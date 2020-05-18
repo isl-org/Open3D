@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "MatrixInteractorLogic.h"
+#include "Open3D/Visualization/Rendering/MatrixInteractorLogic.h"
 
-#include "RendererHandle.h"
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
 
 namespace open3d {
 namespace visualization {
@@ -44,7 +44,7 @@ public:
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
 
-    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn);
+    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool is_on);
 
     void StartMouseDrag();
     void UpdateMouseDragUI();
@@ -56,14 +56,14 @@ private:
     Scene* scene_;
     Camera* camera_;
     visualization::SkyboxHandle skybox_;
-    bool skyboxIsNormallyOn_;
-    Camera::Transform iblRotationAtMouseDown_;
+    bool skybox_is_normally_on_;
+    Camera::Transform ibl_rotation_at_mouse_down_;
 
     struct UIObj {
         GeometryHandle handle;
         Camera::Transform transform;
     };
-    std::vector<UIObj> uiObjs_;
+    std::vector<UIObj> ui_objs_;
 
     void ClearUI();
 };

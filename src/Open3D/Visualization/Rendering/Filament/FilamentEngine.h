@@ -52,7 +52,7 @@ private:
 
     static filament::backend::Backend backend_;
     filament::Engine* engine_;
-    FilamentResourceManager* resourceManager_;
+    FilamentResourceManager* resource_manager_;
 };
 
 }  // namespace visualization

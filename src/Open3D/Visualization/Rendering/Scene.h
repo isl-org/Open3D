@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include "RendererHandle.h"
-#include "RendererStructs.h"
-
 #include <Eigen/Geometry>
+
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
+#include "Open3D/Visualization/Rendering/RendererStructs.h"
 
 namespace open3d {
 
@@ -54,9 +54,9 @@ public:
                                std::int32_t y,
                                std::uint32_t w,
                                std::uint32_t h) = 0;
-    virtual View* GetView(const ViewHandle& viewId) const = 0;
-    virtual void SetViewActive(const ViewHandle& viewId, bool isActive) = 0;
-    virtual void RemoveView(const ViewHandle& viewId) = 0;
+    virtual View* GetView(const ViewHandle& view_id) const = 0;
+    virtual void SetViewActive(const ViewHandle& view_id, bool is_active) = 0;
+    virtual void RemoveView(const ViewHandle& view_id) = 0;
 
     // 'All defaults' way:
     // * Will use geometry name as entity name
@@ -67,20 +67,21 @@ public:
     // Will use geometry name as entity name
     virtual GeometryHandle AddGeometry(
             const geometry::Geometry3D& geometry,
-            const MaterialInstanceHandle& materialId) = 0;
-    virtual GeometryHandle AddGeometry(const geometry::Geometry3D& geometry,
-                                       const MaterialInstanceHandle& materialId,
-                                       const std::string& name) = 0;
-    virtual void AssignMaterial(const GeometryHandle& geometryId,
-                                const MaterialInstanceHandle& materialId) = 0;
+            const MaterialInstanceHandle& material_id) = 0;
+    virtual GeometryHandle AddGeometry(
+            const geometry::Geometry3D& geometry,
+            const MaterialInstanceHandle& material_id,
+            const std::string& name) = 0;
+    virtual void AssignMaterial(const GeometryHandle& geometry_id,
+                                const MaterialInstanceHandle& material_id) = 0;
     virtual MaterialInstanceHandle GetMaterial(
-            const GeometryHandle& geometryId) const = 0;
-    virtual void SetGeometryShadows(const GeometryHandle& geometryId,
-                                    bool castsShadows,
-                                    bool receivesShadows) = 0;
+            const GeometryHandle& geometry_id) const = 0;
+    virtual void SetGeometryShadows(const GeometryHandle& geometry_id,
+                                    bool casts_shadows,
+                                    bool receives_shadows) = 0;
     virtual std::vector<GeometryHandle> FindGeometryByName(
             const std::string& name) = 0;
-    virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
+    virtual void RemoveGeometry(const GeometryHandle& geometry_id) = 0;
 
     virtual LightHandle AddLight(const LightDescription& descr) = 0;
     // TODO: If possible, add getters
@@ -105,16 +106,17 @@ public:
     // Passing empty id removes skybox
     virtual void SetSkybox(const SkyboxHandle& id) = 0;
 
-    virtual void SetEntityEnabled(const REHandle_abstract& entityId,
+    virtual void SetEntityEnabled(const REHandle_abstract& entity_id,
                                   bool enabled) = 0;
-    virtual bool GetEntityEnabled(const REHandle_abstract& entityId) = 0;
-    virtual void SetEntityTransform(const REHandle_abstract& entityId,
+    virtual bool GetEntityEnabled(const REHandle_abstract& entity_id) = 0;
+    virtual void SetEntityTransform(const REHandle_abstract& entity_id,
                                     const Transform& transform) = 0;
-    virtual Transform GetEntityTransform(const REHandle_abstract& entityId) = 0;
+    virtual Transform GetEntityTransform(
+            const REHandle_abstract& entity_id) = 0;
 
     // Returns world space AABB
     virtual geometry::AxisAlignedBoundingBox GetEntityBoundingBox(
-            const REHandle_abstract& entityId) = 0;
+            const REHandle_abstract& entity_id) = 0;
 };
 
 }  // namespace visualization

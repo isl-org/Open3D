@@ -24,26 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Renderer.h"
-
-#include "RenderToBuffer.h"
+#include "Open3D/Visualization/Rendering/Renderer.h"
 
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Visualization/Rendering/RenderToBuffer.h"
 
 namespace open3d {
 namespace visualization {
 
-static ResourceLoadRequest::ErrorCallback sDefaultErrorHandler =
+static const ResourceLoadRequest::ErrorCallback kDefaultErrorHandler =
         [](const ResourceLoadRequest& request,
            const uint8_t code,
            const std::string& details) {
-            if (!request.path.empty()) {
+            if (!request.path_.empty()) {
                 utility::LogWarning(
                         "Resource request for path {} failed:\n* Code: {}\n* "
                         "Error: {}",
-                        request.path.data(), code, details.data());
-            } else if (request.dataSize > 0) {
+                        request.path_.data(), code, details.data());
+            } else if (request.data_size_ > 0) {
                 utility::LogWarning(
                         "Resource request failed:\n* Code: {}\n * Error: {}",
                         code, details.data());
@@ -53,32 +52,32 @@ static ResourceLoadRequest::ErrorCallback sDefaultErrorHandler =
             }
         };
 
-ResourceLoadRequest::ResourceLoadRequest(const void* aData, size_t aDataSize)
-    : data(aData),
-      dataSize(aDataSize),
-      path(""),
-      errorCallback(sDefaultErrorHandler) {}
+ResourceLoadRequest::ResourceLoadRequest(const void* data, size_t data_size)
+    : data_(data),
+      data_size_(data_size),
+      path_(""),
+      error_callback_(kDefaultErrorHandler) {}
 
-ResourceLoadRequest::ResourceLoadRequest(const char* aPath)
-    : data(nullptr),
-      dataSize(0u),
-      path(aPath),
-      errorCallback(sDefaultErrorHandler) {}
+ResourceLoadRequest::ResourceLoadRequest(const char* path)
+    : data_(nullptr),
+      data_size_(0u),
+      path_(path),
+      error_callback_(kDefaultErrorHandler) {}
 
-ResourceLoadRequest::ResourceLoadRequest(const void* aData,
-                                         size_t aDataSize,
-                                         ErrorCallback aErrorCallback)
-    : data(aData),
-      dataSize(aDataSize),
-      path(""),
-      errorCallback(std::move(aErrorCallback)) {}
+ResourceLoadRequest::ResourceLoadRequest(const void* data,
+                                         size_t data_size,
+                                         ErrorCallback error_callback)
+    : data_(data),
+      data_size_(data_size),
+      path_(""),
+      error_callback_(std::move(error_callback)) {}
 
-ResourceLoadRequest::ResourceLoadRequest(const char* aPath,
-                                         ErrorCallback aErrorCallback)
-    : data(nullptr),
-      dataSize(0u),
-      path(aPath),
-      errorCallback(std::move(aErrorCallback)) {}
+ResourceLoadRequest::ResourceLoadRequest(const char* path,
+                                         ErrorCallback error_callback)
+    : data_(nullptr),
+      data_size_(0u),
+      path_(path),
+      error_callback_(std::move(error_callback)) {}
 
 void Renderer::RenderToImage(
         std::size_t width,

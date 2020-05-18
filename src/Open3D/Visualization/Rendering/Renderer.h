@@ -26,10 +26,9 @@
 
 #pragma once
 
-#include "MaterialModifier.h"
-#include "RendererHandle.h"
-
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Visualization/Rendering/MaterialModifier.h"
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
 
 namespace open3d {
 
@@ -48,18 +47,18 @@ public:
     using ErrorCallback = std::function<void(
             const ResourceLoadRequest&, const uint8_t, const std::string&)>;
 
-    ResourceLoadRequest(const void* data, size_t dataSize);
+    ResourceLoadRequest(const void* data, size_t data_size);
     explicit ResourceLoadRequest(const char* path);
 
     ResourceLoadRequest(const void* data,
-                        size_t dataSize,
-                        ErrorCallback errorCallback);
-    ResourceLoadRequest(const char* path, ErrorCallback errorCallback);
+                        size_t data_size,
+                        ErrorCallback error_callback);
+    ResourceLoadRequest(const char* path, ErrorCallback error_callback);
 
-    const void* data;
-    const size_t dataSize;
-    const std::string path;
-    ErrorCallback errorCallback;
+    const void* data_;
+    const size_t data_size_;
+    const std::string path_;
+    ErrorCallback error_callback_;
 };
 
 class Renderer {

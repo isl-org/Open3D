@@ -26,13 +26,12 @@
 
 #pragma once
 
-#include <filament/utils/Entity.h>
+#include "Open3D/Visualization/Rendering/Renderer.h"
 
+#include <filament/utils/Entity.h>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
-
-#include "Open3D/Visualization/Rendering/Renderer.h"
 
 namespace filament {
 class Engine;
@@ -54,8 +53,8 @@ class FilamentView;
 class FilamentRenderer : public Renderer {
 public:
     FilamentRenderer(filament::Engine& engine,
-                     void* nativeDrawable,
-                     FilamentResourceManager& resourceManager);
+                     void* native_drawable,
+                     FilamentResourceManager& resource_mgr);
     ~FilamentRenderer() override;
 
     SceneHandle CreateScene() override;
@@ -95,25 +94,25 @@ public:
     // Removes scene from scenes list and draws it last
     // WARNING: will destroy previous gui scene if there was any
     void ConvertToGuiScene(const SceneHandle& id);
-    FilamentScene* GetGuiScene() const { return guiScene_.get(); }
+    FilamentScene* GetGuiScene() const { return gui_scene_.get(); }
 
 private:
     friend class FilamentRenderToBuffer;
 
     filament::Engine& engine_;
     filament::Renderer* renderer_ = nullptr;
-    filament::SwapChain* swapChain_ = nullptr;
+    filament::SwapChain* swap_chain_ = nullptr;
 
     std::unordered_map<REHandle_abstract, std::unique_ptr<FilamentScene>>
             scenes_;
-    std::unique_ptr<FilamentScene> guiScene_;
+    std::unique_ptr<FilamentScene> gui_scene_;
 
-    std::unique_ptr<FilamentMaterialModifier> materialsModifier_;
-    FilamentResourceManager& resourceManager_;
+    std::unique_ptr<FilamentMaterialModifier> materials_modifier_;
+    FilamentResourceManager& resource_mgr_;
 
-    std::unordered_set<FilamentRenderToBuffer*> bufferRenderers_;
+    std::unordered_set<FilamentRenderToBuffer*> buffer_renderers_;
 
-    bool frameStarted_ = false;
+    bool frame_started_ = false;
 
     void OnBufferRenderDestroyed(FilamentRenderToBuffer* render);
 };

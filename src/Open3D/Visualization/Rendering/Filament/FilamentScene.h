@@ -26,13 +26,13 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/Scene.h"
+#include <filament/utils/Entity.h>
+#include <filament/utils/EntityInstance.h>
 
 #include <memory>
 #include <unordered_map>
 
-#include <filament/utils/Entity.h>
-#include <filament/utils/EntityInstance.h>
+#include "Open3D/Visualization/Rendering/Scene.h"
 
 namespace filament {
 class Engine;
@@ -53,7 +53,7 @@ class FilamentView;
 class FilamentScene : public Scene {
 public:
     FilamentScene(filament::Engine& engine,
-                  FilamentResourceManager& resourceManager);
+                  FilamentResourceManager& resource_mgr);
     ~FilamentScene() override;
 
     // All views above first will discard
@@ -63,27 +63,27 @@ public:
                        std::uint32_t w,
                        std::uint32_t h) override;
 
-    View* GetView(const ViewHandle& viewId) const override;
-    void SetViewActive(const ViewHandle& viewId, bool isActive) override;
-    void RemoveView(const ViewHandle& viewId) override;
+    View* GetView(const ViewHandle& view_id) const override;
+    void SetViewActive(const ViewHandle& view_id, bool is_active) override;
+    void RemoveView(const ViewHandle& view_id) override;
 
     GeometryHandle AddGeometry(const geometry::Geometry3D& geometry) override;
     GeometryHandle AddGeometry(
             const geometry::Geometry3D& geometry,
-            const MaterialInstanceHandle& materialId) override;
+            const MaterialInstanceHandle& material_id) override;
     GeometryHandle AddGeometry(const geometry::Geometry3D& geometry,
-                               const MaterialInstanceHandle& materialId,
+                               const MaterialInstanceHandle& material_id,
                                const std::string& name) override;
     std::vector<GeometryHandle> FindGeometryByName(
             const std::string& name) override;
-    void AssignMaterial(const GeometryHandle& geometryId,
-                        const MaterialInstanceHandle& materialId) override;
+    void AssignMaterial(const GeometryHandle& geometry_id,
+                        const MaterialInstanceHandle& material_id) override;
     MaterialInstanceHandle GetMaterial(
-            const GeometryHandle& geometryId) const override;
-    void SetGeometryShadows(const GeometryHandle& geometryId,
-                            bool castsShadows,
-                            bool receivesShadows) override;
-    void RemoveGeometry(const GeometryHandle& geometryId) override;
+            const GeometryHandle& geometry_id) const override;
+    void SetGeometryShadows(const GeometryHandle& geometry_id,
+                            bool casts_shadows,
+                            bool receives_shadows) override;
+    void RemoveGeometry(const GeometryHandle& geometry_id) override;
 
     LightHandle AddLight(const LightDescription& descr) override;
     void SetLightIntensity(const LightHandle& id, float intensity) override;
@@ -105,15 +105,15 @@ public:
 
     void SetSkybox(const SkyboxHandle& id) override;
 
-    void SetEntityEnabled(const REHandle_abstract& entityId,
+    void SetEntityEnabled(const REHandle_abstract& entity_id,
                           bool enabled) override;
-    bool GetEntityEnabled(const REHandle_abstract& entityId) override;
-    void SetEntityTransform(const REHandle_abstract& entityId,
+    bool GetEntityEnabled(const REHandle_abstract& entity_id) override;
+    void SetEntityTransform(const REHandle_abstract& entity_id,
                             const Transform& transform) override;
-    Transform GetEntityTransform(const REHandle_abstract& entityId) override;
+    Transform GetEntityTransform(const REHandle_abstract& entity_id) override;
 
     geometry::AxisAlignedBoundingBox GetEntityBoundingBox(
-            const REHandle_abstract& entityId) override;
+            const REHandle_abstract& entity_id) override;
 
     void Draw(filament::Renderer& renderer);
 
@@ -150,7 +150,7 @@ private:
 
     struct ViewContainer {
         std::unique_ptr<FilamentView> view;
-        bool isActive = true;
+        bool is_active = true;
     };
 
     utils::EntityInstance<filament::TransformManager>
@@ -160,12 +160,12 @@ private:
     filament::Scene* scene_ = nullptr;
 
     filament::Engine& engine_;
-    FilamentResourceManager& resourceManager_;
+    FilamentResourceManager& resource_mgr_;
 
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
     std::unordered_map<REHandle_abstract, SceneEntity> entities_;
-    std::weak_ptr<filament::IndirectLight> wIndirectLight_;
-    std::weak_ptr<filament::Skybox> wSkybox_;
+    std::weak_ptr<filament::IndirectLight> indirect_light_;
+    std::weak_ptr<filament::Skybox> skybox_;
 };
 
 }  // namespace visualization

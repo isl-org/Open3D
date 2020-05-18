@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "MaterialModifier.h"
+#include "Open3D/Visualization/Rendering/MaterialModifier.h"
 
 namespace open3d {
 namespace visualization {
@@ -36,39 +36,39 @@ TextureSamplerParameters TextureSamplerParameters::Simple() {
 TextureSamplerParameters TextureSamplerParameters::Pretty() {
     TextureSamplerParameters parameters;
 
-    parameters.filterMin = TextureSamplerParameters::MinFilter::Linear;
-    parameters.filterMag = TextureSamplerParameters::MagFilter::Linear;
+    parameters.filter_min = TextureSamplerParameters::MinFilter::Linear;
+    parameters.filter_mag = TextureSamplerParameters::MagFilter::Linear;
     parameters.SetAnisotropy(4);
 
     return parameters;
 }
 
-TextureSamplerParameters::TextureSamplerParameters(MagFilter minMag,
+TextureSamplerParameters::TextureSamplerParameters(MagFilter min_mag,
                                                    WrapMode uvw) {
-    filterMin = MinFilter(minMag);
-    filterMag = minMag;
-    wrapU = uvw;
-    wrapV = uvw;
-    wrapW = uvw;
+    filter_min = MinFilter(min_mag);
+    filter_mag = min_mag;
+    wrap_u = uvw;
+    wrap_v = uvw;
+    wrap_w = uvw;
 }
 
 TextureSamplerParameters::TextureSamplerParameters(MinFilter min,
                                                    MagFilter mag,
                                                    WrapMode uvw) {
-    filterMin = min;
-    filterMag = mag;
-    wrapU = uvw;
-    wrapV = uvw;
-    wrapW = uvw;
+    filter_min = min;
+    filter_mag = mag;
+    wrap_u = uvw;
+    wrap_v = uvw;
+    wrap_w = uvw;
 }
 
 TextureSamplerParameters::TextureSamplerParameters(
         MinFilter min, MagFilter mag, WrapMode u, WrapMode v, WrapMode w) {
-    filterMin = min;
-    filterMag = mag;
-    wrapU = u;
-    wrapV = v;
-    wrapW = w;
+    filter_min = min;
+    filter_mag = mag;
+    wrap_u = u;
+    wrap_v = v;
+    wrap_w = w;
 }
 
 void TextureSamplerParameters::SetAnisotropy(const std::uint8_t a) {

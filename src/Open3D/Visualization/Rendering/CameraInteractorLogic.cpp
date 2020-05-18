@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "CameraInteractorLogic.h"
+#include "Open3D/Visualization/Rendering/CameraInteractorLogic.h"
 
 namespace open3d {
 namespace visualization {
 
-CameraInteractorLogic::CameraInteractorLogic(Camera* c, double minFarPlane)
-    : RotationInteractorLogic(c, minFarPlane), fovAtMouseDown_(60.0) {}
+CameraInteractorLogic::CameraInteractorLogic(Camera* c, double min_far_plane)
+    : RotationInteractorLogic(c, min_far_plane), fov_at_mouse_down_(60.0) {}
 
 void CameraInteractorLogic::SetBoundingBox(
         const geometry::AxisAlignedBoundingBox& bounds) {
@@ -63,13 +63,13 @@ void CameraInteractorLogic::RotateFly(int dx, int dy) {
 void CameraInteractorLogic::Dolly(int dy, DragType type) {
     // Parent's matrix_ may not have been set yet
     if (type != DragType::MOUSE) {
-        SetMouseDownInfo(camera_->GetModelMatrix(), centerOfRotation_);
+        SetMouseDownInfo(camera_->GetModelMatrix(), center_of_rotation_);
     }
     Super::Dolly(dy, type);
 }
 
-void CameraInteractorLogic::Dolly(float zDist, Camera::Transform matrixIn) {
-    Super::Dolly(zDist, matrixIn);
+void CameraInteractorLogic::Dolly(float z_dist, Camera::Transform matrix_in) {
+    Super::Dolly(z_dist, matrix_in);
     auto matrix = GetMatrix();
     camera_->SetModelMatrix(matrix);
 
@@ -81,77 +81,78 @@ void CameraInteractorLogic::Pan(int dx, int dy) {
     camera_->SetModelMatrix(GetMatrix());
 }
 
-void CameraInteractorLogic::RotateLocal(float angleRad,
+void CameraInteractorLogic::RotateLocal(float angle_rad,
                                         const Eigen::Vector3f& axis) {
-    auto modelMatrix = camera_->GetModelMatrix();  // copy
-    modelMatrix.rotate(Eigen::AngleAxis<float>(angleRad, axis));
-    camera_->SetModelMatrix(modelMatrix);
+    auto model_matrix = camera_->GetModelMatrix();  // copy
+    model_matrix.rotate(Eigen::AngleAxis<float>(angle_rad, axis));
+    camera_->SetModelMatrix(model_matrix);
 }
 
 void CameraInteractorLogic::MoveLocal(const Eigen::Vector3f& v) {
-    auto modelMatrix = camera_->GetModelMatrix();  // copy
-    modelMatrix.translate(v);
-    camera_->SetModelMatrix(modelMatrix);
+    auto model_matrix = camera_->GetModelMatrix();  // copy
+    model_matrix.translate(v);
+    camera_->SetModelMatrix(model_matrix);
 }
 
-void CameraInteractorLogic::Zoom(int dy, DragType dragType) {
-    float dFOV = 0.0f;  // initialize to make GCC happy
-    switch (dragType) {
+void CameraInteractorLogic::Zoom(int dy, DragType drag_type) {
+    float d_fov = 0.0f;  // initialize to make GCC happy
+    switch (drag_type) {
         case DragType::MOUSE:
-            dFOV = float(-dy) * 0.1;  // deg
+            d_fov = float(-dy) * 0.1;  // deg
             break;
         case DragType::TWO_FINGER:
-            dFOV = float(dy) * 0.2f;  // deg
+            d_fov = float(dy) * 0.2f;  // deg
             break;
-        case DragType::WHEEL:         // actual mouse wheel, same as two-fingers
-            dFOV = float(dy) * 2.0f;  // deg
+        case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
+            d_fov = float(dy) * 2.0f;  // deg
             break;
     }
-    float oldFOV = 0.0;
-    if (dragType == DragType::MOUSE) {
-        oldFOV = fovAtMouseDown_;
+    float old_fov = 0.0;
+    if (drag_type == DragType::MOUSE) {
+        old_fov = fov_at_mouse_down_;
     } else {
-        oldFOV = camera_->GetFieldOfView();
+        old_fov = camera_->GetFieldOfView();
     }
-    float newFOV = oldFOV + dFOV;
-    newFOV = std::max(5.0f, newFOV);
-    newFOV = std::min(90.0f, newFOV);
+    float new_fov = old_fov + d_fov;
+    new_fov = std::max(5.0f, new_fov);
+    new_fov = std::min(90.0f, new_fov);
 
-    float toRadians = M_PI / 180.0;
+    float to_radians = M_PI / 180.0;
     float near = camera_->GetNear();
-    Eigen::Vector3f cameraPos, COR;
-    if (dragType == DragType::MOUSE) {
-        cameraPos = matrixAtMouseDown_.translation();
-        COR = centerOfRotationAtMouseDown_;
+    Eigen::Vector3f camera_pos, cor;
+    if (drag_type == DragType::MOUSE) {
+        camera_pos = matrix_at_mouse_down_.translation();
+        cor = center_of_rotation_at_mouse_down_;
     } else {
-        cameraPos = camera_->GetPosition();
-        COR = centerOfRotation_;
+        camera_pos = camera_->GetPosition();
+        cor = center_of_rotation_;
     }
-    Eigen::Vector3f toCOR = COR - cameraPos;
-    float oldDistFromPlaneToCOR = toCOR.norm() - near;
-    float newDistFromPlaneToCOR = (near + oldDistFromPlaneToCOR) *
-                                          std::tan(oldFOV / 2.0 * toRadians) /
-                                          std::tan(newFOV / 2.0 * toRadians) -
-                                  near;
-    if (dragType == DragType::MOUSE) {
-        Dolly(-(newDistFromPlaneToCOR - oldDistFromPlaneToCOR),
-              matrixAtMouseDown_);
+    Eigen::Vector3f to_cor = cor - camera_pos;
+    float old_dist_from_plane_to_cor = to_cor.norm() - near;
+    float new_dist_from_plane_to_cor =
+            (near + old_dist_from_plane_to_cor) *
+                    std::tan(old_fov / 2.0 * to_radians) /
+                    std::tan(new_fov / 2.0 * to_radians) -
+            near;
+    if (drag_type == DragType::MOUSE) {
+        Dolly(-(new_dist_from_plane_to_cor - old_dist_from_plane_to_cor),
+              matrix_at_mouse_down_);
     } else {
-        Dolly(-(newDistFromPlaneToCOR - oldDistFromPlaneToCOR),
+        Dolly(-(new_dist_from_plane_to_cor - old_dist_from_plane_to_cor),
               camera_->GetModelMatrix());
     }
 
     float aspect = 1.0f;
-    if (viewHeight_ > 0) {
-        aspect = float(viewWidth_) / float(viewHeight_);
+    if (view_height_ > 0) {
+        aspect = float(view_width_) / float(view_height_);
     }
-    camera_->SetProjection(newFOV, aspect, camera_->GetNear(),
+    camera_->SetProjection(new_fov, aspect, camera_->GetNear(),
                            camera_->GetFar(), camera_->GetFieldOfViewType());
 }
 
 void CameraInteractorLogic::StartMouseDrag() {
-    Super::SetMouseDownInfo(camera_->GetModelMatrix(), centerOfRotation_);
-    fovAtMouseDown_ = camera_->GetFieldOfView();
+    Super::SetMouseDownInfo(camera_->GetModelMatrix(), center_of_rotation_);
+    fov_at_mouse_down_ = camera_->GetFieldOfView();
 }
 
 void CameraInteractorLogic::ResetMouseDrag() { StartMouseDrag(); }

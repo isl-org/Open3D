@@ -26,9 +26,8 @@
 
 #pragma once
 
-#include "MatrixInteractorLogic.h"
-
-#include "RendererHandle.h"
+#include "Open3D/Visualization/Rendering/MatrixInteractorLogic.h"
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
 
 namespace open3d {
 namespace visualization {
@@ -42,7 +41,7 @@ class LightDirectionInteractorLogic : public MatrixInteractorLogic {
 public:
     LightDirectionInteractorLogic(Scene* scene, Camera* camera);
 
-    void SetDirectionalLight(LightHandle dirLight);
+    void SetDirectionalLight(LightHandle dir_light);
 
     void Rotate(int dx, int dy) override;
 
@@ -55,14 +54,14 @@ public:
 private:
     Scene* scene_;
     Camera* camera_;
-    LightHandle dirLight_;
-    Eigen::Vector3f lightDirAtMouseDown_;
+    LightHandle dir_light_;
+    Eigen::Vector3f light_dir_at_mouse_down_;
 
     struct UIObj {
         GeometryHandle handle;
         Camera::Transform transform;
     };
-    std::vector<UIObj> uiObjs_;
+    std::vector<UIObj> ui_objs_;
 
     void ClearUI();
 };

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "FilamentGeometryBuffersBuilder.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentGeometryBuffersBuilder.h"
 
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/PointCloud.h"
@@ -58,7 +58,7 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
 
 void GeometryBuffersBuilder::DeallocateBuffer(void* buffer,
                                               size_t size,
-                                              void* userPtr) {
+                                              void* user_ptr) {
     free(buffer);
 }
 

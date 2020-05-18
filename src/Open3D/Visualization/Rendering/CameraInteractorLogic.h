@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "RotationInteractorLogic.h"
+#include "Open3D/Visualization/Rendering/RotationInteractorLogic.h"
 
 namespace open3d {
 namespace visualization {
@@ -35,7 +35,7 @@ class CameraInteractorLogic : public RotationInteractorLogic {
     using Super = RotationInteractorLogic;
 
 public:
-    CameraInteractorLogic(Camera* c, double minFarPlane);
+    CameraInteractorLogic(Camera* c, double min_far_plane);
 
     void SetBoundingBox(
             const geometry::AxisAlignedBoundingBox& bounds) override;
@@ -43,14 +43,14 @@ public:
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
     void Dolly(int dy, DragType type) override;
-    void Dolly(float zDist, Camera::Transform matrixIn) override;
+    void Dolly(float z_dist, Camera::Transform matrix_in) override;
 
     void Pan(int dx, int dy) override;
 
     /// Sets camera field of view
-    void Zoom(int dy, DragType dragType);
+    void Zoom(int dy, DragType drag_type);
 
-    void RotateLocal(float angleRad, const Eigen::Vector3f& axis);
+    void RotateLocal(float angle_rad, const Eigen::Vector3f& axis);
     void MoveLocal(const Eigen::Vector3f& v);
 
     void RotateFly(int dx, int dy);
@@ -61,7 +61,7 @@ public:
     void EndMouseDrag() override;
 
 private:
-    double fovAtMouseDown_;
+    double fov_at_mouse_down_;
 };
 
 }  // namespace visualization
