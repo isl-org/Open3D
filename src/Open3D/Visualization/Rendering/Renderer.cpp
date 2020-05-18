@@ -33,7 +33,7 @@
 namespace open3d {
 namespace visualization {
 
-static ResourceLoadRequest::ErrorCallback kDefaultErrorHandler =
+static const ResourceLoadRequest::ErrorCallback kDefaultErrorHandler =
         [](const ResourceLoadRequest& request,
            const uint8_t code,
            const std::string& details) {
