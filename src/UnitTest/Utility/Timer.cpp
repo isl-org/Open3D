@@ -26,26 +26,30 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(Timer, DISABLED_Constructor) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(Timer, DISABLED_Destructor) { unit_test::NotImplemented(); }
+TEST(Timer, DISABLED_Constructor) { NotImplemented(); }
 
-TEST(Timer, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(Timer, DISABLED_Destructor) { NotImplemented(); }
 
-TEST(Timer, DISABLED_GetSystemTimeInMilliseconds) {
-    unit_test::NotImplemented();
-}
+TEST(Timer, DISABLED_MemberData) { NotImplemented(); }
 
-TEST(Timer, DISABLED_Start) { unit_test::NotImplemented(); }
+TEST(Timer, DISABLED_GetSystemTimeInMilliseconds) { NotImplemented(); }
 
-TEST(Timer, DISABLED_Stop) { unit_test::NotImplemented(); }
+TEST(Timer, DISABLED_Start) { NotImplemented(); }
 
-TEST(Timer, DISABLED_Print) { unit_test::NotImplemented(); }
+TEST(Timer, DISABLED_Stop) { NotImplemented(); }
 
-TEST(Timer, DISABLED_GetDuration) { unit_test::NotImplemented(); }
+TEST(Timer, DISABLED_Print) { NotImplemented(); }
 
-TEST(Timer, DISABLED_ScopeTimer) { unit_test::NotImplemented(); }
+TEST(Timer, DISABLED_GetDuration) { NotImplemented(); }
 
-TEST(Timer, DISABLED_FPSTimer) { unit_test::NotImplemented(); }
+TEST(Timer, DISABLED_ScopeTimer) { NotImplemented(); }
 
-TEST(Timer, DISABLED_Signal) { unit_test::NotImplemented(); }
+TEST(Timer, DISABLED_FPSTimer) { NotImplemented(); }
+
+TEST(Timer, DISABLED_Signal) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

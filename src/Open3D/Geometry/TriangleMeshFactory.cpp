@@ -433,9 +433,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCoordinateFrame(
     mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
-    transformation = Eigen::Matrix4d::Identity();
-    transformation.block<3, 1>(0, 3) = origin;
-    mesh_frame->Transform(transformation);
+    mesh_frame->Translate(-origin, true);
 
     return mesh_frame;
 }

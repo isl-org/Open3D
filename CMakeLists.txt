@@ -2,8 +2,9 @@
 # https://cmake.org/cmake/help/v3.1/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-cmake_minimum_required(VERSION 3.1)
-set (CMAKE_CXX_STANDARD 11)
+cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
+set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CUDA_STANDARD 11)
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
@@ -71,6 +72,7 @@ option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
+option(BUILD_BENCHMARKS          "Build the micro benchmarks"               OFF)
 option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
 option(BUILD_FLANN               "Use the flann that comes with Open3D"     ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
@@ -83,9 +85,58 @@ option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
 option(BUILD_AZURE_KINECT        "Build support for Azure Kinect sensor"    OFF)
 option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
+option(BUILD_FILAMENT            "Build filament from source"               OFF)
+option(ENABLE_GUI                "Builds new GUI"                           ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
+option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
+
+# This should be a folder with next hierarchy:
+# root
+# |-bin <- Here filament tools are located
+# |-include
+# |-lib
+# | |-<platform_type> <- For precompiled libs
+# For Windows we need even more specific folders struct, check 'filament_download.cmake' for details
+set(PATH_TO_FILAMENT "" CACHE STRING "Path to prebuilt filament libraries")
+
+option(BUILD_CUDA_MODULE         "Build the CUDA module"                    OFF)
+option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
 option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
+
+# Cache variables for specifying the GPU architectures
+set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
+one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures" )
+set_property( CACHE CUDA_ARCH PROPERTY STRINGS Auto BasicPTX User)
+set(CUDA_ARCH_USER "" CACHE STRING "User defined list of GPU architectures, e.g. 3.5 5.0+PTX Turing" )
+
+# Build CUDA module by default if CUDA is available
+# Compatible with CMake 3.8+
+if (BUILD_CUDA_MODULE)
+    include(CheckLanguage)
+    check_language(CUDA)
+    if(CMAKE_CUDA_COMPILER)
+        find_package( CUDA REQUIRED ) # required for cuda_select_nvcc_arch_flags
+        message(STATUS "Building CUDA enabled")
+        add_definitions(-DBUILD_CUDA_MODULE)
+        enable_language(CUDA)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
+        # get gencode flags
+        if( "${CUDA_ARCH}" STREQUAL "User" )
+            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
+        elseif( "${CUDA_ARCH}" STREQUAL "BasicPTX" )
+            # include oldest and most recent PTX and rely on JIT compilation
+            set(CUDA_GENCODES "-gencode arch=compute_30,code=compute_30;-gencode arch=compute_75,code=compute_75")
+        else()
+            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH}")
+        endif()
+        string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CUDA_GENCODES}")
+    else()
+        set(BUILD_CUDA_MODULE OFF)
+        message(STATUS "No CUDA support")
+    endif()
+endif ()
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
@@ -98,8 +149,14 @@ endif ()
 # See docs/compilation.rst for details.
 if (GLIBCXX_USE_CXX11_ABI)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=1")
+    if (BUILD_CUDA_MODULE)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=1")
+    endif()
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+    if (BUILD_CUDA_MODULE)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+    endif()
 endif()
 
 # if dynamic link is added, use if (WIN32) macro
@@ -114,6 +171,9 @@ if (ENABLE_HEADLESS_RENDERING)
         set(ENABLE_HEADLESS_RENDERING OFF)
     else()
         add_definitions(-DHEADLESS_RENDERING)
+        if (ENABLE_GUI AND UNIX)
+            message(FATAL_ERROR "Headless rendering is not compatible with ENABLE_GUI=ON, which requires libX11")
+        endif()
     endif()
 endif()
 
@@ -130,6 +190,9 @@ endif()
 
 # Set OS-specific things here
 if (WIN32)
+    message(STATUS "New GUI is not currently supported on Windows, setting ENABLE_GUI to OFF")
+    set(ENABLE_GUI OFF)
+
     # can't hide the unit testing option on Windows only
     # as a precaution: disable unit testing on Windows regardless of user input
     message(STATUS "Disable unit tests since this feature is not fully supported on Windows.")
@@ -149,6 +212,8 @@ if (WIN32)
         # Ignore certain warnings
         # C4522: multiple assignment operators specified
         set(MSVC_WARNING_IGNORE "/wd4522")
+        # Ignore [[nodiscard]] warnings (since we're only using C++14)
+        set(MSVC_WARNING_IGNORE "${MSVC_WARNING_IGNORE} /Wv:18")
 
         # Multi-thread compile, two ways to enable
         # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
@@ -172,6 +237,17 @@ if (WIN32)
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
     endif (MSVC)
 
+    if (ENABLE_GUI)
+        # Filament links normally only against static runtime
+        set(STATIC_WINDOWS_RUNTIME ON)
+
+        # GLEW, Open3D make direct OpenGL calls and link to opengl32.lib;
+        # Filament needs to link through bluegl.lib.
+        # See https://github.com/google/filament/issues/652
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /FORCE:MULTIPLE")
+    endif()
+
     if (STATIC_WINDOWS_RUNTIME)
         # /MT  links libcmt.lib   libvcruntime.lib   libucrt.lib
         # /MTd links libcmtd.lib  libvcruntimed.lib  libucrtd.lib
@@ -189,10 +265,6 @@ if (WIN32)
         string(REPLACE "/MT" "/MD" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
         string(REPLACE "/MTd" "/MDd" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
     endif ()
-    message(STATUS "CMAKE_C_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
-    message(STATUS "CMAKE_C_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
-    message(STATUS "CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
-    message(STATUS "CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 elseif (CYGWIN)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Cygwin")
@@ -213,7 +285,6 @@ elseif (UNIX)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
     add_compile_options(-Wno-deprecated-declarations)
-    add_compile_options(-Wno-unused-result)
     # In Release build -O3 will be added automatically by CMake
     # We still enable -O3 at debug build to optimize performance
     if (uppercase_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
@@ -223,6 +294,10 @@ elseif (UNIX)
     message(STATUS "Compiling on Unix")
     message(STATUS "Disable RealSense since it is not fully supported on Linux.")
     set(BUILD_LIBREALSENSE OFF)
+    if (ENABLE_GUI)
+        message(STATUS "Compiling with Filament: specifically link -lstdc++ before -lc++")
+        list(INSERT 3RDPARTY_LIBRARIES 0 "-lstdc++")
+    endif ()
 endif ()
 
 # Set OpenMP
@@ -234,7 +309,7 @@ if (WITH_OPENMP)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
     else ()
-        message(STATUS "OpenMP NOT found")
+        message(WARNING "OpenMP enabled but not found.")
     endif ()
   endif ()
 

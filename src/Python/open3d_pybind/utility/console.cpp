@@ -29,9 +29,9 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/open3d_pybind.h"
 
-using namespace open3d;
+namespace open3d {
 
-void pybind_console(py::module &m) {
+void pybind_console(py::module& m) {
     py::enum_<utility::VerbosityLevel> vl(m, "VerbosityLevel", py::arithmetic(),
                                           "VerbosityLevel");
     vl.value("Error", utility::VerbosityLevel::Error)
@@ -57,4 +57,22 @@ void pybind_console(py::module &m) {
     m.def("get_verbosity_level", &utility::GetVerbosityLevel,
           "Get global verbosity level of Open3D");
     docstring::FunctionDocInject(m, "get_verbosity_level");
+
+    py::class_<utility::VerbosityContextManager>(m, "VerbosityContextManager",
+                                                 "A context manager to "
+                                                 "temporally change the "
+                                                 "verbosity level of Open3D")
+            .def(py::init<utility::VerbosityLevel>(),
+                 "Create a VerbosityContextManager with a given VerbosityLevel",
+                 "level"_a)
+            .def("__enter__",
+                 [&](utility::VerbosityContextManager& cm) { cm.enter(); },
+                 "Enter the context manager")
+            .def("__exit__",
+                 [&](utility::VerbosityContextManager& cm,
+                     pybind11::object exc_type, pybind11::object exc_value,
+                     pybind11::object traceback) { cm.exit(); },
+                 "Exit the context manager");
 }
+
+}  // namespace open3d

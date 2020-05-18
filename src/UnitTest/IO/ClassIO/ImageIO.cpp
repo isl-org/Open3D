@@ -26,16 +26,22 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(ImageIO, DISABLED_CreateImageFromFile) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(ImageIO, DISABLED_ReadImage) { unit_test::NotImplemented(); }
+TEST(ImageIO, DISABLED_CreateImageFromFile) { NotImplemented(); }
 
-TEST(ImageIO, DISABLED_WriteImage) { unit_test::NotImplemented(); }
+TEST(ImageIO, DISABLED_ReadImage) { NotImplemented(); }
 
-TEST(ImageIO, DISABLED_ReadImageFromPNG) { unit_test::NotImplemented(); }
+TEST(ImageIO, DISABLED_WriteImage) { NotImplemented(); }
 
-TEST(ImageIO, DISABLED_WriteImageToPNG) { unit_test::NotImplemented(); }
+TEST(ImageIO, DISABLED_ReadImageFromPNG) { NotImplemented(); }
 
-TEST(ImageIO, DISABLED_ReadImageFromJPG) { unit_test::NotImplemented(); }
+TEST(ImageIO, DISABLED_WriteImageToPNG) { NotImplemented(); }
 
-TEST(ImageIO, DISABLED_WriteImageToJPG) { unit_test::NotImplemented(); }
+TEST(ImageIO, DISABLED_ReadImageFromJPG) { NotImplemented(); }
+
+TEST(ImageIO, DISABLED_WriteImageToJPG) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

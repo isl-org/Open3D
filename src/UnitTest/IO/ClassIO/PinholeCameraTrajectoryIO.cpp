@@ -26,23 +26,29 @@
 
 #include "TestUtility/UnitTest.h"
 
+namespace open3d {
+namespace unit_test {
+
 TEST(PinholeCameraTrajectoryIO,
      DISABLED_CreatePinholeCameraTrajectoryFromFile) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectory) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectory) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectoryFromLOG) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectoryToLOG) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
+
+}  // namespace unit_test
+}  // namespace open3d

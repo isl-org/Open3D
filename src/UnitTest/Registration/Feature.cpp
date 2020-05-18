@@ -26,12 +26,18 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(Feature, DISABLED_Resize) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(Feature, DISABLED_Dimension) { unit_test::NotImplemented(); }
+TEST(Feature, DISABLED_Resize) { NotImplemented(); }
 
-TEST(Feature, DISABLED_Num) { unit_test::NotImplemented(); }
+TEST(Feature, DISABLED_Dimension) { NotImplemented(); }
 
-TEST(Feature, DISABLED_ComputeFPFHFeature) { unit_test::NotImplemented(); }
+TEST(Feature, DISABLED_Num) { NotImplemented(); }
 
-TEST(Feature, DISABLED_KDTreeSearchParamKNN) { unit_test::NotImplemented(); }
+TEST(Feature, DISABLED_ComputeFPFHFeature) { NotImplemented(); }
+
+TEST(Feature, DISABLED_KDTreeSearchParamKNN) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

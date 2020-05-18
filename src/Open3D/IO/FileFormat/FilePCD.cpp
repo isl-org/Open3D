@@ -29,6 +29,7 @@
 #include <cstdio>
 #include <sstream>
 
+#include "Open3D/IO/ClassIO/FileFormatIO.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
@@ -711,6 +712,10 @@ bool WritePCDData(FILE *file,
 }  // unnamed namespace
 
 namespace io {
+FileGeometry ReadFileGeometryTypePCD(const std::string &path) {
+    return CONTAINS_POINTS;
+}
+
 bool ReadPointCloudFromPCD(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            bool print_progress) {

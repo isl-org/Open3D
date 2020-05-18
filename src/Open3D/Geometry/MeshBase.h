@@ -69,6 +69,12 @@ public:
     /// \param Vertex indicates that only the vertex positions are filtered.
     enum class FilterScope { All, Color, Normal, Vertex };
 
+    /// Energy model that is minimized in the DeformAsRigidAsPossible method.
+    /// \param Spokes is the original energy as formulated in
+    /// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
+    /// \param Smoothed adds a rotation smoothing term to the rotations.
+    enum class DeformAsRigidAsPossibleEnergy { Spokes, Smoothed };
+
     /// \brief Default Constructor.
     MeshBase() : Geometry3D(Geometry::GeometryType::MeshBase) {}
     ~MeshBase() override {}
@@ -84,9 +90,10 @@ public:
     virtual MeshBase &Transform(const Eigen::Matrix4d &transformation) override;
     virtual MeshBase &Translate(const Eigen::Vector3d &translation,
                                 bool relative = true) override;
-    virtual MeshBase &Scale(const double scale, bool center = true) override;
+    virtual MeshBase &Scale(const double scale,
+                            const Eigen::Vector3d &center) override;
     virtual MeshBase &Rotate(const Eigen::Matrix3d &R,
-                             bool center = true) override;
+                             const Eigen::Vector3d &center) override;
 
     MeshBase &operator+=(const MeshBase &mesh);
     MeshBase operator+(const MeshBase &mesh) const;

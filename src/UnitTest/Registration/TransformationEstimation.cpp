@@ -26,34 +26,32 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(TransformationEstimation, DISABLED_Constructor) {
-    unit_test::NotImplemented();
-}
+namespace open3d {
+namespace unit_test {
 
-TEST(TransformationEstimation, DISABLED_Destructor) {
-    unit_test::NotImplemented();
-}
+TEST(TransformationEstimation, DISABLED_Constructor) { NotImplemented(); }
 
-TEST(TransformationEstimation, DISABLED_MemberData) {
-    unit_test::NotImplemented();
-}
+TEST(TransformationEstimation, DISABLED_Destructor) { NotImplemented(); }
+
+TEST(TransformationEstimation, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(TransformationEstimation, DISABLED_GetTransformationEstimationType) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
-TEST(TransformationEstimation, DISABLED_ComputeRMSE) {
-    unit_test::NotImplemented();
-}
+TEST(TransformationEstimation, DISABLED_ComputeRMSE) { NotImplemented(); }
 
 TEST(TransformationEstimation, DISABLED_ComputeTransformation) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPoint) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPlane) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
+
+}  // namespace unit_test
+}  // namespace open3d

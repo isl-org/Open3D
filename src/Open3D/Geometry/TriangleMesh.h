@@ -70,7 +70,7 @@ public:
     virtual TriangleMesh &Transform(
             const Eigen::Matrix4d &transformation) override;
     virtual TriangleMesh &Rotate(const Eigen::Matrix3d &R,
-                                 bool center = true) override;
+                                 const Eigen::Vector3d &center) override;
 
 public:
     TriangleMesh &operator+=(const TriangleMesh &mesh);
@@ -103,6 +103,8 @@ public:
                 [](bool a, const Image &b) { return a && !b.IsEmpty(); });
         return !textures_.empty() && is_all_texture_valid;
     }
+
+    bool HasMaterials() const { return !materials_.empty(); }
 
     bool HasTriangleMaterialIds() const {
         return HasTriangles() &&
@@ -194,7 +196,7 @@ public:
 
     /// \brief Function to smooth triangle mesh using Laplacian.
     ///
-    /// $v_o = v_i \cdot \lambda (sum_{n \in N} w_n v_n - v_i)$,
+    /// $v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)$,
     /// with $v_i$ being the input value, $v_o$ the output value, $N$ is the
     /// set of adjacent neighbours, $w_n$ is the weighting of the neighbour
     /// based on the inverse distance (closer neighbours have higher weight),
@@ -267,7 +269,7 @@ public:
     bool IsIntersecting(const TriangleMesh &other) const;
 
     /// Function that tests if the given triangle mesh is orientable, i.e.
-    /// the triangles can oriented in such a way that all normals point
+    /// the triangles can be oriented in such a way that all normals point
     /// towards the outside.
     bool IsOrientable() const;
 
@@ -349,15 +351,19 @@ public:
             size_t number_of_points,
             std::vector<double> &triangle_areas,
             double surface_area,
-            bool use_triangle_normal);
+            bool use_triangle_normal,
+            int seed);
 
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh. \param use_triangle_normal Set to true to assign the triangle
     /// normals to the returned points instead of the interpolated vertex
     /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary.
+    /// if necessary. \param seed Sets the seed value used in the random
+    /// generator, set to -1 to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
-            size_t number_of_points, bool use_triangle_normal = false);
+            size_t number_of_points,
+            bool use_triangle_normal = false,
+            int seed = -1);
 
     /// Function to sample \param number_of_points points (blue noise).
     /// Based on the method presented in Yuksel, "Sample Elimination for
@@ -368,12 +374,14 @@ public:
     /// \param use_triangle_normal Set to true to assign the triangle
     /// normals to the returned points instead of the interpolated vertex
     /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary.
+    /// if necessary. \param seed Sets the seed value used in the random
+    /// generator, set to -1 to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
             const std::shared_ptr<PointCloud> pcl_init = nullptr,
-            bool use_triangle_normal = false);
+            bool use_triangle_normal = false,
+            int seed = -1);
 
     /// Function to subdivide triangle mesh using the simple midpoint algorithm.
     /// Each triangle is subdivided into four triangles per iteration and the
@@ -479,17 +487,23 @@ public:
     /// \param constraint_vertex_positions Vertex positions used for the
     /// constraints.
     /// \param max_iter maximum number of iterations to minimize energy
-    /// functional. \return The deformed TriangleMesh
+    /// functional.
+    /// \param energy energy model that should be optimized
+    /// \param smoothed_alpha alpha parameter of the smoothed ARAP model
+    /// \return The deformed TriangleMesh
     std::shared_ptr<TriangleMesh> DeformAsRigidAsPossible(
             const std::vector<int> &constraint_vertex_indices,
             const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
-            size_t max_iter) const;
+            size_t max_iter,
+            DeformAsRigidAsPossibleEnergy energy =
+                    DeformAsRigidAsPossibleEnergy::Spokes,
+            double smoothed_alpha = 0.01) const;
 
     /// \brief Alpha shapes are a generalization of the convex hull. With
     /// decreasing alpha value the shape schrinks and creates cavities.
     /// See Edelsbrunner and Muecke, "Three-Dimensional Alpha Shapes", 1994.
     /// \param pcd PointCloud for what the alpha shape should be computed.
-    /// \param alpha parameter to controll the shape. A very big value will
+    /// \param alpha parameter to control the shape. A very big value will
     /// give a shape close to the convex hull.
     /// \param tetra_mesh If not a nullptr, than uses this to construct the
     /// alpha shape. Otherwise, ComputeDelaunayTetrahedralization is called.
@@ -726,6 +740,88 @@ public:
     std::vector<std::unordered_set<int>> adjacency_list_;
     /// List of uv coordinates per triangle.
     std::vector<Eigen::Vector2d> triangle_uvs_;
+
+    struct Material {
+        struct MaterialParameter {
+            union {
+                float f4[4] = {0};
+                float f3[3];
+                float f2[2];
+                float f;
+
+                float x, y, z, w;
+                float r, g, b, a;
+            };
+
+            MaterialParameter() {
+                f4[0] = 0;
+                f4[1] = 0;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            MaterialParameter(const float v1,
+                              const float v2,
+                              const float v3,
+                              const float v4) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = v3;
+                f4[3] = v4;
+            }
+
+            MaterialParameter(const float v1, const float v2, const float v3) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = v3;
+                f4[3] = 1;
+            }
+
+            MaterialParameter(const float v1, const float v2) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            explicit MaterialParameter(const float v1) {
+                f4[0] = v1;
+                f4[1] = 0;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            static MaterialParameter CreateRGB(const float r,
+                                               const float g,
+                                               const float b) {
+                return {r, g, b, 1.f};
+            }
+        };
+
+        MaterialParameter baseColor;
+        float baseMetallic = 0.f;
+        float baseRoughness = 1.f;
+        float baseReflectance = 0.5f;
+        float baseClearCoat = 0.f;
+        float baseClearCoatRoughness = 0.f;
+        float baseAnisotropy = 0.f;
+
+        std::shared_ptr<Image> albedo;
+        std::shared_ptr<Image> normalMap;
+        std::shared_ptr<Image> ambientOcclusion;
+        std::shared_ptr<Image> metallic;
+        std::shared_ptr<Image> roughness;
+        std::shared_ptr<Image> reflectance;
+        std::shared_ptr<Image> clearCoat;
+        std::shared_ptr<Image> clearCoatRoughness;
+        std::shared_ptr<Image> anisotropy;
+
+        std::unordered_map<std::string, MaterialParameter> floatParameters;
+        std::unordered_map<std::string, Image> additionalMaps;
+    };
+
+    std::unordered_map<std::string, Material> materials_;
+
     /// List of material ids.
     std::vector<int> triangle_material_ids_;
     /// Textures of the image.

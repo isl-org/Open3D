@@ -1,8 +1,9 @@
-language: ruby
+language: cpp
 env:
   global:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
+    - BUILD_TENSORFLOW_OPS=ON
     - NPROC=2
 
 notifications:
@@ -27,7 +28,7 @@ matrix:
             - cmake
             - clang-7
             - clang-format-5.0
-      before_install: ./util/scripts/setup-linux.sh
+      install: ./util/scripts/setup-linux.sh
       script:
         - mkdir build
         - cd build
@@ -35,7 +36,7 @@ matrix:
         - pip install -U yapf==0.28.0
         - make check-style
 
-    # Build docs only
+    # Build headless and docs
     - os: linux
       dist: bionic
       sudo: true
@@ -48,18 +49,48 @@ matrix:
           packages:
             - cmake
             - doxygen
-      before_install: ./util/scripts/setup-linux.sh
+            - texlive
+            - texlive-latex-extra
+            - ghostscript
+            - pandoc
+            - libosmesa6-dev
+      install:
+        # Install ubuntu dependencies
+        - ./util/scripts/setup-linux.sh
+        # Install Kinect k4a package
+        - curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+        - sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
+        - sudo apt-get update
+        # Accept EULA using a temporary workaround
+        # https://github.com/microsoft/Azure-Kinect-Sensor-SDK/issues/1190#issuecomment-618473882
+        - DEBIAN_FRONTEND=noninteractive
+        - echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' | sudo debconf-set-selections
+        - echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' | sudo debconf-set-selections
+        - sudo apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
+        # Install Python dependencies for building docs
+        - which python
+        - python -V
+        - pip install -U -q sphinx sphinx-rtd-theme nbsphinx Pillow
       script:
         - mkdir build
         - cd build
-        - which python
-        - python -V
-        - pip install -U -q sphinx sphinx-rtd-theme
-        - cmake -DPYTHON_EXECUTABLE=`which python` ..
+        - |
+          cmake -DPYTHON_EXECUTABLE=`which python` \
+                -DENABLE_HEADLESS_RENDERING=ON \
+                -DENABLE_JUPYTER=ON \
+                -DENABLE_GUI=OFF \
+                -DBUILD_GLEW=ON \
+                -DBUILD_GLFW=ON \
+                -DWITH_OPENMP=ON \
+                -DBUILD_AZURE_KINECT=ON \
+                ..
         - make install-pip-package -j$NPROC
+        - make -j$NPROC
+        - bin/GLInfo
         - python -c "from open3d import *; import open3d; print(open3d)"
-        - ../util/scripts/make-documentation.sh
-
+        - cd .. # Back to Open3D/
+        - travis_wait 40 ./util/scripts/make-documentation.sh
+        - ./.travis/deploy_docs.sh
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - os: linux
@@ -74,7 +105,7 @@ matrix:
           packages:
             - cmake
       env: SHARED=ON
-      before_install: ./util/scripts/setup-linux.sh
+      install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
     # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=ON
@@ -90,7 +121,7 @@ matrix:
           packages:
             - cmake
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install: ./util/scripts/setup-linux.sh
+      install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=ON
@@ -106,26 +137,13 @@ matrix:
           packages:
             - cmake
       env: SHARED=ON BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install: ./util/scripts/setup-linux.sh
+      install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
-
-    # Default environment of macOS 10.13 High Sierra
-    # compiled using clang shipped with xcode10.1
-    - os: osx
-      osx_image: xcode10.1
-      before_install:
-        - ./util/scripts/install-deps-osx.sh
-      script: travis_wait 40 ./util/scripts/run-travis.sh
-
-    - os: osx
-      osx_image: xcode10.1
-      env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      script: travis_wait 40 ./util/scripts/run-travis.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
-    #   before_install: sudo apt-get update && sudo apt-get install -y realpath
+    #   install: sudo apt-get update && sudo apt-get install -y realpath
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=SHARED
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
-    #   before_install: sudo apt-get update && sudo apt-get install -y realpath
+    #   install: sudo apt-get update && sudo apt-get install -y realpath

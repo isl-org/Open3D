@@ -7,23 +7,36 @@ configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h.in"
 # Subdirectories
 add_subdirectory(Camera)
 add_subdirectory(ColorMap)
+add_subdirectory(Core)
 add_subdirectory(Geometry)
 add_subdirectory(Integration)
 add_subdirectory(Odometry)
 add_subdirectory(Registration)
 add_subdirectory(Utility)
 add_subdirectory(IO)
+if (ENABLE_GUI)
+    add_subdirectory(GUI)
+endif()
 add_subdirectory(Visualization)
 
 # Source group for Visual Studio
 ADD_SOURCE_GROUP(Camera)
 ADD_SOURCE_GROUP(ColorMap)
+ADD_SOURCE_GROUP(Core)
 ADD_SOURCE_GROUP(Geometry)
 ADD_SOURCE_GROUP(Integration)
 ADD_SOURCE_GROUP(Odometry)
 ADD_SOURCE_GROUP(Registration)
 ADD_SOURCE_GROUP(Utility)
 ADD_SOURCE_GROUP(IO)
+if (ENABLE_GUI)
+    ADD_SOURCE_GROUP(GUI)
+else ()
+    # Need a GUI target so that $<TARGET_OBJECTS:GUI> below works
+    # We can't create an empty library, but Gui.cpp has no dependencies on
+    # any other files.
+    add_library(GUI OBJECT "GUI/Gui.cpp")
+endif()
 ADD_SOURCE_GROUP(Visualization)
 
 # Install headers
@@ -37,16 +50,17 @@ install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
 add_library(${CMAKE_PROJECT_NAME}
-    Open3DConfig.h
     Open3DConfig.cpp
     $<TARGET_OBJECTS:Camera>
     $<TARGET_OBJECTS:ColorMap>
+    $<TARGET_OBJECTS:Core>
     $<TARGET_OBJECTS:Geometry>
     $<TARGET_OBJECTS:Integration>
     $<TARGET_OBJECTS:Odometry>
     $<TARGET_OBJECTS:Registration>
     $<TARGET_OBJECTS:Utility>
     $<TARGET_OBJECTS:IO>
+    $<TARGET_OBJECTS:GUI>
     $<TARGET_OBJECTS:Visualization>
 )
 ShowAndAbortOnWarning(${CMAKE_PROJECT_NAME})
@@ -55,11 +69,25 @@ ShowAndAbortOnWarning(${CMAKE_PROJECT_NAME})
 if (ENABLE_HEADLESS_RENDERING)
     find_package(OSMesa REQUIRED)
     include_directories(${OSMESA_INCLUDE_DIR})
+    list(APPEND 3RDPARTY_INCLUDE_DIRS ${OSMESA_INCLUDE_DIR})
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OSMESA_LIBRARY})
+    list(APPEND 3RDPARTY_LIBRARIES ${OSMESA_LIBRARY})
+    set(OGL_LIBS ${OSMESA_LIBRARY})
 else ()
     find_package(OpenGL REQUIRED)
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES})
+    set(OGL_LIBS ${OPENGL_LIBRARIES})
 endif ()
+
+# Use whole-archive to support static registration
+# TODO: handle Windows
+if(APPLE)
+    set(ENABLE_WHOLE_ARCHIVE -Wl,-force_load)
+    set(DISABLE_WHOLE_ARCHIVE "") # -noall_load is obsolete
+else()
+    set(ENABLE_WHOLE_ARCHIVE -Wl,--whole-archive)
+    set(DISABLE_WHOLE_ARCHIVE -Wl,--no-whole-archive)
+endif()
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${3RDPARTY_LIBRARIES}
@@ -120,7 +148,7 @@ list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
 #           1) Open3D
 #           2) Pre-installed 3rd-party libraries
 #           3) Built-from-source 3rd-party libraries
-list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}" ${OMP_LIBRARIES})
+list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}" ${OGL_LIBS} ${OMP_LIBRARIES})
 if (BUILD_SHARED_LIBS)
     list(APPEND CONFIG_Open3D_LIBRARIES ${PRE_BUILT_3RDPARTY_LIBRARIES})
 else ()
@@ -194,3 +222,6 @@ if (NOT TARGET uninstall)
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P
                       ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif ()
+
+# Export GUI_RESOURCE_FILES up to parent CMake context (src/)
+set(GUI_RESOURCE_FILES ${GUI_RESOURCE_FILES} PARENT_SCOPE)

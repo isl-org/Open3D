@@ -73,8 +73,10 @@ public:
     PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
     PointCloud &Translate(const Eigen::Vector3d &translation,
                           bool relative = true) override;
-    PointCloud &Scale(const double scale, bool center = true) override;
-    PointCloud &Rotate(const Eigen::Matrix3d &R, bool center = true) override;
+    PointCloud &Scale(const double scale,
+                      const Eigen::Vector3d &center) override;
+    PointCloud &Rotate(const Eigen::Matrix3d &R,
+                       const Eigen::Vector3d &center) override;
 
     PointCloud &operator+=(const PointCloud &cloud);
     PointCloud operator+(const PointCloud &cloud) const;

@@ -27,45 +27,43 @@
 #include "Open3D/Utility/Console.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
+namespace open3d {
+namespace unit_test {
 
 TEST(Logger, LogError) {
     EXPECT_THROW(utility::LogError("Example exeption message"),
                  std::runtime_error);
 }
 
-TEST(Console, DISABLED_SetVerbosityLevel) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_SetVerbosityLevel) { NotImplemented(); }
 
-TEST(Console, DISABLED_GetVerbosityLevel) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_GetVerbosityLevel) { NotImplemented(); }
 
-TEST(Console, DISABLED_PrintWarning) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_PrintWarning) { NotImplemented(); }
 
-TEST(Console, DISABLED_PrintInfo) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_PrintInfo) { NotImplemented(); }
 
-TEST(Console, DISABLED_PrintDebug) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_PrintDebug) { NotImplemented(); }
 
-TEST(Console, DISABLED_PrintAlways) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_PrintAlways) { NotImplemented(); }
 
-TEST(Console, DISABLED_ResetConsoleProgress) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_ResetConsoleProgress) { NotImplemented(); }
 
-TEST(Console, DISABLED_AdvanceConsoleProgress) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_AdvanceConsoleProgress) { NotImplemented(); }
 
-TEST(Console, DISABLED_GetCurrentTimeStamp) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_GetCurrentTimeStamp) { NotImplemented(); }
 
-TEST(Console, DISABLED_GetProgramOptionAsString) {
-    unit_test::NotImplemented();
-}
+TEST(Console, DISABLED_GetProgramOptionAsString) { NotImplemented(); }
 
-TEST(Console, DISABLED_GetProgramOptionAsInt) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_GetProgramOptionAsInt) { NotImplemented(); }
 
-TEST(Console, DISABLED_GetProgramOptionAsDouble) {
-    unit_test::NotImplemented();
-}
+TEST(Console, DISABLED_GetProgramOptionAsDouble) { NotImplemented(); }
 
-TEST(Console, DISABLED_GetProgramOptionAsEigenVectorXd) {
-    unit_test::NotImplemented();
-}
+TEST(Console, DISABLED_GetProgramOptionAsEigenVectorXd) { NotImplemented(); }
 
-TEST(Console, DISABLED_ProgramOptionExists) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_ProgramOptionExists) { NotImplemented(); }
 
-TEST(Console, DISABLED_ProgramOptionExistsAny) { unit_test::NotImplemented(); }
+TEST(Console, DISABLED_ProgramOptionExistsAny) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

@@ -22,7 +22,7 @@ Preprocess point cloud
    :lines: 5,18-28
    :linenos:
 
-This function downsamples point cloud to make a point cloud sparser and regularly distributed. Normals and FPFH feature are precomputed. See :ref:`voxel_downsampling`, :ref:`vertex_normal_estimation`, and :ref:`extract_geometric_feature` for more details.
+This function downsamples point cloud to make a point cloud sparser and regularly distributed. Normals and FPFH feature are precomputed. See :ref:`/tutorial/Basic/pointcloud.ipynb#voxel-downsampling`, :ref:`/tutorial/Basic/pointcloud.ipynb#vertex-normal-estimation`, and :ref:`/tutorial/Advanced/global_registration.ipynb#extract-geometric-feature` for more details.
 
 
 Compute initial registration
@@ -48,7 +48,7 @@ Pairwise global registration
    :lines: 5,31-52
    :linenos:
 
-This function uses :ref:`feature_matching` or :ref:`fast_global_registration` for pairwise global registration.
+This function uses :ref:`/tutorial/Advanced/global_registration.ipynb#RANSAC` or :ref:`/tutorial/Advanced/global_registration.ipynb#fast-global-registration` for pairwise global registration.
 
 
 .. _reconstruction_system_compute_initial_registration:
@@ -62,7 +62,7 @@ Multiway registration
    :lines: 5,84-103
    :linenos:
 
-This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``update_posegrph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
+This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. Function ``update_posegrph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
 Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called for multiway registration.
 

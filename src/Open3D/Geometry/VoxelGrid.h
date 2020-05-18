@@ -96,8 +96,10 @@ public:
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
     VoxelGrid &Translate(const Eigen::Vector3d &translation,
                          bool relative = true) override;
-    VoxelGrid &Scale(const double scale, bool center = true) override;
-    VoxelGrid &Rotate(const Eigen::Matrix3d &R, bool center = true) override;
+    VoxelGrid &Scale(const double scale,
+                     const Eigen::Vector3d &center) override;
+    VoxelGrid &Rotate(const Eigen::Matrix3d &R,
+                      const Eigen::Vector3d &center) override;
 
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
@@ -236,6 +238,11 @@ public:
             double voxel_size,
             const Eigen::Vector3d &min_bound,
             const Eigen::Vector3d &max_bound);
+
+    /// Returns List of ``Voxel``: Voxels contained in voxel grid.
+    /// Changes to the voxels returned from this method are not reflected in
+    /// the voxel grid.
+    std::vector<Voxel> GetVoxels() const;
 
 public:
     /// Size of the voxel.

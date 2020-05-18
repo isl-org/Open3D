@@ -47,7 +47,7 @@
 #include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
 #endif
 
-using namespace open3d;
+namespace open3d {
 
 // IO functions have similar arguments, thus the arg docstrings may be shared
 static const std::unordered_map<std::string, std::string>
@@ -383,3 +383,5 @@ void pybind_class_io(py::module &m_io) {
                                  map_shared_argument_docstrings);
 #endif
 }
+
+}  // namespace open3d

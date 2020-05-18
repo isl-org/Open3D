@@ -31,7 +31,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_tetramesh(py::module &m) {
     py::class_<geometry::TetraMesh, PyGeometry3D<geometry::TetraMesh>,
@@ -118,3 +118,5 @@ void pybind_tetramesh(py::module &m) {
 }
 
 void pybind_tetramesh_methods(py::module &m) {}
+
+}  // namespace open3d

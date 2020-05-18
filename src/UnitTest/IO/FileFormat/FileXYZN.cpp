@@ -26,6 +26,12 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(FileXYZN, DISABLED_ReadPointCloudFromXYZN) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(FileXYZN, DISABLED_WritePointCloudToXYZN) { unit_test::NotImplemented(); }
+TEST(FileXYZN, DISABLED_ReadPointCloudFromXYZN) { NotImplemented(); }
+
+TEST(FileXYZN, DISABLED_WritePointCloudToXYZN) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

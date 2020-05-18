@@ -120,12 +120,13 @@ VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3d &translation,
     return *this;
 }
 
-VoxelGrid &VoxelGrid::Scale(const double scale, bool center) {
+VoxelGrid &VoxelGrid::Scale(const double scale, const Eigen::Vector3d &center) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-VoxelGrid &VoxelGrid::Rotate(const Eigen::Matrix3d &R, bool center) {
+VoxelGrid &VoxelGrid::Rotate(const Eigen::Matrix3d &R,
+                             const Eigen::Vector3d &center) {
     utility::LogError("Not implemented");
     return *this;
 }
@@ -354,6 +355,15 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
             it++;
     }
     return *this;
+}
+
+std::vector<Voxel> VoxelGrid::GetVoxels() const {
+    std::vector<Voxel> result;
+    result.reserve(voxels_.size());
+    for (const auto &keyval : voxels_) {
+        result.push_back(keyval.second);
+    }
+    return result;
 }
 
 }  // namespace geometry

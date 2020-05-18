@@ -30,7 +30,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_geometry_classes(py::module &m) {
     // open3d.geometry functions
@@ -115,12 +115,19 @@ void pybind_geometry_classes(py::module &m) {
             .def("translate", &geometry::Geometry3D::Translate,
                  "Apply translation to the geometry coordinates.",
                  "translation"_a, "relative"_a = true)
+            .def("scale",
+                 (geometry::Geometry3D &
+                  (geometry::Geometry3D::*)(const double,
+                                            const Eigen::Vector3d &)) &
+                         geometry::Geometry3D::Scale,
+                 "Apply scaling to the geometry coordinates.", "scale"_a,
+                 "center"_a)
             .def("scale", &geometry::Geometry3D::Scale,
                  "Apply scaling to the geometry coordinates.", "scale"_a,
-                 "center"_a = true)
+                 "center"_a)
             .def("rotate", &geometry::Geometry3D::Rotate,
                  "Apply rotation to the geometry coordinates and normals.",
-                 "R"_a, "center"_a = true)
+                 "R"_a, "center"_a)
             .def_static("get_rotation_matrix_from_xyz",
                         &geometry::Geometry3D::GetRotationMatrixFromXYZ,
                         "rotation"_a)
@@ -166,13 +173,11 @@ void pybind_geometry_classes(py::module &m) {
             {{"scale",
               "The scale parameter that is multiplied to the points/vertices "
               "of the geometry"},
-             {"center",
-              "If true, then the scale is applied to the centered geometry"}});
-    docstring::ClassMethodDocInject(m, "Geometry3D", "rotate",
-                                    {{"R", "The rotation matrix"},
-                                     {"center",
-                                      "If true, then the rotation is applied "
-                                      "to the centered geometry"}});
+             {"center", "Scale center used for transformation"}});
+    docstring::ClassMethodDocInject(
+            m, "Geometry3D", "rotate",
+            {{"R", "The rotation matrix"},
+             {"center", "Rotation center used for transformation"}});
 
     // open3d.geometry.Geometry2D
     py::class_<geometry::Geometry2D, PyGeometry2D<geometry::Geometry2D>,
@@ -209,3 +214,5 @@ void pybind_geometry(py::module &m) {
     pybind_octree(m_submodule);
     pybind_boundingvolume(m_submodule);
 }
+
+}  // namespace open3d

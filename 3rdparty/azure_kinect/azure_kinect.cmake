@@ -55,17 +55,17 @@ if (BUILD_AZURE_KINECT)
     # Export the following variables:
     # - k4a_INCLUDE_DIRS
     if (WIN32)
-        # We assume k4a 1.2.0 is installed in the default directory
+        # We assume k4a 1.4.0 is installed in the default directory
         if (K4A_INCLUDE_DIR)
             set(k4a_INCLUDE_DIRS ${K4A_INCLUDE_DIR})
         else()
-            set(k4a_INCLUDE_DIRS "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\include")
+            set(k4a_INCLUDE_DIRS "C:\\Program Files\\Azure Kinect SDK v1.4.0\\sdk\\include")
         endif()
     else()
         # Attempt 1: system-wide installed K4a
         # The property names are tested with k4a 1.2, future versions might work
-        find_package(k4a 1.2 QUIET)
-        find_package(k4arecord 1.2 QUIET)
+        find_package(k4a QUIET)
+        find_package(k4arecord QUIET)
         if (k4a_FOUND)
             get_target_property(k4a_INCLUDE_DIRS k4a::k4a INTERFACE_INCLUDE_DIRECTORIES)
         endif()

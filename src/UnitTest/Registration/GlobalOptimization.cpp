@@ -26,22 +26,28 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(GlobalOptimization, DISABLED_Constructor) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(GlobalOptimization, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(GlobalOptimization, DISABLED_Constructor) { NotImplemented(); }
+
+TEST(GlobalOptimization, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(GlobalOptimization, DISABLED_GlobalOptimizationLevenbergMarquardt) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(GlobalOptimization, DISABLED_GlobalOptimizationConvergenceCriteria) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(GlobalOptimization, DISABLED_GlobalOptimizationOption) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(GlobalOptimization, DISABLED_CreatePoseGraphWithoutInvalidEdges) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
+
+}  // namespace unit_test
+}  // namespace open3d

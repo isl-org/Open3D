@@ -33,7 +33,8 @@
 
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
 
-using namespace open3d;
+namespace open3d {
+namespace unit_test {
 
 static std::unordered_map<std::string, std::string> defult_config{
         {"color_format", "K4A_IMAGE_FORMAT_COLOR_MJPG"},
@@ -102,3 +103,6 @@ TEST(AzureKinectSensorConfig, ConvertToNativeConfig) {
     kinect_config_b.ConvertFromNativeConfig(native_config_a);
     EXPECT_EQ(kinect_config_a.config_, kinect_config_b.config_);
 }
+
+}  // namespace unit_test
+}  // namespace open3d
