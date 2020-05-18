@@ -170,9 +170,9 @@ public:
 
     /// \brief Function to sharpen triangle mesh.
     ///
-    /// The output value (\f$v_o\f$) is the input value (\f$v_i\f$) plus strength times
-    /// the input value minus the sum of he adjacent values. \f$v_o = v_i +
-    /// strength (v_i * |N| - \sum_{n \in N} v_n)\f$.
+    /// The output value (\f$v_o\f$) is the input value (\f$v_i\f$) plus
+    /// strength times the input value minus the sum of he adjacent values.
+    /// \f$v_o = v_i + strength (v_i * |N| - \sum_{n \in N} v_n)\f$.
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
@@ -197,9 +197,10 @@ public:
     /// \brief Function to smooth triangle mesh using Laplacian.
     ///
     /// \f$v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)\f$,
-    /// with \f$v_i\f$ being the input value, \f$v_o\f$ the output value, \f$N\f$ is the
-    /// set of adjacent neighbours, \f$w_n\f$ is the weighting of the neighbour
-    /// based on the inverse distance (closer neighbours have higher weight),
+    /// with \f$v_i\f$ being the input value, \f$v_o\f$ the output value,
+    /// \f$N\f$ is the set of adjacent neighbours, \f$w_n\f$ is the weighting of
+    /// the neighbour based on the inverse distance (closer neighbours have
+    /// higher weight),
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
