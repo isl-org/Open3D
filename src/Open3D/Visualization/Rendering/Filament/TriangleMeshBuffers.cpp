@@ -401,10 +401,13 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
 
     // We take ownership of vbdata.bytes and ibdata.bytes here.
     std::tuple<vbdata, ibdata> buffers_data;
+    size_t stride = sizeof(BaseVertex);
     if (has_uvs) {
         buffers_data = CreateTexturedBuffers(float4v_tangents, geometry_);
+        stride = sizeof(TexturedVertex);
     } else if (has_colors) {
         buffers_data = CreateColoredBuffers(float4v_tangents, geometry_);
+        stride = sizeof(ColoredVertex);
     } else {
         buffers_data = CreatePlainBuffers(float4v_tangents, geometry_);
     }
@@ -414,14 +417,7 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
     const vbdata& vertex_data = std::get<0>(buffers_data);
     const ibdata& index_data = std::get<1>(buffers_data);
 
-    size_t stride = sizeof(BaseVertex);
     VertexBuffer* vbuf = nullptr;
-    if (has_uvs) {
-        stride = sizeof(TexturedVertex);
-    } else {
-        stride = sizeof(ColoredVertex);
-    }
-
     vbuf = BuildFilamentVertexBuffer(engine, vertex_data.vertices_count, stride,
                                      has_uvs, has_colors);
 
