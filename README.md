@@ -34,6 +34,7 @@ Core features of Open3D includes:
 * Scene reconstruction
 * Surface alignment
 * 3D visualization
+* Physically based rendering (PBR)
 * Available in C++ and Python
 
 For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
