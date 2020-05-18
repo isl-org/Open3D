@@ -228,13 +228,13 @@ def print_2D_array_for_cpp(prefix, values, fmt):
 
 
 def print_mesh_for_cpp(mesh, prefix=""):
-    print_2D_array_for_cpp("{}vertices_".format(prefix), np.asarray(mesh.vertices),
-                           ".6f")
+    print_2D_array_for_cpp("{}vertices_".format(prefix),
+                           np.asarray(mesh.vertices), ".6f")
     print_2D_array_for_cpp("{}vertex_normals_".format(prefix),
                            np.asarray(mesh.vertex_normals), ".6f")
     print_2D_array_for_cpp("{}vertex_colors_".format(prefix),
                            np.asarray(mesh.vertex_colors), ".6f")
-    print_2D_array_for_cpp("{}triangles_".format(prefix), np.asarray(mesh.triangles),
-                           "d")
+    print_2D_array_for_cpp("{}triangles_".format(prefix),
+                           np.asarray(mesh.triangles), "d")
     print_2D_array_for_cpp("{}triangle_normals_".format(prefix),
                            np.asarray(mesh.triangle_normals), ".6f")
