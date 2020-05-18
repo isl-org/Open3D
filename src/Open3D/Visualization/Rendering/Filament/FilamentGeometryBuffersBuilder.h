@@ -32,7 +32,6 @@
 
 #include <filament/Box.h>
 #include <filament/RenderableManager.h>
-
 #include <memory>
 #include <tuple>
 
