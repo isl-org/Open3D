@@ -41,10 +41,10 @@ First, install a TeX distribution such as `MacTeX <http://www.tug.org/mactex/>`_
 .. code-block:: bash
 
     # For pip
-    pip install sphinx sphinx-autobuild nbsphinx Pillow
+    pip install sphinx sphinx-autobuild nbsphinx Pillow m2r
 
     # Or, for Conda
-    conda install sphinx sphinx-autobuild nbsphinx Pillow
+    conda install sphinx sphinx-autobuild nbsphinx Pillow m2r
 
 
 Build

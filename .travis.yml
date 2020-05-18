@@ -70,7 +70,7 @@ matrix:
         # Install Python dependencies for building docs
         - which python
         - python -V
-        - pip install -U -q sphinx sphinx-rtd-theme nbsphinx Pillow
+        - pip install -U -q sphinx sphinx-rtd-theme nbsphinx Pillow m2r
       script:
         - mkdir build
         - cd build
