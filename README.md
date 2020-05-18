@@ -48,7 +48,7 @@ Please stay tuned for Windows. You can download the viewer app
 ## Python quick start
 
 Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.14+ and
-Windows 64-bit with Python 3.5, 3.6, 3.7 and 3.8. If you have other Python
+Windows 10 (64-bit) with Python 3.5, 3.6, 3.7 and 3.8. If you have other Python
 versions or operating systems, please
 [compile Open3D from source](http://www.open3d.org/docs/release/compilation.html).
 
