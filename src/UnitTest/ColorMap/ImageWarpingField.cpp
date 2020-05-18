@@ -28,7 +28,8 @@
 
 // #include "Open3D/ColorMap/ImageWarpingField.h"
 
-using namespace std;
+namespace open3d {
+namespace unit_test {
 
 /* TODO
 As the color_map::ColorMapOptimization subcomponents go back into hiding several
@@ -38,7 +39,7 @@ subcomponents visible to UnitTest.
 */
 
 TEST(ImageWarpingField, DISABLED_Constructor) {
-    // vector<double> ref = {
+    // std::vector<double> ref = {
     //         0.00,   0.00,   16.00,  0.00,   32.00,  0.00,   48.00,  0.00,
     //         64.00,  0.00,   80.00,  0.00,   96.00,  0.00,   112.00, 0.00,
     //         128.00, 0.00,   144.00, 0.00,   160.00, 0.00,   176.00, 0.00,
@@ -143,25 +144,23 @@ TEST(ImageWarpingField, DISABLED_Constructor) {
 // ----------------------------------------------------------------------------
 // Same as ImageWarpingField.Constructor.
 // ----------------------------------------------------------------------------
-TEST(ImageWarpingField, DISABLED_InitializeWarpingFields) {
-    unit_test::NotImplemented();
-}
+TEST(ImageWarpingField, DISABLED_InitializeWarpingFields) { NotImplemented(); }
 
 TEST(ImageWarpingField, QueryFlow) {
-    // vector<int> x = {5,   6,   7,   10,  13,  16,  18,  20,  20,  20,
+    // std::vector<int> x = {5,   6,   7,   10,  13,  16,  18,  20,  20,  20,
     //                  22,  38,  41,  42,  47,  55,  58,  60,  72,  75,
     //                  76,  105, 109, 111, 114, 129, 130, 138, 138, 140,
     //                  145, 171, 171, 176, 180, 184, 188, 193, 193, 205,
     //                  209, 218, 219, 223, 248, 264, 281, 284, 304, 314};
 
-    // vector<int> y = {81, 109, 0,  15,  5,   12,  11,  4,   4,  56,  0,   8,
-    // 12,
+    // std::vector<int> y = {81, 109, 0,  15,  5,   12,  11,  4,   4,  56,  0,
+    // 8, 12,
     //                  97, 7,   10, 0,   7,   213, 232, 3,   54, 1,   164, 10,
     //                  3, 0,  0,   0,  210, 15,  0,   3,   2,   0,  7,   157,
     //                  3,  3, 0,  205, 3,  228, 135, 0,   79,  198, 83, 141,
     //                  0};
 
-    // vector<Eigen::Vector2d> ref_output = {
+    // std::vector<Eigen::Vector2d> ref_output = {
     //         {0.00, 0.00},     {0.00, 0.00},     {112.00, 0.00},
     //         {160.00, 240.00}, {208.00, 80.00},  {256.00, 192.00},
     //         {288.00, 176.00}, {320.00, 64.00},  {320.00, 64.00},
@@ -192,20 +191,20 @@ TEST(ImageWarpingField, QueryFlow) {
 }
 
 TEST(ImageWarpingField, GetImageWarpingField) {
-    // vector<int> x = {5,   6,   7,   10,  13,  16,  18,  20,  20,  20,
+    // std::vector<int> x = {5,   6,   7,   10,  13,  16,  18,  20,  20,  20,
     //                  22,  38,  41,  42,  47,  55,  58,  60,  72,  75,
     //                  76,  105, 109, 111, 114, 129, 130, 138, 138, 140,
     //                  145, 171, 171, 176, 180, 184, 188, 193, 193, 205,
     //                  209, 218, 219, 223, 248, 264, 281, 284, 304, 314};
 
-    // vector<int> y = {81, 109, 0,  15,  5,   12,  11,  4,   4,  56,  0,   8,
-    // 12,
+    // std::vector<int> y = {81, 109, 0,  15,  5,   12,  11,  4,   4,  56,  0,
+    // 8, 12,
     //                  97, 7,   10, 0,   7,   213, 232, 3,   54, 1,   164, 10,
     //                  3, 0,  0,   0,  210, 15,  0,   3,   2,   0,  7,   157,
     //                  3,  3, 0,  205, 3,  228, 135, 0,   79,  198, 83, 141,
     //                  0};
 
-    // vector<Eigen::Vector2d> ref_output = {
+    // std::vector<Eigen::Vector2d> ref_output = {
     //         {5.00, 81.00},    {6.00, 109.00},   {7.00, 0.00},
     //         {10.00, 15.00},   {13.00, 5.00},    {16.00, 12.00},
     //         {18.00, 11.00},   {20.00, 4.00},    {20.00, 4.00},
@@ -237,3 +236,6 @@ TEST(ImageWarpingField, GetImageWarpingField) {
     //     unit_test::ExpectEQ(ref_output[i], elem);
     // }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

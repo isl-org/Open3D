@@ -26,6 +26,12 @@
 
 #include "TestUtility/UnitTest.h"
 
+namespace open3d {
+namespace unit_test {
+
 TEST(PinholeCameraParameters, DISABLED_ConvertToFromJsonValue) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
+
+}  // namespace unit_test
+}  // namespace open3d

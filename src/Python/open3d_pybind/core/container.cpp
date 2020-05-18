@@ -27,6 +27,8 @@
 #include "open3d_pybind/core/container.h"
 #include "open3d_pybind/open3d_pybind.h"
 
+namespace open3d {
+
 void pybind_core(py::module &m) {
     pybind_cuda_utils(m);
     pybind_core_blob(m);
@@ -37,3 +39,5 @@ void pybind_core(py::module &m) {
     pybind_core_tensor(m);
     pybind_core_tensorlist(m);
 }
+
+}  // namespace open3d

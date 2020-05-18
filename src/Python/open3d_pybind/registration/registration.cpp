@@ -36,7 +36,7 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/registration/registration.h"
 
-using namespace open3d;
+namespace open3d {
 
 template <class TransformationEstimationBase =
                   registration::TransformationEstimation>
@@ -599,3 +599,5 @@ void pybind_registration(py::module &m) {
     pybind_global_optimization(m_submodule);
     pybind_global_optimization_methods(m_submodule);
 }
+
+}  // namespace open3d

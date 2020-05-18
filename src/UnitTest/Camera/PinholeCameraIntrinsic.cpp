@@ -29,10 +29,8 @@
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace Eigen;
-using namespace open3d;
-using namespace std;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
 TEST(PinholeCameraIntrinsic, Constructor_Default) {
     camera::PinholeCameraIntrinsic intrinsic;
@@ -40,7 +38,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Default) {
     EXPECT_EQ(-1, intrinsic.width_);
     EXPECT_EQ(-1, intrinsic.height_);
 
-    Matrix3d reference = Matrix3d::Zero();
+    Eigen::Matrix3d reference = Eigen::Matrix3d::Zero();
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
@@ -51,7 +49,7 @@ TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault) {
     EXPECT_EQ(640, intrinsic.width_);
     EXPECT_EQ(480, intrinsic.height_);
 
-    Matrix3d reference;
+    Eigen::Matrix3d reference;
     reference << 525.0, 0.0, 319.5, 0.0, 525.0, 239.5, 0.0, 0.0, 1.0;
 
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
@@ -65,7 +63,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault) {
     EXPECT_EQ(512, intrinsic.width_);
     EXPECT_EQ(424, intrinsic.height_);
 
-    Matrix3d reference;
+    Eigen::Matrix3d reference;
     reference << 365.456, 0.0, 254.878, 0.0, 365.456, 205.395, 0.0, 0.0, 1.0;
 
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
@@ -79,7 +77,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2ColorCameraDefault) {
     EXPECT_EQ(1920, intrinsic.width_);
     EXPECT_EQ(1080, intrinsic.height_);
 
-    Matrix3d reference;
+    Eigen::Matrix3d reference;
     reference << 1059.9718, 0.0, 975.7193, 0.0, 1059.9718, 545.9533, 0.0, 0.0,
             1.0;
 
@@ -101,15 +99,13 @@ TEST(PinholeCameraIntrinsic, Constructor_Init) {
     EXPECT_EQ(width, intrinsic.width_);
     EXPECT_EQ(height, intrinsic.height_);
 
-    Matrix3d reference;
+    Eigen::Matrix3d reference;
     reference << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
 
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
-TEST(PinholeCameraIntrinsic, DISABLED_MemberData) {
-    unit_test::NotImplemented();
-}
+TEST(PinholeCameraIntrinsic, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(PinholeCameraIntrinsic, SetIntrinsics) {
     camera::PinholeCameraIntrinsic intrinsic;
@@ -117,7 +113,7 @@ TEST(PinholeCameraIntrinsic, SetIntrinsics) {
     EXPECT_EQ(-1, intrinsic.width_);
     EXPECT_EQ(-1, intrinsic.height_);
 
-    intrinsic.intrinsic_matrix_ = Matrix3d::Zero();
+    intrinsic.intrinsic_matrix_ = Eigen::Matrix3d::Zero();
 
     int width = 640;
     int height = 480;
@@ -133,7 +129,7 @@ TEST(PinholeCameraIntrinsic, SetIntrinsics) {
     EXPECT_EQ(width, intrinsic.width_);
     EXPECT_EQ(height, intrinsic.height_);
 
-    Matrix3d reference;
+    Eigen::Matrix3d reference;
     reference << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
 
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
@@ -156,7 +152,7 @@ TEST(PinholeCameraIntrinsic, GetFocalLength) {
     EXPECT_EQ(width, intrinsic.width_);
     EXPECT_EQ(height, intrinsic.height_);
 
-    pair<double, double> output = intrinsic.GetFocalLength();
+    std::pair<double, double> output = intrinsic.GetFocalLength();
 
     EXPECT_NEAR(fx, output.first, THRESHOLD_1E_6);
     EXPECT_NEAR(fy, output.second, THRESHOLD_1E_6);
@@ -179,7 +175,7 @@ TEST(PinholeCameraIntrinsic, GetPrincipalPoint) {
     EXPECT_EQ(width, intrinsic.width_);
     EXPECT_EQ(height, intrinsic.height_);
 
-    pair<double, double> output = intrinsic.GetPrincipalPoint();
+    std::pair<double, double> output = intrinsic.GetPrincipalPoint();
 
     EXPECT_NEAR(cx, output.first, THRESHOLD_1E_6);
     EXPECT_NEAR(cy, output.second, THRESHOLD_1E_6);
@@ -251,8 +247,11 @@ TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue) {
     EXPECT_EQ(width, dst.width_);
     EXPECT_EQ(height, dst.height_);
 
-    Matrix3d reference;
+    Eigen::Matrix3d reference;
     reference << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
 
     ExpectEQ(reference, dst.intrinsic_matrix_);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

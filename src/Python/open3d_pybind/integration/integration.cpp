@@ -32,7 +32,7 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/integration/integration.h"
 
-using namespace open3d;
+namespace open3d {
 
 template <class TSDFVolumeBase = integration::TSDFVolume>
 class PyTSDFVolume : public TSDFVolumeBase {
@@ -162,10 +162,10 @@ In SIGGRAPH, 1996)");
             scalable_tsdfvolume(m, "ScalableTSDFVolume", R"(The
 ScalableTSDFVolume implements a more memory efficient data structure for
 volumetric integration.
-                                
+
 This implementation is based on the following repository:
 https://github.com/qianyizh/ElasticReconstruction/tree/master/Integrate
-                                
+
 An observed depth pixel gives two types of information: (a) an approximation
 of the nearby surface, and (b) empty space from the camera to the surface.
 They induce two core concepts of volumetric integration: weighted average of
@@ -219,3 +219,5 @@ void pybind_integration(py::module &m) {
     pybind_integration_classes(m_submodule);
     pybind_integration_methods(m_submodule);
 }
+
+}  // namespace open3d

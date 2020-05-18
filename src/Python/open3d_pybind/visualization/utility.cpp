@@ -35,7 +35,7 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/visualization/visualization.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_visualization_utility(py::module &m) {
     py::class_<visualization::SelectionPolygonVolume> selection_volume(
@@ -242,3 +242,5 @@ void pybind_visualization_utility_methods(py::module &m) {
     docstring::FunctionDocInject(m, "read_selection_polygon_volume",
                                  map_shared_argument_docstrings);
 }
+
+}  // namespace open3d

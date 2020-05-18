@@ -26,16 +26,22 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(PoseGraph, DISABLED_Constructor) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(PoseGraph, DISABLED_Destructor) { unit_test::NotImplemented(); }
+TEST(PoseGraph, DISABLED_Constructor) { NotImplemented(); }
 
-TEST(PoseGraph, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(PoseGraph, DISABLED_Destructor) { NotImplemented(); }
 
-TEST(PoseGraph, DISABLED_PoseGraphNode) { unit_test::NotImplemented(); }
+TEST(PoseGraph, DISABLED_MemberData) { NotImplemented(); }
 
-TEST(PoseGraph, DISABLED_ConvertToJsonValue) { unit_test::NotImplemented(); }
+TEST(PoseGraph, DISABLED_PoseGraphNode) { NotImplemented(); }
 
-TEST(PoseGraph, DISABLED_ConvertFromJsonValue) { unit_test::NotImplemented(); }
+TEST(PoseGraph, DISABLED_ConvertToJsonValue) { NotImplemented(); }
 
-TEST(PoseGraph, DISABLED_PoseGraphEdge) { unit_test::NotImplemented(); }
+TEST(PoseGraph, DISABLED_ConvertFromJsonValue) { NotImplemented(); }
+
+TEST(PoseGraph, DISABLED_PoseGraphEdge) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d
