@@ -46,9 +46,6 @@ public:
     };
 
 public:
-    /// Function to add geometry to the scene and create corresponding shaders.
-    ///
-    /// \param geometry The Geometry object.
     VisualizerWithEditing(double voxel_size = -1.0,
                           bool use_dialog = true,
                           const std::string &directory = "")
@@ -60,6 +57,9 @@ public:
     VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
 
 public:
+    /// Function to add geometry to the scene and create corresponding shaders.
+    ///
+    /// \param geometry_ptr The Geometry object.
     bool AddGeometry(std::shared_ptr<const geometry::Geometry> geometry_ptr,
                      bool reset_bounding_box = true) override;
     void PrintVisualizerHelp() override;

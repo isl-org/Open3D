@@ -58,7 +58,7 @@ public:
     /// and returns true if the item is enabled.
     bool IsEnabled(ItemId itemId) const;
     /// Searches the menu hierarchy down from this menu to find the item
-    /// and set it enabled according to \param enabled.
+    /// and set it enabled according to \p enabled.
     void SetEnabled(ItemId itemId, bool enabled);
 
     bool IsChecked(ItemId itemId) const;
