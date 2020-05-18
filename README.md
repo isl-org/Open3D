@@ -36,9 +36,15 @@ Core features of Open3D includes:
 
 For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 
+## Open3D viewer app
+
+Open3D now comes with a standalone 3D viewer app available on Ubuntu and macOS.
+Please stay tuned for Windows. Download
+[here](https://github.com/intel-isl/Open3D/releases).
+
 ## Python quick start
 
-Pre-built pip and conda packages support Ubuntu 18.04+, up-to-date macOS and
+Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.14+ and
 Windows 64-bit with Python 3.5, 3.6, 3.7 and 3.8. If you have other Python
 versions or operating systems, please
 [compile Open3D from source](http://www.open3d.org/docs/release/compilation.html).
@@ -72,12 +78,6 @@ started.
 
 Please refer to [compiling from source](http://www.open3d.org/docs/release/compilation.html)
 and [Open3D C++ interface](http://www.open3d.org/docs/release/tutorial/C++/cplusplus_interface.html).
-
-## Open3D standalone viewer app (New!)
-
-Open3D now comes with a standalone
-[3D viewer app](https://github.com/intel-isl/Open3D/releases) available on
-Ubuntu and macOS. Stay tuned for Windows.
 
 ## Communication channels
 

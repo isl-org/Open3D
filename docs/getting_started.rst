@@ -22,8 +22,11 @@ Supported Python versions:
 Supported operating systems:
 
 * Ubuntu 18.04+
-* macOS
+* macOS 10.14+
 * Windows 10 (64-bit)
+
+If you have other Python versions (e.g. Python 2) or operating systems, please
+refer to :ref:`compilation` and compile Open3D from source.
 
 Pip (PyPI)
 ----------
