@@ -1,19 +1,21 @@
 <p align="center">
-<img src="docs/_static/open3d_logo_horizontal.png" width="320" />
+<img src="https://raw.githubusercontent.com/intel-isl/Open3D/master/docs/_static/open3d_logo_horizontal.png" width="320" />
 </p>
 
 # Open3D: A Modern Library for 3D Data Processing
 
-**[Homepage](http://www.open3d.org) |**
-**[Docs](http://www.open3d.org/docs) |**
-**[Viewer App](https://github.com/intel-isl/Open3D/releases) |**
-**[Quick Start](http://www.open3d.org/docs/release/getting_started.html) |**
-**[Build from Source](http://www.open3d.org/docs/release/compilation.html) |**
-**[Python API](http://www.open3d.org/docs/release/index.html#python-api-index) |**
-**[C++ API](http://www.open3d.org/docs/release/cpp_api/index.html) |**
-**[Contribute](http://www.open3d.org/docs/release/contribute.html) |**
-**[Demo](https://www.youtube.com/watch?v=I3UjXlA4IsU) |**
-**[Forum](https://forum.open3d.org)**
+<h4>
+    <a href="http://www.open3d.org">Homepage</a> |
+    <a href="http://www.open3d.org/docs">Docs</a> |
+    <a href="https://github.com/intel-isl/Open3D/releases">Viewer App</a> |
+    <a href="http://www.open3d.org/docs/release/getting_started.html">Quick Start</a> |
+    <a href="http://www.open3d.org/docs/release/compilation.html">Build from Source</a> |
+    <a href="http://www.open3d.org/docs/release/index.html#python-api-index">Python API</a> |
+    <a href="http://www.open3d.org/docs/release/cpp_api/index.html">C++ API</a> |
+    <a href="http://www.open3d.org/docs/release/contribute.html">Contribute</a> |
+    <a href="https://www.youtube.com/watch?v=I3UjXlA4IsU">Demo</a> |
+    <a href="https://forum.open3d.org">Forum</a>
+</h4>
 
 Open3D is an open-source library that supports rapid development of software
 that deals with 3D data. The Open3D frontend exposes a set of carefully selected
