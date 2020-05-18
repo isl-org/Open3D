@@ -440,7 +440,7 @@ Rect Window::GetContentRect() const {
     MakeDrawContextCurrent();
     auto menubar = Application::GetInstance().GetMenubar();
     if (menubar) {
-        menuHeight = menubar->CalcHeight(GetTheme());
+        menu_height = menubar->CalcHeight(GetTheme());
     }
 #endif
 

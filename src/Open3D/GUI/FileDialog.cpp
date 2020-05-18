@@ -184,8 +184,8 @@ struct FileDialog::Impl {
         // include an up icon.
 #ifndef __APPLE__
         if (path != "/") {
-            entries.insert(entries.begin(),
-                           DirEntry("..", DirEntry::Type::DIR));
+            entries_.insert(entries_.begin(),
+                            DirEntry("..", DirEntry::Type::DIR));
         }
 #endif  // __APPLE__
 
