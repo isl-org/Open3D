@@ -26,10 +26,9 @@
 
 #pragma once
 
+#include "Open3D/GUI/Widget.h"
 #include "Open3D/Visualization/Rendering/RendererHandle.h"
 #include "Open3D/Visualization/Rendering/View.h"
-
-#include "Widget.h"
 
 namespace open3d {
 
@@ -64,28 +63,28 @@ public:
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,
-                     const geometry::AxisAlignedBoundingBox& geometryBounds,
-                     const Eigen::Vector3f& centerOfRotation);
+                     const geometry::AxisAlignedBoundingBox& geometry_bounds,
+                     const Eigen::Vector3f& center_of_rotation);
     void SetCameraChangedCallback(
-            std::function<void(visualization::Camera*)> onCamChanged);
+            std::function<void(visualization::Camera*)> on_cam_changed);
 
     /// Enables changing the directional light with the mouse.
     /// SceneWidget will update the light's direction, so onDirChanged is
     /// only needed if other things need to be updated (like a UI).
     void SelectDirectionalLight(
             visualization::LightHandle dirLight,
-            std::function<void(const Eigen::Vector3f&)> onDirChanged);
+            std::function<void(const Eigen::Vector3f&)> on_dir_changed);
     /// Enables showing the skybox while in skybox ROTATE_IBL mode.
-    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn);
+    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool is_on);
 
     struct ModelDescription {
         visualization::GeometryHandle axes;
-        std::vector<visualization::GeometryHandle> pointClouds;
+        std::vector<visualization::GeometryHandle> point_clouds;
         std::vector<visualization::GeometryHandle> meshes;
         // Optional point clouds drawn instead of 'pointClouds' when rotating.
         // These should have substantially fewer points than the originals
         // so that rotations are faster.
-        std::vector<visualization::GeometryHandle> fastPointClouds;
+        std::vector<visualization::GeometryHandle> fast_point_clouds;
     };
     void SetModel(const ModelDescription& desc);
 

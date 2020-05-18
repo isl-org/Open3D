@@ -29,14 +29,13 @@
 #include "TestUtility/UnitTest.h"
 #include "UnitTest/Odometry/OdometryTools.h"
 
-using namespace Eigen;
+namespace open3d {
+namespace unit_test {
+
 using namespace odometry_tools;
-using namespace open3d;
-using namespace std;
-using namespace unit_test;
 
 TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
-    vector<Vector6d, utility::Vector6d_allocator> ref_J_r(10);
+    std::vector<Eigen::Vector6d, utility::Vector6d_allocator> ref_J_r(10);
     ref_J_r[0] << -1.208103, 0.621106, -0.040830, 0.173142, 0.260220, -1.164557;
     ref_J_r[1] << -0.338017, 0.140257, 0.019732, 0.030357, 0.128839, -0.395772;
     ref_J_r[2] << -0.235842, 0.122008, 0.029948, 0.037260, 0.119792, -0.194611;
@@ -48,9 +47,9 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
     ref_J_r[8] << -2.080471, 1.779082, 0.191770, 0.116250, 0.373750, -2.206175;
     ref_J_r[9] << -0.015476, 0.054573, -0.002288, 0.027828, 0.005931, -0.046776;
 
-    vector<double> ref_r = {0.419608, -0.360784, 0.274510,  0.564706,
-                            0.835294, -0.352941, -0.545098, -0.360784,
-                            0.121569, -0.094118};
+    std::vector<double> ref_r = {0.419608, -0.360784, 0.274510,  0.564706,
+                                 0.835294, -0.352941, -0.545098, -0.360784,
+                                 0.121569, -0.094118};
 
     int width = 10;
     int height = 10;
@@ -78,26 +77,26 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
     geometry::RGBDImage target_dx(*dxColor, *tgtDepth);
     geometry::RGBDImage target_dy(*dyColor, *tgtDepth);
 
-    Matrix3d intrinsic = Matrix3d::Zero();
+    Eigen::Matrix3d intrinsic = Eigen::Matrix3d::Zero();
     intrinsic(0, 0) = 0.5;
     intrinsic(1, 1) = 0.65;
     intrinsic(0, 2) = 0.75;
     intrinsic(1, 2) = 0.35;
 
-    Matrix4d extrinsic = Matrix4d::Zero();
+    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
     extrinsic(0, 0) = 1.0;
     extrinsic(1, 1) = 1.0;
     extrinsic(2, 2) = 1.0;
 
     int rows = height;
-    vector<Vector4i, utility::Vector4i_allocator> corresps(rows);
+    std::vector<Eigen::Vector4i, utility::Vector4i_allocator> corresps(rows);
     Rand(corresps, 0, 3, 0);
 
     odometry::RGBDOdometryJacobianFromColorTerm jacobian_method;
 
     for (int row = 0; row < rows; row++) {
-        vector<Vector6d, utility::Vector6d_allocator> J_r;
-        vector<double> r;
+        std::vector<Eigen::Vector6d, utility::Vector6d_allocator> J_r;
+        std::vector<double> r;
 
         jacobian_method.ComputeJacobianAndResidual(
                 row, J_r, r, source, target, *source_xyz, target_dx, target_dy,
@@ -107,3 +106,6 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
         ExpectEQ(ref_J_r[row], J_r[0]);
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

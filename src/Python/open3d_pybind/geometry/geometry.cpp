@@ -30,7 +30,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_geometry_classes(py::module &m) {
     // open3d.geometry functions
@@ -214,3 +214,5 @@ void pybind_geometry(py::module &m) {
     pybind_octree(m_submodule);
     pybind_boundingvolume(m_submodule);
 }
+
+}  // namespace open3d

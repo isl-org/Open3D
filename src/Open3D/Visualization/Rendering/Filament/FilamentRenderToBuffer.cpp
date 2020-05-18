@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "FilamentRenderToBuffer.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentRenderToBuffer.h"
 
 #include <filament/Engine.h>
 #include <filament/RenderableManager.h>
@@ -35,11 +35,11 @@
 #include <filament/View.h>
 #include <filament/Viewport.h>
 
-#include "FilamentEngine.h"
-#include "FilamentRenderer.h"
-#include "FilamentScene.h"
-#include "FilamentView.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentScene.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
 
 namespace open3d {
 namespace visualization {
@@ -63,7 +63,7 @@ FilamentRenderToBuffer::~FilamentRenderToBuffer() {
         free(buffer_);
         buffer_ = nullptr;
 
-        bufferSize_ = 0;
+        buffer_size_ = 0;
     }
 
     if (parent_) {
@@ -85,9 +85,9 @@ void FilamentRenderToBuffer::SetDimensions(const std::size_t width,
     width_ = width;
     height_ = height;
 
-    bufferSize_ = width * height * 3 * sizeof(std::uint8_t);
+    buffer_size_ = width * height * 3 * sizeof(std::uint8_t);
     if (buffer_) {
-        buffer_ = static_cast<std::uint8_t*>(realloc(buffer_, bufferSize_));
+        buffer_ = static_cast<std::uint8_t*>(realloc(buffer_, buffer_size_));
     }
 }
 
@@ -127,7 +127,7 @@ void FilamentRenderToBuffer::RequestFrame(Scene* scene,
     pending_ = true;
 
     if (buffer_ == nullptr) {
-        buffer_ = static_cast<std::uint8_t*>(malloc(bufferSize_));
+        buffer_ = static_cast<std::uint8_t*>(malloc(buffer_size_));
     }
 
     callback_ = callback;
@@ -139,16 +139,16 @@ void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
     BufferReadyCallback callback;
     std::tie(self, callback) = *params;
 
-    callback({self->width_, self->height_, self->buffer_, self->bufferSize_});
+    callback({self->width_, self->height_, self->buffer_, self->buffer_size_});
 
-    self->frameDone_ = true;
+    self->frame_done_ = true;
     delete params;
 }
 
 void FilamentRenderToBuffer::Render() {
     bool shotDone = false;
-    frameDone_ = false;
-    while (!frameDone_) {
+    frame_done_ = false;
+    while (!frame_done_) {
         if (renderer_->beginFrame(swapchain_)) {
             renderer_->render(view_->GetNativeView());
 
@@ -158,10 +158,10 @@ void FilamentRenderToBuffer::Render() {
                 using namespace filament;
                 using namespace backend;
 
-                auto userParam = new PBDParams(this, callback_);
+                auto user_param = new PBDParams(this, callback_);
                 PixelBufferDescriptor pd(
-                        buffer_, bufferSize_, PixelDataFormat::RGB,
-                        PixelDataType::UBYTE, ReadPixelsCallback, userParam);
+                        buffer_, buffer_size_, PixelDataFormat::RGB,
+                        PixelDataType::UBYTE, ReadPixelsCallback, user_param);
 
                 auto vp = view_->GetNativeView()->getViewport();
 

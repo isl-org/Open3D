@@ -24,49 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "VectorEdit.h"
-
-#include "Theme.h"
-#include "Util.h"
+#include "Open3D/GUI/VectorEdit.h"
 
 #include <imgui.h>
-
 #include <sstream>
+
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Util.h"
 
 namespace open3d {
 namespace gui {
 
 namespace {
-static int gNextVectorEditId = 1;
+static int g_next_vector_edit_id = 1;
 }
 
 struct VectorEdit::Impl {
-    std::string id;
-    Eigen::Vector3f value;
-    bool isUnitVector = false;
-    std::function<void(const Eigen::Vector3f&)> onChanged;
+    std::string id_;
+    Eigen::Vector3f value_;
+    bool is_unit_vector_ = false;
+    std::function<void(const Eigen::Vector3f&)> on_changed_;
 };
 
 VectorEdit::VectorEdit() : impl_(new VectorEdit::Impl()) {
     std::stringstream s;
-    s << "##vectoredit" << gNextVectorEditId++ << std::endl;
+    s << "##vectoredit" << g_next_vector_edit_id++ << std::endl;
 }
 
 VectorEdit::~VectorEdit() {}
 
-Eigen::Vector3f VectorEdit::GetValue() const { return impl_->value; }
+Eigen::Vector3f VectorEdit::GetValue() const { return impl_->value_; }
 
 void VectorEdit::SetValue(const Eigen::Vector3f& val) {
-    if (impl_->isUnitVector) {
-        impl_->value = val.normalized();
+    if (impl_->is_unit_vector_) {
+        impl_->value_ = val.normalized();
     } else {
-        impl_->value = val;
+        impl_->value_ = val;
     }
 }
 
 void VectorEdit::SetOnValueChanged(
-        std::function<void(const Eigen::Vector3f&)> onChanged) {
-    impl_->onChanged = onChanged;
+        std::function<void(const Eigen::Vector3f&)> on_changed) {
+    impl_->on_changed_ = on_changed;
 }
 
 Size VectorEdit::CalcPreferredSize(const Theme& theme) const {
@@ -85,18 +84,18 @@ Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
 
     ImGui::PushStyleColor(
             ImGuiCol_FrameBg,
-            util::colorToImgui(context.theme.textEditBackgroundColor));
+            util::colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgHovered,
-            util::colorToImgui(context.theme.textEditBackgroundColor));
+            util::colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgActive,
-            util::colorToImgui(context.theme.textEditBackgroundColor));
+            util::colorToImgui(context.theme.text_edit_background_color));
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
-    if (ImGui::InputFloat3(impl_->id.c_str(), impl_->value.data(), 3)) {
+    if (ImGui::InputFloat3(impl_->id_.c_str(), impl_->value_.data(), 3)) {
         result = Widget::DrawResult::REDRAW;
     }
     ImGui::PopItemWidth();
@@ -106,8 +105,8 @@ Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
     ImGui::PopStyleVar();
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
-        if (impl_->onChanged) {
-            impl_->onChanged(impl_->value);
+        if (impl_->on_changed_) {
+            impl_->on_changed_(impl_->value_);
         }
         result = Widget::DrawResult::REDRAW;
     }

@@ -51,7 +51,7 @@
 #include <filament/Texture.h>
 #include <filament/VertexBuffer.h>
 #include <filament/View.h>
-
+#include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 #include <memory>
 
 struct ImDrawData;
@@ -74,37 +74,37 @@ class Window;
 class ImguiFilamentBridge {
 public:
     ImguiFilamentBridge(visualization::FilamentRenderer* renderer,
-                        const Size& windowSize);
+                        const Size& window_size);
     // The constructor creates its own Scene and places it in the given View.
     ImguiFilamentBridge(filament::Engine* engine,
                         filament::Scene* scene,
-                        filament::Material* uiblitMaterial);
+                        filament::Material* uiblit_material);
     ~ImguiFilamentBridge();
 
     // Helper method called after resolving fontPath; public so fonts can be
     // added by caller. Requires the appropriate ImGuiContext to be current
-    void createAtlasTextureAlpha8(unsigned char* pixels,
+    void CreateAtlasTextureAlpha8(unsigned char* pixels,
                                   int width,
                                   int height,
-                                  int bytesPerPx);
+                                  int bytes_per_px);
 
     // This populates the Filament View. Clients are responsible for
     // rendering the View. This should be called on every frame, regardless of
     // whether the Renderer wants to skip or not.
-    void update(ImDrawData* imguiData);
+    void Update(ImDrawData* imguiData);
 
-    void onWindowResized(const Window& window);
+    void OnWindowResized(const Window& window);
 
 private:
-    void createBuffers(size_t numRequiredBuffers);
-    void populateVertexData(size_t bufferIndex,
-                            size_t vbSizeInBytes,
-                            void* vbData,
-                            size_t ibSizeInBytes,
-                            void* ibData);
-    void createVertexBuffer(size_t bufferIndex, size_t capacity);
-    void createIndexBuffer(size_t bufferIndex, size_t capacity);
-    void syncThreads();
+    void CreateBuffers(size_t num_required_buffers);
+    void PopulateVertexData(size_t buffer_index,
+                            size_t vb_size_in_bytes,
+                            void* vb_data,
+                            size_t ib_size_in_bytes,
+                            void* ib_data);
+    void CreateVertexBuffer(size_t buffer_index, size_t capacity);
+    void CreateIndexBuffer(size_t buffer_index, size_t capacity);
+    void SyncThreads();
 
 private:
     struct Impl;

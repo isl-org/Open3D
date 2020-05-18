@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
+
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 
-#include "FilamentEngine.h"
-
-#include "FilamentResourceManager.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 
 namespace open3d {
 namespace visualization {
@@ -36,20 +36,20 @@ namespace visualization {
 filament::backend::Backend EngineInstance::backend_ =
         filament::backend::Backend::DEFAULT;
 
-void EngineInstance::SelectBackend(const filament::backend::Backend aBackend) {
-    backend_ = aBackend;
+void EngineInstance::SelectBackend(const filament::backend::Backend backend) {
+    backend_ = backend;
 }
 
 filament::Engine& EngineInstance::GetInstance() { return *Get().engine_; }
 
 FilamentResourceManager& EngineInstance::GetResourceManager() {
-    return *Get().resourceManager_;
+    return *Get().resource_manager_;
 }
 
 EngineInstance::~EngineInstance() {
-    resourceManager_->DestroyAll();
-    delete resourceManager_;
-    resourceManager_ = nullptr;
+    resource_manager_->DestroyAll();
+    delete resource_manager_;
+    resource_manager_ = nullptr;
 
     filament::Engine::destroy(engine_);
     engine_ = nullptr;
@@ -62,7 +62,7 @@ EngineInstance& EngineInstance::Get() {
 
 EngineInstance::EngineInstance() {
     engine_ = filament::Engine::create(backend_);
-    resourceManager_ = new FilamentResourceManager(*engine_);
+    resource_manager_ = new FilamentResourceManager(*engine_);
 }
 
 }  // namespace visualization

@@ -69,10 +69,10 @@ private:
     std::size_t width_ = 0;
     std::size_t height_ = 0;
     std::uint8_t* buffer_ = nullptr;
-    std::size_t bufferSize_ = 0;
+    std::size_t buffer_size_ = 0;
 
     BufferReadyCallback callback_;
-    bool frameDone_ = true;
+    bool frame_done_ = true;
     bool pending_ = false;
 
     static void ReadPixelsCallback(void* buffer, size_t size, void* user);

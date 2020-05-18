@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Dialog.h"
-
 #include <functional>
+
+#include "Open3D/GUI/Dialog.h"
 
 namespace open3d {
 namespace gui {
@@ -57,9 +57,9 @@ public:
     void AddFilter(const char *filter, const char *description);
 
     /// The OnCancel and OnDone callbacks *must* be specified.
-    void SetOnCancel(std::function<void()> onCancel);
+    void SetOnCancel(std::function<void()> on_cancel);
     /// The OnCancel and OnDone callbacks *must* be specified.
-    void SetOnDone(std::function<void(const char *)> onDone);
+    void SetOnDone(std::function<void(const char *)> on_done);
 
     Size CalcPreferredSize(const Theme &theme) const override;
 

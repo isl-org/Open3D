@@ -26,10 +26,12 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(ColoredICP, DISABLED_RegistrationColoredICP) {
-    unit_test::NotImplemented();
-}
+namespace open3d {
+namespace unit_test {
 
-TEST(ColoredICP, DISABLED_ICPConvergenceCriteria) {
-    unit_test::NotImplemented();
-}
+TEST(ColoredICP, DISABLED_RegistrationColoredICP) { NotImplemented(); }
+
+TEST(ColoredICP, DISABLED_ICPConvergenceCriteria) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

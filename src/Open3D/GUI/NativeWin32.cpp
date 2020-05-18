@@ -35,12 +35,12 @@
 namespace open3d {
 namespace gui {
 
-void* GetNativeDrawable(GLFWwindow* glfwWindow) {
-    return glfwGetWin32Window(glfwWindow);
+void* GetNativeDrawable(GLFWwindow* glfw_window) {
+    return glfwGetWin32Window(glfw_window);
 }
 
-void PostNativeExposeEvent(GLFWwindow* glfwWindow) {
-    InvalidateRect(glfwGetWin32Window(glfwWindow), NULL, TRUE);
+void PostNativeExposeEvent(GLFWwindow* glfw_window) {
+    InvalidateRect(glfwGetWin32Window(glfw_window), NULL, TRUE);
 }
 
 void ShowNativeAlert(const char* message) {

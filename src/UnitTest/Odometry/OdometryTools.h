@@ -29,6 +29,9 @@
 #include "Open3D/Geometry/Image.h"
 #include "TestUtility/UnitTest.h"
 
+namespace open3d {
+namespace unit_test {
+
 namespace odometry_tools {
 std::shared_ptr<open3d::geometry::Image> GenerateImage(
         const int& width,
@@ -59,3 +62,5 @@ std::shared_ptr<open3d::geometry::Image> DepthBuffer(const int& width,
                                                      const float& vmax,
                                                      const int& seed);
 }  // namespace odometry_tools
+}  // namespace unit_test
+}  // namespace open3d

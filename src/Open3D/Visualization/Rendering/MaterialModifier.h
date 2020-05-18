@@ -28,7 +28,7 @@
 
 #include <Eigen/Core>
 
-#include "RendererHandle.h"
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
 
 namespace open3d {
 namespace visualization {
@@ -85,7 +85,7 @@ struct TextureSamplerParameters {
     // Creates a TextureSampler with the default parameters but setting the
     // filtering and wrap modes. 'minMag' is filtering for both minification and
     // magnification 'uvw' is wrapping mode for all texture coordinate axes
-    explicit TextureSamplerParameters(MagFilter minMag,
+    explicit TextureSamplerParameters(MagFilter min_mag,
                                       WrapMode uvw = WrapMode::ClampToEdge);
 
     // Creates a TextureSampler with the default parameters but setting the
@@ -103,11 +103,11 @@ struct TextureSamplerParameters {
 
     std::uint8_t GetAnisotropy() const { return anisotropy; }
 
-    MagFilter filterMag = MagFilter::Nearest;
-    MinFilter filterMin = MinFilter::Nearest;
-    WrapMode wrapU = WrapMode::ClampToEdge;
-    WrapMode wrapV = WrapMode::ClampToEdge;
-    WrapMode wrapW = WrapMode::ClampToEdge;
+    MagFilter filter_mag = MagFilter::Nearest;
+    MinFilter filter_min = MinFilter::Nearest;
+    WrapMode wrap_u = WrapMode::ClampToEdge;
+    WrapMode wrap_v = WrapMode::ClampToEdge;
+    WrapMode wrap_w = WrapMode::ClampToEdge;
 
 private:
     std::uint8_t anisotropy = 0;

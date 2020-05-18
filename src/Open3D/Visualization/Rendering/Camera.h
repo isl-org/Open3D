@@ -43,7 +43,7 @@ public:
                                double aspect,
                                double near,
                                double far,
-                               FovType fovType) = 0;
+                               FovType fov_type) = 0;
 
     /** Sets the projection matrix from a frustum defined by six planes.
      *

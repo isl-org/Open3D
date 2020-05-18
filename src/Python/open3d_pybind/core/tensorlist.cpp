@@ -39,7 +39,8 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/open3d_pybind.h"
 #include "open3d_pybind/pybind_utils.h"
-using namespace open3d;
+
+namespace open3d {
 
 void pybind_core_tensorlist(py::module& m) {
     py::class_<TensorList> tensorlist(
@@ -95,3 +96,5 @@ void pybind_core_tensorlist(py::module& m) {
     tensorlist.def_property_readonly("dtype", &TensorList::GetDtype);
     tensorlist.def_property_readonly("device", &TensorList::GetDevice);
 }
+
+}  // namespace open3d

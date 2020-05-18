@@ -29,8 +29,10 @@
 #include <Eigen/Core>
 #include <vector>
 
+namespace open3d {
 namespace unit_test {
 namespace Sort {
+
 // Greater than or Equal for sorting Eigen::Vector3d elements.
 bool GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
 
@@ -38,5 +40,7 @@ bool GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
 // method needed because std::sort failed on TravisCI/macOS (works fine on
 // Linux)
 void Do(std::vector<Eigen::Vector3d>& v);
+
 }  // namespace Sort
 }  // namespace unit_test
+}  // namespace open3d

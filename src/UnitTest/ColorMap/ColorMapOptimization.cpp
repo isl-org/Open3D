@@ -30,9 +30,8 @@
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
-using namespace std;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
 /* TODO
 As the color_map::ColorMapOptimization subcomponents go back into hiding several
@@ -41,12 +40,12 @@ useful again after a decision has been made about the way to make these
 subcomponents visible to UnitTest.
 */
 
-vector<geometry::Image> GenerateImages(const int& width,
-                                       const int& height,
-                                       const int& num_of_channels,
-                                       const int& bytes_per_channel,
-                                       const size_t& size) {
-    vector<geometry::Image> images;
+std::vector<geometry::Image> GenerateImages(const int& width,
+                                            const int& height,
+                                            const int& num_of_channels,
+                                            const int& bytes_per_channel,
+                                            const size_t& size) {
+    std::vector<geometry::Image> images;
     for (size_t i = 0; i < size; i++) {
         geometry::Image image;
 
@@ -64,38 +63,38 @@ vector<geometry::Image> GenerateImages(const int& width,
     return images;
 }
 
-vector<shared_ptr<geometry::Image>> GenerateSharedImages(
+std::vector<std::shared_ptr<geometry::Image>> GenerateSharedImages(
         const int& width,
         const int& height,
         const int& num_of_channels,
         const int& bytes_per_channel,
         const size_t& size) {
-    vector<geometry::Image> images = GenerateImages(
+    std::vector<geometry::Image> images = GenerateImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
-    vector<shared_ptr<geometry::Image>> output;
+    std::vector<std::shared_ptr<geometry::Image>> output;
     for (size_t i = 0; i < size; i++)
-        output.push_back(make_shared<geometry::Image>(images[i]));
+        output.push_back(std::make_shared<geometry::Image>(images[i]));
 
     return output;
 }
 
-vector<geometry::RGBDImage> GenerateRGBDImages(const int& width,
-                                               const int& height,
-                                               const size_t& size) {
+std::vector<geometry::RGBDImage> GenerateRGBDImages(const int& width,
+                                                    const int& height,
+                                                    const size_t& size) {
     int num_of_channels = 3;
     int bytes_per_channel = 1;
     int depth_num_of_channels = 1;
     int depth_bytes_per_channel = 4;
 
-    vector<geometry::Image> depths =
+    std::vector<geometry::Image> depths =
             GenerateImages(width, height, depth_num_of_channels,
                            depth_bytes_per_channel, size);
 
-    vector<geometry::Image> colors = GenerateImages(
+    std::vector<geometry::Image> colors = GenerateImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
-    vector<geometry::RGBDImage> rgbdImages;
+    std::vector<geometry::RGBDImage> rgbdImages;
     for (size_t i = 0; i < size; i++) {
         geometry::RGBDImage rgbdImage(colors[i], depths[i]);
         rgbdImages.push_back(rgbdImage);
@@ -130,7 +129,7 @@ camera::PinholeCameraTrajectory GenerateCamera(const int& width,
 }
 
 TEST(ColorMapOptimization, DISABLED_Project3DPointAndGetUVDepth) {
-    vector<Eigen::Vector3d> ref_points = {
+    std::vector<Eigen::Vector3d> ref_points = {
             {1.072613, 0.611307, 42.921570}, {0.897783, 0.859754, 43.784313},
             {1.452353, 1.769294, 18.333334}, {1.181915, 0.663475, 30.411764},
             {1.498387, 0.741398, 20.058823}, {0.814378, 0.620043, 50.254902},
@@ -152,7 +151,7 @@ TEST(ColorMapOptimization, DISABLED_Project3DPointAndGetUVDepth) {
 
     // Eigen::Vector3d point = {3.3, 4.4, 5.5};
 
-    vector<Eigen::Vector3d> output;
+    std::vector<Eigen::Vector3d> output;
     for (size_t i = 0; i < ref_points.size(); i++) {
         // change the pose randomly
         Eigen::Vector3d pose;
@@ -161,13 +160,13 @@ TEST(ColorMapOptimization, DISABLED_Project3DPointAndGetUVDepth) {
                 GenerateCamera(width, height, pose);
 
         // float u, v, d;
-        // tie(u, v, d) = Project3DPointAndGetUVDepth(point, camera, camid);
-        // ExpectEQ(ref_points[i], Eigen::Vector3d(u, v, d));
+        // std::tie(u, v, d) = Project3DPointAndGetUVDepth(point, camera,
+        // camid); ExpectEQ(ref_points[i], Eigen::Vector3d(u, v, d));
     }
 }
 
 TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility) {
-    vector<vector<int>> ref_second = {
+    std::vector<std::vector<int>> ref_second = {
             {1,   421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432,
              433, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471,
              472, 473, 474, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508,
@@ -196,11 +195,11 @@ TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility) {
     int bytes_per_channel = 1;
     size_t size = 10;
 
-    shared_ptr<geometry::TriangleMesh> mesh =
+    std::shared_ptr<geometry::TriangleMesh> mesh =
             geometry::TriangleMesh::CreateSphere(10.0, 20);
-    vector<geometry::RGBDImage> images_rgbd =
+    std::vector<geometry::RGBDImage> images_rgbd =
             GenerateRGBDImages(width, height, size);
-    vector<geometry::Image> images_mask = GenerateImages(
+    std::vector<geometry::Image> images_mask = GenerateImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
     Eigen::Vector3d pose(-30, -15, -13);
@@ -209,9 +208,9 @@ TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility) {
 
     // ColorMapOptimizationOption option(false, 4, 0.316, 30, 15, 120, 0.1, 3);
 
-    vector<vector<int>> first;
-    vector<vector<int>> second;
-    // tie(first, second) = MakeVertexAndImageVisibility(*mesh,
+    std::vector<std::vector<int>> first;
+    std::vector<std::vector<int>> second;
+    // std::tie(first, second) = MakeVertexAndImageVisibility(*mesh,
     //                                                   images_rgbd,
     //                                                   images_mask,
     //                                                   camera,
@@ -232,7 +231,7 @@ TEST(ColorMapOptimization, DISABLED_MakeWarpingFields) {
     // int ref_anchor_w = 4;
     // int ref_anchor_h = 4;
     // double ref_anchor_step = 1.666667;
-    // vector<double> ref_flow = {0.000000, 0.000000, 1.666667,
+    // std::vector<double> ref_flow = {0.000000, 0.000000, 1.666667,
     // 0.000000, 3.333333,
     //                            0.000000, 5.000000, 0.000000,
     //                            0.000000, 1.666667, 1.666667,
@@ -249,13 +248,14 @@ TEST(ColorMapOptimization, DISABLED_MakeWarpingFields) {
     int num_of_channels = 3;
     int bytes_per_channel = 1;
 
-    vector<shared_ptr<geometry::Image>> images = GenerateSharedImages(
+    std::vector<std::shared_ptr<geometry::Image>> images = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
     // ColorMapOptimizationOption option(false, 4, 0.316, 30, 2.5, 0.03, 0.1,
     // 3);
 
-    // vector<ImageWarpingField> fields = MakeWarpingFields(images, option);
+    // std::vector<ImageWarpingField> fields = MakeWarpingFields(images,
+    // option);
 
     // for (size_t i = 0; i < fields.size(); i++)
     // {
@@ -270,34 +270,34 @@ TEST(ColorMapOptimization, DISABLED_MakeWarpingFields) {
 }
 
 TEST(ColorMapOptimization, DISABLED_QueryImageIntensity) {
-    vector<bool> ref_bool = {0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0,
-                             0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0};
+    std::vector<bool> ref_bool = {0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0,
+                                  0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0};
 
-    vector<Eigen::Vector3d> ref_float = {{0.000000, 0.000000, 0.000000},
-                                         {10.260207, 10.070588, 10.323875},
-                                         {10.257440, 10.114879, 10.260207},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {10.285121, 10.244983, 10.109343},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {10.229758, 10.322492, 10.073357},
-                                         {10.300346, 10.211764, 10.112111},
-                                         {10.229758, 10.113495, 10.211764},
-                                         {10.261592, 10.318339, 10.346021},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {10.157785, 10.347404, 10.249135},
-                                         {10.343252, 10.102422, 10.271280},
-                                         {10.094118, 10.066436, 10.243599},
-                                         {10.024914, 10.001384, 10.325259},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {10.073357, 10.159169, 10.055364},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {10.217301, 10.098269, 10.276816},
-                                         {0.000000, 0.000000, 0.000000}};
+    std::vector<Eigen::Vector3d> ref_float = {{0.000000, 0.000000, 0.000000},
+                                              {10.260207, 10.070588, 10.323875},
+                                              {10.257440, 10.114879, 10.260207},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {10.285121, 10.244983, 10.109343},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {10.229758, 10.322492, 10.073357},
+                                              {10.300346, 10.211764, 10.112111},
+                                              {10.229758, 10.113495, 10.211764},
+                                              {10.261592, 10.318339, 10.346021},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {10.157785, 10.347404, 10.249135},
+                                              {10.343252, 10.102422, 10.271280},
+                                              {10.094118, 10.066436, 10.243599},
+                                              {10.024914, 10.001384, 10.325259},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {10.073357, 10.159169, 10.055364},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {10.217301, 10.098269, 10.276816},
+                                              {0.000000, 0.000000, 0.000000}};
 
     int width = 320;
     int height = 240;
@@ -318,14 +318,14 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity) {
     size_t size = 25;
 
     for (size_t i = 0; i < size; i++) {
-        vector<double> vData(3);
+        std::vector<double> vData(3);
         Rand(vData, 10.0, 100.0, i);
         Eigen::Vector3d V(vData[0], vData[1], vData[2]);
 
         // bool boolResult = false;
         // float floatResult = 0.0;
 
-        // tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
+        // std::tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
         //                                                           V,
         //                                                           camera,
         //                                                           camid,
@@ -333,7 +333,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity) {
         // EXPECT_EQ(ref_bool[i], boolResult);
         // EXPECT_NEAR(ref_float[i](0, 0), floatResult, THRESHOLD_1E_6);
 
-        // tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
+        // std::tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
         //                                                           V,
         //                                                           camera,
         //                                                           camid,
@@ -341,7 +341,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity) {
         // EXPECT_EQ(ref_bool[i], boolResult);
         // EXPECT_NEAR(ref_float[i](1, 0), floatResult, THRESHOLD_1E_6);
 
-        // tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
+        // std::tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
         //                                                           V,
         //                                                           camera,
         //                                                           camid,
@@ -352,34 +352,34 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity) {
 }
 
 TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
-    vector<bool> ref_bool = {0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0,
-                             0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0};
+    std::vector<bool> ref_bool = {0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0,
+                                  0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0};
 
-    vector<Eigen::Vector3d> ref_float = {{0.000000, 0.000000, 0.000000},
-                                         {10.260207, 10.070588, 10.323875},
-                                         {10.257440, 10.114879, 10.260207},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {10.285121, 10.244983, 10.109343},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {10.229758, 10.322492, 10.073357},
-                                         {10.300346, 10.211764, 10.112111},
-                                         {10.229758, 10.113495, 10.211764},
-                                         {10.261592, 10.318339, 10.346021},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {10.157785, 10.347404, 10.249135},
-                                         {10.343252, 10.102422, 10.271280},
-                                         {10.094118, 10.066436, 10.243599},
-                                         {10.024914, 10.001384, 10.325259},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {10.073357, 10.159169, 10.055364},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {0.000000, 0.000000, 0.000000},
-                                         {10.217301, 10.098269, 10.276816},
-                                         {0.000000, 0.000000, 0.000000}};
+    std::vector<Eigen::Vector3d> ref_float = {{0.000000, 0.000000, 0.000000},
+                                              {10.260207, 10.070588, 10.323875},
+                                              {10.257440, 10.114879, 10.260207},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {10.285121, 10.244983, 10.109343},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {10.229758, 10.322492, 10.073357},
+                                              {10.300346, 10.211764, 10.112111},
+                                              {10.229758, 10.113495, 10.211764},
+                                              {10.261592, 10.318339, 10.346021},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {10.157785, 10.347404, 10.249135},
+                                              {10.343252, 10.102422, 10.271280},
+                                              {10.094118, 10.066436, 10.243599},
+                                              {10.024914, 10.001384, 10.325259},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {10.073357, 10.159169, 10.055364},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {0.000000, 0.000000, 0.000000},
+                                              {10.217301, 10.098269, 10.276816},
+                                              {0.000000, 0.000000, 0.000000}};
 
     int width = 320;
     int height = 240;
@@ -405,14 +405,14 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
     size_t size = 25;
 
     for (size_t i = 0; i < size; i++) {
-        vector<double> vData(3);
+        std::vector<double> vData(3);
         Rand(vData, 10.0, 100.0, i);
         Eigen::Vector3d V(vData[0], vData[1], vData[2]);
 
         // bool boolResult = false;
         // float floatResult = 0.0;
 
-        // tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
+        // std::tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
         //                                                           V,
         //                                                           camera,
         //                                                           camid,
@@ -420,7 +420,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
         // EXPECT_EQ(ref_bool[i], boolResult);
         // EXPECT_NEAR(ref_float[i](0, 0), floatResult, THRESHOLD_1E_6);
 
-        // tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
+        // std::tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
         //                                                           V,
         //                                                           camera,
         //                                                           camid,
@@ -428,7 +428,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
         // EXPECT_EQ(ref_bool[i], boolResult);
         // EXPECT_NEAR(ref_float[i](1, 0), floatResult, THRESHOLD_1E_6);
 
-        // tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
+        // std::tie(boolResult, floatResult) = QueryImageIntensity<float>(img,
         //                                                           V,
         //                                                           camera,
         //                                                           camid,
@@ -439,7 +439,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
 }
 
 TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex) {
-    vector<double> ref_proxy_intensity = {
+    std::vector<double> ref_proxy_intensity = {
             0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,
             0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,
             0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,
@@ -479,11 +479,12 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<geometry::TriangleMesh> mesh =
+    std::shared_ptr<geometry::TriangleMesh> mesh =
             geometry::TriangleMesh::CreateSphere(10.0, 10);
 
-    vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
-            width, height, num_of_channels, bytes_per_channel, size);
+    std::vector<std::shared_ptr<geometry::Image>> images_gray =
+            GenerateSharedImages(width, height, num_of_channels,
+                                 bytes_per_channel, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
     camera::PinholeCameraTrajectory camera =
@@ -491,9 +492,10 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex) {
     // int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
-    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
+    std::vector<std::vector<int>> vertex_to_image(n_vertex,
+                                                  std::vector<int>(size, 0));
 
-    vector<double> proxy_intensity;
+    std::vector<double> proxy_intensity;
 
     // SetProxyIntensityForVertex(*mesh,
     //                            images_gray,
@@ -507,7 +509,7 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex) {
 }
 
 TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
-    vector<double> ref_proxy_intensity = {
+    std::vector<double> ref_proxy_intensity = {
             0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,
             0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,
             0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,
@@ -547,21 +549,22 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<geometry::TriangleMesh> mesh =
+    std::shared_ptr<geometry::TriangleMesh> mesh =
             geometry::TriangleMesh::CreateSphere(10.0, 10);
 
     // TODO: change the initialization in such a way that the fields have an
     // effect on the outcome of QueryImageIntensity.
     // int nr_anchors = 6;
-    // vector<ImageWarpingField> fields;
+    // std::vector<ImageWarpingField> fields;
     // for (size_t i = 0; i < size; i++)
     // {
     //     ImageWarpingField field(width, height, nr_anchors + i);
     //     fields.push_back(field);
     // }
 
-    vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
-            width, height, num_of_channels, bytes_per_channel, size);
+    std::vector<std::shared_ptr<geometry::Image>> images_gray =
+            GenerateSharedImages(width, height, num_of_channels,
+                                 bytes_per_channel, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
     camera::PinholeCameraTrajectory camera =
@@ -569,9 +572,10 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
     // int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
-    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
+    std::vector<std::vector<int>> vertex_to_image(n_vertex,
+                                                  std::vector<int>(size, 0));
 
-    vector<double> proxy_intensity;
+    std::vector<double> proxy_intensity;
 
     // SetProxyIntensityForVertex(*mesh,
     //                            images_gray,
@@ -585,7 +589,7 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
         EXPECT_NEAR(ref_proxy_intensity[i], proxy_intensity[i], THRESHOLD_1E_6);
 }
 TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
-    vector<double> ref_proxy_intensity = {
+    std::vector<double> ref_proxy_intensity = {
             0.000000,  0.000000,  0.000000,  10.319723, 10.134256, 0.000000,
             0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,
             10.206228, 10.059516, 10.102422, 0.000000,  0.000000,  0.000000,
@@ -600,25 +604,28 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<geometry::TriangleMesh> mesh =
+    std::shared_ptr<geometry::TriangleMesh> mesh =
             geometry::TriangleMesh::CreateSphere(10.0, 5);
 
-    vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
-            width, height, num_of_channels, bytes_per_channel, size);
+    std::vector<std::shared_ptr<geometry::Image>> images_gray =
+            GenerateSharedImages(width, height, num_of_channels,
+                                 bytes_per_channel, size);
 
-    vector<shared_ptr<geometry::Image>> images_dx = GenerateSharedImages(
-            width, height, num_of_channels, bytes_per_channel, size);
+    std::vector<std::shared_ptr<geometry::Image>> images_dx =
+            GenerateSharedImages(width, height, num_of_channels,
+                                 bytes_per_channel, size);
 
-    vector<shared_ptr<geometry::Image>> images_dy = GenerateSharedImages(
-            width, height, num_of_channels, bytes_per_channel, size);
+    std::vector<std::shared_ptr<geometry::Image>> images_dy =
+            GenerateSharedImages(width, height, num_of_channels,
+                                 bytes_per_channel, size);
     // int nr_anchors = 6;
-    // vector<ImageWarpingField> warping_fields;
+    // std::vector<ImageWarpingField> warping_fields;
     // for (size_t i = 0; i < size; i++)
     // {
     //     ImageWarpingField field(width, height, nr_anchors + i);
     //     warping_fields.push_back(field);
     // }
-    // vector<ImageWarpingField> warping_fields_init;
+    // std::vector<ImageWarpingField> warping_fields_init;
     // for (size_t i = 0; i < size; i++)
     // {
     //     ImageWarpingField field(width, height, nr_anchors + i);
@@ -632,8 +639,10 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
     size_t n_vertex = mesh->vertices_.size();
     size_t n_camera = camera.parameters_.size();
 
-    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(n_camera, 0));
-    vector<vector<int>> image_to_vertex(n_camera, vector<int>(n_vertex, 0));
+    std::vector<std::vector<int>> vertex_to_image(
+            n_vertex, std::vector<int>(n_camera, 0));
+    std::vector<std::vector<int>> image_to_vertex(
+            n_camera, std::vector<int>(n_vertex, 0));
 
     for (size_t i = 0; i < image_to_vertex.size(); i++)
         Rand(image_to_vertex[i], 0, n_vertex, i);
@@ -641,7 +650,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
     // ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95,
     // 3);
 
-    vector<double> proxy_intensity;
+    std::vector<double> proxy_intensity;
 
     // OptimizeImageCoorNonrigid(
     //     *mesh,
@@ -662,7 +671,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
 }
 
 TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
-    vector<double> ref_proxy_intensity = {
+    std::vector<double> ref_proxy_intensity = {
             0.000000, 0.000000,  0.000000,  10.120416, 10.192388, 0.000000,
             0.000000, 0.000000,  0.000000,  0.000000,  0.000000,  0.000000,
             0.000000, 10.120416, 10.056747, 0.000000,  0.000000,  0.000000,
@@ -677,17 +686,20 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<geometry::TriangleMesh> mesh =
+    std::shared_ptr<geometry::TriangleMesh> mesh =
             geometry::TriangleMesh::CreateSphere(10.0, 5);
 
-    vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
-            width, height, num_of_channels, bytes_per_channel, size);
+    std::vector<std::shared_ptr<geometry::Image>> images_gray =
+            GenerateSharedImages(width, height, num_of_channels,
+                                 bytes_per_channel, size);
 
-    vector<shared_ptr<geometry::Image>> images_dx = GenerateSharedImages(
-            width, height, num_of_channels, bytes_per_channel, size);
+    std::vector<std::shared_ptr<geometry::Image>> images_dx =
+            GenerateSharedImages(width, height, num_of_channels,
+                                 bytes_per_channel, size);
 
-    vector<shared_ptr<geometry::Image>> images_dy = GenerateSharedImages(
-            width, height, num_of_channels, bytes_per_channel, size);
+    std::vector<std::shared_ptr<geometry::Image>> images_dy =
+            GenerateSharedImages(width, height, num_of_channels,
+                                 bytes_per_channel, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
     camera::PinholeCameraTrajectory camera =
@@ -696,8 +708,10 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
     size_t n_vertex = mesh->vertices_.size();
     size_t n_camera = camera.parameters_.size();
 
-    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(n_camera, 0));
-    vector<vector<int>> image_to_vertex(n_camera, vector<int>(n_vertex, 0));
+    std::vector<std::vector<int>> vertex_to_image(
+            n_vertex, std::vector<int>(n_camera, 0));
+    std::vector<std::vector<int>> image_to_vertex(
+            n_camera, std::vector<int>(n_vertex, 0));
 
     for (size_t i = 0; i < image_to_vertex.size(); i++)
         Rand(image_to_vertex[i], 0, n_vertex, i);
@@ -705,7 +719,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
     // ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95,
     // 3);
 
-    vector<double> proxy_intensity;
+    std::vector<double> proxy_intensity;
 
     // OptimizeImageCoorRigid(
     //     *mesh,
@@ -724,7 +738,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
 }
 
 TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage) {
-    vector<Eigen::Vector3d> ref_vertex_colors = {
+    std::vector<Eigen::Vector3d> ref_vertex_colors = {
             {0.000000, 0.000000, 0.000000}, {0.000000, 0.000000, 0.000000},
             {0.000000, 0.000000, 0.000000}, {0.325490, 0.737255, 0.200000},
             {0.290196, 0.243137, 0.909804}, {0.000000, 0.000000, 0.000000},
@@ -751,10 +765,10 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage) {
     int width = 320;
     int height = 240;
 
-    shared_ptr<geometry::TriangleMesh> mesh =
+    std::shared_ptr<geometry::TriangleMesh> mesh =
             geometry::TriangleMesh::CreateSphere(10.0, 5);
 
-    vector<geometry::RGBDImage> images_rgbd =
+    std::vector<geometry::RGBDImage> images_rgbd =
             GenerateRGBDImages(width, height, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
@@ -763,9 +777,10 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage) {
     // int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
-    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
+    std::vector<std::vector<int>> vertex_to_image(n_vertex,
+                                                  std::vector<int>(size, 0));
 
-    vector<double> proxy_intensity;
+    std::vector<double> proxy_intensity;
 
     // SetGeometryColorAverage(*mesh,
     //                         images_rgbd,
@@ -778,7 +793,7 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage) {
 }
 
 TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
-    vector<Eigen::Vector3d> ref_vertex_colors = {
+    std::vector<Eigen::Vector3d> ref_vertex_colors = {
             {0.000000, 0.000000, 0.000000}, {0.000000, 0.000000, 0.000000},
             {0.000000, 0.000000, 0.000000}, {0.325490, 0.737255, 0.200000},
             {0.290196, 0.243137, 0.909804}, {0.000000, 0.000000, 0.000000},
@@ -805,20 +820,20 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
     int width = 320;
     int height = 240;
 
-    shared_ptr<geometry::TriangleMesh> mesh =
+    std::shared_ptr<geometry::TriangleMesh> mesh =
             geometry::TriangleMesh::CreateSphere(10.0, 5);
 
     // TODO: change the initialization in such a way that the fields have an
     // effect on the outcome of QueryImageIntensity.
     // int nr_anchors = 6;
-    // vector<ImageWarpingField> fields;
+    // std::vector<ImageWarpingField> fields;
     // for (size_t i = 0; i < size; i++)
     // {
     //     ImageWarpingField field(width, height, nr_anchors + i);
     //     fields.push_back(field);
     // }
 
-    vector<geometry::RGBDImage> images_rgbd =
+    std::vector<geometry::RGBDImage> images_rgbd =
             GenerateRGBDImages(width, height, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
@@ -827,9 +842,10 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
     // int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
-    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
+    std::vector<std::vector<int>> vertex_to_image(n_vertex,
+                                                  std::vector<int>(size, 0));
 
-    vector<double> proxy_intensity;
+    std::vector<double> proxy_intensity;
 
     // SetGeometryColorAverage(*mesh,
     //                         images_rgbd,
@@ -843,7 +859,7 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
 }
 
 TEST(ColorMapOptimization, DISABLED_MakeGradientImages) {
-    vector<vector<double>> ref_images0_data = {
+    std::vector<std::vector<double>> ref_images0_data = {
             {76,  133, 33,  63,  159, 183, 31,  63,  11,  93,  9,   63,  164,
              86,  251, 62,  126, 154, 6,   63,  195, 48,  37,  63,  159, 99,
              12,  63,  102, 11,  239, 62,  152, 253, 247, 62,  111, 102, 18,
@@ -861,7 +877,7 @@ TEST(ColorMapOptimization, DISABLED_MakeGradientImages) {
              207, 62,  198, 46,  72,  63,  30,  83,  27,  63,  208, 111, 238,
              62,  31,  6,   222, 62,  221, 77,  25,  63}};
 
-    vector<vector<double>> ref_images1_data = {
+    std::vector<std::vector<double>> ref_images1_data = {
             {88,  177, 241, 189, 166, 71,  236, 190, 116, 19,  237, 190, 168,
              200, 148, 61,  156, 212, 68,  62,  246, 34,  155, 190, 237, 140,
              28,  191, 246, 26,  155, 190, 46,  75,  128, 62,  128, 222, 122,
@@ -879,7 +895,7 @@ TEST(ColorMapOptimization, DISABLED_MakeGradientImages) {
              21,  62,  247, 196, 35,  191, 114, 77,  151, 191, 144, 84,  59,
              191, 1,   38,  161, 62,  164, 17,  1,   63}};
 
-    vector<vector<double>> ref_images2_data = {
+    std::vector<std::vector<double>> ref_images2_data = {
             {192, 25,  5,   189, 128, 79,  83,  190, 224, 188, 98,  190, 64,
              71,  22,  189, 48,  221, 6,   62,  128, 165, 205, 60,  208, 83,
              11,  190, 224, 51,  227, 189, 64,  120, 45,  61,  224, 85,  214,
@@ -902,14 +918,14 @@ TEST(ColorMapOptimization, DISABLED_MakeGradientImages) {
     int width = 5;
     int height = 5;
 
-    vector<geometry::RGBDImage> images_rgbd =
+    std::vector<geometry::RGBDImage> images_rgbd =
             GenerateRGBDImages(width, height, size);
 
-    vector<shared_ptr<geometry::Image>> images0;
-    vector<shared_ptr<geometry::Image>> images1;
-    vector<shared_ptr<geometry::Image>> images2;
+    std::vector<std::shared_ptr<geometry::Image>> images0;
+    std::vector<std::shared_ptr<geometry::Image>> images1;
+    std::vector<std::shared_ptr<geometry::Image>> images2;
 
-    // tie(images0, images1, images2) = MakeGradientImages(images_rgbd);
+    // std::tie(images0, images1, images2) = MakeGradientImages(images_rgbd);
 
     EXPECT_EQ(size, images0.size());
     for (size_t i = 0; i < size; i++) {
@@ -934,7 +950,7 @@ TEST(ColorMapOptimization, DISABLED_MakeGradientImages) {
 }
 
 TEST(ColorMapOptimization, DISABLED_MakeDepthMasks) {
-    vector<vector<double>> ref_images_data = {
+    std::vector<std::vector<double>> ref_images_data = {
             {0,   0,   255, 255, 255, 255, 255, 255, 255, 0,   0,   0,   255,
              255, 255, 255, 255, 255, 255, 0,   0,   0,   255, 255, 255, 255,
              255, 255, 255, 0,   0,   0,   255, 255, 255, 255, 255, 255, 255,
@@ -956,13 +972,13 @@ TEST(ColorMapOptimization, DISABLED_MakeDepthMasks) {
     int width = 10;
     int height = 10;
 
-    vector<geometry::RGBDImage> images_rgbd =
+    std::vector<geometry::RGBDImage> images_rgbd =
             GenerateRGBDImages(width, height, size);
 
     // ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95,
     // 3);
 
-    // vector<Image> images = MakeDepthMasks(images_rgbd, option);
+    // std::vector<Image> images = MakeDepthMasks(images_rgbd, option);
 
     // EXPECT_EQ(size, images.size());
     // for (size_t i = 0; i < size; i++)
@@ -974,52 +990,53 @@ TEST(ColorMapOptimization, DISABLED_MakeDepthMasks) {
 }
 
 TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
-    vector<Eigen::Vector3d> ref_vertices = {{0.000000, 0.000000, 10.000000},
-                                            {0.000000, 0.000000, -10.000000},
-                                            {5.877853, 0.000000, 8.090170},
-                                            {4.755283, 3.454915, 8.090170},
-                                            {1.816356, 5.590170, 8.090170},
-                                            {-1.816356, 5.590170, 8.090170},
-                                            {-4.755283, 3.454915, 8.090170},
-                                            {-5.877853, 0.000000, 8.090170},
-                                            {-4.755283, -3.454915, 8.090170},
-                                            {-1.816356, -5.590170, 8.090170},
-                                            {1.816356, -5.590170, 8.090170},
-                                            {4.755283, -3.454915, 8.090170},
-                                            {9.510565, 0.000000, 3.090170},
-                                            {7.694209, 5.590170, 3.090170},
-                                            {2.938926, 9.045085, 3.090170},
-                                            {-2.938926, 9.045085, 3.090170},
-                                            {-7.694209, 5.590170, 3.090170},
-                                            {-9.510565, 0.000000, 3.090170},
-                                            {-7.694209, -5.590170, 3.090170},
-                                            {-2.938926, -9.045085, 3.090170},
-                                            {2.938926, -9.045085, 3.090170},
-                                            {7.694209, -5.590170, 3.090170},
-                                            {9.510565, 0.000000, -3.090170},
-                                            {7.694209, 5.590170, -3.090170},
-                                            {2.938926, 9.045085, -3.090170},
-                                            {-2.938926, 9.045085, -3.090170},
-                                            {-7.694209, 5.590170, -3.090170},
-                                            {-9.510565, 0.000000, -3.090170},
-                                            {-7.694209, -5.590170, -3.090170},
-                                            {-2.938926, -9.045085, -3.090170},
-                                            {2.938926, -9.045085, -3.090170},
-                                            {7.694209, -5.590170, -3.090170},
-                                            {5.877853, 0.000000, -8.090170},
-                                            {4.755283, 3.454915, -8.090170},
-                                            {1.816356, 5.590170, -8.090170},
-                                            {-1.816356, 5.590170, -8.090170},
-                                            {-4.755283, 3.454915, -8.090170},
-                                            {-5.877853, 0.000000, -8.090170},
-                                            {-4.755283, -3.454915, -8.090170},
-                                            {-1.816356, -5.590170, -8.090170},
-                                            {1.816356, -5.590170, -8.090170},
-                                            {4.755283, -3.454915, -8.090170}};
+    std::vector<Eigen::Vector3d> ref_vertices = {
+            {0.000000, 0.000000, 10.000000},
+            {0.000000, 0.000000, -10.000000},
+            {5.877853, 0.000000, 8.090170},
+            {4.755283, 3.454915, 8.090170},
+            {1.816356, 5.590170, 8.090170},
+            {-1.816356, 5.590170, 8.090170},
+            {-4.755283, 3.454915, 8.090170},
+            {-5.877853, 0.000000, 8.090170},
+            {-4.755283, -3.454915, 8.090170},
+            {-1.816356, -5.590170, 8.090170},
+            {1.816356, -5.590170, 8.090170},
+            {4.755283, -3.454915, 8.090170},
+            {9.510565, 0.000000, 3.090170},
+            {7.694209, 5.590170, 3.090170},
+            {2.938926, 9.045085, 3.090170},
+            {-2.938926, 9.045085, 3.090170},
+            {-7.694209, 5.590170, 3.090170},
+            {-9.510565, 0.000000, 3.090170},
+            {-7.694209, -5.590170, 3.090170},
+            {-2.938926, -9.045085, 3.090170},
+            {2.938926, -9.045085, 3.090170},
+            {7.694209, -5.590170, 3.090170},
+            {9.510565, 0.000000, -3.090170},
+            {7.694209, 5.590170, -3.090170},
+            {2.938926, 9.045085, -3.090170},
+            {-2.938926, 9.045085, -3.090170},
+            {-7.694209, 5.590170, -3.090170},
+            {-9.510565, 0.000000, -3.090170},
+            {-7.694209, -5.590170, -3.090170},
+            {-2.938926, -9.045085, -3.090170},
+            {2.938926, -9.045085, -3.090170},
+            {7.694209, -5.590170, -3.090170},
+            {5.877853, 0.000000, -8.090170},
+            {4.755283, 3.454915, -8.090170},
+            {1.816356, 5.590170, -8.090170},
+            {-1.816356, 5.590170, -8.090170},
+            {-4.755283, 3.454915, -8.090170},
+            {-5.877853, 0.000000, -8.090170},
+            {-4.755283, -3.454915, -8.090170},
+            {-1.816356, -5.590170, -8.090170},
+            {1.816356, -5.590170, -8.090170},
+            {4.755283, -3.454915, -8.090170}};
 
-    vector<Eigen::Vector3d> ref_vertex_normals = {};
+    std::vector<Eigen::Vector3d> ref_vertex_normals = {};
 
-    vector<Eigen::Vector3d> ref_vertex_colors = {
+    std::vector<Eigen::Vector3d> ref_vertex_colors = {
             {0.000000, 0.000000, 0.000000}, {0.000000, 0.000000, 0.000000},
             {0.000000, 0.000000, 0.000000}, {0.000000, 0.000000, 0.000000},
             {0.000000, 0.000000, 0.000000}, {0.000000, 0.000000, 0.000000},
@@ -1042,7 +1059,7 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
             {0.000000, 0.000000, 0.000000}, {0.000000, 0.000000, 0.000000},
             {0.000000, 0.000000, 0.000000}, {0.000000, 0.000000, 0.000000}};
 
-    vector<Eigen::Vector3i> ref_triangles = {
+    std::vector<Eigen::Vector3i> ref_triangles = {
             {0, 2, 3},    {1, 33, 32},  {0, 3, 4},    {1, 34, 33},
             {0, 4, 5},    {1, 35, 34},  {0, 5, 6},    {1, 36, 35},
             {0, 6, 7},    {1, 37, 36},  {0, 7, 8},    {1, 38, 37},
@@ -1064,7 +1081,7 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
             {38, 29, 28}, {38, 39, 29}, {39, 30, 29}, {39, 40, 30},
             {40, 31, 30}, {40, 41, 31}, {41, 22, 31}, {41, 32, 22}};
 
-    vector<Eigen::Vector3d> ref_triangle_normals = {};
+    std::vector<Eigen::Vector3d> ref_triangle_normals = {};
 
     size_t size = 10;
     int width = 320;
@@ -1072,10 +1089,10 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
     // int num_of_channels = 1;
     // int bytes_per_channel = 4;
 
-    shared_ptr<geometry::TriangleMesh> mesh =
+    std::shared_ptr<geometry::TriangleMesh> mesh =
             geometry::TriangleMesh::CreateSphere(10.0, 5);
 
-    vector<geometry::RGBDImage> rgbdImages =
+    std::vector<geometry::RGBDImage> rgbdImages =
             GenerateRGBDImages(width, height, size);
 
     Eigen::Vector3d pose(60, 15, 0.3);
@@ -1085,7 +1102,7 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
     // ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95,
     // 3);
 
-    vector<double> proxy_intensity;
+    std::vector<double> proxy_intensity;
 
     // ColorMapOptimization(
     //     *mesh,
@@ -1113,3 +1130,6 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
     for (size_t i = 0; i < ref_triangle_normals.size(); i++)
         ExpectEQ(ref_triangle_normals[i], mesh->triangle_normals_[i]);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

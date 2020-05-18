@@ -26,12 +26,18 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(Odometry, DISABLED_ComputeRGBDOdometry) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(Odometry, DISABLED_PinholeCameraIntrinsic) { unit_test::NotImplemented(); }
+TEST(Odometry, DISABLED_ComputeRGBDOdometry) { NotImplemented(); }
+
+TEST(Odometry, DISABLED_PinholeCameraIntrinsic) { NotImplemented(); }
 
 TEST(Odometry, DISABLED_RGBDOdometryJacobianFromHybridTerm) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
-TEST(Odometry, DISABLED_OdometryOption) { unit_test::NotImplemented(); }
+TEST(Odometry, DISABLED_OdometryOption) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

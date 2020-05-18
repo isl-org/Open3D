@@ -72,11 +72,11 @@ public:
 
     // \param materialData must remain valid for the duration of the call to
     // CreateMaterial(), and may be freed afterwards.
-    MaterialHandle CreateMaterial(const void* materialData, size_t dataSize);
+    MaterialHandle CreateMaterial(const void* material_data, size_t data_size);
     MaterialHandle CreateMaterial(const ResourceLoadRequest& request);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
     MaterialInstanceHandle CreateFromDescriptor(
-            const geometry::TriangleMesh::Material& materialAttributes);
+            const geometry::TriangleMesh::Material& material_attributes);
 
     TextureHandle CreateTexture(const char* path);
     TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image);
@@ -92,9 +92,9 @@ public:
     // Since rendering uses not all Open3D geometry/filament features, we don't
     // know which arguments pass to CreateVB(...). Thus creation of VB is
     // managed by FilamentGeometryBuffersBuilder class
-    VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertexBuffer);
-    IndexBufferHandle CreateIndexBuffer(size_t indicesCount,
-                                        size_t indexStride);
+    VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertex_buffer);
+    IndexBufferHandle CreateIndexBuffer(size_t indices_count,
+                                        size_t index_stride);
 
     std::weak_ptr<filament::Material> GetMaterial(const MaterialHandle& id);
     std::weak_ptr<filament::MaterialInstance> GetMaterialInstance(
@@ -119,13 +119,13 @@ private:
             std::unordered_map<REHandle_abstract,
                                std::shared_ptr<ResourceType>>;
 
-    ResourcesContainer<filament::MaterialInstance> materialInstances_;
+    ResourcesContainer<filament::MaterialInstance> material_instances_;
     ResourcesContainer<filament::Material> materials_;
     ResourcesContainer<filament::Texture> textures_;
     ResourcesContainer<filament::IndirectLight> ibls_;
     ResourcesContainer<filament::Skybox> skyboxes_;
-    ResourcesContainer<filament::VertexBuffer> vertexBuffers_;
-    ResourcesContainer<filament::IndexBuffer> indexBuffers_;
+    ResourcesContainer<filament::VertexBuffer> vertex_buffers_;
+    ResourcesContainer<filament::IndexBuffer> index_buffers_;
 
     // Stores dependent resources, which should be deallocated when
     // resource referred by map key is deallocated.

@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Menu.h"  // defines GUI_USE_NATIVE_MENUS
+#include "Open3D/GUI/Menu.h"  // defines GUI_USE_NATIVE_MENUS
 
 #if GUI_USE_NATIVE_MENUS
 
 #import "AppKit/AppKit.h"
 
-#include "Application.h"
-
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "Open3D/GUI/Application.h"
 
 @interface Open3DRunnable : NSObject
 {
@@ -60,17 +60,17 @@ namespace open3d {
 namespace gui {
 
 struct Menu::Impl {
-    NSMenu *menu;
-    std::vector<std::shared_ptr<Menu>> submenus;
+    NSMenu *menu_;
+    std::vector<std::shared_ptr<Menu>> submenus_;
 
     NSMenuItem* FindMenuItem(ItemId itemId) const {
 
-        auto item = [this->menu itemWithTag:itemId];
+        auto item = [this->menu_ itemWithTag:itemId];
         if (item != nil) {
             return item;
         }
         // Not sure if -itemWithTag searches recursively
-        for (auto sm : this->submenus) {
+        for (auto sm : this->submenus_) {
             item = sm->impl_->FindMenuItem(itemId);
             if (item != nil) {
                 return item;
@@ -84,71 +84,71 @@ struct Menu::Impl {
 
 Menu::Menu()
 : impl_(new Menu::Impl()) {
-    impl_->menu = [[NSMenu alloc] initWithTitle:@""];
-    impl_->menu.autoenablesItems = NO;
+    impl_->menu_ = [[NSMenu alloc] initWithTitle:@""];
+    impl_->menu_.autoenablesItems = NO;
 }
 
 Menu::~Menu() {} // ARC will automatically release impl_->menu
 
-void* Menu::GetNativePointer() { return impl_->menu; }
+void* Menu::GetNativePointer() { return impl_->menu_; }
 
 void Menu::AddItem(const char *name,
-                   ItemId itemId /*= NO_ITEM*/,
+                   ItemId item_id /*= NO_ITEM*/,
                    KeyName key /*= KEY_NONE*/) {
     std::string shortcut;
     shortcut += char(key);
-    NSString *objcShortcut = [NSString stringWithUTF8String:shortcut.c_str()];
+    NSString *objc_shortcut = [NSString stringWithUTF8String:shortcut.c_str()];
     auto item = [[NSMenuItem alloc]
                  initWithTitle:[NSString stringWithUTF8String:name]
                         action:@selector(run)
-                 keyEquivalent:objcShortcut];
-    item.target = [[Open3DRunnable alloc] initWithFunction:[itemId]() {
-        Application::GetInstance().OnMenuItemSelected(itemId);
+                 keyEquivalent:objc_shortcut];
+    item.target = [[Open3DRunnable alloc] initWithFunction:[item_id]() {
+        Application::GetInstance().OnMenuItemSelected(item_id);
     }];
-    item.tag = itemId;
-    [impl_->menu addItem:item];
+    item.tag = item_id;
+    [impl_->menu_ addItem:item];
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
-    submenu->impl_->menu.title = [NSString stringWithUTF8String:name];
+    submenu->impl_->menu_.title = [NSString stringWithUTF8String:name];
     auto item = [[NSMenuItem alloc]
                  initWithTitle:[NSString stringWithUTF8String:name]
                         action:nil
                  keyEquivalent:@""];
-    [impl_->menu addItem:item];
-    [impl_->menu setSubmenu:submenu->impl_->menu forItem:item];
-    impl_->submenus.push_back(submenu);
+    [impl_->menu_ addItem:item];
+    [impl_->menu_ setSubmenu:submenu->impl_->menu_ forItem:item];
+    impl_->submenus_.push_back(submenu);
 }
 
 void Menu::AddSeparator() {
-    [impl_->menu addItem: [NSMenuItem separatorItem]];
+    [impl_->menu_ addItem: [NSMenuItem separatorItem]];
 }
 
-bool Menu::IsEnabled(ItemId itemId) const {
-    NSMenuItem *item = impl_->FindMenuItem(itemId);
+bool Menu::IsEnabled(ItemId item_id) const {
+    NSMenuItem *item = impl_->FindMenuItem(item_id);
     if (item) {
         return (item.enabled == YES ? true : false);
     }
     return false;
 }
 
-void Menu::SetEnabled(ItemId itemId, bool enabled) {
-    NSMenuItem *item = impl_->FindMenuItem(itemId);
+void Menu::SetEnabled(ItemId item_id, bool enabled) {
+    NSMenuItem *item = impl_->FindMenuItem(item_id);
     if (item) {
         item.enabled = (enabled ? YES : NO);
     }
 }
 
-bool Menu::IsChecked(ItemId itemId) const {
-    NSMenuItem *item = impl_->FindMenuItem(itemId);
+bool Menu::IsChecked(ItemId item_id) const {
+    NSMenuItem *item = impl_->FindMenuItem(item_id);
     if (item) {
         return (item.state == NSControlStateValueOn);
     }
     return false;
 }
 
-void Menu::SetChecked(ItemId itemId, bool checked) {
-    NSMenuItem *item = impl_->FindMenuItem(itemId);
+void Menu::SetChecked(ItemId item_id, bool checked) {
+    NSMenuItem *item = impl_->FindMenuItem(item_id);
     if (item) {
         item.state = (checked ? NSControlStateValueOn
                               : NSControlStateValueOff);
@@ -159,13 +159,13 @@ int Menu::CalcHeight(const Theme &theme) const {
     return 0;  // menu is not part of window on macOS
 }
 
-Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool isEnabled) {
+Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
     return NO_ITEM;
 }
 
 Menu::ItemId Menu::Draw(const DrawContext &context,
                         const char *name,
-                        bool isEnabled) {
+                        bool is_enabled) {
     return NO_ITEM;
 }
 

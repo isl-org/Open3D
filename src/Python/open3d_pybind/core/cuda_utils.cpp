@@ -28,7 +28,7 @@
 
 #include "Open3D/Core/CUDAUtils.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_cuda_utils(py::module &m) {
     py::module m_cuda = m.def_submodule("cuda");
@@ -36,3 +36,5 @@ void pybind_cuda_utils(py::module &m) {
     m_cuda.def("device_count", cuda::DeviceCount);
     m_cuda.def("is_available", cuda::IsAvailable);
 }
+
+}  // namespace open3d

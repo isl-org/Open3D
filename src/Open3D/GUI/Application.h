@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include "Menu.h"
-
 #include <functional>
 #include <memory>
+
+#include "Open3D/GUI/Menu.h"
 
 namespace open3d {
 namespace gui {

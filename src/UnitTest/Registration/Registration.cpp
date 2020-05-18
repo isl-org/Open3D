@@ -26,40 +26,40 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(Registration, DISABLED_ICPConvergenceCriteria) {
-    unit_test::NotImplemented();
-}
+namespace open3d {
+namespace unit_test {
 
-TEST(Registration, DISABLED_Destructor) { unit_test::NotImplemented(); }
+TEST(Registration, DISABLED_ICPConvergenceCriteria) { NotImplemented(); }
 
-TEST(Registration, DISABLED_Constructor) { unit_test::NotImplemented(); }
+TEST(Registration, DISABLED_Destructor) { NotImplemented(); }
 
-TEST(Registration, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(Registration, DISABLED_Constructor) { NotImplemented(); }
 
-TEST(Registration, DISABLED_RANSACConvergenceCriteria) {
-    unit_test::NotImplemented();
-}
+TEST(Registration, DISABLED_MemberData) { NotImplemented(); }
 
-TEST(Registration, DISABLED_RegistrationResult) { unit_test::NotImplemented(); }
+TEST(Registration, DISABLED_RANSACConvergenceCriteria) { NotImplemented(); }
 
-TEST(Registration, DISABLED_EvaluateRegistration) {
-    unit_test::NotImplemented();
-}
+TEST(Registration, DISABLED_RegistrationResult) { NotImplemented(); }
 
-TEST(Registration, DISABLED_RegistrationICP) { unit_test::NotImplemented(); }
+TEST(Registration, DISABLED_EvaluateRegistration) { NotImplemented(); }
+
+TEST(Registration, DISABLED_RegistrationICP) { NotImplemented(); }
 
 TEST(Registration, DISABLED_TransformationEstimationPointToPoint) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(Registration, DISABLED_RegistrationRANSACBasedOnCorrespondence) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(Registration, DISABLED_RegistrationRANSACBasedOnFeatureMatching) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(Registration, DISABLED_GetInformationMatrixFromPointClouds) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
+
+}  // namespace unit_test
+}  // namespace open3d

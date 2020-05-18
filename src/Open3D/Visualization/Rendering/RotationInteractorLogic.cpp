@@ -24,33 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "RotationInteractorLogic.h"
+#include "Open3D/Visualization/Rendering/RotationInteractorLogic.h"
 
 namespace open3d {
 namespace visualization {
 
 RotationInteractorLogic::RotationInteractorLogic(visualization::Camera* camera,
-                                                 double minFarPlane)
-    : minFarPlane_(minFarPlane), camera_(camera) {}
+                                                 double min_far_plane)
+    : min_far_plane_(min_far_plane), camera_(camera) {}
 
 RotationInteractorLogic::~RotationInteractorLogic() {}
 
 void RotationInteractorLogic::SetCenterOfRotation(
         const Eigen::Vector3f& center) {
-    centerOfRotation_ = center;
+    center_of_rotation_ = center;
 }
 
 void RotationInteractorLogic::Pan(int dx, int dy) {
-    Eigen::Vector3f worldMove = CalcPanVectorWorld(dx, dy);
-    centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
+    Eigen::Vector3f world_move = CalcPanVectorWorld(dx, dy);
+    center_of_rotation_ = center_of_rotation_at_mouse_down_ + world_move;
 
-    auto matrix = matrixAtMouseDown_;  // copy
+    auto matrix = matrix_at_mouse_down_;  // copy
     // matrix.translate(cameraLocalMove) would work if
     // matrix == camara matrix. Since it isn't necessarily true,
     // we need to translate the position of the matrix in the world
     // coordinate system.
-    Eigen::Vector3f newTrans = matrix.translation() + worldMove;
-    matrix.fromPositionOrientationScale(newTrans, matrix.rotation(),
+    Eigen::Vector3f new_trans = matrix.translation() + world_move;
+    matrix.fromPositionOrientationScale(new_trans, matrix.rotation(),
                                         Eigen::Vector3f(1, 1, 1));
     SetMatrix(matrix);
 }
@@ -64,28 +64,28 @@ Eigen::Vector3f RotationInteractorLogic::CalcPanVectorWorld(int dx, int dy) {
     auto pos = camera_->GetPosition();
     auto forward = camera_->GetForwardVector();
     float near = camera_->GetNear();
-    float dist = forward.dot(centerOfRotationAtMouseDown_ - pos);
+    float dist = forward.dot(center_of_rotation_at_mouse_down_ - pos);
     dist = std::max(near, dist);
 
     // How far is one pixel?
-    float halfFoV = camera_->GetFieldOfView() / 2.0;
-    float halfFoVRadians = halfFoV * M_PI / 180.0;
-    float unitsAtDist = 2.0f * std::tan(halfFoVRadians) * (near + dist);
-    float unitsPerPx = unitsAtDist / float(viewHeight_);
+    float half_fov = camera_->GetFieldOfView() / 2.0;
+    float hal_fov_radians = half_fov * M_PI / 180.0;
+    float units_at_dist = 2.0f * std::tan(hal_fov_radians) * (near + dist);
+    float units_per_px = units_at_dist / float(view_height_);
 
     // Move camera and center of rotation. Adjust values from the
     // original positions at mousedown to avoid hysteresis problems.
     // Note that the interactor's matrix may not be the same as the
     // camera's matrix.
-    Eigen::Vector3f cameraLocalMove(-dx * unitsPerPx, dy * unitsPerPx, 0);
-    Eigen::Vector3f worldMove =
-            camera_->GetModelMatrix().rotation() * cameraLocalMove;
+    Eigen::Vector3f camera_local_move(-dx * units_per_px, dy * units_per_px, 0);
+    Eigen::Vector3f world_move =
+            camera_->GetModelMatrix().rotation() * camera_local_move;
 
-    return worldMove;
+    return world_move;
 }
 
 void RotationInteractorLogic::StartMouseDrag() {
-    Super::SetMouseDownInfo(GetMatrix(), centerOfRotation_);
+    Super::SetMouseDownInfo(GetMatrix(), center_of_rotation_);
 }
 
 void RotationInteractorLogic::UpdateMouseDragUI() {}
@@ -99,15 +99,15 @@ void RotationInteractorLogic::UpdateCameraFarPlane() {
     // axis if it is visible, so we need the far plane to include
     // the origin. (See also SceneWidget::SetupCamera())
     auto pos = camera_->GetModelMatrix().translation().cast<double>();
-    auto far1 = modelBounds_.GetMinBound().norm();
-    auto far2 = modelBounds_.GetMaxBound().norm();
+    auto far1 = model_bounds_.GetMinBound().norm();
+    auto far2 = model_bounds_.GetMaxBound().norm();
     auto far3 = pos.norm();
-    auto modelSize = 2.0 * modelBounds_.GetExtent().norm();
-    auto far = std::max(minFarPlane_,
-                        std::max(std::max(far1, far2), far3) + modelSize);
+    auto model_size = 2.0 * model_bounds_.GetExtent().norm();
+    auto far = std::max(min_far_plane_,
+                        std::max(std::max(far1, far2), far3) + model_size);
     float aspect = 1.0f;
-    if (viewHeight_ > 0) {
-        aspect = float(viewWidth_) / float(viewHeight_);
+    if (view_height_ > 0) {
+        aspect = float(view_width_) / float(view_height_);
     }
     camera_->SetProjection(camera_->GetFieldOfView(), aspect,
                            camera_->GetNear(), far,

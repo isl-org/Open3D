@@ -26,4 +26,10 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(Helper, DISABLED_SplitString) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
+
+TEST(Helper, DISABLED_SplitString) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

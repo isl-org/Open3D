@@ -8,7 +8,11 @@ About Open3D
     :width: 240px
     :align: right
 
-Open3D is an open-source library that supports rapid development of software that deals with 3D data. The Open3D frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and is set up for parallelization. We welcome contributions from the open-source community.
+Open3D is an open-source library that supports rapid development of software
+that deals with 3D data. The Open3D frontend exposes a set of carefully selected
+data structures and algorithms in both C++ and Python. The backend is highly
+optimized and is set up for parallelization. We welcome contributions from the
+open-source community.
 
 If you use Open3D in an academic project, please cite our paper:
 ::

@@ -26,12 +26,11 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/View.h"
-
+#include <filament/Color.h>
 #include <memory>
 #include <numeric>
 
-#include <filament/Color.h>
+#include "Open3D/Visualization/Rendering/View.h"
 
 namespace filament {
 class Engine;
@@ -54,10 +53,10 @@ public:
     static constexpr std::uint8_t kMainLayer = 1;  // Default layer for objects
 
     FilamentView(filament::Engine& engine,
-                 FilamentResourceManager& resourceManager);
+                 FilamentResourceManager& resource_mgr);
     FilamentView(filament::Engine& engine,
                  FilamentScene& scene,
-                 FilamentResourceManager& resourceManager);
+                 FilamentResourceManager& resource_mgr);
     ~FilamentView() override;
 
     Mode GetMode() const override;
@@ -89,13 +88,13 @@ public:
 
 private:
     std::unique_ptr<FilamentCamera> camera_;
-    Eigen::Vector3f clearColor_;
+    Eigen::Vector3f clear_color_;
     Mode mode_ = Mode::Color;
-    TargetBuffers discardBuffers_;
+    TargetBuffers discard_buffers_;
 
     filament::Engine& engine_;
     FilamentScene* scene_ = nullptr;
-    FilamentResourceManager& resourceManager_;
+    FilamentResourceManager& resource_mgr_;
     filament::View* view_ = nullptr;
 };
 
