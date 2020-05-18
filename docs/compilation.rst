@@ -8,12 +8,19 @@ get the latest features in the ``master`` branch, or if the OS or Python
 versions are not covered by Open3D's pre-built Python packages from PyPI and
 Conda.
 
-The basic tools needed are `git <https://git-scm.com/>`_,
-`CMake <https://cmake.org/>`_, and **a non-ancient C++ compiler** that supports
-C++11, such as GCC 5.x or newer, Visual Studio 2017 or newer, or XCode 8.0+. If
-Python binding is needed, make sure Python 2.7 or 3.5+ is installed.
+.. _compiler_version:
 
-Download source code from the `repository <https://github.com/intel-isl/Open3D>`_.
+System requirements
+-------------------
+
+* Ubuntu 18.04+: GCC 5+, Clang 7+
+* macOS: XCode 8.0+
+* Windows 10: Visual Studio 2017+
+
+Cloning Open3D
+--------------
+
+Make sure to use the ``--recursive`` flag when cloning Open3D.
 
 .. code-block:: bash
 
