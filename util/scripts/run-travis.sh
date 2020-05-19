@@ -56,8 +56,10 @@ make install-pip-package -j$NPROC
 echo
 
 echo "running Open3D unit tests..."
+unitTestFlags=
+[ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter='-*Reduce*Sum*'"
 date
-./bin/unitTests
+./bin/unitTests $unitTestFlags
 echo
 
 echo "running Open3D python tests..."
