@@ -1,6 +1,6 @@
 ## Master
 
-*  Add libosmesa6-dev to the install-deps-ubuntu.sh
+* Add libosmesa6-dev to the install-deps-ubuntu.sh
 * Added GUI widgets and model-viewing app
 * Fixes travis for race-condition on macOS
 * Fixes appveyor configuration and to build all branches
@@ -12,4 +12,4 @@
 
 ## 0.9.0
 
-*  Version bump to 0.9.0
+* Version bump to 0.9.0
