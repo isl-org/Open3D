@@ -681,6 +681,24 @@ Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
     return dst;
 }
 
+Tensor Tensor::Mean(const SizeVector& dims, bool keepdim) const {
+    if (dtype_ != Dtype::Float32 && dtype_ != Dtype::Float64) {
+        utility::LogError(
+                "Can only compute mean for Float32 or Float64, got {} instead.",
+                DtypeUtil::ToString(dtype_));
+    }
+
+    // Following Numpy's semantics, reduction on 0-sized Tensor will result in
+    // NaNs and a warning. A straightforward method is used now. Later it can be
+    // extended to handle overflow and underflow in a better way.
+    if (NumElements() == 0) {
+        utility::LogWarning("Computing mean of 0-sized Tensor.");
+    }
+    Tensor sum = Sum(dims, keepdim);
+    double factor = static_cast<double>(sum.NumElements()) / NumElements();
+    return sum * factor;
+}
+
 Tensor Tensor::Prod(const SizeVector& dims, bool keepdim) const {
     Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
                GetDevice());

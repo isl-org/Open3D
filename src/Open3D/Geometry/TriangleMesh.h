@@ -170,9 +170,9 @@ public:
 
     /// \brief Function to sharpen triangle mesh.
     ///
-    /// The output value ($v_o$) is the input value ($v_i$) plus strength times
-    /// the input value minus the sum of he adjacent values. $v_o = v_i x
-    /// strength (v_i * |N| - \sum_{n \in N} v_n)$.
+    /// The output value (\f$v_o\f$) is the input value (\f$v_i\f$) plus
+    /// strength times the input value minus the sum of he adjacent values.
+    /// \f$v_o = v_i + strength (v_i * |N| - \sum_{n \in N} v_n)\f$.
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
@@ -184,8 +184,8 @@ public:
 
     /// \brief Function to smooth triangle mesh with simple neighbour average.
     ///
-    /// $v_o = \frac{v_i + \sum_{n \in N} v_n)}{|N| + 1}$, with $v_i$
-    /// being the input value, $v_o$ the output value, and $N$ is the
+    /// \f$v_o = \frac{v_i + \sum_{n \in N} v_n)}{|N| + 1}\f$, with \f$v_i\f$
+    /// being the input value, \f$v_o\f$ the output value, and \f$N\f$ is the
     /// set of adjacent neighbours.
     ///
     /// \param number_of_iterations defines the number of repetitions
@@ -196,10 +196,11 @@ public:
 
     /// \brief Function to smooth triangle mesh using Laplacian.
     ///
-    /// $v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)$,
-    /// with $v_i$ being the input value, $v_o$ the output value, $N$ is the
-    /// set of adjacent neighbours, $w_n$ is the weighting of the neighbour
-    /// based on the inverse distance (closer neighbours have higher weight),
+    /// \f$v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)\f$,
+    /// with \f$v_i\f$ being the input value, \f$v_o\f$ the output value,
+    /// \f$N\f$ is the set of adjacent neighbours, \f$w_n\f$ is the weighting of
+    /// the neighbour based on the inverse distance (closer neighbours have
+    /// higher weight),
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
@@ -365,16 +366,16 @@ public:
             bool use_triangle_normal = false,
             int seed = -1);
 
-    /// Function to sample \param number_of_points points (blue noise).
+    /// Function to sample \p number_of_points points (blue noise).
     /// Based on the method presented in Yuksel, "Sample Elimination for
     /// Generating Poisson Disk Sample Sets", EUROGRAPHICS, 2015 The PointCloud
-    /// \param pcl_init is used for sample elimination if given, otherwise a
-    /// PointCloud is first uniformly sampled with \param init_number_of_points
-    /// x \param number_of_points number of points.
-    /// \param use_triangle_normal Set to true to assign the triangle
+    /// \p pcl_init is used for sample elimination if given, otherwise a
+    /// PointCloud is first uniformly sampled with \p init_number_of_points
+    /// x \p number_of_points number of points.
+    /// \p use_triangle_normal Set to true to assign the triangle
     /// normals to the returned points instead of the interpolated vertex
     /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary. \param seed Sets the seed value used in the random
+    /// if necessary. \p seed Sets the seed value used in the random
     /// generator, set to -1 to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
@@ -417,9 +418,9 @@ public:
     std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
             int target_number_of_triangles) const;
 
-    /// Function to select points from \param input TriangleMesh into
+    /// Function to select points from \p input TriangleMesh into
     /// output TriangleMesh
-    /// Vertices with indices in \param indices are selected.
+    /// Vertices with indices in \p indices are selected.
     /// \param indices defines Indices of vertices to be selected.
     std::shared_ptr<TriangleMesh> SelectByIndex(
             const std::vector<size_t> &indices) const;
@@ -466,7 +467,7 @@ public:
     /// \p vertex_indices. Note that also all triangles associated with the
     /// vertices are removeds.
     ///
-    /// \param triangle_indices Indices of the triangles that should be
+    /// \param vertex_indices Indices of the vertices that should be
     /// removed.
     void RemoveVerticesByIndex(const std::vector<size_t> &vertex_indices);
 
@@ -516,17 +517,18 @@ public:
             std::shared_ptr<TetraMesh> tetra_mesh = nullptr,
             std::vector<size_t> *pt_map = nullptr);
 
-    /// Function that computes a triangle mesh from a oriented PointCloud \param
+    /// Function that computes a triangle mesh from a oriented PointCloud \p
     /// pcd. This implements the Ball Pivoting algorithm proposed in F.
     /// Bernardini et al., "The ball-pivoting algorithm for surface
     /// reconstruction", 1999. The implementation is also based on the
     /// algorithms outlined in Digne, "An Analysis and Implementation of a
     /// Parallel Ball Pivoting Algorithm", 2014. The surface reconstruction is
-    /// done by rolling a ball with a given radius (cf. \param radii) over the
+    /// done by rolling a ball with a given radius (cf. \p radii) over the
     /// point cloud, whenever the ball touches three points a triangle is
     /// created.
     /// \param pcd defines the PointCloud from which the TriangleMesh surface is
-    /// reconstructed. Has to contain normals. \param radii defines the radii of
+    /// reconstructed. Has to contain normals.
+    /// \param radii defines the radii of
     /// the ball that are used for the surface reconstruction.
     static std::shared_ptr<TriangleMesh> CreateFromPointCloudBallPivoting(
             const PointCloud &pcd, const std::vector<double> &radii);

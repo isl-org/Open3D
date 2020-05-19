@@ -41,6 +41,7 @@ except:
 # https://github.com/llvm-mirror/openmp/blob/8453ca8594e1a5dd8a250c39bf8fcfbfb1760e60/runtime/src/i18n/en_US.txt#L449
 # https://github.com/dmlc/xgboost/issues/1715
 import os
+import sys
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 from open3d.open3d_pybind import camera
@@ -65,6 +66,9 @@ from open3d.open3d_pybind import NoneType
 none = NoneType()
 
 __version__ = "@PROJECT_VERSION@"
+
+if int(sys.version_info[0]) < 3:
+    raise Exception("Open3D only supports Python 3.")
 
 if "@ENABLE_JUPYTER@" == "ON":
     from .j_visualizer import *

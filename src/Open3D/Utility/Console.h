@@ -137,9 +137,10 @@ public:
 
 protected:
     /// Internal function to change text color for the console
-    /// Note there is no security check for parameters.
-    /// \param text_color, from 0 to 7, they are black, red, green, yellow,
-    /// blue, magenta, cyan, white \param emphasis_text is 0 or 1
+    /// Note there is no safety check for parameters.
+    /// \param text_color from 0 to 7, they are black, red, green, yellow,
+    /// blue, magenta, cyan, white
+    /// \param highlight_text is 0 or 1
     void ChangeConsoleColor(TextColor text_color, int highlight_text) const;
     void ResetConsoleColor() const;
     /// Colorize and reset the color of a string, does not work on Windows

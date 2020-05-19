@@ -24,6 +24,23 @@ macro(INSTALL_HEADERS source)
             PATTERN     ".gitignore"    EXCLUDE)
 endmacro()
 
+# Check 3rdparty submodules are present:
+# when adding a new git submodule, put in a check for one of the files from the module
+# git pull does not notify users that submodules have been updated, this check
+# will let developers know that their submodule list is out of date
+# Updated Modules:
+# 2020-05-15 Added dependency on Dear ImGui
+if (EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/pybind11/include/pybind11/pybind11.h"
+    AND EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/fmt/include/fmt/format.h"
+    AND EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/imgui/imgui.h"
+   )
+# updated submodules are present
+else ()
+    message(FATAL_ERROR "3rdparty submodules are missing
+if you are using git, to update submodules run:
+  git submodule update --init --recursive")
+endif ()
+
 # dirent
 if (WIN32)
     message(STATUS "On windows, so using 3rdparty/dirent")
