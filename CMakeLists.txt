@@ -58,6 +58,10 @@ if (POLICY CMP0072)
         cmake_policy(SET CMP0072 OLD)
     endif()
 endif()
+# Overide policy for hidden symbol visibility
+if(POLICY CMP0063)
+    cmake_policy(SET CMP0063 NEW)
+endif()
 
 # Parse Open3D version number
 file(STRINGS "src/Open3D/version.txt" OPEN3D_VERSION_READ)
@@ -146,39 +150,40 @@ if (BUILD_CUDA_MODULE)
     endif()
 endif ()
 
+# Catch a few incompatible settings
+if((UNIX AND NOT APPLE) AND BUILD_LIBREALSENSE)
+    message(STATUS "Disabling RealSense since it is not fully supported on Linux.")
+    set(BUILD_LIBREALSENSE OFF)
+endif()
+if (APPLE AND ENABLE_HEADLESS_RENDERING)
+    message(STATUS "Headless rendering is not supported on Mac OS")
+    set(ENABLE_HEADLESS_RENDERING OFF)
+endif()
+if(ENABLE_HEADLESS_RENDERING AND ENABLE_GUI)
+    message(STATUS "Headless rendering disables the Open3D GUI")
+    set(ENABLE_GUI OFF)
+endif()
+if(ENABLE_HEADLESS_RENDERING AND (NOT BUILD_GLEW OR NOT BUILD_GLFW))
+    message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
+    set(BUILD_GLEW ON)
+    set(BUILD_GLFW ON)
+endif()
+if(ENABLE_GUI AND WIN32)
+    message(STATUS "New GUI is currently unsupported on Windows")
+    set(ENABLE_GUI OFF)
+endif()
+
+# OS specific settings
 if(WIN32)
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explictly export symbols.
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
-
-# Catch a few incompatible settings
-if((UNIX AND NOT APPLE) AND BUILD_LIBREALSENSE)
-    message(STATUS "Disabling RealSense since it is not fully supported on Linux.")
-    set(BUILD_LIBREALSENSE OFF)
-endif()
-
-if (APPLE AND ENABLE_HEADLESS_RENDERING)
-    message(STATUS "Headless rendering is not supported on Mac OS")
-    set(ENABLE_HEADLESS_RENDERING OFF)
-endif()
-
-if(ENABLE_HEADLESS_RENDERING AND ENABLE_GUI)
-    message(STATUS "Headless rendering disables the Open3D GUI")
-    set(ENABLE_GUI OFF)
-endif()
-
-if(ENABLE_HEADLESS_RENDERING AND (NOT BUILD_GLEW OR NOT BUILD_GLFW))
-    message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
-    set(BUILD_GLEW ON)
-    set(BUILD_GLFW ON)
-endif()
-
 if(ENABLE_GUI AND WIN32)
     # Filament links normally only against static runtime
     set(STATIC_WINDOWS_RUNTIME ON)
-    if(NOT COMMAND target_link_options)
+    if(NOT COMMAND target_link_options)  # CMake 3.13+ required
         # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
         # Filament needs to link through bluegl.lib.
         # See https://github.com/google/filament/issues/652
@@ -257,6 +262,7 @@ function(open3d_set_global_properties target)
         )
         if(MSVC)
             target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
+            target_compile_options(${target} PRIVATE /EHsc /wd4522 /Wv:18 /WX /bigobj)
             # Multi-thread compile, two ways to enable
             # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
             # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
@@ -268,7 +274,7 @@ function(open3d_set_global_properties target)
             # supported on Windows.
             # ref: https://stackoverflow.com/a/15110915
             # ref: https://stackoverflow.com/a/19026241
-            target_compile_options(${target} PRIVATE /EHsc /wd4522 /WX /bigobj)
+            target_compile_options(${target} PRIVATE /MP)
             if(ENABLE_GUI AND COMMAND target_link_options)
                 # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
                 # Filament needs to link through bluegl.lib.
@@ -282,6 +288,9 @@ function(open3d_set_global_properties target)
     elseif(APPLE)
         target_compile_definitions(${target} PRIVATE UNIX APPLE)
         target_compile_options(${target} PRIVATE "-Wno-deprecated-declarations")
+        if(NOT BUILD_SHARED_LIBS)
+            set_target_properties(${target} PROPERTIES CXX_VISIBILITY_PRESET "hidden" VISIBILITY_INLINES_HIDDEN ON)
+        endif()
     elseif(UNIX)
         target_compile_definitions(${target} PRIVATE UNIX)
         target_compile_options(${target} PRIVATE "-Wno-deprecated-declarations" "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-result>")
@@ -324,3 +333,48 @@ add_custom_target(apply-style
     -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/apply-style.cmake
 )
+
+message(STATUS "========================================================================")
+message(STATUS "Open3D ${PROJECT_VERSION} Configuration Summary")
+message(STATUS "========================================================================")
+message(STATUS "ENABLED FEATURES")
+message(STATUS "  Enable OpenMP .................... ${WITH_OPENMP}")
+message(STATUS "  Enable Headless Rendering ........ ${ENABLE_HEADLESS_RENDERING}")
+message(STATUS "  Enable Azure Kinect Support ...... ${BUILD_AZURE_KINECT}")
+message(STATUS "  Enable CUDA Support .............. ${BUILD_CUDA_MODULE}")
+message(STATUS "  Enable GUI ....................... ${ENABLE_GUI}")
+message(STATUS "  Build Shared Library ............. ${BUILD_SHARED_LIBS}")
+message(STATUS "  Build Unit Tests ................. ${BUILD_UNIT_TESTS}")
+message(STATUS "  Build Examples ................... ${BUILD_CPP_EXAMPLES}")
+message(STATUS "  Build Python Module .............. ${BUILD_PYTHON_MODULE}")
+if(BUILD_PYTHON_MODULE)
+    message(STATUS "  - with Jupyter Notebook Support .. ${ENABLE_JUPYTER}")
+endif()
+message(STATUS "  Build Tensorflow Ops ............. ${BUILD_TENSORFLOW_OPS}")
+message(STATUS "  Build Benchmarks ................. ${BUILD_BENCHMARKS}")
+if(NOT HAS_GLIBCXX_USE_CXX11_ABI)
+    if(GLIBCXX_USE_CXX11_ABI)
+        set(usage "=1")
+    else()
+        set(usage "=0")
+    endif()
+    message(STATUS "  Force GLIBCXX_USE_CXX11_ABI ...... ${usage}")
+endif()
+message(STATUS "========================================================================")
+message(STATUS "THIRD-PARTY DEPENDENCIES")
+foreach(dep IN ITEMS EIGEN3 FILAMENT FLANN FMT GLEW GLFW GOOGLETEST IMGUI JPEG JSONCPP LIBLZF OPENGL PNG PYBIND11 QHULL LIBREALSENSE TINYFILEDIALOGS TINYGLTF TINYOBJLOADER)
+    string(LENGTH "${dep}" dep_len)
+    math(EXPR star_len "29 - ${dep_len}")
+    string(SUBSTRING "............................." 0 ${star_len} stars)
+    if(${dep}_TARGET)
+        if(BUILD_${dep})
+            set(usage "yes (built from source)")
+        else()
+            set(usage "yes")
+        endif()
+    else()
+        set(usage "no")
+    endif()
+    message(STATUS "  Use ${dep} ${stars} ${usage}")
+endforeach()
+message(STATUS "========================================================================")

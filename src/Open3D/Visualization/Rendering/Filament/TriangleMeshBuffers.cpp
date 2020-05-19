@@ -26,10 +26,10 @@
 
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
+#include <filament/MaterialEnums.h>
 #include <filament/Scene.h>
 #include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
-#include <filament/MaterialEnums.h>
 #include <geometry/SurfaceOrientation.h>
 
 #include <map>

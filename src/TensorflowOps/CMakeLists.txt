@@ -44,7 +44,7 @@ foreach( definition IN LISTS Tensorflow_DEFINITIONS )
 endforeach(definition)
 
 # enable c++11
-set_target_properties( open3d_tf_ops PROPERTIES 
+set_target_properties( open3d_tf_ops PROPERTIES
                        CXX_STANDARD 11 
                        CXX_STANDARD_REQUIRED ON 
                        CXX_EXTENSIONS OFF
@@ -69,10 +69,7 @@ target_include_directories( open3d_tf_ops SYSTEM PRIVATE
 #endif ()
 
 target_link_libraries( open3d_tf_ops PRIVATE
-    ${EIGEN3_TARGET}
-    ${TBB_LIBRARY} 
-    ${TBB_MALLOC_LIBRARY} 
+    ${TBB_LIBRARY}
+    ${TBB_MALLOC_LIBRARY}
     ${Tensorflow_FRAMEWORK_LIB}
 )
-
-

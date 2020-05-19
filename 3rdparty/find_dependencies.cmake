@@ -90,16 +90,9 @@ function(build_3rdparty_library name)
         target_include_directories(${name} PUBLIC 
             $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty>
         )
-        if (NOT HAS_GLIBCXX_USE_CXX11_ABI)
-            if(GLIBCXX_USE_CXX11_ABI)
-                target_compile_definitions(${name} PRIVATE _GLIBCXX_USE_CXX11_ABI=1)
-            else()
-                target_compile_definitions(${name} PRIVATE _GLIBCXX_USE_CXX11_ABI=0)
-            endif()
-        endif()
+        open3d_set_global_properties(${name})
         set_target_properties(${name} PROPERTIES
             OUTPUT_NAME "${PROJECT_NAME}_${name}"
-            POSITION_INDEPENDENT_CODE ON
         )
         if(arg_LIBS)
             target_link_libraries(${name} PRIVATE ${arg_LIBS})
@@ -429,7 +422,11 @@ if(NOT BUILD_PYBIND11)
     find_package(pybind11)
 endif()
 if (BUILD_PYBIND11 OR NOT TARGET pybind11::module)
+    set(BUILD_PYBIND11 ON)
     add_subdirectory(${Open3D_3RDPARTY_DIR}/pybind11)
+endif()
+if(TARGET pybind11::module)
+    set(PYBIND11_TARGET "pybind11::module")
 endif()
 
 # Azure Kinect
@@ -587,8 +584,8 @@ if (BUILD_LIBREALSENSE)
     add_subdirectory(${Open3D_3RDPARTY_DIR}/librealsense)
     import_3rdparty_library(3rdparty_realsense INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/librealsense/include/ LIBRARIES ${REALSENSE_LIBRARY})
     add_dependencies(3rdparty_realsense ${REALSENSE_LIBRARY})
-    set(REALSENSE_TARGET "3rdparty_realsense")
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${REALSENSE_TARGET}")
+    set(LIBREALSENSE_TARGET "3rdparty_realsense")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
 endif ()
 
 # tinyfiledialogs
@@ -762,8 +759,6 @@ if (BUILD_UNIT_TESTS)
                 googlemock/include/
                 googlemock/
         )
-        # Googletest wants to be compiled with the same compile options as the tests
-        open3d_set_global_properties(3rdparty_googletest)
         set(GOOGLETEST_TARGET "3rdparty_googletest")
     endif()
 endif()
@@ -830,9 +825,12 @@ if(ENABLE_GUI)
     )
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
     target_link_libraries(3rdparty_filament INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
-    find_library(CPP_LIBRARY c++)
-    if(CPP_LIBRARY)
-        target_link_libraries(3rdparty_filament INTERFACE ${CPP_LIBRARY})
+    if(UNIX AND NOT APPLE)
+        find_library(CPP_LIBRARY c++)
+        if(CPP_LIBRARY)
+            # Ensure that libstdc++ gets linked first
+            target_link_libraries(3rdparty_filament INTERFACE -lstdc++ ${CPP_LIBRARY})
+        endif()
     endif()
     if (APPLE)
         find_library(CORE_VIDEO CoreVideo)
