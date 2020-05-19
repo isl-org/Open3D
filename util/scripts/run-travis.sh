@@ -8,15 +8,15 @@
 
 set -euo pipefail
 
-python --version
-pytest --version
-cmake --version
-
 echo "installing Python unit test dependencies..."
 pip install --upgrade pip
 pip install -U -q pytest
 pip install -U -q wheel
 echo
+
+python --version
+pytest --version
+cmake --version
 
 echo "cmake configure the Open3D project..."
 date
