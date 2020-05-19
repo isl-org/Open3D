@@ -24,12 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "IBLRotationInteractorLogic.h"
-
-#include "Camera.h"
-#include "Scene.h"
+#include "Open3D/Visualization/Rendering/IBLRotationInteractorLogic.h"
 
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Visualization/Rendering/Camera.h"
+#include "Open3D/Visualization/Rendering/Scene.h"
 
 namespace open3d {
 namespace visualization {
@@ -54,17 +53,17 @@ void IBLRotationInteractorLogic::RotateZ(int dx, int dy) {
 }
 
 void IBLRotationInteractorLogic::SetSkyboxHandle(
-        visualization::SkyboxHandle skybox, bool isOn) {
+        visualization::SkyboxHandle skybox, bool is_on) {
     skybox_ = skybox;
-    skyboxIsNormallyOn_ = isOn;
+    skybox_is_normally_on_ = is_on;
 }
 
 void IBLRotationInteractorLogic::StartMouseDrag() {
-    iblRotationAtMouseDown_ = scene_->GetIndirectLightRotation();
+    ibl_rotation_at_mouse_down_ = scene_->GetIndirectLightRotation();
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
 
-    if (!skyboxIsNormallyOn_) {
+    if (!skybox_is_normally_on_) {
         scene_->SetSkybox(skybox_);
     }
 
@@ -75,27 +74,27 @@ void IBLRotationInteractorLogic::StartMouseDrag() {
 
 void IBLRotationInteractorLogic::UpdateMouseDragUI() {
     Camera::Transform current = GetCurrentRotation();
-    for (auto& o : uiObjs_) {
+    for (auto& o : ui_objs_) {
         scene_->SetEntityTransform(o.handle, current);
     }
 }
 
 void IBLRotationInteractorLogic::EndMouseDrag() {
     ClearUI();
-    if (!skyboxIsNormallyOn_) {
+    if (!skybox_is_normally_on_) {
         scene_->SetSkybox(visualization::SkyboxHandle());
     }
 }
 
 void IBLRotationInteractorLogic::ClearUI() {
-    for (auto& o : uiObjs_) {
+    for (auto& o : ui_objs_) {
         scene_->RemoveGeometry(o.handle);
     }
-    uiObjs_.clear();
+    ui_objs_.clear();
 }
 
 Camera::Transform IBLRotationInteractorLogic::GetCurrentRotation() const {
-    return GetMatrix() * iblRotationAtMouseDown_;
+    return GetMatrix() * ibl_rotation_at_mouse_down_;
 }
 
 }  // namespace visualization

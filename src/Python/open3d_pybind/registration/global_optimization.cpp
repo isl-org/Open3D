@@ -32,7 +32,7 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/registration/registration.h"
 
-using namespace open3d;
+namespace open3d {
 
 template <class GlobalOptimizationMethodBase =
                   registration::GlobalOptimizationMethod>
@@ -386,3 +386,5 @@ void pybind_global_optimization_methods(py::module &m) {
              {"criteria", "Global optimization convergence criteria."},
              {"option", "Global optimization option."}});
 }
+
+}  // namespace open3d

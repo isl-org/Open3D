@@ -26,6 +26,12 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(FileJPG, DISABLED_ReadImageFromJPG) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(FileJPG, DISABLED_WriteImageToJPG) { unit_test::NotImplemented(); }
+TEST(FileJPG, DISABLED_ReadImageFromJPG) { NotImplemented(); }
+
+TEST(FileJPG, DISABLED_WriteImageToJPG) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

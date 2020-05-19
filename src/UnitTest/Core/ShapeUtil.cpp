@@ -28,8 +28,8 @@
 
 #include "TestUtility/UnitTest.h"
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
+namespace unit_test {
 
 TEST(ShapeUtil, IsCompatibleBroadcastShape) {
     // A 0-dim tensor is compatible with any shape.
@@ -185,3 +185,6 @@ TEST(ShapeUtil, ReductionShape) {
     EXPECT_EQ(shape_util::ReductionShape({2, 3, 4}, {0, -1}, true),
               SizeVector({1, 3, 1}));
 }
+
+}  // namespace unit_test
+}  // namespace open3d

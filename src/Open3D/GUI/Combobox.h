@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Widget.h"
-
 #include <functional>
+
+#include "Open3D/GUI/Widget.h"
 
 namespace open3d {
 namespace gui {
@@ -62,7 +62,7 @@ public:
     /// Specifies a callback function which will be called when the value
     /// changes as a result of user action.
     void SetOnValueChanged(
-            std::function<void(const char*, int)> onValueChanged);
+            std::function<void(const char*, int)> on_value_changed);
 
 private:
     struct Impl;

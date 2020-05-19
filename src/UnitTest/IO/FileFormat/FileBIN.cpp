@@ -26,10 +26,16 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(FileBIN, DISABLED_ReadMatrixXdFromBINFile) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(FileBIN, DISABLED_WriteMatrixXdToBINFile) { unit_test::NotImplemented(); }
+TEST(FileBIN, DISABLED_ReadMatrixXdFromBINFile) { NotImplemented(); }
 
-TEST(FileBIN, DISABLED_ReadFeatureFromBIN) { unit_test::NotImplemented(); }
+TEST(FileBIN, DISABLED_WriteMatrixXdToBINFile) { NotImplemented(); }
 
-TEST(FileBIN, DISABLED_WriteFeatureToBIN) { unit_test::NotImplemented(); }
+TEST(FileBIN, DISABLED_ReadFeatureFromBIN) { NotImplemented(); }
+
+TEST(FileBIN, DISABLED_WriteFeatureToBIN) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

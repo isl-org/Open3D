@@ -40,7 +40,7 @@
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Core/TensorKey.h"
 
-using namespace open3d;
+namespace open3d {
 
 template <typename T>
 void bind_templated_constructor(py::class_<Tensor>& tensor) {
@@ -360,6 +360,7 @@ void pybind_core_tensor(py::module& m) {
     tensor.def_property_readonly("device", &Tensor::GetDevice);
     tensor.def_property_readonly("blob", &Tensor::GetBlob);
     tensor.def_property_readonly("ndim", &Tensor::NumDims);
+    tensor.def("num_elements", &Tensor::NumElements);
 
     // Unary element-wise ops
     tensor.def("sqrt", &Tensor::Sqrt);
@@ -377,8 +378,13 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
 
+    // Boolean find
+    tensor.def("_non_zero", &Tensor::NonZero);
+    tensor.def("_non_zero_numpy", &Tensor::NonZeroNumpy);
+
     // Reduction ops
     tensor.def("sum", &Tensor::Sum);
+    tensor.def("mean", &Tensor::Mean);
     tensor.def("prod", &Tensor::Prod);
     tensor.def("min", &Tensor::Min);
     tensor.def("max", &Tensor::Max);
@@ -390,3 +396,5 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("__str__",
                [](const Tensor& tensor) { return tensor.ToString(); });
 }
+
+}  // namespace open3d

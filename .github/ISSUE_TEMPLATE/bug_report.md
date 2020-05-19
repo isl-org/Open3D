@@ -15,6 +15,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
+
 1. cd '...'
 2. python '....'
 3. See error
@@ -26,11 +27,13 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Environment (please complete the following information):**
- - OS: [e.g. OSX Mojave, Ubuntu 16.04, Windows 10.0]
- - Python version:
- - Open3D version:
- - Is this remote workstation?: yes or no
- - How did you install Open3D?: pip or conda or build_from_source (provide build method, such as GCC, Xcode, Visual Studio, and so on)
+
+- Operating system: (e.g. OSX 10.15, Ubuntu 18.04, Windows 10 64-bit)
+- Python version: (e.g. Python 3.6)
+- Open3D version:
+- Is this remote workstation?: yes or no
+- How did you install Open3D?: (e.g. pip, conda, build from source)
+- Compiler version (if built from source): (e.g. gcc 7.5, clang 7.0)
 
 **Additional context**
 Add any other context about the problem here.

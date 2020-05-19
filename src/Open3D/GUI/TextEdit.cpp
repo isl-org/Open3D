@@ -24,29 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TextEdit.h"
-
-#include "Theme.h"
-#include "Util.h"
+#include "Open3D/GUI/TextEdit.h"
 
 #include <imgui.h>
-
 #include <cmath>
 #include <sstream>
 #include <string>
+
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Util.h"
 
 namespace open3d {
 namespace gui {
 
 namespace {
-static int gNextTextEditId = 1;
+static int g_next_text_edit_id = 1;
 
 // See 3rdparty/imgui/misc/imgui_stdlib.cpp
 int InputTextCallback(ImGuiInputTextCallbackData *data) {
     if (data && data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-        std::string *s = (std::string *)data->UserData;
+        std::string *s = reinterpret_cast<std::string *>(data->UserData);
         s->resize(data->BufTextLen);
-        data->Buf = (char *)s->c_str();
+        data->Buf = const_cast<char *>(s->c_str());
     }
     return 0;
 }
@@ -54,42 +53,42 @@ int InputTextCallback(ImGuiInputTextCallbackData *data) {
 }  // namespace
 
 struct TextEdit::Impl {
-    std::string id;
-    std::string text;
-    std::string placeholder;
-    std::function<void(const char *)> onTextChanged;
-    std::function<void(const char *)> onValueChanged;
+    std::string id_;
+    std::string text_;
+    std::string placeholder_;
+    std::function<void(const char *)> on_text_changed_;
+    std::function<void(const char *)> on_value_changed_;
 };
 
 TextEdit::TextEdit() : impl_(new TextEdit::Impl()) {
     std::stringstream s;
-    s << "##textedit_" << gNextTextEditId++;
-    impl_->id = s.str();
-    impl_->text.reserve(1);
+    s << "##textedit_" << g_next_text_edit_id++;
+    impl_->id_ = s.str();
+    impl_->text_.reserve(1);
 }
 
 TextEdit::~TextEdit() {}
 
-const char *TextEdit::GetText() const { return impl_->text.c_str(); }
+const char *TextEdit::GetText() const { return impl_->text_.c_str(); }
 
-void TextEdit::SetText(const char *text) { impl_->text = text; }
+void TextEdit::SetText(const char *text) { impl_->text_ = text; }
 
 const char *TextEdit::GetPlaceholderText() const {
-    return impl_->placeholder.c_str();
+    return impl_->placeholder_.c_str();
 }
 
 void TextEdit::SetPlaceholderText(const char *text) {
-    impl_->placeholder = text;
+    impl_->placeholder_ = text;
 }
 
 void TextEdit::SetOnTextChanged(
-        std::function<void(const char *)> onTextChanged) {
-    impl_->onTextChanged = onTextChanged;
+        std::function<void(const char *)> on_text_changed) {
+    impl_->on_text_changed_ = on_text_changed;
 }
 
 void TextEdit::SetOnValueChanged(
-        std::function<void(const char *)> onValueChanged) {
-    impl_->onValueChanged = onValueChanged;
+        std::function<void(const char *)> on_value_changed) {
+    impl_->on_value_changed_ = on_value_changed;
 }
 
 bool TextEdit::ValidateNewText(const char *text) { return true; }
@@ -110,27 +109,28 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
 
     ImGui::PushStyleColor(
             ImGuiCol_FrameBg,
-            util::colorToImgui(context.theme.textEditBackgroundColor));
+            util::colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgHovered,
-            util::colorToImgui(context.theme.textEditBackgroundColor));
+            util::colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgActive,
-            util::colorToImgui(context.theme.textEditBackgroundColor));
+            util::colorToImgui(context.theme.text_edit_background_color));
 
-    int textFlags = ImGuiInputTextFlags_CallbackResize;
+    int text_flags = ImGuiInputTextFlags_CallbackResize;
     if (!IsEnabled()) {
-        textFlags = ImGuiInputTextFlags_ReadOnly;
+        text_flags = ImGuiInputTextFlags_ReadOnly;
     }
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
-    if (ImGui::InputTextWithHint(impl_->id.c_str(), impl_->placeholder.c_str(),
-                                 (char *)impl_->text.c_str(),
-                                 impl_->text.capacity(), textFlags,
-                                 InputTextCallback, &impl_->text)) {
-        if (impl_->onTextChanged) {
-            impl_->onTextChanged(impl_->text.c_str());
+    if (ImGui::InputTextWithHint(impl_->id_.c_str(),
+                                 impl_->placeholder_.c_str(),
+                                 const_cast<char *>(impl_->text_.c_str()),
+                                 impl_->text_.capacity(), text_flags,
+                                 InputTextCallback, &impl_->text_)) {
+        if (impl_->on_text_changed_) {
+            impl_->on_text_changed_(impl_->text_.c_str());
         }
         result = Widget::DrawResult::REDRAW;
     }
@@ -141,9 +141,9 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     ImGui::PopStyleVar();
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
-        if (ValidateNewText(impl_->text.c_str())) {
-            if (impl_->onValueChanged) {
-                impl_->onValueChanged(impl_->text.c_str());
+        if (ValidateNewText(impl_->text_.c_str())) {
+            if (impl_->on_value_changed_) {
+                impl_->on_value_changed_(impl_->text_.c_str());
             }
         }
         // ValidateNewText() may have updated text (even if returned true)

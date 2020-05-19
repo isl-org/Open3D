@@ -24,34 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Window.h"
-
-#include "Application.h"
-#include "Button.h"
-#include "Dialog.h"
-#include "ImguiFilamentBridge.h"
-#include "Label.h"
-#include "Layout.h"
-#include "Menu.h"
-#include "Native.h"
-#include "SceneWidget.h"
-#include "Theme.h"
-#include "Util.h"
-#include "Widget.h"
-
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "Open3D/GUI/Window.h"
 
 #include <GLFW/glfw3.h>
 #include <filament/Engine.h>
 #include <imgui.h>
-#include <imgui_internal.h>
-
+#include <imgui_internal.h>  // so we can examine the current context
 #include <cmath>
 #include <queue>
 #include <unordered_map>
 #include <vector>
+
+#include "Open3D/GUI/Application.h"
+#include "Open3D/GUI/Button.h"
+#include "Open3D/GUI/Dialog.h"
+#include "Open3D/GUI/ImguiFilamentBridge.h"
+#include "Open3D/GUI/Label.h"
+#include "Open3D/GUI/Layout.h"
+#include "Open3D/GUI/Menu.h"
+#include "Open3D/GUI/Native.h"
+#include "Open3D/GUI/SceneWidget.h"
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Util.h"
+#include "Open3D/GUI/Widget.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
 
 using namespace open3d::gui::util;
 
@@ -67,13 +65,13 @@ static constexpr int AUTOSIZE_WIDTH = 0;
 static constexpr int AUTOSIZE_HEIGHT = 0;
 
 // Assumes the correct ImGuiContext is current
-void updateImGuiForScaling(float newScaling) {
+void UpdateImGuiForScaling(float new_scaling) {
     ImGuiStyle& style = ImGui::GetStyle();
     // FrameBorderSize is not adjusted (we want minimal borders)
-    style.FrameRounding *= newScaling;
+    style.FrameRounding *= new_scaling;
 }
 
-int mouseButtonFromGLFW(int button) {
+int MouseButtonFromGLFW(int button) {
     switch (button) {
         case GLFW_MOUSE_BUTTON_LEFT:
             return int(MouseButton::LEFT);
@@ -90,26 +88,26 @@ int mouseButtonFromGLFW(int button) {
     }
 }
 
-int keymodsFromGLFW(int glfwMods) {
+int KeymodsFromGLFW(int glfw_mods) {
     int keymods = 0;
-    if (glfwMods & GLFW_MOD_SHIFT) {
+    if (glfw_mods & GLFW_MOD_SHIFT) {
         keymods |= int(KeyModifier::SHIFT);
     }
-    if (glfwMods & GLFW_MOD_CONTROL) {
+    if (glfw_mods & GLFW_MOD_CONTROL) {
 #if __APPLE__
         keymods |= int(KeyModifier::ALT);
 #else
         keymods |= int(KeyModifier::CTRL);
 #endif  // __APPLE__
     }
-    if (glfwMods & GLFW_MOD_ALT) {
+    if (glfw_mods & GLFW_MOD_ALT) {
 #if __APPLE__
         keymods |= int(KeyModifier::META);
 #else
         keymods |= int(KeyModifier::ALT);
 #endif  // __APPLE__
     }
-    if (glfwMods & GLFW_MOD_SUPER) {
+    if (glfw_mods & GLFW_MOD_SUPER) {
 #if __APPLE__
         keymods |= int(KeyModifier::CTRL);
 #else
@@ -139,23 +137,23 @@ void ChangeAllRenderQuality(
 const int Window::FLAG_TOPMOST = (1 << 0);
 
 struct Window::Impl {
-    GLFWwindow* window = nullptr;
-    std::string title;  // there is no glfwGetWindowTitle()...
+    GLFWwindow* window_ = nullptr;
+    std::string title_;  // there is no glfwGetWindowTitle()...
     // We need these for mouse moves and wheel events.
     // The only source of ground truth is button events, so the rest of
     // the time we monitor key up/down events.
-    int mouseMods = 0;  // ORed KeyModifiers
-    double lastRenderTime = 0.0;
+    int mouse_mods_ = 0;  // ORed KeyModifiers
+    double last_render_time_ = 0.0;
 
-    Theme theme;  // so that the font size can be different based on scaling
-    std::unique_ptr<visualization::FilamentRenderer> renderer;
+    Theme theme_;  // so that the font size can be different based on scaling
+    std::unique_ptr<visualization::FilamentRenderer> renderer_;
     struct {
-        std::unique_ptr<ImguiFilamentBridge> imguiBridge;
+        std::unique_ptr<ImguiFilamentBridge> imgui_bridge;
         ImGuiContext* context = nullptr;
-        ImFont* systemFont = nullptr;  // reference; owned by imguiContext
+        ImFont* system_font = nullptr;  // reference; owned by imguiContext
         float scaling = 1.0;
-    } imgui;
-    std::vector<std::shared_ptr<Widget>> children;
+    } imgui_;
+    std::vector<std::shared_ptr<Widget>> children_;
 
     // Active dialog is owned here. It is not put in the children because
     // we are going to add it and take it out during draw (since that's
@@ -163,17 +161,16 @@ struct Window::Impl {
     // children while iterating over it. Also, conceptually it is not a
     // child, it is a child window, and needs to be on top, which we cannot
     // guarantee if it is a child widget.
-    std::shared_ptr<Dialog> activeDialog;
+    std::shared_ptr<Dialog> active_dialog_;
 
-    std::queue<std::function<void()>> deferredUntilBeforeDraw;
-    std::queue<std::function<void()>> deferredUntilDraw;
-    Widget* mouseGrabberWidget = nullptr;  // only if not ImGUI widget
-    Widget* focusWidget =
+    std::queue<std::function<void()>> deferred_until_before_draw_;
+    std::queue<std::function<void()>> deferred_until_draw_;
+    Widget* mouse_grabber_widget_ = nullptr;  // only if not ImGUI widget
+    Widget* focus_widget_ =
             nullptr;  // only used if ImGUI isn't taking keystrokes
-    int nSkippedFrames = 0;
-    bool wantsAutoSizeAndCenter = false;
-    bool needsLayout = true;
-    bool isResizing = false;
+    bool wants_auto_size_and_center_ = false;
+    bool needs_layout_ = true;
+    bool is_resizing_ = false;
 };
 
 Window::Window(const std::string& title, int flags /*= 0*/)
@@ -194,7 +191,7 @@ Window::Window(const std::string& title,
     : impl_(new Window::Impl()) {
     if (x == CENTERED_X || y == CENTERED_Y || width == AUTOSIZE_WIDTH ||
         height == AUTOSIZE_HEIGHT) {
-        impl_->wantsAutoSizeAndCenter = true;
+        impl_->wants_auto_size_and_center_ = true;
     }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
@@ -211,24 +208,28 @@ Window::Window(const std::string& title,
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
 #endif
     glfwWindowHint(GLFW_VISIBLE,
-                   impl_->wantsAutoSizeAndCenter ? GLFW_TRUE : GLFW_FALSE);
+                   impl_->wants_auto_size_and_center_ ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FLOATING,
                    ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
 
-    impl_->window = glfwCreateWindow(std::max(10, width), std::max(10, height),
-                                     title.c_str(), NULL, NULL);
-    impl_->title = title;
+    impl_->window_ = glfwCreateWindow(std::max(10, width), std::max(10, height),
+                                      title.c_str(), NULL, NULL);
+    impl_->title_ = title;
 
-    glfwSetWindowUserPointer(impl_->window, this);
-    glfwSetWindowSizeCallback(impl_->window, ResizeCallback);
-    glfwSetWindowRefreshCallback(impl_->window, DrawCallback);
-    glfwSetCursorPosCallback(impl_->window, MouseMoveCallback);
-    glfwSetMouseButtonCallback(impl_->window, MouseButtonCallback);
-    glfwSetScrollCallback(impl_->window, MouseScrollCallback);
-    glfwSetKeyCallback(impl_->window, KeyCallback);
-    glfwSetCharCallback(impl_->window, CharCallback);
-    glfwSetDropCallback(impl_->window, DragDropCallback);
-    glfwSetWindowCloseCallback(impl_->window, CloseCallback);
+    if (x != CENTERED_X || y != CENTERED_Y) {
+        glfwSetWindowPos(impl_->window_, x, y);
+    }
+
+    glfwSetWindowUserPointer(impl_->window_, this);
+    glfwSetWindowSizeCallback(impl_->window_, ResizeCallback);
+    glfwSetWindowRefreshCallback(impl_->window_, DrawCallback);
+    glfwSetCursorPosCallback(impl_->window_, MouseMoveCallback);
+    glfwSetMouseButtonCallback(impl_->window_, MouseButtonCallback);
+    glfwSetScrollCallback(impl_->window_, MouseScrollCallback);
+    glfwSetKeyCallback(impl_->window_, KeyCallback);
+    glfwSetCharCallback(impl_->window_, CharCallback);
+    glfwSetDropCallback(impl_->window_, DragDropCallback);
+    glfwSetWindowCloseCallback(impl_->window_, CloseCallback);
 
     // On single-threaded platforms, Filament's OpenGL context must be current,
     // not GLFW's context, so create the renderer after the window.
@@ -237,63 +238,66 @@ Window::Window(const std::string& title,
     // size when we create it, because we can't change the bitmap without
     // reloading the whole thing (expensive).
     float scaling = GetScaling();
-    impl_->theme = Application::GetInstance().GetTheme();
-    impl_->theme.fontSize *= scaling;
-    impl_->theme.defaultMargin *= scaling;
-    impl_->theme.defaultLayoutSpacing *= scaling;
+    impl_->theme_ = Application::GetInstance().GetTheme();
+    impl_->theme_.font_size *= scaling;
+    impl_->theme_.default_margin *= scaling;
+    impl_->theme_.default_layout_spacing *= scaling;
 
-    auto& engineInstance = visualization::EngineInstance::GetInstance();
-    auto& resourceManager = visualization::EngineInstance::GetResourceManager();
+    auto& engine = visualization::EngineInstance::GetInstance();
+    auto& resource_manager =
+            visualization::EngineInstance::GetResourceManager();
 
-    impl_->renderer = std::make_unique<visualization::FilamentRenderer>(
-            engineInstance, GetNativeDrawable(), resourceManager);
+    impl_->renderer_ = std::make_unique<visualization::FilamentRenderer>(
+            engine, GetNativeDrawable(), resource_manager);
 
-    auto& theme = impl_->theme;  // shorter alias
-    impl_->imgui.context = ImGui::CreateContext();
+    auto& theme = impl_->theme_;  // shorter alias
+    impl_->imgui_.context = ImGui::CreateContext();
     auto oldContext = MakeDrawContextCurrent();
 
-    impl_->imgui.imguiBridge = std::make_unique<ImguiFilamentBridge>(
-            impl_->renderer.get(), GetSize());
+    impl_->imgui_.imgui_bridge = std::make_unique<ImguiFilamentBridge>(
+            impl_->renderer_.get(), GetSize());
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
     style.WindowPadding = ImVec2(0, 0);
     style.WindowRounding = 0;
     style.WindowBorderSize = 0;
-    style.FrameBorderSize = theme.borderWidth;
-    style.FrameRounding = theme.borderRadius;
-    style.Colors[ImGuiCol_WindowBg] = colorToImgui(theme.backgroundColor);
-    style.Colors[ImGuiCol_Text] = colorToImgui(theme.textColor);
-    style.Colors[ImGuiCol_Border] = colorToImgui(theme.borderColor);
-    style.Colors[ImGuiCol_Button] = colorToImgui(theme.buttonColor);
-    style.Colors[ImGuiCol_ButtonHovered] = colorToImgui(theme.buttonHoverColor);
-    style.Colors[ImGuiCol_ButtonActive] = colorToImgui(theme.buttonActiveColor);
-    style.Colors[ImGuiCol_CheckMark] = colorToImgui(theme.checkboxCheckColor);
+    style.FrameBorderSize = theme.border_width;
+    style.FrameRounding = theme.border_radius;
+    style.Colors[ImGuiCol_WindowBg] = colorToImgui(theme.background_color);
+    style.Colors[ImGuiCol_Text] = colorToImgui(theme.text_color);
+    style.Colors[ImGuiCol_Border] = colorToImgui(theme.border_color);
+    style.Colors[ImGuiCol_Button] = colorToImgui(theme.button_color);
+    style.Colors[ImGuiCol_ButtonHovered] =
+            colorToImgui(theme.button_hover_color);
+    style.Colors[ImGuiCol_ButtonActive] =
+            colorToImgui(theme.button_active_color);
+    style.Colors[ImGuiCol_CheckMark] = colorToImgui(theme.checkbox_check_color);
     style.Colors[ImGuiCol_FrameBg] =
-            colorToImgui(theme.comboboxBackgroundColor);
+            colorToImgui(theme.combobox_background_color);
     style.Colors[ImGuiCol_FrameBgHovered] =
-            colorToImgui(theme.comboboxHoverColor);
+            colorToImgui(theme.combobox_hover_color);
     style.Colors[ImGuiCol_FrameBgActive] =
             style.Colors[ImGuiCol_FrameBgHovered];
-    style.Colors[ImGuiCol_SliderGrab] = colorToImgui(theme.sliderGrabColor);
+    style.Colors[ImGuiCol_SliderGrab] = colorToImgui(theme.slider_grab_color);
     style.Colors[ImGuiCol_SliderGrabActive] =
-            colorToImgui(theme.sliderGrabColor);
-    style.Colors[ImGuiCol_Tab] = colorToImgui(theme.tabInactiveColor);
-    style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tabHoverColor);
-    style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tabActiveColor);
+            colorToImgui(theme.slider_grab_color);
+    style.Colors[ImGuiCol_Tab] = colorToImgui(theme.tab_inactive_color);
+    style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tab_hover_color);
+    style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tab_active_color);
 
     // If the given font path is invalid, ImGui will silently fall back to
     // proggy, which is a tiny "pixel art" texture that is compiled into the
     // library.
-    if (!theme.fontPath.empty()) {
+    if (!theme.font_path.empty()) {
         ImGuiIO& io = ImGui::GetIO();
-        impl_->imgui.systemFont = io.Fonts->AddFontFromFileTTF(
-                theme.fontPath.c_str(), theme.fontSize);
+        impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
+                theme.font_path.c_str(), theme.font_size);
         /*static*/ unsigned char* pixels;
         int textureW, textureH, bytesPerPx;
         io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
                                      &bytesPerPx);
-        impl_->imgui.imguiBridge->createAtlasTextureAlpha8(
+        impl_->imgui_.imgui_bridge->CreateAtlasTextureAlpha8(
                 pixels, textureW, textureH, bytesPerPx);
     }
 
@@ -341,17 +345,17 @@ Window::Window(const std::string& title,
 }
 
 Window::~Window() {
-    impl_->children.clear();  // needs to happen before deleting renderer
-    ImGui::SetCurrentContext(impl_->imgui.context);
+    impl_->children_.clear();  // needs to happen before deleting renderer
+    ImGui::SetCurrentContext(impl_->imgui_.context);
     ImGui::DestroyContext();
-    impl_->renderer.reset();
-    glfwDestroyWindow(impl_->window);
+    impl_->renderer_.reset();
+    glfwDestroyWindow(impl_->window_);
 }
 
 void* Window::MakeDrawContextCurrent() const {
-    auto oldContext = ImGui::GetCurrentContext();
-    ImGui::SetCurrentContext(impl_->imgui.context);
-    return oldContext;
+    auto old_context = ImGui::GetCurrentContext();
+    ImGui::SetCurrentContext(impl_->imgui_.context);
+    return old_context;
 }
 
 void Window::RestoreDrawContext(void* oldContext) const {
@@ -359,32 +363,32 @@ void Window::RestoreDrawContext(void* oldContext) const {
 }
 
 void* Window::GetNativeDrawable() const {
-    return open3d::gui::GetNativeDrawable(impl_->window);
+    return open3d::gui::GetNativeDrawable(impl_->window_);
 }
 
-const Theme& Window::GetTheme() const { return impl_->theme; }
+const Theme& Window::GetTheme() const { return impl_->theme_; }
 
 visualization::Renderer& Window::GetRenderer() const {
-    return *impl_->renderer;
+    return *impl_->renderer_;
 }
 
 Rect Window::GetOSFrame() const {
     int x, y, w, h;
-    glfwGetWindowPos(impl_->window, &x, &y);
-    glfwGetWindowSize(impl_->window, &w, &h);
+    glfwGetWindowPos(impl_->window_, &x, &y);
+    glfwGetWindowSize(impl_->window_, &w, &h);
     return Rect(x, y, w, h);
 }
 
 void Window::SetOSFrame(const Rect& r) {
-    glfwSetWindowPos(impl_->window, r.x, r.y);
-    glfwSetWindowSize(impl_->window, r.width, r.height);
+    glfwSetWindowPos(impl_->window_, r.x, r.y);
+    glfwSetWindowSize(impl_->window_, r.width, r.height);
 }
 
-const char* Window::GetTitle() const { return impl_->title.c_str(); }
+const char* Window::GetTitle() const { return impl_->title_.c_str(); }
 
 void Window::SetTitle(const char* title) {
-    impl_->title = title;
-    glfwSetWindowTitle(impl_->window, title);
+    impl_->title_ = title;
+    glfwSetWindowTitle(impl_->window_, title);
 }
 
 // Note: can only be called if the ImGUI context is current (that is,
@@ -392,7 +396,7 @@ void Window::SetTitle(const char* title) {
 //       ImGUI won't be able to access the font.
 Size Window::CalcPreferredSize() {
     Rect bbox(0, 0, 0, 0);
-    for (auto& child : impl_->children) {
+    for (auto& child : impl_->children_) {
         auto pref = child->CalcPreferredSize(GetTheme());
         Rect r(child->GetFrame().x, child->GetFrame().y, pref.width,
                pref.height);
@@ -409,100 +413,100 @@ void Window::SizeToFit() {
     // CalcPreferredSize() can only be called while the ImGUI context
     // is current, but we are probably calling this while setting up the
     // window.
-    auto autoSize = [this]() { SetSize(CalcPreferredSize()); };
-    impl_->deferredUntilDraw.push(autoSize);
+    auto auto_size = [this]() { SetSize(CalcPreferredSize()); };
+    impl_->deferred_until_draw_.push(auto_size);
 }
 
 void Window::SetSize(const Size& size) {
     // Make sure we do the resize outside of a draw, to avoid unsightly
     // errors if we happen to do this in the middle of a draw.
     auto resize = [this, size /*copy*/]() {
-        glfwSetWindowSize(this->impl_->window,
-                          size.width / this->impl_->imgui.scaling,
-                          size.height / this->impl_->imgui.scaling);
+        glfwSetWindowSize(this->impl_->window_,
+                          size.width / this->impl_->imgui_.scaling,
+                          size.height / this->impl_->imgui_.scaling);
         // SDL_SetWindowSize() doesn't generate an event, so we need to update
         // the size ourselves
         this->OnResize();
     };
-    impl_->deferredUntilBeforeDraw.push(resize);
+    impl_->deferred_until_before_draw_.push(resize);
 }
 
 Size Window::GetSize() const {
     uint32_t w, h;
-    glfwGetFramebufferSize(impl_->window, (int*)&w, (int*)&h);
+    glfwGetFramebufferSize(impl_->window_, (int*)&w, (int*)&h);
     return Size(w, h);
 }
 
 Rect Window::GetContentRect() const {
     auto size = GetSize();
-    int menuHeight = 0;
+    int menu_height = 0;
 #if !(GUI_USE_NATIVE_MENUS && defined(__APPLE__))
     MakeDrawContextCurrent();
     auto menubar = Application::GetInstance().GetMenubar();
     if (menubar) {
-        menuHeight = menubar->CalcHeight(GetTheme());
+        menu_height = menubar->CalcHeight(GetTheme());
     }
 #endif
 
-    return Rect(0, menuHeight, size.width, size.height - menuHeight);
+    return Rect(0, menu_height, size.width, size.height - menu_height);
 }
 
 float Window::GetScaling() const {
 #if GLFW_VERSION_MAJOR > 3 || \
         (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3)
     float xscale, yscale;
-    glfwGetWindowContentScale(impl_->window, &xscale, &yscale);
+    glfwGetWindowContentScale(impl_->window_, &xscale, &yscale);
     return xscale;
 #else
     return 1.0f;
 #endif  // GLFW version >= 3.3
 }
 
-Point Window::GlobalToWindowCoord(int globalX, int globalY) {
+Point Window::GlobalToWindowCoord(int global_x, int global_y) {
     int wx, wy;
-    glfwGetWindowPos(impl_->window, &wx, &wy);
-    return Point(globalX - wx, globalY - wy);
+    glfwGetWindowPos(impl_->window_, &wx, &wy);
+    return Point(global_y - wx, global_y - wy);
 }
 
 bool Window::IsVisible() const {
-    return glfwGetWindowAttrib(impl_->window, GLFW_VISIBLE);
+    return glfwGetWindowAttrib(impl_->window_, GLFW_VISIBLE);
 }
 
 void Window::Show(bool vis /*= true*/) {
     if (vis) {
-        glfwShowWindow(impl_->window);
+        glfwShowWindow(impl_->window_);
     } else {
-        glfwHideWindow(impl_->window);
+        glfwHideWindow(impl_->window_);
     }
 }
 
 void Window::Close() { Application::GetInstance().RemoveWindow(this); }
 
-void Window::SetNeedsLayout() { impl_->needsLayout = true; }
+void Window::SetNeedsLayout() { impl_->needs_layout_ = true; }
 
-void Window::PostRedraw() { PostNativeExposeEvent(impl_->window); }
+void Window::PostRedraw() { PostNativeExposeEvent(impl_->window_); }
 
-void Window::RaiseToTop() const { glfwFocusWindow(impl_->window); }
+void Window::RaiseToTop() const { glfwFocusWindow(impl_->window_); }
 
 bool Window::IsActiveWindow() const {
-    return glfwGetWindowAttrib(impl_->window, GLFW_FOCUSED);
+    return glfwGetWindowAttrib(impl_->window_, GLFW_FOCUSED);
 }
 
-void Window::SetFocusWidget(Widget* w) { impl_->focusWidget = w; }
+void Window::SetFocusWidget(Widget* w) { impl_->focus_widget_ = w; }
 
 void Window::AddChild(std::shared_ptr<Widget> w) {
-    impl_->children.push_back(w);
-    impl_->needsLayout = true;
+    impl_->children_.push_back(w);
+    impl_->needs_layout_ = true;
 }
 
 void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
-    if (impl_->activeDialog) {
+    if (impl_->active_dialog_) {
         CloseDialog();
     }
-    impl_->activeDialog = dlg;
+    impl_->active_dialog_ = dlg;
     dlg->OnWillShow();
 
-    auto winSize = GetSize();
+    auto win_size = GetSize();
     auto pref = dlg->CalcPreferredSize(GetTheme());
     int w = dlg->GetFrame().width;
     int h = dlg->GetFrame().height;
@@ -512,23 +516,23 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     if (h == 0) {
         h = pref.height;
     }
-    w = std::min(w, int(std::round(0.8 * winSize.width)));
-    h = std::min(h, int(std::round(0.8 * winSize.height)));
-    dlg->SetFrame(
-            gui::Rect((winSize.width - w) / 2, (winSize.height - h) / 2, w, h));
+    w = std::min(w, int(std::round(0.8 * win_size.width)));
+    h = std::min(h, int(std::round(0.8 * win_size.height)));
+    dlg->SetFrame(gui::Rect((win_size.width - w) / 2, (win_size.height - h) / 2,
+                            w, h));
     dlg->Layout(GetTheme());
 }
 
 void Window::CloseDialog() {
-    if (impl_->focusWidget == impl_->activeDialog.get()) {
+    if (impl_->focus_widget_ == impl_->active_dialog_.get()) {
         SetFocusWidget(nullptr);
     }
-    impl_->activeDialog.reset();
+    impl_->active_dialog_.reset();
 }
 
 void Window::ShowMessageBox(const char* title, const char* message) {
-    auto em = GetTheme().fontSize;
-    auto margins = Margins(GetTheme().defaultMargin);
+    auto em = GetTheme().font_size;
+    auto margins = Margins(GetTheme().default_margin);
     auto dlg = std::make_shared<Dialog>(title);
     auto layout = std::make_shared<Vert>(em, margins);
     layout->AddChild(std::make_shared<Label>(message));
@@ -540,18 +544,18 @@ void Window::ShowMessageBox(const char* title, const char* message) {
 }
 
 void Window::Layout(const Theme& theme) {
-    if (impl_->children.size() == 1) {
+    if (impl_->children_.size() == 1) {
         auto r = GetContentRect();
-        impl_->children[0]->SetFrame(r);
-        impl_->children[0]->Layout(theme);
+        impl_->children_[0]->SetFrame(r);
+        impl_->children_[0]->Layout(theme);
     } else {
-        for (auto& child : impl_->children) {
+        for (auto& child : impl_->children_) {
             child->Layout(theme);
         }
     }
 }
 
-void Window::OnMenuItemSelected(Menu::ItemId itemId) {}
+void Window::OnMenuItemSelected(Menu::ItemId item_id) {}
 
 namespace {
 enum Mode { NORMAL, DIALOG, NO_INPUT };
@@ -580,14 +584,14 @@ Widget::DrawResult DrawChild(DrawContext& dc,
         flags |= ImGuiWindowFlags_NoInputs;
     }
     auto frame = child->GetFrame();
-    bool bgColorNotDefault = !child->IsDefaultBackgroundColor();
-    auto isContainer = !child->GetChildren().empty();
-    if (isContainer) {
+    bool bg_color_not_default = !child->IsDefaultBackgroundColor();
+    auto is_container = !child->GetChildren().empty();
+    if (is_container) {
         dc.uiOffsetX = frame.x;
         dc.uiOffsetY = frame.y;
         ImGui::SetNextWindowPos(ImVec2(frame.x, frame.y));
         ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
-        if (bgColorNotDefault) {
+        if (bg_color_not_default) {
             auto& bgColor = child->GetBackgroundColor();
             ImGui::PushStyleColor(ImGuiCol_WindowBg,
                                   util::colorToImgui(bgColor));
@@ -601,9 +605,9 @@ Widget::DrawResult DrawChild(DrawContext& dc,
     Widget::DrawResult result;
     result = child->Draw(dc);
 
-    if (isContainer) {
+    if (is_container) {
         ImGui::End();
-        if (bgColorNotDefault) {
+        if (bg_color_not_default) {
             ImGui::PopStyleColor();
         }
     }
@@ -612,7 +616,7 @@ Widget::DrawResult DrawChild(DrawContext& dc,
 }
 }  // namespace
 
-Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
+Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // These are here to provide fast unique window names. (Hence using
     // char* instead of a std::string, just in case c_str() recreates
     // the buffer on some platform and unwittingly makes
@@ -620,54 +624,54 @@ Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
     // If you find yourself needing more than a handful of top-level
     // children, you should probably be using a layout of some sort
     // (gui::Vert, gui::Horiz, gui::VGrid, etc. See Layout.h).
-    static const std::vector<const char*> winNames = {
+    static const std::vector<const char*> win_names = {
             "win1",  "win2",  "win3",  "win4",  "win5",  "win6",  "win7",
             "win8",  "win9",  "win10", "win11", "win12", "win13", "win14",
             "win15", "win16", "win17", "win18", "win19", "win20"};
 
-    bool needsLayout = false;
-    bool needsRedraw = false;
+    bool needs_layout = false;
+    bool needs_redraw = false;
 
     // ImGUI uses the dt parameter to calculate double-clicks, so it
     // needs to be reasonably accurate.
     double now = Application::GetInstance().Now();
-    float dtSec = now - impl_->lastRenderTime;
-    impl_->lastRenderTime = now;
+    float dt_sec = now - impl_->last_render_time_;
+    impl_->last_render_time_ = now;
 
     // Run the deferred callbacks that need to happen outside a draw
-    while (!impl_->deferredUntilBeforeDraw.empty()) {
-        impl_->deferredUntilBeforeDraw.front()();
-        impl_->deferredUntilBeforeDraw.pop();
+    while (!impl_->deferred_until_before_draw_.empty()) {
+        impl_->deferred_until_before_draw_.front()();
+        impl_->deferred_until_before_draw_.pop();
     }
 
     // Set current context
     MakeDrawContextCurrent();  // make sure our ImGUI context is active
     ImGuiIO& io = ImGui::GetIO();
-    io.DeltaTime = dtSec;
+    io.DeltaTime = dt_sec;
 
     // Set mouse information
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
     if (IsActiveWindow()) {
         double mx, my;
-        glfwGetCursorPos(impl_->window, &mx, &my);
+        glfwGetCursorPos(impl_->window_, &mx, &my);
         auto scaling = GetScaling();
         io.MousePos = ImVec2(mx * scaling, my * scaling);
     }
     io.MouseDown[0] =
-            (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_LEFT) ==
+            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_LEFT) ==
              GLFW_PRESS);
     io.MouseDown[1] =
-            (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_RIGHT) ==
+            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_RIGHT) ==
              GLFW_PRESS);
     io.MouseDown[2] =
-            (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_MIDDLE) ==
+            (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_MIDDLE) ==
              GLFW_PRESS);
 
     // Set key information
-    io.KeyShift = (impl_->mouseMods & int(KeyModifier::SHIFT));
-    io.KeyAlt = (impl_->mouseMods & int(KeyModifier::ALT));
-    io.KeyCtrl = (impl_->mouseMods & int(KeyModifier::CTRL));
-    io.KeySuper = (impl_->mouseMods & int(KeyModifier::META));
+    io.KeyShift = (impl_->mouse_mods_ & int(KeyModifier::SHIFT));
+    io.KeyAlt = (impl_->mouse_mods_ & int(KeyModifier::ALT));
+    io.KeyCtrl = (impl_->mouse_mods_ & int(KeyModifier::CTRL));
+    io.KeySuper = (impl_->mouse_mods_ & int(KeyModifier::META));
 
     // Begin an ImGUI frame. We should NOT begin a filament frame here:
     // a) ImGUI always needs to "draw", because event processing happens
@@ -678,47 +682,47 @@ Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
     //    a key up event to process and erase the key down state from
     //    the ImGuiIO structure before we get a chance to draw/process it.
     ImGui::NewFrame();
-    ImGui::PushFont(impl_->imgui.systemFont);
+    ImGui::PushFont(impl_->imgui_.system_font);
 
     // Run the deferred callbacks that need to happen inside a draw
     // In particular, text sizing with ImGUI seems to require being
     // in a frame, otherwise there isn't an GL texture info and we crash.
-    while (!impl_->deferredUntilDraw.empty()) {
-        impl_->deferredUntilDraw.front()();
-        impl_->deferredUntilDraw.pop();
+    while (!impl_->deferred_until_draw_.empty()) {
+        impl_->deferred_until_draw_.front()();
+        impl_->deferred_until_draw_.pop();
     }
 
     // Layout if necessary.  This must happen within ImGui setup so that widgets
     // can query font information.
-    auto& theme = impl_->theme;
-    if (impl_->needsLayout) {
+    auto& theme = impl_->theme_;
+    if (impl_->needs_layout_) {
         Layout(theme);
-        impl_->needsLayout = false;
+        impl_->needs_layout_ = false;
     }
 
     auto size = GetSize();
-    int em = theme.fontSize;  // em = font size in digital type (from Wikipedia)
-    DrawContext dc{theme, 0, 0, size.width, size.height, em, dtSec};
+    int em = theme.font_size;  // em = font size in digital type (see Wikipedia)
+    DrawContext dc{theme, 0, 0, size.width, size.height, em, dt_sec};
 
     // Draw all the widgets. These will get recorded by ImGui.
-    size_t winIdx = 0;
-    Mode drawMode = (impl_->activeDialog ? NO_INPUT : NORMAL);
-    for (auto& child : this->impl_->children) {
+    size_t win_idx = 0;
+    Mode draw_mode = (impl_->active_dialog_ ? NO_INPUT : NORMAL);
+    for (auto& child : this->impl_->children_) {
         if (!child->IsVisible()) {
             continue;
         }
-        if (winIdx >= winNames.size()) {
-            winIdx = winNames.size() - 1;
+        if (win_idx >= win_names.size()) {
+            win_idx = win_names.size() - 1;
             utility::LogWarning(
                     "Using too many top-level child widgets; use a layout "
                     "instead.");
         }
-        auto result = DrawChild(dc, winNames[winIdx++], child, drawMode);
+        auto result = DrawChild(dc, win_names[win_idx++], child, draw_mode);
         if (result != Widget::DrawResult::NONE) {
-            needsRedraw = true;
+            needs_redraw = true;
         }
         if (result == Widget::DrawResult::RELAYOUT) {
-            needsLayout = true;
+            needs_layout = true;
         }
     }
 
@@ -726,22 +730,22 @@ Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
     // shouldn't matter, as there shouldn't be anything under it)
     auto menubar = Application::GetInstance().GetMenubar();
     if (menubar) {
-        auto id = menubar->DrawMenuBar(dc, !impl_->activeDialog);
+        auto id = menubar->DrawMenuBar(dc, !impl_->active_dialog_);
         if (id != Menu::NO_ITEM) {
             OnMenuItemSelected(id);
-            needsRedraw = true;
+            needs_redraw = true;
         }
     }
 
     // Draw any active dialog
-    if (impl_->activeDialog) {
+    if (impl_->active_dialog_) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,
-                            theme.dialogBorderWidth);
+                            theme.dialog_border_width);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,
-                            theme.dialogBorderRadius);
-        if (DrawChild(dc, "dialog", impl_->activeDialog, DIALOG) !=
+                            theme.dialog_border_radius);
+        if (DrawChild(dc, "dialog", impl_->active_dialog_, DIALOG) !=
             Widget::DrawResult::NONE) {
-            needsRedraw = true;
+            needs_redraw = true;
         }
         ImGui::PopStyleVar(2);
     }
@@ -752,20 +756,20 @@ Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
     ImGui::Render();  // creates the draw data (i.e. Render()s to data)
 
     // Draw the ImGui commands
-    impl_->imgui.imguiBridge->update(ImGui::GetDrawData());
+    impl_->imgui_.imgui_bridge->Update(ImGui::GetDrawData());
 
     // Draw. Since ImGUI is an immediate mode gui, it does layout during
     // draw, and if we are drawing for layout purposes, don't actually
     // draw, because we are just going to draw again after this returns.
-    if (!isLayoutPass) {
-        impl_->renderer->BeginFrame();
-        impl_->renderer->Draw();
-        impl_->renderer->EndFrame();
+    if (!is_layout_pass) {
+        impl_->renderer_->BeginFrame();
+        impl_->renderer_->Draw();
+        impl_->renderer_->EndFrame();
     }
 
-    if (needsLayout) {
+    if (needs_layout) {
         return Widget::DrawResult::RELAYOUT;
-    } else if (needsRedraw) {
+    } else if (needs_redraw) {
         return Widget::DrawResult::REDRAW;
     } else {
         return Widget::DrawResult::NONE;
@@ -773,18 +777,18 @@ Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
 }
 
 Window::DrawResult Window::OnDraw() {
-    bool neededLayout = impl_->needsLayout;
+    bool needed_layout = impl_->needs_layout_;
 
-    auto result = DrawOnce(neededLayout);
+    auto result = DrawOnce(needed_layout);
     if (result == Widget::DrawResult::RELAYOUT) {
-        impl_->needsLayout = true;
+        impl_->needs_layout_ = true;
     }
 
     // ImGUI can take two frames to do its layout, so if we did a layout
     // redraw a second time. This helps prevent a brief red flash when the
     // window first appears, as well as corrupted images if the
     // window initially appears underneath the mouse.
-    if (neededLayout || impl_->needsLayout) {
+    if (needed_layout || impl_->needs_layout_) {
         DrawOnce(false);
     }
 
@@ -792,50 +796,50 @@ Window::DrawResult Window::OnDraw() {
 }
 
 void Window::OnResize() {
-    impl_->needsLayout = true;
+    impl_->needs_layout_ = true;
 
 #if __APPLE__
     // We need to recreate the swap chain after resizing a window on macOS
     // otherwise things look very wrong.
-    impl_->renderer->UpdateSwapChain();
+    impl_->renderer_->UpdateSwapChain();
 #endif  // __APPLE__
 
-    impl_->imgui.imguiBridge->onWindowResized(*this);
+    impl_->imgui_.imgui_bridge->OnWindowResized(*this);
 
     auto size = GetSize();
     auto scaling = GetScaling();
 
-    auto oldContext = MakeDrawContextCurrent();
+    auto old_context = MakeDrawContextCurrent();
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(size.width, size.height);
-    if (impl_->imgui.scaling != scaling) {
-        updateImGuiForScaling(1.0 / impl_->imgui.scaling);  // undo previous
-        updateImGuiForScaling(scaling);
-        impl_->imgui.scaling = scaling;
+    if (impl_->imgui_.scaling != scaling) {
+        UpdateImGuiForScaling(1.0 / impl_->imgui_.scaling);  // undo previous
+        UpdateImGuiForScaling(scaling);
+        impl_->imgui_.scaling = scaling;
     }
     io.DisplayFramebufferScale.x = 1.0f;
     io.DisplayFramebufferScale.y = 1.0f;
 
-    if (impl_->wantsAutoSizeAndCenter) {
-        impl_->wantsAutoSizeAndCenter = false;
-        int screenWidth = 1024;  // defaults in case monitor == nullptr
-        int screenHeight = 768;
-        auto* monitor = glfwGetWindowMonitor(impl_->window);
+    if (impl_->wants_auto_size_and_center_) {
+        impl_->wants_auto_size_and_center_ = false;
+        int screen_width = 1024;  // defaults in case monitor == nullptr
+        int screen_height = 768;
+        auto* monitor = glfwGetWindowMonitor(impl_->window_);
         if (monitor) {
             const GLFWvidmode* mode = glfwGetVideoMode(monitor);
             if (mode) {
-                screenWidth = mode->width;
-                screenHeight = mode->height;
+                screen_width = mode->width;
+                screen_height = mode->height;
             }
         }
         ImGui::NewFrame();
-        ImGui::PushFont(impl_->imgui.systemFont);
+        ImGui::PushFont(impl_->imgui_.system_font);
         auto pref = CalcPreferredSize();
-        Size size(pref.width / this->impl_->imgui.scaling,
-                  pref.height / this->impl_->imgui.scaling);
-        glfwSetWindowSize(impl_->window, size.width, size.height);
-        glfwSetWindowPos(impl_->window, (screenWidth - size.width) / 2,
-                         (screenHeight - size.height) / 2);
+        Size size(pref.width / this->impl_->imgui_.scaling,
+                  pref.height / this->impl_->imgui_.scaling);
+        glfwSetWindowSize(impl_->window_, size.width, size.height);
+        glfwSetWindowPos(impl_->window_, (screen_width - size.width) / 2,
+                         (screen_height - size.height) / 2);
         ImGui::PopFont();
         ImGui::EndFrame();
         OnResize();
@@ -849,12 +853,12 @@ void Window::OnResize() {
     // way to tell when we've stopped resizing, so we use the mouse movement.
     // (We get no mouse events while resizing, so any mouse even must mean we
     // are no longer resizing.)
-    if (!impl_->isResizing) {
-        impl_->isResizing = true;
-        ChangeAllRenderQuality(SceneWidget::Quality::FAST, impl_->children);
+    if (!impl_->is_resizing_) {
+        impl_->is_resizing_ = true;
+        ChangeAllRenderQuality(SceneWidget::Quality::FAST, impl_->children_);
     }
 
-    RestoreDrawContext(oldContext);
+    RestoreDrawContext(old_context);
 }
 
 void Window::OnMouseEvent(const MouseEvent& e) {
@@ -862,12 +866,12 @@ void Window::OnMouseEvent(const MouseEvent& e) {
 
     // We don't have a good way of determining when resizing ends; the most
     // likely action after resizing a window is to move the mouse.
-    if (impl_->isResizing) {
-        impl_->isResizing = false;
-        ChangeAllRenderQuality(SceneWidget::Quality::BEST, impl_->children);
+    if (impl_->is_resizing_) {
+        impl_->is_resizing_ = false;
+        ChangeAllRenderQuality(SceneWidget::Quality::BEST, impl_->children_);
     }
 
-    impl_->mouseMods = e.modifiers;
+    impl_->mouse_mods_ = e.modifiers;
 
     switch (e.type) {
         case MouseEvent::MOVE:
@@ -897,10 +901,10 @@ void Window::OnMouseEvent(const MouseEvent& e) {
         }
     }
 
-    if (impl_->mouseGrabberWidget) {
-        impl_->mouseGrabberWidget->Mouse(e);
+    if (impl_->mouse_grabber_widget_) {
+        impl_->mouse_grabber_widget_->Mouse(e);
         if (e.type == MouseEvent::BUTTON_UP) {
-            impl_->mouseGrabberWidget = nullptr;
+            impl_->mouse_grabber_widget_ = nullptr;
         }
         return;
     }
@@ -918,7 +922,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
                 Rect r(w->Pos.x, w->Pos.y, w->Size.x, w->Size.y);
                 if (r.Contains(e.x, e.y)) {
                     bool weKnowThis = false;
-                    for (auto child : impl_->children) {
+                    for (auto child : impl_->children_) {
                         if (child->GetFrame() == r) {
                             weKnowThis = true;
                             break;
@@ -935,7 +939,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
     }
 
     // Iterate backwards so that we send mouse events from the top down.
-    auto handleMouseForChild = [this](const MouseEvent& e,
+    auto HandleMouseForChild = [this](const MouseEvent& e,
                                       std::shared_ptr<Widget> child) -> bool {
         if (child->GetFrame().Contains(e.x, e.y) && child->IsVisible()) {
             if (e.type == MouseEvent::BUTTON_DOWN) {
@@ -944,26 +948,26 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             auto result = child->Mouse(e);
             if (e.type == MouseEvent::BUTTON_DOWN) {
                 if (result == Widget::EventResult::CONSUMED) {
-                    impl_->mouseGrabberWidget = child.get();
+                    impl_->mouse_grabber_widget_ = child.get();
                 }
             } else if (e.type == MouseEvent::BUTTON_UP) {
-                impl_->mouseGrabberWidget = nullptr;
+                impl_->mouse_grabber_widget_ = nullptr;
             }
             return true;
         }
         return false;
     };
-    if (impl_->activeDialog) {
-        handleMouseForChild(e, impl_->activeDialog);
+    if (impl_->active_dialog_) {
+        HandleMouseForChild(e, impl_->active_dialog_);
     } else {
         // Mouse move and wheel always get delivered.
         // Button up and down get delivered if they weren't in an ImGUI popup.
         // Drag should only be delivered if the grabber widget exists;
         // if it is null, then the mouse is being dragged over an ImGUI popup.
-        if (e.type != MouseEvent::DRAG || impl_->mouseGrabberWidget) {
-            std::vector<std::shared_ptr<Widget>>& children = impl_->children;
+        if (e.type != MouseEvent::DRAG || impl_->mouse_grabber_widget_) {
+            std::vector<std::shared_ptr<Widget>>& children = impl_->children_;
             for (auto it = children.rbegin(); it != children.rend(); ++it) {
-                if (handleMouseForChild(e, *it)) {
+                if (HandleMouseForChild(e, *it)) {
                     break;
                 }
             }
@@ -972,24 +976,24 @@ void Window::OnMouseEvent(const MouseEvent& e) {
 }
 
 void Window::OnKeyEvent(const KeyEvent& e) {
-    auto thisMod = 0;
+    auto this_mod = 0;
     if (e.key == KEY_LSHIFT || e.key == KEY_RSHIFT) {
-        thisMod = int(KeyModifier::SHIFT);
+        this_mod = int(KeyModifier::SHIFT);
     } else if (e.key == KEY_LCTRL || e.key == KEY_RCTRL) {
-        thisMod = int(KeyModifier::CTRL);
+        this_mod = int(KeyModifier::CTRL);
     } else if (e.key == KEY_ALT) {
-        thisMod = int(KeyModifier::ALT);
+        this_mod = int(KeyModifier::ALT);
     } else if (e.key == KEY_META) {
-        thisMod = int(KeyModifier::META);
+        this_mod = int(KeyModifier::META);
     }
 
     if (e.type == KeyEvent::UP) {
-        impl_->mouseMods &= ~thisMod;
+        impl_->mouse_mods_ &= ~this_mod;
     } else {
-        impl_->mouseMods |= thisMod;
+        impl_->mouse_mods_ |= this_mod;
     }
 
-    auto oldContext = MakeDrawContextCurrent();
+    auto old_context = MakeDrawContextCurrent();
     ImGuiIO& io = ImGui::GetIO();
     if (e.key < IM_ARRAYSIZE(io.KeysDown)) {
         io.KeysDown[e.key] = (e.type == KeyEvent::DOWN);
@@ -997,29 +1001,29 @@ void Window::OnKeyEvent(const KeyEvent& e) {
 
     // If an ImGUI widget is not getting keystrokes, we can send them to
     // non-ImGUI widgets
-    if (ImGui::GetCurrentContext()->ActiveId == 0 && impl_->focusWidget) {
-        impl_->focusWidget->Key(e);
+    if (ImGui::GetCurrentContext()->ActiveId == 0 && impl_->focus_widget_) {
+        impl_->focus_widget_->Key(e);
     }
 
-    RestoreDrawContext(oldContext);
+    RestoreDrawContext(old_context);
 }
 
 void Window::OnTextInput(const TextInputEvent& e) {
-    auto oldContext = MakeDrawContextCurrent();
+    auto old_context = MakeDrawContextCurrent();
     ImGuiIO& io = ImGui::GetIO();
     io.AddInputCharactersUTF8(e.utf8);
-    RestoreDrawContext(oldContext);
+    RestoreDrawContext(old_context);
 }
 
 bool Window::OnTickEvent(const TickEvent& e) {
-    auto oldContext = MakeDrawContextCurrent();
+    auto old_context = MakeDrawContextCurrent();
     bool redraw = false;
-    for (auto child : impl_->children) {
+    for (auto child : impl_->children_) {
         if (child->Tick(e) == Widget::DrawResult::REDRAW) {
             redraw = true;
         }
     }
-    RestoreDrawContext(oldContext);
+    RestoreDrawContext(old_context);
     return redraw;
 }
 
@@ -1032,11 +1036,11 @@ void Window::DrawCallback(GLFWwindow* window) {
         // Can't just draw here, because Filament sometimes fences within
         // a draw, and then you can get two draws happening at the same
         // time, which ends up with a crash.
-        PostNativeExposeEvent(w->impl_->window);
+        PostNativeExposeEvent(w->impl_->window_);
     }
 }
 
-void Window::ResizeCallback(GLFWwindow* window, int osWidth, int osHeight) {
+void Window::ResizeCallback(GLFWwindow* window, int os_width, int os_height) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     w->OnResize();
     UpdateAfterEvent(w);
@@ -1053,7 +1057,7 @@ void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
     int buttons = 0;
     for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
         if (glfwGetMouseButton(window, b) == GLFW_PRESS) {
-            buttons |= mouseButtonFromGLFW(b);
+            buttons |= MouseButtonFromGLFW(b);
         }
     }
     float scaling = w->GetScaling();
@@ -1061,7 +1065,7 @@ void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
     int iy = int(std::ceil(y * scaling));
 
     auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
-    MouseEvent me = {type, ix, iy, w->impl_->mouseMods};
+    MouseEvent me = {type, ix, iy, w->impl_->mouse_mods_};
     me.button.button = MouseButton(buttons);
 
     w->OnMouseEvent(me);
@@ -1082,8 +1086,8 @@ void Window::MouseButtonCallback(GLFWwindow* window,
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
-    MouseEvent me = {type, ix, iy, keymodsFromGLFW(mods)};
-    me.button.button = MouseButton(mouseButtonFromGLFW(button));
+    MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
+    me.button.button = MouseButton(MouseButtonFromGLFW(button));
 
     w->OnMouseEvent(me);
     UpdateAfterEvent(w);
@@ -1098,7 +1102,7 @@ void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
-    MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->impl_->mouseMods};
+    MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->impl_->mouse_mods_};
     me.wheel.dx = dx;
     me.wheel.dy = dy;
 
@@ -1116,7 +1120,7 @@ void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
 
 void Window::KeyCallback(
         GLFWwindow* window, int key, int scancode, int action, int mods) {
-    static std::unordered_map<int, uint32_t> gGLFW2Key = {
+    static std::unordered_map<int, uint32_t> g_GLFW2Key = {
             {GLFW_KEY_BACKSPACE, KEY_BACKSPACE},
             {GLFW_KEY_TAB, KEY_TAB},
             {GLFW_KEY_ENTER, KEY_ENTER},
@@ -1150,8 +1154,8 @@ void Window::KeyCallback(
     if (key >= 'A' && key <= 'Z') {
         k += 32;  // GLFW gives uppercase for letters, convert to lowercase
     } else {
-        auto it = gGLFW2Key.find(key);
-        if (it != gGLFW2Key.end()) {
+        auto it = g_GLFW2Key.find(key);
+        if (it != g_GLFW2Key.end()) {
             k = it->second;
         }
     }
@@ -1213,7 +1217,7 @@ void Window::CloseCallback(GLFWwindow* window) {
 }
 
 void Window::UpdateAfterEvent(Window* w) {
-    PostNativeExposeEvent(w->impl_->window);
+    PostNativeExposeEvent(w->impl_->window_);
 }
 
 }  // namespace gui

@@ -30,7 +30,7 @@
 #include "open3d_pybind/camera/camera.h"
 #include "open3d_pybind/docstring.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_camera_classes(py::module &m) {
     // open3d.camera.PinholeCameraIntrinsic
@@ -178,3 +178,5 @@ void pybind_camera(py::module &m) {
     py::module m_submodule = m.def_submodule("camera");
     pybind_camera_classes(m_submodule);
 }
+
+}  // namespace open3d

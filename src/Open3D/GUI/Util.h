@@ -28,7 +28,6 @@
 // These are internal helper functions
 
 #include <imgui.h>
-
 #include <string>
 #include <vector>
 

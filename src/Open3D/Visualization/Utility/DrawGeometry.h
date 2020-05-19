@@ -46,7 +46,7 @@ class Visualizer;
 /// This function MUST be called from the main thread. It blocks the main thread
 /// until the window is closed.
 ///
-/// \param geometry_list List of geometries to be visualized.
+/// \param geometry_ptrs List of geometries to be visualized.
 /// \param window_name The displayed title of the visualization window.
 /// \param width The width of the visualization window.
 /// \param height The height of the visualization window.
@@ -70,13 +70,13 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
 /// \brief Function to draw a list of geometry objects with a GUI that
 /// supports animation.
 ///
-/// \param geometry_list List of geometries to be visualized.
+/// \param geometry_ptrs List of geometries to be visualized.
 /// \param window_name The displayed title of the visualization window.
 /// \param width The width of the visualization window.
 /// \param height The height of the visualization window.
 /// \param left margin of the visualization window.
 /// \param top The top margin of the visualization window.
-/// \param optional_view_trajectory_json_file Camera trajectory json file path
+/// \param json_filename Camera trajectory json file path
 /// for custom animation.
 bool DrawGeometriesWithCustomAnimation(
         const std::vector<std::shared_ptr<const geometry::Geometry>>
@@ -92,8 +92,9 @@ bool DrawGeometriesWithCustomAnimation(
 /// customized animation callback function.
 ///
 /// \param geometry_ptrs List of geometries to be visualized.
-/// \param callback_function Call back function to be triggered at a key press
-/// event. \param window_name The displayed title of the visualization window.
+/// \param callback_func Call back function to be triggered at a key press
+/// event.
+/// \param window_name The displayed title of the visualization window.
 /// \param width The width of the visualization window.
 /// \param height The height of the visualization window.
 /// \param left margin of the visualization window.
@@ -112,7 +113,7 @@ bool DrawGeometriesWithAnimationCallback(
 ///
 /// Geometry objects with a customized key-callback mapping
 ///
-/// \param geometry_ptr List of geometries to be visualized.
+/// \param geometry_ptrs List of geometries to be visualized.
 /// \param key_to_callback Map of key to call back functions.
 /// \param window_name The displayed title of the visualization window.
 /// \param width The width of the visualization window.
@@ -133,7 +134,7 @@ bool DrawGeometriesWithKeyCallbacks(
 ///
 /// Geometry providing user interaction.
 ///
-/// \param geometry_ptr List of geometries to be visualized.
+/// \param geometry_ptrs List of geometries to be visualized.
 /// \param window_name The displayed title of the visualization window.
 /// \param width The width of the visualization window.
 /// \param height The height of the visualization window.

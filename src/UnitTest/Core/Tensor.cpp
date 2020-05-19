@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <cmath>
+#include <limits>
 
 #include "Open3D/Core/AdvancedIndexing.h"
 #include "Open3D/Core/Dtype.h"
@@ -37,8 +38,8 @@
 #include "Core/CoreTest.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
+namespace unit_test {
 
 class TensorPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Tensor,
@@ -375,16 +376,32 @@ TEST_P(TensorPermuteDevices, ItemAssign) {
 
 TEST_P(TensorPermuteDevices, ToString) {
     Device device = GetParam();
+    Tensor t;
 
+    // 0D
+    t = Tensor::Ones({}, Dtype::Float32, device);
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
+              R"(1)");
+    t = Tensor::Full({}, std::numeric_limits<float>::quiet_NaN(),
+                     Dtype::Float32, device);
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
+              R"(nan)");
+    t = Tensor::Full({}, std::numeric_limits<double>::quiet_NaN(),
+                     Dtype::Float32, device);  // Casting
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
+              R"(nan)");
+
+    // 1D
     std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
                             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
-    Tensor t1(vals, {24}, Dtype::Float32, device);
+    t = Tensor(vals, {24}, Dtype::Float32, device);
     EXPECT_EQ(
-            t1.ToString(/*with_suffix=*/false),
+            t.ToString(/*with_suffix=*/false),
             R"([0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23])");
 
-    Tensor t2(vals, {6, 4}, Dtype::Float32, device);
-    EXPECT_EQ(t2.ToString(/*with_suffix=*/false),
+    // 2D
+    t = Tensor(vals, {6, 4}, Dtype::Float32, device);
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[0 1 2 3],
  [4 5 6 7],
  [8 9 10 11],
@@ -392,8 +409,9 @@ TEST_P(TensorPermuteDevices, ToString) {
  [16 17 18 19],
  [20 21 22 23]])");
 
-    Tensor t3(vals, {2, 3, 4}, Dtype::Float32, device);
-    EXPECT_EQ(t3.ToString(/*with_suffix=*/false),
+    // 3D
+    t = Tensor(vals, {2, 3, 4}, Dtype::Float32, device);
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[[0 1 2 3],
   [4 5 6 7],
   [8 9 10 11]],
@@ -401,8 +419,9 @@ TEST_P(TensorPermuteDevices, ToString) {
   [16 17 18 19],
   [20 21 22 23]]])");
 
-    Tensor t4(vals, {2, 3, 2, 2}, Dtype::Float32, device);
-    EXPECT_EQ(t4.ToString(/*with_suffix=*/false),
+    // 4D
+    t = Tensor(vals, {2, 3, 2, 2}, Dtype::Float32, device);
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[[[0 1],
    [2 3]],
   [[4 5],
@@ -416,9 +435,10 @@ TEST_P(TensorPermuteDevices, ToString) {
   [[20 21],
    [22 23]]]])");
 
-    Tensor t5(std::vector<bool>{true, false, true, true, false, false}, {2, 3},
-              Dtype::Bool, device);
-    EXPECT_EQ(t5.ToString(/*with_suffix=*/false),
+    // Boolean
+    t = Tensor(std::vector<bool>{true, false, true, true, false, false}, {2, 3},
+               Dtype::Bool, device);
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[True False True],
  [True False False]])");
 }
@@ -1247,6 +1267,84 @@ TEST_P(TensorPermuteDevices, ReduceSumNotKeepDim) {
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({276.f}));
 }
 
+TEST_P(TensorPermuteDevices, ReduceSumSpecialShapes) {
+    Device device = GetParam();
+    Tensor src;
+    Tensor dst;
+
+    // np.sum(np.ones(()), axis=(), keepdims=*)
+    src = Tensor::Ones({}, Dtype::Float32, device);
+    dst = src.Sum({}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1}));
+    dst = src.Sum({}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1}));
+
+    // np.sum(np.ones(()), axis=(out_of_bound), keepdims=*)
+    EXPECT_THROW(dst.Sum({0}, false), std::runtime_error);
+    EXPECT_THROW(dst.Sum({-1}, false), std::runtime_error);
+    EXPECT_THROW(dst.Sum({-1}, true), std::runtime_error);
+    EXPECT_THROW(dst.Sum({1}, false), std::runtime_error);
+    EXPECT_THROW(dst.Sum({1}, true), std::runtime_error);
+
+    // Emtpy reduction axis ().
+    // This reduces no axis, which is different from reduce all axis.
+    // np.sum(np.ones((0)), axis=(), keepdims=*)
+    src = Tensor::Ones({0}, Dtype::Float32, device);
+    dst = src.Sum({}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({0}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({}));
+    dst = src.Sum({}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({0}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({}));
+
+    // np.sum(np.ones((0)), axis=(0,), keepdims=*), fill with identity
+    src = Tensor::Ones({0}, Dtype::Float32, device);
+    dst = src.Sum({0}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));  // 1D becomes 0D.
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0}));
+    dst = src.Sum({0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1}));  // Remains 1D, but with size 1.
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0}));
+
+    // np.sum(np.ones((0, 2)), axis=(), keepdims=*)
+    src = Tensor::Ones({0, 2}, Dtype::Float32, device);
+    dst = src.Sum({}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({0, 2}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({}));
+    dst = src.Sum({}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({0, 2}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({}));
+
+    // np.sum(np.ones((0, 2)), axis=(0,), keepdims=*), fill with identity
+    src = Tensor::Ones({0, 2}, Dtype::Float32, device);
+    dst = src.Sum({0}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0, 0}));
+    dst = src.Sum({0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 2}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0, 0}));
+
+    // np.sum(np.ones((0, 2)), axis=(1,), keepdims=*)
+    src = Tensor::Ones({0, 2}, Dtype::Float32, device);
+    dst = src.Sum({1}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({0}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({}));
+    dst = src.Sum({1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({0, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({}));
+
+    // np.sum(np.ones((0, 2)), axis=(0, 1), keepdims=*), fill with identity
+    src = Tensor::Ones({0, 2}, Dtype::Float32, device);
+    dst = src.Sum({0, 1}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0}));
+    dst = src.Sum({0, 1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0}));
+}
+
 TEST_P(TensorPermuteDevices, ReduceMultipleOutputsSumLargeArray) {
     Device device = GetParam();
     SizeVector shape{3, 7, 8234719};
@@ -1988,6 +2086,43 @@ TEST_P(TensorPermuteDevices, Ne) {
     EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 1, 1, 1}));
 }
 
+TEST_P(TensorPermuteDevices, BooleanIndex) {
+    Device device = GetParam();
+
+    // a[a < 0] = 0
+    Tensor a(std::vector<float>({1, -1, -2, 3}), {4}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({0}), {1}, Dtype::Float32, device);
+    a.SetItem(TensorKey::IndexTensor(a.Le(b)), b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({1, 0, 0, 3}));
+
+    // x = np.array([[0, 1], [1, 1], [2, 2]])
+    // row_sum = np.array([1, 2, 4])
+    // y = x[row_sum <= 2, :]
+    Tensor x(std::vector<float>{0, 1, 1, 1, 2, 2}, {3, 2}, Dtype::Float32,
+             device);
+    Tensor row_sum(std::vector<float>{1, 2, 4}, {3}, Dtype::Float32, device);
+    Tensor two(std::vector<float>({2}), {1}, Dtype::Float32, device);
+    Tensor y = x.GetItem({TensorKey::IndexTensor(row_sum.Le(two)),
+                          TensorKey::Slice(None, None, None)});
+    EXPECT_EQ(y.ToFlatVector<float>(), std::vector<float>({0, 1, 1, 1}));
+    EXPECT_EQ(y.GetShape(), SizeVector({2, 2}));
+    EXPECT_EQ(y.GetDtype(), Dtype::Float32);
+}
+
+TEST_P(TensorPermuteDevices, NonZeroNumpy) {
+    Device device = GetParam();
+
+    Tensor a(std::vector<float>({0, 1, 1, 0, 1, 0}), {3, 2}, Dtype::Float32,
+             device);
+    std::vector<Tensor> results = a.NonZeroNumpy();
+    EXPECT_EQ(results[0].ToFlatVector<int64_t>(),
+              std::vector<int64_t>({0, 1, 2}));
+    EXPECT_EQ(results[1].ToFlatVector<int64_t>(),
+              std::vector<int64_t>({1, 0, 0}));
+    EXPECT_EQ(results[0].GetShape(), SizeVector{3});
+    EXPECT_EQ(results[1].GetShape(), SizeVector{3});
+}
+
 TEST_P(TensorPermuteDevices, CreationEmpty) {
     Device device = GetParam();
 
@@ -2150,3 +2285,96 @@ TEST_P(TensorPermuteDevices, ScalarOperatorOverload) {
     a /= true;
     EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({5, 5}));
 }
+
+TEST_P(TensorPermuteDevices, ReduceMean) {
+    Device device = GetParam();
+    Tensor src;
+    Tensor dst;
+
+    // Only Float32 and Float64 supports Mean.
+    src = Tensor::Ones({2, 3}, Dtype::Int64, device);
+    EXPECT_THROW(src.Mean({}), std::runtime_error);
+
+    // Input shape {2, 3}, not keepdim.
+    src = Tensor(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32,
+                 device);
+    dst = src.Mean({}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 2, 3, 4, 5}));
+    dst = src.Mean({0}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({3}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1.5, 2.5, 3.5}));
+    dst = src.Mean({1}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1, 4}));
+
+    // Input shape {2, 3}, keepdim.
+    src = Tensor(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32,
+                 device);
+    dst = src.Mean({}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 2, 3, 4, 5}));
+    dst = src.Mean({0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 3}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1.5, 2.5, 3.5}));
+    dst = src.Mean({1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1, 4}));
+
+    // Input shape {}, one element, not keepdim.
+    src = Tensor::Ones({}, Dtype::Float32, device);
+    dst = src.Mean({}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1}));
+    EXPECT_THROW(src.Mean({0}, false), std::runtime_error);
+
+    // Input shape {}, one element, keepdim.
+    src = Tensor::Ones({}, Dtype::Float32, device);
+    dst = src.Mean({}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1}));
+    EXPECT_THROW(src.Mean({0}, true), std::runtime_error);
+
+    // Input shape {0}, not keepdim.
+    src = Tensor::Ones({0}, Dtype::Float32, device);
+    dst = src.Mean({0}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));  // 1D becomes 0D.
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
+
+    // Input shape {0}, keepdim.
+    src = Tensor::Ones({0}, Dtype::Float32, device);
+    dst = src.Mean({0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1}));  // 1D, filled with identity.
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
+
+    // Input shape {0, 2}, not keepdim.
+    src = Tensor::Ones({0, 2}, Dtype::Float32, device);
+    dst = src.Mean({0}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2}));
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[1]));
+    dst = src.Mean({1}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({0}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({}));
+    dst = src.Mean({0, 1}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
+
+    // Input shape {0, 2}, keepdim.
+    src = Tensor::Ones({0, 2}, Dtype::Float32, device);
+    dst = src.Mean({0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 2}));
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[1]));
+    dst = src.Mean({1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({0, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({}));
+    dst = src.Mean({0, 1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 1}));
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
+}
+
+}  // namespace unit_test
+}  // namespace open3d

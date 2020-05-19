@@ -28,7 +28,7 @@
 
 #include <memory>
 
-#include "Events.h"
+#include "Open3D/GUI/Events.h"
 
 #define GUI_USE_NATIVE_MENUS 1
 
@@ -49,25 +49,25 @@ public:
     virtual ~Menu();
 
     void AddItem(const char* name,
-                 ItemId itemId = NO_ITEM,
+                 ItemId item_id = NO_ITEM,
                  KeyName key = KEY_NONE);
     void AddMenu(const char* name, std::shared_ptr<Menu> submenu);
     void AddSeparator();
 
     /// Searches the menu hierarchy down from this menu to find the item
     /// and returns true if the item is enabled.
-    bool IsEnabled(ItemId itemId) const;
+    bool IsEnabled(ItemId item_id) const;
     /// Searches the menu hierarchy down from this menu to find the item
-    /// and set it enabled according to \param enabled.
-    void SetEnabled(ItemId itemId, bool enabled);
+    /// and set it enabled according to \p enabled.
+    void SetEnabled(ItemId item_id, bool enabled);
 
-    bool IsChecked(ItemId itemId) const;
-    void SetChecked(ItemId itemId, bool checked);
+    bool IsChecked(ItemId item_id) const;
+    void SetChecked(ItemId item_id, bool checked);
 
     int CalcHeight(const Theme& theme) const;
 
-    ItemId DrawMenuBar(const DrawContext& context, bool isEnabled);
-    ItemId Draw(const DrawContext& context, const char* name, bool isEnabled);
+    ItemId DrawMenuBar(const DrawContext& context, bool is_enabled);
+    ItemId Draw(const DrawContext& context, const char* name, bool is_enabled);
 
 protected:
     void* GetNativePointer();  // nullptr if not using native menus

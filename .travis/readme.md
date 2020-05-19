@@ -38,7 +38,16 @@
    # Grant public read permission
    # The current user must have appropriate permission, you may do this in the web interface
    gsutil acl ch -u AllUsers:R gs://open3d-docs/
+
+   # Set object life cycle
+   # https://cloud.google.com/storage/docs/managing-lifecycles#delete_an_object
+   gsutil lifecycle set gcs.lifecycle.json gs://open3d-docs/
    ```
+
+   Objects will be stored in the bucket for one week. Currently, the
+   documentation server fetches the latest docs from `master` branch every hour.
+   If the documentation server fails to fetch the docs matching the `master`
+   commit id, the last successfully fetched docs will be displayed.
 
 3. Create service account
 

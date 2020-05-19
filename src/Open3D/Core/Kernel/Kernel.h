@@ -28,5 +28,6 @@
 
 #include "Open3D/Core/Kernel/BinaryEW.h"
 #include "Open3D/Core/Kernel/IndexGetSet.h"
+#include "Open3D/Core/Kernel/NonZero.h"
 #include "Open3D/Core/Kernel/Reduction.h"
 #include "Open3D/Core/Kernel/UnaryEW.h"

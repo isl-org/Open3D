@@ -26,12 +26,11 @@
 
 #include "Open3DViewer.h"
 
-#include "Open3D/Open3D.h"
-#include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
+#include <string>
 
 #include "Open3D/GUI/Native.h"
-
-#include <string>
+#include "Open3D/Open3D.h"
+#include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
 
 using namespace open3d;
 using namespace open3d::geometry;
@@ -45,10 +44,10 @@ bool LoadAndCreateWindow(const char *path) {
     static int x = 50, y = 50;
 
     bool loaded = false;
-    bool isPathValid = (path && path[0] != '\0');
+    bool is_path_valid = (path && path[0] != '\0');
     std::vector<std::shared_ptr<const Geometry>> empty;
     std::string title = "Open3D";
-    if (isPathValid) {
+    if (is_path_valid) {
         title += " - ";
         title += path;
     }
@@ -56,7 +55,7 @@ bool LoadAndCreateWindow(const char *path) {
             std::make_shared<GuiVisualizer>(empty, title, WIDTH, HEIGHT, x, y);
     x += 20;  // so next window (if any) doesn't hide this one
     y += 20;
-    if (isPathValid) {
+    if (is_path_valid) {
         loaded = vis->LoadGeometry(path);
     }
     gui::Application::GetInstance().AddWindow(vis);  // add even if failed
@@ -66,7 +65,7 @@ bool LoadAndCreateWindow(const char *path) {
     // been output to console and the typical Linux user will know to check
     // console when the window shows up empty.
 #if defined(__APPLE__) || defined(_WIN32)
-    if (!loaded && isPathValid) {
+    if (!loaded && is_path_valid) {
         auto err = std::string("Error reading geometry file '") + path + "'";
         gui::ShowNativeAlert(err.c_str());
     }

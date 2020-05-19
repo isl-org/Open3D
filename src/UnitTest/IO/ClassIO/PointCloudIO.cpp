@@ -26,58 +26,38 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(PointCloudIO, DISABLED_CreatePointCloudFromFile) {
-    unit_test::NotImplemented();
-}
+namespace open3d {
+namespace unit_test {
 
-TEST(PointCloudIO, DISABLED_ReadPointCloud) { unit_test::NotImplemented(); }
+TEST(PointCloudIO, DISABLED_CreatePointCloudFromFile) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_WritePointCloud) { unit_test::NotImplemented(); }
+TEST(PointCloudIO, DISABLED_ReadPointCloud) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZ) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_WritePointCloud) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_WritePointCloudToXYZ) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZ) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZN) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_WritePointCloudToXYZ) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_WritePointCloudToXYZN) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZN) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZRGB) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_WritePointCloudToXYZN) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_WritePointCloudToXYZRGB) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZRGB) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromPLY) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_WritePointCloudToXYZRGB) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_WritePointCloudToPLY) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromPLY) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromPCD) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_WritePointCloudToPLY) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_WritePointCloudToPCD) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromPCD) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromPTS) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_WritePointCloudToPCD) { NotImplemented(); }
 
-TEST(PointCloudIO, DISABLED_WritePointCloudToPTS) {
-    unit_test::NotImplemented();
-}
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromPTS) { NotImplemented(); }
+
+TEST(PointCloudIO, DISABLED_WritePointCloudToPTS) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

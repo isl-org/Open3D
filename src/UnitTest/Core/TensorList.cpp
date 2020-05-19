@@ -31,8 +31,8 @@
 #include "Core/CoreTest.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
+namespace unit_test {
 
 class TensorListPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(TensorList,
@@ -329,3 +329,6 @@ TEST_P(TensorListPermuteDevices, Clear) {
     EXPECT_EQ(tensor_list.GetSize(), 0);
     EXPECT_EQ(tensor_list.GetReservedSize(), 1);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

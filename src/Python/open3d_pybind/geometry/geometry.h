@@ -28,6 +28,8 @@
 
 #include "open3d_pybind/open3d_pybind.h"
 
+namespace open3d {
+
 void pybind_geometry(py::module &m);
 
 void pybind_pointcloud(py::module &m);
@@ -48,3 +50,5 @@ void pybind_image_methods(py::module &m);
 void pybind_octree_methods(py::module &m);
 void pybind_octree(py::module &m);
 void pybind_boundingvolume(py::module &m);
+
+}  // namespace open3d

@@ -43,11 +43,22 @@ def cast_to_py_tensor(func):
         A function which returns a python object `o3d.Tensor`.
     """
 
+    def _maybe_to_py_tensor(c_tensor):
+        if isinstance(c_tensor, open3d_pybind.Tensor):
+            py_tensor = Tensor([])
+            py_tensor.shallow_copy_from(c_tensor)
+            return py_tensor
+        else:
+            return c_tensor
+
     def wrapped_func(self, *args, **kwargs):
         result = func(self, *args, **kwargs)
-        wrapped_result = Tensor([])
-        wrapped_result.shallow_copy_from(result)
-        return wrapped_result
+        if isinstance(result, list):
+            return [_maybe_to_py_tensor(val) for val in result]
+        elif isinstance(result, tuple):
+            return tuple([_maybe_to_py_tensor(val) for val in result])
+        else:
+            return _maybe_to_py_tensor(result)
 
     return wrapped_func
 
@@ -70,7 +81,7 @@ def _to_o3d_tensor_key(key):
     elif isinstance(key, Tensor):
         return o3d.open3d_pybind.TensorKey.index_tensor(key)
     else:
-        raise TypeError(f"Invalid key type {type(key)}.")
+        raise TypeError("Invalid key type {}.".format(type(key)))
 
 
 class Tensor(open3d_pybind.Tensor):
@@ -99,7 +110,7 @@ class Tensor(open3d_pybind.Tensor):
         elif isinstance(key, (int, slice, list, np.ndarray, Tensor)):
             t = super(Tensor, self)._getitem(_to_o3d_tensor_key(key))
         else:
-            raise TypeError(f"Invalid type {type(key)} for getitem.")
+            raise TypeError("Invalid type {} for getitem.".format(type(key)))
         return t
 
     @cast_to_py_tensor
@@ -110,7 +121,7 @@ class Tensor(open3d_pybind.Tensor):
         elif isinstance(key, (int, slice, list, np.ndarray, Tensor)):
             super(Tensor, self)._setitem(_to_o3d_tensor_key(key), value)
         else:
-            raise TypeError(f"Invalid type {type(key)} for getitem.")
+            raise TypeError("Invalid type {} for getitem.".format(type(key)))
         return self
 
     @staticmethod
@@ -467,6 +478,13 @@ class Tensor(open3d_pybind.Tensor):
         """
         return super(Tensor, self).to(dtype, copy)
 
+    @cast_to_py_tensor
+    def nonzero(self, as_tuple=False):
+        if as_tuple:
+            return super(Tensor, self)._non_zero_numpy()
+        else:
+            return super(Tensor, self)._non_zero()
+
     def __add__(self, value):
         return self.add(value)
 
@@ -526,7 +544,7 @@ class Tensor(open3d_pybind.Tensor):
             return o3d.SizeVector(dim)
         else:
             raise TypeError(
-                f"dim must be int, list or tuple, but was {type(dim)}.")
+                "dim must be int, list or tuple, but was {}.".format(type(dim)))
 
     @cast_to_py_tensor
     def sum(self, dim=None, keepdim=False):
@@ -537,6 +555,16 @@ class Tensor(open3d_pybind.Tensor):
         """
         dim = self._reduction_dim_to_size_vector(dim)
         return super(Tensor, self).sum(dim, keepdim)
+
+    @cast_to_py_tensor
+    def mean(self, dim=None, keepdim=False):
+        """
+        Returns the mean along each the specified dimension `dim`. If `dim` is
+        None, the reduction happens for all elements of the tensor. If `dim` is
+        a list or tuple, the reduction happens in all of the specified `dim`.
+        """
+        dim = self._reduction_dim_to_size_vector(dim)
+        return super(Tensor, self).mean(dim, keepdim)
 
     @cast_to_py_tensor
     def prod(self, dim=None, keepdim=False):
@@ -590,7 +618,7 @@ class Tensor(open3d_pybind.Tensor):
         elif isinstance(dim, int):
             dim = self._reduction_dim_to_size_vector([dim])
         else:
-            raise TypeError(f"dim must be int or None, but got {dim}")
+            raise TypeError("dim must be int or None, but got {}".format(dim))
         return super(Tensor, self).argmin_(dim)
 
     @cast_to_py_tensor
@@ -608,7 +636,7 @@ class Tensor(open3d_pybind.Tensor):
         elif isinstance(dim, int):
             dim = self._reduction_dim_to_size_vector([dim])
         else:
-            raise TypeError(f"dim must be int or None, but got {dim}")
+            raise TypeError("dim must be int or None, but got {}".format(dim))
         return super(Tensor, self).argmax_(dim)
 
     def __lt__(self, value):

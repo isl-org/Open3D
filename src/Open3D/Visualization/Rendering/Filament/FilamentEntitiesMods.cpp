@@ -24,15 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "FilamentEntitiesMods.h"
-
-#include "FilamentEngine.h"
-#include "FilamentResourceManager.h"
-
-#include "Open3D/Utility/Console.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEntitiesMods.h"
 
 #include <filament/MaterialInstance.h>
 #include <filament/TextureSampler.h>
+
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
 
 namespace open3d {
 namespace visualization {
@@ -58,10 +57,10 @@ TextureSampler::WrapMode ConvertWrapMode(
 }  // namespace
 
 TextureSampler FilamentMaterialModifier::SamplerFromSamplerParameters(
-        const TextureSamplerParameters& samplerConfig) {
+        const TextureSamplerParameters& sampler_config) {
     TextureSampler sampler;
 
-    switch (samplerConfig.filterMag) {
+    switch (sampler_config.filter_mag) {
         case TextureSamplerParameters::MagFilter::Nearest:
             sampler.setMagFilter(TextureSampler::MagFilter::NEAREST);
             break;
@@ -70,7 +69,7 @@ TextureSampler FilamentMaterialModifier::SamplerFromSamplerParameters(
             break;
     }
 
-    switch (samplerConfig.filterMin) {
+    switch (sampler_config.filter_min) {
         case TextureSamplerParameters::MinFilter::Nearest:
             sampler.setMinFilter(TextureSampler::MinFilter::NEAREST);
             break;
@@ -95,9 +94,9 @@ TextureSampler FilamentMaterialModifier::SamplerFromSamplerParameters(
             break;
     }
 
-    sampler.setWrapModeS(ConvertWrapMode(samplerConfig.wrapU));
-    sampler.setWrapModeT(ConvertWrapMode(samplerConfig.wrapV));
-    sampler.setWrapModeR(ConvertWrapMode(samplerConfig.wrapW));
+    sampler.setWrapModeS(ConvertWrapMode(sampler_config.wrap_u));
+    sampler.setWrapModeT(ConvertWrapMode(sampler_config.wrap_v));
+    sampler.setWrapModeR(ConvertWrapMode(sampler_config.wrap_w));
 
     sampler.setAnisotropy(sampler.getAnisotropy());
 
@@ -105,37 +104,37 @@ TextureSampler FilamentMaterialModifier::SamplerFromSamplerParameters(
 }
 
 FilamentMaterialModifier::FilamentMaterialModifier(
-        const std::shared_ptr<filament::MaterialInstance>& materialInstance,
+        const std::shared_ptr<filament::MaterialInstance>& material_instance,
         const MaterialInstanceHandle& id) {
-    Init(materialInstance, id);
+    Init(material_instance, id);
 }
 
 void FilamentMaterialModifier::Reset() {
-    if (materialInstance_ != nullptr) {
+    if (material_instance_ != nullptr) {
         utility::LogWarning(
                 "Previous material instance modifications are not finished!");
     }
 
-    materialInstance_ = nullptr;
-    currentHandle_ = MaterialInstanceHandle::kBad;
+    material_instance_ = nullptr;
+    current_handle_ = MaterialInstanceHandle::kBad;
 }
 
 void FilamentMaterialModifier::Init(
-        const std::shared_ptr<filament::MaterialInstance>& materialInstance,
+        const std::shared_ptr<filament::MaterialInstance>& material_instance,
         const MaterialInstanceHandle& id) {
-    if (materialInstance_ != nullptr) {
+    if (material_instance_ != nullptr) {
         utility::LogWarning(
                 "Previous material instance modifications are not finished!");
     }
 
-    materialInstance_ = materialInstance;
-    currentHandle_ = id;
+    material_instance_ = material_instance;
+    current_handle_ = id;
 }
 
 MaterialModifier& FilamentMaterialModifier::SetParameter(const char* parameter,
                                                          const int value) {
-    if (materialInstance_) {
-        materialInstance_->setParameter(parameter, value);
+    if (material_instance_) {
+        material_instance_->setParameter(parameter, value);
     }
 
     return *this;
@@ -143,8 +142,8 @@ MaterialModifier& FilamentMaterialModifier::SetParameter(const char* parameter,
 
 MaterialModifier& FilamentMaterialModifier::SetParameter(const char* parameter,
                                                          const float value) {
-    if (materialInstance_) {
-        materialInstance_->setParameter(parameter, value);
+    if (material_instance_) {
+        material_instance_->setParameter(parameter, value);
     }
 
     return *this;
@@ -152,9 +151,9 @@ MaterialModifier& FilamentMaterialModifier::SetParameter(const char* parameter,
 
 MaterialModifier& FilamentMaterialModifier::SetParameter(
         const char* parameter, const Eigen::Vector3f& v) {
-    if (materialInstance_) {
-        materialInstance_->setParameter(parameter,
-                                        math::float3{v(0), v(1), v(2)});
+    if (material_instance_) {
+        material_instance_->setParameter(parameter,
+                                         math::float3{v(0), v(1), v(2)});
     }
 
     return *this;
@@ -162,11 +161,11 @@ MaterialModifier& FilamentMaterialModifier::SetParameter(
 
 MaterialModifier& FilamentMaterialModifier::SetColor(
         const char* parameter, const Eigen::Vector3f& value) {
-    if (materialInstance_) {
+    if (material_instance_) {
         const auto color =
                 filament::math::float3{value.x(), value.y(), value.z()};
-        materialInstance_->setParameter(parameter, filament::RgbType::LINEAR,
-                                        color);
+        material_instance_->setParameter(parameter, filament::RgbType::LINEAR,
+                                         color);
     }
 
     return *this;
@@ -174,11 +173,11 @@ MaterialModifier& FilamentMaterialModifier::SetColor(
 
 MaterialModifier& FilamentMaterialModifier::SetColor(
         const char* parameter, const Eigen::Vector4f& value) {
-    if (materialInstance_) {
+    if (material_instance_) {
         auto color =
                 filament::math::float4{value(0), value(1), value(2), value(3)};
-        materialInstance_->setParameter(parameter, filament::RgbaType::LINEAR,
-                                        color);
+        material_instance_->setParameter(parameter, filament::RgbaType::LINEAR,
+                                         color);
     }
 
     return *this;
@@ -186,39 +185,39 @@ MaterialModifier& FilamentMaterialModifier::SetColor(
 
 MaterialModifier& FilamentMaterialModifier::SetTexture(
         const char* parameter,
-        const TextureHandle& textureHandle,
-        const TextureSamplerParameters& samplerConfig) {
-    if (materialInstance_) {
-        auto wTexture =
-                EngineInstance::GetResourceManager().GetTexture(textureHandle);
+        const TextureHandle& texture_handle,
+        const TextureSamplerParameters& sampler_config) {
+    if (material_instance_) {
+        auto w_texture =
+                EngineInstance::GetResourceManager().GetTexture(texture_handle);
 
-        if (auto texturePtr = wTexture.lock()) {
-            materialInstance_->setParameter(
-                    parameter, texturePtr.get(),
-                    SamplerFromSamplerParameters(samplerConfig));
+        if (auto texture_ptr = w_texture.lock()) {
+            material_instance_->setParameter(
+                    parameter, texture_ptr.get(),
+                    SamplerFromSamplerParameters(sampler_config));
         } else {
             utility::LogWarning(
                     "Failed to set texture for material.\n\tMaterial handle: "
                     "{}\n\tTexture handle: {}\n\tParameter name: {}",
-                    currentHandle_, textureHandle, parameter);
+                    current_handle_, texture_handle, parameter);
         }
     }
 
     return *this;
 }
 
-MaterialModifier& FilamentMaterialModifier::SetDoubleSided(bool doubleSided) {
-    if (materialInstance_) {
-        materialInstance_->setDoubleSided(doubleSided);
+MaterialModifier& FilamentMaterialModifier::SetDoubleSided(bool double_sided) {
+    if (material_instance_) {
+        material_instance_->setDoubleSided(double_sided);
     }
     return *this;
 }
 
 MaterialInstanceHandle FilamentMaterialModifier::Finish() {
-    auto res = currentHandle_;
+    auto res = current_handle_;
 
-    materialInstance_ = nullptr;
-    currentHandle_ = MaterialInstanceHandle::kBad;
+    material_instance_ = nullptr;
+    current_handle_ = MaterialInstanceHandle::kBad;
 
     return res;
 }

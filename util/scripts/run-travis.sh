@@ -8,22 +8,26 @@
 
 set -euo pipefail
 
-python --version
-cmake --version
+echo "installing Python unit test dependencies..."
+pip install --upgrade pip
+pip install -U -q pytest
+pip install -U -q wheel
 echo
 
-OPEN3D_INSTALL_DIR=~/open3d_install
+python --version
+pytest --version
+cmake --version
 
 echo "cmake configure the Open3D project..."
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
-    pip install --upgrade pip
-    pip install tensorflow==2.0.0
+    pip install -U -q tensorflow==2.0.0
 fi
 mkdir build
 cd build
 
 runBenchmarks=true
+OPEN3D_INSTALL_DIR=~/open3d_install
 cmakeOptions="-DBUILD_SHARED_LIBS=$SHARED \
         -DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS \
         -DBUILD_UNIT_TESTS=ON \
@@ -48,11 +52,18 @@ echo
 echo "build & install Open3D..."
 date
 make install -j$NPROC
+make install-pip-package -j$NPROC
 echo
 
 echo "running Open3D unit tests..."
 date
 ./bin/unitTests
+echo
+
+echo "running Open3D python tests..."
+date
+# TODO: fix TF op library test.
+pytest ../src/UnitTest/Python/ --ignore="../src/UnitTest/Python/test_tf_op_library.py"
 echo
 
 if $runBenchmarks; then

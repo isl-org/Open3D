@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Widget.h"
-
 #include <functional>
+
+#include "Open3D/GUI/Widget.h"
 
 namespace open3d {
 namespace gui {
@@ -53,14 +53,14 @@ public:
     double GetMaximumValue() const;
     /// Sets the bounds for valid values of the widget. Values will be clamped
     /// to be within [minValue, maxValue].
-    void SetLimits(double minValue, double maxValue);
+    void SetLimits(double min_value, double max_value);
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 
     /// Sets a function to call when the value changes because of user action.
-    void SetOnValueChanged(std::function<void(double)> onValueChanged);
+    void SetOnValueChanged(std::function<void(double)> on_value_changed);
 
 private:
     struct Impl;

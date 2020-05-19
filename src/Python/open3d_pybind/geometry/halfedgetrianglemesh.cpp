@@ -32,7 +32,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_half_edge(py::module &m) {
     py::class_<geometry::HalfEdgeTriangleMesh::HalfEdge> half_edge(
@@ -158,3 +158,5 @@ void pybind_halfedgetrianglemesh(py::module &m) {
                                     "create_from_triangle_mesh",
                                     {{"mesh", "The input TriangleMesh"}});
 }
+
+}  // namespace open3d

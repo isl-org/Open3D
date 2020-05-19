@@ -38,6 +38,8 @@
 
 #include "Open3D/Utility/Console.h"
 
+namespace open3d {
+
 PYBIND11_MODULE(open3d_pybind, m) {
     open3d::utility::Logger::i().print_fcn_ = [](const std::string& msg) {
         py::print(msg);
@@ -62,3 +64,5 @@ PYBIND11_MODULE(open3d_pybind, m) {
     pybind_odometry(m);
     pybind_visualization(m);
 }
+
+}  // namespace open3d

@@ -145,7 +145,8 @@ add_custom_target(install-pip-package
 # FOR DEBUGGING ONLY Use `make install-python-package` to build and install
 # python package in the current python environment. This is substantially
 # faster than `make install-pip-package`. However this approach does not create
-# wheel or egg files thus not suitable for deployment.
+# wheel or egg files and does not take care of dependencies thus not suitable
+# for deployment.
 # Ref: https://stackoverflow.com/a/33791008/1255535
 add_custom_target(install-python-package
     COMMAND ${PYTHON_EXECUTABLE} setup.py install --single-version-externally-managed --root=/

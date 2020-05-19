@@ -26,28 +26,28 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(CorrespondenceChecker, DISABLED_Constructor) {
-    unit_test::NotImplemented();
-}
+namespace open3d {
+namespace unit_test {
 
-TEST(CorrespondenceChecker, DISABLED_Destructor) {
-    unit_test::NotImplemented();
-}
+TEST(CorrespondenceChecker, DISABLED_Constructor) { NotImplemented(); }
 
-TEST(CorrespondenceChecker, DISABLED_MemberData) {
-    unit_test::NotImplemented();
-}
+TEST(CorrespondenceChecker, DISABLED_Destructor) { NotImplemented(); }
 
-TEST(CorrespondenceChecker, DISABLED_Check) { unit_test::NotImplemented(); }
+TEST(CorrespondenceChecker, DISABLED_MemberData) { NotImplemented(); }
+
+TEST(CorrespondenceChecker, DISABLED_Check) { NotImplemented(); }
 
 TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnEdgeLength) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnDistance) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnNormal) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
+
+}  // namespace unit_test
+}  // namespace open3d

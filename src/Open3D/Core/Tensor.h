@@ -350,7 +350,6 @@ public:
     ///
     /// We use the Numpy advanced indexing symnatics, see:
     /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
-    /// ```
     Tensor IndexGet(const std::vector<Tensor>& index_tensors) const;
 
     /// \brief Advanced indexing getter.
@@ -502,6 +501,11 @@ public:
     /// \param dims A list of dimensions to be reduced.
     /// \param keepdim If true, the reduced dims will be retained as size 1.
     Tensor Sum(const SizeVector& dims, bool keepdim = false) const;
+
+    /// Returns the mean of the tensor along the given \p dims.
+    /// \param dims A list of dimensions to be reduced.
+    /// \param keepdim If true, the reduced dims will be retained as size 1.
+    Tensor Mean(const SizeVector& dims, bool keepdim = false) const;
 
     /// Returns the product of the tensor along the given \p dims.
     /// \param dims A list of dimensions to be reduced.
@@ -682,6 +686,17 @@ public:
     /// operation won't change the tensor's dtype.
     Tensor Ne_(const Tensor& value);
 
+    /// Find the indices of the elements that are non-zero. Returns a vector of
+    /// int64 Tensors, each containing the indices of the non-zero elements in
+    /// each dimension.
+    std::vector<Tensor> NonZeroNumpy() const;
+
+    /// Find the indices of the elements that are non-zero. Returns an int64
+    /// tensor of shape {num_dims, num_non_zeros}, where the i-th row contains
+    /// the indices of the non-zero elements in i-th dimension of the original
+    /// tensor.
+    Tensor NonZero() const;
+
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>
     std::vector<T> ToFlatVector() const {
@@ -798,7 +813,7 @@ protected:
 
     /// Underlying memory buffer for Tensor.
     std::shared_ptr<Blob> blob_ = nullptr;
-};
+};  // namespace open3d
 
 template <>
 inline Tensor::Tensor(const std::vector<bool>& init_vals,

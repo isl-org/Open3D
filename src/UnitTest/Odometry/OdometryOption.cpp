@@ -26,8 +26,14 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(OdometryOption, DISABLED_Constructor) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(OdometryOption, DISABLED_Destructor) { unit_test::NotImplemented(); }
+TEST(OdometryOption, DISABLED_Constructor) { NotImplemented(); }
 
-TEST(OdometryOption, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(OdometryOption, DISABLED_Destructor) { NotImplemented(); }
+
+TEST(OdometryOption, DISABLED_MemberData) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

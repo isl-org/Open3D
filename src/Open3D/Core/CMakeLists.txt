@@ -1,6 +1,8 @@
 set (KERNEL_SRC
     Kernel/IndexGetSet.cpp
     Kernel/IndexGetSetCPU.cpp
+    Kernel/NonZero.cpp
+    Kernel/NonZeroCPU.cpp
     Kernel/UnaryEW.cpp
     Kernel/UnaryEWCPU.cpp
     Kernel/BinaryEW.cpp
@@ -11,6 +13,7 @@ set (KERNEL_SRC
 
 set (KERNEL_CUDA_SRC
     Kernel/IndexGetSetCUDA.cu
+    Kernel/NonZeroCUDA.cu
     Kernel/UnaryEWCUDA.cu
     Kernel/BinaryEWCUDA.cu
     Kernel/ReductionCUDA.cu

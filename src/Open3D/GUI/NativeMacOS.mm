@@ -24,28 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Native.h"
+#include "Open3D/GUI/Native.h"
 
-#include "Open3D/Utility/Helper.h"
+#import <Cocoa/Cocoa.h>
+#import <QuartzCore/QuartzCore.h>
 
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_COCOA 1
 #include <GLFW/glfw3native.h>
 
-#import <Cocoa/Cocoa.h>
-#import <QuartzCore/QuartzCore.h>
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 namespace gui {
 
-void* GetNativeDrawable(GLFWwindow* glfwWindow) {
-    NSWindow* win = glfwGetCocoaWindow(glfwWindow);
+void* GetNativeDrawable(GLFWwindow* glfw_window) {
+    NSWindow* win = glfwGetCocoaWindow(glfw_window);
     NSView* view = [win contentView];
     return view;
 }
 
-void PostNativeExposeEvent(GLFWwindow* glfwWindow) {
-    NSWindow* win = glfwGetCocoaWindow(glfwWindow);
+void PostNativeExposeEvent(GLFWwindow* glfw_window) {
+    NSWindow* win = glfwGetCocoaWindow(glfw_window);
     [win contentView].needsDisplay = YES;
 }
 
@@ -91,15 +91,15 @@ void SetNativeMenubar(void* menubar) {
 void ShowNativeFileDialog(FileDialog::Mode type,
                           const std::string& path,
                           const std::vector<std::pair<std::string, std::string>>& filters,
-                          std::function<void(const char*)> onOk,
-                          std::function<void()> onCancel) {
+                          std::function<void(const char*)> on_ok,
+                          std::function<void()> on_cancel) {
     NSSavePanel *dlg; // NSOpenPanel inherits from NSSavePanel, oddly enough
     if (type == FileDialog::Mode::OPEN) {
-        NSOpenPanel *openDlg = [NSOpenPanel openPanel];
-        openDlg.allowsMultipleSelection = NO;
-        openDlg.canChooseDirectories = NO;
-        openDlg.canChooseFiles = YES;
-        dlg = openDlg;
+        NSOpenPanel *open_dlg = [NSOpenPanel openPanel];
+        open_dlg.allowsMultipleSelection = NO;
+        open_dlg.canChooseDirectories = NO;
+        open_dlg.canChooseFiles = YES;
+        dlg = open_dlg;
     } else {
         dlg = [NSSavePanel savePanel];
     }
@@ -125,9 +125,9 @@ void ShowNativeFileDialog(FileDialog::Mode type,
     NSWindow *current = NSApp.mainWindow;
     [dlg beginWithCompletionHandler:^(NSModalResponse result) {
         if (result == NSModalResponseOK) {
-            onOk(dlg.URL.path.UTF8String);
+            on_ok(dlg.URL.path.UTF8String);
         } else {
-            onCancel();
+            on_cancel();
         }
         [current makeKeyWindow];
     }];

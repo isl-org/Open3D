@@ -24,15 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Checkbox.h"
-
-#include "Theme.h"
-#include "Util.h"
+#include "Open3D/GUI/Checkbox.h"
 
 #include <imgui.h>
-
 #include <cmath>
 #include <string>
+
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Util.h"
 
 using namespace open3d::gui::util;
 
@@ -40,33 +39,33 @@ namespace open3d {
 namespace gui {
 
 struct Checkbox::Impl {
-    std::string name;
-    bool isChecked = false;
-    std::function<void(bool)> onChecked;
+    std::string name_;
+    bool is_checked_ = false;
+    std::function<void(bool)> on_checked_;
 };
 
 Checkbox::Checkbox(const char* name) : impl_(new Checkbox::Impl()) {
-    impl_->name = name;
+    impl_->name_ = name;
 }
 
 Checkbox::~Checkbox() {}
 
-bool Checkbox::IsChecked() const { return impl_->isChecked; }
+bool Checkbox::IsChecked() const { return impl_->is_checked_; }
 
-void Checkbox::SetChecked(bool checked) { impl_->isChecked = checked; }
+void Checkbox::SetChecked(bool checked) { impl_->is_checked_ = checked; }
 
-void Checkbox::SetOnChecked(std::function<void(bool)> onChecked) {
-    impl_->onChecked = onChecked;
+void Checkbox::SetOnChecked(std::function<void(bool)> on_checked) {
+    impl_->on_checked_ = on_checked;
 }
 
 Size Checkbox::CalcPreferredSize(const Theme& theme) const {
     auto em = ImGui::GetTextLineHeight();
     auto padding = ImGui::GetStyle().FramePadding;
-    auto textSize = ImGui::GetFont()->CalcTextSizeA(theme.fontSize, 10000,
-                                                    10000, impl_->name.c_str());
+    auto text_size = ImGui::GetFont()->CalcTextSizeA(
+            theme.font_size, 10000, 10000, impl_->name_.c_str());
     int height = std::ceil(em + 2.0f * padding.y);
-    auto checkboxWidth = height + padding.x;
-    return Size(checkboxWidth + std::ceil(textSize.x + 2.0f * padding.x),
+    auto checkbox_width = height + padding.x;
+    return Size(checkbox_width + std::ceil(text_size.x + 2.0f * padding.x),
                 height);
 }
 
@@ -78,27 +77,28 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
 
     // ImGUI doesn't offer styling specific to checkboxes other than the
     // color of the checkmark, so we need to adjust the colors ourselves.
-    if (impl_->isChecked) {
+    if (impl_->is_checked_) {
         ImGui::PushStyleColor(
                 ImGuiCol_FrameBg,
-                colorToImgui(context.theme.checkboxBackgroundOnColor));
+                colorToImgui(context.theme.checkbox_background_on_color));
         ImGui::PushStyleColor(
                 ImGuiCol_FrameBgHovered,
-                colorToImgui(context.theme.checkboxBackgroundHoverOnColor));
+                colorToImgui(context.theme.checkbox_background_hover_on_color));
     } else {
         ImGui::PushStyleColor(
                 ImGuiCol_FrameBg,
-                colorToImgui(context.theme.checkboxBackgroundOffColor));
+                colorToImgui(context.theme.checkbox_background_off_color));
         ImGui::PushStyleColor(
                 ImGuiCol_FrameBgHovered,
-                colorToImgui(context.theme.checkboxBackgroundHoverOffColor));
+                colorToImgui(
+                        context.theme.checkbox_background_hover_off_color));
     }
 
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
-    if (ImGui::Checkbox(impl_->name.c_str(), &impl_->isChecked)) {
-        if (impl_->onChecked) {
-            impl_->onChecked(impl_->isChecked);
+    if (ImGui::Checkbox(impl_->name_.c_str(), &impl_->is_checked_)) {
+        if (impl_->on_checked_) {
+            impl_->on_checked_(impl_->is_checked_);
         }
         result = Widget::DrawResult::REDRAW;
     }

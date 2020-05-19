@@ -45,7 +45,7 @@ public:
                        double aspect,
                        double near,
                        double far,
-                       FovType fovType) override;
+                       FovType fov_type) override;
 
     void SetProjection(Projection projection,
                        double left,
@@ -85,7 +85,7 @@ private:
     filament::Camera* camera_ = nullptr;
     filament::Engine& engine_;
     double fov_;
-    FovType fovType_;
+    FovType fov_type_;
 };
 
 }  // namespace visualization
