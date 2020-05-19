@@ -309,7 +309,7 @@ public:
     /// \param depth_trunc Truncated at \p depth_trunc distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
     ///
-    /// \Return An empty pointcloud if the conversion fails.
+    /// \return An empty pointcloud if the conversion fails.
     /// If \param project_valid_depth_only is true, return point cloud, which
     /// doesn't
     /// have nan point. If the value is false, return point cloud, which has
@@ -334,7 +334,7 @@ public:
     /// \param intrinsic Intrinsic parameters of the camera.
     /// \param extrinsic Extrinsic parameters of the camera.
     ///
-    /// \Return An empty pointcloud if the conversion fails.
+    /// \return An empty pointcloud if the conversion fails.
     /// If \param project_valid_depth_only is true, return point cloud, which
     /// doesn't
     /// have nan point. If the value is false, return point cloud, which has

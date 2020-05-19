@@ -54,7 +54,7 @@ public:
 
     /// Open an mkv playback.
     ///
-    /// \param Path to the mkv file.
+    /// \param filename Path to the mkv file.
     bool Open(const std::string &filename);
     /// Close the opened mkv playback.
     void Close();

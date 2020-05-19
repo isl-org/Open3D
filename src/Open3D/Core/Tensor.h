@@ -350,7 +350,6 @@ public:
     ///
     /// We use the Numpy advanced indexing symnatics, see:
     /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
-    /// ```
     Tensor IndexGet(const std::vector<Tensor>& index_tensors) const;
 
     /// \brief Advanced indexing getter.
