@@ -146,7 +146,7 @@ public:
     /// valid image location.
     ///
     /// \param depth_map Depth map (Image) used for VoxelGrid carving.
-    /// \param camera_params Input Camera Parameters.
+    /// \param camera_parameter Input Camera Parameters.
     /// \param keep_voxels_outside_image Project all voxels to a valid location.
     VoxelGrid &CarveDepthMap(
             const Image &depth_map,

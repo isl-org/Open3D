@@ -216,6 +216,10 @@ Window::Window(const std::string& title,
                                       title.c_str(), NULL, NULL);
     impl_->title_ = title;
 
+    if (x != CENTERED_X || y != CENTERED_Y) {
+        glfwSetWindowPos(impl_->window_, x, y);
+    }
+
     glfwSetWindowUserPointer(impl_->window_, this);
     glfwSetWindowSizeCallback(impl_->window_, ResizeCallback);
     glfwSetWindowRefreshCallback(impl_->window_, DrawCallback);

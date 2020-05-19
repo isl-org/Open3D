@@ -223,7 +223,7 @@ ImguiFilamentBridge::ImguiFilamentBridge(
     scene->GetNativeScene()->addEntity(impl_->renderable_);
 }
 
-ImguiFilamentBridge::ImguiFilamentBridge(Engine* engine,
+ImguiFilamentBridge::ImguiFilamentBridge(filament::Engine* engine,
                                          filament::Scene* scene,
                                          filament::Material* uiblit_material)
     : impl_(new ImguiFilamentBridge::Impl()) {

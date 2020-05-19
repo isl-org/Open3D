@@ -455,7 +455,8 @@ protected:
     /// src.strides_: [ 0,  3,  0,  3,  1]
     ///
     /// \param src The source TensorRef to be broadcasted.
-    /// \param dst The destination TensorRef to be broadcasted to.
+    /// \param dst_ndims Number of dimensions to be broadcasted to.
+    /// \param dst_shape Shape to be broadcasted to.
     static void BroadcastRestride(TensorRef& src,
                                   int64_t dst_ndims,
                                   const int64_t* dst_shape);

@@ -158,7 +158,7 @@ protected:
     /// \param translation A 3D vector to transform the geometry.
     /// \param points A list of points to be transformed.
     /// \param relative If `true`, the \p translation is directly applied to the
-    /// \points. Otherwise, the center of the \points is moved to the \p
+    /// \p points. Otherwise, the center of the \p points is moved to the \p
     /// translation.
     void TranslatePoints(const Eigen::Vector3d& translation,
                          std::vector<Eigen::Vector3d>& points,

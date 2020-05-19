@@ -213,28 +213,28 @@ def print_1D_array_for_cpp(prefix, array):
         dtype = "bool"
     else:
         raise Exception("invalid dtype")
-    print(f"std::vector<{dtype}> {prefix} = {{")
+    print("std::vector<{}> {} = {{".format(dtype, prefix))
     print(", ".join(map(str, array)))
     print("};")
 
 
 def print_2D_array_for_cpp(prefix, values, fmt):
     if values.shape[0] > 0:
-        print(f"{prefix} = {{")
-        print(",\n".join([
-            f"  {{{v[0]:{fmt}}, {v[1]:{fmt}}, {v[2]:{fmt}}}}" for v in values
-        ]))
-        print(f"}};")
+        print("{} = {{".format(prefix))
+        # e.g. if fmt == ".6f", v3d_fmt == "  {{{0:.6f}, {0:.6f}, {0:.6f}}}'
+        v3d_fmt = "  {{{0:%s}, {0:%s}, {0:%s}}}" % (".6f", ".6f", ".6f")
+        print(",\n".join([v3d_fmt.format(v[0], v[1], v[2]) for v in values]))
+        print("};")
 
 
 def print_mesh_for_cpp(mesh, prefix=""):
-    print_2D_array_for_cpp(f"{prefix}vertices_", np.asarray(mesh.vertices),
-                           ".6f")
-    print_2D_array_for_cpp(f"{prefix}vertex_normals_",
+    print_2D_array_for_cpp("{}vertices_".format(prefix),
+                           np.asarray(mesh.vertices), ".6f")
+    print_2D_array_for_cpp("{}vertex_normals_".format(prefix),
                            np.asarray(mesh.vertex_normals), ".6f")
-    print_2D_array_for_cpp(f"{prefix}vertex_colors_",
+    print_2D_array_for_cpp("{}vertex_colors_".format(prefix),
                            np.asarray(mesh.vertex_colors), ".6f")
-    print_2D_array_for_cpp(f"{prefix}triangles_", np.asarray(mesh.triangles),
-                           "d")
-    print_2D_array_for_cpp(f"{prefix}triangle_normals_",
+    print_2D_array_for_cpp("{}triangles_".format(prefix),
+                           np.asarray(mesh.triangles), "d")
+    print_2D_array_for_cpp("{}triangle_normals_".format(prefix),
                            np.asarray(mesh.triangle_normals), ".6f")

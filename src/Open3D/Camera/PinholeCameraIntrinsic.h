@@ -54,9 +54,9 @@ public:
     PinholeCameraIntrinsic();
     /// \brief Parameterized Constructor.
     ///
-    /// \param PinholeCameraIntrinsicParameters - Sets the camera parameters to
+    /// \param param Sets the camera parameters to
     /// the default settings of one of the sensors.
-    PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters);
+    PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters param);
     /// \brief Parameterized Constructor.
     ///
     /// \param width width of the image.

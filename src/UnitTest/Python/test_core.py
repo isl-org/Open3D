@@ -38,48 +38,67 @@ else:
 
 
 def list_devices():
+    """
+    If Open3D is built with CUDA support:
+    - If cuda device is available, returns [Device("CPU:0"), Device("CUDA:0")].
+    - If cuda device is not available, returns [Device("CPU:0")].
+
+    If Open3D is built without CUDA support:
+    - returns [Device("CPU:0")].
+    """
     devices = [o3d.Device("CPU:" + str(0))]
     if _torch_imported:
         if (o3d.cuda.device_count() != torch.cuda.device_count()):
             raise RuntimeError(
-                f"o3d.cuda.device_count() != torch.cuda.device_count(), "
-                f"{o3d.cuda.device_count()} != {torch.cuda.device_count()}")
+                "o3d.cuda.device_count() != torch.cuda.device_count(), "
+                "{} != {}".format(o3d.cuda.device_count(),
+                                  torch.cuda.device_count()))
     else:
-        print(
-            'Warning: torch is not imported, cannot guarantee the correctness of device_count()'
-        )
-
-    for i in range(o3d.cuda.device_count()):
-        devices.append(o3d.Device("CUDA:" + str(i)))
+        print("Warning: PyTorch is not imported")
+    if o3d.cuda.device_count() > 0:
+        devices.append(o3d.Device("CUDA:0"))
     return devices
 
 
-def test_creation():
+@pytest.mark.parametrize("device", list_devices())
+def test_creation(device):
     # Shape takes tuple, list or o3d.SizeVector
-    t = o3d.Tensor.empty((2, 3), o3d.Dtype.Float32)
+    t = o3d.Tensor.empty((2, 3), o3d.Dtype.Float32, device=device)
     assert t.shape == o3d.SizeVector([2, 3])
-    t = o3d.Tensor.empty([2, 3], o3d.Dtype.Float32)
+    t = o3d.Tensor.empty([2, 3], o3d.Dtype.Float32, device=device)
     assert t.shape == o3d.SizeVector([2, 3])
-    t = o3d.Tensor.empty(o3d.SizeVector([2, 3]), o3d.Dtype.Float32)
+    t = o3d.Tensor.empty(o3d.SizeVector([2, 3]),
+                         o3d.Dtype.Float32,
+                         device=device)
     assert t.shape == o3d.SizeVector([2, 3])
 
     # Test zeros and ones
-    t = o3d.Tensor.zeros((2, 3), o3d.Dtype.Float32)
-    np.testing.assert_equal(t.numpy(), np.zeros((2, 3), dtype=np.float32))
-    t = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)
-    np.testing.assert_equal(t.numpy(), np.ones((2, 3), dtype=np.float32))
+    t = o3d.Tensor.zeros((2, 3), o3d.Dtype.Float32, device=device)
+    np.testing.assert_equal(t.cpu().numpy(), np.zeros((2, 3), dtype=np.float32))
+    t = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32, device=device)
+    np.testing.assert_equal(t.cpu().numpy(), np.ones((2, 3), dtype=np.float32))
 
     # Automatic casting of dtype.
-    t = o3d.Tensor.full((2,), False, o3d.Dtype.Float32)
-    np.testing.assert_equal(t.numpy(), np.full((2,), False, dtype=np.float32))
-    t = o3d.Tensor.full((2,), 3.5, o3d.Dtype.UInt8)
-    np.testing.assert_equal(t.numpy(), np.full((2,), 3.5, dtype=np.uint8))
+    t = o3d.Tensor.full((2,), False, o3d.Dtype.Float32, device=device)
+    np.testing.assert_equal(t.cpu().numpy(),
+                            np.full((2,), False, dtype=np.float32))
+    t = o3d.Tensor.full((2,), 3.5, o3d.Dtype.UInt8, device=device)
+    np.testing.assert_equal(t.cpu().numpy(), np.full((2,), 3.5, dtype=np.uint8))
+
+
+@pytest.mark.parametrize("shape", [(), (0,), (1,), (0, 2), (0, 0, 2),
+                                   (2, 0, 3)])
+@pytest.mark.parametrize("device", list_devices())
+def test_creation_special_shapes(shape, device):
+    o3_t = o3d.Tensor.full(shape, 3.14, o3d.Dtype.Float32, device=device)
+    np_t = np.full(shape, 3.14, dtype=np.float32)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
 
 def test_dtype():
     dtype = o3d.Dtype.Int32
     assert o3d.DtypeUtil.byte_size(dtype) == 4
-    assert f"{dtype}" == "Dtype.Int32"
+    assert "{}".format(dtype) == "Dtype.Int32"
 
 
 def test_device():
@@ -104,33 +123,33 @@ def test_device():
 def test_size_vector():
     # List
     sv = o3d.SizeVector([-1, 2, 3])
-    assert f"{sv}" == "{-1, 2, 3}"
+    assert "{}".format(sv) == "{-1, 2, 3}"
 
     # Tuple
     sv = o3d.SizeVector((-1, 2, 3))
-    assert f"{sv}" == "{-1, 2, 3}"
+    assert "{}".format(sv) == "{-1, 2, 3}"
 
     # Numpy 1D array
     sv = o3d.SizeVector(np.array([-1, 2, 3]))
-    assert f"{sv}" == "{-1, 2, 3}"
+    assert "{}".format(sv) == "{-1, 2, 3}"
 
     # Empty
     sv = o3d.SizeVector()
-    assert f"{sv}" == "{}"
+    assert "{}".format(sv) == "{}"
     sv = o3d.SizeVector([])
-    assert f"{sv}" == "{}"
+    assert "{}".format(sv) == "{}"
     sv = o3d.SizeVector(())
-    assert f"{sv}" == "{}"
+    assert "{}".format(sv) == "{}"
     sv = o3d.SizeVector(np.array([]))
-    assert f"{sv}" == "{}"
+    assert "{}".format(sv) == "{}"
 
     # Automatic int casting (not rounding to nearest)
     sv = o3d.SizeVector((1.9, 2, 3))
-    assert f"{sv}" == "{1, 2, 3}"
+    assert "{}".format(sv) == "{1, 2, 3}"
 
     # Automatic casting negative
     sv = o3d.SizeVector((-1.5, 2, 3))
-    assert f"{sv}" == "{-1, 2, 3}"
+    assert "{}".format(sv) == "{-1, 2, 3}"
 
     # 2D list exception
     with pytest.raises(ValueError):
@@ -145,19 +164,19 @@ def test_size_vector():
         sv = o3d.SizeVector(["foo", "bar"])
 
 
-def test_tensor_constructor():
+@pytest.mark.parametrize("device", list_devices())
+def test_tensor_constructor(device):
     dtype = o3d.Dtype.Int32
-    device = o3d.Device("CPU:0")
 
     # Numpy array
     np_t = np.array([[0, 1, 2], [3, 4, 5]])
     o3_t = o3d.Tensor(np_t, dtype, device)
-    np.testing.assert_equal(np_t, o3_t.numpy())
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # 2D list
     li_t = [[0, 1, 2], [3, 4, 5]]
     no3_t = o3d.Tensor(li_t, dtype, device)
-    np.testing.assert_equal(li_t, o3_t.numpy())
+    np.testing.assert_equal(li_t, o3_t.cpu().numpy())
 
     # 2D list, inconsistent length
     li_t = [[0, 1, 2], [3, 4]]
@@ -168,19 +187,19 @@ def test_tensor_constructor():
     np_t_double = np.array([[0., 1.5, 2.], [3., 4., 5.]])
     np_t_int = np.array([[0, 1, 2], [3, 4, 5]])
     o3_t = o3d.Tensor(np_t_double, dtype, device)
-    np.testing.assert_equal(np_t_int, o3_t.numpy())
+    np.testing.assert_equal(np_t_int, o3_t.cpu().numpy())
 
     # Special strides
     np_t = np.random.randint(10, size=(10, 10))[1:10:2, 1:10:3].T
     o3_t = o3d.Tensor(np_t, dtype, device)
-    np.testing.assert_equal(np_t, o3_t.numpy())
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Boolean
     np_t = np.array([True, False, True], dtype=np.bool)
     o3_t = o3d.Tensor([True, False, True], o3d.Dtype.Bool, device)
-    np.testing.assert_equal(np_t, o3_t.numpy())
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
     o3_t = o3d.Tensor(np_t, o3d.Dtype.Bool, device)
-    np.testing.assert_equal(np_t, o3_t.numpy())
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
 def test_tensor_from_to_numpy():
@@ -303,79 +322,87 @@ def test_tensor_numpy_to_open3d_to_pytorch():
     np.testing.assert_equal(r, c.cpu().numpy())
 
 
-def test_binary_ew_ops():
-    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
-    b = o3d.Tensor(np.array([2, 3, 4, 5, 6, 7]))
-    np.testing.assert_equal((a + b).numpy(), np.array([6, 9, 12, 15, 18, 21]))
-    np.testing.assert_equal((a - b).numpy(), np.array([2, 3, 4, 5, 6, 7]))
-    np.testing.assert_equal((a * b).numpy(), np.array([8, 18, 32, 50, 72, 98]))
-    np.testing.assert_equal((a / b).numpy(), np.array([2, 2, 2, 2, 2, 2]))
+@pytest.mark.parametrize("device", list_devices())
+def test_binary_ew_ops(device):
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]), device=device)
+    b = o3d.Tensor(np.array([2, 3, 4, 5, 6, 7]), device=device)
+    np.testing.assert_equal((a + b).cpu().numpy(),
+                            np.array([6, 9, 12, 15, 18, 21]))
+    np.testing.assert_equal((a - b).cpu().numpy(), np.array([2, 3, 4, 5, 6, 7]))
+    np.testing.assert_equal((a * b).cpu().numpy(),
+                            np.array([8, 18, 32, 50, 72, 98]))
+    np.testing.assert_equal((a / b).cpu().numpy(), np.array([2, 2, 2, 2, 2, 2]))
 
-    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]), device=device)
     a += b
-    np.testing.assert_equal(a.numpy(), np.array([6, 9, 12, 15, 18, 21]))
+    np.testing.assert_equal(a.cpu().numpy(), np.array([6, 9, 12, 15, 18, 21]))
 
-    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]), device=device)
     a -= b
-    np.testing.assert_equal(a.numpy(), np.array([2, 3, 4, 5, 6, 7]))
+    np.testing.assert_equal(a.cpu().numpy(), np.array([2, 3, 4, 5, 6, 7]))
 
-    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]), device=device)
     a *= b
-    np.testing.assert_equal(a.numpy(), np.array([8, 18, 32, 50, 72, 98]))
+    np.testing.assert_equal(a.cpu().numpy(), np.array([8, 18, 32, 50, 72, 98]))
 
-    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]), device=device)
     a //= b
-    np.testing.assert_equal(a.numpy(), np.array([2, 2, 2, 2, 2, 2]))
+    np.testing.assert_equal(a.cpu().numpy(), np.array([2, 2, 2, 2, 2, 2]))
 
 
-def test_to():
-    a = o3d.Tensor(np.array([0.1, 1.2, 2.3, 3.4, 4.5, 5.6]).astype(np.float32))
+@pytest.mark.parametrize("device", list_devices())
+def test_to(device):
+    a = o3d.Tensor(np.array([0.1, 1.2, 2.3, 3.4, 4.5, 5.6]).astype(np.float32),
+                   device=device)
     b = a.to(o3d.Dtype.Int32)
-    np.testing.assert_equal(b.numpy(), np.array([0, 1, 2, 3, 4, 5]))
+    np.testing.assert_equal(b.cpu().numpy(), np.array([0, 1, 2, 3, 4, 5]))
     assert b.shape == o3d.SizeVector([6])
     assert b.strides == o3d.SizeVector([1])
     assert b.dtype == o3d.Dtype.Int32
     assert b.device == a.device
 
 
-def test_unary_ew_ops():
+@pytest.mark.parametrize("device", list_devices())
+def test_unary_ew_ops(device):
     src_vals = np.array([0, 1, 2, 3, 4, 5]).astype(np.float32)
-    src = o3d.Tensor(src_vals)
+    src = o3d.Tensor(src_vals, device=device)
 
     rtol = 1e-5
     atol = 0
-    np.testing.assert_allclose(src.sqrt().numpy(),
+    np.testing.assert_allclose(src.sqrt().cpu().numpy(),
                                np.sqrt(src_vals),
                                rtol=rtol,
                                atol=atol)
-    np.testing.assert_allclose(src.sin().numpy(),
+    np.testing.assert_allclose(src.sin().cpu().numpy(),
                                np.sin(src_vals),
                                rtol=rtol,
                                atol=atol)
-    np.testing.assert_allclose(src.cos().numpy(),
+    np.testing.assert_allclose(src.cos().cpu().numpy(),
                                np.cos(src_vals),
                                rtol=rtol,
                                atol=atol)
-    np.testing.assert_allclose(src.neg().numpy(),
+    np.testing.assert_allclose(src.neg().cpu().numpy(),
                                -src_vals,
                                rtol=rtol,
                                atol=atol)
-    np.testing.assert_allclose(src.exp().numpy(),
+    np.testing.assert_allclose(src.exp().cpu().numpy(),
                                np.exp(src_vals),
                                rtol=rtol,
                                atol=atol)
 
 
-def test_tensorlist_operations():
-    a = o3d.TensorList([3, 4], o3d.Dtype.Float32, o3d.Device(), size=1)
+@pytest.mark.parametrize("device", list_devices())
+def test_tensorlist_operations(device):
+    a = o3d.TensorList([3, 4], o3d.Dtype.Float32, device=device, size=1)
     assert a.size() == 1
 
     b = o3d.TensorList.from_tensor(
-        o3d.Tensor(np.ones((2, 3, 4), dtype=np.float32)))
+        o3d.Tensor(np.ones((2, 3, 4), dtype=np.float32), device=device))
     assert b.size() == 2
 
     c = o3d.TensorList.from_tensors(
-        [o3d.Tensor(np.zeros((3, 4), dtype=np.float32))])
+        [o3d.Tensor(np.zeros((3, 4), dtype=np.float32), device=device)],
+        device=device)
     assert c.size() == 1
 
     d = a + b
@@ -384,7 +411,7 @@ def test_tensorlist_operations():
     e = o3d.TensorList.concat(c, d)
     assert e.size() == 4
 
-    e.push_back(o3d.Tensor(np.zeros((3, 4), dtype=np.float32)))
+    e.push_back(o3d.Tensor(np.zeros((3, 4), dtype=np.float32), device=device))
     assert e.size() == 5
 
     e.extend(d)
@@ -394,131 +421,136 @@ def test_tensorlist_operations():
     assert e.size() == 9
 
 
-def test_getitem():
+@pytest.mark.parametrize("device", list_devices())
+def test_getitem(device):
     np_t = np.array(range(24)).reshape((2, 3, 4))
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
 
-    np.testing.assert_equal(o3_t[:].numpy(), np_t[:])
-    np.testing.assert_equal(o3_t[0].numpy(), np_t[0])
-    np.testing.assert_equal(o3_t[0, 1].numpy(), np_t[0, 1])
-    np.testing.assert_equal(o3_t[0, :].numpy(), np_t[0, :])
-    np.testing.assert_equal(o3_t[0, 1:3].numpy(), np_t[0, 1:3])
-    np.testing.assert_equal(o3_t[0, :, :-2].numpy(), np_t[0, :, :-2])
-    np.testing.assert_equal(o3_t[0, 1:3, 2].numpy(), np_t[0, 1:3, 2])
-    np.testing.assert_equal(o3_t[0, 1:-1, 2].numpy(), np_t[0, 1:-1, 2])
-    np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].numpy(), np_t[0, 1:3, 0:4:2])
-    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].numpy(), np_t[0, 1:3, 0:-1:2])
-    np.testing.assert_equal(o3_t[0, 1, :].numpy(), np_t[0, 1, :])
+    np.testing.assert_equal(o3_t[:].cpu().numpy(), np_t[:])
+    np.testing.assert_equal(o3_t[0].cpu().numpy(), np_t[0])
+    np.testing.assert_equal(o3_t[0, 1].cpu().numpy(), np_t[0, 1])
+    np.testing.assert_equal(o3_t[0, :].cpu().numpy(), np_t[0, :])
+    np.testing.assert_equal(o3_t[0, 1:3].cpu().numpy(), np_t[0, 1:3])
+    np.testing.assert_equal(o3_t[0, :, :-2].cpu().numpy(), np_t[0, :, :-2])
+    np.testing.assert_equal(o3_t[0, 1:3, 2].cpu().numpy(), np_t[0, 1:3, 2])
+    np.testing.assert_equal(o3_t[0, 1:-1, 2].cpu().numpy(), np_t[0, 1:-1, 2])
+    np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].cpu().numpy(),
+                            np_t[0, 1:3, 0:4:2])
+    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].cpu().numpy(),
+                            np_t[0, 1:3, 0:-1:2])
+    np.testing.assert_equal(o3_t[0, 1, :].cpu().numpy(), np_t[0, 1, :])
 
     # Slice the slice
-    np.testing.assert_equal(o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].numpy(),
+    np.testing.assert_equal(o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].cpu().numpy(),
                             np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3])
 
 
-def test_setitem():
+@pytest.mark.parametrize("device", list_devices())
+def test_setitem(device):
     np_ref = np.array(range(24)).reshape((2, 3, 4))
-    o3_ref = o3d.Tensor(np_ref)
+    o3_ref = o3d.Tensor(np_ref, device=device)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[:].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[:] = np_fill_t
     o3_t[:] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0] = np_fill_t
     o3_t[0] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0, 1].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0, 1] = np_fill_t
     o3_t[0, 1] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0, :].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0, :] = np_fill_t
     o3_t[0, :] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0, 1:3].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0, 1:3] = np_fill_t
     o3_t[0, 1:3] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0, :, :-2].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0, :, :-2] = np_fill_t
     o3_t[0, :, :-2] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0, 1:3, 2].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0, 1:3, 2] = np_fill_t
     o3_t[0, 1:3, 2] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0, 1:-1, 2].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0, 1:-1, 2] = np_fill_t
     o3_t[0, 1:-1, 2] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0, 1:3, 0:4:2].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0, 1:3, 0:4:2] = np_fill_t
     o3_t[0, 1:3, 0:4:2] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0, 1:3, 0:-1:2].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0, 1:3, 0:-1:2] = np_fill_t
     o3_t[0, 1:3, 0:-1:2] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0, 1, :].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0, 1, :] = np_fill_t
     o3_t[0, 1, :] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     np_t = np_ref.copy()
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].shape)
-    o3_fill_t = o3d.Tensor(np_fill_t)
+    o3_fill_t = o3d.Tensor(np_fill_t, device=device)
     np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3] = np_fill_t
     o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3] = o3_fill_t
-    np.testing.assert_equal(o3_t.numpy(), np_t)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
 
-def test_cast_to_py_tensor():
-    a = o3d.Tensor([1])
-    b = o3d.Tensor([2])
+@pytest.mark.parametrize("device", list_devices())
+def test_cast_to_py_tensor(device):
+    a = o3d.Tensor([1], device=device)
+    b = o3d.Tensor([2], device=device)
     c = a + b
     assert isinstance(c, o3d.Tensor)  # Not o3d.open3d-pybind.Tensor
 
@@ -527,122 +559,165 @@ def test_cast_to_py_tensor():
     "dim",
     [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
-def test_reduction_sum(dim, keepdim):
+@pytest.mark.parametrize("device", list_devices())
+def test_reduction_sum(dim, keepdim, device):
     np_src = np.array(range(24)).reshape((2, 3, 4))
-    o3_src = o3d.Tensor(np_src)
+    o3_src = o3d.Tensor(np_src, device=device)
 
     np_dst = np_src.sum(axis=dim, keepdims=keepdim)
     o3_dst = o3_src.sum(dim=dim, keepdim=keepdim)
-    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+    np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
+
+
+@pytest.mark.parametrize("shape_and_axis", [
+    ((), ()),
+    ((0,), ()),
+    ((0,), (0)),
+    ((0, 2), ()),
+    ((0, 2), (0)),
+    ((0, 2), (1)),
+])
+@pytest.mark.parametrize("keepdim", [True, False])
+@pytest.mark.parametrize("device", list_devices())
+def test_reduction_special_shapes(shape_and_axis, keepdim, device):
+    shape, axis = shape_and_axis
+    np_src = np.array(np.random.rand(*shape))
+    o3_src = o3d.Tensor(np_src, device=device)
+    np.testing.assert_equal(o3_src.cpu().numpy(), np_src)
+
+    np_dst = np_src.sum(axis=axis, keepdims=keepdim)
+    o3_dst = o3_src.sum(dim=axis, keepdim=keepdim)
+    np.testing.assert_equal(o3_dst.cpu().numpy(), np_dst)
 
 
 @pytest.mark.parametrize(
     "dim",
     [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
-def test_reduction_prod(dim, keepdim):
+@pytest.mark.parametrize("device", list_devices())
+def test_reduction_mean(dim, keepdim, device):
+    np_src = np.array(range(24)).reshape((2, 3, 4)).astype(np.float32)
+    o3_src = o3d.Tensor(np_src, device=device)
+
+    np_dst = np_src.mean(axis=dim, keepdims=keepdim)
+    o3_dst = o3_src.mean(dim=dim, keepdim=keepdim)
+    np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
+
+
+@pytest.mark.parametrize(
+    "dim",
+    [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
+@pytest.mark.parametrize("keepdim", [True, False])
+@pytest.mark.parametrize("device", list_devices())
+def test_reduction_prod(dim, keepdim, device):
     np_src = np.array(range(24)).reshape((2, 3, 4))
-    o3_src = o3d.Tensor(np_src)
+    o3_src = o3d.Tensor(np_src, device=device)
 
     np_dst = np_src.prod(axis=dim, keepdims=keepdim)
     o3_dst = o3_src.prod(dim=dim, keepdim=keepdim)
-    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+    np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
 
 
 @pytest.mark.parametrize(
     "dim",
     [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
-def test_reduction_min(dim, keepdim):
+@pytest.mark.parametrize("device", list_devices())
+def test_reduction_min(dim, keepdim, device):
     np_src = np.array(range(24))
     np.random.shuffle(np_src)
     np_src = np_src.reshape((2, 3, 4))
-    o3_src = o3d.Tensor(np_src)
+    o3_src = o3d.Tensor(np_src, device=device)
 
     np_dst = np_src.min(axis=dim, keepdims=keepdim)
     o3_dst = o3_src.min(dim=dim, keepdim=keepdim)
-    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+    np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
 
 
 @pytest.mark.parametrize(
     "dim",
     [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
-def test_reduction_max(dim, keepdim):
+@pytest.mark.parametrize("device", list_devices())
+def test_reduction_max(dim, keepdim, device):
     np_src = np.array(range(24))
     np.random.shuffle(np_src)
     np_src = np_src.reshape((2, 3, 4))
-    o3_src = o3d.Tensor(np_src)
+    o3_src = o3d.Tensor(np_src, device=device)
 
     np_dst = np_src.max(axis=dim, keepdims=keepdim)
     o3_dst = o3_src.max(dim=dim, keepdim=keepdim)
-    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+    np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2, None])
-def test_reduction_argmin_argmax(dim):
+@pytest.mark.parametrize("device", list_devices())
+def test_reduction_argmin_argmax(dim, device):
     np_src = np.array(range(24))
     np.random.shuffle(np_src)
     np_src = np_src.reshape((2, 3, 4))
-    o3_src = o3d.Tensor(np_src)
+    o3_src = o3d.Tensor(np_src, device=device)
 
     np_dst = np_src.argmin(axis=dim)
     o3_dst = o3_src.argmin(dim=dim)
-    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+    np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
 
     np_dst = np_src.argmax(axis=dim)
     o3_dst = o3_src.argmax(dim=dim)
-    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+    np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
 
 
-def test_advanced_index_get_mixed():
+@pytest.mark.parametrize("device", list_devices())
+def test_advanced_index_get_mixed(device):
     np_src = np.array(range(24)).reshape((2, 3, 4))
-    o3_src = o3d.Tensor(np_src)
+    o3_src = o3d.Tensor(np_src, device=device)
 
     np_dst = np_src[1, 0:2, [1, 2]]
     o3_dst = o3_src[1, 0:2, [1, 2]]
-    np.testing.assert_equal(o3_dst.numpy(), np_dst)
+    np.testing.assert_equal(o3_dst.cpu().numpy(), np_dst)
 
     # Subtle differences between slice and list
     np_src = np.array([0, 100, 200, 300, 400, 500, 600, 700, 800]).reshape(3, 3)
-    o3_src = o3d.Tensor(np_src)
-    np.testing.assert_equal(o3_src[1, 2].numpy(), np_src[1, 2])
-    np.testing.assert_equal(o3_src[[1, 2]].numpy(), np_src[[1, 2]])
-    np.testing.assert_equal(o3_src[(1, 2)].numpy(), np_src[(1, 2)])
-    np.testing.assert_equal(o3_src[(1, 2), [1, 2]].numpy(),
+    o3_src = o3d.Tensor(np_src, device=device)
+    np.testing.assert_equal(o3_src[1, 2].cpu().numpy(), np_src[1, 2])
+    np.testing.assert_equal(o3_src[[1, 2]].cpu().numpy(), np_src[[1, 2]])
+    np.testing.assert_equal(o3_src[(1, 2)].cpu().numpy(), np_src[(1, 2)])
+    np.testing.assert_equal(o3_src[(1, 2), [1, 2]].cpu().numpy(),
                             np_src[(1, 2), [1, 2]])
 
     # Complex case: interleaving slice and advanced indexing
     np_src = np.array(range(120)).reshape((2, 3, 4, 5))
-    o3_src = o3d.Tensor(np_src)
+    o3_src = o3d.Tensor(np_src, device=device)
     o3_dst = o3_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]]
     np_dst = np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]]
-    np.testing.assert_equal(o3_dst.numpy(), np_dst)
+    np.testing.assert_equal(o3_dst.cpu().numpy(), np_dst)
 
 
-def test_advanced_index_set_mixed():
+@pytest.mark.parametrize("device", list_devices())
+def test_advanced_index_set_mixed(device):
     np_src = np.array(range(24)).reshape((2, 3, 4))
-    o3_src = o3d.Tensor(np_src)
+    o3_src = o3d.Tensor(np_src, device=device)
 
     np_fill = np.array(([[100, 200], [300, 400]]))
-    o3_fill = o3d.Tensor(np_fill)
+    o3_fill = o3d.Tensor(np_fill, device=device)
 
     np_src[1, 0:2, [1, 2]] = np_fill
     o3_src[1, 0:2, [1, 2]] = o3_fill
-    np.testing.assert_equal(o3_src.numpy(), np_src)
+    np.testing.assert_equal(o3_src.cpu().numpy(), np_src)
 
     # Complex case: interleaving slice and advanced indexing
     np_src = np.array(range(120)).reshape((2, 3, 4, 5))
-    o3_src = o3d.Tensor(np_src)
+    o3_src = o3d.Tensor(np_src, device=device)
     fill_shape = np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]].shape
     np_fill_val = np.random.randint(5000, size=fill_shape).astype(np_src.dtype)
     o3_fill_val = o3d.Tensor(np_fill_val)
     o3_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = o3_fill_val
     np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = np_fill_val
-    np.testing.assert_equal(o3_src.numpy(), np_src)
+    np.testing.assert_equal(o3_src.cpu().numpy(), np_src)
 
 
-def test_tensorlist_indexing():
+@pytest.mark.parametrize("device", list_devices())
+def test_tensorlist_indexing(device):
     # 5 x (3, 4)
     dtype = o3d.Dtype.Float32
     device = o3d.Device("CPU:0")
@@ -658,33 +733,35 @@ def test_tensorlist_indexing():
     tl[-1] = o3d.Tensor(np.zeros((3, 4), dtype=np.float32))
 
     # get items
-    np.testing.assert_allclose(tl[0].numpy(), np.ones((3, 4), dtype=np.float32))
-    np.testing.assert_allclose(tl[1].numpy(), 3 * np.ones(
+    np.testing.assert_allclose(tl[0].cpu().numpy(),
+                               np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[1].cpu().numpy(), 3 * np.ones(
         (3, 4), dtype=np.float32))
-    np.testing.assert_allclose(tl[2].numpy(), np.ones((3, 4), dtype=np.float32))
-    np.testing.assert_allclose(tl[3].numpy(), 3 * np.ones(
+    np.testing.assert_allclose(tl[2].cpu().numpy(),
+                               np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[3].cpu().numpy(), 3 * np.ones(
         (3, 4), dtype=np.float32))
-    np.testing.assert_allclose(tl[4].numpy(), np.zeros((3, 4),
-                                                       dtype=np.float32))
+    np.testing.assert_allclose(tl[4].cpu().numpy(),
+                               np.zeros((3, 4), dtype=np.float32))
 
     # push_back
     tl.push_back(o3d.Tensor(-1 * np.ones((3, 4)), dtype, device))
     assert tl.size() == 6
-    np.testing.assert_allclose(tl[5].numpy(), -1 * np.ones(
+    np.testing.assert_allclose(tl[5].cpu().numpy(), -1 * np.ones(
         (3, 4), dtype=np.float32))
 
     tl += tl
     assert tl.size() == 12
     for offset in [0, 6]:
-        np.testing.assert_allclose(tl[0 + offset].numpy(),
+        np.testing.assert_allclose(tl[0 + offset].cpu().numpy(),
                                    np.ones((3, 4), dtype=np.float32))
-        np.testing.assert_allclose(tl[1 + offset].numpy(), 3 * np.ones(
+        np.testing.assert_allclose(tl[1 + offset].cpu().numpy(), 3 * np.ones(
             (3, 4), dtype=np.float32))
-        np.testing.assert_allclose(tl[2 + offset].numpy(),
+        np.testing.assert_allclose(tl[2 + offset].cpu().numpy(),
                                    np.ones((3, 4), dtype=np.float32))
-        np.testing.assert_allclose(tl[3 + offset].numpy(), 3 * np.ones(
+        np.testing.assert_allclose(tl[3 + offset].cpu().numpy(), 3 * np.ones(
             (3, 4), dtype=np.float32))
-        np.testing.assert_allclose(tl[4 + offset].numpy(),
+        np.testing.assert_allclose(tl[4 + offset].cpu().numpy(),
                                    np.zeros((3, 4), dtype=np.float32))
 
 
@@ -700,163 +777,170 @@ def test_tensor_from_to_pytorch(device):
                                                        ("negative", "neg"),
                                                        ("exp", "exp"),
                                                        ("abs", "abs")])
-def test_unary_elementwise(np_func_name, o3_func_name):
+@pytest.mark.parametrize("device", list_devices())
+def test_unary_elementwise(np_func_name, o3_func_name, device):
     np_t = np.array([-3, -2, -1, 9, 1, 2, 3]).astype(np.float32)
-    o3_t = o3d.Tensor(np_t)
+    o3_t = o3d.Tensor(np_t, device=device)
 
     # Test non-in-place version
     np.seterr(invalid='ignore')  # e.g. sqrt of negative should be -nan
     np.testing.assert_allclose(
-        getattr(o3_t, o3_func_name)().numpy(),
+        getattr(o3_t, o3_func_name)().cpu().numpy(),
         getattr(np, np_func_name)(np_t))
 
     # Test in-place version
     o3_func_name_inplace = o3_func_name + "_"
     getattr(o3_t, o3_func_name_inplace)()
-    np.testing.assert_allclose(o3_t.numpy(), getattr(np, np_func_name)(np_t))
+    np.testing.assert_allclose(o3_t.cpu().numpy(),
+                               getattr(np, np_func_name)(np_t))
 
 
-def test_logical_ops():
+@pytest.mark.parametrize("device", list_devices())
+def test_logical_ops(device):
     np_a = np.array([True, False, True, False])
     np_b = np.array([True, True, False, False])
-    o3_a = o3d.Tensor(np_a)
-    o3_b = o3d.Tensor(np_b)
+    o3_a = o3d.Tensor(np_a, device=device)
+    o3_b = o3d.Tensor(np_b, device=device)
 
     o3_r = o3_a.logical_and(o3_b)
     np_r = np.logical_and(np_a, np_b)
-    np.testing.assert_equal(o3_r.numpy(), np_r)
+    np.testing.assert_equal(o3_r.cpu().numpy(), np_r)
 
     o3_r = o3_a.logical_or(o3_b)
     np_r = np.logical_or(np_a, np_b)
-    np.testing.assert_equal(o3_r.numpy(), np_r)
+    np.testing.assert_equal(o3_r.cpu().numpy(), np_r)
 
     o3_r = o3_a.logical_xor(o3_b)
     np_r = np.logical_xor(np_a, np_b)
-    np.testing.assert_equal(o3_r.numpy(), np_r)
+    np.testing.assert_equal(o3_r.cpu().numpy(), np_r)
 
 
-def test_comparision_ops():
+@pytest.mark.parametrize("device", list_devices())
+def test_comparision_ops(device):
     np_a = np.array([0, 1, -1])
     np_b = np.array([0, 0, 0])
-    o3_a = o3d.Tensor(np_a)
-    o3_b = o3d.Tensor(np_b)
+    o3_a = o3d.Tensor(np_a, device=device)
+    o3_b = o3d.Tensor(np_b, device=device)
 
-    np.testing.assert_equal((o3_a > o3_b).numpy(), np_a > np_b)
-    np.testing.assert_equal((o3_a >= o3_b).numpy(), np_a >= np_b)
-    np.testing.assert_equal((o3_a < o3_b).numpy(), np_a < np_b)
-    np.testing.assert_equal((o3_a <= o3_b).numpy(), np_a <= np_b)
-    np.testing.assert_equal((o3_a == o3_b).numpy(), np_a == np_b)
-    np.testing.assert_equal((o3_a != o3_b).numpy(), np_a != np_b)
+    np.testing.assert_equal((o3_a > o3_b).cpu().numpy(), np_a > np_b)
+    np.testing.assert_equal((o3_a >= o3_b).cpu().numpy(), np_a >= np_b)
+    np.testing.assert_equal((o3_a < o3_b).cpu().numpy(), np_a < np_b)
+    np.testing.assert_equal((o3_a <= o3_b).cpu().numpy(), np_a <= np_b)
+    np.testing.assert_equal((o3_a == o3_b).cpu().numpy(), np_a == np_b)
+    np.testing.assert_equal((o3_a != o3_b).cpu().numpy(), np_a != np_b)
 
 
-def test_non_zero():
+@pytest.mark.parametrize("device", list_devices())
+def test_non_zero(device):
     np_x = np.array([[3, 0, 0], [0, 4, 0], [5, 6, 0]])
     np_nonzero_tuple = np.nonzero(np_x)
-    o3_x = o3d.Tensor(np_x)
+    o3_x = o3d.Tensor(np_x, device=device)
     o3_nonzero_tuple = o3_x.nonzero(as_tuple=True)
     for np_t, o3_t in zip(np_nonzero_tuple, o3_nonzero_tuple):
-        np.testing.assert_equal(np_t, o3_t.numpy())
+        np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
-def boolean_advanced_indexing():
+@pytest.mark.parametrize("device", list_devices())
+def boolean_advanced_indexing(device):
     np_a = np.array([1, -1, -2, 3])
-    o3_a = o3d.Tensor(np_a)
+    o3_a = o3d.Tensor(np_a, device=device)
     np_a[np_a < 0] = 0
     o3_a[o3_a < 0] = 0
-    np.testing.assert_equal(np_a, o3_a.numpy())
+    np.testing.assert_equal(np_a, o3_a.cpu().numpy())
 
     np_x = np.array([[0, 1], [1, 1], [2, 2]])
     np_row_sum = np.array([1, 2, 4])
     np_y = np_x[np_row_sum <= 2, :]
-    o3_x = o3d.Tensor(np_x)
+    o3_x = o3d.Tensor(np_x, device=device)
     o3_row_sum = o3d.Tensor(np_row_sum)
     o3_y = o3_x[o3_row_sum <= 2, :]
-    np.testing.assert_equal(np_y, o3_y.numpy())
+    np.testing.assert_equal(np_y, o3_y.cpu().numpy())
 
 
-def test_scalar_op():
+@pytest.mark.parametrize("device", list_devices())
+def test_scalar_op(device):
     # +
-    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)
+    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32, device=device)
     b = a.add(1)
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 2))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 2))
     b = a + 1
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 2))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 2))
     b = 1 + a
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 2))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 2))
     b = a + True
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 2))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 2))
 
     # +=
-    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)
+    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32, device=device)
     a.add_(1)
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 2))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 2))
     a += 1
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 3))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 3))
     a += True
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 4))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 4))
 
     # -
-    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)
+    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32, device=device)
     b = a.sub(1)
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 0))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 0))
     b = a - 1
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 0))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 0))
     b = 10 - a
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 9))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 9))
     b = a - True
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 0))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 0))
 
     # -=
-    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)
+    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32, device=device)
     a.sub_(1)
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 0))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 0))
     a -= 1
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), -1))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), -1))
     a -= True
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), -2))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), -2))
 
     # *
-    a = o3d.Tensor.full((2, 3), 2, o3d.Dtype.Float32)
+    a = o3d.Tensor.full((2, 3), 2, o3d.Dtype.Float32, device=device)
     b = a.mul(10)
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 20))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 20))
     b = a * 10
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 20))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 20))
     b = 10 * a
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 20))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 20))
     b = a * True
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 2))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 2))
 
     # *=
-    a = o3d.Tensor.full((2, 3), 2, o3d.Dtype.Float32)
+    a = o3d.Tensor.full((2, 3), 2, o3d.Dtype.Float32, device=device)
     a.mul_(10)
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 20))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 20))
     a *= 10
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 200))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 200))
     a *= True
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 200))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 200))
 
     # /
-    a = o3d.Tensor.full((2, 3), 20, o3d.Dtype.Float32)
+    a = o3d.Tensor.full((2, 3), 20, o3d.Dtype.Float32, device=device)
     b = a.div(2)
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 10))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 10))
     b = a / 2
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 10))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 10))
     b = a // 2
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 10))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 10))
     b = 10 / a
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 0.5))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 0.5))
     b = 10 // a
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 0.5))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 0.5))
     b = a / True
-    np.testing.assert_equal(b.numpy(), np.full((2, 3), 20))
+    np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 20))
 
     # /=
-    a = o3d.Tensor.full((2, 3), 20, o3d.Dtype.Float32)
+    a = o3d.Tensor.full((2, 3), 20, o3d.Dtype.Float32, device=device)
     a.div_(2)
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 10))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 10))
     a /= 2
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 5))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 5))
     a //= 2
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 2.5))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 2.5))
     a /= True
-    np.testing.assert_equal(a.numpy(), np.full((2, 3), 2.5))
+    np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 2.5))
