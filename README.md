@@ -41,7 +41,7 @@ For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 
 ## Open3D viewer app
 
-<img align="left" width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D/yixing/more-readme/docs/_static/open3d_viewer.png">
+<img align="left" width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D/master/docs/_static/open3d_viewer.png">
 
 Open3D now comes with a standalone 3D viewer app available on Ubuntu and macOS.
 Please stay tuned for Windows.
