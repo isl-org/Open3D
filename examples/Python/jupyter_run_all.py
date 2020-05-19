@@ -12,7 +12,7 @@ if __name__ == "__main__":
     nb_paths = sorted((file_dir / "Basic").glob("*.ipynb"))
     nb_paths += sorted((file_dir / "Advanced").glob("*.ipynb"))
     for nb_path in nb_paths:
-        print(f"[Executing notebook {nb_path.name}]")
+        print("[Executing notebook {}]".format(nb_path.name))
 
         with open(nb_path) as f:
             nb = nbformat.read(f, as_version=4)
@@ -20,7 +20,7 @@ if __name__ == "__main__":
         try:
             ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
         except nbconvert.preprocessors.execute.CellExecutionError:
-            print(f"Execution of {nb_path.name} failed")
+            print("Execution of {} failed".format(nb_path.name))
 
         with open(nb_path, "w", encoding="utf-8") as f:
             nbformat.write(nb, f)

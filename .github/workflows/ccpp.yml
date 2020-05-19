@@ -21,14 +21,19 @@ jobs:
       SHARED: OFF
       NPROC: 2
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout source code
+      uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Install Dependencies
+    - name: Set up Python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.5  # Python 2 is deprecated
+    - name: Install dependencies
       run: |
         brew update
         brew upgrade python || true
         ./util/scripts/install-deps-osx.sh
-    - name: Config and Build
+    - name: Config and build
       run: |
         ./util/scripts/run-travis.sh

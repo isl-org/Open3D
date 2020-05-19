@@ -46,7 +46,7 @@ def multiscale_icp(source,
     for i, scale in enumerate(range(len(max_iter))):  # multi-scale approach
         iter = max_iter[scale]
         distance_threshold = config["voxel_size"] * 1.4
-        print("voxel_size %f" % voxel_size[scale])
+        print("voxel_size {}".format(voxel_size[scale]))
         source_down = source.voxel_down_sample(voxel_size[scale])
         target_down = target.voxel_down_sample(voxel_size[scale])
         if config["icp_method"] == "point_to_point":
