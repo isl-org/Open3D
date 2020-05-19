@@ -7,8 +7,27 @@
 # - NPROC
 
 set -euo pipefail
+set -x
 
-echo "installing Python unit test dependencies..."
+#$1 - name of the job
+reportJobStart() {
+	rj_ts=$(date +%T)
+	echo "$rj_ts EndJob $rj_prevj ran $rj_prevts - $rj_ts (session started $rj_startts)"
+	echo "$rj_ts StartJob $1"
+	rj_prevj=$1
+	rj_prevts=$rj_ts
+}
+rj_startts=$(date +%H%M%S)
+rj_prevts=$rj_startts
+rj_prevj=ReportInit
+echo "$rj_startts StartJob ReportInit"
+reportJobFinishSession() {
+	rj_ts=$(date +%H%M%S)
+	echo "$rj_ts EndJob $rj_prevj ran $rj_prevts - $rj_ts (session started $rj_startts)"
+	echo "ReportJobSession: ran $rj_startts - $rj_ts"
+}
+
+reportJobStart "installing Python unit test dependencies"
 pip install --upgrade pip
 pip install -U -q pytest
 pip install -U -q wheel
@@ -18,9 +37,9 @@ python --version
 pytest --version
 cmake --version
 
-echo "cmake configure the Open3D project..."
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
+    reportJobStart "install tensorflow"
     pip install -U -q tensorflow==2.0.0
 fi
 mkdir build
@@ -45,13 +64,18 @@ if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "ON" ]; then
 fi
 
 echo
+reportJobStart "cmake configure the Open3D project"
 echo "Running cmake" $cmakeOptions ..
 cmake $cmakeOptions ..
 echo
 
 echo "build & install Open3D..."
 date
+reportJobStart "build -j$NPROC"
+make -j$NPROC
+reportJobStart "install"
 make install -j$NPROC
+reportJobStart "install-pip-package"
 make install-pip-package -j$NPROC
 echo
 
@@ -59,23 +83,27 @@ echo "running Open3D unit tests..."
 unitTestFlags=
 [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter='-*Reduce*Sum*'"
 date
+reportJobStart "unitTests"
 ./bin/unitTests $unitTestFlags
 echo
 
 echo "running Open3D python tests..."
 date
 # TODO: fix TF op library test.
+reportJobStart "pytest"
 pytest ../src/UnitTest/Python/ --ignore="../src/UnitTest/Python/test_tf_op_library.py"
 echo
 
 if $runBenchmarks; then
     echo "running Open3D benchmarks..."
     date
+reportJobStart "benchmarks"
     ./bin/benchmarks
     echo
 fi
 
 echo "test find_package(Open3D)..."
+reportJobStart "other tests"
 date
 test=$(cmake --find-package \
     -DNAME=Open3D \
@@ -101,6 +129,7 @@ make
 ./TestVisualizer
 echo
 
+reportJobStart "cleanup"
 echo "cleanup the C++ example..."
 date
 cd ../
@@ -117,3 +146,5 @@ cd ../
 rm -rf build
 rm -rf ${OPEN3D_INSTALL_DIR}
 echo
+
+reportJobFinish
