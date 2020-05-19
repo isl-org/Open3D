@@ -143,7 +143,7 @@ matrix:
     # Default environment of macOS 10.13 High Sierra
     # compiled using clang shipped with xcode10.1
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       install:
         - brew update
         - brew upgrade python || true
@@ -151,7 +151,7 @@ matrix:
       script: ./util/scripts/run-travis.sh
 
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode11.4
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON BUILD_TENSORFLOW_OPS=OFF
       script: ./util/scripts/run-travis.sh
 
