@@ -321,11 +321,10 @@ class JupyterDocsBuilder:
 
     def __init__(self, current_file_dir, clean_notebooks, execute_notebooks):
         """
-        execute_notebooks is one of {"auto", "always", "never"}
+        execute_notebooks is one of {"auto", "always"}
         """
-        if execute_notebooks not in {"auto", "always", "never"}:
-            raise ValueError(
-                "Invalid execute option: {}.".format(execute_notebooks))
+        if execute_notebooks not in {"auto", "always"}:
+            raise ValueError(f"Invalid execute option: {execute_notebooks}.")
         self.clean_notebooks = clean_notebooks
         self.execute_notebooks = execute_notebooks
         self.current_file_dir = current_file_dir
@@ -427,7 +426,7 @@ if __name__ == "__main__":
         "--execute_notebooks",
         dest="execute_notebooks",
         default="auto",
-        help="Jupyter notebook execution mode, one of {auto, always, never}.",
+        help="Jupyter notebook execution mode, one of {auto, always}.",
     )
     parser.add_argument(
         "--sphinx",
