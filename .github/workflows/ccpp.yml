@@ -12,6 +12,7 @@ jobs:
   macos:
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
         BUILD_TENSORFLOW_OPS: [ON, OFF]

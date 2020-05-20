@@ -51,7 +51,7 @@ echo
 
 echo "build & install Open3D..."
 date
-make install -j$NPROC VERBOSE=ON
+make install -j$NPROC
 make install-pip-package -j$NPROC
 echo
 
