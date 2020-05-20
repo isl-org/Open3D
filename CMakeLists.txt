@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
 
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
+
 # Config options
 option(BUILD_SHARED_LIBS         "Build shared libraries"                   OFF)
 option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
