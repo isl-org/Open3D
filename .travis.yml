@@ -27,9 +27,11 @@ matrix:
         - ls -l /usr/local/opt/python*/bin/
         - mkdir ~/py3
         - ln -s /usr/local/opt/python@3.8/bin/python3 ~/py3/python
+        - ln -s /usr/local/opt/python@3.8/bin/pip3 ~/py3/pip
         - PATH=$HOME/py3:$PATH
         - echo $PATH
         - which python
+        - which pip
         - ./util/scripts/install-deps-osx.sh
       script: ./util/scripts/run-travis.sh
 
@@ -44,9 +46,11 @@ matrix:
         - ls -l /usr/local/opt/python*/bin/
         - mkdir ~/py3
         - ln -s /usr/local/opt/python@3.8/bin/python3 ~/py3/python
+        - ln -s /usr/local/opt/python@3.8/bin/pip3 ~/py3/pip
         - PATH=$HOME/py3:$PATH
         - echo $PATH
         - which python
+        - which pip
       script: ./util/scripts/run-travis.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
