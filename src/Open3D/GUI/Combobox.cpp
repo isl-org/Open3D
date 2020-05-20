@@ -103,7 +103,7 @@ void Combobox::RemoveItem(const char* name) {
 void Combobox::RemoveItem(int index) {
     if (index >= 0 && index < int(impl_->items_.size())) {
         impl_->items_.erase(impl_->items_.begin() + index);
-        if (impl_->current_index_ >= impl_->items_.size()) {
+        if (impl_->current_index_ >= int(impl_->items_.size())) {
             impl_->current_index_ = impl_->items_.size() - 1;
         }
     }
