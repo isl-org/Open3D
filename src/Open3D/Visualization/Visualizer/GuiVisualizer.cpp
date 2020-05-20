@@ -1201,6 +1201,8 @@ GuiVisualizer::GuiVisualizer(
         impl_->settings_.SetCustomProfile();
         if (checked) {
             render_scene->SetIndirectLight(impl_->settings_.ibl);
+            render_scene->SetIndirectLightIntensity(
+                    impl_->settings_.wgt_ibl_intensity->GetDoubleValue());
         } else {
             render_scene->SetIndirectLight(IndirectLightHandle());
         }
