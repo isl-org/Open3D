@@ -41,6 +41,7 @@ if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "ON" ]; then
         -DBUILD_FLANN=ON \
         -DBUILD_GLEW=ON \
         -DBUILD_GLFW=ON \
+        -DBUILD_JPEG=ON \
         -DBUILD_PNG=ON"
 fi
 
