@@ -35,6 +35,7 @@ endif ()
 
 add_library( open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES} )
 open3d_set_global_properties(open3d_tf_ops)
+open3d_set_global_properties(open3d_tf_ops)
 
 set_target_properties( open3d_tf_ops PROPERTIES PREFIX "" ) # do not add 'lib' prefix
 set_target_properties( open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug" )
@@ -42,14 +43,6 @@ set_target_properties( open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug" )
 foreach( definition IN LISTS Tensorflow_DEFINITIONS )
 	set_target_properties( open3d_tf_ops PROPERTIES COMPILE_DEFINITIONS "${definition}" )
 endforeach(definition)
-
-# enable c++11
-set_target_properties( open3d_tf_ops PROPERTIES
-                       CXX_STANDARD 11 
-                       CXX_STANDARD_REQUIRED ON 
-                       CXX_EXTENSIONS OFF
-                       CUDA_STANDARD 11
-                       )
 
 target_include_directories( open3d_tf_ops PRIVATE
     ${PROJECT_SOURCE_DIR}/src

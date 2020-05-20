@@ -12,6 +12,7 @@ add_definitions(-DBENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
 
 target_link_libraries(benchmarks ${CMAKE_PROJECT_NAME} benchmark::benchmark benchmark::benchmark_main)
 open3d_show_and_abort_on_warning(benchmarks)
+open3d_set_global_properties(benchmarks)
 
 if (BUILD_CUDA_MODULE)
     target_include_directories(benchmarks PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
