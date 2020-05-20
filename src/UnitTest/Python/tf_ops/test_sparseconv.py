@@ -57,7 +57,6 @@ def test_compare_to_conv3d(dtype, device_name, kernel_size, out_channels,
     import open3d.ml.tf as ml3d
     np.random.seed(0)
 
-
     filters = np.random.random(size=(*kernel_size, in_channels,
                                      out_channels)).astype(dtype)
     bias = np.random.random(size=(out_channels,))
@@ -130,7 +129,6 @@ def test_compare_to_conv3d(dtype, device_name, kernel_size, out_channels,
     np.testing.assert_allclose(y, y_conv3d, rtol=1e-5, atol=1e-8)
 
 
-
 # yapf: disable
 # @pytest.mark.skip()
 @pytest.mark.parametrize("kernel_size, out_channels, in_channels, with_out_importance, with_normalization",[
@@ -143,14 +141,13 @@ def test_compare_to_conv3d(dtype, device_name, kernel_size, out_channels,
 # yapf: enable
 @mark_helper.devices
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size, out_channels,
-                           in_channels, with_out_importance,
-                           with_normalization):
+def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size,
+                                    out_channels, in_channels,
+                                    with_out_importance, with_normalization):
     """Compares to the 3D transposed convolution in tensorflow"""
     import tensorflow as tf
     import open3d.ml.tf as ml3d
     np.random.seed(0)
-
 
     filters = np.random.random(size=(*kernel_size, in_channels,
                                      out_channels)).astype(dtype)
@@ -164,7 +161,8 @@ def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size, out_channel
     inp_positions_int = inp_positions.astype(np.int32)
     out_positions = np.unique(np.random.randint(
         np.max(kernel_size) // 2, max_grid_extent - np.max(kernel_size) // 2,
-        (5, 3)).astype(dtype), axis=0)
+        (5, 3)).astype(dtype),
+                              axis=0)
 
     if with_out_importance:
         out_importance = np.random.rand(
@@ -187,7 +185,8 @@ def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size, out_channel
 
     with tf.device(device_name):
         y = sparse_conv_transpose(inp_features, inp_positions * voxel_size,
-                        out_positions * voxel_size, voxel_size, out_importance)
+                                  out_positions * voxel_size, voxel_size,
+                                  out_importance)
         assert device_name in y.device
         y = y.numpy()
 
@@ -208,7 +207,8 @@ def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size, out_channel
     conv3d = tf.keras.layers.Conv3DTranspose(
         out_channels,
         kernel_size,
-        kernel_initializer=tf.constant_initializer(filters.transpose([0,1,2,4,3])),
+        kernel_initializer=tf.constant_initializer(
+            filters.transpose([0, 1, 2, 4, 3])),
         use_bias=False,
         padding='same')
     y_conv3d = conv3d(inp_volume).numpy()
@@ -218,11 +218,9 @@ def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size, out_channel
         y_conv3d[0, out_positions_int[:, 2], out_positions_int[:, 1],
                  out_positions_int[:, 0], :])
 
-
     if with_out_importance:
-        y_conv3d *= out_importance[:,np.newaxis]
+        y_conv3d *= out_importance[:, np.newaxis]
 
     y_conv3d += bias
 
     np.testing.assert_allclose(y, y_conv3d, rtol=1e-5, atol=1e-8)
-

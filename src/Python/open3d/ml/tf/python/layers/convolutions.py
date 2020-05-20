@@ -641,9 +641,10 @@ class SparseConvTranspose(tf.keras.layers.Layer):
             hash_table=fixed_radius_search_hash_table)
 
         num_out = tf.shape(out_positions, out_type=tf.int64)[0]
-        
+
         neighbors_index, neighbors_row_splits, _ = ops.invert_neighbors_list(
-        num_out, self.nns_inp.neighbors_index, self.nns_inp.neighbors_row_splits, empty_vec)
+            num_out, self.nns_inp.neighbors_index,
+            self.nns_inp.neighbors_row_splits, empty_vec)
 
         # for stats and debugging
         num_pairs = tf.shape(neighbors_index)[0]
