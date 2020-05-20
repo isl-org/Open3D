@@ -11,20 +11,20 @@ set -x
 
 #$1 - name of the job
 reportJobStart() {
-	rj_ts=$(date +%T)
-	echo "$rj_ts EndJob $rj_prevj ran $rj_prevts - $rj_ts (session started $rj_startts)"
-	echo "$rj_ts StartJob $1"
-	rj_prevj=$1
-	rj_prevts=$rj_ts
+    rj_ts=$(date +%T)
+    echo "$rj_ts EndJob $rj_prevj ran $rj_prevts - $rj_ts (session started $rj_startts)"
+    echo "$rj_ts StartJob $1"
+    rj_prevj=$1
+    rj_prevts=$rj_ts
 }
-rj_startts=$(date +%H%M%S)
+rj_startts=$(date +%T)
 rj_prevts=$rj_startts
 rj_prevj=ReportInit
 echo "$rj_startts StartJob ReportInit"
 reportJobFinishSession() {
-	rj_ts=$(date +%H%M%S)
-	echo "$rj_ts EndJob $rj_prevj ran $rj_prevts - $rj_ts (session started $rj_startts)"
-	echo "ReportJobSession: ran $rj_startts - $rj_ts"
+    rj_ts=$(date +%H%M%S)
+    echo "$rj_ts EndJob $rj_prevj ran $rj_prevts - $rj_ts (session started $rj_startts)"
+    echo "ReportJobSession: ran $rj_startts - $rj_ts"
 }
 
 reportJobStart "installing Python unit test dependencies"

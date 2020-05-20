@@ -22,6 +22,9 @@ matrix:
       install:
         - brew update
         - brew upgrade python || true
+        - ls /usr/local/opt
+        - ls -l /usr/local/opt/*/bin/python
+        - PATH=/usr/local/opt/python@3.8/bin:$PATH
         - ./util/scripts/install-deps-osx.sh
       script: ./util/scripts/run-travis.sh
 
@@ -31,6 +34,9 @@ matrix:
       install:
         - brew update
         - brew upgrade python || true
+        - ls /usr/local/opt
+        - ls -l /usr/local/opt/*/bin/python
+        - PATH=/usr/local/opt/python@3.7/bin:$PATH
       script: ./util/scripts/run-travis.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
