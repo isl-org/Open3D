@@ -5,6 +5,7 @@
 cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CUDA_STANDARD 11)
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
