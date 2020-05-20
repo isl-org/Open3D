@@ -494,3 +494,194 @@ class SparseConv(tf.keras.layers.Layer):
 
     def compute_output_shape(self, inp_features_shape):
         return tf.TensorShape((None, self.filters))
+
+
+class SparseConvTranspose(tf.keras.layers.Layer):
+    """Sparse Transposed Convolution. This layer computes a transposed convolution which is only
+    evaluated at the specified output positions.
+
+    Arguments:
+        filters: The number of filters/output channels.
+
+        kernel_size: The spatial resolution of the filter, e.g. [3,3,3].
+
+        activation: The activation function to use. None means no activation.
+
+        use_bias: If True adds an additive bias vector.
+
+        kernel_initializer: Initializer for the kernel weights.
+
+        bias_initializer: Initializer for the bias vector.
+
+        kernel_regularizer: Regularizer for the kernel weights.
+
+        bias_regularizer: Regularizer for the bias vector.
+
+        normalize: If true then the input features will be normalized with the number of output points.
+
+        offset: A single 3D vector used in the filter coordinate computation.
+          The shape is [3]. This can be used to control how the filters are
+          centered. It will be set automatically for kernels with even sizes.
+    """
+
+    def __init__(self,
+                 filters,
+                 kernel_size,
+                 activation=None,
+                 use_bias=True,
+                 kernel_initializer='uniform',
+                 bias_initializer='zeros',
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 normalize=False,
+                 offset=None,
+                 **kwargs):
+
+        from tensorflow.keras import activations, initializers, regularizers
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.activation = activations.get(activation)
+        self.use_bias = use_bias
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.normalize = normalize
+
+        if not (np.asarray(kernel_size) == kernel_size[0]).all():
+            raise Exception("Only cubic kernel sizes are supported.")
+
+        if offset is None:
+            if kernel_size[0] % 2:
+                self.offset = tf.zeros(shape=(3,))
+            else:
+                self.offset = tf.fill([3], -0.5)
+        else:
+            self.offset = offset
+
+        self.fixed_radius_search = layers.FixedRadiusSearch(
+            metric='Linf', ignore_query_point=False, return_distances=False)
+
+        super().__init__(**kwargs)
+
+    def build(self, inp_features_shape):
+        self.in_channels = inp_features_shape[-1]
+
+        kernel_shape = tf.TensorShape(
+            (*self.kernel_size, self.in_channels, self.filters))
+        self.kernel = self.add_weight(
+            name="kernel",
+            shape=kernel_shape,
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            trainable=self.trainable,
+        )
+
+        if self.use_bias:
+            bias_shape = tf.TensorShape((self.filters,))
+            self.bias = self.add_weight(
+                name="bias",
+                shape=bias_shape,
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                trainable=self.trainable,
+            )
+        super().build(inp_features_shape)
+
+    def call(self,
+             inp_features,
+             inp_positions,
+             out_positions,
+             voxel_size,
+             out_importance=None,
+             fixed_radius_search_hash_table=None):
+        """This function computes the output features.
+
+        Arguments:
+
+          inp_features: A 2D tensor which stores a feature vector for each input
+            point.
+
+          inp_positions: A 2D tensor with the 3D point positions of each input
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          out_positions: A 2D tensor with the 3D point positions of each output
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          voxel_size: A scalar float that defines the edge length of a voxel.
+
+          out_importance: Optional scalar importance value for each output point.
+
+          fixed_radius_search_hash_table: A precomputed hash table generated with build_spatial_hash_table().
+            This input can be used to explicitly force the reuse of a hash table in special
+            cases and is usually not needed.
+            Note that the hash table must have been generated with the same 'points' array.
+            Note that this parameter is only used if 'extents' is a scalar.
+
+        Returns: A tensor of shape [num output points, filters] with the output
+          features.
+        """
+
+        offset = self.offset
+        voxel_size = tf.convert_to_tensor(voxel_size, dtype=inp_positions.dtype)
+        if voxel_size.shape.rank != 0:
+            raise Exception("voxel_size must be a scalar")
+
+        if out_importance is None:
+            out_importance = tf.ones((0,), dtype=tf.float32)
+
+        empty_vec = tf.ones((0,), dtype=tf.float32)
+
+        hash_table_size_factor = 1 / 64
+        self.nns_inp = self.fixed_radius_search(
+            out_positions,
+            queries=inp_positions - offset * voxel_size,
+            radius=self.kernel_size[0] * voxel_size * 0.51,
+            hash_table_size_factor=hash_table_size_factor,
+            hash_table=fixed_radius_search_hash_table)
+
+        num_out = tf.shape(out_positions, out_type=tf.int64)[0]
+        
+        neighbors_index, neighbors_row_splits, _ = ops.invert_neighbors_list(
+        num_out, self.nns_inp.neighbors_index, self.nns_inp.neighbors_row_splits, empty_vec)
+
+        # for stats and debugging
+        num_pairs = tf.shape(neighbors_index)[0]
+        self._avg_neighbors = num_pairs / tf.shape(out_positions)[0]
+
+        extents_rank2 = tf.fill([1, 1], voxel_size * self.kernel_size[0])
+
+        self._conv_values = {
+            'filters': self.kernel,
+            'out_positions': out_positions,
+            'extents': extents_rank2,
+            'offset': offset,
+            'inp_positions': inp_positions,
+            'inp_features': inp_features,
+            'out_importance': out_importance,
+            'inp_neighbors_index': self.nns_inp.neighbors_index,
+            'inp_neighbors_importance_sum': empty_vec,
+            'inp_neighbors_row_splits': self.nns_inp.neighbors_row_splits,
+            'neighbors_index': neighbors_index,
+            'neighbors_importance': empty_vec,
+            'neighbors_row_splits': neighbors_row_splits,
+            'align_corners': False,
+            'coordinate_mapping': 'identity',
+            'interpolation': 'nearest_neighbor',
+            'normalize': self.normalize,
+        }
+
+        out_features = ops.continuous_conv_transpose(**self._conv_values)
+
+        self._conv_values['out_features'] = out_features
+
+        self._conv_output = out_features
+
+        if self.use_bias:
+            out_features += self.bias
+        out_features = self.activation(out_features)
+
+        return out_features
+
+    def compute_output_shape(self, inp_features_shape):
+        return tf.TensorShape((None, self.filters))
