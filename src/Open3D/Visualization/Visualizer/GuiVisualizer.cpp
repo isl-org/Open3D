@@ -1685,7 +1685,6 @@ void GuiVisualizer::SetGeometry(
         int resetIdx = impl_->settings_.wgt_prefab_material->AddItem(
                 MATERIAL_FROM_FILE_NAME.c_str());
         impl_->settings_.wgt_prefab_material->SetSelectedIndex(resetIdx);
-        ;
         impl_->settings_.wgt_prefab_material->ChangeItem(
                 (DEFAULT_MATERIAL_NAME + " [default]").c_str(),
                 DEFAULT_MATERIAL_NAME.c_str());
