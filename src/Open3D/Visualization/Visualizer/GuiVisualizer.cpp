@@ -714,6 +714,11 @@ struct GuiVisualizer::Impl {
         settings_.current_materials.lit.base_color = material.base_color;
         settings_.current_materials.lit.roughness = material.roughness;
         settings_.current_materials.lit.metallic = material.metallic;
+        settings_.current_materials.lit.reflectance = material.reflectance;
+        settings_.current_materials.lit.clear_coat = material.clear_coat;
+        settings_.current_materials.lit.clear_coat_roughness =
+                material.clear_coat_roughness;
+        settings_.current_materials.lit.anisotropy = material.anisotropy;
         settings_.current_materials.unlit.base_color = material.base_color;
 
         // Update maps
@@ -725,6 +730,11 @@ struct GuiVisualizer::Impl {
                         .SetColor("baseColor", material.base_color)
                         .SetParameter("baseRoughness", material.roughness)
                         .SetParameter("baseMetallic", material.metallic)
+                        .SetParameter("reflectance", material.reflectance)
+                        .SetParameter("clearCoat", material.clear_coat)
+                        .SetParameter("clearCoatRoughness",
+                                      material.clear_coat_roughness)
+                        .SetParameter("anisotropy", material.anisotropy)
                         .SetTexture("albedo", maps.albedo_map,
                                     TextureSamplerParameters::Pretty())
                         .SetTexture("normalMap", maps.normal_map,
@@ -1558,6 +1568,11 @@ void GuiVisualizer::SetGeometry(
                     material.base_color.y() = mesh_material.baseColor.g;
                     material.base_color.z() = mesh_material.baseColor.b;
                     material.roughness = mesh_material.baseRoughness;
+                    material.reflectance = mesh_material.baseReflectance;
+                    material.clear_coat = mesh_material.baseClearCoat;
+                    material.clear_coat_roughness =
+                            mesh_material.baseClearCoatRoughness;
+                    material.anisotropy = mesh_material.baseAnisotropy;
 
                     auto is_map_valid =
                             [](std::shared_ptr<geometry::Image> map) -> bool {
