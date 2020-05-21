@@ -102,4 +102,5 @@ def test_color_map():
     vertex_colors = np.asarray(mesh.vertex_colors)
     assert vertex_colors.shape == (536872, 3)
     np.testing.assert_allclose(np.mean(vertex_colors, axis=0),
-                               [0.40307181, 0.37264626, 0.5436129], rtol=1e-4)
+                               [0.40307181, 0.37264626, 0.5436129],
+                               rtol=1e-4)
