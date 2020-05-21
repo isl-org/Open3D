@@ -75,10 +75,6 @@ class ImguiFilamentBridge {
 public:
     ImguiFilamentBridge(visualization::FilamentRenderer* renderer,
                         const Size& window_size);
-    // The constructor creates its own Scene and places it in the given View.
-    ImguiFilamentBridge(filament::Engine* engine,
-                        filament::Scene* scene,
-                        filament::Material* uiblit_material);
     ~ImguiFilamentBridge();
 
     // Helper method called after resolving fontPath; public so fonts can be
