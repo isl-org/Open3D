@@ -853,7 +853,6 @@ struct GuiVisualizer::Impl {
     void SetMaterialByName(visualization::Renderer &renderer,
                            const std::string &name) {
         if (name == MATERIAL_FROM_FILE_NAME) {
-            settings_.user_has_changed_color = false;
             for (size_t i = 0; i < geometry_handles_.size(); ++i) {
                 auto mat_desc = settings_.loaded_materials_.find(i);
                 if (mat_desc == settings_.loaded_materials_.end()) {
@@ -864,11 +863,13 @@ struct GuiVisualizer::Impl {
                 scene_->GetScene()->AssignMaterial(geometry_handles_[i], mat);
                 settings_.current_materials.lit.handle = mat;
             }
-            settings_.user_has_changed_color = false;
-            auto color = LitMaterial().base_color;
-            settings_.wgt_material_color->SetValue(color.x(), color.y(),
-                                                   color.z());
-            settings_.current_materials.lit.base_color = color;
+            if (!settings_.user_has_changed_color &&
+                settings_.loaded_materials_.size() == 1) {
+                auto color = settings_.loaded_materials_.begin()->second.base_color;
+                settings_.wgt_material_color->SetValue(color.x(), color.y(),
+                                                       color.z());
+                settings_.current_materials.lit.base_color = color;
+            }
         } else {
             auto prefab_it = prefab_materials_.find(name);
             // DEFAULT_MATERIAL_NAME may have "[default]" appended, if the model
@@ -1675,6 +1676,12 @@ void GuiVisualizer::SetGeometry(
     }
 
     if (!impl_->settings_.loaded_materials_.empty()) {
+        if (impl_->settings_.loaded_materials_.size() == 1) {
+            auto color = impl_->settings_.loaded_materials_.begin()->second.base_color;
+            impl_->settings_.wgt_material_color->SetValue(color.x(),
+                                                          color.y(),
+                                                          color.z());
+        }
         int resetIdx = impl_->settings_.wgt_prefab_material->AddItem(
                 MATERIAL_FROM_FILE_NAME.c_str());
         impl_->settings_.wgt_prefab_material->SetSelectedIndex(resetIdx);
