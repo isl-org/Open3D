@@ -875,7 +875,8 @@ struct GuiVisualizer::Impl {
             }
             if (!settings_.user_has_changed_color &&
                 settings_.loaded_materials_.size() == 1) {
-                auto color = settings_.loaded_materials_.begin()->second.base_color;
+                auto color =
+                        settings_.loaded_materials_.begin()->second.base_color;
                 settings_.wgt_material_color->SetValue(color.x(), color.y(),
                                                        color.z());
                 settings_.current_materials.lit.base_color = color;
@@ -1692,9 +1693,9 @@ void GuiVisualizer::SetGeometry(
 
     if (!impl_->settings_.loaded_materials_.empty()) {
         if (impl_->settings_.loaded_materials_.size() == 1) {
-            auto color = impl_->settings_.loaded_materials_.begin()->second.base_color;
-            impl_->settings_.wgt_material_color->SetValue(color.x(),
-                                                          color.y(),
+            auto color = impl_->settings_.loaded_materials_.begin()
+                                 ->second.base_color;
+            impl_->settings_.wgt_material_color->SetValue(color.x(), color.y(),
                                                           color.z());
         }
         int resetIdx = impl_->settings_.wgt_prefab_material->AddItem(
