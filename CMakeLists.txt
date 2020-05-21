@@ -37,9 +37,15 @@ option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
+option(PREFER_OSX_HOMEBREW       "Prefer Homebrew libs over frameworks"     ON)
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT=OFF)")
 set(FILAMENT_SOURCE_ROOT "" CACHE PATH "Path to Filament library sources (used if BUILD_FILAMENT=ON)")
+
+if (PREFER_OSX_HOMEBREW)
+    set(CMAKE_FIND_FRAMEWORK LAST)
+    set(CMAKE_FIND_APPBUNDLE LAST)
+endif()
 
 # Cache variables for specifying the GPU architectures
 set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
