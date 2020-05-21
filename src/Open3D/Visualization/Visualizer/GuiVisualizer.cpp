@@ -1565,9 +1565,9 @@ void GuiVisualizer::SetGeometry(
                     auto mesh_material = mesh->materials_.begin()->second;
                     Impl::LitMaterial material;
                     Impl::TextureMaps maps;
-                    material.base_color.x() = mesh_material.baseColor.r;
-                    material.base_color.y() = mesh_material.baseColor.g;
-                    material.base_color.z() = mesh_material.baseColor.b;
+                    material.base_color.x() = mesh_material.baseColor.r();
+                    material.base_color.y() = mesh_material.baseColor.g();
+                    material.base_color.z() = mesh_material.baseColor.b();
                     material.roughness = mesh_material.baseRoughness;
                     material.reflectance = mesh_material.baseReflectance;
                     material.clear_coat = mesh_material.baseClearCoat;
