@@ -745,15 +745,7 @@ public:
 
     struct Material {
         struct MaterialParameter {
-            union {
-                float f4[4] = {0};
-                float f3[3];
-                float f2[2];
-                float f;
-
-                float x, y, z, w;
-                float r, g, b, a;
-            };
+            float f4[4] = {0};
 
             MaterialParameter() {
                 f4[0] = 0;
@@ -798,6 +790,11 @@ public:
                                                const float b) {
                 return {r, g, b, 1.f};
             }
+
+            float r() const { return f4[0]; }
+            float g() const { return f4[1]; }
+            float b() const { return f4[2]; }
+            float a() const { return f4[3]; }
         };
 
         MaterialParameter baseColor;

@@ -296,9 +296,9 @@ MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
             FilamentMaterialModifier::SamplerFromSamplerParameters(
                     TextureSamplerParameters::Pretty());
 
-    auto base_color = filament::math::float3{descriptor.baseColor.r,
-                                             descriptor.baseColor.g,
-                                             descriptor.baseColor.b};
+    auto base_color = filament::math::float3{descriptor.baseColor.r(),
+                                             descriptor.baseColor.g(),
+                                             descriptor.baseColor.b()};
     material_instance->setParameter("baseColor", filament::RgbType::sRGB,
                                     base_color);
 
