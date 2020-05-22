@@ -60,18 +60,18 @@ class ContinuousConv(tf.keras.layers.Layer):
 
         window_function: Optional radial window function to steer the importance of
           points based on their distance to the center. The input to the function
-          is a 1D tensor of distances (squared distances if radius_search_metric is 'L2').
-          The output must be a tensor of the same shape. Example:
+          is a 1D tensor of distances (squared distances if radius_search_metric is
+          'L2'). The output must be a tensor of the same shape. Example:
 
             def window_fn(r_sqr):
                 return tf.clip_by_value((1 - r_sqr)**3, 0, 1)
 
-        use_dense_layer_for_center: If True a linear dense layer is used to 
-          process the input features for each point. The result is added to the 
+        use_dense_layer_for_center: If True a linear dense layer is used to
+          process the input features for each point. The result is added to the
           result of the convolution before adding the bias. This option is
           useful when using even kernel sizes that have no center element and
-          input and output point sets are the same and 'radius_search_ignore_query_points'
-          has been set to True.
+          input and output point sets are the same and
+          'radius_search_ignore_query_points' has been set to True.
     """
 
     def __init__(self,
@@ -189,19 +189,20 @@ class ContinuousConv(tf.keras.layers.Layer):
 
           inp_importance: Optional scalar importance value for each input point.
 
-          fixed_radius_search_hash_table: A precomputed hash table generated with build_spatial_hash_table().
-            This input can be used to explicitly force the reuse of a hash table in special
-            cases and is usually not needed.
-            Note that the hash table must have been generated with the same 'points' array.
-            Note that this parameter is only used if 'extents' is a scalar.
+          fixed_radius_search_hash_table: A precomputed hash table generated with
+            build_spatial_hash_table().
+            This input can be used to explicitly force the reuse of a hash table in
+            special cases and is usually not needed.
+            Note that the hash table must have been generated with the same 'points'
+            array. Note that this parameter is only used if 'extents' is a scalar.
 
           user_neighbors_index: This parameter together with 'user_neighbors_row_splits'
-            and 'user_neighbors_importance' allows to override the automatic neighbor search.
-            This is the list of neighbor indices for each output point.
+            and 'user_neighbors_importance' allows to override the automatic neighbor
+            search. This is the list of neighbor indices for each output point.
             This is a nested list for which the start and end of each sublist is
             defined by 'user_neighbors_row_splits'.
 
-          user_neighbors_row_splits: Defines the start and end of each neighbors 
+          user_neighbors_row_splits: Defines the start and end of each neighbors
             list in 'user_neighbors_index'.
 
           user_neighbors_importance: Defines a scalar importance value for each
@@ -431,11 +432,11 @@ class SparseConv(tf.keras.layers.Layer):
 
           inp_importance: Optional scalar importance value for each input point.
 
-          fixed_radius_search_hash_table: A precomputed hash table generated with build_spatial_hash_table().
-            This input can be used to explicitly force the reuse of a hash table in special
-            cases and is usually not needed.
-            Note that the hash table must have been generated with the same 'points' array.
-            Note that this parameter is only used if 'extents' is a scalar.
+          fixed_radius_search_hash_table: A precomputed hash table generated with
+            build_spatial_hash_table(). This input can be used to explicitly force the
+            reuse of a hash table in special cases and is usually not needed.
+            Note that the hash table must have been generated with the same 'points'
+            array. Note that this parameter is only used if 'extents' is a scalar.
 
         Returns: A tensor of shape [num output points, filters] with the output
           features.
@@ -497,8 +498,7 @@ class SparseConv(tf.keras.layers.Layer):
 
 
 class SparseConvTranspose(tf.keras.layers.Layer):
-    """Sparse Transposed Convolution. This layer computes a transposed convolution which is only
-    evaluated at the specified output positions.
+    """Sparse Transposed Convolution. This layer computes a transposed convolution which is only evaluated at the specified output positions.
 
     Arguments:
         filters: The number of filters/output channels.
@@ -517,7 +517,8 @@ class SparseConvTranspose(tf.keras.layers.Layer):
 
         bias_regularizer: Regularizer for the bias vector.
 
-        normalize: If true then the input features will be normalized with the number of output points.
+        normalize: If true then the input features will be normalized with the number of
+          output points.
 
         offset: A single 3D vector used in the filter coordinate computation.
           The shape is [3]. This can be used to control how the filters are
@@ -612,11 +613,11 @@ class SparseConvTranspose(tf.keras.layers.Layer):
 
           out_importance: Optional scalar importance value for each output point.
 
-          fixed_radius_search_hash_table: A precomputed hash table generated with build_spatial_hash_table().
-            This input can be used to explicitly force the reuse of a hash table in special
-            cases and is usually not needed.
-            Note that the hash table must have been generated with the same 'points' array.
-            Note that this parameter is only used if 'extents' is a scalar.
+          fixed_radius_search_hash_table: A precomputed hash table generated with
+            build_spatial_hash_table(). This input can be used to explicitly force the
+            reuse of a hash table in special cases and is usually not needed.
+            Note that the hash table must have been generated with the same 'points'
+            array. Note that this parameter is only used if 'extents' is a scalar.
 
         Returns: A tensor of shape [num output points, filters] with the output
           features.
