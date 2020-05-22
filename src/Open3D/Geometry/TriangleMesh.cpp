@@ -1571,7 +1571,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectByIndex(
         if (new_vert_ind[sel_vidx] >= 0) {
             continue;
         }
-        new_vert_ind[sel_vidx] = output->vertices_.size();
+        new_vert_ind[sel_vidx] = int(output->vertices_.size());
         output->vertices_.push_back(vertices_[sel_vidx]);
         if (has_vertex_colors) {
             output->vertex_colors_.push_back(vertex_colors_[sel_vidx]);
