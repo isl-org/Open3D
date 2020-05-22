@@ -26,40 +26,49 @@
 
 #pragma once
 
-#include "Open3D/GUI/Widget.h"
-
-#include "Open3D/GUI/UIImage.h"
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
 
 namespace open3d {
 namespace gui {
 
-class ImageLabel : public Widget {
-    using Super = Widget;
-
+class UIImage {
 public:
-    ImageLabel();
     /// Uses image from the specified path. Each ImageLabel will use one
     /// draw call.
-    explicit ImageLabel(const char* image_path);
+    explicit UIImage(const char* image_path);
     /// Uses an existing texture, using texture coordinates
     /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
     /// This is useful for using an icon atlas to reduce draw calls.
-    explicit ImageLabel(visualization::TextureHandle texture_id,
-                        float u0 = 0.0f,
-                        float v0 = 0.0f,
-                        float u1 = 1.0f,
-                        float v1 = 1.0f);
-    ImageLabel(std::shared_ptr<UIImage> image);
-    ~ImageLabel();
+    explicit UIImage(visualization::TextureHandle texture_id,
+                     float u0 = 0.0f,
+                     float v0 = 0.0f,
+                     float u1 = 1.0f,
+                     float v1 = 1.0f);
+    ~UIImage();
 
-    std::shared_ptr<UIImage> GetImage() const;
-    void SetImage(std::shared_ptr<UIImage> image);
+    enum class Scaling {
+        NONE,   /// No scaling, fixed size
+        ANY,    /// Scales to any size and aspect ratio
+        ASPECT  /// Scales to any size, but fixed aspect ratio (default)
+    };
+    void SetScaling(Scaling scaling);
+    Scaling GetScaling() const;
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const Theme& theme) const;
 
-    void Layout(const Theme& theme) override;
-
-    DrawResult Draw(const DrawContext& context) override;
+    struct DrawParams {
+        float pos_x;
+        float pos_y;
+        float width;
+        float height;
+        float u0;
+        float v0;
+        float u1;
+        float v1;
+        visualization::TextureHandle texture;
+    };
+    DrawParams CalcDrawParams(visualization::Renderer& renderer,
+                              const Rect& frame) const;
 
 private:
     struct Impl;
