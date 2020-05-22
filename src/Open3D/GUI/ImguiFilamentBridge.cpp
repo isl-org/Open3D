@@ -335,11 +335,15 @@ public:
         id_ = tex_id;
     }
 
-    bool operator=(const ScissorRectKey& other) const {
+    bool operator==(const ScissorRectKey& other) const {
         if (id_ == other.id_) {
             return (rect_ == other.rect_);
         }
         return false;
+    }
+    
+    bool operator!=(const ScissorRectKey& other) const {
+        return !operator==(other);
     }
 
     bool operator<(const ScissorRectKey& other) const {
