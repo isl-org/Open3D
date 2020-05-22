@@ -38,7 +38,6 @@ pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
 
 
 # yapf: disable
-# @pytest.mark.skip()
 @pytest.mark.parametrize("kernel_size, out_channels, in_channels, with_inp_importance, with_normalization",[
                              ([1,1,1],            2,           7,                True,              False),
                              ([2,2,2],            1,           1,               False,              False),
@@ -59,14 +58,14 @@ def test_compare_to_conv3d(dtype, device_name, kernel_size, out_channels,
 
     filters = np.random.random(size=(*kernel_size, in_channels,
                                      out_channels)).astype(dtype)
-    bias = np.random.random(size=(out_channels,))
+    bias = np.random.random(size=(out_channels,)).astype(dtype)
 
     max_grid_extent = 10
     inp_positions = np.unique(np.random.randint(0, max_grid_extent,
                                                 (256, 3)).astype(dtype),
                               axis=0)
     inp_positions_int = inp_positions.astype(np.int32)
-    if (with_inp_importance):
+    if with_inp_importance:
         inp_importance = np.random.rand(
             inp_positions.shape[0]).astype(dtype) - 0.5
     else:
@@ -98,7 +97,8 @@ def test_compare_to_conv3d(dtype, device_name, kernel_size, out_channels,
     # Compare the output to a standard 3d conv
     # store features in a volume to use standard 3d convs
     inp_volume = np.zeros(
-        (1, max_grid_extent, max_grid_extent, max_grid_extent, in_channels))
+        (1, max_grid_extent, max_grid_extent, max_grid_extent, in_channels),
+        dtype=dtype)
 
     if with_inp_importance:
         inp_features *= inp_importance[:, np.newaxis]
@@ -130,7 +130,6 @@ def test_compare_to_conv3d(dtype, device_name, kernel_size, out_channels,
 
 
 # yapf: disable
-# @pytest.mark.skip()
 @pytest.mark.parametrize("kernel_size, out_channels, in_channels, with_out_importance, with_normalization",[
                              ([1,1,1],            2,           7,                True,              False),
                              ([2,2,2],            1,           1,               False,              False),
@@ -151,8 +150,7 @@ def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size,
 
     filters = np.random.random(size=(*kernel_size, in_channels,
                                      out_channels)).astype(dtype)
-    bias = np.random.random(size=(out_channels,))
-    # bias[:] = 0
+    bias = np.random.random(size=(out_channels,)).astype(dtype)
 
     max_grid_extent = 10
     inp_positions = np.unique(np.random.randint(0, max_grid_extent,
@@ -193,7 +191,8 @@ def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size,
     # Compare the output to a standard 3d conv
     # store features in a volume to use standard 3d convs
     inp_volume = np.zeros(
-        (1, max_grid_extent, max_grid_extent, max_grid_extent, in_channels))
+        (1, max_grid_extent, max_grid_extent, max_grid_extent, in_channels),
+        dtype=dtype)
 
     if with_normalization:
         for i, v in enumerate(inp_features):
