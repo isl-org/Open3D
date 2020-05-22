@@ -422,8 +422,13 @@ public:
     /// output TriangleMesh
     /// Vertices with indices in \p indices are selected.
     /// \param indices defines Indices of vertices to be selected.
+    /// \param cleanup If true it automatically calls
+    /// TriangleMesh::RemoveDuplicatedVertices,
+    /// TriangleMesh::RemoveDuplicatedTriangles,
+    /// TriangleMesh::RemoveUnreferencedVertices, and
+    /// TriangleMesh::RemoveDegenerateTriangles
     std::shared_ptr<TriangleMesh> SelectByIndex(
-            const std::vector<size_t> &indices) const;
+            const std::vector<size_t> &indices, bool cleanup = true) const;
 
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
