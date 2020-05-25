@@ -42,7 +42,23 @@ public:
     void ClearItems();
     /// Adds an item to the combobox. Its index is the order in which it is
     /// added, so the first item's index is 0, the second is 1, etc.
-    void AddItem(const char* name);
+    /// Returns the index of the new item.
+    int AddItem(const char* name);
+
+    /// Changes the item's text. \param index must be valid, otherwise
+    /// nothing will happen.
+    void ChangeItem(int index, const char* name);
+    /// If an item exists with \param orig_name, it will be changed to
+    /// \param new_name.
+    void ChangeItem(const char* orig_name, const char* new_name);
+
+    /// Removes the first item matching the given text.
+    void RemoveItem(const char* name);
+    /// Removes the item at \param index.
+    void RemoveItem(int index);
+
+    /// Returns the text of the item at \param index. \param index must be
+    /// valid.
     const char* GetItem(int index) const;
 
     int GetSelectedIndex() const;

@@ -225,7 +225,7 @@ void pybind_trianglemesh(py::module &m) {
                  "triangle mesh. ``input``: The input triangle mesh. "
                  "``indices``: "
                  "Indices of vertices to be selected.",
-                 "indices"_a)
+                 "indices"_a, "cleanup"_a = true)
             .def("crop",
                  (std::shared_ptr<geometry::TriangleMesh>(
                          geometry::TriangleMesh::*)(
@@ -563,7 +563,10 @@ void pybind_trianglemesh(py::module &m) {
              {"scope", "Mesh property that should be filtered."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "select_by_index",
-            {{"indices", "Indices of vertices to be selected."}});
+            {{"indices", "Indices of vertices to be selected."},
+             {"cleanup",
+              "If true calls number of mesh cleanup functions to remove "
+              "unreferenced vertices and degenerate triangles"}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "crop",
             {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});

@@ -403,7 +403,9 @@ struct LightingProfile {
 };
 
 static const std::string DEFAULT_IBL = "default";
-static const std::string DEFAULT_MATERIAL_NAME = "Polished ceramic [default]";
+static const std::string DEFAULT_MATERIAL_NAME = "Polished ceramic";
+static const std::string MATERIAL_FROM_FILE_NAME =
+        "Material from file [default]";
 static const std::string POINT_CLOUD_PROFILE_NAME =
         "Cloudy day (no direct sun)";
 static const bool DEFAULT_SHOW_SKYBOX = false;
@@ -599,6 +601,8 @@ struct GuiVisualizer::Impl {
 
         MaterialType selected_type = LIT;
         Materials current_materials;
+        // geometry index -> material  (entry exists if mesh HasMaterials())
+        std::map<int, LitMaterial> loaded_materials_;
         std::shared_ptr<gui::Combobox> wgt_material_type;
 
         std::shared_ptr<gui::Combobox> wgt_prefab_material;
@@ -616,6 +620,12 @@ struct GuiVisualizer::Impl {
     } settings_;
 
     void SetMaterialsToDefault(visualization::Renderer &renderer) {
+        settings_.loaded_materials_.clear();
+        if (settings_.wgt_prefab_material) {
+            settings_.wgt_prefab_material->RemoveItem(
+                    MATERIAL_FROM_FILE_NAME.c_str());
+        }
+
         Materials defaults;
         if (settings_.user_has_changed_color) {
             defaults.unlit.base_color =
@@ -704,6 +714,11 @@ struct GuiVisualizer::Impl {
         settings_.current_materials.lit.base_color = material.base_color;
         settings_.current_materials.lit.roughness = material.roughness;
         settings_.current_materials.lit.metallic = material.metallic;
+        settings_.current_materials.lit.reflectance = material.reflectance;
+        settings_.current_materials.lit.clear_coat = material.clear_coat;
+        settings_.current_materials.lit.clear_coat_roughness =
+                material.clear_coat_roughness;
+        settings_.current_materials.lit.anisotropy = material.anisotropy;
         settings_.current_materials.unlit.base_color = material.base_color;
 
         // Update maps
@@ -715,6 +730,11 @@ struct GuiVisualizer::Impl {
                         .SetColor("baseColor", material.base_color)
                         .SetParameter("baseRoughness", material.roughness)
                         .SetParameter("baseMetallic", material.metallic)
+                        .SetParameter("reflectance", material.reflectance)
+                        .SetParameter("clearCoat", material.clear_coat)
+                        .SetParameter("clearCoatRoughness",
+                                      material.clear_coat_roughness)
+                        .SetParameter("anisotropy", material.anisotropy)
                         .SetTexture("albedo", maps.albedo_map,
                                     TextureSamplerParameters::Pretty())
                         .SetTexture("normalMap", maps.normal_map,
@@ -842,23 +862,52 @@ struct GuiVisualizer::Impl {
 
     void SetMaterialByName(visualization::Renderer &renderer,
                            const std::string &name) {
-        auto prefab_it = prefab_materials_.find(name);
-        if (prefab_it != prefab_materials_.end()) {
-            auto &prefab = prefab_it->second;
-            if (!settings_.user_has_changed_color) {
-                settings_.current_materials.lit.base_color = prefab.base_color;
-                settings_.wgt_material_color->SetValue(prefab.base_color.x(),
-                                                       prefab.base_color.y(),
-                                                       prefab.base_color.z());
+        if (name == MATERIAL_FROM_FILE_NAME) {
+            for (size_t i = 0; i < geometry_handles_.size(); ++i) {
+                auto mat_desc = settings_.loaded_materials_.find(i);
+                if (mat_desc == settings_.loaded_materials_.end()) {
+                    continue;
+                }
+                auto mat = settings_.current_materials.lit.handle;
+                mat = this->CreateLitMaterial(renderer, mat, mat_desc->second);
+                scene_->GetScene()->AssignMaterial(geometry_handles_[i], mat);
+                settings_.current_materials.lit.handle = mat;
             }
-            auto mat = settings_.current_materials.lit.handle;
-            mat = this->CreateLitMaterial(renderer, mat, prefab);
-            for (const auto &handle : geometry_handles_) {
-                scene_->GetScene()->AssignMaterial(handle, mat);
+            if (!settings_.user_has_changed_color &&
+                settings_.loaded_materials_.size() == 1) {
+                auto color =
+                        settings_.loaded_materials_.begin()->second.base_color;
+                settings_.wgt_material_color->SetValue(color.x(), color.y(),
+                                                       color.z());
+                settings_.current_materials.lit.base_color = color;
             }
-            settings_.current_materials.lit.handle = mat;
+        } else {
+            auto prefab_it = prefab_materials_.find(name);
+            // DEFAULT_MATERIAL_NAME may have "[default]" appended, if the model
+            // doesn't have its own material, so search again if that happened.
+            if (prefab_it == prefab_materials_.end() &&
+                name.find(DEFAULT_MATERIAL_NAME) == 0) {
+                prefab_it = prefab_materials_.find(DEFAULT_MATERIAL_NAME);
+            }
+            if (prefab_it != prefab_materials_.end()) {
+                auto &prefab = prefab_it->second;
+                if (!settings_.user_has_changed_color) {
+                    settings_.current_materials.lit.base_color =
+                            prefab.base_color;
+                    settings_.wgt_material_color->SetValue(
+                            prefab.base_color.x(), prefab.base_color.y(),
+                            prefab.base_color.z());
+                }
+                auto mat = settings_.current_materials.lit.handle;
+                mat = this->CreateLitMaterial(renderer, mat, prefab);
+                for (const auto &handle : geometry_handles_) {
+                    scene_->GetScene()->AssignMaterial(handle, mat);
+                }
+                settings_.current_materials.lit.handle = mat;
+            }
         }
     }
+
     void SetLightingProfile(visualization::Renderer &renderer,
                             const std::string &name) {
         for (size_t i = 0; i < g_lighting_profiles.size(); ++i) {
@@ -1516,10 +1565,15 @@ void GuiVisualizer::SetGeometry(
                     auto mesh_material = mesh->materials_.begin()->second;
                     Impl::LitMaterial material;
                     Impl::TextureMaps maps;
-                    material.base_color.x() = mesh_material.baseColor.r;
-                    material.base_color.y() = mesh_material.baseColor.g;
-                    material.base_color.z() = mesh_material.baseColor.b;
+                    material.base_color.x() = mesh_material.baseColor.r();
+                    material.base_color.y() = mesh_material.baseColor.g();
+                    material.base_color.z() = mesh_material.baseColor.b();
                     material.roughness = mesh_material.baseRoughness;
+                    material.reflectance = mesh_material.baseReflectance;
+                    material.clear_coat = mesh_material.baseClearCoat;
+                    material.clear_coat_roughness =
+                            mesh_material.baseClearCoatRoughness;
+                    material.anisotropy = mesh_material.baseAnisotropy;
 
                     auto is_map_valid =
                             [](std::shared_ptr<geometry::Image> map) -> bool {
@@ -1576,6 +1630,7 @@ void GuiVisualizer::SetGeometry(
                     }
                     impl_->SetMaterialsToCurrentSettings(GetRenderer(),
                                                          material, maps);
+                    impl_->settings_.loaded_materials_[i] = material;
                 }
 
                 if ((mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) ||
@@ -1634,6 +1689,25 @@ void GuiVisualizer::SetGeometry(
             impl_->SetLightingProfile(GetRenderer(), POINT_CLOUD_PROFILE_NAME);
         }
         impl_->settings_.wgt_point_size->SetEnabled(num_point_clouds > 0);
+    }
+
+    if (!impl_->settings_.loaded_materials_.empty()) {
+        if (impl_->settings_.loaded_materials_.size() == 1) {
+            auto color = impl_->settings_.loaded_materials_.begin()
+                                 ->second.base_color;
+            impl_->settings_.wgt_material_color->SetValue(color.x(), color.y(),
+                                                          color.z());
+        }
+        int resetIdx = impl_->settings_.wgt_prefab_material->AddItem(
+                MATERIAL_FROM_FILE_NAME.c_str());
+        impl_->settings_.wgt_prefab_material->SetSelectedIndex(resetIdx);
+        impl_->settings_.wgt_prefab_material->ChangeItem(
+                (DEFAULT_MATERIAL_NAME + " [default]").c_str(),
+                DEFAULT_MATERIAL_NAME.c_str());
+    } else {
+        impl_->settings_.wgt_prefab_material->ChangeItem(
+                DEFAULT_MATERIAL_NAME.c_str(),
+                (DEFAULT_MATERIAL_NAME + " [default]").c_str());
     }
 
     // Add axes. Axes length should be the longer of the bounds extent
