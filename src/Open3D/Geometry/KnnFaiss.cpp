@@ -32,6 +32,7 @@
 #include "Open3D/Geometry/KnnFaiss.h"
 
 #include <faiss/IndexFlat.h>
+#include <faiss/impl/AuxIndexStructures.h>
 
 #include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
 #include "Open3D/Geometry/PointCloud.h"
@@ -139,15 +140,22 @@ int KnnFaiss::SearchRadius(const T &query,
     // Since max_nn is not given, we let flann to do its own memory management.
     // Other flann::Index::radiusSearch() implementations lose performance due
     // to memory management and CPU caching.
-//    if (data_.empty() || dataset_size_ <= 0 ||
-//        size_t(query.rows()) != dimension_) {
-//        return -1;
-//    }
-//    faiss::RangeSearchResult* result = new faiss::RangeSearchResult(query.cols());
-//    result->labels = indices.data();
-//    result->distances = distance2.data();
-//    index->range_search(query.cols(), query.data(), radius, result);
-    return 1;
+    if (data_.empty() || dataset_size_ <= 0 ||
+        size_t(query.rows()) != dimension_) {
+        return -1;
+    }
+    std::vector<float> tmp_query(query.size());
+    for(unsigned int i = 0; i < query.size(); i++){
+        tmp_query[i] = (float)query.data()[i];
+    }
+    faiss::RangeSearchResult result(query.cols());
+    result.do_allocation();
+    index->range_search(query.cols(), tmp_query.data(), std::pow(radius, 2), &result); // square radius to maintain unify with kdtreeflann
+    for (unsigned int i = 0; i < result.lims[query.cols()]; i++){
+        indices.push_back(result.labels[i]);
+        distance2.push_back(result.distances[i]);
+    }
+    return result.lims[1];
 }
 
 bool KnnFaiss::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
