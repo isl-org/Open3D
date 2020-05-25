@@ -118,7 +118,8 @@ bool WritePointCloudToPTS(const std::string &filename,
             fprintf(file, "%.10f %.10f %.10f\r\n", point(0), point(1),
                     point(2));
         } else {
-            const auto &color = pointcloud.colors_[i] * 255.0;
+            const auto &color = pointcloud.colors_[i] * 255.0 +
+                                Eigen::Vector3d(0.5, 0.5, 0.5);
             fprintf(file, "%.10f %.10f %.10f %d %d %d %d\r\n", point(0),
                     point(1), point(2), 0, (int)color(0), (int)color(1),
                     (int)(color(2)));
