@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-set(BENCHMARK_SOURCE_FILES
-    Geometry/KDTreeFlann.cpp
-    Geometry/SamplePoints.cpp
-    Core/Reduction.cpp
-)
+file(GLOB_RECURSE BENCHMARK_SOURCE_FILES "*.cpp")
 
 add_executable(benchmarks ${BENCHMARK_SOURCE_FILES})
 add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/TestData")
