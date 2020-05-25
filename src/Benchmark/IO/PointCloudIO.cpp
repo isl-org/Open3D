@@ -144,7 +144,7 @@ public:
         }
     }
 };
-// reuse the same instance so we don't recreate the kdtree every time
+// reuse the same instance so we don't recreate the point cloud every time
 TestPCGrid0 test_pc_grid0;
 
 }  // namespace
