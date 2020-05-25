@@ -73,6 +73,7 @@ bool Task::IsFinished() const {
         case ThreadState::FINISHED:
             return true;
     }
+    return true;  // make GCC happy
 }
 
 void Task::WaitToFinish() {
