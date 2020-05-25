@@ -26,8 +26,8 @@
 
 #include "Open3D/GUI/ProgressBar.h"
 
-#include <cmath>
 #include <imgui.h>
+#include <cmath>
 
 #include "Open3D/GUI/Theme.h"
 
@@ -43,35 +43,30 @@ ProgressBar::ProgressBar() : impl_(new ProgressBar::Impl()) {}
 ProgressBar::~ProgressBar() {}
 
 /// ProgressBar values ranges from 0.0 (incomplete) to 1.0 (complete)
-void ProgressBar::SetValue(float value) {
-    impl_->value_ = value;
-}
+void ProgressBar::SetValue(float value) { impl_->value_ = value; }
 
-float ProgressBar::GetValue() const {
-    return impl_->value_;
-}
+float ProgressBar::GetValue() const { return impl_->value_; }
 
 Size ProgressBar::CalcPreferredSize(const Theme& theme) const {
     return Size(Widget::DIM_GROW, 0.25 * theme.font_size);
 }
 
 Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {
-    auto &frame = GetFrame();
+    auto& frame = GetFrame();
     auto fg = context.theme.border_color;
     auto color = IM_COL32(int(std::round(255.0f * fg.GetRed())),
                           int(std::round(255.0f * fg.GetGreen())),
                           int(std::round(255.0f * fg.GetBlue())),
                           int(std::round(255.0f * fg.GetAlpha())));
-    ImGui::GetWindowDrawList()->AddRect(ImVec2(frame.x, frame.y),
-                                        ImVec2(frame.GetRight(), frame.GetBottom()),
-                                        color,
-                                        frame.height / 2.0f);
+    ImGui::GetWindowDrawList()->AddRect(
+            ImVec2(frame.x, frame.y),
+            ImVec2(frame.GetRight(), frame.GetBottom()), color,
+            frame.height / 2.0f);
     float x = float(frame.x) + float(frame.width) * impl_->value_;
     x = std::max(x, float(frame.x + frame.height / 2));
     ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(frame.x, frame.y),
                                               ImVec2(x, frame.GetBottom()),
-                                              color,
-                                              frame.height / 2.0f);
+                                              color, frame.height / 2.0f);
     return DrawResult::NONE;
 }
 

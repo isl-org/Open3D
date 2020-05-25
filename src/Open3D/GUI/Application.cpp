@@ -104,7 +104,7 @@ struct Application::Impl {
     std::unordered_set<std::shared_ptr<Window>> windows_;
     std::unordered_set<std::shared_ptr<Window>> windows_to_be_destroyed_;
 
-    std::list<Task> running_tasks_; // always accessed from main thread
+    std::list<Task> running_tasks_;  // always accessed from main thread
     // ----
     std::mutex posted_lock_;
     std::vector<std::function<void()>> posted_;
@@ -329,9 +329,11 @@ bool Application::RunOneTick() {
 
     // Cleanup if we are done
     if (status == RunStatus::DONE) {
-        // Clear all the running tasks. The destructor will wait for them to finish.
-        for (auto it = impl_->running_tasks_.begin(); it != impl_->running_tasks_.end(); ++it) {
-            impl_->running_tasks_.erase(it); // calls join()
+        // Clear all the running tasks. The destructor will wait for them to
+        // finish.
+        for (auto it = impl_->running_tasks_.begin();
+             it != impl_->running_tasks_.end(); ++it) {
+            impl_->running_tasks_.erase(it);  // calls join()
         }
 
         glfwTerminate();
@@ -363,11 +365,11 @@ Application::RunStatus Application::ProcessQueuedEvents() {
 
     // Run any posted functions
     {
-    std::lock_guard<std::mutex> lock(impl_->posted_lock_);
-    for (auto &f : impl_->posted_) {
-        f();
-    }
-    impl_->posted_.clear();
+        std::lock_guard<std::mutex> lock(impl_->posted_lock_);
+        for (auto &f : impl_->posted_) {
+            f();
+        }
+        impl_->posted_.clear();
     }
 
     // Clear any tasks that have finished
@@ -376,7 +378,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
         auto current = it;
         ++it;
         if (current->IsFinished()) {
-            impl_->running_tasks_.erase(current); // calls join()
+            impl_->running_tasks_.erase(current);  // calls join()
         }
     }
 

@@ -65,7 +65,7 @@ void Task::Run() {
 }
 
 bool Task::IsFinished() const {
-    switch(impl_->state_) {
+    switch (impl_->state_) {
         case ThreadState::NOT_STARTED:
             return true;
         case ThreadState::RUNNING:
@@ -82,5 +82,5 @@ void Task::WaitToFinish() {
     }
 }
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

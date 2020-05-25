@@ -31,8 +31,7 @@
 namespace open3d {
 namespace gui {
 
-class ProgressBar : public Widget
-{
+class ProgressBar : public Widget {
 public:
     ProgressBar();
     ~ProgressBar();
