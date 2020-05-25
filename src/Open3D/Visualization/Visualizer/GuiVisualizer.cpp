@@ -1764,68 +1764,91 @@ bool GuiVisualizer::SetIBL(const char *path) {
     return result;
 }
 
-bool GuiVisualizer::LoadGeometry(const std::string &path) {
-    auto geometry = std::shared_ptr<geometry::Geometry3D>();
+void GuiVisualizer::LoadGeometry(const std::string &path) {
+    // Post the dialog creation back to the main thread so that the OS window
+    // gets created if it is not already.
+    gui::Application::GetInstance().PostToMainThread([this, path]() {
+        auto &theme = GetTheme();
+        auto loading_dlg = std::make_shared<gui::Dialog>("Loading");
+        auto vert = std::make_shared<gui::Vert>(0, gui::Margins(theme.font_size));
+        auto loading_text = std::string("Loading ") + path;
+        vert->AddChild(std::make_shared<gui::Label>(loading_text.c_str()));
+        loading_dlg->AddChild(vert);
+        ShowDialog(loading_dlg);
+    });
 
-    auto geometry_type = io::ReadFileGeometryType(path);
+    gui::Application::GetInstance().RunInThread([this, path]() {
+        auto geometry = std::shared_ptr<geometry::Geometry3D>();
 
-    auto mesh = std::make_shared<geometry::TriangleMesh>();
-    bool mesh_success = false;
-    if (geometry_type & io::CONTAINS_TRIANGLES) {
-        try {
-            mesh_success = io::ReadTriangleMesh(path, *mesh);
-        } catch (...) {
-            mesh_success = false;
+        auto geometry_type = io::ReadFileGeometryType(path);
+
+        auto mesh = std::make_shared<geometry::TriangleMesh>();
+        bool mesh_success = false;
+        if (geometry_type & io::CONTAINS_TRIANGLES) {
+            try {
+                mesh_success = io::ReadTriangleMesh(path, *mesh);
+            } catch (...) {
+                mesh_success = false;
+            }
         }
-    }
-    if (mesh_success) {
-        if (mesh->triangles_.size() == 0) {
-            utility::LogWarning(
-                    "Contains 0 triangles, will read as point cloud");
+        if (mesh_success) {
+            if (mesh->triangles_.size() == 0) {
+                utility::LogWarning(
+                        "Contains 0 triangles, will read as point cloud");
+                mesh.reset();
+            } else {
+                mesh->ComputeVertexNormals();
+                if (mesh->vertex_colors_.empty()) {
+                    mesh->PaintUniformColor({1, 1, 1});
+                }
+                geometry = mesh;
+            }
+            // Make sure the mesh has texture coordinates
+            if (!mesh->HasTriangleUvs()) {
+                mesh->triangle_uvs_.resize(mesh->triangles_.size() * 3, {0.0, 0.0});
+            }
+        } else {
+            // LogError throws an exception, which we don't want, because this might
+            // be a point cloud.
+            utility::LogInfo("{} appears to be a point cloud", path.c_str());
             mesh.reset();
-        } else {
-            mesh->ComputeVertexNormals();
-            if (mesh->vertex_colors_.empty()) {
-                mesh->PaintUniformColor({1, 1, 1});
-            }
-            geometry = mesh;
         }
-        // Make sure the mesh has texture coordinates
-        if (!mesh->HasTriangleUvs()) {
-            mesh->triangle_uvs_.resize(mesh->triangles_.size() * 3, {0.0, 0.0});
-        }
-    } else {
-        // LogError throws an exception, which we don't want, because this might
-        // be a point cloud.
-        utility::LogInfo("{} appears to be a point cloud", path.c_str());
-        mesh.reset();
-    }
 
-    if (!geometry) {
-        auto cloud = std::make_shared<geometry::PointCloud>();
-        bool success = false;
-        try {
-            success = io::ReadPointCloud(path, *cloud);
-        } catch (...) {
-            success = false;
-        }
-        if (success) {
-            utility::LogInfo("Successfully read {}", path.c_str());
-            if (!cloud->HasNormals()) {
-                cloud->EstimateNormals();
+        if (!geometry) {
+            auto cloud = std::make_shared<geometry::PointCloud>();
+            bool success = false;
+            try {
+                success = io::ReadPointCloud(path, *cloud);
+            } catch (...) {
+                success = false;
             }
-            cloud->NormalizeNormals();
-            geometry = cloud;
-        } else {
-            utility::LogWarning("Failed to read points {}", path.c_str());
-            cloud.reset();
+            if (success) {
+                utility::LogInfo("Successfully read {}", path.c_str());
+                if (!cloud->HasNormals()) {
+                    cloud->EstimateNormals();
+                }
+                cloud->NormalizeNormals();
+                geometry = cloud;
+            } else {
+                utility::LogWarning("Failed to read points {}", path.c_str());
+                cloud.reset();
+            }
         }
-    }
 
-    if (geometry) {
-        SetGeometry({geometry});
-    }
-    return (geometry != nullptr);
+        if (geometry) {
+            gui::Application::GetInstance().PostToMainThread([this, geometry]() {
+                SetGeometry({geometry});
+                CloseDialog();
+                PostRedraw();
+            });
+        } else {
+            gui::Application::GetInstance().PostToMainThread([this, path]() {
+                CloseDialog();
+                auto msg = std::string("Could not load '") + path + "'.";
+                ShowMessageBox("Error", msg.c_str());
+            });
+        }
+    });
 }
 
 void GuiVisualizer::ExportCurrentImage(int width,
@@ -1970,11 +1993,7 @@ void GuiVisualizer::OnDragDropped(const char *path) {
     this->SetTitle(title);
     auto vis = this;
 #endif  // LOAD_IN_NEW_WINDOW
-    if (!vis->LoadGeometry(path)) {
-        auto err = std::string("Error reading geometry file '") + path + "'";
-        vis->ShowMessageBox("Error loading geometry", err.c_str());
-    }
-    PostRedraw();
+    vis->LoadGeometry(path);
 }
 
 }  // namespace visualization

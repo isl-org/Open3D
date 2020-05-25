@@ -26,55 +26,36 @@
 
 #pragma once
 
-#include <vector>
-
-#include "Open3D/GUI/Window.h"
+#include <functional>
+#include <memory>
 
 namespace open3d {
-
-namespace geometry {
-class AxisAlignedBoundingBox;
-class Geometry;
-}  // namespace geometry
-
 namespace gui {
-struct Theme;
-}
 
-namespace visualization {
-class GuiVisualizer : public gui::Window {
-    using Super = gui::Window;
-
+class Task {
 public:
-    GuiVisualizer(const std::vector<std::shared_ptr<const geometry::Geometry>>&
-                          geometries,
-                  const std::string& title,
-                  int width,
-                  int height,
-                  int left,
-                  int top);
-    virtual ~GuiVisualizer();
+    /// Runs \param f in another thread. \param f may want to call
+    /// Application::PostToMainThread() to communicate the results.
+    Task(std::function<void()> f);
 
-    void SetTitle(const std::string& title);
-    void SetGeometry(
-            const std::vector<std::shared_ptr<const geometry::Geometry>>&
-                    geometries);
+    Task(const Task&) = delete;
+    Task& operator=(const Task& other) = delete;
 
-    bool SetIBL(const char* path);
+    /// Will call WaitToFinish(), which may block.
+    ~Task();
 
-    void LoadGeometry(const std::string& path);
-    void ExportCurrentImage(int width, int height, const std::string& path);
+    void Run();
 
-    void Layout(const gui::Theme& theme) override;
+    bool IsFinished() const;
 
-protected:
-    void OnMenuItemSelected(gui::Menu::ItemId item_id) override;
-    void OnDragDropped(const char* path) override;
+    /// This must be called for all tasks eventually or the process will not
+    /// exit.
+    void WaitToFinish();
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 
-}  // namespace visualization
-}  // namespace open3d
+}
+}

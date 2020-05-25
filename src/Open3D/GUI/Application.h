@@ -59,6 +59,12 @@ public:
     /// Closes all the windows, which exits as a result
     void Quit();
 
+    /// Runs \param f in a separate thread. Do NOT call UI functions in
+    /// \param f; use PostToMainThread().
+    void RunInThread(std::function<void()> f);
+    /// Runs \param f on the main thread at some point in the near future.
+    void PostToMainThread(std::function<void()> f);
+
     std::shared_ptr<Menu> GetMenubar() const;
     void SetMenubar(std::shared_ptr<Menu> menubar);
 

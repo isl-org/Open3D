@@ -28,6 +28,7 @@
 
 #include <GLFW/glfw3.h>
 #include <chrono>
+#include <list>
 #include <thread>
 #include <unordered_set>
 
@@ -36,6 +37,7 @@
 #include "Open3D/GUI/Label.h"
 #include "Open3D/GUI/Layout.h"
 #include "Open3D/GUI/Native.h"
+#include "Open3D/GUI/Task.h"
 #include "Open3D/GUI/Theme.h"
 #include "Open3D/GUI/Window.h"
 #include "Open3D/Utility/Console.h"
@@ -101,6 +103,12 @@ struct Application::Impl {
     std::shared_ptr<Menu> menubar_;
     std::unordered_set<std::shared_ptr<Window>> windows_;
     std::unordered_set<std::shared_ptr<Window>> windows_to_be_destroyed_;
+
+    std::list<Task> running_tasks_; // always accessed from main thread
+    // ----
+    std::mutex posted_lock_;
+    std::vector<std::function<void()>> posted_;
+    // ----
 
     void InitGFLW() {
         if (this->is_GLFW_initalized_) {
@@ -321,6 +329,11 @@ bool Application::RunOneTick() {
 
     // Cleanup if we are done
     if (status == RunStatus::DONE) {
+        // Clear all the running tasks. The destructor will wait for them to finish.
+        for (auto it = impl_->running_tasks_.begin(); it != impl_->running_tasks_.end(); ++it) {
+            impl_->running_tasks_.erase(it); // calls join()
+        }
+
         glfwTerminate();
         impl_->is_GLFW_initalized_ = false;
         impl_->is_running_ = false;
@@ -348,10 +361,40 @@ Application::RunStatus Application::ProcessQueuedEvents() {
         impl_->last_time_ = now;
     }
 
+    // Run any posted functions
+    {
+    std::lock_guard<std::mutex> lock(impl_->posted_lock_);
+    for (auto &f : impl_->posted_) {
+        f();
+    }
+    impl_->posted_.clear();
+    }
+
+    // Clear any tasks that have finished
+    auto it = impl_->running_tasks_.begin();
+    while (it != impl_->running_tasks_.end()) {
+        auto current = it;
+        ++it;
+        if (current->IsFinished()) {
+            impl_->running_tasks_.erase(current); // calls join()
+        }
+    }
+
     if (impl_->should_quit_) {
         return RunStatus::DONE;
     }
     return RunStatus::CONTINUE;
+}
+
+void Application::RunInThread(std::function<void()> f) {
+    // We need to be on the main thread here.
+    impl_->running_tasks_.emplace_back(f);
+    impl_->running_tasks_.back().Run();
+}
+
+void Application::PostToMainThread(std::function<void()> f) {
+    std::lock_guard<std::mutex> lock(impl_->posted_lock_);
+    impl_->posted_.push_back(f);
 }
 
 const char *Application::GetResourcePath() const {
