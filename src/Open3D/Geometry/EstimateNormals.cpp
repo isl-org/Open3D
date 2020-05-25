@@ -468,7 +468,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(int k) {
         kdtree.SearchKNN(points_[v0], k, neighbors, dists2);
         for (size_t vidx1 = 0; vidx1 < neighbors.size(); ++vidx1) {
             int v1 = neighbors[vidx1];
-            if (v0 == v1) {
+            if (v0 == size_t(v1)) {
                 continue;
             }
             int edge = EdgeIndex(v0, v1);
