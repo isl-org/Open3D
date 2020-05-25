@@ -81,7 +81,8 @@ bool ReadPointCloud(const std::string &filename,
                     const std::string &format,
                     bool remove_nan_points,
                     bool remove_infinite_points,
-                    bool print_progress) {
+                    bool print_progress,
+                    bool quiet) {
     std::string filename_ext;
     if (format == "auto") {
         filename_ext =
@@ -90,8 +91,10 @@ bool ReadPointCloud(const std::string &filename,
         filename_ext = format;
     }
 
-    std::cout << "Format = " << format << std::endl;
-    std::cout << "Extension = " << filename_ext << std::endl;
+    if (!quiet) {
+        std::cout << "Format = " << format << std::endl;
+        std::cout << "Extension = " << filename_ext << std::endl;
+    }
 
     if (filename_ext.empty()) {
         utility::LogWarning(
