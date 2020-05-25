@@ -5,7 +5,7 @@ import numpy as np
 import PIL.Image
 import IPython.display
 import os
-import urllib
+import urllib.request
 import tarfile
 import gzip
 import zipfile
