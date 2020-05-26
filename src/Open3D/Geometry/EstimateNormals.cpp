@@ -267,7 +267,7 @@ class DisjointSet {
 public:
     DisjointSet(size_t size) : parent_(size), size_(size) {
         for (size_t idx = 0; idx < size; idx++) {
-            parent_[idx] = idx;
+            parent_[idx] = int(idx);
             size_[idx] = 0;
         }
     }
