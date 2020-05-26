@@ -267,14 +267,14 @@ class DisjointSet {
 public:
     DisjointSet(size_t size) : parent_(size), size_(size) {
         for (size_t idx = 0; idx < size; idx++) {
-            parent_[idx] = int(idx);
+            parent_[idx] = idx;
             size_[idx] = 0;
         }
     }
 
     // find representative element for given x
     // using path compression
-    int Find(int x) {
+    size_t Find(size_t x) {
         if (x != parent_[x]) {
             parent_[x] = Find(parent_[x]);
         }
@@ -282,7 +282,7 @@ public:
     }
 
     // combine to sets using size of sets
-    void Union(int x, int y) {
+    void Union(size_t x, size_t y) {
         x = Find(x);
         y = Find(y);
         if (x != y) {
@@ -297,21 +297,21 @@ public:
     }
 
 private:
-    std::vector<int> parent_;
-    std::vector<int> size_;
+    std::vector<size_t> parent_;
+    std::vector<size_t> size_;
 };
 
 struct WeightedEdge {
-    WeightedEdge(int v0, int v1, double weight)
+    WeightedEdge(size_t v0, size_t v1, double weight)
         : v0_(v0), v1_(v1), weight_(weight) {}
-    int v0_;
-    int v1_;
+    size_t v0_;
+    size_t v1_;
     double weight_;
 };
 
 // Minimum Spanning Tree algorithm (Kruskal's algorithm)
 std::vector<WeightedEdge> Kruskal(std::vector<WeightedEdge> &edges,
-                                  int n_vertices) {
+                                  size_t n_vertices) {
     std::sort(edges.begin(), edges.end(),
               [](WeightedEdge &e0, WeightedEdge &e1) {
                   return e0.weight_ < e1.weight_;
@@ -319,8 +319,8 @@ std::vector<WeightedEdge> Kruskal(std::vector<WeightedEdge> &edges,
     DisjointSet disjoint_set(n_vertices);
     std::vector<WeightedEdge> mst;
     for (size_t eidx = 0; eidx < edges.size(); ++eidx) {
-        int set0 = disjoint_set.Find(edges[eidx].v0_);
-        int set1 = disjoint_set.Find(edges[eidx].v1_);
+        size_t set0 = disjoint_set.Find(edges[eidx].v0_);
+        size_t set1 = disjoint_set.Find(edges[eidx].v1_);
         if (set0 != set1) {
             mst.push_back(edges[eidx]);
             disjoint_set.Union(set0, set1);
@@ -415,7 +415,7 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
     }
 }
 
-void PointCloud::OrientNormalsConsistentTangentPlane(int k) {
+void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
     if (HasNormals() == false) {
         utility::LogError(
                 "[OrientNormalsConsistentTangentPlane] No normals in the "
@@ -428,14 +428,14 @@ void PointCloud::OrientNormalsConsistentTangentPlane(int k) {
     std::vector<size_t> pt_map;
     std::tie(delaunay_mesh, pt_map) = TetraMesh::CreateFromPointCloud(*this);
     std::vector<WeightedEdge> delaunay_graph;
-    std::unordered_set<int> graph_edges;
-    auto EdgeIndex = [&](int v0, int v1) {
+    std::unordered_set<size_t> graph_edges;
+    auto EdgeIndex = [&](size_t v0, size_t v1) -> size_t {
         return std::min(v0, v1) * points_.size() + std::max(v0, v1);
     };
-    auto AddEdgeToDelaunayGraph = [&](int v0, int v1) {
+    auto AddEdgeToDelaunayGraph = [&](size_t v0, size_t v1) {
         v0 = pt_map[v0];
         v1 = pt_map[v1];
-        int edge = EdgeIndex(v0, v1);
+        size_t edge = EdgeIndex(v0, v1);
         if (graph_edges.count(edge) == 0) {
             double dist = (points_[v0] - points_[v1]).squaredNorm();
             delaunay_graph.push_back(WeightedEdge(v0, v1, dist));
@@ -453,7 +453,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(int k) {
 
     std::vector<WeightedEdge> mst = Kruskal(delaunay_graph, points_.size());
 
-    auto NormalWeight = [&](int v0, int v1) {
+    auto NormalWeight = [&](size_t v0, size_t v1) -> double {
         return 1.0 - std::abs(normals_[v0].dot(normals_[v1]));
     };
     for (auto &edge : mst) {
@@ -467,11 +467,11 @@ void PointCloud::OrientNormalsConsistentTangentPlane(int k) {
         std::vector<double> dists2;
         kdtree.SearchKNN(points_[v0], k, neighbors, dists2);
         for (size_t vidx1 = 0; vidx1 < neighbors.size(); ++vidx1) {
-            int v1 = neighbors[vidx1];
-            if (v0 == size_t(v1)) {
+            size_t v1 = size_t(neighbors[vidx1]);
+            if (v0 == v1) {
                 continue;
             }
-            int edge = EdgeIndex(v0, v1);
+            size_t edge = EdgeIndex(v0, v1);
             if (graph_edges.count(edge) == 0) {
                 double weight = NormalWeight(v0, v1);
                 mst.push_back(WeightedEdge(v0, v1, weight));
@@ -484,10 +484,10 @@ void PointCloud::OrientNormalsConsistentTangentPlane(int k) {
     mst = Kruskal(mst, points_.size());
 
     // convert list of edges to graph
-    std::vector<std::unordered_set<int>> mst_graph(points_.size());
+    std::vector<std::unordered_set<size_t>> mst_graph(points_.size());
     for (const auto &edge : mst) {
-        int v0 = edge.v0_;
-        int v1 = edge.v1_;
+        size_t v0 = edge.v0_;
+        size_t v1 = edge.v1_;
         mst_graph[v0].insert(v1);
         mst_graph[v1].insert(v0);
     }
@@ -495,7 +495,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(int k) {
     // finst start node for tree traversal
     // init with node with max z
     double max_z = std::numeric_limits<double>::lowest();
-    int v0 = -1;
+    size_t v0;
     for (size_t vidx = 0; vidx < points_.size(); ++vidx) {
         const Eigen::Vector3d &v = points_[vidx];
         if (v(2) > max_z) {
@@ -505,7 +505,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(int k) {
     }
 
     // traverse MST and orient normals consistently
-    std::queue<int> traversal_queue;
+    std::queue<size_t> traversal_queue;
     std::vector<bool> visited(points_.size(), false);
     traversal_queue.push(v0);
     auto TestAndOrientNormal = [&](const Eigen::Vector3d &n0,
@@ -519,7 +519,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(int k) {
         v0 = traversal_queue.front();
         traversal_queue.pop();
         visited[v0] = true;
-        for (int v1 : mst_graph[v0]) {
+        for (size_t v1 : mst_graph[v0]) {
             if (!visited[v1]) {
                 traversal_queue.push(v1);
                 TestAndOrientNormal(normals_[v0], normals_[v1]);
