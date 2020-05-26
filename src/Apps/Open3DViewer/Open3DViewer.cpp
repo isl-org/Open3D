@@ -54,7 +54,9 @@ void LoadAndCreateWindow(const char *path) {
             std::make_shared<GuiVisualizer>(empty, title, WIDTH, HEIGHT, x, y);
     x += 20;  // so next window (if any) doesn't hide this one
     y += 20;
-    vis->LoadGeometry(path);
+    if (is_path_valid) {
+        vis->LoadGeometry(path);
+    }
     gui::Application::GetInstance().AddWindow(vis);
 }
 
