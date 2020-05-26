@@ -334,7 +334,9 @@ bool Application::RunOneTick() {
         // finish.
         for (auto it = impl_->running_tasks_.begin();
              it != impl_->running_tasks_.end(); ++it) {
-            impl_->running_tasks_.erase(it);  // calls join()
+            auto current = it;
+            ++it;
+            impl_->running_tasks_.erase(current);  // calls join()
         }
 
         glfwTerminate();
@@ -347,11 +349,6 @@ bool Application::RunOneTick() {
 
 Application::RunStatus Application::ProcessQueuedEvents() {
     glfwWaitEventsTimeout(RUNLOOP_DELAY_SEC);
-
-    // We can't destroy a GLFW window in a callback, so we need to do it here.
-    // Since these are the only copy of the shared pointers, this will cause
-    // the Window destructor to be called.
-    impl_->windows_to_be_destroyed_.clear();
 
     // Handle tick messages.
     double now = Now();
@@ -382,6 +379,11 @@ Application::RunStatus Application::ProcessQueuedEvents() {
             impl_->running_tasks_.erase(current);  // calls join()
         }
     }
+
+    // We can't destroy a GLFW window in a callback, so we need to do it here.
+    // Since these are the only copy of the shared pointers, this will cause
+    // the Window destructor to be called.
+    impl_->windows_to_be_destroyed_.clear();
 
     if (impl_->should_quit_) {
         return RunStatus::DONE;
