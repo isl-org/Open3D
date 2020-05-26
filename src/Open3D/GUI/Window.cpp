@@ -521,10 +521,6 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     dlg->SetFrame(gui::Rect((win_size.width - w) / 2, (win_size.height - h) / 2,
                             w, h));
     dlg->Layout(GetTheme());
-
-    // Post a redraw in case we are calling this outside of a draw,
-    // such as on drag-and-drop.
-    PostRedraw();
 }
 
 void Window::CloseDialog() {

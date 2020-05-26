@@ -1769,8 +1769,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
     auto progressbar = std::make_shared<gui::ProgressBar>();
     // Post the dialog creation back to the main thread so that the OS window
     // gets created if it is not already.
-    gui::Application::GetInstance().PostToMainThread([this, path,
-                                                      progressbar]() {
+    gui::Application::GetInstance().PostToMainThread(this, [this, path,
+                                                            progressbar]() {
         auto &theme = GetTheme();
         auto loading_dlg = std::make_shared<gui::Dialog>("Loading");
         auto vert =
@@ -1786,10 +1786,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
     gui::Application::GetInstance().RunInThread([this, path, progressbar]() {
         auto UpdateProgress = [this, progressbar](float value) {
             gui::Application::GetInstance().PostToMainThread(
-                    [this, progressbar, value]() {
-                        progressbar->SetValue(value);
-                        this->PostRedraw();
-                    });
+                    this,
+                    [progressbar, value]() { progressbar->SetValue(value); });
         };
 
         auto geometry = std::shared_ptr<geometry::Geometry3D>();
@@ -1857,13 +1855,13 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
 
         if (geometry) {
             gui::Application::GetInstance().PostToMainThread(
-                    [this, geometry]() {
+                    this, [this, geometry]() {
                         SetGeometry({geometry});
                         CloseDialog();
-                        PostRedraw();
                     });
         } else {
-            gui::Application::GetInstance().PostToMainThread([this, path]() {
+            gui::Application::GetInstance().PostToMainThread(this, [this,
+                                                                    path]() {
                 CloseDialog();
                 auto msg = std::string("Could not load '") + path + "'.";
                 ShowMessageBox("Error", msg.c_str());

@@ -63,7 +63,8 @@ public:
     /// \param f; use PostToMainThread().
     void RunInThread(std::function<void()> f);
     /// Runs \param f on the main thread at some point in the near future.
-    void PostToMainThread(std::function<void()> f);
+    /// Proper context will be setup for \param window.
+    void PostToMainThread(Window *window, std::function<void()> f);
 
     std::shared_ptr<Menu> GetMenubar() const;
     void SetMenubar(std::shared_ptr<Menu> menubar);

@@ -107,8 +107,14 @@ struct Application::Impl {
 
     std::list<Task> running_tasks_;  // always accessed from main thread
     // ----
+    struct Posted {
+        Window *window;
+        std::function<void()> f;
+
+        Posted(Window *w, std::function<void()> func) : window(w), f(func) {}
+    };
     std::mutex posted_lock_;
-    std::vector<std::function<void()>> posted_;
+    std::vector<Posted> posted_;
     // ----
 
     void InitGFLW() {
@@ -364,8 +370,16 @@ Application::RunStatus Application::ProcessQueuedEvents() {
     // Run any posted functions
     {
         std::lock_guard<std::mutex> lock(impl_->posted_lock_);
-        for (auto &f : impl_->posted_) {
-            f();
+        for (auto &p : impl_->posted_) {
+            void *old = nullptr;
+            if (p.window) {
+                old = p.window->MakeDrawContextCurrent();
+            }
+            p.f();
+            if (p.window) {
+                p.window->RestoreDrawContext(old);
+                p.window->PostRedraw();
+            }
         }
         impl_->posted_.clear();
     }
@@ -397,9 +411,9 @@ void Application::RunInThread(std::function<void()> f) {
     impl_->running_tasks_.back().Run();
 }
 
-void Application::PostToMainThread(std::function<void()> f) {
+void Application::PostToMainThread(Window *window, std::function<void()> f) {
     std::lock_guard<std::mutex> lock(impl_->posted_lock_);
-    impl_->posted_.push_back(f);
+    impl_->posted_.emplace_back(window, f);
 }
 
 const char *Application::GetResourcePath() const {
