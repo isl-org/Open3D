@@ -36,6 +36,7 @@
 #include "Open3D/GUI/FileDialog.h"
 #include "Open3D/GUI/Label.h"
 #include "Open3D/GUI/Layout.h"
+#include "Open3D/GUI/ProgressBar.h"
 #include "Open3D/GUI/SceneWidget.h"
 #include "Open3D/GUI/Slider.h"
 #include "Open3D/GUI/Theme.h"
@@ -1765,19 +1766,30 @@ bool GuiVisualizer::SetIBL(const char *path) {
 }
 
 void GuiVisualizer::LoadGeometry(const std::string &path) {
+    auto progressbar = std::make_shared<gui::ProgressBar>();
     // Post the dialog creation back to the main thread so that the OS window
     // gets created if it is not already.
-    gui::Application::GetInstance().PostToMainThread([this, path]() {
+    gui::Application::GetInstance().PostToMainThread([this, path, progressbar]() {
         auto &theme = GetTheme();
         auto loading_dlg = std::make_shared<gui::Dialog>("Loading");
-        auto vert = std::make_shared<gui::Vert>(0, gui::Margins(theme.font_size));
+        auto vert =
+                std::make_shared<gui::Vert>(0, gui::Margins(theme.font_size));
         auto loading_text = std::string("Loading ") + path;
         vert->AddChild(std::make_shared<gui::Label>(loading_text.c_str()));
+        vert->AddFixed(theme.font_size);
+        vert->AddChild(progressbar);
         loading_dlg->AddChild(vert);
         ShowDialog(loading_dlg);
     });
 
-    gui::Application::GetInstance().RunInThread([this, path]() {
+    gui::Application::GetInstance().RunInThread([this, path, progressbar]() {
+        auto UpdateProgress = [this, progressbar](float value) {
+            gui::Application::GetInstance().PostToMainThread([this, progressbar, value]() {
+                progressbar->SetValue(value);
+                this->PostRedraw();
+            });
+        };
+
         auto geometry = std::shared_ptr<geometry::Geometry3D>();
 
         auto geometry_type = io::ReadFileGeometryType(path);
@@ -1797,10 +1809,12 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                         "Contains 0 triangles, will read as point cloud");
                 mesh.reset();
             } else {
+                UpdateProgress(0.5);
                 mesh->ComputeVertexNormals();
                 if (mesh->vertex_colors_.empty()) {
                     mesh->PaintUniformColor({1, 1, 1});
                 }
+                UpdateProgress(0.666);
                 geometry = mesh;
             }
             // Make sure the mesh has texture coordinates
@@ -1825,10 +1839,13 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
             }
             if (success) {
                 utility::LogInfo("Successfully read {}", path.c_str());
+                UpdateProgress(0.50);
                 if (!cloud->HasNormals()) {
                     cloud->EstimateNormals();
                 }
+                UpdateProgress(0.666);
                 cloud->NormalizeNormals();
+                UpdateProgress(0.75);
                 geometry = cloud;
             } else {
                 utility::LogWarning("Failed to read points {}", path.c_str());
