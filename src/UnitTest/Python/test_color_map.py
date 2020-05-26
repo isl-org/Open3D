@@ -106,4 +106,4 @@ def test_color_map():
     # exact with libjpeg-turbo, but not with the original libjpeg.
     np.testing.assert_allclose(np.mean(vertex_colors, axis=0),
                                [0.40307181, 0.37264626, 0.5436129],
-                               rtol=1./256.)
+                               rtol=1. / 256.)
