@@ -88,25 +88,28 @@ std::vector<ReadWritePCArgs> g_pc_args({
 });
 
 class TestPCGrid0 {
-    constexpr static double step_ = .139;
-    constexpr static double offset_ = -50.;
     geometry::PointCloud pc_;
-
     int size_ = 0;
 
 public:
     void Setup(int size) {
         if (size_ == size) return;
-        utility::LogInfo("setup PCGrid size={:d}", size);
+        utility::LogInfo("setup PCGrid size={}", size);
         pc_.Clear();
 
         size_ = size;
         for (int i = 0; i < size; ++i) {
-            double f = double(i) * step_ + offset_;
-            pc_.points_.push_back({0., sin(f) * 1000., cos(f) * 1000.});
-            pc_.normals_.push_back({sin(f), cos(f), 0.});
-            double fc = fmod(double(i) * step_, 1.57);
-            pc_.colors_.push_back({cos(fc), sin(fc), cos(fc)});
+            // provide somewhat random numbers everywhere, so compression
+            // doesn't get a free pass
+            pc_.points_.push_back({sin(i * .8969920581) * 1000.,
+                                   sin(i * .3898546778) * 1000.,
+                                   sin(i * .2509962463) * 1000.});
+            pc_.normals_.push_back({sin(i * .4472367685), sin(i * .9698787116),
+                                    sin(i * .7072878517)});
+            // color needs to be [0,1]
+            pc_.colors_.push_back({fmod(i * .4241490710, 1.0),
+                                   fmod(i * .6468026221, 1.0),
+                                   fmod(i * .5376722873, 1.0)});
         }
     }
 
