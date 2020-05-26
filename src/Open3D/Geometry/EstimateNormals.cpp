@@ -465,7 +465,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
     for (size_t v0 = 0; v0 < points_.size(); ++v0) {
         std::vector<int> neighbors;
         std::vector<double> dists2;
-        kdtree.SearchKNN(points_[v0], k, neighbors, dists2);
+        kdtree.SearchKNN(points_[v0], int(k), neighbors, dists2);
         for (size_t vidx1 = 0; vidx1 < neighbors.size(); ++vidx1) {
             size_t v1 = size_t(neighbors[vidx1]);
             if (v0 == v1) {
