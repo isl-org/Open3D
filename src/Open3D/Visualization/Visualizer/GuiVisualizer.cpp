@@ -1767,8 +1767,6 @@ bool GuiVisualizer::SetIBL(const char *path) {
 
 void GuiVisualizer::LoadGeometry(const std::string &path) {
     auto progressbar = std::make_shared<gui::ProgressBar>();
-    // Post the dialog creation back to the main thread so that the OS window
-    // gets created if it is not already.
     gui::Application::GetInstance().PostToMainThread(this, [this, path,
                                                             progressbar]() {
         auto &theme = GetTheme();
