@@ -1769,7 +1769,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
     auto progressbar = std::make_shared<gui::ProgressBar>();
     // Post the dialog creation back to the main thread so that the OS window
     // gets created if it is not already.
-    gui::Application::GetInstance().PostToMainThread([this, path, progressbar]() {
+    gui::Application::GetInstance().PostToMainThread([this, path,
+                                                      progressbar]() {
         auto &theme = GetTheme();
         auto loading_dlg = std::make_shared<gui::Dialog>("Loading");
         auto vert =
@@ -1784,10 +1785,11 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
 
     gui::Application::GetInstance().RunInThread([this, path, progressbar]() {
         auto UpdateProgress = [this, progressbar](float value) {
-            gui::Application::GetInstance().PostToMainThread([this, progressbar, value]() {
-                progressbar->SetValue(value);
-                this->PostRedraw();
-            });
+            gui::Application::GetInstance().PostToMainThread(
+                    [this, progressbar, value]() {
+                        progressbar->SetValue(value);
+                        this->PostRedraw();
+                    });
         };
 
         auto geometry = std::shared_ptr<geometry::Geometry3D>();
