@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "Open3D/Core/Dispatch.h"
 #include "Open3D/Core/SizeVector.h"
 #include "Open3D/Utility/Console.h"
@@ -91,5 +93,9 @@ int64_t WrapDim(int64_t dim, int64_t max_dim);
 // Ref: PyTorch's aten/src/ATen/InferSize.h
 SizeVector InferShape(SizeVector shape, int64_t num_elements);
 
+/// \brief Check if Tensor has the correct shape.
+void AssertShape(const Tensor& tensor,
+                 const SizeVector& expected_shape,
+                 const std::string& msg);
 }  // namespace shape_util
 }  // namespace open3d

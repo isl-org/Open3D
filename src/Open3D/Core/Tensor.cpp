@@ -327,6 +327,8 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
     }
 }
 
+Tensor Tensor::Copy() const { return Copy(GetDevice()); }
+
 Tensor Tensor::Copy(const Device& device) const {
     Tensor dst_tensor(shape_, dtype_, device);
     kernel::Copy(*this, dst_tensor);

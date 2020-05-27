@@ -9,6 +9,7 @@ add_subdirectory(Camera)
 add_subdirectory(ColorMap)
 add_subdirectory(Core)
 add_subdirectory(Geometry)
+add_subdirectory(TGeometry)
 add_subdirectory(Integration)
 add_subdirectory(Odometry)
 add_subdirectory(Registration)
@@ -24,6 +25,7 @@ ADD_SOURCE_GROUP(Camera)
 ADD_SOURCE_GROUP(ColorMap)
 ADD_SOURCE_GROUP(Core)
 ADD_SOURCE_GROUP(Geometry)
+ADD_SOURCE_GROUP(TGeometry)
 ADD_SOURCE_GROUP(Integration)
 ADD_SOURCE_GROUP(Odometry)
 ADD_SOURCE_GROUP(Registration)
@@ -55,6 +57,7 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:ColorMap>
     $<TARGET_OBJECTS:Core>
     $<TARGET_OBJECTS:Geometry>
+    $<TARGET_OBJECTS:TGeometry>
     $<TARGET_OBJECTS:Integration>
     $<TARGET_OBJECTS:Odometry>
     $<TARGET_OBJECTS:Registration>

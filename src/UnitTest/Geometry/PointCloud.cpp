@@ -193,6 +193,18 @@ TEST(PointCloud, Transform) {
     ExpectEQ(ref_normals, pc.normals_);
 }
 
+TEST(PointCloud, Scale) {
+    geometry::PointCloud pc;
+    pc.points_ = {{0, 0, 0}, {1, 1, 1}, {2, 2, 2}};
+
+    Eigen::Vector3d center{1, 1, 1};
+    double scale = 4;
+    pc.Scale(scale, center);
+
+    ExpectEQ(pc.points_, std::vector<Eigen::Vector3d>(
+                                 {{-3, -3, -3}, {1, 1, 1}, {5, 5, 5}}));
+}
+
 TEST(PointCloud, HasPoints) {
     int size = 100;
 

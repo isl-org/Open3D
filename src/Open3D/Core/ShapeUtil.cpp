@@ -209,5 +209,15 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
                       num_elements);
 }
 
+void AssertShape(const Tensor& tensor,
+                 const SizeVector& expected_shape,
+                 const std::string& msg) {
+    if (tensor.GetShape() != expected_shape) {
+        utility::LogError(
+                "Tensor shape {} does not match expected shape {}: {}",
+                tensor.GetShape(), expected_shape, msg);
+    }
+}
+
 }  // namespace shape_util
 }  // namespace open3d

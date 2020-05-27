@@ -48,6 +48,8 @@ namespace open3d {
 /// - Sparse Voxel Grid: (N, 8, 8, 8)
 class TensorList {
 public:
+    TensorList() {}
+
     /// Constructor for creating an (empty by default) tensor list.
     ///
     /// \param shape Shape for the contained tensors. e.g.
@@ -163,6 +165,13 @@ public:
 
     SizeVector GetShape() const { return shape_; }
 
+    void AssertShape(const SizeVector& shape) const {
+        if (shape != shape_) {
+            utility::LogError("TensorList shape mismatch, {} != {}", shape,
+                              shape_);
+        }
+    }
+
     Device GetDevice() const { return device_; }
 
     Dtype GetDtype() const { return dtype_; }
@@ -236,8 +245,9 @@ protected:
     /// The internal_tensor_'s shape is (reserved_size_, *shape_).
     SizeVector shape_;
 
-    Dtype dtype_;
-    Device device_;
+    Dtype dtype_ = Dtype::Float32;
+
+    Device device_ = Device("CPU:0");
 
     /// Maximum number of elements in TensorList.
     /// The internal_tensor_'s shape is (reserved_size_, *shape_).
