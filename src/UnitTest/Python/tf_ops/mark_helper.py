@@ -48,6 +48,7 @@ def to_numpy(tensor):
 
 
 def to_torch(x, device):
+    """Converts x such that it can be used as input to a pytorch op."""
     if isinstance(x, np.ndarray):
         return torch.from_numpy(x).contiguous().to(device)
     else:

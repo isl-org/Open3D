@@ -49,6 +49,13 @@ foreach( lib ${TORCH_LIBRARIES} )
 message( STATUS "              libraries: ${lib}" )
 endforeach( lib )
 
+# check if the c++11 ABI is compatible
+if( ${TORCH_CXX_FLAGS} MATCHES "_GLIBCXX_USE_CXX11_ABI=([01])" )
+        if( (GLIBCXX_USE_CXX11_ABI AND NOT CMAKE_MATCH_1) OR (NOT GLIBCXX_USE_CXX11_ABI AND CMAKE_MATCH_1) )
+                message( FATAL_ERROR "_GLIBCXX_USE_CXX11_ABI mismatch: Open3D ${GLIBCXX_USE_CXX11_ABI} vs Torch ${CMAKE_MATCH_1}")
+        endif()
+endif()
+
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Pytorch DEFAULT_MSG Pytorch_VERSION Pytorch_ROOT )
 

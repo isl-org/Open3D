@@ -30,6 +30,13 @@ message( STATUS "             library dir: ${Tensorflow_LIB_DIR}" )
 message( STATUS "           framework lib: ${Tensorflow_FRAMEWORK_LIB}" )
 message( STATUS "             definitions: ${Tensorflow_DEFINITIONS}" )
 
+# check if the c++11 ABI is compatible
+if( ${Tensorflow_DEFINITIONS} MATCHES "_GLIBCXX_USE_CXX11_ABI=([01])" )
+        if( (GLIBCXX_USE_CXX11_ABI AND NOT CMAKE_MATCH_1) OR (NOT GLIBCXX_USE_CXX11_ABI AND CMAKE_MATCH_1) )
+                message( FATAL_ERROR "_GLIBCXX_USE_CXX11_ABI mismatch: Open3D ${GLIBCXX_USE_CXX11_ABI} vs Tensorflow ${CMAKE_MATCH_1}")
+        endif()
+endif()
+
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Tensorflow DEFAULT_MSG Tensorflow_INCLUDE_DIR Tensorflow_LIB_DIR Tensorflow_FRAMEWORK_LIB Tensorflow_DEFINITIONS )
 

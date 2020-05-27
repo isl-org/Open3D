@@ -1,7 +1,7 @@
 message( STATUS "Building Pytorch ops" )
 
 get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
-if ("CUDA" IN_LIST languages)
+if (BUILD_CUDA_MODULE)
     set( CUDA_ENABLED YES )
     message(STATUS "Building Pytorch ops with CUDA")
 endif ()
@@ -18,19 +18,19 @@ endif ()
 
 
 if ( CUDA_ENABLED )
-        file(GLOB_RECURSE open3d_torch_ops_SOURCES 
-                "*.cpp" 
-                "*.cu" 
-                "../*/Detail/*.cc" 
-                "../*/Detail/*.cpp" 
+        file(GLOB_RECURSE open3d_torch_ops_SOURCES
+                "*.cpp"
+                "*.cu"
+                "../*/Detail/*.cc"
+                "../*/Detail/*.cpp"
                 "../*/Detail/*.cu" )
 else ()
-    file(GLOB_RECURSE open3d_torch_ops_SOURCES 
-            "*.cpp" 
-            "../*/Detail/*.cc" 
+    file(GLOB_RECURSE open3d_torch_ops_SOURCES
+            "*.cpp"
+            "../*/Detail/*.cc"
             "../*/Detail/*.cpp" )
 endif ()
-list(APPEND open3d_torch_ops_SOURCES 
+list(APPEND open3d_torch_ops_SOURCES
         "../../Utility/Console.cpp"
         "../../Utility/Helper.cpp"
         )
@@ -47,9 +47,9 @@ if( CUDA_ENABLED )
 endif()
 
 # enable c++11
-set_target_properties( open3d_torch_ops PROPERTIES 
-                       CXX_STANDARD 11 
-                       CXX_STANDARD_REQUIRED ON 
+set_target_properties( open3d_torch_ops PROPERTIES
+                       CXX_STANDARD 11
+                       CXX_STANDARD_REQUIRED ON
                        CXX_EXTENSIONS OFF
                        CUDA_STANDARD 11
                        )
@@ -68,8 +68,8 @@ if ( CUDA_ENABLED )
 endif ()
 
 target_link_libraries( open3d_torch_ops PRIVATE
-    ${TBB_LIBRARY} 
-    ${TBB_MALLOC_LIBRARY} 
+    ${TBB_LIBRARY}
+    ${TBB_MALLOC_LIBRARY}
     ${TORCH_LIBRARIES}
     )
 
