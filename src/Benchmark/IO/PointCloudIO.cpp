@@ -65,26 +65,25 @@ struct ReadWritePCArgs {
     Compare compare;
 };
 std::vector<ReadWritePCArgs> g_pc_args({
-        {"testbu.pcd", IsAscii::BINARY, Compressed::UNCOMPRESSED,
-         Compare::NORMALS_AND_COLORS},  // 0
+        // PCD has ASCII, BINARY, and BINARY_COMPRESSED
         {"testau.pcd", IsAscii::ASCII, Compressed::UNCOMPRESSED,
+         Compare::NORMALS_AND_COLORS},  // 0
+        {"testbu.pcd", IsAscii::BINARY, Compressed::UNCOMPRESSED,
          Compare::NORMALS_AND_COLORS},  // 1
         {"testbc.pcd", IsAscii::BINARY, Compressed::COMPRESSED,
          Compare::NORMALS_AND_COLORS},  // 2
-        {"testac.pcd", IsAscii::ASCII, Compressed::COMPRESSED,
-         Compare::NORMALS_AND_COLORS},  // 3
         {"testb.ply", IsAscii::BINARY, Compressed::UNCOMPRESSED,
-         Compare::NORMALS_AND_COLORS},  // 4
+         Compare::NORMALS_AND_COLORS},  // 3
         {"testa.ply", IsAscii::ASCII, Compressed::UNCOMPRESSED,
-         Compare::NORMALS_AND_COLORS},  // 5
+         Compare::NORMALS_AND_COLORS},  // 4
         {"test.pts", IsAscii::BINARY, Compressed::UNCOMPRESSED,
-         Compare::COLORS},  // 6
+         Compare::COLORS},  // 5
         {"test.xyz", IsAscii::BINARY, Compressed::UNCOMPRESSED,
-         Compare::NONE},  // 7
+         Compare::NONE},  // 6
         {"test.xyzn", IsAscii::BINARY, Compressed::UNCOMPRESSED,
-         Compare::NORMALS},  // 8
+         Compare::NORMALS},  // 7
         {"test.xyzrgb", IsAscii::BINARY, Compressed::UNCOMPRESSED,
-         Compare::COLORS},  // 9
+         Compare::COLORS},  // 8
 });
 
 class TestPCGrid0 {
