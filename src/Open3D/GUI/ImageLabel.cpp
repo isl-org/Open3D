@@ -43,16 +43,16 @@ ImageLabel::ImageLabel(const char* image_path) : impl_(new ImageLabel::Impl()) {
 }
 
 ImageLabel::ImageLabel(visualization::TextureHandle texture_id,
-                   float u0 /*= 0.0f*/,
-                   float v0 /*= 0.0f*/,
-                   float u1 /*= 1.0f*/,
-                   float v1 /*= 1.0f*/)
-: impl_(new ImageLabel::Impl()) {
+                       float u0 /*= 0.0f*/,
+                       float v0 /*= 0.0f*/,
+                       float u1 /*= 1.0f*/,
+                       float v1 /*= 1.0f*/)
+    : impl_(new ImageLabel::Impl()) {
     impl_->image_ = std::make_shared<UIImage>(texture_id, u0, v0, u1, v1);
 }
 
 ImageLabel::ImageLabel(std::shared_ptr<UIImage> image)
-: impl_(new ImageLabel::Impl()) {
+    : impl_(new ImageLabel::Impl()) {
     impl_->image_ = image;
 }
 
@@ -85,8 +85,7 @@ Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
                 reinterpret_cast<ImTextureID>(params.texture.GetId());
         ImGui::SetCursorPos(ImVec2(params.pos_x - context.uiOffsetX,
                                    params.pos_y - context.uiOffsetY));
-        ImGui::Image(image_id,
-                     ImVec2(params.width, params.height),
+        ImGui::Image(image_id, ImVec2(params.width, params.height),
                      ImVec2(params.u0, params.v0),
                      ImVec2(params.u1, params.v1));
     } else {

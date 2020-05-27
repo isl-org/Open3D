@@ -341,7 +341,7 @@ public:
         }
         return false;
     }
-    
+
     bool operator!=(const ScissorRectKey& other) const {
         return !operator==(other);
     }

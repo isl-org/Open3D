@@ -71,10 +71,10 @@ UIImage::UIImage(const char* image_path) : impl_(new UIImage::Impl()) {
 }
 
 UIImage::UIImage(visualization::TextureHandle texture_id,
-                       float u0 /*= 0.0f*/,
-                       float v0 /*= 0.0f*/,
-                       float u1 /*= 1.0f*/,
-                       float v1 /*= 1.0f*/)
+                 float u0 /*= 0.0f*/,
+                 float v0 /*= 0.0f*/,
+                 float u1 /*= 1.0f*/,
+                 float v1 /*= 1.0f*/)
     : impl_(new UIImage::Impl()) {
     auto& resource_manager =
             visualization::EngineInstance::GetResourceManager();
@@ -84,7 +84,7 @@ UIImage::UIImage(visualization::TextureHandle texture_id,
         float uvw = u1 - u0;
         float uvh = v1 - v0;
         impl_->image_width_ = uvw * float(tex_sh->getWidth());
-        impl_->image_height_ = uvh* float(tex_sh->getHeight());
+        impl_->image_height_ = uvh * float(tex_sh->getHeight());
     }
     impl_->u0_ = u0;
     impl_->v0_ = v0;
@@ -106,8 +106,7 @@ UIImage::Scaling UIImage::GetScaling() const { return impl_->scaling_; }
 
 Size UIImage::CalcPreferredSize(const Theme& theme) const {
     if (impl_->image_width_ != 0.0f && impl_->image_height_ != 0.0f) {
-//        return Size(impl_->image_width_, impl_->image_height_);
-        return Size(impl_->image_width_, 0.75 * impl_->image_height_);
+        return Size(impl_->image_width_, impl_->image_height_);
     } else {
         return Size(0, 0);
     }
@@ -140,8 +139,10 @@ UIImage::DrawParams UIImage::CalcDrawParams(visualization::Renderer& renderer,
                 params.height = h;
                 params.u0 = impl_->u0_;
                 params.v0 = impl_->v0_;
-                params.u1 = impl_->u0_ + (impl_->u1_ - impl_->u0_) * w / width_px;
-                params.v1 = impl_->v0_ + (impl_->v1_ - impl_->v0_) * h / height_px;
+                params.u1 =
+                        impl_->u0_ + (impl_->u1_ - impl_->u0_) * w / width_px;
+                params.v1 =
+                        impl_->v0_ + (impl_->v1_ - impl_->v0_) * h / height_px;
                 break;
             }
             case Scaling::ANY:
