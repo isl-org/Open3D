@@ -206,7 +206,7 @@ public:
     /// search. \param fast_normal_computation If true, the normal estiamtion
     /// uses a non-iterative method to extract the eigenvector from the
     /// covariance matrix. This is faster, but is not as numerical stable.
-    bool EstimateNormals(
+    void EstimateNormals(
             const KDTreeSearchParam &search_param = KDTreeSearchParamKNN(),
             bool fast_normal_computation = true);
 
@@ -214,7 +214,7 @@ public:
     ///
     /// \param orientation_reference Normals are oriented with respect to
     /// orientation_reference.
-    bool OrientNormalsToAlignWithDirection(
+    void OrientNormalsToAlignWithDirection(
             const Eigen::Vector3d &orientation_reference =
                     Eigen::Vector3d(0.0, 0.0, 1.0));
 
@@ -222,8 +222,16 @@ public:
     ///
     /// \param camera_location Normals are oriented with towards the
     /// camera_location.
-    bool OrientNormalsTowardsCameraLocation(
+    void OrientNormalsTowardsCameraLocation(
             const Eigen::Vector3d &camera_location = Eigen::Vector3d::Zero());
+
+    /// \brief Function to consistently orient estimated normals based on
+    /// consistent tangent planes as described in Hoppe et al., "Surface
+    /// Reconstruction from Unorganized Points", 1992.
+    ///
+    /// \param k k nearest neighbour for graph reconstruction for normal
+    /// propagation.
+    void OrientNormalsConsistentTangentPlane(size_t k);
 
     /// \brief Function to compute the point to point distances between point
     /// clouds.
