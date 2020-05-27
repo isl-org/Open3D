@@ -51,9 +51,9 @@ void IndexGetCUDA(const Tensor& src,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
     CUDADeviceSwitcher switcher(src.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        CUDALauncher::LaunchAdvancedIndexerKernel<scalar_t>(
+        CUDALauncher::LaunchAdvancedIndexerKernel(
                 ai,
-                // Need to wrap as extended CUDA lamba function
+                // Need to wrap as extended CUDA lambda function
                 [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyElementKernel<scalar_t>(src, dst);
                 });
@@ -70,9 +70,9 @@ void IndexSetCUDA(const Tensor& src,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
     CUDADeviceSwitcher switcher(dst.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        CUDALauncher::LaunchAdvancedIndexerKernel<scalar_t>(
+        CUDALauncher::LaunchAdvancedIndexerKernel(
                 ai,
-                // Need to wrap as extended CUDA lamba function
+                // Need to wrap as extended CUDA lambda function
                 [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyElementKernel<scalar_t>(src, dst);
                 });

@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "../TensorFlowHelper.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
@@ -36,51 +37,55 @@ REGISTER_OP("Open3DFixedRadiusSearch")
         .Attr("metric: {'L1', 'L2', 'Linf'} = 'L2'")
         .Attr("ignore_query_point: bool = false")
         .Attr("return_distances: bool = false")
-        .Attr("max_hash_table_size: int = 33554432")
         .Input("points: T")
         .Input("queries: T")
         .Input("radius: T")
-        .Input("hash_table_size_factor: double")
+        .Input("points_row_splits: int64")
+        .Input("queries_row_splits: int64")
+        .Input("hash_table_splits: uint32")
+        .Input("hash_table_index: uint32")
+        .Input("hash_table_cell_splits: uint32")
         .Output("neighbors_index: int32")
         .Output("neighbors_row_splits: int64")
         .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
+            using namespace open3d::ml::shape_checking;
             ShapeHandle points_shape, queries_shape, radius_shape,
-                    hash_table_size_factor_shape, indices_shape,
+                    points_row_splits_shape, queries_row_splits_shape,
+                    hash_table_splits_shape, hash_table_index_shape,
+                    hash_table_row_splits_shape, neighbors_index_shape,
                     neighbors_row_splits_shape, neighbors_distance_shape;
 
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &points_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &queries_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &radius_shape));
             TF_RETURN_IF_ERROR(
-                    c->WithRank(c->input(3), 0, &hash_table_size_factor_shape));
+                    c->WithRank(c->input(3), 1, &points_row_splits_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(4), 1, &queries_row_splits_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(5), 1, &hash_table_splits_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(6), 1, &hash_table_index_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(7), 1, &hash_table_row_splits_shape));
 
-            // check if we have [N,3] tensors for the positions
-            if (c->RankKnown(points_shape)) {
-                DimensionHandle d;
-                TF_RETURN_IF_ERROR(
-                        c->WithValue(c->Dim(points_shape, -1), 3, &d));
-            }
-
-            DimensionHandle num_query_points = c->UnknownDim();
-            if (c->RankKnown(queries_shape)) {
-                num_query_points = c->Dim(queries_shape, 0);
-
-                DimensionHandle d;
-                TF_RETURN_IF_ERROR(
-                        c->WithValue(c->Dim(queries_shape, -1), 3, &d));
-            }
+            Dim num_points("num_points");
+            Dim num_queries("num_queries");
+            Dim batch_size("batch_size");
+            CHECK_SHAPE_HANDLE(c, points_shape, num_points, 3);
+            CHECK_SHAPE_HANDLE(c, hash_table_index_shape, num_points);
+            CHECK_SHAPE_HANDLE(c, queries_shape, num_queries, 3);
+            CHECK_SHAPE_HANDLE(c, points_row_splits_shape, batch_size + 1);
+            CHECK_SHAPE_HANDLE(c, queries_row_splits_shape, batch_size + 1);
+            CHECK_SHAPE_HANDLE(c, hash_table_splits_shape, batch_size + 1);
 
             // we cannot infer the number of neighbors
-            indices_shape = c->MakeShape({c->UnknownDim()});
-            c->set_output(0, indices_shape);
+            neighbors_index_shape = c->MakeShape({c->UnknownDim()});
+            c->set_output(0, neighbors_index_shape);
 
-            DimensionHandle neighbors_row_splits_size;
-            TF_RETURN_IF_ERROR(
-                    c->Add(num_query_points, 1, &neighbors_row_splits_size));
-            neighbors_row_splits_shape =
-                    c->MakeShape({neighbors_row_splits_size});
+            neighbors_row_splits_shape = MakeShapeHandle(c, num_queries + 1);
             c->set_output(1, neighbors_row_splits_shape);
 
             bool return_distances;
@@ -113,9 +118,6 @@ return_distances:
   'neighbors_distance'.
   If False a zero length Tensor will be returned for 'neighbors_distance'.
 
-max_hash_table_size:
-  The maximum hash table size.
-
 points: 
   The 3D positions of the input points.
 
@@ -125,8 +127,22 @@ queries:
 radius:
   A scalar with the neighborhood radius
 
-hash_table_size_factor:
-  The size of the hash table as a factor of the number of input points.
+points_row_splits:
+  1D vector with the row splits information if points is batched.
+  This vector is [0, num_points] if there is only 1 batch item.
+
+queries_row_splits:
+  1D vector with the row splits information if queries is batched.
+  This vector is [0, num_queries] if there is only 1 batch item.
+
+hash_table_splits: Array defining the start and end the hash table
+  for each batch item. This is [0, number of cells] if there is only
+  1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+
+hash_table_index: Stores the values of the hash table, which are the indices of
+  the points. The start and end of each cell is defined by hash_table_cell_splits.
+
+hash_table_cell_splits: Defines the start and end of each hash table cell.
 
 neighbors_index:
   The compact list of indices of the neighbors. The corresponding query point 

@@ -56,10 +56,12 @@ void pybind_trianglemesh(py::module &m) {
                              "triangles",
                              mesh.vertices_.size(), mesh.triangles_.size());
 
-                     if (mesh.HasTexture()) {
-                         info += fmt::format(", and ({}, {}) texture.",
-                                             mesh.texture_.width_,
-                                             mesh.texture_.height_);
+                     if (mesh.HasTextures()) {
+                         info += fmt::format(", and textures of size ");
+                         for (auto &tex : mesh.textures_) {
+                             info += fmt::format("({}, {}) ", tex.width_,
+                                                 tex.height_);
+                         }
                      } else {
                          info += ".";
                      }
@@ -171,10 +173,13 @@ void pybind_trianglemesh(py::module &m) {
                  "Returns ``True`` if the mesh contains adjacency normals.")
             .def("has_triangle_uvs", &geometry::TriangleMesh::HasTriangleUvs,
                  "Returns ``True`` if the mesh contains uv coordinates.")
-            .def("has_texture", &geometry::TriangleMesh::HasTexture,
+            .def("has_triangle_material_ids",
+                 &geometry::TriangleMesh::HasTriangleMaterialIds,
+                 "Returns ``True`` if the mesh contains material ids.")
+            .def("has_textures", &geometry::TriangleMesh::HasTextures,
                  "Returns ``True`` if the mesh contains a texture image.")
             .def("normalize_normals", &geometry::TriangleMesh::NormalizeNormals,
-                 "Normalize both triangle normals and vertex normals to legnth "
+                 "Normalize both triangle normals and vertex normals to length "
                  "1.")
             .def("paint_uniform_color",
                  &geometry::TriangleMesh::PaintUniformColor,
@@ -215,8 +220,7 @@ void pybind_trianglemesh(py::module &m) {
                  "If the mesh is orientable this function orients all "
                  "triangles such that all normals point towards the same "
                  "direction.")
-            .def("select_down_sample",
-                 &geometry::TriangleMesh::SelectDownSample,
+            .def("select_by_index", &geometry::TriangleMesh::SelectByIndex,
                  "Function to select mesh from input triangle mesh into output "
                  "triangle mesh. ``input``: The input triangle mesh. "
                  "``indices``: "
@@ -236,10 +240,16 @@ void pybind_trianglemesh(py::module &m) {
                          geometry::TriangleMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
+            .def("get_surface_area",
+                 (double (geometry::TriangleMesh::*)() const) &
+                         geometry::TriangleMesh::GetSurfaceArea,
+                 "Function that computes the surface area of the mesh, i.e. "
+                 "the sum of the individual triangle surfaces.")
             .def("sample_points_uniformly",
                  &geometry::TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
-                 "number_of_points"_a = 100)
+                 "number_of_points"_a = 100, "use_triangle_normal"_a = false,
+                 "seed"_a = -1)
             .def("sample_points_poisson_disk",
                  &geometry::TriangleMesh::SamplePointsPoissonDisk,
                  "Function to sample points from the mesh, where each point "
@@ -248,7 +258,8 @@ void pybind_trianglemesh(py::module &m) {
                  "(blue "
                  "noise). Method is based on Yuksel, \"Sample Elimination for "
                  "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
-                 "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr)
+                 "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
+                 "use_triangle_normal"_a = false, "seed"_a = -1)
             .def("subdivide_midpoint",
                  &geometry::TriangleMesh::SubdivideMidpoint,
                  "Function subdivide mesh using midpoint algorithm.",
@@ -312,6 +323,16 @@ void pybind_trianglemesh(py::module &m) {
                  "'As-Rigid-As-Possible Surface Modeling', 2007",
                  "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
                  "max_iter"_a)
+            .def_static("create_from_point_cloud_alpha_shape",
+                        [](const geometry::PointCloud &pcd, double alpha) {
+                            return geometry::TriangleMesh::
+                                    CreateFromPointCloudAlphaShape(pcd, alpha);
+                        },
+                        "Alpha shapes are a generalization of the convex hull. "
+                        "With decreasing alpha value the shape schrinks and "
+                        "creates cavities. See Edelsbrunner and Muecke, "
+                        "\"Three-Dimensional Alpha Shapes\", 1994.",
+                        "pcd"_a, "alpha"_a)
             .def_static("create_from_point_cloud_alpha_shape",
                         &geometry::TriangleMesh::CreateFromPointCloudAlphaShape,
                         "Alpha shapes are a generalization of the convex hull. "
@@ -445,8 +466,8 @@ void pybind_trianglemesh(py::module &m) {
                            "``numpy.asarray()`` to access data: List of "
                            "uvs denoted by the index of points forming "
                            "the triangle.")
-            .def_readwrite("texture", &geometry::TriangleMesh::texture_,
-                           "open3d.geometry.Image: The texture image.");
+            .def_readwrite("textures", &geometry::TriangleMesh::textures_,
+                           "open3d.geometry.Image: The texture images.");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "compute_adjacency_list");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
@@ -460,7 +481,9 @@ void pybind_trianglemesh(py::module &m) {
               "Set to ``True`` to normalize the normal to length 1."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangles");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangle_uvs");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_texture");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "has_triangle_material_ids");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_textures");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertex_colors");
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "has_vertex_normals",
@@ -536,7 +559,7 @@ void pybind_trianglemesh(py::module &m) {
              {"mu", "Filter parameter."},
              {"scope", "Mesh property that should be filtered."}});
     docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "select_down_sample",
+            m, "TriangleMesh", "select_by_index",
             {{"indices", "Indices of vertices to be selected."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "crop",
@@ -544,7 +567,15 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_uniformly",
             {{"number_of_points",
-              "Number of points that should be uniformly sampled."}});
+              "Number of points that should be uniformly sampled."},
+             {"use_triangle_normal",
+              "If True assigns the triangle normals instead of the "
+              "interpolated vertex normals to the returned points. The "
+              "triangle normals will be computed and added to the mesh if "
+              "necessary."},
+             {"seed",
+              "Seed value used in the random generator, set to -1 to use a "
+              "random seed value with each function call."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_poisson_disk",
             {{"number_of_points", "Number of points that should be sampled."},
@@ -553,7 +584,15 @@ void pybind_trianglemesh(py::module &m) {
               "PointCloud is used for sample elimination."},
              {"pcl",
               "Initial PointCloud that is used for sample elimination. If this "
-              "parameter is provided the init_factor is ignored."}});
+              "parameter is provided the init_factor is ignored."},
+             {"use_triangle_normal",
+              "If True assigns the triangle normals instead of the "
+              "interpolated vertex normals to the returned points. The "
+              "triangle normals will be computed and added to the mesh if "
+              "necessary."},
+             {"seed",
+              "Seed value used in the random generator, set to -1 to use a "
+              "random seed value with each function call."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "subdivide_midpoint",
             {{"number_of_iterations",
@@ -626,7 +665,7 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_ball_pivoting",
             {{"pcd",
-              "PointCloud from whicht the TriangleMesh surface is "
+              "PointCloud from which the TriangleMesh surface is "
               "reconstructed. Has to contain normals."},
              {"radii",
               "The radii of the ball that are used for the surface "

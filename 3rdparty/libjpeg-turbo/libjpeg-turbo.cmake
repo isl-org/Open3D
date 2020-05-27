@@ -42,6 +42,13 @@ else()
     message(STATUS "NASM assembler not found - libjpeg-turbo performance may suffer")
 endif()
 
+if (STATIC_WINDOWS_RUNTIME)
+    set(WITH_CRT_DLL OFF)
+else()
+    set(WITH_CRT_DLL ON)
+endif()
+message(STATUS "libturbojpeg: WITH_CRT_DLL=${WITH_CRT_DLL}")
+
 ExternalProject_Add(
     ext_turbojpeg
     PREFIX turbojpeg
@@ -51,12 +58,8 @@ ExternalProject_Add(
     CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
     CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
     CMAKE_ARGS
-        -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-        -DCMAKE_C_FLAGS=${DCMAKE_C_FLAGS}
-        -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}
-        -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}
-        -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
-        -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DWITH_CRT_DLL=${WITH_CRT_DLL}
         -DENABLE_STATIC=ON
         -DENABLE_SHARED=OFF
         -DWITH_SIMD=${WITH_SIMD}

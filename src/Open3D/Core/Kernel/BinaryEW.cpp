@@ -28,12 +28,21 @@
 
 #include <vector>
 
-#include "Open3D/Core/Broadcast.h"
+#include "Open3D/Core/ShapeUtil.h"
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace kernel {
+
+const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class::hash>
+        s_boolean_binary_ew_op_codes{
+                BinaryEWOpCode::LogicalAnd, BinaryEWOpCode::LogicalOr,
+                BinaryEWOpCode::LogicalXor, BinaryEWOpCode::Gt,
+                BinaryEWOpCode::Lt,         BinaryEWOpCode::Ge,
+                BinaryEWOpCode::Le,         BinaryEWOpCode::Eq,
+                BinaryEWOpCode::Ne,
+        };
 
 void BinaryEW(const Tensor& lhs,
               const Tensor& rhs,
@@ -56,7 +65,7 @@ void BinaryEW(const Tensor& lhs,
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        utility::LogError("Add: Unimplemented device");
+        utility::LogError("BinaryEW: Unimplemented device");
     }
 }
 

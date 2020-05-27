@@ -31,7 +31,7 @@ This rendering loop can be readily customized. For example, a custom loop can be
     for i in range(icp_iteration):
         # do ICP single iteration
         # transform geometry using ICP
-        vis.update_geometry()
+        vis.update_geometry(geometry)
         vis.poll_events()
         vis.update_renderer()
 

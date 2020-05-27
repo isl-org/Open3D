@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Utility/visualization.py
+# examples/Python/Utility/transformation.py
 
 import numpy as np
 import open3d as o3d
@@ -42,14 +42,14 @@ def animate(geom):
     for scale, aa in zip(scales, axisangles):
         R = geom.get_rotation_matrix_from_axis_angle(aa)
         geom.scale(scale).rotate(R, center=False)
-        vis.update_geometry()
+        vis.update_geometry(geom)
         vis.poll_events()
         vis.update_renderer()
         time.sleep(0.05)
 
     for t in ts:
         geom.translate(t)
-        vis.update_geometry()
+        vis.update_geometry(geom)
         vis.poll_events()
         vis.update_renderer()
         time.sleep(0.05)
@@ -57,7 +57,7 @@ def animate(geom):
     for scale, aa, t in zip(scales, axisangles, ts):
         R = geom.get_rotation_matrix_from_axis_angle(aa)
         geom.scale(scale).translate(t).rotate(R, center=True)
-        vis.update_geometry()
+        vis.update_geometry(geom)
         vis.poll_events()
         vis.update_renderer()
         time.sleep(0.05)

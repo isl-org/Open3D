@@ -30,5 +30,9 @@ target_link_libraries(unitTests pthread ${CMAKE_PROJECT_NAME})
 ShowAndAbortOnWarning(unitTests)
 
 if (BUILD_CUDA_MODULE)
+    # We still need to explicitly link against CUDA libraries.
+    # See: https://stackoverflow.com/a/48540499/1255535.
+    # Consider removing dependencies of cuda headers in the future.
+    target_link_libraries(unitTests ${CUDA_LIBRARIES})
     target_include_directories(unitTests PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()

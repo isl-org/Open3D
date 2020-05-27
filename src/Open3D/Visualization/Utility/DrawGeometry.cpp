@@ -45,13 +45,15 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     int width /* = 640*/,
                     int height /* = 480*/,
                     int left /* = 50*/,
-                    int top /* = 50*/) {
+                    int top /* = 50*/,
+                    bool point_show_normal /* = false */) {
     Visualizer visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
         utility::LogWarning("[DrawGeometries] Failed creating OpenGL window.");
         return false;
     }
+    visualizer.GetRenderOption().point_show_normal_ = point_show_normal;
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
             utility::LogWarning("[DrawGeometries] Failed adding geometry.");

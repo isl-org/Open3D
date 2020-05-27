@@ -47,7 +47,11 @@ public:
                 const tensorflow::Tensor& points,
                 const tensorflow::Tensor& queries,
                 const tensorflow::Tensor& radius,
-                const size_t hash_table_size,
+                const tensorflow::Tensor& points_row_splits,
+                const tensorflow::Tensor& queries_row_splits,
+                const tensorflow::Tensor& hash_table_splits,
+                const tensorflow::Tensor& hash_table_index,
+                const tensorflow::Tensor& hash_table_cell_splits,
                 tensorflow::Tensor& query_neighbors_row_splits) {
         auto device = context->eigen_gpu_device();
 
@@ -62,7 +66,14 @@ public:
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
-                radius.scalar<T>()(), hash_table_size, metric,
+                radius.scalar<T>()(), points_row_splits.shape().dim_size(0),
+                (int64_t*)points_row_splits.flat<int64>().data(),
+                queries_row_splits.shape().dim_size(0),
+                (int64_t*)queries_row_splits.flat<int64>().data(),
+                hash_table_splits.flat<uint32_t>().data(),
+                hash_table_cell_splits.shape().dim_size(0),
+                hash_table_cell_splits.flat<uint32_t>().data(),
+                hash_table_index.flat<uint32_t>().data(), metric,
                 ignore_query_point, return_distances, output_allocator);
 
         Tensor temp_tensor;
@@ -78,7 +89,14 @@ public:
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
-                radius.scalar<T>()(), hash_table_size, metric,
+                radius.scalar<T>()(), points_row_splits.shape().dim_size(0),
+                (int64_t*)points_row_splits.flat<int64>().data(),
+                queries_row_splits.shape().dim_size(0),
+                (int64_t*)queries_row_splits.flat<int64>().data(),
+                hash_table_splits.flat<uint32_t>().data(),
+                hash_table_cell_splits.shape().dim_size(0),
+                hash_table_cell_splits.flat<uint32_t>().data(),
+                hash_table_index.flat<uint32_t>().data(), metric,
                 ignore_query_point, return_distances, output_allocator);
     }
 
@@ -86,12 +104,14 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type)                                                       \
-    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")                \
-                                    .Device(DEVICE_GPU)                    \
-                                    .TypeConstraint<type>("T")             \
-                                    .HostMemory("radius")                  \
-                                    .HostMemory("hash_table_size_factor"), \
+#define REG_KB(type)                                                  \
+    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")           \
+                                    .Device(DEVICE_GPU)               \
+                                    .TypeConstraint<type>("T")        \
+                                    .HostMemory("radius")             \
+                                    .HostMemory("points_row_splits")  \
+                                    .HostMemory("queries_row_splits") \
+                                    .HostMemory("hash_table_splits"), \
                             FixedRadiusSearchOpKernelCUDA<type>);
 REG_KB(float)
 #undef REG_KB

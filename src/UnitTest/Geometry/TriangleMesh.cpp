@@ -723,6 +723,32 @@ TEST(TriangleMesh, SamplePointsUniformly) {
         ExpectEQ(pcd_simple->colors_[pidx], Vector3d(1, 0, 0));
         ExpectEQ(pcd_simple->normals_[pidx], Vector3d(0, 1, 0));
     }
+
+    // use triangle normal instead of the vertex normals
+    EXPECT_TRUE(mesh_simple.HasTriangleNormals() == false);
+    pcd_simple = mesh_simple.SamplePointsUniformly(n_points, true);
+    // the mesh now has triangle normals as a side effect.
+    EXPECT_TRUE(mesh_simple.HasTriangleNormals() == true);
+    EXPECT_TRUE(pcd_simple->points_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
+
+    for (size_t pidx = 0; pidx < n_points; ++pidx) {
+        ExpectEQ(pcd_simple->colors_[pidx], Vector3d(1, 0, 0));
+        ExpectEQ(pcd_simple->normals_[pidx], Vector3d(0, 0, 1));
+    }
+
+    // use triangle normal, this time the mesh has no vertex normals
+    mesh_simple.vertex_normals_.clear();
+    pcd_simple = mesh_simple.SamplePointsUniformly(n_points, true);
+    EXPECT_TRUE(pcd_simple->points_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
+
+    for (size_t pidx = 0; pidx < n_points; ++pidx) {
+        ExpectEQ(pcd_simple->colors_[pidx], Vector3d(1, 0, 0));
+        ExpectEQ(pcd_simple->normals_[pidx], Vector3d(0, 0, 1));
+    }
 }
 
 TEST(TriangleMesh, FilterSharpen) {
@@ -1050,6 +1076,8 @@ TEST(TriangleMesh, IsSelfIntersecting) {
 }
 
 TEST(TriangleMesh, ClusterConnectedTriangles) {
+    // Test 1
+
     geometry::TriangleMesh mesh;
     mesh.vertices_ = {
             {0.000000, 0.000000, 0.000000}, {1.000000, 0.000000, 0.000000},
@@ -1091,6 +1119,36 @@ TEST(TriangleMesh, ClusterConnectedTriangles) {
     std::vector<int> clusters;
     std::vector<size_t> cluster_n_triangles;
     std::vector<double> cluster_area;
+    std::tie(clusters, cluster_n_triangles, cluster_area) =
+            mesh.ClusterConnectedTriangles();
+
+    EXPECT_EQ(gt_clusters, clusters);
+    EXPECT_EQ(cluster_n_triangles, gt_cluster_n_triangles);
+    EXPECT_EQ(cluster_area, gt_cluster_area);
+
+    // Test 2
+
+    mesh.Clear();
+    mesh.vertices_ = {
+            {0.000000, 0.000000, 0.000000}, {0.500000, 0.866025, 0.000000},
+            {1.000000, 0.000000, 0.000000}, {0.500000, 0.866025, 0.000000},
+
+            {2.000000, 0.000000, 0.000000}, {2.500000, 0.866025, 0.000000},
+            {3.000000, 0.000000, 0.000000}, {2.500000, 0.866025, 0.000000},
+
+            {4.000000, 0.000000, 0.000000}, {4.500000, 0.866025, 0.000000},
+            {5.000000, 0.000000, 0.000000}, {4.500000, 0.866025, 0.000000},
+
+            {6.000000, 0.000000, 0.000000}, {6.500000, 0.866025, 0.000000},
+            {7.000000, 0.000000, 0.000000}, {6.500000, 0.866025, 0.000000}};
+
+    mesh.triangles_ = {{0, 1, 2},  {12, 14, 15}, {4, 5, 6},    {8, 10, 11},
+                       {8, 9, 10}, {4, 6, 7},    {12, 13, 14}, {0, 2, 3}};
+
+    gt_clusters = {0, 1, 2, 3, 3, 2, 1, 0};
+    gt_cluster_n_triangles = {2, 2, 2, 2};
+    gt_cluster_area = {0.866025, 0.866025, 0.866025, 0.866025};
+
     std::tie(clusters, cluster_n_triangles, cluster_area) =
             mesh.ClusterConnectedTriangles();
 
@@ -1372,7 +1430,7 @@ TEST(TriangleMesh, DeformAsRigidAsPossible) {
     ExpectEQ(*mesh_deform, mesh_gt);
 }
 
-TEST(TriangleMesh, SelectDownSample) {
+TEST(TriangleMesh, SelectByIndex) {
     vector<Vector3d> ref_vertices = {{349.019608, 803.921569, 917.647059},
                                      {439.215686, 117.647059, 588.235294},
                                      {290.196078, 356.862745, 874.509804},
@@ -1506,7 +1564,7 @@ TEST(TriangleMesh, SelectDownSample) {
     vector<size_t> indices(size / 40);
     Rand(indices, 0, size - 1, 0);
 
-    auto output_tm = tm.SelectDownSample(indices);
+    auto output_tm = tm.SelectByIndex(indices);
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
@@ -2092,7 +2150,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
     }
     unique(indices.begin(), indices.end());
     sort(indices.begin(), indices.end());
-    auto output = output_tm->SelectDownSample(indices);
+    auto output = output_tm->SelectByIndex(indices);
 
     ExpectEQ(ref_vertices, output->vertices_);
     ExpectEQ(ref_vertex_normals, output->vertex_normals_);

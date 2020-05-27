@@ -22,6 +22,7 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
+#include "../TensorFlowHelper.h"
 #include "Open3D/ML/Misc/Detail/FixedRadiusSearch.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
@@ -84,10 +85,6 @@ public:
 
         OP_REQUIRES_OK(construction, construction->GetAttr("return_distances",
                                                            &return_distances));
-
-        OP_REQUIRES_OK(construction,
-                       construction->GetAttr("max_hash_table_size",
-                                             &max_hash_table_size));
     }
 
     void Compute(tensorflow::OpKernelContext* context) override {
@@ -96,33 +93,35 @@ public:
                       "int64 type is not compatible");
 
         const Tensor& points = context->input(0);
-        OP_REQUIRES(context, points.shape().dims() == 2,
-                    errors::InvalidArgument("points must be a rank 2 tensor"));
-
         const Tensor& queries = context->input(1);
-        OP_REQUIRES(context, queries.shape().dims() == 2,
-                    errors::InvalidArgument("queries must be a rank 2 tensor"));
 
         const Tensor& radius = context->input(2);
         OP_REQUIRES(context, TensorShapeUtils::IsScalar(radius.shape()),
                     errors::InvalidArgument("radius must be scalar, got shape ",
                                             radius.shape().DebugString()));
 
-        const Tensor& hash_table_size_factor_tensor = context->input(3);
-        OP_REQUIRES(
-                context,
-                TensorShapeUtils::IsScalar(
-                        hash_table_size_factor_tensor.shape()),
-                errors::InvalidArgument(
-                        "hash_table_size_factor must be scalar, got shape ",
-                        hash_table_size_factor_tensor.shape().DebugString()));
-        const double hash_table_size_factor =
-                hash_table_size_factor_tensor.scalar<double>()();
-        const size_t hash_table_size = std::min<int64_t>(
-                std::max<int64_t>(
-                        hash_table_size_factor * points.shape().dim_size(0), 1),
-                max_hash_table_size);
+        const Tensor& points_row_splits = context->input(3);
+        const Tensor& queries_row_splits = context->input(4);
 
+        const Tensor& hash_table_splits = context->input(5);
+        const Tensor& hash_table_index = context->input(6);
+        const Tensor& hash_table_cell_splits = context->input(7);
+
+        {
+            using namespace open3d::ml::shape_checking;
+
+            Dim num_points("num_points");
+            Dim num_queries("num_queries");
+            Dim batch_size("batch_size");
+            Dim num_cells("num_cells");
+            CHECK_SHAPE(context, points, num_points, 3);
+            CHECK_SHAPE(context, hash_table_index, num_points);
+            CHECK_SHAPE(context, queries, num_queries, 3);
+            CHECK_SHAPE(context, points_row_splits, batch_size + 1);
+            CHECK_SHAPE(context, queries_row_splits, batch_size + 1);
+            CHECK_SHAPE(context, hash_table_splits, batch_size + 1);
+            CHECK_SHAPE(context, hash_table_cell_splits, num_cells + 1);
+        }
         Tensor* query_neighbors_row_splits = 0;
         TensorShape query_neighbors_row_splits_shape(
                 {queries.shape().dim_size(0) + 1});
@@ -130,27 +129,25 @@ public:
                                         1, query_neighbors_row_splits_shape,
                                         &query_neighbors_row_splits));
 
-        Tensor hash_table;
-        TensorShape hash_table_shape({ssize_t(hash_table_size)});
-        OP_REQUIRES_OK(context,
-                       context->allocate_temp(DataTypeToEnum<uint32_t>::v(),
-                                              hash_table_shape, &hash_table));
-
-        Kernel(context, points, queries, radius, hash_table_size,
-               *query_neighbors_row_splits);
+        Kernel(context, points, queries, radius, points_row_splits,
+               queries_row_splits, hash_table_splits, hash_table_index,
+               hash_table_cell_splits, *query_neighbors_row_splits);
     }
 
     virtual void Kernel(tensorflow::OpKernelContext* context,
                         const tensorflow::Tensor& points,
                         const tensorflow::Tensor& queries,
                         const tensorflow::Tensor& radius,
-                        const size_t hash_table_size,
+                        const tensorflow::Tensor& points_row_splits,
+                        const tensorflow::Tensor& queries_row_splits,
+                        const tensorflow::Tensor& hash_table_splits,
+                        const tensorflow::Tensor& hash_table_index,
+                        const tensorflow::Tensor& hash_table_cell_splits,
                         tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:
     open3d::ml::detail::Metric metric;
     bool ignore_query_point;
     bool return_distances;
-    int max_hash_table_size;
 };
 }  // namespace fixed_radius_search_opkernel

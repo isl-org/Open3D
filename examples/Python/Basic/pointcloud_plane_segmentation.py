@@ -20,9 +20,9 @@ if __name__ == "__main__":
     [a, b, c, d] = plane_model
     print(f"Plane model: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
 
-    inlier_cloud = pcd.select_down_sample(inliers)
+    inlier_cloud = pcd.select_by_index(inliers)
     inlier_cloud.paint_uniform_color([1.0, 0, 0])
 
-    outlier_cloud = pcd.select_down_sample(inliers, invert=True)
+    outlier_cloud = pcd.select_by_index(inliers, invert=True)
 
     o3d.visualization.draw_geometries([inlier_cloud, outlier_cloud])

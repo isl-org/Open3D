@@ -127,3 +127,47 @@ def test_invert_neighbors_list(dtype, attributes, device_name, ml):
             for j, attr in zip(neighbors_i, attributes_i):
                 key = (j, i)
                 np.testing.assert_equal(attr, edge_attr_map[key])
+
+
+def test_invert_neighbors_list_shape_checking():
+    import tensorflow as tf
+    import open3d.ml.tf as ml3d
+
+    num_points = 3
+    inp_neighbors_index = np.array([0, 1, 2, 2, 1, 2], dtype=np.int32)
+    inp_neighbors_row_splits = np.array([0, 3, 4, 6], dtype=np.int64)
+    inp_neighbors_attributes = np.array([10, 20, 30, 40, 50, 60],
+                                        dtype=np.float32)
+
+    # test the shape checking by passing arrays with wrong rank and/or size
+    with pytest.raises(Exception) as einfo:
+        ans = ml3d.ops.invert_neighbors_list(
+            num_points=num_points,
+            inp_neighbors_index=inp_neighbors_index[1:],
+            inp_neighbors_row_splits=inp_neighbors_row_splits,
+            inp_neighbors_attributes=inp_neighbors_attributes)
+    assert 'invalid shape' in str(einfo.value)
+
+    with pytest.raises(Exception) as einfo:
+        ans = ml3d.ops.invert_neighbors_list(
+            num_points=num_points,
+            inp_neighbors_index=inp_neighbors_index[:, np.newaxis],
+            inp_neighbors_row_splits=inp_neighbors_row_splits,
+            inp_neighbors_attributes=inp_neighbors_attributes)
+    assert 'invalid shape' in str(einfo.value)
+
+    with pytest.raises(Exception) as einfo:
+        ans = ml3d.ops.invert_neighbors_list(
+            num_points=num_points,
+            inp_neighbors_index=inp_neighbors_index,
+            inp_neighbors_row_splits=inp_neighbors_row_splits[:, np.newaxis],
+            inp_neighbors_attributes=inp_neighbors_attributes)
+    assert 'invalid shape' in str(einfo.value)
+
+    with pytest.raises(Exception) as einfo:
+        ans = ml3d.ops.invert_neighbors_list(
+            num_points=num_points,
+            inp_neighbors_index=inp_neighbors_index,
+            inp_neighbors_row_splits=inp_neighbors_row_splits,
+            inp_neighbors_attributes=inp_neighbors_attributes[1:])
+    assert 'invalid shape' in str(einfo.value)

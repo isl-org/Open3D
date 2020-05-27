@@ -53,7 +53,7 @@ void pybind_global_optimization(py::module &m) {
     // open3d.registration.PoseGraphNode
     py::class_<registration::PoseGraphNode,
                std::shared_ptr<registration::PoseGraphNode>>
-            pose_graph_node(m, "PoseGraphNode", "Node of ``PostGraph``.");
+            pose_graph_node(m, "PoseGraphNode", "Node of ``PoseGraph``.");
     py::detail::bind_default_constructor<registration::PoseGraphNode>(
             pose_graph_node);
     py::detail::bind_copy_functions<registration::PoseGraphNode>(
@@ -83,7 +83,7 @@ void pybind_global_optimization(py::module &m) {
     // open3d.registration.PoseGraphEdge
     py::class_<registration::PoseGraphEdge,
                std::shared_ptr<registration::PoseGraphEdge>>
-            pose_graph_edge(m, "PoseGraphEdge", "Edge of ``PostGraph``.");
+            pose_graph_edge(m, "PoseGraphEdge", "Edge of ``PoseGraph``.");
     py::detail::bind_default_constructor<registration::PoseGraphEdge>(
             pose_graph_edge);
     py::detail::bind_copy_functions<registration::PoseGraphEdge>(
@@ -104,10 +104,17 @@ void pybind_global_optimization(py::module &m) {
                            "``6 x 6`` float64 numpy array: Information matrix.")
             .def_readwrite("uncertain",
                            &registration::PoseGraphEdge::uncertain_,
-                           "bool: Whether the edge is uncertain.")
-            .def_readwrite("confidence",
-                           &registration::PoseGraphEdge::confidence_,
-                           "float from 0 to 1: Confidence value of the edge.")
+                           "bool: Whether the edge is uncertain. Odometry edge "
+                           "has uncertain == false, loop closure edges has "
+                           "uncertain == true")
+            .def_readwrite(
+                    "confidence", &registration::PoseGraphEdge::confidence_,
+                    "float from 0 to 1: Confidence value of the edge. if "
+                    "uncertain is true, it has confidence bounded in [0,1].   "
+                    "1 means reliable, and 0 means "
+                    "unreliable edge. This correspondence to "
+                    "line process value in [Choi et al 2015] See "
+                    "core/registration/globaloptimization.h for more details.")
             .def(py::init([](int source_node_id, int target_node_id,
                              Eigen::Matrix4d transformation,
                              Eigen::Matrix6d information, bool uncertain,
@@ -150,10 +157,10 @@ void pybind_global_optimization(py::module &m) {
     pose_graph
             .def_readwrite(
                     "nodes", &registration::PoseGraph::nodes_,
-                    "``List(PostGraphNode)``: List of ``PostGraphNode``.")
+                    "``List(PoseGraphNode)``: List of ``PoseGraphNode``.")
             .def_readwrite(
                     "edges", &registration::PoseGraph::edges_,
-                    "``List(PostGraphEdge)``: List of ``PostGraphEdge``.")
+                    "``List(PoseGraphEdge)``: List of ``PoseGraphEdge``.")
             .def("__repr__", [](const registration::PoseGraph &rr) {
                 return std::string("registration::PoseGraph with ") +
                        std::to_string(rr.nodes_.size()) +
@@ -231,7 +238,8 @@ void pybind_global_optimization(py::module &m) {
                     "max_iteration",
                     &registration::GlobalOptimizationConvergenceCriteria::
                             max_iteration_,
-                    "int: Maximum iteration number.")
+                    "int: Maximum iteration number for iterative optimization "
+                    "module.")
             .def_readwrite(
                     "min_relative_increment",
                     &registration::GlobalOptimizationConvergenceCriteria::
@@ -257,12 +265,17 @@ void pybind_global_optimization(py::module &m) {
                     &registration::GlobalOptimizationConvergenceCriteria::
                             max_iteration_lm_,
                     "int: Maximum iteration number for Levenberg Marquardt "
-                    "method.")
+                    "method. max_iteration_lm is used for additional "
+                    "Levenberg-Marquardt inner loop that automatically changes "
+                    "steepest gradient gain.")
             .def_readwrite(
                     "upper_scale_factor",
                     &registration::GlobalOptimizationConvergenceCriteria::
                             upper_scale_factor_,
-                    "float: Upper scale factor value.")
+                    "float: Upper scale factor value. Scaling factors are used "
+                    "for levenberg marquardt algorithm these are scaling "
+                    "factors that increase/decrease lambda used in H_LM = H + "
+                    "lambda * I")
             .def_readwrite(
                     "lower_scale_factor",
                     &registration::GlobalOptimizationConvergenceCriteria::

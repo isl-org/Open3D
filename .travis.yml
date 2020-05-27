@@ -16,7 +16,7 @@ matrix:
   include:
     # Style check only
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: true
       language: python
       python: "3.6"
@@ -24,9 +24,9 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-xenial-5.0
           packages:
             - cmake
+            - clang-7
             - clang-format-5.0
       before_install: ./util/scripts/setup-linux.sh
       script:
@@ -38,7 +38,7 @@ matrix:
 
     # Build docs only
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: true
       language: python
       python: "3.6"
@@ -49,6 +49,7 @@ matrix:
           packages:
             - cmake
             - doxygen
+            - libosmesa6-dev
       before_install: ./util/scripts/setup-linux.sh
       script:
         - mkdir build
@@ -56,29 +57,17 @@ matrix:
         - which python
         - python -V
         - pip install -U -q sphinx sphinx-rtd-theme
-        - cmake -DPYTHON_EXECUTABLE=`which python` ..
+        - cmake -DPYTHON_EXECUTABLE=`which python` -DENABLE_HEADLESS_RENDERING=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON ..
         - make install-pip-package -j$NPROC
+        - make -j$NPROC
+        - bin/GLInfo
         - python -c "from open3d import *; import open3d; print(open3d)"
         - ../util/scripts/make-documentation.sh
 
-    # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=OFF
-    - os: linux
-      dist: xenial
-      sudo: true
-      language: python
-      python: "2.7"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-      before_install: ./util/scripts/setup-linux.sh
-      script: ./util/scripts/run-travis.sh
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: required
       language: python
       python: "3.5"
@@ -94,7 +83,7 @@ matrix:
 
     # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=ON
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: required
       language: python
       python: "3.6"
@@ -110,10 +99,10 @@ matrix:
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=ON
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: required
       language: python
-      python: "3.7" # Xenial has Python 3.7 on travis
+      python: "3.7" # bionic has Python 3.7 on travis
       addons:
         apt:
           sources:
@@ -132,12 +121,12 @@ matrix:
         - brew update
         - brew upgrade python || true
         - ./util/scripts/install-deps-osx.sh
-      script: travis_wait 30 ./util/scripts/run-travis.sh
+      script: travis_wait 40 ./util/scripts/run-travis.sh
 
     - os: osx
       osx_image: xcode10.1
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON BUILD_TENSORFLOW_OPS=OFF
-      script: travis_wait 30 ./util/scripts/run-travis.sh
+      script: travis_wait 40 ./util/scripts/run-travis.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
