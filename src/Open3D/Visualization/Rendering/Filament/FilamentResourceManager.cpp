@@ -173,6 +173,10 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image) {
             settings.image_format = filament::Texture::Format::RGB;
             settings.format = filament::Texture::InternalFormat::RGB8;
             break;
+        case 4:
+            settings.image_format = filament::Texture::Format::RGBA;
+            settings.format = filament::Texture::InternalFormat::RGBA8;
+            break;
         default:
             utility::LogError("Unsupported image number of channels: {}",
                               image.num_of_channels_);
