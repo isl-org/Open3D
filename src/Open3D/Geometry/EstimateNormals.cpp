@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include <queue>
-#include <unordered_map>
 
 #include <Eigen/Eigenvalues>
 
@@ -281,7 +280,7 @@ public:
         return parent_[x];
     }
 
-    // combine to sets using size of sets
+    // combine two sets using size of sets
     void Union(size_t x, size_t y) {
         x = Find(x);
         y = Find(y);
@@ -492,8 +491,8 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
         mst_graph[v1].insert(v0);
     }
 
-    // finst start node for tree traversal
-    // init with node with max z
+    // find start node for tree traversal
+    // init with node that maximizes z
     double max_z = std::numeric_limits<double>::lowest();
     size_t v0;
     for (size_t vidx = 0; vidx < points_.size(); ++vidx) {
