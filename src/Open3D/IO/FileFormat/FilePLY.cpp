@@ -520,11 +520,11 @@ bool WritePointCloudToPLY(const std::string &filename,
                 printed_color_warning = true;
             }
             ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
+                      std::min(255.0, std::max(0.0, color(0) * 255.0 + 0.5)));
             ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
+                      std::min(255.0, std::max(0.0, color(1) * 255.0 + 0.5)));
             ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
+                      std::min(255.0, std::max(0.0, color(2) * 255.0 + 0.5)));
         }
         ++progress_bar;
     }
@@ -686,11 +686,11 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                 printed_color_warning = true;
             }
             ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
+                      std::min(255.0, std::max(0.0, color(0) * 255.0 + 0.5)));
             ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
+                      std::min(255.0, std::max(0.0, color(1) * 255.0 + 0.5)));
             ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
+                      std::min(255.0, std::max(0.0, color(2) * 255.0 + 0.5)));
         }
         ++progress_bar;
     }
@@ -844,11 +844,11 @@ bool WriteLineSetToPLY(const std::string &filename,
                 printed_color_warning = true;
             }
             ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
+                      std::min(255.0, std::max(0.0, color(0) * 255.0 + 0.5)));
             ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
+                      std::min(255.0, std::max(0.0, color(1) * 255.0 + 0.5)));
             ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
+                      std::min(255.0, std::max(0.0, color(2) * 255.0 + 0.5)));
         }
         ++progress_bar;
     }
@@ -991,9 +991,12 @@ bool WriteVoxelGridToPLY(const std::string &filename,
         ply_write(ply_file, voxel.grid_index_(2));
 
         const Eigen::Vector3d &color = voxel.color_;
-        ply_write(ply_file, std::min(255.0, std::max(0.0, color(0) * 255.0)));
-        ply_write(ply_file, std::min(255.0, std::max(0.0, color(1) * 255.0)));
-        ply_write(ply_file, std::min(255.0, std::max(0.0, color(2) * 255.0)));
+        ply_write(ply_file,
+                  std::min(255.0, std::max(0.0, color(0) * 255.0 + 0.5)));
+        ply_write(ply_file,
+                  std::min(255.0, std::max(0.0, color(1) * 255.0 + 0.5)));
+        ply_write(ply_file,
+                  std::min(255.0, std::max(0.0, color(2) * 255.0 + 0.5)));
 
         ++progress_bar;
     }
