@@ -145,7 +145,7 @@ matrix:
 
     # Environment macOS 10.14 - no TF_OPS
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.4
       env: BUILD_TENSORFLOW_OPS=OFF
       before_install:
         - brew update
