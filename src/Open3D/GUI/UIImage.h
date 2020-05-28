@@ -57,14 +57,16 @@ public:
     Size CalcPreferredSize(const Theme& theme) const;
 
     struct DrawParams {
-        float pos_x;
-        float pos_y;
-        float width;
-        float height;
-        float u0;
-        float v0;
-        float u1;
-        float v1;
+        // Default values are to make GCC happy and contented,
+        // pos and size don't have reasonable defaults.
+        float pos_x = 0.0f;
+        float pos_y = 0.0f;
+        float width = 0.0f;
+        float height = 0.0f;
+        float u0 = 0.0f;
+        float v0 = 0.0f;
+        float u1 = 1.0f;
+        float v1 = 1.0f;
         visualization::TextureHandle texture;
     };
     DrawParams CalcDrawParams(visualization::Renderer& renderer,
