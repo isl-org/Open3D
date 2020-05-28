@@ -82,6 +82,10 @@ struct REHandle_abstract {
         return id == other.id && type == other.type;
     }
 
+    bool operator!=(const REHandle_abstract& other) const {
+        return !operator==(other);
+    }
+
     bool operator<(const REHandle_abstract& other) const {
         return Hash() < other.Hash();
     }
@@ -132,15 +136,13 @@ struct REHandle : public REHandle_abstract {
 
     REHandle() : REHandle_abstract(entityType, REHandle_abstract::kBadId) {}
     REHandle(const REHandle& other) : REHandle_abstract(entityType, other.id) {}
+    // Don't use this constructor unless you know what you are doing
+    explicit REHandle(std::uint16_t id) : REHandle_abstract(entityType, id) {}
 
     REHandle& operator=(const REHandle& other) {
         id = other.id;
         return *this;
     }
-
-private:
-    explicit REHandle(const std::uint16_t aId)
-        : REHandle_abstract(entityType, aId) {}
 };
 
 template <EntityType entityType>

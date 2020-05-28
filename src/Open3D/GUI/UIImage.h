@@ -26,32 +26,51 @@
 
 #pragma once
 
-#include "Open3D/GUI/Widget.h"
-
-#include <functional>
-
-#include "Open3D/GUI/UIImage.h"
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
 
 namespace open3d {
 namespace gui {
 
-class Button : public Widget {
+class UIImage {
 public:
-    explicit Button(const char* title);
-    explicit Button(std::shared_ptr<UIImage> image);
-    ~Button();
+    /// Uses image from the specified path. Each ImageLabel will use one
+    /// draw call.
+    explicit UIImage(const char* image_path);
+    /// Uses an existing texture, using texture coordinates
+    /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
+    /// This is useful for using an icon atlas to reduce draw calls.
+    explicit UIImage(visualization::TextureHandle texture_id,
+                     float u0 = 0.0f,
+                     float v0 = 0.0f,
+                     float u1 = 1.0f,
+                     float v1 = 1.0f);
+    ~UIImage();
 
-    bool GetIsToggleable() const;
-    void SetToggleable(bool toggles);
+    enum class Scaling {
+        NONE,   /// No scaling, fixed size
+        ANY,    /// Scales to any size and aspect ratio
+        ASPECT  /// Scales to any size, but fixed aspect ratio (default)
+    };
+    void SetScaling(Scaling scaling);
+    Scaling GetScaling() const;
 
-    bool GetIsOn() const;
-    void SetOn(bool is_on);
+    Size CalcPreferredSize(const Theme& theme) const;
 
-    Size CalcPreferredSize(const Theme& theme) const override;
-
-    DrawResult Draw(const DrawContext& context) override;
-
-    void SetOnClicked(std::function<void()> on_clicked);
+    struct DrawParams {
+        // Default values are to make GCC happy and contented,
+        // pos and size don't have reasonable defaults.
+        float pos_x = 0.0f;
+        float pos_y = 0.0f;
+        float width = 0.0f;
+        float height = 0.0f;
+        float u0 = 0.0f;
+        float v0 = 0.0f;
+        float u1 = 1.0f;
+        float v1 = 1.0f;
+        visualization::TextureHandle texture;
+    };
+    DrawParams CalcDrawParams(visualization::Renderer& renderer,
+                              const Rect& frame) const;
 
 private:
     struct Impl;

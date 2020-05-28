@@ -28,30 +28,38 @@
 
 #include "Open3D/GUI/Widget.h"
 
-#include <functional>
-
 #include "Open3D/GUI/UIImage.h"
 
 namespace open3d {
 namespace gui {
 
-class Button : public Widget {
+class ImageLabel : public Widget {
+    using Super = Widget;
+
 public:
-    explicit Button(const char* title);
-    explicit Button(std::shared_ptr<UIImage> image);
-    ~Button();
+    ImageLabel();
+    /// Uses image from the specified path. Each ImageLabel will use one
+    /// draw call.
+    explicit ImageLabel(const char* image_path);
+    /// Uses an existing texture, using texture coordinates
+    /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
+    /// This is useful for using an icon atlas to reduce draw calls.
+    explicit ImageLabel(visualization::TextureHandle texture_id,
+                        float u0 = 0.0f,
+                        float v0 = 0.0f,
+                        float u1 = 1.0f,
+                        float v1 = 1.0f);
+    ImageLabel(std::shared_ptr<UIImage> image);
+    ~ImageLabel();
 
-    bool GetIsToggleable() const;
-    void SetToggleable(bool toggles);
-
-    bool GetIsOn() const;
-    void SetOn(bool is_on);
+    std::shared_ptr<UIImage> GetImage() const;
+    void SetImage(std::shared_ptr<UIImage> image);
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
-    DrawResult Draw(const DrawContext& context) override;
+    void Layout(const Theme& theme) override;
 
-    void SetOnClicked(std::function<void()> on_clicked);
+    DrawResult Draw(const DrawContext& context) override;
 
 private:
     struct Impl;

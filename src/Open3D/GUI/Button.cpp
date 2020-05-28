@@ -38,6 +38,7 @@ namespace gui {
 
 struct Button::Impl {
     std::string title_;
+    std::shared_ptr<UIImage> image_;
     bool is_toggleable_ = false;
     bool is_on_ = false;
     std::function<void()> on_clicked_;
@@ -45,6 +46,10 @@ struct Button::Impl {
 
 Button::Button(const char* title) : impl_(new Button::Impl()) {
     impl_->title_ = title;
+}
+
+Button::Button(std::shared_ptr<UIImage> image) : impl_(new Button::Impl()) {
+    impl_->image_ = image;
 }
 
 Button::~Button() {}
@@ -66,11 +71,16 @@ void Button::SetOnClicked(std::function<void()> on_clicked) {
 }
 
 Size Button::CalcPreferredSize(const Theme& theme) const {
-    auto font = ImGui::GetFont();
-    auto em = std::ceil(ImGui::GetTextLineHeight());
-    auto size = font->CalcTextSizeA(theme.font_size, 10000, 10000,
-                                    impl_->title_.c_str());
-    return Size(std::ceil(size.x) + 2.0 * em, 2 * em);
+    if (impl_->image_) {
+        auto size = impl_->image_->CalcPreferredSize(theme);
+        return Size(size.width, size.height);
+    } else {
+        auto font = ImGui::GetFont();
+        auto em = std::ceil(ImGui::GetTextLineHeight());
+        auto size = font->CalcTextSizeA(theme.font_size, 10000, 10000,
+                                        impl_->title_.c_str());
+        return Size(std::ceil(size.x) + 2.0 * em, 2 * em);
+    }
 }
 
 Widget::DrawResult Button::Draw(const DrawContext& context) {
@@ -93,10 +103,23 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
                 util::colorToImgui(context.theme.button_on_active_color));
     }
     DrawImGuiPushEnabledState();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
-    if (ImGui::Button(impl_->title_.c_str(),
-                      ImVec2(GetFrame().width, GetFrame().height))) {
+    bool pressed = false;
+    if (impl_->image_) {
+        auto params = impl_->image_->CalcDrawParams(context.renderer, frame);
+        ImTextureID image_id =
+                reinterpret_cast<ImTextureID>(params.texture.GetId());
+        ImGui::SetCursorPos(ImVec2(params.pos_x - context.uiOffsetX,
+                                   params.pos_y - context.uiOffsetY));
+        pressed = ImGui::ImageButton(
+                image_id, ImVec2(params.width, params.height),
+                ImVec2(params.u0, params.v0), ImVec2(params.u1, params.v1));
+    } else {
+        ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
+                                   frame.y - context.uiOffsetY));
+        pressed = ImGui::Button(impl_->title_.c_str(),
+                                ImVec2(GetFrame().width, GetFrame().height));
+    }
+    if (pressed) {
         if (impl_->is_toggleable_) {
             impl_->is_on_ = !impl_->is_on_;
         }
