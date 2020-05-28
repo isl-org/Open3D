@@ -121,10 +121,10 @@ Eigen::Matrix3d RotationMatrixZ(double radians);
 
 /// Color conversion from double [0,1] to uint8_t 0-255; this does proper
 /// clipping and rounding
-Eigen::Vector3uint8 ColorToUint8(Eigen::Vector3d color);
+Eigen::Vector3uint8 ColorToUint8(const Eigen::Vector3d &color);
 /// Color conversion from uint8_t 0-255 to double [0,1]
 Eigen::Vector3d ColorToDouble(uint8_t r, uint8_t g, uint8_t b);
-Eigen::Vector3d ColorToDouble(Eigen::Vector3uint8 rgb);
+Eigen::Vector3d ColorToDouble(const Eigen::Vector3uint8 &rgb);
 
 }  // namespace utility
 }  // namespace open3d
