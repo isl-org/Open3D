@@ -42,6 +42,9 @@ double AverageDistance(const std::vector<T> &a, const std::vector<T> &b) {
     if (a.size() != b.size()) {
         utility::LogError("vectors different size {} {}", a.size(), b.size());
     }
+    if (a.size() == 0) {
+        return 0.;
+    }
     double total = 0;
     for (size_t i = 0; i < a.size(); ++i) {
         total += (a[i] - b[i]).norm();
@@ -100,15 +103,16 @@ public:
         for (int i = 0; i < size; ++i) {
             // provide somewhat random numbers everywhere, so compression
             // doesn't get a free pass
-            pc_.points_.push_back({sin(i * .8969920581) * 1000.,
-                                   sin(i * .3898546778) * 1000.,
-                                   sin(i * .2509962463) * 1000.});
-            pc_.normals_.push_back({sin(i * .4472367685), sin(i * .9698787116),
-                                    sin(i * .7072878517)});
+            pc_.points_.push_back({std::sin(i * .8969920581) * 1000.,
+                                   std::sin(i * .3898546778) * 1000.,
+                                   std::sin(i * .2509962463) * 1000.});
+            pc_.normals_.push_back({std::sin(i * .4472367685),
+                                    std::sin(i * .9698787116),
+                                    std::sin(i * .7072878517)});
             // color needs to be [0,1]
-            pc_.colors_.push_back({fmod(i * .4241490710, 1.0),
-                                   fmod(i * .6468026221, 1.0),
-                                   fmod(i * .5376722873, 1.0)});
+            pc_.colors_.push_back({std::fmod(i * .4241490710, 1.0),
+                                   std::fmod(i * .6468026221, 1.0),
+                                   std::fmod(i * .5376722873, 1.0)});
         }
     }
 
@@ -121,8 +125,7 @@ public:
             utility::LogError("Failed to write to {}", args.filename);
         }
         geometry::PointCloud pc2;
-        if (!ReadPointCloud(args.filename, pc2, "auto", false, false, false,
-                            true)) {
+        if (!ReadPointCloud(args.filename, pc2, "auto", false, false)) {
             utility::LogError("Failed to read from {}", args.filename);
         }
         auto CheckLE = [](double a, double b) {

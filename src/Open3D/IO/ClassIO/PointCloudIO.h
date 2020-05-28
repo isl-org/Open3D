@@ -48,8 +48,7 @@ bool ReadPointCloud(const std::string &filename,
                     const std::string &format = "auto",
                     bool remove_nan_points = true,
                     bool remove_infinite_points = true,
-                    bool print_progress = false,
-                    bool quiet = false);
+                    bool print_progress = false);
 
 /// The general entrance for writing a PointCloud to a file
 /// The function calls write functions based on the extension name of filename.
