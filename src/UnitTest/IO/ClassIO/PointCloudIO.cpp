@@ -32,7 +32,9 @@ namespace open3d {
 namespace unit_test {
 
 using open3d::io::ReadPointCloud;
+using open3d::io::ReadPointCloudParams;
 using open3d::io::WritePointCloud;
+using open3d::io::WritePointCloudParams;
 
 namespace {
 
@@ -47,9 +49,7 @@ double MaxDistance(const std::vector<T> &a, const std::vector<T> &b) {
     return m;
 }
 
-void RandPC(geometry::PointCloud &pc) {
-    int size = 100;
-
+void RandPC(geometry::PointCloud &pc, int size = 100) {
     Eigen::Vector3d one(1, 1, 1);
 
     pc.points_.resize(size);
@@ -395,6 +395,38 @@ TEST_P(ReadWritePC, ColorRounding) {
         EXPECT_TRUE(ReadPointCloud(args.filename, pc_load, "auto", false, false,
                                    true));
         EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
+    }
+}
+
+TEST_P(ReadWritePC, UpdateProgressCallback) {
+    ReadWritePCArgs args = GetParam();
+    geometry::PointCloud pc;
+    RandPC(pc, 32 * 1024);
+
+    double last_percent;
+    int num_calls;
+    auto Clear = [&]() { last_percent = num_calls = 0; };
+    auto Update = [&](double percent) {
+        last_percent = percent;
+        ++num_calls;
+    };
+
+    {
+        WritePointCloudParams p;
+        p.write_ascii = WritePointCloudParams::IsAscii(args.write_ascii);
+        p.compressed = WritePointCloudParams::Compressed(args.compressed);
+        p.update_progress = Update;
+        Clear();
+        EXPECT_TRUE(WritePointCloudP(args.filename, pc, p));
+        EXPECT_EQ(last_percent, 100.);
+        EXPECT_GT(num_calls, 10);
+    }
+    {
+        ReadPointCloudParams p(Update);
+        Clear();
+        EXPECT_TRUE(ReadPointCloudP(args.filename, pc, p));
+        EXPECT_EQ(last_percent, 100.);
+        EXPECT_GT(num_calls, 10);
     }
 }
 
