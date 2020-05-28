@@ -7,6 +7,7 @@
 # - NPROC
 
 set -euo pipefail
+set -x
 
 echo "installing Python unit test dependencies..."
 pip install --upgrade pip
