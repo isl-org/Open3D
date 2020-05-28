@@ -13,7 +13,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
+        BUILD_DEPENDENCY_FROM_SOURCE: [ON] # TODO: re-enable "OFF", probably in Travis
         BUILD_TENSORFLOW_OPS: [ON, OFF]
     env:
       BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
