@@ -56,10 +56,7 @@ make install-pip-package -j$NPROC
 echo
 
 echo "running Open3D unit tests..."
-date
-./bin/unitTests
-echo
-
+./bin/unitTests --gtest_filter='-*Reduce*Sum*'
 echo "running Open3D python tests..."
 date
 # TODO: fix TF op library test.
