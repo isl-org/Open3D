@@ -4,6 +4,7 @@ set(BENCHMARK_SOURCE_FILES
     Geometry/KDTreeFlann.cpp
     Geometry/SamplePoints.cpp
     Core/Reduction.cpp
+    IO/PointCloudIO.cpp
 )
 
 add_executable(benchmarks ${BENCHMARK_SOURCE_FILES})
