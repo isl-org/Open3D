@@ -24,3 +24,6 @@ for pkg in libusb glew glfw3 libpng pkg-config eigen tbb; do
         brew install $pkg
     fi
 done
+
+echo "alias python=/usr/local/bin/python3" >> ~/.bashrc
+echo "alias pip=/usr/local/bin/pip3" >> ~/.bashrc
