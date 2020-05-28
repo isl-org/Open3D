@@ -289,8 +289,7 @@ Eigen::Vector3d UnpackBinaryPCDColor(const char *data_ptr,
         std::uint8_t data[4];
         memcpy(data, data_ptr, 4);
         // color data is packed in BGR order.
-        return Eigen::Vector3d((double)data[2] / 255.0, (double)data[1] / 255.0,
-                               (double)data[0] / 255.0);
+        return utility::ColorToDouble(data[2], data[1], data[0]);
     } else {
         return Eigen::Vector3d::Zero();
     }
@@ -326,8 +325,7 @@ Eigen::Vector3d UnpackASCIIPCDColor(const char *data_ptr,
             std::float_t value = std::strtof(data_ptr, &end);
             memcpy(data, &value, 4);
         }
-        return Eigen::Vector3d((double)data[2] / 255.0, (double)data[1] / 255.0,
-                               (double)data[0] / 255.0);
+        return utility::ColorToDouble(data[2], data[1], data[0]);
     } else {
         return Eigen::Vector3d::Zero();
     }
@@ -617,13 +615,8 @@ bool WritePCDHeader(FILE *file, const PCDHeader &header) {
 }
 
 float ConvertRGBToFloat(const Eigen::Vector3d &color) {
-    std::uint8_t rgba[4] = {0, 0, 0, 0};
-    rgba[2] = (std::uint8_t)std::max(
-            std::min((int)(color(0) * 255.0 + 0.5), 255), 0);
-    rgba[1] = (std::uint8_t)std::max(
-            std::min((int)(color(1) * 255.0 + 0.5), 255), 0);
-    rgba[0] = (std::uint8_t)std::max(
-            std::min((int)(color(2) * 255.0 + 0.5), 255), 0);
+    auto rgb = utility::ColorToUint8(color);
+    std::uint8_t rgba[4] = {rgb(2), rgb(1), rgb(0), 0};
     float value;
     memcpy(&value, rgba, 4);
     return value;

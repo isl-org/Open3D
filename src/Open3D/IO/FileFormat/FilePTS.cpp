@@ -88,7 +88,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             if (sscanf(line_buffer, "%lf %lf %lf %d %d %d %d", &x, &y, &z, &i,
                        &r, &g, &b) == 7) {
                 pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
-                pointcloud.colors_[idx] = Eigen::Vector3d(r, g, b) / 255.0;
+                pointcloud.colors_[idx] = utility::ColorToDouble(r, g, b);
             }
         }
         idx++;
@@ -118,8 +118,7 @@ bool WritePointCloudToPTS(const std::string &filename,
             fprintf(file, "%.10f %.10f %.10f\r\n", point(0), point(1),
                     point(2));
         } else {
-            Eigen::Vector3d color = pointcloud.colors_[i] * 255.0 +
-                                    Eigen::Vector3d(0.5, 0.5, 0.5);
+            auto color = utility::ColorToUint8(pointcloud.colors_[i]);
             fprintf(file, "%.10f %.10f %.10f %d %d %d %d\r\n", point(0),
                     point(1), point(2), 0, (int)color(0), (int)color(1),
                     (int)(color(2)));
