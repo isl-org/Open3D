@@ -151,7 +151,10 @@ matrix:
         - brew update
         - brew upgrade python || true
         - ./util/scripts/install-deps-osx.sh
-        - alias python=/usr/local/bin/python3
+        - brew install python3
+        - python3 -m pip install --upgrade virtualenv
+        - virtualenv -p python3 --system-site-packages "$HOME/venv"
+        - source "$HOME/venv/bin/activate"
       script: ./util/scripts/run-travis.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
