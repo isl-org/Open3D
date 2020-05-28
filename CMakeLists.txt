@@ -182,12 +182,6 @@ if(ENABLE_GUI AND WIN32)
 endif()
 
 # OS specific settings
-if(WIN32)
-    # Windows defaults to hidden symbol visibility, override that
-    # TODO: It would be better to explictly export symbols.
-    #       Then, we could use -fvisibility=hidden for Linux as well
-    SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif()
 if(ENABLE_GUI AND WIN32)
     # Filament links normally only against static runtime
     set(STATIC_WINDOWS_RUNTIME ON)
@@ -195,8 +189,22 @@ if(ENABLE_GUI AND WIN32)
         # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
         # Filament needs to link through bluegl.lib.
         # See https://github.com/google/filament/issues/652
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /FORCE:MULTIPLE")
+        string(APPEND CMAKE_EXE_LINKER_FLAGS " /force:multiple")
+        string(APPEND CMAKE_SHARED_LINKER_FLAGS " /force:multiple")
+    endif()
+endif()
+if(WIN32)
+    # Windows defaults to hidden symbol visibility, override that
+    # TODO: It would be better to explictly export symbols.
+    #       Then, we could use -fvisibility=hidden for Linux as well
+    SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    if(MSVC)
+        # We cannot set this on a per-target basis, unfortunately
+        string(APPEND CMAKE_C_FLAGS " /bigobj")
+        string(APPEND CMAKE_CXX_FLAGS " /bigobj")
+    endif()
+    if (STATIC_WINDOWS_RUNTIME)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     endif()
 endif()
 
@@ -270,7 +278,7 @@ function(open3d_set_global_properties target)
         )
         if(MSVC)
             target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
-            target_compile_options(${target} PRIVATE /EHsc /wd4522 /Wv:18 /WX /bigobj)
+            target_compile_options(${target} PRIVATE /EHsc /wd4522 /Wv:18 /WX)
             # Multi-thread compile, two ways to enable
             # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
             # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
@@ -289,9 +297,6 @@ function(open3d_set_global_properties target)
                 # See https://github.com/google/filament/issues/652
                 target_link_options(${target} PRIVATE /force:multiple)
             endif()
-        endif()
-        if (STATIC_WINDOWS_RUNTIME)
-            set_property(TARGET ${target} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
         endif()
     elseif(APPLE)
         target_compile_definitions(${target} PRIVATE UNIX APPLE)
