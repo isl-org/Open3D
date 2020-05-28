@@ -150,20 +150,20 @@ TEST_P(ReadWritePC, Basic) {
                                 bool(args.compressed), true));
     geometry::PointCloud pc2;
     EXPECT_TRUE(ReadPointCloud(args.filename, pc2, "auto", false, false, true));
-    const double pointsMaxError =
+    const double points_max_error =
             1e-3;  //.ply ascii has the highest error, others <1e-4
-    EXPECT_LT(MaxDistance(pc.points_, pc2.points_), pointsMaxError);
+    EXPECT_LT(MaxDistance(pc.points_, pc2.points_), points_max_error);
     if (int(args.compare) & int(Compare::NORMALS)) {
         SCOPED_TRACE("Normals");
-        const double normalsMaxError =
+        const double normals_max_error =
                 1e-6;  //.ply ascii has the highest error, others <1e-7
-        EXPECT_LT(MaxDistance(pc.normals_, pc2.normals_), normalsMaxError);
+        EXPECT_LT(MaxDistance(pc.normals_, pc2.normals_), normals_max_error);
     }
     if (int(args.compare) & int(Compare::COLORS)) {
         SCOPED_TRACE("Colors");
-        const double colorsMaxError =
+        const double colors_max_error =
                 1e-2;  // colors are saved as uint8_t[3] in a lot of formats
-        EXPECT_LT(MaxDistance(pc.colors_, pc2.colors_), colorsMaxError);
+        EXPECT_LT(MaxDistance(pc.colors_, pc2.colors_), colors_max_error);
     }
 
     // test writing if we only have normals or colors that we are comparing
@@ -205,25 +205,25 @@ TEST_P(ReadWritePC, ColorReload) {
         return;
     }
 
-    geometry::PointCloud pcStart;
+    geometry::PointCloud pc_start;
     Eigen::Vector3d one(1, 1, 1);
     // we are working with 0-255, we should always be within 0.5/255.
     for (int i = 0; i < 256; ++i) {
-        pcStart.points_.push_back(one * 0.);
-        pcStart.colors_.push_back(one * ((i) / 255.0));
+        pc_start.points_.push_back(one * 0.);
+        pc_start.colors_.push_back(one * ((i) / 255.0));
     }
-    EXPECT_TRUE(WritePointCloud(args.filename, pcStart, bool(args.write_ascii),
+    EXPECT_TRUE(WritePointCloud(args.filename, pc_start, bool(args.write_ascii),
                                 bool(args.compressed), true));
-    geometry::PointCloud pcLoad;
+    geometry::PointCloud pc_load;
     EXPECT_TRUE(
-            ReadPointCloud(args.filename, pcLoad, "auto", false, false, true));
-    EXPECT_LT(MaxDistance(pcStart.colors_, pcLoad.colors_) * 255., .5);
+            ReadPointCloud(args.filename, pc_load, "auto", false, false, true));
+    EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
 
-    EXPECT_TRUE(WritePointCloud(args.filename, pcLoad, bool(args.write_ascii),
+    EXPECT_TRUE(WritePointCloud(args.filename, pc_load, bool(args.write_ascii),
                                 bool(args.compressed), true));
     geometry::PointCloud pc;
     EXPECT_TRUE(ReadPointCloud(args.filename, pc, "auto", false, false, true));
-    EXPECT_LT(MaxDistance(pcStart.colors_, pc.colors_) * 255, .5);
+    EXPECT_LT(MaxDistance(pc_start.colors_, pc.colors_) * 255, .5);
 }
 
 // writing as another format (.xyzrgb) then loading and writing as specified
@@ -235,31 +235,31 @@ TEST_P(ReadWritePC, ColorConvertLoad) {
         return;
     }
 
-    geometry::PointCloud pcStart;
+    geometry::PointCloud pc_start;
     Eigen::Vector3d one(1, 1, 1);
     // we are working with 0-255, we should always be within 0.5/255.
     for (int i = 0; i < 256; ++i) {
-        pcStart.points_.push_back(one * 0.);
-        pcStart.colors_.push_back(one * ((i) / 255.0));
+        pc_start.points_.push_back(one * 0.);
+        pc_start.colors_.push_back(one * ((i) / 255.0));
     }
-    EXPECT_TRUE(WritePointCloud(args.filename, pcStart, bool(args.write_ascii),
+    EXPECT_TRUE(WritePointCloud(args.filename, pc_start, bool(args.write_ascii),
                                 bool(args.compressed), true));
-    geometry::PointCloud pcLoad;
+    geometry::PointCloud pc_load;
     EXPECT_TRUE(
-            ReadPointCloud(args.filename, pcLoad, "auto", false, false, true));
-    EXPECT_LT(MaxDistance(pcStart.colors_, pcLoad.colors_) * 255., .5);
+            ReadPointCloud(args.filename, pc_load, "auto", false, false, true));
+    EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
 
-    EXPECT_TRUE(WritePointCloud("test0.xyzrgb", pcLoad, true, false, true));
+    EXPECT_TRUE(WritePointCloud("test0.xyzrgb", pc_load, true, false, true));
     geometry::PointCloud pc2;
     EXPECT_TRUE(
             ReadPointCloud("test0.xyzrgb", pc2, "auto", false, false, true));
-    EXPECT_LT(MaxDistance(pcStart.colors_, pc2.colors_) * 255., .5);
+    EXPECT_LT(MaxDistance(pc_start.colors_, pc2.colors_) * 255., .5);
 
     EXPECT_TRUE(WritePointCloud(args.filename, pc2, bool(args.write_ascii),
                                 bool(args.compressed), true));
     geometry::PointCloud pc3;
     EXPECT_TRUE(ReadPointCloud(args.filename, pc3, "auto", false, false, true));
-    EXPECT_LT(MaxDistance(pcStart.colors_, pc3.colors_) * 255., .5);
+    EXPECT_LT(MaxDistance(pc_start.colors_, pc3.colors_) * 255., .5);
 }
 
 // avg on grayscale, then writing and loading
@@ -270,30 +270,31 @@ TEST_P(ReadWritePC, ColorGrayAvg) {
         return;
     }
 
-    geometry::PointCloud pcStart;
+    geometry::PointCloud pc_start;
     Eigen::Vector3d one(1, 1, 1);
     // we are working with 0-255, we should always be within 0.5/255.
     for (int i = 0; i < 256; ++i) {
-        pcStart.points_.push_back(one * 0.);
-        pcStart.colors_.push_back(one * ((i) / 255.0));
+        pc_start.points_.push_back(one * 0.);
+        pc_start.colors_.push_back(one * ((i) / 255.0));
     }
-    EXPECT_TRUE(WritePointCloud(args.filename, pcStart, bool(args.write_ascii),
+    EXPECT_TRUE(WritePointCloud(args.filename, pc_start, bool(args.write_ascii),
                                 bool(args.compressed), true));
-    geometry::PointCloud pcLoad;
+    geometry::PointCloud pc_load;
     EXPECT_TRUE(
-            ReadPointCloud(args.filename, pcLoad, "auto", false, false, true));
-    EXPECT_LT(MaxDistance(pcStart.colors_, pcLoad.colors_) * 255., .5);
+            ReadPointCloud(args.filename, pc_load, "auto", false, false, true));
+    EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
 
-    geometry::PointCloud pcAvgCol = pcLoad;
-    for (auto &c : pcAvgCol.colors_) {
+    geometry::PointCloud pc_avg_col = pc_load;
+    for (auto &c : pc_avg_col.colors_) {
         double avg = (c[0] + c[1] + c[2]) / 3.;
         c[0] = c[1] = c[2] = avg;
     }
-    EXPECT_TRUE(WritePointCloud(args.filename, pcAvgCol, bool(args.write_ascii),
-                                bool(args.compressed), true));
+    EXPECT_TRUE(WritePointCloud(args.filename, pc_avg_col,
+                                bool(args.write_ascii), bool(args.compressed),
+                                true));
     geometry::PointCloud pc;
     EXPECT_TRUE(ReadPointCloud(args.filename, pc, "auto", false, false, true));
-    EXPECT_LT(MaxDistance(pcStart.colors_, pc.colors_) * 255, .5);
+    EXPECT_LT(MaxDistance(pc_start.colors_, pc.colors_) * 255, .5);
 }
 
 // grayscale luma on grayscale, then writing and loading
@@ -304,30 +305,31 @@ TEST_P(ReadWritePC, ColorGrayscaleLuma) {
         return;
     }
 
-    geometry::PointCloud pcStart;
+    geometry::PointCloud pc_start;
     Eigen::Vector3d one(1, 1, 1);
     // we are working with 0-255, we should always be within 0.5/255.
     for (int i = 0; i < 256; ++i) {
-        pcStart.points_.push_back(one * 0.);
-        pcStart.colors_.push_back(one * ((i) / 255.0));
+        pc_start.points_.push_back(one * 0.);
+        pc_start.colors_.push_back(one * ((i) / 255.0));
     }
-    EXPECT_TRUE(WritePointCloud(args.filename, pcStart, bool(args.write_ascii),
+    EXPECT_TRUE(WritePointCloud(args.filename, pc_start, bool(args.write_ascii),
                                 bool(args.compressed), true));
-    geometry::PointCloud pcLoad;
+    geometry::PointCloud pc_load;
     EXPECT_TRUE(
-            ReadPointCloud(args.filename, pcLoad, "auto", false, false, true));
-    EXPECT_LT(MaxDistance(pcStart.colors_, pcLoad.colors_) * 255., .5);
+            ReadPointCloud(args.filename, pc_load, "auto", false, false, true));
+    EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
 
-    geometry::PointCloud pcAvgCol = pcLoad;
-    for (auto &c : pcAvgCol.colors_) {
+    geometry::PointCloud pc_avg_col = pc_load;
+    for (auto &c : pc_avg_col.colors_) {
         double gray = .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
         c[0] = c[1] = c[2] = gray;
     }
-    EXPECT_TRUE(WritePointCloud(args.filename, pcAvgCol, bool(args.write_ascii),
-                                bool(args.compressed), true));
+    EXPECT_TRUE(WritePointCloud(args.filename, pc_avg_col,
+                                bool(args.write_ascii), bool(args.compressed),
+                                true));
     geometry::PointCloud pc;
     EXPECT_TRUE(ReadPointCloud(args.filename, pc, "auto", false, false, true));
-    EXPECT_LT(MaxDistance(pcStart.colors_, pc.colors_) * 255, .5);
+    EXPECT_LT(MaxDistance(pc_start.colors_, pc.colors_) * 255, .5);
 }
 
 // crop instead of wraparound, color -.5 ends up <=0, color 1.5 ends up >=1
@@ -338,19 +340,19 @@ TEST_P(ReadWritePC, ColorCrop) {
         return;
     }
 
-    geometry::PointCloud pcStart;
+    geometry::PointCloud pc_start;
     Eigen::Vector3d one(1, 1, 1);
-    pcStart.points_.push_back(one * 0.);
-    pcStart.colors_.push_back(one * (-.5));
-    pcStart.points_.push_back(one * 0.);
-    pcStart.colors_.push_back(one * (1.5));
-    EXPECT_TRUE(WritePointCloud(args.filename, pcStart, bool(args.write_ascii),
+    pc_start.points_.push_back(one * 0.);
+    pc_start.colors_.push_back(one * (-.5));
+    pc_start.points_.push_back(one * 0.);
+    pc_start.colors_.push_back(one * (1.5));
+    EXPECT_TRUE(WritePointCloud(args.filename, pc_start, bool(args.write_ascii),
                                 bool(args.compressed), true));
-    geometry::PointCloud pcLoad;
+    geometry::PointCloud pc_load;
     EXPECT_TRUE(
-            ReadPointCloud(args.filename, pcLoad, "auto", false, false, true));
-    EXPECT_LT(pcLoad.colors_[0](0), .001);
-    EXPECT_GT(pcLoad.colors_[1](0), .999);
+            ReadPointCloud(args.filename, pc_load, "auto", false, false, true));
+    EXPECT_LT(pc_load.colors_[0](0), .001);
+    EXPECT_GT(pc_load.colors_[1](0), .999);
 }
 
 // +-0.2/255. should round and be within 0.5 (note it maybe off by
@@ -363,36 +365,36 @@ TEST_P(ReadWritePC, ColorRounding) {
     }
 
     {
-        geometry::PointCloud pcStart;
+        geometry::PointCloud pc_start;
         Eigen::Vector3d one(1, 1, 1);
         // we are working with 0-255, we should always be within 0.5/255.
         for (int i = 0; i < 256; ++i) {
-            pcStart.points_.push_back(one * 0.);
-            pcStart.colors_.push_back(one * ((i - 0.2) / 255.0));
+            pc_start.points_.push_back(one * 0.);
+            pc_start.colors_.push_back(one * ((i - 0.2) / 255.0));
         }
-        EXPECT_TRUE(WritePointCloud(args.filename, pcStart,
+        EXPECT_TRUE(WritePointCloud(args.filename, pc_start,
                                     bool(args.write_ascii),
                                     bool(args.compressed), true));
-        geometry::PointCloud pcLoad;
-        EXPECT_TRUE(ReadPointCloud(args.filename, pcLoad, "auto", false, false,
+        geometry::PointCloud pc_load;
+        EXPECT_TRUE(ReadPointCloud(args.filename, pc_load, "auto", false, false,
                                    true));
-        EXPECT_LT(MaxDistance(pcStart.colors_, pcLoad.colors_) * 255., .5);
+        EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
     }
     {
-        geometry::PointCloud pcStart;
+        geometry::PointCloud pc_start;
         Eigen::Vector3d one(1, 1, 1);
         // we are working with 0-255, we should always be within 0.5/255.
         for (int i = 0; i < 256; ++i) {
-            pcStart.points_.push_back(one * 0.);
-            pcStart.colors_.push_back(one * ((i + 0.2) / 255.0));
+            pc_start.points_.push_back(one * 0.);
+            pc_start.colors_.push_back(one * ((i + 0.2) / 255.0));
         }
-        EXPECT_TRUE(WritePointCloud(args.filename, pcStart,
+        EXPECT_TRUE(WritePointCloud(args.filename, pc_start,
                                     bool(args.write_ascii),
                                     bool(args.compressed), true));
-        geometry::PointCloud pcLoad;
-        EXPECT_TRUE(ReadPointCloud(args.filename, pcLoad, "auto", false, false,
+        geometry::PointCloud pc_load;
+        EXPECT_TRUE(ReadPointCloud(args.filename, pc_load, "auto", false, false,
                                    true));
-        EXPECT_LT(MaxDistance(pcStart.colors_, pcLoad.colors_) * 255., .5);
+        EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
     }
 }
 
