@@ -40,7 +40,7 @@ FileGeometry ReadFileGeometryTypePTS(const std::string &path) {
 
 bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           bool print_progress) {
+                           const ReadPointCloudParams &params) {
     FILE *file = utility::filesystem::FOpen(filename, "r");
     if (file == NULL) {
         utility::LogWarning("Read PTS failed: unable to open file.");
@@ -57,8 +57,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         fclose(file);
         return false;
     }
-    utility::ConsoleProgressBar progress_bar(num_of_pts,
-                                             "Reading PTS: ", print_progress);
+    utility::ConsoleProgressBar progress_bar(num_of_pts, "Reading PTS: ", true);
     size_t idx = 0;
     while (idx < num_of_pts &&
            fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
@@ -100,9 +99,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 
 bool WritePointCloudToPTS(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          bool write_ascii /* = false*/,
-                          bool compressed /* = false*/,
-                          bool print_progress) {
+                          const WritePointCloudParams &params) {
     FILE *file = utility::filesystem::FOpen(filename, "w");
     if (file == NULL) {
         utility::LogWarning("Write PTS failed: unable to open file.");
@@ -111,7 +108,7 @@ bool WritePointCloudToPTS(const std::string &filename,
     fprintf(file, "%zu\r\n", (size_t)pointcloud.points_.size());
     utility::ConsoleProgressBar progress_bar(
             static_cast<size_t>(pointcloud.points_.size()),
-            "Writing PTS: ", print_progress);
+            "Writing PTS: ", true);
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const auto &point = pointcloud.points_[i];
         if (pointcloud.HasColors() == false) {

@@ -33,16 +33,30 @@
 namespace open3d {
 namespace io {
 
-/// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)
+/// Factory function to create a pointcloud from a file
 /// Return an empty pointcloud if fail to read the file.
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &filename,
         const std::string &format = "auto",
         bool print_progress = false);
 
+struct ReadPointCloudParams {
+    std::string format = "auto";
+    bool remove_nan_points = true;
+    bool remove_infinite_points = true;
+    std::function<void(double)> update_progress;
+    ReadPointCloudParams(){};
+    ReadPointCloudParams(std::function<void(double)> up) {
+        update_progress = up;
+    };
+};
+
 /// The general entrance for reading a PointCloud from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
+bool ReadPointCloudP(const std::string &filename,
+                     geometry::PointCloud &pointcloud,
+                     const ReadPointCloudParams &params);
 bool ReadPointCloud(const std::string &filename,
                     geometry::PointCloud &pointcloud,
                     const std::string &format = "auto",
@@ -50,11 +64,26 @@ bool ReadPointCloud(const std::string &filename,
                     bool remove_infinite_points = true,
                     bool print_progress = false);
 
+struct WritePointCloudParams {
+    enum class IsAscii : bool { Binary = false, Ascii = true };
+    enum class Compressed : bool { Uncompressed = false, Compressed = true };
+    IsAscii write_ascii = IsAscii::Binary;
+    Compressed compressed = Compressed::Uncompressed;
+    std::function<void(double)> update_progress;
+    WritePointCloudParams(){};
+    WritePointCloudParams(std::function<void(double)> up) {
+        update_progress = up;
+    };
+};
+
 /// The general entrance for writing a PointCloud to a file
 /// The function calls write functions based on the extension name of filename.
 /// If the write function supports binary encoding and compression, the later
 /// two parameters will be used. Otherwise they will be ignored.
 /// \return return true if the write function is successful, false otherwise.
+bool WritePointCloudP(const std::string &filename,
+                      const geometry::PointCloud &pointcloud,
+                      const WritePointCloudParams &params);
 bool WritePointCloud(const std::string &filename,
                      const geometry::PointCloud &pointcloud,
                      bool write_ascii = false,
@@ -63,63 +92,51 @@ bool WritePointCloud(const std::string &filename,
 
 bool ReadPointCloudFromXYZ(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           bool print_progress = false);
+                           const ReadPointCloudParams &params);
 
 bool WritePointCloudToXYZ(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          bool write_ascii = false,
-                          bool compressed = false,
-                          bool print_progress = false);
+                          const WritePointCloudParams &params);
 
 bool ReadPointCloudFromXYZN(const std::string &filename,
                             geometry::PointCloud &pointcloud,
-                            bool print_progress = false);
+                            const ReadPointCloudParams &params);
 
 bool WritePointCloudToXYZN(const std::string &filename,
                            const geometry::PointCloud &pointcloud,
-                           bool write_ascii = false,
-                           bool compressed = false,
-                           bool print_progress = false);
+                           const WritePointCloudParams &params);
 
 bool ReadPointCloudFromXYZRGB(const std::string &filename,
                               geometry::PointCloud &pointcloud,
-                              bool print_progress);
+                              const ReadPointCloudParams &params);
 
 bool WritePointCloudToXYZRGB(const std::string &filename,
                              const geometry::PointCloud &pointcloud,
-                             bool write_ascii = false,
-                             bool compressed = false,
-                             bool print_progress = false);
+                             const WritePointCloudParams &params);
 
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           bool print_progress = false);
+                           const ReadPointCloudParams &params);
 
 bool WritePointCloudToPLY(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          bool write_ascii = false,
-                          bool compressed = false,
-                          bool print_progress = false);
+                          const WritePointCloudParams &params);
 
 bool ReadPointCloudFromPCD(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           bool print_progress = false);
+                           const ReadPointCloudParams &params);
 
 bool WritePointCloudToPCD(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          bool write_ascii = false,
-                          bool compressed = false,
-                          bool print_progress = false);
+                          const WritePointCloudParams &params);
 
 bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           bool print_progress = false);
+                           const ReadPointCloudParams &params);
 
 bool WritePointCloudToPTS(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          bool write_ascii = false,
-                          bool compressed = false,
-                          bool print_progress = false);
+                          const WritePointCloudParams &params);
 
 }  // namespace io
 }  // namespace open3d

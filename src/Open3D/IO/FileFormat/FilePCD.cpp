@@ -714,7 +714,7 @@ FileGeometry ReadFileGeometryTypePCD(const std::string &path) {
 
 bool ReadPointCloudFromPCD(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           bool print_progress) {
+                           const ReadPointCloudParams &params) {
     PCDHeader header;
     FILE *file = utility::filesystem::FOpen(filename.c_str(), "rb");
     if (file == NULL) {
@@ -751,11 +751,10 @@ bool ReadPointCloudFromPCD(const std::string &filename,
 
 bool WritePointCloudToPCD(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          bool write_ascii /* = false*/,
-                          bool compressed /* = false*/,
-                          bool print_progress) {
+                          const WritePointCloudParams &params) {
     PCDHeader header;
-    if (GenerateHeader(pointcloud, write_ascii, compressed, header) == false) {
+    if (GenerateHeader(pointcloud, bool(params.write_ascii),
+                       bool(params.compressed), header) == false) {
         utility::LogWarning("Write PCD failed: unable to generate header.");
         return false;
     }

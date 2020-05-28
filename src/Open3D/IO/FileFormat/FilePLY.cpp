@@ -32,6 +32,7 @@
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/VoxelGridIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/ProgressReporters.h"
 
 namespace open3d {
 
@@ -41,7 +42,7 @@ using namespace io;
 namespace ply_pointcloud_reader {
 
 struct PLYReaderState {
-    utility::ConsoleProgressBar *progress_bar;
+    utility::CountingProgressReporter *progress_bar;
     geometry::PointCloud *pointcloud_ptr;
     long vertex_index;
     long vertex_num;
@@ -391,7 +392,7 @@ FileGeometry ReadFileGeometryTypePLY(const std::string &path) {
 
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           bool print_progress) {
+                           const ReadPointCloudParams &params) {
     using namespace ply_pointcloud_reader;
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
@@ -438,9 +439,9 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     pointcloud.normals_.resize(state.normal_num);
     pointcloud.colors_.resize(state.color_num);
 
-    utility::ConsoleProgressBar progress_bar(state.vertex_num + 1,
-                                             "Reading PLY: ", print_progress);
-    state.progress_bar = &progress_bar;
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(state.vertex_num);
+    state.progress_bar = &reporter;
 
     if (!ply_read(ply_file)) {
         utility::LogWarning("Read PLY failed: unable to read file: {}",
@@ -450,23 +451,22 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     }
 
     ply_close(ply_file);
-    ++progress_bar;
+    reporter.Finish();
     return true;
 }
 
 bool WritePointCloudToPLY(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          bool write_ascii /* = false*/,
-                          bool compressed /* = false*/,
-                          bool print_progress) {
+                          const WritePointCloudParams &params) {
     if (pointcloud.IsEmpty()) {
         utility::LogWarning("Write PLY failed: point cloud has 0 points.");
         return false;
     }
 
-    p_ply ply_file = ply_create(filename.c_str(),
-                                write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN,
-                                NULL, 0, NULL);
+    p_ply ply_file =
+            ply_create(filename.c_str(),
+                       bool(params.write_ascii) ? PLY_ASCII : PLY_LITTLE_ENDIAN,
+                       NULL, 0, NULL);
     if (!ply_file) {
         utility::LogWarning("Write PLY failed: unable to open file: {}",
                             filename);
@@ -494,9 +494,8 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    utility::ConsoleProgressBar progress_bar(
-            static_cast<size_t>(pointcloud.points_.size()),
-            "Writing PLY: ", print_progress);
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(pointcloud.points_.size());
 
     bool printed_color_warning = false;
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
@@ -524,9 +523,10 @@ bool WritePointCloudToPLY(const std::string &filename,
             ply_write(ply_file, rgb(1));
             ply_write(ply_file, rgb(2));
         }
-        ++progress_bar;
+        ++reporter;
     }
 
+    reporter.Finish();
     ply_close(ply_file);
     return true;
 }
