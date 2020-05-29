@@ -44,9 +44,9 @@ struct ReadPointCloudParams {
     std::string format = "auto";
     bool remove_nan_points = true;
     bool remove_infinite_points = true;
-    std::function<void(double)> update_progress;
+    std::function<bool(double)> update_progress;
     ReadPointCloudParams(){};
-    ReadPointCloudParams(std::function<void(double)> up) {
+    ReadPointCloudParams(std::function<bool(double)> up) {
         update_progress = up;
     };
 };
@@ -69,9 +69,9 @@ struct WritePointCloudParams {
     enum class Compressed : bool { Uncompressed = false, Compressed = true };
     IsAscii write_ascii = IsAscii::Binary;
     Compressed compressed = Compressed::Uncompressed;
-    std::function<void(double)> update_progress;
+    std::function<bool(double)> update_progress;
     WritePointCloudParams(){};
-    WritePointCloudParams(std::function<void(double)> up) {
+    WritePointCloudParams(std::function<bool(double)> up) {
         update_progress = up;
     };
 };

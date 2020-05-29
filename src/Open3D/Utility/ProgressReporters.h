@@ -37,12 +37,12 @@ namespace utility {
 /// specify how many items you have, of course)
 class CountingProgressReporter {
 public:
-    CountingProgressReporter(std::function<void(double)> f) {
+    CountingProgressReporter(std::function<bool(double)> f) {
         update_progress_ = f;
     }
     void SetTotal(int64_t total) { total_ = total; }
-    void Update(int64_t count) {
-        if (!update_progress_) return;
+    bool Update(int64_t count) {
+        if (!update_progress_) return true;
         last_count_ = count;
         double percent = 0;
         if (total_ > 0) {
@@ -52,19 +52,20 @@ public:
                 percent = 100.0;
             }
         }
-        CallUpdate(percent);
+        return CallUpdate(percent);
     }
     void Finish() { CallUpdate(100); }
     // for compatibility with ConsoleProgressBar
     void operator++() { Update(last_count_ + 1); }
 
 private:
-    void CallUpdate(double percent) {
+    bool CallUpdate(double percent) {
         if (update_progress_) {
-            update_progress_(percent);
+            return update_progress_(percent);
         }
+	return true;
     }
-    std::function<void(double)> update_progress_;
+    std::function<bool(double)> update_progress_;
     int64_t total_ = -1;
     int64_t last_count_ = -1;
 };
@@ -75,11 +76,12 @@ struct ConsoleProgressUpdater {
     ConsoleProgressUpdater(const std::string &progress_info,
                            bool active = false)
         : progress_bar_(100, progress_info, active) {}
-    void operator()(double pct) {
+    bool operator()(double pct) {
         while (last_pct_ < pct) {
             ++last_pct_;
             ++progress_bar_;
         }
+	return true;
     }
 
 private:

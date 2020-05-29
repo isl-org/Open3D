@@ -409,6 +409,7 @@ TEST_P(ReadWritePC, UpdateProgressCallback) {
     auto Update = [&](double percent) {
         last_percent = percent;
         ++num_calls;
+	return true;
     };
 
     {
