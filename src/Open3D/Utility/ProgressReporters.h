@@ -63,7 +63,7 @@ private:
         if (update_progress_) {
             return update_progress_(percent);
         }
-	return true;
+        return true;
     }
     std::function<bool(double)> update_progress_;
     int64_t total_ = -1;
@@ -81,7 +81,7 @@ struct ConsoleProgressUpdater {
             ++last_pct_;
             ++progress_bar_;
         }
-	return true;
+        return true;
     }
 
 private:
