@@ -59,16 +59,43 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
 
-# Override OpenGL policy
+# Set OpenGL policy
 if (POLICY CMP0072)
     cmake_policy(SET CMP0072 NEW)
     if (BUILD_GLFW)
         cmake_policy(SET CMP0072 OLD)
     endif()
 endif()
-# Overide policy for hidden symbol visibility
+# Set policy for hidden symbol visibility
 if(POLICY CMP0063)
     cmake_policy(SET CMP0063 NEW)
+endif()
+# Set policy to enable MSVC_RUNTIME_LIBRARY property
+if(POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
+endif()
+
+# Catch a few incompatible build options
+if((UNIX AND NOT APPLE) AND BUILD_LIBREALSENSE)
+    message(STATUS "Disabling RealSense since it is not fully supported on Linux.")
+    set(BUILD_LIBREALSENSE OFF)
+endif()
+if (APPLE AND ENABLE_HEADLESS_RENDERING)
+    message(STATUS "Headless rendering is not supported on Mac OS")
+    set(ENABLE_HEADLESS_RENDERING OFF)
+endif()
+if(ENABLE_HEADLESS_RENDERING AND ENABLE_GUI)
+    message(STATUS "Headless rendering disables the Open3D GUI")
+    set(ENABLE_GUI OFF)
+endif()
+if(ENABLE_HEADLESS_RENDERING AND (NOT BUILD_GLEW OR NOT BUILD_GLFW))
+    message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
+    set(BUILD_GLEW ON)
+    set(BUILD_GLFW ON)
+endif()
+if(ENABLE_GUI AND WIN32)
+    message(STATUS "New GUI is currently unsupported on Windows")
+    set(ENABLE_GUI OFF)
 endif()
 
 # Parse Open3D version number
@@ -158,29 +185,6 @@ if (BUILD_CUDA_MODULE)
     endif()
 endif ()
 
-# Catch a few incompatible settings
-if((UNIX AND NOT APPLE) AND BUILD_LIBREALSENSE)
-    message(STATUS "Disabling RealSense since it is not fully supported on Linux.")
-    set(BUILD_LIBREALSENSE OFF)
-endif()
-if (APPLE AND ENABLE_HEADLESS_RENDERING)
-    message(STATUS "Headless rendering is not supported on Mac OS")
-    set(ENABLE_HEADLESS_RENDERING OFF)
-endif()
-if(ENABLE_HEADLESS_RENDERING AND ENABLE_GUI)
-    message(STATUS "Headless rendering disables the Open3D GUI")
-    set(ENABLE_GUI OFF)
-endif()
-if(ENABLE_HEADLESS_RENDERING AND (NOT BUILD_GLEW OR NOT BUILD_GLFW))
-    message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
-    set(BUILD_GLEW ON)
-    set(BUILD_GLFW ON)
-endif()
-if(ENABLE_GUI AND WIN32)
-    message(STATUS "New GUI is currently unsupported on Windows")
-    set(ENABLE_GUI OFF)
-endif()
-
 # OS specific settings
 if(ENABLE_GUI AND WIN32)
     # Filament links normally only against static runtime
@@ -199,11 +203,14 @@ if(WIN32)
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
-        # We cannot set this on a per-target basis, unfortunately
-        string(APPEND CMAKE_C_FLAGS " /bigobj")
-        string(APPEND CMAKE_CXX_FLAGS " /bigobj")
+        # Make sure we don't hit the 65535 object limit with MSVC
+        add_compile_options(/bigobj)
+        if(NOT COMMAND target_link_options)  # CMake 3.13+ required
+            string(APPEND CMAKE_SHARED_LINKER_FLAGS " /bigobj")
+        endif()
     endif()
     if (STATIC_WINDOWS_RUNTIME)
+        # This needs cmake_policy(SET CMP0091 NEW)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     endif()
 endif()
@@ -291,11 +298,17 @@ function(open3d_set_global_properties target)
             # ref: https://stackoverflow.com/a/15110915
             # ref: https://stackoverflow.com/a/19026241
             target_compile_options(${target} PRIVATE /MP)
-            if(ENABLE_GUI AND COMMAND target_link_options)
-                # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
-                # Filament needs to link through bluegl.lib.
-                # See https://github.com/google/filament/issues/652
-                target_link_options(${target} PRIVATE /force:multiple)
+            if(COMMAND target_link_options)
+                if(ENABLE_GUI)
+                    # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
+                    # Filament needs to link through bluegl.lib.
+                    # See https://github.com/google/filament/issues/652
+                    target_link_options(${target} PRIVATE /force:multiple)
+                endif()
+                if(target_type STREQUAL "SHARED_LIBRARY")
+                    # We need /bigobj for the export library
+                    target_link_options(${target} PRIVATE /bigobj)
+                endif()
             endif()
         endif()
     elseif(APPLE)
@@ -316,7 +329,7 @@ macro(add_source_group module_name)
 endmacro()
 
 # Enumerate all third-party libraries which we need later
-# This creates the nececssary targets and sets the 
+# This creates the necessary targets and sets the 
 # Open3D_3RDPARTY_*_TARGETS variables we use in open3d_link_3rdparty_libraries
 include(3rdparty/find_dependencies.cmake)
 
@@ -372,11 +385,11 @@ open3d_aligned_print("Build Tensorflow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 if(NOT HAS_GLIBCXX_USE_CXX11_ABI)
     if(GLIBCXX_USE_CXX11_ABI)
-        set(usage "=1")
+        set(usage "1")
     else()
-        set(usage "=0")
+        set(usage "0")
     endif()
-    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI" "${usage}")
+    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
 endif()
 message(STATUS "========================================================================")
 message(STATUS "Third-Party Dependencies:")
