@@ -65,7 +65,9 @@ int ReadVertexCallback(p_ply_argument argument) {
     state_ptr->pointcloud_ptr->points_[state_ptr->vertex_index](index) = value;
     if (index == 2) {  // reading 'z'
         state_ptr->vertex_index++;
-        ++(*state_ptr->progress_bar);
+        if (state_ptr->vertex_index % 1000 == 0) {
+            state_ptr->progress_bar->Update(state_ptr->vertex_index);
+        }
     }
     return 1;
 }
@@ -523,7 +525,9 @@ bool WritePointCloudToPLY(const std::string &filename,
             ply_write(ply_file, rgb(1));
             ply_write(ply_file, rgb(2));
         }
-        ++reporter;
+        if (i % 1000 == 0) {
+            reporter.Update(i);
+        }
     }
 
     reporter.Finish();
