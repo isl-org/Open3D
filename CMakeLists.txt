@@ -203,11 +203,14 @@ if(WIN32)
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
-        # Make sure we don't hit the 65535 object limit with MSVC
-        add_compile_options(/bigobj)
-        if(NOT COMMAND target_link_options)  # CMake 3.13+ required
-            string(APPEND CMAKE_SHARED_LINKER_FLAGS " /bigobj")
-        endif()
+        # Make sure we don't hit the 65535 object member limit with MSVC
+        #
+        # /bigobj allows object files with more than 65535 members
+        # /Ob2 enables function inlining, because MSVC is particularly
+        # verbose with inline members
+        #
+        # See: https://github.com/tensorflow/tensorflow/pull/10962
+        add_compile_options(/bigobj /Ob2)
     endif()
     if (STATIC_WINDOWS_RUNTIME)
         # This needs cmake_policy(SET CMP0091 NEW)
@@ -304,10 +307,6 @@ function(open3d_set_global_properties target)
                     # Filament needs to link through bluegl.lib.
                     # See https://github.com/google/filament/issues/652
                     target_link_options(${target} PRIVATE /force:multiple)
-                endif()
-                if(target_type STREQUAL "SHARED_LIBRARY")
-                    # We need /bigobj for the export library
-                    target_link_options(${target} PRIVATE /bigobj)
                 endif()
             endif()
         endif()
