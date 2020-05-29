@@ -70,6 +70,11 @@ endif()
 if(POLICY CMP0063)
     cmake_policy(SET CMP0063 NEW)
 endif()
+# MSVC runtime library
+if(POLICY CMP0091)
+    # https://stackoverflow.com/a/56490614
+    cmake_policy(SET CMP0091 NEW)
+endif()
 
 # Parse Open3D version number
 file(STRINGS "src/Open3D/version.txt" OPEN3D_VERSION_READ)
@@ -84,6 +89,36 @@ string(CONCAT OPEN3D_VERSION
     ".${OPEN3D_VERSION_PATCH}"
     ".${OPEN3D_VERSION_TWEAK}"
 )
+
+# OS specific settings
+if(ENABLE_GUI AND WIN32)
+    # Filament links normally only against static runtime
+    set(STATIC_WINDOWS_RUNTIME ON)
+    if(NOT COMMAND target_link_options)  # CMake 3.13+ required
+        # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
+        # Filament needs to link through bluegl.lib.
+        # See https://github.com/google/filament/issues/652
+        string(APPEND CMAKE_EXE_LINKER_FLAGS " /force:multiple")
+        string(APPEND CMAKE_SHARED_LINKER_FLAGS " /force:multiple")
+    endif()
+endif()
+if(WIN32)
+    # Windows defaults to hidden symbol visibility, override that
+    # TODO: It would be better to explictly export symbols.
+    #       Then, we could use -fvisibility=hidden for Linux as well
+    SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    # We cannot set this on a per-target basis, unfortunately
+    # The /bigobj global flags only works before the `project()` statement
+    # `if(MSVC)` does not work before the `project()` statement
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /bigobj")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /bigobj")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
+    if(STATIC_WINDOWS_RUNTIME)
+        # This needs cmake_policy(SET CMP0091 NEW)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    endif()
+endif()
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${PROJECT_VERSION}")
@@ -181,33 +216,6 @@ if(ENABLE_GUI AND WIN32)
     set(ENABLE_GUI OFF)
 endif()
 
-# OS specific settings
-if(ENABLE_GUI AND WIN32)
-    # Filament links normally only against static runtime
-    set(STATIC_WINDOWS_RUNTIME ON)
-    if(NOT COMMAND target_link_options)  # CMake 3.13+ required
-        # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
-        # Filament needs to link through bluegl.lib.
-        # See https://github.com/google/filament/issues/652
-        string(APPEND CMAKE_EXE_LINKER_FLAGS " /force:multiple")
-        string(APPEND CMAKE_SHARED_LINKER_FLAGS " /force:multiple")
-    endif()
-endif()
-if(WIN32)
-    # Windows defaults to hidden symbol visibility, override that
-    # TODO: It would be better to explictly export symbols.
-    #       Then, we could use -fvisibility=hidden for Linux as well
-    SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-    if(MSVC)
-        # We cannot set this on a per-target basis, unfortunately
-        string(APPEND CMAKE_C_FLAGS " /bigobj")
-        string(APPEND CMAKE_CXX_FLAGS " /bigobj")
-    endif()
-    if (STATIC_WINDOWS_RUNTIME)
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    endif()
-endif()
-
 # CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
 
@@ -284,12 +292,6 @@ function(open3d_set_global_properties target)
             # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
             # OPtion 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
-            #
-            # /bigobj is enabled by default. On Windows, the build type (Debug, Release)
-            # is set at build time, not config time, since CMAKE_BUILD_TYPE is not
-            # supported on Windows.
-            # ref: https://stackoverflow.com/a/15110915
-            # ref: https://stackoverflow.com/a/19026241
             target_compile_options(${target} PRIVATE /MP)
             if(ENABLE_GUI AND COMMAND target_link_options)
                 # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
