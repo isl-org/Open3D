@@ -42,7 +42,7 @@ FileGeometry ReadFileGeometryTypePTS(const std::string &path) {
 
 bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           const ReadPointCloudParams &params) {
+                           const ReadPointCloudOption &params) {
     try {
         utility::filesystem::CFile file;
         if (!file.Open(filename, "r")) {
@@ -108,7 +108,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 
 bool WritePointCloudToPTS(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          const WritePointCloudParams &params) {
+                          const WritePointCloudOption &params) {
     try {
         utility::filesystem::CFile file;
         if (!file.Open(filename, "w")) {

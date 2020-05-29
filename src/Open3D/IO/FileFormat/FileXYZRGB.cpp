@@ -41,7 +41,7 @@ FileGeometry ReadFileGeometryTypeXYZRGB(const std::string &path) {
 
 bool ReadPointCloudFromXYZRGB(const std::string &filename,
                               geometry::PointCloud &pointcloud,
-                              const ReadPointCloudParams &params) {
+                              const ReadPointCloudOption &params) {
     try {
         utility::filesystem::CFile file;
         if (!file.Open(filename, "r")) {
@@ -77,7 +77,7 @@ bool ReadPointCloudFromXYZRGB(const std::string &filename,
 
 bool WritePointCloudToXYZRGB(const std::string &filename,
                              const geometry::PointCloud &pointcloud,
-                             const WritePointCloudParams &params) {
+                             const WritePointCloudOption &params) {
     if (pointcloud.HasColors() == false) {
         return false;
     }

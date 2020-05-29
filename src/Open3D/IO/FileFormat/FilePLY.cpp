@@ -394,7 +394,7 @@ FileGeometry ReadFileGeometryTypePLY(const std::string &path) {
 
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           const ReadPointCloudParams &params) {
+                           const ReadPointCloudOption &params) {
     using namespace ply_pointcloud_reader;
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
@@ -459,7 +459,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
 bool WritePointCloudToPLY(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          const WritePointCloudParams &params) {
+                          const WritePointCloudOption &params) {
     if (pointcloud.IsEmpty()) {
         utility::LogWarning("Write PLY failed: point cloud has 0 points.");
         return false;

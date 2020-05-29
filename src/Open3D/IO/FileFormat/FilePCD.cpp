@@ -335,7 +335,7 @@ Eigen::Vector3d UnpackASCIIPCDColor(const char *data_ptr,
 bool ReadPCDData(FILE *file,
                  const PCDHeader &header,
                  geometry::PointCloud &pointcloud,
-                 const ReadPointCloudParams &params) {
+                 const ReadPointCloudOption &params) {
     // The header should have been checked
     if (header.has_points) {
         pointcloud.points_.resize(header.points);
@@ -645,7 +645,7 @@ float ConvertRGBToFloat(const Eigen::Vector3d &color) {
 bool WritePCDData(FILE *file,
                   const PCDHeader &header,
                   const geometry::PointCloud &pointcloud,
-                  const WritePointCloudParams &params) {
+                  const WritePointCloudOption &params) {
     bool has_normal = pointcloud.HasNormals();
     bool has_color = pointcloud.HasColors();
     utility::CountingProgressReporter reporter(params.update_progress);
@@ -753,7 +753,7 @@ FileGeometry ReadFileGeometryTypePCD(const std::string &path) {
 
 bool ReadPointCloudFromPCD(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           const ReadPointCloudParams &params) {
+                           const ReadPointCloudOption &params) {
     PCDHeader header;
     FILE *file = utility::filesystem::FOpen(filename.c_str(), "rb");
     if (file == NULL) {
@@ -790,7 +790,7 @@ bool ReadPointCloudFromPCD(const std::string &filename,
 
 bool WritePointCloudToPCD(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          const WritePointCloudParams &params) {
+                          const WritePointCloudOption &params) {
     PCDHeader header;
     if (GenerateHeader(pointcloud, bool(params.write_ascii),
                        bool(params.compressed), header) == false) {

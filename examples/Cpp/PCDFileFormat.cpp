@@ -51,11 +51,11 @@ int main(int argc, char **argv) {
     if (argc >= 3) {
         std::string method(argv[2]);
         if (method == "ascii") {
-            io::WritePointCloud("data.pcd", *cloud_ptr, true);
+            io::WritePointCloud("data.pcd", *cloud_ptr, {true});
         } else if (method == "binary") {
-            io::WritePointCloud("data.pcd", *cloud_ptr, false, false);
+            io::WritePointCloud("data.pcd", *cloud_ptr, {false, false});
         } else if (method == "compressed") {
-            io::WritePointCloud("data.pcd", *cloud_ptr, false, true);
+            io::WritePointCloud("data.pcd", *cloud_ptr, {false, true});
         }
     }
 
