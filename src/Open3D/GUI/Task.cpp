@@ -26,7 +26,10 @@
 
 #include "Open3D/GUI/Task.h"
 
+#include <atomic>
 #include <thread>
+
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace gui {
@@ -39,15 +42,13 @@ struct Task::Impl {
     std::function<void()> func_;
     std::thread thread_;
     ThreadState state_;
-    // Doesn't need mutex because false -> true is atomic:
-    // any bit that is changes makes it true, so even if the
-    // complete assignment isn't atomic, the effect is.
-    bool is_finished_running_ = false;
+    std::atomic<bool> is_finished_running_;
 };
 
 Task::Task(std::function<void()> f) : impl_(new Task::Impl) {
     impl_->func_ = f;
     impl_->state_ = ThreadState::NOT_STARTED;
+    impl_->is_finished_running_ = false;
 }
 
 Task::~Task() {
@@ -56,6 +57,11 @@ Task::~Task() {
 }
 
 void Task::Run() {
+    if (impl_->state_ != ThreadState::NOT_STARTED) {
+        utility::LogWarning("Attempting to Run() already-started Task");
+        return;
+    }
+
     auto thread_main = [this]() {
         impl_->func_();
         impl_->is_finished_running_ = true;
@@ -73,7 +79,7 @@ bool Task::IsFinished() const {
         case ThreadState::FINISHED:
             return true;
     }
-    return true;  // make GCC happy
+    utility::LogError("Unexpected thread state");
 }
 
 void Task::WaitToFinish() {

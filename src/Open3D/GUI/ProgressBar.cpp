@@ -58,12 +58,12 @@ Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {
                           int(std::round(255.0f * fg.GetGreen())),
                           int(std::round(255.0f * fg.GetBlue())),
                           int(std::round(255.0f * fg.GetAlpha())));
+    float rounding = frame.height / 2.0f;
     ImGui::GetWindowDrawList()->AddRect(
             ImVec2(frame.x, frame.y),
-            ImVec2(frame.GetRight(), frame.GetBottom()), color,
-            frame.height / 2.0f);
+            ImVec2(frame.GetRight(), frame.GetBottom()), color, rounding);
     float x = float(frame.x) + float(frame.width) * impl_->value_;
-    x = std::max(x, float(frame.x + frame.height / 2));
+    x = std::max(x, float(frame.x + rounding));
     ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(frame.x, frame.y),
                                               ImVec2(x, frame.GetBottom()),
                                               color, frame.height / 2.0f);

@@ -34,7 +34,7 @@ namespace gui {
 
 class Task {
 public:
-    /// Runs \param f in another thread. \param f may want to call
+    /// Runs \param f in another thread. \p f may want to call
     /// Application::PostToMainThread() to communicate the results.
     Task(std::function<void()> f);
 
