@@ -27,6 +27,7 @@
 #include "Open3D/GUI/Application.h"
 
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #include <chrono>
 #include <list>
 #include <mutex>
@@ -385,14 +386,8 @@ Application::RunStatus Application::ProcessQueuedEvents() {
     }
 
     // Clear any tasks that have finished
-    auto it = impl_->running_tasks_.begin();
-    while (it != impl_->running_tasks_.end()) {
-        auto current = it;
-        ++it;
-        if (current->IsFinished()) {
-            impl_->running_tasks_.erase(current);  // calls join()
-        }
-    }
+    impl_->running_tasks_.remove_if(
+            [](const Task &t) { return t.IsFinished(); });
 
     // We can't destroy a GLFW window in a callback, so we need to do it here.
     // Since these are the only copy of the shared pointers, this will cause
