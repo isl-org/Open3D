@@ -159,7 +159,7 @@ bool WritePointCloud(const std::string &filename,
     std::string format =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     utility::ConsoleProgressUpdater progress_updater(
-            std::string("Reading ") + utility::ToUpper(format) +
+            std::string("Writing ") + utility::ToUpper(format) +
                     " file: " + filename,
             print_progress);
     p.update_progress = progress_updater;
