@@ -1,10 +1,20 @@
 cmake_minimum_required(VERSION 3.8.0)
 set (CMAKE_CXX_STANDARD 14)
 
+if(POLICY CMP0091)
+    # https://stackoverflow.com/a/56490614
+    cmake_policy(SET CMP0091 NEW)
+endif()
+
 # The options shall be the same as Open3D's default
 # If Open3D is configured and built with custom options, you'll also need to
 # specify the same custom options.
 option(BUILD_SHARED_LIBS "Whether Open3D was build as shared library" OFF)
+option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
+if(STATIC_WINDOWS_RUNTIME)
+    # This needs cmake_policy(SET CMP0091 NEW)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 project(TestVisualizer LANGUAGES C CXX)
 

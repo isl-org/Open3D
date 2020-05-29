@@ -45,7 +45,9 @@ build_script:
 - cd ..\docs\_static\C++
 - mkdir build
 - cd build
-- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% ..
+# When building Open3D, ENABLE_GUI=ON forces STATIC_WINDOWS_RUNTIME=ON for Windows.
+# Thus we need to set -DSTATIC_WINDOWS_RUNTIME=ON here manually.
+- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% -DSTATIC_WINDOWS_RUNTIME=ON ..
 - cmake --build . --config %CONFIG%
 - .\%CONFIG%\TestVisualizer
 
