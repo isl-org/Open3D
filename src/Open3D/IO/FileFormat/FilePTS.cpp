@@ -64,8 +64,8 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         reporter.SetTotal(num_of_pts);
 
         pointcloud.Clear();
-        int idx = 0;
-        while ((line_buffer = file.ReadLine())) {
+        size_t idx = 0;
+        while (idx < num_of_pts && (line_buffer = file.ReadLine())) {
             if (num_of_fields == 0) {
                 std::vector<std::string> st;
                 utility::SplitString(st, line_buffer, " ");
@@ -95,7 +95,9 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 }
             }
             idx++;
-            ++reporter;
+            if (idx % 1000 == 0) {
+                reporter.Update(idx);
+            }
         }
         reporter.Finish();
 
@@ -146,7 +148,9 @@ bool WritePointCloudToPTS(const std::string &filename,
                     return false;
                 }
             }
-            ++reporter;
+            if (i % 1000 == 0) {
+                reporter.Update(i);
+            }
         }
         reporter.Finish();
         return true;
