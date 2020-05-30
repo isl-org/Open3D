@@ -447,8 +447,8 @@ bool ReadPCDData(FILE *file,
         }
     } else if (header.datatype == PCD_DATA_BINARY_COMPRESSED) {
         double reporter_total = 100.0;
-        reporter.SetTotal(reporter_total);
-        reporter.Update(reporter_total * 0.01);
+        reporter.SetTotal(int(reporter_total));
+        reporter.Update(int(reporter_total * 0.01));
         std::uint32_t compressed_size;
         std::uint32_t uncompressed_size;
         if (fread(&compressed_size, sizeof(compressed_size), 1, file) != 1) {
@@ -467,7 +467,7 @@ bool ReadPCDData(FILE *file,
                 "size.",
                 compressed_size, uncompressed_size);
         std::unique_ptr<char[]> buffer_compressed(new char[compressed_size]);
-        reporter.Update(reporter_total * .1);
+        reporter.Update(int(reporter_total * .1));
         if (fread(buffer_compressed.get(), 1, compressed_size, file) !=
             compressed_size) {
             utility::LogWarning("[ReadPCDData] Failed to read data record.");
@@ -475,7 +475,7 @@ bool ReadPCDData(FILE *file,
             return false;
         }
         std::unique_ptr<char[]> buffer(new char[uncompressed_size]);
-        reporter.Update(reporter_total * .2);
+        reporter.Update(int(reporter_total * .2));
         if (lzf_decompress(buffer_compressed.get(),
                            (unsigned int)compressed_size, buffer.get(),
                            (unsigned int)uncompressed_size) !=
@@ -488,7 +488,7 @@ bool ReadPCDData(FILE *file,
             const char *base_ptr = buffer.get() + field.offset * header.points;
             double progress =
                     double(base_ptr - buffer.get()) / uncompressed_size;
-            reporter.Update(reporter_total * (progress + .2));
+            reporter.Update(int(reporter_total * (progress + .2)));
             if (field.name == "x") {
                 for (int i = 0; i < header.points; i++) {
                     pointcloud.points_[i](0) = UnpackBinaryPCDElement(
@@ -693,11 +693,11 @@ bool WritePCDData(FILE *file,
             }
         }
     } else if (header.datatype == PCD_DATA_BINARY_COMPRESSED) {
-        double report_total = pointcloud.points_.size() * 2;
+        double report_total = double(pointcloud.points_.size() * 2);
         // 0%-50% packing into buffer
         // 50%-75% compressing buffer
         // 75%-100% writing compressed buffer
-        reporter.SetTotal(report_total);
+        reporter.SetTotal(int(report_total));
         int strip_size = header.points;
         std::uint32_t buffer_size =
                 (std::uint32_t)(header.elementnum * header.points);
@@ -735,7 +735,7 @@ bool WritePCDData(FILE *file,
         utility::LogDebug(
                 "[WritePCDData] {:d} bytes data compressed into {:d} bytes.",
                 buffer_size_in_bytes, size_compressed);
-        reporter.Update(report_total * 0.75);
+        reporter.Update(int(report_total * 0.75));
         fwrite(&size_compressed, sizeof(size_compressed), 1, file);
         fwrite(&buffer_size_in_bytes, sizeof(buffer_size_in_bytes), 1, file);
         fwrite(buffer_compressed.get(), 1, size_compressed, file);

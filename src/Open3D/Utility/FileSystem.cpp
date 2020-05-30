@@ -467,7 +467,7 @@ const char *CFile::ReadLine() {
     if (line_buffer_.size() == 0) {
         line_buffer_.resize(DEFAULT_IO_BUFFER_SIZE);
     }
-    if (!fgets(line_buffer_.data(), line_buffer_.size(), file_)) {
+    if (!fgets(line_buffer_.data(), int(line_buffer_.size()), file_)) {
         if (ferror(file_)) {
             utility::LogError("CFile::ReadLine() ferror encountered");
         }
