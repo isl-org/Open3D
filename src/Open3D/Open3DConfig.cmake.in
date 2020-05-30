@@ -1,5 +1,9 @@
 @PACKAGE_INIT@
 
+if(POLICY CMP0072)
+    cmake_policy(SET CMP0072 @CMP0072_VALUE@)
+endif()
+
 include(CMakeFindDependencyMacro)
 include(FindPackageHandleStandardArgs)
 

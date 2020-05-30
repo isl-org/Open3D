@@ -62,8 +62,10 @@ endif()
 # Set OpenGL policy
 if (POLICY CMP0072)
     cmake_policy(SET CMP0072 NEW)
+    set(CMP0072_VALUE NEW)
     if (BUILD_GLFW)
         cmake_policy(SET CMP0072 OLD)
+        set(CMP0072_VALUE OLD)
     endif()
 endif()
 # Set policy for hidden symbol visibility
