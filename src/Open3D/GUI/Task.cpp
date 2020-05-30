@@ -24,59 +24,70 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3D/GUI/Task.h"
 
-#include <vector>
+#include <atomic>
+#include <thread>
 
-#include "Open3D/GUI/Window.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
-
-namespace geometry {
-class AxisAlignedBoundingBox;
-class Geometry;
-}  // namespace geometry
-
 namespace gui {
-struct Theme;
+
+namespace {
+enum class ThreadState { NOT_STARTED, RUNNING, FINISHED };
 }
 
-namespace visualization {
-class GuiVisualizer : public gui::Window {
-    using Super = gui::Window;
-
-public:
-    GuiVisualizer(const std::vector<std::shared_ptr<const geometry::Geometry>>&
-                          geometries,
-                  const std::string& title,
-                  int width,
-                  int height,
-                  int left,
-                  int top);
-    virtual ~GuiVisualizer();
-
-    void SetTitle(const std::string& title);
-    void SetGeometry(
-            const std::vector<std::shared_ptr<const geometry::Geometry>>&
-                    geometries);
-
-    bool SetIBL(const char* path);
-
-    /// Loads asynchronously, will return immediately.
-    void LoadGeometry(const std::string& path);
-
-    void ExportCurrentImage(int width, int height, const std::string& path);
-
-    void Layout(const gui::Theme& theme) override;
-
-protected:
-    void OnMenuItemSelected(gui::Menu::ItemId item_id) override;
-    void OnDragDropped(const char* path) override;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+struct Task::Impl {
+    std::function<void()> func_;
+    std::thread thread_;
+    ThreadState state_;
+    std::atomic<bool> is_finished_running_;
 };
 
-}  // namespace visualization
+Task::Task(std::function<void()> f) : impl_(new Task::Impl) {
+    impl_->func_ = f;
+    impl_->state_ = ThreadState::NOT_STARTED;
+    impl_->is_finished_running_ = false;
+}
+
+Task::~Task() {
+    // TODO: if able to cancel, do so here
+    WaitToFinish();
+}
+
+void Task::Run() {
+    if (impl_->state_ != ThreadState::NOT_STARTED) {
+        utility::LogWarning("Attempting to Run() already-started Task");
+        return;
+    }
+
+    auto thread_main = [this]() {
+        impl_->func_();
+        impl_->is_finished_running_ = true;
+    };
+    impl_->thread_ = std::thread(thread_main);  // starts thread
+    impl_->state_ = ThreadState::RUNNING;
+}
+
+bool Task::IsFinished() const {
+    switch (impl_->state_) {
+        case ThreadState::NOT_STARTED:
+            return true;
+        case ThreadState::RUNNING:
+            return impl_->is_finished_running_;
+        case ThreadState::FINISHED:
+            return true;
+    }
+    utility::LogError("Unexpected thread state");
+}
+
+void Task::WaitToFinish() {
+    if (impl_->state_ == ThreadState::RUNNING) {
+        impl_->thread_.join();
+        impl_->state_ = ThreadState::FINISHED;
+    }
+}
+
+}  // namespace gui
 }  // namespace open3d

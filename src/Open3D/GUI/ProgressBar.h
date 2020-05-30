@@ -24,63 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3DViewer.h"
+#pragma once
 
-#include <string>
+#include "Open3D/GUI/Widget.h"
 
-#include "Open3D/GUI/Native.h"
-#include "Open3D/Open3D.h"
-#include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
+namespace open3d {
+namespace gui {
 
-using namespace open3d;
-using namespace open3d::geometry;
-using namespace open3d::visualization;
+class ProgressBar : public Widget {
+public:
+    ProgressBar();
+    ~ProgressBar();
 
-namespace {
-static const std::string gUsage = "Usage: Open3DViewer [meshfile|pointcloud]";
-}  // namespace
+    /// ProgressBar values ranges from 0.0 (incomplete) to 1.0 (complete)
+    void SetValue(float value);
+    float GetValue() const;
 
-void LoadAndCreateWindow(const char *path) {
-    static int x = 50, y = 50;
+    Size CalcPreferredSize(const Theme& theme) const override;
 
-    bool is_path_valid = (path && path[0] != '\0');
-    std::vector<std::shared_ptr<const Geometry>> empty;
-    std::string title = "Open3D";
-    if (is_path_valid) {
-        title += " - ";
-        title += path;
-    }
-    auto vis =
-            std::make_shared<GuiVisualizer>(empty, title, WIDTH, HEIGHT, x, y);
-    x += 20;  // so next window (if any) doesn't hide this one
-    y += 20;
-    if (is_path_valid) {
-        vis->LoadGeometry(path);
-    }
-    gui::Application::GetInstance().AddWindow(vis);
-}
+    Widget::DrawResult Draw(const DrawContext& context) override;
 
-int Run(int argc, const char *argv[]) {
-    const char *path = nullptr;
-    if (argc > 1) {
-        path = argv[1];
-        if (argc > 2) {
-            utility::LogWarning(gUsage.c_str());
-        }
-    }
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
 
-    auto &app = gui::Application::GetInstance();
-    app.Initialize(argc, argv);
-
-    LoadAndCreateWindow(path);
-
-    app.Run();
-
-    return 0;
-}
-
-#if __APPLE__
-// Open3DViewer_mac.mm
-#else
-int main(int argc, const char *argv[]) { return Run(argc, argv); }
-#endif  // __APPLE__
+}  // namespace gui
+}  // namespace open3d

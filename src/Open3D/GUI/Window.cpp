@@ -299,6 +299,7 @@ Window::Window(const std::string& title,
                                      &bytesPerPx);
         impl_->imgui_.imgui_bridge->CreateAtlasTextureAlpha8(
                 pixels, textureW, textureH, bytesPerPx);
+        ImGui::SetCurrentFont(impl_->imgui_.system_font);
     }
 
     ImGuiIO& io = ImGui::GetIO();

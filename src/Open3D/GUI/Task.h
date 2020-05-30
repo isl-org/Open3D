@@ -24,63 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3DViewer.h"
+#pragma once
 
-#include <string>
+#include <functional>
+#include <memory>
 
-#include "Open3D/GUI/Native.h"
-#include "Open3D/Open3D.h"
-#include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
+namespace open3d {
+namespace gui {
 
-using namespace open3d;
-using namespace open3d::geometry;
-using namespace open3d::visualization;
+class Task {
+public:
+    /// Runs \param f in another thread. \p f may want to call
+    /// Application::PostToMainThread() to communicate the results.
+    Task(std::function<void()> f);
 
-namespace {
-static const std::string gUsage = "Usage: Open3DViewer [meshfile|pointcloud]";
-}  // namespace
+    Task(const Task&) = delete;
+    Task& operator=(const Task& other) = delete;
 
-void LoadAndCreateWindow(const char *path) {
-    static int x = 50, y = 50;
+    /// Will call WaitToFinish(), which may block.
+    ~Task();
 
-    bool is_path_valid = (path && path[0] != '\0');
-    std::vector<std::shared_ptr<const Geometry>> empty;
-    std::string title = "Open3D";
-    if (is_path_valid) {
-        title += " - ";
-        title += path;
-    }
-    auto vis =
-            std::make_shared<GuiVisualizer>(empty, title, WIDTH, HEIGHT, x, y);
-    x += 20;  // so next window (if any) doesn't hide this one
-    y += 20;
-    if (is_path_valid) {
-        vis->LoadGeometry(path);
-    }
-    gui::Application::GetInstance().AddWindow(vis);
-}
+    void Run();
 
-int Run(int argc, const char *argv[]) {
-    const char *path = nullptr;
-    if (argc > 1) {
-        path = argv[1];
-        if (argc > 2) {
-            utility::LogWarning(gUsage.c_str());
-        }
-    }
+    bool IsFinished() const;
 
-    auto &app = gui::Application::GetInstance();
-    app.Initialize(argc, argv);
+    /// This must be called for all tasks eventually or the process will not
+    /// exit.
+    void WaitToFinish();
 
-    LoadAndCreateWindow(path);
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
 
-    app.Run();
-
-    return 0;
-}
-
-#if __APPLE__
-// Open3DViewer_mac.mm
-#else
-int main(int argc, const char *argv[]) { return Run(argc, argv); }
-#endif  // __APPLE__
+}  // namespace gui
+}  // namespace open3d
