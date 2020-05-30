@@ -34,23 +34,21 @@ target_link_libraries(TestVisualizer Open3D::Open3D)
 if(WIN32)
     get_target_property(open3d_type Open3D::Open3D TYPE)
     if(open3d_type STREQUAL "SHARED_LIBRARY")
-        get_target_property(open3d_location Open3D::Open3D IMPORTED_LOCATION)
-        message("Will copy ${open3d_location} to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+        message(STATUS "Will copy Open3D.dll to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
         add_custom_command(TARGET TestVisualizer POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy
-                                ${open3d_location}
+                                ${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll
                                 ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
     endif()
     if(ENABLE_GUI)
-        get_filename_component(libdir "${open3d_location}" DIRECTORY)
-        if(EXISTS "${libdir}/SDL2.dll")
-            message("Will copy ${libdir}/SDL2.dll to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+        if(EXISTS "${CMAKE_INSTALL_PREFIX}/lib/SDL2.dll")
+            message(STATUS "Will copy SDL2.dll to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
             add_custom_command(TARGET TestVisualizer POST_BUILD
                             COMMAND ${CMAKE_COMMAND} -E copy
-                                    ${libdir}/SDL2.dll
+                                    ${CMAKE_INSTALL_PREFIX}/lib/SDL2.dll
                                     ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
         else()
-            message(WARNING "SDL2.dll not found in ${libdir}")
+            message(WARNING "SDL2.dll not found in ${CMAKE_INSTALL_PREFIX}/lib")
         endif()
     endif()
 endif()
