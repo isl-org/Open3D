@@ -25,11 +25,13 @@
 // ----------------------------------------------------------------------------
 
 #include <cstdio>
+
 #include "Open3D/IO/ClassIO/FileFormatIO.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Utility/Helper.h"
+#include "Open3D/Utility/ProgressReporters.h"
 
 namespace open3d {
 namespace io {
@@ -40,93 +42,122 @@ FileGeometry ReadFileGeometryTypePTS(const std::string &path) {
 
 bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           bool print_progress) {
-    FILE *file = utility::filesystem::FOpen(filename, "r");
-    if (file == NULL) {
-        utility::LogWarning("Read PTS failed: unable to open file.");
-        return false;
-    }
-    char line_buffer[DEFAULT_IO_BUFFER_SIZE];
-    size_t num_of_pts = 0;
-    int num_of_fields = 0;
-    if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-        sscanf(line_buffer, "%zu", &num_of_pts);
-    }
-    if (num_of_pts <= 0) {
-        utility::LogWarning("Read PTS failed: unable to read header.");
-        fclose(file);
-        return false;
-    }
-    utility::ConsoleProgressBar progress_bar(num_of_pts,
-                                             "Reading PTS: ", print_progress);
-    size_t idx = 0;
-    while (idx < num_of_pts &&
-           fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-        if (num_of_fields == 0) {
-            std::vector<std::string> st;
-            utility::SplitString(st, line_buffer, " ");
-            num_of_fields = (int)st.size();
-            if (num_of_fields < 3) {
-                utility::LogWarning(
-                        "Read PTS failed: insufficient data fields.");
-                fclose(file);
-                return false;
+                           const ReadPointCloudOption &params) {
+    try {
+        utility::filesystem::CFile file;
+        if (!file.Open(filename, "r")) {
+            utility::LogWarning("Read PTS failed: unable to open file: {}",
+                                filename);
+            return false;
+        }
+        size_t num_of_pts = 0;
+        int num_of_fields = 0;
+        const char *line_buffer;
+        if ((line_buffer = file.ReadLine())) {
+            sscanf(line_buffer, "%zu", &num_of_pts);
+        }
+        if (num_of_pts <= 0) {
+            utility::LogWarning("Read PTS failed: unable to read header.");
+            return false;
+        }
+        utility::CountingProgressReporter reporter(params.update_progress);
+        reporter.SetTotal(num_of_pts);
+
+        pointcloud.Clear();
+        size_t idx = 0;
+        while (idx < num_of_pts && (line_buffer = file.ReadLine())) {
+            if (num_of_fields == 0) {
+                std::vector<std::string> st;
+                utility::SplitString(st, line_buffer, " ");
+                num_of_fields = (int)st.size();
+                if (num_of_fields < 3) {
+                    utility::LogWarning(
+                            "Read PTS failed: insufficient data fields.");
+                    return false;
+                }
+                pointcloud.points_.resize(num_of_pts);
+                if (num_of_fields >= 7) {
+                    // X Y Z I R G B
+                    pointcloud.colors_.resize(num_of_pts);
+                }
             }
-            pointcloud.points_.resize(num_of_pts);
-            if (num_of_fields >= 7) {
-                // X Y Z I R G B
-                pointcloud.colors_.resize(num_of_pts);
+            double x, y, z;
+            int i, r, g, b;
+            if (num_of_fields < 7) {
+                if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
+                    pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
+                }
+            } else {
+                if (sscanf(line_buffer, "%lf %lf %lf %d %d %d %d", &x, &y, &z,
+                           &i, &r, &g, &b) == 7) {
+                    pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
+                    pointcloud.colors_[idx] = utility::ColorToDouble(r, g, b);
+                }
+            }
+            idx++;
+            if (idx % 1000 == 0) {
+                reporter.Update(idx);
             }
         }
-        double x, y, z;
-        int i, r, g, b;
-        if (num_of_fields < 7) {
-            if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
-                pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
-            }
-        } else {
-            if (sscanf(line_buffer, "%lf %lf %lf %d %d %d %d", &x, &y, &z, &i,
-                       &r, &g, &b) == 7) {
-                pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
-                pointcloud.colors_[idx] = utility::ColorToDouble(r, g, b);
-            }
-        }
-        idx++;
-        ++progress_bar;
+        reporter.Finish();
+
+        return true;
+    } catch (const std::exception &e) {
+        utility::LogWarning("Read PTS failed with exception: {}", e.what());
+        return false;
     }
-    fclose(file);
-    return true;
 }
 
 bool WritePointCloudToPTS(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          bool write_ascii /* = false*/,
-                          bool compressed /* = false*/,
-                          bool print_progress) {
-    FILE *file = utility::filesystem::FOpen(filename, "w");
-    if (file == NULL) {
-        utility::LogWarning("Write PTS failed: unable to open file.");
+                          const WritePointCloudOption &params) {
+    try {
+        utility::filesystem::CFile file;
+        if (!file.Open(filename, "w")) {
+            utility::LogWarning("Write PTS failed: unable to open file: {}",
+                                filename);
+            return false;
+        }
+        utility::CountingProgressReporter reporter(params.update_progress);
+        reporter.SetTotal(pointcloud.points_.size());
+
+        if (fprintf(file.GetFILE(), "%zu\r\n",
+                    (size_t)pointcloud.points_.size()) < 0) {
+            utility::LogWarning("Write PTS failed: unable to write file: {}",
+                                filename);
+            return false;
+        }
+        for (size_t i = 0; i < pointcloud.points_.size(); i++) {
+            const auto &point = pointcloud.points_[i];
+            if (pointcloud.HasColors() == false) {
+                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f\r\n", point(0),
+                            point(1), point(2)) < 0) {
+                    utility::LogWarning(
+                            "Write PTS failed: unable to write file: {}",
+                            filename);
+                    return false;
+                }
+            } else {
+                auto color = utility::ColorToUint8(pointcloud.colors_[i]);
+                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %d %d %d %d\r\n",
+                            point(0), point(1), point(2), 0, (int)color(0),
+                            (int)color(1), (int)(color(2))) < 0) {
+                    utility::LogWarning(
+                            "Write PTS failed: unable to write file: {}",
+                            filename);
+                    return false;
+                }
+            }
+            if (i % 1000 == 0) {
+                reporter.Update(i);
+            }
+        }
+        reporter.Finish();
+        return true;
+    } catch (const std::exception &e) {
+        utility::LogWarning("Write PTS failed with exception: {}", e.what());
         return false;
     }
-    fprintf(file, "%zu\r\n", (size_t)pointcloud.points_.size());
-    utility::ConsoleProgressBar progress_bar(
-            static_cast<size_t>(pointcloud.points_.size()),
-            "Writing PTS: ", print_progress);
-    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-        const auto &point = pointcloud.points_[i];
-        if (pointcloud.HasColors() == false) {
-            fprintf(file, "%.10f %.10f %.10f\r\n", point(0), point(1),
-                    point(2));
-        } else {
-            auto color = utility::ColorToUint8(pointcloud.colors_[i]);
-            fprintf(file, "%.10f %.10f %.10f %d %d %d %d\r\n", point(0),
-                    point(1), point(2), 0, (int)color(0), (int)color(1),
-                    (int)(color(2)));
-        }
-        ++progress_bar;
-    }
-    fclose(file);
-    return true;
 }
 
 }  // namespace io

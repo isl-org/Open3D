@@ -92,6 +92,7 @@ std::vector<ReadWritePCArgs> g_pc_args({
 class TestPCGrid0 {
     geometry::PointCloud pc_;
     int size_ = 0;
+    const bool print_progress = false;
 
 public:
     void Setup(int size) {
@@ -120,12 +121,14 @@ public:
         const auto &args = g_pc_args[pc_args_id];
         const auto &pc = pc_;
         // we loose some precision when saving generated data
-        if (!WritePointCloud(args.filename, pc, bool(args.write_ascii),
-                             bool(args.compressed), false)) {
+        if (!WritePointCloud(args.filename, pc,
+                             {bool(args.write_ascii), bool(args.compressed),
+                              print_progress})) {
             utility::LogError("Failed to write to {}", args.filename);
         }
         geometry::PointCloud pc2;
-        if (!ReadPointCloud(args.filename, pc2, "auto", false, false)) {
+        if (!ReadPointCloud(args.filename, pc2,
+                            {"auto", false, false, print_progress})) {
             utility::LogError("Failed to read from {}", args.filename);
         }
         auto CheckLE = [](double a, double b) {
