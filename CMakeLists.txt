@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
+cmake_minimum_required(VERSION 3.12.0)
+# CMake 3.12+ is required to allow linking with OBJECT libraries
+# and to prevent erroneous -gencode option deduplication with CUDA.
+# If you're using Ubuntu 18.04 or older, we suggest you install
+# a backported CMake from https://apt.kitware.com/
 
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 
