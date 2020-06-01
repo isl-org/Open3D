@@ -155,7 +155,7 @@ int KnnFaiss::SearchRadius(const T &query,
         indices.push_back(result.labels[i]);
         distance2.push_back(result.distances[i]);
     }
-    return result.lims[1];
+    return result.lims[1]; // for just one query point, lims[1] == # of results
 }
 
 bool KnnFaiss::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
