@@ -1,5 +1,4 @@
 # build
-file(GLOB IMGUI_SOURCE_FILES ${CMAKE_SOURCE_DIR}/3rdparty/imgui/*.cpp)
 file(GLOB_RECURSE GUI_SOURCE_FILES "*.cpp")
 file(GLOB_RECURSE GUI_HEADER_FILES "*.h")
 
@@ -16,13 +15,10 @@ else ()
 endif()
 
 # create object library
-include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/3rdparty/imgui)
-add_library(GUI OBJECT ${GUI_HEADER_FILES} ${GUI_SOURCE_FILES} ${IMGUI_SOURCE_FILES})
-set_property(TARGET GUI PROPERTY CXX_STANDARD 14)
-ShowAndAbortOnWarning(GUI)
-
-# enforce 3rd party dependencies
-add_dependencies(GUI build_all_3rd_party_libs)
+add_library(GUI OBJECT ${GUI_HEADER_FILES} ${GUI_SOURCE_FILES})
+open3d_show_and_abort_on_warning(GUI)
+open3d_set_global_properties(GUI)
+open3d_link_3rdparty_libraries(GUI)
 
 # --- build resources ----
 file(GLOB GUI_RESOURCE_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Resources/*)
@@ -40,7 +36,6 @@ if (IOS OR ANDROID)
 elseif (NOT WIN32)
     set(GUI_MATC_ARGS --platform desktop)
 endif()
-set(FILAMENT_MATC ${3RDPARTY_INSTALL_PREFIX}/bin/matc)
 
 set(GUI_MATERIAL_COMPILED_FILES "")
 foreach(matsrc IN ITEMS ${GUI_MATERIAL_SOURCE_FILES})
@@ -49,12 +44,11 @@ foreach(matsrc IN ITEMS ${GUI_MATERIAL_SOURCE_FILES})
     list(APPEND GUI_MATERIAL_COMPILED_FILES ${matdest})
     add_custom_command(OUTPUT ${matdest}
                        COMMAND ${FILAMENT_MATC} ${GUI_MATC_ARGS} -o ${matdest} ${matsrc}
-		       DEPENDS ${matsrc})
+		       MAIN_DEPENDENCY ${matsrc} DEPENDS ${FILAMENT_TARGET})
 endforeach()
 
 add_custom_target(GuiResources
                   DEPENDS ${GUI_MATERIAL_COMPILED_FILES})
-add_dependencies(GuiResources filament_copy)
 add_dependencies(GUI GuiResources)
 
 # Export GUI_RESOURCE_FILES to parent CMake context (src/Open3D/)

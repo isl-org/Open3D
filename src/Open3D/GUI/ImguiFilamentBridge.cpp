@@ -45,6 +45,7 @@
 #include "Open3D/GUI/ImguiFilamentBridge.h"
 
 #include <fcntl.h>
+#include <filamat/MaterialBuilder.h>
 #include <filament/Fence.h>
 #include <filament/IndexBuffer.h>
 #include <filament/Material.h>
@@ -55,9 +56,8 @@
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
-#include <filament/filamat/MaterialBuilder.h>
-#include <filament/utils/EntityManager.h>
 #include <imgui.h>
+#include <utils/EntityManager.h>
 #include <cerrno>
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 #include <iostream>

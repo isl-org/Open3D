@@ -12,6 +12,7 @@ jobs:
   macos:
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         BUILD_DEPENDENCY_FROM_SOURCE: [ON] # TODO: re-enable "OFF", probably in Travis
         BUILD_TENSORFLOW_OPS: [ON, OFF]
@@ -34,6 +35,7 @@ jobs:
         brew update
         brew upgrade python || true
         ./util/scripts/install-deps-osx.sh
+        brew cleanup
     - name: Config and build
       run: |
         ./util/scripts/run-travis.sh

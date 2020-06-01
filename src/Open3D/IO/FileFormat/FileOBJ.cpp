@@ -34,8 +34,7 @@
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tinyobjloader/tiny_obj_loader.h"
+#include <tiny_obj_loader.h>
 
 namespace open3d {
 namespace io {
