@@ -91,8 +91,15 @@ public:
     std::unordered_map<std::string, TensorList> point_dict_;
 
 public:
-    static PointCloud CreateFromPointCloudLegacy(
+    /// Usage:
+    /// auto pcd_legacy = io::CreatePointCloudFromFile(filename);
+    /// auto pcd = tgeometry::PointCloud::FromLegacyPointCloud(*pcd_legacy);
+    /// auto pcd_legacy_back = tgeometry::PointCloud::ToLegacyPointCloud(pcd);
+    static tgeometry::PointCloud FromLegacyPointCloud(
             const geometry::PointCloud &pcd_legacy);
+
+    static std::shared_ptr<geometry::PointCloud> ToLegacyPointCloud(
+            const tgeometry::PointCloud &pcd);
 
 protected:
     Dtype dtype_ = Dtype::Float32;
