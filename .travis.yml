@@ -4,7 +4,7 @@ env:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - BUILD_TENSORFLOW_OPS=ON
-    - NPROC=4
+    - NPROC=2
 
 notifications:
   email:
@@ -31,6 +31,7 @@ matrix:
         - which pip
         - pip install pytest
         - which pytest
+        - nproc
         - ls -la ~/py3env/bin
         - pytest --version
         - ./util/scripts/install-deps-osx.sh
@@ -53,6 +54,7 @@ matrix:
         - which pip
         - pip install pytest
         - which pytest
+        - nproc
         - ls -la ~/py3env/bin
         - pytest --version
         - ./util/scripts/install-deps-osx.sh

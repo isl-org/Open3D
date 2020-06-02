@@ -82,7 +82,7 @@ echo
 
 echo "running Open3D unit tests..."
 unitTestFlags=
-[ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter='-*Reduce*Sum*'"
+[ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
 date
 reportJobStart "unitTests"
 ./bin/unitTests $unitTestFlags
