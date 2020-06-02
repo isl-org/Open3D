@@ -4,7 +4,7 @@ env:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - BUILD_TENSORFLOW_OPS=ON
-    - NPROC=2
+    - NPROC=4
 
 notifications:
   email:
@@ -14,11 +14,8 @@ notifications:
 matrix:
 
   include:
-    # Default environment of macOS 10.13 High Sierra
-    # compiled using clang shipped with xcode10.1
     - os: osx
-      #osx_image: xcode10.2
-      osx_image: xcode10.3
+      osx_image: xcode11
       env: BUILD_TENSORFLOW_OPS=OFF LOW_MEM_USAGE=ON
       install:
         - brew update
@@ -40,7 +37,7 @@ matrix:
       script: ./util/scripts/run-travis.sh
 
     - os: osx
-      osx_image: xcode11.2
+      osx_image: xcode11.5
       env: BUILD_TENSORFLOW_OPS=OFF LOW_MEM_USAGE=ON
       install:
         - brew update

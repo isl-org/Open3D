@@ -131,4 +131,4 @@ rm -rf build
 rm -rf ${OPEN3D_INSTALL_DIR}
 echo
 
-reportJobFinish
+reportJobFinishSession
