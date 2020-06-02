@@ -16,6 +16,22 @@ System requirements
 * Ubuntu 18.04+: GCC 5+, Clang 7+
 * macOS 10.14+: XCode 8.0+
 * Windows 10 (64-bit): Visual Studio 2019+
+* CMake 3.12+
+
+  * Ubuntu:
+
+    * Install with ``apt-get``: see `official APT repository <https://apt.kitware.com/>`_
+    * Install with ``snap``: ``sudo snap install cmake --classic``
+    * Install with ``pip`` (run inside a Python virtual environment): ``pip install cmake``
+
+  * macOS:
+
+    * Install with Homebrew: ``brew install cmake``
+    * Download from: `CMake download page <https://cmake.org/download/>`_
+
+  * Windows:
+
+    * Download from: `CMake download page <https://cmake.org/download/>`_
 
 Cloning Open3D
 --------------
