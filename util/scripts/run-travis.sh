@@ -22,15 +22,15 @@ rj_prevts=$rj_startts
 rj_prevj=ReportInit
 echo "$rj_startts StartJob ReportInit"
 reportJobFinishSession() {
-    rj_ts=$(date +%H%M%S)
+    rj_ts=$(date +%T)
     echo "$rj_ts EndJob $rj_prevj ran $rj_prevts - $rj_ts (session started $rj_startts)"
     echo "ReportJobSession: ran $rj_startts - $rj_ts"
 }
 
 reportJobStart "installing Python unit test dependencies"
 pip install --upgrade pip
-pip install -U -q pytest
-pip install -U -q wheel
+pip install -U pytest
+pip install -U wheel
 echo
 
 python --version
@@ -40,7 +40,7 @@ cmake --version
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
     reportJobStart "install tensorflow"
-    pip install -U -q tensorflow==2.0.0
+    pip install -U tensorflow==2.0.0
 fi
 mkdir build
 cd build

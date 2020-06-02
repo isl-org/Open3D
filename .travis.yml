@@ -17,14 +17,15 @@ matrix:
     - os: osx
       osx_image: xcode11
       env: BUILD_TENSORFLOW_OPS=ON LOW_MEM_USAGE=ON
+      #python@3 is python 3.7
       install:
         - brew update
         - brew upgrade python || true
         - ls /usr/local/opt
         - ls -l /usr/local/opt/*/bin/python
         - ls -l /usr/local/opt/python*/bin/
-        - /usr/local/opt/python@3.8/bin/pip3 install virtualenv
-        - /usr/local/opt/python@3.8/bin/python3 -m venv ~/py3env
+        - /usr/local/opt/python@3/bin/pip3 install virtualenv
+        - /usr/local/opt/python@3/bin/python3 -m venv ~/py3env
         - source ~/py3env/bin/activate
         - echo $PATH
         - which python
@@ -46,8 +47,8 @@ matrix:
         - ls /usr/local/opt
         - ls -l /usr/local/opt/*/bin/python
         - ls -l /usr/local/opt/python*/bin/
-        - /usr/local/opt/python@3.8/bin/pip3 install virtualenv
-        - /usr/local/opt/python@3.8/bin/python3 -m venv ~/py3env
+        - /usr/local/opt/python@3/bin/pip3 install virtualenv
+        - /usr/local/opt/python@3/bin/python3 -m venv ~/py3env
         - source ~/py3env/bin/activate
         - echo $PATH
         - which python
