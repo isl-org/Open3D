@@ -17,7 +17,30 @@ matrix:
     # Default environment of macOS 10.13 High Sierra
     # compiled using clang shipped with xcode10.1
     - os: osx
-      osx_image: xcode10.2
+      #osx_image: xcode10.2
+      osx_image: xcode10.3
+      env: BUILD_TENSORFLOW_OPS=OFF LOW_MEM_USAGE=ON
+      install:
+        - brew update
+        - brew upgrade python || true
+        - ls /usr/local/opt
+        - ls -l /usr/local/opt/*/bin/python
+        - ls -l /usr/local/opt/python*/bin/
+        - /usr/local/opt/python@3.8/bin/pip3 install virtualenv
+        - /usr/local/opt/python@3.8/bin/python3 -m venv ~/py3env
+        - source ~/py3env/bin/activate
+        - echo $PATH
+        - which python
+        - which pip
+        - pip install pytest
+        - which pytest
+        - ls -la ~/py3env/bin
+        - pytest --version
+        - ./util/scripts/install-deps-osx.sh
+      script: ./util/scripts/run-travis.sh
+
+    - os: osx
+      osx_image: xcode11.2
       env: BUILD_TENSORFLOW_OPS=OFF LOW_MEM_USAGE=ON
       install:
         - brew update
