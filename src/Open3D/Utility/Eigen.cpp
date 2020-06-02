@@ -299,5 +299,22 @@ Eigen::Matrix3d RotationMatrixZ(double radians) {
     return rot;
 }
 
+Eigen::Vector3uint8 ColorToUint8(const Eigen::Vector3d &color) {
+    Eigen::Vector3uint8 rgb;
+    for (int i = 0; i < 3; ++i) {
+        rgb[i] = uint8_t(
+                std::round(std::min(1., std::max(0., color(i))) * 255.));
+    }
+    return rgb;
+}
+
+Eigen::Vector3d ColorToDouble(uint8_t r, uint8_t g, uint8_t b) {
+    return Eigen::Vector3d(r, g, b) / 255.0;
+}
+
+Eigen::Vector3d ColorToDouble(const Eigen::Vector3uint8 &rgb) {
+    return ColorToDouble(rgb(0), rgb(1), rgb(2));
+}
+
 }  // namespace utility
 }  // namespace open3d

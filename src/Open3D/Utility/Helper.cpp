@@ -76,6 +76,13 @@ std::string ToLower(const std::string& str) {
     return out;
 }
 
+std::string ToUpper(const std::string& str) {
+    std::string out = str;
+    std::transform(str.begin(), str.end(), out.begin(),
+                   [](unsigned char c) { return std::toupper(c); });
+    return out;
+}
+
 // Count the length of current word starting from start_pos
 size_t WordLength(const std::string& doc,
                   size_t start_pos,

@@ -36,6 +36,7 @@
 #include "Open3D/GUI/FileDialog.h"
 #include "Open3D/GUI/Label.h"
 #include "Open3D/GUI/Layout.h"
+#include "Open3D/GUI/ProgressBar.h"
 #include "Open3D/GUI/SceneWidget.h"
 #include "Open3D/GUI/Slider.h"
 #include "Open3D/GUI/Theme.h"
@@ -403,7 +404,9 @@ struct LightingProfile {
 };
 
 static const std::string DEFAULT_IBL = "default";
-static const std::string DEFAULT_MATERIAL_NAME = "Polished ceramic [default]";
+static const std::string DEFAULT_MATERIAL_NAME = "Polished ceramic";
+static const std::string MATERIAL_FROM_FILE_NAME =
+        "Material from file [default]";
 static const std::string POINT_CLOUD_PROFILE_NAME =
         "Cloudy day (no direct sun)";
 static const bool DEFAULT_SHOW_SKYBOX = false;
@@ -599,6 +602,8 @@ struct GuiVisualizer::Impl {
 
         MaterialType selected_type = LIT;
         Materials current_materials;
+        // geometry index -> material  (entry exists if mesh HasMaterials())
+        std::map<int, LitMaterial> loaded_materials_;
         std::shared_ptr<gui::Combobox> wgt_material_type;
 
         std::shared_ptr<gui::Combobox> wgt_prefab_material;
@@ -616,6 +621,12 @@ struct GuiVisualizer::Impl {
     } settings_;
 
     void SetMaterialsToDefault(visualization::Renderer &renderer) {
+        settings_.loaded_materials_.clear();
+        if (settings_.wgt_prefab_material) {
+            settings_.wgt_prefab_material->RemoveItem(
+                    MATERIAL_FROM_FILE_NAME.c_str());
+        }
+
         Materials defaults;
         if (settings_.user_has_changed_color) {
             defaults.unlit.base_color =
@@ -704,6 +715,11 @@ struct GuiVisualizer::Impl {
         settings_.current_materials.lit.base_color = material.base_color;
         settings_.current_materials.lit.roughness = material.roughness;
         settings_.current_materials.lit.metallic = material.metallic;
+        settings_.current_materials.lit.reflectance = material.reflectance;
+        settings_.current_materials.lit.clear_coat = material.clear_coat;
+        settings_.current_materials.lit.clear_coat_roughness =
+                material.clear_coat_roughness;
+        settings_.current_materials.lit.anisotropy = material.anisotropy;
         settings_.current_materials.unlit.base_color = material.base_color;
 
         // Update maps
@@ -715,6 +731,11 @@ struct GuiVisualizer::Impl {
                         .SetColor("baseColor", material.base_color)
                         .SetParameter("baseRoughness", material.roughness)
                         .SetParameter("baseMetallic", material.metallic)
+                        .SetParameter("reflectance", material.reflectance)
+                        .SetParameter("clearCoat", material.clear_coat)
+                        .SetParameter("clearCoatRoughness",
+                                      material.clear_coat_roughness)
+                        .SetParameter("anisotropy", material.anisotropy)
                         .SetTexture("albedo", maps.albedo_map,
                                     TextureSamplerParameters::Pretty())
                         .SetTexture("normalMap", maps.normal_map,
@@ -842,23 +863,52 @@ struct GuiVisualizer::Impl {
 
     void SetMaterialByName(visualization::Renderer &renderer,
                            const std::string &name) {
-        auto prefab_it = prefab_materials_.find(name);
-        if (prefab_it != prefab_materials_.end()) {
-            auto &prefab = prefab_it->second;
-            if (!settings_.user_has_changed_color) {
-                settings_.current_materials.lit.base_color = prefab.base_color;
-                settings_.wgt_material_color->SetValue(prefab.base_color.x(),
-                                                       prefab.base_color.y(),
-                                                       prefab.base_color.z());
+        if (name == MATERIAL_FROM_FILE_NAME) {
+            for (size_t i = 0; i < geometry_handles_.size(); ++i) {
+                auto mat_desc = settings_.loaded_materials_.find(i);
+                if (mat_desc == settings_.loaded_materials_.end()) {
+                    continue;
+                }
+                auto mat = settings_.current_materials.lit.handle;
+                mat = this->CreateLitMaterial(renderer, mat, mat_desc->second);
+                scene_->GetScene()->AssignMaterial(geometry_handles_[i], mat);
+                settings_.current_materials.lit.handle = mat;
             }
-            auto mat = settings_.current_materials.lit.handle;
-            mat = this->CreateLitMaterial(renderer, mat, prefab);
-            for (const auto &handle : geometry_handles_) {
-                scene_->GetScene()->AssignMaterial(handle, mat);
+            if (!settings_.user_has_changed_color &&
+                settings_.loaded_materials_.size() == 1) {
+                auto color =
+                        settings_.loaded_materials_.begin()->second.base_color;
+                settings_.wgt_material_color->SetValue(color.x(), color.y(),
+                                                       color.z());
+                settings_.current_materials.lit.base_color = color;
             }
-            settings_.current_materials.lit.handle = mat;
+        } else {
+            auto prefab_it = prefab_materials_.find(name);
+            // DEFAULT_MATERIAL_NAME may have "[default]" appended, if the model
+            // doesn't have its own material, so search again if that happened.
+            if (prefab_it == prefab_materials_.end() &&
+                name.find(DEFAULT_MATERIAL_NAME) == 0) {
+                prefab_it = prefab_materials_.find(DEFAULT_MATERIAL_NAME);
+            }
+            if (prefab_it != prefab_materials_.end()) {
+                auto &prefab = prefab_it->second;
+                if (!settings_.user_has_changed_color) {
+                    settings_.current_materials.lit.base_color =
+                            prefab.base_color;
+                    settings_.wgt_material_color->SetValue(
+                            prefab.base_color.x(), prefab.base_color.y(),
+                            prefab.base_color.z());
+                }
+                auto mat = settings_.current_materials.lit.handle;
+                mat = this->CreateLitMaterial(renderer, mat, prefab);
+                for (const auto &handle : geometry_handles_) {
+                    scene_->GetScene()->AssignMaterial(handle, mat);
+                }
+                settings_.current_materials.lit.handle = mat;
+            }
         }
     }
+
     void SetLightingProfile(visualization::Renderer &renderer,
                             const std::string &name) {
         for (size_t i = 0; i < g_lighting_profiles.size(); ++i) {
@@ -1201,6 +1251,8 @@ GuiVisualizer::GuiVisualizer(
         impl_->settings_.SetCustomProfile();
         if (checked) {
             render_scene->SetIndirectLight(impl_->settings_.ibl);
+            render_scene->SetIndirectLightIntensity(
+                    impl_->settings_.wgt_ibl_intensity->GetDoubleValue());
         } else {
             render_scene->SetIndirectLight(IndirectLightHandle());
         }
@@ -1514,10 +1566,15 @@ void GuiVisualizer::SetGeometry(
                     auto mesh_material = mesh->materials_.begin()->second;
                     Impl::LitMaterial material;
                     Impl::TextureMaps maps;
-                    material.base_color.x() = mesh_material.baseColor.r;
-                    material.base_color.y() = mesh_material.baseColor.g;
-                    material.base_color.z() = mesh_material.baseColor.b;
+                    material.base_color.x() = mesh_material.baseColor.r();
+                    material.base_color.y() = mesh_material.baseColor.g();
+                    material.base_color.z() = mesh_material.baseColor.b();
                     material.roughness = mesh_material.baseRoughness;
+                    material.reflectance = mesh_material.baseReflectance;
+                    material.clear_coat = mesh_material.baseClearCoat;
+                    material.clear_coat_roughness =
+                            mesh_material.baseClearCoatRoughness;
+                    material.anisotropy = mesh_material.baseAnisotropy;
 
                     auto is_map_valid =
                             [](std::shared_ptr<geometry::Image> map) -> bool {
@@ -1574,6 +1631,7 @@ void GuiVisualizer::SetGeometry(
                     }
                     impl_->SetMaterialsToCurrentSettings(GetRenderer(),
                                                          material, maps);
+                    impl_->settings_.loaded_materials_[i] = material;
                 }
 
                 if ((mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) ||
@@ -1634,6 +1692,25 @@ void GuiVisualizer::SetGeometry(
         impl_->settings_.wgt_point_size->SetEnabled(num_point_clouds > 0);
     }
 
+    if (!impl_->settings_.loaded_materials_.empty()) {
+        if (impl_->settings_.loaded_materials_.size() == 1) {
+            auto color = impl_->settings_.loaded_materials_.begin()
+                                 ->second.base_color;
+            impl_->settings_.wgt_material_color->SetValue(color.x(), color.y(),
+                                                          color.z());
+        }
+        int resetIdx = impl_->settings_.wgt_prefab_material->AddItem(
+                MATERIAL_FROM_FILE_NAME.c_str());
+        impl_->settings_.wgt_prefab_material->SetSelectedIndex(resetIdx);
+        impl_->settings_.wgt_prefab_material->ChangeItem(
+                (DEFAULT_MATERIAL_NAME + " [default]").c_str(),
+                DEFAULT_MATERIAL_NAME.c_str());
+    } else {
+        impl_->settings_.wgt_prefab_material->ChangeItem(
+                DEFAULT_MATERIAL_NAME.c_str(),
+                (DEFAULT_MATERIAL_NAME + " [default]").c_str());
+    }
+
     // Add axes. Axes length should be the longer of the bounds extent
     // or 25% of the distance from the origin. The latter is necessary
     // so that the axis is big enough to be visible even if the object
@@ -1688,68 +1765,107 @@ bool GuiVisualizer::SetIBL(const char *path) {
     return result;
 }
 
-bool GuiVisualizer::LoadGeometry(const std::string &path) {
-    auto geometry = std::shared_ptr<geometry::Geometry3D>();
+void GuiVisualizer::LoadGeometry(const std::string &path) {
+    auto progressbar = std::make_shared<gui::ProgressBar>();
+    gui::Application::GetInstance().PostToMainThread(this, [this, path,
+                                                            progressbar]() {
+        auto &theme = GetTheme();
+        auto loading_dlg = std::make_shared<gui::Dialog>("Loading");
+        auto vert =
+                std::make_shared<gui::Vert>(0, gui::Margins(theme.font_size));
+        auto loading_text = std::string("Loading ") + path;
+        vert->AddChild(std::make_shared<gui::Label>(loading_text.c_str()));
+        vert->AddFixed(theme.font_size);
+        vert->AddChild(progressbar);
+        loading_dlg->AddChild(vert);
+        ShowDialog(loading_dlg);
+    });
 
-    auto geometry_type = io::ReadFileGeometryType(path);
+    gui::Application::GetInstance().RunInThread([this, path, progressbar]() {
+        auto UpdateProgress = [this, progressbar](float value) {
+            gui::Application::GetInstance().PostToMainThread(
+                    this,
+                    [progressbar, value]() { progressbar->SetValue(value); });
+        };
 
-    auto mesh = std::make_shared<geometry::TriangleMesh>();
-    bool mesh_success = false;
-    if (geometry_type & io::CONTAINS_TRIANGLES) {
-        try {
-            mesh_success = io::ReadTriangleMesh(path, *mesh);
-        } catch (...) {
-            mesh_success = false;
+        auto geometry = std::shared_ptr<geometry::Geometry3D>();
+
+        auto geometry_type = io::ReadFileGeometryType(path);
+
+        auto mesh = std::make_shared<geometry::TriangleMesh>();
+        bool mesh_success = false;
+        if (geometry_type & io::CONTAINS_TRIANGLES) {
+            try {
+                mesh_success = io::ReadTriangleMesh(path, *mesh);
+            } catch (...) {
+                mesh_success = false;
+            }
         }
-    }
-    if (mesh_success) {
-        if (mesh->triangles_.size() == 0) {
-            utility::LogWarning(
-                    "Contains 0 triangles, will read as point cloud");
+        if (mesh_success) {
+            if (mesh->triangles_.size() == 0) {
+                utility::LogWarning(
+                        "Contains 0 triangles, will read as point cloud");
+                mesh.reset();
+            } else {
+                UpdateProgress(0.5);
+                mesh->ComputeVertexNormals();
+                if (mesh->vertex_colors_.empty()) {
+                    mesh->PaintUniformColor({1, 1, 1});
+                }
+                UpdateProgress(0.666);
+                geometry = mesh;
+            }
+            // Make sure the mesh has texture coordinates
+            if (!mesh->HasTriangleUvs()) {
+                mesh->triangle_uvs_.resize(mesh->triangles_.size() * 3,
+                                           {0.0, 0.0});
+            }
+        } else {
+            // LogError throws an exception, which we don't want, because this
+            // might be a point cloud.
+            utility::LogInfo("{} appears to be a point cloud", path.c_str());
             mesh.reset();
-        } else {
-            mesh->ComputeVertexNormals();
-            if (mesh->vertex_colors_.empty()) {
-                mesh->PaintUniformColor({1, 1, 1});
-            }
-            geometry = mesh;
         }
-        // Make sure the mesh has texture coordinates
-        if (!mesh->HasTriangleUvs()) {
-            mesh->triangle_uvs_.resize(mesh->triangles_.size() * 3, {0.0, 0.0});
-        }
-    } else {
-        // LogError throws an exception, which we don't want, because this might
-        // be a point cloud.
-        utility::LogInfo("{} appears to be a point cloud", path.c_str());
-        mesh.reset();
-    }
 
-    if (!geometry) {
-        auto cloud = std::make_shared<geometry::PointCloud>();
-        bool success = false;
-        try {
-            success = io::ReadPointCloud(path, *cloud);
-        } catch (...) {
-            success = false;
-        }
-        if (success) {
-            utility::LogInfo("Successfully read {}", path.c_str());
-            if (!cloud->HasNormals()) {
-                cloud->EstimateNormals();
+        if (!geometry) {
+            auto cloud = std::make_shared<geometry::PointCloud>();
+            bool success = false;
+            try {
+                success = io::ReadPointCloud(path, *cloud);
+            } catch (...) {
+                success = false;
             }
-            cloud->NormalizeNormals();
-            geometry = cloud;
-        } else {
-            utility::LogWarning("Failed to read points {}", path.c_str());
-            cloud.reset();
+            if (success) {
+                utility::LogInfo("Successfully read {}", path.c_str());
+                UpdateProgress(0.50);
+                if (!cloud->HasNormals()) {
+                    cloud->EstimateNormals();
+                }
+                UpdateProgress(0.666);
+                cloud->NormalizeNormals();
+                UpdateProgress(0.75);
+                geometry = cloud;
+            } else {
+                utility::LogWarning("Failed to read points {}", path.c_str());
+                cloud.reset();
+            }
         }
-    }
 
-    if (geometry) {
-        SetGeometry({geometry});
-    }
-    return (geometry != nullptr);
+        if (geometry) {
+            gui::Application::GetInstance().PostToMainThread(
+                    this, [this, geometry]() {
+                        SetGeometry({geometry});
+                        CloseDialog();
+                    });
+        } else {
+            gui::Application::GetInstance().PostToMainThread(this, [this,
+                                                                    path]() {
+                CloseDialog();
+                auto msg = std::string("Could not load '") + path + "'.";
+                ShowMessageBox("Error", msg.c_str());
+            });
+        }
+    });
 }
 
 void GuiVisualizer::ExportCurrentImage(int width,
@@ -1894,11 +2010,7 @@ void GuiVisualizer::OnDragDropped(const char *path) {
     this->SetTitle(title);
     auto vis = this;
 #endif  // LOAD_IN_NEW_WINDOW
-    if (!vis->LoadGeometry(path)) {
-        auto err = std::string("Error reading geometry file '") + path + "'";
-        vis->ShowMessageBox("Error loading geometry", err.c_str());
-    }
-    PostRedraw();
+    vis->LoadGeometry(path);
 }
 
 }  // namespace visualization

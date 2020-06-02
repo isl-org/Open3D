@@ -73,7 +73,41 @@ void Combobox::ClearItems() {
     impl_->current_index_ = 0;
 }
 
-void Combobox::AddItem(const char* name) { impl_->items_.push_back(name); }
+int Combobox::AddItem(const char* name) {
+    impl_->items_.push_back(name);
+    return impl_->items_.size() - 1;
+}
+
+void Combobox::ChangeItem(int index, const char* new_name) {
+    impl_->items_[index] = new_name;
+}
+
+void Combobox::ChangeItem(const char* orig_name, const char* new_name) {
+    for (size_t i = 0; i < impl_->items_.size(); ++i) {
+        if (impl_->items_[i] == orig_name) {
+            impl_->items_[i] = new_name;
+            break;
+        }
+    }
+}
+
+void Combobox::RemoveItem(const char* name) {
+    for (size_t i = 0; i < impl_->items_.size(); ++i) {
+        if (impl_->items_[i] == name) {
+            RemoveItem(int(i));
+            break;
+        }
+    }
+}
+
+void Combobox::RemoveItem(int index) {
+    if (index >= 0 && index < int(impl_->items_.size())) {
+        impl_->items_.erase(impl_->items_.begin() + index);
+        if (impl_->current_index_ >= int(impl_->items_.size())) {
+            impl_->current_index_ = impl_->items_.size() - 1;
+        }
+    }
+}
 
 const char* Combobox::GetItem(int index) const {
     return impl_->items_[index].c_str();

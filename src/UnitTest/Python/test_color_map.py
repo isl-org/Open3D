@@ -3,7 +3,7 @@ import numpy as np
 import re
 import os
 import sys
-import urllib
+import urllib.request
 import zipfile
 
 
@@ -101,5 +101,9 @@ def test_color_map():
     # same inputs and optimization options.
     vertex_colors = np.asarray(mesh.vertex_colors)
     assert vertex_colors.shape == (536872, 3)
+    # We need to account for the acceptable variation in the least significant bit
+    # which can occur with different JPEG libraries. The test value is pretty much
+    # exact with libjpeg-turbo, but not with the original libjpeg.
     np.testing.assert_allclose(np.mean(vertex_colors, axis=0),
-                               [0.40307181, 0.37264626, 0.5436129])
+                               [0.40307181, 0.37264626, 0.5436129],
+                               rtol=1. / 256.)

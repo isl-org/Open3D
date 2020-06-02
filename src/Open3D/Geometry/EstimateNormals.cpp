@@ -24,10 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <queue>
+
 #include <Eigen/Eigenvalues>
 
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TetraMesh.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
@@ -258,15 +261,82 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
     }
 }
 
+// Disjoint set data structure to find cycles in graphs
+class DisjointSet {
+public:
+    DisjointSet(size_t size) : parent_(size), size_(size) {
+        for (size_t idx = 0; idx < size; idx++) {
+            parent_[idx] = idx;
+            size_[idx] = 0;
+        }
+    }
+
+    // find representative element for given x
+    // using path compression
+    size_t Find(size_t x) {
+        if (x != parent_[x]) {
+            parent_[x] = Find(parent_[x]);
+        }
+        return parent_[x];
+    }
+
+    // combine two sets using size of sets
+    void Union(size_t x, size_t y) {
+        x = Find(x);
+        y = Find(y);
+        if (x != y) {
+            if (size_[x] < size_[y]) {
+                size_[y] += size_[x];
+                parent_[x] = y;
+            } else {
+                size_[x] += size_[y];
+                parent_[y] = x;
+            }
+        }
+    }
+
+private:
+    std::vector<size_t> parent_;
+    std::vector<size_t> size_;
+};
+
+struct WeightedEdge {
+    WeightedEdge(size_t v0, size_t v1, double weight)
+        : v0_(v0), v1_(v1), weight_(weight) {}
+    size_t v0_;
+    size_t v1_;
+    double weight_;
+};
+
+// Minimum Spanning Tree algorithm (Kruskal's algorithm)
+std::vector<WeightedEdge> Kruskal(std::vector<WeightedEdge> &edges,
+                                  size_t n_vertices) {
+    std::sort(edges.begin(), edges.end(),
+              [](WeightedEdge &e0, WeightedEdge &e1) {
+                  return e0.weight_ < e1.weight_;
+              });
+    DisjointSet disjoint_set(n_vertices);
+    std::vector<WeightedEdge> mst;
+    for (size_t eidx = 0; eidx < edges.size(); ++eidx) {
+        size_t set0 = disjoint_set.Find(edges[eidx].v0_);
+        size_t set1 = disjoint_set.Find(edges[eidx].v1_);
+        if (set0 != set1) {
+            mst.push_back(edges[eidx]);
+            disjoint_set.Union(set0, set1);
+        }
+    }
+    return mst;
+}
+
 }  // unnamed namespace
 
 namespace geometry {
 
-bool PointCloud::EstimateNormals(
+void PointCloud::EstimateNormals(
         const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/,
         bool fast_normal_computation /* = true */) {
     bool has_normal = HasNormals();
-    if (HasNormals() == false) {
+    if (!has_normal) {
         normals_.resize(points_.size());
     }
     KDTreeFlann kdtree;
@@ -295,15 +365,13 @@ bool PointCloud::EstimateNormals(
             normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
         }
     }
-
-    return true;
 }
 
-bool PointCloud::OrientNormalsToAlignWithDirection(
+void PointCloud::OrientNormalsToAlignWithDirection(
         const Eigen::Vector3d &orientation_reference
         /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/) {
     if (HasNormals() == false) {
-        utility::LogWarning(
+        utility::LogError(
                 "[OrientNormalsToAlignWithDirection] No normals in the "
                 "PointCloud. Call EstimateNormals() first.");
     }
@@ -318,13 +386,12 @@ bool PointCloud::OrientNormalsToAlignWithDirection(
             normal *= -1.0;
         }
     }
-    return true;
 }
 
-bool PointCloud::OrientNormalsTowardsCameraLocation(
+void PointCloud::OrientNormalsTowardsCameraLocation(
         const Eigen::Vector3d &camera_location /* = Eigen::Vector3d::Zero()*/) {
     if (HasNormals() == false) {
-        utility::LogWarning(
+        utility::LogError(
                 "[OrientNormalsTowardsCameraLocation] No normals in the "
                 "PointCloud. Call EstimateNormals() first.");
     }
@@ -345,7 +412,120 @@ bool PointCloud::OrientNormalsTowardsCameraLocation(
             normal *= -1.0;
         }
     }
-    return true;
 }
+
+void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
+    if (HasNormals() == false) {
+        utility::LogError(
+                "[OrientNormalsConsistentTangentPlane] No normals in the "
+                "PointCloud. Call EstimateNormals() first.");
+    }
+
+    // Create Riemannian graph (Euclidian MST + kNN)
+    // Euclidian MST is subgraph of Delaunay triangulation
+    std::shared_ptr<TetraMesh> delaunay_mesh;
+    std::vector<size_t> pt_map;
+    std::tie(delaunay_mesh, pt_map) = TetraMesh::CreateFromPointCloud(*this);
+    std::vector<WeightedEdge> delaunay_graph;
+    std::unordered_set<size_t> graph_edges;
+    auto EdgeIndex = [&](size_t v0, size_t v1) -> size_t {
+        return std::min(v0, v1) * points_.size() + std::max(v0, v1);
+    };
+    auto AddEdgeToDelaunayGraph = [&](size_t v0, size_t v1) {
+        v0 = pt_map[v0];
+        v1 = pt_map[v1];
+        size_t edge = EdgeIndex(v0, v1);
+        if (graph_edges.count(edge) == 0) {
+            double dist = (points_[v0] - points_[v1]).squaredNorm();
+            delaunay_graph.push_back(WeightedEdge(v0, v1, dist));
+            graph_edges.insert(edge);
+        }
+    };
+    for (const Eigen::Vector4i &tetra : delaunay_mesh->tetras_) {
+        AddEdgeToDelaunayGraph(tetra[0], tetra[1]);
+        AddEdgeToDelaunayGraph(tetra[0], tetra[2]);
+        AddEdgeToDelaunayGraph(tetra[0], tetra[3]);
+        AddEdgeToDelaunayGraph(tetra[1], tetra[2]);
+        AddEdgeToDelaunayGraph(tetra[1], tetra[3]);
+        AddEdgeToDelaunayGraph(tetra[2], tetra[3]);
+    }
+
+    std::vector<WeightedEdge> mst = Kruskal(delaunay_graph, points_.size());
+
+    auto NormalWeight = [&](size_t v0, size_t v1) -> double {
+        return 1.0 - std::abs(normals_[v0].dot(normals_[v1]));
+    };
+    for (auto &edge : mst) {
+        edge.weight_ = NormalWeight(edge.v0_, edge.v1_);
+    }
+
+    // Add k nearest neighbors to Riemannian graph
+    KDTreeFlann kdtree(*this);
+    for (size_t v0 = 0; v0 < points_.size(); ++v0) {
+        std::vector<int> neighbors;
+        std::vector<double> dists2;
+        kdtree.SearchKNN(points_[v0], int(k), neighbors, dists2);
+        for (size_t vidx1 = 0; vidx1 < neighbors.size(); ++vidx1) {
+            size_t v1 = size_t(neighbors[vidx1]);
+            if (v0 == v1) {
+                continue;
+            }
+            size_t edge = EdgeIndex(v0, v1);
+            if (graph_edges.count(edge) == 0) {
+                double weight = NormalWeight(v0, v1);
+                mst.push_back(WeightedEdge(v0, v1, weight));
+                graph_edges.insert(edge);
+            }
+        }
+    }
+
+    // extract MST from Riemannian graph
+    mst = Kruskal(mst, points_.size());
+
+    // convert list of edges to graph
+    std::vector<std::unordered_set<size_t>> mst_graph(points_.size());
+    for (const auto &edge : mst) {
+        size_t v0 = edge.v0_;
+        size_t v1 = edge.v1_;
+        mst_graph[v0].insert(v1);
+        mst_graph[v1].insert(v0);
+    }
+
+    // find start node for tree traversal
+    // init with node that maximizes z
+    double max_z = std::numeric_limits<double>::lowest();
+    size_t v0;
+    for (size_t vidx = 0; vidx < points_.size(); ++vidx) {
+        const Eigen::Vector3d &v = points_[vidx];
+        if (v(2) > max_z) {
+            max_z = v(2);
+            v0 = vidx;
+        }
+    }
+
+    // traverse MST and orient normals consistently
+    std::queue<size_t> traversal_queue;
+    std::vector<bool> visited(points_.size(), false);
+    traversal_queue.push(v0);
+    auto TestAndOrientNormal = [&](const Eigen::Vector3d &n0,
+                                   Eigen::Vector3d &n1) {
+        if (n0.dot(n1) < 0) {
+            n1 *= -1;
+        }
+    };
+    TestAndOrientNormal(Eigen::Vector3d(0, 0, 1), normals_[v0]);
+    while (!traversal_queue.empty()) {
+        v0 = traversal_queue.front();
+        traversal_queue.pop();
+        visited[v0] = true;
+        for (size_t v1 : mst_graph[v0]) {
+            if (!visited[v1]) {
+                traversal_queue.push(v1);
+                TestAndOrientNormal(normals_[v0], normals_[v1]);
+            }
+        }
+    }
+}
+
 }  // namespace geometry
 }  // namespace open3d

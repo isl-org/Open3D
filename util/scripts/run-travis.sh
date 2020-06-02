@@ -60,6 +60,7 @@ if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "ON" ]; then
         -DBUILD_FLANN=ON \
         -DBUILD_GLEW=ON \
         -DBUILD_GLFW=ON \
+        -DBUILD_JPEG=ON \
         -DBUILD_PNG=ON"
 fi
 
@@ -101,23 +102,6 @@ reportJobStart "benchmarks"
     ./bin/benchmarks
     echo
 fi
-
-echo "test find_package(Open3D)..."
-reportJobStart "other tests"
-date
-test=$(cmake --find-package \
-    -DNAME=Open3D \
-    -DCOMPILER_ID=GNU \
-    -DLANGUAGE=C \
-    -DMODE=EXIST \
-    -DCMAKE_PREFIX_PATH="${OPEN3D_INSTALL_DIR}/lib/cmake")
-if [ "$test" == "Open3D found." ]; then
-    echo "PASSED find_package(Open3D) in specified install path."
-else
-    echo "FAILED find_package(Open3D) in specified install path."
-    exit 1
-fi
-echo
 
 echo "test building a C++ example with installed Open3D..."
 date

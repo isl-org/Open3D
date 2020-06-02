@@ -299,6 +299,7 @@ Window::Window(const std::string& title,
                                      &bytesPerPx);
         impl_->imgui_.imgui_bridge->CreateAtlasTextureAlpha8(
                 pixels, textureW, textureH, bytesPerPx);
+        ImGui::SetCurrentFont(impl_->imgui_.system_font);
     }
 
     ImGuiIO& io = ImGui::GetIO();
@@ -702,7 +703,8 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
 
     auto size = GetSize();
     int em = theme.font_size;  // em = font size in digital type (see Wikipedia)
-    DrawContext dc{theme, 0, 0, size.width, size.height, em, dt_sec};
+    DrawContext dc{theme,      *impl_->renderer_, 0,  0,
+                   size.width, size.height,       em, dt_sec};
 
     // Draw all the widgets. These will get recorded by ImGui.
     size_t win_idx = 0;

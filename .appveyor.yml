@@ -16,7 +16,10 @@ environment:
     SHARED: ON
   - PYTHON: 36
     CONFIG: Debug
-    SHARED: OFF  # Only check Debug mode with SHARED=OFF to save time.
+    SHARED: OFF
+  - PYTHON: 36
+    CONFIG: Debug
+    SHARED: ON
 install:
 - ps: |
     if ($env:PLATFORM -eq "x64") {
@@ -34,6 +37,7 @@ build_script:
 - git submodule update --init --recursive
 - mkdir build
 - cd build
+- cmake --version
 - cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_EIGEN3=ON -DBUILD_FLANN=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_PNG=ON ..
 - cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config %CONFIG% --target INSTALL
 

@@ -32,10 +32,7 @@
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "tinygltf/tiny_gltf.h"
+#include <tiny_gltf.h>
 
 namespace open3d {
 namespace io {

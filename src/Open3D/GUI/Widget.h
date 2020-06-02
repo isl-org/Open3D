@@ -32,6 +32,11 @@
 #include "Open3D/GUI/Gui.h"
 
 namespace open3d {
+
+namespace visualization {
+class Renderer;
+}  // namespace visualization
+
 namespace gui {
 
 class Color;
@@ -42,6 +47,7 @@ struct Theme;
 
 struct DrawContext {
     const Theme& theme;
+    visualization::Renderer& renderer;
     int uiOffsetX;
     int uiOffsetY;
     int screenWidth;

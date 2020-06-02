@@ -184,7 +184,7 @@ void convert(int argc,
                 "Processed point cloud from {:d} points to {:d} points.",
                 (int)point_num_in, (int)point_num_out);
     }
-    io::WritePointCloud(file_out.c_str(), *pointcloud_ptr, false, true);
+    io::WritePointCloud(file_out.c_str(), *pointcloud_ptr, {false, true});
 }
 
 int main(int argc, char **argv) {

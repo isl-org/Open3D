@@ -45,6 +45,7 @@
 #include "Open3D/GUI/ImguiFilamentBridge.h"
 
 #include <fcntl.h>
+#include <filamat/MaterialBuilder.h>
 #include <filament/Fence.h>
 #include <filament/IndexBuffer.h>
 #include <filament/Material.h>
@@ -55,13 +56,12 @@
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
-#include <filament/filamat/MaterialBuilder.h>
-#include <filament/utils/EntityManager.h>
 #include <imgui.h>
+#include <utils/EntityManager.h>
 #include <cerrno>
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 #include <iostream>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 #if !defined(WIN32)
@@ -78,6 +78,7 @@
 #include "Open3D/Visualization/Rendering/Filament/FilamentCamera.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentScene.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
 
@@ -181,28 +182,82 @@ static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
             .build(engine);
 }
 
+class MaterialPool {
+public:
+    MaterialPool(){};
+
+    MaterialPool(filament::Engine* engine,
+                 filament::Material* material_template) {
+        engine_ = engine;
+        template_ = material_template;
+        reset();
+    }
+
+    // Drains the pool and deallocates all the objects.
+    void drain() {
+        for (auto* o : pool_) {
+            engine_->destroy(o);
+        }
+        pool_.clear();
+    }
+
+    // Invalidates all the pointers previously given out and "refills"
+    // the pool with them.
+    void reset() { next_index_ = 0; }
+
+    // Returns an object from the pool. The pool retains ownership.
+    filament::MaterialInstance* pull() {
+        if (next_index_ >= pool_.size()) {
+            pool_.push_back(template_->createInstance());
+        }
+        return pool_[next_index_++];
+    }
+
+private:
+    filament::Engine* engine_ = nullptr;             // we do not own this
+    filament::Material* template_ = nullptr;         // we do not own this
+    std::vector<filament::MaterialInstance*> pool_;  // we DO own these
+    size_t next_index_ = 0;
+};
+
+static const char* kUiBlitTexParamName = "albedo";
+static const char* kImageTexParamName = "image";
+
 struct ImguiFilamentBridge::Impl {
     // Bridge manages filament resources directly
-    filament::Material* material_ = nullptr;
+    filament::Material* uiblit_material_ = nullptr;
+    filament::Material* image_material_ = nullptr;
     std::vector<filament::VertexBuffer*> vertex_buffers_;
     std::vector<filament::IndexBuffer*> index_buffers_;
-    std::vector<filament::MaterialInstance*> material_instances_;
+
+    // Use material pools to avoid allocating materials during every draw
+    MaterialPool uiblit_pool_;
+    MaterialPool image_pool_;
 
     utils::Entity renderable_;
-    filament::Texture* texture_ = nullptr;
+    filament::Texture* font_texture_ = nullptr;
     bool has_synced_ = false;
 
-    visualization::FilamentView* view_ = nullptr;  // we do not own this
+    visualization::FilamentRenderer* renderer_ = nullptr;  // we do not own this
+    visualization::FilamentView* view_ = nullptr;          // we do not own this
 };
 
 ImguiFilamentBridge::ImguiFilamentBridge(
         visualization::FilamentRenderer* renderer, const Size& window_size)
     : impl_(new ImguiFilamentBridge::Impl()) {
+    impl_->renderer_ = renderer;
     // The UI needs a special material (just a pass-through blit)
     std::string resource_path = Application::GetInstance().GetResourcePath();
-    impl_->material_ =
+    impl_->uiblit_material_ =
             LoadMaterialTemplate(resource_path + "/ui_blit.filamat",
                                  visualization::EngineInstance::GetInstance());
+    impl_->image_material_ =
+            LoadMaterialTemplate(resource_path + "/img_blit.filamat",
+                                 visualization::EngineInstance::GetInstance());
+
+    auto& engine = visualization::EngineInstance::GetInstance();
+    impl_->uiblit_pool_ = MaterialPool(&engine, impl_->uiblit_material_);
+    impl_->image_pool_ = MaterialPool(&engine, impl_->image_material_);
 
     auto scene_handle = renderer->CreateScene();
     renderer->ConvertToGuiScene(scene_handle);
@@ -223,51 +278,41 @@ ImguiFilamentBridge::ImguiFilamentBridge(
     scene->GetNativeScene()->addEntity(impl_->renderable_);
 }
 
-ImguiFilamentBridge::ImguiFilamentBridge(filament::Engine* engine,
-                                         filament::Scene* scene,
-                                         filament::Material* uiblit_material)
-    : impl_(new ImguiFilamentBridge::Impl()) {
-    impl_->material_ = uiblit_material;
-
-    EntityManager& em = utils::EntityManager::get();
-    impl_->renderable_ = em.create();
-    scene->addEntity(impl_->renderable_);
-}
-
 void ImguiFilamentBridge::CreateAtlasTextureAlpha8(unsigned char* pixels,
                                                    int width,
                                                    int height,
                                                    int bytes_per_px) {
     auto& engine = visualization::EngineInstance::GetInstance();
 
-    engine.destroy(impl_->texture_);
+    engine.destroy(impl_->font_texture_);
 
     size_t size = (size_t)(width * height);
     Texture::PixelBufferDescriptor pb(pixels, size, Texture::Format::R,
                                       Texture::Type::UBYTE);
-    impl_->texture_ = Texture::Builder()
-                              .width((uint32_t)width)
-                              .height((uint32_t)height)
-                              .levels((uint8_t)1)
-                              .format(Texture::InternalFormat::R8)
-                              .sampler(Texture::Sampler::SAMPLER_2D)
-                              .build(engine);
-    impl_->texture_->setImage(engine, 0, std::move(pb));
+    impl_->font_texture_ = Texture::Builder()
+                                   .width((uint32_t)width)
+                                   .height((uint32_t)height)
+                                   .levels((uint8_t)1)
+                                   .format(Texture::InternalFormat::R8)
+                                   .sampler(Texture::Sampler::SAMPLER_2D)
+                                   .build(engine);
+    impl_->font_texture_->setImage(engine, 0, std::move(pb));
 
     TextureSampler sampler(TextureSampler::MinFilter::LINEAR,
                            TextureSampler::MagFilter::LINEAR);
-    impl_->material_->setDefaultParameter("albedo", impl_->texture_, sampler);
+    impl_->uiblit_material_->setDefaultParameter(kUiBlitTexParamName,
+                                                 impl_->font_texture_, sampler);
 }
 
 ImguiFilamentBridge::~ImguiFilamentBridge() {
     auto& engine = visualization::EngineInstance::GetInstance();
 
     engine.destroy(impl_->renderable_);
-    for (auto& mi : impl_->material_instances_) {
-        engine.destroy(mi);
-    }
-    engine.destroy(impl_->material_);
-    engine.destroy(impl_->texture_);
+    impl_->uiblit_pool_.drain();
+    impl_->image_pool_.drain();
+    engine.destroy(impl_->uiblit_material_);
+    engine.destroy(impl_->image_material_);
+    engine.destroy(impl_->font_texture_);
     for (auto& vb : impl_->vertex_buffers_) {
         engine.destroy(vb);
     }
@@ -278,14 +323,46 @@ ImguiFilamentBridge::~ImguiFilamentBridge() {
 
 // To help with mapping unique scissor rectangles to material instances, we
 // create a 64-bit key from a 4-tuple that defines an AABB in screen space.
-static uint64_t MakeScissorKey(int fb_height, const ImVec4& clip_rect) {
-    uint16_t left = (uint16_t)clip_rect.x;
-    uint16_t bottom = (uint16_t)(fb_height - clip_rect.w);
-    uint16_t width = (uint16_t)(clip_rect.z - clip_rect.x);
-    uint16_t height = (uint16_t)(clip_rect.w - clip_rect.y);
-    return ((uint64_t)left << 0ull) | ((uint64_t)bottom << 16ull) |
-           ((uint64_t)width << 32ull) | ((uint64_t)height << 48ull);
-}
+class ScissorRectKey {
+public:
+    ScissorRectKey(int fb_height, const ImVec4& clip_rect, ImTextureID tex_id) {
+        left_ = (uint16_t)clip_rect.x;
+        bottom_ = (uint16_t)(fb_height - clip_rect.w);
+        width_ = (uint16_t)(clip_rect.z - clip_rect.x);
+        height_ = (uint16_t)(clip_rect.w - clip_rect.y);
+        rect_ = ((uint64_t)left_ << 0ull) | ((uint64_t)bottom_ << 16ull) |
+                ((uint64_t)width_ << 32ull) | ((uint64_t)height_ << 48ull);
+        id_ = tex_id;
+    }
+
+    bool operator==(const ScissorRectKey& other) const {
+        if (id_ == other.id_) {
+            return (rect_ == other.rect_);
+        }
+        return false;
+    }
+
+    bool operator!=(const ScissorRectKey& other) const {
+        return !operator==(other);
+    }
+
+    bool operator<(const ScissorRectKey& other) const {
+        if (id_ == other.id_) {
+            return (rect_ < other.rect_);
+        }
+        return (id_ < other.id_);
+    }
+
+    // Used for comparisons
+    uint64_t rect_;
+    ImTextureID id_;
+
+    // Not used for comparisons
+    uint16_t left_;
+    uint16_t bottom_;
+    uint16_t width_;
+    uint16_t height_;
+};
 
 void ImguiFilamentBridge::Update(ImDrawData* imgui_data) {
     impl_->has_synced_ = false;
@@ -307,36 +384,41 @@ void ImguiFilamentBridge::Update(ImDrawData* imgui_data) {
     // Count how many primitives we'll need, then create a Renderable builder.
     // Also count how many unique scissor rectangles are required.
     size_t num_prims = 0;
-    std::unordered_map<uint64_t, filament::MaterialInstance*> scissor_rects;
+    std::map<ScissorRectKey, filament::MaterialInstance*> scissor_rects;
     for (int idx = 0; idx < imgui_data->CmdListsCount; idx++) {
         const ImDrawList* cmds = imgui_data->CmdLists[idx];
         num_prims += cmds->CmdBuffer.size();
         for (const auto& pcmd : cmds->CmdBuffer) {
-            scissor_rects[MakeScissorKey(fbheight, pcmd.ClipRect)] = nullptr;
+            scissor_rects[ScissorRectKey(fbheight, pcmd.ClipRect,
+                                         pcmd.TextureId)] = nullptr;
         }
     }
     auto rbuilder = RenderableManager::Builder(num_prims);
     rbuilder.boundingBox({{0, 0, 0}, {10000, 10000, 10000}}).culling(false);
 
-    // Ensure that we have a material instance for each scissor rectangle.
-    size_t previous_size = impl_->material_instances_.size();
-    if (scissor_rects.size() > impl_->material_instances_.size()) {
-        impl_->material_instances_.resize(scissor_rects.size());
-        for (size_t i = previous_size; i < impl_->material_instances_.size();
-             i++) {
-            impl_->material_instances_[i] = impl_->material_->createInstance();
-        }
-    }
-
     // Push each unique scissor rectangle to a MaterialInstance.
-    size_t mat_index = 0;
+    impl_->uiblit_pool_.reset();
+    impl_->image_pool_.reset();
+    TextureSampler sampler(TextureSampler::MinFilter::LINEAR,
+                           TextureSampler::MagFilter::LINEAR);
     for (auto& pair : scissor_rects) {
-        pair.second = impl_->material_instances_[mat_index++];
-        uint32_t left = (pair.first >> 0ull) & 0xffffull;
-        uint32_t bottom = (pair.first >> 16ull) & 0xffffull;
-        uint32_t width = (pair.first >> 32ull) & 0xffffull;
-        uint32_t height = (pair.first >> 48ull) & 0xffffull;
-        pair.second->setScissor(left, bottom, width, height);
+        if (pair.first.id_ == 0) {
+            pair.second = impl_->uiblit_pool_.pull();
+            // Don't need to set texture, since we set the font texture
+            // as the default when we created this material.
+        } else {
+            pair.second = impl_->image_pool_.pull();
+            auto tex_id_long = reinterpret_cast<uintptr_t>(pair.first.id_);
+            auto tex_id = std::uint16_t(tex_id_long);
+            auto tex_handle = visualization::TextureHandle(tex_id);
+            auto tex = visualization::EngineInstance::GetResourceManager()
+                               .GetTexture(tex_handle);
+            auto tex_sh_ptr = tex.lock();
+            pair.second->setParameter(kImageTexParamName, tex_sh_ptr.get(),
+                                      sampler);
+        }
+        pair.second->setScissor(pair.first.left_, pair.first.bottom_,
+                                pair.first.width_, pair.first.height_);
     }
 
     // Recreate the Renderable component and point it to the vertex buffers.
@@ -354,7 +436,8 @@ void ImguiFilamentBridge::Update(ImDrawData* imgui_data) {
             if (pcmd.UserCallback) {
                 pcmd.UserCallback(cmds, &pcmd);
             } else {
-                uint64_t skey = MakeScissorKey(fbheight, pcmd.ClipRect);
+                auto skey =
+                        ScissorRectKey(fbheight, pcmd.ClipRect, pcmd.TextureId);
                 auto miter = scissor_rects.find(skey);
                 assert(miter != scissor_rects.end());
                 rbuilder.geometry(prim_index,
