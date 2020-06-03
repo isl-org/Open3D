@@ -413,7 +413,7 @@ public:
     /// Function to simplify mesh using Quadric Error Metric Decimation by
     /// Garland and Heckbert.
     /// \param target_number_of_triangles defines the number of triangles that
-    /// the simplified mesh should have. It is not guranteed that this number
+    /// the simplified mesh should have. It is not guaranteed that this number
     /// will be reached.
     std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
             int target_number_of_triangles) const;
@@ -522,7 +522,7 @@ public:
             std::shared_ptr<TetraMesh> tetra_mesh = nullptr,
             std::vector<size_t> *pt_map = nullptr);
 
-    /// Function that computes a triangle mesh from a oriented PointCloud \p
+    /// Function that computes a triangle mesh from an oriented PointCloud \p
     /// pcd. This implements the Ball Pivoting algorithm proposed in F.
     /// Bernardini et al., "The ball-pivoting algorithm for surface
     /// reconstruction", 1999. The implementation is also based on the
@@ -596,7 +596,7 @@ public:
     /// The sphere with radius will be centered at (0, 0, 0).
     /// Its axis is aligned with z-axis.
     /// \param radius defines radius of the sphere.
-    /// \param resolution defines the resolution of the sphere. The longitues
+    /// \param resolution defines the resolution of the sphere. The longitudes
     /// will be split into resolution segments (i.e. there are resolution + 1
     /// latitude lines including the north and south pole). The latitudes will
     /// be split into `2 * resolution segments (i.e. there are 2 * resolution
@@ -682,7 +682,7 @@ public:
     /// (TriangleMeshFactory.cpp).
     /// arrows respectively. \param size is the length of the axes.
     /// \param size defines the size of the coordinate frame.
-    /// \param origin defines the origin of the cooridnate frame.
+    /// \param origin defines the origin of the coordinate frame.
     static std::shared_ptr<TriangleMesh> CreateCoordinateFrame(
             double size = 1.0,
             const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
