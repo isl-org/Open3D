@@ -127,6 +127,9 @@ void pybind_geometry_classes(py::module &m) {
                  "center"_a)
             .def("rotate", &geometry::Geometry3D::Rotate,
                  "Apply rotation to the geometry coordinates and normals.",
+                 "R"_a)
+            .def("rotate", &geometry::Geometry3D::Rotate,
+                 "Apply rotation to the geometry coordinates and normals.",
                  "R"_a, "center"_a)
             .def_static("get_rotation_matrix_from_xyz",
                         &geometry::Geometry3D::GetRotationMatrixFromXYZ,
