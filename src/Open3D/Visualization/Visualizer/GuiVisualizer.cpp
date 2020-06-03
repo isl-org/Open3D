@@ -1833,7 +1833,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
             const float ioProgressAmount = 0.5f;
             try {
                 io::ReadPointCloudOption opt;
-                opt.update_progress = [ioProgressAmount, UpdateProgress](double percent) -> bool {
+                opt.update_progress = [ioProgressAmount,
+                                       UpdateProgress](double percent) -> bool {
                     UpdateProgress(ioProgressAmount * percent / 100.0);
                     return true;
                 };
