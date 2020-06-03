@@ -54,7 +54,7 @@ endif()
 # setup PYTHON_EXECUTABLE if not set
 find_program(PYTHON_IN_PATH "python")
 if (NOT PYTHON_EXECUTABLE)
-    set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
+    set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH} CACHE FILEPATH "Python exectuable to use")
     message(STATUS "Using python from PATH: ${PYTHON_EXECUTABLE}")
 else()
     message(STATUS "Using python from PYTHON_EXECUTABLE variable: ${PYTHON_EXECUTABLE}")
