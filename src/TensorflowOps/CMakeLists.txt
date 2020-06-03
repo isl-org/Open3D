@@ -51,7 +51,9 @@ target_include_directories( open3d_tf_ops PRIVATE
     #${parallelstl_INCLUDE_DIR}
     )
 # silence warnings caused by tensorflow's Eigen
-target_include_directories( open3d_tf_ops SYSTEM PRIVATE
+# Travis has a different version of protobuf in /usr/local/include
+# we want to pick up the tensorflow version here, so we want to use BEFORE
+target_include_directories( open3d_tf_ops SYSTEM BEFORE PRIVATE
     ${Tensorflow_INCLUDE_DIR}
     )
 #if ( CUDA_ENABLED )
