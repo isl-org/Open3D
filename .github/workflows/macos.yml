@@ -1,6 +1,5 @@
-name: C/C++ CI
+name: macOS CI
 
-# on: [push, pull_request]
 on:
   push:
     branches:
