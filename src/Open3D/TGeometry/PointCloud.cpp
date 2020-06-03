@@ -48,7 +48,7 @@ PointCloud::PointCloud(const Tensor &points_tensor)
 }
 
 PointCloud::PointCloud(
-        const std::unordered_map<std::string, Tensor> &point_dict)
+        const std::unordered_map<std::string, TensorList> &point_dict)
     : Geometry3D(Geometry::GeometryType::PointCloud) {
     auto it = point_dict.find("points");
     if (it == point_dict.end()) {
@@ -59,7 +59,7 @@ PointCloud::PointCloud(
     device_ = it->second.GetDevice();
 
     auto shape = it->second.GetShape();
-    if (shape[1] != 3) {
+    if (shape.size() != 2 || shape[1] != 3) {
         utility::LogError("PointCloud must be constructed from (N, 3) points.");
     }
 

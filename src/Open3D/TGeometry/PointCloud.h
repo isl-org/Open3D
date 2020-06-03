@@ -55,7 +55,7 @@ public:
     PointCloud(const Tensor &points_tensor);
 
     /// Construct from points and various other properties
-    PointCloud(const std::unordered_map<std::string, Tensor> &point_dict);
+    PointCloud(const std::unordered_map<std::string, TensorList> &point_dict);
 
     ~PointCloud() override {}
 
