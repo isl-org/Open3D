@@ -50,7 +50,19 @@ public:
         point_dict_["points"] = TensorList({3}, dtype_, device_);
     }
 
+    /// Construct from default points
+    /// points_tensor: (N, 3)
+    PointCloud(const Tensor &points_tensor);
+
+    /// Construct from points and various other properties
+    PointCloud(const std::unordered_map<std::string, Tensor> &point_dict);
+
     ~PointCloud() override {}
+
+    TensorList &operator[](const std::string &key);
+
+    void SyncPushBack(
+            const std::unordered_map<std::string, Tensor> &point_struct);
 
     PointCloud &Clear() override;
 

@@ -36,6 +36,77 @@
 namespace open3d {
 namespace tgeometry {
 
+PointCloud::PointCloud(const Tensor &points_tensor)
+    : Geometry3D(Geometry::GeometryType::PointCloud),
+      dtype_(points_tensor.GetDtype()),
+      device_(points_tensor.GetDevice()) {
+    auto shape = points_tensor.GetShape();
+    if (shape[1] != 3) {
+        utility::LogError("PointCloud must be constructed from (N, 3) points.");
+    }
+    point_dict_.emplace("points", TensorList(points_tensor));
+}
+
+PointCloud::PointCloud(
+        const std::unordered_map<std::string, Tensor> &point_dict)
+    : Geometry3D(Geometry::GeometryType::PointCloud) {
+    auto it = point_dict.find("points");
+    if (it == point_dict.end()) {
+        utility::LogError("PointCloud must include key \"points\".");
+    }
+
+    dtype_ = it->second.GetDtype();
+    device_ = it->second.GetDevice();
+
+    auto shape = it->second.GetShape();
+    if (shape[1] != 3) {
+        utility::LogError("PointCloud must be constructed from (N, 3) points.");
+    }
+
+    for (auto kv : point_dict) {
+        if (device_ != kv.second.GetDevice()) {
+            utility::LogError("TensorList device mismatch!");
+        }
+        point_dict_.emplace(kv.first, kv.second);
+    }
+}
+
+TensorList &PointCloud::operator[](const std::string &key) {
+    auto it = point_dict_.find(key);
+    if (it == point_dict_.end()) {
+        utility::LogError("Unknown key {} in PointCloud point_dict_.", key);
+    }
+
+    return it->second;
+}
+
+void PointCloud::SyncPushBack(
+        const std::unordered_map<std::string, Tensor> &point_struct) {
+    // Check if "point"" exists
+    auto it = point_struct.find("points");
+    if (it == point_struct.end()) {
+        utility::LogError("Point must include key \"points\".");
+    }
+
+    auto size = point_dict_.find("points")->second.GetSize();
+    for (auto kv : point_struct) {
+        // Check existance of key in point_dict
+        auto it = point_dict_.find(kv.first);
+        if (it == point_dict_.end()) {
+            utility::LogError("Unknown key {} in PointCloud dictionary.",
+                              kv.first);
+        }
+
+        // Check size consistency
+        auto size_it = it->second.GetSize();
+        if (size_it != size) {
+            utility::LogError("Size mismatch ({}, {}) between ({}, {}).",
+                              "points", size, kv.first, size_it);
+        }
+        it->second.PushBack(kv.second);
+    }
+}
+
 PointCloud &PointCloud::Clear() {
     point_dict_.clear();
     return *this;
