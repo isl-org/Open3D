@@ -36,6 +36,8 @@ matrix:
         - ls -la ~/py3env/bin
         - pytest --version
         - ./util/scripts/install-deps-osx.sh
+        - pip install -U tensorflow==2.0.0
+        - find /Users/travis/build/intel-isl/Open3D/src /usr/local/include /Users/travis/py3env/lib/python3.7/site-packages/tensorflow_core/include -name port_def.inc|xargs grep PROTOBUF_VERSION
       script: ./util/scripts/run-travis.sh
 
     - os: osx
