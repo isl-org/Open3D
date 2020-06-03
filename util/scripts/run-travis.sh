@@ -27,6 +27,7 @@ reportJobFinishSession() {
     echo "ReportJobSession: ran $rj_startts - $rj_ts"
 }
 
+echo "nproc = $(nproc) NPROC = ${NPROC}"
 reportJobStart "installing Python unit test dependencies"
 pip install --upgrade pip
 pip install -U pytest
@@ -73,7 +74,7 @@ echo
 echo "build & install Open3D..."
 date
 reportJobStart "build -j$NPROC"
-make -j$NPROC VERBOSE=1
+make -j$NPROC
 reportJobStart "install"
 make install -j$NPROC
 reportJobStart "install-pip-package"
@@ -98,7 +99,7 @@ echo
 if $runBenchmarks; then
     echo "running Open3D benchmarks..."
     date
-reportJobStart "benchmarks"
+    reportJobStart "benchmarks"
     ./bin/benchmarks
     echo
 fi
