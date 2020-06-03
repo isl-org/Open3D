@@ -51,6 +51,20 @@ if (PREFER_OSX_HOMEBREW)
     set(CMAKE_FIND_APPBUNDLE LAST)
 endif()
 
+# setup PYTHON_EXECUTABLE if not set
+find_program(PYTHON_IN_PATH "python")
+if (NOT PYTHON_EXECUTABLE)
+    set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
+    message(STATUS "Using python from PATH: ${PYTHON_EXECUTABLE}")
+else()
+    message(STATUS "Using python from PYTHON_EXECUTABLE variable: ${PYTHON_EXECUTABLE}")
+    if ("${PYTHON_EXECUTABLE}" STREQUAL "${PYTHON_IN_PATH}")
+        message(STATUS "(PYTHON_EXECUTABLE matches python from PATH)")
+    else()
+        message(STATUS "(PYTHON_EXECUTABLE does NOT match python from PATH: ${PYTHON_IN_PATH})")
+    endif()
+endif()
+
 # Cache variables for specifying the GPU architectures
 set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
 one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures" )
