@@ -73,7 +73,7 @@ echo
 echo "build & install Open3D..."
 date
 reportJobStart "build -j$NPROC"
-make -j$NPROC
+make -j$NPROC VERBOSE=1
 reportJobStart "install"
 make install -j$NPROC
 reportJobStart "install-pip-package"
