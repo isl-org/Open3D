@@ -30,61 +30,45 @@
 #include "Open3D/Utility/Eigen.h"
 
 namespace open3d {
-template <typename Scalar>
-Tensor FromEigen(const Eigen::Matrix<Scalar, -1, -1>& eigen_matrix) {
-    auto dtype = DtypeUtil::FromType<Scalar>();
-
-    // Eigen uses column major, so we fill in a transposed matrix
-    // TODO: consider eigen allocator and alignment
-    Tensor tensor = Tensor(
-            SizeVector({eigen_matrix.cols(), eigen_matrix.rows()}), dtype);
-
-    auto dst_ptr = tensor.GetBlob()->GetDataPtr();
-    auto dst_stride = tensor.GetStrides()[0];
-
-    auto src_ptr = reinterpret_cast<const void*>(eigen_matrix.data());
-    auto src_stride = eigen_matrix.outerStride();
-
-    for (int64_t i = 0; i < eigen_matrix.cols(); ++i) {
-        MemoryManager::MemcpyFromHost(
-                static_cast<Scalar*>(dst_ptr) + i * dst_stride,
-                tensor.GetDevice(),
-                static_cast<const Scalar*>(src_ptr) + i * src_stride,
-                src_stride * sizeof(Scalar));
-    }
-
-    return tensor.T();
+template <class T, int M, int N, int A>
+Tensor FromEigen(const Eigen::Matrix<T, M, N, A>& matrix) {
+    Dtype dtype = DtypeUtil::FromType<T>();
+    Eigen::Matrix<T, M, N, Eigen::RowMajor> matrix_row_major = matrix;
+    return Tensor(matrix_row_major.data(), {matrix.rows(), matrix.cols()},
+                  dtype);
 }
 
 /// By default returns a double Matrix on CPU
-template <typename Scalar>
-Eigen::Matrix<Scalar, -1, -1> ToEigen(const Tensor& tensor) {
-    auto dtype = DtypeUtil::FromType<Scalar>();
+template <typename T>
+Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> ToEigen(
+        const Tensor& tensor, Eigen::StorageOptions align = Eigen::ColMajor) {
+    Dtype dtype = DtypeUtil::FromType<T>();
     if (dtype != tensor.GetDtype()) {
         utility::LogError("Eigen and tensor dtype mismatch.");
     }
-
-    auto shape = tensor.GetShape();
+    SizeVector shape = tensor.GetShape();
     if (shape.size() != 2) {
         utility::LogError("A tensor must be 2D to be converted to a matrix.");
     }
 
-    /// Copy from transposed tensor is more efficient for point clouds (N x 3)
-    auto tensor_t = tensor.T().Contiguous();
-    auto src_ptr = tensor_t.GetBlob()->GetDataPtr();
-    auto src_stride = tensor_t.GetStrides()[0];
-
-    Eigen::Matrix<Scalar, -1, -1> eigen_matrix(shape[0], shape[1]);
-    auto dst_ptr = reinterpret_cast<void*>(eigen_matrix.data());
-    auto dst_stride = eigen_matrix.outerStride();
-
-    for (int64_t i = 0; i < eigen_matrix.cols(); ++i) {
-        MemoryManager::MemcpyToHost(
-                static_cast<Scalar*>(dst_ptr) + i * dst_stride,
-                static_cast<const Scalar*>(src_ptr) + i * src_stride,
-                tensor.GetDevice(), src_stride * sizeof(Scalar));
+    size_t num_bytes = DtypeUtil::ByteSize(dtype) * tensor.NumElements();
+    Device device = tensor.GetDevice();
+    if (align == Eigen::ColMajor) {
+        Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>
+                matrix(shape[0], shape[1]);
+        MemoryManager::MemcpyToHost(matrix.data(),
+                                    tensor.T().Contiguous().GetDataPtr(),
+                                    device, num_bytes);
+        return matrix;
+    } else if (align == Eigen::RowMajor) {
+        Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                matrix(shape[0], shape[1]);
+        MemoryManager::MemcpyToHost(matrix.data(),
+                                    tensor.Contiguous().GetDataPtr(), device,
+                                    num_bytes);
+        return matrix;
+    } else {
+        utility::LogError("Only supports RowMajor or ColumnMajor.");
     }
-
-    return eigen_matrix;
 }
 }  // namespace open3d

@@ -32,45 +32,42 @@
 namespace open3d {
 namespace unit_test {
 TEST(EigenAdaptor, FromEigen) {
-    Eigen::MatrixXd matrix(63, 33);
-    matrix.setRandom();
+    Eigen::MatrixXd matrix(2, 3);
+    matrix << 0, 1, 2, 3, 4, 5;
 
-    auto tensor_f64 = FromEigen(matrix);
-    auto tensor_f32 = FromEigen(matrix.cast<float>().eval());
+    Tensor tensor_f64 = FromEigen(matrix);
+    EXPECT_EQ(tensor_f64.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(tensor_f64.GetDevice(), Device("CPU:0"));
+    EXPECT_EQ(tensor_f64.GetDtype(), Dtype::Float64);
+    EXPECT_EQ(tensor_f64.ToFlatVector<double>(),
+              std::vector<double>({0, 1, 2, 3, 4, 5}));
 
-    for (int64_t i = 0; i < matrix.rows(); ++i) {
-        for (int64_t j = 0; j < matrix.cols(); ++j) {
-            double f64_gt = matrix(i, j);
-            double f64 = tensor_f64[i][j].Item<double>();
-            float f32 = tensor_f32[i][j].Item<float>();
-            EXPECT_NEAR(f64, f64_gt, THRESHOLD_1E_6);
-            EXPECT_NEAR(f32, f64_gt, THRESHOLD_1E_6);
-        }
-    }
+    Tensor tensor_f32 = FromEigen(matrix.cast<float>().eval());
+    EXPECT_EQ(tensor_f32.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(tensor_f32.GetDevice(), Device("CPU:0"));
+    EXPECT_EQ(tensor_f32.GetDtype(), Dtype::Float32);
+    EXPECT_EQ(tensor_f32.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 2, 3, 4, 5}));
 }
 
 TEST(EigenAdaptor, ToEigen) {
-    std::random_device rnd_device;
-    std::mt19937 mersenne_engine{rnd_device()};
-    std::uniform_real_distribution<float> dist{-10000, 10000};
+    Tensor t(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32);
 
-    int64_t rows = 63;
-    int64_t cols = 33;
-    std::vector<float> tensor_vals(rows * cols);
-    std::generate(tensor_vals.begin(), tensor_vals.end(),
-                  [&]() { return dist(mersenne_engine); });
+    Eigen::Matrix<float, -1, -1, Eigen::RowMajor> ref_row_major(2, 3);
+    ref_row_major << 0, 1, 2, 3, 4, 5;
+    Eigen::Matrix<float, -1, -1, Eigen::RowMajor> row_major =
+            ToEigen<float>(t, Eigen::RowMajor);
+    ExpectEQ(row_major, ref_row_major);
+    EXPECT_EQ(row_major.rows(), ref_row_major.rows());
+    EXPECT_EQ(row_major.cols(), ref_row_major.cols());
 
-    auto tensor = Tensor(tensor_vals, SizeVector({rows, cols}), Dtype::Float32,
-                         Device("CPU:0"));
-    auto matrix = ToEigen<float>(tensor);
-
-    for (int64_t i = 0; i < matrix.rows(); ++i) {
-        for (int64_t j = 0; j < matrix.cols(); ++j) {
-            double fgt = matrix(i, j);
-            double f = tensor[i][j].Item<float>();
-            EXPECT_NEAR(f, fgt, THRESHOLD_1E_6);
-        }
-    }
+    Eigen::Matrix<float, -1, -1, Eigen::ColMajor> ref_col_major(2, 3);
+    ref_col_major << 0, 1, 2, 3, 4, 5;
+    Eigen::Matrix<float, -1, -1, Eigen::ColMajor> col_major =
+            ToEigen<float>(t, Eigen::ColMajor);
+    ExpectEQ(col_major, ref_col_major);
+    EXPECT_EQ(col_major.rows(), ref_col_major.rows());
+    EXPECT_EQ(col_major.cols(), ref_col_major.cols());
 }
 }  // namespace unit_test
 }  // namespace open3d

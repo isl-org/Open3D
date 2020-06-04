@@ -33,7 +33,7 @@ template <typename T>
 inline Tensor FromTemplatedVectorXd(const Eigen::VectorXd& vector,
                                     int64_t N,
                                     Dtype dtype,
-                                    Device device) {
+                                    Device device = Device("CPU:0")) {
     auto vals = std::vector<T>(N);
     for (int64_t i = 0; i < N; ++i) {
         vals[i] = vector(i);
@@ -41,7 +41,9 @@ inline Tensor FromTemplatedVectorXd(const Eigen::VectorXd& vector,
     return Tensor(vals, SizeVector({N}), dtype, device);
 }
 
-Tensor FromVectorXd(const Eigen::VectorXd& vector, Dtype dtype, Device device) {
+Tensor FromVectorXd(const Eigen::VectorXd& vector,
+                    Dtype dtype,
+                    Device device = Device("CPU:0")) {
     int64_t N = vector.size();
     if (dtype == Dtype::Float64) {
         return FromTemplatedVectorXd<double>(vector, N, dtype, device);
@@ -53,7 +55,7 @@ Tensor FromVectorXd(const Eigen::VectorXd& vector, Dtype dtype, Device device) {
 }
 
 inline Eigen::Vector3d FromTensor3d(const Tensor& tensor) {
-    auto dtype = tensor.GetDtype();
+    Dtype dtype = tensor.GetDtype();
     if (dtype == Dtype::Float64) {
         return Eigen::Vector3d(tensor[0].Item<double>(),
                                tensor[1].Item<double>(),
@@ -67,79 +69,80 @@ inline Eigen::Vector3d FromTensor3d(const Tensor& tensor) {
 }
 
 tgeometry::PointCloud PointCloud::FromLegacyPointCloud(
-        const geometry::PointCloud& pcd_legacy) {
-    tgeometry::PointCloud pcd;
+        const geometry::PointCloud& pcd_legacy, Dtype dtype, Device device) {
+    tgeometry::PointCloud pcd(dtype, device);
 
-    if (!pcd_legacy.HasPoints()) {
-        utility::LogWarning("Create from empty geometry::PointCloud");
-        return pcd;
-    }
-
-    int64_t N = pcd_legacy.points_.size();
-    pcd.point_dict_["points"].Resize(N);
-
-    auto pts_tensor = pcd.point_dict_["points"].AsTensor();
-    auto dtype = pts_tensor.GetDtype();
-    auto device = pts_tensor.GetDevice();
-
-    for (int64_t i = 0; i < N; ++i) {
-        pts_tensor[i] = FromVectorXd(pcd_legacy.points_[i], dtype, device);
-    }
-
-    if (pcd_legacy.HasNormals()) {
-        int64_t N = pcd_legacy.normals_.size();
-        pcd.point_dict_["normals"] = TensorList({3}, dtype, device, N);
-
-        auto ns_tensor = pcd.point_dict_["normals"].AsTensor();
+    if (pcd_legacy.HasPoints()) {
+        int64_t N = pcd_legacy.points_.size();
+        Tensor pts_tensor({N, 3}, dtype);
         for (int64_t i = 0; i < N; ++i) {
-            ns_tensor[i] = FromVectorXd(pcd_legacy.normals_[i], dtype, device);
+            pts_tensor[i] = FromVectorXd(pcd_legacy.points_[i], dtype);
         }
+        pcd.point_dict_["points"] =
+                TensorList::FromTensor(pts_tensor.Copy(device));
+    } else {
+        utility::LogWarning(
+                "Create from empty geometry::PointCloud, returning an empty "
+                "tgeometry::PointCloud");
+        return pcd;
     }
 
     if (pcd_legacy.HasColors()) {
         int64_t N = pcd_legacy.colors_.size();
-        pcd.point_dict_["colors"] = TensorList({3}, dtype, device, N);
-
-        auto cs_tensor = pcd.point_dict_["colors"].AsTensor();
+        Tensor cs_tensor({N, 3}, dtype);
         for (int64_t i = 0; i < N; ++i) {
-            cs_tensor[i] = FromVectorXd(pcd_legacy.colors_[i], dtype, device);
+            cs_tensor[i] = FromVectorXd(pcd_legacy.colors_[i], dtype);
         }
+        pcd.point_dict_["colors"] =
+                TensorList::FromTensor(cs_tensor.Copy(device));
+    }
+
+    if (pcd_legacy.HasNormals()) {
+        int64_t N = pcd_legacy.normals_.size();
+        Tensor ns_tensor({N, 3}, dtype);
+        for (int64_t i = 0; i < N; ++i) {
+            ns_tensor[i] = FromVectorXd(pcd_legacy.normals_[i], dtype);
+        }
+        pcd.point_dict_["normals"] =
+                TensorList::FromTensor(ns_tensor.Copy(device));
     }
 
     return pcd;
 }
 
-std::shared_ptr<geometry::PointCloud> PointCloud::ToLegacyPointCloud(
+geometry::PointCloud PointCloud::ToLegacyPointCloud(
         const tgeometry::PointCloud& pcd) {
-    auto pcd_legacy = std::make_shared<geometry::PointCloud>();
+    geometry::PointCloud pcd_legacy;
 
-    if (!pcd.HasPoints()) {
-        utility::LogWarning("Create from empty tgeometry::PointCloud");
-        return pcd_legacy;
-    }
+    Device host = Device("CPU:0");
 
-    auto pts_tensorlist = pcd.point_dict_.find("points")->second;
-    auto pts_tensor = pts_tensorlist.AsTensor();
-    int64_t N = pts_tensorlist.GetSize();
-
-    pcd_legacy->points_.resize(N);
-    for (int64_t i = 0; i < N; ++i) {
-        pcd_legacy->points_[i] = FromTensor3d(pts_tensor[i]);
+    if (pcd.HasPoints()) {
+        Tensor pts_tensor =
+                pcd.point_dict_.find("colors")->second.AsTensor().Copy(host);
+        int64_t N = pts_tensor.GetShape()[0];
+        pcd_legacy.colors_.resize(N);
+        for (int64_t i = 0; i < N; ++i) {
+            pcd_legacy.points_[i] = FromTensor3d(pts_tensor[i]);
+        }
     }
 
     if (pcd.HasColors()) {
-        auto cs_tensor = pcd.point_dict_.find("colors")->second.AsTensor();
-        pcd_legacy->colors_.resize(N);
+        Tensor cs_tensor =
+                pcd.point_dict_.find("colors")->second.AsTensor().Copy(host);
+        int64_t N = cs_tensor.GetShape()[0];
+        pcd_legacy.colors_.resize(N);
         for (int64_t i = 0; i < N; ++i) {
-            pcd_legacy->colors_[i] = FromTensor3d(cs_tensor[i]);
+            pcd_legacy.colors_[i] = FromTensor3d(cs_tensor[i]);
         }
     }
 
     if (pcd.HasNormals()) {
-        auto ns_tensor = pcd.point_dict_.find("normals")->second.AsTensor();
-        pcd_legacy->normals_.resize(N);
+        Tensor ns_tensor =
+                pcd.point_dict_.find("normals")->second.AsTensor().Copy(host);
+        int64_t N = ns_tensor.GetShape()[0];
+        pcd_legacy.normals_.resize(N);
         for (int64_t i = 0; i < N; ++i) {
-            pcd_legacy->normals_[i] = FromTensor3d(ns_tensor[i]);
+            pcd_legacy.normals_[i] = FromTensor3d(ns_tensor[i]);
         }
     }
 

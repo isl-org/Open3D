@@ -83,6 +83,22 @@ public:
                 init_vals.size() * DtypeUtil::ByteSize(dtype));
     }
 
+    /// Constructor from raw data
+    template <typename T>
+    Tensor(const T* init_vals,
+           const SizeVector& shape,
+           Dtype dtype,
+           const Device& device = Device("CPU:0"))
+        : Tensor(shape, dtype, device) {
+        // Check data types
+        AssertTemplateDtype<T>();
+
+        // Copy data to blob
+        MemoryManager::MemcpyFromHost(
+                blob_->GetDataPtr(), GetDevice(), init_vals,
+                shape_.NumElements() * DtypeUtil::ByteSize(dtype));
+    }
+
     /// The fully specified constructor
     Tensor(const SizeVector& shape,
            const SizeVector& strides,

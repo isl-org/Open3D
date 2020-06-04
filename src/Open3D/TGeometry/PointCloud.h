@@ -29,6 +29,7 @@
 #include <Eigen/Core>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Core/TensorList.h"
@@ -103,14 +104,19 @@ public:
     std::unordered_map<std::string, TensorList> point_dict_;
 
 public:
-    /// Usage:
-    /// auto pcd_legacy = io::CreatePointCloudFromFile(filename);
-    /// auto pcd = tgeometry::PointCloud::FromLegacyPointCloud(*pcd_legacy);
-    /// auto pcd_legacy_back = tgeometry::PointCloud::ToLegacyPointCloud(pcd);
+    // Usage:
+    // std::shared_ptr<geometry::PointCloud> pcd_legacy =
+    //         io::CreatePointCloudFromFile(filename);
+    // tgeometry::PointCloud pcd =
+    //         tgeometry::PointCloud::FromLegacyPointCloud(*pcd_legacy);
+    // geometry::PointCloud pcd_legacy_back =
+    //         tgeometry::PointCloud::ToLegacyPointCloud(pcd);
     static tgeometry::PointCloud FromLegacyPointCloud(
-            const geometry::PointCloud &pcd_legacy);
+            const geometry::PointCloud &pcd_legacy,
+            Dtype dtype = Dtype::Float32,
+            Device device = Device("CPU:0"));
 
-    static std::shared_ptr<geometry::PointCloud> ToLegacyPointCloud(
+    static geometry::PointCloud ToLegacyPointCloud(
             const tgeometry::PointCloud &pcd);
 
 protected:

@@ -59,7 +59,7 @@ PointCloud::PointCloud(
     device_ = it->second.GetDevice();
 
     auto shape = it->second.GetShape();
-    if (shape.size() != 2 || shape[1] != 3) {
+    if (shape[0] != 3) {
         utility::LogError("PointCloud must be constructed from (N, 3) points.");
     }
 
