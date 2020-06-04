@@ -118,9 +118,9 @@ geometry::PointCloud PointCloud::ToLegacyPointCloud(
 
     if (pcd.HasPoints()) {
         Tensor pts_tensor =
-                pcd.point_dict_.find("colors")->second.AsTensor().Copy(host);
+                pcd.point_dict_.find("points")->second.AsTensor().Copy(host);
         int64_t N = pts_tensor.GetShape()[0];
-        pcd_legacy.colors_.resize(N);
+        pcd_legacy.points_.resize(N);
         for (int64_t i = 0; i < N; ++i) {
             pcd_legacy.points_[i] = FromTensor3d(pts_tensor[i]);
         }
