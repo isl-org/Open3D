@@ -1830,14 +1830,21 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
         if (!geometry) {
             auto cloud = std::make_shared<geometry::PointCloud>();
             bool success = false;
+            const float ioProgressAmount = 0.5f;
             try {
-                success = io::ReadPointCloud(path, *cloud);
+                io::ReadPointCloudOption opt;
+                opt.update_progress = [ioProgressAmount,
+                                       UpdateProgress](double percent) -> bool {
+                    UpdateProgress(ioProgressAmount * percent / 100.0);
+                    return true;
+                };
+                success = io::ReadPointCloud(path, *cloud, opt);
             } catch (...) {
                 success = false;
             }
             if (success) {
                 utility::LogInfo("Successfully read {}", path.c_str());
-                UpdateProgress(0.50);
+                UpdateProgress(ioProgressAmount);
                 if (!cloud->HasNormals()) {
                     cloud->EstimateNormals();
                 }
