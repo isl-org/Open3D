@@ -36,7 +36,7 @@
 #include "Open3D/Utility/Helper.h"
 
 #include "Core/CoreTest.h"
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

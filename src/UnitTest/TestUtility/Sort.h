@@ -26,21 +26,93 @@
 
 #pragma once
 
+#include "UnitTest/TestUtility/Compare.h"
+
 #include <Eigen/Core>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 
 namespace open3d {
 namespace unit_test {
-namespace Sort {
 
-// Greater than or Equal for sorting Eigen::Vector3d elements.
-bool GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
+template <class T, int M, int N, int A>
+std::vector<Eigen::Matrix<T, M, N, A>> ApplyIndices(
+        const std::vector<Eigen::Matrix<T, M, N, A>>& vals,
+        const std::vector<size_t>& indices) {
+    std::vector<Eigen::Matrix<T, M, N, A>> vals_sorted;
+    for (const size_t& i : indices) {
+        vals_sorted.push_back(vals[i]);
+    }
+    return vals_sorted;
+};
 
-// Sort a vector of Eigen::Vector3d elements.
-// method needed because std::sort failed on TravisCI/macOS (works fine on
-// Linux)
-void Do(std::vector<Eigen::Vector3d>& v);
+/// \brief Returns ascending sorted values and the sorting indices.
+///
+/// \param vals Values of array.
+/// \return A pair of sorted_vals and indices, s.t. sorted_val[i] =
+/// vals[indices[i]].
+template <class T, int M, int N, int A>
+std::pair<std::vector<Eigen::Matrix<T, M, N, A>>, std::vector<size_t>>
+SortWithIndices(const std::vector<Eigen::Matrix<T, M, N, A>>& vals) {
+    // https://stackoverflow.com/a/12399290/1255535
+    std::vector<size_t> indices(vals.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    std::stable_sort(indices.begin(), indices.end(),
+                     [&vals](size_t lhs, size_t rhs) -> bool {
+                         for (int i = 0; i < vals[lhs].size(); i++) {
+                             if (vals[lhs](i) == vals[rhs](i)) {
+                                 continue;
+                             } else {
+                                 return vals[lhs](i) < vals[rhs](i);
+                             }
+                         }
+                         return false;
+                     });
+    return std::make_pair(ApplyIndices(vals, indices), indices);
+};
 
-}  // namespace Sort
+template <class T, int M, int N, int A>
+std::vector<Eigen::Matrix<T, M, N, A>> Sort(
+        const std::vector<Eigen::Matrix<T, M, N, A>>& vals) {
+    return SortWithIndices(vals).first;
+};
+
+/// \brief Returns indices that can transform array A to B, s.t. B[i] ~=
+/// A[indices[i]].
+///
+/// This assumes the sorted \p a_vals and the sorted \p b_vals are close or
+/// equal.
+///
+/// \param a Values of array A.
+/// \param b Values of array B.
+/// \return indices such that B[i] ~= A[indices[i]]
+template <class T, int M, int N, int A>
+std::vector<size_t> GetIndicesAToB(
+        const std::vector<Eigen::Matrix<T, M, N, A>>& a,
+        const std::vector<Eigen::Matrix<T, M, N, A>>& b,
+        double threshold = 1e-6) {
+    EXPECT_EQ(a.size(), b.size());
+    size_t size = a.size();
+
+    std::vector<Eigen::Matrix<T, M, N, A>> a_sorted;
+    std::vector<size_t> indices_a_to_sorted;
+    std::tie(a_sorted, indices_a_to_sorted) = SortWithIndices(a);
+    std::vector<Eigen::Matrix<T, M, N, A>> b_sorted;
+    std::vector<size_t> indices_b_to_sorted;
+    std::tie(b_sorted, indices_b_to_sorted) = SortWithIndices(b);
+    ExpectEQ(a_sorted, b_sorted, threshold);
+
+    std::vector<size_t> indices_sorted_to_b(size);
+    for (size_t i = 0; i < size; ++i) {
+        indices_sorted_to_b[indices_b_to_sorted[i]] = i;
+    }
+    std::vector<size_t> indices_a_to_b(size);
+    for (size_t i = 0; i < size; i++) {
+        indices_a_to_b[i] = indices_a_to_sorted[indices_sorted_to_b[i]];
+    }
+    return indices_a_to_b;
+};
+
 }  // namespace unit_test
 }  // namespace open3d

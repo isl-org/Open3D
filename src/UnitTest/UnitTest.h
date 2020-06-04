@@ -24,43 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
+// TEST_DATA_DIR defined in CMakeLists.txt
+// Put it here to avoid editor warnings
+#ifndef TEST_DATA_DIR
+#define TEST_DATA_DIR
+#endif
+
 #include <gtest/gtest.h>
-#include <cstring>
+#include <Eigen/Core>
+#include <sstream>
 #include <string>
+#include <vector>
 
-#ifdef BUILD_CUDA_MODULE
-#include "Open3D/Core/CUDAState.cuh"
-#endif
+#include "Open3D/Macro.h"
+#include "UnitTest/TestUtility/Compare.h"
+#include "UnitTest/TestUtility/Print.h"
+#include "UnitTest/TestUtility/Rand.h"
+#include "UnitTest/TestUtility/Raw.h"
+#include "UnitTest/TestUtility/Sort.h"
 
-#include "Open3D/Utility/Console.h"
-#include "TestUtility/Print.h"
-#include "TestUtility/Rand.h"
-#include "TestUtility/Raw.h"
+// GPU_CONDITIONAL_COMPILE_STR is "" if gpu is available, otherwise "DISABLED_"
+// The GPU_CONDITIONAL_COMPILE_STR value is configured in CMake
+#define CUDA_CONDITIONAL_TEST(test_name) \
+    OPEN3D_CONCATENATE(GPU_CONDITIONAL_TEST_STR, test_name)
 
-#ifdef BUILD_CUDA_MODULE
-/// Returns true if --disable_p2p flag is used.
-bool ShallDisableP2P(int argc, char** argv) {
-    bool shall_disable_p2p = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
-            shall_disable_p2p = true;
-            break;
-        }
-    }
-    return shall_disable_p2p;
+namespace open3d {
+namespace unit_test {
+
+// Eigen Zero()
+const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();
+const Eigen::Vector3d Zero3d = Eigen::Vector3d::Zero();
+const Eigen::Matrix<double, 6, 1> Zero6d = Eigen::Matrix<double, 6, 1>::Zero();
+const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
+
+// Mechanism for reporting unit tests for which there is no implementation yet.
+void NotImplemented();
+
+// Reinterpret cast from uint8_t* to float*.
+template <class T>
+T* const Cast(uint8_t* data) {
+    return reinterpret_cast<T* const>(data);
 }
-#endif
 
-int main(int argc, char** argv) {
-#ifdef BUILD_CUDA_MODULE
-    if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<open3d::CUDAState> cuda_state =
-                open3d::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        open3d::utility::LogInfo("P2P device transfer has been disabled.");
-    }
-#endif
-    testing::InitGoogleTest(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
-}
+}  // namespace unit_test
+}  // namespace open3d

@@ -26,8 +26,7 @@
 
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/PointCloud.h"
-#include "TestUtility/Raw.h"
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

@@ -27,14 +27,14 @@
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/PointCloud.h"
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {
 
-void ExpectEQ(const open3d::geometry::TriangleMesh& mesh0,
-              const open3d::geometry::TriangleMesh& mesh1,
-              double threshold = 1e-6) {
+void ExpectMeshEQ(const open3d::geometry::TriangleMesh& mesh0,
+                  const open3d::geometry::TriangleMesh& mesh1,
+                  double threshold = 1e-6) {
     ExpectEQ(mesh0.vertices_, mesh1.vertices_, threshold);
     ExpectEQ(mesh0.vertex_normals_, mesh1.vertex_normals_, threshold);
     ExpectEQ(mesh0.vertex_colors_, mesh1.vertex_colors_, threshold);
@@ -669,7 +669,7 @@ TEST(TriangleMesh, MergeCloseVertices) {
                              {0.000000, 0.000000, -0.000000}};
 
     mesh.MergeCloseVertices(1);
-    ExpectEQ(mesh, ref);
+    ExpectMeshEQ(mesh, ref);
 
     mesh.vertices_ = {{0.000000, 0.000000, 0.000000},
                       {0.000000, 0.200000, 0.000000},
@@ -695,7 +695,7 @@ TEST(TriangleMesh, MergeCloseVertices) {
                              {0.000000, 0.000000, 1.000000}};
 
     mesh.MergeCloseVertices(0.1);
-    ExpectEQ(mesh, ref);
+    ExpectMeshEQ(mesh, ref);
 }
 
 TEST(TriangleMesh, SamplePointsUniformly) {
@@ -786,7 +786,7 @@ TEST(TriangleMesh, FilterSmoothSimple) {
                                          {0, 0.25, 0},
                                          {-0.25, 0, 0},
                                          {0, -0.25, 0}};
-    ExpectEQ(mesh->vertices_, ref1);
+    ExpectEQ(mesh->vertices_, ref1, 1e-4);
 
     mesh = mesh->FilterSmoothSimple(3);
     std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
@@ -794,7 +794,7 @@ TEST(TriangleMesh, FilterSmoothSimple) {
                                          {0, 0.003906, 0},
                                          {-0.003906, 0, 0},
                                          {0, -0.003906, 0}};
-    ExpectEQ(mesh->vertices_, ref2);
+    ExpectEQ(mesh->vertices_, ref2, 1e-4);
 }
 
 TEST(TriangleMesh, FilterSmoothLaplacian) {
@@ -805,7 +805,7 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
     mesh = mesh->FilterSmoothLaplacian(1, 0.5);
     std::vector<Eigen::Vector3d> ref1 = {
             {0, 0, 0}, {0.5, 0, 0}, {0, 0.5, 0}, {-0.5, 0, 0}, {0, -0.5, 0}};
-    ExpectEQ(mesh->vertices_, ref1);
+    ExpectEQ(mesh->vertices_, ref1, 1e-3);
 
     mesh = mesh->FilterSmoothLaplacian(10, 0.5);
     std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
@@ -813,7 +813,7 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
                                          {0, 0.000488, 0},
                                          {-0.000488, 0, 0},
                                          {0, -0.000488, 0}};
-    ExpectEQ(mesh->vertices_, ref2);
+    ExpectEQ(mesh->vertices_, ref2, 1e-3);
 }
 
 TEST(TriangleMesh, FilterSmoothTaubin) {
@@ -827,7 +827,7 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
                                          {0, 0.765, 0},
                                          {-0.765, 0, 0},
                                          {0, -0.765, 0}};
-    ExpectEQ(mesh->vertices_, ref1);
+    ExpectEQ(mesh->vertices_, ref1, 1e-4);
 
     mesh = mesh->FilterSmoothTaubin(10, 0.5, -0.53);
     std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
@@ -835,7 +835,7 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
                                          {0, 0.052514, 0},
                                          {-0.052514, 0, 0},
                                          {0, -0.052514, 0}};
-    ExpectEQ(mesh->vertices_, ref2);
+    ExpectEQ(mesh->vertices_, ref2, 1e-4);
 }
 
 TEST(TriangleMesh, HasVertices) {
@@ -1235,7 +1235,7 @@ TEST(TriangleMesh, RemoveTrianglesByMask) {
 
     mesh_in.RemoveTrianglesByMask(triangles_to_remove);
 
-    ExpectEQ(mesh_in, mesh_gt);
+    ExpectMeshEQ(mesh_in, mesh_gt);
 }
 
 TEST(TriangleMesh, DeformAsRigidAsPossible) {
@@ -1432,7 +1432,7 @@ TEST(TriangleMesh, DeformAsRigidAsPossible) {
 
     auto mesh_deform =
             mesh_in.DeformAsRigidAsPossible(constraint_ids, constraint_pos, 50);
-    ExpectEQ(*mesh_deform, mesh_gt);
+    ExpectMeshEQ(*mesh_deform, mesh_gt, 1e-5);
 }
 
 TEST(TriangleMesh, SelectByIndex) {
@@ -1877,7 +1877,7 @@ TEST(TriangleMesh, CreateFromPointCloudPoisson) {
     std::vector<double> densities_es;
     std::tie(mesh_es, densities_es) =
             geometry::TriangleMesh::CreateFromPointCloudPoisson(pcd, 2);
-    ExpectEQ(*mesh_es, mesh_gt, 1e-4);
+    ExpectMeshEQ(*mesh_es, mesh_gt, 1e-4);
     ExpectEQ(densities_es, densities_gt, 1e-4);
 }
 
@@ -1903,7 +1903,7 @@ TEST(TriangleMesh, CreateFromPointCloudAlphaShape) {
 
     auto mesh_es =
             geometry::TriangleMesh::CreateFromPointCloudAlphaShape(pcd, 1);
-    ExpectEQ(*mesh_es, mesh_gt);
+    ExpectMeshEQ(*mesh_es, mesh_gt);
 }
 
 TEST(TriangleMesh, CreateMeshSphere) {

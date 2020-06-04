@@ -26,7 +26,7 @@
 
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

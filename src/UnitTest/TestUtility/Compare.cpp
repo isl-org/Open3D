@@ -24,13 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Eigen/Core>
-#include <iostream>
-
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/TestUtility/Compare.h"
 
 namespace open3d {
 namespace unit_test {
+
+std::string LineInfo(const char* file, int line) {
+    std::stringstream ss;
+    ss << file << ":" << line << ":\n";
+    return ss.str();
+}
 
 // ----------------------------------------------------------------------------
 // Default message to use for tests missing an implementation.
@@ -49,73 +52,87 @@ void NotImplemented() {
 // ----------------------------------------------------------------------------
 // Test equality of two arrays of uint8_t.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const uint8_t* const v0,
-              const uint8_t* const v1,
-              const size_t& size) {
-    for (size_t i = 0; i < size; i++) EXPECT_EQ(v0[i], v1[i]);
+void _ExpectEQ(const std::string& line_info,
+               const uint8_t* const v0,
+               const uint8_t* const v1,
+               const size_t& size) {
+    for (size_t i = 0; i < size; i++) {
+        EXPECT_EQ(v0[i], v1[i]);
+    }
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of uint8_t.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const std::vector<uint8_t>& v0, const std::vector<uint8_t>& v1) {
+void _ExpectEQ(const std::string& line_info,
+               const std::vector<uint8_t>& v0,
+               const std::vector<uint8_t>& v1) {
     EXPECT_EQ(v0.size(), v1.size());
-    ExpectEQ(v0.data(), v1.data(), v0.size());
+    _ExpectEQ(line_info, v0.data(), v1.data(), v0.size());
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two arrays of int.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const int* const v0, const int* const v1, const size_t& size) {
+void _ExpectEQ(const std::string& line_info,
+               const int* const v0,
+               const int* const v1,
+               const size_t& size) {
     for (size_t i = 0; i < size; i++) EXPECT_EQ(v0[i], v1[i]);
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of int.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const std::vector<int>& v0, const std::vector<int>& v1) {
+void _ExpectEQ(const std::string& line_info,
+               const std::vector<int>& v0,
+               const std::vector<int>& v1) {
     EXPECT_EQ(v0.size(), v1.size());
-    ExpectEQ(v0.data(), v1.data(), v0.size());
+    _ExpectEQ(line_info, v0.data(), v1.data(), v0.size());
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two arrays of float.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const float* const v0,
-              const float* const v1,
-              const size_t& size,
-              float threshold) {
+void _ExpectEQ(const std::string& line_info,
+               const float* const v0,
+               const float* const v1,
+               const size_t& size,
+               float threshold) {
     for (size_t i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], threshold);
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of float.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const std::vector<float>& v0,
-              const std::vector<float>& v1,
-              float threshold) {
+void _ExpectEQ(const std::string& line_info,
+               const std::vector<float>& v0,
+               const std::vector<float>& v1,
+               float threshold) {
     EXPECT_EQ(v0.size(), v1.size());
-    ExpectEQ(v0.data(), v1.data(), v0.size(), threshold);
+    _ExpectEQ(line_info, v0.data(), v1.data(), v0.size(), threshold);
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two arrays of double.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const double* const v0,
-              const double* const v1,
-              const size_t& size,
-              double threshold) {
+void _ExpectEQ(const std::string& line_info,
+               const double* const v0,
+               const double* const v1,
+               const size_t& size,
+               double threshold) {
     for (size_t i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], threshold);
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of double.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const std::vector<double>& v0,
-              const std::vector<double>& v1,
-              double threshold) {
+void _ExpectEQ(const std::string& line_info,
+               const std::vector<double>& v0,
+               const std::vector<double>& v1,
+               double threshold) {
     EXPECT_EQ(v0.size(), v1.size());
-    ExpectEQ(v0.data(), v1.data(), v0.size(), threshold);
+    _ExpectEQ(line_info, v0.data(), v1.data(), v0.size(), threshold);
 }
 
 }  // namespace unit_test

@@ -24,37 +24,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+#include <cstring>
+#include <string>
+
+#ifdef BUILD_CUDA_MODULE
+#include "Open3D/Core/CUDAState.cuh"
+#endif
+
+#include "Open3D/Utility/Console.h"
 #include "UnitTest/UnitTest.h"
 
-// #include "Open3D/ColorMap/ColorMapOptimizationOption.h"
-
-namespace open3d {
-namespace unit_test {
-
-/* TODO
-As the color_map::ColorMapOptimization subcomponents go back into hiding several
-lines of code had to commented out. Do not remove these lines, they may become
-useful again after a decision has been made about the way to make these
-subcomponents visible to UnitTest.
-*/
-
-TEST(ColorMapOptimizationOption, DISABLED_Constructor) {
-    // open3d::ColorMapOptimizationOption option;
-
-    // EXPECT_FALSE(option.non_rigid_camera_coordinate_);
-
-    // EXPECT_EQ(16, option.number_of_vertical_anchors_);
-    // EXPECT_EQ(3, option.half_dilation_kernel_size_for_discontinuity_map_);
-
-    // EXPECT_NEAR(0.316, option.non_rigid_anchor_point_weight_,
-    // unit_test::THRESHOLD_1E_6); EXPECT_NEAR(300, option.maximum_iteration_,
-    // unit_test::THRESHOLD_1E_6); EXPECT_NEAR(2.5,
-    // option.maximum_allowable_depth_, unit_test::THRESHOLD_1E_6);
-    // EXPECT_NEAR(0.03, option.depth_threshold_for_visibility_check_,
-    // unit_test::THRESHOLD_1E_6); EXPECT_NEAR(0.1,
-    // option.depth_threshold_for_discontinuity_check_,
-    // unit_test::THRESHOLD_1E_6);
+#ifdef BUILD_CUDA_MODULE
+/// Returns true if --disable_p2p flag is used.
+bool ShallDisableP2P(int argc, char** argv) {
+    bool shall_disable_p2p = false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
+            shall_disable_p2p = true;
+            break;
+        }
+    }
+    return shall_disable_p2p;
 }
+#endif
 
-}  // namespace unit_test
-}  // namespace open3d
+int main(int argc, char** argv) {
+#ifdef BUILD_CUDA_MODULE
+    if (ShallDisableP2P(argc, argv)) {
+        std::shared_ptr<open3d::CUDAState> cuda_state =
+                open3d::CUDAState::GetInstance();
+        cuda_state->ForceDisableP2PForTesting();
+        open3d::utility::LogInfo("P2P device transfer has been disabled.");
+    }
+#endif
+    testing::InitGoogleTest(&argc, argv);
+    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
+    return RUN_ALL_TESTS();
+}

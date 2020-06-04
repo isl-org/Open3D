@@ -30,7 +30,7 @@
 #include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 #include <sstream>
 

@@ -29,7 +29,7 @@
 #include "Open3D/Core/Device.h"
 
 #include "Core/CoreTest.h"
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 #include <vector>
 
