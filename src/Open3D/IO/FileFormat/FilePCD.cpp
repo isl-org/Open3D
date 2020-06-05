@@ -792,8 +792,8 @@ bool WritePointCloudToPCD(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params) {
     PCDHeader header;
-    if (GenerateHeader(pointcloud, bool(params.write_ascii),
-                       bool(params.compressed), header) == false) {
+    if (!GenerateHeader(pointcloud, bool(params.write_ascii),
+                        bool(params.compressed), header)) {
         utility::LogWarning("Write PCD failed: unable to generate header.");
         return false;
     }

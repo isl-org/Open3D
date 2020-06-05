@@ -131,8 +131,8 @@ void Visualizer::CopyViewStatusFromClipboard() {
     if (clipboard_string_buffer != NULL) {
         std::string clipboard_string(clipboard_string_buffer);
         ViewTrajectory trajectory;
-        if (io::ReadIJsonConvertibleFromJSONString(clipboard_string,
-                                                   trajectory) == false) {
+        if (!io::ReadIJsonConvertibleFromJSONString(clipboard_string,
+                                                    trajectory)) {
             utility::LogError("Something is wrong copying view status.");
         }
         if (trajectory.view_status_.size() != 1) {

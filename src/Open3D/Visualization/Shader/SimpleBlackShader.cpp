@@ -37,8 +37,8 @@ namespace visualization {
 namespace glsl {
 
 bool SimpleBlackShader::Compile() {
-    if (CompileShaders(SimpleBlackVertexShader, NULL,
-                       SimpleBlackFragmentShader) == false) {
+    if (!CompileShaders(SimpleBlackVertexShader, NULL,
+                        SimpleBlackFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }

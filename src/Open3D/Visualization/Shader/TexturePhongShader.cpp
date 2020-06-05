@@ -38,8 +38,8 @@ namespace visualization {
 namespace glsl {
 
 bool TexturePhongShader::Compile() {
-    if (CompileShaders(TexturePhongVertexShader, NULL,
-                       TexturePhongFragmentShader) == false) {
+    if (!CompileShaders(TexturePhongVertexShader, NULL,
+                        TexturePhongFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }

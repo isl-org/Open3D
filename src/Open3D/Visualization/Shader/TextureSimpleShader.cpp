@@ -35,8 +35,8 @@ namespace visualization {
 namespace glsl {
 
 bool TextureSimpleShader::Compile() {
-    if (CompileShaders(TextureSimpleVertexShader, NULL,
-                       TextureSimpleFragmentShader) == false) {
+    if (!CompileShaders(TextureSimpleVertexShader, NULL,
+                        TextureSimpleFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }

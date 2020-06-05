@@ -270,13 +270,13 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
     view_trajectory_.view_status_.resize(camera_trajectory.parameters_.size());
     for (size_t i = 0; i < camera_trajectory.parameters_.size(); i++) {
         ViewControlWithCustomAnimation view_control = *this;
-        if (view_control.ConvertFromPinholeCameraParameters(
-                    camera_trajectory.parameters_[i]) == false) {
+        if (!view_control.ConvertFromPinholeCameraParameters(
+                    camera_trajectory.parameters_[i])) {
             view_trajectory_.Reset();
             return false;
         }
-        if (view_control.ConvertToViewParameters(
-                    view_trajectory_.view_status_[i]) == false) {
+        if (!view_control.ConvertToViewParameters(
+                    view_trajectory_.view_status_[i])) {
             view_trajectory_.Reset();
             return false;
         }

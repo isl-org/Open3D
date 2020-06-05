@@ -107,8 +107,8 @@ int main(int argc, char **argv) {
             utility::ProgramOptionExists(argc, argv, "--show_frame");
 
     visualization::VisualizerWithCustomAnimation visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning("Failed creating OpenGL window.");
         return 0;
     }
@@ -178,8 +178,8 @@ int main(int argc, char **argv) {
     }
 
     if (!render_filename.empty()) {
-        if (io::ReadIJsonConvertible(render_filename,
-                                     visualizer.GetRenderOption()) == false) {
+        if (!io::ReadIJsonConvertible(render_filename,
+                                      visualizer.GetRenderOption())) {
             utility::LogWarning("Failed loading rendering settings.");
             return 1;
         }
@@ -202,8 +202,8 @@ int main(int argc, char **argv) {
             auto &view_control =
                     (visualization::ViewControlWithCustomAnimation &)
                             visualizer.GetViewControl();
-            if (view_control.LoadTrajectoryFromCameraTrajectory(
-                        camera_trajectory) == false) {
+            if (!view_control.LoadTrajectoryFromCameraTrajectory(
+                        camera_trajectory)) {
                 utility::LogWarning(
                         "Failed converting camera trajectory to view "
                         "trajectory.");

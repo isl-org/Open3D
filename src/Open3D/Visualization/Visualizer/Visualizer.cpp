@@ -240,8 +240,8 @@ void Visualizer::BuildUtilities() {
             boundingbox.GetMaxExtent() * 0.2, boundingbox.min_bound_);
     coordinate_frame_mesh_renderer_ptr_ =
             std::make_shared<glsl::CoordinateFrameRenderer>();
-    if (coordinate_frame_mesh_renderer_ptr_->AddGeometry(
-                coordinate_frame_mesh_ptr_) == false) {
+    if (!coordinate_frame_mesh_renderer_ptr_->AddGeometry(
+                coordinate_frame_mesh_ptr_)) {
         return;
     }
     utility_ptrs_.push_back(coordinate_frame_mesh_ptr_);

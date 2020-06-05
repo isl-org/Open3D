@@ -50,8 +50,8 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     bool mesh_show_wireframe /* = false */,
                     bool mesh_show_back_face /* = false */) {
     Visualizer visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometries] Failed creating OpenGL "
                 "window.");
@@ -93,8 +93,8 @@ bool DrawGeometriesWithCustomAnimation(
         int top /* = 50*/,
         const std::string &json_filename /* = ""*/) {
     VisualizerWithCustomAnimation visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithCustomAnimation] Failed creating OpenGL "
                 "window.");
@@ -140,8 +140,8 @@ bool DrawGeometriesWithAnimationCallback(
         int left /* = 50*/,
         int top /* = 50*/) {
     Visualizer visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithAnimationCallback] Failed creating OpenGL "
                 "window.");
@@ -174,8 +174,8 @@ bool DrawGeometriesWithKeyCallbacks(
         int left /* = 50*/,
         int top /* = 50*/) {
     VisualizerWithKeyCallback visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithKeyCallbacks] Failed creating OpenGL "
                 "window.");
@@ -210,8 +210,8 @@ bool DrawGeometriesWithEditing(
         int left /* = 50*/,
         int top /* = 50*/) {
     VisualizerWithEditing visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithEditing] Failed creating OpenGL window.");
         return false;
@@ -240,8 +240,8 @@ bool DrawGeometriesWithVertexSelection(
         int left /* = 50*/,
         int top /* = 50*/) {
     VisualizerWithVertexSelection visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithVertexSelection] Failed creating OpenGL "
                 "window.");

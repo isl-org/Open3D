@@ -99,13 +99,13 @@ bool ViewParameters::ConvertFromJsonValue(const Json::Value &value) {
         utility::LogWarning("ViewParameters read JSON failed: wrong format.");
         return false;
     }
-    if (EigenVector3dFromJsonArray(boundingbox_min_,
-                                   value["boundingbox_min"]) == false) {
+    if (!EigenVector3dFromJsonArray(boundingbox_min_,
+                                    value["boundingbox_min"])) {
         utility::LogWarning("ViewParameters read JSON failed: wrong format.");
         return false;
     }
-    if (EigenVector3dFromJsonArray(boundingbox_max_,
-                                   value["boundingbox_max"]) == false) {
+    if (!EigenVector3dFromJsonArray(boundingbox_max_,
+                                    value["boundingbox_max"])) {
         utility::LogWarning("ViewParameters read JSON failed: wrong format.");
         return false;
     }
