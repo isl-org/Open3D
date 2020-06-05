@@ -34,9 +34,9 @@ inline Tensor FromTemplatedVectorXd(const Eigen::VectorXd& vector,
                                     int64_t N,
                                     Dtype dtype,
                                     Device device = Device("CPU:0")) {
-    auto vals = std::vector<T>(N);
+    std::vector<T> vals(N);
     for (int64_t i = 0; i < N; ++i) {
-        vals[i] = vector(i);
+        vals[i] = static_cast<T>(vector(i));
     }
     return Tensor(vals, SizeVector({N}), dtype, device);
 }
