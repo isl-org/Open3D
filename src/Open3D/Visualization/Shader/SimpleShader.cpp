@@ -97,7 +97,7 @@ bool SimpleShader::BindGeometry(const geometry::Geometry &geometry,
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3f> colors;
-    if (PrepareBinding(geometry, option, view, points, colors) == false) {
+    if (!PrepareBinding(geometry, option, view, points, colors)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -118,7 +118,7 @@ bool SimpleShader::BindGeometry(const geometry::Geometry &geometry,
 bool SimpleShader::RenderGeometry(const geometry::Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
@@ -172,7 +172,7 @@ bool SimpleShaderForPointCloud::PrepareBinding(
     }
     const geometry::PointCloud &pointcloud =
             (const geometry::PointCloud &)geometry;
-    if (pointcloud.HasPoints() == false) {
+    if (!pointcloud.HasPoints()) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
@@ -241,7 +241,7 @@ bool SimpleShaderForLineSet::PrepareBinding(
         return false;
     }
     const geometry::LineSet &lineset = (const geometry::LineSet &)geometry;
-    if (lineset.HasLines() == false) {
+    if (!lineset.HasLines()) {
         PrintShaderWarning("Binding failed with empty geometry::LineSet.");
         return false;
     }
@@ -296,7 +296,7 @@ bool SimpleShaderForTetraMesh::PrepareBinding(
     }
     const geometry::TetraMesh &tetramesh =
             (const geometry::TetraMesh &)geometry;
-    if (tetramesh.HasTetras() == false) {
+    if (!tetramesh.HasTetras()) {
         PrintShaderWarning("Binding failed with empty geometry::TetraMesh.");
         return false;
     }
@@ -470,7 +470,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
     }
     const geometry::TriangleMesh &mesh =
             (const geometry::TriangleMesh &)geometry;
-    if (mesh.HasTriangles() == false) {
+    if (!mesh.HasTriangles()) {
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
@@ -546,7 +546,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
     }
     const geometry::VoxelGrid &voxel_grid =
             (const geometry::VoxelGrid &)geometry;
-    if (voxel_grid.HasVoxels() == false) {
+    if (!voxel_grid.HasVoxels()) {
         PrintShaderWarning("Binding failed with empty voxel grid.");
         return false;
     }
@@ -636,7 +636,7 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
     }
     const geometry::VoxelGrid &voxel_grid =
             (const geometry::VoxelGrid &)geometry;
-    if (voxel_grid.HasVoxels() == false) {
+    if (!voxel_grid.HasVoxels()) {
         PrintShaderWarning("Binding failed with empty voxel grid.");
         return false;
     }

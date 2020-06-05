@@ -248,7 +248,7 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
         const std::string &filename) {
     bool success = io::ReadIJsonConvertible(filename, view_trajectory_);
-    if (success == false) {
+    if (!success) {
         view_trajectory_.Reset();
     }
     current_keyframe_ = 0.0;

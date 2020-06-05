@@ -54,7 +54,7 @@ bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "PinholeCameraTrajectory read JSON failed: unsupported json "
                 "format.");

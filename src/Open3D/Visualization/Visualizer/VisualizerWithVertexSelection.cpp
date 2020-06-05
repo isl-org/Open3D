@@ -138,7 +138,7 @@ bool VisualizerWithVertexSelection::AddGeometry(
             return false;
     }
 
-    if (geometry_renderer_ptr_->AddGeometry(geometry_ptr_) == false) {
+    if (!geometry_renderer_ptr_->AddGeometry(geometry_ptr_)) {
         return false;
     }
     geometry_ptrs_.insert(geometry_ptr_);
@@ -351,7 +351,7 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
     points_in_rect_.clear();
 
     auto renderer_ptr = std::make_shared<glsl::PointCloudPickingRenderer>();
-    if (renderer_ptr->AddGeometry(ui_points_geometry_ptr_) == false) {
+    if (!renderer_ptr->AddGeometry(ui_points_geometry_ptr_)) {
         return {};
     }
     const auto &view = GetViewControl();

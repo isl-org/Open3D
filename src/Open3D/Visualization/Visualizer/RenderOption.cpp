@@ -120,7 +120,7 @@ bool RenderOption::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool RenderOption::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "ViewTrajectory read JSON failed: unsupported json format.");
         return false;

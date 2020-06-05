@@ -343,7 +343,7 @@ bool RGBDImageRenderer::UpdateGeometry() {
 bool CoordinateFrameRenderer::Render(const RenderOption &option,
                                      const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
-    if (option.show_coordinate_frame_ == false) return true;
+    if (!option.show_coordinate_frame_) return true;
     const auto &mesh = (const geometry::TriangleMesh &)(*geometry_ptr_);
     return phong_shader_.Render(mesh, option, view);
 }
@@ -370,7 +370,7 @@ bool SelectionPolygonRenderer::Render(const RenderOption &option,
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     const auto &polygon = (const SelectionPolygon &)(*geometry_ptr_);
     if (polygon.IsEmpty()) return true;
-    if (simple2d_shader_.Render(polygon, option, view) == false) return false;
+    if (!simple2d_shader_.Render(polygon, option, view)) return false;
     if (polygon.polygon_interior_mask_.IsEmpty()) return true;
     return image_mask_shader_.Render(polygon.polygon_interior_mask_, option,
                                      view);
@@ -422,7 +422,7 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
             trans.block<3, 1>(0, 3) = pointcloud.points_[index];
             sphere->Transform(trans);
             phong_shader_.InvalidateGeometry();
-            if (phong_shader_.Render(*sphere, option, view) == false) {
+            if (!phong_shader_.Render(*sphere, option, view)) {
                 return false;
             }
         }

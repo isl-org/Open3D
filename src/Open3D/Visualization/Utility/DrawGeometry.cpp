@@ -61,7 +61,7 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
     visualizer.GetRenderOption().mesh_show_wireframe_ = mesh_show_wireframe;
     visualizer.GetRenderOption().mesh_show_back_face_ = mesh_show_back_face;
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning("[DrawGeometries] Failed adding geometry.");
             utility::LogWarning(
                     "[DrawGeometries] Possibly due to bad geometry or wrong"
@@ -69,7 +69,7 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
             return false;
         }
         for (const auto &geometry_ptr : geometry_ptrs) {
-            if (visualizer.AddGeometry(geometry_ptr) == false) {
+            if (!visualizer.AddGeometry(geometry_ptr)) {
                 utility::LogWarning("[DrawGeometries] Failed adding geometry.");
                 utility::LogWarning(
                         "[DrawGeometries] Possibly due to bad geometry or wrong"
@@ -101,7 +101,7 @@ bool DrawGeometriesWithCustomAnimation(
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed adding "
                     "geometry.");
@@ -113,8 +113,8 @@ bool DrawGeometriesWithCustomAnimation(
     }
     auto &view_control =
             (ViewControlWithCustomAnimation &)visualizer.GetViewControl();
-    if (json_filename.empty() == false) {
-        if (view_control.LoadTrajectoryFromJsonFile(json_filename) == false) {
+    if (!json_filename.empty()) {
+        if (!view_control.LoadTrajectoryFromJsonFile(json_filename)) {
             utility::LogWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed loading json "
                     "file.");
@@ -148,7 +148,7 @@ bool DrawGeometriesWithAnimationCallback(
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithAnimationCallback] Failed adding "
                     "geometry.");
@@ -182,7 +182,7 @@ bool DrawGeometriesWithKeyCallbacks(
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithKeyCallbacks] Failed adding "
                     "geometry.");
@@ -217,7 +217,7 @@ bool DrawGeometriesWithEditing(
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithEditing] Failed adding geometry.");
             utility::LogWarning(
@@ -248,7 +248,7 @@ bool DrawGeometriesWithVertexSelection(
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithVertexSelection] Failed adding "
                     "geometry.");

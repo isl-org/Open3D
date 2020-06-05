@@ -116,14 +116,14 @@ int main(int argc, char **argv) {
     if (!mesh_filename.empty()) {
         auto mesh_ptr = io::CreateMeshFromFile(mesh_filename);
         mesh_ptr->ComputeVertexNormals();
-        if (visualizer.AddGeometry(mesh_ptr) == false) {
+        if (!visualizer.AddGeometry(mesh_ptr)) {
             utility::LogWarning("Failed adding triangle mesh.");
             return 1;
         }
     }
     if (!pcd_filename.empty()) {
         auto pointcloud_ptr = io::CreatePointCloudFromFile(pcd_filename);
-        if (visualizer.AddGeometry(pointcloud_ptr) == false) {
+        if (!visualizer.AddGeometry(pointcloud_ptr)) {
             utility::LogWarning("Failed adding point cloud.");
             return 1;
         }
@@ -133,21 +133,21 @@ int main(int argc, char **argv) {
     }
     if (!lineset_filename.empty()) {
         auto lineset_ptr = io::CreateLineSetFromFile(lineset_filename);
-        if (visualizer.AddGeometry(lineset_ptr) == false) {
+        if (!visualizer.AddGeometry(lineset_ptr)) {
             utility::LogWarning("Failed adding line set.");
             return 1;
         }
     }
     if (!voxelgrid_filename.empty()) {
         auto voxelgrid_ptr = io::CreateVoxelGridFromFile(voxelgrid_filename);
-        if (visualizer.AddGeometry(voxelgrid_ptr) == false) {
+        if (!visualizer.AddGeometry(voxelgrid_ptr)) {
             utility::LogWarning("Failed adding voxel grid.");
             return 1;
         }
     }
     if (!image_filename.empty()) {
         auto image_ptr = io::CreateImageFromFile(image_filename);
-        if (visualizer.AddGeometry(image_ptr) == false) {
+        if (!visualizer.AddGeometry(image_ptr)) {
             utility::LogWarning("Failed adding image.");
             return 1;
         }
@@ -165,13 +165,13 @@ int main(int argc, char **argv) {
         auto image_ptr = io::CreateImageFromFile(depth_filename);
         auto pointcloud_ptr = geometry::PointCloud::CreateFromDepthImage(
                 *image_ptr, parameters.intrinsic_, parameters.extrinsic_);
-        if (visualizer.AddGeometry(pointcloud_ptr) == false) {
+        if (!visualizer.AddGeometry(pointcloud_ptr)) {
             utility::LogWarning("Failed adding depth image.");
             return 1;
         }
     }
 
-    if (visualizer.HasGeometry() == false) {
+    if (!visualizer.HasGeometry()) {
         utility::LogWarning("No geometry to render!");
         visualizer.DestroyVisualizerWindow();
         return 1;
@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
     if (!view_filename.empty()) {
         auto &view_control = (visualization::ViewControlWithCustomAnimation &)
                                      visualizer.GetViewControl();
-        if (view_control.LoadTrajectoryFromJsonFile(view_filename) == false) {
+        if (!view_control.LoadTrajectoryFromJsonFile(view_filename)) {
             utility::LogWarning("Failed loading view trajectory.");
             return 1;
         }

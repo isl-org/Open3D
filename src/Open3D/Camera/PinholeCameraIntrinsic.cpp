@@ -67,7 +67,7 @@ bool PinholeCameraIntrinsic::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool PinholeCameraIntrinsic::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "PinholeCameraParameters read JSON failed: unsupported json "
                 "format.");

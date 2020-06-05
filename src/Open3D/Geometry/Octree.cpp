@@ -103,7 +103,7 @@ bool OctreeInternalNode::ConvertToJsonValue(Json::Value& value) const {
 }
 
 bool OctreeInternalNode::ConvertFromJsonValue(const Json::Value& value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "ConvertFromJsonValue read JSON failed: unsupported json "
                 "format.");
@@ -167,7 +167,7 @@ bool OctreeColorLeafNode::ConvertToJsonValue(Json::Value& value) const {
 }
 
 bool OctreeColorLeafNode::ConvertFromJsonValue(const Json::Value& value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "OctreeColorLeafNode read JSON failed: unsupported json "
                 "format.");
@@ -588,7 +588,7 @@ bool Octree::ConvertToJsonValue(Json::Value& value) const {
 }
 
 bool Octree::ConvertFromJsonValue(const Json::Value& value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "Octree read JSON failed: unsupported json format.");
         return false;

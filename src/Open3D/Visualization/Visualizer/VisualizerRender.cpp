@@ -113,7 +113,7 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
 
 void Visualizer::CopyViewStatusToClipboard() {
     ViewParameters current_status;
-    if (view_control_ptr_->ConvertToViewParameters(current_status) == false) {
+    if (!view_control_ptr_->ConvertToViewParameters(current_status)) {
         utility::LogError("Something is wrong copying view status.");
     }
     ViewTrajectory trajectory;
