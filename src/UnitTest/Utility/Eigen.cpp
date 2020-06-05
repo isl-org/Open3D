@@ -260,5 +260,38 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
     ExpectEQ(ref_JTJ, JTJ);
 }
 
+TEST(Eigen, ColorToUint8Round) {
+    auto rgb = utility::ColorToUint8({.001, .999, .501});
+    EXPECT_EQ(rgb(0), 0);
+    EXPECT_EQ(rgb(1), 255);
+    EXPECT_EQ(rgb(2), 128);
+}
+
+TEST(Eigen, ColorToUint8Clip) {
+    {
+        auto rgb = utility::ColorToUint8({-.001, -.5, -1000});
+        EXPECT_EQ(rgb(0), 0);
+        EXPECT_EQ(rgb(1), 0);
+        EXPECT_EQ(rgb(2), 0);
+    }
+    {
+        auto rgb = utility::ColorToUint8({1.001, 1.5, 1000});
+        EXPECT_EQ(rgb(0), 255);
+        EXPECT_EQ(rgb(1), 255);
+        EXPECT_EQ(rgb(2), 255);
+    }
+}
+
+TEST(Eigen, ColorToUint8ToDouble) {
+    for (int i = 0; i < 10000; ++i) {
+        Eigen::Vector3d d({i / 10000., i / 10000., i / 10000.});
+        auto rgb = utility::ColorToUint8(d);
+        Eigen::Vector3d conv = utility::ColorToDouble(rgb(0), rgb(1), rgb(2));
+        for (int j = 0; j < 3; j++) {
+            EXPECT_LT(std::abs(d(j) - conv(j)) * 255., 0.5);
+        }
+    }
+}
+
 }  // namespace unit_test
 }  // namespace open3d

@@ -89,6 +89,3 @@ else()
     # Conditionally include header files in Open3D.h
     set(BUILD_AZURE_KINECT_COMMENT "//")
 endif()
-
-# For configure_file
-set(BUILD_AZURE_KINECT_COMMENT ${BUILD_AZURE_KINECT_COMMENT} PARENT_SCOPE)

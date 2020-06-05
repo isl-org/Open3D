@@ -46,6 +46,8 @@
 #include <unistd.h>
 #endif
 
+#include "Open3D/Utility/Console.h"
+
 namespace open3d {
 namespace utility {
 namespace filesystem {
@@ -303,7 +305,7 @@ FILE *FOpen(const std::string &filename, const std::string &mode) {
     return fp;
 }
 
-static std::string GetIOErrorString(const int errnoVal) {
+std::string GetIOErrorString(const int errnoVal) {
     switch (errnoVal) {
         case EPERM:
             return "Operation not permitted";
@@ -400,6 +402,107 @@ bool FReadToBuffer(const std::string &path,
 
     fclose(file);
     return true;
+}
+
+CFile::~CFile() { Close(); }
+
+bool CFile::Open(const std::string &filename, const std::string &mode) {
+    Close();
+    file_ = FOpen(filename, mode);
+    if (!file_) {
+        error_code_ = errno;
+    }
+    return bool(file_);
+}
+
+std::string CFile::GetError() { return GetIOErrorString(error_code_); }
+
+void CFile::Close() {
+    if (file_) {
+        if (fclose(file_)) {
+            error_code_ = errno;
+            utility::LogError("fclose failed: {}", GetError());
+        }
+        file_ = nullptr;
+    }
+}
+
+int64_t CFile::CurPos() {
+    if (!file_) {
+        utility::LogError("CFile::CurPos() called on a closed file");
+    }
+    int64_t pos = ftell(file_);
+    if (pos < 0) {
+        error_code_ = errno;
+        utility::LogError("ftell failed: {}", GetError());
+    }
+    return pos;
+}
+
+int64_t CFile::GetFileSize() {
+    if (!file_) {
+        utility::LogError("CFile::GetFileSize() called on a closed file");
+    }
+    fpos_t prevpos;
+    if (fgetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fgetpos failed: {}", GetError());
+    }
+    if (fseek(file_, 0, SEEK_END)) {
+        error_code_ = errno;
+        utility::LogError("fseek failed: {}", GetError());
+    }
+    int64_t size = CurPos();
+    if (fsetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fsetpos failed: {}", GetError());
+    }
+    return size;
+}
+
+const char *CFile::ReadLine() {
+    if (!file_) {
+        utility::LogError("CFile::ReadLine() called on a closed file");
+    }
+    if (line_buffer_.size() == 0) {
+        line_buffer_.resize(DEFAULT_IO_BUFFER_SIZE);
+    }
+    if (!fgets(line_buffer_.data(), int(line_buffer_.size()), file_)) {
+        if (ferror(file_)) {
+            utility::LogError("CFile::ReadLine() ferror encountered");
+        }
+        if (!feof(file_)) {
+            utility::LogError(
+                    "CFile::ReadLine() fgets returned NULL, ferror is not set, "
+                    "feof is not set");
+        }
+        return nullptr;
+    }
+    if (strlen(line_buffer_.data()) == line_buffer_.size() - 1) {
+        // if we didn't read the whole line, chances are code using this is
+        // not equipped to handle partial line on next call
+        utility::LogError("CFile::ReadLine() encountered a line longer than {}",
+                          line_buffer_.size() - 2);
+    }
+    return line_buffer_.data();
+}
+
+size_t CFile::ReadData(void *data, size_t elem_size, size_t num_elems) {
+    if (!file_) {
+        utility::LogError("CFile::ReadData() called on a closed file");
+    }
+    size_t elems = fread(data, elem_size, num_elems, file_);
+    if (ferror(file_)) {
+        utility::LogError("CFile::ReadData() ferror encountered");
+    }
+    if (elems < num_elems) {
+        if (!feof(file_)) {
+            utility::LogError(
+                    "CFile::ReadData() fread short read, ferror not set, feof "
+                    "not set");
+        }
+    }
+    return elems;
 }
 
 }  // namespace filesystem

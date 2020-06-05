@@ -69,7 +69,8 @@
 // a file onto the app icon and the application is already launched.
 - (BOOL)application:(NSApplication *)sender openFile:(NSString *)filename {
     open_empty_window_ = false;  // LoadAndCreateWindow() always opens a window
-    return (LoadAndCreateWindow(filename.UTF8String));
+    LoadAndCreateWindow(filename.UTF8String);
+    return YES;
 }
 
 - (void)applicationWillTerminate:(NSNotification *)notification {

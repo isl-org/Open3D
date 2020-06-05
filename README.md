@@ -12,7 +12,7 @@
     <a href="http://www.open3d.org/docs/release/compilation.html">Build from Source</a> |
     <a href="http://www.open3d.org/docs/release/index.html#python-api-index">Python API</a> |
     <a href="http://www.open3d.org/docs/release/cpp_api/index.html">C++ API</a> |
-    <a href="http://www.open3d.org/docs/release/contribute.html">Contribute</a> |
+    <a href="http://www.open3d.org/docs/release/contribute/contribute.html">Contribute</a> |
     <a href="https://www.youtube.com/watch?v=I3UjXlA4IsU">Demo</a> |
     <a href="https://forum.open3d.org">Forum</a>
 </h4>

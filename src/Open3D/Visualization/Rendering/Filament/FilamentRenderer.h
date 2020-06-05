@@ -28,7 +28,7 @@
 
 #include "Open3D/Visualization/Rendering/Renderer.h"
 
-#include <filament/utils/Entity.h>
+#include <utils/Entity.h>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>

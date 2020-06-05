@@ -1,0 +1,42 @@
+name: Windows CI
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        shared: [ON, OFF]
+        static_runtime: [ON, OFF]
+        config: [Release, Debug]
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.5
+    - name: Config
+      run: |
+        mkdir build
+        cd build
+        cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --parallel 2 --config ${{ matrix.config }} --target INSTALL
+    - name: Linking to Open3D
+      run: |
+        cd docs\_static\C++
+        mkdir build
+        cd build
+        cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
+        cmake --build . --config ${{ matrix.config }} && .\${{ matrix.config }}\TestVisualizer.exe

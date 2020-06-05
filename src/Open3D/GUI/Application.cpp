@@ -27,7 +27,10 @@
 #include "Open3D/GUI/Application.h"
 
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #include <chrono>
+#include <list>
+#include <mutex>
 #include <thread>
 #include <unordered_set>
 
@@ -36,6 +39,7 @@
 #include "Open3D/GUI/Label.h"
 #include "Open3D/GUI/Layout.h"
 #include "Open3D/GUI/Native.h"
+#include "Open3D/GUI/Task.h"
 #include "Open3D/GUI/Theme.h"
 #include "Open3D/GUI/Window.h"
 #include "Open3D/Utility/Console.h"
@@ -101,6 +105,18 @@ struct Application::Impl {
     std::shared_ptr<Menu> menubar_;
     std::unordered_set<std::shared_ptr<Window>> windows_;
     std::unordered_set<std::shared_ptr<Window>> windows_to_be_destroyed_;
+
+    std::list<Task> running_tasks_;  // always accessed from main thread
+    // ----
+    struct Posted {
+        Window *window;
+        std::function<void()> f;
+
+        Posted(Window *w, std::function<void()> func) : window(w), f(func) {}
+    };
+    std::mutex posted_lock_;
+    std::vector<Posted> posted_;
+    // ----
 
     void InitGFLW() {
         if (this->is_GLFW_initalized_) {
@@ -321,6 +337,15 @@ bool Application::RunOneTick() {
 
     // Cleanup if we are done
     if (status == RunStatus::DONE) {
+        // Clear all the running tasks. The destructor will wait for them to
+        // finish.
+        for (auto it = impl_->running_tasks_.begin();
+             it != impl_->running_tasks_.end(); ++it) {
+            auto current = it;
+            ++it;
+            impl_->running_tasks_.erase(current);  // calls join()
+        }
+
         glfwTerminate();
         impl_->is_GLFW_initalized_ = false;
         impl_->is_running_ = false;
@@ -331,11 +356,6 @@ bool Application::RunOneTick() {
 
 Application::RunStatus Application::ProcessQueuedEvents() {
     glfwWaitEventsTimeout(RUNLOOP_DELAY_SEC);
-
-    // We can't destroy a GLFW window in a callback, so we need to do it here.
-    // Since these are the only copy of the shared pointers, this will cause
-    // the Window destructor to be called.
-    impl_->windows_to_be_destroyed_.clear();
 
     // Handle tick messages.
     double now = Now();
@@ -348,10 +368,47 @@ Application::RunStatus Application::ProcessQueuedEvents() {
         impl_->last_time_ = now;
     }
 
+    // Run any posted functions
+    {
+        std::lock_guard<std::mutex> lock(impl_->posted_lock_);
+        for (auto &p : impl_->posted_) {
+            void *old = nullptr;
+            if (p.window) {
+                old = p.window->MakeDrawContextCurrent();
+            }
+            p.f();
+            if (p.window) {
+                p.window->RestoreDrawContext(old);
+                p.window->PostRedraw();
+            }
+        }
+        impl_->posted_.clear();
+    }
+
+    // Clear any tasks that have finished
+    impl_->running_tasks_.remove_if(
+            [](const Task &t) { return t.IsFinished(); });
+
+    // We can't destroy a GLFW window in a callback, so we need to do it here.
+    // Since these are the only copy of the shared pointers, this will cause
+    // the Window destructor to be called.
+    impl_->windows_to_be_destroyed_.clear();
+
     if (impl_->should_quit_) {
         return RunStatus::DONE;
     }
     return RunStatus::CONTINUE;
+}
+
+void Application::RunInThread(std::function<void()> f) {
+    // We need to be on the main thread here.
+    impl_->running_tasks_.emplace_back(f);
+    impl_->running_tasks_.back().Run();
+}
+
+void Application::PostToMainThread(Window *window, std::function<void()> f) {
+    std::lock_guard<std::mutex> lock(impl_->posted_lock_);
+    impl_->posted_.emplace_back(window, f);
 }
 
 const char *Application::GetResourcePath() const {

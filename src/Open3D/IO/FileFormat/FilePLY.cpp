@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <rply/rply.h>
+#include <rply.h>
 
 #include "Open3D/IO/ClassIO/FileFormatIO.h"
 #include "Open3D/IO/ClassIO/LineSetIO.h"
@@ -32,6 +32,7 @@
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/VoxelGridIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/ProgressReporters.h"
 
 namespace open3d {
 
@@ -41,7 +42,7 @@ using namespace io;
 namespace ply_pointcloud_reader {
 
 struct PLYReaderState {
-    utility::ConsoleProgressBar *progress_bar;
+    utility::CountingProgressReporter *progress_bar;
     geometry::PointCloud *pointcloud_ptr;
     long vertex_index;
     long vertex_num;
@@ -64,7 +65,9 @@ int ReadVertexCallback(p_ply_argument argument) {
     state_ptr->pointcloud_ptr->points_[state_ptr->vertex_index](index) = value;
     if (index == 2) {  // reading 'z'
         state_ptr->vertex_index++;
-        ++(*state_ptr->progress_bar);
+        if (state_ptr->vertex_index % 1000 == 0) {
+            state_ptr->progress_bar->Update(state_ptr->vertex_index);
+        }
     }
     return 1;
 }
@@ -391,7 +394,7 @@ FileGeometry ReadFileGeometryTypePLY(const std::string &path) {
 
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,
-                           bool print_progress) {
+                           const ReadPointCloudOption &params) {
     using namespace ply_pointcloud_reader;
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
@@ -438,9 +441,9 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     pointcloud.normals_.resize(state.normal_num);
     pointcloud.colors_.resize(state.color_num);
 
-    utility::ConsoleProgressBar progress_bar(state.vertex_num + 1,
-                                             "Reading PLY: ", print_progress);
-    state.progress_bar = &progress_bar;
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(state.vertex_num);
+    state.progress_bar = &reporter;
 
     if (!ply_read(ply_file)) {
         utility::LogWarning("Read PLY failed: unable to read file: {}",
@@ -450,23 +453,22 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     }
 
     ply_close(ply_file);
-    ++progress_bar;
+    reporter.Finish();
     return true;
 }
 
 bool WritePointCloudToPLY(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
-                          bool write_ascii /* = false*/,
-                          bool compressed /* = false*/,
-                          bool print_progress) {
+                          const WritePointCloudOption &params) {
     if (pointcloud.IsEmpty()) {
         utility::LogWarning("Write PLY failed: point cloud has 0 points.");
         return false;
     }
 
-    p_ply ply_file = ply_create(filename.c_str(),
-                                write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN,
-                                NULL, 0, NULL);
+    p_ply ply_file =
+            ply_create(filename.c_str(),
+                       bool(params.write_ascii) ? PLY_ASCII : PLY_LITTLE_ENDIAN,
+                       NULL, 0, NULL);
     if (!ply_file) {
         utility::LogWarning("Write PLY failed: unable to open file: {}",
                             filename);
@@ -494,9 +496,8 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    utility::ConsoleProgressBar progress_bar(
-            static_cast<size_t>(pointcloud.points_.size()),
-            "Writing PLY: ", print_progress);
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(pointcloud.points_.size());
 
     bool printed_color_warning = false;
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
@@ -519,16 +520,17 @@ bool WritePointCloudToPLY(const std::string &filename,
                         "Write Ply clamped color value to valid range");
                 printed_color_warning = true;
             }
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
+            auto rgb = utility::ColorToUint8(color);
+            ply_write(ply_file, rgb(0));
+            ply_write(ply_file, rgb(1));
+            ply_write(ply_file, rgb(2));
         }
-        ++progress_bar;
+        if (i % 1000 == 0) {
+            reporter.Update(i);
+        }
     }
 
+    reporter.Finish();
     ply_close(ply_file);
     return true;
 }
@@ -685,12 +687,10 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                         "Write Ply clamped color value to valid range");
                 printed_color_warning = true;
             }
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
+            auto rgb = utility::ColorToUint8(color);
+            ply_write(ply_file, rgb(0));
+            ply_write(ply_file, rgb(1));
+            ply_write(ply_file, rgb(2));
         }
         ++progress_bar;
     }
@@ -843,12 +843,10 @@ bool WriteLineSetToPLY(const std::string &filename,
                         "Write Ply clamped color value to valid range");
                 printed_color_warning = true;
             }
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
+            auto rgb = utility::ColorToUint8(color);
+            ply_write(ply_file, rgb(0));
+            ply_write(ply_file, rgb(1));
+            ply_write(ply_file, rgb(2));
         }
         ++progress_bar;
     }
@@ -990,10 +988,10 @@ bool WriteVoxelGridToPLY(const std::string &filename,
         ply_write(ply_file, voxel.grid_index_(1));
         ply_write(ply_file, voxel.grid_index_(2));
 
-        const Eigen::Vector3d &color = voxel.color_;
-        ply_write(ply_file, std::min(255.0, std::max(0.0, color(0) * 255.0)));
-        ply_write(ply_file, std::min(255.0, std::max(0.0, color(1) * 255.0)));
-        ply_write(ply_file, std::min(255.0, std::max(0.0, color(2) * 255.0)));
+        auto rgb = utility::ColorToUint8(voxel.color_);
+        ply_write(ply_file, rgb(0));
+        ply_write(ply_file, rgb(1));
+        ply_write(ply_file, rgb(2));
 
         ++progress_bar;
     }

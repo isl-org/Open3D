@@ -36,8 +36,8 @@
 #include <filament/Skybox.h>
 #include <filament/Texture.h>
 #include <filament/TextureSampler.h>
-#include <filament/image/KtxBundle.h>
-#include <filament/image/KtxUtility.h>
+#include <image/KtxBundle.h>
+#include <image/KtxUtility.h>
 
 #include "Open3D/GUI/Application.h"
 #include "Open3D/IO/ClassIO/ImageIO.h"
@@ -172,6 +172,10 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image) {
         case 3:
             settings.image_format = filament::Texture::Format::RGB;
             settings.format = filament::Texture::InternalFormat::RGB8;
+            break;
+        case 4:
+            settings.image_format = filament::Texture::Format::RGBA;
+            settings.format = filament::Texture::InternalFormat::RGBA8;
             break;
         default:
             utility::LogError("Unsupported image number of channels: {}",

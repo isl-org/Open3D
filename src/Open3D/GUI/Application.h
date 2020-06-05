@@ -59,6 +59,21 @@ public:
     /// Closes all the windows, which exits as a result
     void Quit();
 
+    /// Runs \param f in a separate thread. Do NOT call UI functions in
+    /// \p f; if you have a long running function that needs to call UI
+    /// functions (e.g. updating a progress bar), have your function call
+    /// PostToMainThread() with code that will do the UI (note: your function
+    /// may finish before the code given to PostToMainThread will run, so if
+    /// using lambdas, capture by copy and make sure whatever you use will
+    /// still be alive).
+    void RunInThread(std::function<void()> f);
+    /// Runs \param f on the main thread at some point in the near future.
+    /// Proper context will be setup for \param window. \p f will block the
+    /// UI, so it should run quickly. If you need to do something slow
+    /// (e.g. load a file) consider using RunInThread() and have the function
+    /// pass off UI calls to PostToMainThread().
+    void PostToMainThread(Window *window, std::function<void()> f);
+
     std::shared_ptr<Menu> GetMenubar() const;
     void SetMenubar(std::shared_ptr<Menu> menubar);
 
