@@ -47,10 +47,18 @@ PYBIND11_MODULE(open3d_pybind, m) {
 
     m.doc() = "Python binding of Open3D";
 
-    // Check open3d CXX11_ABI with
-    // import open3d; print(open3d.open3d._GLIBCXX_USE_CXX11_ABI)
+    // Check Open3D CXX11_ABI with
+    // import open3d as o3d; print(o3d.open3d_pybind._GLIBCXX_USE_CXX11_ABI)
     m.add_object("_GLIBCXX_USE_CXX11_ABI",
                  _GLIBCXX_USE_CXX11_ABI ? Py_True : Py_False);
+
+    // Check whether headless mode is enabled
+    // import open3d as o3d; print(o3d.open3d_pybind._ENABLE_HEADLESS_RENDERING)
+#ifdef HEADLESS_RENDERING
+    m.add_object("_ENABLE_HEADLESS_RENDERING", Py_True);
+#else
+    m.add_object("_ENABLE_HEADLESS_RENDERING", Py_False);
+#endif
 
     // Register this first, other submodule (e.g. odometry) might depend on this
     pybind_utility(m);
