@@ -60,6 +60,14 @@ PYBIND11_MODULE(open3d_pybind, m) {
     m.add_object("_ENABLE_HEADLESS_RENDERING", Py_False);
 #endif
 
+    // Check whether CUDA is enabled
+    // import open3d as o3d; print(o3d.open3d_pybind._BUILD_CUDA_MODULE)
+#ifdef BUILD_CUDA_MODULE
+    m.add_object("_BUILD_CUDA_MODULE", Py_True);
+#else
+    m.add_object("_BUILD_CUDA_MODULE", Py_False);
+#endif
+
     // Register this first, other submodule (e.g. odometry) might depend on this
     pybind_utility(m);
     pybind_core(m);
