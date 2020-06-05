@@ -809,44 +809,49 @@ TEST(PointCloud, OrientNormalsConsistentTangentPlane) {
             {1, 0, 1},
             {1, 1, 0},
             {1, 1, 1},
-            {0.5, 0.5, 0},
-            {0.5, 0.5, 1},
-            {0.5, 0, 0.5},
-            {0.5, 1, 0.5},
-            {0, 0.5, 0.5},
-            {1, 0.5, 0.5},
+            {0.5, 0.5, -0.25},
+            {0.5, 0.5, 1.25},
+            {0.5, -0.25, 0.5},
+            {0.5, 1.25, 0.5},
+            {-0.25, 0.5, 0.5},
+            {1.25, 0.5, 0.5},
     });
+
+    // Hard-coded test
     pcd.EstimateNormals(geometry::KDTreeSearchParamKNN(/*knn=*/4));
-    ExpectEQ(pcd.normals_, std::vector<Eigen::Vector3d>({{0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, -1},
-                                                         {0, 0, -1},
-                                                         {0, 1, 0},
-                                                         {0, 1, 0},
-                                                         {1, 0, 0},
-                                                         {1, 0, 0}}));
+    double a = 0.57735;
+    double b = 0.0927618;
+    double c = 0.991358;
+    ExpectEQ(pcd.normals_, std::vector<Eigen::Vector3d>({{a, a, a},
+                                                         {-a, -a, a},
+                                                         {a, -a, a},
+                                                         {-a, a, a},
+                                                         {-a, a, a},
+                                                         {a, -a, a},
+                                                         {-a, -a, a},
+                                                         {a, a, a},
+                                                         {-b, -b, -c},
+                                                         {b, b, -c},
+                                                         {b, c, b},
+                                                         {-b, c, -b},
+                                                         {c, b, b},
+                                                         {c, -b, -b}}));
 
     pcd.OrientNormalsConsistentTangentPlane(/*k=*/4);
-    ExpectEQ(pcd.normals_, std::vector<Eigen::Vector3d>({{0, 0, -1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, 1},
-                                                         {0, 0, -1},
-                                                         {0, 0, 1},
-                                                         {0, 1, 0},
-                                                         {0, 1, 0},
-                                                         {1, 0, 0},
-                                                         {1, 0, 0}}));
+    ExpectEQ(pcd.normals_, std::vector<Eigen::Vector3d>({{-a, -a, -a},
+                                                         {-a, -a, a},
+                                                         {-a, a, -a},
+                                                         {-a, a, a},
+                                                         {a, -a, -a},
+                                                         {a, -a, a},
+                                                         {a, a, -a},
+                                                         {a, a, a},
+                                                         {-b, -b, -c},
+                                                         {-b, -b, c},
+                                                         {-b, -c, -b},
+                                                         {-b, c, -b},
+                                                         {-c, -b, -b},
+                                                         {c, -b, -b}}));
 }
 
 TEST(PointCloud, ComputePointCloudToPointCloudDistance) {
