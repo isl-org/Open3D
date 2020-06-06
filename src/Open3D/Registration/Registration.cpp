@@ -307,9 +307,9 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 }
                 bool check = true;
                 for (const auto &checker : checkers) {
-                    if (checker.get().require_pointcloud_alignment_ == false &&
-                        checker.get().Check(source, target, ransac_corres,
-                                            transformation) == false) {
+                    if (!checker.get().require_pointcloud_alignment_ &&
+                        !checker.get().Check(source, target, ransac_corres,
+                                             transformation)) {
                         check = false;
                         break;
                     }
@@ -319,9 +319,9 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                         source, target, ransac_corres);
                 check = true;
                 for (const auto &checker : checkers) {
-                    if (checker.get().require_pointcloud_alignment_ == true &&
-                        checker.get().Check(source, target, ransac_corres,
-                                            transformation) == false) {
+                    if (checker.get().require_pointcloud_alignment_ &&
+                        !checker.get().Check(source, target, ransac_corres,
+                                             transformation)) {
                         check = false;
                         break;
                     }

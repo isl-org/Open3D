@@ -213,8 +213,7 @@ bool NormalShaderForTriangleMesh::PrepareBinding(
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    if (mesh.HasTriangleNormals() == false ||
-        mesh.HasVertexNormals() == false) {
+    if (!mesh.HasTriangleNormals() || !mesh.HasVertexNormals()) {
         PrintShaderWarning("Binding failed because mesh has no normals.");
         PrintShaderWarning("Call ComputeVertexNormals() before binding.");
         return false;

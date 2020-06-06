@@ -98,7 +98,7 @@ bool BindFramebuffer(int width, int height) {
 bool VisualizerWithVertexSelection::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_in_ptr,
         bool reset_bounding_box) {
-    if (is_initialized_ == false || geometry_ptrs_.empty() == false) {
+    if (!is_initialized_ || !geometry_ptrs_.empty()) {
         utility::LogInfo(
                 "VisualizerWithVertexSelection only supports one geometry");
         return false;
@@ -289,7 +289,7 @@ void VisualizerWithVertexSelection::BuildUtilities() {
     success = true;
     pointcloud_picker_ptr_ = std::make_shared<PointCloudPicker>();
     if (geometry_ptrs_.empty() ||
-        pointcloud_picker_ptr_->SetPointCloud(geometry_ptr_) == false) {
+        !pointcloud_picker_ptr_->SetPointCloud(geometry_ptr_)) {
         success = false;
     }
     pointcloud_picker_renderer_ptr_ =

@@ -166,7 +166,7 @@ std::shared_ptr<SelectionPolygonVolume>
 SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
     auto volume = std::make_shared<SelectionPolygonVolume>();
     const auto &editing_view = (const ViewControlWithEditing &)view;
-    if (editing_view.IsLocked() == false ||
+    if (!editing_view.IsLocked() ||
         editing_view.GetEditingMode() == ViewControlWithEditing::FreeMode) {
         return volume;
     }

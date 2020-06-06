@@ -43,7 +43,7 @@ bool ShaderWrapper::Render(const geometry::Geometry &geometry,
     if (!bound_) {
         BindGeometry(geometry, option, view);
     }
-    if (compiled_ == false || bound_ == false) {
+    if (!compiled_ || !bound_) {
         PrintShaderWarning("Something is wrong in compiling or binding.");
         return false;
     }
