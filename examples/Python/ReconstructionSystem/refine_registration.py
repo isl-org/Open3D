@@ -15,7 +15,7 @@ from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 
 def update_posegraph_for_scene(s, t, transformation, information, odometry,
-                              pose_graph):
+                               pose_graph):
     if t == s + 1:  # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)

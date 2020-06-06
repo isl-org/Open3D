@@ -82,7 +82,7 @@ def compute_initial_registration(s, t, source_down, target_down, source_fpfh,
 
 
 def update_posegraph_for_scene(s, t, transformation, information, odometry,
-                              pose_graph):
+                               pose_graph):
     if t == s + 1:  # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
