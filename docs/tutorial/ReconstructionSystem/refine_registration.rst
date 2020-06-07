@@ -32,7 +32,7 @@ Multiway registration
    :lines: 5,17-36
    :linenos:
 
-This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. Function ``update_posegrph_for_refined_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
+This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. Function ``update_posegraph_for_refined_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
 Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called for multiway registration.
 
@@ -57,8 +57,7 @@ The main workflow is: pairwise local refinement -> multiway registration.
 
 Results
 ``````````````````````````````````````
-
-The following is messages from pose graph optimization.
+The pose graph optimization outputs the following messages:
 
 .. code-block:: sh
 
@@ -78,4 +77,4 @@ The following is messages from pose graph optimization.
     CompensateReferencePoseGraphNode : reference : 0
 
 
-There are 14 fragments and 52 valid matching pairs between fragments. After 23 iteration, 11 edges are detected to be false positive. After they are pruned, pose graph optimization runs again to achieve tight alignment.
+There are 14 fragments and 52 valid matching pairs between fragments. After 23 iterations, 11 edges are detected to be false positives. After they are pruned, pose graph optimization runs again to achieve tight alignment.

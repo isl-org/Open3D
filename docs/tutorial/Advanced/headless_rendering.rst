@@ -5,7 +5,7 @@ Headless rendering
 
 This tutorial explains how to render and save images from a terminal without any display device.
 
-.. Note:: This feature is experimental; it was only tested with Ubuntu 18.04 environment.
+.. Note:: This feature is experimental; it was only tested with an Ubuntu 18.04 environment.
 
 .. Note:: Although Ubuntu 16.04 is no longer supported for Open3D, additional instructions are under :ref:`headless_ubuntu1604`.
 
@@ -144,7 +144,7 @@ If instead you get
     [Open3D WARNING] GLFW Error: OSMesa: Failed to create context
     [Open3D DEBUG] Failed to create window
 
-Then your OSMesa version maybe too old.  Try to follow instructions below to :ref:`compile_osmesa` to build a newer version and see if that would resolve your issue.
+Then your OSMesa version might be too old.  Try to follow instructions below to :ref:`compile_osmesa` to build a newer version and see if that resolves your issue.
 
 .. _headless_ubuntu1604:
 
@@ -187,4 +187,4 @@ Here are instructions for compiling mesa-19.0.8, last version that still support
     (py3env) $ make -j$(nproc)
     (py3env) $ make install-pip-package
 
-Now you can follow instructions under :ref:`test_headless_rendering`.
+Now you can follow the instructions under :ref:`test_headless_rendering`.
