@@ -102,11 +102,10 @@ int main(int argc, char **args) {
     utility::LogInfo("");
 
     visualization::Visualizer depth_vis, color_vis;
-    if (depth_vis.CreateVisualizerWindow("Depth", 640, 480, 15, 50) == false ||
-        depth_vis.AddGeometry(depth_image_ptr) == false ||
-        color_vis.CreateVisualizerWindow("Color", 1920, 1080, 675, 50) ==
-                false ||
-        color_vis.AddGeometry(color_image_ptr) == false) {
+    if (!depth_vis.CreateVisualizerWindow("Depth", 640, 480, 15, 50) ||
+        !depth_vis.AddGeometry(depth_image_ptr) ||
+        !color_vis.CreateVisualizerWindow("Color", 1920, 1080, 675, 50) ||
+        !color_vis.AddGeometry(color_image_ptr)) {
         return 0;
     }
 

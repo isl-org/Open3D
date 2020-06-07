@@ -55,7 +55,7 @@ bool AlignmentSession::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool AlignmentSession::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "AlignmentSession read JSON failed: unsupported json "
                 "format.");

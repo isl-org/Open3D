@@ -35,8 +35,8 @@ namespace visualization {
 namespace glsl {
 
 bool TextureSimpleShader::Compile() {
-    if (CompileShaders(TextureSimpleVertexShader, NULL,
-                       TextureSimpleFragmentShader) == false) {
+    if (!CompileShaders(TextureSimpleVertexShader, NULL,
+                        TextureSimpleFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -66,7 +66,7 @@ bool TextureSimpleShader::BindGeometry(const geometry::Geometry &geometry,
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector2f> uvs;
-    if (PrepareBinding(geometry, option, view, points, uvs) == false) {
+    if (!PrepareBinding(geometry, option, view, points, uvs)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -92,7 +92,7 @@ bool TextureSimpleShader::BindGeometry(const geometry::Geometry &geometry,
 bool TextureSimpleShader::RenderGeometry(const geometry::Geometry &geometry,
                                          const RenderOption &option,
                                          const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
@@ -187,7 +187,7 @@ bool TextureSimpleShaderForTriangleMesh::PrepareBinding(
     }
     const geometry::TriangleMesh &mesh =
             (const geometry::TriangleMesh &)geometry;
-    if (mesh.HasTriangles() == false) {
+    if (!mesh.HasTriangles()) {
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }

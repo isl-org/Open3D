@@ -38,7 +38,7 @@ const double RenderOptionWithEditing::PICKER_SPHERE_SIZE_MAX = 0.08;
 const double RenderOptionWithEditing::PICKER_SPHERE_SIZE_DEFAULT = 0.01;
 
 bool RenderOptionWithEditing::ConvertToJsonValue(Json::Value &value) const {
-    if (RenderOption::ConvertToJsonValue(value) == false) {
+    if (!RenderOption::ConvertToJsonValue(value)) {
         return false;
     }
     if (EigenVector3dToJsonArray(selection_polygon_boundary_color_,
@@ -57,7 +57,7 @@ bool RenderOptionWithEditing::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool RenderOptionWithEditing::ConvertFromJsonValue(const Json::Value &value) {
-    if (RenderOption::ConvertFromJsonValue(value) == false) {
+    if (!RenderOption::ConvertFromJsonValue(value)) {
         return false;
     }
     if (EigenVector3dFromJsonArray(selection_polygon_boundary_color_,

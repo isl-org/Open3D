@@ -59,15 +59,15 @@ PinholeCameraIntrinsic::~PinholeCameraIntrinsic() {}
 bool PinholeCameraIntrinsic::ConvertToJsonValue(Json::Value &value) const {
     value["width"] = width_;
     value["height"] = height_;
-    if (EigenMatrix3dToJsonArray(intrinsic_matrix_,
-                                 value["intrinsic_matrix"]) == false) {
+    if (!EigenMatrix3dToJsonArray(intrinsic_matrix_,
+                                  value["intrinsic_matrix"])) {
         return false;
     }
     return true;
 }
 
 bool PinholeCameraIntrinsic::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "PinholeCameraParameters read JSON failed: unsupported json "
                 "format.");
@@ -75,8 +75,8 @@ bool PinholeCameraIntrinsic::ConvertFromJsonValue(const Json::Value &value) {
     }
     width_ = value.get("width", -1).asInt();
     height_ = value.get("height", -1).asInt();
-    if (EigenMatrix3dFromJsonArray(intrinsic_matrix_,
-                                   value["intrinsic_matrix"]) == false) {
+    if (!EigenMatrix3dFromJsonArray(intrinsic_matrix_,
+                                    value["intrinsic_matrix"])) {
         utility::LogWarning(
                 "PinholeCameraParameters read JSON failed: wrong format.");
         return false;

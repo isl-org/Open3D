@@ -78,7 +78,7 @@ bool ReadPointCloudFromXYZRGB(const std::string &filename,
 bool WritePointCloudToXYZRGB(const std::string &filename,
                              const geometry::PointCloud &pointcloud,
                              const WritePointCloudOption &params) {
-    if (pointcloud.HasColors() == false) {
+    if (!pointcloud.HasColors()) {
         return false;
     }
 
