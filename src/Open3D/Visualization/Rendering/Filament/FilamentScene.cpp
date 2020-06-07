@@ -37,7 +37,7 @@
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/View.h>
-#include <filament/utils/EntityManager.h>
+#include <utils/EntityManager.h>
 
 #include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/LineSet.h"

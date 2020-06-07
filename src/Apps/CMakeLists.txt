@@ -41,11 +41,12 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
 
     set(DEPENDENCIES "${ARGN}")
     foreach(DEPENDENCY IN LISTS DEPENDENCIES)
-        target_link_libraries(${TARGET_NAME} ${DEPENDENCY})
+        target_link_libraries(${TARGET_NAME} PRIVATE ${DEPENDENCY})
     endforeach()
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Apps")
-    ShowAndAbortOnWarning(${TARGET_NAME})
+    open3d_show_and_abort_on_warning(${TARGET_NAME})
+    open3d_set_global_properties(${TARGET_NAME})
 
     # Copy the resource files. This needs to be done as a post-build step
     # because on macOS, we don't know the bundle directory until build time

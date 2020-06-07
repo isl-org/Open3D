@@ -74,9 +74,48 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
 
 // wrapper for fopen that enables unicode paths on Windows
 FILE *FOpen(const std::string &filename, const std::string &mode);
+std::string GetIOErrorString(const int errnoVal);
 bool FReadToBuffer(const std::string &path,
                    std::vector<char> &bytes,
                    std::string *errorStr);
+
+/// RAII Wrapper for C FILE*
+/// Throws exceptions in situations where the caller is not usually going to
+/// have proper handling code:
+/// - using an unopened CFile
+/// - errors and ferror from underlying calls (fclose, ftell, fseek, fread,
+///   fwrite, fgetpos, fsetpos)
+/// - reading a line that is too long, caller is unlikely to have proper code to
+///   handle a partial next line
+/// If you would like to handle any of these issues by not having your code
+/// throw, use try/catch (const std::exception &e) { ... }
+class CFile {
+public:
+    ~CFile();
+    bool Open(const std::string &filename, const std::string &mode);
+    /// return last encountered error for this file
+    std::string GetError();
+    void Close();
+    /// return current position in the file (ftell)
+    int64_t CurPos();
+    int64_t GetFileSize();
+    /// Throws if we hit buffer maximum.  In most cases, calling code is only
+    /// capable of processing a complete line, if it receives a partial line it
+    /// will probably fail and it is very likely to fail/corrupt on the next
+    /// call that receives the remainder of the line
+    const char *ReadLine();
+    template <class T>
+    size_t ReadData(T *data, size_t num_elems) {
+        return ReadData(data, sizeof(T), num_elems);
+    }
+    size_t ReadData(void *data, size_t elem_size, size_t num_elems);
+    FILE *GetFILE() { return file_; }
+
+private:
+    FILE *file_ = nullptr;
+    int error_code_ = 0;
+    std::vector<char> line_buffer_;
+};
 
 }  // namespace filesystem
 }  // namespace utility

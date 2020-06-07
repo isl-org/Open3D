@@ -29,9 +29,11 @@
 #include <Eigen/Core>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Core/TensorList.h"
+#include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/TGeometry/Geometry3D.h"
 
 namespace open3d {
@@ -49,7 +51,19 @@ public:
         point_dict_["points"] = TensorList({3}, dtype_, device_);
     }
 
+    /// Construct from default points
+    /// points_tensor: (N, 3)
+    PointCloud(const Tensor &points_tensor);
+
+    /// Construct from points and various other properties
+    PointCloud(const std::unordered_map<std::string, TensorList> &point_dict);
+
     ~PointCloud() override {}
+
+    TensorList &operator[](const std::string &key);
+
+    void SyncPushBack(
+            const std::unordered_map<std::string, Tensor> &point_struct);
 
     PointCloud &Clear() override;
 
@@ -88,6 +102,22 @@ public:
 
 public:
     std::unordered_map<std::string, TensorList> point_dict_;
+
+public:
+    // Usage:
+    // std::shared_ptr<geometry::PointCloud> pcd_legacy =
+    //         io::CreatePointCloudFromFile(filename);
+    // tgeometry::PointCloud pcd =
+    //         tgeometry::PointCloud::FromLegacyPointCloud(*pcd_legacy);
+    // geometry::PointCloud pcd_legacy_back =
+    //         tgeometry::PointCloud::ToLegacyPointCloud(pcd);
+    static tgeometry::PointCloud FromLegacyPointCloud(
+            const geometry::PointCloud &pcd_legacy,
+            Dtype dtype = Dtype::Float32,
+            Device device = Device("CPU:0"));
+
+    static geometry::PointCloud ToLegacyPointCloud(
+            const tgeometry::PointCloud &pcd);
 
 protected:
     Dtype dtype_ = Dtype::Float32;

@@ -26,9 +26,11 @@
 
 #pragma once
 
+#include "Open3D/GUI/Widget.h"
+
 #include <functional>
 
-#include "Open3D/GUI/Widget.h"
+#include "Open3D/GUI/UIImage.h"
 
 namespace open3d {
 namespace gui {
@@ -36,6 +38,7 @@ namespace gui {
 class Button : public Widget {
 public:
     explicit Button(const char* title);
+    explicit Button(std::shared_ptr<UIImage> image);
     ~Button();
 
     bool GetIsToggleable() const;

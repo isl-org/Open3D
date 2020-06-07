@@ -1,52 +1,7 @@
+# .appveyor.yml is intentionally left blank.
+# Checkout .github/workflows/windows.yml instead.
+
 version: 1.0.{build}
 image:
 - Visual Studio 2019
-test: off
-build:
-  parallel: true
-platform:
-- x64
-environment:
-  matrix:
-  - PYTHON: 36
-    CONFIG: Release
-    SHARED: OFF
-  - PYTHON: 36
-    CONFIG: Release
-    SHARED: ON
-  - PYTHON: 36
-    CONFIG: Debug
-    SHARED: OFF  # Only check Debug mode with SHARED=OFF to save time.
-install:
-- ps: |
-    if ($env:PLATFORM -eq "x64") {
-      $env:CMAKE_ARCH = "x64"
-      $env:CMAKE_INSTALL_PREFIX = "C:\Program Files\Open3D"
-    } else {
-      $env:CMAKE_INSTALL_PREFIX = "C:\Program Files (x86)\Open3D"
-    }
-    $env:CMAKE_GENERATOR = "Visual Studio 16 2019"
-    if ($env:PYTHON) {
-      if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
-      $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
-    }
-build_script:
-- git submodule update --init --recursive
-- mkdir build
-- cd build
-- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_EIGEN3=ON -DBUILD_FLANN=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_PNG=ON ..
-- cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config %CONFIG% --target INSTALL
-
-# Test cmake install
-- cd ..\docs\_static\C++
-- mkdir build
-- cd build
-- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% ..
-- cmake --build . --config %CONFIG%
-- .\%CONFIG%\TestVisualizer
-
-# The following script has issues on SHARED = "ON"
-# - cd lib/Release/Tutorial/Basic && python file_io.py
-artifacts:
-  # Archive the generated packages in the ci.appveyor.com build report.
-- path:  build\lib\%CONFIG%\open3d.cp36-win_amd64.pyd
+build: off

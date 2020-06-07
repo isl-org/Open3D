@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
                      total_correspondence_num, total_point_num,
                      total_correspondence_num * 100.0 / total_point_num);
 
-    for (const auto feature : features) {
+    for (const auto &feature : features) {
         utility::LogInfo("Evaluate feature {}.", feature);
         std::vector<KDTreeFlannFeature> feature_trees(pcd_names.size());
 #ifdef _OPENMP

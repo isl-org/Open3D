@@ -36,6 +36,7 @@ namespace Eigen {
 /// Extending Eigen namespace by adding frequently used matrix type
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
+typedef Eigen::Matrix<uint8_t, 3, 1> Vector3uint8;
 
 /// Use Eigen::DontAlign for matrices inside classes which are exposed in the
 /// Open3D headers https://github.com/intel-isl/Open3D/issues/653
@@ -50,6 +51,7 @@ namespace utility {
 using Matrix4d_allocator = Eigen::aligned_allocator<Eigen::Matrix4d>;
 using Matrix6d_allocator = Eigen::aligned_allocator<Eigen::Matrix6d>;
 using Vector2d_allocator = Eigen::aligned_allocator<Eigen::Vector2d>;
+using Vector3uint8_allocator = Eigen::aligned_allocator<Eigen::Vector3uint8>;
 using Vector4i_allocator = Eigen::aligned_allocator<Eigen::Vector4i>;
 using Vector4d_allocator = Eigen::aligned_allocator<Eigen::Vector4d>;
 using Vector6d_allocator = Eigen::aligned_allocator<Eigen::Vector6d>;
@@ -116,6 +118,13 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
 Eigen::Matrix3d RotationMatrixX(double radians);
 Eigen::Matrix3d RotationMatrixY(double radians);
 Eigen::Matrix3d RotationMatrixZ(double radians);
+
+/// Color conversion from double [0,1] to uint8_t 0-255; this does proper
+/// clipping and rounding
+Eigen::Vector3uint8 ColorToUint8(const Eigen::Vector3d &color);
+/// Color conversion from uint8_t 0-255 to double [0,1]
+Eigen::Vector3d ColorToDouble(uint8_t r, uint8_t g, uint8_t b);
+Eigen::Vector3d ColorToDouble(const Eigen::Vector3uint8 &rgb);
 
 }  // namespace utility
 }  // namespace open3d

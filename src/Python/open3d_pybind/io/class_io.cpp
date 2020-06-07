@@ -146,8 +146,9 @@ void pybind_class_io(py::module &m_io) {
                 bool remove_nan_points, bool remove_infinite_points,
                 bool print_progress) {
                  geometry::PointCloud pcd;
-                 io::ReadPointCloud(filename, pcd, format, remove_nan_points,
-                                    remove_infinite_points, print_progress);
+                 io::ReadPointCloud(filename, pcd,
+                                    {format, remove_nan_points,
+                                     remove_infinite_points, print_progress});
                  return pcd;
              },
              "Function to read PointCloud from file", "filename"_a,
@@ -160,8 +161,9 @@ void pybind_class_io(py::module &m_io) {
              [](const std::string &filename,
                 const geometry::PointCloud &pointcloud, bool write_ascii,
                 bool compressed, bool print_progress) {
-                 return io::WritePointCloud(filename, pointcloud, write_ascii,
-                                            compressed, print_progress);
+                 return io::WritePointCloud(
+                         filename, pointcloud,
+                         {write_ascii, compressed, print_progress});
              },
              "Function to write PointCloud to file", "filename"_a,
              "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false,

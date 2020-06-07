@@ -381,7 +381,7 @@ TEST_P(TensorPermuteDevices, ToString) {
     // 0D
     t = Tensor::Ones({}, Dtype::Float32, device);
     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"(1)");
+              R"(1.0)");
     t = Tensor::Full({}, std::numeric_limits<float>::quiet_NaN(),
                      Dtype::Float32, device);
     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
@@ -391,16 +391,20 @@ TEST_P(TensorPermuteDevices, ToString) {
     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"(nan)");
 
-    // 1D
-    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
-                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
-    t = Tensor(vals, {24}, Dtype::Float32, device);
+    // 1D float
+    t = Tensor(std::vector<float>{0, 1, 2, 3, 4}, {5}, Dtype::Float32, device);
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"([0.0 1.0 2.0 3.0 4.0])");
+
+    // 1D int
+    std::vector<int32_t> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                              12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    t = Tensor(vals, {24}, Dtype::Int32, device);
     EXPECT_EQ(
             t.ToString(/*with_suffix=*/false),
             R"([0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23])");
 
     // 2D
-    t = Tensor(vals, {6, 4}, Dtype::Float32, device);
+    t = Tensor(vals, {6, 4}, Dtype::Int32, device);
     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[0 1 2 3],
  [4 5 6 7],
@@ -410,7 +414,7 @@ TEST_P(TensorPermuteDevices, ToString) {
  [20 21 22 23]])");
 
     // 3D
-    t = Tensor(vals, {2, 3, 4}, Dtype::Float32, device);
+    t = Tensor(vals, {2, 3, 4}, Dtype::Int32, device);
     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[[0 1 2 3],
   [4 5 6 7],
@@ -420,7 +424,7 @@ TEST_P(TensorPermuteDevices, ToString) {
   [20 21 22 23]]])");
 
     // 4D
-    t = Tensor(vals, {2, 3, 2, 2}, Dtype::Float32, device);
+    t = Tensor(vals, {2, 3, 2, 2}, Dtype::Int32, device);
     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[[[0 1],
    [2 3]],
