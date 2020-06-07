@@ -198,7 +198,8 @@ def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size,
         for i, v in enumerate(inp_features):
             num_neighbors = sparse_conv_transpose.nns_inp.neighbors_row_splits[
                 i + 1] - sparse_conv_transpose.nns_inp.neighbors_row_splits[i]
-            v /= dtype(num_neighbors)
+            if num_neighbors:
+                v /= dtype(num_neighbors)
 
     inp_volume[0, inp_positions_int[:, 2], inp_positions_int[:, 1],
                inp_positions_int[:, 0], :] = inp_features

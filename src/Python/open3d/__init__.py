@@ -80,4 +80,5 @@ if "@ENABLE_JUPYTER@" == "ON":
 
 _build_config = {
     "BUILD_TENSORFLOW_OPS": "@BUILD_TENSORFLOW_OPS@" == "ON",
+    "BUILD_PYTORCH_OPS": "@BUILD_PYTORCH_OPS@" == "ON",
 }

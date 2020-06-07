@@ -110,6 +110,18 @@ if ( BUILD_TENSORFLOW_OPS )
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py")
 endif ()
 
+# add additional optional compiled modules
+if ( BUILD_PYTORCH_OPS )
+    list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
+    add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
+            COMMAND ${PYTHON_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in open3d/ml/torch/python/ops.py.in --input_return_types_py_in open3d/ml/torch/python/return_types.py.in --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../Open3D/ML/TensorFlow"
+                        DEPENDS open3d_torch_ops
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        COMMENT "Generating python ops.py and return_types.py" )
+                
+    list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py")
+endif ()
+
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -118,6 +130,7 @@ add_custom_target(python-package
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
             -DENABLE_JUPYTER=${ENABLE_JUPYTER}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+            -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}

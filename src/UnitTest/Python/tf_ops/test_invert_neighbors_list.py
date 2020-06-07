@@ -44,9 +44,8 @@ attributes = pytest.mark.parametrize('attributes',
 @value_dtypes
 @attributes
 @mark_helper.devices
-def test_invert_neighbors_list(dtype, attributes, device_name):
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+@mark_helper.ml
+def test_invert_neighbors_list(dtype, attributes, device_name, ml):
 
     # yapf: disable
 
@@ -83,14 +82,17 @@ def test_invert_neighbors_list(dtype, attributes, device_name):
 
 # yapf: enable
 
-    with tf.device(device_name):
-        ans = ml3d.ops.invert_neighbors_list(num_points, neighbors_index,
-                                             neighbors_row_splits,
-                                             neighbors_attributes)
-        assert device_name in ans.neighbors_index.device
+    ans = mark_helper.run_op(ml.framework,
+                             device_name,
+                             ml.ops.invert_neighbors_list,
+                             check_device=True,
+                             num_points=num_points,
+                             inp_neighbors_index=neighbors_index,
+                             inp_neighbors_row_splits=neighbors_row_splits,
+                             inp_neighbors_attributes=neighbors_attributes)
 
     expected_neighbors_row_splits = [0, 1, 3, edges.shape[0]]
-    np.testing.assert_equal(ans.neighbors_row_splits.numpy(),
+    np.testing.assert_equal(ans.neighbors_row_splits,
                             expected_neighbors_row_splits)
 
     # checking the neighbors_index is more complicated because the order
@@ -103,13 +105,13 @@ def test_invert_neighbors_list(dtype, attributes, device_name):
     for i, expected_neighbors_i in enumerate(expected_neighbors_index):
         start = ans.neighbors_row_splits[i]
         end = ans.neighbors_row_splits[i + 1]
-        neighbors_i = set(ans.neighbors_index[start:end].numpy())
+        neighbors_i = set(ans.neighbors_index[start:end])
         assert neighbors_i == expected_neighbors_i
 
     if neighbors_attributes.shape == (0,):
         # if the input is a zero length vector then the returned attributes
         # vector also must be a zero length vector
-        assert ans.neighbors_attributes.numpy().shape == (0,)
+        assert ans.neighbors_attributes.shape == (0,)
     else:
         # check if the attributes are still associated with the same edge
         edge_attr_map = {
@@ -120,8 +122,8 @@ def test_invert_neighbors_list(dtype, attributes, device_name):
             end = ans.neighbors_row_splits[i + 1]
 
             # neighbors and attributes for point i
-            neighbors_i = ans.neighbors_index[start:end].numpy()
-            attributes_i = ans.neighbors_attributes[start:end].numpy()
+            neighbors_i = ans.neighbors_index[start:end]
+            attributes_i = ans.neighbors_attributes[start:end]
             for j, attr in zip(neighbors_i, attributes_i):
                 key = (j, i)
                 np.testing.assert_equal(attr, edge_attr_map[key])
