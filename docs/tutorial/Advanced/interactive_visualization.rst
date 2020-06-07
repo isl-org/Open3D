@@ -95,7 +95,7 @@ This will print:
     Picked point #77321 (2.86, 1.92, 1.09) to add in queue.
     Picked point #42639 (3.28, 1.53, 1.45) to add in queue.
 
-Press ``Q` to close the window. The next step is to pick the same correspondences in the target point cloud. The color of the sphere helps to identify the same correspondence.
+Press ``Q`` to close the window. The next step is to pick the same correspondences in the target point cloud. The color of the sphere helps to identify the same correspondence.
 
 .. image:: ../../_static/Advanced/interactive_visualization/manual_icp_target.png
     :width: 400px
