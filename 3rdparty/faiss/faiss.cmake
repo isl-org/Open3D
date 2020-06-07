@@ -14,7 +14,7 @@ ExternalProject_Add(
     ext_faiss
     PREFIX faiss
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss
-    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss/configure --without-cuda --prefix=${3RDPARTY_INSTALL_PREFIX}
+    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss/configure --with-cuda=/usr/local/cuda-10.1  --prefix=${3RDPARTY_INSTALL_PREFIX}
     BUILD_COMMAND ${MAKE}
     BUILD_IN_SOURCE 1
 )
