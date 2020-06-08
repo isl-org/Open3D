@@ -38,8 +38,8 @@ namespace visualization {
 namespace glsl {
 
 bool TexturePhongShader::Compile() {
-    if (CompileShaders(TexturePhongVertexShader, NULL,
-                       TexturePhongFragmentShader) == false) {
+    if (!CompileShaders(TexturePhongVertexShader, NULL,
+                        TexturePhongFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -85,7 +85,7 @@ bool TexturePhongShader::BindGeometry(const geometry::Geometry &geometry,
     std::vector<Eigen::Vector3f> normals;
     std::vector<Eigen::Vector2f> uvs;
 
-    if (PrepareBinding(geometry, option, view, points, normals, uvs) == false) {
+    if (!PrepareBinding(geometry, option, view, points, normals, uvs)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -117,7 +117,7 @@ bool TexturePhongShader::BindGeometry(const geometry::Geometry &geometry,
 bool TexturePhongShader::RenderGeometry(const geometry::Geometry &geometry,
                                         const RenderOption &option,
                                         const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
@@ -270,12 +270,11 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
     }
     const geometry::TriangleMesh &mesh =
             (const geometry::TriangleMesh &)geometry;
-    if (mesh.HasTriangles() == false) {
+    if (!mesh.HasTriangles()) {
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    if (mesh.HasTriangleNormals() == false ||
-        mesh.HasVertexNormals() == false) {
+    if (!mesh.HasTriangleNormals() || !mesh.HasVertexNormals()) {
         PrintShaderWarning("Binding failed because mesh has no normals.");
         PrintShaderWarning("Call ComputeVertexNormals() before binding.");
         return false;

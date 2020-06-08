@@ -14,8 +14,8 @@ sys.path.append(".")
 from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 
-def update_posegrph_for_scene(s, t, transformation, information, odometry,
-                              pose_graph):
+def update_posegraph_for_scene(s, t, transformation, information, odometry,
+                               pose_graph):
     if t == s + 1:  # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
@@ -166,7 +166,7 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
     odometry = np.identity(4)
     pose_graph_new.nodes.append(o3d.registration.PoseGraphNode(odometry))
     for r in matching_results:
-        (odometry, pose_graph_new) = update_posegrph_for_scene(
+        (odometry, pose_graph_new) = update_posegraph_for_scene(
             matching_results[r].s, matching_results[r].t,
             matching_results[r].transformation, matching_results[r].information,
             odometry, pose_graph_new)

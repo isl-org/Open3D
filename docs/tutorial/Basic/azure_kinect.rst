@@ -11,12 +11,12 @@ Installation
 Install the Azure Kinect SDK
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Follow `the guide <https://github.com/microsoft/Azure-Kinect-Sensor-SDK>`_
+Follow `this guide <https://github.com/microsoft/Azure-Kinect-Sensor-SDK>`_
 to install the Azure Kinect SDK (K4A).
 
 On Ubuntu, you'll need to set up a udev rule to use the Kinect camera without
-``sudo``, follow
-`this instruction <https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md#linux-device-setup>`_.
+``sudo``. Follow
+`these instructions <https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md#linux-device-setup>`_.
 
 After installation, you may run ``k4aviewer`` from the Linux terminal or
 ``k4aviewer.exe`` on Windows to make sure that the device is working.
@@ -31,8 +31,8 @@ We have an unofficial workaround, see :ref:`azure_kinect_u1604_fix` for details.
 Using Open3D from Pip or Conda
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you're using Open3D installed via Pip or Conda, Open3D Azure Kinect features
-shall work out-of-the box if K4A is installed in the system in the recommended
+If you're using Open3D installed via Pip or Conda, Open3D's Azure Kinect features
+should work out-of-the box if K4A is installed in the system in the recommended
 way. Open3D will try to load the K4A dynamic library automatically at runtime,
 when a K4A related feature within Open3D is used.
 
@@ -46,7 +46,7 @@ installation path. For example, for K4A ``v1.2.0``, the default path is
 Python module is installed if you're using Open3D with Python, or to the same
 directory as your C++ executable.
 
-You can get Open3D's Python module path by:
+You can get Open3D's Python module path with the following command:
 
 .. code-block:: sh
 
@@ -56,7 +56,7 @@ Compile from Source
 ~~~~~~~~~~~~~~~~~~~
 
 To build Open3D from source with K4A support, set ``BUILD_AZURE_KINECT=ON`` at
-CMake config step. That is
+CMake config step. That is,
 
 .. code-block:: sh
 
@@ -102,7 +102,7 @@ You may also specify the sensor config with a ``json`` file.
     python examples/Python/ReconstructionSystem/sensors/azure_kinect_viewer.py --config config.json
 
 An sensor config will look like the following. For the full list of available
-configs, refer to `here <https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/include/k4a/k4atypes.h>`_.
+configs, refer to `this file <https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/include/k4a/k4atypes.h>`_.
 
 .. code-block:: json
 
@@ -123,7 +123,7 @@ Open3D Azure Kinect Recorder
 ============================
 
 Open3D Azure Kinect Viewer is used for recording RGB and depth image stream
-to a MKV file.
+to an MKV file.
 
 Open3D provides Python and C++ example code of Azure Kinect viewer. Please
 see ``examples/Cpp/AzureKinectRecord.cpp`` and
@@ -138,8 +138,8 @@ We'll use the Python version as an example.
 
 You may optionally specify the camera config when running the recorder script.
 
-When the visualizer window is active, press ``SPACE`` start or pause the
-recording, press ``ESC`` to quit the recorder.
+When the visualizer window is active, press ``SPACE`` to start or pause the
+recording or press ``ESC`` to quit the recorder.
 
 .. image:: https://storage.googleapis.com/open3d-bin/docs/images/azure_kinect_recorder.png
     :alt: azure_kinect_recorder.png
@@ -149,7 +149,7 @@ Open3D Azure Kinect MKV Reader
 ==============================
 
 The recorded MKV file uses K4A's custom format which contains both RGB and depth
-information. Regular video player may only support playing back the color channel
+information. The regular video player may only support playing back the color channel
 or not supporting the format at all. To view the customized MKV file, use the
 Open3D Azure Kinect MKV Reader.
 
@@ -207,7 +207,7 @@ The ``open3d_azure_kinect_ubuntu1604_fix`` will preload the shared libs and set
 is loaded from the compiled module.
 
 After installing ``open3d_azure_kinect_ubuntu1604_fix``, import Open3D as usual
-with ``import open3d``, Open3D will try to load the shared libraries at
+with ``import open3d``. Open3D will try to load the shared libraries at
 initialization time in ``__init__.py``.
 
 Compiling Open3D from source

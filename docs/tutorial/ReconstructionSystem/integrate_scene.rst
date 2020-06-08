@@ -39,7 +39,7 @@ This is a printed log from the volume integration script.
     Fragment 013 / 013 :: integrate rgbd frame 1363 (64 of 64).
     Writing PLY: [========================================] 100%
 
-The following images show final scene reconstruction.
+The following image shows the final scene reconstruction.
 
 .. image:: ../../_static/ReconstructionSystem/integrate_scene/scene.png
     :width: 500px
