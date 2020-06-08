@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "Open3D/Utility/Console.h"
 #include "UnitTest/TestUtility/Compare.h"
 
 #include <Eigen/Core>
@@ -36,6 +37,30 @@
 namespace open3d {
 namespace unit_test {
 
+/// \brief Functor class for comparing Eigen matrices of the same size.
+template <class EigenMatrix>
+struct EigenLess {
+    bool operator()(const EigenMatrix& lhs, const EigenMatrix& rhs) {
+        if (lhs.size() != rhs.size()) {
+            utility::LogError("Eigen matrices have different sizes {} != {}",
+                              lhs.size(), rhs.size());
+        }
+        for (int i = 0; i < lhs.size(); i++) {
+            if (lhs(i) == rhs(i)) {
+                continue;
+            } else {
+                return lhs(i) < rhs(i);
+            }
+        }
+        return false;
+    }
+};
+
+/// \brief Apply indices to a vector of matrices
+///
+/// \param vals A vector of Eigen matrices.
+/// \param indices The sorting indices.
+/// \return A vector of Eigen matrices, s.t. out_vals[i] = vals[indices[i]].
 template <class T, int M, int N, int A>
 std::vector<Eigen::Matrix<T, M, N, A>> ApplyIndices(
         const std::vector<Eigen::Matrix<T, M, N, A>>& vals,
@@ -47,31 +72,27 @@ std::vector<Eigen::Matrix<T, M, N, A>> ApplyIndices(
     return vals_sorted;
 };
 
-/// \brief Returns ascending sorted values and the sorting indices.
+/// \brief Returns ascending sorted Eigen matrices and the sorting indices.
 ///
-/// \param vals Values of array.
+/// \param vals A vector of Eigen matrices.
 /// \return A pair of sorted_vals and indices, s.t. sorted_val[i] =
 /// vals[indices[i]].
-template <class T, int M, int N, int A>
-std::pair<std::vector<Eigen::Matrix<T, M, N, A>>, std::vector<size_t>>
-SortWithIndices(const std::vector<Eigen::Matrix<T, M, N, A>>& vals) {
-    // https://stackoverflow.com/a/12399290/1255535
+template <class EigenMatrix>
+std::pair<std::vector<EigenMatrix>, std::vector<size_t>> SortWithIndices(
+        const std::vector<EigenMatrix>& vals) {
+    // Sort with indices: https://stackoverflow.com/a/12399290/1255535
     std::vector<size_t> indices(vals.size());
     std::iota(indices.begin(), indices.end(), 0);
     std::stable_sort(indices.begin(), indices.end(),
                      [&vals](size_t lhs, size_t rhs) -> bool {
-                         for (int i = 0; i < vals[lhs].size(); i++) {
-                             if (vals[lhs](i) == vals[rhs](i)) {
-                                 continue;
-                             } else {
-                                 return vals[lhs](i) < vals[rhs](i);
-                             }
-                         }
-                         return false;
+                         return EigenLess<EigenMatrix>()(vals[lhs], vals[rhs]);
                      });
     return std::make_pair(ApplyIndices(vals, indices), indices);
 };
 
+/// \brief Returns ascending sorted Eigen matrices.
+///
+/// \param vals Sorted Eigen matrices.
 template <class T, int M, int N, int A>
 std::vector<Eigen::Matrix<T, M, N, A>> Sort(
         const std::vector<Eigen::Matrix<T, M, N, A>>& vals) {
