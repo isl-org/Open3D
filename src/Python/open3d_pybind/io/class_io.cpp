@@ -97,6 +97,7 @@ void pybind_class_io(py::module &m_io) {
     // open3d::geometry::Image
     m_io.def("read_image",
              [](const std::string &filename) {
+                 py::gil_scoped_release release;
                  geometry::Image image;
                  io::ReadImage(filename, image);
                  return image;
@@ -108,6 +109,7 @@ void pybind_class_io(py::module &m_io) {
     m_io.def("write_image",
              [](const std::string &filename, const geometry::Image &image,
                 int quality) {
+                 py::gil_scoped_release release;
                  return io::WriteImage(filename, image, quality);
              },
              "Function to write Image to file", "filename"_a, "image"_a,
@@ -119,6 +121,7 @@ void pybind_class_io(py::module &m_io) {
     m_io.def("read_line_set",
              [](const std::string &filename, const std::string &format,
                 bool print_progress) {
+                 py::gil_scoped_release release;
                  geometry::LineSet line_set;
                  io::ReadLineSet(filename, line_set, format, print_progress);
                  return line_set;
@@ -131,6 +134,7 @@ void pybind_class_io(py::module &m_io) {
     m_io.def("write_line_set",
              [](const std::string &filename, const geometry::LineSet &line_set,
                 bool write_ascii, bool compressed, bool print_progress) {
+                 py::gil_scoped_release release;
                  return io::WriteLineSet(filename, line_set, write_ascii,
                                          compressed, print_progress);
              },
@@ -145,6 +149,7 @@ void pybind_class_io(py::module &m_io) {
              [](const std::string &filename, const std::string &format,
                 bool remove_nan_points, bool remove_infinite_points,
                 bool print_progress) {
+                 py::gil_scoped_release release;
                  geometry::PointCloud pcd;
                  io::ReadPointCloud(filename, pcd,
                                     {format, remove_nan_points,
@@ -161,6 +166,7 @@ void pybind_class_io(py::module &m_io) {
              [](const std::string &filename,
                 const geometry::PointCloud &pointcloud, bool write_ascii,
                 bool compressed, bool print_progress) {
+                 py::gil_scoped_release release;
                  return io::WritePointCloud(
                          filename, pointcloud,
                          {write_ascii, compressed, print_progress});
@@ -174,6 +180,7 @@ void pybind_class_io(py::module &m_io) {
     // open3d::geometry::TriangleMesh
     m_io.def("read_triangle_mesh",
              [](const std::string &filename, bool print_progress) {
+                 py::gil_scoped_release release;
                  geometry::TriangleMesh mesh;
                  io::ReadTriangleMesh(filename, mesh, print_progress);
                  return mesh;
@@ -188,6 +195,7 @@ void pybind_class_io(py::module &m_io) {
                 bool write_ascii, bool compressed, bool write_vertex_normals,
                 bool write_vertex_colors, bool write_triangle_uvs,
                 bool print_progress) {
+                 py::gil_scoped_release release;
                  return io::WriteTriangleMesh(
                          filename, mesh, write_ascii, compressed,
                          write_vertex_normals, write_vertex_colors,
@@ -204,6 +212,7 @@ void pybind_class_io(py::module &m_io) {
     m_io.def("read_voxel_grid",
              [](const std::string &filename, const std::string &format,
                 bool print_progress) {
+                 py::gil_scoped_release release;
                  geometry::VoxelGrid voxel_grid;
                  io::ReadVoxelGrid(filename, voxel_grid, format);
                  return voxel_grid;
@@ -217,6 +226,7 @@ void pybind_class_io(py::module &m_io) {
              [](const std::string &filename,
                 const geometry::VoxelGrid &voxel_grid, bool write_ascii,
                 bool compressed, bool print_progress) {
+                 py::gil_scoped_release release;
                  return io::WriteVoxelGrid(filename, voxel_grid, write_ascii,
                                            compressed, print_progress);
              },
@@ -229,6 +239,7 @@ void pybind_class_io(py::module &m_io) {
     // open3d::camera
     m_io.def("read_pinhole_camera_intrinsic",
              [](const std::string &filename) {
+                 py::gil_scoped_release release;
                  camera::PinholeCameraIntrinsic intrinsic;
                  io::ReadIJsonConvertible(filename, intrinsic);
                  return intrinsic;
@@ -240,6 +251,7 @@ void pybind_class_io(py::module &m_io) {
     m_io.def("write_pinhole_camera_intrinsic",
              [](const std::string &filename,
                 const camera::PinholeCameraIntrinsic &intrinsic) {
+                 py::gil_scoped_release release;
                  return io::WriteIJsonConvertible(filename, intrinsic);
              },
              "Function to write PinholeCameraIntrinsic to file", "filename"_a,
@@ -249,6 +261,7 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def("read_pinhole_camera_parameters",
              [](const std::string &filename) {
+                 py::gil_scoped_release release;
                  camera::PinholeCameraParameters parameters;
                  io::ReadIJsonConvertible(filename, parameters);
                  return parameters;
@@ -261,6 +274,7 @@ void pybind_class_io(py::module &m_io) {
     m_io.def("write_pinhole_camera_parameters",
              [](const std::string &filename,
                 const camera::PinholeCameraParameters &parameters) {
+                 py::gil_scoped_release release;
                  return io::WriteIJsonConvertible(filename, parameters);
              },
              "Function to write PinholeCameraParameters to file", "filename"_a,
@@ -270,6 +284,7 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def("read_pinhole_camera_trajectory",
              [](const std::string &filename) {
+                 py::gil_scoped_release release;
                  camera::PinholeCameraTrajectory trajectory;
                  io::ReadPinholeCameraTrajectory(filename, trajectory);
                  return trajectory;
@@ -282,6 +297,7 @@ void pybind_class_io(py::module &m_io) {
     m_io.def("write_pinhole_camera_trajectory",
              [](const std::string &filename,
                 const camera::PinholeCameraTrajectory &trajectory) {
+                 py::gil_scoped_release release;
                  return io::WritePinholeCameraTrajectory(filename, trajectory);
              },
              "Function to write PinholeCameraTrajectory to file", "filename"_a,
@@ -292,6 +308,7 @@ void pybind_class_io(py::module &m_io) {
     // open3d::registration
     m_io.def("read_feature",
              [](const std::string &filename) {
+                 py::gil_scoped_release release;
                  registration::Feature feature;
                  io::ReadFeature(filename, feature);
                  return feature;
@@ -303,6 +320,7 @@ void pybind_class_io(py::module &m_io) {
     m_io.def("write_feature",
              [](const std::string &filename,
                 const registration::Feature &feature) {
+                 py::gil_scoped_release release;
                  return io::WriteFeature(filename, feature);
              },
              "Function to write Feature to file", "filename"_a, "feature"_a);
@@ -311,6 +329,7 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def("read_pose_graph",
              [](const std::string &filename) {
+                 py::gil_scoped_release release;
                  registration::PoseGraph pose_graph;
                  io::ReadPoseGraph(filename, pose_graph);
                  return pose_graph;
@@ -322,6 +341,7 @@ void pybind_class_io(py::module &m_io) {
     m_io.def("write_pose_graph",
              [](const std::string &filename,
                 const registration::PoseGraph pose_graph) {
+                 py::gil_scoped_release release;
                  io::WritePoseGraph(filename, pose_graph);
              },
              "Function to write PoseGraph to file", "filename"_a,
