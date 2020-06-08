@@ -37,8 +37,7 @@ namespace visualization {
 namespace glsl {
 
 bool PickingShader::Compile() {
-    if (CompileShaders(PickingVertexShader, NULL, PickingFragmentShader) ==
-        false) {
+    if (!CompileShaders(PickingVertexShader, NULL, PickingFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }

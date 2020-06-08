@@ -44,8 +44,7 @@ bool AlignmentSession::ConvertToJsonValue(Json::Value &value) const {
         target_array.append((int)ti);
     }
     value["target_indices"] = target_array;
-    if (EigenMatrix4dToJsonArray(transformation_, value["transformation"]) ==
-        false) {
+    if (!EigenMatrix4dToJsonArray(transformation_, value["transformation"])) {
         return false;
     }
     value["voxel_size"] = voxel_size_;
@@ -79,8 +78,7 @@ bool AlignmentSession::ConvertFromJsonValue(const Json::Value &value) {
     for (int i = 0; i < (int)target_array.size(); i++) {
         target_indices_[i] = (size_t)target_array[i].asInt();
     }
-    if (EigenMatrix4dFromJsonArray(transformation_, value["transformation"]) ==
-        false) {
+    if (!EigenMatrix4dFromJsonArray(transformation_, value["transformation"])) {
         return false;
     }
     voxel_size_ = value["voxel_size"].asDouble();

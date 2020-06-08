@@ -36,8 +36,7 @@ namespace visualization {
 namespace glsl {
 
 bool NormalShader::Compile() {
-    if (CompileShaders(NormalVertexShader, NULL, NormalFragmentShader) ==
-        false) {
+    if (!CompileShaders(NormalVertexShader, NULL, NormalFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
