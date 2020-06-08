@@ -319,7 +319,7 @@ void FilamentScene::AssignMaterial(const GeometryHandle& geometry_id,
                                    const MaterialInstanceHandle& material_id) {
     auto wmat_instance = resource_mgr_.GetMaterialInstance(material_id);
     auto found = entities_.find(geometry_id);
-    if (found != entities_.end() && false == wmat_instance.expired()) {
+    if (found != entities_.end() && !wmat_instance.expired()) {
         found->second.material = material_id;
 
         auto& renderable_mgr = engine_.getRenderableManager();

@@ -74,7 +74,7 @@ TextureSamplerParameters::TextureSamplerParameters(
 void TextureSamplerParameters::SetAnisotropy(const std::uint8_t a) {
     anisotropy = a;
     // check is NOT power-of-two
-    if (false == (a && !(a & (a - 1)))) {
+    if (!a || (a & (a - 1))) {
         // ceil to nearest power-of-two
         anisotropy |= anisotropy >> 1;
         anisotropy |= anisotropy >> 2;
