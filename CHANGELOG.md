@@ -1,5 +1,6 @@
 ## Master
 
+* ClassIO Python bindings now release GIL for fast multithreaded IO
 * Added GUI widgets and model-viewing app
 * Fixes travis for race-condition on macOS
 * Fixes appveyor configuration and to build all branches
