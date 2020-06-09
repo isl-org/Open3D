@@ -182,6 +182,7 @@ public:
 
     /// Functions to change between fullscreen and windowed modes
     virtual void SetFullScreen(bool fullscreen);
+    virtual void ToggleFullScreen();
     virtual bool IsFullScreen();
 
     virtual void PrintVisualizerHelp();

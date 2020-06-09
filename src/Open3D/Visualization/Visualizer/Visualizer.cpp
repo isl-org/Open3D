@@ -451,6 +451,14 @@ void Visualizer::SetFullScreen(bool fullscreen) {
     }
 }
 
+void Visualizer::ToggleFullScreen() {
+    if (IsFullScreen()) {
+        SetFullScreen(false);
+    } else {
+        SetFullScreen(true);
+    }
+}
+
 bool Visualizer::IsFullScreen() {
     return glfwGetWindowMonitor(window_) != nullptr;
 }

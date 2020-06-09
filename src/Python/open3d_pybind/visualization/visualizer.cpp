@@ -99,6 +99,8 @@ void pybind_visualizer(py::module &m) {
                  "Function to inform render needed to be updated")
             .def("set_full_screen", &visualization::Visualizer::SetFullScreen,
                  "Function to change between fullscreen and windowed")
+            .def("toggle_full_screen", &visualization::Visualizer::ToggleFullScreen,
+                 "Function to toggle between fullscreen and windowed")
             .def("is_full_screen", &visualization::Visualizer::IsFullScreen,
                  "Function to query whether in fullscreen mode")
             .def("poll_events", &visualization::Visualizer::PollEvents,
@@ -279,6 +281,8 @@ void pybind_visualizer(py::module &m) {
     docstring::ClassMethodDocInject(m, "Visualizer", "update_renderer",
                                     map_visualizer_docstrings);
     docstring::ClassMethodDocInject(m, "Visualizer", "set_full_screen",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "toggle_full_screen",
                                     map_visualizer_docstrings);
     docstring::ClassMethodDocInject(m, "Visualizer", "is_full_screen",
                                     map_visualizer_docstrings);
