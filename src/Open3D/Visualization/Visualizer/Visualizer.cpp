@@ -484,6 +484,7 @@ void Visualizer::PrintVisualizerHelp() {
     utility::LogInfo("    P, PrtScn    : Take a screen capture.");
     utility::LogInfo("    D            : Take a depth capture.");
     utility::LogInfo("    O            : Take a capture of current rendering settings.");
+    utility::LogInfo("    Alt + Enter  : Toggle between full screen and windowed mode.");
     utility::LogInfo("");
     utility::LogInfo("  -- Render mode control --");
     utility::LogInfo("    L            : Turn on/off lighting.");
