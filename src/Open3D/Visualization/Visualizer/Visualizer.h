@@ -34,7 +34,7 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <array>
+#include <Eigen/Core>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -269,8 +269,8 @@ protected:
     // window
     GLFWwindow *window_ = NULL;
     std::string window_name_ = "Open3D";
-    std::array<int, 2> saved_window_size_ = {{0, 0}};
-    std::array<int, 2> saved_window_pos_ = {{0, 0}};
+    Eigen::Vector2i saved_window_size_ = Eigen::Vector2i::Zero();
+    Eigen::Vector2i saved_window_pos_ = Eigen::Vector2i::Zero();
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
     // Auxiliary internal backup of the callback function.
     // It copies animation_callback_func_ in each PollEvent() or WaitEvent()

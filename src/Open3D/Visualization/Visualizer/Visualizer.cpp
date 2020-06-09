@@ -437,13 +437,13 @@ bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
 
 void Visualizer::SetFullScreen(bool fullscreen) {
     if (!fullscreen) {
-        glfwSetWindowMonitor(window_, NULL, saved_window_pos_[0],
-                             saved_window_pos_[1], saved_window_size_[0],
-                             saved_window_size_[1], GLFW_DONT_CARE);
+        glfwSetWindowMonitor(window_, NULL, saved_window_pos_(0),
+                             saved_window_pos_(1), saved_window_size_(0),
+                             saved_window_size_(1), GLFW_DONT_CARE);
     } else {
-        glfwGetWindowSize(window_, &saved_window_size_[0],
-                          &saved_window_size_[1]);
-        glfwGetWindowPos(window_, &saved_window_pos_[0], &saved_window_pos_[1]);
+        glfwGetWindowSize(window_, &saved_window_size_(0),
+                          &saved_window_size_(1));
+        glfwGetWindowPos(window_, &saved_window_pos_(0), &saved_window_pos_(1));
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode *mode = glfwGetVideoMode(monitor);
         glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width, mode->height,
