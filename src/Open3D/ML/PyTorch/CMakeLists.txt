@@ -1,6 +1,5 @@
 message( STATUS "Building Pytorch ops" )
 
-get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
 if (BUILD_CUDA_MODULE)
     set( CUDA_ENABLED YES )
     message(STATUS "Building Pytorch ops with CUDA")
