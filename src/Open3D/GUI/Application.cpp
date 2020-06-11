@@ -232,8 +232,10 @@ Application::Application() : impl_(new Application::Impl()) {
     // Init GLFW here so that we can create windows before running
     impl_->InitGFLW();
 
+#ifdef __EMSCRIPTEN__
     // Debugging; remove
     PrintDirectoryTree("/");
+#endif  // __EMSCRIPTEN__
 }
 
 Application::~Application() {}
