@@ -129,7 +129,7 @@ bool WritePointCloudToPTS(const std::string &filename,
         }
         for (size_t i = 0; i < pointcloud.points_.size(); i++) {
             const auto &point = pointcloud.points_[i];
-            if (pointcloud.HasColors() == false) {
+            if (!pointcloud.HasColors()) {
                 if (fprintf(file.GetFILE(), "%.10f %.10f %.10f\r\n", point(0),
                             point(1), point(2)) < 0) {
                     utility::LogWarning(

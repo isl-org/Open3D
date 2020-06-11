@@ -22,7 +22,7 @@ Preprocess point cloud
    :lines: 5,18-28
    :linenos:
 
-This function downsamples point cloud to make a point cloud sparser and regularly distributed. Normals and FPFH feature are precomputed. See :ref:`/tutorial/Basic/pointcloud.ipynb#voxel-downsampling`, :ref:`/tutorial/Basic/pointcloud.ipynb#vertex-normal-estimation`, and :ref:`/tutorial/Advanced/global_registration.ipynb#extract-geometric-feature` for more details.
+This function downsamples a point cloud to make it sparser and regularly distributed. Normals and FPFH feature are precomputed. See :ref:`/tutorial/Basic/pointcloud.ipynb#voxel-downsampling`, :ref:`/tutorial/Basic/pointcloud.ipynb#vertex-normal-estimation`, and :ref:`/tutorial/Advanced/global_registration.ipynb#extract-geometric-feature` for more details.
 
 
 Compute initial registration
@@ -62,9 +62,9 @@ Multiway registration
    :lines: 5,84-103
    :linenos:
 
-This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. Function ``update_posegrph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
+This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. The function ``update_posegraph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
-Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called for multiway registration.
+Once a pose graph is built, the function ``optimize_posegraph_for_scene`` is called for multiway registration.
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/optimize_posegraph.py
    :language: python
@@ -86,7 +86,7 @@ The function ``make_posegraph_for_scene`` below calls all the functions introduc
 Results
 ``````````````````````````````````````
 
-The following is messages from pose graph optimization.
+The pose graph optimization outputs the following messages:
 
 .. code-block:: sh
 
@@ -110,4 +110,4 @@ The following is messages from pose graph optimization.
     CompensateReferencePoseGraphNode : reference : 0
 
 
-There are 14 fragments and 52 valid matching pairs among the fragments. After 23 iteration, 11 edges are detected to be false positive. After they are pruned, pose graph optimization runs again to achieve tight alignment.
+There are 14 fragments and 52 valid matching pairs among the fragments. After 23 iterations, 11 edges are detected to be false positives. After they are pruned, pose graph optimization runs again to achieve tight alignment.

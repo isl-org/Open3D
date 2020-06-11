@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 # Note: we save inverse of result.transformation
                 # to comply with http://redwood-data.org/indoor/fileformat.html
                 if not success:
-                    print("No resonable solution.")
+                    print("No reasonable solution.")
                 else:
                     alignment.append(
                         CameraPose([s, t, n_ply_files],

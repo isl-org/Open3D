@@ -72,7 +72,7 @@ def compute_initial_registration(s, t, source_down, target_down, source_fpfh,
                                                   source_fpfh, target_fpfh,
                                                   config)
         if not success:
-            print("No resonable solution. Skip this pair")
+            print("No reasonable solution. Skip this pair")
             return (False, np.identity(4), np.zeros((6, 6)))
     print(transformation)
 
@@ -81,8 +81,8 @@ def compute_initial_registration(s, t, source_down, target_down, source_fpfh,
     return (True, transformation, information)
 
 
-def update_posegrph_for_scene(s, t, transformation, information, odometry,
-                              pose_graph):
+def update_posegraph_for_scene(s, t, transformation, information, odometry,
+                               pose_graph):
     if t == s + 1:  # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
@@ -167,7 +167,7 @@ def make_posegraph_for_scene(ply_file_names, config):
 
     for r in matching_results:
         if matching_results[r].success:
-            (odometry, pose_graph) = update_posegrph_for_scene(
+            (odometry, pose_graph) = update_posegraph_for_scene(
                 matching_results[r].s, matching_results[r].t,
                 matching_results[r].transformation,
                 matching_results[r].information, odometry, pose_graph)

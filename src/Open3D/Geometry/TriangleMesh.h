@@ -232,8 +232,8 @@ public:
     int EulerPoincareCharacteristic() const;
 
     /// Function that returns the non-manifold edges of the triangle mesh.
-    /// If \param allow_boundary_edges is set to false, than also boundary
-    /// edges are returned
+    /// If \param allow_boundary_edges is set to false, then also boundary
+    /// edges are returned.
     std::vector<Eigen::Vector2i> GetNonManifoldEdges(
             bool allow_boundary_edges = true) const;
 
@@ -413,7 +413,7 @@ public:
     /// Function to simplify mesh using Quadric Error Metric Decimation by
     /// Garland and Heckbert.
     /// \param target_number_of_triangles defines the number of triangles that
-    /// the simplified mesh should have. It is not guranteed that this number
+    /// the simplified mesh should have. It is not guaranteed that this number
     /// will be reached.
     std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
             int target_number_of_triangles) const;
@@ -478,7 +478,7 @@ public:
 
     /// \brief This function removes the vertices that are masked in
     /// \p vertex_mask. Note that also all triangles associated with the
-    /// vertices are removed..
+    /// vertices are removed.
     ///
     /// \param vertex_mask Mask of vertices that should be removed.
     /// Should have same size as \ref vertices_.
@@ -511,7 +511,7 @@ public:
     /// \param pcd PointCloud for what the alpha shape should be computed.
     /// \param alpha parameter to control the shape. A very big value will
     /// give a shape close to the convex hull.
-    /// \param tetra_mesh If not a nullptr, than uses this to construct the
+    /// \param tetra_mesh If not a nullptr, then uses this to construct the
     /// alpha shape. Otherwise, ComputeDelaunayTetrahedralization is called.
     /// \param pt_map Optional map from tetra_mesh vertex indices to pcd
     /// points.
@@ -522,7 +522,7 @@ public:
             std::shared_ptr<TetraMesh> tetra_mesh = nullptr,
             std::vector<size_t> *pt_map = nullptr);
 
-    /// Function that computes a triangle mesh from a oriented PointCloud \p
+    /// Function that computes a triangle mesh from an oriented PointCloud \p
     /// pcd. This implements the Ball Pivoting algorithm proposed in F.
     /// Bernardini et al., "The ball-pivoting algorithm for surface
     /// reconstruction", 1999. The implementation is also based on the
@@ -538,11 +538,11 @@ public:
     static std::shared_ptr<TriangleMesh> CreateFromPointCloudBallPivoting(
             const PointCloud &pcd, const std::vector<double> &radii);
 
-    /// \brief Function that computes a triangle mesh from a oriented PointCloud
-    /// pcd. This implements the Screened Poisson Reconstruction proposed in
-    /// Kazhdan and Hoppe, "Screened Poisson Surface Reconstruction", 2013.
-    /// This function uses the original implementation by Kazhdan. See
-    /// https://github.com/mkazhdan/PoissonRecon
+    /// \brief Function that computes a triangle mesh from an oriented
+    /// PointCloud pcd. This implements the Screened Poisson Reconstruction
+    /// proposed in Kazhdan and Hoppe, "Screened Poisson Surface
+    /// Reconstruction", 2013. This function uses the original implementation by
+    /// Kazhdan. See https://github.com/mkazhdan/PoissonRecon
     ///
     /// \param pcd PointCloud with normals and optionally colors.
     /// \param depth Maximum depth of the tree that will be used for surface
@@ -579,7 +579,7 @@ public:
     static std::shared_ptr<TriangleMesh> CreateOctahedron(double radius = 1.0);
 
     /// Factory function to create an icosahedron mesh
-    /// (trianglemeshfactory.cpp). the mesh centroid will be at (0,0,0) and
+    /// (trianglemeshfactory.cpp). The mesh centroid will be at (0,0,0) and
     /// \param radius defines the distance from the center to the mesh vertices.
     static std::shared_ptr<TriangleMesh> CreateIcosahedron(double radius = 1.0);
 
@@ -596,7 +596,7 @@ public:
     /// The sphere with radius will be centered at (0, 0, 0).
     /// Its axis is aligned with z-axis.
     /// \param radius defines radius of the sphere.
-    /// \param resolution defines the resolution of the sphere. The longitues
+    /// \param resolution defines the resolution of the sphere. The longitudes
     /// will be split into resolution segments (i.e. there are resolution + 1
     /// latitude lines including the north and south pole). The latitudes will
     /// be split into `2 * resolution segments (i.e. there are 2 * resolution
@@ -606,7 +606,7 @@ public:
 
     /// Factory function to create a cylinder mesh (TriangleMeshFactory.cpp)
     /// The axis of the cylinder will be from (0, 0, -height/2) to (0, 0,
-    /// height/2). The circle with  radius will be split into
+    /// height/2). The circle with radius will be split into
     /// resolution segments. The height will be split into split
     /// segments.
     /// \param radius defines the radius of the cylinder.
@@ -682,7 +682,7 @@ public:
     /// (TriangleMeshFactory.cpp).
     /// arrows respectively. \param size is the length of the axes.
     /// \param size defines the size of the coordinate frame.
-    /// \param origin defines the origin of the cooridnate frame.
+    /// \param origin defines the origin of the coordinate frame.
     static std::shared_ptr<TriangleMesh> CreateCoordinateFrame(
             double size = 1.0,
             const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));

@@ -42,7 +42,7 @@
 #include <windows.h>
 #endif
 
-#include <fmt/time.h>
+#include <fmt/chrono.h>
 
 #include "Open3D/Utility/Helper.h"
 
