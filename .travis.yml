@@ -32,7 +32,7 @@ matrix:
       script:
         - mkdir build
         - cd build
-        - cmake -DPYTHON_EXECUTABLE=`which python` ..
+        - cmake ..
         - pip install -U yapf==0.28.0
         - make check-style
 
@@ -78,7 +78,7 @@ matrix:
         - mkdir build
         - cd build
         - |
-          cmake -DPYTHON_EXECUTABLE=`which python` \
+          cmake \
                 -DENABLE_HEADLESS_RENDERING=ON \
                 -DENABLE_JUPYTER=ON \
                 -DENABLE_GUI=OFF \
