@@ -51,20 +51,6 @@ if (PREFER_OSX_HOMEBREW)
     set(CMAKE_FIND_APPBUNDLE LAST)
 endif()
 
-# setup PYTHON_EXECUTABLE if not set
-find_program(PYTHON_IN_PATH "python")
-if (NOT PYTHON_EXECUTABLE)
-    set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH} CACHE FILEPATH "Python exectuable to use")
-    message(STATUS "Using python from PATH: ${PYTHON_EXECUTABLE}")
-else()
-    message(STATUS "Using python from PYTHON_EXECUTABLE variable: ${PYTHON_EXECUTABLE}")
-    if ("${PYTHON_EXECUTABLE}" STREQUAL "${PYTHON_IN_PATH}")
-        message(STATUS "(PYTHON_EXECUTABLE matches python from PATH)")
-    else()
-        message(STATUS "(PYTHON_EXECUTABLE does NOT match python from PATH: ${PYTHON_IN_PATH})")
-    endif()
-endif()
-
 # Cache variables for specifying the GPU architectures
 set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
 one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures" )
@@ -134,6 +120,12 @@ string(CONCAT OPEN3D_VERSION
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${PROJECT_VERSION}")
+
+# CMake modules
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
+
+# setup PYTHON_EXECUTABLE if not set
+find_package(PythonExecutable REQUIRED) # invokes the module in 3rdparty/CMake
 
 # npm version has to be MAJOR.MINOR.PATCH
 string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
@@ -237,9 +229,6 @@ if(WIN32)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     endif()
 endif()
-
-# CMake modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
 
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
