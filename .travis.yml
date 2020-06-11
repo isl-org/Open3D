@@ -148,7 +148,8 @@ matrix:
       osx_image: xcode11
       env: BUILD_TENSORFLOW_OPS=ON LOW_MEM_USAGE=ON
       install:
-        - echo "Travis processors: $(nproc)"
+        - echo "Travis processors:"
+        - nproc
         - brew update
         - brew upgrade python || true
           #python@3 on Travis is 3.7
@@ -162,7 +163,8 @@ matrix:
       osx_image: xcode11.5
       env: BUILD_TENSORFLOW_OPS=OFF LOW_MEM_USAGE=ON
       install:
-        - echo "Travis processors: $(nproc)"
+        - echo "Travis processors:"
+        - nproc
         - brew update
         - brew upgrade python || true
         - /usr/local/opt/python@3.8/bin/pip3 install virtualenv
