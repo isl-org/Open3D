@@ -52,6 +52,14 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
     # because on macOS, we don't know the bundle directory until build time
     # if we are using Xcode.
     set(RESOURCE_FILES ${GUI_RESOURCE_FILES} ${RESOURCE_FILES})
+    # If we are using emscripten, remove all the skyboxes except the default
+    # to reduce data size
+    if (EMSCRIPTEN)
+        list(FILTER RESOURCE_FILES EXCLUDE REGEX ".*\\.ktx$")
+        set(TMP_FILES ${GUI_RESOURCE_FILES} ${RESOURCE_FILES})
+        list(FILTER TMP_FILES INCLUDE REGEX "default_.*\\.ktx$")
+        list(APPEND RESOURCE_FILES ${TMP_FILES})
+    endif()
     if (APPLE)
         set(RESOURCE_DIR_NAME "Contents/Resources")
     else ()
@@ -100,6 +108,11 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
             # Various caches need to be updated for the app to become visible
             install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
         endif()
+    endif()
+    if (EMSCRIPTEN)
+        add_custom_command(TARGET "${TARGET_NAME}"
+                           POST_BUILD
+                           COMMAND ${CMAKE_COMMAND} -E copy "${SOURCE_DIR}/Open3DViewer.html" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.html")
     endif()
 endmacro(APP)
 

@@ -3,15 +3,17 @@ file(GLOB_RECURSE GUI_SOURCE_FILES "*.cpp")
 file(GLOB_RECURSE GUI_HEADER_FILES "*.h")
 
 list(REMOVE_ITEM GUI_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Native.h)
+list(FILTER GUI_SOURCE_FILES EXCLUDE REGEX "/Native")
+
 if (WIN32)
-    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeLinux.cpp)
+    list(APPEND GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeWin32.cpp)
 elseif (APPLE)
-    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeWin32.cpp)
-    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeLinux.cpp)
     list(APPEND GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeMacOS.mm)
     list(APPEND GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/MenuMacOS.mm)
+elseif (EMSCRIPTEN)
+    list(APPEND GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeEmscripten.cpp)
 else ()
-    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeWin32.cpp)
+    list(APPEND GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeLinux.cpp)
 endif()
 
 # create object library
@@ -24,14 +26,28 @@ open3d_link_3rdparty_libraries(GUI)
 file(GLOB GUI_RESOURCE_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Resources/*)
 file(GLOB GUI_MATERIAL_SOURCE_FILES "Materials/*.mat")
 
+if (EMSCRIPTEN)   # ubermaterial.mat doesn't compile on mobile
+    list(FILTER GUI_MATERIAL_SOURCE_FILES EXCLUDE REGEX "ubermaterial")
+endif()
+
 # copy GUI/Resources -> <output>/resources
 set(GUI_RESOURCE_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources)
 file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
-file(COPY ${GUI_RESOURCE_SOURCE_FILES}
-     DESTINATION ${GUI_RESOURCE_DIR})
+if (NOT EMSCRIPTEN)
+   file(COPY ${GUI_RESOURCE_SOURCE_FILES}
+        DESTINATION ${GUI_RESOURCE_DIR})
+else()
+   file(COPY ${GUI_RESOURCE_SOURCE_FILES}
+        DESTINATION ${GUI_RESOURCE_DIR}
+        REGEX ".*.ktx" EXCLUDE
+        )
+   file(COPY ${GUI_RESOURCE_SOURCE_FILES}
+        DESTINATION ${GUI_RESOURCE_DIR}
+        FILES_MATCHING REGEX "default_(.*).ktx")
+endif()
 
 # Compile .mat files and copy to resources directory in output directory
-if (IOS OR ANDROID)
+if (IOS OR ANDROID OR EMSCRIPTEN)
     set(GUI_MATC_ARGS --platform mobile)
 elseif (NOT WIN32)
     set(GUI_MATC_ARGS --platform desktop)

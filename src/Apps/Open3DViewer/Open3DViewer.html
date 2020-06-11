@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Open3D</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+        padding: none;
+        /* we can't have a border around the canvas, so make the background
+           color just a little off-white */
+        background-color: #f0f0f0;
+      }
+
+      #header {
+        text-align: center;
+        height: 32pt;
+      }
+
+      #logo { width: 24pt; height: 24p; }
+      #logolink {
+        float: left;
+        margin-left: 4pt;
+        margin-top: 2pt;
+        text-decoration: none;
+        font-size: 18pt;
+        font-weight: bold;
+        color: black;
+      }
+
+      #controls {
+        display: inline-block;
+        float: right;
+        margin-right: 20px;
+        line-height: 32pt;
+      }
+
+      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+      div.emscripten { text-align: center; }      
+      div.emscripten_border { border-top: 1px solid black; }
+      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+      canvas.emscripten { border: 0px none; background-color: black; }
+
+      .spinner {
+        height: 20pt;
+        width: 20pt;
+        margin: 0;
+        margin-left: 20px;
+        display: inline-block;
+        vertical-align: top;
+
+        -webkit-animation: rotation .8s linear infinite;
+        -moz-animation: rotation .8s linear infinite;
+        -o-animation: rotation .8s linear infinite;
+        animation: rotation 0.8s linear infinite;
+
+        border-left: 5px solid rgb(235, 235, 235);
+        border-right: 5px solid rgb(235, 235, 235);
+        border-bottom: 5px solid rgb(235, 235, 235);
+        border-top: 5px solid rgb(120, 120, 120);
+        
+        border-radius: 100%;
+        background-color: rgb(200, 200, 200);
+      }
+
+      @-webkit-keyframes rotation {
+        from {-webkit-transform: rotate(0deg);}
+        to {-webkit-transform: rotate(360deg);}
+      }
+      @-moz-keyframes rotation {
+        from {-moz-transform: rotate(0deg);}
+        to {-moz-transform: rotate(360deg);}
+      }
+      @-o-keyframes rotation {
+        from {-o-transform: rotate(0deg);}
+        to {-o-transform: rotate(360deg);}
+      }
+      @keyframes rotation {
+        from {transform: rotate(0deg);}
+        to {transform: rotate(360deg);}
+      }
+
+      #status {
+        display: inline-block;
+        width: 20em;
+        vertical-align: top;
+        margin-top: 2pt;
+        margin-left: 2em;
+        font-weight: bold;
+        color: rgb(120, 120, 120);
+      }
+
+      #progress {
+        height: 20px;
+        width: 300px;
+      }
+
+      #output {
+        width: 100%;
+        height: 200px;
+        margin: 0 auto;
+        margin-top: 10px;
+        border-left: 0px;
+        border-right: 0px;
+        padding-left: 0px;
+        padding-right: 0px;
+        display: block;
+        background-color: black;
+        color: white;
+        font-family: 'Lucida Console', Monaco, monospace;
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+<div id="header">
+    <a id="logolink" href="http://open3d.org">
+<!-- Open3D logo -->
+<span style="display: inline-block; vertical-align: middle;">
+<svg id="logo" viewBox="0 0 270.93333 270.93334" version="1.1">
+  <g id="layer1" transform="translate(0,-26.06665)">
+    <path
+       style="fill:#ffffff;fill-rule:evenodd;stroke:none;stroke-width:0.26458332000000001px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 0.5544881,161.53331 68.009801,44.695487 H 202.92404 l 67.4548,116.837823 -67.4548,116.83783 H 68.009801 Z"
+       id="path970" />
+    <path
+       style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:143.62203979;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
+       d="M 257.04492 70.408203 L 2.0957031 512 L 257.04492 953.5918 L 345.98242 953.5918 L 428.9043 809.96875 L 339.96484 809.96875 L 174.55273 523.4707 L 520.9043 523.4707 L 672.16211 785 L 829.9707 512.13477 L 672.16211 238.16211 L 520.88281 500.79297 L 174.40039 500.79297 L 339.96484 214.0293 L 428.91602 214.0293 L 345.99609 70.408203 L 257.04492 70.408203 z M 372.18164 70.408203 L 455.10156 214.0293 L 684.03516 214.0293 L 856.0625 512 L 684.02734 809.96875 L 455.08984 809.96875 L 372.16797 953.5918 L 766.95703 953.5918 L 787.68359 917.68555 L 1021.9043 512 L 766.95703 70.408203 L 372.18164 70.408203 z "
+       transform="matrix(0.26458333,0,0,0.26458333,0,26.06665)"
+       id="path49627" />
+  </g>
+</svg>
+</span>
+<span style="display: inline-block; vertical-align: middle;">Open3D</a></span>
+</a>
+<!----->
+    <span class="spinner" id='spinner'></span>
+    <span style="display: inline-block;">
+        <div id="status">Downloading...</div>
+        <div><progress value="0" max="100" id="progress" hidden=1></progress></div>
+    </span>
+
+<span id='controls'>
+  <span style="display: inline-block; vertical-align: middle;"><input type="checkbox" id="resize" checked/>Resize canvas</span>
+  <span style="display: inline-block; vertical-align: middle;"><input type="button" value="Fullscreen" onclick="Module.requestFullscreen(false, document.getElementById('resize').checked)"/>
+<!--
+  <span style="display: inline-block; vertical-align: middle;"><input type="file" accept=".stl,.obj,.ply,.off,.gltf,.glb,.xyz,.pts"/></span>
+-->
+</span>
+
+</div>
+
+    <div class="emscripten">
+      <progress value="0" max="100" id="progress" hidden=1></progress>
+    </div>
+
+    <div class="emscripten_border">
+      <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+    </div>
+    <textarea id="output" rows="8"></textarea>
+
+    <script type='text/javascript'>
+      var statusElement = document.getElementById('status');
+      var progressElement = document.getElementById('progress');
+      var spinnerElement = document.getElementById('spinner');
+
+      var Module = {
+        preRun: [],
+        postRun: [],
+        print: (function() {
+          var element = document.getElementById('output');
+          if (element) element.value = ''; // clear browser cache
+          return function(text) {
+            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+            // These replacements are necessary if you render to raw HTML
+            //text = text.replace(/&/g, "&amp;");
+            //text = text.replace(/</g, "&lt;");
+            //text = text.replace(/>/g, "&gt;");
+            //text = text.replace('\n', '<br>', 'g');
+            console.log(text);
+            if (element) {
+              element.value += text + "\n";
+              element.scrollTop = element.scrollHeight; // focus on bottom
+            }
+          };
+        })(),
+        printErr: function(text) {
+          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+          console.error(text);
+        },
+        canvas: (function() {
+          var canvas = document.getElementById('canvas');
+
+          // As a default initial behavior, pop up an alert when webgl context is lost. To make your
+          // application robust, you may want to override this behavior before shipping!
+          // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+          canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+
+          return canvas;
+        })(),
+        setStatus: function(text) {
+          if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+          if (text === Module.setStatus.last.text) return;
+          var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+          var now = Date.now();
+          if (m && now - Module.setStatus.last.time < 30) return; // if this is a progress update, skip it if too soon
+          Module.setStatus.last.time = now;
+          Module.setStatus.last.text = text;
+          if (m) {
+            text = m[1];
+            progressElement.value = parseInt(m[2])*100;
+            progressElement.max = parseInt(m[4])*100;
+            progressElement.hidden = false;
+            spinnerElement.hidden = false;
+          } else {
+            progressElement.value = null;
+            progressElement.max = null;
+            progressElement.hidden = true;
+            if (!text) spinnerElement.style.display = 'none';
+          }
+          statusElement.innerHTML = text;
+        },
+        totalDependencies: 0,
+        monitorRunDependencies: function(left) {
+          this.totalDependencies = Math.max(this.totalDependencies, left);
+          Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+        }
+      };
+      Module.setStatus('Downloading...');
+      window.onerror = function(event) {
+        // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
+        Module.setStatus('Exception thrown, see JavaScript console');
+        spinnerElement.style.display = 'none';
+        Module.setStatus = function(text) {
+          if (text) Module.printErr('[post-exception status] ' + text);
+        };
+      };
+    </script>
+    <script async type="text/javascript" src="Open3D.js"></script>
+  </body>
+</html>
+
+

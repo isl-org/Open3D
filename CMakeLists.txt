@@ -43,6 +43,57 @@ option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(PREFER_OSX_HOMEBREW       "Prefer Homebrew libs over frameworks"     ON)
 
+if (EMSCRIPTEN)
+   message(STATUS "Building with Emscripten")
+   # We need to build most of the libraries, since they won't be available
+   # in WebAssembly
+   set(BUILD_SHARED_LIBS         OFF)
+   set(WITH_OPENMP               OFF)
+   set(ENABLE_HEADLESS_RENDERING OFF)
+   set(BUILD_CPP_EXAMPLES        OFF)
+   set(BUILD_UNIT_TESTS          OFF)
+   set(BUILD_BENCHMARKS          OFF)
+   set(BUILD_EIGEN               ON)
+   set(BUILD_FLANN               ON)
+   set(BUILD_FMT                 ON)
+   set(BUILD_GLEW                OFF)  # Emscripten comes with GLEW
+   set(BUILD_GLFW                OFF)  # Emscripten comes with GLFW
+   set(BUILD_IMGUI               ON)
+   set(BUILD_JSONCPP             ON)
+   set(BUILD_LIBLZF              ON)
+   set(BUILD_PNG                 OFF)
+   set(BUILD_ZLIB                OFF)
+   set(BUILD_JPEG                OFF)
+   set(BUILD_PYBIND11            OFF)
+   set(BUILD_PYTHON_MODULE       OFF)
+   set(BUILD_LIBREALSENSE        OFF)
+   set(BUILD_AZURE_KINECT        OFF)
+   set(BUILD_TINYFILEDIALOGS     ON)
+   set(BUILD_TINYGLTF            ON)
+   set(BUILD_TINYOBJLOADER       ON)
+   set(BUILD_QHULL               ON)
+   set(BUILD_CUDA_MODULE         OFF)
+   set(BUILD_TENSORFLOW_OPS      OFF)
+   set(ENABLE_GUI                ON)
+   set(ENABLE_JUPYTER            OFF)
+   set(USE_VULKAN                OFF)
+   set(STATIC_WINDOWS_RUNTIME    OFF)
+   set(GLIBCXX_USE_CXX11_ABI     OFF)
+   set(PREFER_OSX_HOMEBREW       OFF)
+
+   set(EMSCRIPTEN_FLAGS "-s USE_ZLIB=1 -s USE_LIBPNG=1 -s USE_LIBJPEG=1 -s USE_GLFW=3")
+   if(APPLE)
+      set(COMPAT_FLAGS "-isystem ${CMAKE_SOURCE_DIR}/WebAssembly")
+   else()
+      set(COMPAT_FLAGS "-I${CMAKE_SOURCE_DIR}/WebAssembly")
+   endif()
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EMSCRIPTEN_FLAGS} ${COMPAT_FLAGS}")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EMSCRIPTEN_FLAGS} ${COMPAT_FLAGS}")
+   # The @ in --preload-file marks the root, so FindResourcePath() in
+   # src/Open3D/GUI/Application.cpp should return the path from there.
+   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_GLFW=3 -s MAX_WEBGL_VERSION=2 -s ALLOW_MEMORY_GROWTH=1  -s FULL_ES3=1 --preload-file ../../bin/Open3D@/resources/ ")
+endif()
+
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT=OFF)")
 set(FILAMENT_SOURCE_ROOT "" CACHE PATH "Path to Filament library sources (used if BUILD_FILAMENT=ON)")
 
@@ -118,8 +169,25 @@ string(CONCAT OPEN3D_VERSION
     ".${OPEN3D_VERSION_TWEAK}"
 )
 
+# Under emscripten, calling project() seems to set the OS to UNIX. Record what
+# we actually have so we can download the correct filament. Also, before the
+# call to project(), EMSCRIPTEN is not defined. Emscripten's system is linux.
+if(APPLE)
+    set(TMP_APPLE 1)
+endif()
+if(WIN32)
+    set(TMP_WIN32 1)
+endif()
+
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${PROJECT_VERSION}")
+
+if(TMP_APPLE)
+    set(EMSCRIPTEN_APPLE 1)
+endif()
+if(TMP_WIN32)
+    set(EMSCRIPTEN_WIN32 1)
+endif()
 
 # npm version has to be MAJOR.MINOR.PATCH
 string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"

@@ -26,10 +26,12 @@
 
 #include "Open3DViewer.h"
 
+#include <set>
 #include <string>
 
 #include "Open3D/GUI/Native.h"
 #include "Open3D/Open3D.h"
+#include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
 
 using namespace open3d;
@@ -38,6 +40,31 @@ using namespace open3d::visualization;
 
 namespace {
 static const std::string gUsage = "Usage: Open3DViewer [meshfile|pointcloud]";
+
+#ifdef __EMSCRIPTEN__
+std::string FindModel(const std::string &root) {
+    std::set<std::string> supported = {"bin", "gltf", "obj",   "off",
+                                       "pcd", "ply",  "pts",   "stl",
+                                       "xyz", "xyzn", "xyzrgb"};
+    std::vector<std::string> subdirs, files;
+    utility::filesystem::ListDirectory(root, subdirs, files);
+    for (auto &f : files) {  // 'f' is full path relative to 'root'
+        auto ext = utility::filesystem::GetFileExtensionInLowerCase(f);
+        if (supported.find(ext) != supported.end()) {
+            return f;
+        }
+    }
+    // Nothing in this directory, recurse through the subdirs
+    for (auto &dir : subdirs) {
+        auto f = FindModel(dir);
+        if (!f.empty()) {
+            return f;
+        }
+    }
+    return "";
+}
+#endif  // __EMSCRIPTEN__
+
 }  // namespace
 
 void LoadAndCreateWindow(const char *path) {
@@ -61,6 +88,13 @@ void LoadAndCreateWindow(const char *path) {
 }
 
 int Run(int argc, const char *argv[]) {
+    auto &app = gui::Application::GetInstance();
+    app.Initialize(argc, argv);
+
+#ifdef __EMSCRIPTEN__
+    std::string path = FindModel(std::string(app.GetResourcePath()));
+    LoadAndCreateWindow(path.c_str());
+#else
     const char *path = nullptr;
     if (argc > 1) {
         path = argv[1];
@@ -68,11 +102,8 @@ int Run(int argc, const char *argv[]) {
             utility::LogWarning(gUsage.c_str());
         }
     }
-
-    auto &app = gui::Application::GetInstance();
-    app.Initialize(argc, argv);
-
     LoadAndCreateWindow(path);
+#endif  // __EMSCRIPTEN
 
     app.Run();
 

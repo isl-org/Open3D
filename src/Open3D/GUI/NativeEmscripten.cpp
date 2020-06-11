@@ -24,24 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <memory>
+#include "Native.h"
+
+#include <emscripten.h>
 
 namespace open3d {
-namespace geometry {
-class Geometry;
-}
-namespace visualizer {
-class GuiVisualizer;
-}
+namespace gui {
+
+void* GetNativeDrawable(GLFWwindow* glfw_window) { return nullptr; }
+
+void PostNativeExposeEvent(GLFWwindow* glfw_window) {}
+
+EM_JS(void, js_ShowAlert, (const char* message), { alert(message); });
+
+void ShowNativeAlert(const char* message) { js_ShowAlert(message); }
+
+}  // namespace gui
 }  // namespace open3d
-
-#ifdef __EMSCRIPTEN__
-#define WIDTH 1024
-#define HEIGHT 768
-#else
-#define WIDTH 1280
-#define HEIGHT 960
-#endif  // __EMSCRIPTEN__
-
-int Run(int argc, const char *argv[]);
-void LoadAndCreateWindow(const char *path);

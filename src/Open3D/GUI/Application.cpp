@@ -46,10 +46,41 @@
 #include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#endif  // __EMSCRIPTEN__
+
+#include <iostream>  // debugging; remove
+
+// Debugging; remove
+void PrintDirectoryTree(const std::string &root) {
+    std::vector<std::string> subdirs, files;
+    std::cout << "[debug] " << root;
+    if (root.find("/") != root.size() - 1) {
+        std::cout << "/";
+    }
+    std::cout << std::endl;
+    open3d::utility::filesystem::ListDirectory(root, subdirs, files);
+    for (auto &f : files) {
+        std::cout << "[debug] " << f << std::endl;
+    }
+    for (auto &d : subdirs) {
+        PrintDirectoryTree(d);
+    }
+}
+
 namespace {
 
 const double RUNLOOP_DELAY_SEC = 0.010;
 
+#ifdef __EMSCRIPTEN__
+std::string FindResourcePath(int argc, const char *argv[]) {
+    // This path is determined by the path in the --preload-file argument
+    // to the Emscripten link command.
+    return "resources/resources";
+}
+#else
 std::string FindResourcePath(int argc, const char *argv[]) {
     std::string argv0;
     if (argc != 0 && argv) {
@@ -88,6 +119,7 @@ std::string FindResourcePath(int argc, const char *argv[]) {
     }
     return resource_path;
 }
+#endif  // __EMSCRIPTEN__
 
 }  // namespace
 
@@ -199,6 +231,9 @@ Application::Application() : impl_(new Application::Impl()) {
 
     // Init GLFW here so that we can create windows before running
     impl_->InitGFLW();
+
+    // Debugging; remove
+    PrintDirectoryTree("/");
 }
 
 Application::~Application() {}
@@ -294,10 +329,20 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
     }
 }
 
+#ifdef __EMSCRIPTEN__
+int emscripten_main_loop(double t, void *) {
+    return (Application::GetInstance().RunOneTick() ? 1 : 0);
+}
+
+void Application::Run() {
+    emscripten_request_animation_frame_loop(emscripten_main_loop, nullptr);
+}
+#else
 void Application::Run() {
     while (RunOneTick())
         ;
 }
+#endif  // __EMSCRIPTEN__
 
 bool Application::RunOneTick() {
     // Initialize if we have not started yet
@@ -407,8 +452,12 @@ void Application::RunInThread(std::function<void()> f) {
 }
 
 void Application::PostToMainThread(Window *window, std::function<void()> f) {
+#ifdef __EMSCRIPTEN__
+    f();
+#else
     std::lock_guard<std::mutex> lock(impl_->posted_lock_);
     impl_->posted_.emplace_back(window, f);
+#endif  // __EMSCRIPTEN__
 }
 
 const char *Application::GetResourcePath() const {

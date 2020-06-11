@@ -48,6 +48,7 @@
 #include "Open3D/GUI/Util.h"
 #include "Open3D/GUI/Widget.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
 
@@ -291,9 +292,25 @@ Window::Window(const std::string& title,
     // library.
     if (!theme.font_path.empty()) {
         ImGuiIO& io = ImGui::GetIO();
+#ifdef __EMSCRIPTEN__
+        // Why doesn't fopen() work for ImGUI? AddFontFromFileTTF() fails
+        // with a permission error, even though the same path works fine here.
+        std::vector<char> bytes;
+        std::string err;
+        if (!utility::filesystem::FReadToBuffer(theme.font_path, bytes, &err)) {
+            utility::LogWarning("Could not read font file {}", theme.font_path);
+        }
+        // ImGUI wants to free() the memory, so copy it. Less than ideal, but
+        // the font is only about 100 kB, so not that big of a deal.
+        char* ttf = (char*)malloc(bytes.size());
+        memcpy(ttf, bytes.data(), bytes.size());
+        impl_->imgui_.system_font = io.Fonts->AddFontFromMemoryTTF(
+                ttf, bytes.size(), theme.font_size);
+#else
         impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
                 theme.font_path.c_str(), theme.font_size);
-        /*static*/ unsigned char* pixels;
+#endif  // __EMSCRIPTEN__
+        unsigned char* pixels;
         int textureW, textureH, bytesPerPx;
         io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
                                      &bytesPerPx);
@@ -485,12 +502,22 @@ void Window::Close() { Application::GetInstance().RemoveWindow(this); }
 
 void Window::SetNeedsLayout() { impl_->needs_layout_ = true; }
 
-void Window::PostRedraw() { PostNativeExposeEvent(impl_->window_); }
+void Window::PostRedraw() {
+#ifdef __EMSCRIPTEN__
+    DrawCallback(impl_->window_);
+#else
+    PostNativeExposeEvent(impl_->window_);
+#endif  // __EMSCRIPTEN__
+}
 
 void Window::RaiseToTop() const { glfwFocusWindow(impl_->window_); }
 
 bool Window::IsActiveWindow() const {
+#ifdef __EMSCRIPTEN__
+    return true;  // the normal call always returns false ?!
+#else
     return glfwGetWindowAttrib(impl_->window_, GLFW_FOCUSED);
+#endif  // __EMSCRIPTEN__
 }
 
 void Window::SetFocusWidget(Widget* w) { impl_->focus_widget_ = w; }
@@ -648,7 +675,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // Set current context
     MakeDrawContextCurrent();  // make sure our ImGUI context is active
     ImGuiIO& io = ImGui::GetIO();
-    io.DeltaTime = dt_sec;
+    io.DeltaTime = std::max(0.001f, dt_sec);  // ImGUI doesn't like dt = 0.0
 
     // Set mouse information
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
@@ -1038,7 +1065,7 @@ void Window::DrawCallback(GLFWwindow* window) {
         // Can't just draw here, because Filament sometimes fences within
         // a draw, and then you can get two draws happening at the same
         // time, which ends up with a crash.
-        PostNativeExposeEvent(w->impl_->window_);
+        w->PostRedraw();
     }
 }
 
@@ -1218,9 +1245,7 @@ void Window::CloseCallback(GLFWwindow* window) {
     Application::GetInstance().RemoveWindow(w);
 }
 
-void Window::UpdateAfterEvent(Window* w) {
-    PostNativeExposeEvent(w->impl_->window_);
-}
+void Window::UpdateAfterEvent(Window* w) { w->PostRedraw(); }
 
 }  // namespace gui
 }  // namespace open3d

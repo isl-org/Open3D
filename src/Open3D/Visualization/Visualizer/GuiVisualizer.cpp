@@ -1046,7 +1046,9 @@ GuiVisualizer::GuiVisualizer(
                                SETTINGS_LIGHT_AND_MATERIALS);
         settings_menu->SetChecked(SETTINGS_LIGHT_AND_MATERIALS, true);
         auto menu = std::make_shared<gui::Menu>();
+#ifndef __EMSCRIPTEN__
         menu->AddMenu("File", file_menu);
+#endif  // !__EMSCRIPTEN__
         menu->AddMenu("Settings", settings_menu);
 #if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
         // macOS adds a special search item to menus named "Help",
@@ -1766,6 +1768,21 @@ bool GuiVisualizer::SetIBL(const char *path) {
 }
 
 void GuiVisualizer::LoadGeometry(const std::string &path) {
+#ifdef __EMSCRIPTEN__
+    // Emscripten seems to fail in fclose() for an empty file. To avoid
+    // bad user experience in the not unlikely event that the viewer was
+    // built without a model, check this case and report an error. Since we
+    // are specifically __EMSCRIPTEN__ we can suggest a resolution, too.
+    if (!utility::filesystem::FileExists(path)) {
+        auto msg = std::string("Model file at path '") + path +
+                   "' does not exist.\n\n" +
+                   "Please ensure that this model is in "
+                   "<build_dir>/bin/Open3D/resources and rebuild";
+        ShowMessageBox("Error", msg.c_str());
+        return;
+    }
+#endif  // __EMSCRIPTEN__
+
     auto progressbar = std::make_shared<gui::ProgressBar>();
     gui::Application::GetInstance().PostToMainThread(this, [this, path,
                                                             progressbar]() {

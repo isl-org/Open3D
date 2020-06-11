@@ -139,6 +139,9 @@ void FilamentRenderer::Draw() {
 void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
+#ifdef __EMSCRIPTEN__
+        engine_.execute();
+#endif  // __EMSCRIPTEN__
     }
 }
 

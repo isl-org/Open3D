@@ -310,7 +310,7 @@ set(FLANN_TARGET "3rdparty_flann")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FLANN_TARGET}")
 
 # GLEW
-if(NOT BUILD_GLEW)
+if(NOT BUILD_GLEW AND NOT EMSCRIPTEN)
     find_package(GLEW)
     if(TARGET GLEW::GLEW)
         message(STATUS "Using installed third-party library GLEW ${GLEW_VERSION}")
@@ -339,7 +339,7 @@ list(APPEND Open3D_3RDPARTY_HEADER_TARGETS "${GLEW_TARGET}")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${GLEW_TARGET}")
 
 # GLFW
-if(NOT BUILD_GLFW)
+if(NOT BUILD_GLFW AND NOT EMSCRIPTEN)
     find_package(glfw3)
     if(TARGET glfw)
         message(STATUS "Using installed third-party library glfw3")
@@ -405,7 +405,7 @@ if(NOT BUILD_JPEG AND BUILD_AZURE_KINECT)
 endif()
 
 # JPEG
-if(NOT BUILD_JPEG)
+if(NOT BUILD_JPEG AND NOT EMSCRIPTEN)
     find_package(JPEG)
     if(TARGET JPEG::JPEG)
         message(STATUS "Using installed third-party library JPEG")
@@ -508,7 +508,7 @@ if (BUILD_LIBREALSENSE)
 endif ()
 
 # PNG
-if(NOT BUILD_PNG)
+if(NOT BUILD_PNG AND NOT EMSCRIPTEN)
     find_package(PNG)
     if(TARGET PNG::PNG)
         message(STATUS "Using installed third-party library libpng")
@@ -679,15 +679,17 @@ endif()
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${FMT_TARGET}")
 
 # Pybind11
-if(NOT BUILD_PYBIND11)
-    find_package(pybind11)
-endif()
-if (BUILD_PYBIND11 OR NOT TARGET pybind11::module)
-    set(BUILD_PYBIND11 ON)
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/pybind11)
-endif()
-if(TARGET pybind11::module)
-    set(PYBIND11_TARGET "pybind11::module")
+if(NOT EMSCRIPTEN)
+    if(NOT BUILD_PYBIND11)
+        find_package(pybind11)
+    endif()
+    if (BUILD_PYBIND11 OR NOT TARGET pybind11::module)
+        set(BUILD_PYBIND11 ON)
+        add_subdirectory(${Open3D_3RDPARTY_DIR}/pybind11)
+    endif()
+    if(TARGET pybind11::module)
+        set(PYBIND11_TARGET "pybind11::module")
+    endif()
 endif()
 
 # Azure Kinect
@@ -839,9 +841,14 @@ if(ENABLE_GUI)
         message(STATUS "Using prebuilt third-party library Filament")
         include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
     endif()
+    if(EMSCRIPTEN)
+        set(ARCH "wasm")
+    else()
+        set(ARCH "x86_64")
+    endif()
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIR ${FILAMENT_ROOT}/include/
-        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64
+        LIB_DIR ${FILAMENT_ROOT}/lib/${ARCH}
         LIBRARIES ${filament_LIBRARIES}
     )
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")

@@ -66,7 +66,11 @@ void Task::Run() {
         impl_->func_();
         impl_->is_finished_running_ = true;
     };
+#ifdef __EMSCRIPTEN__
+    thread_main();  // Emscripten is single-threaded
+#else
     impl_->thread_ = std::thread(thread_main);  // starts thread
+#endif  // __EMSCRIPTEN__
     impl_->state_ = ThreadState::RUNNING;
 }
 
@@ -84,7 +88,9 @@ bool Task::IsFinished() const {
 
 void Task::WaitToFinish() {
     if (impl_->state_ == ThreadState::RUNNING) {
+#ifndef __EMSCRIPTEN__
         impl_->thread_.join();
+#endif  // !__EMSCRIPTEN__
         impl_->state_ = ThreadState::FINISHED;
     }
 }
