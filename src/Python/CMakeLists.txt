@@ -1,3 +1,4 @@
+include(ExternalProject)
 # Option 1: Do not define "PYTHON_EXECUTABLE", but run `cmake ..` within your
 #           virtual environment. CMake will pick up the python executable in the
 #           virtual environment.
@@ -122,6 +123,21 @@ if ( BUILD_PYTORCH_OPS )
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py")
 endif ()
 
+if ( BUNDLE_3DML )
+    ExternalProject_Add(
+            open3d_3dml
+            PREFIX "${CMAKE_BINARY_DIR}/open3d_3dml"
+            GIT_REPOSITORY "https://github.com/benjaminum/open3d-3dml-mockup.git"
+            # do not configure
+            CONFIGURE_COMMAND ""
+            # do not build
+            BUILD_COMMAND ""
+            # do not install
+            INSTALL_COMMAND ""
+    )
+    list(APPEND GENERATED_OUTPUTS open3d_3dml )
+endif ()
+
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -131,6 +147,7 @@ add_custom_target(python-package
             -DENABLE_JUPYTER=${ENABLE_JUPYTER}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+            -DBUNDLE_3DML=${BUNDLE_3DML}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}
