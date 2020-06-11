@@ -7,41 +7,51 @@
 # - NPROC
 
 set -euo pipefail
-set -x
 
 #$1 - name of the job
 reportJobStart() {
-    rj_ts=$(date +%T)
-    echo "$rj_ts EndJob $rj_prevj ran $rj_prevts - $rj_ts (session started $rj_startts)"
+    rj_ts=$(date +%s)
+    ((rj_dt=rj_ts-rj_prevts)) || true
+    echo "$rj_ts EndJob $rj_prevj ran for $rj_dt sec (session started $rj_startts)"
     echo "$rj_ts StartJob $1"
     rj_prevj=$1
     rj_prevts=$rj_ts
 }
-rj_startts=$(date +%T)
+rj_startts=$(date +%s)
 rj_prevts=$rj_startts
 rj_prevj=ReportInit
 echo "$rj_startts StartJob ReportInit"
 reportJobFinishSession() {
-    rj_ts=$(date +%T)
-    echo "$rj_ts EndJob $rj_prevj ran $rj_prevts - $rj_ts (session started $rj_startts)"
-    echo "ReportJobSession: ran $rj_startts - $rj_ts"
+    rj_ts=$(date +%s)
+    ((rj_dt=rj_ts-rj_prevts)) || true
+    echo "$rj_ts EndJob $rj_prevj ran for $rj_dt sec (session started $rj_startts)"
+    ((rj_dt=rj_ts-rj_startts)) || true
+    echo "ReportJobSession: ran for $rj_dt sec"
+}
+reportRun() {
+    reportJobStart "$*"
+    echo "path: $(which $1)"
+    "$@"
 }
 
 echo "nproc = $(nproc) NPROC = ${NPROC}"
 reportJobStart "installing Python unit test dependencies"
+echo "using pip: $(which pip)"
 pip install --upgrade pip
 pip install -U pytest
 pip install -U wheel
 echo
 
+echo "using python: $(which python)"
 python --version
+echo "using pytest: $(which pytest)"
 pytest --version
+echo "using cmake: $(which cmake)"
 cmake --version
 
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
-    reportJobStart "install tensorflow"
-    pip install -U tensorflow==2.0.0
+    reportRun pip install -U tensorflow==2.0.0
 fi
 mkdir build
 cd build
@@ -66,44 +76,38 @@ if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "ON" ]; then
 fi
 
 echo
-reportJobStart "cmake configure the Open3D project"
 echo "Running cmake" $cmakeOptions ..
-cmake $cmakeOptions ..
+reportRun cmake $cmakeOptions ..
 echo
 
 echo "build & install Open3D..."
 date
-reportJobStart "build -j$NPROC"
-make -j$NPROC
-reportJobStart "install"
-make install -j$NPROC
-reportJobStart "install-pip-package"
-make install-pip-package -j$NPROC
+reportRun make -j$NPROC
+reportRun make install -j$NPROC
+reportRun make install-pip-package -j$NPROC
 echo
 
 echo "running Open3D unit tests..."
 unitTestFlags=
 [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
 date
-reportJobStart "unitTests"
-./bin/unitTests $unitTestFlags
+reportRun ./bin/unitTests $unitTestFlags
 echo
 
 echo "running Open3D python tests..."
 date
 # TODO: fix TF op library test.
-reportJobStart "pytest"
-pytest ../src/UnitTest/Python/ --ignore="../src/UnitTest/Python/test_tf_op_library.py"
+reportRun pytest ../src/UnitTest/Python/ --ignore="../src/UnitTest/Python/test_tf_op_library.py"
 echo
 
 if $runBenchmarks; then
     echo "running Open3D benchmarks..."
     date
-    reportJobStart "benchmarks"
-    ./bin/benchmarks
+    reportRun ./bin/benchmarks
     echo
 fi
 
+reportJobStart "test build C++ example"
 echo "test building a C++ example with installed Open3D..."
 date
 cd ../docs/_static/C++
