@@ -380,7 +380,7 @@ bool Visualizer::AddGeometry(
     utility::LogDebug(
             "Add geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
-    return UpdateGeometry();
+    return UpdateGeometry(geometry_ptr);
 }
 
 bool Visualizer::RemoveGeometry(
@@ -404,7 +404,7 @@ bool Visualizer::RemoveGeometry(
     utility::LogDebug(
             "Remove geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
-    return UpdateGeometry();
+    return UpdateGeometry(geometry_ptr);
 }
 
 bool Visualizer::ClearGeometries() {
