@@ -109,7 +109,7 @@ matrix:
         - /usr/local/opt/python@3/bin/python3 -m venv ~/py3env
         - source ~/py3env/bin/activate
         - ./util/scripts/install-deps-osx.sh
-      script: ./util/scripts/run-travis.sh
+      script: ./util/scripts/run-ci.sh
 
     - os: osx
       osx_image: xcode11.5
@@ -123,7 +123,7 @@ matrix:
         - /usr/local/opt/python@3.8/bin/python3 -m venv ~/py3env
         - source ~/py3env/bin/activate
         - ./util/scripts/install-deps-osx.sh
-      script: ./util/scripts/run-travis.sh
+      script: ./util/scripts/run-ci.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK

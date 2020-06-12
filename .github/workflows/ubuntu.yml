@@ -1,4 +1,4 @@
-name: ubuntu CI
+name: Ubuntu CI
 
 on:
   push:
@@ -36,4 +36,4 @@ jobs:
         ./util/scripts/setup-linux.sh
     - name: Config and build
       run: |
-        ./util/scripts/run-travis.sh
+        ./util/scripts/run-ci.sh
