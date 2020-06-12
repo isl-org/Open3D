@@ -46,13 +46,15 @@ endforeach(definition)
 
 target_include_directories( open3d_tf_ops PRIVATE
     ${PROJECT_SOURCE_DIR}/src
-    ${TBB_INCLUDE_DIR}
     #${nanoflann_INCLUDE_DIR}
     #${parallelstl_INCLUDE_DIR}
     )
 # silence warnings caused by tensorflow's Eigen
+# Travis has a different version of protobuf in /usr/local/include
+# TBB is in /usr/local/include, so it needs to be after Tensorflow
 target_include_directories( open3d_tf_ops SYSTEM PRIVATE
     ${Tensorflow_INCLUDE_DIR}
+    ${TBB_INCLUDE_DIR}
     )
 #if ( CUDA_ENABLED )
     #target_include_directories( open3d_tf_ops PRIVATE
