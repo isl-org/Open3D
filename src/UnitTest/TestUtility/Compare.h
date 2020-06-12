@@ -34,9 +34,9 @@
 
 #include "Open3D/Macro.h"
 
-#define ExpectEQ(arg, ...)                                            \
-    _ExpectEQ(::open3d::unit_test::LineInfo(__FILE__, __LINE__), arg, \
-              __VA_ARGS__)
+#define ExpectEQ(arg, ...)                                                   \
+    ExpectEQInternal(::open3d::unit_test::LineInfo(__FILE__, __LINE__), arg, \
+                     __VA_ARGS__)
 
 namespace open3d {
 namespace unit_test {
@@ -50,10 +50,10 @@ const Eigen::IOFormat matrix_fmt(
 std::string LineInfo(const char* file, int line);
 
 template <class T, int M, int N, int A>
-void _ExpectEQ(const std::string& line_info,
-               const Eigen::Matrix<T, M, N, A>& v0,
-               const Eigen::Matrix<T, M, N, A>& v1,
-               double threshold = THRESHOLD_1E_6) {
+void ExpectEQInternal(const std::string& line_info,
+                      const Eigen::Matrix<T, M, N, A>& v0,
+                      const Eigen::Matrix<T, M, N, A>& v1,
+                      double threshold = THRESHOLD_1E_6) {
     EXPECT_EQ(v0.size(), v1.size());
     EXPECT_TRUE(v0.isApprox(v1, threshold))
             << line_info << "threshold:\n"
@@ -63,18 +63,18 @@ void _ExpectEQ(const std::string& line_info,
 }
 
 template <class T, int M, int N, int A>
-void _ExpectEQ(const std::string& line_info,
-               const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
-               const std::vector<Eigen::Matrix<T, M, N, A>>& v1,
-               double threshold = THRESHOLD_1E_6) {
+void ExpectEQInternal(const std::string& line_info,
+                      const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
+                      const std::vector<Eigen::Matrix<T, M, N, A>>& v1,
+                      double threshold = THRESHOLD_1E_6) {
     EXPECT_EQ(v0.size(), v1.size());
     for (size_t i = 0; i < v0.size(); i++) {
-        _ExpectEQ(line_info, v0[i], v1[i], threshold);
+        ExpectEQInternal(line_info, v0[i], v1[i], threshold);
     }
 }
 
 template <class T, int M, int N, int A>
-void _ExpectEQ(
+void ExpectEQInternal(
         const std::string& line_info,
         const std::vector<Eigen::Matrix<T, M, N, A>,
                           Eigen::aligned_allocator<Eigen::Matrix<T, M, N, A>>>&
@@ -85,7 +85,7 @@ void _ExpectEQ(
         double threshold = THRESHOLD_1E_6) {
     EXPECT_EQ(v0.size(), v1.size());
     for (size_t i = 0; i < v0.size(); i++) {
-        _ExpectEQ(line_info, v0[i], v1[i], threshold);
+        ExpectEQInternal(line_info, v0[i], v1[i], threshold);
     }
 }
 
@@ -130,52 +130,52 @@ void ExpectGE(const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
 }
 
 // Test equality of two arrays of uint8_t.
-void _ExpectEQ(const std::string& line_info,
-               const uint8_t* const v0,
-               const uint8_t* const v1,
-               const size_t& size);
+void ExpectEQInternal(const std::string& line_info,
+                      const uint8_t* const v0,
+                      const uint8_t* const v1,
+                      const size_t& size);
 
 // Test equality of two vectors of uint8_t.
-void _ExpectEQ(const std::string& line_info,
-               const std::vector<uint8_t>& v0,
-               const std::vector<uint8_t>& v1);
+void ExpectEQInternal(const std::string& line_info,
+                      const std::vector<uint8_t>& v0,
+                      const std::vector<uint8_t>& v1);
 
 // Test equality of two arrays of int.
-void _ExpectEQ(const std::string& line_info,
-               const int* const v0,
-               const int* const v1,
-               const size_t& size);
+void ExpectEQInternal(const std::string& line_info,
+                      const int* const v0,
+                      const int* const v1,
+                      const size_t& size);
 
 // Test equality of two vectors of int.
-void _ExpectEQ(const std::string& line_info,
-               const std::vector<int>& v0,
-               const std::vector<int>& v1);
+void ExpectEQInternal(const std::string& line_info,
+                      const std::vector<int>& v0,
+                      const std::vector<int>& v1);
 
 // Test equality of two arrays of float.
-void _ExpectEQ(const std::string& line_info,
-               const float* const v0,
-               const float* const v1,
-               const size_t& size,
-               float threshold = THRESHOLD_1E_6);
+void ExpectEQInternal(const std::string& line_info,
+                      const float* const v0,
+                      const float* const v1,
+                      const size_t& size,
+                      float threshold = THRESHOLD_1E_6);
 
 // Test equality of two vectors of float.
-void _ExpectEQ(const std::string& line_info,
-               const std::vector<float>& v0,
-               const std::vector<float>& v1,
-               float threshold = THRESHOLD_1E_6);
+void ExpectEQInternal(const std::string& line_info,
+                      const std::vector<float>& v0,
+                      const std::vector<float>& v1,
+                      float threshold = THRESHOLD_1E_6);
 
 // Test equality of two arrays of double.
-void _ExpectEQ(const std::string& line_info,
-               const double* const v0,
-               const double* const v1,
-               const size_t& size,
-               double threshold = THRESHOLD_1E_6);
+void ExpectEQInternal(const std::string& line_info,
+                      const double* const v0,
+                      const double* const v1,
+                      const size_t& size,
+                      double threshold = THRESHOLD_1E_6);
 
 // Test equality of two vectors of double.
-void _ExpectEQ(const std::string& line_info,
-               const std::vector<double>& v0,
-               const std::vector<double>& v1,
-               double threshold = THRESHOLD_1E_6);
+void ExpectEQInternal(const std::string& line_info,
+                      const std::vector<double>& v0,
+                      const std::vector<double>& v1,
+                      double threshold = THRESHOLD_1E_6);
 
 }  // namespace unit_test
 }  // namespace open3d
