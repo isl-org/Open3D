@@ -45,7 +45,7 @@ std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
 struct ReadPointCloudOption {
     ReadPointCloudOption(
             // Attention: when you update the defaults, update the docstrings in
-            // Python/open3d_pybind/io/class_io.cpp
+            // Pybind/io/class_io.cpp
             std::string format = "auto",
             bool remove_nan_points = true,
             bool remove_infinite_points = true,
@@ -92,7 +92,7 @@ struct WritePointCloudOption {
     enum class Compressed : bool { Uncompressed = false, Compressed = true };
     WritePointCloudOption(
             // Attention: when you update the defaults, update the docstrings in
-            // Python/open3d_pybind/io/class_io.cpp
+            // Pybind/io/class_io.cpp
             IsAscii write_ascii = IsAscii::Binary,
             Compressed compressed = Compressed::Uncompressed,
             bool print_progress = false,
