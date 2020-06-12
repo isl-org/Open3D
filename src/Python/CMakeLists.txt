@@ -1,9 +1,6 @@
-# Option 1: Do not define "PYTHON_EXECUTABLE", but run `cmake ..` within your
-#           virtual environment. CMake will pick up the python executable in the
-#           virtual environment.
-# Option 2: You can also define `cmake -DPYTHON_EXECUTABLE` to specify a python
-#           executable.
-find_package( PythonExecutable REQUIRED ) # invokes the module in 3rdparty/CMake
+if (NOT PYTHON_EXECUTABLE)
+    message(FATAL_ERROR "PYTHON_EXECUTABLE should be set in top level CMakeLists.txt")
+endif()
 
 # Detect whether `npm` is installed. Jupyter support will only be enabled if
 # `npm` is found.
