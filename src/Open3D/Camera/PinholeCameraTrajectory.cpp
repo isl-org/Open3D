@@ -54,7 +54,7 @@ bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "PinholeCameraTrajectory read JSON failed: unsupported json "
                 "format.");
@@ -80,12 +80,12 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     parameters_.resize(parameter_array.size());
     for (size_t i = 0; i < parameter_array.size(); i++) {
         const Json::Value &status_object = parameter_array[int(i)];
-        if (parameters_[i].intrinsic_.ConvertFromJsonValue(
-                    status_object["intrinsic"]) == false) {
+        if (!parameters_[i].intrinsic_.ConvertFromJsonValue(
+                    status_object["intrinsic"])) {
             return false;
         }
-        if (EigenMatrix4dFromJsonArray(parameters_[i].extrinsic_,
-                                       status_object["extrinsic"]) == false) {
+        if (!EigenMatrix4dFromJsonArray(parameters_[i].extrinsic_,
+                                        status_object["extrinsic"])) {
             return false;
         }
     }

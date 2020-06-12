@@ -110,7 +110,7 @@ public:
         return *this;
     }
 
-    /// \brief Remove all points fromt he point cloud that have a nan entry, or
+    /// \brief Remove all points from the point cloud that have a nan entry, or
     /// infinite entries.
     ///
     /// Also removes the corresponding normals and color entries.

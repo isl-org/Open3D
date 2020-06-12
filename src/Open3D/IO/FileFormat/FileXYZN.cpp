@@ -78,7 +78,7 @@ bool ReadPointCloudFromXYZN(const std::string &filename,
 bool WritePointCloudToXYZN(const std::string &filename,
                            const geometry::PointCloud &pointcloud,
                            const WritePointCloudOption &params) {
-    if (pointcloud.HasNormals() == false) {
+    if (!pointcloud.HasNormals()) {
         return false;
     }
 

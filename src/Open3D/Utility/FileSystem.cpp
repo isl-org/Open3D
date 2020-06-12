@@ -199,8 +199,8 @@ bool MakeDirectoryHierarchy(const std::string &directory) {
     size_t curr_pos = full_path.find_first_of("/\\", 1);
     while (curr_pos != std::string::npos) {
         std::string subdir = full_path.substr(0, curr_pos + 1);
-        if (DirectoryExists(subdir) == false) {
-            if (MakeDirectory(subdir) == false) {
+        if (!DirectoryExists(subdir)) {
+            if (!MakeDirectory(subdir)) {
                 return false;
             }
         }
@@ -272,7 +272,7 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
                                        const std::string &extname,
                                        std::vector<std::string> &filenames) {
     std::vector<std::string> all_files;
-    if (ListFilesInDirectory(directory, all_files) == false) {
+    if (!ListFilesInDirectory(directory, all_files)) {
         return false;
     }
     std::string ext_in_lower = extname;

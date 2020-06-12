@@ -59,13 +59,13 @@ void ViewParameters::ConvertFromVector17d(const ViewParameters::Vector17d &v) {
 bool ViewParameters::ConvertToJsonValue(Json::Value &value) const {
     value["field_of_view"] = field_of_view_;
     value["zoom"] = zoom_;
-    if (EigenVector3dToJsonArray(lookat_, value["lookat"]) == false) {
+    if (!EigenVector3dToJsonArray(lookat_, value["lookat"])) {
         return false;
     }
-    if (EigenVector3dToJsonArray(up_, value["up"]) == false) {
+    if (!EigenVector3dToJsonArray(up_, value["up"])) {
         return false;
     }
-    if (EigenVector3dToJsonArray(front_, value["front"]) == false) {
+    if (!EigenVector3dToJsonArray(front_, value["front"])) {
         return false;
     }
     if (EigenVector3dToJsonArray(boundingbox_min_, value["boundingbox_min"]) ==
@@ -80,32 +80,32 @@ bool ViewParameters::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool ViewParameters::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "ViewParameters read JSON failed: unsupported json format.");
         return false;
     }
     field_of_view_ = value.get("field_of_view", 60.0).asDouble();
     zoom_ = value.get("zoom", 0.7).asDouble();
-    if (EigenVector3dFromJsonArray(lookat_, value["lookat"]) == false) {
+    if (!EigenVector3dFromJsonArray(lookat_, value["lookat"])) {
         utility::LogWarning("ViewParameters read JSON failed: wrong format.");
         return false;
     }
-    if (EigenVector3dFromJsonArray(up_, value["up"]) == false) {
+    if (!EigenVector3dFromJsonArray(up_, value["up"])) {
         utility::LogWarning("ViewParameters read JSON failed: wrong format.");
         return false;
     }
-    if (EigenVector3dFromJsonArray(front_, value["front"]) == false) {
+    if (!EigenVector3dFromJsonArray(front_, value["front"])) {
         utility::LogWarning("ViewParameters read JSON failed: wrong format.");
         return false;
     }
-    if (EigenVector3dFromJsonArray(boundingbox_min_,
-                                   value["boundingbox_min"]) == false) {
+    if (!EigenVector3dFromJsonArray(boundingbox_min_,
+                                    value["boundingbox_min"])) {
         utility::LogWarning("ViewParameters read JSON failed: wrong format.");
         return false;
     }
-    if (EigenVector3dFromJsonArray(boundingbox_max_,
-                                   value["boundingbox_max"]) == false) {
+    if (!EigenVector3dFromJsonArray(boundingbox_max_,
+                                    value["boundingbox_max"])) {
         utility::LogWarning("ViewParameters read JSON failed: wrong format.");
         return false;
     }

@@ -122,7 +122,7 @@ bool CheckHeader(PCDHeader &header) {
     header.has_points = (has_x && has_y && has_z);
     header.has_normals = (has_normal_x && has_normal_y && has_normal_z);
     header.has_colors = (has_rgb || has_rgba);
-    if (header.has_points == false) {
+    if (!header.has_points) {
         utility::LogWarning(
                 "[CheckHeader] Fields for point data are not complete.");
         return false;
@@ -230,7 +230,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
             break;
         }
     }
-    if (CheckHeader(header) == false) {
+    if (!CheckHeader(header)) {
         return false;
     }
     return true;
@@ -542,7 +542,7 @@ bool GenerateHeader(const geometry::PointCloud &pointcloud,
                     const bool write_ascii,
                     const bool compressed,
                     PCDHeader &header) {
-    if (pointcloud.HasPoints() == false) {
+    if (!pointcloud.HasPoints()) {
         return false;
     }
     header.version = "0.7";
@@ -761,7 +761,7 @@ bool ReadPointCloudFromPCD(const std::string &filename,
                             filename);
         return false;
     }
-    if (ReadPCDHeader(file, header) == false) {
+    if (!ReadPCDHeader(file, header)) {
         utility::LogWarning("Read PCD failed: unable to parse header.");
         fclose(file);
         return false;
@@ -779,7 +779,7 @@ bool ReadPointCloudFromPCD(const std::string &filename,
                       header.has_points ? "yes" : "no",
                       header.has_normals ? "yes" : "no",
                       header.has_colors ? "yes" : "no");
-    if (ReadPCDData(file, header, pointcloud, params) == false) {
+    if (!ReadPCDData(file, header, pointcloud, params)) {
         utility::LogWarning("Read PCD failed: unable to read data.");
         fclose(file);
         return false;
@@ -792,8 +792,8 @@ bool WritePointCloudToPCD(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params) {
     PCDHeader header;
-    if (GenerateHeader(pointcloud, bool(params.write_ascii),
-                       bool(params.compressed), header) == false) {
+    if (!GenerateHeader(pointcloud, bool(params.write_ascii),
+                        bool(params.compressed), header)) {
         utility::LogWarning("Write PCD failed: unable to generate header.");
         return false;
     }
@@ -802,12 +802,12 @@ bool WritePointCloudToPCD(const std::string &filename,
         utility::LogWarning("Write PCD failed: unable to open file.");
         return false;
     }
-    if (WritePCDHeader(file, header) == false) {
+    if (!WritePCDHeader(file, header)) {
         utility::LogWarning("Write PCD failed: unable to write header.");
         fclose(file);
         return false;
     }
-    if (WritePCDData(file, header, pointcloud, params) == false) {
+    if (!WritePCDData(file, header, pointcloud, params)) {
         utility::LogWarning("Write PCD failed: unable to write data.");
         fclose(file);
         return false;

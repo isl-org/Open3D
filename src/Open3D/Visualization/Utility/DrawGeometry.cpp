@@ -50,8 +50,8 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     bool mesh_show_wireframe /* = false */,
                     bool mesh_show_back_face /* = false */) {
     Visualizer visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometries] Failed creating OpenGL "
                 "window.");
@@ -61,7 +61,7 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
     visualizer.GetRenderOption().mesh_show_wireframe_ = mesh_show_wireframe;
     visualizer.GetRenderOption().mesh_show_back_face_ = mesh_show_back_face;
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning("[DrawGeometries] Failed adding geometry.");
             utility::LogWarning(
                     "[DrawGeometries] Possibly due to bad geometry or wrong"
@@ -69,7 +69,7 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
             return false;
         }
         for (const auto &geometry_ptr : geometry_ptrs) {
-            if (visualizer.AddGeometry(geometry_ptr) == false) {
+            if (!visualizer.AddGeometry(geometry_ptr)) {
                 utility::LogWarning("[DrawGeometries] Failed adding geometry.");
                 utility::LogWarning(
                         "[DrawGeometries] Possibly due to bad geometry or wrong"
@@ -93,15 +93,15 @@ bool DrawGeometriesWithCustomAnimation(
         int top /* = 50*/,
         const std::string &json_filename /* = ""*/) {
     VisualizerWithCustomAnimation visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithCustomAnimation] Failed creating OpenGL "
                 "window.");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed adding "
                     "geometry.");
@@ -113,8 +113,8 @@ bool DrawGeometriesWithCustomAnimation(
     }
     auto &view_control =
             (ViewControlWithCustomAnimation &)visualizer.GetViewControl();
-    if (json_filename.empty() == false) {
-        if (view_control.LoadTrajectoryFromJsonFile(json_filename) == false) {
+    if (!json_filename.empty()) {
+        if (!view_control.LoadTrajectoryFromJsonFile(json_filename)) {
             utility::LogWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed loading json "
                     "file.");
@@ -140,15 +140,15 @@ bool DrawGeometriesWithAnimationCallback(
         int left /* = 50*/,
         int top /* = 50*/) {
     Visualizer visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithAnimationCallback] Failed creating OpenGL "
                 "window.");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithAnimationCallback] Failed adding "
                     "geometry.");
@@ -174,15 +174,15 @@ bool DrawGeometriesWithKeyCallbacks(
         int left /* = 50*/,
         int top /* = 50*/) {
     VisualizerWithKeyCallback visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithKeyCallbacks] Failed creating OpenGL "
                 "window.");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithKeyCallbacks] Failed adding "
                     "geometry.");
@@ -210,14 +210,14 @@ bool DrawGeometriesWithEditing(
         int left /* = 50*/,
         int top /* = 50*/) {
     VisualizerWithEditing visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithEditing] Failed creating OpenGL window.");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithEditing] Failed adding geometry.");
             utility::LogWarning(
@@ -240,15 +240,15 @@ bool DrawGeometriesWithVertexSelection(
         int left /* = 50*/,
         int top /* = 50*/) {
     VisualizerWithVertexSelection visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithVertexSelection] Failed creating OpenGL "
                 "window.");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithVertexSelection] Failed adding "
                     "geometry.");
