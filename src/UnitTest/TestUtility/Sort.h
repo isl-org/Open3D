@@ -58,14 +58,13 @@ struct EigenLess {
 
 /// \brief Apply indices to a vector of matrices
 ///
-/// \param vals A vector of Eigen matrices.
+/// \param vals A vector of T.
 /// \param indices The sorting indices.
-/// \return A vector of Eigen matrices, s.t. out_vals[i] = vals[indices[i]].
-template <class T, int M, int N, int A>
-std::vector<Eigen::Matrix<T, M, N, A>> ApplyIndices(
-        const std::vector<Eigen::Matrix<T, M, N, A>>& vals,
-        const std::vector<size_t>& indices) {
-    std::vector<Eigen::Matrix<T, M, N, A>> vals_sorted;
+/// \return A vector of T, s.t. out_vals[i] = vals[indices[i]].
+template <class T>
+std::vector<T> ApplyIndices(const std::vector<T>& vals,
+                            const std::vector<size_t>& indices) {
+    std::vector<T> vals_sorted;
     for (const size_t& i : indices) {
         vals_sorted.push_back(vals[i]);
     }
@@ -113,7 +112,9 @@ std::vector<size_t> GetIndicesAToB(
         const std::vector<Eigen::Matrix<T, M, N, A>>& a,
         const std::vector<Eigen::Matrix<T, M, N, A>>& b,
         double threshold = 1e-6) {
-    EXPECT_EQ(a.size(), b.size());
+    if (a.size() != b.size()) {
+        utility::LogError("a.size() != b.size(): {} != {}", a.size(), b.size());
+    }
     size_t size = a.size();
 
     std::vector<Eigen::Matrix<T, M, N, A>> a_sorted;

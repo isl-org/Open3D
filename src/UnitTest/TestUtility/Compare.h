@@ -34,8 +34,9 @@
 
 #include "Open3D/Macro.h"
 
-#define _LINE_INFO ::open3d::unit_test::LineInfo(__FILE__, __LINE__)
-#define ExpectEQ(arg, ...) _ExpectEQ(_LINE_INFO, arg, __VA_ARGS__)
+#define ExpectEQ(arg, ...)                                            \
+    _ExpectEQ(::open3d::unit_test::LineInfo(__FILE__, __LINE__), arg, \
+              __VA_ARGS__)
 
 namespace open3d {
 namespace unit_test {
