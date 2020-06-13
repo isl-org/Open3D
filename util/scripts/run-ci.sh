@@ -98,7 +98,7 @@ echo
 
 echo "running Open3D python tests..."
 date
-ignore_tests=""
+ignore_tests=()
 if [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
     ignore_tests=(--ignore ../src/UnitTest/Python/test_tf_op_library.py  --ignore ../src/UnitTest/Python/tf_ops/)
 fi
