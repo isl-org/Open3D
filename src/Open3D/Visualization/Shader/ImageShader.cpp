@@ -51,7 +51,7 @@ uint8_t ConvertColorFromFloatToUnsignedChar(float color) {
 }  // unnamed namespace
 
 bool ImageShader::Compile() {
-    if (CompileShaders(ImageVertexShader, NULL, ImageFragmentShader) == false) {
+    if (!CompileShaders(ImageVertexShader, NULL, ImageFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -80,7 +80,7 @@ bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
 
     // Prepare data to be passed to GPU
     geometry::Image render_image;
-    if (PrepareBinding(geometry, option, view, render_image) == false) {
+    if (!PrepareBinding(geometry, option, view, render_image)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -127,7 +127,7 @@ bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
 bool ImageShader::RenderGeometry(const geometry::Geometry &geometry,
                                  const RenderOption &option,
                                  const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
@@ -206,7 +206,7 @@ bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
         return false;
     }
     const geometry::Image &image = (const geometry::Image &)geometry;
-    if (image.HasData() == false) {
+    if (!image.HasData()) {
         PrintShaderWarning("Binding failed with empty image.");
         return false;
     }

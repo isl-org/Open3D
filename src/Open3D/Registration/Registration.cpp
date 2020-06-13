@@ -138,7 +138,7 @@ RegistrationResult EvaluateRegistration(
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
     geometry::PointCloud pcd = source;
-    if (transformation.isIdentity() == false) {
+    if (!transformation.isIdentity()) {
         pcd.Transform(transformation);
     }
     return GetRegistrationResultAndCorrespondences(
@@ -172,7 +172,7 @@ RegistrationResult RegistrationICP(
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
     geometry::PointCloud pcd = source;
-    if (init.isIdentity() == false) {
+    if (!init.isIdentity()) {
         pcd.Transform(init);
     }
     RegistrationResult result;
@@ -307,26 +307,26 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 }
                 bool check = true;
                 for (const auto &checker : checkers) {
-                    if (checker.get().require_pointcloud_alignment_ == false &&
-                        checker.get().Check(source, target, ransac_corres,
-                                            transformation) == false) {
+                    if (!checker.get().require_pointcloud_alignment_ &&
+                        !checker.get().Check(source, target, ransac_corres,
+                                             transformation)) {
                         check = false;
                         break;
                     }
                 }
-                if (check == false) continue;
+                if (!check) continue;
                 transformation = estimation.ComputeTransformation(
                         source, target, ransac_corres);
                 check = true;
                 for (const auto &checker : checkers) {
-                    if (checker.get().require_pointcloud_alignment_ == true &&
-                        checker.get().Check(source, target, ransac_corres,
-                                            transformation) == false) {
+                    if (checker.get().require_pointcloud_alignment_ &&
+                        !checker.get().Check(source, target, ransac_corres,
+                                             transformation)) {
                         check = false;
                         break;
                     }
                 }
-                if (check == false) continue;
+                if (!check) continue;
                 geometry::PointCloud pcd = source;
                 pcd.Transform(transformation);
                 auto this_result = GetRegistrationResultAndCorrespondences(
@@ -372,7 +372,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation) {
     geometry::PointCloud pcd = source;
-    if (transformation.isIdentity() == false) {
+    if (!transformation.isIdentity()) {
         pcd.Transform(transformation);
     }
     RegistrationResult result;

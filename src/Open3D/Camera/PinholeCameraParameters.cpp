@@ -41,17 +41,17 @@ bool PinholeCameraParameters::ConvertToJsonValue(Json::Value &value) const {
     value["class_name"] = "PinholeCameraParameters";
     value["version_major"] = 1;
     value["version_minor"] = 0;
-    if (EigenMatrix4dToJsonArray(extrinsic_, value["extrinsic"]) == false) {
+    if (!EigenMatrix4dToJsonArray(extrinsic_, value["extrinsic"])) {
         return false;
     }
-    if (intrinsic_.ConvertToJsonValue(value["intrinsic"]) == false) {
+    if (!intrinsic_.ConvertToJsonValue(value["intrinsic"])) {
         return false;
     }
     return true;
 }
 
 bool PinholeCameraParameters::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "PinholeCameraParameters read JSON failed: unsupported json "
                 "format.");
@@ -65,10 +65,10 @@ bool PinholeCameraParameters::ConvertFromJsonValue(const Json::Value &value) {
                 "format.");
         return false;
     }
-    if (intrinsic_.ConvertFromJsonValue(value["intrinsic"]) == false) {
+    if (!intrinsic_.ConvertFromJsonValue(value["intrinsic"])) {
         return false;
     }
-    if (EigenMatrix4dFromJsonArray(extrinsic_, value["extrinsic"]) == false) {
+    if (!EigenMatrix4dFromJsonArray(extrinsic_, value["extrinsic"])) {
         return false;
     }
     return true;

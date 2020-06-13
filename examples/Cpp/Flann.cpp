@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if (cloud_ptr->HasColors() == false) {
+    if (!cloud_ptr->HasColors()) {
         cloud_ptr->colors_.resize(cloud_ptr->points_.size());
         for (size_t i = 0; i < cloud_ptr->points_.size(); i++) {
             cloud_ptr->colors_[i].setZero();
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if (new_cloud_ptr->HasColors() == false) {
+    if (!new_cloud_ptr->HasColors()) {
         new_cloud_ptr->colors_.resize(new_cloud_ptr->points_.size());
         for (size_t i = 0; i < new_cloud_ptr->points_.size(); i++) {
             new_cloud_ptr->colors_[i].setZero();

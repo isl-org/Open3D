@@ -21,7 +21,7 @@ Register RGBD image pairs
    :lines: 5,34-59
    :linenos:
 
-The function reads a pair of RGBD images and registers the ``source_rgbd_image`` to the ``target_rgbd_image``. Open3D function ``compute_rgbd_odometry`` is called to align the RGBD images. For adjacent RGBD images, an identity matrix is used as initialization. For non-adjacent RGBD images, wide baseline matching is used as an initialization. In particular, function ``pose_estimation`` computes OpenCV ORB feature to match sparse features over wide baseline images, then performs 5-point RANSAC to estimate a rough alignment, which is used as the initialization of ``compute_rgbd_odometry``.
+The function reads a pair of RGBD images and registers the ``source_rgbd_image`` to the ``target_rgbd_image``. The Open3D function ``compute_rgbd_odometry`` is called to align the RGBD images. For adjacent RGBD images, an identity matrix is used as the initialization. For non-adjacent RGBD images, wide baseline matching is used as the initialization. In particular, the function ``pose_estimation`` computes OpenCV ORB feature to match sparse features over wide baseline images, then performs 5-point RANSAC to estimate a rough alignment, which is used as the initialization of ``compute_rgbd_odometry``.
 
 
 .. _make_fragments_make_a_posegraph:
@@ -35,9 +35,9 @@ Multiway registration
    :lines: 5,62-108
    :linenos:
 
-This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. Function ``make_posegraph_for_fragment`` builds a pose graph for multiway registration of all RGBD images in this sequence. Each graph node represents an RGBD image and its pose which transforms the geometry to the global fragment space. For efficiency, only key frames are used.
+This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. The function ``make_posegraph_for_fragment`` builds a pose graph for multiway registration of all RGBD images in this sequence. Each graph node represents an RGBD image and its pose which transforms the geometry to the global fragment space. For efficiency, only key frames are used.
 
-Once a pose graph is created, multiway registration is performed by calling function ``optimize_posegraph_for_fragment``.
+Once a pose graph is created, multiway registration is performed by calling the function ``optimize_posegraph_for_fragment``.
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/optimize_posegraph.py
    :language: python

@@ -125,7 +125,7 @@ TriangleMesh &TriangleMesh::ComputeTriangleNormals(
 }
 
 TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
-    if (HasTriangleNormals() == false) {
+    if (!HasTriangleNormals()) {
         ComputeTriangleNormals(false);
     }
     vertex_normals_.resize(vertices_.size(), Eigen::Vector3d::Zero());
