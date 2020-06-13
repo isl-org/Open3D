@@ -36,7 +36,8 @@ namespace {
 template <class T>
 class OutputAllocator {
 public:
-    OutputAllocator(tensorflow::OpKernelContext* context) : context(context) {}
+    explicit OutputAllocator(tensorflow::OpKernelContext* context)
+        : context(context) {}
 
     void AllocIndices(int32_t** ptr, size_t num) {
         using namespace tensorflow;

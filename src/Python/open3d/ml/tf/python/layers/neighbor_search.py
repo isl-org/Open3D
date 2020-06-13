@@ -118,7 +118,7 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
 class RadiusSearch(tf.keras.layers.Layer):
     """Radius search for 3D point clouds.
 
-    This layer computes the neighbors for each query point with each query 
+    This layer computes the neighbors for each query point with each query
     having an individual radius.
 
     Arguments:

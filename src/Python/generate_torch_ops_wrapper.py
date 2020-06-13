@@ -32,8 +32,8 @@ NAMEDTUPLE_TEMPLATE_STR = "{name} = _namedtuple( '{name}', '{fields}')\n"
 class Argument:
     __slots__ = ['type', 'name', 'default_value']
 
-    def __init__(self, type, name, default_value=None):
-        self.type = type
+    def __init__(self, arg_type, name, default_value=None):
+        self.type = arg_type
         self.name = name
         self.default_value = default_value
 
@@ -41,7 +41,7 @@ class Argument:
 Schema = namedtuple('Schema', ['name', 'arguments', 'returns'])
 
 
-# not used at the moment because we can use the parser from pytorch 1.4.0 for now.now
+# not used at the moment because we can use the parser from pytorch 1.4.0 for now.
 # just in case keep this for the initial commit
 def parse_schema_from_docstring(docstring):
     """Parses the schema from the definition in the docstring of the function.

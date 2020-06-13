@@ -92,7 +92,7 @@ def _continuous_conv_transpose_grad(op, grad):
     offset = op.inputs[4]
     inp_positions = op.inputs[5]
     inp_features = op.inputs[6]
-    inp_neighbors_index = op.inputs[7]
+    # unused inp_neighbors_index = op.inputs[7]
     inp_neighbors_importance_sum = op.inputs[8]
     inp_neighbors_row_splits = op.inputs[9]
     neighbors_index = op.inputs[10]
@@ -122,7 +122,7 @@ def _continuous_conv_transpose_grad(op, grad):
 
     # invert the neighbors list
     num_points = _tf.shape(inp_positions, out_type=_tf.int64)[0]
-    inv_neighbors_index, inv_neighbors_row_splits, inv_neighbors_importance = _lib.open3d_invert_neighbors_list(
+    inv_neighbors_index, _, inv_neighbors_importance = _lib.open3d_invert_neighbors_list(
         num_points, neighbors_index, neighbors_row_splits, neighbors_importance)
 
     inp_features_grad = _lib.open3d_continuous_conv(
