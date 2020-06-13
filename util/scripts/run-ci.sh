@@ -84,10 +84,9 @@ echo
 
 echo "build & install Open3D..."
 date
-reportRun make -j$NPROC
-reportRun make install -j$NPROC
-reportRun make install-pip-package -j$NPROC
-reportRun make VERBOSE=1 install-pip-package
+reportRun make -j$NPROC || make VERBOSE=1
+reportRun make install -j$NPROC 
+reportRun make install-pip-package -j$NPROC || make VERBOSE=1 install-pip-package
 echo
 
 echo "running Open3D unit tests..."
@@ -99,7 +98,11 @@ echo
 
 echo "running Open3D python tests..."
 date
-reportRun pytest ../src/UnitTest/Python/
+ignore_tests=""
+if [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
+    ignore_tests="--ignore ../src/UnitTest/Python/test_tf_op_library.py  --ignore ../src/UnitTest/Python/tf_ops/"
+fi
+reportRun pytest ../src/UnitTest/Python/ $ignore_tests
 echo
 
 if $runBenchmarks; then
