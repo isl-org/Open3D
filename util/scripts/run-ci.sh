@@ -40,6 +40,7 @@ echo "using pip: $(which pip)"
 pip install --upgrade pip
 pip install -U pytest
 pip install -U wheel
+pip install scipy
 echo
 
 echo "using python: $(which python)"
@@ -97,8 +98,7 @@ echo
 
 echo "running Open3D python tests..."
 date
-# TODO: fix TF op library test.
-reportRun pytest ../src/UnitTest/Python/ --ignore="../src/UnitTest/Python/test_tf_op_library.py"
+reportRun pytest ../src/UnitTest/Python/
 echo
 
 if $runBenchmarks; then
