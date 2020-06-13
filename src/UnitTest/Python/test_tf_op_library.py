@@ -41,7 +41,7 @@ pytestmark = [
 
 def test_load_tf_op_library():
     import open3d.ml.tf as ml3d
-    assert hasattr(ml3d.python.ops.lib._lib, 'OP_LIST')
+    assert hasattr(ml3d.python.ops.lib._lib, 'open3d_reduce_subarrays_sum')
 
 
 def test_execute_tf_op():
