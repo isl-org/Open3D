@@ -181,15 +181,15 @@ bool Visualizer::CreateVisualizerWindow(
     glfwMakeContextCurrent(window_);
     glfwSwapInterval(1);
 
-    if (InitOpenGL() == false) {
+    if (!InitOpenGL()) {
         return false;
     }
 
-    if (InitViewControl() == false) {
+    if (!InitViewControl()) {
         return false;
     }
 
-    if (InitRenderOption() == false) {
+    if (!InitRenderOption()) {
         return false;
     }
 
@@ -240,8 +240,8 @@ void Visualizer::BuildUtilities() {
             boundingbox.GetMaxExtent() * 0.2, boundingbox.min_bound_);
     coordinate_frame_mesh_renderer_ptr_ =
             std::make_shared<glsl::CoordinateFrameRenderer>();
-    if (coordinate_frame_mesh_renderer_ptr_->AddGeometry(
-                coordinate_frame_mesh_ptr_) == false) {
+    if (!coordinate_frame_mesh_renderer_ptr_->AddGeometry(
+                coordinate_frame_mesh_ptr_)) {
         return;
     }
     utility_ptrs_.push_back(coordinate_frame_mesh_ptr_);
@@ -270,7 +270,7 @@ void Visualizer::Close() {
 }
 
 bool Visualizer::WaitEvents() {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -283,7 +283,7 @@ bool Visualizer::WaitEvents() {
 }
 
 bool Visualizer::PollEvents() {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -298,7 +298,7 @@ bool Visualizer::PollEvents() {
 bool Visualizer::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr,
         bool reset_bounding_box) {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -309,25 +309,25 @@ bool Visualizer::AddGeometry(
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::PointCloud) {
         renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::VoxelGrid) {
         renderer_ptr = std::make_shared<glsl::VoxelGridRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::Octree) {
         renderer_ptr = std::make_shared<glsl::OctreeRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::LineSet) {
         renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
@@ -335,37 +335,37 @@ bool Visualizer::AddGeometry(
                geometry_ptr->GetGeometryType() ==
                        geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::Image) {
         renderer_ptr = std::make_shared<glsl::ImageRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::RGBDImage) {
         renderer_ptr = std::make_shared<glsl::RGBDImageRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::TetraMesh) {
         renderer_ptr = std::make_shared<glsl::TetraMeshRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::OrientedBoundingBox) {
         renderer_ptr = std::make_shared<glsl::OrientedBoundingBoxRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::AxisAlignedBoundingBox) {
         renderer_ptr = std::make_shared<glsl::AxisAlignedBoundingBoxRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else {
@@ -380,13 +380,13 @@ bool Visualizer::AddGeometry(
     utility::LogDebug(
             "Add geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
-    return UpdateGeometry();
+    return UpdateGeometry(geometry_ptr);
 }
 
 bool Visualizer::RemoveGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr,
         bool reset_bounding_box) {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -404,11 +404,11 @@ bool Visualizer::RemoveGeometry(
     utility::LogDebug(
             "Remove geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
-    return UpdateGeometry();
+    return UpdateGeometry(geometry_ptr);
 }
 
 bool Visualizer::ClearGeometries() {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);

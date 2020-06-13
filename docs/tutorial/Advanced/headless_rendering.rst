@@ -5,7 +5,7 @@ Headless rendering
 
 This tutorial explains how to render and save images from a terminal without any display device.
 
-.. Note:: This feature is experimental; it was only tested with Ubuntu 18.04 environment.
+.. Note:: This feature is experimental; it was only tested with an Ubuntu 18.04 environment.
 
 .. Note:: Although Ubuntu 16.04 is no longer supported for Open3D, additional instructions are under :ref:`headless_ubuntu1604`.
 
@@ -54,12 +54,14 @@ In the next step, there are two cmake flags that need to be specified.
 - ``-DBUILD_GLEW=ON -DBUILD_GLFW=ON``: note that headless rendering only works with the **glew 2.1** and **glfw 3.3-dev** version.
   In most cases, these versions are not installed in vanilla Ubuntu systems.
   Use these CMake options to force to build glew 2.1 and glfw 3.3-dev from source included with Open3D.
+- The Filament-based GUI implementation is not compatible with headless rendering, please set ``-DENABLE_GUI=OFF``.
 
 As a result, the cmake command is the following
 
 .. code-block:: shell
 
     (py3env) $ cmake -DENABLE_HEADLESS_RENDERING=ON \
+                     -DENABLE_GUI=OFF \
                      -DBUILD_GLEW=ON \
                      -DBUILD_GLFW=ON \
                      ..
@@ -142,7 +144,7 @@ If instead you get
     [Open3D WARNING] GLFW Error: OSMesa: Failed to create context
     [Open3D DEBUG] Failed to create window
 
-Then your OSMesa version maybe too old.  Try to follow instructions below to :ref:`compile_osmesa` to build a newer version and see if that would resolve your issue.
+Then your OSMesa version might be too old.  Try to follow instructions below to :ref:`compile_osmesa` to build a newer version and see if that resolves your issue.
 
 .. _headless_ubuntu1604:
 
@@ -185,4 +187,4 @@ Here are instructions for compiling mesa-19.0.8, last version that still support
     (py3env) $ make -j$(nproc)
     (py3env) $ make install-pip-package
 
-Now you can follow instructions under :ref:`test_headless_rendering`.
+Now you can follow the instructions under :ref:`test_headless_rendering`.

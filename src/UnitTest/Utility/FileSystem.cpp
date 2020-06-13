@@ -28,19 +28,19 @@
 #include <sys/stat.h>
 #include <algorithm>
 
+#include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
-using namespace std;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
 // ----------------------------------------------------------------------------
 // Get the file extension and convert to lower case.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileExtensionInLowerCase) {
-    string path;
-    string result;
+    std::string path;
+    std::string result;
 
     // empty
     path = "";
@@ -97,8 +97,8 @@ TEST(FileSystem, GetFileExtensionInLowerCase) {
 // What it actually does is return the full path without the extension.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileNameWithoutExtension) {
-    string path;
-    string result;
+    std::string path;
+    std::string result;
 
     // empty
     path = "";
@@ -136,8 +136,8 @@ TEST(FileSystem, GetFileNameWithoutExtension) {
 }
 
 TEST(FileSystem, GetFileNameWithoutDirectory) {
-    string path;
-    string result;
+    std::string path;
+    std::string result;
 
     // empty
     path = "";
@@ -178,8 +178,8 @@ TEST(FileSystem, GetFileNameWithoutDirectory) {
 // Get parent directory, terminated in '/'.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileParentDirectory) {
-    string path;
-    string result;
+    std::string path;
+    std::string result;
 
     // empty
     path = "";
@@ -220,8 +220,8 @@ TEST(FileSystem, GetFileParentDirectory) {
 // Add '/' at the end of the input path, if missing.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetRegularizedDirectoryName) {
-    string path;
-    string result;
+    std::string path;
+    std::string result;
 
     path = "";
     result = utility::filesystem::GetRegularizedDirectoryName(path);
@@ -240,7 +240,7 @@ TEST(FileSystem, GetRegularizedDirectoryName) {
 // Get/Change the working directory.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, ChangeWorkingDirectory) {
-    string path = "test";
+    std::string path = "test";
 
     bool status;
 
@@ -250,7 +250,7 @@ TEST(FileSystem, ChangeWorkingDirectory) {
     status = utility::filesystem::ChangeWorkingDirectory(path);
     EXPECT_TRUE(status);
 
-    string cwd = utility::filesystem::GetWorkingDirectory();
+    std::string cwd = utility::filesystem::GetWorkingDirectory();
 
     EXPECT_EQ(path, utility::filesystem::GetFileNameWithoutDirectory(cwd));
 
@@ -265,7 +265,7 @@ TEST(FileSystem, ChangeWorkingDirectory) {
 // Check if a path exists.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, DirectoryExists) {
-    string path = "test/test_dir";
+    std::string path = "test/test_dir";
 
     bool status;
 
@@ -301,7 +301,7 @@ TEST(FileSystem, DirectoryExists) {
 // Return false otherwise. This could mean that the directory already exists.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, MakeDirectory) {
-    string path = "test";
+    std::string path = "test";
 
     bool status;
 
@@ -319,7 +319,7 @@ TEST(FileSystem, MakeDirectory) {
 // Make a hierarchy of directories. Equivalent to 'mkdir -p ...'.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, MakeDirectoryHierarchy) {
-    string path = "test/test_dir";
+    std::string path = "test/test_dir";
 
     bool status;
 
@@ -344,7 +344,7 @@ TEST(FileSystem, MakeDirectoryHierarchy) {
 // Note: DeleteDirectory can delete one dir at a time.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, DeleteDirectory) {
-    string path = "test";
+    std::string path = "test";
 
     bool status;
 
@@ -359,8 +359,8 @@ TEST(FileSystem, DeleteDirectory) {
 }
 
 TEST(FileSystem, File_Exists_Remove) {
-    string path = "test/test_dir";
-    string fileName = "fileName.ext";
+    std::string path = "test/test_dir";
+    std::string fileName = "fileName.ext";
 
     bool status;
 
@@ -402,9 +402,9 @@ TEST(FileSystem, File_Exists_Remove) {
 // List all files in the specified directory.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, ListFilesInDirectory) {
-    string path = "test/test_dir";
-    vector<string> fileNames = {"fileName00.ext", "fileName01.ext",
-                                "fileName02.ext", "fileName03.ext"};
+    std::string path = "test/test_dir";
+    std::vector<std::string> fileNames = {"fileName00.ext", "fileName01.ext",
+                                          "fileName02.ext", "fileName03.ext"};
 
     bool status;
 
@@ -417,7 +417,7 @@ TEST(FileSystem, ListFilesInDirectory) {
     for (size_t i = 0; i < fileNames.size(); i++)
         creat(fileNames[i].c_str(), 0);
 
-    vector<string> list;
+    std::vector<std::string> list;
     status = utility::filesystem::ListFilesInDirectory(".", list);
     EXPECT_TRUE(status);
 
@@ -452,11 +452,11 @@ TEST(FileSystem, ListFilesInDirectory) {
 // List all files of a specific extension in the specified directory.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, ListFilesInDirectoryWithExtension) {
-    string path = "test/test_dir";
-    vector<string> fileNames = {"fileName00.ext0", "fileName01.ext0",
-                                "fileName02.ext0", "fileName03.ext0",
-                                "fileName04.ext1", "fileName05.ext1",
-                                "fileName06.ext1", "fileName07.ext1"};
+    std::string path = "test/test_dir";
+    std::vector<std::string> fileNames = {"fileName00.ext0", "fileName01.ext0",
+                                          "fileName02.ext0", "fileName03.ext0",
+                                          "fileName04.ext1", "fileName05.ext1",
+                                          "fileName06.ext1", "fileName07.ext1"};
 
     bool status;
 
@@ -469,7 +469,7 @@ TEST(FileSystem, ListFilesInDirectoryWithExtension) {
     for (size_t i = 0; i < fileNames.size(); i++)
         creat(fileNames[i].c_str(), 0);
 
-    vector<string> list;
+    std::vector<std::string> list;
     status = utility::filesystem::ListFilesInDirectory(".", list);
     EXPECT_TRUE(status);
 
@@ -499,3 +499,51 @@ TEST(FileSystem, ListFilesInDirectoryWithExtension) {
     status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
 }
+
+// ----------------------------------------------------------------------------
+// Split path into components
+// ----------------------------------------------------------------------------
+TEST(FileSystem, GetPathComponents) {
+    // setup
+    std::string cwd = utility::filesystem::GetWorkingDirectory();
+    std::vector<std::string> cwd_components =
+            utility::filesystem::GetPathComponents(cwd);
+    if (cwd_components.size() < 2) {
+        utility::LogError("Please do not run unit test from root directory.");
+    }
+    std::vector<std::string> parent_components(cwd_components.begin(),
+                                               cwd_components.end() - 1);
+
+    // test
+    std::vector<std::string> expected;
+    std::vector<std::string> result;
+
+    result = utility::filesystem::GetPathComponents("");
+    EXPECT_EQ(result, cwd_components);
+
+    result = utility::filesystem::GetPathComponents("/");
+    expected = {"/"};
+    EXPECT_EQ(result, expected);
+
+    result = utility::filesystem::GetPathComponents("c:\\");
+    expected = {"c:"};
+    EXPECT_EQ(result, expected);
+
+    result = utility::filesystem::GetPathComponents("../bogus/test.abc");
+    expected = parent_components;
+    expected.push_back("bogus");
+    expected.push_back("test.abc");
+    EXPECT_EQ(result, expected);
+
+    result = utility::filesystem::GetPathComponents("/usr/lib/../local/bin");
+    expected = {"/", "usr", "local", "bin"};
+    EXPECT_EQ(result, expected);
+
+    result = utility::filesystem::GetPathComponents(
+            "c:\\windows\\system\\winnt.dll");
+    expected = {"c:", "windows", "system", "winnt.dll"};
+    EXPECT_EQ(result, expected);
+}
+
+}  // namespace unit_test
+}  // namespace open3d

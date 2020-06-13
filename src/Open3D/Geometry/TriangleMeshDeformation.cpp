@@ -38,7 +38,9 @@ namespace geometry {
 std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
         const std::vector<int> &constraint_vertex_indices,
         const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
-        size_t max_iter) const {
+        size_t max_iter,
+        DeformAsRigidAsPossibleEnergy energy_model,
+        double smoothed_alpha) const {
     auto prime = std::make_shared<TriangleMesh>();
     prime->vertices_ = this->vertices_;
     prime->triangles_ = this->triangles_;
@@ -48,7 +50,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
     auto edges_to_vertices = prime->GetEdgeToVerticesMap();
     auto edge_weights =
             prime->ComputeEdgeWeightsCot(edges_to_vertices, /*min_weight=*/0);
-    std::vector<Eigen::Matrix3d> Rs(vertices_.size());
     utility::LogDebug("[DeformAsRigidAsPossible] done setting up S'");
 
     std::unordered_map<int, Eigen::Vector3d> constraints;
@@ -57,6 +58,16 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
          ++idx) {
         constraints[constraint_vertex_indices[idx]] =
                 constraint_vertex_positions[idx];
+    }
+
+    double surface_area = -1;
+    // std::vector<Eigen::Matrix3d> Rs(vertices_.size(),
+    // Eigen::Matrix3d::Identity());
+    std::vector<Eigen::Matrix3d> Rs(vertices_.size());
+    std::vector<Eigen::Matrix3d> Rs_old;
+    if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
+        surface_area = prime->GetSurfaceArea();
+        Rs_old.resize(vertices_.size());
     }
 
     // Build system matrix L and its solver
@@ -84,7 +95,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
 
     utility::LogDebug("[DeformAsRigidAsPossible] setting up sparse solver");
     Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
-    // Eigen::SuperLU<Eigen::SparseMatrix<double>> solver;
     solver.analyzePattern(L);
     solver.factorize(L);
     if (solver.info() != Eigen::Success) {
@@ -99,17 +109,32 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
                                       Eigen::VectorXd(vertices_.size()),
                                       Eigen::VectorXd(vertices_.size())};
     for (size_t iter = 0; iter < max_iter; ++iter) {
+        if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
+            std::swap(Rs, Rs_old);
+        }
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
         for (int i = 0; i < int(vertices_.size()); ++i) {
             // Update rotations
             Eigen::Matrix3d S = Eigen::Matrix3d::Zero();
+            Eigen::Matrix3d R = Eigen::Matrix3d::Zero();
+            int n_nbs = 0;
             for (int j : prime->adjacency_list_[i]) {
                 Eigen::Vector3d e0 = vertices_[i] - vertices_[j];
                 Eigen::Vector3d e1 = prime->vertices_[i] - prime->vertices_[j];
                 double w = edge_weights[GetOrderedEdge(i, j)];
                 S += w * (e0 * e1.transpose());
+                if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
+                    R += Rs_old[j];
+                }
+                n_nbs++;
+            }
+            if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed &&
+                iter > 0 && n_nbs > 0) {
+                S = 2 * S +
+                    (4 * smoothed_alpha * surface_area / n_nbs) * R.transpose();
             }
             Eigen::JacobiSVD<Eigen::Matrix3d> svd(
                     S, Eigen::ComputeFullU | Eigen::ComputeFullV);
@@ -122,7 +147,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             if (Rs[i].determinant() <= 0) {
                 utility::LogError(
                         "[DeformAsRigidAsPossible] something went wrong with "
-                        "updateing R");
+                        "updating R");
             }
         }
 
@@ -161,6 +186,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
 
         // Compute energy and log
         double energy = 0;
+        double reg = 0;
         for (int i = 0; i < int(vertices_.size()); ++i) {
             for (int j : prime->adjacency_list_[i]) {
                 double w = edge_weights[GetOrderedEdge(i, j)];
@@ -168,7 +194,13 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
                 Eigen::Vector3d e1 = prime->vertices_[i] - prime->vertices_[j];
                 Eigen::Vector3d diff = e1 - Rs[i] * e0;
                 energy += w * diff.squaredNorm();
+                if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
+                    reg += (Rs[i] - Rs[j]).squaredNorm();
+                }
             }
+        }
+        if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
+            energy = energy + smoothed_alpha * surface_area * reg;
         }
         utility::LogDebug("[DeformAsRigidAsPossible] iter={}, energy={:e}",
                           iter, energy);

@@ -33,12 +33,9 @@ Dos
 +-------------------------------------------------------------------------------------------------------------+
 | [DO] Remember to provide Python bindings when adding new C++ core functionalities                           |
 +-------------------------------------------------------------------------------------------------------------+
-| [DO] Use Python 3.6 when contributing Python code                                                           |
+| [DO] Use Python 3 when contributing Python code                                                             |
 +-------------------------------------------------------------------------------------------------------------+
-| | [DO] Be aware of multiple platforms. Your code should be compatible with the following toolchains:        |
-| |  - Windows, Visual Studio 2019 update 3+, CMake 3.1+                                                      |
-| |  - OS X, Clang included in the latest Xcode, CMake 3.1+                                                   |
-| |  - Ubuntu 18.04, gcc (+5.x), CMake 3.1+                                                                   |
+| [DO] Be aware of OS and compiler versions. Please check :ref:`compiler_version` for details.                |
 +-------------------------------------------------------------------------------------------------------------+
 | | [DO] Provide suitable unit tests                                                                          |
 | |  - Your contribution must come with unit tests of the most important functionality                        |
@@ -267,6 +264,15 @@ Case 4: When adding a Python tutorial
   .. note:: { "path": "../../../examples/TutorialPointcloud.ipynb" }
 
 * Update the `index.rst` file to include your new tutorial
+
+.. note::
+   When you commit a ipynb notebook file make sure to remove the output cells
+   to keep the commit sizes small.
+   You can use the script ``examples/Python/jupyter_strip_output.sh`` for
+   stripping the output cells of all tutorials.
+   Alternatively, you can enable a pre-commit filter by running the script
+   ``utils/scripts/git_enable_ipynb_filter.sh`` once. In any case you need to
+   have ``jupyter`` in your ``PATH`` and ``nbconvert`` installed.
 
 Dos
 -----------------------

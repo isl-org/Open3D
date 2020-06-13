@@ -41,7 +41,7 @@ bool PoseGraphNode::ConvertToJsonValue(Json::Value &value) const {
     value["version_minor"] = 0;
 
     Json::Value pose_object;
-    if (EigenMatrix4dToJsonArray(pose_, pose_object) == false) {
+    if (!EigenMatrix4dToJsonArray(pose_, pose_object)) {
         return false;
     }
     value["pose"] = pose_object;
@@ -49,7 +49,7 @@ bool PoseGraphNode::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool PoseGraphNode::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "PoseGraphNode read JSON failed: unsupported json format.");
         return false;
@@ -63,7 +63,7 @@ bool PoseGraphNode::ConvertFromJsonValue(const Json::Value &value) {
     }
 
     const Json::Value &pose_object = value["pose"];
-    if (EigenMatrix4dFromJsonArray(pose_, pose_object) == false) {
+    if (!EigenMatrix4dFromJsonArray(pose_, pose_object)) {
         return false;
     }
     return true;
@@ -87,7 +87,7 @@ bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const {
     }
     value["transformation"] = transformation_object;
     Json::Value information_object;
-    if (EigenMatrix6dToJsonArray(information_, information_object) == false) {
+    if (!EigenMatrix6dToJsonArray(information_, information_object)) {
         return false;
     }
     value["information"] = information_object;
@@ -95,7 +95,7 @@ bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool PoseGraphEdge::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "PoseGraphEdge read JSON failed: unsupported json format.");
         return false;
@@ -118,7 +118,7 @@ bool PoseGraphEdge::ConvertFromJsonValue(const Json::Value &value) {
         return false;
     }
     const Json::Value &information_object = value["information"];
-    if (EigenMatrix6dFromJsonArray(information_, information_object) == false) {
+    if (!EigenMatrix6dFromJsonArray(information_, information_object)) {
         return false;
     }
     return true;
@@ -136,7 +136,7 @@ bool PoseGraph::ConvertToJsonValue(Json::Value &value) const {
     Json::Value node_array;
     for (const auto &node : nodes_) {
         Json::Value node_object;
-        if (node.ConvertToJsonValue(node_object) == false) {
+        if (!node.ConvertToJsonValue(node_object)) {
             return false;
         }
         node_array.append(node_object);
@@ -146,7 +146,7 @@ bool PoseGraph::ConvertToJsonValue(Json::Value &value) const {
     Json::Value edge_array;
     for (const auto &edge : edges_) {
         Json::Value edge_object;
-        if (edge.ConvertToJsonValue(edge_object) == false) {
+        if (!edge.ConvertToJsonValue(edge_object)) {
             return false;
         }
         edge_array.append(edge_object);
@@ -156,7 +156,7 @@ bool PoseGraph::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool PoseGraph::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "PoseGraph read JSON failed: unsupported json format.");
         return false;
@@ -178,7 +178,7 @@ bool PoseGraph::ConvertFromJsonValue(const Json::Value &value) {
     for (int i = 0; i < (int)node_array.size(); i++) {
         const Json::Value &node_object = node_array[i];
         PoseGraphNode new_node;
-        if (new_node.ConvertFromJsonValue(node_object) == false) {
+        if (!new_node.ConvertFromJsonValue(node_object)) {
             return false;
         }
         nodes_.push_back(new_node);
@@ -193,7 +193,7 @@ bool PoseGraph::ConvertFromJsonValue(const Json::Value &value) {
     for (int i = 0; i < (int)edge_array.size(); i++) {
         const Json::Value &edge_object = edge_array[i];
         PoseGraphEdge new_edge;
-        if (new_edge.ConvertFromJsonValue(edge_object) == false) {
+        if (!new_edge.ConvertFromJsonValue(edge_object)) {
             return false;
         }
         edges_.push_back(new_edge);

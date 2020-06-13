@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+
+<mime-type type="model/stl">
+    <comment>Stereolithography File Format</comment>
+    <glob pattern="*.stl"/>
+</mime-type>
+
+<mime-type type="model/x.stl">
+    <comment>Stereolithography File Format</comment>
+    <glob pattern="*.stl"/>
+</mime-type>
+
+<mime-type type="model/x.stl-ascii">
+    <comment>Stereolithography File Format</comment>
+    <glob pattern="*.stl"/>
+</mime-type>
+
+
+<mime-type type="model/x.stl-binary">
+    <comment>Stereolithography File Format</comment>
+    <glob pattern="*.stl"/>
+</mime-type>
+
+<mime-type type="model/x-ply">
+    <comment>Stanford Triangle Format</comment>
+    <glob pattern="*.ply"/>
+    <magic priority="50">
+        <match value="ply" type="string" offset="0"/>
+    </magic>
+</mime-type>
+
+<mime-type type="model/obj">
+    <comment>Geometry Definition File Format</comment>
+    <glob pattern="*.obj"/>
+</mime-type>
+
+<mime-type type="application/x-off">
+    <comment>Object File Format</comment>
+    <glob pattern="*.off"/>
+    <magic priority="50">
+        <match value="OFF" type="string" offset="0"/>
+    </magic>
+</mime-type>
+
+<mime-type type="model/gltf-binary">
+    <comment>GL Transmission Format</comment>
+    <glob pattern="*.glb"/>
+</mime-type>
+
+<mime-type type="model/gltf+json">
+    <comment>GL Transmission Format</comment>
+    <glob pattern="*.gltf"/>
+</mime-type>
+
+<mime-type type="application/x-pcd">
+    <comment>Point Cloud Data Format</comment>
+    <glob pattern="*.pcd"/>
+</mime-type>
+
+<mime-type type="application/x-pts">
+    <comment>Point Cloud</comment>
+    <glob pattern="*.pts"/>
+</mime-type>
+
+<mime-type type="application/x-xyz">
+    <comment>XYZ Point Cloud</comment>
+    <glob pattern="*.xyz"/>
+</mime-type>
+
+<mime-type type="application/x-xyzn">
+    <comment>XYZN Point Cloud</comment>
+    <glob pattern="*.xyzn"/>
+</mime-type>
+
+<mime-type type="application/x-xyzrgb">
+    <comment>XYZRGB Point Cloud</comment>
+    <glob pattern="*.xyzrgb"/>
+</mime-type>
+
+</mime-info>

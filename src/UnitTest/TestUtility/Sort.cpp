@@ -26,12 +26,13 @@
 
 #include "UnitTest/TestUtility/Sort.h"
 
-using namespace std;
+namespace open3d {
+namespace unit_test {
 
 // ----------------------------------------------------------------------------
 // Greater than or Equal for sorting Eigen::Vector3d elements.
 // ----------------------------------------------------------------------------
-bool unit_test::Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1) {
+bool Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1) {
     if (v0(0, 0) > v1(0, 0)) return true;
 
     if (v0(0, 0) == v1(0, 0)) {
@@ -48,15 +49,17 @@ bool unit_test::Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1) {
 // ----------------------------------------------------------------------------
 // Sort a vector of Eigen::Vector3d elements.
 // ----------------------------------------------------------------------------
-void unit_test::Sort::Do(vector<Eigen::Vector3d>& v) {
+void Sort::Do(std::vector<Eigen::Vector3d>& v) {
     Eigen::Vector3d temp(0.0, 0.0, 0.0);
     for (size_t i = 0; i < v.size(); i++) {
         for (size_t j = 0; j < v.size(); j++) {
             if (GE(v[i], v[j])) continue;
-
             temp = v[j];
             v[j] = v[i];
             v[i] = temp;
         }
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

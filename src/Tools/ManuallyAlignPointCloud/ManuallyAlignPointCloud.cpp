@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
 
     if (!alignment_filename.empty()) {
         AlignmentSession session;
-        if (io::ReadIJsonConvertible(alignment_filename, session) == false) {
+        if (!io::ReadIJsonConvertible(alignment_filename, session)) {
             return 0;
         }
         session.voxel_size_ = voxel_size;
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
 
     if (!eval_filename.empty()) {
         AlignmentSession session;
-        if (io::ReadIJsonConvertible(eval_filename, session) == false) {
+        if (!io::ReadIJsonConvertible(eval_filename, session)) {
             return 0;
         }
         source_ptr->Transform(session.transformation_);

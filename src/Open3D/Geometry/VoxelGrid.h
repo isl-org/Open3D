@@ -96,8 +96,10 @@ public:
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
     VoxelGrid &Translate(const Eigen::Vector3d &translation,
                          bool relative = true) override;
-    VoxelGrid &Scale(const double scale, bool center = true) override;
-    VoxelGrid &Rotate(const Eigen::Matrix3d &R, bool center = true) override;
+    VoxelGrid &Scale(const double scale,
+                     const Eigen::Vector3d &center) override;
+    VoxelGrid &Rotate(const Eigen::Matrix3d &R,
+                      const Eigen::Vector3d &center) override;
 
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
@@ -144,7 +146,7 @@ public:
     /// valid image location.
     ///
     /// \param depth_map Depth map (Image) used for VoxelGrid carving.
-    /// \param camera_params Input Camera Parameters.
+    /// \param camera_parameter Input Camera Parameters.
     /// \param keep_voxels_outside_image Project all voxels to a valid location.
     VoxelGrid &CarveDepthMap(
             const Image &depth_map,

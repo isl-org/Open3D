@@ -143,7 +143,7 @@ public:
     /// notify the Visualizer that the geometry has been changed and the
     /// Visualizer should be updated accordingly.
     ///
-    /// \param geometry The Geometry object.
+    /// \param geometry_ptr The Geometry object.
     virtual bool AddGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr,
             bool reset_bounding_box = true);
@@ -156,7 +156,7 @@ public:
     /// 3. This function returns FALSE if the geometry to be removed is not
     /// added by AddGeometry
     ///
-    /// \param geometry The Geometry object.
+    /// \param geometry_ptr The Geometry object.
     virtual bool RemoveGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr,
             bool reset_bounding_box = true);
@@ -194,8 +194,8 @@ public:
             bool do_render = true);
     /// \brief Function to capture and save a screen image.
     ///
+    /// \param filename Path to file.
     /// \param do_render Set to `true` to do render.
-    /// \param depth_scale Scale depth value when capturing the depth image.
     void CaptureScreenImage(const std::string &filename = "",
                             bool do_render = true);
     /// Function to capture depth in a float buffer.

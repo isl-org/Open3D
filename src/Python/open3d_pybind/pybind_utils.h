@@ -41,4 +41,5 @@ Dtype ArrayFormatToDtype(const std::string& format);
 std::string DtypeToArrayFormat(const Dtype& dtype);
 
 }  // namespace pybind_utils
+
 }  // namespace open3d

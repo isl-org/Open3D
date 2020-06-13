@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     size_t old_triangle_num = mesh->triangles_.size();
     size_t kt = 0;
     for (size_t i = 0; i < old_vertex_num; i++) {  // old index
-        if (remove_vertex_mask[i] == false) {
+        if (!remove_vertex_mask[i]) {
             mesh->vertices_[k] = mesh->vertices_[i];
             if (has_vert_normal)
                 mesh->vertex_normals_[k] = mesh->vertex_normals_[i];

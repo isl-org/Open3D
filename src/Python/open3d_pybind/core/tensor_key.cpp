@@ -31,7 +31,7 @@
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Core/TensorKey.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_core_tensor_key(py::module& m) {
     py::class_<NoneType> none_type(m, "NoneType");
@@ -77,3 +77,5 @@ void pybind_core_tensor_key(py::module& m) {
                           });
     tensor_key.def_static("index_tensor", &TensorKey::IndexTensor);
 }
+
+}  // namespace open3d

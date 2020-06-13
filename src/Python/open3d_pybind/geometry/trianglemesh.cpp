@@ -32,7 +32,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_trianglemesh(py::module &m) {
     py::class_<geometry::TriangleMesh, PyGeometry3D<geometry::TriangleMesh>,
@@ -225,7 +225,7 @@ void pybind_trianglemesh(py::module &m) {
                  "triangle mesh. ``input``: The input triangle mesh. "
                  "``indices``: "
                  "Indices of vertices to be selected.",
-                 "indices"_a)
+                 "indices"_a, "cleanup"_a = true)
             .def("crop",
                  (std::shared_ptr<geometry::TriangleMesh>(
                          geometry::TriangleMesh::*)(
@@ -288,7 +288,7 @@ void pybind_trianglemesh(py::module &m) {
                  &geometry::TriangleMesh::ClusterConnectedTriangles,
                  "Function that clusters connected triangles, i.e., triangles "
                  "that are connected via edges are assigned the same cluster "
-                 "index.  This function retuns an array that contains the "
+                 "index.  This function returns an array that contains the "
                  "cluster index per triangle, a second array contains the "
                  "number of triangles per cluster, and a third vector contains "
                  "the surface area per cluster.")
@@ -322,7 +322,10 @@ void pybind_trianglemesh(py::module &m) {
                  "and Alexa, "
                  "'As-Rigid-As-Possible Surface Modeling', 2007",
                  "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
-                 "max_iter"_a)
+                 "max_iter"_a,
+                 "energy"_a = geometry::MeshBase::
+                         DeformAsRigidAsPossibleEnergy::Spokes,
+                 "smoothed_alpha"_a = 0.01)
             .def_static("create_from_point_cloud_alpha_shape",
                         [](const geometry::PointCloud &pcd, double alpha) {
                             return geometry::TriangleMesh::
@@ -560,7 +563,10 @@ void pybind_trianglemesh(py::module &m) {
              {"scope", "Mesh property that should be filtered."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "select_by_index",
-            {{"indices", "Indices of vertices to be selected."}});
+            {{"indices", "Indices of vertices to be selected."},
+             {"cleanup",
+              "If true calls number of mesh cleanup functions to remove "
+              "unreferenced vertices and degenerate triangles"}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "crop",
             {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
@@ -615,7 +621,7 @@ void pybind_trianglemesh(py::module &m) {
             m, "TriangleMesh", "simplify_quadric_decimation",
             {{"target_number_of_triangles",
               "The number of triangles that the simplified mesh should have. "
-              "It is not guranteed that this number will be reached."}});
+              "It is not guaranteed that this number will be reached."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "cluster_connected_triangles");
@@ -648,14 +654,19 @@ void pybind_trianglemesh(py::module &m) {
              {"constraint_vertex_positions",
               "Vertex positions used for the constraints."},
              {"max_iter",
-              "Maximum number of iterations to minimize energy functional."}});
+              "Maximum number of iterations to minimize energy functional."},
+             {"energy",
+              "Energy model that is minimized in the deformation process"},
+             {"smoothed_alpha",
+              "trade-off parameter for the smoothed energy functional for the "
+              "regularization term."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_alpha_shape",
             {{"pcd",
               "PointCloud from whicht the TriangleMesh surface is "
               "reconstructed."},
              {"alpha",
-              "Parameter to controll the shape. A very big value will give a "
+              "Parameter to control the shape. A very big value will give a "
               "shape close to the convex hull."},
              {"tetra_mesh",
               "If not None, than uses this to construct the alpha shape. "
@@ -689,8 +700,8 @@ void pybind_trianglemesh(py::module &m) {
               "Specifies the ratio between the diameter of the cube used for "
               "reconstruction and the diameter of the samples' bounding cube."},
              {"linear_fit",
-              "If true, the reconstructor use linear interpolation to estimate "
-              "the positions of iso-vertices."}});
+              "If true, the reconstructor will use linear interpolation to "
+              "estimate the positions of iso-vertices."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
                                     {{"width", "x-directional length."},
                                      {"height", "y-directional length."},
@@ -779,3 +790,5 @@ void pybind_trianglemesh(py::module &m) {
 }
 
 void pybind_trianglemesh_methods(py::module &m) {}
+
+}  // namespace open3d

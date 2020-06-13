@@ -30,12 +30,12 @@
 #include <iostream>
 #include <sstream>
 
-using namespace std;
-
+namespace open3d {
+namespace unit_test {
 // ----------------------------------------------------------------------------
 // Raw data with SIZE = 1021 elements.
 // ----------------------------------------------------------------------------
-vector<uint8_t> unit_test::Raw::data_ = {
+std::vector<uint8_t> Raw::data_ = {
         214, 100, 199, 203, 232, 50,  85,  195, 70,  141, 121, 160, 93,  130,
         242, 233, 162, 182, 36,  154, 4,   61,  34,  205, 39,  102, 33,  27,
         254, 55,  130, 213, 156, 75,  162, 133, 125, 248, 74,  196, 134, 196,
@@ -115,7 +115,7 @@ vector<uint8_t> unit_test::Raw::data_ = {
 // Output range: [0, 255].
 // ----------------------------------------------------------------------------
 template <>
-uint8_t unit_test::Raw::Next() {
+uint8_t Raw::Next() {
     uint8_t output = data_[index];
     index = (index + step) % SIZE;
 
@@ -127,7 +127,7 @@ uint8_t unit_test::Raw::Next() {
 // Output range: [0, 255].
 // ----------------------------------------------------------------------------
 template <>
-int unit_test::Raw::Next() {
+int Raw::Next() {
     int output = (int)data_[index];
     index = (index + step) % SIZE;
 
@@ -139,7 +139,7 @@ int unit_test::Raw::Next() {
 // Output range: [0, 255].
 // ----------------------------------------------------------------------------
 template <>
-size_t unit_test::Raw::Next() {
+size_t Raw::Next() {
     size_t output = (size_t)data_[index];
     index = (index + step) % SIZE;
 
@@ -151,7 +151,7 @@ size_t unit_test::Raw::Next() {
 // Output range: [0, 1].
 // ----------------------------------------------------------------------------
 template <>
-float unit_test::Raw::Next() {
+float Raw::Next() {
     float output = (float)data_[index] / VMAX;
     index = (index + step) % SIZE;
 
@@ -163,9 +163,12 @@ float unit_test::Raw::Next() {
 // Output range: [0, 1].
 // ----------------------------------------------------------------------------
 template <>
-double unit_test::Raw::Next() {
+double Raw::Next() {
     double output = (double)data_[index] / VMAX;
     index = (index + step) % SIZE;
 
     return output;
 }
+
+}  // namespace unit_test
+}  // namespace open3d

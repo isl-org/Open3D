@@ -26,6 +26,12 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(EstimateNormals, DISABLED_FastEigen3x3) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(EstimateNormals, DISABLED_ComputeNormal) { unit_test::NotImplemented(); }
+TEST(EstimateNormals, DISABLED_FastEigen3x3) { NotImplemented(); }
+
+TEST(EstimateNormals, DISABLED_ComputeNormal) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

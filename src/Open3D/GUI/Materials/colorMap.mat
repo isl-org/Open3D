@@ -1,0 +1,39 @@
+material {
+    name : colorMap,
+    shadingModel : unlit,
+    doubleSided : true,
+
+    parameters : [
+        { type : int,       name : coordinateIndex },
+        { type : sampler2d, name : colorMap },
+        // World space
+        { type : float3,    name : bboxMin },
+        { type : float3,    name : bboxMax }
+    ],
+
+    variables : [
+        colorMapUV
+    ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = 3.0;
+
+        float min = materialParams.bboxMin[materialParams.coordinateIndex];
+        float max = materialParams.bboxMax[materialParams.coordinateIndex];
+
+        float4 pos = getWorldFromModelMatrix()*getPosition() + vec4(getWorldOffset(),0.0);
+        float a = pos[materialParams.coordinateIndex];
+        material.colorMapUV.s = (a - min)/(max - min);
+        material.colorMapUV.t = 0.0;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        material.baseColor.rgb = texture(materialParams_colorMap, variable_colorMapUV.st).rgb;
+    }
+}

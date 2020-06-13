@@ -41,19 +41,36 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                  const std::vector<Tensor>& output_tensors,
                  DtypePolicy dtype_policy,
                  const SizeVector& reduction_dims) {
-    if (input_tensors.size() < 1) {
+    // Check the number of inputs and outputs.
+    num_inputs_ = static_cast<int64_t>(input_tensors.size());
+    num_outputs_ = static_cast<int64_t>(output_tensors.size());
+    if (num_inputs_ < 1) {
         utility::LogError("Indexer must have at least one input.");
     }
-    if (output_tensors.size() < 1) {
+    if (num_inputs_ > MAX_INPUTS) {
+        utility::LogError(
+                "Indexer cannot have more than {} inputs, but got {}.",
+                MAX_INPUTS, num_inputs_);
+    }
+    if (num_outputs_ < 1) {
         utility::LogError("Indexer must have at least one input.");
+    }
+    if (num_outputs_ > MAX_OUTPUTS) {
+        utility::LogError(
+                "Indexer cannot have more than {} outputs, but got {}.",
+                MAX_OUTPUTS, num_outputs_);
     }
 
-    // Dtype sanity check and handling.
-    if (dtype_policy == DtypePolicy::CAST ||
-        dtype_policy == DtypePolicy::CAST_INPUTS) {
-        utility::LogError("Unimplemented dtype_policy.");
-    } else if (dtype_policy == DtypePolicy::ASSERT_SAME) {
-        Dtype ref_dtype = input_tensors[0].GetDtype();
+    // Check DtypePolicy.
+    if (dtype_policy == DtypePolicy::ALL_SAME) {
+        const Dtype ref_dtype = input_tensors[0].GetDtype();
+        for (const auto& input_tensor : input_tensors) {
+            if (input_tensor.GetDtype() != ref_dtype) {
+                utility::LogError("Dype mismatch {} != {}.",
+                                  DtypeUtil::ToString(input_tensor.GetDtype()),
+                                  DtypeUtil::ToString(ref_dtype));
+            }
+        }
         for (const auto& output_tensor : output_tensors) {
             if (output_tensor.GetDtype() != ref_dtype) {
                 utility::LogError("Dype mismatch {} != {}.",
@@ -61,6 +78,8 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                                   DtypeUtil::ToString(ref_dtype));
             }
         }
+    } else if (dtype_policy == DtypePolicy::INPUT_SAME) {
+        const Dtype ref_dtype = input_tensors[0].GetDtype();
         for (const auto& input_tensor : input_tensors) {
             if (input_tensor.GetDtype() != ref_dtype) {
                 utility::LogError("Dype mismatch {} != {}.",
@@ -68,8 +87,8 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                                   DtypeUtil::ToString(ref_dtype));
             }
         }
-    } else if (dtype_policy == DtypePolicy::ASSERT_SAME_OR_BOOL_OUT) {
-        Dtype ref_dtype = input_tensors[0].GetDtype();
+    } else if (dtype_policy == DtypePolicy::INPUT_SAME_OUTPUT_BOOL) {
+        const Dtype ref_dtype = input_tensors[0].GetDtype();
         for (const auto& input_tensor : input_tensors) {
             if (input_tensor.GetDtype() != ref_dtype) {
                 utility::LogError("Dype mismatch {} != {}.",
@@ -78,26 +97,24 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
             }
         }
         for (const auto& output_tensor : output_tensors) {
-            Dtype output_dtype = output_tensor.GetDtype();
-            if (output_dtype != Dtype::Bool && output_dtype != ref_dtype) {
+            if (output_tensor.GetDtype() != Dtype::Bool) {
                 utility::LogError("Dype mismatch {} != {}.",
-                                  DtypeUtil::ToString(output_dtype),
-                                  DtypeUtil::ToString(ref_dtype));
-            }
-        }
-    } else if (dtype_policy == DtypePolicy::ASSERT_SAME_INPUTS) {
-        Dtype ref_dtype = input_tensors[0].GetDtype();
-        for (const auto& input_tensor : input_tensors) {
-            if (input_tensor.GetDtype() != ref_dtype) {
-                utility::LogError("Dype mismatch {} != {}.",
-                                  DtypeUtil::ToString(input_tensor.GetDtype()),
-                                  DtypeUtil::ToString(ref_dtype));
+                                  DtypeUtil::ToString(output_tensor.GetDtype()),
+                                  DtypeUtil::ToString(Dtype::Bool));
             }
         }
     } else if (dtype_policy == DtypePolicy::NONE) {
         // Do nothing.
     } else {
         utility::LogError("Unimplemented dtype policy");
+    }
+
+    // Convert to TensorRef.
+    for (int64_t i = 0; i < num_inputs_; ++i) {
+        inputs_[i] = TensorRef(input_tensors[i]);
+    }
+    for (int64_t i = 0; i < num_outputs_; ++i) {
+        outputs_[i] = TensorRef(output_tensors[i]);
     }
 
     // For simplicity, all outputs must have the same shape.
@@ -109,25 +126,6 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                     "but {} != {}",
                     output_tensor.GetShape(), ref_output_shape);
         }
-    }
-
-    // Convert to TensorRef.
-    num_inputs_ = static_cast<int64_t>(input_tensors.size());
-    if (num_inputs_ > MAX_OPERANDS) {
-        utility::LogError("Operation has too many inputs {} > {}", num_inputs_,
-                          MAX_OPERANDS);
-    }
-    for (int64_t i = 0; i < num_inputs_; ++i) {
-        inputs_[i] = TensorRef(input_tensors[i]);
-    }
-
-    num_outputs_ = static_cast<int64_t>(output_tensors.size());
-    if (num_outputs_ > MAX_OPERANDS) {
-        utility::LogError("Operation has too many outputs {} > {}",
-                          num_outputs_, MAX_OPERANDS);
-    }
-    for (int64_t i = 0; i < num_outputs_; ++i) {
-        outputs_[i] = TensorRef(output_tensors[i]);
     }
 
     // Theoretically, reduction can be mixed with broadcasting. For

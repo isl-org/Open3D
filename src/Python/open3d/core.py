@@ -43,11 +43,22 @@ def cast_to_py_tensor(func):
         A function which returns a python object `o3d.Tensor`.
     """
 
+    def _maybe_to_py_tensor(c_tensor):
+        if isinstance(c_tensor, open3d_pybind.Tensor):
+            py_tensor = Tensor([])
+            py_tensor.shallow_copy_from(c_tensor)
+            return py_tensor
+        else:
+            return c_tensor
+
     def wrapped_func(self, *args, **kwargs):
         result = func(self, *args, **kwargs)
-        wrapped_result = Tensor([])
-        wrapped_result.shallow_copy_from(result)
-        return wrapped_result
+        if isinstance(result, list):
+            return [_maybe_to_py_tensor(val) for val in result]
+        elif isinstance(result, tuple):
+            return tuple([_maybe_to_py_tensor(val) for val in result])
+        else:
+            return _maybe_to_py_tensor(result)
 
     return wrapped_func
 
@@ -70,7 +81,7 @@ def _to_o3d_tensor_key(key):
     elif isinstance(key, Tensor):
         return o3d.open3d_pybind.TensorKey.index_tensor(key)
     else:
-        raise TypeError(f"Invalid key type {type(key)}.")
+        raise TypeError("Invalid key type {}.".format(type(key)))
 
 
 class Tensor(open3d_pybind.Tensor):
@@ -99,7 +110,7 @@ class Tensor(open3d_pybind.Tensor):
         elif isinstance(key, (int, slice, list, np.ndarray, Tensor)):
             t = super(Tensor, self)._getitem(_to_o3d_tensor_key(key))
         else:
-            raise TypeError(f"Invalid type {type(key)} for getitem.")
+            raise TypeError("Invalid type {} for getitem.".format(type(key)))
         return t
 
     @cast_to_py_tensor
@@ -110,8 +121,69 @@ class Tensor(open3d_pybind.Tensor):
         elif isinstance(key, (int, slice, list, np.ndarray, Tensor)):
             super(Tensor, self)._setitem(_to_o3d_tensor_key(key), value)
         else:
-            raise TypeError(f"Invalid type {type(key)} for getitem.")
+            raise TypeError("Invalid type {} for getitem.".format(type(key)))
         return self
+
+    @staticmethod
+    @cast_to_py_tensor
+    def empty(shape, dtype, device=o3d.Device("CPU:0")):
+        """
+        Create a tensor with uninitilized values.
+
+        Args:
+            shape (list, tuple, o3d.SizeVector): Shape of the tensor.
+            dtype (o3d.Dtype): Data type of the tensor.
+            device (o3d.Device): Device where the tensor is created.
+        """
+        if not isinstance(shape, o3d.SizeVector):
+            shape = o3d.SizeVector(shape)
+        return super(Tensor, Tensor).empty(shape, dtype, device)
+
+    @staticmethod
+    @cast_to_py_tensor
+    def full(shape, fill_value, dtype, device=o3d.Device("CPU:0")):
+        """
+        Create a tensor with fill with the specified value.
+
+        Args:
+            shape (list, tuple, o3d.SizeVector): Shape of the tensor.
+            fill_value (scalar): The value to be filled.
+            dtype (o3d.Dtype): Data type of the tensor.
+            device (o3d.Device): Device where the tensor is created.
+        """
+        if not isinstance(shape, o3d.SizeVector):
+            shape = o3d.SizeVector(shape)
+        return super(Tensor, Tensor).full(shape, fill_value, dtype, device)
+
+    @staticmethod
+    @cast_to_py_tensor
+    def zeros(shape, dtype, device=o3d.Device("CPU:0")):
+        """
+        Create a tensor with fill with zeros.
+
+        Args:
+            shape (list, tuple, o3d.SizeVector): Shape of the tensor.
+            dtype (o3d.Dtype): Data type of the tensor.
+            device (o3d.Device): Device where the tensor is created.
+        """
+        if not isinstance(shape, o3d.SizeVector):
+            shape = o3d.SizeVector(shape)
+        return super(Tensor, Tensor).zeros(shape, dtype, device)
+
+    @staticmethod
+    @cast_to_py_tensor
+    def ones(shape, dtype, device=o3d.Device("CPU:0")):
+        """
+        Create a tensor with fill with ones.
+
+        Args:
+            shape (list, tuple, o3d.SizeVector): Shape of the tensor.
+            dtype (o3d.Dtype): Data type of the tensor.
+            device (o3d.Device): Device where the tensor is created.
+        """
+        if not isinstance(shape, o3d.SizeVector):
+            shape = o3d.SizeVector(shape)
+        return super(Tensor, Tensor).ones(shape, dtype, device)
 
     @cast_to_py_tensor
     def cuda(self, device_id=0):
@@ -406,7 +478,17 @@ class Tensor(open3d_pybind.Tensor):
         """
         return super(Tensor, self).to(dtype, copy)
 
+    @cast_to_py_tensor
+    def nonzero(self, as_tuple=False):
+        if as_tuple:
+            return super(Tensor, self)._non_zero_numpy()
+        else:
+            return super(Tensor, self)._non_zero()
+
     def __add__(self, value):
+        return self.add(value)
+
+    def __radd__(self, value):
         return self.add(value)
 
     def __iadd__(self, value):
@@ -415,10 +497,16 @@ class Tensor(open3d_pybind.Tensor):
     def __sub__(self, value):
         return self.sub(value)
 
+    def __rsub__(self, value):
+        return o3d.Tensor.full((), value, self.dtype, self.device) - self
+
     def __isub__(self, value):
         return self.sub_(value)
 
     def __mul__(self, value):
+        return self.mul(value)
+
+    def __rmul__(self, value):
         return self.mul(value)
 
     def __imul__(self, value):
@@ -428,6 +516,9 @@ class Tensor(open3d_pybind.Tensor):
         # True div and floor div are the same for Tensor.
         return self.div(value)
 
+    def __rtruediv__(self, value):
+        return o3d.Tensor.full((), value, self.dtype, self.device) / self
+
     def __itruediv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
@@ -435,6 +526,10 @@ class Tensor(open3d_pybind.Tensor):
     def __floordiv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div(value)
+
+    def __rfloordiv__(self, value):
+        # True div and floor div are the same for Tensor.
+        return o3d.Tensor.full((), value, self.dtype, self.device) // self
 
     def __ifloordiv__(self, value):
         # True div and floor div are the same for Tensor.
@@ -449,7 +544,7 @@ class Tensor(open3d_pybind.Tensor):
             return o3d.SizeVector(dim)
         else:
             raise TypeError(
-                f"dim must be int, list or tuple, but was {type(dim)}.")
+                "dim must be int, list or tuple, but was {}.".format(type(dim)))
 
     @cast_to_py_tensor
     def sum(self, dim=None, keepdim=False):
@@ -460,6 +555,16 @@ class Tensor(open3d_pybind.Tensor):
         """
         dim = self._reduction_dim_to_size_vector(dim)
         return super(Tensor, self).sum(dim, keepdim)
+
+    @cast_to_py_tensor
+    def mean(self, dim=None, keepdim=False):
+        """
+        Returns the mean along each the specified dimension `dim`. If `dim` is
+        None, the reduction happens for all elements of the tensor. If `dim` is
+        a list or tuple, the reduction happens in all of the specified `dim`.
+        """
+        dim = self._reduction_dim_to_size_vector(dim)
+        return super(Tensor, self).mean(dim, keepdim)
 
     @cast_to_py_tensor
     def prod(self, dim=None, keepdim=False):
@@ -513,7 +618,7 @@ class Tensor(open3d_pybind.Tensor):
         elif isinstance(dim, int):
             dim = self._reduction_dim_to_size_vector([dim])
         else:
-            raise TypeError(f"dim must be int or None, but got {dim}")
+            raise TypeError("dim must be int or None, but got {}".format(dim))
         return super(Tensor, self).argmin_(dim)
 
     @cast_to_py_tensor
@@ -531,7 +636,7 @@ class Tensor(open3d_pybind.Tensor):
         elif isinstance(dim, int):
             dim = self._reduction_dim_to_size_vector([dim])
         else:
-            raise TypeError(f"dim must be int or None, but got {dim}")
+            raise TypeError("dim must be int or None, but got {}".format(dim))
         return super(Tensor, self).argmax_(dim)
 
     def __lt__(self, value):

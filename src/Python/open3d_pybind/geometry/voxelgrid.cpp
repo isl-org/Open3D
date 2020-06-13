@@ -36,7 +36,7 @@
 
 #include <sstream>
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_voxelgrid(py::module &m) {
     py::class_<geometry::Voxel, std::shared_ptr<geometry::Voxel>> voxel(
@@ -228,3 +228,5 @@ void pybind_voxelgrid(py::module &m) {
 }
 
 void pybind_voxelgrid_methods(py::module &m) {}
+
+}  // namespace open3d

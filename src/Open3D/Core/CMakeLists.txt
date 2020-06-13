@@ -1,6 +1,8 @@
 set (KERNEL_SRC
     Kernel/IndexGetSet.cpp
     Kernel/IndexGetSetCPU.cpp
+    Kernel/NonZero.cpp
+    Kernel/NonZeroCPU.cpp
     Kernel/UnaryEW.cpp
     Kernel/UnaryEWCPU.cpp
     Kernel/BinaryEW.cpp
@@ -11,6 +13,7 @@ set (KERNEL_SRC
 
 set (KERNEL_CUDA_SRC
     Kernel/IndexGetSetCUDA.cu
+    Kernel/NonZeroCUDA.cu
     Kernel/UnaryEWCUDA.cu
     Kernel/BinaryEWCUDA.cu
     Kernel/ReductionCUDA.cu
@@ -50,8 +53,9 @@ endif()
 
 # Create object library
 add_library(Core OBJECT ${ALL_CORE_SRC})
-set_target_properties(Core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+open3d_set_global_properties(Core)
+open3d_link_3rdparty_libraries(Core)
 
 if (BUILD_CUDA_MODULE)
-    target_include_directories(Core PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    target_include_directories(Core PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()

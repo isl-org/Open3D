@@ -64,7 +64,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || target.HasNormals() == false) return 0.0;
+    if (corres.empty() || !target.HasNormals()) return 0.0;
     double err = 0.0, r;
     for (const auto &c : corres) {
         r = (source.points_[c[0]] - target.points_[c[1]])
@@ -78,7 +78,7 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || target.HasNormals() == false)
+    if (corres.empty() || !target.HasNormals())
         return Eigen::Matrix4d::Identity();
 
     auto compute_jacobian_and_residual = [&](int i, Eigen::Vector6d &J_r,

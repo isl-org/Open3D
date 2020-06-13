@@ -1,9 +1,6 @@
-# Option 1: Do not define "PYTHON_EXECUTABLE", but run `cmake ..` within your
-#           virtual environment. CMake will pick up the python executable in the
-#           virtual environment.
-# Option 2: You can also define `cmake -DPYTHON_EXECUTABLE` to specify a python
-#           executable.
-find_package( PythonExecutable REQUIRED ) # invokes the module in 3rdparty/CMake
+if (NOT PYTHON_EXECUTABLE)
+    message(FATAL_ERROR "PYTHON_EXECUTABLE should be set in top level CMakeLists.txt")
+endif()
 
 # Detect whether `npm` is installed. Jupyter support will only be enabled if
 # `npm` is found.
@@ -62,7 +59,7 @@ target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
     ${PYBIND11_INCLUDE_DIR}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
-
+open3d_set_global_properties(${PACKAGE_NAME})
 
 # The Python headers won't be included outside the project, so it is okay to
 # use the target_compile_definitions approach. Otherwise, use configure_file.
@@ -71,6 +68,10 @@ if (BUILD_AZURE_KINECT)
 endif()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
+if (WIN32)
+    target_link_options(${PACKAGE_NAME} PUBLIC "/force:multiple")
+endif()
+
 if (${PYTHON_VERSION_MAJOR} EQUAL 2)
     target_compile_definitions(${PACKAGE_NAME} PRIVATE PYTHON_2_FALLBACK)
 endif ()
@@ -164,7 +165,8 @@ add_custom_target(install-pip-package
 # FOR DEBUGGING ONLY Use `make install-python-package` to build and install
 # python package in the current python environment. This is substantially
 # faster than `make install-pip-package`. However this approach does not create
-# wheel or egg files thus not suitable for deployment.
+# wheel or egg files and does not take care of dependencies thus not suitable
+# for deployment.
 # Ref: https://stackoverflow.com/a/33791008/1255535
 add_custom_target(install-python-package
     COMMAND ${PYTHON_EXECUTABLE} setup.py install --single-version-externally-managed --root=/

@@ -103,7 +103,7 @@ bool OctreeInternalNode::ConvertToJsonValue(Json::Value& value) const {
 }
 
 bool OctreeInternalNode::ConvertFromJsonValue(const Json::Value& value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "ConvertFromJsonValue read JSON failed: unsupported json "
                 "format.");
@@ -167,7 +167,7 @@ bool OctreeColorLeafNode::ConvertToJsonValue(Json::Value& value) const {
 }
 
 bool OctreeColorLeafNode::ConvertFromJsonValue(const Json::Value& value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "OctreeColorLeafNode read JSON failed: unsupported json "
                 "format.");
@@ -379,12 +379,13 @@ Octree& Octree::Translate(const Eigen::Vector3d& translation, bool relative) {
     return *this;
 }
 
-Octree& Octree::Scale(const double scale, bool center) {
+Octree& Octree::Scale(const double scale, const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-Octree& Octree::Rotate(const Eigen::Matrix3d& R, bool center) {
+Octree& Octree::Rotate(const Eigen::Matrix3d& R,
+                       const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }
@@ -587,7 +588,7 @@ bool Octree::ConvertToJsonValue(Json::Value& value) const {
 }
 
 bool Octree::ConvertFromJsonValue(const Json::Value& value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "Octree read JSON failed: unsupported json format.");
         return false;

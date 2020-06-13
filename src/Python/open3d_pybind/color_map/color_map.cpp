@@ -33,7 +33,7 @@
 #include "open3d_pybind/color_map/color_map.h"
 #include "open3d_pybind/docstring.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_color_map_classes(py::module &m) {
     py::class_<color_map::ColorMapOptimizationOption>
@@ -90,14 +90,14 @@ void pybind_color_map_classes(py::module &m) {
                     "Select a proper value to include necessary points while "
                     "ignoring unwanted points such as the background.")
             .def_readwrite(
-                    "depth_threshold_for_visiblity_check",
+                    "depth_threshold_for_visibility_check",
                     &color_map::ColorMapOptimizationOption::
-                            depth_threshold_for_visiblity_check_,
+                            depth_threshold_for_visibility_check_,
                     "float: (Default ``0.03``) Parameter for point visibility "
                     "check. When the difference of a point's depth "
                     "value in the RGB-D image and the point's depth "
                     "value in the 3D mesh is greater than "
-                    "``depth_threshold_for_visiblity_check``, the "
+                    "``depth_threshold_for_visibility_check``, the "
                     "point is marked as invisible to the camera producing "
                     "the RGB-D image.")
             .def_readwrite(
@@ -153,7 +153,7 @@ void pybind_color_map_classes(py::module &m) {
                     "- non_rigid_anchor_point_weight: {}\n"
                     "- maximum_iteration: {}\n"
                     "- maximum_allowable_depth: {}\n"
-                    "- depth_threshold_for_visiblity_check: {}\n"
+                    "- depth_threshold_for_visibility_check: {}\n"
                     "- depth_threshold_for_discontinuity_check: {}\n"
                     "- half_dilation_kernel_size_for_discontinuity_map: {}\n"
                     "- image_boundary_margin: {}\n"
@@ -163,7 +163,7 @@ void pybind_color_map_classes(py::module &m) {
                     to.non_rigid_anchor_point_weight_,
                     to.maximum_iteration_,
                     to.maximum_allowable_depth_,
-                    to.depth_threshold_for_visiblity_check_,
+                    to.depth_threshold_for_visibility_check_,
                     to.depth_threshold_for_discontinuity_check_,
                     to.half_dilation_kernel_size_for_discontinuity_map_,
                     to.image_boundary_margin_,
@@ -196,3 +196,5 @@ void pybind_color_map(py::module &m) {
     pybind_color_map_classes(m_submodule);
     pybind_color_map_methods(m_submodule);
 }
+
+}  // namespace open3d

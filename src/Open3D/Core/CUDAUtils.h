@@ -28,7 +28,7 @@
 /// \brief Common CUDA utilities
 ///
 /// CUDAUtils.h may be included from CPU-only code.
-/// Use #ifdef __CUDACC__ to mark conitional compilation
+/// Use \#ifdef __CUDACC__ to mark conitional compilation
 
 #pragma once
 

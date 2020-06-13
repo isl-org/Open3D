@@ -33,8 +33,8 @@
 #include "Core/CoreTest.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
+namespace unit_test {
 
 class IndexerPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Indexer,
@@ -183,3 +183,6 @@ TEST_P(IndexerPermuteDevices, GetPointers) {
     EXPECT_EQ(indexer.GetOutputPtr(4), output_base_ptr + 4 * dtype_byte_size);
     EXPECT_EQ(indexer.GetOutputPtr(5), output_base_ptr + 5 * dtype_byte_size);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

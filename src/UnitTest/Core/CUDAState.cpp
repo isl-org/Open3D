@@ -29,13 +29,21 @@
 #include "Open3D/Core/CUDAState.cuh"
 #include "TestUtility/UnitTest.h"
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
+namespace unit_test {
 
 TEST(CUDAState, InitState) {
     std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
     utility::LogInfo("Number of CUDA devices: {}", cuda_state->GetNumDevices());
-    utility::LogInfo("P2PEnabled: {}", cuda_state->GetP2PEnabled());
+    for (int i = 0; i < cuda_state->GetNumDevices(); ++i) {
+        for (int j = 0; j < cuda_state->GetNumDevices(); ++j) {
+            utility::LogInfo("P2PEnabled {}->{}: {}", i, j,
+                             cuda_state->GetP2PEnabled()[i][j]);
+        }
+    }
 }
+
+}  // namespace unit_test
+}  // namespace open3d
 
 #endif

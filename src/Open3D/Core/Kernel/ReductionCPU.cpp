@@ -240,7 +240,7 @@ void ReductionCPU(const Tensor& src,
                   bool keepdim,
                   ReductionOpCode op_code) {
     if (regular_reduce_ops.find(op_code) != regular_reduce_ops.end()) {
-        DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME;
+        DtypePolicy dtype_policy = DtypePolicy::ALL_SAME;
         Indexer indexer({src}, dst, dtype_policy, dims);
         CPUReductionEngine re(indexer);
         DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
@@ -271,7 +271,7 @@ void ReductionCPU(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport Max.");
                     } else {
-                        identity = std::numeric_limits<scalar_t>::min();
+                        identity = std::numeric_limits<scalar_t>::lowest();
                         dst.Fill(identity);
                         re.Run(CPUMaxReductionKernel<scalar_t>, identity);
                     }
@@ -285,7 +285,7 @@ void ReductionCPU(const Tensor& src,
         if (dst.GetDtype() != Dtype::Int64) {
             utility::LogError("Arg-reduction must have int64 output dtype.");
         }
-        DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME_INPUTS;
+        DtypePolicy dtype_policy = DtypePolicy::INPUT_SAME;
 
         // Accumulation buffer to store temporary min/max values.
         Tensor dst_acc(dst.GetShape(), src.GetDtype(), src.GetDevice());
@@ -310,7 +310,7 @@ void ReductionCPU(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport ArgMax.");
                     } else {
-                        identity = std::numeric_limits<scalar_t>::min();
+                        identity = std::numeric_limits<scalar_t>::lowest();
                         dst_acc.Fill(identity);
                         re.Run(CPUArgMaxReductionKernel<scalar_t>, identity);
                     }

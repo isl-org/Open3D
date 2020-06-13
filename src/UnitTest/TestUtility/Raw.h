@@ -30,7 +30,9 @@
 #include <string>
 #include <vector>
 
+namespace open3d {
 namespace unit_test {
+
 // Class for "generating" data.
 class Raw {
 public:
@@ -89,4 +91,6 @@ float Raw::Next();
 // Output range: [0, 1].
 template <>
 double Raw::Next();
+
 }  // namespace unit_test
+}  // namespace open3d

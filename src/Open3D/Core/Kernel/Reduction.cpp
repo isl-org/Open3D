@@ -50,7 +50,7 @@ void Reduction(const Tensor& src,
                              [](bool seen) { return seen; })) {
                 utility::LogError(
                         "Arg-reduction can only have 1 or all reduction "
-                        "dimentions. However, dims = {}.",
+                        "dimensions. However, dims = {}.",
                         dims);
             }
         }

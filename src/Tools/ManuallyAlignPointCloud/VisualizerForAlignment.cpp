@@ -255,7 +255,7 @@ bool VisualizerForAlignment::SaveSessionToFile(const std::string &filename) {
 }
 
 bool VisualizerForAlignment::LoadSessionFromFile(const std::string &filename) {
-    if (io::ReadIJsonConvertible(filename, alignment_session_) == false) {
+    if (!io::ReadIJsonConvertible(filename, alignment_session_)) {
         return false;
     }
     source_visualizer_.GetPickedPoints() = alignment_session_.source_indices_;

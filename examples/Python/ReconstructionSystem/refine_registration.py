@@ -14,8 +14,8 @@ sys.path.append(".")
 from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 
-def update_posegrph_for_scene(s, t, transformation, information, odometry,
-                              pose_graph):
+def update_posegraph_for_scene(s, t, transformation, information, odometry,
+                               pose_graph):
     if t == s + 1:  # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
@@ -46,7 +46,7 @@ def multiscale_icp(source,
     for i, scale in enumerate(range(len(max_iter))):  # multi-scale approach
         iter = max_iter[scale]
         distance_threshold = config["voxel_size"] * 1.4
-        print("voxel_size %f" % voxel_size[scale])
+        print("voxel_size {}".format(voxel_size[scale]))
         source_down = source.voxel_down_sample(voxel_size[scale])
         target_down = target.voxel_down_sample(voxel_size[scale])
         if config["icp_method"] == "point_to_point":
@@ -166,7 +166,7 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
     odometry = np.identity(4)
     pose_graph_new.nodes.append(o3d.registration.PoseGraphNode(odometry))
     for r in matching_results:
-        (odometry, pose_graph_new) = update_posegrph_for_scene(
+        (odometry, pose_graph_new) = update_posegraph_for_scene(
             matching_results[r].s, matching_results[r].t,
             matching_results[r].transformation, matching_results[r].information,
             odometry, pose_graph_new)

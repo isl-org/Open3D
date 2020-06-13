@@ -40,13 +40,6 @@ int main(int argc, char **argv) {
     utility::LogWarning("This Warning message should be visible, {} {:.2f}",
                         "format:", 0.42001);
 
-    utility::LogDebugf("This Debug message should be visible, %s %.2f",
-                       "formatf:", 0.42001);
-    utility::LogInfof("This Info message should be visible, %s %.2f",
-                      "formatf:", 0.42001);
-    utility::LogWarningf("This Warning message should be visible, %s %.2f",
-                         "formatf:", 0.42001);
-
     utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
 
     utility::LogDebug("This Debug message should NOT be visible, {} {:.2f}",

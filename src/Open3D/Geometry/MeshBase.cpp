@@ -82,14 +82,15 @@ MeshBase &MeshBase::Translate(const Eigen::Vector3d &translation,
     return *this;
 }
 
-MeshBase &MeshBase::Scale(const double scale, bool center) {
+MeshBase &MeshBase::Scale(const double scale, const Eigen::Vector3d &center) {
     ScalePoints(scale, vertices_, center);
     return *this;
 }
 
-MeshBase &MeshBase::Rotate(const Eigen::Matrix3d &R, bool center) {
+MeshBase &MeshBase::Rotate(const Eigen::Matrix3d &R,
+                           const Eigen::Vector3d &center) {
     RotatePoints(R, vertices_, center);
-    RotateNormals(R, vertex_normals_, center);
+    RotateNormals(R, vertex_normals_);
     return *this;
 }
 

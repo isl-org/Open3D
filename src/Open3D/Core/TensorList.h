@@ -55,6 +55,7 @@ public:
     /// (8, 8, 8) for a list of voxel blocks.
     /// \param dtype Type for the contained tensors. e.g. Dtype::Int64.
     /// \param device Device to store the contained tensors. e.g. "CPU:0".
+    /// \param size Size of 0-th dimension.
     TensorList(const SizeVector& shape,
                Dtype dtype,
                const Device& device = Device("CPU:0"),
@@ -90,6 +91,7 @@ public:
     /// Constructor from a raw internal tensor.
     /// The inverse of AsTensor().
     ///
+    /// \param internal_tensor raw tensor
     /// \param inplace:
     /// - If true (default), reuse the raw internal tensor. The input tensor
     /// must be contiguous.

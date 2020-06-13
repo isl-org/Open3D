@@ -36,13 +36,18 @@ list(APPEND open3d_tf_ops_SOURCES
         )
 
 add_library( open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES} )
+open3d_set_global_properties(open3d_tf_ops)
+open3d_set_global_properties(open3d_tf_ops)
 
 set_target_properties( open3d_tf_ops PROPERTIES PREFIX "" ) # do not add 'lib' prefix
 set_target_properties( open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug" )
 # Use definitions from tensorflow. This is usually just a definition for the GLIBC ABI.
-foreach( definition IN LISTS Tensorflow_DEFINITIONS )
-	set_target_properties( open3d_tf_ops PROPERTIES COMPILE_DEFINITIONS "${definition}" )
-endforeach(definition)
+
+set( compile_definitions "${Tensorflow_DEFINITIONS}" )
+if ( CUDA_ENABLED )
+    list(APPEND compile_definitions "BUILD_CUDA_MODULE" )
+endif ()
+set_target_properties( open3d_tf_ops PROPERTIES COMPILE_DEFINITIONS "${compile_definitions}" )
 
 # enable c++11
 set_target_properties( open3d_tf_ops PROPERTIES
@@ -58,8 +63,11 @@ target_include_directories( open3d_tf_ops PRIVATE
     ${parallelstl_INCLUDE_DIR}
     )
 # silence warnings caused by tensorflow's Eigen
+# Travis has a different version of protobuf in /usr/local/include
+# TBB is in /usr/local/include, so it needs to be after Tensorflow
 target_include_directories( open3d_tf_ops SYSTEM PRIVATE
     ${Tensorflow_INCLUDE_DIR}
+    ${TBB_INCLUDE_DIR}
     )
 if ( CUDA_ENABLED )
     target_include_directories( open3d_tf_ops PRIVATE
@@ -72,6 +80,5 @@ target_link_libraries( open3d_tf_ops PRIVATE
     ${TBB_LIBRARY}
     ${TBB_MALLOC_LIBRARY}
     ${Tensorflow_FRAMEWORK_LIB}
-    )
-
-
+    ${FMT_TARGET}
+)

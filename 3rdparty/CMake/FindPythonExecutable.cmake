@@ -3,10 +3,15 @@
 #           virtual environment.
 # Option 2: You can also define `cmake -DPYTHON_EXECUTABLE` to specify a python
 #           executable.
+find_program(PYTHON_IN_PATH "python")
 if (NOT PYTHON_EXECUTABLE)
-    # find_program will returns the python executable in current PATH, which
-    # works with virtualenv
-    find_program(PYTHON_IN_PATH "python")
-    set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
+    set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH} CACHE FILEPATH "Python exectuable to use")
+    message(STATUS "Using python from PATH: ${PYTHON_EXECUTABLE}")
+else()
+    message(STATUS "Using python from PYTHON_EXECUTABLE variable: ${PYTHON_EXECUTABLE}")
+    if ("${PYTHON_EXECUTABLE}" STREQUAL "${PYTHON_IN_PATH}")
+        message(STATUS "(PYTHON_EXECUTABLE matches python from PATH)")
+    else()
+        message(STATUS "(PYTHON_EXECUTABLE does NOT match python from PATH: ${PYTHON_IN_PATH})")
+    endif()
 endif()
-message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")

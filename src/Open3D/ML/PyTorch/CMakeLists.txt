@@ -54,6 +54,7 @@ set_target_properties( open3d_torch_ops PROPERTIES
                        )
 
 target_include_directories( open3d_torch_ops PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
     ${TBB_INCLUDE_DIR}
     ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
@@ -70,5 +71,7 @@ target_link_libraries( open3d_torch_ops PRIVATE
     ${TBB_LIBRARY}
     ${TBB_MALLOC_LIBRARY}
     ${TORCH_LIBRARIES}
+    ${EIGEN3_TARGET}
+    ${FMT_TARGET}
     )
 
