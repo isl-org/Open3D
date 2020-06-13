@@ -1,4 +1,4 @@
-name: macOS CI
+name: Ubuntu CI
 
 on:
   push:
@@ -8,17 +8,18 @@ on:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
 jobs:
-  macos:
-    runs-on: macos-latest
+  ubuntu:
+    runs-on: ubuntu-18.04
     strategy:
       fail-fast: false
       matrix:
-        BUILD_DEPENDENCY_FROM_SOURCE: [ON] # TODO: re-enable "OFF", probably in Travis
+        SHARED: [ON, OFF]
+        BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
         BUILD_TENSORFLOW_OPS: [ON, OFF]
     env:
+      SHARED: ${{ matrix.SHARED }}
       BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
       BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_TENSORFLOW_OPS }}
-      SHARED: OFF
       NPROC: 2
     steps:
     - name: Checkout source code
@@ -28,13 +29,11 @@ jobs:
     - name: Set up Python version
       uses: actions/setup-python@v2
       with:
-        python-version: 3.5  # Python 2 is deprecated
+        python-version: 3.5
+    # Pre-installed 18.04 packages: https://git.io/JfHmW
     - name: Install dependencies
       run: |
-        brew update
-        brew upgrade python || true
-        ./util/scripts/install-deps-osx.sh
-        brew cleanup
+        ./util/scripts/setup-linux.sh
     - name: Config and build
       run: |
-        ./util/scripts/run-travis.sh
+        ./util/scripts/run-ci.sh

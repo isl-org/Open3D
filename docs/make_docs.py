@@ -33,7 +33,6 @@ from __future__ import print_function
 import argparse
 import subprocess
 import sys
-import multiprocessing
 import importlib
 import os
 from inspect import getmembers, isbuiltin, isclass, ismodule
@@ -277,8 +276,6 @@ class SphinxDocsBuilder:
                 "version=" + release_version,
                 "-D",
                 "release=" + release_version,
-                "-j",
-                str(multiprocessing.cpu_count()),
                 ".",
                 build_dir,
             ]
@@ -287,8 +284,6 @@ class SphinxDocsBuilder:
                 "sphinx-build",
                 "-b",
                 "html",
-                "-j",
-                str(multiprocessing.cpu_count()),
                 ".",
                 build_dir,
             ]
