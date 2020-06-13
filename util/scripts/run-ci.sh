@@ -87,6 +87,7 @@ date
 reportRun make -j$NPROC
 reportRun make install -j$NPROC
 reportRun make install-pip-package -j$NPROC
+reportRun make VERBOSE=1 install-pip-package
 echo
 
 echo "running Open3D unit tests..."
