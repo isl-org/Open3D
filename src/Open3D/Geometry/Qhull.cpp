@@ -25,7 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/Qhull.h"
+#include "Open3D/Geometry/TetraMesh.h"
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Utility/Console.h"
 
 #include "libqhullcpp/PointCoordinates.h"
 #include "libqhullcpp/Qhull.h"
@@ -36,9 +38,10 @@
 namespace open3d {
 namespace geometry {
 
-std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
-        const std::vector<Eigen::Vector3d>& points) {
+std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
+Qhull::ComputeConvexHull(const std::vector<Eigen::Vector3d>& points) {
     auto convex_hull = std::make_shared<TriangleMesh>();
+    std::vector<size_t> pt_map;
 
     std::vector<double> qhull_points_data(points.size() * 3);
     for (size_t pidx = 0; pidx < points.size(); ++pidx) {
@@ -78,10 +81,11 @@ std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
 
             if (inserted_vertices.count(vidx) == 0) {
                 inserted_vertices.insert(vidx);
-                vert_map[vidx] = convex_hull->vertices_.size();
+                vert_map[vidx] = int(convex_hull->vertices_.size());
                 double* coords = p.coordinates();
                 convex_hull->vertices_.push_back(
                         Eigen::Vector3d(coords[0], coords[1], coords[2]));
+                pt_map.push_back(vidx);
             }
         }
 
@@ -94,7 +98,87 @@ std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
         triangle(2) = vert_map[triangle(2)];
     }
 
-    return convex_hull;
+    return std::make_tuple(convex_hull, pt_map);
+}
+
+std::tuple<std::shared_ptr<TetraMesh>, std::vector<size_t>>
+Qhull::ComputeDelaunayTetrahedralization(
+        const std::vector<Eigen::Vector3d>& points) {
+    typedef decltype(TetraMesh::tetras_)::value_type Vector4i;
+    auto delaunay_triangulation = std::make_shared<TetraMesh>();
+    std::vector<size_t> pt_map;
+
+    if (points.size() < 4) {
+        utility::LogError(
+                "[ComputeDelaunayTriangulation3D] not enough points to create "
+                "a tetrahedral mesh.");
+    }
+
+    // qhull cannot deal with this case
+    if (points.size() == 4) {
+        delaunay_triangulation->vertices_ = points;
+        delaunay_triangulation->tetras_.push_back(Vector4i(0, 1, 2, 3));
+        return std::make_tuple(delaunay_triangulation, pt_map);
+    }
+
+    std::vector<double> qhull_points_data(points.size() * 3);
+    for (size_t pidx = 0; pidx < points.size(); ++pidx) {
+        const auto& pt = points[pidx];
+        qhull_points_data[pidx * 3 + 0] = pt(0);
+        qhull_points_data[pidx * 3 + 1] = pt(1);
+        qhull_points_data[pidx * 3 + 2] = pt(2);
+    }
+
+    orgQhull::PointCoordinates qhull_points(3, "");
+    qhull_points.append(qhull_points_data);
+
+    orgQhull::Qhull qhull;
+    qhull.runQhull(qhull_points.comment().c_str(), qhull_points.dimension(),
+                   qhull_points.count(), qhull_points.coordinates(),
+                   "d Qbb Qt");
+
+    orgQhull::QhullFacetList facets = qhull.facetList();
+    delaunay_triangulation->tetras_.resize(facets.count());
+    std::unordered_map<int, int> vert_map;
+    std::unordered_set<int> inserted_vertices;
+    int tidx = 0;
+    for (orgQhull::QhullFacetList::iterator it = facets.begin();
+         it != facets.end(); ++it) {
+        if (!(*it).isGood()) continue;
+
+        orgQhull::QhullFacet f = *it;
+        orgQhull::QhullVertexSet vSet = f.vertices();
+        int tetra_subscript = 0;
+        for (orgQhull::QhullVertexSet::iterator vIt = vSet.begin();
+             vIt != vSet.end(); ++vIt) {
+            orgQhull::QhullVertex v = *vIt;
+            orgQhull::QhullPoint p = v.point();
+
+            int vidx = p.id();
+            delaunay_triangulation->tetras_[tidx](tetra_subscript) = vidx;
+            tetra_subscript++;
+
+            if (inserted_vertices.count(vidx) == 0) {
+                inserted_vertices.insert(vidx);
+                vert_map[vidx] = int(delaunay_triangulation->vertices_.size());
+                double* coords = p.coordinates();
+                delaunay_triangulation->vertices_.push_back(
+                        Eigen::Vector3d(coords[0], coords[1], coords[2]));
+                pt_map.push_back(vidx);
+            }
+        }
+
+        tidx++;
+    }
+
+    for (auto& tetra : delaunay_triangulation->tetras_) {
+        tetra(0) = vert_map[tetra(0)];
+        tetra(1) = vert_map[tetra(1)];
+        tetra(2) = vert_map[tetra(2)];
+        tetra(3) = vert_map[tetra(3)];
+    }
+
+    return std::make_tuple(delaunay_triangulation, pt_map);
 }
 
 }  // namespace geometry

@@ -20,21 +20,19 @@ def draw_geometries_with_back_face(geometries):
 
 
 if __name__ == "__main__":
+    # Initialize a HalfEdgeTriangleMesh from TriangleMesh
     mesh = o3d.io.read_triangle_mesh("../../TestData/sphere.ply")
-    mesh = mesh.crop([-1, -1, -1], [1, 0.6, 1])
-    # mesh.purge()
-    mesh = o3d.geometry.HalfEdgeTriangleMesh.create_from_mesh(mesh)
-    mesh.compute_vertex_normals()
-    num_vertices = len(mesh.vertices)
-    draw_geometries_with_back_face([mesh])
+    bbox = o3d.geometry.AxisAlignedBoundingBox()
+    bbox.min_bound = [-1, -1, -1]
+    bbox.max_bound = [1, 0.6, 1]
+    mesh = mesh.crop(bbox)
+    het_mesh = o3d.geometry.HalfEdgeTriangleMesh.create_from_triangle_mesh(mesh)
+    draw_geometries_with_back_face([het_mesh])
 
-    # Find a boundary vertex
-    boundaries = mesh.get_boundaries()
-    assert len(boundaries) == 1
-    boundary_vertices = boundaries[0]
-
-    # Colorize boundary vertices
-    vertex_colors = 0.75 * np.ones((num_vertices, 3))
-    vertex_colors[boundary_vertices, :] = np.array([1, 0, 0])
-    mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
-    draw_geometries_with_back_face([mesh])
+    # Colorize boundary vertices to red
+    vertex_colors = 0.75 * np.ones((len(het_mesh.vertices), 3))
+    for boundary in het_mesh.get_boundaries():
+        for vertex_id in boundary:
+            vertex_colors[vertex_id] = [1, 0, 0]
+    het_mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
+    draw_geometries_with_back_face([het_mesh])

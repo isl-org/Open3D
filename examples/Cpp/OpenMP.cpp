@@ -70,7 +70,7 @@ void svd_task() {
 }
 
 void TestMatrixMultiplication(int argc, char **argv) {
-    int i = 0, nRet = 0, nSum = 0, nStart = NUM_START, nEnd = NUM_END;
+    int i = 0, nSum = 0, nStart = NUM_START, nEnd = NUM_END;
     int nThreads = 1, nTmp = nStart + nEnd;
     unsigned uTmp = (unsigned(nEnd - nStart + 1) * unsigned(nTmp)) / 2;
     int nSumCalc = uTmp;
@@ -80,9 +80,9 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
 #ifdef _OPENMP
-    utility::PrintInfo("OpenMP is supported.\n");
+    utility::LogInfo("OpenMP is supported.");
 #else
-    utility::PrintInfo("OpenMP is not supported.\n");
+    utility::LogInfo("OpenMP is not supported.");
 #endif
 
 #ifdef _OPENMP
@@ -105,36 +105,33 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
     if (nThreads == NUM_THREADS) {
-        utility::PrintInfo("%d OpenMP threads were used.\n", NUM_THREADS);
-        nRet = 0;
+        utility::LogInfo("{:d} OpenMP threads were used.", NUM_THREADS);
     } else {
-        utility::PrintInfo("Expected %d OpenMP threads, but %d were used.\n",
-                           NUM_THREADS, nThreads);
-        nRet = 1;
+        utility::LogInfo("Expected {:d} OpenMP threads, but {:d} were used.",
+                         NUM_THREADS, nThreads);
     }
 
     if (nSum != nSumCalc) {
-        utility::PrintInfo(
-                "The sum of %d through %d should be %d, "
-                "but %d was reported!\n",
+        utility::LogInfo(
+                "The sum of {:d} through {:d} should be {:d}, "
+                "but {:d} was reported!",
                 NUM_START, NUM_END, nSumCalc, nSum);
-        nRet = 1;
     } else {
-        utility::PrintInfo("The sum of %d through %d is %d\n", NUM_START,
-                           NUM_END, nSum);
+        utility::LogInfo("The sum of {:d} through {:d} is {:d}", NUM_START,
+                         NUM_END, nSum);
     }
 
     int test_thread = 256;
     if (argc > 1) {
         test_thread = std::stoi(argv[1]);
     }
-    open3d::utility::PrintInfo("Benchmark multithreading up to %d threads.\n",
-                               test_thread);
+    open3d::utility::LogInfo("Benchmark multithreading up to {:d} threads.",
+                             test_thread);
 
     for (int i = 1; i <= test_thread; i *= 2) {
-        char buff[1024];
-        sprintf(buff, "simple task, %d tasks, %d threads", i, i);
-        open3d::utility::ScopeTimer t(buff);
+        std::string buff =
+                fmt::format("simple task, {:d} tasks, {:d} threads", i, i);
+        open3d::utility::ScopeTimer t(buff.c_str());
 #ifdef _OPENMP
         omp_set_num_threads(i);
 #endif
@@ -143,9 +140,9 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
     for (int i = 1; i <= test_thread; i *= 2) {
-        char buff[1024];
-        sprintf(buff, "simple task, %d tasks, %d threads", i, i);
-        open3d::utility::ScopeTimer t(buff);
+        std::string buff =
+                fmt::format("simple task, {:d} tasks, {:d} threads", i, i);
+        open3d::utility::ScopeTimer t(buff.c_str());
         std::vector<std::thread> threads(i);
         for (int k = 0; k < i; k++) {
             threads[k] = std::thread(simple_task);
@@ -156,9 +153,8 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
     for (int i = 1; i <= test_thread; i *= 2) {
-        char buff[1024];
-        sprintf(buff, "svd, %d tasks, %d threads", i, i);
-        open3d::utility::ScopeTimer t(buff);
+        std::string buff = fmt::format("svd, {:d} tasks, {:d} threads", i, i);
+        open3d::utility::ScopeTimer t(buff.c_str());
 #ifdef _OPENMP
         omp_set_num_threads(i);
 #endif
@@ -167,9 +163,9 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
     for (int i = 1; i <= test_thread; i *= 2) {
-        char buff[1024];
-        sprintf(buff, "svd task, %d tasks, %d threads", i, i);
-        open3d::utility::ScopeTimer t(buff);
+        std::string buff =
+                fmt::format("svd task, {:d} tasks, {:d} threads", i, i);
+        open3d::utility::ScopeTimer t(buff.c_str());
         std::vector<std::thread> threads(i);
         for (int k = 0; k < i; k++) {
             threads[k] = std::thread(svd_task);

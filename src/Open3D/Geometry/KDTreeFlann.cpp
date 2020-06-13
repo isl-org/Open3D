@@ -74,8 +74,8 @@ bool KDTreeFlann::SetGeometry(const Geometry &geometry) {
         case Geometry::GeometryType::Image:
         case Geometry::GeometryType::Unspecified:
         default:
-            utility::PrintDebug(
-                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.\n");
+            utility::LogWarning(
+                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
             return false;
     }
 }
@@ -116,8 +116,8 @@ int KDTreeFlann::SearchKNN(const T &query,
     // This is optimized code for heavily repeated search.
     // Other flann::Index::knnSearch() implementations lose performance due to
     // memory allocation/deallocation.
-    if (data_.empty() || dataset_size_ <= 0 || query.rows() != dimension_ ||
-        knn < 0) {
+    if (data_.empty() || dataset_size_ <= 0 ||
+        size_t(query.rows()) != dimension_ || knn < 0) {
         return -1;
     }
     flann::Matrix<double> query_flann((double *)query.data(), 1, dimension_);
@@ -141,7 +141,8 @@ int KDTreeFlann::SearchRadius(const T &query,
     // Since max_nn is not given, we let flann to do its own memory management.
     // Other flann::Index::radiusSearch() implementations lose performance due
     // to memory management and CPU caching.
-    if (data_.empty() || dataset_size_ <= 0 || query.rows() != dimension_) {
+    if (data_.empty() || dataset_size_ <= 0 ||
+        size_t(query.rows()) != dimension_) {
         return -1;
     }
     flann::Matrix<double> query_flann((double *)query.data(), 1, dimension_);
@@ -166,8 +167,8 @@ int KDTreeFlann::SearchHybrid(const T &query,
     // It is also the recommended setting for search.
     // Other flann::Index::radiusSearch() implementations lose performance due
     // to memory allocation/deallocation.
-    if (data_.empty() || dataset_size_ <= 0 || query.rows() != dimension_ ||
-        max_nn < 0) {
+    if (data_.empty() || dataset_size_ <= 0 ||
+        size_t(query.rows()) != dimension_ || max_nn < 0) {
         return -1;
     }
     flann::Matrix<double> query_flann((double *)query.data(), 1, dimension_);
@@ -189,8 +190,7 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
     dimension_ = data.rows();
     dataset_size_ = data.cols();
     if (dimension_ == 0 || dataset_size_ == 0) {
-        utility::PrintDebug(
-                "[KDTreeFlann::SetRawData] Failed due to no data.\n");
+        utility::LogWarning("[KDTreeFlann::SetRawData] Failed due to no data.");
         return false;
     }
     data_.resize(dataset_size_ * dimension_);

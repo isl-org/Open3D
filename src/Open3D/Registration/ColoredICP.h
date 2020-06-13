@@ -39,10 +39,19 @@ class PointCloud;
 namespace registration {
 class RegistrationResult;
 
-/// Function to align colored point clouds
+/// \brief Function for Colored ICP registration.
+///
 /// This is implementation of following paper
 /// J. Park, Q.-Y. Zhou, V. Koltun,
-/// Colored Point Cloud Registration Revisited, ICCV 2017
+/// Colored Point Cloud Registration Revisited, ICCV 2017.
+///
+/// \param source The source point cloud.
+/// \param target The target point cloud.
+/// \param max_distance Maximum correspondence points-pair distance.
+/// \param init Initial transformation estimation.
+/// Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
+/// [0., 0., 0., 1.]]). \param criteria  Convergence criteria. \param
+/// lambda_geometric  lambda_geometric value.
 RegistrationResult RegistrationColoredICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

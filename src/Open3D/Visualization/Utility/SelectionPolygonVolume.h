@@ -43,6 +43,9 @@ class TriangleMesh;
 
 namespace visualization {
 
+/// \class SelectionPolygonVolume
+///
+/// \brief Select a polygon volume for cropping.
 class SelectionPolygonVolume : public utility::IJsonConvertible {
 public:
     ~SelectionPolygonVolume() override {}
@@ -50,8 +53,14 @@ public:
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
+    /// Function to crop point cloud.
+    ///
+    /// \param input The input point cloud.
     std::shared_ptr<geometry::PointCloud> CropPointCloud(
             const geometry::PointCloud &input) const;
+    /// Function to crop crop triangle mesh.
+    ///
+    /// \param input The input triangle mesh.
     std::shared_ptr<geometry::TriangleMesh> CropTriangleMesh(
             const geometry::TriangleMesh &input) const;
 
@@ -64,9 +73,13 @@ private:
             const std::vector<Eigen::Vector3d> &input) const;
 
 public:
+    /// One of `{x, y, z}`.
     std::string orthogonal_axis_ = "";
+    /// Bounding polygon boundary.
     std::vector<Eigen::Vector3d> bounding_polygon_;
+    /// Minimum axis value.
     double axis_min_ = 0.0;
+    /// Maximum axis value.
     double axis_max_ = 0.0;
 };
 

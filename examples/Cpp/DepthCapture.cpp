@@ -85,17 +85,17 @@ protected:
 };
 
 int main(int argc, char *argv[]) {
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc < 2) {
         PrintOpen3DVersion();
-        utility::PrintInfo("Usage:\n");
-        utility::PrintInfo("    > DepthCapture  [filename]\n");
+        utility::LogInfo("Usage:");
+        utility::LogInfo("    > DepthCapture  [filename]");
         return 1;
     }
 
     auto mesh_ptr = io::CreateMeshFromFile(argv[1]);
     mesh_ptr->ComputeVertexNormals();
-    utility::PrintWarning("Press S to capture a depth image.\n");
+    utility::LogInfo("Press S to capture a depth image.");
     VisualizerWithDepthCapture visualizer;
     visualizer.CreateVisualizerWindow("Depth Capture", 640, 480, 200, 200);
     visualizer.AddGeometry(mesh_ptr);
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 
     if (!utility::filesystem::FileExists("depth.png") ||
         !utility::filesystem::FileExists("camera.json")) {
-        utility::PrintWarning("Depth has not been captured.\n");
+        utility::LogInfo("Depth has not been captured.");
         return 1;
     }
 
@@ -122,15 +122,15 @@ int main(int argc, char *argv[]) {
     visualizer1.Run();
     visualizer1.DestroyVisualizerWindow();
 
-    utility::PrintWarning("Press L to validate the depth image.\n");
-    utility::PrintWarning("Press P to load the capturing camera pose.\n");
+    utility::LogInfo("Press L to validate the depth image.");
+    utility::LogInfo("Press P to load the capturing camera pose.");
     VisualizerWithDepthCapture visualizer2;
     visualizer2.CreateVisualizerWindow("Depth Validation", 640, 480, 200, 200);
     visualizer2.AddGeometry(mesh_ptr);
     visualizer2.Run();
     visualizer2.DestroyVisualizerWindow();
 
-    utility::PrintInfo("End of the test.\n");
+    utility::LogInfo("End of the test.");
 
     return 0;
 }

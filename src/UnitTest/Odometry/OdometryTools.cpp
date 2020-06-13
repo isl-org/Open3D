@@ -26,14 +26,10 @@
 
 #include "UnitTest/Odometry/OdometryTools.h"
 
-using namespace open3d;
-using namespace std;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-shared_ptr<geometry::Image> odometry_tools::GenerateImage(
+std::shared_ptr<geometry::Image> odometry_tools::GenerateImage(
         const int& width,
         const int& height,
         const int& num_of_channels,
@@ -41,7 +37,8 @@ shared_ptr<geometry::Image> odometry_tools::GenerateImage(
         const float& vmin,
         const float& vmax,
         const int& seed) {
-    shared_ptr<geometry::Image> image = make_shared<geometry::Image>();
+    std::shared_ptr<geometry::Image> image =
+            std::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -54,12 +51,12 @@ shared_ptr<geometry::Image> odometry_tools::GenerateImage(
 // ----------------------------------------------------------------------------
 // Shift the pixels left with a specified step.
 // ----------------------------------------------------------------------------
-void odometry_tools::ShiftLeft(shared_ptr<geometry::Image> image,
+void odometry_tools::ShiftLeft(std::shared_ptr<geometry::Image> image,
                                const int& step) {
     int width = image->width_;
     int height = image->height_;
-    int num_of_channels = image->num_of_channels_;
-    int bytes_per_channel = image->bytes_per_channel_;
+    // int num_of_channels = image->num_of_channels_;
+    // int bytes_per_channel = image->bytes_per_channel_;
 
     float* const float_data = Cast<float>(&image->data_[0]);
     for (int h = 0; h < height; h++)
@@ -71,12 +68,12 @@ void odometry_tools::ShiftLeft(shared_ptr<geometry::Image> image,
 // ----------------------------------------------------------------------------
 // Shift the pixels up with a specified step.
 // ----------------------------------------------------------------------------
-void odometry_tools::ShiftUp(shared_ptr<geometry::Image> image,
+void odometry_tools::ShiftUp(std::shared_ptr<geometry::Image> image,
                              const int& step) {
     int width = image->width_;
     int height = image->height_;
-    int num_of_channels = image->num_of_channels_;
-    int bytes_per_channel = image->bytes_per_channel_;
+    // int num_of_channels = image->num_of_channels_;
+    // int bytes_per_channel = image->bytes_per_channel_;
 
     float* const float_data = Cast<float>(&image->data_[0]);
     for (int h = 0; h < height; h++)
@@ -88,15 +85,17 @@ void odometry_tools::ShiftUp(shared_ptr<geometry::Image> image,
 // ----------------------------------------------------------------------------
 // Create dummy correspondence map object.
 // ----------------------------------------------------------------------------
-shared_ptr<geometry::Image> odometry_tools::CorrespondenceMap(const int& width,
-                                                              const int& height,
-                                                              const int& vmin,
-                                                              const int& vmax,
-                                                              const int& seed) {
+std::shared_ptr<geometry::Image> odometry_tools::CorrespondenceMap(
+        const int& width,
+        const int& height,
+        const int& vmin,
+        const int& vmax,
+        const int& seed) {
     int num_of_channels = 2;
     int bytes_per_channel = 4;
 
-    shared_ptr<geometry::Image> image = make_shared<geometry::Image>();
+    std::shared_ptr<geometry::Image> image =
+            std::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -110,15 +109,16 @@ shared_ptr<geometry::Image> odometry_tools::CorrespondenceMap(const int& width,
 // ----------------------------------------------------------------------------
 // Create dummy depth buffer object.
 // ----------------------------------------------------------------------------
-shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
-                                                        const int& height,
-                                                        const float& vmin,
-                                                        const float& vmax,
-                                                        const int& seed) {
+std::shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
+                                                             const int& height,
+                                                             const float& vmin,
+                                                             const float& vmax,
+                                                             const int& seed) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<geometry::Image> image = make_shared<geometry::Image>();
+    std::shared_ptr<geometry::Image> image =
+            std::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -128,3 +128,6 @@ shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
 
     return image;
 }
+
+}  // namespace unit_test
+}  // namespace open3d

@@ -5,7 +5,7 @@ C++ interface
 
 This page explains how to create a CMake based C++ project using the Open3D C++ interface.
 
-.. note:: For help on the C++ interfaces, refer to examples in [examples/Cpp/Test], [examples/Cpp/Experimental] and [src/Tools] folder and check `Doxygen document for C++ API <http://open3d.org/cppapi>`_.
+.. note:: For help on the C++ interfaces, refer to examples in [examples/Cpp/Test], [examples/Cpp/Experimental] and [src/Tools] folder and check `Doxygen document for C++ API <../../cpp_api/index.html>`_.
 
 .. _install_open3d_from_source:
 
@@ -77,13 +77,13 @@ Alternatively, this can be done by calling CMake from the console:
     cd Open3D
     mkdir build
     cd build
-    cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX=C:\open3d_install ..
+    cmake -G "Visual Studio 16 2019 Win64" -DCMAKE_INSTALL_PREFIX=C:\open3d_install ..
     cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config Release --target install
 
     cd ..\docs\_static\C++\
     mkdir build
     cd build
-    cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH=C:\open3d_install ..
+    cmake -G "Visual Studio 16 2019 Win64" -DCMAKE_PREFIX_PATH=C:\open3d_install ..
     cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config Release
     Release\TestVisualizer.exe
 

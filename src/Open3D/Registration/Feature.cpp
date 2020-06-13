@@ -120,11 +120,10 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
                 &search_param /* = geometry::KDTreeSearchParamKNN()*/) {
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)input.points_.size());
-    if (input.HasNormals() == false) {
-        utility::PrintDebug(
+    if (!input.HasNormals()) {
+        utility::LogError(
                 "[ComputeFPFHFeature] Failed because input point cloud has no "
-                "normal.\n");
-        return feature;
+                "normal.");
     }
     geometry::KDTreeFlann kdtree(input);
     auto spfh = ComputeSPFHFeature(input, kdtree, search_param);

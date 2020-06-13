@@ -92,18 +92,18 @@ bool ImageWarpingField::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
-        utility::PrintWarning(
+    if (!value.isObject()) {
+        utility::LogWarning(
                 "ImageWarpingField read JSON failed: unsupported json "
-                "format.\n");
+                "format.");
         return false;
     }
     if (value.get("class_name", "").asString() != "ImageWarpingField" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "ImageWarpingField read JSON failed: unsupported json "
-                "format.\n");
+                "format.");
         return false;
     }
     anchor_w_ = value.get("anchor_w", 1).asInt();
@@ -111,9 +111,9 @@ bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value) {
 
     const Json::Value flow_array = value["flow"];
     if (flow_array.size() == 0 ||
-        flow_array.size() != (anchor_w_ * anchor_h_ * 2)) {
-        utility::PrintWarning(
-                "ImageWarpingField read JSON failed: invalid flow.\n");
+        int(flow_array.size()) != (anchor_w_ * anchor_h_ * 2)) {
+        utility::LogWarning(
+                "ImageWarpingField read JSON failed: invalid flow.");
         return false;
     }
     flow_.resize(anchor_w_ * anchor_h_ * 2, 1);

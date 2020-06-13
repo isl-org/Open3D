@@ -35,37 +35,23 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <sstream>
 #include <string>
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
+#include <fmt/chrono.h>
 
 #include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 
-namespace {
-using namespace utility;
+namespace utility {
 
-enum class TextColor {
-    Black = 0,
-    Red = 1,
-    Green = 2,
-    Yellow = 3,
-    Blue = 4,
-    Magenta = 5,
-    Cyan = 6,
-    White = 7
-};
-
-static VerbosityLevel global_verbosity_level = VerbosityLevel::VerboseInfo;
-
-/// Internal function to change text color for the console
-/// Note there is no security check for parameters.
-/// \param text_color, from 0 to 7, they are black, red, green, yellow, blue,
-/// magenta, cyan, white
-/// \param emphasis_text is 0 or 1
-void ChangeConsoleColor(TextColor text_color, int highlight_text) {
+void Logger::ChangeConsoleColor(TextColor text_color,
+                                int highlight_text) const {
 #ifdef _WIN32
     const WORD EMPHASIS_MASK[2] = {0, FOREGROUND_INTENSITY};
     const WORD COLOR_MASK[8] = {
@@ -85,7 +71,7 @@ void ChangeConsoleColor(TextColor text_color, int highlight_text) {
 #endif
 }
 
-void ResetConsoleColor() {
+void Logger::ResetConsoleColor() const {
 #ifdef _WIN32
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(
@@ -95,129 +81,24 @@ void ResetConsoleColor() {
 #endif
 }
 
-static int64_t expected_console_count = 0;
-
-static int64_t current_console_progress = 0;
-
-static int current_console_progress_pixel = 0;
-
-static std::string console_progress_info = "";
-
-static const int CONSOLE_PROGRESS_RESOLUTION = 40;
-
-void PrintConsoleProgress() {
-    if (current_console_progress == expected_console_count) {
-        PrintInfo("%s[%s] 100%%\n", console_progress_info.c_str(),
-                  std::string(CONSOLE_PROGRESS_RESOLUTION, '=').c_str());
-    } else {
-        int new_console_progress_pixel =
-                int(current_console_progress * CONSOLE_PROGRESS_RESOLUTION /
-                    expected_console_count);
-        if (new_console_progress_pixel > current_console_progress_pixel) {
-            current_console_progress_pixel = new_console_progress_pixel;
-            int percent = int(current_console_progress * 100 /
-                              expected_console_count);
-            PrintInfo("%s[%s>%s] %d%%\r", console_progress_info.c_str(),
-                      std::string(current_console_progress_pixel, '=').c_str(),
-                      std::string(CONSOLE_PROGRESS_RESOLUTION - 1 -
-                                          current_console_progress_pixel,
-                                  ' ')
-                              .c_str(),
-                      percent);
-            fflush(stdout);
-        }
-    }
-}
-
-}  // unnamed namespace
-
-namespace utility {
-void SetVerbosityLevel(VerbosityLevel verbosity_level) {
-    global_verbosity_level = verbosity_level;
-}
-
-VerbosityLevel GetVerbosityLevel() { return global_verbosity_level; }
-
-void PrintError(const char *format, ...) {
-    if (global_verbosity_level >= VerbosityLevel::VerboseError) {
-        ChangeConsoleColor(TextColor::Red, 1);
-        va_list args;
-        va_start(args, format);
-        vprintf(format, args);
-        va_end(args);
-        ResetConsoleColor();
-    }
-}
-
-void PrintWarning(const char *format, ...) {
-    if (global_verbosity_level >= VerbosityLevel::VerboseWarning) {
-        ChangeConsoleColor(TextColor::Yellow, 1);
-        va_list args;
-        va_start(args, format);
-        vprintf(format, args);
-        va_end(args);
-        ResetConsoleColor();
-    }
-}
-
-void PrintInfo(const char *format, ...) {
-    if (global_verbosity_level >= VerbosityLevel::VerboseInfo) {
-        va_list args;
-        va_start(args, format);
-        vprintf(format, args);
-        va_end(args);
-    }
-}
-
-void PrintDebug(const char *format, ...) {
-    if (global_verbosity_level >= VerbosityLevel::VerboseDebug) {
-        ChangeConsoleColor(TextColor::Green, 0);
-        va_list args;
-        va_start(args, format);
-        vprintf(format, args);
-        va_end(args);
-        ResetConsoleColor();
-    }
-}
-
-void PrintAlways(const char *format, ...) {
-    if (global_verbosity_level >= VerbosityLevel::VerboseAlways) {
-        ChangeConsoleColor(TextColor::Blue, 0);
-        va_list args;
-        va_start(args, format);
-        vprintf(format, args);
-        va_end(args);
-        ResetConsoleColor();
-    }
-}
-
-void ResetConsoleProgress(const int64_t expected_count,
-                          const std::string &progress_info /* = ""*/) {
-    if (expected_count > 0) {
-        expected_console_count = expected_count;
-        current_console_progress = 0;
-    } else {
-        expected_console_count = 1;
-        current_console_progress = 1;
-    }
-    current_console_progress_pixel = -1;
-    console_progress_info = progress_info;
-    PrintConsoleProgress();
-}
-
-void AdvanceConsoleProgress() {
-    current_console_progress++;
-    PrintConsoleProgress();
+std::string Logger::ColorString(const std::string &text,
+                                TextColor text_color,
+                                int highlight_text) const {
+    std::ostringstream msg;
+#ifndef _WIN32
+    msg << fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
+                        (int)text_color + 30);
+#endif
+    msg << text;
+#ifndef _WIN32
+    msg << fmt::sprintf("%c[0;m", 0x1B);
+#endif
+    return msg.str();
 }
 
 std::string GetCurrentTimeStamp() {
-    time_t rawtime;
-    struct tm *timeinfo;
-    char buffer[DEFAULT_IO_BUFFER_SIZE];
-    time(&rawtime);
-    timeinfo = localtime(&rawtime);
-    strftime(buffer, DEFAULT_IO_BUFFER_SIZE, "%Y-%m-%d-%H-%M-%S", timeinfo);
-    return std::string(buffer);
+    std::time_t t = std::time(nullptr);
+    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
 }
 
 std::string GetProgramOptionAsString(
@@ -287,7 +168,7 @@ Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
     std::vector<std::string> tokens;
     SplitString(tokens, str.substr(1, str.length() - 2), ",");
     Eigen::VectorXd vec(tokens.size());
-    for (auto i = 0; i < tokens.size(); i++) {
+    for (size_t i = 0; i < tokens.size(); i++) {
         char *end;
         errno = 0;
         double l = std::strtod(tokens[i].c_str(), &end);

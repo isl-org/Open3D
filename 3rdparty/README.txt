@@ -61,6 +61,26 @@ tinyfiledialogs             2.7.2                                   zlib license
 A lightweight cross-platform file dialog library
 https://sourceforge.net/projects/tinyfiledialogs/
 --------------------------------------------------------------------------------
+tinygltf                    v2.2.0                                   MIT license
+Header only C++11 tiny glTF 2.0 library
+https://github.com/syoyo/tinygltf
+--------------------------------------------------------------------------------
+tinyobjloader                v1.0.0                                  MIT license
+Tiny but powerful single file wavefront obj loader
+https://github.com/syoyo/tinyobjloader
+--------------------------------------------------------------------------------
 pybind11                    2.2                                      BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11
+--------------------------------------------------------------------------------
+PoissonReco                 12.0                                     BSD license
+Poisson Surface Reconstruction
+https://github.com/mkazhdan/PoissonRecon
+--------------------------------------------------------------------------------
+CUTLASS                     1.3.2                                    BSD license
+CUDA Templates for Linear Algebra Subroutines
+https://github.com/NVIDIA/cutlass
+--------------------------------------------------------------------------------
+benchmark                   1.5.0                               Apache-2 license
+A microbenchmark support library
+https://github.com/google/benchmark

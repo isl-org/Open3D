@@ -45,14 +45,14 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
     // PSD implies symmetric
     check_symmetric = check_symmetric || check_psd;
     if (check_symmetric && !A.isApprox(A.transpose())) {
-        PrintInfo("check_symmetric failed, empty vector will be returned\n");
+        LogWarning("check_symmetric failed, empty vector will be returned");
         return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
     }
 
     if (check_det) {
         double det = A.determinant();
         if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
-            PrintInfo("check_det failed, empty vector will be returned\n");
+            LogWarning("check_det failed, empty vector will be returned");
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }
     }
@@ -61,7 +61,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
     if (check_psd) {
         Eigen::LLT<Eigen::MatrixXd> A_llt(A);
         if (A_llt.info() == Eigen::NumericalIssue) {
-            PrintInfo("check_psd failed, empty vector will be returned\n");
+            LogWarning("check_psd failed, empty vector will be returned");
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }
     }
@@ -79,10 +79,10 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
                 // Both decompose and solve are successful
                 return std::make_tuple(true, std::move(x));
             } else {
-                PrintInfo("Cholesky solve failed, switched to dense solver\n");
+                LogWarning("Cholesky solve failed, switched to dense solver");
             }
         } else {
-            PrintInfo("Cholesky decompose failed, switched to dense solver\n");
+            LogWarning("Cholesky decompose failed, switched to dense solver");
         }
     }
 
@@ -142,9 +142,9 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
     std::vector<Eigen::Matrix4d, Matrix4d_allocator> output_matrix_array;
     output_matrix_array.clear();
     if (JTJ.rows() != JTr.rows() || JTJ.cols() % 6 != 0) {
-        PrintWarning(
+        LogWarning(
                 "[SolveJacobianSystemAndObtainExtrinsicMatrixArray] "
-                "Unsupported matrix format.\n");
+                "Unsupported matrix format.");
         return std::make_tuple(false, std::move(output_matrix_array));
     }
 
@@ -207,8 +207,8 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
     }
 #endif
     if (verbose) {
-        PrintDebug("Residual : %.2e (# of elements : %d)\n",
-                   r2_sum / (double)iteration_num, iteration_num);
+        LogDebug("Residual : {:.2e} (# of elements : {:d})",
+                 r2_sum / (double)iteration_num, iteration_num);
     }
     return std::make_tuple(std::move(JTJ), std::move(JTr), r2_sum);
 }
@@ -260,8 +260,8 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
     }
 #endif
     if (verbose) {
-        PrintDebug("Residual : %.2e (# of elements : %d)\n",
-                   r2_sum / (double)iteration_num, iteration_num);
+        LogDebug("Residual : {:.2e} (# of elements : {:d})",
+                 r2_sum / (double)iteration_num, iteration_num);
     }
     return std::make_tuple(std::move(JTJ), std::move(JTr), r2_sum);
 }
@@ -297,6 +297,23 @@ Eigen::Matrix3d RotationMatrixZ(double radians) {
     rot << std::cos(radians), -std::sin(radians), 0, std::sin(radians),
             std::cos(radians), 0, 0, 0, 1;
     return rot;
+}
+
+Eigen::Vector3uint8 ColorToUint8(const Eigen::Vector3d &color) {
+    Eigen::Vector3uint8 rgb;
+    for (int i = 0; i < 3; ++i) {
+        rgb[i] = uint8_t(
+                std::round(std::min(1., std::max(0., color(i))) * 255.));
+    }
+    return rgb;
+}
+
+Eigen::Vector3d ColorToDouble(uint8_t r, uint8_t g, uint8_t b) {
+    return Eigen::Vector3d(r, g, b) / 255.0;
+}
+
+Eigen::Vector3d ColorToDouble(const Eigen::Vector3uint8 &rgb) {
+    return ColorToDouble(rgb(0), rgb(1), rgb(2));
 }
 
 }  // namespace utility

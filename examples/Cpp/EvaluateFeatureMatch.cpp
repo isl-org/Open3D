@@ -37,7 +37,7 @@ public:
 
 public:
     bool LoadFromFile(const std::string &filename) {
-        FILE *fid = fopen(filename.c_str(), "rb");
+        FILE *fid = open3d::utility::filesystem::FOpen(filename, "rb");
         fread(&dataset_size_, sizeof(int), 1, fid);
         fread(&dimension_, sizeof(int), 1, fid);
         data_.resize(dataset_size_ * dimension_);
@@ -84,16 +84,16 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > EvaluateFeatureMatch [options]\n");
-    utility::PrintInfo("      Evaluate feature matching quality of point clouds.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Basic options:\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --log file                : A log file of the pairwise matching results. Must have.\n");
-    utility::PrintInfo("    --dir directory           : The directory storing all data files. By default it is the parent directory of the log file + pcd/.\n");
-    utility::PrintInfo("    --threshold t             : Threshold to determine if a match is good or not. Default: 0.075.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > EvaluateFeatureMatch [options]");
+    utility::LogInfo("      Evaluate feature matching quality of point clouds.");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --help, -h                : Print help information.");
+    utility::LogInfo("    --log file                : A log file of the pairwise matching results. Must have.");
+    utility::LogInfo("    --dir directory           : The directory storing all data files. By default it is the parent directory of the log file + pcd/.");
+    utility::LogInfo("    --threshold t             : Threshold to determine if a match is good or not. Default: 0.075.");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4). Default: 2.");
     // clang-format on
 }
 
@@ -103,9 +103,9 @@ bool ReadLogFile(const std::string &filename,
     using namespace open3d;
     pair_ids.clear();
     transformations.clear();
-    FILE *f = fopen(filename.c_str(), "r");
+    FILE *f = open3d::utility::filesystem::FOpen(filename, "r");
     if (f == NULL) {
-        utility::PrintWarning("Read LOG failed: unable to open file.\n");
+        utility::LogWarning("Read LOG failed: unable to open file.");
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -114,37 +114,32 @@ bool ReadLogFile(const std::string &filename,
     while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
         if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
             if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.");
                 return false;
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.");
                 return false;
             } else {
                 sscanf(line_buffer, "%lf %lf %lf %lf", &trans(0, 0),
                        &trans(0, 1), &trans(0, 2), &trans(0, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.");
                 return false;
             } else {
                 sscanf(line_buffer, "%lf %lf %lf %lf", &trans(1, 0),
                        &trans(1, 1), &trans(1, 2), &trans(1, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.");
                 return false;
             } else {
                 sscanf(line_buffer, "%lf %lf %lf %lf", &trans(2, 0),
                        &trans(2, 1), &trans(2, 2), &trans(2, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.");
                 return false;
             } else {
                 sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3, 0),
@@ -159,7 +154,7 @@ bool ReadLogFile(const std::string &filename,
 }
 
 void WriteBinaryResult(const std::string &filename, std::vector<double> &data) {
-    FILE *f = fopen(filename.c_str(), "wb");
+    FILE *f = open3d::utility::filesystem::FOpen(filename, "wb");
     fwrite(data.data(), sizeof(double), data.size(), f);
     fclose(f);
 }
@@ -173,7 +168,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     std::string log_filename =
             utility::GetProgramOptionAsString(argc, argv, "--log");
@@ -197,7 +192,7 @@ int main(int argc, char *argv[]) {
                                                            pcd_names);
     std::vector<geometry::PointCloud> pcds(pcd_names.size());
     std::vector<geometry::KDTreeFlann> kdtrees(pcd_names.size());
-    for (auto i = 0; i < pcd_names.size(); i++) {
+    for (size_t i = 0; i < pcd_names.size(); i++) {
         io::ReadPointCloud(
                 pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd",
                 pcds[i]);
@@ -209,7 +204,7 @@ int main(int argc, char *argv[]) {
     ReadLogFile(log_filename, pair_ids, transformations);
     int total_point_num = 0;
     int total_correspondence_num = 0;
-    for (auto k = 0; k < pair_ids.size(); k++) {
+    for (size_t k = 0; k < pair_ids.size(); k++) {
         geometry::PointCloud source = pcds[pair_ids[k].second];
         source.Transform(transformations[k]);
         std::vector<int> indices(1);
@@ -225,38 +220,38 @@ int main(int argc, char *argv[]) {
         }
         total_correspondence_num += correspondence_num;
         total_point_num += (int)source.points_.size();
-        utility::PrintInfo("#%d <-- #%d : %d out of %d (%.2f%%).\n",
-                           pair_ids[k].first, pair_ids[k].second,
-                           correspondence_num, (int)source.points_.size(),
-                           correspondence_num * 100.0 / source.points_.size());
+        utility::LogInfo("#{:d} <-- #{:d} : {:d} out of {:d} ({:.2f}%).",
+                         pair_ids[k].first, pair_ids[k].second,
+                         correspondence_num, (int)source.points_.size(),
+                         correspondence_num * 100.0 / source.points_.size());
     }
-    utility::PrintWarning("Total %d out of %d (%.2f%% coverage).\n\n",
-                          total_correspondence_num, total_point_num,
-                          total_correspondence_num * 100.0 / total_point_num);
+    utility::LogInfo("Total {:d} out of {:d} ({:.2f}% coverage).",
+                     total_correspondence_num, total_point_num,
+                     total_correspondence_num * 100.0 / total_point_num);
 
-    for (const auto feature : features) {
-        utility::PrintWarning("Evaluate feature %s.\n", feature.c_str());
+    for (const auto &feature : features) {
+        utility::LogInfo("Evaluate feature {}.", feature);
         std::vector<KDTreeFlannFeature> feature_trees(pcd_names.size());
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) num_threads(16)
 #endif
-        for (auto i = 0; i < pcd_names.size(); i++) {
+        for (int i = 0; i < int(pcd_names.size()); i++) {
             feature_trees[i].LoadFromFile(pcd_dirname + "cloud_bin_" +
                                           std::to_string(i) + "." + feature);
         }
-        utility::PrintInfo("All KDTrees built.\n");
+        utility::LogInfo("All KDTrees built.");
         int total_point_num = 0;
         int total_correspondence_num = 0;
         int total_positive = 0;
 
-        for (auto k = 0; k < pair_ids.size(); k++) {
+        for (size_t k = 0; k < pair_ids.size(); k++) {
             geometry::PointCloud source = pcds[pair_ids[k].second];
             total_point_num += (int)source.points_.size();
         }
         std::vector<double> true_dis(total_point_num, -1.0);
         total_point_num = 0;
 
-        for (auto k = 0; k < pair_ids.size(); k++) {
+        for (size_t k = 0; k < pair_ids.size(); k++) {
             geometry::PointCloud source = pcds[pair_ids[k].second];
             source.Transform(transformations[k]);
             std::vector<int> indices(1);
@@ -266,7 +261,7 @@ int main(int argc, char *argv[]) {
             int correspondence_num = 0;
             std::vector<bool> has_correspondence(
                     pcds[pair_ids[k].second].points_.size(), false);
-            for (auto i = 0; i < source.points_.size(); i++) {
+            for (size_t i = 0; i < source.points_.size(); i++) {
                 const auto &pt = source.points_[i];
                 if (kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices,
                                                          distance2) > 0) {
@@ -280,7 +275,7 @@ int main(int argc, char *argv[]) {
 #pragma omp parallel for schedule(static) \
         num_threads(16) private(indices, fdistance2)
 #endif
-            for (auto i = 0; i < source.points_.size(); i++) {
+            for (int i = 0; i < int(source.points_.size()); i++) {
                 if (has_correspondence[i]) {
                     if (feature_trees[pair_ids[k].first].SearchKNN(
                                 feature_trees[pair_ids[k].second].data_, i, 1,
@@ -302,16 +297,17 @@ int main(int argc, char *argv[]) {
             total_correspondence_num += correspondence_num;
             total_positive += positive;
             total_point_num += (int)source.points_.size();
-            utility::PrintInfo(
-                    "#%d <-- #%d : %d out of %d out of %d (%.2f%% w.r.t. "
-                    "correspondences).\n",
+            utility::LogInfo(
+                    "#{:d} <-- #{:d} : {:d} out of {:d} out of {:d} ({:.2f}% "
+                    "w.r.t. "
+                    "correspondences).",
                     pair_ids[k].first, pair_ids[k].second, positive,
                     correspondence_num, (int)source.points_.size(),
                     positive * 100.0 / correspondence_num);
         }
-        utility::PrintWarning(
-                "Total %d out of %d out of %d (%.2f%% w.r.t. "
-                "correspondences).\n\n",
+        utility::LogInfo(
+                "Total {:d} out of {:d} out of {:d} ({:.2f}% w.r.t. "
+                "correspondences).",
                 total_positive, total_correspondence_num, total_point_num,
                 total_positive * 100.0 / total_correspondence_num);
         WriteBinaryResult(pcd_dirname + feature + ".bin", true_dis);

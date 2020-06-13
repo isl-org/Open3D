@@ -26,8 +26,10 @@
 
 #include <Eigen/Dense>
 
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TetraMesh.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 
 namespace open3d {
@@ -74,6 +76,72 @@ std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
         InsertEdge(triangle(0), triangle(1));
         InsertEdge(triangle(1), triangle(2));
         InsertEdge(triangle(2), triangle(0));
+    }
+
+    return line_set;
+}
+
+std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(
+        const OrientedBoundingBox &box) {
+    auto line_set = std::make_shared<LineSet>();
+    line_set->points_ = box.GetBoxPoints();
+    line_set->lines_.push_back(Eigen::Vector2i(0, 1));
+    line_set->lines_.push_back(Eigen::Vector2i(1, 7));
+    line_set->lines_.push_back(Eigen::Vector2i(7, 2));
+    line_set->lines_.push_back(Eigen::Vector2i(2, 0));
+    line_set->lines_.push_back(Eigen::Vector2i(3, 6));
+    line_set->lines_.push_back(Eigen::Vector2i(6, 4));
+    line_set->lines_.push_back(Eigen::Vector2i(4, 5));
+    line_set->lines_.push_back(Eigen::Vector2i(5, 3));
+    line_set->lines_.push_back(Eigen::Vector2i(0, 3));
+    line_set->lines_.push_back(Eigen::Vector2i(1, 6));
+    line_set->lines_.push_back(Eigen::Vector2i(7, 4));
+    line_set->lines_.push_back(Eigen::Vector2i(2, 5));
+    line_set->PaintUniformColor(box.color_);
+    return line_set;
+}
+
+std::shared_ptr<LineSet> LineSet::CreateFromAxisAlignedBoundingBox(
+        const AxisAlignedBoundingBox &box) {
+    auto line_set = std::make_shared<LineSet>();
+    line_set->points_ = box.GetBoxPoints();
+    line_set->lines_.push_back(Eigen::Vector2i(0, 1));
+    line_set->lines_.push_back(Eigen::Vector2i(1, 7));
+    line_set->lines_.push_back(Eigen::Vector2i(7, 2));
+    line_set->lines_.push_back(Eigen::Vector2i(2, 0));
+    line_set->lines_.push_back(Eigen::Vector2i(3, 6));
+    line_set->lines_.push_back(Eigen::Vector2i(6, 4));
+    line_set->lines_.push_back(Eigen::Vector2i(4, 5));
+    line_set->lines_.push_back(Eigen::Vector2i(5, 3));
+    line_set->lines_.push_back(Eigen::Vector2i(0, 3));
+    line_set->lines_.push_back(Eigen::Vector2i(1, 6));
+    line_set->lines_.push_back(Eigen::Vector2i(7, 4));
+    line_set->lines_.push_back(Eigen::Vector2i(2, 5));
+    line_set->PaintUniformColor(box.color_);
+    return line_set;
+}
+
+std::shared_ptr<LineSet> LineSet::CreateFromTetraMesh(const TetraMesh &mesh) {
+    auto line_set = std::make_shared<LineSet>();
+    line_set->points_ = mesh.vertices_;
+
+    std::unordered_set<Eigen::Vector2i,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+            inserted_edges;
+    auto InsertEdge = [&](int vidx0, int vidx1) {
+        Eigen::Vector2i edge(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
+        if (inserted_edges.count(edge) == 0) {
+            inserted_edges.insert(edge);
+            line_set->lines_.push_back(Eigen::Vector2i(vidx0, vidx1));
+        }
+    };
+    for (const auto &tetra : mesh.tetras_) {
+        InsertEdge(tetra(0), tetra(1));
+        InsertEdge(tetra(1), tetra(2));
+        InsertEdge(tetra(2), tetra(0));
+        InsertEdge(tetra(3), tetra(0));
+        InsertEdge(tetra(3), tetra(1));
+        InsertEdge(tetra(3), tetra(2));
     }
 
     return line_set;

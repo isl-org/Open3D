@@ -31,7 +31,9 @@
 #include <iostream>
 #include <vector>
 
+namespace open3d {
 namespace unit_test {
+
 // tab size used for formatting ref data.
 static const int TAB_SIZE = 4;
 
@@ -58,7 +60,7 @@ void Print(const Eigen::Matrix<T, M, N>& matrix,
         std::cout << std::setw((tabs + 1) * TAB_SIZE) << "";
 
         for (int n = 0; n < N; n++) {
-            std::cout << std::setw(width) << matrix(n, m);
+            std::cout << std::setw(width) << matrix(m, n);
             if (m != (M - 1) || n != (N - 1)) std::cout << ",";
         }
     }
@@ -76,6 +78,30 @@ template <class T, int M, int N>
 void Print(const std::vector<Eigen::Matrix<T, M, N>>& v,
            const int& tabs = 1,
            const char& terminator = ';') {
+    std::cout << std::setw(tabs * TAB_SIZE) << "{";
+    std::cout << std::endl;
+    for (size_t i = 0; i < v.size(); i++) {
+        if (i == (v.size() - 1))
+            Print(v[i], tabs + 1, '0');
+        else
+            Print(v[i], tabs + 1, ',');
+
+        std::cout << std::endl;
+    }
+    std::cout << std::setw(tabs * TAB_SIZE) << "}";
+
+    if (';' == terminator || ',' == terminator) std::cout << terminator;
+
+    if (',' != terminator) std::cout << std::endl;
+}
+
+// Print a vector of Matrix<T, M, N> that uses the Eigen::aligned_allocator.
+template <class T, int M, int N>
+void Print(
+        const std::vector<Eigen::Matrix<T, M, N>,
+                          Eigen::aligned_allocator<Eigen::Matrix<T, M, N>>>& v,
+        const int& tabs = 1,
+        const char& terminator = ';') {
     std::cout << std::setw(tabs * TAB_SIZE) << "{";
     std::cout << std::endl;
     for (size_t i = 0; i < v.size(); i++) {
@@ -142,4 +168,6 @@ template <class T>
 void Print(const std::vector<T>& v, const int& width = 12) {
     Print(&v[0], v.size(), width);
 }
+
 }  // namespace unit_test
+}  // namespace open3d

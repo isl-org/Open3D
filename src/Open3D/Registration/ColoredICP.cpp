@@ -78,7 +78,7 @@ private:
 std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
         const geometry::PointCloud &target,
         const geometry::KDTreeSearchParamHybrid &search_param) {
-    utility::PrintDebug("InitializePointCloudForColoredICP\n");
+    utility::LogDebug("InitializePointCloudForColoredICP");
 
     geometry::KDTreeFlann tree;
     tree.SetGeometry(target);
@@ -91,7 +91,7 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
     size_t n_points = output->points_.size();
     output->color_gradient_.resize(n_points, Eigen::Vector3d::Zero());
 
-    for (auto k = 0; k < n_points; k++) {
+    for (size_t k = 0; k < n_points; k++) {
         const Eigen::Vector3d &vt = output->points_[k];
         const Eigen::Vector3d &nt = output->normals_[k];
         double it = (output->colors_[k](0) + output->colors_[k](1) +
@@ -102,14 +102,14 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
         std::vector<double> point_squared_distance;
 
         if (tree.SearchHybrid(vt, search_param.radius_, search_param.max_nn_,
-                              point_idx, point_squared_distance) >= 3) {
+                              point_idx, point_squared_distance) >= 4) {
             // approximate image gradient of vt's tangential plane
             size_t nn = point_idx.size();
             Eigen::MatrixXd A(nn, 3);
             Eigen::MatrixXd b(nn, 1);
             A.setZero();
             b.setZero();
-            for (auto i = 1; i < nn; i++) {
+            for (size_t i = 1; i < nn; i++) {
                 int P_adj_idx = point_idx[i];
                 Eigen::Vector3d vt_adj = output->points_[P_adj_idx];
                 Eigen::Vector3d vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
@@ -144,8 +144,8 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || target.HasNormals() == false ||
-        target.HasColors() == false || source.HasColors() == false)
+    if (corres.empty() || !target.HasNormals() || !target.HasColors() ||
+        !source.HasColors())
         return Eigen::Matrix4d::Identity();
 
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);

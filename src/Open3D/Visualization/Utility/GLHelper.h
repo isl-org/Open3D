@@ -26,14 +26,26 @@
 
 #pragma once
 
+// Avoid warning caused by redefinition of APIENTRY macro
+// defined also in glfw3.h
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <GL/glew.h>  // Make sure glew.h is included before gl.h
 #include <GLFW/glfw3.h>
 #include <Eigen/Core>
 #include <string>
+#include <unordered_map>
 
 namespace open3d {
 namespace visualization {
 namespace GLHelper {
+
+const static std::unordered_map<int, GLenum> texture_format_map_ = {
+        {1, GL_RED}, {3, GL_RGB}, {4, GL_RGBA}};
+const static std::unordered_map<int, GLenum> texture_type_map_ = {
+        {1, GL_UNSIGNED_BYTE}, {2, GL_UNSIGNED_SHORT}, {4, GL_FLOAT}};
 
 typedef Eigen::Matrix<GLfloat, 3, 1, Eigen::ColMajor> GLVector3f;
 typedef Eigen::Matrix<GLfloat, 4, 1, Eigen::ColMajor> GLVector4f;

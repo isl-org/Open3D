@@ -30,17 +30,17 @@ int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         PrintOpen3DVersion();
         // clang-format off
-        utility::PrintInfo("Usage:\n");
-        utility::PrintInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]\n");
-        utility::PrintInfo("    The program will :\n");
-        utility::PrintInfo("    1. load the pointcloud in [filename].\n");
-        utility::PrintInfo("    2. visualize the point cloud.\n");
-        utility::PrintInfo("    3. if a save method is specified, write the point cloud into data.pcd.\n");
+        utility::LogInfo("Usage:");
+        utility::LogInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]");
+        utility::LogInfo("    The program will :");
+        utility::LogInfo("    1. load the pointcloud in [filename].");
+        utility::LogInfo("    2. visualize the point cloud.");
+        utility::LogInfo("    3. if a save method is specified, write the point cloud into data.pcd.");
         // clang-format on
         return 0;
     }
@@ -51,11 +51,11 @@ int main(int argc, char **argv) {
     if (argc >= 3) {
         std::string method(argv[2]);
         if (method == "ascii") {
-            io::WritePointCloud("data.pcd", *cloud_ptr, true);
+            io::WritePointCloud("data.pcd", *cloud_ptr, {true});
         } else if (method == "binary") {
-            io::WritePointCloud("data.pcd", *cloud_ptr, false, false);
+            io::WritePointCloud("data.pcd", *cloud_ptr, {false, false});
         } else if (method == "compressed") {
-            io::WritePointCloud("data.pcd", *cloud_ptr, false, true);
+            io::WritePointCloud("data.pcd", *cloud_ptr, {false, true});
         }
     }
 

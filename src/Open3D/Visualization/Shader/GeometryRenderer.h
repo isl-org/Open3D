@@ -32,9 +32,12 @@
 #include "Open3D/Visualization/Shader/NormalShader.h"
 #include "Open3D/Visualization/Shader/PhongShader.h"
 #include "Open3D/Visualization/Shader/PickingShader.h"
+#include "Open3D/Visualization/Shader/RGBDImageShader.h"
 #include "Open3D/Visualization/Shader/Simple2DShader.h"
 #include "Open3D/Visualization/Shader/SimpleBlackShader.h"
 #include "Open3D/Visualization/Shader/SimpleShader.h"
+#include "Open3D/Visualization/Shader/TexturePhongShader.h"
+#include "Open3D/Visualization/Shader/TextureSimpleShader.h"
 
 namespace open3d {
 namespace visualization {
@@ -65,6 +68,11 @@ public:
     bool HasGeometry() const { return bool(geometry_ptr_); }
     std::shared_ptr<const geometry::Geometry> GetGeometry() const {
         return geometry_ptr_;
+    }
+
+    bool HasGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) const {
+        return geometry_ptr_ == geometry_ptr;
     }
 
     bool IsVisible() const { return is_visible_; }
@@ -120,6 +128,49 @@ protected:
     SimpleShaderForLineSet simple_lineset_shader_;
 };
 
+class TetraMeshRenderer : public GeometryRenderer {
+public:
+    ~TetraMeshRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForTetraMesh simple_tetramesh_shader_;
+};
+
+class OrientedBoundingBoxRenderer : public GeometryRenderer {
+public:
+    ~OrientedBoundingBoxRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForOrientedBoundingBox simple_oriented_bounding_box_shader_;
+};
+
+class AxisAlignedBoundingBoxRenderer : public GeometryRenderer {
+public:
+    ~AxisAlignedBoundingBoxRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForAxisAlignedBoundingBox
+            simple_axis_aligned_bounding_box_shader_;
+};
+
 class TriangleMeshRenderer : public GeometryRenderer {
 public:
     ~TriangleMeshRenderer() override {}
@@ -132,7 +183,9 @@ public:
 
 protected:
     SimpleShaderForTriangleMesh simple_mesh_shader_;
+    TextureSimpleShaderForTriangleMesh texture_simple_mesh_shader_;
     PhongShaderForTriangleMesh phong_mesh_shader_;
+    TexturePhongShaderForTriangleMesh texture_phong_mesh_shader_;
     NormalShaderForTriangleMesh normal_mesh_shader_;
     SimpleBlackShaderForTriangleMeshWireFrame simpleblack_wireframe_shader_;
 };
@@ -179,6 +232,20 @@ public:
 
 protected:
     ImageShaderForImage image_shader_;
+};
+
+class RGBDImageRenderer : public GeometryRenderer {
+public:
+    ~RGBDImageRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    RGBDImageShaderForImage rgbd_image_shader_;
 };
 
 class CoordinateFrameRenderer : public GeometryRenderer {

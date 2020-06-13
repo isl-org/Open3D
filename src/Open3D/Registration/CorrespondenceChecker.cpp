@@ -39,8 +39,8 @@ bool CorrespondenceCheckerBasedOnEdgeLength::Check(
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d & /*transformation*/) const {
-    for (auto i = 0; i < corres.size(); i++) {
-        for (auto j = i + 1; j < corres.size(); j++) {
+    for (size_t i = 0; i < corres.size(); i++) {
+        for (size_t j = i + 1; j < corres.size(); j++) {
             // check edge ij
             double dis_source = (source.points_[corres[i](0)] -
                                  source.points_[corres[j](0)])
@@ -79,10 +79,10 @@ bool CorrespondenceCheckerBasedOnNormal::Check(
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d &transformation) const {
-    if (source.HasNormals() == false || target.HasNormals() == false) {
-        utility::PrintDebug(
+    if (!source.HasNormals() || !target.HasNormals()) {
+        utility::LogWarning(
                 "[CorrespondenceCheckerBasedOnNormal::Check] Pointcloud has no "
-                "normals.\n");
+                "normals.");
         return true;
     }
     double cos_normal_angle_threshold = std::cos(normal_angle_threshold_);

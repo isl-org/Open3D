@@ -123,9 +123,8 @@ template <typename T>
 std::shared_ptr<Image> Image::CreateImageFromFloatImage() const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintDebug(
-                "[CreateImageFromFloatImage] Unsupported image format.\n");
-        return output;
+        utility::LogError(
+                "[CreateImageFromFloatImage] Unsupported image format.");
     }
 
     output->Prepare(width_, height_, num_of_channels_, sizeof(T));
@@ -148,12 +147,10 @@ ImagePyramid Image::CreatePyramid(size_t num_of_levels,
     std::vector<std::shared_ptr<Image>> pyramid_image;
     pyramid_image.clear();
     if ((num_of_channels_ != 1) || (bytes_per_channel_ != 4)) {
-        utility::PrintWarning(
-                "[CreateImagePyramid] Unsupported image format.\n");
-        return pyramid_image;
+        utility::LogError("[CreateImagePyramid] Unsupported image format.");
     }
 
-    for (int i = 0; i < num_of_levels; i++) {
+    for (size_t i = 0; i < num_of_levels; i++) {
         if (i == 0) {
             std::shared_ptr<Image> input_copy_ptr = std::make_shared<Image>();
             *input_copy_ptr = *this;

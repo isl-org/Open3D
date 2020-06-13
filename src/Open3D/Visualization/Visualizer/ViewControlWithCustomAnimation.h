@@ -42,6 +42,8 @@ public:
     };
 
 public:
+    virtual ~ViewControlWithCustomAnimation() {}
+
     void Reset() override;
     void ChangeFieldOfView(double step) override;
     void Scale(double scale) override;

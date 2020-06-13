@@ -6,8 +6,8 @@ set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 # SET LIBNAME
 set(FILEDIALOG_LIBRARY tinyfiledialogs)
 
-file(GLOB tinyfiledialogs_sources tinyfiledialogs.c)
-file(GLOB tinyfiledialogs_headers tinyfiledialogs.h)
+file(GLOB tinyfiledialogs_sources include/tinyfiledialogs/tinyfiledialogs.c)
+file(GLOB tinyfiledialogs_headers include/tinyfiledialogs/tinyfiledialogs.h)
 
 add_library(${FILEDIALOG_LIBRARY} STATIC ${tinyfiledialogs_sources} ${tinyfiledialogs_headers})
 set_target_properties(${FILEDIALOG_LIBRARY} PROPERTIES

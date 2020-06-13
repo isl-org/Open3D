@@ -27,10 +27,11 @@
 #include <cstddef>
 #include <cstdio>
 
-#include <jpeglib.h>
+#include <jpeglib.h>  // Include after cstddef to define size_t
 
 #include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 namespace open3d {
 namespace io {
@@ -41,9 +42,9 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     FILE *file_in;
     JSAMPARRAY buffer;
 
-    if ((file_in = fopen(filename.c_str(), "rb")) == NULL) {
-        utility::PrintWarning("Read JPG failed: unable to open file: %s\n",
-                              filename.c_str());
+    if ((file_in = utility::filesystem::FOpen(filename, "rb")) == NULL) {
+        utility::LogWarning("Read JPG failed: unable to open file: {}",
+                            filename);
         return false;
     }
 
@@ -70,8 +71,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
         case JCS_CMYK:
         case JCS_YCCK:
         default:
-            utility::PrintWarning(
-                    "Read JPG failed: color space not supported.\n");
+            utility::LogWarning("Read JPG failed: color space not supported.");
             jpeg_destroy_decompress(&cinfo);
             fclose(file_in);
             return false;
@@ -97,13 +97,13 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
 bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
                      int quality /* = 90*/) {
-    if (image.HasData() == false) {
-        utility::PrintWarning("Write JPG failed: image has no data.\n");
+    if (!image.HasData()) {
+        utility::LogWarning("Write JPG failed: image has no data.");
         return false;
     }
     if (image.bytes_per_channel_ != 1 ||
         (image.num_of_channels_ != 1 && image.num_of_channels_ != 3)) {
-        utility::PrintWarning("Write JPG failed: unsupported image data.\n");
+        utility::LogWarning("Write JPG failed: unsupported image data.");
         return false;
     }
     struct jpeg_compress_struct cinfo;
@@ -111,9 +111,9 @@ bool WriteImageToJPG(const std::string &filename,
     FILE *file_out;
     JSAMPROW row_pointer[1];
 
-    if ((file_out = fopen(filename.c_str(), "wb")) == NULL) {
-        utility::PrintWarning("Write JPG failed: unable to open file: %s\n",
-                              filename.c_str());
+    if ((file_out = utility::filesystem::FOpen(filename, "wb")) == NULL) {
+        utility::LogWarning("Write JPG failed: unable to open file: {}",
+                            filename);
         return false;
     }
 

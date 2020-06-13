@@ -36,7 +36,7 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
                          patchSize=31)  # to save time
     [kp_s, des_s] = orb.detectAndCompute(color_cv_s, None)
     [kp_t, des_t] = orb.detectAndCompute(color_cv_t, None)
-    if len(kp_s) is 0 or len(kp_t) is 0:
+    if len(kp_s) == 0 or len(kp_t) == 0:
         return success, trans
 
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
@@ -227,7 +227,7 @@ def get_xyz_from_pts(pts_row, depth, px, py, focal):
         d0 = depth[v0, u0]
         d1 = depth[v0, u0 + 1]
         d2 = depth[v0 + 1, u0]
-        d3 = depth[v0 + 1, u0]
+        d3 = depth[v0 + 1, u0 + 1]
         d = (1 - vp) * (d1 * up + d0 * (1 - up)) + vp * (d3 * up + d2 *
                                                          (1 - up))
         return get_xyz_from_uv(u, v, d, px, py, focal)

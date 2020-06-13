@@ -29,21 +29,11 @@
 #include "Open3D/Camera/PinholeCameraTrajectory.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace Eigen;
-using namespace open3d;
-using namespace std;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_MemberData) {
-    unit_test::NotImplemented();
-}
+TEST(PinholeCameraTrajectory, DISABLED_MemberData) { NotImplemented(); }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectory, ConvertToFromJsonValue) {
     camera::PinholeCameraTrajectory src;
     camera::PinholeCameraTrajectory dst;
@@ -56,10 +46,10 @@ TEST(PinholeCameraTrajectory, ConvertToFromJsonValue) {
         camera::PinholeCameraIntrinsic intrinsic;
         intrinsic.width_ = width;
         intrinsic.height_ = height;
-        intrinsic.intrinsic_matrix_ = Matrix3d::Random();
+        intrinsic.intrinsic_matrix_ = Eigen::Matrix3d::Random();
 
         src.parameters_[i].intrinsic_ = intrinsic;
-        src.parameters_[i].extrinsic_ = Matrix4d::Random();
+        src.parameters_[i].extrinsic_ = Eigen::Matrix4d::Random();
     }
 
     Json::Value value;
@@ -84,3 +74,6 @@ TEST(PinholeCameraTrajectory, ConvertToFromJsonValue) {
         ExpectEQ(src_params.extrinsic_, dst_params.extrinsic_);
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

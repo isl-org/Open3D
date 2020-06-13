@@ -1,34 +1,59 @@
-build*/
-_build/
-src/Sandbox/
+# Windows build temp cmake file
+CMakeSettings.json
+
+# Docs tar file created by travis deploy
+.travis/*.tar.gz
+
+# CMake configured files
+src/Open3D/Open3D.h
+src/Open3D/Open3DConfig.h
 src/Open3D/Visualization/Shader/Shader.h
+util/pip_package/setup.py
+
+# CMake temp file from Visual Studio
+CMakeSettings.json
+
+# Temp directories
+build*/
+cmake-build-debug/
+cmake-build-release/
+docs/_out/
+util/pip_package/dist/
+util/conda_package/dist/
 doxygen/
+docs/python_api/
+node_modules/
+
+# Local configs
+_vimrc_local.vim
 .vs/
 .vscode/
-src/Open3D/Open3DConfig.h
-util/pip_package/setup.py
-open3d*.so
-open3d*.pyd
+.clangd/
+
+# Build artifacts
+**/package-lock.json
 *.pyc
 __pycache__
 ._*
 .DS_Store
 .vscode
 .idea
-util/pip_package/dist/
-util/conda_package/dist/
-examples/Python/ReconstructionSystem/dataset/
 *.egg-info/
 *.ipynb_checkpoints/
 *.py[cod]
+*.bak
 node_modules/
 static/
-**/package-lock.json
 *.old*
-docs/python_api/
-_vimrc_local.vim
+compile_commands.json
+
+# Example resources
+examples/Python/ReconstructionSystem/dataset/
+examples/TestData/fountain_small
 examples/TestData/Armadillo.ply
 examples/TestData/Bunny.ply
+examples/TestData/eagle.ply
+examples/TestData/voxelized.ply
 examples/Python/Basic/voxel_grid_test.ply
 examples/Python/Benchmark/testdata/
 examples/Python/Misc/test.jpg
@@ -44,4 +69,15 @@ examples/Python/Advanced/viewpoint.json
 examples/Python/Basic/copy_of_fragment.pcd
 examples/Python/Basic/copy_of_knot.ply
 examples/Python/Basic/copy_of_lena_color.jpg
+examples/Python/Basic/copy_of_crate.mtl
+examples/Python/Basic/copy_of_crate.png
+examples/Python/Basic/copy_of_crate.obj
 
+# doc
+docs/TestData
+docs/tutorial/**/*.ipynb
+docs/tutorial/**/*.py
+docs/tutorial/**/*.jpg
+docs/tutorial/**/*.ply
+docs/tutorial/**/*.pcd
+docs/tutorial/**/*.json

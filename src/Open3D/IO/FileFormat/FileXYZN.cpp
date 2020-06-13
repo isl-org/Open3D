@@ -26,67 +26,93 @@
 
 #include <cstdio>
 
+#include "Open3D/IO/ClassIO/FileFormatIO.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
+#include "Open3D/Utility/ProgressReporters.h"
 
 namespace open3d {
 namespace io {
 
+FileGeometry ReadFileGeometryTypeXYZN(const std::string &path) {
+    return CONTAINS_POINTS;
+}
+
 bool ReadPointCloudFromXYZN(const std::string &filename,
-                            geometry::PointCloud &pointcloud) {
-    FILE *file = fopen(filename.c_str(), "r");
-    if (file == NULL) {
-        utility::PrintWarning("Read XYZN failed: unable to open file: %s\n",
-                              filename.c_str());
+                            geometry::PointCloud &pointcloud,
+                            const ReadPointCloudOption &params) {
+    try {
+        utility::filesystem::CFile file;
+        if (!file.Open(filename, "r")) {
+            utility::LogWarning("Read XYZN failed: unable to open file: {}",
+                                filename);
+            return false;
+        }
+        utility::CountingProgressReporter reporter(params.update_progress);
+        reporter.SetTotal(file.GetFileSize());
+
+        pointcloud.Clear();
+        int i = 0;
+        double x, y, z, nx, ny, nz;
+        const char *line_buffer;
+        while ((line_buffer = file.ReadLine())) {
+            if (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf", &x, &y, &z, &nx,
+                       &ny, &nz) == 6) {
+                pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
+                pointcloud.normals_.push_back(Eigen::Vector3d(nx, ny, nz));
+            }
+            if (++i % 1000 == 0) {
+                reporter.Update(file.CurPos());
+            }
+        }
+        reporter.Finish();
+
+        return true;
+    } catch (const std::exception &e) {
+        utility::LogWarning("Read XYZN failed with exception: {}", e.what());
         return false;
     }
-
-    char line_buffer[DEFAULT_IO_BUFFER_SIZE];
-    double x, y, z, nx, ny, nz;
-    pointcloud.Clear();
-
-    while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-        if (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf", &x, &y, &z, &nx, &ny,
-                   &nz) == 6) {
-            pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
-            pointcloud.normals_.push_back(Eigen::Vector3d(nx, ny, nz));
-        }
-    }
-
-    fclose(file);
-    return true;
 }
 
 bool WritePointCloudToXYZN(const std::string &filename,
                            const geometry::PointCloud &pointcloud,
-                           bool write_ascii /* = false*/,
-                           bool compressed /* = false*/) {
-    if (pointcloud.HasNormals() == false) {
+                           const WritePointCloudOption &params) {
+    if (!pointcloud.HasNormals()) {
         return false;
     }
 
-    FILE *file = fopen(filename.c_str(), "w");
-    if (file == NULL) {
-        utility::PrintWarning("Write XYZN failed: unable to open file: %s\n",
-                              filename.c_str());
-        return false;
-    }
-
-    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-        const Eigen::Vector3d &point = pointcloud.points_[i];
-        const Eigen::Vector3d &normal = pointcloud.normals_[i];
-        if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n", point(0),
-                    point(1), point(2), normal(0), normal(1), normal(2)) < 0) {
-            utility::PrintWarning(
-                    "Write XYZN failed: unable to write file: %s\n",
-                    filename.c_str());
-            fclose(file);
-            return false;  // error happens during writing.
+    try {
+        utility::filesystem::CFile file;
+        if (!file.Open(filename, "w")) {
+            utility::LogWarning("Write XYZN failed: unable to open file: {}",
+                                filename);
+            return false;
         }
-    }
+        utility::CountingProgressReporter reporter(params.update_progress);
+        reporter.SetTotal(pointcloud.points_.size());
 
-    fclose(file);
-    return true;
+        for (size_t i = 0; i < pointcloud.points_.size(); i++) {
+            const Eigen::Vector3d &point = pointcloud.points_[i];
+            const Eigen::Vector3d &normal = pointcloud.normals_[i];
+            if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f %.10f %.10f\n",
+                        point(0), point(1), point(2), normal(0), normal(1),
+                        normal(2)) < 0) {
+                utility::LogWarning(
+                        "Write XYZN failed: unable to write file: {}",
+                        filename);
+                return false;  // error happened during writing.
+            }
+            if (i % 1000 == 0) {
+                reporter.Update(i);
+            }
+        }
+        reporter.Finish();
+        return true;
+    } catch (const std::exception &e) {
+        utility::LogWarning("Write XYZN failed with exception: {}", e.what());
+        return false;
+    }
 }
 
 }  // namespace io

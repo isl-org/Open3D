@@ -145,10 +145,10 @@ std::shared_ptr<geometry::TriangleMesh> SelectionPolygon::CropTriangleMesh(
         return std::make_shared<geometry::TriangleMesh>();
     }
     if (input.HasVertices() && !input.HasTriangles()) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "geometry::TriangleMesh contains vertices, but no triangles; "
                 "cropping will always yield an empty "
-                "geometry::TriangleMesh.\n");
+                "geometry::TriangleMesh.");
         return std::make_shared<geometry::TriangleMesh>();
     }
     switch (polygon_type_) {
@@ -166,7 +166,7 @@ std::shared_ptr<SelectionPolygonVolume>
 SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
     auto volume = std::make_shared<SelectionPolygonVolume>();
     const auto &editing_view = (const ViewControlWithEditing &)view;
-    if (editing_view.IsLocked() == false ||
+    if (!editing_view.IsLocked() ||
         editing_view.GetEditingMode() == ViewControlWithEditing::FreeMode) {
         return volume;
     }
@@ -207,24 +207,24 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
 std::shared_ptr<geometry::PointCloud>
 SelectionPolygon::CropPointCloudInRectangle(const geometry::PointCloud &input,
                                             const ViewControl &view) {
-    return input.SelectDownSample(CropInRectangle(input.points_, view));
+    return input.SelectByIndex(CropInRectangle(input.points_, view));
 }
 
 std::shared_ptr<geometry::PointCloud> SelectionPolygon::CropPointCloudInPolygon(
         const geometry::PointCloud &input, const ViewControl &view) {
-    return input.SelectDownSample(CropInPolygon(input.points_, view));
+    return input.SelectByIndex(CropInPolygon(input.points_, view));
 }
 
 std::shared_ptr<geometry::TriangleMesh>
 SelectionPolygon::CropTriangleMeshInRectangle(
         const geometry::TriangleMesh &input, const ViewControl &view) {
-    return input.SelectDownSample(CropInRectangle(input.vertices_, view));
+    return input.SelectByIndex(CropInRectangle(input.vertices_, view));
 }
 
 std::shared_ptr<geometry::TriangleMesh>
 SelectionPolygon::CropTriangleMeshInPolygon(const geometry::TriangleMesh &input,
                                             const ViewControl &view) {
-    return input.SelectDownSample(CropInPolygon(input.vertices_, view));
+    return input.SelectByIndex(CropInPolygon(input.vertices_, view));
 }
 
 std::vector<size_t> SelectionPolygon::CropInRectangle(
@@ -235,9 +235,10 @@ std::vector<size_t> SelectionPolygon::CropInRectangle(
     double half_height = (double)view.GetWindowHeight() * 0.5;
     auto min_bound = GetMinBound();
     auto max_bound = GetMaxBound();
-    utility::ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
+    utility::ConsoleProgressBar progress_bar((int64_t)input.size(),
+                                             "Cropping geometry: ");
     for (size_t i = 0; i < input.size(); i++) {
-        utility::AdvanceConsoleProgress();
+        ++progress_bar;
         const auto &point = input[i];
         Eigen::Vector4d pos =
                 mvp_matrix * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
@@ -260,9 +261,10 @@ std::vector<size_t> SelectionPolygon::CropInPolygon(
     double half_width = (double)view.GetWindowWidth() * 0.5;
     double half_height = (double)view.GetWindowHeight() * 0.5;
     std::vector<double> nodes;
-    utility::ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
+    utility::ConsoleProgressBar progress_bar((int64_t)input.size(),
+                                             "Cropping geometry: ");
     for (size_t k = 0; k < input.size(); k++) {
-        utility::AdvanceConsoleProgress();
+        ++progress_bar;
         const auto &point = input[k];
         Eigen::Vector4d pos =
                 mvp_matrix * Eigen::Vector4d(point(0), point(1), point(2), 1.0);

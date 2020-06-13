@@ -8,7 +8,7 @@ The first step of the scene reconstruction system is to create fragments from sh
 Input arguments
 ``````````````````````````````````````
 
-The script runs with ``python run_system.py [config] --make``. In ``[config]``, ``["path_dataset"]`` should have subfolders ``image`` and ``depth`` to store the color images and depth images respectively. We assume the color images and the depth images are synchronized and registered. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies the path to a json file that stores the camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
+The script runs with ``python run_system.py [config] --make``. In ``[config]``, ``["path_dataset"]`` should have subfolders ``image`` and ``depth`` to store the color images and depth images respectively. We assume the color images and the depth images are synchronized and registered. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies the path to a json file that stores the camera intrinsic matrix (See :ref:`/tutorial/Basic/rgbd_odometry.ipynb#read-camera-intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
 
 .. _make_fragments_register_rgbd_image_pairs:
 
@@ -17,11 +17,11 @@ Register RGBD image pairs
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
    :language: python
-   :lineno-start: 34
-   :lines: 5,35-60
+   :lineno-start: 33
+   :lines: 5,34-59
    :linenos:
 
-The function reads a pair of RGBD images and registers the ``source_rgbd_image`` to the ``target_rgbd_image``. Open3D function ``compute_rgbd_odometry`` is called to align the RGBD images. For adjacent RGBD images, an identity matrix is used as initialization. For non-adjacent RGBD images, wide baseline matching is used as an initialization. In particular, function ``pose_estimation`` computes OpenCV ORB feature to match sparse features over wide baseline images, then performs 5-point RANSAC to estimate a rough alignment, which is used as the initialization of ``compute_rgbd_odometry``.
+The function reads a pair of RGBD images and registers the ``source_rgbd_image`` to the ``target_rgbd_image``. The Open3D function ``compute_rgbd_odometry`` is called to align the RGBD images. For adjacent RGBD images, an identity matrix is used as the initialization. For non-adjacent RGBD images, wide baseline matching is used as the initialization. In particular, the function ``pose_estimation`` computes OpenCV ORB feature to match sparse features over wide baseline images, then performs 5-point RANSAC to estimate a rough alignment, which is used as the initialization of ``compute_rgbd_odometry``.
 
 
 .. _make_fragments_make_a_posegraph:
@@ -31,13 +31,13 @@ Multiway registration
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
    :language: python
-   :lineno-start: 62
-   :lines: 5,63-109
+   :lineno-start: 61
+   :lines: 5,62-108
    :linenos:
 
-This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``make_posegraph_for_fragment`` builds a pose graph for multiway registration of all RGBD images in this sequence. Each graph node represents an RGBD image and its pose which transforms the geometry to the global fragment space. For efficiency, only key frames are used.
+This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. The function ``make_posegraph_for_fragment`` builds a pose graph for multiway registration of all RGBD images in this sequence. Each graph node represents an RGBD image and its pose which transforms the geometry to the global fragment space. For efficiency, only key frames are used.
 
-Once a pose graph is created, multiway registration is performed by calling function ``optimize_posegraph_for_fragment``.
+Once a pose graph is created, multiway registration is performed by calling the function ``optimize_posegraph_for_fragment``.
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/optimize_posegraph.py
    :language: python
@@ -54,19 +54,19 @@ Make a fragment
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
    :language: python
-   :lineno-start: 111
-   :lines: 5,112-146
+   :lineno-start: 110
+   :lines: 5,111-145
    :linenos:
 
-Once the poses are estimates, :ref:`rgbd_integration` is used to reconstruct a colored fragment from each RGBD sequence.
+Once the poses are estimates, :ref:`/tutorial/Advanced/rgbd_integration.ipynb` is used to reconstruct a colored fragment from each RGBD sequence.
 
 Batch processing
 ``````````````````````````````````````
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
    :language: python
-   :lineno-start: 168
-   :lines: 5,169-188
+   :lineno-start: 167
+   :lines: 5,168-187
    :linenos:
 
 The main function calls each individual function explained above.

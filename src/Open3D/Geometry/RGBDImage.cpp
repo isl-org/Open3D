@@ -29,8 +29,26 @@
 namespace open3d {
 namespace geometry {
 
+RGBDImage &RGBDImage::Clear() {
+    color_.Clear();
+    depth_.Clear();
+    return *this;
+}
+
+bool RGBDImage::IsEmpty() const {
+    return !color_.HasData() || !depth_.HasData();
+}
+
+Eigen::Vector2d RGBDImage::GetMinBound() const {
+    return Eigen::Vector2d(0.0, 0.0);
+}
+
+Eigen::Vector2d RGBDImage::GetMaxBound() const {
+    return Eigen::Vector2d(color_.width_ + depth_.width_, color_.height_);
+}
+
 RGBDImagePyramid RGBDImage::FilterPyramid(
-        const RGBDImagePyramid& rgbd_image_pyramid, Image::FilterType type) {
+        const RGBDImagePyramid &rgbd_image_pyramid, Image::FilterType type) {
     RGBDImagePyramid rgbd_image_pyramid_filtered;
     rgbd_image_pyramid_filtered.clear();
     int num_of_levels = (int)rgbd_image_pyramid.size();

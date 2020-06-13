@@ -1,3 +1,9 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
+# examples/Python/ReconstructionSystem/sensors/realsense_recorder.py
+
 # pyrealsense2 is required.
 # Please see instructions in https://github.com/IntelRealSense/librealsense/tree/master/wrappers/python
 import pyrealsense2 as rs
@@ -44,9 +50,9 @@ def save_intrinsic_as_json(filename, frame):
         obj = json.dump(
             {
                 'width':
-                intrinsics.width,
+                    intrinsics.width,
                 'height':
-                intrinsics.height,
+                    intrinsics.height,
                 'intrinsic_matrix': [
                     intrinsics.fx, 0, 0, 0, intrinsics.fy, 0, intrinsics.ppx,
                     intrinsics.ppy, 1

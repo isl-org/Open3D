@@ -30,18 +30,18 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > ViewDistances source_file [options]\n");
-    utility::PrintInfo("      View color coded distances of a point cloud.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Basic options:\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
-    utility::PrintInfo("    --max_distance d          : Set max distance. Must be positive.\n");
-    utility::PrintInfo("    --mahalanobis_distance    : Compute the Mahalanobis distance.\n");
-    utility::PrintInfo("    --nn_distance             : Compute the NN distance.\n");
-    utility::PrintInfo("    --write_color_back        : Write color back to source_file.\n");
-    utility::PrintInfo("    --without_gui             : Without GUI.\n");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > ViewDistances source_file [options]");
+    utility::LogInfo("      View color coded distances of a point cloud.");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --help, -h                : Print help information.");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4). Default: 2.");
+    utility::LogInfo("    --max_distance d          : Set max distance. Must be positive.");
+    utility::LogInfo("    --mahalanobis_distance    : Compute the Mahalanobis distance.");
+    utility::LogInfo("    --nn_distance             : Compute the NN distance.");
+    utility::LogInfo("    --write_color_back        : Write color back to source_file.");
+    utility::LogInfo("    --without_gui             : Without GUI.");
     // clang-format on
 }
 
@@ -53,13 +53,13 @@ int main(int argc, char *argv[]) {
         PrintHelp();
         return 1;
     }
-    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     double max_distance = utility::GetProgramOptionAsDouble(
             argc, argv, "--max_distance", 0.0);
     auto pcd = io::CreatePointCloudFromFile(argv[1]);
     if (pcd->IsEmpty()) {
-        utility::PrintInfo("Empty point cloud.\n");
+        utility::LogWarning("Empty point cloud.");
         return 1;
     }
     std::string binname =
@@ -67,28 +67,28 @@ int main(int argc, char *argv[]) {
     std::vector<double> distances(pcd->points_.size());
     if (utility::ProgramOptionExists(argc, argv, "--mahalanobis_distance")) {
         distances = pcd->ComputeMahalanobisDistance();
-        FILE *f = fopen(binname.c_str(), "wb");
+        FILE *f = utility::filesystem::FOpen(binname, "wb");
         fwrite(distances.data(), sizeof(double), distances.size(), f);
         fclose(f);
     } else if (utility::ProgramOptionExists(argc, argv, "--nn_distance")) {
         distances = pcd->ComputeNearestNeighborDistance();
-        FILE *f = fopen(binname.c_str(), "wb");
+        FILE *f = utility::filesystem::FOpen(binname, "wb");
         fwrite(distances.data(), sizeof(double), distances.size(), f);
         fclose(f);
     } else {
-        FILE *f = fopen(binname.c_str(), "rb");
+        FILE *f = utility::filesystem::FOpen(binname, "rb");
         if (f == NULL) {
-            utility::PrintInfo("Cannot open bin file.\n");
+            utility::LogWarning("Cannot open bin file.");
             return 1;
         }
         if (fread(distances.data(), sizeof(double), pcd->points_.size(), f) !=
             pcd->points_.size()) {
-            utility::PrintInfo("Cannot open bin file.\n");
+            utility::LogWarning("Cannot open bin file.");
             return 1;
         }
     }
     if (max_distance <= 0.0) {
-        utility::PrintInfo("Max distance must be a positive value.\n");
+        utility::LogWarning("Max distance must be a positive value.");
         return 1;
     }
     pcd->colors_.resize(pcd->points_.size());

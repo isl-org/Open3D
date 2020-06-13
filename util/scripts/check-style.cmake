@@ -44,6 +44,7 @@ set(DIRECTORIES_OF_INTEREST_PYTHON
     examples/Python
     src/UnitTest/Python
     docs
+    src/Python
 )
 
 message(STATUS "Python check-style...")
@@ -69,7 +70,7 @@ if (CLANG_FORMAT)
     message(STATUS "clang-format found at: ${CLANG_FORMAT}")
     execute_process(COMMAND ${CLANG_FORMAT} --version)
 else()
-    message("See http://www.open3d.org/docs/contribute.html#automated-style-checker for help on style checker")
+    message("See http://www.open3d.org/docs/release/contribute.html#automated-style-checker for help on style checker")
     message(FATAL_ERROR "clang-format not found, style not available")
 endif()
 
@@ -90,11 +91,13 @@ set(DIRECTORIES_OF_INTEREST_CPP
     docs/_static
 )
 
-message(STATUS "C++ check-style...")
+message(STATUS "C++/CUDA check-style...")
 foreach(DIRECTORY ${DIRECTORIES_OF_INTEREST_CPP})
     set(CPP_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cpp")
+    set(CU_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cu")
+    set(CUH_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cuh")
     set(H_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h")
-    file(GLOB_RECURSE FILES ${CPP_GLOB} ${H_GLOB})
+    file(GLOB_RECURSE FILES ${CPP_GLOB} ${CU_GLOB} ${CUH_GLOB} ${H_GLOB})
     foreach(FILE ${FILES})
         style_check_file_cpp(${FILE})
     endforeach(FILE)
@@ -102,4 +105,4 @@ endforeach(DIRECTORY)
 if(ERROR_LIST_CPP)
     message(FATAL_ERROR "Style errors")
 endif()
-message(STATUS "C++ check-style done")
+message(STATUS "C++/CUDA check-style done")

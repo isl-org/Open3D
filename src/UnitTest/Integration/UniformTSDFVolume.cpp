@@ -28,20 +28,21 @@
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/IO/ClassIO/ImageIO.h"
+#include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
 #include "TestUtility/UnitTest.h"
 
 #include <sstream>
 
-using namespace open3d;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
 bool ReadPoses(const std::string& trajectory_path,
                std::vector<Eigen::Matrix4d>& poses) {
-    FILE* f = fopen(trajectory_path.c_str(), "r");
+    FILE* f = utility::filesystem::FOpen(trajectory_path, "r");
     if (f == NULL) {
-        utility::PrintWarning("Read poses failed: unable to open file: %s\n",
-                              trajectory_path.c_str());
+        utility::LogWarning("Read poses failed: unable to open file: {}",
+                            trajectory_path);
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -93,7 +94,7 @@ TEST(UniformTSDFVolume, Constructor) {
     EXPECT_EQ(tsdf_volume.length_, length);
     EXPECT_EQ(tsdf_volume.resolution_, resolution);
     EXPECT_EQ(tsdf_volume.voxel_num_, resolution * resolution * resolution);
-    EXPECT_EQ(tsdf_volume.voxel_grid_.voxels_.size(), tsdf_volume.voxel_num_);
+    EXPECT_EQ(int(tsdf_volume.voxels_.size()), tsdf_volume.voxel_num_);
 }
 
 TEST(UniformTSDFVolume, RealData) {
@@ -153,8 +154,8 @@ TEST(UniformTSDFVolume, RealData) {
     // Extract mesh
     std::shared_ptr<geometry::TriangleMesh> mesh =
             tsdf_volume.ExtractTriangleMesh();
-    EXPECT_EQ(mesh->vertices_.size(), 3198);
-    EXPECT_EQ(mesh->triangles_.size(), 4402);
+    EXPECT_EQ(mesh->vertices_.size(), 3198u);
+    EXPECT_EQ(mesh->triangles_.size(), 4402u);
     Eigen::Vector3d color_sum(0, 0, 0);
     for (const Eigen::Vector3d& color : mesh->vertex_colors_) {
         color_sum += color;
@@ -166,8 +167,8 @@ TEST(UniformTSDFVolume, RealData) {
 
     // Extract point cloud
     std::shared_ptr<geometry::PointCloud> pcd = tsdf_volume.ExtractPointCloud();
-    EXPECT_EQ(pcd->points_.size(), 2227);
-    EXPECT_EQ(pcd->colors_.size(), 2227);
+    EXPECT_EQ(pcd->points_.size(), 2227u);
+    EXPECT_EQ(pcd->colors_.size(), 2227u);
     color_sum << 0, 0, 0;
     for (const Eigen::Vector3d& color : pcd->colors_) {
         color_sum += color;
@@ -184,8 +185,8 @@ TEST(UniformTSDFVolume, RealData) {
     // Extract voxel cloud
     std::shared_ptr<geometry::PointCloud> voxel_pcd =
             tsdf_volume.ExtractVoxelPointCloud();
-    EXPECT_EQ(voxel_pcd->points_.size(), 4488);
-    EXPECT_EQ(voxel_pcd->colors_.size(), 4488);
+    EXPECT_EQ(voxel_pcd->points_.size(), 4488u);
+    EXPECT_EQ(voxel_pcd->colors_.size(), 4488u);
     color_sum << 0, 0, 0;
     for (const Eigen::Vector3d& color : voxel_pcd->colors_) {
         color_sum += color;
@@ -216,3 +217,6 @@ TEST(UniformTSDFVolume, DISABLED_IndexOf) {}
 TEST(UniformTSDFVolume, DISABLED_GetNormalAt) {}
 
 TEST(UniformTSDFVolume, DISABLED_GetTSDFAt) {}
+
+}  // namespace unit_test
+}  // namespace open3d

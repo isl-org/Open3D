@@ -30,17 +30,22 @@
 
 #include "Open3D/Open3D.h"
 
+void PrintUsage() {
+    using namespace open3d;
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing|editmesh] [filename]");
+    utility::LogInfo("    > Visualizer [animation] [filename] [trajectoryfile]");
+    utility::LogInfo("    > Visualizer [rgbd] [color] [depth] [--rgbd_type]");
+    // clang-format on
+}
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc < 3) {
-        PrintOpen3DVersion();
-        // clang-format off
-        utility::PrintInfo("Usage:\n");
-        utility::PrintInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
-        utility::PrintInfo("    > Visualizer [animation] [filename] [trajectoryfile]\n");
-        // clang-format on
+        PrintUsage();
         return 1;
     }
 
@@ -48,19 +53,30 @@ int main(int argc, char *argv[]) {
     if (option == "mesh") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            utility::PrintWarning("Successfully read %s\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::PrintError("Failed to read %s\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
         visualization::DrawGeometries({mesh_ptr}, "Mesh", 1600, 900);
+    } else if (option == "editmesh") {
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
+        if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
+            utility::LogInfo("Successfully read {}", argv[2]);
+        } else {
+            utility::LogWarning("Failed to read {}", argv[2]);
+            return 1;
+        }
+        mesh_ptr->ComputeVertexNormals();
+        visualization::DrawGeometriesWithVertexSelection(
+                {mesh_ptr}, "Edit Mesh", 1600, 900);
     } else if (option == "spin") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            utility::PrintWarning("Successfully read %s\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::PrintError("Failed to read %s\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -75,9 +91,9 @@ int main(int argc, char *argv[]) {
     } else if (option == "slowspin") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            utility::PrintWarning("Successfully read %s\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::PrintError("Failed to read %s\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -94,9 +110,9 @@ int main(int argc, char *argv[]) {
     } else if (option == "pointcloud") {
         auto cloud_ptr = std::make_shared<geometry::PointCloud>();
         if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
-            utility::PrintWarning("Successfully read %s\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::PrintError("Failed to read %s\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         cloud_ptr->NormalizeNormals();
@@ -104,9 +120,9 @@ int main(int argc, char *argv[]) {
     } else if (option == "rainbow") {
         auto cloud_ptr = std::make_shared<geometry::PointCloud>();
         if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
-            utility::PrintWarning("Successfully read %s\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::PrintError("Failed to read %s\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         cloud_ptr->NormalizeNormals();
@@ -135,13 +151,54 @@ int main(int argc, char *argv[]) {
     } else if (option == "image") {
         auto image_ptr = std::make_shared<geometry::Image>();
         if (io::ReadImage(argv[2], *image_ptr)) {
-            utility::PrintWarning("Successfully read %s\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::PrintError("Failed to read %s\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         visualization::DrawGeometries({image_ptr}, "Image", image_ptr->width_,
                                       image_ptr->height_);
+    } else if (option == "rgbd") {
+        if (argc < 4) {
+            PrintUsage();
+            return 1;
+        }
+
+        int rgbd_type =
+                utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
+        auto color_ptr = std::make_shared<geometry::Image>();
+        auto depth_ptr = std::make_shared<geometry::Image>();
+
+        if (io::ReadImage(argv[2], *color_ptr)) {
+            utility::LogInfo("Successfully read {}", argv[2]);
+        } else {
+            utility::LogWarning("Failed to read {}", argv[2]);
+            return 1;
+        }
+
+        if (io::ReadImage(argv[3], *depth_ptr)) {
+            utility::LogInfo("Successfully read {}", argv[3]);
+        } else {
+            utility::LogWarning("Failed to read {}", argv[3]);
+            return 1;
+        }
+
+        std::shared_ptr<geometry::RGBDImage> (*CreateRGBDImage)(
+                const geometry::Image &, const geometry::Image &, bool);
+        if (rgbd_type == 0)
+            CreateRGBDImage = &geometry::RGBDImage::CreateFromRedwoodFormat;
+        else if (rgbd_type == 1)
+            CreateRGBDImage = &geometry::RGBDImage::CreateFromTUMFormat;
+        else if (rgbd_type == 2)
+            CreateRGBDImage = &geometry::RGBDImage::CreateFromSUNFormat;
+        else if (rgbd_type == 3)
+            CreateRGBDImage = &geometry::RGBDImage::CreateFromNYUFormat;
+        else
+            CreateRGBDImage = &geometry::RGBDImage::CreateFromRedwoodFormat;
+        auto rgbd_ptr = CreateRGBDImage(*color_ptr, *depth_ptr, false);
+        visualization::DrawGeometries({rgbd_ptr}, "RGBD", depth_ptr->width_ * 2,
+                                      depth_ptr->height_);
+
     } else if (option == "depth") {
         auto image_ptr = io::CreateImageFromFile(argv[2]);
         camera::PinholeCameraIntrinsic camera;
@@ -157,9 +214,9 @@ int main(int argc, char *argv[]) {
     } else if (option == "animation") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            utility::PrintWarning("Successfully read %s\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::PrintError("Failed to read %s\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -172,7 +229,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    utility::PrintInfo("End of the test.\n");
+    utility::LogInfo("End of the test.");
 
     return 0;
 }

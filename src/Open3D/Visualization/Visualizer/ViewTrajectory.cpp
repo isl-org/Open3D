@@ -148,7 +148,7 @@ bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const {
     Json::Value trajectory_array;
     for (const auto &status : view_status_) {
         Json::Value status_object;
-        if (status.ConvertToJsonValue(status_object) == false) {
+        if (!status.ConvertToJsonValue(status_object)) {
             return false;
         }
         trajectory_array.append(status_object);
@@ -163,31 +163,31 @@ bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
-        utility::PrintWarning(
-                "ViewTrajectory read JSON failed: unsupported json format.\n");
+    if (!value.isObject()) {
+        utility::LogWarning(
+                "ViewTrajectory read JSON failed: unsupported json format.");
         return false;
     }
     if (value.get("class_name", "").asString() != "ViewTrajectory" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        utility::PrintWarning(
-                "ViewTrajectory read JSON failed: unsupported json format.\n");
+        utility::LogWarning(
+                "ViewTrajectory read JSON failed: unsupported json format.");
         return false;
     }
     is_loop_ = value.get("is_loop", false).asBool();
     interval_ = value.get("interval", 29).asInt();
     const Json::Value &trajectory_array = value["trajectory"];
     if (trajectory_array.size() == 0) {
-        utility::PrintWarning(
-                "ViewTrajectory read JSON failed: empty trajectory.\n");
+        utility::LogWarning(
+                "ViewTrajectory read JSON failed: empty trajectory.");
         return false;
     }
     view_status_.resize(trajectory_array.size());
     for (int i = 0; i < (int)trajectory_array.size(); i++) {
         const Json::Value &status_object = trajectory_array[i];
         ViewParameters status;
-        if (status.ConvertFromJsonValue(status_object) == false) {
+        if (!status.ConvertFromJsonValue(status_object)) {
             return false;
         }
         view_status_[i] = status;

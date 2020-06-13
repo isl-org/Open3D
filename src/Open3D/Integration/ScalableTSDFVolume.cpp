@@ -66,13 +66,12 @@ void ScalableTSDFVolume::Integrate(
          image.color_.num_of_channels_ != 1) ||
         (color_type_ == TSDFVolumeColorType::Gray32 &&
          image.color_.bytes_per_channel_ != 4) ||
-        (color_type_ != TSDFVolumeColorType::None &&
+        (color_type_ != TSDFVolumeColorType::NoColor &&
          image.color_.width_ != intrinsic.width_) ||
-        (color_type_ != TSDFVolumeColorType::None &&
+        (color_type_ != TSDFVolumeColorType::NoColor &&
          image.color_.height_ != intrinsic.height_)) {
-        utility::PrintWarning(
-                "[ScalableTSDFVolume::Integrate] Unsupported image format.\n");
-        return;
+        utility::LogError(
+                "[ScalableTSDFVolume::Integrate] Unsupported image format.");
     }
     auto depth2cameradistance =
             geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(
@@ -119,13 +118,10 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                 for (int y = 0; y < volume0.resolution_; y++) {
                     for (int z = 0; z < volume0.resolution_; z++) {
                         Eigen::Vector3i idx0(x, y, z);
-                        w0 = volume0.voxel_grid_.voxels_[volume0.IndexOf(idx0)]
-                                     .weight_;
-                        f0 = volume0.voxel_grid_.voxels_[volume0.IndexOf(idx0)]
-                                     .tsdf_;
-                        if (color_type_ != TSDFVolumeColorType::None)
-                            c0 = volume0.voxel_grid_
-                                         .voxels_[volume0.IndexOf(idx0)]
+                        w0 = volume0.voxels_[volume0.IndexOf(idx0)].weight_;
+                        f0 = volume0.voxels_[volume0.IndexOf(idx0)].tsdf_;
+                        if (color_type_ != TSDFVolumeColorType::NoColor)
+                            c0 = volume0.voxels_[volume0.IndexOf(idx0)]
                                          .color_.cast<float>();
                         if (w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f) {
                             Eigen::Vector3d p0 =
@@ -143,17 +139,14 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                                 p1(i) += voxel_length_;
                                 idx1(i) += 1;
                                 if (idx1(i) < volume0.resolution_) {
-                                    w1 = volume0.voxel_grid_
-                                                 .voxels_[volume0.IndexOf(idx1)]
+                                    w1 = volume0.voxels_[volume0.IndexOf(idx1)]
                                                  .weight_;
-                                    f1 = volume0.voxel_grid_
-                                                 .voxels_[volume0.IndexOf(idx1)]
+                                    f1 = volume0.voxels_[volume0.IndexOf(idx1)]
                                                  .tsdf_;
                                     if (color_type_ !=
-                                        TSDFVolumeColorType::None)
-                                        c1 = volume0.voxel_grid_
-                                                     .voxels_[volume0.IndexOf(
-                                                             idx1)]
+                                        TSDFVolumeColorType::NoColor)
+                                        c1 = volume0.voxels_[volume0.IndexOf(
+                                                                     idx1)]
                                                      .color_.cast<float>();
                                 } else {
                                     idx1(i) -= volume0.resolution_;
@@ -165,20 +158,18 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                                     } else {
                                         const auto &volume1 =
                                                 *unit_itr->second.volume_;
-                                        w1 = volume1.voxel_grid_
-                                                     .voxels_[volume1.IndexOf(
-                                                             idx1)]
+                                        w1 = volume1.voxels_[volume1.IndexOf(
+                                                                     idx1)]
                                                      .weight_;
-                                        f1 = volume1.voxel_grid_
-                                                     .voxels_[volume1.IndexOf(
-                                                             idx1)]
+                                        f1 = volume1.voxels_[volume1.IndexOf(
+                                                                     idx1)]
                                                      .tsdf_;
                                         if (color_type_ !=
-                                            TSDFVolumeColorType::None)
-                                            c1 = volume1.voxel_grid_
-                                                         .voxels_[volume1.IndexOf(
-                                                                 idx1)]
-                                                         .color_.cast<float>();
+                                            TSDFVolumeColorType::NoColor)
+                                            c1 = volume1.voxels_
+                                                         [volume1.IndexOf(idx1)]
+                                                                 .color_
+                                                                 .cast<float>();
                                     }
                                 }
                                 if (w1 != 0.0f && f1 < 0.98f && f1 >= -0.98f &&
@@ -246,23 +237,19 @@ ScalableTSDFVolume::ExtractTriangleMesh() {
                             if (idx1(0) < volume_unit_resolution_ &&
                                 idx1(1) < volume_unit_resolution_ &&
                                 idx1(2) < volume_unit_resolution_) {
-                                w[i] = volume0.voxel_grid_
-                                               .voxels_[volume0.IndexOf(idx1)]
+                                w[i] = volume0.voxels_[volume0.IndexOf(idx1)]
                                                .weight_;
-                                f[i] = volume0.voxel_grid_
-                                               .voxels_[volume0.IndexOf(idx1)]
+                                f[i] = volume0.voxels_[volume0.IndexOf(idx1)]
                                                .tsdf_;
                                 if (color_type_ == TSDFVolumeColorType::RGB8)
-                                    c[i] = volume0.voxel_grid_
-                                                   .voxels_[volume0.IndexOf(
-                                                           idx1)]
+                                    c[i] = volume0.voxels_[volume0.IndexOf(
+                                                                   idx1)]
                                                    .color_.cast<double>() /
                                            255.0;
                                 else if (color_type_ ==
                                          TSDFVolumeColorType::Gray32)
-                                    c[i] = volume0.voxel_grid_
-                                                   .voxels_[volume0.IndexOf(
-                                                           idx1)]
+                                    c[i] = volume0.voxels_[volume0.IndexOf(
+                                                                   idx1)]
                                                    .color_.cast<double>();
                             } else {
                                 for (int j = 0; j < 3; j++) {
@@ -278,26 +265,22 @@ ScalableTSDFVolume::ExtractTriangleMesh() {
                                 } else {
                                     const auto &volume1 =
                                             *unit_itr1->second.volume_;
-                                    w[i] = volume1.voxel_grid_
-                                                   .voxels_[volume1.IndexOf(
-                                                           idx1)]
+                                    w[i] = volume1.voxels_[volume1.IndexOf(
+                                                                   idx1)]
                                                    .weight_;
-                                    f[i] = volume1.voxel_grid_
-                                                   .voxels_[volume1.IndexOf(
-                                                           idx1)]
+                                    f[i] = volume1.voxels_[volume1.IndexOf(
+                                                                   idx1)]
                                                    .tsdf_;
                                     if (color_type_ ==
                                         TSDFVolumeColorType::RGB8)
-                                        c[i] = volume1.voxel_grid_
-                                                       .voxels_[volume1.IndexOf(
-                                                               idx1)]
+                                        c[i] = volume1.voxels_[volume1.IndexOf(
+                                                                       idx1)]
                                                        .color_.cast<double>() /
                                                255.0;
                                     else if (color_type_ ==
                                              TSDFVolumeColorType::Gray32)
-                                        c[i] = volume1.voxel_grid_
-                                                       .voxels_[volume1.IndexOf(
-                                                               idx1)]
+                                        c[i] = volume1.voxels_[volume1.IndexOf(
+                                                                       idx1)]
                                                        .color_.cast<double>();
                                 }
                             }
@@ -345,7 +328,7 @@ ScalableTSDFVolume::ExtractTriangleMesh() {
                                             f0 * voxel_length_ / (f0 + f1);
                                     mesh->vertices_.push_back(pt);
                                     if (color_type_ !=
-                                        TSDFVolumeColorType::None) {
+                                        TSDFVolumeColorType::NoColor) {
                                         const auto &c0 = c[edge_to_vert[i][0]];
                                         const auto &c1 = c[edge_to_vert[i][1]];
                                         mesh->vertex_colors_.push_back(
@@ -438,7 +421,7 @@ double ScalableTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
         if (idx1(0) < volume_unit_resolution_ &&
             idx1(1) < volume_unit_resolution_ &&
             idx1(2) < volume_unit_resolution_) {
-            f[i] = volume0.voxel_grid_.voxels_[volume0.IndexOf(idx1)].tsdf_;
+            f[i] = volume0.voxels_[volume0.IndexOf(idx1)].tsdf_;
         } else {
             for (int j = 0; j < 3; j++) {
                 if (idx1(j) >= volume_unit_resolution_) {
@@ -451,7 +434,7 @@ double ScalableTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
                 f[i] = 0.0f;
             } else {
                 const auto &volume1 = *unit_itr1->second.volume_;
-                f[i] = volume1.voxel_grid_.voxels_[volume1.IndexOf(idx1)].tsdf_;
+                f[i] = volume1.voxels_[volume1.IndexOf(idx1)].tsdf_;
             }
         }
     }

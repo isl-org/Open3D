@@ -68,7 +68,7 @@ bool NormalShader::BindGeometry(const geometry::Geometry &geometry,
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3f> normals;
-    if (PrepareBinding(geometry, option, view, points, normals) == false) {
+    if (!PrepareBinding(geometry, option, view, points, normals)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -89,7 +89,7 @@ bool NormalShader::BindGeometry(const geometry::Geometry &geometry,
 bool NormalShader::RenderGeometry(const geometry::Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
@@ -127,7 +127,7 @@ bool NormalShaderForPointCloud::PrepareRendering(
         return false;
     }
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     glPointSize(GLfloat(option.point_size_));
     return true;
 }
@@ -145,11 +145,11 @@ bool NormalShaderForPointCloud::PrepareBinding(
     }
     const geometry::PointCloud &pointcloud =
             (const geometry::PointCloud &)geometry;
-    if (pointcloud.HasPoints() == false) {
+    if (!pointcloud.HasPoints()) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
-    if (pointcloud.HasNormals() == false) {
+    if (!pointcloud.HasNormals()) {
         PrintShaderWarning("Binding failed with pointcloud with no normals.");
         return false;
     }
@@ -183,7 +183,7 @@ bool NormalShaderForTriangleMesh::PrepareRendering(
         glEnable(GL_CULL_FACE);
     }
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     if (option.mesh_show_wireframe_) {
         glEnable(GL_POLYGON_OFFSET_FILL);
@@ -209,12 +209,11 @@ bool NormalShaderForTriangleMesh::PrepareBinding(
     }
     const geometry::TriangleMesh &mesh =
             (const geometry::TriangleMesh &)geometry;
-    if (mesh.HasTriangles() == false) {
+    if (!mesh.HasTriangles()) {
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    if (mesh.HasTriangleNormals() == false ||
-        mesh.HasVertexNormals() == false) {
+    if (!mesh.HasTriangleNormals() || !mesh.HasVertexNormals()) {
         PrintShaderWarning("Binding failed because mesh has no normals.");
         PrintShaderWarning("Call ComputeVertexNormals() before binding.");
         return false;

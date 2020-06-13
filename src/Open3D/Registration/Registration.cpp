@@ -27,12 +27,12 @@
 #include "Open3D/Registration/Registration.h"
 
 #include <cstdlib>
-#include <ctime>
 
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Registration/Feature.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 
@@ -47,7 +47,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
         const Eigen::Matrix4d &transformation) {
     RegistrationResult result(transformation);
     if (max_correspondence_distance <= 0.0) {
-        return std::move(result);
+        return result;
     }
 
     double error2 = 0.0;
@@ -94,7 +94,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
         result.fitness_ = (double)corres_number / (double)source.points_.size();
         result.inlier_rmse_ = std::sqrt(error2 / (double)corres_number);
     }
-    return std::move(result);
+    return result;
 }
 
 RegistrationResult EvaluateRANSACBasedOnCorrespondence(
@@ -113,6 +113,7 @@ RegistrationResult EvaluateRANSACBasedOnCorrespondence(
         if (dis2 < max_dis2) {
             good++;
             error2 += dis2;
+            result.correspondence_set_.push_back(c);
         }
     }
     if (good == 0) {
@@ -137,7 +138,7 @@ RegistrationResult EvaluateRegistration(
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
     geometry::PointCloud pcd = source;
-    if (transformation.isIdentity() == false) {
+    if (!transformation.isIdentity()) {
         pcd.Transform(transformation);
     }
     return GetRegistrationResultAndCorrespondences(
@@ -154,31 +155,32 @@ RegistrationResult RegistrationICP(
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
     if (max_correspondence_distance <= 0.0) {
-        utility::PrintError("Error: Invalid max_correspondence_distance.\n");
-        return RegistrationResult(init);
+        utility::LogError("Invalid max_correspondence_distance.");
     }
-    if (estimation.GetTransformationEstimationType() ==
-                TransformationEstimationType::PointToPlane &&
+    if ((estimation.GetTransformationEstimationType() ==
+                 TransformationEstimationType::PointToPlane ||
+         estimation.GetTransformationEstimationType() ==
+                 TransformationEstimationType::ColoredICP) &&
         (!source.HasNormals() || !target.HasNormals())) {
-        utility::PrintError(
-                "Error: TransformationEstimationPointToPlane requires "
-                "pre-computed normal vectors.\n");
-        return RegistrationResult(init);
+        utility::LogError(
+                "TransformationEstimationPointToPlane and "
+                "TransformationEstimationColoredICP "
+                "require pre-computed normal vectors.");
     }
 
     Eigen::Matrix4d transformation = init;
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
     geometry::PointCloud pcd = source;
-    if (init.isIdentity() == false) {
+    if (!init.isIdentity()) {
         pcd.Transform(init);
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, kdtree, max_correspondence_distance, transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::PrintDebug("ICP Iteration #%d: Fitness %.4f, RMSE %.4f\n", i,
-                            result.fitness_, result.inlier_rmse_);
+        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
+                          result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
         transformation = update * transformation;
@@ -211,15 +213,16 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         max_correspondence_distance <= 0.0) {
         return RegistrationResult();
     }
-    std::srand((unsigned int)std::time(0));
     Eigen::Matrix4d transformation;
     CorrespondenceSet ransac_corres(ransac_n);
     RegistrationResult result;
+
     for (int itr = 0;
          itr < criteria.max_iteration_ && itr < criteria.max_validation_;
          itr++) {
         for (int j = 0; j < ransac_n; j++) {
-            ransac_corres[j] = corres[std::rand() % (int)corres.size()];
+            ransac_corres[j] = corres[utility::UniformRandInt(
+                    0, static_cast<int>(corres.size()) - 1)];
         }
         transformation =
                 estimation.ComputeTransformation(source, target, ransac_corres);
@@ -234,8 +237,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
             result = this_result;
         }
     }
-    utility::PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
-                        result.inlier_rmse_);
+    utility::LogDebug("RANSAC: Fitness {:e}, RMSE {:e}", result.fitness_,
+                      result.inlier_rmse_);
     return result;
 }
 
@@ -270,14 +273,6 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         geometry::KDTreeFlann kdtree(target);
         geometry::KDTreeFlann kdtree_feature(target_feature);
         RegistrationResult result_private;
-        unsigned int seed_number;
-#ifdef _OPENMP
-        // each thread has different seed_number
-        seed_number = (unsigned int)std::time(0) * (omp_get_thread_num() + 1);
-#else
-    seed_number = (unsigned int)std::time(0);
-#endif
-        std::srand(seed_number);
 
 #ifdef _OPENMP
 #pragma omp for nowait
@@ -287,8 +282,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 std::vector<double> dists(num_similar_features);
                 Eigen::Matrix4d transformation;
                 for (int j = 0; j < ransac_n; j++) {
-                    int source_sample_id =
-                            std::rand() % (int)source.points_.size();
+                    int source_sample_id = utility::UniformRandInt(
+                            0, static_cast<int>(source.points_.size()) - 1);
                     if (similar_features[source_sample_id].empty()) {
                         std::vector<int> indices(num_similar_features);
                         kdtree_feature.SearchKNN(
@@ -304,34 +299,34 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                     if (num_similar_features == 1)
                         ransac_corres[j](1) =
                                 similar_features[source_sample_id][0];
-                    else
-                        ransac_corres[j](1) =
-                                similar_features[source_sample_id]
-                                                [std::rand() %
-                                                 num_similar_features];
+                    else {
+                        ransac_corres[j](1) = similar_features
+                                [source_sample_id][utility::UniformRandInt(
+                                        0, num_similar_features - 1)];
+                    }
                 }
                 bool check = true;
                 for (const auto &checker : checkers) {
-                    if (checker.get().require_pointcloud_alignment_ == false &&
-                        checker.get().Check(source, target, ransac_corres,
-                                            transformation) == false) {
+                    if (!checker.get().require_pointcloud_alignment_ &&
+                        !checker.get().Check(source, target, ransac_corres,
+                                             transformation)) {
                         check = false;
                         break;
                     }
                 }
-                if (check == false) continue;
+                if (!check) continue;
                 transformation = estimation.ComputeTransformation(
                         source, target, ransac_corres);
                 check = true;
                 for (const auto &checker : checkers) {
-                    if (checker.get().require_pointcloud_alignment_ == true &&
-                        checker.get().Check(source, target, ransac_corres,
-                                            transformation) == false) {
+                    if (checker.get().require_pointcloud_alignment_ &&
+                        !checker.get().Check(source, target, ransac_corres,
+                                             transformation)) {
                         check = false;
                         break;
                     }
                 }
-                if (check == false) continue;
+                if (!check) continue;
                 geometry::PointCloud pcd = source;
                 pcd.Transform(transformation);
                 auto this_result = GetRegistrationResultAndCorrespondences(
@@ -365,9 +360,9 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 #ifdef _OPENMP
     }
 #endif
-    utility::PrintDebug("total_validation : %d\n", total_validation);
-    utility::PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
-                        result.inlier_rmse_);
+    utility::LogDebug("total_validation : {:d}", total_validation);
+    utility::LogDebug("RANSAC: Fitness {:e}, RMSE {:e}", result.fitness_,
+                      result.inlier_rmse_);
     return result;
 }
 
@@ -377,7 +372,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation) {
     geometry::PointCloud pcd = source;
-    if (transformation.isIdentity() == false) {
+    if (!transformation.isIdentity()) {
         pcd.Transform(transformation);
     }
     RegistrationResult result;
@@ -389,17 +384,17 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
     // write q^*
     // see http://redwood-data.org/indoor/registration.html
     // note: I comes first in this implementation
-    Eigen::Matrix6d GTG = Eigen::Matrix6d::Identity();
+    Eigen::Matrix6d GTG = Eigen::Matrix6d::Zero();
 #ifdef _OPENMP
 #pragma omp parallel
     {
 #endif
-        Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
+        Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Zero();
         Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
-        for (auto c = 0; c < result.correspondence_set_.size(); c++) {
+        for (int c = 0; c < int(result.correspondence_set_.size()); c++) {
             int t = result.correspondence_set_[c](1);
             double x = target.points_[t](0);
             double y = target.points_[t](1);
@@ -427,7 +422,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 #ifdef _OPENMP
     }
 #endif
-    return std::move(GTG);
+    return GTG;
 }
 
 }  // namespace registration

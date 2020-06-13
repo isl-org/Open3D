@@ -60,12 +60,12 @@ void VisualizeRegistration(const open3d::geometry::PointCloud &source,
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc != 3 && argc != 4) {
-        utility::PrintDebug(
+        utility::LogInfo(
                 "Usage : RegistrationRANSAC [path_to_first_point_cloud] "
-                "[path_to_second_point_cloud] --visualize\n");
+                "[path_to_second_point_cloud] --visualize");
         return 1;
     }
 

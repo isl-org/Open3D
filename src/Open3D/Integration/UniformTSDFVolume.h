@@ -46,15 +46,14 @@ public:
     float weight_ = 0;
 };
 
-class TSDFVoxelGrid : public VoxelGrid {
-public:
-    std::vector<TSDFVoxel> voxels_;
-};
-
 }  // namespace geometry
 
 namespace integration {
 
+/// \class UniformTSDFVolume
+///
+/// \brief UniformTSDFVolume implements the classic TSDF volume with uniform
+/// voxel grid (Curless and Levoy 1996).
 class UniformTSDFVolume : public TSDFVolume {
 public:
     UniformTSDFVolume(double length,
@@ -74,6 +73,7 @@ public:
 
     /// Debug function to extract the voxel data into a VoxelGrid
     std::shared_ptr<geometry::PointCloud> ExtractVoxelPointCloud() const;
+    /// Debug function to extract the voxel data VoxelGrid
     std::shared_ptr<geometry::VoxelGrid> ExtractVoxelGrid() const;
 
     /// Faster Integrate function that uses depth_to_camera_distance_multiplier
@@ -93,10 +93,14 @@ public:
     }
 
 public:
-    geometry::TSDFVoxelGrid voxel_grid_;
+    std::vector<geometry::TSDFVoxel> voxels_;
     Eigen::Vector3d origin_;
+    /// Total length, where voxel_length = length / resolution.
     double length_;
+    /// Resolution over the total length, where voxel_length = length /
+    /// resolution.
     int resolution_;
+    /// Number of voxels present.
     int voxel_num_;
 
 private:

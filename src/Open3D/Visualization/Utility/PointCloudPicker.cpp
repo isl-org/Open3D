@@ -26,6 +26,7 @@
 
 #include "Open3D/Visualization/Utility/PointCloudPicker.h"
 
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Utility/Console.h"
 
@@ -57,6 +58,33 @@ Eigen::Vector3d PointCloudPicker::GetMaxBound() const {
     }
 }
 
+Eigen::Vector3d PointCloudPicker::GetCenter() const {
+    if (pointcloud_ptr_) {
+        return ((const geometry::PointCloud&)(*pointcloud_ptr_)).GetCenter();
+    } else {
+        return Eigen::Vector3d(0.0, 0.0, 0.0);
+    }
+}
+
+geometry::AxisAlignedBoundingBox PointCloudPicker::GetAxisAlignedBoundingBox()
+        const {
+    if (pointcloud_ptr_) {
+        return geometry::AxisAlignedBoundingBox::CreateFromPoints(
+                ((const geometry::PointCloud&)(*pointcloud_ptr_)).points_);
+    } else {
+        return geometry::AxisAlignedBoundingBox();
+    }
+}
+
+geometry::OrientedBoundingBox PointCloudPicker::GetOrientedBoundingBox() const {
+    if (pointcloud_ptr_) {
+        return geometry::OrientedBoundingBox::CreateFromPoints(
+                ((const geometry::PointCloud&)(*pointcloud_ptr_)).points_);
+    } else {
+        return geometry::OrientedBoundingBox();
+    }
+}
+
 PointCloudPicker& PointCloudPicker::Transform(
         const Eigen::Matrix4d& /*transformation*/) {
     // Do nothing
@@ -64,19 +92,19 @@ PointCloudPicker& PointCloudPicker::Transform(
 }
 
 PointCloudPicker& PointCloudPicker::Translate(
-        const Eigen::Vector3d& translation) {
+        const Eigen::Vector3d& translation, bool relative) {
     // Do nothing
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::Scale(const double scale, bool center) {
+PointCloudPicker& PointCloudPicker::Scale(const double scale,
+                                          const Eigen::Vector3d& center) {
     // Do nothing
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::Rotate(const Eigen::Vector3d& rotation,
-                                           bool center,
-                                           RotationType type) {
+PointCloudPicker& PointCloudPicker::Rotate(const Eigen::Matrix3d& R,
+                                           const Eigen::Vector3d& center) {
     // Do nothing
     return *this;
 }

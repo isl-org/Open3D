@@ -11,10 +11,12 @@ interface of Open3D.
     file_io
     pointcloud
     mesh
-    rgbd_images/index
+    transformation
+    rgbd_image
     rgbd_odometry
     visualization
     kdtree
     icp_registration
     working_with_numpy
     jupyter
+    azure_kinect

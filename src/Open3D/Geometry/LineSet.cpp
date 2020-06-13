@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/LineSet.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 
 #include <numeric>
 
@@ -41,70 +42,41 @@ LineSet &LineSet::Clear() {
 bool LineSet::IsEmpty() const { return !HasPoints(); }
 
 Eigen::Vector3d LineSet::GetMinBound() const {
-    if (!HasPoints()) {
-        return Eigen::Vector3d(0.0, 0.0, 0.0);
-    }
-    return std::accumulate(
-            points_.begin(), points_.end(), points_[0],
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a.array().min(b.array()).matrix();
-            });
+    return ComputeMinBound(points_);
 }
 
 Eigen::Vector3d LineSet::GetMaxBound() const {
-    if (!HasPoints()) {
-        return Eigen::Vector3d(0.0, 0.0, 0.0);
-    }
-    return std::accumulate(
-            points_.begin(), points_.end(), points_[0],
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a.array().max(b.array()).matrix();
-            });
+    return ComputeMaxBound(points_);
+}
+
+Eigen::Vector3d LineSet::GetCenter() const { return ComputeCenter(points_); }
+
+AxisAlignedBoundingBox LineSet::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(points_);
+}
+
+OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(points_);
 }
 
 LineSet &LineSet::Transform(const Eigen::Matrix4d &transformation) {
-    for (auto &point : points_) {
-        Eigen::Vector4d new_point =
-                transformation *
-                Eigen::Vector4d(point(0), point(1), point(2), 1.0);
-        point = new_point.block<3, 1>(0, 0);
-    }
+    TransformPoints(transformation, points_);
     return *this;
 }
 
-LineSet &LineSet::Translate(const Eigen::Vector3d &translation) {
-    for (auto &point : points_) {
-        point += translation;
-    }
+LineSet &LineSet::Translate(const Eigen::Vector3d &translation, bool relative) {
+    TranslatePoints(translation, points_, relative);
     return *this;
 }
 
-LineSet &LineSet::Scale(const double scale, bool center) {
-    Eigen::Vector3d point_center(0, 0, 0);
-    if (center && !points_.empty()) {
-        point_center =
-                std::accumulate(points_.begin(), points_.end(), point_center);
-        point_center /= points_.size();
-    }
-    for (auto &point : points_) {
-        point = (point - point_center) * scale + point_center;
-    }
+LineSet &LineSet::Scale(const double scale, const Eigen::Vector3d &center) {
+    ScalePoints(scale, points_, center);
     return *this;
 }
 
-LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation,
-                         bool center,
-                         RotationType type) {
-    Eigen::Vector3d point_center(0, 0, 0);
-    if (center && !points_.empty()) {
-        point_center =
-                std::accumulate(points_.begin(), points_.end(), point_center);
-        point_center /= points_.size();
-    }
-    const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
-    for (auto &point : points_) {
-        point = R * (point - point_center) + point_center;
-    }
+LineSet &LineSet::Rotate(const Eigen::Matrix3d &R,
+                         const Eigen::Vector3d &center) {
+    RotatePoints(R, points_, center);
     return *this;
 }
 

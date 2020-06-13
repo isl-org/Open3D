@@ -27,90 +27,147 @@
 #include <numeric>
 #include <unordered_map>
 
+#include "Open3D/Geometry/IntersectionTest.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/Helper.h"
 
 namespace open3d {
-
-namespace {
-using namespace geometry;
-
-class PointCloudVoxel {
-public:
-    PointCloudVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
-
-public:
-    void AddPoint(const Eigen::Vector3i &voxel_index,
-                  const PointCloud &cloud,
-                  int index) {
-        coordinate_ = voxel_index;
-        if (cloud.HasColors()) {
-            color_ += cloud.colors_[index];
-        }
-        num_of_points_++;
-    }
-
-    Eigen::Vector3i GetVoxelCoordinate() const { return coordinate_; }
-
-    Eigen::Vector3d GetAverageColor() const {
-        return color_ / double(num_of_points_);
-    }
-
-public:
-    int num_of_points_;
-    Eigen::Vector3i coordinate_;
-    Eigen::Vector3d color_;
-};
-
-}  // namespace
-
 namespace geometry {
 
-std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
-        const PointCloud &input, double voxel_size) {
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
+                                                  double voxel_size,
+                                                  double width,
+                                                  double height,
+                                                  double depth) {
+    auto output = std::make_shared<VoxelGrid>();
+    int num_w = int(std::round(width / voxel_size));
+    int num_h = int(std::round(height / voxel_size));
+    int num_d = int(std::round(depth / voxel_size));
+    output->origin_ = origin;
+    output->voxel_size_ = voxel_size;
+    for (int widx = 0; widx < num_w; widx++) {
+        for (int hidx = 0; hidx < num_h; hidx++) {
+            for (int didx = 0; didx < num_d; didx++) {
+                Eigen::Vector3i grid_index(widx, hidx, didx);
+                output->AddVoxel(geometry::Voxel(grid_index));
+            }
+        }
+    }
+    return output;
+}
+
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
+        const PointCloud &input,
+        double voxel_size,
+        const Eigen::Vector3d &min_bound,
+        const Eigen::Vector3d &max_bound) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
-        utility::PrintDebug("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
-        return output;
+        utility::LogError("[VoxelGridFromPointCloud] voxel_size <= 0.");
     }
-    Eigen::Vector3d voxel_size3 =
-            Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
-    Eigen::Vector3d voxel_min_bound = input.GetMinBound() - voxel_size3 * 0.5;
-    Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
+
     if (voxel_size * std::numeric_limits<int>::max() <
-        (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::PrintDebug(
-                "[VoxelGridFromPointCloud] voxel_size is too small.\n");
-        return output;
+        (max_bound - min_bound).maxCoeff()) {
+        utility::LogError("[VoxelGridFromPointCloud] voxel_size is too small.");
     }
     output->voxel_size_ = voxel_size;
-    output->origin_ = voxel_min_bound;
-    std::unordered_map<Eigen::Vector3i, PointCloudVoxel,
+    output->origin_ = min_bound;
+    std::unordered_map<Eigen::Vector3i, AvgColorVoxel,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
+    bool has_colors = input.HasColors();
     for (int i = 0; i < (int)input.points_.size(); i++) {
-        ref_coord = (input.points_[i] - voxel_min_bound) / voxel_size;
+        ref_coord = (input.points_[i] - min_bound) / voxel_size;
         voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
                 int(floor(ref_coord(2)));
-        voxelindex_to_accpoint[voxel_index].AddPoint(voxel_index, input, i);
+        if (has_colors) {
+            voxelindex_to_accpoint[voxel_index].Add(voxel_index,
+                                                    input.colors_[i]);
+        } else {
+            voxelindex_to_accpoint[voxel_index].Add(voxel_index);
+        }
     }
-    bool has_colors = input.HasColors();
     for (auto accpoint : voxelindex_to_accpoint) {
-        const Eigen::Vector3i &grid_index =
-                accpoint.second.GetVoxelCoordinate();
+        const Eigen::Vector3i &grid_index = accpoint.second.GetVoxelIndex();
         const Eigen::Vector3d &color =
                 has_colors ? accpoint.second.GetAverageColor()
                            : Eigen::Vector3d(0, 0, 0);
-        output->voxels_.emplace_back(grid_index, color);
+        output->AddVoxel(geometry::Voxel(grid_index, color));
     }
-    utility::PrintDebug(
-            "Pointcloud is voxelized from %d points to %d voxels.\n",
+    utility::LogDebug(
+            "Pointcloud is voxelized from {:d} points to {:d} voxels.",
             (int)input.points_.size(), (int)output->voxels_.size());
     return output;
+}
+
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
+        const PointCloud &input, double voxel_size) {
+    Eigen::Vector3d voxel_size3(voxel_size, voxel_size, voxel_size);
+    Eigen::Vector3d min_bound = input.GetMinBound() - voxel_size3 * 0.5;
+    Eigen::Vector3d max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
+    return CreateFromPointCloudWithinBounds(input, voxel_size, min_bound,
+                                            max_bound);
+}
+
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
+        const TriangleMesh &input,
+        double voxel_size,
+        const Eigen::Vector3d &min_bound,
+        const Eigen::Vector3d &max_bound) {
+    auto output = std::make_shared<VoxelGrid>();
+    if (voxel_size <= 0.0) {
+        utility::LogError("[CreateFromTriangleMesh] voxel_size <= 0.");
+    }
+
+    if (voxel_size * std::numeric_limits<int>::max() <
+        (max_bound - min_bound).maxCoeff()) {
+        utility::LogError("[CreateFromTriangleMesh] voxel_size is too small.");
+    }
+    output->voxel_size_ = voxel_size;
+    output->origin_ = min_bound;
+
+    Eigen::Vector3d grid_size = max_bound - min_bound;
+    int num_w = int(std::round(grid_size(0) / voxel_size));
+    int num_h = int(std::round(grid_size(1) / voxel_size));
+    int num_d = int(std::round(grid_size(2) / voxel_size));
+    const Eigen::Vector3d box_half_size(voxel_size / 2, voxel_size / 2,
+                                        voxel_size / 2);
+    for (int widx = 0; widx < num_w; widx++) {
+        for (int hidx = 0; hidx < num_h; hidx++) {
+            for (int didx = 0; didx < num_d; didx++) {
+                const Eigen::Vector3d box_center =
+                        min_bound +
+                        Eigen::Vector3d(widx, hidx, didx) * voxel_size;
+                for (const Eigen::Vector3i &tria : input.triangles_) {
+                    const Eigen::Vector3d &v0 = input.vertices_[tria(0)];
+                    const Eigen::Vector3d &v1 = input.vertices_[tria(1)];
+                    const Eigen::Vector3d &v2 = input.vertices_[tria(2)];
+                    if (IntersectionTest::TriangleAABB(
+                                box_center, box_half_size, v0, v1, v2)) {
+                        Eigen::Vector3i grid_index(widx, hidx, didx);
+                        output->AddVoxel(geometry::Voxel(grid_index));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return output;
+}
+
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMesh(
+        const TriangleMesh &input, double voxel_size) {
+    Eigen::Vector3d voxel_size3(voxel_size, voxel_size, voxel_size);
+    Eigen::Vector3d min_bound = input.GetMinBound() - voxel_size3 * 0.5;
+    Eigen::Vector3d max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
+    return CreateFromTriangleMeshWithinBounds(input, voxel_size, min_bound,
+                                              max_bound);
 }
 
 }  // namespace geometry

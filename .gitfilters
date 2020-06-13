@@ -1,0 +1,4 @@
+[filter "jupyter_clear_output"]
+    clean = "jupyter nbconvert --stdin --stdout --log-level=ERROR --to notebook --ClearOutputPreprocessor.enabled=True"
+    smudge = cat
+    required = true

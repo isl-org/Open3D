@@ -30,13 +30,15 @@
 #include <string>
 #include <vector>
 
+namespace open3d {
 namespace unit_test {
+
 // Class for "generating" data.
 class Raw {
 public:
-    Raw() : index(0), step(1) {}
+    Raw() : step(1), index(0) {}
     Raw(const int &seed)
-        : index(abs(seed) % SIZE), step((seed <= 0) ? 1 : seed) {}
+        : step((seed <= 0) ? 1 : seed), index(abs(seed) % SIZE) {}
 
 private:
     // size of the raw data
@@ -62,9 +64,7 @@ private:
 public:
     // Get the next value.
     template <class T>
-    T Next() {
-        return T(0);
-    }
+    T Next();
 };
 
 // Get the next uint8_t value.
@@ -91,4 +91,6 @@ float Raw::Next();
 // Output range: [0, 1].
 template <>
 double Raw::Next();
+
 }  // namespace unit_test
+}  // namespace open3d

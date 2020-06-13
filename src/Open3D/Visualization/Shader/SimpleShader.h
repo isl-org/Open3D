@@ -102,6 +102,53 @@ protected:
                         std::vector<Eigen::Vector3f> &colors) final;
 };
 
+class SimpleShaderForTetraMesh : public SimpleShader {
+public:
+    SimpleShaderForTetraMesh() : SimpleShader("SimpleShaderForTetraMesh") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &colors) final;
+};
+
+class SimpleShaderForOrientedBoundingBox : public SimpleShader {
+public:
+    SimpleShaderForOrientedBoundingBox()
+        : SimpleShader("SimpleShaderForOrientedBoundingBox") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &colors) final;
+};
+
+class SimpleShaderForAxisAlignedBoundingBox : public SimpleShader {
+public:
+    SimpleShaderForAxisAlignedBoundingBox()
+        : SimpleShader("SimpleShaderForAxisAlignedBoundingBox") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &colors) final;
+};
+
 class SimpleShaderForTriangleMesh : public SimpleShader {
 public:
     SimpleShaderForTriangleMesh()

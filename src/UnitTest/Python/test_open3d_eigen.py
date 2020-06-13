@@ -24,7 +24,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-import open3d
+import open3d as o3d
 import numpy as np
 import time
 import pytest
@@ -56,7 +56,7 @@ import pytest
 def test_Vector3dVector(input_array, expect_exception):
 
     def run_test(input_array):
-        open3d_array = open3d.Vector3dVector(input_array)
+        open3d_array = o3d.utility.Vector3dVector(input_array)
         output_array = np.asarray(open3d_array)
         np.testing.assert_allclose(input_array, output_array)
 
@@ -93,7 +93,7 @@ def test_Vector3dVector(input_array, expect_exception):
 def test_Vector3iVector(input_array, expect_exception):
 
     def run_test(input_array):
-        open3d_array = open3d.Vector3iVector(input_array)
+        open3d_array = o3d.utility.Vector3iVector(input_array)
         output_array = np.asarray(open3d_array)
         np.testing.assert_allclose(input_array, output_array)
 
@@ -129,7 +129,7 @@ def test_Vector3iVector(input_array, expect_exception):
 def test_Vector2iVector(input_array, expect_exception):
 
     def run_test(input_array):
-        open3d_array = open3d.Vector2iVector(input_array)
+        open3d_array = o3d.utility.Vector2iVector(input_array)
         output_array = np.asarray(open3d_array)
         np.testing.assert_allclose(input_array, output_array)
 
@@ -164,7 +164,7 @@ def test_Vector2iVector(input_array, expect_exception):
 def test_Matrix4dVector(input_array, expect_exception):
 
     def run_test(input_array):
-        open3d_array = open3d.Matrix4dVector(input_array)
+        open3d_array = o3d.utility.Matrix4dVector(input_array)
         output_array = np.asarray(open3d_array)
         np.testing.assert_allclose(input_array, output_array)
 
@@ -180,29 +180,29 @@ def test_benchmark():
     vector_size = int(2e6)
 
     x = np.random.randint(10, size=(vector_size, 3)).astype(np.float64)
-    print("\nopen3d.Vector3dVector:", x.shape)
+    print("\no3d.utility.Vector3dVector:", x.shape)
     start_time = time.time()
-    y = open3d.Vector3dVector(x)
+    y = o3d.utility.Vector3dVector(x)
     print("open3d -> numpy: %.6fs" % (time.time() - start_time))
     start_time = time.time()
     z = np.asarray(y)
     print("numpy -> open3d: %.6fs" % (time.time() - start_time))
     np.testing.assert_allclose(x, z)
 
-    print("\nopen3d.Vector3iVector:", x.shape)
+    print("\no3d.utility.Vector3iVector:", x.shape)
     x = np.random.randint(10, size=(vector_size, 3)).astype(np.int32)
     start_time = time.time()
-    y = open3d.Vector3iVector(x)
+    y = o3d.utility.Vector3iVector(x)
     print("open3d -> numpy: %.6fs" % (time.time() - start_time))
     start_time = time.time()
     z = np.asarray(y)
     print("numpy -> open3d: %.6fs" % (time.time() - start_time))
     np.testing.assert_allclose(x, z)
 
-    print("\nopen3d.Vector2iVector:", x.shape)
+    print("\no3d.utility.Vector2iVector:", x.shape)
     x = np.random.randint(10, size=(vector_size, 2)).astype(np.int32)
     start_time = time.time()
-    y = open3d.Vector2iVector(x)
+    y = o3d.utility.Vector2iVector(x)
     print("open3d -> numpy: %.6fs" % (time.time() - start_time))
     start_time = time.time()
     z = np.asarray(y)

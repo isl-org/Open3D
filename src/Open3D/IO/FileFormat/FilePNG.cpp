@@ -55,21 +55,18 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     memset(&pngimage, 0, sizeof(pngimage));
     pngimage.version = PNG_IMAGE_VERSION;
     if (png_image_begin_read_from_file(&pngimage, filename.c_str()) == 0) {
-        utility::PrintWarning("Read PNG failed: unable to parse header.\n");
+        utility::LogWarning("Read PNG failed: unable to parse header.");
         return false;
     }
 
-    // We only support two channel types: gray, and RGB.
-    // There is no alpha channel.
-    // bytes_per_channel is determined by PNG_FORMAT_FLAG_LINEAR flag.
     image.Prepare(pngimage.width, pngimage.height,
-                  (pngimage.format & PNG_FORMAT_FLAG_COLOR) ? 3 : 1,
-                  (pngimage.format & PNG_FORMAT_FLAG_LINEAR) ? 2 : 1);
-    SetPNGImageFromImage(image, pngimage);
+                  PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
+                  PNG_IMAGE_SAMPLE_COMPONENT_SIZE(pngimage.format));
+
     if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 0, NULL) ==
         0) {
-        utility::PrintWarning("Read PNG failed: unable to read file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Read PNG failed: unable to read file: {}",
+                            filename);
         return false;
     }
     return true;
@@ -78,8 +75,8 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
 bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,
                      int quality) {
-    if (image.HasData() == false) {
-        utility::PrintWarning("Write PNG failed: image has no data.\n");
+    if (!image.HasData()) {
+        utility::LogWarning("Write PNG failed: image has no data.");
         return false;
     }
     png_image pngimage;
@@ -88,8 +85,8 @@ bool WriteImageToPNG(const std::string &filename,
     SetPNGImageFromImage(image, pngimage);
     if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
                                 image.data_.data(), 0, NULL) == 0) {
-        utility::PrintWarning("Write PNG failed: unable to write file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Write PNG failed: unable to write file: {}",
+                            filename);
         return false;
     }
     return true;

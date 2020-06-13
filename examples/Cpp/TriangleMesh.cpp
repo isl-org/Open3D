@@ -30,10 +30,10 @@
 
 void PrintHelp() {
     using namespace open3d;
-    utility::PrintInfo("Usage :\n");
-    utility::PrintInfo("    > TriangleMesh sphere\n");
-    utility::PrintInfo("    > TriangleMesh merge <file1> <file2>\n");
-    utility::PrintInfo("    > TriangleMesh normal <file1> <file2>\n");
+    utility::LogInfo("Usage :");
+    utility::LogInfo("    > TriangleMesh sphere");
+    utility::LogInfo("    > TriangleMesh merge <file1> <file2>");
+    utility::LogInfo("    > TriangleMesh normal <file1> <file2>");
 }
 
 void PaintMesh(open3d::geometry::TriangleMesh &mesh,
@@ -47,7 +47,7 @@ void PaintMesh(open3d::geometry::TriangleMesh &mesh,
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         PrintHelp();
@@ -83,28 +83,29 @@ int main(int argc, char *argv[]) {
         } else {
             auto mesh = io::CreateMeshFromFile(argv[2]);
             mesh->ComputeVertexNormals();
-            visualization::BoundingBox boundingbox(*mesh);
+            auto boundingbox = mesh->GetAxisAlignedBoundingBox();
             auto mesh_frame = geometry::TriangleMesh::CreateCoordinateFrame(
-                    boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+                    boundingbox.GetMaxExtent() * 0.2, boundingbox.min_bound_);
             visualization::DrawGeometries({mesh, mesh_frame});
         }
     } else if (option == "merge") {
         auto mesh1 = io::CreateMeshFromFile(argv[2]);
         auto mesh2 = io::CreateMeshFromFile(argv[3]);
-        utility::PrintInfo("Mesh1 has %d vertices, %d triangles.\n",
-                           mesh1->vertices_.size(), mesh1->triangles_.size());
-        utility::PrintInfo("Mesh2 has %d vertices, %d triangles.\n",
-                           mesh2->vertices_.size(), mesh2->triangles_.size());
+        utility::LogInfo("Mesh1 has {:d} vertices, {:d} triangles.",
+                         mesh1->vertices_.size(), mesh1->triangles_.size());
+        utility::LogInfo("Mesh2 has {:d} vertices, {:d} triangles.",
+                         mesh2->vertices_.size(), mesh2->triangles_.size());
         *mesh1 += *mesh2;
-        utility::PrintInfo(
-                "After merge, Mesh1 has %d vertices, %d triangles.\n",
+        utility::LogInfo(
+                "After merge, Mesh1 has {:d} vertices, {:d} triangles.",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
         mesh1->RemoveDuplicatedVertices();
         mesh1->RemoveDuplicatedTriangles();
         mesh1->RemoveDegenerateTriangles();
         mesh1->RemoveUnreferencedVertices();
-        utility::PrintInfo(
-                "After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
+        utility::LogInfo(
+                "After purge vertices, Mesh1 has {:d} vertices, {:d} "
+                "triangles.",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
         visualization::DrawGeometries({mesh1});
         io::WriteTriangleMesh("temp.ply", *mesh1, true, true);
@@ -122,17 +123,16 @@ int main(int argc, char *argv[]) {
     } else if (option == "unify") {
         // unify into (0, 0, 0) - (scale, scale, scale) box
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        visualization::BoundingBox bbox;
-        bbox.FitInGeometry(*mesh);
+        auto bbox = mesh->GetAxisAlignedBoundingBox();
         double scale1 = std::stod(argv[4]);
         double scale2 = std::stod(argv[5]);
         Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
-        trans(0, 0) = trans(1, 1) = trans(2, 2) = scale1 / bbox.GetSize();
+        trans(0, 0) = trans(1, 1) = trans(2, 2) = scale1 / bbox.GetMaxExtent();
         mesh->Transform(trans);
         trans.setIdentity();
         trans.block<3, 1>(0, 3) =
                 Eigen::Vector3d(scale2 / 2.0, scale2 / 2.0, scale2 / 2.0) -
-                bbox.GetCenter() * scale1 / bbox.GetSize();
+                bbox.GetCenter() * scale1 / bbox.GetMaxExtent();
         mesh->Transform(trans);
         io::WriteTriangleMesh(argv[3], *mesh);
     } else if (option == "distance") {
@@ -151,8 +151,8 @@ int main(int argc, char *argv[]) {
             mesh1->vertex_colors_[i] = Eigen::Vector3d(color, color, color);
             r += sqrt(dists[0]);
         }
-        utility::PrintInfo("Average distance is %.6f.\n",
-                           r / (double)mesh1->vertices_.size());
+        utility::LogInfo("Average distance is {:.6f}.",
+                         r / (double)mesh1->vertices_.size());
         if (argc > 5) {
             io::WriteTriangleMesh(argv[5], *mesh1);
         }
@@ -171,8 +171,8 @@ int main(int argc, char *argv[]) {
         mesh->ComputeVertexNormals();
         camera::PinholeCameraTrajectory trajectory;
         io::ReadIJsonConvertible(argv[3], trajectory);
-        if (utility::filesystem::DirectoryExists("image") == false) {
-            utility::PrintWarning("No image!\n");
+        if (!utility::filesystem::DirectoryExists("image")) {
+            utility::LogWarning("No image!");
             return 0;
         }
         int idx = 3000;
@@ -188,8 +188,8 @@ int main(int argc, char *argv[]) {
         visualization::DrawGeometries(ptrs);
 
         for (size_t i = 0; i < trajectory.parameters_.size(); i += 10) {
-            char buffer[1024];
-            sprintf(buffer, "image/image_%06d.png", (int)i + 1);
+            std::string buffer =
+                    fmt::format("image/image_{:06d}.png", (int)i + 1);
             auto image = io::CreateImageFromFile(buffer);
             auto fimage = image->CreateFloatImage();
             Eigen::Vector4d pt_in_camera =
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
             std::cout << pt_in_plane / pt_in_plane(2) << std::endl;
             auto result = fimage->FloatValueAt(uv(0), uv(1));
             if (result.first) {
-                utility::PrintWarning("%.6f\n", result.second);
+                utility::LogInfo("{:.6f}", result.second);
             }
             visualization::DrawGeometries({fimage}, "Test", 1920, 1080);
         }

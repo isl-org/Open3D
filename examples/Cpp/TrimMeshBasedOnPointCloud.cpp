@@ -30,17 +30,17 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > TrimMeshBasedOnPointCloud [options]\n");
-    utility::PrintInfo("      Trim a mesh baesd on distance to a point cloud.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Basic options:\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
-    utility::PrintInfo("    --in_mesh mesh_file       : Input mesh file. MUST HAVE.\n");
-    utility::PrintInfo("    --out_mesh mesh_file      : Output mesh file. MUST HAVE.\n");
-    utility::PrintInfo("    --pointcloud pcd_file     : Reference pointcloud file. MUST HAVE.\n");
-    utility::PrintInfo("    --distance d              : Maximum distance. MUST HAVE.\n");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > TrimMeshBasedOnPointCloud [options]");
+    utility::LogInfo("      Trim a mesh baesd on distance to a point cloud.");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --help, -h                : Print help information.");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4). Default: 2.");
+    utility::LogInfo("    --in_mesh mesh_file       : Input mesh file. MUST HAVE.");
+    utility::LogInfo("    --out_mesh mesh_file      : Output mesh file. MUST HAVE.");
+    utility::LogInfo("    --pointcloud pcd_file     : Reference pointcloud file. MUST HAVE.");
+    utility::LogInfo("    --distance d              : Maximum distance. MUST HAVE.");
     // clang-format on
 }
 
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
         PrintHelp();
         return 1;
     }
-    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     auto in_mesh_file =
             utility::GetProgramOptionAsString(argc, argv, "--in_mesh");
@@ -62,24 +62,25 @@ int main(int argc, char *argv[]) {
             utility::GetProgramOptionAsString(argc, argv, "--pointcloud");
     auto distance = utility::GetProgramOptionAsDouble(argc, argv, "--distance");
     if (distance <= 0.0) {
-        utility::PrintWarning("Illegal distance.\n");
+        utility::LogWarning("Illegal distance.");
         return 1;
     }
     if (in_mesh_file.empty() || out_mesh_file.empty() || pcd_file.empty()) {
-        utility::PrintWarning("Missing file names.\n");
+        utility::LogWarning("Missing file names.");
         return 1;
     }
     auto mesh = io::CreateMeshFromFile(in_mesh_file);
     auto pcd = io::CreatePointCloudFromFile(pcd_file);
     if (mesh->IsEmpty() || pcd->IsEmpty()) {
-        utility::PrintWarning("Empty geometry.\n");
+        utility::LogWarning("Empty geometry.");
         return 1;
     }
 
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(*pcd);
     std::vector<bool> remove_vertex_mask(mesh->vertices_.size(), false);
-    utility::ResetConsoleProgress(mesh->vertices_.size(), "Prune vetices: ");
+    utility::ConsoleProgressBar progress_bar(mesh->vertices_.size(),
+                                             "Prune vetices: ");
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -93,7 +94,7 @@ int main(int argc, char *argv[]) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
-        { utility::AdvanceConsoleProgress(); }
+        { ++progress_bar; }
     }
 
     std::vector<int> index_old_to_new(mesh->vertices_.size());
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]) {
     size_t old_triangle_num = mesh->triangles_.size();
     size_t kt = 0;
     for (size_t i = 0; i < old_vertex_num; i++) {  // old index
-        if (remove_vertex_mask[i] == false) {
+        if (!remove_vertex_mask[i]) {
             mesh->vertices_[k] = mesh->vertices_[i];
             if (has_vert_normal)
                 mesh->vertex_normals_[k] = mesh->vertex_normals_[i];
@@ -136,9 +137,9 @@ int main(int argc, char *argv[]) {
         mesh->triangles_.resize(kt);
         if (has_tri_normal) mesh->triangle_normals_.resize(kt);
     }
-    utility::PrintDebug(
-            "[TrimMeshBasedOnPointCloud] %d vertices and %d triangles have "
-            "been removed.\n",
+    utility::LogInfo(
+            "[TrimMeshBasedOnPointCloud] {:d} vertices and {:d} triangles have "
+            "been removed.",
             old_vertex_num - k, old_triangle_num - kt);
     io::WriteTriangleMesh(out_mesh_file, *mesh);
     return 0;

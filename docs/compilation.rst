@@ -8,12 +8,35 @@ get the latest features in the ``master`` branch, or if the OS or Python
 versions are not covered by Open3D's pre-built Python packages from PyPI and
 Conda.
 
-The basic tools needed are `git <https://git-scm.com/>`_,
-`CMake <https://cmake.org/>`_, and **a non-ancient C++ compiler** that supports
-C++11, such as gcc 4.8+, Visual Studio 2015 update 3+, or XCode 8.0+. If Python
-binding is needed, make sure Python 2.7 or 3.5+ is installed.
+.. _compiler_version:
 
-Download source code from the `repository <https://github.com/intel-isl/Open3D>`_.
+System requirements
+-------------------
+
+* Ubuntu 18.04+: GCC 5+, Clang 7+
+* macOS 10.14+: XCode 8.0+
+* Windows 10 (64-bit): Visual Studio 2019+
+* CMake 3.12+
+
+  * Ubuntu:
+
+    * Install with ``apt-get``: see `official APT repository <https://apt.kitware.com/>`_
+    * Install with ``snap``: ``sudo snap install cmake --classic``
+    * Install with ``pip`` (run inside a Python virtual environment): ``pip install cmake``
+
+  * macOS:
+
+    * Install with Homebrew: ``brew install cmake``
+    * Download from: `CMake download page <https://cmake.org/download/>`_
+
+  * Windows:
+
+    * Download from: `CMake download page <https://cmake.org/download/>`_
+
+Cloning Open3D
+--------------
+
+Make sure to use the ``--recursive`` flag when cloning Open3D.
 
 .. code-block:: bash
 
@@ -42,7 +65,7 @@ compilation time. Otherwise, the dependencies can also be build from source, see
 2. Setup Python binding environments
 ````````````````````````````````````
 
-This step is only required Python support for Open3D is needed.
+This step is only required if Python support for Open3D is needed.
 We use `pybind11 <https://github.com/pybind/pybind11>`_ for the Python
 binding. Please refer to
 `pybind11 document page <http://pybind11.readthedocs.io/en/stable/faq.html>`_
@@ -111,7 +134,6 @@ compilation options to ``OFF``:
 
 - ``BUILD_PYBIND11``
 - ``BUILD_PYTHON_MODULE``
-- ``BUILD_PYTHON_TUTORIALS``
 
 .. _compilation_ubuntu_config:
 
@@ -127,6 +149,39 @@ The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
 Open3D to a user location. In the absence of this argument Open3D will be
 installed to a system location (sudo required). For more customizations of the
 build, please see :ref:`compilation_options`.
+
+.. note::
+    Importing Python libraries compiled with different CXX ABI may cause segfaults
+    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
+    and TensorFlow Python releases use the older CXX ABI; while when they are
+    compiled from source, newer ABI is enabled by default.
+
+    When releasing Open3D as a Python package, we set
+    ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
+    in order to ensure compatibility with PyTorch and TensorFlow Python releases.
+
+    If you build PyTorch or TensorFlow from source or if you run into ABI
+    compatibility issues with them, please:
+
+    1. Check PyTorch and TensorFlow ABI with
+
+       .. code-block:: python
+
+           import torch
+           import tensorflow
+           print(torch._C._GLIBCXX_USE_CXX11_ABI)
+           print(tensorflow.__cxx11_abi_flag__)
+
+    2. Configure Open3D to compile all dependencies from source
+       with the corresponding ABI version obtained from step 1.
+
+    After installation of the Python package, you can check Open3D ABI version
+    with:
+
+    .. code-block:: python
+
+        import open3d
+        print(open3d.open3d._GLIBCXX_USE_CXX11_ABI)
 
 .. _compilation_ubuntu_build:
 
@@ -200,11 +255,16 @@ To Install/uninstall the Open3D as a C++ library (headers and binaries):
     ...
     make uninstall
 
-.. tip:: ``sudo`` may be needed to install Open3D to a system location.
+Note that ``sudo`` may be needed to install Open3D to a system location.
 
 To link a C++ project against the Open3D C++ library, please refer to
 :ref:`create_cplusplus_project`, starting from
 `this example CMake file <https://github.com/intel-isl/Open3D/tree/master/docs/_static/C%2B%2B>`_.
+
+
+.. tip:: You may also check out ``utils/scripts`` which contains scripts
+    to build, install and verify the code. These scripts may help in subsequent
+    builds when contributing to Open3D.
 
 .. _compilation_osx:
 
@@ -253,9 +313,6 @@ Same as the steps for Ubuntu: :ref:`compilation_ubuntu_install`.
 Windows
 -------
 
-On Windows, only **Visual Studio 2015 update 3** and newer are supported since
-Open3D relies heavily on C++11 language features.
-
 1. Dependencies
 ```````````````
 For easy compilation, we have included source code of all dependent libraries
@@ -273,7 +330,7 @@ attention to the ``Found PythonInterp`` message printed by CMake.
 
 The CMake GUI is as shown in the following figure. Specify the
 directories, click ``Configure`` and choose the correct Visual Studio
-version (e.g., ``Visual Studio 14 2015 Win64``), then click ``Generate``.
+version (e.g., ``Visual Studio 16 2019 Win64``), then click ``Generate``.
 This will create an ``Open3D.sln`` file in the build directory.
 
 .. image:: _static/cmake_windows.png
@@ -285,7 +342,9 @@ Alternatively, this file can be generated by calling CMake from the console:
 
     mkdir build
     cd build
-    cmake -G "Visual Studio 14 2015 Win64" ..
+
+    :: Run one of the following lines based on your Visual Studio version
+    cmake -G "Visual Studio 16 2019 Win64" ..
 
 .. error:: If cmake fail to find ``PYTHON_EXECUTABLE``, follow the Ubuntu guide:
     :ref:`compilation_ubuntu_python_binding` to activate the Python virtualenv before running
@@ -379,10 +438,9 @@ The following is an example of forcing building dependencies from source code:
 .. code-block:: bash
 
     cmake -DBUILD_EIGEN3=ON  \
+          -DBUILD_FLANN=ON   \
           -DBUILD_GLEW=ON    \
           -DBUILD_GLFW=ON    \
-          -DBUILD_JPEG=ON    \
-          -DBUILD_JSONCPP=ON \
           -DBUILD_PNG=ON     \
           ..
 
@@ -425,23 +483,3 @@ reference.
     cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
     ./bin/unitTests
-
-Documentation
-`````````````
-
-Documentation is written in
-`reStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ and compiled
-with `sphinx <http://www.sphinx-doc.org/>`_. From ``docs`` folder, run
-
-.. code-block:: bash
-
-    pip install sphinx sphinx-autobuild sphinx-rtd-theme
-    make html
-
-Documentation for C++ API is made with `Doxygen <http://www.stack.nl/~dimitri/doxygen/>`_.
-Follow the `Doxygen installation instruction <http://www.stack.nl/~dimitri/doxygen/manual/install.html>`_.
-From Open3D ``docs`` folder, run
-
-.. code-block:: bash
-
-    doxygen Doxyfile

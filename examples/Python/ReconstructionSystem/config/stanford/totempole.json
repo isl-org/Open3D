@@ -1,5 +1,5 @@
 {
-    "name": "Open3D reconstruction tutorial http://open3d.org/docs/tutorial/ReconstructionSystem/system_overview.html",
+    "name": "Open3D reconstruction tutorial http://open3d.org/docs/release/tutorial/ReconstructionSystem/system_overview.html",
     "path_dataset": "dataset/stanford/totempole/",
     "path_intrinsic": "",
     "max_depth": 3.0,

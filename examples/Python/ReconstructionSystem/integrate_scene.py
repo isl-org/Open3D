@@ -9,12 +9,13 @@ import math
 import sys
 import open3d as o3d
 sys.path.append("../Utility")
-from file import join, get_rgbd_file_lists
+from file import *
 sys.path.append(".")
 from make_fragments import read_rgbd_image
 
 
 def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
+    poses = []
     [color_files, depth_files] = get_rgbd_file_lists(path_dataset)
     n_files = len(color_files)
     n_fragments = int(math.ceil(float(n_files) / \
@@ -44,6 +45,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
             pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose,
                           pose_graph_rgbd.nodes[frame_id].pose)
             volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
+            poses.append(pose)
 
     mesh = volume.extract_triangle_mesh()
     mesh.compute_vertex_normals()
@@ -52,6 +54,9 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
 
     mesh_name = join(path_dataset, config["template_global_mesh"])
     o3d.io.write_triangle_mesh(mesh_name, mesh, False, True)
+
+    traj_name = join(path_dataset, config["template_global_traj"])
+    write_poses_to_log(traj_name, poses)
 
 
 def run(config):

@@ -34,6 +34,9 @@ namespace visualization {
 class SelectionPolygon;
 class PointCloudPicker;
 
+/// \class VisualizerWithEditing
+///
+/// \brief Visualizer with editing capabilities.
 class VisualizerWithEditing : public Visualizer {
 public:
     enum class SelectionMode {
@@ -54,8 +57,11 @@ public:
     VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
 
 public:
-    bool AddGeometry(
-            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    /// Function to add geometry to the scene and create corresponding shaders.
+    ///
+    /// \param geometry_ptr The Geometry object.
+    bool AddGeometry(std::shared_ptr<const geometry::Geometry> geometry_ptr,
+                     bool reset_bounding_box = true) override;
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void BuildUtilities() override;

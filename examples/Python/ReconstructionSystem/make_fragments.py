@@ -23,12 +23,11 @@ if with_opencv:
 def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
     color = o3d.io.read_image(color_file)
     depth = o3d.io.read_image(depth_file)
-    if config["depth_map_type"] == "redwood":
-        rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
-            color,
-            depth,
-            depth_trunc=config["max_depth"],
-            convert_rgb_to_intensity=convert_rgb_to_intensity)
+    rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
+        color,
+        depth,
+        depth_trunc=config["max_depth"],
+        convert_rgb_to_intensity=convert_rgb_to_intensity)
     return rgbd_image
 
 
@@ -41,7 +40,7 @@ def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
 
     option = o3d.odometry.OdometryOption()
     option.max_depth_diff = config["max_depth_diff"]
-    if abs(s - t) is not 1:
+    if abs(s - t) != 1:
         if with_opencv:
             success_5pt, odo_init = pose_estimation(source_rgbd_image,
                                                     target_rgbd_image,

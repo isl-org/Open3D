@@ -2,6 +2,8 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# examples/Python/ReconstructionSystem/debug/visualize_alignment.py
+
 import numpy as np
 import json
 import argparse

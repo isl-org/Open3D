@@ -77,10 +77,10 @@ protected:
 
 protected:
     std::string recording_image_basedir_ = "image/";
-    std::string recording_image_filename_format_ = "image_%06d.png";
+    std::string recording_image_filename_format_ = "image_{:06d}.png";
     std::string recording_image_trajectory_filename_ = "image_trajectory.json";
     std::string recording_depth_basedir_ = "depth/";
-    std::string recording_depth_filename_format_ = "depth_%06d.png";
+    std::string recording_depth_filename_format_ = "depth_{:06d}.png";
     std::string recording_depth_trajectory_filename_ = "depth_trajectory.json";
     size_t recording_file_index_ = 0;
 };

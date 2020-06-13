@@ -30,12 +30,12 @@
 
 void PrintHelp() {
     using namespace open3d;
-    utility::PrintInfo("Usage :\n");
-    utility::PrintInfo("    > FileSystem ls [dir]\n");
-    utility::PrintInfo("    > FileSystem mkdir [dir]\n");
-    utility::PrintInfo("    > FileSystem rmdir [dir]\n");
-    utility::PrintInfo("    > FileSystem rmfile [file]\n");
-    utility::PrintInfo("    > FileSystem fileexists [file]\n");
+    utility::LogInfo("Usage :");
+    utility::LogInfo("    > FileSystem ls [dir]");
+    utility::LogInfo("    > FileSystem mkdir [dir]");
+    utility::LogInfo("    > FileSystem rmdir [dir]");
+    utility::LogInfo("    > FileSystem rmfile [file]");
+    utility::LogInfo("    > FileSystem fileexists [file]");
 }
 
 int main(int argc, char **args) {

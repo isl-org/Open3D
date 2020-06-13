@@ -29,6 +29,7 @@
 
 #include "Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 // The TUM format for camera trajectories as used in
 // "A Benchmark for the Evaluation of RGB-D SLAM Systems" by
@@ -53,10 +54,10 @@ bool ReadPinholeCameraTrajectoryFromTUM(
                 camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }
     trajectory.parameters_.clear();
-    FILE *f = fopen(filename.c_str(), "r");
+    FILE *f = utility::filesystem::FOpen(filename, "r");
     if (f == NULL) {
-        utility::PrintWarning("Read TUM failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Read TUM failed: unable to open file: {}",
+                            filename);
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -66,8 +67,7 @@ bool ReadPinholeCameraTrajectoryFromTUM(
         if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
             if (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf %lf %lf", &ts, &x,
                        &y, &z, &qx, &qy, &qz, &qw) != 8) {
-                utility::PrintWarning(
-                        "Read TUM failed: unrecognized format.\n");
+                utility::LogWarning("Read TUM failed: unrecognized format.");
                 fclose(f);
                 return false;
             }
@@ -89,10 +89,10 @@ bool ReadPinholeCameraTrajectoryFromTUM(
 bool WritePinholeCameraTrajectoryToTUM(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory) {
-    FILE *f = fopen(filename.c_str(), "w");
+    FILE *f = utility::filesystem::FOpen(filename, "w");
     if (f == NULL) {
-        utility::PrintWarning("Write TUM failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Write TUM failed: unable to open file: {}",
+                            filename);
         return false;
     }
 

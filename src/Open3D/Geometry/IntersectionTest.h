@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include <Eigen/Dense>
 
 namespace open3d {
 namespace geometry {
@@ -44,6 +44,39 @@ public:
                                    const Eigen::Vector3d& q0,
                                    const Eigen::Vector3d& q1,
                                    const Eigen::Vector3d& q2);
+
+    static bool TriangleAABB(const Eigen::Vector3d& box_center,
+                             const Eigen::Vector3d& box_half_size,
+                             const Eigen::Vector3d& vert0,
+                             const Eigen::Vector3d& vert1,
+                             const Eigen::Vector3d& vert2);
+
+    /// Tests if the given four points all lie on the same plane.
+    static bool PointsCoplanar(const Eigen::Vector3d& p0,
+                               const Eigen::Vector3d& p1,
+                               const Eigen::Vector3d& p2,
+                               const Eigen::Vector3d& p3);
+
+    /// Computes the minimum distance between two lines. The first line is
+    /// defined by 3D points \p p0 and \p p1, the second line is defined
+    /// by 3D points \p q0 and \p q1. The returned distance is negative
+    /// if no minimum distance can be computed. This implementation is based on
+    /// the description of Paul Bourke
+    /// (http://paulbourke.net/geometry/pointlineplane/).
+    static double LinesMinimumDistance(const Eigen::Vector3d& p0,
+                                       const Eigen::Vector3d& p1,
+                                       const Eigen::Vector3d& q0,
+                                       const Eigen::Vector3d& q1);
+
+    /// Computes the minimum distance between two line segments. The first line
+    /// segment is defined by 3D points \p p0 and \p p1, the second line
+    /// segment is defined by 3D points \p q0 and \p q1. This
+    /// implementation is based on the description of David Eberly
+    /// (https://www.geometrictools.com/Documentation/DistanceLine3Line3.pdf).
+    static double LineSegmentsMinimumDistance(const Eigen::Vector3d& p0,
+                                              const Eigen::Vector3d& p1,
+                                              const Eigen::Vector3d& q0,
+                                              const Eigen::Vector3d& q1);
 };
 
 }  // namespace geometry

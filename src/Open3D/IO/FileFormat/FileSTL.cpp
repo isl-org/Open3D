@@ -27,36 +27,43 @@
 #include <fstream>
 #include <vector>
 
+#include "Open3D/IO/ClassIO/FileFormatIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 namespace open3d {
 namespace io {
 
+FileGeometry ReadFileGeometryTypeSTL(const std::string &path) {
+    return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
+}
+
 bool ReadTriangleMeshFromSTL(const std::string &filename,
-                             geometry::TriangleMesh &mesh) {
-    std::ifstream myFile(filename.c_str(), std::ios::in | std::ios::binary);
+                             geometry::TriangleMesh &mesh,
+                             bool print_progress) {
+    FILE *myFile = utility::filesystem::FOpen(filename.c_str(), "rb");
 
     if (!myFile) {
-        utility::PrintWarning("Read STL failed: unable to open file.\n");
+        utility::LogWarning("Read STL failed: unable to open file.");
+        fclose(myFile);
         return false;
     }
 
     int num_of_triangles;
     if (myFile) {
         char header[80] = "";
-        char buffer[4];
-        myFile.read(header, 80);
-        myFile.read(buffer, 4);
-        num_of_triangles = (int)(*((unsigned long *)buffer));
-        // PrintInfo("header : %s\n", header);
+        fread(header, sizeof(char), 80, myFile);
+        fread(&num_of_triangles, sizeof(unsigned int), 1, myFile);
     } else {
-        utility::PrintWarning("Read STL failed: unable to read header.\n");
+        utility::LogWarning("Read STL failed: unable to read header.");
+        fclose(myFile);
         return false;
     }
 
     if (num_of_triangles == 0) {
-        utility::PrintWarning("Read STL failed: empty file.\n");
+        utility::LogWarning("Read STL failed: empty file.");
+        fclose(myFile);
         return false;
     }
 
@@ -67,12 +74,13 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
     mesh.triangles_.resize(num_of_triangles);
     mesh.triangle_normals_.resize(num_of_triangles);
 
-    utility::ResetConsoleProgress(num_of_triangles, "Reading STL: ");
+    utility::ConsoleProgressBar progress_bar(num_of_triangles,
+                                             "Reading STL: ", print_progress);
     for (int i = 0; i < num_of_triangles; i++) {
         char buffer[50];
         float *float_buffer;
         if (myFile) {
-            myFile.read(buffer, 50);
+            fread(buffer, sizeof(char), 50, myFile);
             float_buffer = reinterpret_cast<float *>(buffer);
             mesh.triangle_normals_[i] =
                     Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>();
@@ -87,36 +95,55 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
             // ignore buffer[48] and buffer [49] because it is rarely used.
 
         } else {
-            utility::PrintWarning("Read STL failed: not enough triangles.\n");
+            utility::LogWarning("Read STL failed: not enough triangles.");
+            fclose(myFile);
             return false;
         }
-        utility::AdvanceConsoleProgress();
+        ++progress_bar;
     }
+
+    fclose(myFile);
     return true;
 }
 
 bool WriteTriangleMeshToSTL(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             bool write_ascii /* = false*/,
-                            bool compressed /* = false*/) {
+                            bool compressed /* = false*/,
+                            bool write_vertex_normals /* = true*/,
+                            bool write_vertex_colors /* = true*/,
+                            bool write_triangle_uvs /* = true*/,
+                            bool print_progress) {
+    if (write_triangle_uvs && mesh.HasTriangleUvs()) {
+        utility::LogWarning(
+                "This file format does not support writing textures and uv "
+                "coordinates. Consider using .obj");
+    }
+
     std::ofstream myFile(filename.c_str(), std::ios::out | std::ios::binary);
 
     if (!myFile) {
-        utility::PrintWarning("Write STL failed: unable to open file.\n");
+        utility::LogWarning("Write STL failed: unable to open file.");
+        return false;
+    }
+
+    if (!mesh.HasTriangleNormals()) {
+        utility::LogWarning("Write STL failed: compute normals first.");
         return false;
     }
 
     size_t num_of_triangles = mesh.triangles_.size();
     if (num_of_triangles == 0) {
-        utility::PrintWarning("Write STL failed: empty file.\n");
+        utility::LogWarning("Write STL failed: empty file.");
         return false;
     }
     char header[80] = "Created by Open3D";
     myFile.write(header, 80);
     myFile.write((char *)(&num_of_triangles), 4);
 
-    utility::ResetConsoleProgress(num_of_triangles, "Writing STL: ");
-    for (int i = 0; i < num_of_triangles; i++) {
+    utility::ConsoleProgressBar progress_bar(num_of_triangles,
+                                             "Writing STL: ", print_progress);
+    for (size_t i = 0; i < num_of_triangles; i++) {
         Eigen::Vector3f float_vector3f =
                 mesh.triangle_normals_[i].cast<float>();
         myFile.write(reinterpret_cast<const char *>(float_vector3f.data()), 12);
@@ -128,7 +155,7 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
         }
         char blank[2] = {0, 0};
         myFile.write(blank, 2);
-        utility::AdvanceConsoleProgress();
+        ++progress_bar;
     }
     return true;
 }

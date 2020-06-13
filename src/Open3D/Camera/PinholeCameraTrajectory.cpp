@@ -54,38 +54,38 @@ bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
-        utility::PrintWarning(
+    if (!value.isObject()) {
+        utility::LogWarning(
                 "PinholeCameraTrajectory read JSON failed: unsupported json "
-                "format.\n");
+                "format.");
         return false;
     }
     if (value.get("class_name", "").asString() != "PinholeCameraTrajectory" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "PinholeCameraTrajectory read JSON failed: unsupported json "
-                "format.\n");
+                "format.");
         return false;
     }
 
     const Json::Value parameter_array = value["parameters"];
 
     if (parameter_array.size() == 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "PinholeCameraTrajectory read JSON failed: empty "
-                "trajectory.\n");
+                "trajectory.");
         return false;
     }
     parameters_.resize(parameter_array.size());
-    for (auto i = 0; i < parameter_array.size(); i++) {
-        const Json::Value &status_object = parameter_array[i];
-        if (parameters_[i].intrinsic_.ConvertFromJsonValue(
-                    status_object["intrinsic"]) == false) {
+    for (size_t i = 0; i < parameter_array.size(); i++) {
+        const Json::Value &status_object = parameter_array[int(i)];
+        if (!parameters_[i].intrinsic_.ConvertFromJsonValue(
+                    status_object["intrinsic"])) {
             return false;
         }
-        if (EigenMatrix4dFromJsonArray(parameters_[i].extrinsic_,
-                                       status_object["extrinsic"]) == false) {
+        if (!EigenMatrix4dFromJsonArray(parameters_[i].extrinsic_,
+                                        status_object["extrinsic"])) {
             return false;
         }
     }

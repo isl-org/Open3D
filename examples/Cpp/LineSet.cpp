@@ -34,21 +34,21 @@ int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         PrintOpen3DVersion();
         // clang-format off
-        utility::PrintInfo("Usage:\n");
-        utility::PrintInfo("    > LineSet [filename]\n");
-        utility::PrintInfo("    The program will :\n");
-        utility::PrintInfo("    1. load the pointcloud in [filename].\n");
-        utility::PrintInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.\n");
-        utility::PrintInfo("    3. convert the correspondences to LineSet and render it.\n");
-        utility::PrintInfo("    4. rotate the point cloud slightly to get another point cloud.\n");
-        utility::PrintInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
-        utility::PrintInfo("    6. convert to LineSet and render it.\n");
-        utility::PrintInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
+        utility::LogInfo("Usage:");
+        utility::LogInfo("    > LineSet [filename]");
+        utility::LogInfo("    The program will :");
+        utility::LogInfo("    1. load the pointcloud in [filename].");
+        utility::LogInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.");
+        utility::LogInfo("    3. convert the correspondences to LineSet and render it.");
+        utility::LogInfo("    4. rotate the point cloud slightly to get another point cloud.");
+        utility::LogInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.");
+        utility::LogInfo("    6. convert to LineSet and render it.");
+        utility::LogInfo("    7. distance below 0.05 are rendered as red, others as black.");
         // clang-format on
         return 1;
     }
@@ -71,8 +71,7 @@ int main(int argc, char **argv) {
 
     auto new_cloud_ptr = std::make_shared<geometry::PointCloud>();
     *new_cloud_ptr = *cloud_ptr;
-    visualization::BoundingBox bounding_box;
-    bounding_box.FitInGeometry(*new_cloud_ptr);
+    auto bounding_box = new_cloud_ptr->GetAxisAlignedBoundingBox();
     Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();
     trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
@@ -92,7 +91,7 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < new_lineset_ptr->lines_.size(); i++) {
         auto point_pair = new_lineset_ptr->GetLineCoordinate(i);
         if ((point_pair.first - point_pair.second).norm() <
-            0.05 * bounding_box.GetSize()) {
+            0.05 * bounding_box.GetMaxExtent()) {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(1.0, 0.0, 0.0);
         } else {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(0.0, 0.0, 0.0);

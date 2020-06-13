@@ -35,8 +35,8 @@
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
 TEST(Octree, ConstructorWithoutSize) {
     geometry::Octree octree(10);
@@ -205,7 +205,7 @@ TEST(Octree, EightCubesTraverse) {
     colors_traversed.clear();
     child_indices_traversed.clear();
     octree_1.Traverse(f);
-    EXPECT_EQ(colors_traversed.size(), 8);
+    EXPECT_EQ(colors_traversed.size(), 8u);
     for (size_t i = 0; i < 8; ++i) {
         ExpectEQ(colors_traversed[i], colors[i]);
     }
@@ -223,7 +223,7 @@ TEST(Octree, EightCubesTraverse) {
     colors_traversed.clear();
     child_indices_traversed.clear();
     octree_5.Traverse(f);
-    EXPECT_EQ(colors_traversed.size(), 8);
+    EXPECT_EQ(colors_traversed.size(), 8u);
     ExpectEQ(colors_traversed, colors);
 }
 
@@ -314,3 +314,6 @@ TEST(Octree, ConvertToJsonValue) {
 
     EXPECT_TRUE(src_octree == dst_octree);
 }
+
+}  // namespace unit_test
+}  // namespace open3d
