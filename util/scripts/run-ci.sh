@@ -52,6 +52,7 @@ cmake --version
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
     reportRun pip install -U tensorflow==2.0.0
+    reportRun pip install yapf==0.28.0
 fi
 mkdir build
 cd build
