@@ -50,29 +50,26 @@ endif ()
 set_target_properties( open3d_tf_ops PROPERTIES COMPILE_DEFINITIONS "${compile_definitions}" )
 
 # enable c++11
-set_target_properties( open3d_tf_ops PROPERTIES
-                       CXX_STANDARD 11
-                       CXX_STANDARD_REQUIRED ON
-                       CXX_EXTENSIONS OFF
-                       CUDA_STANDARD 11
-                       )
+open3d_set_global_properties(open3d_tf_ops)
+open3d_link_3rdparty_libraries(open3d_tf_ops)
 
 target_include_directories( open3d_tf_ops PRIVATE
     ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
-    )
+)
+
 # silence warnings caused by tensorflow's Eigen
 # Travis has a different version of protobuf in /usr/local/include
 # TBB is in /usr/local/include, so it needs to be after Tensorflow
 target_include_directories( open3d_tf_ops SYSTEM PRIVATE
     ${Tensorflow_INCLUDE_DIR}
     ${TBB_INCLUDE_DIR}
-    )
+)
 if ( CUDA_ENABLED )
     target_include_directories( open3d_tf_ops PRIVATE
         ${CUB_INCLUDE_DIR}
         ${CUTLASS_INCLUDE_DIR}
-        )
+    )
 endif ()
 
 target_link_libraries( open3d_tf_ops PRIVATE
