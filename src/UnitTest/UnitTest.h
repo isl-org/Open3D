@@ -62,11 +62,5 @@ const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
 // Mechanism for reporting unit tests for which there is no implementation yet.
 void NotImplemented();
 
-// Reinterpret cast from uint8_t* to float*.
-template <class T>
-T* const Cast(uint8_t* data) {
-    return reinterpret_cast<T* const>(data);
-}
-
 }  // namespace unit_test
 }  // namespace open3d

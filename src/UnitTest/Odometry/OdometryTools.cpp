@@ -42,7 +42,7 @@ std::shared_ptr<geometry::Image> odometry_tools::GenerateImage(
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    float* const depthData = Cast<float>(&image->data_[0]);
+    float* const depthData = image->PointerAs<float>();
     Rand(depthData, width * height, vmin, vmax, seed);
 
     return image;
@@ -58,7 +58,7 @@ void odometry_tools::ShiftLeft(std::shared_ptr<geometry::Image> image,
     // int num_of_channels = image->num_of_channels_;
     // int bytes_per_channel = image->bytes_per_channel_;
 
-    float* const float_data = Cast<float>(&image->data_[0]);
+    float* const float_data = image->PointerAs<float>();
     for (int h = 0; h < height; h++)
         for (int w = 0; w < width; w++)
             float_data[h * width + w] =
@@ -75,7 +75,7 @@ void odometry_tools::ShiftUp(std::shared_ptr<geometry::Image> image,
     // int num_of_channels = image->num_of_channels_;
     // int bytes_per_channel = image->bytes_per_channel_;
 
-    float* const float_data = Cast<float>(&image->data_[0]);
+    float* const float_data = image->PointerAs<float>();
     for (int h = 0; h < height; h++)
         for (int w = 0; w < width; w++)
             float_data[h * width + w] =
@@ -99,7 +99,7 @@ std::shared_ptr<geometry::Image> odometry_tools::CorrespondenceMap(
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    int* const int_data = Cast<int>(&image->data_[0]);
+    int* const int_data = image->PointerAs<int>();
     size_t image_size = image->data_.size() / sizeof(int);
     Rand(int_data, image_size, vmin, vmax, seed);
 
@@ -122,7 +122,7 @@ std::shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    float* const float_data = Cast<float>(&image->data_[0]);
+    float* const float_data = image->PointerAs<float>();
     size_t image_size = image->data_.size() / sizeof(float);
     Rand(float_data, image_size, vmin, vmax, seed);
 

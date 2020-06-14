@@ -159,6 +159,17 @@ public:
     template <typename T>
     T *PointerAt(int u, int v, int ch) const;
 
+    /// Reinterpret the internal data buffer. The resulting type's size must be
+    /// the same as bytes_per_channel_. This is similar to PointerAt<T>(0, 0).
+    template <class T>
+    T *PointerAs() const {
+        if (sizeof(T) != bytes_per_channel_) {
+            utility::LogError("sizeof(T) != byte_per_channel_: {} != {}.",
+                              sizeof(T), bytes_per_channel_);
+        }
+        return (T *)(data_.data());
+    }
+
     std::shared_ptr<Image> ConvertDepthToFloatImage(
             double depth_scale = 1000.0, double depth_trunc = 3.0) const;
 
