@@ -20,9 +20,9 @@ if (NOT Pytorch_FOUND)
 
     message( STATUS "Getting Pytorch properties ..." )
 
-    execute_process( COMMAND ${PYTHON_EXECUTABLE} "-c" "import torch; print(torch.__version__, end='')" 
+    execute_process( COMMAND ${PYTHON_EXECUTABLE} "-c" "import torch; print(torch.__version__, end='')"
             OUTPUT_VARIABLE Pytorch_VERSION )
-    execute_process( COMMAND ${PYTHON_EXECUTABLE} "-c" "import os; import torch; print(os.path.dirname(torch.__file__), end='')" 
+    execute_process( COMMAND ${PYTHON_EXECUTABLE} "-c" "import os; import torch; print(os.path.dirname(torch.__file__), end='')"
             OUTPUT_VARIABLE Pytorch_ROOT )
 
     # use the cmake config provided by torch
@@ -34,7 +34,7 @@ if (NOT Pytorch_FOUND)
     # Try to fix those here
     get_target_property( iface_link_libs torch INTERFACE_LINK_LIBRARIES )
     string( REPLACE "/usr/local/cuda/lib64" "${CUDA_TOOLKIT_ROOT_DIR}" iface_link_libs "${iface_link_libs}" )
-    set_target_properties( torch PROPERTIES INTERFACE_LINK_LIBRARIES ${iface_link_libs} )
+    set_target_properties( torch PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
     # if successful everything works :)
     # if unsuccessful CMake will complain that there are no rules to make the targets with the hardcoded paths
 endif()

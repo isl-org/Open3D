@@ -3,6 +3,7 @@
 # The following environment variables are required:
 # - SHARED
 # - BUILD_TENSORFLOW_OPS
+# - BUILD_PYTORCH_OPS
 # - BUILD_DEPENDENCY_FROM_SOURCE
 # - NPROC
 
@@ -11,7 +12,7 @@ set -euo pipefail
 #$1 - name of the job
 reportJobStart() {
     rj_ts=$(date +%s)
-    ((rj_dt=rj_ts-rj_prevts)) || true
+    ((rj_dt = rj_ts - rj_prevts)) || true
     echo "$rj_ts EndJob $rj_prevj ran for $rj_dt sec (session started $rj_startts)"
     echo "$rj_ts StartJob $1"
     rj_prevj=$1
@@ -23,9 +24,9 @@ rj_prevj=ReportInit
 echo "$rj_startts StartJob ReportInit"
 reportJobFinishSession() {
     rj_ts=$(date +%s)
-    ((rj_dt=rj_ts-rj_prevts)) || true
+    ((rj_dt = rj_ts - rj_prevts)) || true
     echo "$rj_ts EndJob $rj_prevj ran for $rj_dt sec (session started $rj_startts)"
-    ((rj_dt=rj_ts-rj_startts)) || true
+    ((rj_dt = rj_ts - rj_startts)) || true
     echo "ReportJobSession: ran for $rj_dt sec"
 }
 reportRun() {
@@ -53,15 +54,21 @@ cmake --version
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
     reportRun pip install -U tensorflow==2.0.0
-    reportRun pip install yapf==0.28.0
+fi
+if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    reportRun pip install -U torch==1.4.0
+fi
+if [ "$BUILD_TENSORFLOW_OPS" == "ON" -o "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    reportRun pip install -U yapf==0.28.0
 fi
 mkdir build
 cd build
 
 runBenchmarks=true
 OPEN3D_INSTALL_DIR=~/open3d_install
-cmakeOptions="-DBUILD_SHARED_LIBS=$SHARED \
-        -DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS \
+cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
+        -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
+        -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
         -DBUILD_UNIT_TESTS=ON \
         -DBUILD_BENCHMARKS=ON \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \

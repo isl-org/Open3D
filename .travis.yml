@@ -98,7 +98,7 @@ matrix:
 
     - os: osx
       osx_image: xcode11
-      env: BUILD_TENSORFLOW_OPS=ON LOW_MEM_USAGE=ON
+      env: BUILD_TENSORFLOW_OPS=ON BUILD_PYTORCH_OPS=ON LOW_MEM_USAGE=ON
       install:
         - echo "Travis processors:"
         - nproc
@@ -113,7 +113,7 @@ matrix:
 
     - os: osx
       osx_image: xcode11.5
-      env: BUILD_TENSORFLOW_OPS=OFF LOW_MEM_USAGE=ON
+      env: BUILD_TENSORFLOW_OPS=OFF BUILD_PYTORCH_OPS=OFF LOW_MEM_USAGE=ON
       install:
         - echo "Travis processors:"
         - nproc
