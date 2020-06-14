@@ -9,7 +9,6 @@ else()
     set(LIBDIR ${CMAKE_INSTALL_LIBDIR})
 endif()
 
-message(STATUS ${BLAS_LIBRARIES})
 ExternalProject_Add(
     ext_faiss
     PREFIX faiss
@@ -40,4 +39,4 @@ endif()
 
 #add_dependencies(build_all_3rd_party_libs faiss)
 
-set(FAISS_LIBRARIES ${lib_name} ${BLAS_LIBRARIES})
+set(FAISS_LIBRARIES ${lib_name})

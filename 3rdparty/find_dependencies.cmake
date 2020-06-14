@@ -436,13 +436,15 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JPEG_TARGET}")
 
 # faiss
 if (BUILD_FAISS)
+    find_package(BLAS REQUIRED)
     message(STATUS "Building third-party library faiss from source")
     include(${Open3D_3RDPARTY_DIR}/faiss/faiss.cmake)
     import_3rdparty_library(3rdparty_faiss
-            INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libfaiss-install/include
+            INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libfaiss-install/include/
             LIBRARIES ${FAISS_LIBRARIES}
             LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libfaiss-install/lib
     )
+    target_link_libraries(3rdparty_faiss INTERFACE ${BLAS_LIBRARIES})
     add_dependencies(3rdparty_faiss ext_faiss)
     set(FAISS_TARGET "3rdparty_faiss")
 endif()
