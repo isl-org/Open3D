@@ -35,7 +35,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_pointcloud(py::module &m) {
     py::class_<geometry::PointCloud, PyGeometry3D<geometry::PointCloud>,
@@ -133,6 +133,11 @@ void pybind_pointcloud(py::module &m) {
                  &geometry::PointCloud::OrientNormalsTowardsCameraLocation,
                  "Function to orient the normals of a point cloud",
                  "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
+            .def("orient_normals_consistent_tangent_plane",
+                 &geometry::PointCloud::OrientNormalsConsistentTangentPlane,
+                 "Function to orient the normals with respect to consistent "
+                 "tangent planes",
+                 "k"_a)
             .def("compute_point_cloud_distance",
                  &geometry::PointCloud::ComputePointCloudDistance,
                  "For each point in the source point cloud, compute the "
@@ -272,6 +277,11 @@ void pybind_pointcloud(py::module &m) {
             m, "PointCloud", "orient_normals_towards_camera_location",
             {{"camera_location",
               "Normals are oriented with towards the camera_location."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_consistent_tangent_plane",
+            {{"k",
+              "Number of k nearest neighbors used in constructing the "
+              "Riemannian graph used to propogate normal orientation."}});
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_point_cloud_distance",
                                     {{"target", "The target point cloud."}});
@@ -324,3 +334,5 @@ void pybind_pointcloud(py::module &m) {
 }
 
 void pybind_pointcloud_methods(py::module &m) {}
+
+}  // namespace open3d

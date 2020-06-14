@@ -36,7 +36,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/open3d_pybind.h"
 
-using namespace open3d;
+namespace open3d {
 
 template <class GeometryBase = geometry::Geometry>
 class PyGeometry : public GeometryBase {
@@ -87,3 +87,5 @@ public:
         PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
     }
 };
+
+}  // namespace open3d

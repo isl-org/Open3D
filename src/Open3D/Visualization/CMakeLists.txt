@@ -23,8 +23,24 @@ add_custom_target(ShaderFileTarget ALL
 set_target_properties(ShaderFileTarget PROPERTIES FOLDER "Custom")
 
 # build
-file(GLOB_RECURSE VISUALIZATION_ALL_HEADER_FILES "*.h")
-file(GLOB_RECURSE VISUALIZATION_ALL_SOURCE_FILES "*.cpp")
+set(VISUALIZATION_ALL_HEADER_FILES "")
+set(VISUALIZATION_ALL_SOURCE_FILES "")
+macro(AddSourceDir DIR)
+    file(GLOB_RECURSE HEADER_FILES "${DIR}/*.h")
+    file(GLOB_RECURSE SOURCE_FILES "${DIR}/*.cpp")
+    list(APPEND VISUALIZATION_ALL_HEADER_FILES ${HEADER_FILES})
+    list(APPEND VISUALIZATION_ALL_SOURCE_FILES ${SOURCE_FILES})
+endmacro(AddSourceDir)
+AddSourceDir("Shader")
+AddSourceDir("Utility")
+AddSourceDir("Visualizer")
+
+if (ENABLE_GUI)
+    AddSourceDir("Rendering")
+else ()
+    list(FILTER VISUALIZATION_ALL_HEADER_FILES EXCLUDE REGEX .*GuiVisualizer.h)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiVisualizer.cpp)
+endif()
 
 # create object library
 add_library(Visualization OBJECT
@@ -36,7 +52,6 @@ source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
 
 add_dependencies(Visualization ShaderFileTarget)
 
-ShowAndAbortOnWarning(Visualization)
-
-# Enforce 3rd party dependencies
-add_dependencies(Visualization build_all_3rd_party_libs)
+open3d_show_and_abort_on_warning(Visualization)
+open3d_set_global_properties(Visualization)
+open3d_link_3rdparty_libraries(Visualization)

@@ -144,8 +144,8 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || target.HasNormals() == false ||
-        target.HasColors() == false || source.HasColors() == false)
+    if (corres.empty() || !target.HasNormals() || !target.HasColors() ||
+        !source.HasColors())
         return Eigen::Matrix4d::Identity();
 
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);

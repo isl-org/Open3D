@@ -28,4 +28,8 @@
 
 #include "open3d_pybind/open3d_pybind.h"
 
+namespace open3d {
+
 void pybind_integration(py::module &m);
+
+}  // namespace open3d

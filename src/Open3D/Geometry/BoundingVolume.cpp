@@ -86,24 +86,16 @@ OrientedBoundingBox& OrientedBoundingBox::Translate(
 }
 
 OrientedBoundingBox& OrientedBoundingBox::Scale(const double scale,
-                                                bool center) {
-    if (center) {
-        extent_ *= scale;
-    } else {
-        center_ *= scale;
-        extent_ *= scale;
-    }
+                                                const Eigen::Vector3d& center) {
+    extent_ *= scale;
+    center_ = center;
     return *this;
 }
 
-OrientedBoundingBox& OrientedBoundingBox::Rotate(const Eigen::Matrix3d& R,
-                                                 bool center) {
-    if (center) {
-        R_ *= R;
-    } else {
-        center_ = R * center_;
-        R_ *= R;
-    }
+OrientedBoundingBox& OrientedBoundingBox::Rotate(
+        const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
+    R_ = R;
+    center_ = center;
     return *this;
 }
 
@@ -129,28 +121,15 @@ std::vector<Eigen::Vector3d> OrientedBoundingBox::GetBoxPoints() const {
 
 std::vector<size_t> OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
         const std::vector<Eigen::Vector3d>& points) const {
-    auto box_points = GetBoxPoints();
-    auto TestPlane = [](const Eigen::Vector3d& a, const Eigen::Vector3d& b,
-                        const Eigen::Vector3d c, const Eigen::Vector3d& x) {
-        Eigen::Matrix3d design;
-        design << (b - a), (c - a), (x - a);
-        return design.determinant();
-    };
     std::vector<size_t> indices;
+    Eigen::Vector3d dx = R_ * Eigen::Vector3d(1, 0, 0);
+    Eigen::Vector3d dy = R_ * Eigen::Vector3d(0, 1, 0);
+    Eigen::Vector3d dz = R_ * Eigen::Vector3d(0, 0, 1);
     for (size_t idx = 0; idx < points.size(); idx++) {
-        const auto& point = points[idx];
-        if (TestPlane(box_points[0], box_points[1], box_points[3], point) <=
-                    0 &&
-            TestPlane(box_points[0], box_points[5], box_points[3], point) >=
-                    0 &&
-            TestPlane(box_points[2], box_points[5], box_points[7], point) <=
-                    0 &&
-            TestPlane(box_points[1], box_points[4], box_points[7], point) >=
-                    0 &&
-            TestPlane(box_points[3], box_points[4], box_points[5], point) <=
-                    0 &&
-            TestPlane(box_points[0], box_points[1], box_points[7], point) >=
-                    0) {
+        Eigen::Vector3d d = points[idx] - center_;
+        if (std::abs(d.dot(dx)) <= extent_(0) / 2 &&
+            std::abs(d.dot(dy)) <= extent_(1) / 2 &&
+            std::abs(d.dot(dz)) <= extent_(2) / 2) {
             indices.push_back(idx);
         }
     }
@@ -221,6 +200,7 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Clear() {
 }
 
 bool AxisAlignedBoundingBox::IsEmpty() const { return Volume() <= 0; }
+
 Eigen::Vector3d AxisAlignedBoundingBox::GetMinBound() const {
     return min_bound_;
 }
@@ -263,21 +243,15 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Translate(
     return *this;
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(const double scale,
-                                                      bool center) {
-    if (center) {
-        Eigen::Vector3d center = GetCenter();
-        min_bound_ = center + scale * (min_bound_ - center);
-        max_bound_ = center + scale * (max_bound_ - center);
-    } else {
-        min_bound_ *= scale;
-        max_bound_ *= scale;
-    }
+AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(
+        const double scale, const Eigen::Vector3d& center) {
+    min_bound_ = center + scale * (min_bound_ - center);
+    max_bound_ = center + scale * (max_bound_ - center);
     return *this;
 }
 
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Rotate(
-        const Eigen::Matrix3d& rotation, bool center) {
+        const Eigen::Matrix3d& rotation, const Eigen::Vector3d& center) {
     utility::LogError(
             "A rotation of a AxisAlignedBoundingBox would not be axis aligned "
             "anymore, convert it to an OrientedBoundingBox first");

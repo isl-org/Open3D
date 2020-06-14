@@ -56,7 +56,7 @@ def run_benchmark():
 if __name__ == "__main__":
     times = []
     for i in range(10):
-        print(f"Running benchmark {i}")
+        print("Running benchmark {}".format(i))
         time_integrate, time_extract_mesh, time_extract_pcd = run_benchmark()
         times.append([time_integrate, time_extract_mesh, time_extract_pcd])
     avg_times = np.mean(np.array(times), axis=0)

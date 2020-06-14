@@ -32,8 +32,8 @@
 #include "Open3D/Utility/Helper.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
 // [0: (-1, 2)]__________[1: (1, 2)]
 //             |        /|
@@ -502,3 +502,6 @@ TEST(HalfEdgeTriangleMesh, GetBoundaries_FourTrianglesDisconnect) {
     assert_vector_eq(het_mesh->GetBoundaries()[0], {0, 2, 3, 1}, true);
     assert_vector_eq(het_mesh->GetBoundaries()[1], {4, 6, 7, 5}, true);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

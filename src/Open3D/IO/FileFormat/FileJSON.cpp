@@ -44,7 +44,7 @@ bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
     JSONCPP_STRING errs;
     bool is_parse_successful =
             parseFromStream(builder, json_stream, &root_object, &errs);
-    if (is_parse_successful == false) {
+    if (!is_parse_successful) {
         utility::LogWarning("Read JSON failed: {}.", errs);
         return false;
     }
@@ -54,7 +54,7 @@ bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
 bool WriteIJsonConvertibleToJSONStream(
         std::ostream &json_stream, const utility::IJsonConvertible &object) {
     Json::Value root_object;
-    if (object.ConvertToJsonValue(root_object) == false) {
+    if (!object.ConvertToJsonValue(root_object)) {
         return false;
     }
     Json::StreamWriterBuilder builder;
@@ -72,7 +72,7 @@ namespace io {
 bool ReadIJsonConvertibleFromJSON(const std::string &filename,
                                   utility::IJsonConvertible &object) {
     std::ifstream file_in(filename);
-    if (file_in.is_open() == false) {
+    if (!file_in.is_open()) {
         utility::LogWarning("Read JSON failed: unable to open file: {}",
                             filename);
         return false;
@@ -85,7 +85,7 @@ bool ReadIJsonConvertibleFromJSON(const std::string &filename,
 bool WriteIJsonConvertibleToJSON(const std::string &filename,
                                  const utility::IJsonConvertible &object) {
     std::ofstream file_out(filename);
-    if (file_out.is_open() == false) {
+    if (!file_out.is_open()) {
         utility::LogWarning("Write JSON failed: unable to open file: {}",
                             filename);
         return false;

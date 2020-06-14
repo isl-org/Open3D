@@ -37,10 +37,10 @@ def geometry_to_json(geometry):
     if isinstance(geometry, o3.geometry.PointCloud):
         json['type'] = 'PointCloud'
         # TODO: do not flatten
-        json['points'] = np.asarray(
-            geometry.points, dtype=np.float32).reshape(-1).tolist()
-        json['colors'] = np.asarray(
-            geometry.colors, dtype=np.float32).reshape(-1).tolist()
+        json['points'] = np.asarray(geometry.points,
+                                    dtype=np.float32).reshape(-1).tolist()
+        json['colors'] = np.asarray(geometry.colors,
+                                    dtype=np.float32).reshape(-1).tolist()
     else:
         raise NotImplementedError(
             "Only supporting geometry_to_json for PointCloud")
@@ -51,10 +51,12 @@ def geometry_to_json(geometry):
 class JVisualizer(widgets.DOMWidget):
     _view_name = Unicode('JVisualizerView').tag(sync=True)
     _view_module = Unicode('open3d').tag(sync=True)
-    _view_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(sync=True)
+    _view_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
+        sync=True)
     _model_name = Unicode('JVisualizerModel').tag(sync=True)
     _model_module = Unicode('open3d').tag(sync=True)
-    _model_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(sync=True)
+    _model_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(
+        sync=True)
 
     # We need to declare class attributes for traitlets to work
     geometry_jsons = List(Instance(dict)).tag(sync=True)

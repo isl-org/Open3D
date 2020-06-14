@@ -37,6 +37,7 @@ set(DIRECTORIES_OF_INTEREST_PYTHON
     examples/Python
     src/UnitTest/Python
     docs
+    src/Python
 )
 
 message(STATUS "Python apply-style...")
@@ -52,6 +53,9 @@ message(STATUS "Python apply-style done")
 
 # Try to locate "clang-format-5.0" and then "clang-format"
 find_program(CLANG_FORMAT clang-format-5.0 PATHS ENV PATH)
+if (NOT CLANG_FORMAT)
+    find_program(CLANG_FORMAT clang-format-mp-5.0 PATHS ENV PATH)
+endif()
 if (NOT CLANG_FORMAT)
     find_program(CLANG_FORMAT clang-format PATHS ENV PATH)
 endif()
@@ -80,13 +84,16 @@ set(DIRECTORIES_OF_INTEREST_CPP
     docs/_static
 )
 
-message(STATUS "C++ apply-style...")
+message(STATUS "C++/CUDA apply-style...")
 foreach(DIRECTORY ${DIRECTORIES_OF_INTEREST_CPP})
     set(CPP_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cpp")
+    set(CU_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cu")
+    set(CUH_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cuh")
     set(H_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h")
-    file(GLOB_RECURSE FILES ${CPP_GLOB} ${H_GLOB})
+    set(H_IN_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h.in")
+    file(GLOB_RECURSE FILES ${CPP_GLOB} ${CU_GLOB} ${CUH_GLOB} ${H_GLOB})
     foreach(FILE ${FILES})
         style_apply_file_cpp(${FILE})
     endforeach(FILE)
 endforeach(DIRECTORY)
-message(STATUS "C++ apply-style done")
+message(STATUS "C++/CUDA apply-style done")

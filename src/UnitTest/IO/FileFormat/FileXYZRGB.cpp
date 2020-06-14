@@ -26,10 +26,12 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(FileXYZRGB, DISABLED_ReadPointCloudFromXYZRGB) {
-    unit_test::NotImplemented();
-}
+namespace open3d {
+namespace unit_test {
 
-TEST(FileXYZRGB, DISABLED_WritePointCloudToXYZRGB) {
-    unit_test::NotImplemented();
-}
+TEST(FileXYZRGB, DISABLED_ReadPointCloudFromXYZRGB) { NotImplemented(); }
+
+TEST(FileXYZRGB, DISABLED_WritePointCloudToXYZRGB) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

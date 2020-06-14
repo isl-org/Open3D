@@ -1,8 +1,17 @@
+# Windows build temp cmake file
+CMakeSettings.json
+
+# Docs tar file created by travis deploy
+.travis/*.tar.gz
+
 # CMake configured files
 src/Open3D/Open3D.h
 src/Open3D/Open3DConfig.h
 src/Open3D/Visualization/Shader/Shader.h
 util/pip_package/setup.py
+
+# CMake temp file from Visual Studio
+CMakeSettings.json
 
 # Temp directories
 build*/
@@ -19,6 +28,7 @@ node_modules/
 _vimrc_local.vim
 .vs/
 .vscode/
+.clangd/
 
 # Build artifacts
 **/package-lock.json
@@ -39,6 +49,7 @@ compile_commands.json
 
 # Example resources
 examples/Python/ReconstructionSystem/dataset/
+examples/TestData/fountain_small
 examples/TestData/Armadillo.ply
 examples/TestData/Bunny.ply
 examples/TestData/eagle.ply
@@ -61,3 +72,12 @@ examples/Python/Basic/copy_of_lena_color.jpg
 examples/Python/Basic/copy_of_crate.mtl
 examples/Python/Basic/copy_of_crate.png
 examples/Python/Basic/copy_of_crate.obj
+
+# doc
+docs/TestData
+docs/tutorial/**/*.ipynb
+docs/tutorial/**/*.py
+docs/tutorial/**/*.jpg
+docs/tutorial/**/*.ply
+docs/tutorial/**/*.pcd
+docs/tutorial/**/*.json

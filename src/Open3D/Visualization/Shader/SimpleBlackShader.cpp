@@ -37,8 +37,8 @@ namespace visualization {
 namespace glsl {
 
 bool SimpleBlackShader::Compile() {
-    if (CompileShaders(SimpleBlackVertexShader, NULL,
-                       SimpleBlackFragmentShader) == false) {
+    if (!CompileShaders(SimpleBlackVertexShader, NULL,
+                        SimpleBlackFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -65,7 +65,7 @@ bool SimpleBlackShader::BindGeometry(const geometry::Geometry &geometry,
 
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
-    if (PrepareBinding(geometry, option, view, points) == false) {
+    if (!PrepareBinding(geometry, option, view, points)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -83,7 +83,7 @@ bool SimpleBlackShader::BindGeometry(const geometry::Geometry &geometry,
 bool SimpleBlackShader::RenderGeometry(const geometry::Geometry &geometry,
                                        const RenderOption &option,
                                        const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
@@ -130,7 +130,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
     }
     const geometry::PointCloud &pointcloud =
             (const geometry::PointCloud &)geometry;
-    if (pointcloud.HasPoints() == false) {
+    if (!pointcloud.HasPoints()) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
@@ -181,7 +181,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
     }
     const geometry::TriangleMesh &mesh =
             (const geometry::TriangleMesh &)geometry;
-    if (mesh.HasTriangles() == false) {
+    if (!mesh.HasTriangles()) {
         PrintShaderWarning("Binding failed with empty geometry::TriangleMesh.");
         return false;
     }

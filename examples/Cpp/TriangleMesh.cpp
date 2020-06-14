@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
         mesh->ComputeVertexNormals();
         camera::PinholeCameraTrajectory trajectory;
         io::ReadIJsonConvertible(argv[3], trajectory);
-        if (utility::filesystem::DirectoryExists("image") == false) {
+        if (!utility::filesystem::DirectoryExists("image")) {
             utility::LogWarning("No image!");
             return 0;
         }

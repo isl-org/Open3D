@@ -14,18 +14,22 @@ Open3D Python packages are distributed via
 
 Supported Python versions:
 
-* 2.7
 * 3.5
 * 3.6
+* 3.7
+* 3.8
 
 Supported operating systems:
 
-* Ubuntu (tested on 16.04, should work on other modern versions)
-* MacOS
-* Windows 10 (32-bit and 64-bit)
+* Ubuntu 18.04+
+* macOS 10.14+
+* Windows 10 (64-bit)
 
-PyPI
-----
+If you have other Python versions (e.g. Python 2) or operating systems, please
+refer to :ref:`compilation` and compile Open3D from source.
+
+Pip (PyPI)
+----------
 
 .. code-block:: bash
 
@@ -65,7 +69,7 @@ Now, try importing Open3D.
 
 .. code-block:: bash
 
-    python -c "import open3d"
+    python -c "import open3d as o3d"
 
 If this works, congratulations, now Open3D has been successfully installed!
 
@@ -74,29 +78,7 @@ Running Open3D tutorials
 ========================
 
 A complete set of Python tutorials and testing data will also be copied to
-demonstrate the usage of Open3D Python interface.
-For example, tutorial ``Basic/rgbd_redwood.py`` can be run with:
-
-.. code-block:: bash
-
-    cd lib/Tutorial/Basic
-    python rgbd_redwood.py
-
-It reads a pair of RGB-D images and visualizes them.
-
-.. image:: _static/Basic/rgbd_images/redwood_rgbd.png
-    :width: 400px
-
-It then transforms the RGB-D image into a point cloud, then renders the point
-cloud using Open3D visualizer.
-
-.. image:: _static/Basic/rgbd_images/redwood_pcd.png
-    :width: 400px
-
-The Python code is quite straightforward, and the detailed explanation can be
-found in :ref:`rgbd_redwood`.
-You may further experiment with different tutorials or check out the complete
-tutorial list in the :ref:`tutorial_index` page.
+demonstrate the usage of Open3D Python interface. See ``examples/Python`` for all Python examples.
 
 .. note:: Open3D's Python tutorial utilizes some external packages: ``numpy``,
     ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction

@@ -28,10 +28,12 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/open3d_pybind.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_utility(py::module &m) {
     py::module m_submodule = m.def_submodule("utility");
     pybind_console(m_submodule);
     pybind_eigen(m_submodule);
 }
+
+}  // namespace open3d

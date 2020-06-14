@@ -65,7 +65,7 @@ bool Simple2DShader::BindGeometry(const geometry::Geometry &geometry,
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3f> colors;
-    if (PrepareBinding(geometry, option, view, points, colors) == false) {
+    if (!PrepareBinding(geometry, option, view, points, colors)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -87,7 +87,7 @@ bool Simple2DShader::BindGeometry(const geometry::Geometry &geometry,
 bool Simple2DShader::RenderGeometry(const geometry::Geometry &geometry,
                                     const RenderOption &option,
                                     const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }

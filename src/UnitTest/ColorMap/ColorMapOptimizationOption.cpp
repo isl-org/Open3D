@@ -28,6 +28,9 @@
 
 // #include "Open3D/ColorMap/ColorMapOptimizationOption.h"
 
+namespace open3d {
+namespace unit_test {
+
 /* TODO
 As the color_map::ColorMapOptimization subcomponents go back into hiding several
 lines of code had to commented out. Do not remove these lines, they may become
@@ -47,8 +50,11 @@ TEST(ColorMapOptimizationOption, DISABLED_Constructor) {
     // unit_test::THRESHOLD_1E_6); EXPECT_NEAR(300, option.maximum_iteration_,
     // unit_test::THRESHOLD_1E_6); EXPECT_NEAR(2.5,
     // option.maximum_allowable_depth_, unit_test::THRESHOLD_1E_6);
-    // EXPECT_NEAR(0.03, option.depth_threshold_for_visiblity_check_,
+    // EXPECT_NEAR(0.03, option.depth_threshold_for_visibility_check_,
     // unit_test::THRESHOLD_1E_6); EXPECT_NEAR(0.1,
     // option.depth_threshold_for_discontinuity_check_,
     // unit_test::THRESHOLD_1E_6);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

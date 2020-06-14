@@ -70,10 +70,15 @@ public:
     bool ConvertToViewParameters(ViewParameters &status) const;
     bool ConvertFromViewParameters(const ViewParameters &status);
 
+    void SetLookat(const Eigen::Vector3d &lookat);
+    void SetUp(const Eigen::Vector3d &up);
+    void SetFront(const Eigen::Vector3d &front);
+    void SetZoom(const double zoom);
+
     /// Function to get equivalent pinhole camera parameters (does not support
     /// orthogonal since it is not a real camera view).
     ///
-    /// \param The pinhole camera parameter to convert to.
+    /// \param parameters The pinhole camera parameter to convert to.
     bool ConvertToPinholeCameraParameters(
             camera::PinholeCameraParameters &parameters);
     /// Function to get view controller from pinhole camera parameters.

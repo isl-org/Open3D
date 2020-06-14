@@ -1,0 +1,28 @@
+material {
+    name : defaultUnlit,
+    shadingModel : unlit,
+    doubleSided : true,
+
+    parameters : [
+        { type : float3,    name : baseColor },
+        { type : float,     name : pointSize },
+        { type : sampler2d, name : albedo }
+    ],
+    requires : [
+        color, uv0
+    ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        material.baseColor.rgb = materialParams.baseColor*getColor().rgb * texture(materialParams_albedo, getUV0()).rgb;
+    }
+}

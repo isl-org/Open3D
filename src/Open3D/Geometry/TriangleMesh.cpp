@@ -52,8 +52,10 @@ TriangleMesh &TriangleMesh::Clear() {
     triangle_normals_.clear();
     adjacency_list_.clear();
     triangle_uvs_.clear();
+    materials_.clear();
     triangle_material_ids_.clear();
     textures_.clear();
+
     return *this;
 }
 
@@ -63,9 +65,10 @@ TriangleMesh &TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
     return *this;
 }
 
-TriangleMesh &TriangleMesh::Rotate(const Eigen::Matrix3d &R, bool center) {
+TriangleMesh &TriangleMesh::Rotate(const Eigen::Matrix3d &R,
+                                   const Eigen::Vector3d &center) {
     MeshBase::Rotate(R, center);
-    RotateNormals(R, triangle_normals_, center);
+    RotateNormals(R, triangle_normals_);
     return *this;
 }
 
@@ -122,7 +125,7 @@ TriangleMesh &TriangleMesh::ComputeTriangleNormals(
 }
 
 TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
-    if (HasTriangleNormals() == false) {
+    if (!HasTriangleNormals()) {
         ComputeTriangleNormals(false);
     }
     vertex_normals_.resize(vertices_.size(), Eigen::Vector3d::Zero());
@@ -430,7 +433,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         std::vector<double> &triangle_areas,
         double surface_area,
-        bool use_triangle_normal) {
+        bool use_triangle_normal,
+        int seed) {
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
     for (size_t tidx = 1; tidx < triangles_.size(); ++tidx) {
@@ -441,8 +445,11 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     // sample point cloud
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
-    std::random_device rd;
-    std::mt19937 mt(rd());
+    if (seed == -1) {
+        std::random_device rd;
+        seed = rd();
+    }
+    std::mt19937 mt(seed);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
     auto pcd = std::make_shared<PointCloud>();
     pcd->points_.resize(number_of_points);
@@ -491,7 +498,9 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
-        size_t number_of_points, bool use_triangle_normal /* = false */) {
+        size_t number_of_points,
+        bool use_triangle_normal /* = false */,
+        int seed /* = -1 */) {
     if (number_of_points <= 0) {
         utility::LogError("[SamplePointsUniformly] number_of_points <= 0");
     }
@@ -505,14 +514,15 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     double surface_area = GetSurfaceArea(triangle_areas);
 
     return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
-                                     surface_area, use_triangle_normal);
+                                     surface_area, use_triangle_normal, seed);
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         size_t number_of_points,
         double init_factor /* = 5 */,
         const std::shared_ptr<PointCloud> pcl_init /* = nullptr */,
-        bool use_triangle_normal /* = false */) {
+        bool use_triangle_normal /* = false */,
+        int seed /* = -1 */) {
     if (number_of_points <= 0) {
         utility::LogError("[SamplePointsPoissonDisk] number_of_points <= 0");
     }
@@ -540,7 +550,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     if (pcl_init == nullptr) {
         pcl = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
                                         triangle_areas, surface_area,
-                                        use_triangle_normal);
+                                        use_triangle_normal, seed);
     } else {
         pcl = std::make_shared<PointCloud>();
         pcl->points_ = pcl_init->points_;
@@ -1538,89 +1548,64 @@ void TriangleMesh::RemoveVerticesByMask(const std::vector<bool> &vertex_mask) {
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::SelectByIndex(
-        const std::vector<size_t> &indices) const {
+        const std::vector<size_t> &indices, bool cleanup) const {
     if (HasTriangleUvs()) {
         utility::LogWarning(
-                "[SelectByIndices] This mesh contains triangle uvs that are "
+                "[SelectByIndex] This mesh contains triangle uvs that are "
                 "not handled in this function");
     }
     auto output = std::make_shared<TriangleMesh>();
     bool has_triangle_normals = HasTriangleNormals();
     bool has_vertex_normals = HasVertexNormals();
     bool has_vertex_colors = HasVertexColors();
-    // For each vertex, list face indices.
-    std::vector<std::vector<int>> vertex_to_triangle_temp(vertices_.size());
-    int triangle_id = 0;
-    for (auto trangle : triangles_) {
-        for (int i = 0; i < 3; i++)
-            vertex_to_triangle_temp[trangle(i)].push_back(triangle_id);
-        triangle_id++;
-    }
-    // Remove face indices of vertex_to_triangle_temp
-    // if it does not correspond to selected vertices
-    std::vector<std::vector<int>> vertex_to_triangle(vertices_.size());
-    for (auto vertex_id : indices) {
-        vertex_to_triangle[vertex_id] = vertex_to_triangle_temp[vertex_id];
-    }
-    // Make a triangle_to_vertex using vertex_to_triangle
-    std::vector<std::vector<int>> triangle_to_vertex(triangles_.size());
-    int vertex_id = 0;
-    for (auto face_ids : vertex_to_triangle) {
-        for (auto face_id : face_ids)
-            triangle_to_vertex[face_id].push_back(vertex_id);
-        vertex_id++;
-    }
-    // Only a face with three selected points contributes to mark
-    // mask_observed_vertex.
-    std::vector<bool> mask_observed_vertex(vertices_.size());
-    for (auto vertex_ids : triangle_to_vertex) {
-        if ((int)vertex_ids.size() == 3)
-            for (int i = 0; i < 3; i++)
-                mask_observed_vertex[vertex_ids[i]] = true;
-    }
-    // Rename vertex id based on selected points
-    std::vector<int> new_vertex_id(vertices_.size());
-    for (size_t i = 0, cnt = 0; i < mask_observed_vertex.size(); i++) {
-        if (mask_observed_vertex[i]) {
-            new_vertex_id[i] = int(cnt);
-            cnt++;
+
+    std::vector<int> new_vert_ind(vertices_.size(), -1);
+    for (const auto &sel_vidx : indices) {
+        if (sel_vidx < 0 || sel_vidx >= vertices_.size()) {
+            utility::LogWarning(
+                    "[SelectByIndex] indices contains index {} out of range. "
+                    "It is ignored.",
+                    sel_vidx);
+            continue;
+        }
+        if (new_vert_ind[sel_vidx] >= 0) {
+            continue;
+        }
+        new_vert_ind[sel_vidx] = int(output->vertices_.size());
+        output->vertices_.push_back(vertices_[sel_vidx]);
+        if (has_vertex_colors) {
+            output->vertex_colors_.push_back(vertex_colors_[sel_vidx]);
+        }
+        if (has_vertex_normals) {
+            output->vertex_normals_.push_back(vertex_normals_[sel_vidx]);
         }
     }
-    // Push a triangle that has 3 selected vertices.
-    triangle_id = 0;
-    for (auto vertex_ids : triangle_to_vertex) {
-        if ((int)vertex_ids.size() == 3) {
-            Eigen::Vector3i new_face;
-            for (int i = 0; i < 3; i++)
-                new_face(i) = new_vertex_id[triangles_[triangle_id][i]];
-            output->triangles_.push_back(new_face);
-            if (has_triangle_normals)
-                output->triangle_normals_.push_back(
-                        triangle_normals_[triangle_id]);
-        }
-        triangle_id++;
-    }
-    // Push marked vertex.
-    for (size_t i = 0; i < mask_observed_vertex.size(); i++) {
-        if (mask_observed_vertex[i]) {
-            output->vertices_.push_back(vertices_[i]);
-            if (has_vertex_normals)
-                output->vertex_normals_.push_back(vertex_normals_[i]);
-            if (has_vertex_colors)
-                output->vertex_colors_.push_back(vertex_colors_[i]);
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        int nvidx0 = new_vert_ind[triangles_[tidx](0)];
+        int nvidx1 = new_vert_ind[triangles_[tidx](1)];
+        int nvidx2 = new_vert_ind[triangles_[tidx](2)];
+        if (nvidx0 >= 0 && nvidx1 >= 0 && nvidx2 >= 0) {
+            output->triangles_.push_back(
+                    Eigen::Vector3i(nvidx0, nvidx1, nvidx2));
+            if (has_triangle_normals) {
+                output->triangle_normals_.push_back(triangle_normals_[tidx]);
+            }
         }
     }
-    output->RemoveDuplicatedVertices();
-    output->RemoveDuplicatedTriangles();
-    output->RemoveUnreferencedVertices();
-    output->RemoveDegenerateTriangles();
+
+    if (cleanup) {
+        output->RemoveDuplicatedVertices();
+        output->RemoveDuplicatedTriangles();
+        output->RemoveUnreferencedVertices();
+        output->RemoveDegenerateTriangles();
+    }
     utility::LogDebug(
             "Triangle mesh sampled from {:d} vertices and {:d} triangles to "
             "{:d} vertices and {:d} triangles.",
             (int)vertices_.size(), (int)triangles_.size(),
             (int)output->vertices_.size(), (int)output->triangles_.size());
     return output;
-}
+}  // namespace geometry
 
 std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
         const AxisAlignedBoundingBox &bbox) const {

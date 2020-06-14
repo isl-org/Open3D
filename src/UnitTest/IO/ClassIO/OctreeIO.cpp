@@ -34,8 +34,8 @@
 #include "Open3D/Utility/IJsonConvertible.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
 void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
                              bool delete_temp = true) {
@@ -102,3 +102,6 @@ TEST(OctreeIO, JsonFileIOSevenCubes) {
 
     WriteReadAndAssertEqual(octree);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

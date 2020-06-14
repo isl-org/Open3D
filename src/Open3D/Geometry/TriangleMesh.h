@@ -70,7 +70,7 @@ public:
     virtual TriangleMesh &Transform(
             const Eigen::Matrix4d &transformation) override;
     virtual TriangleMesh &Rotate(const Eigen::Matrix3d &R,
-                                 bool center = true) override;
+                                 const Eigen::Vector3d &center) override;
 
 public:
     TriangleMesh &operator+=(const TriangleMesh &mesh);
@@ -103,6 +103,8 @@ public:
                 [](bool a, const Image &b) { return a && !b.IsEmpty(); });
         return !textures_.empty() && is_all_texture_valid;
     }
+
+    bool HasMaterials() const { return !materials_.empty(); }
 
     bool HasTriangleMaterialIds() const {
         return HasTriangles() &&
@@ -168,9 +170,9 @@ public:
 
     /// \brief Function to sharpen triangle mesh.
     ///
-    /// The output value ($v_o$) is the input value ($v_i$) plus strength times
-    /// the input value minus the sum of he adjacent values. $v_o = v_i x
-    /// strength (v_i * |N| - \sum_{n \in N} v_n)$.
+    /// The output value (\f$v_o\f$) is the input value (\f$v_i\f$) plus
+    /// strength times the input value minus the sum of he adjacent values.
+    /// \f$v_o = v_i + strength (v_i * |N| - \sum_{n \in N} v_n)\f$.
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
@@ -182,8 +184,8 @@ public:
 
     /// \brief Function to smooth triangle mesh with simple neighbour average.
     ///
-    /// $v_o = \frac{v_i + \sum_{n \in N} v_n)}{|N| + 1}$, with $v_i$
-    /// being the input value, $v_o$ the output value, and $N$ is the
+    /// \f$v_o = \frac{v_i + \sum_{n \in N} v_n)}{|N| + 1}\f$, with \f$v_i\f$
+    /// being the input value, \f$v_o\f$ the output value, and \f$N\f$ is the
     /// set of adjacent neighbours.
     ///
     /// \param number_of_iterations defines the number of repetitions
@@ -194,10 +196,11 @@ public:
 
     /// \brief Function to smooth triangle mesh using Laplacian.
     ///
-    /// $v_o = v_i \cdot \lambda (sum_{n \in N} w_n v_n - v_i)$,
-    /// with $v_i$ being the input value, $v_o$ the output value, $N$ is the
-    /// set of adjacent neighbours, $w_n$ is the weighting of the neighbour
-    /// based on the inverse distance (closer neighbours have higher weight),
+    /// \f$v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)\f$,
+    /// with \f$v_i\f$ being the input value, \f$v_o\f$ the output value,
+    /// \f$N\f$ is the set of adjacent neighbours, \f$w_n\f$ is the weighting of
+    /// the neighbour based on the inverse distance (closer neighbours have
+    /// higher weight),
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
@@ -229,8 +232,8 @@ public:
     int EulerPoincareCharacteristic() const;
 
     /// Function that returns the non-manifold edges of the triangle mesh.
-    /// If \param allow_boundary_edges is set to false, than also boundary
-    /// edges are returned
+    /// If \param allow_boundary_edges is set to false, then also boundary
+    /// edges are returned.
     std::vector<Eigen::Vector2i> GetNonManifoldEdges(
             bool allow_boundary_edges = true) const;
 
@@ -267,7 +270,7 @@ public:
     bool IsIntersecting(const TriangleMesh &other) const;
 
     /// Function that tests if the given triangle mesh is orientable, i.e.
-    /// the triangles can oriented in such a way that all normals point
+    /// the triangles can be oriented in such a way that all normals point
     /// towards the outside.
     bool IsOrientable() const;
 
@@ -349,31 +352,37 @@ public:
             size_t number_of_points,
             std::vector<double> &triangle_areas,
             double surface_area,
-            bool use_triangle_normal);
+            bool use_triangle_normal,
+            int seed);
 
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh. \param use_triangle_normal Set to true to assign the triangle
     /// normals to the returned points instead of the interpolated vertex
     /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary.
+    /// if necessary. \param seed Sets the seed value used in the random
+    /// generator, set to -1 to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
-            size_t number_of_points, bool use_triangle_normal = false);
+            size_t number_of_points,
+            bool use_triangle_normal = false,
+            int seed = -1);
 
-    /// Function to sample \param number_of_points points (blue noise).
+    /// Function to sample \p number_of_points points (blue noise).
     /// Based on the method presented in Yuksel, "Sample Elimination for
     /// Generating Poisson Disk Sample Sets", EUROGRAPHICS, 2015 The PointCloud
-    /// \param pcl_init is used for sample elimination if given, otherwise a
-    /// PointCloud is first uniformly sampled with \param init_number_of_points
-    /// x \param number_of_points number of points.
-    /// \param use_triangle_normal Set to true to assign the triangle
+    /// \p pcl_init is used for sample elimination if given, otherwise a
+    /// PointCloud is first uniformly sampled with \p init_number_of_points
+    /// x \p number_of_points number of points.
+    /// \p use_triangle_normal Set to true to assign the triangle
     /// normals to the returned points instead of the interpolated vertex
     /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary.
+    /// if necessary. \p seed Sets the seed value used in the random
+    /// generator, set to -1 to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
             const std::shared_ptr<PointCloud> pcl_init = nullptr,
-            bool use_triangle_normal = false);
+            bool use_triangle_normal = false,
+            int seed = -1);
 
     /// Function to subdivide triangle mesh using the simple midpoint algorithm.
     /// Each triangle is subdivided into four triangles per iteration and the
@@ -404,17 +413,22 @@ public:
     /// Function to simplify mesh using Quadric Error Metric Decimation by
     /// Garland and Heckbert.
     /// \param target_number_of_triangles defines the number of triangles that
-    /// the simplified mesh should have. It is not guranteed that this number
+    /// the simplified mesh should have. It is not guaranteed that this number
     /// will be reached.
     std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
             int target_number_of_triangles) const;
 
-    /// Function to select points from \param input TriangleMesh into
+    /// Function to select points from \p input TriangleMesh into
     /// output TriangleMesh
-    /// Vertices with indices in \param indices are selected.
+    /// Vertices with indices in \p indices are selected.
     /// \param indices defines Indices of vertices to be selected.
+    /// \param cleanup If true it automatically calls
+    /// TriangleMesh::RemoveDuplicatedVertices,
+    /// TriangleMesh::RemoveDuplicatedTriangles,
+    /// TriangleMesh::RemoveUnreferencedVertices, and
+    /// TriangleMesh::RemoveDegenerateTriangles
     std::shared_ptr<TriangleMesh> SelectByIndex(
-            const std::vector<size_t> &indices) const;
+            const std::vector<size_t> &indices, bool cleanup = true) const;
 
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
@@ -458,13 +472,13 @@ public:
     /// \p vertex_indices. Note that also all triangles associated with the
     /// vertices are removeds.
     ///
-    /// \param triangle_indices Indices of the triangles that should be
+    /// \param vertex_indices Indices of the vertices that should be
     /// removed.
     void RemoveVerticesByIndex(const std::vector<size_t> &vertex_indices);
 
     /// \brief This function removes the vertices that are masked in
     /// \p vertex_mask. Note that also all triangles associated with the
-    /// vertices are removed..
+    /// vertices are removed.
     ///
     /// \param vertex_mask Mask of vertices that should be removed.
     /// Should have same size as \ref vertices_.
@@ -479,19 +493,25 @@ public:
     /// \param constraint_vertex_positions Vertex positions used for the
     /// constraints.
     /// \param max_iter maximum number of iterations to minimize energy
-    /// functional. \return The deformed TriangleMesh
+    /// functional.
+    /// \param energy energy model that should be optimized
+    /// \param smoothed_alpha alpha parameter of the smoothed ARAP model
+    /// \return The deformed TriangleMesh
     std::shared_ptr<TriangleMesh> DeformAsRigidAsPossible(
             const std::vector<int> &constraint_vertex_indices,
             const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
-            size_t max_iter) const;
+            size_t max_iter,
+            DeformAsRigidAsPossibleEnergy energy =
+                    DeformAsRigidAsPossibleEnergy::Spokes,
+            double smoothed_alpha = 0.01) const;
 
     /// \brief Alpha shapes are a generalization of the convex hull. With
     /// decreasing alpha value the shape schrinks and creates cavities.
     /// See Edelsbrunner and Muecke, "Three-Dimensional Alpha Shapes", 1994.
     /// \param pcd PointCloud for what the alpha shape should be computed.
-    /// \param alpha parameter to controll the shape. A very big value will
+    /// \param alpha parameter to control the shape. A very big value will
     /// give a shape close to the convex hull.
-    /// \param tetra_mesh If not a nullptr, than uses this to construct the
+    /// \param tetra_mesh If not a nullptr, then uses this to construct the
     /// alpha shape. Otherwise, ComputeDelaunayTetrahedralization is called.
     /// \param pt_map Optional map from tetra_mesh vertex indices to pcd
     /// points.
@@ -502,26 +522,27 @@ public:
             std::shared_ptr<TetraMesh> tetra_mesh = nullptr,
             std::vector<size_t> *pt_map = nullptr);
 
-    /// Function that computes a triangle mesh from a oriented PointCloud \param
+    /// Function that computes a triangle mesh from an oriented PointCloud \p
     /// pcd. This implements the Ball Pivoting algorithm proposed in F.
     /// Bernardini et al., "The ball-pivoting algorithm for surface
     /// reconstruction", 1999. The implementation is also based on the
     /// algorithms outlined in Digne, "An Analysis and Implementation of a
     /// Parallel Ball Pivoting Algorithm", 2014. The surface reconstruction is
-    /// done by rolling a ball with a given radius (cf. \param radii) over the
+    /// done by rolling a ball with a given radius (cf. \p radii) over the
     /// point cloud, whenever the ball touches three points a triangle is
     /// created.
     /// \param pcd defines the PointCloud from which the TriangleMesh surface is
-    /// reconstructed. Has to contain normals. \param radii defines the radii of
+    /// reconstructed. Has to contain normals.
+    /// \param radii defines the radii of
     /// the ball that are used for the surface reconstruction.
     static std::shared_ptr<TriangleMesh> CreateFromPointCloudBallPivoting(
             const PointCloud &pcd, const std::vector<double> &radii);
 
-    /// \brief Function that computes a triangle mesh from a oriented PointCloud
-    /// pcd. This implements the Screened Poisson Reconstruction proposed in
-    /// Kazhdan and Hoppe, "Screened Poisson Surface Reconstruction", 2013.
-    /// This function uses the original implementation by Kazhdan. See
-    /// https://github.com/mkazhdan/PoissonRecon
+    /// \brief Function that computes a triangle mesh from an oriented
+    /// PointCloud pcd. This implements the Screened Poisson Reconstruction
+    /// proposed in Kazhdan and Hoppe, "Screened Poisson Surface
+    /// Reconstruction", 2013. This function uses the original implementation by
+    /// Kazhdan. See https://github.com/mkazhdan/PoissonRecon
     ///
     /// \param pcd PointCloud with normals and optionally colors.
     /// \param depth Maximum depth of the tree that will be used for surface
@@ -558,7 +579,7 @@ public:
     static std::shared_ptr<TriangleMesh> CreateOctahedron(double radius = 1.0);
 
     /// Factory function to create an icosahedron mesh
-    /// (trianglemeshfactory.cpp). the mesh centroid will be at (0,0,0) and
+    /// (trianglemeshfactory.cpp). The mesh centroid will be at (0,0,0) and
     /// \param radius defines the distance from the center to the mesh vertices.
     static std::shared_ptr<TriangleMesh> CreateIcosahedron(double radius = 1.0);
 
@@ -575,7 +596,7 @@ public:
     /// The sphere with radius will be centered at (0, 0, 0).
     /// Its axis is aligned with z-axis.
     /// \param radius defines radius of the sphere.
-    /// \param resolution defines the resolution of the sphere. The longitues
+    /// \param resolution defines the resolution of the sphere. The longitudes
     /// will be split into resolution segments (i.e. there are resolution + 1
     /// latitude lines including the north and south pole). The latitudes will
     /// be split into `2 * resolution segments (i.e. there are 2 * resolution
@@ -585,7 +606,7 @@ public:
 
     /// Factory function to create a cylinder mesh (TriangleMeshFactory.cpp)
     /// The axis of the cylinder will be from (0, 0, -height/2) to (0, 0,
-    /// height/2). The circle with  radius will be split into
+    /// height/2). The circle with radius will be split into
     /// resolution segments. The height will be split into split
     /// segments.
     /// \param radius defines the radius of the cylinder.
@@ -661,7 +682,7 @@ public:
     /// (TriangleMeshFactory.cpp).
     /// arrows respectively. \param size is the length of the axes.
     /// \param size defines the size of the coordinate frame.
-    /// \param origin defines the origin of the cooridnate frame.
+    /// \param origin defines the origin of the coordinate frame.
     static std::shared_ptr<TriangleMesh> CreateCoordinateFrame(
             double size = 1.0,
             const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
@@ -726,6 +747,85 @@ public:
     std::vector<std::unordered_set<int>> adjacency_list_;
     /// List of uv coordinates per triangle.
     std::vector<Eigen::Vector2d> triangle_uvs_;
+
+    struct Material {
+        struct MaterialParameter {
+            float f4[4] = {0};
+
+            MaterialParameter() {
+                f4[0] = 0;
+                f4[1] = 0;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            MaterialParameter(const float v1,
+                              const float v2,
+                              const float v3,
+                              const float v4) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = v3;
+                f4[3] = v4;
+            }
+
+            MaterialParameter(const float v1, const float v2, const float v3) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = v3;
+                f4[3] = 1;
+            }
+
+            MaterialParameter(const float v1, const float v2) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            explicit MaterialParameter(const float v1) {
+                f4[0] = v1;
+                f4[1] = 0;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            static MaterialParameter CreateRGB(const float r,
+                                               const float g,
+                                               const float b) {
+                return {r, g, b, 1.f};
+            }
+
+            float r() const { return f4[0]; }
+            float g() const { return f4[1]; }
+            float b() const { return f4[2]; }
+            float a() const { return f4[3]; }
+        };
+
+        MaterialParameter baseColor;
+        float baseMetallic = 0.f;
+        float baseRoughness = 1.f;
+        float baseReflectance = 0.5f;
+        float baseClearCoat = 0.f;
+        float baseClearCoatRoughness = 0.f;
+        float baseAnisotropy = 0.f;
+
+        std::shared_ptr<Image> albedo;
+        std::shared_ptr<Image> normalMap;
+        std::shared_ptr<Image> ambientOcclusion;
+        std::shared_ptr<Image> metallic;
+        std::shared_ptr<Image> roughness;
+        std::shared_ptr<Image> reflectance;
+        std::shared_ptr<Image> clearCoat;
+        std::shared_ptr<Image> clearCoatRoughness;
+        std::shared_ptr<Image> anisotropy;
+
+        std::unordered_map<std::string, MaterialParameter> floatParameters;
+        std::unordered_map<std::string, Image> additionalMaps;
+    };
+
+    std::unordered_map<std::string, Material> materials_;
+
     /// List of material ids.
     std::vector<int> triangle_material_ids_;
     /// Textures of the image.

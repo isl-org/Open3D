@@ -59,7 +59,7 @@ public:
             double non_rigid_anchor_point_weight = 0.316,
             int maximum_iteration = 300,
             double maximum_allowable_depth = 2.5,
-            double depth_threshold_for_visiblity_check = 0.03,
+            double depth_threshold_for_visibility_check = 0.03,
             double depth_threshold_for_discontinuity_check = 0.1,
             int half_dilation_kernel_size_for_discontinuity_map = 3,
             int image_boundary_margin = 10,
@@ -69,8 +69,8 @@ public:
           non_rigid_anchor_point_weight_(non_rigid_anchor_point_weight),
           maximum_iteration_(maximum_iteration),
           maximum_allowable_depth_(maximum_allowable_depth),
-          depth_threshold_for_visiblity_check_(
-                  depth_threshold_for_visiblity_check),
+          depth_threshold_for_visibility_check_(
+                  depth_threshold_for_visibility_check),
           depth_threshold_for_discontinuity_check_(
                   depth_threshold_for_discontinuity_check),
           half_dilation_kernel_size_for_discontinuity_map_(
@@ -106,9 +106,9 @@ public:
     double maximum_allowable_depth_;
     /// Parameter to check the visibility of a point. When the difference of a
     /// point’s depth value in the RGB-D image and the point’s depth value in
-    /// the 3D mesh is greater than depth_threshold_for_visiblity_check, the
+    /// the 3D mesh is greater than depth_threshold_for_visibility_check, the
     /// point is marked as invisible to the camera producing the RGB-D image.
-    double depth_threshold_for_visiblity_check_;
+    double depth_threshold_for_visibility_check_;
     /// Parameter to check the visibility of a point. It’s often desirable to
     /// ignore points where there is an abrupt change in depth value. First the
     /// depth gradient image is computed, points are considered to be invisible

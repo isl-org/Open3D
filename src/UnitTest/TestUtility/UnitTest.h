@@ -36,11 +36,19 @@
 #include <Eigen/Core>
 #include <vector>
 
+#include "Open3D/Macro.h"
 #include "UnitTest/TestUtility/Print.h"
 #include "UnitTest/TestUtility/Rand.h"
 #include "UnitTest/TestUtility/Sort.h"
 
+// GPU_CONDITIONAL_COMPILE_STR is "" if gpu is available, otherwise "DISABLED_"
+// The GPU_CONDITIONAL_COMPILE_STR value is configured in CMake
+#define CUDA_CONDITIONAL_TEST(test_name) \
+    OPEN3D_CONCATENATE(GPU_CONDITIONAL_TEST_STR, test_name)
+
+namespace open3d {
 namespace unit_test {
+
 // thresholds for comparing floating point values
 const double THRESHOLD_1E_6 = 1e-6;
 
@@ -161,4 +169,6 @@ template <class T>
 T* const Cast(uint8_t* data) {
     return reinterpret_cast<T* const>(data);
 }
+
 }  // namespace unit_test
+}  // namespace open3d

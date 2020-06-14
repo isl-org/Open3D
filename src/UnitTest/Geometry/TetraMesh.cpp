@@ -30,10 +30,8 @@
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace Eigen;
-using namespace open3d;
-using namespace std;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
 TEST(TetraMesh, Constructor) {
     geometry::TetraMesh tm;
@@ -57,16 +55,16 @@ TEST(TetraMesh, Constructor) {
     EXPECT_FALSE(tm.HasTetras());
 }
 
-TEST(TetraMesh, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(TetraMesh, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(TetraMesh, Clear) {
     int size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Vector4i imin(0, 0, 0, 0);
-    Vector4i imax(size - 1, size - 1, size - 1, size - 1);
+    Eigen::Vector4i imin(0, 0, 0, 0);
+    Eigen::Vector4i imax(size - 1, size - 1, size - 1, size - 1);
 
     geometry::TetraMesh tm;
 
@@ -78,8 +76,9 @@ TEST(TetraMesh, Clear) {
 
     EXPECT_FALSE(tm.IsEmpty());
 
-    ExpectEQ(Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
-    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), tm.GetMaxBound());
+    ExpectEQ(Eigen::Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
+    ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+             tm.GetMaxBound());
 
     EXPECT_TRUE(tm.HasVertices());
     EXPECT_TRUE(tm.HasTetras());
@@ -111,33 +110,34 @@ TEST(TetraMesh, IsEmpty) {
 TEST(TetraMesh, GetMinBound) {
     int size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
     geometry::TetraMesh tm;
 
     tm.vertices_.resize(size);
     Rand(tm.vertices_, dmin, dmax, 0);
 
-    ExpectEQ(Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
+    ExpectEQ(Eigen::Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
 }
 
 TEST(TetraMesh, GetMaxBound) {
     int size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
     geometry::TetraMesh tm;
 
     tm.vertices_.resize(size);
     Rand(tm.vertices_, dmin, dmax, 0);
 
-    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), tm.GetMaxBound());
+    ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+             tm.GetMaxBound());
 }
 
 TEST(TetraMesh, Transform) {
-    vector<Vector3d> ref_vertices = {
+    std::vector<Eigen::Vector3d> ref_vertices = {
             {1.411252, 4.274168, 3.130918}, {1.231757, 4.154505, 3.183678},
             {1.403168, 4.268779, 2.121679}, {1.456767, 4.304511, 2.640845},
             {1.620902, 4.413935, 1.851255}, {1.374684, 4.249790, 3.062485},
@@ -146,8 +146,8 @@ TEST(TetraMesh, Transform) {
 
     int size = 10;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
     geometry::TetraMesh tm;
 
@@ -155,7 +155,7 @@ TEST(TetraMesh, Transform) {
 
     Rand(tm.vertices_, dmin, dmax, 0);
 
-    Matrix4d transformation;
+    Eigen::Matrix4d transformation;
     transformation << 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90,
             0.10, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16;
 
@@ -167,11 +167,11 @@ TEST(TetraMesh, Transform) {
 TEST(TetraMesh, OperatorAppend) {
     size_t size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Vector4i imin(0, 0, 0, 0);
-    Vector4i imax(size - 1, size - 1, size - 1, size - 1);
+    Eigen::Vector4i imin(0, 0, 0, 0);
+    Eigen::Vector4i imax(size - 1, size - 1, size - 1, size - 1);
 
     geometry::TetraMesh tm0;
     geometry::TetraMesh tm1;
@@ -200,10 +200,10 @@ TEST(TetraMesh, OperatorAppend) {
     EXPECT_EQ(2 * size, tm.tetras_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(tm0.tetras_[i], tm.tetras_[i + 0]);
-        ExpectEQ(Vector4i(tm1.tetras_[i](0, 0) + size,
-                          tm1.tetras_[i](1, 0) + size,
-                          tm1.tetras_[i](2, 0) + size,
-                          tm1.tetras_[i](3, 0) + size),
+        ExpectEQ(Eigen::Vector4i(tm1.tetras_[i](0, 0) + size,
+                                 tm1.tetras_[i](1, 0) + size,
+                                 tm1.tetras_[i](2, 0) + size,
+                                 tm1.tetras_[i](3, 0) + size),
                  tm.tetras_[i + size]);
     }
 }
@@ -211,11 +211,11 @@ TEST(TetraMesh, OperatorAppend) {
 TEST(TetraMesh, OperatorADD) {
     size_t size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Vector4i imin(0, 0, 0, 0);
-    Vector4i imax(size - 1, size - 1, size - 1, size - 1);
+    Eigen::Vector4i imin(0, 0, 0, 0);
+    Eigen::Vector4i imax(size - 1, size - 1, size - 1, size - 1);
 
     geometry::TetraMesh tm0;
     geometry::TetraMesh tm1;
@@ -243,27 +243,30 @@ TEST(TetraMesh, OperatorADD) {
     EXPECT_EQ(2 * size, tm.tetras_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(tm0.tetras_[i], tm.tetras_[i + 0]);
-        ExpectEQ(Vector4i(tm1.tetras_[i](0, 0) + size,
-                          tm1.tetras_[i](1, 0) + size,
-                          tm1.tetras_[i](2, 0) + size,
-                          tm1.tetras_[i](3, 0) + size),
+        ExpectEQ(Eigen::Vector4i(tm1.tetras_[i](0, 0) + size,
+                                 tm1.tetras_[i](1, 0) + size,
+                                 tm1.tetras_[i](2, 0) + size,
+                                 tm1.tetras_[i](3, 0) + size),
                  tm.tetras_[i + size]);
     }
 }
 
 TEST(TetraMesh, Purge) {
-    typedef vector<Vector4i, aligned_allocator<Vector4i>> vector_Vector4i;
+    typedef std::vector<Eigen::Vector4i,
+                        Eigen::aligned_allocator<Eigen::Vector4i>>
+            vector_Vector4i;
 
-    vector<Vector3d> vertices = {// duplicate
-                                 {796.078431, 909.803922, 196.078431},
-                                 {796.078431, 909.803922, 196.078431},
-                                 {333.333333, 764.705882, 274.509804},
-                                 {552.941176, 474.509804, 627.450980},
-                                 {364.705882, 509.803922, 949.019608},
-                                 {913.725490, 635.294118, 713.725490},
-                                 {141.176471, 603.921569, 15.686275},
-                                 // unreferenced
-                                 {239.215686, 133.333333, 803.921569}};
+    std::vector<Eigen::Vector3d> vertices = {
+            // duplicate
+            {796.078431, 909.803922, 196.078431},
+            {796.078431, 909.803922, 196.078431},
+            {333.333333, 764.705882, 274.509804},
+            {552.941176, 474.509804, 627.450980},
+            {364.705882, 509.803922, 949.019608},
+            {913.725490, 635.294118, 713.725490},
+            {141.176471, 603.921569, 15.686275},
+            // unreferenced
+            {239.215686, 133.333333, 803.921569}};
 
     vector_Vector4i tetras = {{2, 6, 3, 4},
                               // same tetra after vertex duplicate is removed
@@ -291,7 +294,7 @@ TEST(TetraMesh, Purge) {
 
     tm.RemoveDuplicatedVertices();
 
-    vector<Vector3d> ref_vertices_after_duplicate_removal = {
+    std::vector<Eigen::Vector3d> ref_vertices_after_duplicate_removal = {
             {796.078431, 909.803922, 196.078431},
             {333.333333, 764.705882, 274.509804},
             {552.941176, 474.509804, 627.450980},
@@ -309,7 +312,7 @@ TEST(TetraMesh, Purge) {
 
     tm.RemoveUnreferencedVertices();
 
-    vector<Vector3d> ref_vertices_after_unreferenced_removal = {
+    std::vector<Eigen::Vector3d> ref_vertices_after_unreferenced_removal = {
             {796.078431, 909.803922, 196.078431},
             {333.333333, 764.705882, 274.509804},
             {552.941176, 474.509804, 627.450980},
@@ -358,8 +361,8 @@ TEST(TetraMesh, CreateFromPointCloud) {
 
     int size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
 
@@ -376,25 +379,25 @@ TEST(TetraMesh, CreateFromPointCloud) {
     // This is more a check to see if we have used the right Qhull parameters.
     auto tetrahedron_circumsphere = [&](const geometry::TetraMesh& tm,
                                         size_t tetra_idx) {
-        Vector4i tetra = tm.tetras_[tetra_idx];
-        Matrix4d homogeneous_points;
+        Eigen::Vector4i tetra = tm.tetras_[tetra_idx];
+        Eigen::Matrix4d homogeneous_points;
         for (int i = 0; i < 4; ++i) {
             homogeneous_points.row(i) = tm.vertices_[tetra[i]].homogeneous();
         }
         double det = homogeneous_points.determinant();
-        Vector4d b;
+        Eigen::Vector4d b;
         for (int i = 0; i < 4; ++i) {
             b[i] = -tm.vertices_[tetra[i]].squaredNorm();
         }
 
-        Matrix4d tmp;
+        Eigen::Matrix4d tmp;
         double x[3];
         for (int i = 0; i < 3; ++i) {
             tmp = homogeneous_points;
             tmp.col(i) = b;
             x[i] = tmp.determinant() / det;
         }
-        Vector3d center(-x[0] / 2, -x[1] / 2, -x[2] / 2);
+        Eigen::Vector3d center(-x[0] / 2, -x[1] / 2, -x[2] / 2);
         double sqr_radius = (tm.vertices_[tetra[0]] - center).squaredNorm();
 
         return std::make_tuple(center, sqr_radius);
@@ -402,18 +405,18 @@ TEST(TetraMesh, CreateFromPointCloud) {
 
     bool circumsphere_property = true;
     for (size_t i = 0; i < tm->tetras_.size() && circumsphere_property; ++i) {
-        Vector3d sphere_center;
+        Eigen::Vector3d sphere_center;
         double sqr_radius;
         std::tie(sphere_center, sqr_radius) = tetrahedron_circumsphere(*tm, i);
 
-        const Vector4i tetra = tm->tetras_[i];
+        const Eigen::Vector4i tetra = tm->tetras_[i];
 
         for (int j = 0; j < (int)tm->vertices_.size(); ++j) {
             if (tetra[0] == j || tetra[1] == j || tetra[2] == j ||
                 tetra[3] == j) {
                 continue;
             }
-            Vector3d v = tm->vertices_[j];
+            Eigen::Vector3d v = tm->vertices_[j];
             double sqr_dist_center_v = (v - sphere_center).squaredNorm();
             if (sqr_dist_center_v <= sqr_radius) {
                 circumsphere_property = false;
@@ -430,8 +433,8 @@ TEST(TetraMesh, ExtractTriangleMesh) {
 
     int size = 250;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1.0, 1.0, 1.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1.0, 1.0, 1.0);
 
     pc.points_.resize(size);
 
@@ -441,10 +444,10 @@ TEST(TetraMesh, ExtractTriangleMesh) {
     std::vector<size_t> pt_map;
     std::tie(tm, pt_map) = geometry::TetraMesh::CreateFromPointCloud(pc);
 
-    vector<double> values(tm->vertices_.size());
+    std::vector<double> values(tm->vertices_.size());
 
     // distance to center as values
-    Vector3d center(0.5 * (dmin + dmax));
+    Eigen::Vector3d center(0.5 * (dmin + dmax));
     for (size_t i = 0; i < tm->vertices_.size(); ++i) {
         double dist = (tm->vertices_[i] - center).norm();
         values[i] = dist;
@@ -480,3 +483,6 @@ TEST(TetraMesh, ExtractTriangleMesh) {
         EXPECT_EQ(triangle_mesh->triangles_.size(), size_t(246));
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

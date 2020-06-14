@@ -171,8 +171,10 @@ RegistrationResult RegistrationICP(
 /// \param target The target point cloud.
 /// \param corres Checker class to check if two point clouds can be aligned.
 /// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance. \param estimation Estimation method. \param ransac_n Fit ransac
-/// with `ransac_n` correspondences. \param criteria Convergence criteria.
+/// distance.
+/// \param estimation Estimation method.
+/// \param ransac_n Fit ransac with `ransac_n` correspondences.
+/// \param criteria Convergence criteria.
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

@@ -26,32 +26,38 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(FilePCD, DISABLED_CheckHeader) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(FilePCD, DISABLED_ReadPCDHeader) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_CheckHeader) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_SplitString) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_ReadPCDHeader) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_UnpackBinaryPCDElement) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_SplitString) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_UnpackBinaryPCDColor) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_UnpackBinaryPCDElement) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_UnpackASCIIPCDElement) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_UnpackBinaryPCDColor) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_UnpackASCIIPCDColor) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_UnpackASCIIPCDElement) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_ReadPCDData) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_UnpackASCIIPCDColor) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_RemoveNanData) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_ReadPCDData) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_GenerateHeader) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_RemoveNanData) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_WritePCDHeader) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_GenerateHeader) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_ConvertRGBToFloat) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_WritePCDHeader) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_WritePCDData) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_ConvertRGBToFloat) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_ReadPointCloudFromPCD) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_WritePCDData) { NotImplemented(); }
 
-TEST(FilePCD, DISABLED_WritePointCloudToPCD) { unit_test::NotImplemented(); }
+TEST(FilePCD, DISABLED_ReadPointCloudFromPCD) { NotImplemented(); }
+
+TEST(FilePCD, DISABLED_WritePointCloudToPCD) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

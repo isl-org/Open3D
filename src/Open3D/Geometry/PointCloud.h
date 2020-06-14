@@ -73,8 +73,10 @@ public:
     PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
     PointCloud &Translate(const Eigen::Vector3d &translation,
                           bool relative = true) override;
-    PointCloud &Scale(const double scale, bool center = true) override;
-    PointCloud &Rotate(const Eigen::Matrix3d &R, bool center = true) override;
+    PointCloud &Scale(const double scale,
+                      const Eigen::Vector3d &center) override;
+    PointCloud &Rotate(const Eigen::Matrix3d &R,
+                       const Eigen::Vector3d &center) override;
 
     PointCloud &operator+=(const PointCloud &cloud);
     PointCloud operator+(const PointCloud &cloud) const;
@@ -108,7 +110,7 @@ public:
         return *this;
     }
 
-    /// \brief Remove all points fromt he point cloud that have a nan entry, or
+    /// \brief Remove all points from the point cloud that have a nan entry, or
     /// infinite entries.
     ///
     /// Also removes the corresponding normals and color entries.
@@ -204,7 +206,7 @@ public:
     /// search. \param fast_normal_computation If true, the normal estiamtion
     /// uses a non-iterative method to extract the eigenvector from the
     /// covariance matrix. This is faster, but is not as numerical stable.
-    bool EstimateNormals(
+    void EstimateNormals(
             const KDTreeSearchParam &search_param = KDTreeSearchParamKNN(),
             bool fast_normal_computation = true);
 
@@ -212,7 +214,7 @@ public:
     ///
     /// \param orientation_reference Normals are oriented with respect to
     /// orientation_reference.
-    bool OrientNormalsToAlignWithDirection(
+    void OrientNormalsToAlignWithDirection(
             const Eigen::Vector3d &orientation_reference =
                     Eigen::Vector3d(0.0, 0.0, 1.0));
 
@@ -220,8 +222,16 @@ public:
     ///
     /// \param camera_location Normals are oriented with towards the
     /// camera_location.
-    bool OrientNormalsTowardsCameraLocation(
+    void OrientNormalsTowardsCameraLocation(
             const Eigen::Vector3d &camera_location = Eigen::Vector3d::Zero());
+
+    /// \brief Function to consistently orient estimated normals based on
+    /// consistent tangent planes as described in Hoppe et al., "Surface
+    /// Reconstruction from Unorganized Points", 1992.
+    ///
+    /// \param k k nearest neighbour for graph reconstruction for normal
+    /// propagation.
+    void OrientNormalsConsistentTangentPlane(size_t k);
 
     /// \brief Function to compute the point to point distances between point
     /// clouds.
@@ -307,7 +317,7 @@ public:
     /// \param depth_trunc Truncated at \p depth_trunc distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
     ///
-    /// \Return An empty pointcloud if the conversion fails.
+    /// \return An empty pointcloud if the conversion fails.
     /// If \param project_valid_depth_only is true, return point cloud, which
     /// doesn't
     /// have nan point. If the value is false, return point cloud, which has
@@ -332,7 +342,7 @@ public:
     /// \param intrinsic Intrinsic parameters of the camera.
     /// \param extrinsic Extrinsic parameters of the camera.
     ///
-    /// \Return An empty pointcloud if the conversion fails.
+    /// \return An empty pointcloud if the conversion fails.
     /// If \param project_valid_depth_only is true, return point cloud, which
     /// doesn't
     /// have nan point. If the value is false, return point cloud, which has

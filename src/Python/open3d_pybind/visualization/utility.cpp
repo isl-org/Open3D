@@ -35,7 +35,7 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/visualization/visualization.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_visualization_utility(py::module &m) {
     py::class_<visualization::SelectionPolygonVolume> selection_volume(
@@ -105,6 +105,10 @@ static const std::unordered_map<std::string, std::string>
                 {"width", "The width of the visualization window."},
                 {"point_show_normal",
                  "Visualize point normals if set to true."},
+                {"mesh_show_wireframe",
+                 "Visualize mesh wireframe if set to true."},
+                {"mesh_show_back_face",
+                 "Visualize also the back face of the mesh triangles."},
                 {"window_name",
                  "The displayed title of the visualization window."}};
 
@@ -113,18 +117,21 @@ void pybind_visualization_utility_methods(py::module &m) {
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
              const std::string &window_name, int width, int height, int left,
-             int top, bool point_show_normal) {
+             int top, bool point_show_normal, bool mesh_show_wireframe,
+             bool mesh_show_back_face) {
               std::string current_dir =
                       utility::filesystem::GetWorkingDirectory();
-              visualization::DrawGeometries(geometry_ptrs, window_name, width,
-                                            height, left, top,
-                                            point_show_normal);
+              visualization::DrawGeometries(
+                      geometry_ptrs, window_name, width, height, left, top,
+                      point_show_normal, mesh_show_wireframe,
+                      mesh_show_back_face);
               utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of geometry::Geometry objects",
           "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
           "height"_a = 1080, "left"_a = 50, "top"_a = 50,
-          "point_show_normal"_a = false);
+          "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
+          "mesh_show_back_face"_a = false);
     docstring::FunctionDocInject(m, "draw_geometries",
                                  map_shared_argument_docstrings);
 
@@ -235,3 +242,5 @@ void pybind_visualization_utility_methods(py::module &m) {
     docstring::FunctionDocInject(m, "read_selection_polygon_volume",
                                  map_shared_argument_docstrings);
 }
+
+}  // namespace open3d
