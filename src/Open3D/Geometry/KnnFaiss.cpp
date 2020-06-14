@@ -151,10 +151,22 @@ int KnnFaiss::SearchRadius(const T &query,
     faiss::RangeSearchResult result(query.cols());
     result.do_allocation();
     index->range_search(query.cols(), tmp_query.data(), std::pow(radius, 2), &result); // square radius to maintain unify with kdtreeflann
+
+    std::vector<long> tmp_indices;
+    std::vector<float> tmp_distances;
     for (unsigned int i = 0; i < result.lims[query.cols()]; i++){
-        indices.push_back(result.labels[i]);
-        distance2.push_back(result.distances[i]);
+        tmp_indices.push_back(result.labels[i]);
+        tmp_distances.push_back(result.distances[i]);
     }
+
+    // Sort indices & distances
+    indices.resize(tmp_indices.size());
+    distance2.resize(tmp_distances.size());
+    std::vector<std::size_t> p(tmp_indices.size());
+    std::iota(p.begin(), p.end(), 0);
+    std::sort(p.begin(), p.end(), [&](std::size_t i, std::size_t j){ return tmp_distances[i] < tmp_distances[j]; });
+    std::transform(p.begin(), p.end(), indices.begin(), [&](std::size_t i) { return tmp_indices[i]; });
+    std::transform(p.begin(), p.end(), distance2.begin(), [&](std::size_t i) { return tmp_distances[i]; });
     return result.lims[1]; // for just one query point, lims[1] == # of results
 }
 
@@ -175,7 +187,7 @@ bool KnnFaiss::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
     }
     data_.resize(dataset_size_ * dimension_);
     for(unsigned int i = 0; i < dimension_*dataset_size_; i++){
-        data_[i] = data.data()[i];
+        data_[i] = (float)data.data()[i];
     }
     /*memcpy(data_.data(), data.data(),
            dataset_size_ * dimension_ * sizeof(float));*/
