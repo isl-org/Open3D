@@ -28,8 +28,8 @@
 #pragma warning(push)
 #pragma warning(disable : 4267)
 #endif
-#include <iostream>
 #include "Open3D/Geometry/KnnFaiss.h"
+#include <iostream>
 
 #include <faiss/IndexFlat.h>
 #include <faiss/impl/AuxIndexStructures.h>
@@ -38,7 +38,6 @@
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Utility/Console.h"
-
 
 namespace open3d {
 namespace geometry {
@@ -88,9 +87,9 @@ bool KnnFaiss::SetFeature(const registration::Feature &feature) {
 
 template <typename T>
 int KnnFaiss::Search(const T &query,
-                        const KDTreeSearchParam &param,
-                        std::vector<long> &indices,
-                        std::vector<float> &distance2) const {
+                     const KDTreeSearchParam &param,
+                     std::vector<long> &indices,
+                     std::vector<float> &distance2) const {
     switch (param.GetSearchType()) {
         case KDTreeSearchParam::SearchType::Knn:
             return SearchKNN(query, ((const KDTreeSearchParamKNN &)param).knn_,
@@ -108,34 +107,36 @@ int KnnFaiss::Search(const T &query,
 
 template <typename T>
 int KnnFaiss::SearchKNN(const T &query,
-                           int knn,
-                           std::vector<long> &indices,
-                           std::vector<float> &distance2) const {
+                        int knn,
+                        std::vector<long> &indices,
+                        std::vector<float> &distance2) const {
     // This is optimized code for heavily repeated search.
     // Other flann::Index::knnSearch() implementations lose performance due to
     // memory allocation/deallocation.
-    //std::cout << "query : col=" << query.cols() << ", row=" << query.rows() << std::endl;
-    //std::cout << "exptected dimension : " << dimension_ << std::endl;
+    // std::cout << "query : col=" << query.cols() << ", row=" << query.rows()
+    // << std::endl;  std::cout << "exptected dimension : " << dimension_ <<
+    // std::endl;
 
     if (data_.empty() || dataset_size_ <= 0 ||
         size_t(query.rows()) != dimension_ || knn < 0) {
         return -1;
     }
     std::vector<float> tmp_query(query.size());
-    for(unsigned int i = 0; i < query.size(); i++){
+    for (unsigned int i = 0; i < query.size(); i++) {
         tmp_query[i] = (float)query.data()[i];
     }
     indices.resize(knn * query.cols());
     distance2.resize(knn * query.cols());
-    index->search(query.cols(), tmp_query.data(), knn, distance2.data(), indices.data());
+    index->search(query.cols(), tmp_query.data(), knn, distance2.data(),
+                  indices.data());
     return knn;
 }
 
 template <typename T>
 int KnnFaiss::SearchRadius(const T &query,
-                              float radius,
-                              std::vector<long> &indices,
-                              std::vector<float> &distance2) const {
+                           float radius,
+                           std::vector<long> &indices,
+                           std::vector<float> &distance2) const {
     // This is optimized code for heavily repeated search.
     // Since max_nn is not given, we let flann to do its own memory management.
     // Other flann::Index::radiusSearch() implementations lose performance due
@@ -145,16 +146,18 @@ int KnnFaiss::SearchRadius(const T &query,
         return -1;
     }
     std::vector<float> tmp_query(query.size());
-    for(unsigned int i = 0; i < query.size(); i++){
+    for (unsigned int i = 0; i < query.size(); i++) {
         tmp_query[i] = (float)query.data()[i];
     }
     faiss::RangeSearchResult result(query.cols());
     result.do_allocation();
-    index->range_search(query.cols(), tmp_query.data(), std::pow(radius, 2), &result); // square radius to maintain unify with kdtreeflann
+    index->range_search(
+            query.cols(), tmp_query.data(), std::pow(radius, 2),
+            &result);  // square radius to maintain unify with kdtreeflann
 
     std::vector<long> tmp_indices;
     std::vector<float> tmp_distances;
-    for (unsigned int i = 0; i < result.lims[query.cols()]; i++){
+    for (unsigned int i = 0; i < result.lims[query.cols()]; i++) {
         tmp_indices.push_back(result.labels[i]);
         tmp_distances.push_back(result.distances[i]);
     }
@@ -164,14 +167,19 @@ int KnnFaiss::SearchRadius(const T &query,
     distance2.resize(tmp_distances.size());
     std::vector<std::size_t> p(tmp_indices.size());
     std::iota(p.begin(), p.end(), 0);
-    std::sort(p.begin(), p.end(), [&](std::size_t i, std::size_t j){ return tmp_distances[i] < tmp_distances[j]; });
-    std::transform(p.begin(), p.end(), indices.begin(), [&](std::size_t i) { return tmp_indices[i]; });
-    std::transform(p.begin(), p.end(), distance2.begin(), [&](std::size_t i) { return tmp_distances[i]; });
-    return result.lims[1]; // for just one query point, lims[1] == # of results
+    std::sort(p.begin(), p.end(), [&](std::size_t i, std::size_t j) {
+        return tmp_distances[i] < tmp_distances[j];
+    });
+    std::transform(p.begin(), p.end(), indices.begin(),
+                   [&](std::size_t i) { return tmp_indices[i]; });
+    std::transform(p.begin(), p.end(), distance2.begin(),
+                   [&](std::size_t i) { return tmp_distances[i]; });
+    return result.lims[1];  // for just one query point, lims[1] == # of results
 }
 
 bool KnnFaiss::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
-    //std::cout << "data : cols=" << data.cols() <<", rows=" << data.rows() << std::endl;
+    // std::cout << "data : cols=" << data.cols() <<", rows=" << data.rows() <<
+    // std::endl;
 
     dimension_ = data.rows();
     dataset_size_ = data.cols();
@@ -186,7 +194,7 @@ bool KnnFaiss::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
         return false;
     }
     data_.resize(dataset_size_ * dimension_);
-    for(unsigned int i = 0; i < dimension_*dataset_size_; i++){
+    for (unsigned int i = 0; i < dimension_ * dataset_size_; i++) {
         data_[i] = (float)data.data()[i];
     }
     /*memcpy(data_.data(), data.data(),

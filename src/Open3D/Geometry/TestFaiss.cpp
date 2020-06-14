@@ -30,7 +30,3 @@
 
 #include <Open3D/Open3D.h>
 #include <faiss/IndexFlat.h>
-
-
-
-

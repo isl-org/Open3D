@@ -67,7 +67,7 @@ TEST(KnnFaiss, SearchKNN) {
     vector<float> distance2;
 
     int result = knnFaiss.SearchKNN(query, knn, indices, distance2);
-	
+
     vector<int> indices2(indices.begin(), indices.end());
 
     EXPECT_EQ(result, 30);
@@ -76,7 +76,7 @@ TEST(KnnFaiss, SearchKNN) {
     ExpectEQ(ref_distance2, distance2, threshold);
 }
 
-TEST(KnnFaiss, SearchRadius) { 
+TEST(KnnFaiss, SearchRadius) {
     vector<int> ref_indices = {27, 48, 4,  77, 90, 7, 54, 17, 76, 38, 39,
                                60, 15, 84, 11, 57, 3, 32, 99, 36, 52};
 
@@ -104,7 +104,8 @@ TEST(KnnFaiss, SearchRadius) {
     vector<long> indices;
     vector<float> distance2;
 
-    int result = knnFaiss.SearchRadius<Vector3d>(query, radius, indices, distance2);
+    int result =
+            knnFaiss.SearchRadius<Vector3d>(query, radius, indices, distance2);
 
     vector<int> indices2(indices.begin(), indices.end());
     vector<double> distance3(distance2.begin(), distance2.end());
@@ -116,4 +117,3 @@ TEST(KnnFaiss, SearchRadius) {
 }
 
 TEST(KnnFaiss, DISABLED_SearchHybrid) { unit_test::NotImplemented(); }
-   

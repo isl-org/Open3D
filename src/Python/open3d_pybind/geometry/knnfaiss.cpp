@@ -121,15 +121,15 @@ void pybind_knnfaiss(py::module &m) {
                     {"feature", "Feature data."},
                     {"data", "Matrix data."}};
     py::class_<geometry::KnnFaiss, std::shared_ptr<geometry::KnnFaiss>>
-            KnnFaiss(m, "KnnFaiss",
-                        "Faiss for nearest neighbor search.");
+            KnnFaiss(m, "KnnFaiss", "Faiss for nearest neighbor search.");
     KnnFaiss.def(py::init<>())
             .def(py::init<const Eigen::MatrixXd &>(), "data"_a)
             .def("set_matrix_data", &geometry::KnnFaiss::SetMatrixData,
                  "Sets the data for the Faiss Index from a matrix.", "data"_a)
             .def(py::init<const geometry::Geometry &>(), "geometry"_a)
             .def("set_geometry", &geometry::KnnFaiss::SetGeometry,
-                 "Sets the data for the Faiss Index from geometry.", "geometry"_a)
+                 "Sets the data for the Faiss Index from geometry.",
+                 "geometry"_a)
             .def(py::init<const registration::Feature &>(), "feature"_a)
             .def("set_feature", &geometry::KnnFaiss::SetFeature,
                  "Sets the data for the Faiss Index from the feature data.",
@@ -181,7 +181,7 @@ void pybind_knnfaiss(py::module &m) {
                      std::vector<long> indices;
                      std::vector<float> distance2;
                      int k = index.SearchRadius(query, radius, indices,
-                                               distance2);
+                                                distance2);
                      if (k < 0)
                          throw std::runtime_error(
                                  "search_radius_vector_3d() error!");
@@ -231,26 +231,26 @@ void pybind_knnfaiss(py::module &m) {
                      std::vector<long> indices;
                      std::vector<float> distance2;
                      int k = index.SearchRadius(query, radius, indices,
-                                               distance2);
+                                                distance2);
                      if (k < 0)
                          throw std::runtime_error(
                                  "search_radius_vector_xd() error!");
                      return std::make_tuple(k, indices, distance2);
                  },
                  "query"_a, "radius"_a);
-            /*.def("search_hybrid_vector_xd",
-                 [](const geometry::KnnFaiss &tree,
-                    const Eigen::VectorXd &query, double radius, int max_nn) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.SearchHybrid(query, radius, max_nn, indices,
-                                               distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_hybrid_vector_xd() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "radius"_a, "max_nn"_a);*/
+    /*.def("search_hybrid_vector_xd",
+         [](const geometry::KnnFaiss &tree,
+            const Eigen::VectorXd &query, double radius, int max_nn) {
+             std::vector<int> indices;
+             std::vector<double> distance2;
+             int k = tree.SearchHybrid(query, radius, max_nn, indices,
+                                       distance2);
+             if (k < 0)
+                 throw std::runtime_error(
+                         "search_hybrid_vector_xd() error!");
+             return std::make_tuple(k, indices, distance2);
+         },
+         "query"_a, "radius"_a, "max_nn"_a);*/
     /*docstring::ClassMethodDocInject(m, "KnnFaiss", "search_hybrid_vector_3d",
                                     map_knn_faiss_method_docs);
     docstring::ClassMethodDocInject(m, "KnnFaiss", "search_hybrid_vector_xd",
