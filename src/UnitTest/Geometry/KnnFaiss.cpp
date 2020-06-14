@@ -41,7 +41,7 @@ TEST(KnnFaiss, SearchKNN) {
                                39, 60, 15, 84, 11, 57, 3,  32, 99, 36,
                                52, 40, 26, 59, 22, 97, 20, 42, 73, 24};
 
-    vector<double> ref_distance2 = {
+    vector<float> ref_distance2 = {
             0.000000,  4.684353,  4.996539,  9.191849,  10.034604, 10.466745,
             10.649751, 11.434066, 12.089195, 13.345638, 13.696270, 14.016148,
             16.851978, 17.073435, 18.254518, 20.019994, 21.496347, 23.077277,
@@ -49,6 +49,7 @@ TEST(KnnFaiss, SearchKNN) {
             27.998463, 28.262975, 28.581313, 28.816608, 31.603230, 31.610916};
 
     int size = 100;
+    float threshold = 1e-5;
 
     geometry::PointCloud pc;
 
@@ -68,12 +69,11 @@ TEST(KnnFaiss, SearchKNN) {
     int result = knnFaiss.SearchKNN(query, knn, indices, distance2);
 	
     vector<int> indices2(indices.begin(), indices.end());
-    vector<double> distance3(distance2.begin(), distance2.end());
 
     EXPECT_EQ(result, 30);
 
     ExpectEQ(ref_indices, indices2);
-    ExpectEQ(ref_distance2, distance3);
+    ExpectEQ(ref_distance2, distance2, threshold);
 }
 
 TEST(KnnFaiss, SearchRadius) { 
@@ -87,6 +87,7 @@ TEST(KnnFaiss, SearchRadius) {
             23.692427, 23.809303, 24.104578};
 
     int size = 100;
+    float threshold = 1e-5;
 
     geometry::PointCloud pc;
 
@@ -111,7 +112,7 @@ TEST(KnnFaiss, SearchRadius) {
     EXPECT_EQ(result, 21);
 
     ExpectEQ(ref_indices, indices2);
-    ExpectEQ(ref_distance2, distance3);
+    ExpectEQ(ref_distance2, distance3, threshold);
 }
 
 TEST(KnnFaiss, DISABLED_SearchHybrid) { unit_test::NotImplemented(); }
