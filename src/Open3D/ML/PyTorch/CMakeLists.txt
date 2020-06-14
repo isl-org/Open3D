@@ -53,13 +53,6 @@ target_include_directories( open3d_torch_ops SYSTEM PRIVATE
     ${TORCH_INCLUDE_DIRS}
 )
 
-if ( CUDA_ENABLED )
-    target_include_directories( open3d_torch_ops SYSTEM PRIVATE
-        ${CUB_INCLUDE_DIR}
-        #${CUTLASS_INCLUDE_DIR}
-    )
-endif ()
-
 target_link_libraries( open3d_torch_ops PRIVATE
     ${TBB_LIBRARY}
     ${TBB_MALLOC_LIBRARY}
@@ -67,4 +60,11 @@ target_link_libraries( open3d_torch_ops PRIVATE
     ${EIGEN3_TARGET}
     ${FMT_TARGET}
 )
+
+if ( CUDA_ENABLED )
+    target_include_directories( open3d_torch_ops SYSTEM PRIVATE
+        ${CUB_INCLUDE_DIR}
+        #${CUTLASS_INCLUDE_DIR}
+    )
+endif ()
 

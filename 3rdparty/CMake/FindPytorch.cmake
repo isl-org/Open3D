@@ -15,7 +15,7 @@
 # and import the target 'torch'
 #
 if (NOT Pytorch_FOUND)
-    # searching for pytorch requires the python executable
+    # Searching for pytorch requires the python executable
     find_package( PythonExecutable REQUIRED )
 
     message( STATUS "Getting Pytorch properties ..." )
@@ -25,18 +25,14 @@ if (NOT Pytorch_FOUND)
     execute_process( COMMAND ${PYTHON_EXECUTABLE} "-c" "import os; import torch; print(os.path.dirname(torch.__file__), end='')"
             OUTPUT_VARIABLE Pytorch_ROOT )
 
-    # use the cmake config provided by torch
+    # Use the cmake config provided by torch
     find_package( Torch REQUIRED
                   PATHS "${Pytorch_ROOT}/share/cmake/Torch"
                   NO_DEFAULT_PATH )
 
-    # There are hardcoded paths in ${TORCH_ROOT}/share/cmake/Caffe2/Caffe2Targets.cmake (observed for Pytorch 1.2.0)
-    # Try to fix those here
-    get_target_property( iface_link_libs torch INTERFACE_LINK_LIBRARIES )
-    string( REPLACE "/usr/local/cuda/lib64" "${CUDA_TOOLKIT_ROOT_DIR}" iface_link_libs "${iface_link_libs}" )
-    set_target_properties( torch PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
-    # if successful everything works :)
-    # if unsuccessful CMake will complain that there are no rules to make the targets with the hardcoded paths
+    # Note: older versions of Pytorch have hard-coded cuda library paths, see:
+    # https://github.com/pytorch/pytorch/issues/15476. For PyTorch
+    # version >= 1.4.0 this has been addressed.
 endif()
 
 message( STATUS "Pytorch         version: ${Pytorch_VERSION}" )
