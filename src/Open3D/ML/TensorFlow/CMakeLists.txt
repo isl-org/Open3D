@@ -51,6 +51,7 @@ set_target_properties(open3d_tf_ops PROPERTIES COMPILE_DEFINITIONS
 # Enable c++11
 open3d_set_global_properties(open3d_tf_ops)
 open3d_link_3rdparty_libraries(open3d_tf_ops)
+# open3d_show_and_abort_on_warning(open3d_tf_ops)
 
 target_include_directories(open3d_tf_ops PRIVATE ${nanoflann_INCLUDE_DIR}
                                                  ${parallelstl_INCLUDE_DIR})

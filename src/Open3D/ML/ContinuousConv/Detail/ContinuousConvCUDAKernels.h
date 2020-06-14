@@ -25,8 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
 #include <vector>
-#include "CoordinateTransformation.cuh"
+
+#include "Open3D/ML/ContinuousConv/Detail/CoordinateTransformation.cuh"
 
 namespace open3d {
 namespace ml {

@@ -26,8 +26,9 @@
 
 #pragma once
 
+#include <nanoflann.hpp>
+
 #include "Open3D/Utility/Eigen.h"
-#include "nanoflann.hpp"
 
 namespace open3d {
 namespace ml {

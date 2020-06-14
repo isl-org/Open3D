@@ -26,12 +26,13 @@
 
 #pragma once
 #define EIGEN_USE_GPU
-#include "ContinuousConvCUDAKernels.h"
+
+#include <cutlass/gemm/gemm.h>
+#include <cutlass/gemm/sgemm_traits.h>
+
+#include "Open3D/ML/ContinuousConv/Detail/ContinuousConvCUDAKernels.h"
 #include "Open3D/ML/Misc/Detail/MemoryAllocation.h"
 #include "Open3D/Utility/Helper.h"
-
-#include "cutlass/gemm/gemm.h"
-#include "cutlass/gemm/sgemm_traits.h"
 
 using open3d::utility::DivUp;
 

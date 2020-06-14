@@ -25,10 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <cub/cub.cuh>
+
 #include "Open3D/ML/Misc/Detail/MemoryAllocation.h"
 #include "Open3D/Utility/Helper.h"
-
-#include "cub/cub.cuh"
 
 namespace open3d {
 namespace ml {

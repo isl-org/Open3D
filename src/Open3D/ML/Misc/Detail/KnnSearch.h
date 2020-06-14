@@ -25,11 +25,13 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <tbb/parallel_for.h>
 #include <mutex>
-#include "NeighborSearchCommon.h"
+
 #include "Open3D/Core/Atomic.h"
+#include "Open3D/ML/Misc/Detail/NeighborSearchCommon.h"
 #include "Open3D/Utility/ParallelScan.h"
-#include "tbb/parallel_for.h"
 
 namespace open3d {
 namespace ml {

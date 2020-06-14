@@ -25,8 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "CoordinateTransformation.h"
-#include "tbb/parallel_for.h"
+
+#include <tbb/parallel_for.h>
+
+#include "Open3D/ML/ContinuousConv/Detail/CoordinateTransformation.h"
 
 namespace open3d {
 namespace ml {

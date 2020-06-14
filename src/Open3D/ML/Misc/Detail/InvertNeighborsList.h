@@ -26,9 +26,10 @@
 
 #pragma once
 
+#include <tbb/parallel_for.h>
+
 #include "Open3D/Core/Atomic.h"
 #include "Open3D/Utility/ParallelScan.h"
-#include "tbb/parallel_for.h"
 
 namespace open3d {
 namespace ml {

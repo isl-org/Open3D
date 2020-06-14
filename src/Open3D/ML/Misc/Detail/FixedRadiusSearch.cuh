@@ -26,11 +26,12 @@
 
 #pragma once
 #define EIGEN_USE_GPU
-#include "NeighborSearchCommon.h"
-#include "Open3D/ML/Misc/Detail/MemoryAllocation.h"
-#include "Open3D/Utility/Helper.h"
 
-#include "cub/cub.cuh"
+#include <cub/cub.cuh>
+
+#include "Open3D/ML/Misc/Detail/MemoryAllocation.h"
+#include "Open3D/ML/Misc/Detail/NeighborSearchCommon.h"
+#include "Open3D/Utility/Helper.h"
 
 using namespace open3d::utility;
 

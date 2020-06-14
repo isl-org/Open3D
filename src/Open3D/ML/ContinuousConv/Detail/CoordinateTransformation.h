@@ -26,8 +26,9 @@
 
 #pragma once
 
-#include "ContinuousConvTypes.h"
-#include "Eigen/Geometry"
+#include <Eigen/Geometry>
+
+#include "Open3D/ML/ContinuousConv/Detail/ContinuousConvTypes.h"
 
 namespace open3d {
 namespace ml {

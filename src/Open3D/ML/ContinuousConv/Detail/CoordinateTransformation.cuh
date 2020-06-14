@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "ContinuousConvTypes.h"
+#include "Open3D/ML/ContinuousConv/Detail/ContinuousConvTypes.h"
 
 namespace open3d {
 namespace ml {

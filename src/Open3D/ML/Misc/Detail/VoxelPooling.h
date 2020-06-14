@@ -26,10 +26,11 @@
 
 #pragma once
 
+#include <tbb/task_group.h>
+#include <Eigen/Core>
 #include <unordered_map>
-#include "Eigen/Core"
+
 #include "Open3D/Utility/Helper.h"
-#include "tbb/task_group.h"
 
 namespace open3d {
 namespace ml {

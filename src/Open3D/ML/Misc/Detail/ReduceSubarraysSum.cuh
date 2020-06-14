@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
 #include "Open3D/Utility/Helper.h"
 
 using namespace open3d::utility;

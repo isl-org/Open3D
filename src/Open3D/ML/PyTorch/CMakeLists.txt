@@ -46,6 +46,7 @@ endif()
 
 open3d_set_global_properties(open3d_torch_ops)
 open3d_link_3rdparty_libraries(open3d_torch_ops)
+# open3d_show_and_abort_on_warning(open3d_torch_ops)
 
 target_include_directories(
     open3d_torch_ops SYSTEM
