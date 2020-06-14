@@ -56,7 +56,7 @@ if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
     reportRun pip install -U tensorflow==2.0.0
 fi
 if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
-    reportRun pip install -U torch==1.4.0
+    reportRun pip install -U torch==1.4.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 fi
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" -o "$BUILD_PYTORCH_OPS" == "ON" ]; then
     reportRun pip install -U yapf==0.28.0

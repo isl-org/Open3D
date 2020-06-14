@@ -15,7 +15,7 @@
 # and import the target 'torch'
 #
 if (NOT Pytorch_FOUND)
-    # searching for tensorflow requires the python executable
+    # searching for pytorch requires the python executable
     find_package( PythonExecutable REQUIRED )
 
     message( STATUS "Getting Pytorch properties ..." )
