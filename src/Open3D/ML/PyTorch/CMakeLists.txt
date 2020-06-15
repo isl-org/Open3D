@@ -27,8 +27,6 @@ else()
     file(GLOB_RECURSE open3d_torch_ops_SOURCES "*.cpp" "../*/Detail/*.cc"
          "../*/Detail/*.cpp")
 endif()
-list(APPEND open3d_torch_ops_SOURCES "../../Utility/Console.cpp"
-     "../../Utility/Helper.cpp")
 message(STATUS ${open3d_torch_ops_SOURCES})
 
 add_library(open3d_torch_ops SHARED ${open3d_torch_ops_SOURCES})
@@ -39,26 +37,27 @@ open3d_set_global_properties(open3d_torch_ops)
 set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
-# Use flags from Torch . This is usually just a definition for the GLIBC ABI.
-set_target_properties(open3d_torch_ops PROPERTIES COMPILE_FLAGS "${TORCH_CXX_FLAGS}")
-
 if(CUDA_ENABLED)
-    set_target_properties(open3d_torch_ops PROPERTIES COMPILE_DEFINITIONS
-                                                      "CUDA_ENABLED")
-endif()
-
-target_include_directories(
-    open3d_torch_ops SYSTEM
-    PRIVATE ${TBB_INCLUDE_DIR} ${nanoflann_INCLUDE_DIR}
-            ${parallelstl_INCLUDE_DIR} ${TORCH_INCLUDE_DIRS})
-
-target_link_libraries(
-    open3d_torch_ops PRIVATE ${TBB_LIBRARY} ${TBB_MALLOC_LIBRARY}
-                             ${TORCH_LIBRARIES} ${EIGEN3_TARGET} ${FMT_TARGET})
-
-if(CUDA_ENABLED)
-    target_include_directories(
-        open3d_torch_ops SYSTEM PRIVATE ${CUB_INCLUDE_DIR}
-                                        # ${CUTLASS_INCLUDE_DIR}
+    target_include_directories(open3d_torch_ops SYSTEM PRIVATE
+        ${CUB_INCLUDE_DIR}
+        # ${CUTLASS_INCLUDE_DIR}
     )
+    target_compile_definitions(open3d_torch_ops PRIVATE CUDA_ENABLED)
 endif()
+
+target_include_directories(open3d_torch_ops SYSTEM PRIVATE
+    ${TBB_INCLUDE_DIR}
+    ${nanoflann_INCLUDE_DIR}
+    ${parallelstl_INCLUDE_DIR}
+    ${TORCH_INCLUDE_DIRS}
+)
+
+target_link_libraries(open3d_torch_ops PRIVATE
+    ${CMAKE_PROJECT_NAME}
+    ${TBB_LIBRARY}
+    ${TBB_MALLOC_LIBRARY}
+    ${TORCH_LIBRARIES}
+    ${EIGEN3_TARGET}
+    ${FMT_TARGET}
+)
+
