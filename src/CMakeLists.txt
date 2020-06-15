@@ -1,5 +1,10 @@
 function(open3d_show_and_abort_on_warning trgt)
+    # nvcc requires an option after -Werror
+    # https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#generic-tool-options-Werror
     target_compile_options(${trgt} PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:MSVC>:/W3>>
+        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:Clang>:-Wall -Werror>>
+        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>>
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W3>>
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:Clang>:-Wall -Werror>>
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>>
