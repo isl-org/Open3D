@@ -33,25 +33,19 @@ list(APPEND open3d_tf_ops_SOURCES "../../Utility/Console.cpp"
 
 add_library(open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES})
 open3d_set_global_properties(open3d_tf_ops)
-open3d_set_global_properties(open3d_tf_ops)
+# open3d_show_and_abort_on_warning(open3d_tf_ops)
 
-set_target_properties(open3d_tf_ops PROPERTIES PREFIX "") # do not add 'lib'
-                                                          # prefix
+# Do not add "lib" prefix
+set_target_properties(open3d_tf_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug")
-# Use definitions from tensorflow. This is usually just a definition for the
-# GLIBC ABI.
 
+# Use definitions from tensorflow. This is usually just a definition for the GLIBC ABI.
 set(compile_definitions "${Tensorflow_DEFINITIONS}")
 if(CUDA_ENABLED)
     list(APPEND compile_definitions "BUILD_CUDA_MODULE")
 endif()
 set_target_properties(open3d_tf_ops PROPERTIES COMPILE_DEFINITIONS
                                                "${compile_definitions}")
-
-# Enable c++11
-open3d_set_global_properties(open3d_tf_ops)
-open3d_link_3rdparty_libraries(open3d_tf_ops)
-# open3d_show_and_abort_on_warning(open3d_tf_ops)
 
 target_include_directories(open3d_tf_ops PRIVATE ${nanoflann_INCLUDE_DIR}
                                                  ${parallelstl_INCLUDE_DIR})

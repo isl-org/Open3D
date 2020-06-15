@@ -29,24 +29,23 @@ else()
 endif()
 list(APPEND open3d_torch_ops_SOURCES "../../Utility/Console.cpp"
      "../../Utility/Helper.cpp")
-
 message(STATUS ${open3d_torch_ops_SOURCES})
-add_library(open3d_torch_ops SHARED ${open3d_torch_ops_SOURCES})
 
-set_target_properties(open3d_torch_ops PROPERTIES PREFIX "") # do not add 'lib'
-                                                             # prefix
+add_library(open3d_torch_ops SHARED ${open3d_torch_ops_SOURCES})
+open3d_set_global_properties(open3d_torch_ops)
+# open3d_show_and_abort_on_warning(open3d_torch_ops)
+
+# Do not add "lib" prefix
+set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
+
 # Use flags from Torch . This is usually just a definition for the GLIBC ABI.
-set_target_properties(open3d_torch_ops PROPERTIES COMPILE_FLAGS
-                                                  "${TORCH_CXX_FLAGS}")
+set_target_properties(open3d_torch_ops PROPERTIES COMPILE_FLAGS "${TORCH_CXX_FLAGS}")
+
 if(CUDA_ENABLED)
     set_target_properties(open3d_torch_ops PROPERTIES COMPILE_DEFINITIONS
                                                       "CUDA_ENABLED")
 endif()
-
-open3d_set_global_properties(open3d_torch_ops)
-open3d_link_3rdparty_libraries(open3d_torch_ops)
-# open3d_show_and_abort_on_warning(open3d_torch_ops)
 
 target_include_directories(
     open3d_torch_ops SYSTEM
