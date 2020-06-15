@@ -40,8 +40,8 @@ namespace {
 template <class Tin, class Tout>
 class ScanSumBody {
     Tout sum;
-    Tout* const out;
     const Tin* in;
+    Tout* const out;
 
 public:
     ScanSumBody(Tout* out_, const Tin* in_) : sum(0), in(in_), out(out_) {}
@@ -56,7 +56,7 @@ public:
         }
         sum = temp;
     }
-    ScanSumBody(ScanSumBody& b, tbb::split) : in(b.in), out(b.out), sum(0) {}
+    ScanSumBody(ScanSumBody& b, tbb::split) : sum(0), in(b.in), out(b.out) {}
     void reverse_join(ScanSumBody& a) { sum = a.sum + sum; }
     void assign(ScanSumBody& b) { sum = b.sum; }
 };
