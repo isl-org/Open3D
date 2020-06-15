@@ -901,7 +901,6 @@ public:
         if (std::is_same<res_t, bool>::value) {
             // func_t is a comparison function (for arg-reduction).
             // Signature: (scalar_t, scalar_t) -> bool.
-            auto arg_reduce_ops = WrapArgReduceOps(reduce_func);
             RunReduce<scalar_t, int64_t>(
                     indexer_, WrapArgReduceOps(reduce_func),
                     thrust::pair<scalar_t, int64_t>(identity, 0));

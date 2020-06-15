@@ -1,11 +1,10 @@
 function(open3d_show_and_abort_on_warning trgt)
-    if(MSVC)
-        # target_compile_options(${trgt} PRIVATE /W4 /WX)
-        target_compile_options(${trgt} PRIVATE /W3)
-    else()
-        # target_compile_options(${trgt} PRIVATE -Wall -Wextra -Werror)
-        target_compile_options(${trgt} PRIVATE -Wall -Werror)
-    endif()
+    target_compile_options(${trgt} PRIVATE
+        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W3>>
+        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:Clang>:-Wall -Werror>>
+        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>>
+        $<$<COMPILE_LANGUAGE:CUDA>:-Wall -Werror all-warnings>
+    )
 endfunction()
 
 add_subdirectory(Open3D)

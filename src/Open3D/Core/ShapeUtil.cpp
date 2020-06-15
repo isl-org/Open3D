@@ -34,7 +34,7 @@ namespace shape_util {
 
 /// Expand a shape with ones in front. Returning a shape with size of ndims.
 /// E.g. ExpandFrontDims({2, 3}, 5) == {1, 1, 1, 2, 3}
-const SizeVector ExpandFrontDims(const SizeVector& shape, int64_t ndims) {
+static SizeVector ExpandFrontDims(const SizeVector& shape, int64_t ndims) {
     if (ndims < static_cast<int64_t>(shape.size())) {
         utility::LogError("Cannot expand a shape with ndims {} to ndims {}.",
                           shape.size(), ndims);
@@ -42,7 +42,7 @@ const SizeVector ExpandFrontDims(const SizeVector& shape, int64_t ndims) {
     SizeVector expanded_shape(ndims, 1);
     std::copy(shape.begin(), shape.end(),
               expanded_shape.begin() + ndims - shape.size());
-    return std::move(expanded_shape);
+    return expanded_shape;
 }
 
 bool IsCompatibleBroadcastShape(const SizeVector& l_shape,
