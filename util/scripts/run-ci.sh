@@ -127,16 +127,16 @@ if $runBenchmarks; then
     echo
 fi
 
-reportJobStart "test build C++ example"
-echo "test building a C++ example with installed Open3D..."
-date
-cd ../docs/_static/C++
-mkdir build
-cd build
-cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
-make
-./TestVisualizer
-echo
+#reportJobStart "test build C++ example"
+#echo "test building a C++ example with installed Open3D..."
+#date
+#cd ../docs/_static/C++
+#mkdir build
+#cd build
+#cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
+#make
+#./TestVisualizer
+#echo
 
 reportJobStart "cleanup"
 echo "cleanup the C++ example..."
