@@ -95,6 +95,8 @@ public:
     virtual Geometry3D& Rotate(const Eigen::Matrix3d& R,
                                const Eigen::Vector3d& center) = 0;
 
+    virtual Geometry3D& Rotate(const Eigen::Matrix3d& R);
+
     /// Get Rotation Matrix from XYZ RotationType.
     static Eigen::Matrix3d GetRotationMatrixFromXYZ(
             const Eigen::Vector3d& rotation);
