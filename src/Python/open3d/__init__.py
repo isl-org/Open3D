@@ -44,6 +44,7 @@ import os
 import sys
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
+from open3d._build_config import _build_config
 from open3d.open3d_pybind import camera
 from open3d.open3d_pybind import color_map
 from open3d.open3d_pybind import geometry
@@ -82,6 +83,3 @@ if "@ENABLE_JUPYTER@" == "ON":
         }]
 
 
-_build_config = {
-    "BUILD_TENSORFLOW_OPS": "@BUILD_TENSORFLOW_OPS@" == "ON",
-}

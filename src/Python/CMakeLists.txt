@@ -105,6 +105,9 @@ if ( BUILD_TENSORFLOW_OPS )
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
 endif ()
 
+configure_file("_build_config.py.in"
+               "${CMAKE_BINARY_DIR}/lib/_build_config.py")
+
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}
