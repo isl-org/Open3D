@@ -4,11 +4,11 @@ from collections import OrderedDict
 
 def compute_jacobian_finite_differences(x0, fn, epsilon):
     """Computes the Jacobian using finite differences
-    
+
     x0:      The positions at which to compute J.
-    
+
     fn:      A function of the form fn(x) which returns a single numpy array.
-    
+
     epsilon: A scalar or an array that can be broadcasted to the same
              shape as x0.
     """
@@ -30,20 +30,20 @@ def compute_jacobian_finite_differences(x0, fn, epsilon):
 
 def compute_jacobian_analytical(x0, y_shape, fn_grad, y_bp=None):
     """Computes the analytical Jacobian
-    
+
     x0:      The position at which to compute J.
-    
+
     y_shape: The shape of the backpropagated value, i.e. the shape of
              the output of the corresponding function 'fn'.
-    
+
     fn_grad: The gradient of the original function with the form
-             x_grad = fn_grad(y_bp, x0) where 'y_bp' is the backpropagated 
+             x_grad = fn_grad(y_bp, x0) where 'y_bp' is the backpropagated
              value and 'x0' is the original input to 'fn'. The output of
              the function is the gradient of x wrt to y.
 
     y_bp:    Optional array with custom values for individually scaling
              the gradients.
-            
+
     """
     dtype = x0.dtype
     y_size = 1
@@ -79,7 +79,7 @@ def check_gradients(x0,
     fn:      A function of the form fn(x) which returns a single numpy array.
 
     fn_grad: The gradient of the original function with the form
-             x_grad = fn_grad(y_bp, x0) where 'y_bp' is the backpropagated 
+             x_grad = fn_grad(y_bp, x0) where 'y_bp' is the backpropagated
              value and 'x0' is the original input to 'fn'. The output of
              the function is the gradient of x wrt to y.
 
@@ -91,7 +91,7 @@ def check_gradients(x0,
     atol:    The absolute tolerance parameter used in numpy.allclose()
 
     debug_outputs: Output variable which stores additional outputs useful for
-                   debugging in a dictionary. 
+                   debugging in a dictionary.
     """
     dtype = x0.dtype
 

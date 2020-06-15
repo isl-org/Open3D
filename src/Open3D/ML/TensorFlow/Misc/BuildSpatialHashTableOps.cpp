@@ -79,7 +79,7 @@ Creates a spatial hash table meant as input for fixed_radius_search
 max_hash_table_size:
   The maximum hash table size.
 
-points: 
+points:
   The 3D positions of the input points.
 
 radius:
@@ -96,10 +96,10 @@ hash_table_index: Stores the values of the hash table, which are the indices of
   the points. The start and end of each cell is defined by hash_table_cell_splits.
 
 hash_table_cell_splits: Defines the start and end of each hash table cell within a hash table.
-  The size of this 
+  The size of this
 
-hash_table_splits: Defines the start and end of each hash table in the 
-  hash_table_cell_splits array. If the batch size is 1 then there is only one 
-  hash table and this vector is [0, number of cells]. 
+hash_table_splits: Defines the start and end of each hash table in the
+  hash_table_cell_splits array. If the batch size is 1 then there is only one
+  hash table and this vector is [0, number of cells].
 
 )doc");

@@ -91,7 +91,7 @@ feature_fn:
 debug:
   If true additional checks for debugging will be enabled.
 
-positions: 
+positions:
   The point positions with shape [N,3] with N as the number of points.
 
 features:

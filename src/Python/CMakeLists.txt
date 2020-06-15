@@ -103,11 +103,11 @@ set(GENERATED_OUTPUTS "")
 if ( BUILD_TENSORFLOW_OPS )
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
-                        COMMAND ${PYTHON_EXECUTABLE} generate_tf_ops_wrapper.py --input open3d/ml/tf/python/ops/ops.py.in --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops> 
+                        COMMAND ${PYTHON_EXECUTABLE} generate_tf_ops_wrapper.py --input open3d/ml/tf/python/ops/ops.py.in --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops>
                         DEPENDS open3d_tf_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py" )
-                
+
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py")
 endif ()
 
@@ -119,7 +119,7 @@ if ( BUILD_PYTORCH_OPS )
                         DEPENDS open3d_torch_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py and return_types.py" )
-                
+
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py")
 endif ()
 

@@ -102,7 +102,7 @@ REGISTER_OP("Open3DFixedRadiusSearch")
         .Doc(R"doc(
 Computes the indices of all neighbors within a radius.
 
-This op computes the neighborhood for each query point and returns the indices 
+This op computes the neighborhood for each query point and returns the indices
 of the neighbors.
 
 metric:
@@ -110,18 +110,18 @@ metric:
 
 ignore_query_point:
   If true the points that coincide with the center of the search window will be
-  ignored. This excludes the query point if 'queries' and 'points' are the same 
+  ignored. This excludes the query point if 'queries' and 'points' are the same
   point cloud.
 
 return_distances:
-  If True the distances for each neighbor will be returned in the tensor 
+  If True the distances for each neighbor will be returned in the tensor
   'neighbors_distance'.
   If False a zero length Tensor will be returned for 'neighbors_distance'.
 
-points: 
+points:
   The 3D positions of the input points.
 
-queries: 
+queries:
   The 3D positions of the query points.
 
 radius:
@@ -145,17 +145,17 @@ hash_table_index: Stores the values of the hash table, which are the indices of
 hash_table_cell_splits: Defines the start and end of each hash table cell.
 
 neighbors_index:
-  The compact list of indices of the neighbors. The corresponding query point 
+  The compact list of indices of the neighbors. The corresponding query point
   can be inferred from the 'neighbor_count_row_splits' vector.
 
 neighbors_row_splits:
   The exclusive prefix sum of the neighbor count for the query points including
-  the total neighbor count as the last element. The size of this array is the 
+  the total neighbor count as the last element. The size of this array is the
   number of queries + 1.
 
 neighbors_distance:
   Stores the distance to each neighbor if 'return_distances' is True.
   Note that the distances are squared if metric is L2.
-  This is a zero length Tensor if 'return_distances' is False. 
+  This is a zero length Tensor if 'return_distances' is False.
 
 )doc");

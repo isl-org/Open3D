@@ -92,7 +92,7 @@ REGISTER_OP("Open3DRadiusSearch")
         .Doc(R"doc(
 Computes the indices of all neigbours within a radius.
 
-This op computes the neighborhood for each query point and returns the indices 
+This op computes the neighborhood for each query point and returns the indices
 of the neighbors. Each query point has an individual search radius.
 
 metric:
@@ -104,17 +104,17 @@ ignore_query_point:
   point cloud.
 
 return_distances:
-  If True the distances for each neighbor will be returned in the tensor 
+  If True the distances for each neighbor will be returned in the tensor
   'neighbors_distance'.
   If False a zero length Tensor will be returned for 'neighbors_distances'.
 
 normalize_distances:
   If True the returned distances will be normalized with the radii.
 
-points: 
+points:
   The 3D positions of the input points.
 
-queries: 
+queries:
   The 3D positions of the query points.
 
 radii:
@@ -134,12 +134,12 @@ neighbors_index:
 
 neighbors_row_splits:
   The exclusive prefix sum of the neighbor count for the query points including
-  the total neighbor count as the last element. The size of this array is the 
+  the total neighbor count as the last element. The size of this array is the
   number of queries + 1.
 
 neighbors_distance:
   Stores the distance to each neighbor if 'return_distances' is True.
   The distances are squared only if metric is L2.
-  This is a zero length Tensor if 'return_distances' is False. 
+  This is a zero length Tensor if 'return_distances' is False.
 
 )doc");

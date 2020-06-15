@@ -80,12 +80,12 @@ REGISTER_OP("Open3DInvertNeighborsList")
             return Status::OK();
         })
         .Doc(R"doc(
-Inverts a neighbors list stored as neighbor indices and prefix sum and returns 
+Inverts a neighbors list stored as neighbor indices and prefix sum and returns
 the inverted list in the same format.
 
 
 num_points:
-  Scalar integer with the number of points that have been tested in a neighbor 
+  Scalar integer with the number of points that have been tested in a neighbor
   search. This is the number of the points in the second point cloud (not the
   query point cloud) in a neighbor search.
   This will be the size of the output prefix_sum.
@@ -99,21 +99,21 @@ inp_neighbors_row_splits:
   num_points + 1.
 
 inp_neighbors_attributes:
-  Array that stores an attribute for each neighbor. 
+  Array that stores an attribute for each neighbor.
   The size of the first dim must match the first dim of inp_neighbors_index.
   To ignore attributes pass a 1D Tensor with zero size.
 
-neighbors_index: 
+neighbors_index:
   The output neighbor indices stored linearly.
 
 neighbors_row_splits:
-  Stores the number of neighbors for the new queries (previously the input 
-  points) as exclusive prefix sum including the total number in the last 
+  Stores the number of neighbors for the new queries (previously the input
+  points) as exclusive prefix sum including the total number in the last
   element.
 
 neighbors_attributes:
-  Array that stores an attribute for each neighbor. 
+  Array that stores an attribute for each neighbor.
   If the inp_neighbors_attributes Tensor is a zero length vector then the output
-  will be a zero length vector as well. 
+  will be a zero length vector as well.
 
 )doc");

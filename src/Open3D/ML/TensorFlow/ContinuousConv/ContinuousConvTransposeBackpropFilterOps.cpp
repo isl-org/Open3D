@@ -193,13 +193,13 @@ align_corners:
 coordinate_mapping:
   Defines how the relative positions of the neighbors are mapped before computing
   filter indices.
-  For all mappings relative coordinates will be scaled with the inverse extent, 
+  For all mappings relative coordinates will be scaled with the inverse extent,
   i.e. the extent becomes a unit cube.
   After that one of the following mappings will be applied:
     'ball_to_cube_radial': maps a unit ball to a unit cube by radial stretching.
     'ball_to_cube_volume_preserving': maps a unit ball to a unit cube preserving the volume.
     'identity': the identity mapping.
-  Use 'ball_to_cube_radial' for a spherical or ellipsoidal filter window 
+  Use 'ball_to_cube_radial' for a spherical or ellipsoidal filter window
   and 'identiy' for a rectangular filter window.
 
 
@@ -209,13 +209,13 @@ normalize:
 
 interpolation:
   If interpolation is 'linear' then each filter value lookup is a trilinear interpolation.
-  If interpolation is 'nearest_neighbor' only the spatially closest value is considered. 
+  If interpolation is 'nearest_neighbor' only the spatially closest value is considered.
   This makes the filter and therefore the convolution discontinuous.
 
 
 max_temp_mem_MB:
-  Defines the maximum temporary memory in megabytes to be used for the GPU 
-  implementation. More memory means fewer kernel invocations. Note that the 
+  Defines the maximum temporary memory in megabytes to be used for the GPU
+  implementation. More memory means fewer kernel invocations. Note that the
   a minimum amount of temp memory will always be allocated even if this
   variable is set to 0.
 
@@ -225,12 +225,12 @@ debug:
 
 
 filters:
-  The filter parameters. 
+  The filter parameters.
   The shape of the filter is [depth, height, width, in_ch, out_ch].
   The dimensions 'depth', 'height', 'width' define the spatial resolution of
   the filter. The spatial size of the filter is defined by the parameter
   'extents'.
-    
+
 
 out_positions:
   A 2D tensor with the 3D point positions of each output point.
@@ -238,7 +238,7 @@ out_positions:
 
 
 extents:
-  The extent defines the spatial size of the filter for each input point. 
+  The extent defines the spatial size of the filter for each input point.
   It is a 2D vector of the form [[x_size, y_size, z_size], ..].
   For 'ball to cube' coordinate mappings the extent defines the bounding box
   of the ball.

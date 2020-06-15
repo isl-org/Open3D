@@ -55,7 +55,7 @@ REGISTER_OP("Open3DReduceSubarraysSum")
             return Status::OK();
         })
         .Doc(R"doc(
-Computes the sum for each subarray. The start and end of the subarrays are 
+Computes the sum for each subarray. The start and end of the subarrays are
 defined by an exclusive prefix sum.
 
 
@@ -63,7 +63,7 @@ values:
   Linear memory which stores the values for all arrays.
 
 row_splits:
-  Defines the start and end of each subarray. This is an exclusive prefix with 
+  Defines the start and end of each subarray. This is an exclusive prefix with
   0 as the first element and the length of values as last element.
 
 sums:

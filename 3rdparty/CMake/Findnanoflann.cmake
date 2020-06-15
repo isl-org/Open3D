@@ -7,7 +7,7 @@
 if( NOT nanoflann_INCLUDE_DIR )
 
     find_path( nanoflann_INCLUDE_DIR nanoflann.hpp
-               PATHS ${PROJECT_SOURCE_DIR}/3rdparty/nanoflann/include 
+               PATHS ${PROJECT_SOURCE_DIR}/3rdparty/nanoflann/include
                NO_DEFAULT_PATH )
 endif()
 

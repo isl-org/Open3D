@@ -103,10 +103,10 @@ return_distances:
   If True the distances for each neighbor will be returned in the tensor 'neighbors_distances'.
   If False a zero length Tensor will be returned for 'neighbors_distances'.
 
-points: 
+points:
   The 3D positions of the input points.
 
-queries: 
+queries:
   The 3D positions of the query points.
 
 k:
@@ -127,15 +127,15 @@ neighbors_index:
   These cases are:
   - There are less than k points.
   - 'ignore_query_point' is True and there are multiple points with the same position.
-  
+
 neighbors_row_splits:
   The exclusive prefix sum of the neighbor count for the query points including
-  the total neighbor count as the last element. The size of this array is the 
+  the total neighbor count as the last element. The size of this array is the
   number of queries + 1.
 
 neighbors_distance:
   Stores the distance to each neighbor if 'return_distances' is True.
   The distances are squared only if metric is L2.
-  This is a zero length Tensor if 'return_distances' is False. 
+  This is a zero length Tensor if 'return_distances' is False.
 
 )doc");
