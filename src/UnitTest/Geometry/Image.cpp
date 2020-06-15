@@ -569,8 +569,7 @@ TEST(Image, TransposeFloat) {
     EXPECT_EQ(num_of_channels, transposed_image->num_of_channels_);
     EXPECT_EQ(int(sizeof(float)), transposed_image->bytes_per_channel_);
 
-    const float* transpose_image_floats =
-            reinterpret_cast<const float*>(transposed_image->data_.data());
+    const float* transpose_image_floats = transposed_image->PointerAs<float>();
     std::vector<float> transpose_image_data(
             transpose_image_floats,
             transpose_image_floats + transposed_ref.size());
