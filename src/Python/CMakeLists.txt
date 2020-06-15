@@ -123,6 +123,9 @@ if ( BUILD_PYTORCH_OPS )
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py")
 endif ()
 
+configure_file("_build_config.py.in"
+               "${CMAKE_BINARY_DIR}/lib/_build_config.py")
+
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}
