@@ -23,10 +23,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-
 #include "Open3D/Geometry/KnnFaiss.h"
+#include "Open3D/Core/Device.h"
+#include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/Tensor.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
+
+#include "Core/CoreTest.h"
 #include "TestUtility/UnitTest.h"
 
 using namespace Eigen;
@@ -117,3 +122,54 @@ TEST(KnnFaiss, SearchRadius) {
 }
 
 TEST(KnnFaiss, DISABLED_SearchHybrid) { unit_test::NotImplemented(); }
+
+TEST(KnnFaiss, SetTensorData) {
+    vector<int> ref_indices = {27, 48, 4,  77, 90, 7,  54, 17, 76, 38,
+                               39, 60, 15, 84, 11, 57, 3,  32, 99, 36,
+                               52, 40, 26, 59, 22, 97, 20, 42, 73, 24};
+
+    vector<float> ref_distance2 = {
+            0.000000,  4.684353,  4.996539,  9.191849,  10.034604, 10.466745,
+            10.649751, 11.434066, 12.089195, 13.345638, 13.696270, 14.016148,
+            16.851978, 17.073435, 18.254518, 20.019994, 21.496347, 23.077277,
+            23.692427, 23.809303, 24.104578, 25.005770, 26.952710, 27.487888,
+            27.998463, 28.262975, 28.581313, 28.816608, 31.603230, 31.610916};
+
+    int size = 100;
+    float threshold = 1e-5;
+
+    geometry::PointCloud pc;
+
+    Vector3d vmin(0.0, 0.0, 0.0);
+    Vector3d vmax(10.0, 10.0, 10.0);
+
+    pc.points_.resize(size);
+    Rand(pc.points_, vmin, vmax, 0);
+
+    std::vector<float> points;
+    points.resize(100 * 3);
+    for (unsigned int i = 0; i < pc.points_.size(); i++) {
+        for (unsigned int j = 0; j < 3; j++) {
+            points[3 * i + j] = (float)pc.points_[i].data()[j];
+        }
+    }
+
+    Device device;
+    Tensor t(points, {100, 3}, Dtype::Float32, device);
+
+    geometry::KnnFaiss knnFaiss(t);
+
+    Vector3d query = {1.647059, 4.392157, 8.784314};
+    int knn = 30;
+    vector<long> indices;
+    vector<float> distance2;
+
+    int result = knnFaiss.SearchKNN(query, knn, indices, distance2);
+
+    vector<int> indices2(indices.begin(), indices.end());
+
+    EXPECT_EQ(result, 30);
+
+    ExpectEQ(ref_indices, indices2);
+    ExpectEQ(ref_distance2, distance2, threshold);
+}

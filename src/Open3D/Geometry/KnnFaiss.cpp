@@ -34,6 +34,8 @@
 #include <faiss/IndexFlat.h>
 #include <faiss/impl/AuxIndexStructures.h>
 
+#include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/Tensor.h"
 #include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
@@ -52,11 +54,29 @@ KnnFaiss::KnnFaiss(const registration::Feature &feature) {
     SetFeature(feature);
 }
 
+KnnFaiss::KnnFaiss(const Tensor &tensor) { SetTensorData(tensor); }
+
 KnnFaiss::~KnnFaiss() {}
 
 bool KnnFaiss::SetMatrixData(const Eigen::MatrixXd &data) {
     return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
             data.data(), data.rows(), data.cols()));
+}
+
+bool KnnFaiss::SetTensorData(const Tensor &tensor) {
+    SizeVector size = tensor.GetShape();
+    dimension_ = size[1];
+    dataset_size_ = size[0];
+
+    if (dimension_ == 0 || dataset_size_ == 0) {
+        utility::LogWarning("[KnnFaiss::SetTensorData] Failed due to no data.");
+        return false;
+    }
+    data_.resize(dataset_size_ * dimension_);
+    index.reset(new faiss::IndexFlatL2(dimension_));
+    void *_data_ptr = tensor.GetBlob()->GetDataPtr();
+    index->add(dataset_size_, (float *)_data_ptr);
+    return true;
 }
 
 bool KnnFaiss::SetGeometry(const Geometry &geometry) {

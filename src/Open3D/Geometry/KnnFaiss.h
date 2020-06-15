@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+#include "Open3D/Core/Tensor.h"
 #include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Geometry/KDTreeSearchParam.h"
 #include "Open3D/Registration/Feature.h"
@@ -24,17 +25,21 @@ public:
     KnnFaiss();
     /// \brief Parameterized Constructor.
     ///
-    /// \param data Provides set of data points for KDTree construction.
+    /// \param data Provides set of data points for Faiss Index construction.
     KnnFaiss(const Eigen::MatrixXd &data);
     /// \brief Parameterized Constructor.
     ///
-    /// \param geometry Provides geometry from which KDTree is constructed.
+    /// \param geometry Provides geometry from which Faiss Index is constructed.
     KnnFaiss(const Geometry &geometry);
     /// \brief Parameterized Constructor.
     ///
-    /// \param feature Provides a set of features from which the KDTree is
+    /// \param feature Provides a set of features from which the Faiss Index is
     /// constructed.
     KnnFaiss(const registration::Feature &feature);
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param tensor Provides geometry from which Faiss Index is constructed.
+    KnnFaiss(const Tensor &tensor);
     ~KnnFaiss();
     KnnFaiss(const KnnFaiss &) = delete;
     KnnFaiss &operator=(const KnnFaiss &) = delete;
@@ -44,6 +49,10 @@ public:
     ///
     /// \param data Data points for KDTree Construction.
     bool SetMatrixData(const Eigen::MatrixXd &data);
+    /// Sets the data for the KDTree from a matrix.
+    ///
+    /// \param data Data points for Faiss Index Construction.
+    bool SetTensorData(const Tensor &data);
     /// Sets the data for the KDTree from geometry.
     ///
     /// \param geometry Geometry for KDTree Construction.
