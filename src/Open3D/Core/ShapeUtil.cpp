@@ -164,7 +164,7 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
     SizeVector inferred_shape = shape;
     int64_t new_size = 1;
     bool has_inferred_dim = false;
-    int64_t inferred_dim;
+    int64_t inferred_dim = 0;
     for (int64_t dim = 0, ndim = shape.size(); dim != ndim; dim++) {
         if (shape[dim] == -1) {
             if (has_inferred_dim) {
