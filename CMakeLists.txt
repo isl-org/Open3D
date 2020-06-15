@@ -191,6 +191,8 @@ if (BUILD_CUDA_MODULE)
         else()
             cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH}")
         endif()
+        # make CUDA_GENCODES a string to avoid deduplication in target_compile_options
+        string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
     else()
         set(BUILD_CUDA_MODULE OFF)
         message(STATUS "No CUDA support")
