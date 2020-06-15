@@ -34,6 +34,10 @@
 namespace open3d {
 namespace geometry {
 
+Geometry3D& Geometry3D::Rotate(const Eigen::Matrix3d& R) {
+    return Rotate(R, GetCenter());
+}
+
 Eigen::Vector3d Geometry3D::ComputeMinBound(
         const std::vector<Eigen::Vector3d>& points) const {
     if (points.empty()) {
