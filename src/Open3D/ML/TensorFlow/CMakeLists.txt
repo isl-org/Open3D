@@ -31,7 +31,7 @@ endif()
 
 add_library(open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES})
 open3d_set_global_properties(open3d_tf_ops)
-# open3d_show_and_abort_on_warning(open3d_tf_ops)
+open3d_show_and_abort_on_warning(open3d_tf_ops)
 
 # Do not add "lib" prefix
 set_target_properties(open3d_tf_ops PROPERTIES PREFIX "")

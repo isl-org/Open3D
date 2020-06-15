@@ -71,6 +71,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
         CALL(int32_t, float, InvertNeighborsListCPU)
         CALL(int32_t, double, InvertNeighborsListCPU)
     }
+    return std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>();
 }
 
 static auto registry = torch::RegisterOperators(

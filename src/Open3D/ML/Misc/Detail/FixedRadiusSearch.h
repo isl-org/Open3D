@@ -177,7 +177,6 @@ Eigen::Array<typename TDerived::Scalar, VECSIZE, 1> NeighborsDist(
         const Eigen::ArrayBase<TDerived>& p,
         const Eigen::Array<typename TDerived::Scalar, VECSIZE, 3>& points) {
     typedef Eigen::Array<typename TDerived::Scalar, VECSIZE, 1> VecN_t;
-    typedef Eigen::Array<typename TDerived::Scalar, VECSIZE, 3> MatNx3_t;
     VecN_t dist;
 
     dist.setZero();
@@ -217,7 +216,6 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 
     // number of elements for vectorization
     const int VECSIZE = 8;
-    typedef uint32_t Index_t;
     typedef Eigen::Array<T, 3, 1> Vec3_t;
     typedef Eigen::Array<T, VECSIZE, 1> Vec_t;
     typedef Eigen::Array<int32_t, VECSIZE, 1> Veci_t;

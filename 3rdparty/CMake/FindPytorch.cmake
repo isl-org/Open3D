@@ -38,8 +38,16 @@ if(NOT Pytorch_FOUND)
                  NO_DEFAULT_PATH)
 
     # Note: older versions of Pytorch have hard-coded cuda library paths, see:
-    # https://github.com/pytorch/pytorch/issues/15476. For PyTorch version >=
-    # 1.4.0 this has been addressed.
+    # https://github.com/pytorch/pytorch/issues/15476.
+    # This issue has been addressed but we observed for the conda packages for
+    # Pytorch 1.2.0 and 1.4.0 that there are still hardcoded paths in
+    #  ${TORCH_ROOT}/share/cmake/Caffe2/Caffe2Targets.cmake
+    # Try to fix those here
+    get_target_property( iface_link_libs torch INTERFACE_LINK_LIBRARIES )
+    string( REPLACE "/usr/local/cuda" "${CUDA_TOOLKIT_ROOT_DIR}" iface_link_libs "${iface_link_libs}" )
+    set_target_properties( torch PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
+    # if successful everything works :)
+    # if unsuccessful CMake will complain that there are no rules to make the targets with the hardcoded paths
 
     # Get Pytorch_CXX11_ABI: True/False
     execute_process(
