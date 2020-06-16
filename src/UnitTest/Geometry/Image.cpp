@@ -26,7 +26,7 @@
 
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {
@@ -141,7 +141,7 @@ TEST(Image, FloatValueAt) {
 
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    float* const im = Cast<float>(&image.data_[0]);
+    float* const im = image.PointerAs<float>();
 
     im[0 * width + 0] = 4.0f;
     im[0 * width + 1] = 4.0f;
@@ -449,7 +449,7 @@ TEST(Image, PointerAt) {
 
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    float* const im = Cast<float>(&image.data_[0]);
+    float* const im = image.PointerAs<float>();
 
     im[0 * width + 0] = 0.0f;
     im[0 * width + 1] = 1.0f;
@@ -569,8 +569,7 @@ TEST(Image, TransposeFloat) {
     EXPECT_EQ(num_of_channels, transposed_image->num_of_channels_);
     EXPECT_EQ(int(sizeof(float)), transposed_image->bytes_per_channel_);
 
-    const float* transpose_image_floats =
-            reinterpret_cast<const float*>(transposed_image->data_.data());
+    const float* transpose_image_floats = transposed_image->PointerAs<float>();
     std::vector<float> transpose_image_data(
             transpose_image_floats,
             transpose_image_floats + transposed_ref.size());

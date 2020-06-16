@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 // #include "Open3D/ColorMap/ImageWarpingField.h"
 

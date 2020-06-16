@@ -24,37 +24,43 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "UnitTest/UnitTest.h"
+#pragma once
 
-// #include "Open3D/ColorMap/ColorMapOptimizationOption.h"
+// TEST_DATA_DIR defined in CMakeLists.txt
+// Put it here to avoid editor warnings
+#ifndef TEST_DATA_DIR
+#define TEST_DATA_DIR
+#endif
+
+#include <gtest/gtest.h>
+#include <Eigen/Core>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#include "Open3D/Macro.h"
+#include "UnitTest/TestUtility/Compare.h"
+#include "UnitTest/TestUtility/Print.h"
+#include "UnitTest/TestUtility/Rand.h"
+#include "UnitTest/TestUtility/Raw.h"
+#include "UnitTest/TestUtility/Sort.h"
+
+// GPU_CONDITIONAL_COMPILE_STR is "" if gpu is available, otherwise "DISABLED_"
+// The GPU_CONDITIONAL_COMPILE_STR value is configured in CMake
+#define CUDA_CONDITIONAL_TEST(test_name) \
+    OPEN3D_CONCATENATE(GPU_CONDITIONAL_TEST_STR, test_name)
 
 namespace open3d {
 namespace unit_test {
 
-/* TODO
-As the color_map::ColorMapOptimization subcomponents go back into hiding several
-lines of code had to commented out. Do not remove these lines, they may become
-useful again after a decision has been made about the way to make these
-subcomponents visible to UnitTest.
-*/
+// Eigen Zero()
+const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();
+const Eigen::Vector3d Zero3d = Eigen::Vector3d::Zero();
+const Eigen::Matrix<double, 6, 1> Zero6d = Eigen::Matrix<double, 6, 1>::Zero();
+const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
 
-TEST(ColorMapOptimizationOption, DISABLED_Constructor) {
-    // open3d::ColorMapOptimizationOption option;
-
-    // EXPECT_FALSE(option.non_rigid_camera_coordinate_);
-
-    // EXPECT_EQ(16, option.number_of_vertical_anchors_);
-    // EXPECT_EQ(3, option.half_dilation_kernel_size_for_discontinuity_map_);
-
-    // EXPECT_NEAR(0.316, option.non_rigid_anchor_point_weight_,
-    // unit_test::THRESHOLD_1E_6); EXPECT_NEAR(300, option.maximum_iteration_,
-    // unit_test::THRESHOLD_1E_6); EXPECT_NEAR(2.5,
-    // option.maximum_allowable_depth_, unit_test::THRESHOLD_1E_6);
-    // EXPECT_NEAR(0.03, option.depth_threshold_for_visibility_check_,
-    // unit_test::THRESHOLD_1E_6); EXPECT_NEAR(0.1,
-    // option.depth_threshold_for_discontinuity_check_,
-    // unit_test::THRESHOLD_1E_6);
-}
+// Mechanism for reporting unit tests for which there is no implementation yet.
+void NotImplemented();
 
 }  // namespace unit_test
 }  // namespace open3d
