@@ -178,6 +178,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 if (BUILD_CUDA_MODULE)
     include(CheckLanguage)
     check_language(CUDA)
+    message(STATUS ${CMAKE_CUDA_COMPILER})
     if(CMAKE_CUDA_COMPILER)
         find_package(CUDA REQUIRED) # required for cuda_select_nvcc_arch_flags
         message(STATUS "Building CUDA enabled")
