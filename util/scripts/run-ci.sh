@@ -57,9 +57,7 @@ if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
     export PATH="$CUDA_TOOLKIT_DIR/bin:$PATH"
     export LD_LIBRARY_PATH="$CUDA_TOOLKIT_DIR/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64"
-    echo `which nvcc`
-    echo "$PATH"
-    echo "$LD_LIBRARY_PATH"
+    nvcc --version
 fi
 
 date
@@ -101,24 +99,28 @@ reportRun make install -j$NPROC
 reportRun make install-pip-package -j$NPROC
 echo
 
-echo "running Open3D unit tests..."
-unitTestFlags=
-[ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
-date
-reportRun ./bin/unitTests $unitTestFlags
-echo
 
-echo "running Open3D python tests..."
-date
-# TODO: fix TF op library test.
-reportRun pytest ../src/UnitTest/Python/ --ignore="../src/UnitTest/Python/test_tf_op_library.py"
-echo
-
-if $runBenchmarks; then
-    echo "running Open3D benchmarks..."
+# skip unit tests if built with CUDA
+if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
+    echo "running Open3D unit tests..."
+    unitTestFlags=
+    [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     date
-    reportRun ./bin/benchmarks
+    reportRun ./bin/unitTests $unitTestFlags
     echo
+
+    echo "running Open3D python tests..."
+    date
+    # TODO: fix TF op library test.
+    reportRun pytest ../src/UnitTest/Python/ --ignore="../src/UnitTest/Python/test_tf_op_library.py"
+    echo
+
+    if $runBenchmarks; then
+        echo "running Open3D benchmarks..."
+        date
+        reportRun ./bin/benchmarks
+        echo
+    fi
 fi
 
 reportJobStart "test build C++ example"
