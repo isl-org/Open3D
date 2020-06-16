@@ -126,14 +126,14 @@ void pybind_geometry_classes(py::module &m) {
                  "Apply scaling to the geometry coordinates.", "scale"_a,
                  "center"_a)
             .def("rotate",
-                 [](geometry::Geometry3D &geom, const Eigen::Matrix3d &R) {
-                     geom.Rotate(R);
-                 },
+                 py::overload_cast<const Eigen::Matrix3d &>(
+                         &geometry::Geometry3D::Rotate),
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a)
             .def("rotate",
-                 [](geometry::Geometry3D &geom, const Eigen::Matrix3d &R,
-                    const Eigen::Vector3d &center) { geom.Rotate(R, center); },
+                 py::overload_cast<const Eigen::Matrix3d &,
+                                   const Eigen::Vector3d &>(
+                         &geometry::Geometry3D::Rotate),
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a, "center"_a)
             .def_static("get_rotation_matrix_from_xyz",
