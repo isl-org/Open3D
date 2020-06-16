@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/ML/ShapeChecking.h"
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 using namespace open3d::ml::shape_checking;
 
