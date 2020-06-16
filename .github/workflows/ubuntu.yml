@@ -13,13 +13,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        SHARED: [ON, OFF]
-        BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
-        BUILD_TENSORFLOW_OPS: [ON, OFF]
+        SHARED: [OFF]
+        BUILD_DEPENDENCY_FROM_SOURCE: [OFF]
+        BUILD_TENSORFLOW_OPS: [OFF]
+        BUILD_CUDA: [ON]
     env:
       SHARED: ${{ matrix.SHARED }}
       BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
       BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_TENSORFLOW_OPS }}
+      BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
       NPROC: 2
     steps:
     - name: Checkout source code
