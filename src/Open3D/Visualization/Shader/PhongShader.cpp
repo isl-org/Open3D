@@ -80,8 +80,7 @@ bool PhongShader::BindGeometry(const geometry::Geometry &geometry,
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3f> normals;
     std::vector<Eigen::Vector3f> colors;
-    if (PrepareBinding(geometry, option, view, points, normals, colors) ==
-        false) {
+    if (!PrepareBinding(geometry, option, view, points, normals, colors)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }

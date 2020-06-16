@@ -39,8 +39,7 @@ namespace visualization {
 namespace glsl {
 
 bool RGBDImageShader::Compile() {
-    if (CompileShaders(ImageVertexShader, NULL, RGBDImageFragmentShader) ==
-        false) {
+    if (!CompileShaders(ImageVertexShader, NULL, RGBDImageFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }

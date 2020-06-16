@@ -1,5 +1,4 @@
 import open3d as o3d
-import open3d.open3d_pybind as open3d_pybind
 import numpy as np
 
 
@@ -20,7 +19,7 @@ def _numpy_dtype_to_dtype(numpy_dtype):
         raise ValueError("Unsupported numpy dtype:", numpy_dtype)
 
 
-class SizeVector(open3d_pybind.SizeVector):
+class SizeVector(o3d.pybind.SizeVector):
 
     def __init__(self, values=None):
         if values is None:
@@ -37,14 +36,14 @@ class SizeVector(open3d_pybind.SizeVector):
 def cast_to_py_tensor(func):
     """
     Args:
-        func: function returning a `o3d.open3d_pybind.Tensor`.
+        func: function returning a `o3d.pybind.Tensor`.
 
     Return:
         A function which returns a python object `o3d.Tensor`.
     """
 
     def _maybe_to_py_tensor(c_tensor):
-        if isinstance(c_tensor, open3d_pybind.Tensor):
+        if isinstance(c_tensor, o3d.pybind.Tensor):
             py_tensor = Tensor([])
             py_tensor.shallow_copy_from(c_tensor)
             return py_tensor
@@ -66,25 +65,25 @@ def cast_to_py_tensor(func):
 def _to_o3d_tensor_key(key):
 
     if isinstance(key, int):
-        return o3d.open3d_pybind.TensorKey.index(key)
+        return o3d.pybind.TensorKey.index(key)
     elif isinstance(key, slice):
-        return o3d.open3d_pybind.TensorKey.slice(
+        return o3d.pybind.TensorKey.slice(
             o3d.none if key.start == None else key.start,
             o3d.none if key.stop == None else key.stop,
             o3d.none if key.step == None else key.step)
     elif isinstance(key, (tuple, list)):
         key = np.array(key).astype(np.int64)
-        return o3d.open3d_pybind.TensorKey.index_tensor(Tensor(key))
+        return o3d.pybind.TensorKey.index_tensor(Tensor(key))
     elif isinstance(key, np.ndarray):
         key = key.astype(np.int64)
-        return o3d.open3d_pybind.TensorKey.index_tensor(Tensor(key))
+        return o3d.pybind.TensorKey.index_tensor(Tensor(key))
     elif isinstance(key, Tensor):
-        return o3d.open3d_pybind.TensorKey.index_tensor(key)
+        return o3d.pybind.TensorKey.index_tensor(key)
     else:
         raise TypeError("Invalid key type {}.".format(type(key)))
 
 
-class Tensor(open3d_pybind.Tensor):
+class Tensor(o3d.pybind.Tensor):
     """
     Open3D Tensor class. A Tensor is a view of data blob with shape, strides
     and etc. Tensor can be used to perform numerical operations.
@@ -661,7 +660,7 @@ class Tensor(open3d_pybind.Tensor):
 def cast_to_py_tensorlist(func):
     """
     Args:
-        func: function returning a `o3d.open3d_pybind.Tensor`.
+        func: function returning a `o3d.pybind.Tensor`.
 
     Return:
         A function which returns a python object `o3d.Tensor`.
@@ -676,7 +675,7 @@ def cast_to_py_tensorlist(func):
     return wrapped_func
 
 
-class TensorList(open3d_pybind.TensorList):
+class TensorList(o3d.pybind.TensorList):
     """
     Open3D TensorList class. A TensorList is an extendable tensor at the 0-th dimension.
     It is similar to python list, but uses Open3D's tensor memory management system.

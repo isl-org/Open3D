@@ -67,8 +67,7 @@ const static std::vector<Eigen::Vector2i> cuboid_lines_vertex_indices{
 };
 
 bool SimpleShader::Compile() {
-    if (CompileShaders(SimpleVertexShader, NULL, SimpleFragmentShader) ==
-        false) {
+    if (!CompileShaders(SimpleVertexShader, NULL, SimpleFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }

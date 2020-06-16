@@ -56,8 +56,7 @@ bool RenderOption::ConvertToJsonValue(Json::Value &value) const {
                                   value["light0_position"])) {
         return false;
     }
-    if (EigenVector3dToJsonArray(light_color_[0], value["light0_color"]) ==
-        false) {
+    if (!EigenVector3dToJsonArray(light_color_[0], value["light0_color"])) {
         return false;
     }
     value["light0_diffuse_power"] = light_diffuse_power_[0];
@@ -67,8 +66,7 @@ bool RenderOption::ConvertToJsonValue(Json::Value &value) const {
                                   value["light1_position"])) {
         return false;
     }
-    if (EigenVector3dToJsonArray(light_color_[1], value["light1_color"]) ==
-        false) {
+    if (!EigenVector3dToJsonArray(light_color_[1], value["light1_color"])) {
         return false;
     }
     value["light1_diffuse_power"] = light_diffuse_power_[1];
@@ -78,8 +76,7 @@ bool RenderOption::ConvertToJsonValue(Json::Value &value) const {
                                   value["light2_position"])) {
         return false;
     }
-    if (EigenVector3dToJsonArray(light_color_[2], value["light2_color"]) ==
-        false) {
+    if (!EigenVector3dToJsonArray(light_color_[2], value["light2_color"])) {
         return false;
     }
     value["light2_diffuse_power"] = light_diffuse_power_[2];
@@ -89,8 +86,7 @@ bool RenderOption::ConvertToJsonValue(Json::Value &value) const {
                                   value["light3_position"])) {
         return false;
     }
-    if (EigenVector3dToJsonArray(light_color_[3], value["light3_color"]) ==
-        false) {
+    if (!EigenVector3dToJsonArray(light_color_[3], value["light3_color"])) {
         return false;
     }
     value["light3_diffuse_power"] = light_diffuse_power_[3];
@@ -151,8 +147,7 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value) {
                                     value["light0_position"])) {
         return false;
     }
-    if (EigenVector3dFromJsonArray(light_color_[0], value["light0_color"]) ==
-        false) {
+    if (!EigenVector3dFromJsonArray(light_color_[0], value["light0_color"])) {
         return false;
     }
     light_diffuse_power_[0] =
@@ -168,8 +163,7 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value) {
                                     value["light1_position"])) {
         return false;
     }
-    if (EigenVector3dFromJsonArray(light_color_[1], value["light1_color"]) ==
-        false) {
+    if (!EigenVector3dFromJsonArray(light_color_[1], value["light1_color"])) {
         return false;
     }
     light_diffuse_power_[1] =
@@ -185,8 +179,7 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value) {
                                     value["light2_position"])) {
         return false;
     }
-    if (EigenVector3dFromJsonArray(light_color_[2], value["light2_color"]) ==
-        false) {
+    if (!EigenVector3dFromJsonArray(light_color_[2], value["light2_color"])) {
         return false;
     }
     light_diffuse_power_[2] =
@@ -202,8 +195,7 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value) {
                                     value["light3_position"])) {
         return false;
     }
-    if (EigenVector3dFromJsonArray(light_color_[3], value["light3_color"]) ==
-        false) {
+    if (!EigenVector3dFromJsonArray(light_color_[3], value["light3_color"])) {
         return false;
     }
     light_diffuse_power_[3] =
