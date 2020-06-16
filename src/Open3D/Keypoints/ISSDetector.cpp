@@ -37,8 +37,10 @@ double ISSDetector::ComputeModelResolution() const {
     std::vector<int> indices(2);
     std::vector<double> distances(2);
     double resolution = 0.0;
-#pragma omp parallel for reduction(+ : resolution)
-    for (size_t i = 0; i < cloud_->points_.size(); i++) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static) reduction(+ : resolution)
+#endif
+    for (int i = 0; i < (int)cloud_->points_.size(); i++) {
         if (kdtree_.SearchKNN(cloud_->points_[i], 2, indices, distances) != 0) {
             resolution += std::sqrt(distances[1]);
         }
@@ -74,8 +76,11 @@ Eigen::Matrix3d ISSDetector::ComputeScatterMatrix(
 std::shared_ptr<geometry::PointCloud> ISSDetector::ComputeKeypoints() const {
     const auto& points = cloud_->points_;
     std::vector<double> third_eigen_values(points.size());
-#pragma omp parallel for shared(third_eigen_values)
-    for (size_t i = 0; i < points.size(); i++) {
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static) shared(third_eigen_values)
+#endif
+    for (int i = 0; i < (int)points.size(); i++) {
         Eigen::Matrix3d cov = ComputeScatterMatrix(points[i]);
         if (cov.isZero()) {
             continue;
@@ -93,8 +98,10 @@ std::shared_ptr<geometry::PointCloud> ISSDetector::ComputeKeypoints() const {
 
     std::vector<Eigen::Vector3d> keypoints;
     keypoints.reserve(points.size());
-#pragma omp parallel for shared(keypoints)
-    for (size_t i = 0; i < points.size(); i++) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static) shared(keypoints)
+#endif
+    for (int i = 0; i < (int)points.size(); i++) {
         if (third_eigen_values[i] > 0.0) {
             std::vector<int> nn_indices;
             std::vector<double> dist;
