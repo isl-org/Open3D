@@ -44,25 +44,25 @@ import os
 import sys
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-from open3d.open3d_pybind import camera
-from open3d.open3d_pybind import color_map
-from open3d.open3d_pybind import geometry
-from open3d.open3d_pybind import integration
-from open3d.open3d_pybind import io
-from open3d.open3d_pybind import odometry
-from open3d.open3d_pybind import registration
-from open3d.open3d_pybind import utility
-from open3d.open3d_pybind import visualization
+from open3d.pybind import camera
+from open3d.pybind import color_map
+from open3d.pybind import geometry
+from open3d.pybind import integration
+from open3d.pybind import io
+from open3d.pybind import odometry
+from open3d.pybind import registration
+from open3d.pybind import utility
+from open3d.pybind import visualization
 
-from open3d.open3d_pybind import Dtype
-from open3d.open3d_pybind import Device
-from open3d.open3d_pybind import DtypeUtil
-from open3d.open3d_pybind import cuda
+from open3d.pybind import Dtype
+from open3d.pybind import Device
+from open3d.pybind import DtypeUtil
+from open3d.pybind import cuda
 from open3d.core import SizeVector
 from open3d.core import Tensor
 from open3d.core import TensorList
 
-from open3d.open3d_pybind import NoneType
+from open3d.pybind import NoneType
 none = NoneType()
 
 __version__ = "@PROJECT_VERSION@"
