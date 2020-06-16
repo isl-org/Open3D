@@ -30,4 +30,5 @@ steps:
     cmake ..
 - name: Check style
   run: |
+    cd build
     make check-style
