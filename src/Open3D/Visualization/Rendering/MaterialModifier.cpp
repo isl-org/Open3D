@@ -71,18 +71,14 @@ TextureSamplerParameters::TextureSamplerParameters(
     wrap_w = w;
 }
 
-void TextureSamplerParameters::SetAnisotropy(const std::uint8_t a) {
+void TextureSamplerParameters::SetAnisotropy(std::uint8_t a) {
+    // Set anisotropy to the largest power-of-two less than or eaqual to a.
     anisotropy = a;
-    // check is NOT power-of-two
-    if (false == (a && !(a & (a - 1)))) {
-        // ceil to nearest power-of-two
-        anisotropy |= anisotropy >> 1;
-        anisotropy |= anisotropy >> 2;
-        anisotropy |= anisotropy >> 4;
-        anisotropy |= anisotropy >> 8;
-        anisotropy |= anisotropy >> 16;
-
-        anisotropy = anisotropy - (anisotropy >> 1);
+    for (std::uint8_t b = 1 << 7; b > 0; b >>= 1) {
+        if (b <= a) {
+            anisotropy = b;
+            break;
+        }
     }
 }
 

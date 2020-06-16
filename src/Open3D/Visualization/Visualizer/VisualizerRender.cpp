@@ -119,8 +119,7 @@ void Visualizer::CopyViewStatusToClipboard() {
     ViewTrajectory trajectory;
     trajectory.view_status_.push_back(current_status);
     std::string clipboard_string;
-    if (io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory) ==
-        false) {
+    if (!io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory)) {
         utility::LogError("Something is wrong copying view status.");
     }
     glfwSetClipboardString(window_, clipboard_string.c_str());

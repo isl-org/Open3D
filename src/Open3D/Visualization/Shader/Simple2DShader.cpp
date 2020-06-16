@@ -36,8 +36,7 @@ namespace visualization {
 namespace glsl {
 
 bool Simple2DShader::Compile() {
-    if (CompileShaders(Simple2DVertexShader, NULL, Simple2DFragmentShader) ==
-        false) {
+    if (!CompileShaders(Simple2DVertexShader, NULL, Simple2DFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }

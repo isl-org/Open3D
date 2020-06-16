@@ -161,8 +161,7 @@ void VisualizerWithEditing::BuildUtilities() {
     selection_polygon_ptr_ = std::make_shared<SelectionPolygon>();
     selection_polygon_renderer_ptr_ =
             std::make_shared<glsl::SelectionPolygonRenderer>();
-    if (selection_polygon_renderer_ptr_->AddGeometry(selection_polygon_ptr_) ==
-        false) {
+    if (!selection_polygon_renderer_ptr_->AddGeometry(selection_polygon_ptr_)) {
         success = false;
     }
     if (success) {
@@ -179,8 +178,7 @@ void VisualizerWithEditing::BuildUtilities() {
     }
     pointcloud_picker_renderer_ptr_ =
             std::make_shared<glsl::PointCloudPickerRenderer>();
-    if (pointcloud_picker_renderer_ptr_->AddGeometry(pointcloud_picker_ptr_) ==
-        false) {
+    if (!pointcloud_picker_renderer_ptr_->AddGeometry(pointcloud_picker_ptr_)) {
         success = false;
     }
     if (success) {

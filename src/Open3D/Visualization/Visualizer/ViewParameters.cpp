@@ -68,12 +68,10 @@ bool ViewParameters::ConvertToJsonValue(Json::Value &value) const {
     if (!EigenVector3dToJsonArray(front_, value["front"])) {
         return false;
     }
-    if (EigenVector3dToJsonArray(boundingbox_min_, value["boundingbox_min"]) ==
-        false) {
+    if (!EigenVector3dToJsonArray(boundingbox_min_, value["boundingbox_min"])) {
         return false;
     }
-    if (EigenVector3dToJsonArray(boundingbox_max_, value["boundingbox_max"]) ==
-        false) {
+    if (!EigenVector3dToJsonArray(boundingbox_max_, value["boundingbox_max"])) {
         return false;
     }
     return true;

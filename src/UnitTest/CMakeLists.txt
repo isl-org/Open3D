@@ -20,6 +20,11 @@ if (NOT BUILD_AZURE_KINECT)
     endforeach(TMP_PATH)
 endif()
 
+# TODO: handle conditional compilation more systematically
+if (NOT ENABLE_GUI)
+    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/Visualization/Rendering/.*cpp)
+endif()
+
 add_executable(unitTests ${UNIT_TEST_SOURCE_FILES})
 add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/TestData")
 
