@@ -8,7 +8,7 @@ function(open3d_show_and_abort_on_warning trgt)
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W3>>
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:Clang>:-Wall -Werror>>
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-Wall -Werror>>
-        $<$<COMPILE_LANGUAGE:CUDA>:-Wall -Werror all-warnings>
+        $<$<COMPILE_LANGUAGE:CUDA>:-Werror all-warnings>
     )
 endfunction()
 
