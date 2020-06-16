@@ -1,0 +1,35 @@
+name: Style Check
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.5
+    # Pre-installed 18.04 packages: https://git.io/JfHmW
+    - name: Install dependencies
+      run: |
+        ./util/scripts/setup-linux.sh
+        sudo apt-get install clang-format-5.0
+        pip install -U yapf==0.28.0
+    - name: Config project
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+    - name: Check style
+      run: |
+        make check-style
