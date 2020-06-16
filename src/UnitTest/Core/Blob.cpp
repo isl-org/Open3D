@@ -27,7 +27,7 @@
 #include "Open3D/Core/Blob.h"
 #include "Open3D/Core/Device.h"
 #include "Open3D/Core/MemoryManager.h"
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 #include "Core/CoreTest.h"
 

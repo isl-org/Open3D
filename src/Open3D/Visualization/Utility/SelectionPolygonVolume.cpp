@@ -81,8 +81,7 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     bounding_polygon_.resize(polygon_array.size());
     for (int i = 0; i < (int)polygon_array.size(); i++) {
         const Json::Value &point_object = polygon_array[i];
-        if (EigenVector3dFromJsonArray(bounding_polygon_[i], point_object) ==
-            false) {
+        if (!EigenVector3dFromJsonArray(bounding_polygon_[i], point_object)) {
             return false;
         }
     }

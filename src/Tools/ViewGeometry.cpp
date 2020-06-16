@@ -194,8 +194,7 @@ int main(int argc, char **argv) {
         }
     } else if (!camera_filename.empty()) {
         camera::PinholeCameraTrajectory camera_trajectory;
-        if (io::ReadIJsonConvertible(camera_filename, camera_trajectory) ==
-            false) {
+        if (!io::ReadIJsonConvertible(camera_filename, camera_trajectory)) {
             utility::LogWarning("Failed loading camera trajectory.");
             return 1;
         } else {

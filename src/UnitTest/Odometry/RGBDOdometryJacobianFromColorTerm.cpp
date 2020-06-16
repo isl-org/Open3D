@@ -26,8 +26,8 @@
 
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/Odometry/RGBDOdometryJacobian.h"
-#include "TestUtility/UnitTest.h"
 #include "UnitTest/Odometry/OdometryTools.h"
+#include "UnitTest/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {
@@ -103,7 +103,7 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
                 intrinsic, extrinsic, corresps);
 
         EXPECT_NEAR(ref_r[row], r[0], THRESHOLD_1E_6);
-        ExpectEQ(ref_J_r[row], J_r[0]);
+        ExpectEQ(ref_J_r[row], J_r[0], 1e-4);
     }
 }
 

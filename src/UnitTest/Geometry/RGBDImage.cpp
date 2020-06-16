@@ -28,7 +28,7 @@
 
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/RGBDImage.h"
-#include "TestUtility/UnitTest.h"
+#include "UnitTest/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {
@@ -112,7 +112,7 @@ TEST(RGBDImage, CreateFromColorAndDepth) {
     depth.Prepare(depth_width, depth_height, depth_num_of_channels,
                   depth_bytes_per_channel);
 
-    float* const float_data = Cast<float>(&depth.data_[0]);
+    float* const float_data = depth.PointerAs<float>();
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -166,7 +166,7 @@ TEST(RGBDImage, CreateFromRedwoodFormat) {
     depth.Prepare(depth_width, depth_height, depth_num_of_channels,
                   depth_bytes_per_channel);
 
-    float* const float_data = Cast<float>(&depth.data_[0]);
+    float* const float_data = depth.PointerAs<float>();
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -220,7 +220,7 @@ TEST(RGBDImage, CreateFromTUMFormat) {
     depth.Prepare(depth_width, depth_height, depth_num_of_channels,
                   depth_bytes_per_channel);
 
-    float* const float_data = Cast<float>(&depth.data_[0]);
+    float* const float_data = depth.PointerAs<float>();
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -273,7 +273,7 @@ TEST(RGBDImage, CreateFromSUNFormat) {
     depth.Prepare(depth_width, depth_height, depth_num_of_channels,
                   depth_bytes_per_channel);
 
-    float* const float_data = Cast<float>(&depth.data_[0]);
+    float* const float_data = depth.PointerAs<float>();
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -326,7 +326,7 @@ TEST(RGBDImage, CreateFromNYUFormat) {
     depth.Prepare(depth_width, depth_height, depth_num_of_channels,
                   depth_bytes_per_channel);
 
-    float* const float_data = Cast<float>(&depth.data_[0]);
+    float* const float_data = depth.PointerAs<float>();
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -382,7 +382,7 @@ TEST(RGBDImage, FilterPyramid) {
     depth.Prepare(depth_width, depth_height, depth_num_of_channels,
                   depth_bytes_per_channel);
 
-    float* const float_data = Cast<float>(&depth.data_[0]);
+    float* const float_data = depth.PointerAs<float>();
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -446,7 +446,7 @@ TEST(RGBDImage, CreatePyramid) {
     depth.Prepare(depth_width, depth_height, depth_num_of_channels,
                   depth_bytes_per_channel);
 
-    float* const float_data = Cast<float>(&depth.data_[0]);
+    float* const float_data = depth.PointerAs<float>();
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 

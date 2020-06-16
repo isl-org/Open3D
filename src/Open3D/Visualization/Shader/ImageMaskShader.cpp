@@ -38,8 +38,7 @@ namespace visualization {
 namespace glsl {
 
 bool ImageMaskShader::Compile() {
-    if (CompileShaders(ImageMaskVertexShader, NULL, ImageMaskFragmentShader) ==
-        false) {
+    if (!CompileShaders(ImageMaskVertexShader, NULL, ImageMaskFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
