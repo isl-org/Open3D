@@ -319,7 +319,7 @@ class JupyterDocsBuilder:
         execute_notebooks is one of {"auto", "always"}
         """
         if execute_notebooks not in {"auto", "always"}:
-            raise ValueError(f"Invalid execute option: {execute_notebooks}.")
+            raise ValueError("Invalid execute option: {}.".format(execute_notebooks))
         self.clean_notebooks = clean_notebooks
         self.execute_notebooks = execute_notebooks
         self.current_file_dir = current_file_dir

@@ -56,7 +56,7 @@ jobs:
         make install-pip-package -j$(nproc)
         make -j$(nproc)
         bin/GLInfo
-        python -c "from open3d import *; import open3d; print(open3d)"
+        python -c "import open3d; print(open3d)"
     - name: Build docs
       run: |
         ./util/scripts/make-documentation.sh
