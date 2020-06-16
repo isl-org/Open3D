@@ -1,0 +1,62 @@
+name: Build Documentation
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+
+jobs:
+  build_docs:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.5
+    - name: Install C++ dependencies
+      # Pre-installed 18.04 packages: https://git.io/JfHmW
+      # On Kinect k4a and EULA: https://git.io/Jf5e7
+      run: |
+        ./util/scripts/setup-linux.sh
+        sudo apt-get --yes install doxygen
+        sudo apt-get --yes install texlive
+        sudo apt-get --yes install texlive-latex-extra
+        sudo apt-get --yes install ghostscript
+        sudo apt-get --yes install pandoc
+        sudo apt-get --yes install libosmesa6-dev
+        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+        sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
+        sudo apt-get update
+        DEBIAN_FRONTEND=noninteractive
+        echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' | sudo debconf-set-selections
+        echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' | sudo debconf-set-selections
+        sudo apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
+    - name: Install Python dependencies
+      # m2r needs a patch for sphinx 3
+      # https://github.com/sphinx-doc/sphinx/issues/7420
+      run: |
+        which python
+        which pip
+        pip install -U -q "sphinx>=3.0" sphinx-rtd-theme nbsphinx Pillow
+        pip install -U -q git+https://github.com/intel-isl/m2r@dev#egg=m2r
+    - name: Config project
+      run: |
+        mkdir build
+        cd build
+        cmake -DENABLE_HEADLESS_RENDERING=ON -DENABLE_JUPYTER=ON -DENABLE_GUI=OFF -DWITH_OPENMP=ON -DBUILD_AZURE_KINECT=ON ..
+    - name: Build project
+      run: |
+        cd build
+        make install-pip-package -j$(nproc)
+        make -j$(nproc)
+        bin/GLInfo
+        python -c "from open3d import *; import open3d; print(open3d)"
+    - name: Build docs
+      run: |
+        ./util/scripts/make-documentation.sh

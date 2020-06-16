@@ -8,7 +8,7 @@ on:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
 jobs:
-  ubuntu:
+  style_check:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout source code
@@ -23,7 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         ./util/scripts/setup-linux.sh
-        sudo apt-get install clang-format-5.0
+        sudo apt-get --yes install clang-format-5.0
         pip install -U yapf==0.28.0
     - name: Config project
       run: |
