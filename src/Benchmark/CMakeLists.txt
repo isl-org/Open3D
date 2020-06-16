@@ -6,7 +6,7 @@ endif()
 
 ################################################################################
 #
-# build benchmark dependendy here so we can pass the _GLIBCXX_USE_CXX11_ABI 
+# build benchmark dependency here so we can pass the _GLIBCXX_USE_CXX11_ABI 
 # definition
 #
 

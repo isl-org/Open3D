@@ -52,7 +52,10 @@ public:
         else
             return "?";
     }
-    int64_t& value() { return value_; }
+    int64_t& value() {
+        if (!constant_) throw std::runtime_error("DimValue is not constant");
+        return value_;
+    }
     bool& constant() { return constant_; }
 
 private:
@@ -80,8 +83,6 @@ public:
           name_(other.name_) {}
 
     ~Dim() {}
-
-    Dim& get() && { return *this; }
 
     Dim& operator=(const Dim&) = delete;
 
@@ -539,11 +540,11 @@ bool _CheckShape(const std::vector<DimValue>& shape,
 ///   The shape to be cheked may contain unknowns
 ///   Dim A("A");
 ///   Dim B("B");
-///   status = CheckShape({30, UnkownValue()}, A, B); // VALID, A is 30 and B is
-///                                                   // still unknown
+///   status = CheckShape({30, UnknownValue()}, A, B); // VALID, A is 30 and B
+///                                                   // is still unknown
 ///
-///
-///   status = CheckShape<CSOpt::COMBINE_LAST_DIMS>({30,1,2,UnkownValue()},A,B);
+///   status =
+///   CheckShape<CSOpt::COMBINE_LAST_DIMS>({30,1,2,UnknownValue()},A,B);
 ///                                     // VALID, A is 30 and B is still unknown
 ///
 ///   The following shows some limitations of the dim expressions
