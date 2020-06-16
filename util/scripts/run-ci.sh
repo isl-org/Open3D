@@ -53,8 +53,8 @@ cmake --version
 date
 if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     CUDA_TOOLKIT_DIR=~/cuda
-    reportRun curl -LO https://developer.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.105_418.39_linux.run
-    reportRun sh cuda_10.1.105_418.39_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR"
+    reportRun curl -LO http://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
+    reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR"
     export PATH="$CUDA_TOOLKIT_DIR/bin:$PATH"
     export LD_LIBRARY_PATH="$CUDA_TOOLKIT_DIR/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64"
     echo `which nvcc`
