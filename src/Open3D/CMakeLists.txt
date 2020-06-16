@@ -48,6 +48,7 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:Integration>
     $<TARGET_OBJECTS:Odometry>
     $<TARGET_OBJECTS:Registration>
+    $<TARGET_OBJECTS:Keypoints>
     $<TARGET_OBJECTS:Utility>
     $<TARGET_OBJECTS:IO>
     ${GUI_OBJECTS}
