@@ -58,5 +58,5 @@ open3d_link_3rdparty_libraries(Core)
 open3d_show_and_abort_on_warning(Core)
 
 if (BUILD_CUDA_MODULE)
-    target_include_directories(Core PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    target_include_directories(Core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
