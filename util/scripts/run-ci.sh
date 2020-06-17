@@ -4,6 +4,7 @@
 # - SHARED
 # - BUILD_TENSORFLOW_OPS
 # - BUILD_DEPENDENCY_FROM_SOURCE
+# - BUILD_CUDA_MODULE
 # - NPROC
 
 set -euo pipefail
@@ -50,6 +51,16 @@ echo "using cmake: $(which cmake)"
 cmake --version
 
 date
+if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
+    CUDA_TOOLKIT_DIR=~/cuda
+    reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
+    reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
+    export PATH="$CUDA_TOOLKIT_DIR/bin:$PATH"
+    export LD_LIBRARY_PATH="$CUDA_TOOLKIT_DIR/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64"
+    nvcc --version
+fi
+
+date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
     reportRun pip install -U tensorflow==2.0.0
 fi
@@ -59,6 +70,8 @@ cd build
 runBenchmarks=true
 OPEN3D_INSTALL_DIR=~/open3d_install
 cmakeOptions="-DBUILD_SHARED_LIBS=$SHARED \
+        -DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE \
+        -DCUDA_ARCH=BasicPTX \
         -DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS \
         -DBUILD_UNIT_TESTS=ON \
         -DBUILD_BENCHMARKS=ON \
@@ -87,24 +100,28 @@ reportRun make install -j$NPROC
 reportRun make install-pip-package -j$NPROC
 echo
 
-echo "running Open3D unit tests..."
-unitTestFlags=
-[ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
-date
-reportRun ./bin/unitTests $unitTestFlags
-echo
 
-echo "running Open3D python tests..."
-date
-# TODO: fix TF op library test.
-reportRun pytest ../src/UnitTest/Python/ --ignore="../src/UnitTest/Python/test_tf_op_library.py"
-echo
-
-if $runBenchmarks; then
-    echo "running Open3D benchmarks..."
+# skip unit tests if built with CUDA
+if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
+    echo "running Open3D unit tests..."
+    unitTestFlags=
+    [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     date
-    reportRun ./bin/benchmarks
+    reportRun ./bin/unitTests $unitTestFlags
     echo
+
+    echo "running Open3D python tests..."
+    date
+    # TODO: fix TF op library test.
+    reportRun pytest ../src/UnitTest/Python/ --ignore="../src/UnitTest/Python/test_tf_op_library.py"
+    echo
+
+    if $runBenchmarks; then
+        echo "running Open3D benchmarks..."
+        date
+        reportRun ./bin/benchmarks
+        echo
+    fi
 fi
 
 reportJobStart "test build C++ example"
@@ -134,6 +151,9 @@ date
 cd ../
 rm -rf build
 rm -rf ${OPEN3D_INSTALL_DIR}
+if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
+    rm -rf "$CUDA_TOOLKIT_DIR"
+fi
 echo
 
 reportJobFinishSession

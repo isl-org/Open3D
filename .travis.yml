@@ -4,6 +4,7 @@ env:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - BUILD_TENSORFLOW_OPS=ON
+    - BUILD_CUDA_MODULE=OFF
     - NPROC=2
 
 notifications:
