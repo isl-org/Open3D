@@ -194,7 +194,7 @@ if (BUILD_CUDA_MODULE)
         endif()
         # make CUDA_GENCODES a string to avoid deduplication in target_compile_options
         string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
-        message(STATUS "CUDAGENCODES==${CUDAGENCODES}")
+        message(STATUS "CUDA_GENCODES==${CUDA_GENCODES}")
     else()
         set(BUILD_CUDA_MODULE OFF)
         message(STATUS "No CUDA support")
