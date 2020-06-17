@@ -22,8 +22,6 @@ jobs:
     - name: Get CUDA
       id: test
       uses: termoshtt/rust-cuda-docker-action@v1.0/ubuntu1804-cuda10_1
-      with:
-        path: rust-cuda-test
     - name: Check CUDA
       run: |
           nvcc --version
