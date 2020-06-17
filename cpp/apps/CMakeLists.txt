@@ -1,5 +1,5 @@
 macro(APP SRC_DIR APP_NAME TARGET_NAME)
-    set(APPS_DIR "${PROJECT_SOURCE_DIR}/src/Apps")
+    set(APPS_DIR "${PROJECT_SOURCE_DIR}/cpp/apps")
     set(SOURCE_DIR "${APPS_DIR}/${SRC_DIR}")
 
     file(GLOB SOURCE_FILES "${SOURCE_DIR}/*.cpp")
@@ -44,7 +44,7 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
         target_link_libraries(${TARGET_NAME} PRIVATE ${DEPENDENCY})
     endforeach()
 
-    set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Apps")
+    set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     open3d_show_and_abort_on_warning(${TARGET_NAME})
     open3d_set_global_properties(${TARGET_NAME})
 

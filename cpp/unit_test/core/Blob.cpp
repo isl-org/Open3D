@@ -29,7 +29,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "unit_test/UnitTest.h"
 
-#include "Core/CoreTest.h"
+#include "unit_test/core/CoreTest.h"
 
 namespace open3d {
 namespace unit_test {

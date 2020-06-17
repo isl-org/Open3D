@@ -28,7 +28,7 @@
 #include "open3d/core/Blob.h"
 #include "open3d/core/Device.h"
 
-#include "Core/CoreTest.h"
+#include "unit_test/core/CoreTest.h"
 #include "unit_test/UnitTest.h"
 
 #include <vector>

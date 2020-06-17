@@ -51,7 +51,7 @@ add_custom_target(GuiResources
                   DEPENDS ${GUI_MATERIAL_COMPILED_FILES})
 add_dependencies(GUI GuiResources)
 
-# Export GUI_RESOURCE_FILES to parent CMake context (src/Open3D/)
+# Export GUI_RESOURCE_FILES to parent CMake context (cpp/open3d/)
 set(GUI_RESOURCE_FILES
     ${GUI_RESOURCE_SOURCE_FILES} ${GUI_MATERIAL_COMPILED_FILES}
     PARENT_SCOPE)

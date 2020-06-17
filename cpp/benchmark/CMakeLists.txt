@@ -38,10 +38,10 @@ mark_as_advanced(
 
 
 set(BENCHMARK_SOURCE_FILES
-    Geometry/KDTreeFlann.cpp
-    Geometry/SamplePoints.cpp
-    Core/Reduction.cpp
-    IO/PointCloudIO.cpp
+    geometry/KDTreeFlann.cpp
+    geometry/SamplePoints.cpp
+    core/Reduction.cpp
+    io/PointCloudIO.cpp
 )
 
 add_executable(benchmarks ${BENCHMARK_SOURCE_FILES})

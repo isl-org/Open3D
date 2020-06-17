@@ -1,25 +1,22 @@
 # Configure a header file to pass the version settings to the source code
-configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3D.h.in"
-               "${PROJECT_SOURCE_DIR}/src/Open3D/Open3D.h")
-configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h.in"
-               "${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h")
+configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h.in"
+               "${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h")
+configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h.in"
+               "${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h")
 
 # Subdirectories
-add_subdirectory(Camera)
-add_subdirectory(ColorMap)
-add_subdirectory(Core)
-add_subdirectory(Geometry)
-add_subdirectory(Integration)
-add_subdirectory(Odometry)
-add_subdirectory(Registration)
-add_subdirectory(Utility)
-add_subdirectory(IO)
+add_subdirectory(camera)
+add_subdirectory(core)
+add_subdirectory(geometry)
+add_subdirectory(pipelines)
+add_subdirectory(utility)
+add_subdirectory(io)
 if (ENABLE_GUI)
-    add_subdirectory(GUI)
+    add_subdirectory(visualization/gui)
     set(GUI_OBJECTS "$<TARGET_OBJECTS:GUI>")
 endif()
-add_subdirectory(Visualization)
-add_subdirectory(ML)
+add_subdirectory(visualization)
+add_subdirectory(ml)
 
 # Source group for Visual Studio
 add_source_group(Camera)
@@ -105,5 +102,5 @@ if(NOT TARGET uninstall)
                       ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
 
-# Export GUI_RESOURCE_FILES to parent CMake context (src/Open3D/)
+# Export GUI_RESOURCE_FILES to parent CMake context (cpp/open3d/)
 set(GUI_RESOURCE_FILES ${GUI_RESOURCE_FILES} PARENT_SCOPE)

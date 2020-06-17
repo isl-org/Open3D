@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include "Core/CoreTest.h"
+#include "unit_test/core/CoreTest.h"
 #include "unit_test/UnitTest.h"
 
 namespace open3d {

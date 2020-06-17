@@ -35,7 +35,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Helper.h"
 
-#include "Core/CoreTest.h"
+#include "unit_test/core/CoreTest.h"
 #include "unit_test/UnitTest.h"
 
 namespace open3d {
