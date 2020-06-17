@@ -203,10 +203,7 @@ public:
         // sub-iterations. Each output elemnent corresponds to multiple input
         // elements. We need to keep track of the indices within each
         // sub-iteration.
-        int64_t num_input_elements = indexer_.NumWorkloads();
         int64_t num_output_elements = indexer_.NumOutputElements();
-        int64_t ipo =
-                num_input_elements / num_output_elements;  // Inputs per output
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)

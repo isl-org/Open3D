@@ -72,6 +72,7 @@ public:
                         const void* src_ptr,
                         const Device& src_device,
                         size_t num_bytes) = 0;
+    virtual ~DeviceMemoryManager() {}
 };
 
 class CPUMemoryManager : public DeviceMemoryManager {
