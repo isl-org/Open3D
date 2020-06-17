@@ -18,41 +18,41 @@
 // Conversion from standard types to torch types
 typedef decltype(torch::kInt32) TorchDtype_t;
 template <class T>
-TorchDtype_t ToTorchDtype() {
+inline TorchDtype_t ToTorchDtype() {
     TORCH_CHECK(false, "Unsupported type");
 }
 template <>
-constexpr TorchDtype_t ToTorchDtype<uint8_t>() {
+inline TorchDtype_t ToTorchDtype<uint8_t>() {
     return torch::kUInt8;
 }
 template <>
-constexpr TorchDtype_t ToTorchDtype<int8_t>() {
+inline TorchDtype_t ToTorchDtype<int8_t>() {
     return torch::kInt8;
 }
 template <>
-constexpr TorchDtype_t ToTorchDtype<int16_t>() {
+inline TorchDtype_t ToTorchDtype<int16_t>() {
     return torch::kInt16;
 }
 template <>
-constexpr TorchDtype_t ToTorchDtype<int32_t>() {
+inline TorchDtype_t ToTorchDtype<int32_t>() {
     return torch::kInt32;
 }
 template <>
-constexpr TorchDtype_t ToTorchDtype<int64_t>() {
+inline TorchDtype_t ToTorchDtype<int64_t>() {
     return torch::kInt64;
 }
 template <>
-constexpr TorchDtype_t ToTorchDtype<float>() {
+inline TorchDtype_t ToTorchDtype<float>() {
     return torch::kFloat32;
 }
 template <>
-constexpr TorchDtype_t ToTorchDtype<double>() {
+inline TorchDtype_t ToTorchDtype<double>() {
     return torch::kFloat64;
 }
 
 // convenience function for comparing standard types with torch types
 template <class T, class TDtype>
-constexpr bool CompareTorchDtype(const TDtype& t) {
+inline bool CompareTorchDtype(const TDtype& t) {
     return ToTorchDtype<T>() == t;
 }
 

@@ -66,7 +66,8 @@ date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
     reportRun pip install -U tensorflow==2.0.0
 fi
-if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+# disable pytorch build if CUDA is enabled for now until the problem with caffe2 and cudnn is solved
+if [ "$BUILD_PYTORCH_OPS" == "ON" -a "$BUILD_CUDA_MODULE" == "OFF" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
             reportRun pip install -U torch==1.5.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html
