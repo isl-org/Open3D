@@ -1,5 +1,7 @@
 #pragma once
-#include "torch/script.h"
+
+#include <torch/script.h>
+#include <type_traits>
 
 // Macros for checking tensor properties
 #define CHECK_CUDA(x) \
@@ -16,7 +18,7 @@
                 #__VA_ARGS__ " must all have the same device type")
 
 // Conversion from standard types to torch types
-typedef decltype(torch::kInt32) TorchDtype_t;
+typedef std::remove_const<decltype(torch::kInt32)>::type TorchDtype_t;
 template <class T>
 inline TorchDtype_t ToTorchDtype() {
     TORCH_CHECK(false, "Unsupported type");
