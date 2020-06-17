@@ -13,10 +13,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        SHARED: [OFF]
-        BUILD_DEPENDENCY_FROM_SOURCE: [OFF]
-        BUILD_TENSORFLOW_OPS: [OFF]
-        BUILD_CUDA: [ON]
+        SHARED: [ON, OFF]
+        BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
+        BUILD_TENSORFLOW_OPS: [ON, OFF]
+        BUILD_CUDA: [ON, OFF]
     env:
       SHARED: ${{ matrix.SHARED }}
       BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
