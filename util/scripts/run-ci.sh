@@ -69,9 +69,9 @@ fi
 if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-            reportRun pip install -U torch==1.4.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html
+            reportRun pip install -U torch==1.5.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html
         else
-            reportRun pip install -U torch==1.4.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+            reportRun pip install -U torch==1.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         fi
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         reportRun pip install -U torch==1.4.0
@@ -128,12 +128,6 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     date
     reportRun ./bin/unitTests $unitTestFlags
-    echo
-
-    echo "running Open3D python tests..."
-    date
-    # TODO: fix TF op library test.
-    reportRun pytest ../src/UnitTest/Python/ --ignore="../src/UnitTest/Python/test_tf_op_library.py"
     echo
 
     if $runBenchmarks; then
