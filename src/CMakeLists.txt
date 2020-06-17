@@ -1,6 +1,5 @@
 function(open3d_show_and_abort_on_warning trgt)
 
-    message(STATUS "CMAKE_CUDA_COMPILER_VERSION: ${CMAKE_CUDA_COMPILER_VERSION}")
     if (BUILD_CUDA_MODULE)
         if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.2")
             set(CUDA_FLAGS "--compiler-options -Wall --compiler-options -Werror --Werror cross-execution-space-call,reorder,deprecated-declarations")
