@@ -68,7 +68,11 @@ if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
 fi
 if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        reportRun pip install -U torch==1.4.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
+            reportRun pip install -U torch==1.4.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html
+        else
+            reportRun pip install -U torch==1.4.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        fi
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         reportRun pip install -U torch==1.4.0
     else
@@ -117,17 +121,6 @@ reportRun make install-pip-package -j"$NPROC" || make VERBOSE=1 install-pip-pack
 echo
 
 
-<<<<<<< HEAD
-echo "running Open3D python tests..."
-date
-pytest_args=(../src/UnitTest/Python/)
-if [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-    pytest_args+=(--ignore ../src/UnitTest/Python/test_tf_op_library.py)
-    pytest_args+=(--ignore ../src/UnitTest/Python/tf_ops/)
-fi
-reportRun pytest "${pytest_args[@]}"
-echo
-=======
 # skip unit tests if built with CUDA
 if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
     echo "running Open3D unit tests..."
@@ -136,7 +129,6 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
     date
     reportRun ./bin/unitTests $unitTestFlags
     echo
->>>>>>> master
 
     echo "running Open3D python tests..."
     date
@@ -145,9 +137,14 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
     echo
 
     if $runBenchmarks; then
-        echo "running Open3D benchmarks..."
+        echo "running Open3D python tests..."
         date
-        reportRun ./bin/benchmarks
+        pytest_args=(../src/UnitTest/Python/)
+        if [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
+            pytest_args+=(--ignore ../src/UnitTest/Python/test_tf_op_library.py)
+            pytest_args+=(--ignore ../src/UnitTest/Python/tf_ops/)
+        fi
+        reportRun pytest "${pytest_args[@]}"
         echo
     fi
 fi
