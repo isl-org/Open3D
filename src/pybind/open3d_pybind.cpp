@@ -31,9 +31,9 @@
 #include "pybind/geometry/geometry.h"
 #include "pybind/integration/integration.h"
 #include "pybind/io/io.h"
+#include "pybind/keypoints/keypoints.h"
 #include "pybind/odometry/odometry.h"
 #include "pybind/registration/registration.h"
-#include "pybind/keypoints/keypoints.h"
 #include "pybind/utility/utility.h"
 #include "pybind/visualization/visualization.h"
 
