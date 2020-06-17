@@ -45,5 +45,5 @@ if (BUILD_CUDA_MODULE)
     # See: https://stackoverflow.com/a/48540499/1255535.
     # Consider removing dependencies of cuda headers in the future.
     target_link_libraries(unitTests PRIVATE ${CUDA_LIBRARIES})
-    target_include_directories(unitTests PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    target_include_directories(unitTests SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()

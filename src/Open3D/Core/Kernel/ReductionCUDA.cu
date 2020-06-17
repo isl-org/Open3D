@@ -814,7 +814,6 @@ private:
     static constexpr float acc_buffer_multiplier =
             (float)sizeof(arg_t) / sizeof(out_scalar_t);
     ops_t ops_;
-    arg_t identity_;
     ReduceConfig config_;
     InputCalculator input_calc_;
     OutputCalculator output_calc_;
@@ -826,6 +825,7 @@ private:
     // cta_buf_ used for accumulation between blocks during global reduction
     void* cta_buf_;
     int* semaphores_;
+    arg_t identity_;
     bool accumulate_;
     bool final_output_;
 };
@@ -901,7 +901,6 @@ public:
         if (std::is_same<res_t, bool>::value) {
             // func_t is a comparison function (for arg-reduction).
             // Signature: (scalar_t, scalar_t) -> bool.
-            auto arg_reduce_ops = WrapArgReduceOps(reduce_func);
             RunReduce<scalar_t, int64_t>(
                     indexer_, WrapArgReduceOps(reduce_func),
                     thrust::pair<scalar_t, int64_t>(identity, 0));

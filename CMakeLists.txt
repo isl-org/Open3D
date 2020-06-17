@@ -178,7 +178,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 if (BUILD_CUDA_MODULE)
     include(CheckLanguage)
     check_language(CUDA)
-    message(STATUS "CMAKE_CUDA_COMPILER==${CMAKE_CUDA_COMPILER}")
+    message(STATUS "CMAKE_CUDA_COMPILER: ${CMAKE_CUDA_COMPILER}")
+    message(STATUS "CMAKE_CUDA_COMPILER_VERSION: ${CMAKE_CUDA_COMPILER_VERSION}")
     if(CMAKE_CUDA_COMPILER)
         find_package(CUDA REQUIRED) # required for cuda_select_nvcc_arch_flags
         message(STATUS "Building CUDA enabled")
@@ -194,7 +195,7 @@ if (BUILD_CUDA_MODULE)
         endif()
         # make CUDA_GENCODES a string to avoid deduplication in target_compile_options
         string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
-        message(STATUS "CUDA_GENCODES==${CUDA_GENCODES}")
+        message(STATUS "CUDA_GENCODES: ${CUDA_GENCODES}")
     else()
         set(BUILD_CUDA_MODULE OFF)
         message(STATUS "No CUDA support")
@@ -342,7 +343,7 @@ macro(add_source_group module_name)
 endmacro()
 
 # Enumerate all third-party libraries which we need later
-# This creates the necessary targets and sets the 
+# This creates the necessary targets and sets the
 # Open3D_3RDPARTY_*_TARGETS variables we use in open3d_link_3rdparty_libraries
 include(3rdparty/find_dependencies.cmake)
 
