@@ -38,11 +38,11 @@ set_target_properties(open3d_tf_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
 if(CUDA_ENABLED)
-    target_include_directories(open3d_tf_ops PRIVATE ${CUB_INCLUDE_DIR}
+    target_include_directories(open3d_tf_ops SYSTEM PRIVATE ${CUB_INCLUDE_DIR}
                                                      ${CUTLASS_INCLUDE_DIR})
 endif()
 
-# Silence warnings caused by tensorflow's Eigen Travis has a different version
+# Silence warnings caused by tensorflow's Eigen. Travis has a different version
 # of protobuf in /usr/local/include TBB is in /usr/local/include, so it needs to
 # be after Tensorflow
 target_include_directories(open3d_tf_ops SYSTEM PRIVATE

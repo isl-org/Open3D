@@ -831,7 +831,6 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
                     hash_table_splits[i + 1] - hash_table_splits[i];
             const size_t first_cell_idx = hash_table_splits[i];
             const size_t queries_start_idx = queries_row_splits[i];
-            const size_t queries_end_idx = queries_row_splits[i + 1];
             const T* const queries_i = queries + 3 * queries_row_splits[i];
             const size_t num_queries_i =
                     queries_row_splits[i + 1] - queries_row_splits[i];
@@ -900,8 +899,6 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
             const size_t hash_table_size =
                     hash_table_splits[i + 1] - hash_table_splits[i];
             const size_t first_cell_idx = hash_table_splits[i];
-            const size_t queries_start_idx = queries_row_splits[i];
-            const size_t queries_end_idx = queries_row_splits[i + 1];
             const T* const queries_i = queries + 3 * queries_row_splits[i];
             const size_t num_queries_i =
                     queries_row_splits[i + 1] - queries_row_splits[i];

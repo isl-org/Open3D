@@ -31,32 +31,36 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
     // determine temp_size
     open3d::ml::detail::InvertNeighborsListCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
-            inp_neighbors_index.data<TIndex>(),
-            num_attributes ? inp_neighbors_attributes.data<TAttr>() : nullptr,
-            num_attributes, (int64_t*)inp_neighbors_row_splits.data<int64_t>(),
+            inp_neighbors_index.data_ptr<TIndex>(),
+            num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()
+                           : nullptr,
+            num_attributes,
+            (int64_t*)inp_neighbors_row_splits.data_ptr<int64_t>(),
             inp_neighbors_row_splits.size(0) - 1,
-            neighbors_index.data<TIndex>(),
-            num_attributes ? neighbors_attributes.data<TAttr>() : nullptr,
+            neighbors_index.data_ptr<TIndex>(),
+            num_attributes ? neighbors_attributes.data_ptr<TAttr>() : nullptr,
             neighbors_index.size(0),
-            (int64_t*)neighbors_row_splits.data<int64_t>(),
+            (int64_t*)neighbors_row_splits.data_ptr<int64_t>(),
             neighbors_row_splits.size(0) - 1);
 
     torch::Tensor temp_tensor = torch::empty(
             {int64_t(temp_size)},
             torch::dtype(ToTorchDtype<uint8_t>()).device(device, device_idx));
-    temp_ptr = temp_tensor.data<uint8_t>();
+    temp_ptr = temp_tensor.data_ptr<uint8_t>();
 
     // actually invert the list
     open3d::ml::detail::InvertNeighborsListCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
-            inp_neighbors_index.data<TIndex>(),
-            num_attributes ? inp_neighbors_attributes.data<TAttr>() : nullptr,
-            num_attributes, (int64_t*)inp_neighbors_row_splits.data<int64_t>(),
+            inp_neighbors_index.data_ptr<TIndex>(),
+            num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()
+                           : nullptr,
+            num_attributes,
+            (int64_t*)inp_neighbors_row_splits.data_ptr<int64_t>(),
             inp_neighbors_row_splits.size(0) - 1,
-            neighbors_index.data<TIndex>(),
-            num_attributes ? neighbors_attributes.data<TAttr>() : nullptr,
+            neighbors_index.data_ptr<TIndex>(),
+            num_attributes ? neighbors_attributes.data_ptr<TAttr>() : nullptr,
             neighbors_index.size(0),
-            (int64_t*)neighbors_row_splits.data<int64_t>(),
+            (int64_t*)neighbors_row_splits.data_ptr<int64_t>(),
             neighbors_row_splits.size(0) - 1);
 
     return std::make_tuple(neighbors_index, neighbors_row_splits,
