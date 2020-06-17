@@ -91,6 +91,7 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 # 3) Configured files and supporting files
 # Note: `make python-package` clears PYTHON_COMPILED_MODULE_DIR first every time
+set(PYTHON_PACKAGE_SRC_DIR "${PROJECT_SOURCE_DIR}/src/Python")
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
 message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 
@@ -98,19 +99,44 @@ message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 # add the open3d python module first
 set( COMPILED_MODULE_PATH_LIST $<TARGET_FILE:${PACKAGE_NAME}> )
 
+set(GENERATED_OUTPUTS "")
+
 # add additional optional compiled modules
 if ( BUILD_TENSORFLOW_OPS )
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
+    add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
+            COMMAND ${PYTHON_EXECUTABLE} generate_tf_ops_wrapper.py --input "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/tf/python/ops/ops.py.in" --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops>
+                        DEPENDS open3d_tf_ops
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        COMMENT "Generating python ops.py" )
+
+    list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py")
 endif ()
+
+# add additional optional compiled modules
+if ( BUILD_PYTORCH_OPS )
+    list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
+    add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
+            COMMAND ${PYTHON_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../Open3D/ML/TensorFlow"
+                        DEPENDS open3d_torch_ops
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        COMMENT "Generating python ops.py and return_types.py" )
+
+    list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py")
+endif ()
+
+configure_file("_build_config.py.in"
+               "${CMAKE_BINARY_DIR}/lib/_build_config.py")
 
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
-            -DPYTHON_PACKAGE_SRC_DIR=${PROJECT_SOURCE_DIR}/src/Python
+            -DPYTHON_PACKAGE_SRC_DIR=${PYTHON_PACKAGE_SRC_DIR}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
             -DENABLE_JUPYTER=${ENABLE_JUPYTER}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+            -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}
@@ -121,6 +147,7 @@ add_custom_target(python-package
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
     VERBATIM
+    DEPENDS ${GENERATED_OUTPUTS}
 )
 
 # Use `make pip-package` to create the pip package in the build directory

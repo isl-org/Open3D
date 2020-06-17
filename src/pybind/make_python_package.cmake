@@ -35,6 +35,14 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/j_visualizer.js"
                "${PYTHON_PACKAGE_DST_DIR}/js/j_visualizer.js")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
                "${PYTHON_PACKAGE_DST_DIR}/js/package.json")
+file(COPY "${PYTHON_PACKAGE_DST_DIR}/../_build_config.py"
+     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )
+
+if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
+    # copy generated files
+    file(COPY "${PYTHON_PACKAGE_DST_DIR}/../ml"
+         DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )
+endif()
 
 # Build Jupyter plugin with webpack. This step distills and merges all js
 # dependencies and include all static assets. The generated output is in

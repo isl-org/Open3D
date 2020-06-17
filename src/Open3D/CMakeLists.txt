@@ -19,6 +19,7 @@ if (ENABLE_GUI)
     set(GUI_OBJECTS "$<TARGET_OBJECTS:GUI>")
 endif()
 add_subdirectory(Visualization)
+add_subdirectory(ML)
 
 # Source group for Visual Studio
 add_source_group(Camera)

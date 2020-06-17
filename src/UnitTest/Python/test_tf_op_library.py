@@ -29,26 +29,29 @@ import numpy as np
 import pytest
 import os
 
+# skip all tests if the tf ops were not built and disable warnings caused by
+# tensorflow
+pytestmark = [
+    pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
+                       reason='tf ops not built'),
+    pytest.mark.filterwarnings(
+        'ignore::DeprecationWarning:.*(tensorflow|protobuf).*'),
+]
+
 
 def test_load_tf_op_library():
-
-    if not o3d._build_config['BUILD_TENSORFLOW_OPS']:
-        return
-
     import open3d.ml.tf as ml3d
-    assert hasattr(ml3d.python.ops.lib._lib, 'OP_LIST')
+    assert hasattr(ml3d.python.ops.lib._lib, 'open3d_reduce_subarrays_sum')
 
 
 def test_execute_tf_op():
-
-    if not o3d._build_config['BUILD_TENSORFLOW_OPS']:
-        return
-
+    import tensorflow as tf
     import open3d.ml.tf as ml3d
 
     values = np.arange(0, 10)
-    prefix_sum = np.array([0, 3, 4, 4])
+    row_splits = np.array([0, 3, 4, 4, 10])
 
-    ans = ml3d.ops.reduce_subarrays_sum(values, prefix_sum)
+    with tf.device('CPU:0'):
+        ans = ml3d.ops.reduce_subarrays_sum(values, row_splits)
     # test was a success if we reach this line but check correctness anyway
     assert np.all(ans.numpy() == [3, 3, 0, 39])

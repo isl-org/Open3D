@@ -47,8 +47,8 @@ PYBIND11_MODULE(pybind, m) {
 
     m.doc() = "Python binding of Open3D";
 
-    // Check open3d CXX11_ABI with
-    // import open3d; print(open3d.open3d._GLIBCXX_USE_CXX11_ABI)
+    // Check Open3D CXX11_ABI with
+    // import open3d as o3d; print(o3d.open3d_pybind._GLIBCXX_USE_CXX11_ABI)
     m.add_object("_GLIBCXX_USE_CXX11_ABI",
                  _GLIBCXX_USE_CXX11_ABI ? Py_True : Py_False);
 

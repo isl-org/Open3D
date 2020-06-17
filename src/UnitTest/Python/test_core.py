@@ -47,7 +47,7 @@ def list_devices():
     - returns [Device("CPU:0")].
     """
     devices = [o3d.Device("CPU:" + str(0))]
-    if _torch_imported:
+    if _torch_imported and o3d._build_config['BUILD_CUDA_MODULE']:
         if (o3d.cuda.device_count() != torch.cuda.device_count()):
             raise RuntimeError(
                 "o3d.cuda.device_count() != torch.cuda.device_count(), "

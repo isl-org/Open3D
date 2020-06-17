@@ -24,44 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "tensorflow/core/framework/op.h"
-#include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow/core/framework/shape_inference.h"
-#include "tensorflow/core/lib/core/errors.h"
+#include "ReduceSubarraysSumOpKernel.h"
+#include "Open3D/ML/Misc/Detail/ReduceSubarraysSum.h"
 
+using namespace open3d::ml::detail;
+using namespace reduce_subarrays_sum_opkernel;
 using namespace tensorflow;
 
-REGISTER_OP("Open3DReduceSubarraysSum")
-        .Attr("T: {int32, int64, float, double}")
-        .Input("values: T")
-        .Input("prefix_sum: int64")
-        .Output("sums: T")
-        .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
-            using namespace ::tensorflow::shape_inference;
-            ShapeHandle values_shape, prefix_sum_shape, sums_shape;
+template <class T>
+class ReduceSubarraysSumOpKernelCPU : public ReduceSubarraysSumOpKernel {
+public:
+    explicit ReduceSubarraysSumOpKernelCPU(OpKernelConstruction* construction)
+        : ReduceSubarraysSumOpKernel(construction) {}
 
-            TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 1, &values_shape));
-            TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &prefix_sum_shape));
+    void Kernel(OpKernelContext* context,
+                const tensorflow::Tensor& values,
+                const tensorflow::Tensor& row_splits,
+                tensorflow::Tensor& sums) {
+        ReduceSubarraysSumCPU(
+                values.flat<T>().data(), values.shape().dim_size(0),
+                (int64_t*)row_splits.flat<int64>().data(),
+                row_splits.shape().dim_size(0) - 1, sums.flat<T>().data());
+    }
+};
 
-            // output will have the same shape as the prefix_sum
-            c->set_output(0, prefix_sum_shape);
-
-            return Status::OK();
-        })
-        .Doc(R"doc(
-Computes the sum for each subarray. The start and end of the subarrays are defined by a prefix sum.
-
-
-values:
-  Linear memory which stores the values for all arrays.
-
-prefix_sum:
-  The prefix sum defines the start of each subarray.
-  The end is defined by the next entry in the prefix_sum or the end of the 
-  values array.
-
-sums:
-  The sum of each subarray. The sum of an empty subarray is 0.
-  sums is a zero length vector if values is a zero length vector.
-
-)doc");
+#define REG_KB(type)                                            \
+    REGISTER_KERNEL_BUILDER(Name("Open3DReduceSubarraysSum")    \
+                                    .Device(DEVICE_CPU)         \
+                                    .TypeConstraint<type>("T"), \
+                            ReduceSubarraysSumOpKernelCPU<type>);
+REG_KB(int32_t)
+REG_KB(int64)
+REG_KB(float)
+REG_KB(double)
+#undef REG_KB
