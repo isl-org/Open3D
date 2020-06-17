@@ -28,8 +28,8 @@
 
 #include <memory>
 
-#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
-#include "Open3D/IO/Sensor/RGBDSensor.h"
+#include "open3d/io/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "open3d/io/Sensor/RGBDSensor.h"
 
 struct _k4a_capture_t;         // typedef _k4a_capture_t* k4a_capture_t;
 struct _k4a_device_t;          // typedef _k4a_device_t* k4a_device_t;

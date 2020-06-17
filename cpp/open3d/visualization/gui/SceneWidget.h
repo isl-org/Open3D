@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Open3D/GUI/Widget.h"
-#include "Open3D/Visualization/Rendering/RendererHandle.h"
-#include "Open3D/Visualization/Rendering/View.h"
+#include "open3d/visualization/gui/Widget.h"
+#include "open3d/visualization/Rendering/RendererHandle.h"
+#include "open3d/visualization/Rendering/View.h"
 
 namespace open3d {
 

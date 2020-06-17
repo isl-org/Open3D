@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Tools/ManuallyAlignPointCloud/VisualizerForAlignment.h"
+#include "tools/ManuallyAlignPointCloud/VisualizerForAlignment.h"
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
 

@@ -28,8 +28,8 @@
 
 #include <memory>
 
-#include "Open3D/Registration/GlobalOptimizationConvergenceCriteria.h"
-#include "Open3D/Registration/GlobalOptimizationMethod.h"
+#include "open3d/pipelines/registration/GlobalOptimizationConvergenceCriteria.h"
+#include "open3d/pipelines/registration/GlobalOptimizationMethod.h"
 
 namespace open3d {
 namespace registration {

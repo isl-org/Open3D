@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Task.h"
+#include "open3d/visualization/gui/Task.h"
 
 #include <atomic>
 #include <thread>
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace gui {

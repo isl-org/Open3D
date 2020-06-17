@@ -28,12 +28,12 @@
 #include <iostream>
 #include <memory>
 
-#include "Open3D/Geometry/Octree.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/VoxelGrid.h"
-#include "Open3D/IO/ClassIO/PointCloudIO.h"
-#include "Open3D/Visualization/Utility/DrawGeometry.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/geometry/Octree.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/VoxelGrid.h"
+#include "open3d/io/ClassIO/PointCloudIO.h"
+#include "open3d/visualization/Utility/DrawGeometry.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

@@ -29,8 +29,8 @@
 #include <memory>
 #include <vector>
 
-#include "Open3D/ColorMap/EigenHelperForNonRigidOptimization.h"
-#include "Open3D/Utility/Eigen.h"
+#include "open3d/pipelines/color_map/EigenHelperForNonRigidOptimization.h"
+#include "open3d/utility/Eigen.h"
 
 namespace open3d {
 

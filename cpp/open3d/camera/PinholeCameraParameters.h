@@ -29,7 +29,7 @@
 #include <memory>
 #include <vector>
 
-#include "Open3D/Camera/PinholeCameraIntrinsic.h"
+#include "open3d/camera/PinholeCameraIntrinsic.h"
 
 namespace open3d {
 namespace camera {

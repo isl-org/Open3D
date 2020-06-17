@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/PointCloud.h"
+#include "open3d/geometry/PointCloud.h"
 
 #include <Eigen/Dense>
 #include <algorithm>
@@ -33,8 +33,8 @@
 #include <random>
 #include <unordered_set>
 
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace geometry {

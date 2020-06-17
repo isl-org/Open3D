@@ -22,7 +22,7 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
-#include "Open3D/ML/Misc/Detail/VoxelPooling.h"
+#include "open3d/ml/Misc/Detail/VoxelPooling.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"

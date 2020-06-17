@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Indexer.h"
+#include "open3d/core/Indexer.h"
 
 namespace open3d {
 

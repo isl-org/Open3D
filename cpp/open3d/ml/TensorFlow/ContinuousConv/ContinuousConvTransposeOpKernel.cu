@@ -26,8 +26,8 @@
 
 #define EIGEN_USE_GPU
 #include "ContinuousConvTransposeOpKernel.h"
-#include "Open3D/Core/CUDAUtils.h"
-#include "Open3D/ML/ContinuousConv/Detail/ContinuousConvTranspose.cuh"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/ml/ContinuousConv/Detail/ContinuousConvTranspose.cuh"
 
 using namespace open3d;
 using namespace open3d::ml::detail;

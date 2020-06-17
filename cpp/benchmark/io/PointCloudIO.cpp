@@ -26,8 +26,8 @@
 
 #include "benchmark/benchmark.h"
 
-#include "Open3D/IO/ClassIO/PointCloudIO.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/io/ClassIO/PointCloudIO.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace benchmarks {

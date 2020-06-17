@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Shader/ShaderWrapper.h"
+#include "open3d/visualization/Shader/ShaderWrapper.h"
 
-#include "Open3D/Geometry/Geometry.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/geometry/Geometry.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace visualization {

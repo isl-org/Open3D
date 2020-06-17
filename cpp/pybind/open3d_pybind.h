@@ -35,8 +35,8 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
-#include "Open3D/Registration/PoseGraph.h"
-#include "Open3D/Utility/Eigen.h"
+#include "open3d/pipelines/registration/PoseGraph.h"
+#include "open3d/utility/Eigen.h"
 
 namespace py = pybind11;
 using namespace py::literals;

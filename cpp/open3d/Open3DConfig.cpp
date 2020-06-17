@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Open3DConfig.h"
+#include "open3d/Open3DConfig.h"
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 

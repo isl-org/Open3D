@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/KDTreeFlann.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
+#include "open3d/geometry/KDTreeFlann.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 #include "benchmark/benchmark.h"
 
 using namespace Eigen;

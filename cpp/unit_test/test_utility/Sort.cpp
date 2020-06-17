@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "UnitTest/TestUtility/Sort.h"
+#include "unit_test/test_utility/Sort.h"
 
 #include <algorithm>
 
-#include "Open3D/Utility/Console.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/utility/Console.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/Reduction.h"
+#include "open3d/core/Kernel/Reduction.h"
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -37,17 +37,17 @@
 #include <tuple>
 #include <type_traits>
 
-#include "Open3D/Core/CUDAState.cuh"
-#include "Open3D/Core/CUDAUtils.h"
-#include "Open3D/Core/Device.h"
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Core/FuncionTraits.h"
-#include "Open3D/Core/Indexer.h"
-#include "Open3D/Core/Kernel/CUDALauncher.cuh"
-#include "Open3D/Core/MemoryManager.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/core/CUDAState.cuh"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/FuncionTraits.h"
+#include "open3d/core/Indexer.h"
+#include "open3d/core/Kernel/CUDALauncher.cuh"
+#include "open3d/core/MemoryManager.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 
 // CUDA reduction is based on PyTorch's CUDA reduction implementation.
 // See: aten/src/ATen/native/cuda/Reduce.cuh

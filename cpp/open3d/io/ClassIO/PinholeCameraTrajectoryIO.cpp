@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h"
+#include "open3d/io/ClassIO/PinholeCameraTrajectoryIO.h"
 
 #include <unordered_map>
 
-#include "Open3D/IO/ClassIO/IJsonConvertibleIO.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
+#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
 
 namespace open3d {
 

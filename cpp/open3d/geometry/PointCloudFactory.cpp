@@ -27,12 +27,12 @@
 #include <Eigen/Dense>
 #include <limits>
 
-#include "Open3D/Camera/PinholeCameraIntrinsic.h"
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/Geometry/VoxelGrid.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/geometry/VoxelGrid.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 

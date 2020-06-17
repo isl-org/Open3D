@@ -35,9 +35,9 @@
 #include <memory>
 #include <vector>
 
-#include "Open3D/Core/CUDAUtils.h"
-#include "Open3D/Core/Device.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Device.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Menu.h"  // defines GUI_USE_NATIVE_MENUS
+#include "open3d/visualization/gui/Menu.h"  // defines GUI_USE_NATIVE_MENUS
 
 #if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
 // See MenuMacOS.mm
@@ -37,8 +37,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Open3D/GUI/Theme.h"
-#include "Open3D/GUI/Widget.h"
+#include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
 namespace gui {

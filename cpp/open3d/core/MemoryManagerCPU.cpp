@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/MemoryManager.h"
+#include "open3d/core/MemoryManager.h"
 
 #include <cstdlib>
 

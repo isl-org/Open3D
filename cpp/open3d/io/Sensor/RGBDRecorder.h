@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/IO/Sensor/RGBDSensorConfig.h"
+#include "open3d/io/Sensor/RGBDSensorConfig.h"
 
 namespace open3d {
 namespace io {

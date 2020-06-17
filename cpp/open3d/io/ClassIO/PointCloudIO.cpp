@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/IO/ClassIO/PointCloudIO.h"
+#include "open3d/io/ClassIO/PointCloudIO.h"
 
 #include <iostream>
 #include <unordered_map>
 
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
-#include "Open3D/Utility/Helper.h"
-#include "Open3D/Utility/ProgressReporters.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Helper.h"
+#include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
 

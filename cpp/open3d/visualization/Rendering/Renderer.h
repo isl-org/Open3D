@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Visualization/Rendering/MaterialModifier.h"
-#include "Open3D/Visualization/Rendering/RendererHandle.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/visualization/Rendering/MaterialModifier.h"
+#include "open3d/visualization/Rendering/RendererHandle.h"
 
 namespace open3d {
 

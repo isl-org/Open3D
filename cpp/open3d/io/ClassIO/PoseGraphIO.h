@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include "Open3D/Registration/PoseGraph.h"
+#include "open3d/pipelines/registration/PoseGraph.h"
 
 namespace open3d {
 namespace io {

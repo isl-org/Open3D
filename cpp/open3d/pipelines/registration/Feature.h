@@ -30,7 +30,7 @@
 #include <memory>
 #include <vector>
 
-#include "Open3D/Geometry/KDTreeSearchParam.h"
+#include "open3d/geometry/KDTreeSearchParam.h"
 
 namespace open3d {
 

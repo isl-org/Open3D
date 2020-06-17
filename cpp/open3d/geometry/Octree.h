@@ -30,8 +30,8 @@
 #include <memory>
 #include <vector>
 
-#include "Open3D/Geometry/Geometry3D.h"
-#include "Open3D/Utility/IJsonConvertible.h"
+#include "open3d/geometry/Geometry3D.h"
+#include "open3d/utility/IJsonConvertible.h"
 
 namespace open3d {
 namespace geometry {

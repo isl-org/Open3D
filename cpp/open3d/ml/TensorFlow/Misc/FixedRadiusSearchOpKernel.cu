@@ -27,8 +27,8 @@
 
 #define EIGEN_USE_GPU
 #include "FixedRadiusSearchOpKernel.h"
-#include "Open3D/Core/CUDAUtils.h"
-#include "Open3D/ML/Misc/Detail/FixedRadiusSearch.cuh"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/ml/Misc/Detail/FixedRadiusSearch.cuh"
 
 using namespace open3d;
 using namespace open3d::ml::detail;

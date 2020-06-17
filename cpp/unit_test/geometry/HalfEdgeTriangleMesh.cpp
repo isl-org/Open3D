@@ -27,10 +27,10 @@
 #include <iostream>
 #include <string>
 
-#include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
-#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
-#include "Open3D/Utility/Helper.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/geometry/HalfEdgeTriangleMesh.h"
+#include "open3d/io/ClassIO/TriangleMeshIO.h"
+#include "open3d/utility/Helper.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

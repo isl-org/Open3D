@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Shader/GeometryRenderer.h"
+#include "open3d/visualization/Shader/GeometryRenderer.h"
 
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Visualization/Utility/PointCloudPicker.h"
-#include "Open3D/Visualization/Utility/SelectionPolygon.h"
-#include "Open3D/Visualization/Visualizer/RenderOptionWithEditing.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/visualization/Utility/PointCloudPicker.h"
+#include "open3d/visualization/Utility/SelectionPolygon.h"
+#include "open3d/visualization/Visualizer/RenderOptionWithEditing.h"
 
 namespace open3d {
 namespace visualization {

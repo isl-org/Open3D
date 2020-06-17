@@ -26,11 +26,11 @@
 
 #include <cstdio>
 
-#include "Open3D/IO/ClassIO/FileFormatIO.h"
-#include "Open3D/IO/ClassIO/PointCloudIO.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
-#include "Open3D/Utility/ProgressReporters.h"
+#include "open3d/io/ClassIO/FileFormatIO.h"
+#include "open3d/io/ClassIO/PointCloudIO.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
+#include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
 namespace io {

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Gui.h"
+#include "open3d/visualization/gui/Gui.h"
 
 #include <algorithm>
 

@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Open3D.h"
-#include "Tools/ManuallyAlignPointCloud/AlignmentSession.h"
+#include "open3d/Open3D.h"
+#include "tools/ManuallyAlignPointCloud/AlignmentSession.h"
 
 namespace open3d {
 

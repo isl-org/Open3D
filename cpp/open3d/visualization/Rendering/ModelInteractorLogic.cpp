@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/ModelInteractorLogic.h"
+#include "open3d/visualization/Rendering/ModelInteractorLogic.h"
 
-#include "Open3D/Visualization/Rendering/Scene.h"
+#include "open3d/visualization/Rendering/Scene.h"
 
 namespace open3d {
 namespace visualization {

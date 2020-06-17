@@ -34,9 +34,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/MeshBase.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/MeshBase.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace geometry {

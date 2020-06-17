@@ -28,9 +28,9 @@
 
 #include <string>
 
-#include "Open3D/GUI/Color.h"
-#include "Open3D/GUI/Gui.h"
-#include "Open3D/GUI/Widget.h"
+#include "open3d/visualization/gui/Color.h"
+#include "open3d/visualization/gui/Gui.h"
+#include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
 namespace gui {

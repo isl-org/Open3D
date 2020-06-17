@@ -26,7 +26,7 @@
 
 #include <sstream>
 
-#include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
+#include "open3d/geometry/HalfEdgeTriangleMesh.h"
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"

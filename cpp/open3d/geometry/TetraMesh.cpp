@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/TetraMesh.h"
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
+#include "open3d/geometry/TetraMesh.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 #include <Eigen/Dense>
 #include <array>
 #include <numeric>
 #include <tuple>
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace geometry {

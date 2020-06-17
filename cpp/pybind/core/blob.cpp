@@ -28,7 +28,7 @@
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
-#include "Open3D/Core/Blob.h"
+#include "open3d/core/Blob.h"
 
 namespace open3d {
 

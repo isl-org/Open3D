@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/NumberEdit.h"
+#include "open3d/visualization/gui/NumberEdit.h"
 
 #include <imgui.h>
 #include <string.h>   // for snprintf
@@ -33,8 +33,8 @@
 #include <sstream>
 #include <unordered_set>
 
-#include "Open3D/GUI/Theme.h"
-#include "Open3D/GUI/Util.h"
+#include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Util.h"
 
 namespace open3d {
 namespace gui {

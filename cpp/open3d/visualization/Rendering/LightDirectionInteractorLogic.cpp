@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/LightDirectionInteractorLogic.h"
+#include "open3d/visualization/Rendering/LightDirectionInteractorLogic.h"
 
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Visualization/Rendering/Camera.h"
-#include "Open3D/Visualization/Rendering/Scene.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/visualization/Rendering/Camera.h"
+#include "open3d/visualization/Rendering/Scene.h"
 
 namespace open3d {
 namespace visualization {

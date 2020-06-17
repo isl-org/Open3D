@@ -28,7 +28,7 @@
 
 #include <Eigen/Geometry>
 
-#include "Open3D/ML/ContinuousConv/Detail/ContinuousConvTypes.h"
+#include "open3d/ml/ContinuousConv/Detail/ContinuousConvTypes.h"
 
 namespace open3d {
 namespace ml {

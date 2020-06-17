@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Utility/FileSystem.h"
+#include "open3d/utility/FileSystem.h"
 
 #include <fcntl.h>
 #include <algorithm>
@@ -46,7 +46,7 @@
 #include <unistd.h>
 #endif
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace utility {

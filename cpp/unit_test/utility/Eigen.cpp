@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Utility/Eigen.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/utility/Eigen.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

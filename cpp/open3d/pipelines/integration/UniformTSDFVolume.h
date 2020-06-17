@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "Open3D/Geometry/VoxelGrid.h"
-#include "Open3D/Integration/TSDFVolume.h"
+#include "open3d/geometry/VoxelGrid.h"
+#include "open3d/pipelines/integration/TSDFVolume.h"
 
 namespace open3d {
 

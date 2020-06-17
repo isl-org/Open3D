@@ -28,7 +28,7 @@
 
 #include <functional>
 
-#include "Open3D/GUI/Dialog.h"
+#include "open3d/visualization/gui/Dialog.h"
 
 namespace open3d {
 namespace gui {

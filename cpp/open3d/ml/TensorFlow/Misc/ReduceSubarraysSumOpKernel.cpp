@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "ReduceSubarraysSumOpKernel.h"
-#include "Open3D/ML/Misc/Detail/ReduceSubarraysSum.h"
+#include "open3d/ml/Misc/Detail/ReduceSubarraysSum.h"
 
 using namespace open3d::ml::detail;
 using namespace reduce_subarrays_sum_opkernel;

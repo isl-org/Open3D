@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Utility/ColorMap.h"
+#include "open3d/visualization/Utility/ColorMap.h"
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 

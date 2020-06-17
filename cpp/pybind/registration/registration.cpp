@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Registration/Registration.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Registration/ColoredICP.h"
-#include "Open3D/Registration/CorrespondenceChecker.h"
-#include "Open3D/Registration/FastGlobalRegistration.h"
-#include "Open3D/Registration/Feature.h"
-#include "Open3D/Registration/TransformationEstimation.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/pipelines/registration/Registration.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/pipelines/registration/ColoredICP.h"
+#include "open3d/pipelines/registration/CorrespondenceChecker.h"
+#include "open3d/pipelines/registration/FastGlobalRegistration.h"
+#include "open3d/pipelines/registration/Feature.h"
+#include "open3d/pipelines/registration/TransformationEstimation.h"
+#include "open3d/utility/Console.h"
 
 #include "pybind/docstring.h"
 #include "pybind/registration/registration.h"

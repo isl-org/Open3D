@@ -28,13 +28,13 @@
 
 #include <vector>
 
-#include "Open3D/Core/Device.h"
-#include "Open3D/Core/SizeVector.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/SizeVector.h"
 
-#include "UnitTest/UnitTest.h"
+#include "unit_test/UnitTest.h"
 
 #ifdef BUILD_CUDA_MODULE
-#include "Open3D/Core/CUDAState.cuh"
+#include "open3d/core/CUDAState.cuh"
 #endif
 
 namespace open3d {

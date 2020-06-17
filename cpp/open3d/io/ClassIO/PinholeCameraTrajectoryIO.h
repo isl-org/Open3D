@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include "Open3D/Camera/PinholeCameraTrajectory.h"
+#include "open3d/camera/PinholeCameraTrajectory.h"
 
 namespace open3d {
 namespace io {

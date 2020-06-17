@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/Renderer.h"
+#include "open3d/visualization/Rendering/Renderer.h"
 
 #include <utils/Entity.h>
 #include <memory>

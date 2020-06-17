@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Tools/ManuallyAlignPointCloud/AlignmentSession.h"
+#include "tools/ManuallyAlignPointCloud/AlignmentSession.h"
 
 #include <json/json.h>
 

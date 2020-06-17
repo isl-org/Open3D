@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#include "open3d/core/Device.h"
 
-#include "UnitTest/UnitTest.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

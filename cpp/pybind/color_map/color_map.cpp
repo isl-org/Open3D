@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Camera/PinholeCameraTrajectory.h"
-#include "Open3D/ColorMap/ColorMapOptimization.h"
-#include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/camera/PinholeCameraTrajectory.h"
+#include "open3d/pipelines/color_map/ColorMapOptimization.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/utility/Console.h"
 
 #include "pybind/color_map/color_map.h"
 #include "pybind/docstring.h"

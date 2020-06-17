@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include "Open3D/Geometry/VoxelGrid.h"
+#include "open3d/geometry/VoxelGrid.h"
 
 namespace open3d {
 namespace io {

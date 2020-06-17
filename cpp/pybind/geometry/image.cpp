@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/RGBDImage.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/RGBDImage.h"
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"

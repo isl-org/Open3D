@@ -29,11 +29,11 @@
 #include <geometry/SurfaceOrientation.h>
 #include <Eigen/Core>
 
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentGeometryBuffersBuilder.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
+#include "open3d/visualization/Rendering/Filament/FilamentGeometryBuffersBuilder.h"
+#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
 
 using namespace filament;
 

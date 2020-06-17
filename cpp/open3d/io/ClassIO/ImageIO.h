@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include "Open3D/Geometry/Image.h"
+#include "open3d/geometry/Image.h"
 
 namespace open3d {
 namespace io {

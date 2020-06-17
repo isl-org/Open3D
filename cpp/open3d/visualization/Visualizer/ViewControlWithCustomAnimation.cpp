@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/visualization/Visualizer/ViewControlWithCustomAnimation.h"
+#include "open3d/utility/Console.h"
 
-#include "Open3D/IO/ClassIO/IJsonConvertibleIO.h"
+#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
 
 namespace open3d {
 namespace visualization {

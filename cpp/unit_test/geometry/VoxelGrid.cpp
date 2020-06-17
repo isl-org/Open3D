@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/VoxelGrid.h"
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Visualization/Utility/DrawGeometry.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/geometry/VoxelGrid.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/visualization/Utility/DrawGeometry.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

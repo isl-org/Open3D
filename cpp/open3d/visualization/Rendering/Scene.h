@@ -28,8 +28,8 @@
 
 #include <Eigen/Geometry>
 
-#include "Open3D/Visualization/Rendering/RendererHandle.h"
-#include "Open3D/Visualization/Rendering/RendererStructs.h"
+#include "open3d/visualization/Rendering/RendererHandle.h"
+#include "open3d/visualization/Rendering/RendererStructs.h"
 
 namespace open3d {
 

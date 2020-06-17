@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include "Open3D/Geometry/TriangleMesh.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace io {

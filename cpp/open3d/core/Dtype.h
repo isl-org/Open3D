@@ -28,8 +28,8 @@
 
 #include "string"
 
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/utility/Console.h"
 
 static_assert(sizeof(float) == 4,
               "Unsupported platform: float must be 4 bytes");

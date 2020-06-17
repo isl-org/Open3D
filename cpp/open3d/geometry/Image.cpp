@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/Image.h"
+#include "open3d/geometry/Image.h"
 
 namespace {
 /// Isotropic 2D kernels are separable:

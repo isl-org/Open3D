@@ -26,18 +26,18 @@
 
 #pragma once
 
-#include "Open3D/Geometry/Geometry.h"
-#include "Open3D/Visualization/Shader/ImageMaskShader.h"
-#include "Open3D/Visualization/Shader/ImageShader.h"
-#include "Open3D/Visualization/Shader/NormalShader.h"
-#include "Open3D/Visualization/Shader/PhongShader.h"
-#include "Open3D/Visualization/Shader/PickingShader.h"
-#include "Open3D/Visualization/Shader/RGBDImageShader.h"
-#include "Open3D/Visualization/Shader/Simple2DShader.h"
-#include "Open3D/Visualization/Shader/SimpleBlackShader.h"
-#include "Open3D/Visualization/Shader/SimpleShader.h"
-#include "Open3D/Visualization/Shader/TexturePhongShader.h"
-#include "Open3D/Visualization/Shader/TextureSimpleShader.h"
+#include "open3d/geometry/Geometry.h"
+#include "open3d/visualization/Shader/ImageMaskShader.h"
+#include "open3d/visualization/Shader/ImageShader.h"
+#include "open3d/visualization/Shader/NormalShader.h"
+#include "open3d/visualization/Shader/PhongShader.h"
+#include "open3d/visualization/Shader/PickingShader.h"
+#include "open3d/visualization/Shader/RGBDImageShader.h"
+#include "open3d/visualization/Shader/Simple2DShader.h"
+#include "open3d/visualization/Shader/SimpleBlackShader.h"
+#include "open3d/visualization/Shader/SimpleShader.h"
+#include "open3d/visualization/Shader/TexturePhongShader.h"
+#include "open3d/visualization/Shader/TextureSimpleShader.h"
 
 namespace open3d {
 namespace visualization {

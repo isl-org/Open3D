@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/IO/ClassIO/FeatureIO.h"
+#include "open3d/io/ClassIO/FeatureIO.h"
 
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
 
 namespace open3d {
 namespace io {

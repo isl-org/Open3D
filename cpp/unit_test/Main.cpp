@@ -29,11 +29,11 @@
 #include <string>
 
 #ifdef BUILD_CUDA_MODULE
-#include "Open3D/Core/CUDAState.cuh"
+#include "open3d/core/CUDAState.cuh"
 #endif
 
-#include "Open3D/Utility/Console.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/utility/Console.h"
+#include "unit_test/UnitTest.h"
 
 #ifdef BUILD_CUDA_MODULE
 /// Returns true if --disable_p2p flag is used.

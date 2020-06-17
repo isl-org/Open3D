@@ -1,5 +1,5 @@
 #include "../TorchHelper.h"
-#include "Open3D/ML/Misc/Detail/InvertNeighborsList.h"
+#include "open3d/ml/Misc/Detail/InvertNeighborsList.h"
 #include "torch/script.h"
 
 template <class TIndex, class TAttr>

@@ -30,9 +30,9 @@
 #include <memory>
 #include <vector>
 
-#include "Open3D/Geometry/Geometry.h"
-#include "Open3D/Geometry/KDTreeSearchParam.h"
-#include "Open3D/Registration/Feature.h"
+#include "open3d/geometry/Geometry.h"
+#include "open3d/geometry/KDTreeSearchParam.h"
+#include "open3d/pipelines/registration/Feature.h"
 
 namespace flann {
 template <typename T>

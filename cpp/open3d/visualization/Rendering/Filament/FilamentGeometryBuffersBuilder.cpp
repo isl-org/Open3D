@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/Filament/FilamentGeometryBuffersBuilder.h"
+#include "open3d/visualization/Rendering/Filament/FilamentGeometryBuffersBuilder.h"
 
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace visualization {

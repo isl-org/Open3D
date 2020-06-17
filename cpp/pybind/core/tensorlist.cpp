@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/TensorList.h"
+#include "open3d/core/TensorList.h"
 
 #include <vector>
 
-#include "Open3D/Core/Blob.h"
-#include "Open3D/Core/CUDAUtils.h"
-#include "Open3D/Core/Device.h"
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
+#include "open3d/core/Blob.h"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
 #include "pybind/core/container.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"

@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include "Open3D/Geometry/PointCloud.h"
+#include "open3d/geometry/PointCloud.h"
 
 namespace open3d {
 namespace io {

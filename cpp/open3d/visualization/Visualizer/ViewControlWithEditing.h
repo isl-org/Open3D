@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Visualizer/ViewControl.h"
+#include "open3d/visualization/Visualizer/ViewControl.h"
 
 namespace open3d {
 namespace visualization {

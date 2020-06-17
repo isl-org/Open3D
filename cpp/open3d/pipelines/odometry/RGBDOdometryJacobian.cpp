@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Odometry/RGBDOdometryJacobian.h"
+#include "open3d/pipelines/odometry/RGBDOdometryJacobian.h"
 
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/Odometry/Odometry.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/pipelines/odometry/Odometry.h"
 
 namespace open3d {
 

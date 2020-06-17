@@ -29,11 +29,11 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "Open3D/Core/AdvancedIndexing.h"
-#include "Open3D/Core/CUDAUtils.h"
-#include "Open3D/Core/Indexer.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
+#include "open3d/core/AdvancedIndexing.h"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Indexer.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
 
 // CUDA kernel launcher's goal is to separate scheduling (looping through each
 // valid element) and computation (operations performed on each element).

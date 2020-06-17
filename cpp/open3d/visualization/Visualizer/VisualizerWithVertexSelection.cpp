@@ -24,26 +24,26 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Visualizer/VisualizerWithVertexSelection.h"
+#include "open3d/visualization/Visualizer/VisualizerWithVertexSelection.h"
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
 
-#include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TetraMesh.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/IO/ClassIO/IJsonConvertibleIO.h"
-#include "Open3D/IO/ClassIO/PointCloudIO.h"
-#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
-#include "Open3D/Utility/FileSystem.h"
-#include "Open3D/Visualization/Utility/GLHelper.h"
-#include "Open3D/Visualization/Utility/PointCloudPicker.h"
-#include "Open3D/Visualization/Utility/SelectionPolygon.h"
-#include "Open3D/Visualization/Utility/SelectionPolygonVolume.h"
-#include "Open3D/Visualization/Visualizer/RenderOptionWithEditing.h"
-#include "Open3D/Visualization/Visualizer/ViewControlWithEditing.h"
+#include "open3d/geometry/HalfEdgeTriangleMesh.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TetraMesh.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
+#include "open3d/io/ClassIO/PointCloudIO.h"
+#include "open3d/io/ClassIO/TriangleMeshIO.h"
+#include "open3d/utility/FileSystem.h"
+#include "open3d/visualization/Utility/GLHelper.h"
+#include "open3d/visualization/Utility/PointCloudPicker.h"
+#include "open3d/visualization/Utility/SelectionPolygon.h"
+#include "open3d/visualization/Utility/SelectionPolygonVolume.h"
+#include "open3d/visualization/Visualizer/RenderOptionWithEditing.h"
+#include "open3d/visualization/Visualizer/ViewControlWithEditing.h"
 
 namespace open3d {
 namespace visualization {

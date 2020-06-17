@@ -27,9 +27,9 @@
 #include <fstream>
 #include <vector>
 
-#include "Open3D/IO/ClassIO/FileFormatIO.h"
-#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/io/ClassIO/FileFormatIO.h"
+#include "open3d/io/ClassIO/TriangleMeshIO.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace io {

@@ -27,16 +27,16 @@
 #include <cmath>
 #include <limits>
 
-#include "Open3D/Core/AdvancedIndexing.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/Kernel/Kernel.h"
-#include "Open3D/Core/MemoryManager.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/core/AdvancedIndexing.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/Kernel/Kernel.h"
+#include "open3d/core/MemoryManager.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Helper.h"
 
 #include "Core/CoreTest.h"
-#include "UnitTest/UnitTest.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

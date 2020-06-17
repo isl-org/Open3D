@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/MaterialModifier.h"
+#include "open3d/visualization/Rendering/MaterialModifier.h"
 
 namespace open3d {
 namespace visualization {

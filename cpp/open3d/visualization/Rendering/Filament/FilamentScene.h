@@ -32,7 +32,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "Open3D/Visualization/Rendering/Scene.h"
+#include "open3d/visualization/Rendering/Scene.h"
 
 namespace filament {
 class Engine;

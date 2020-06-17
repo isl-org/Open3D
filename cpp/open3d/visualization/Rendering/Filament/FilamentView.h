@@ -30,7 +30,7 @@
 #include <memory>
 #include <numeric>
 
-#include "Open3D/Visualization/Rendering/View.h"
+#include "open3d/visualization/Rendering/View.h"
 
 namespace filament {
 class Engine;

@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/Filament/FilamentEntitiesMods.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEntitiesMods.h"
 
 #include <filament/MaterialInstance.h>
 #include <filament/TextureSampler.h>
 
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "open3d/utility/Console.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
+#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
 
 namespace open3d {
 namespace visualization {

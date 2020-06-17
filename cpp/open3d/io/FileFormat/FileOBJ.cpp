@@ -28,11 +28,11 @@
 #include <numeric>
 #include <vector>
 
-#include "Open3D/IO/ClassIO/FileFormatIO.h"
-#include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
+#include "open3d/io/ClassIO/FileFormatIO.h"
+#include "open3d/io/ClassIO/ImageIO.h"
+#include "open3d/io/ClassIO/TriangleMeshIO.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
 
 #include <tiny_obj_loader.h>
 

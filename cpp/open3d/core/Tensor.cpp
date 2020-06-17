@@ -24,20 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Tensor.h"
+#include "open3d/core/Tensor.h"
 
 #include <sstream>
 
-#include "Open3D/Core/AdvancedIndexing.h"
-#include "Open3D/Core/Blob.h"
-#include "Open3D/Core/Device.h"
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/Kernel/Kernel.h"
-#include "Open3D/Core/ShapeUtil.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/TensorKey.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/core/AdvancedIndexing.h"
+#include "open3d/core/Blob.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/Kernel/Kernel.h"
+#include "open3d/core/ShapeUtil.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorKey.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 

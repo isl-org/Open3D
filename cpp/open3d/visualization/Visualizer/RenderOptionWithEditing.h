@@ -28,7 +28,7 @@
 
 #include <Eigen/Core>
 
-#include "Open3D/Visualization/Visualizer/RenderOption.h"
+#include "open3d/visualization/Visualizer/RenderOption.h"
 
 namespace open3d {
 namespace visualization {

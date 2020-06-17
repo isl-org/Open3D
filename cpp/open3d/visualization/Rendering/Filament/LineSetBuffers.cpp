@@ -29,11 +29,11 @@
 #include <Eigen/Core>
 #include <map>
 
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentGeometryBuffersBuilder.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
+#include "open3d/visualization/Rendering/Filament/FilamentGeometryBuffersBuilder.h"
+#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
 
 using namespace filament;
 

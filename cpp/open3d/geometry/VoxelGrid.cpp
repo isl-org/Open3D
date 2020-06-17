@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/VoxelGrid.h"
+#include "open3d/geometry/VoxelGrid.h"
 
 #include <numeric>
 #include <unordered_map>
 
-#include "Open3D/Camera/PinholeCameraParameters.h"
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/Octree.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/camera/PinholeCameraParameters.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/Octree.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace geometry {

@@ -31,8 +31,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/Helper.h"
 #include "pybind/docstring.h"
 
 namespace open3d {

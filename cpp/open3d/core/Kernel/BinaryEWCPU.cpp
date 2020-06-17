@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/BinaryEW.h"
+#include "open3d/core/Kernel/BinaryEW.h"
 
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/Kernel/CPULauncher.h"
-#include "Open3D/Core/MemoryManager.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/Kernel/CPULauncher.h"
+#include "open3d/core/MemoryManager.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace kernel {

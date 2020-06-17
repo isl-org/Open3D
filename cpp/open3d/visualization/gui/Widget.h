@@ -29,7 +29,7 @@
 #include <memory>
 #include <vector>
 
-#include "Open3D/GUI/Gui.h"
+#include "open3d/visualization/gui/Gui.h"
 
 namespace open3d {
 

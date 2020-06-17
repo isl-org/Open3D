@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include "Open3D/Registration/Feature.h"
+#include "open3d/pipelines/registration/Feature.h"
 
 namespace open3d {
 namespace io {

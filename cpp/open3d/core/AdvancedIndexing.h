@@ -28,9 +28,9 @@
 
 #include <vector>
 
-#include "Open3D/Core/Indexer.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
+#include "open3d/core/Indexer.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 

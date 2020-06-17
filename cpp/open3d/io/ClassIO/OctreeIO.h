@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include "Open3D/Geometry/Octree.h"
+#include "open3d/geometry/Octree.h"
 
 namespace open3d {
 namespace io {

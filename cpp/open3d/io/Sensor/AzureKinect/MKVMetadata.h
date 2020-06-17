@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "Open3D/Camera/PinholeCameraIntrinsic.h"
-#include "Open3D/Utility/IJsonConvertible.h"
+#include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/utility/IJsonConvertible.h"
 
 enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
 

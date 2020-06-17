@@ -29,7 +29,7 @@
 #include <memory>
 #include <string>
 
-#include "Open3D/ColorMap/ImageWarpingField.h"
+#include "open3d/pipelines/color_map/ImageWarpingField.h"
 
 namespace open3d {
 

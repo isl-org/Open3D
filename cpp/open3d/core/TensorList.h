@@ -30,13 +30,13 @@
 #include <memory>
 #include <string>
 
-#include "Open3D/Core/Blob.h"
-#include "Open3D/Core/Device.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/ShapeUtil.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Core/TensorKey.h"
+#include "open3d/core/Blob.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/ShapeUtil.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/core/TensorKey.h"
 namespace open3d {
 
 /// A TensorList is an extendable tensor at the 0-th dimension.

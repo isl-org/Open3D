@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/IndexGetSet.h"
+#include "open3d/core/Kernel/IndexGetSet.h"
 
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/Kernel/UnaryEW.h"
-#include "Open3D/Core/MemoryManager.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/Kernel/UnaryEW.h"
+#include "open3d/core/MemoryManager.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace kernel {

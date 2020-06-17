@@ -26,11 +26,11 @@
 
 #include <Eigen/Dense>
 
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TetraMesh.h"
-#include "Open3D/Geometry/TriangleMesh.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TetraMesh.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace geometry {

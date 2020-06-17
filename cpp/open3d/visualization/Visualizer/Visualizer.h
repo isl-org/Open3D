@@ -39,11 +39,11 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "Open3D/Geometry/Geometry.h"
-#include "Open3D/Visualization/Shader/GeometryRenderer.h"
-#include "Open3D/Visualization/Utility/ColorMap.h"
-#include "Open3D/Visualization/Visualizer/RenderOption.h"
-#include "Open3D/Visualization/Visualizer/ViewControl.h"
+#include "open3d/geometry/Geometry.h"
+#include "open3d/visualization/Shader/GeometryRenderer.h"
+#include "open3d/visualization/Utility/ColorMap.h"
+#include "open3d/visualization/Visualizer/RenderOption.h"
+#include "open3d/visualization/Visualizer/ViewControl.h"
 
 namespace open3d {
 

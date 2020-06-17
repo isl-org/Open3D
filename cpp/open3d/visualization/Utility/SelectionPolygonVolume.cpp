@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Utility/SelectionPolygonVolume.h"
+#include "open3d/visualization/Utility/SelectionPolygonVolume.h"
 
 #include <json/json.h>
 
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace visualization {

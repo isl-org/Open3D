@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/ColorMap/ImageWarpingField.h"
+#include "open3d/pipelines/color_map/ImageWarpingField.h"
 
 #include <json/json.h>
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace color_map {

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Theme.h"
+#include "open3d/visualization/gui/Theme.h"
 
 namespace open3d {
 namespace gui {}

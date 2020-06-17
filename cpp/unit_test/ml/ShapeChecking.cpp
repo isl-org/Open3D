@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/ML/ShapeChecking.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/ml/ShapeChecking.h"
+#include "unit_test/UnitTest.h"
 
 using namespace open3d::ml::shape_checking;
 

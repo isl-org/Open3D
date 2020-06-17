@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/Utility/Console.h"  //for ConsoleProgressBar
+#include "open3d/utility/Console.h"  //for ConsoleProgressBar
 
 namespace open3d {
 namespace utility {

@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/PointCloud.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

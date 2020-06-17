@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
-#include "Open3D/Utility/IJsonConvertible.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/io/Sensor/AzureKinect/MKVMetadata.h"
+#include "open3d/utility/IJsonConvertible.h"
 
 struct _k4a_playback_t;        // typedef _k4a_playback_t* k4a_playback_t;
 struct _k4a_capture_t;         // typedef _k4a_capture_t* k4a_capture_t;

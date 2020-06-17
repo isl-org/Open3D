@@ -24,22 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/SceneWidget.h"
+#include "open3d/visualization/gui/SceneWidget.h"
 
 #include <Eigen/Geometry>
 #include <set>
 
-#include "Open3D/GUI/Application.h"
-#include "Open3D/GUI/Color.h"
-#include "Open3D/GUI/Events.h"
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Visualization/Rendering/Camera.h"
-#include "Open3D/Visualization/Rendering/CameraInteractorLogic.h"
-#include "Open3D/Visualization/Rendering/IBLRotationInteractorLogic.h"
-#include "Open3D/Visualization/Rendering/LightDirectionInteractorLogic.h"
-#include "Open3D/Visualization/Rendering/ModelInteractorLogic.h"
-#include "Open3D/Visualization/Rendering/Scene.h"
-#include "Open3D/Visualization/Rendering/View.h"
+#include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/Color.h"
+#include "open3d/visualization/gui/Events.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/visualization/Rendering/Camera.h"
+#include "open3d/visualization/Rendering/CameraInteractorLogic.h"
+#include "open3d/visualization/Rendering/IBLRotationInteractorLogic.h"
+#include "open3d/visualization/Rendering/LightDirectionInteractorLogic.h"
+#include "open3d/visualization/Rendering/ModelInteractorLogic.h"
+#include "open3d/visualization/Rendering/Scene.h"
+#include "open3d/visualization/Rendering/View.h"
 
 namespace open3d {
 namespace gui {

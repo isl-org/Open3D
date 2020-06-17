@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "ContinuousConvOpKernel.h"
-#include "Open3D/ML/ContinuousConv/Detail/ContinuousConv.h"
+#include "open3d/ml/ContinuousConv/Detail/ContinuousConv.h"
 
 using namespace open3d;
 using namespace open3d::ml::detail;

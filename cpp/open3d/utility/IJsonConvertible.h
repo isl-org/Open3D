@@ -28,7 +28,7 @@
 
 #include <Eigen/Core>
 
-#include "Open3D/Utility/Eigen.h"
+#include "open3d/utility/Eigen.h"
 
 namespace Json {
 class Value;

@@ -26,8 +26,8 @@
 
 #define EIGEN_USE_GPU
 #include "ContinuousConvBackpropFilterOpKernel.h"
-#include "Open3D/Core/CUDAUtils.h"
-#include "Open3D/ML/ContinuousConv/Detail/ContinuousConvBackpropFilter.cuh"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/ml/ContinuousConv/Detail/ContinuousConvBackpropFilter.cuh"
 
 using namespace open3d;
 using namespace open3d::ml::detail;

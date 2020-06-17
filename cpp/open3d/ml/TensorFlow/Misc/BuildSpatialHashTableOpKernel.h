@@ -23,7 +23,7 @@
 #pragma once
 
 #include "../TensorFlowHelper.h"
-#include "Open3D/ML/Misc/Detail/FixedRadiusSearch.h"
+#include "open3d/ml/Misc/Detail/FixedRadiusSearch.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"

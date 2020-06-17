@@ -26,12 +26,12 @@
 
 #include "RGBDImageShader.h"
 
-#include <Open3D/Open3D.h>
+#include <open3d/Open3D.h>
 #include <algorithm>
 
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Visualization/Shader/Shader.h"
-#include "Open3D/Visualization/Utility/ColorMap.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/visualization/Shader/Shader.h"
+#include "open3d/visualization/Utility/ColorMap.h"
 
 namespace open3d {
 namespace visualization {

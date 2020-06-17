@@ -30,14 +30,14 @@
 #include <memory>
 #include <string>
 
-#include "Open3D/Core/Blob.h"
-#include "Open3D/Core/DLPack/DLPackConverter.h"
-#include "Open3D/Core/DLPack/dlpack.h"
-#include "Open3D/Core/Device.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/ShapeUtil.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/TensorKey.h"
+#include "open3d/core/Blob.h"
+#include "open3d/core/DLPack/DLPackConverter.h"
+#include "open3d/core/DLPack/dlpack.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/ShapeUtil.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorKey.h"
 
 namespace open3d {
 

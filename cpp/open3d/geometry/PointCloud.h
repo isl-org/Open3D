@@ -31,8 +31,8 @@
 #include <tuple>
 #include <vector>
 
-#include "Open3D/Geometry/Geometry3D.h"
-#include "Open3D/Geometry/KDTreeSearchParam.h"
+#include "open3d/geometry/Geometry3D.h"
+#include "open3d/geometry/KDTreeSearchParam.h"
 
 namespace open3d {
 

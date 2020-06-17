@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/BinaryEW.h"
+#include "open3d/core/Kernel/BinaryEW.h"
 
-#include "Open3D/Core/CUDAState.cuh"
-#include "Open3D/Core/CUDAUtils.h"
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Core/Kernel/CUDALauncher.cuh"
-#include "Open3D/Core/Tensor.h"
+#include "open3d/core/CUDAState.cuh"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/Kernel/CUDALauncher.cuh"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace kernel {

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
 
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
@@ -39,11 +39,11 @@
 #include <image/KtxBundle.h>
 #include <image/KtxUtility.h>
 
-#include "Open3D/GUI/Application.h"
-#include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEntitiesMods.h"
+#include "open3d/visualization/gui/Application.h"
+#include "open3d/io/ClassIO/ImageIO.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEntitiesMods.h"
 
 namespace open3d {
 namespace visualization {

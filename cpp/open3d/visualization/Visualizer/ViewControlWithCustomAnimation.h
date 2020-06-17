@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Open3D/Camera/PinholeCameraTrajectory.h"
-#include "Open3D/Visualization/Visualizer/ViewControl.h"
-#include "Open3D/Visualization/Visualizer/ViewTrajectory.h"
+#include "open3d/camera/PinholeCameraTrajectory.h"
+#include "open3d/visualization/Visualizer/ViewControl.h"
+#include "open3d/visualization/Visualizer/ViewTrajectory.h"
 
 namespace open3d {
 namespace visualization {

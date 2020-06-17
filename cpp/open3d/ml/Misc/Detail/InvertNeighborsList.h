@@ -28,8 +28,8 @@
 
 #include <tbb/parallel_for.h>
 
-#include "Open3D/Core/Atomic.h"
-#include "Open3D/Utility/ParallelScan.h"
+#include "open3d/core/Atomic.h"
+#include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
 namespace ml {

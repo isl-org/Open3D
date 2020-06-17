@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/AdvancedIndexing.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/Kernel/Kernel.h"
-#include "Open3D/Core/MemoryManager.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
+#include "open3d/core/AdvancedIndexing.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/Kernel/Kernel.h"
+#include "open3d/core/MemoryManager.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
 
 #include <benchmark/benchmark.h>
 

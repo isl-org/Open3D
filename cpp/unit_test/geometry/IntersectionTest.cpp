@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/IntersectionTest.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/geometry/IntersectionTest.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

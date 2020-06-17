@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/RendererHandle.h"
+#include "open3d/visualization/Rendering/RendererHandle.h"
 
 #include <iostream>
 

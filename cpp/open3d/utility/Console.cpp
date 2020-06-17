@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 #include <algorithm>
 #include <cerrno>
@@ -44,7 +44,7 @@
 
 #include <fmt/chrono.h>
 
-#include "Open3D/Utility/Helper.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 

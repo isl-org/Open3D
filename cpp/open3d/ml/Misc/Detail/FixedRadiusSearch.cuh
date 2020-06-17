@@ -29,9 +29,9 @@
 
 #include <cub/cub.cuh>
 
-#include "Open3D/ML/Misc/Detail/MemoryAllocation.h"
-#include "Open3D/ML/Misc/Detail/NeighborSearchCommon.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/ml/Misc/Detail/MemoryAllocation.h"
+#include "open3d/ml/Misc/Detail/NeighborSearchCommon.h"
+#include "open3d/utility/Helper.h"
 
 using namespace open3d::utility;
 

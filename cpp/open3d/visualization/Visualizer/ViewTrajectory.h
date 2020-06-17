@@ -30,8 +30,8 @@
 #include <tuple>
 #include <vector>
 
-#include "Open3D/Utility/IJsonConvertible.h"
-#include "Open3D/Visualization/Visualizer/ViewParameters.h"
+#include "open3d/utility/IJsonConvertible.h"
+#include "open3d/visualization/Visualizer/ViewParameters.h"
 
 namespace open3d {
 namespace visualization {

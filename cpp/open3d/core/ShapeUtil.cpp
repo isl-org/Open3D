@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/ShapeUtil.h"
+#include "open3d/core/ShapeUtil.h"
 
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace shape_util {

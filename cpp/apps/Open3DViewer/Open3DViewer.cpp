@@ -28,9 +28,9 @@
 
 #include <string>
 
-#include "Open3D/GUI/Native.h"
-#include "Open3D/Open3D.h"
-#include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
+#include "open3d/visualization/gui/Native.h"
+#include "open3d/Open3D.h"
+#include "open3d/visualization/Visualizer/GuiVisualizer.h"
 
 using namespace open3d;
 using namespace open3d::geometry;

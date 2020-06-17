@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/TetraMesh.h"
-#include "Open3D/Geometry/PointCloud.h"
+#include "open3d/geometry/TetraMesh.h"
+#include "open3d/geometry/PointCloud.h"
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"

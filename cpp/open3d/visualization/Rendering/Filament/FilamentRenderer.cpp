@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "open3d/visualization/Rendering/Filament/FilamentRenderer.h"
 
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
@@ -33,13 +33,13 @@
 #include <filament/Scene.h>
 #include <filament/SwapChain.h>
 
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentCamera.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEntitiesMods.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentRenderToBuffer.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentScene.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
+#include "open3d/utility/Console.h"
+#include "open3d/visualization/Rendering/Filament/FilamentCamera.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEntitiesMods.h"
+#include "open3d/visualization/Rendering/Filament/FilamentRenderToBuffer.h"
+#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "open3d/visualization/Rendering/Filament/FilamentScene.h"
+#include "open3d/visualization/Rendering/Filament/FilamentView.h"
 
 namespace open3d {
 namespace visualization {

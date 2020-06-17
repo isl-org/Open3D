@@ -30,9 +30,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Visualization/Rendering/Renderer.h"
-#include "Open3D/Visualization/Rendering/RendererHandle.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/visualization/Rendering/Renderer.h"
+#include "open3d/visualization/Rendering/RendererHandle.h"
 
 namespace filament {
 class Engine;

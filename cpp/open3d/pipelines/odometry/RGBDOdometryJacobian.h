@@ -31,8 +31,8 @@
 #include <tuple>
 #include <vector>
 
-#include "Open3D/Odometry/OdometryOption.h"
-#include "Open3D/Utility/Eigen.h"
+#include "open3d/pipelines/odometry/OdometryOption.h"
+#include "open3d/utility/Eigen.h"
 
 namespace open3d {
 

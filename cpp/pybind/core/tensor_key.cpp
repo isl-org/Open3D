@@ -28,8 +28,8 @@
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Core/TensorKey.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/core/TensorKey.h"
 
 namespace open3d {
 

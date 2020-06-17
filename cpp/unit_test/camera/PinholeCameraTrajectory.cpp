@@ -26,8 +26,8 @@
 
 #include <json/json.h>
 
-#include "Open3D/Camera/PinholeCameraTrajectory.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/camera/PinholeCameraTrajectory.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

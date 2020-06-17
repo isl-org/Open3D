@@ -28,7 +28,7 @@
 
 // NOTE: This header must precede the Filament headers otherwise a conflict
 // occurs between Filament and standard headers
-#include "Open3D/Visualization/Rendering/RendererHandle.h"
+#include "open3d/visualization/Rendering/RendererHandle.h"
 
 #include <filament/Box.h>
 #include <filament/RenderableManager.h>

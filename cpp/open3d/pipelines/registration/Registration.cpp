@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Registration/Registration.h"
+#include "open3d/pipelines/registration/Registration.h"
 
 #include <cstdlib>
 
-#include "Open3D/Geometry/KDTreeFlann.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Registration/Feature.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/geometry/KDTreeFlann.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/pipelines/registration/Feature.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 

@@ -28,7 +28,7 @@
 
 #include <memory>
 
-#include "Open3D/Visualization/Rendering/MaterialModifier.h"
+#include "open3d/visualization/Rendering/MaterialModifier.h"
 
 namespace filament {
 class MaterialInstance;

@@ -24,19 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Registration/GlobalOptimization.h"
+#include "open3d/pipelines/registration/GlobalOptimization.h"
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <tuple>
 #include <vector>
 
-#include "Open3D/Registration/GlobalOptimizationConvergenceCriteria.h"
-#include "Open3D/Registration/GlobalOptimizationMethod.h"
-#include "Open3D/Registration/PoseGraph.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Eigen.h"
-#include "Open3D/Utility/Timer.h"
+#include "open3d/pipelines/registration/GlobalOptimizationConvergenceCriteria.h"
+#include "open3d/pipelines/registration/GlobalOptimizationMethod.h"
+#include "open3d/pipelines/registration/PoseGraph.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/Eigen.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 

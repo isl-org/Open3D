@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/PointCloud.h"
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"

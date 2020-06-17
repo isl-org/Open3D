@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/ImageLabel.h"
+#include "open3d/visualization/gui/ImageLabel.h"
 
 #include <filament/Texture.h>
 #include <string>
 
-#include "Open3D/GUI/Theme.h"
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
-#include "Open3D/Visualization/Rendering/Renderer.h"
+#include "open3d/visualization/gui/Theme.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/io/ClassIO/ImageIO.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
+#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "open3d/visualization/Rendering/Renderer.h"
 
 namespace open3d {
 namespace gui {

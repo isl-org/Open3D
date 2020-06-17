@@ -28,9 +28,9 @@
 #include <sys/stat.h>
 #include <algorithm>
 
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

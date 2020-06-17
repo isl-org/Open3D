@@ -32,7 +32,7 @@
 #include <string>
 #include <vector>
 
-#include "Open3D/Macro.h"
+#include "open3d/Macro.h"
 
 #define ExpectEQ(arg, ...)                                                   \
     ExpectEQInternal(::open3d::unit_test::LineInfo(__FILE__, __LINE__), arg, \

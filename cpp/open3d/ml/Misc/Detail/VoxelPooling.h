@@ -30,7 +30,7 @@
 #include <Eigen/Core>
 #include <unordered_map>
 
-#include "Open3D/Utility/Helper.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace ml {

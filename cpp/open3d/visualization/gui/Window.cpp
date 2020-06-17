@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Window.h"
+#include "open3d/visualization/gui/Window.h"
 
 #include <GLFW/glfw3.h>
 #include <filament/Engine.h>
@@ -35,21 +35,21 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Open3D/GUI/Application.h"
-#include "Open3D/GUI/Button.h"
-#include "Open3D/GUI/Dialog.h"
-#include "Open3D/GUI/ImguiFilamentBridge.h"
-#include "Open3D/GUI/Label.h"
-#include "Open3D/GUI/Layout.h"
-#include "Open3D/GUI/Menu.h"
-#include "Open3D/GUI/Native.h"
-#include "Open3D/GUI/SceneWidget.h"
-#include "Open3D/GUI/Theme.h"
-#include "Open3D/GUI/Util.h"
-#include "Open3D/GUI/Widget.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/Button.h"
+#include "open3d/visualization/gui/Dialog.h"
+#include "open3d/visualization/gui/ImguiFilamentBridge.h"
+#include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/Layout.h"
+#include "open3d/visualization/gui/Menu.h"
+#include "open3d/visualization/gui/Native.h"
+#include "open3d/visualization/gui/SceneWidget.h"
+#include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Util.h"
+#include "open3d/visualization/gui/Widget.h"
+#include "open3d/utility/Console.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
+#include "open3d/visualization/Rendering/Filament/FilamentRenderer.h"
 
 using namespace open3d::gui::util;
 

@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Blob.h"
-#include "Open3D/Core/Device.h"
-#include "Open3D/Core/MemoryManager.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/core/Blob.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/MemoryManager.h"
+#include "unit_test/UnitTest.h"
 
 #include "Core/CoreTest.h"
 

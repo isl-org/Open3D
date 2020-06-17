@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Shader/Simple2DShader.h"
+#include "open3d/visualization/Shader/Simple2DShader.h"
 
-#include "Open3D/Visualization/Shader/Shader.h"
-#include "Open3D/Visualization/Utility/SelectionPolygon.h"
-#include "Open3D/Visualization/Visualizer/RenderOptionWithEditing.h"
+#include "open3d/visualization/Shader/Shader.h"
+#include "open3d/visualization/Utility/SelectionPolygon.h"
+#include "open3d/visualization/Visualizer/RenderOptionWithEditing.h"
 
 namespace open3d {
 namespace visualization {

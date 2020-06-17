@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/MeshBase.h"
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/IntersectionTest.h"
-#include "Open3D/Geometry/KDTreeFlann.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/Qhull.h"
-#include "Open3D/Geometry/TriangleMesh.h"
+#include "open3d/geometry/MeshBase.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/IntersectionTest.h"
+#include "open3d/geometry/KDTreeFlann.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/Qhull.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 #include <Eigen/Dense>
 #include <numeric>
@@ -38,7 +38,7 @@
 #include <random>
 #include <tuple>
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace geometry {

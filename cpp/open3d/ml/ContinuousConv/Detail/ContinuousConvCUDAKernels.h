@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include "Open3D/ML/ContinuousConv/Detail/CoordinateTransformation.cuh"
+#include "open3d/ml/ContinuousConv/Detail/CoordinateTransformation.cuh"
 
 namespace open3d {
 namespace ml {

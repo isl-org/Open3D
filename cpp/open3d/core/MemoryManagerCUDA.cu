@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/MemoryManager.h"
+#include "open3d/core/MemoryManager.h"
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "Open3D/Core/CUDAState.cuh"
-#include "Open3D/Core/CUDAUtils.h"
+#include "open3d/core/CUDAState.cuh"
+#include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
 

@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Integration/UniformTSDFVolume.h"
+#include "open3d/pipelines/integration/UniformTSDFVolume.h"
 
 #include <iostream>
 #include <thread>
 #include <unordered_map>
 
-#include "Open3D/Geometry/VoxelGrid.h"
-#include "Open3D/Integration/MarchingCubesConst.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/geometry/VoxelGrid.h"
+#include "open3d/pipelines/integration/MarchingCubesConst.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace integration {

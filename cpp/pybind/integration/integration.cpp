@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/VoxelGrid.h"
-#include "Open3D/Integration/ScalableTSDFVolume.h"
-#include "Open3D/Integration/TSDFVolume.h"
-#include "Open3D/Integration/UniformTSDFVolume.h"
+#include "open3d/geometry/VoxelGrid.h"
+#include "open3d/pipelines/integration/ScalableTSDFVolume.h"
+#include "open3d/pipelines/integration/TSDFVolume.h"
+#include "open3d/pipelines/integration/UniformTSDFVolume.h"
 
 #include "pybind/docstring.h"
 #include "pybind/integration/integration.h"

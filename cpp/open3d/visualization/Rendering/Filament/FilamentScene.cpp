@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/Filament/FilamentScene.h"
+#include "open3d/visualization/Rendering/Filament/FilamentScene.h"
 
 #include <filament/Engine.h>
 #include <filament/IndirectLight.h>
@@ -39,15 +39,15 @@
 #include <filament/View.h>
 #include <utils/EntityManager.h>
 
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEntitiesMods.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentGeometryBuffersBuilder.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/utility/Console.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEntitiesMods.h"
+#include "open3d/visualization/Rendering/Filament/FilamentGeometryBuffersBuilder.h"
+#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "open3d/visualization/Rendering/Filament/FilamentView.h"
 
 namespace {  // avoid polluting global namespace, since only used here
 

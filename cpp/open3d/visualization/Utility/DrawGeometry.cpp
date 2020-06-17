@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Utility/DrawGeometry.h"
+#include "open3d/visualization/Utility/DrawGeometry.h"
 
-#include "Open3D/GUI/Application.h"
-#include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
-#include "Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h"
-#include "Open3D/Visualization/Visualizer/ViewControlWithEditing.h"
-#include "Open3D/Visualization/Visualizer/Visualizer.h"
-#include "Open3D/Visualization/Visualizer/VisualizerWithCustomAnimation.h"
-#include "Open3D/Visualization/Visualizer/VisualizerWithEditing.h"
-#include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
-#include "Open3D/Visualization/Visualizer/VisualizerWithVertexSelection.h"
+#include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/Visualizer/GuiVisualizer.h"
+#include "open3d/visualization/Visualizer/ViewControlWithCustomAnimation.h"
+#include "open3d/visualization/Visualizer/ViewControlWithEditing.h"
+#include "open3d/visualization/Visualizer/Visualizer.h"
+#include "open3d/visualization/Visualizer/VisualizerWithCustomAnimation.h"
+#include "open3d/visualization/Visualizer/VisualizerWithEditing.h"
+#include "open3d/visualization/Visualizer/VisualizerWithKeyCallback.h"
+#include "open3d/visualization/Visualizer/VisualizerWithVertexSelection.h"
 
 namespace open3d {
 namespace visualization {

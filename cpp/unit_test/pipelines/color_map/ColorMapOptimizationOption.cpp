@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "UnitTest/UnitTest.h"
+#include "unit_test/UnitTest.h"
 
 // #include "Open3D/ColorMap/ColorMapOptimizationOption.h"
 

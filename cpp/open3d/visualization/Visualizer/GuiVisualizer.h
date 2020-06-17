@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include "Open3D/GUI/Window.h"
+#include "open3d/visualization/gui/Window.h"
 
 namespace open3d {
 

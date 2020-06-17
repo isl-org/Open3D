@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/RenderToBuffer.h"
+#include "open3d/visualization/Rendering/RenderToBuffer.h"
 
 namespace filament {
 class Engine;

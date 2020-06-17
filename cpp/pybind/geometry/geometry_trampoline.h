@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/Geometry.h"
-#include "Open3D/Geometry/Geometry2D.h"
-#include "Open3D/Geometry/Geometry3D.h"
-#include "Open3D/Geometry/TetraMesh.h"
-#include "Open3D/Geometry/TriangleMesh.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/Geometry.h"
+#include "open3d/geometry/Geometry2D.h"
+#include "open3d/geometry/Geometry3D.h"
+#include "open3d/geometry/TetraMesh.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 #include "pybind/geometry/geometry.h"
 #include "pybind/open3d_pybind.h"

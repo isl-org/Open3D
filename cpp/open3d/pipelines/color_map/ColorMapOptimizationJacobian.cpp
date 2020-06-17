@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/ColorMap/ColorMapOptimizationJacobian.h"
+#include "open3d/pipelines/color_map/ColorMapOptimizationJacobian.h"
 
-#include "Open3D/ColorMap/EigenHelperForNonRigidOptimization.h"
-#include "Open3D/ColorMap/ImageWarpingField.h"
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/TriangleMesh.h"
+#include "open3d/pipelines/color_map/EigenHelperForNonRigidOptimization.h"
+#include "open3d/pipelines/color_map/ImageWarpingField.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace color_map {

@@ -29,7 +29,7 @@
 #include <functional>
 #include <memory>
 
-#include "Open3D/GUI/Menu.h"
+#include "open3d/visualization/gui/Menu.h"
 
 namespace open3d {
 namespace gui {

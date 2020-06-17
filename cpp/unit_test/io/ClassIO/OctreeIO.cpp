@@ -27,12 +27,12 @@
 #include <json/json.h>
 #include <cstdio>
 
-#include "Open3D/Geometry/Octree.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/IO/ClassIO/OctreeIO.h"
-#include "Open3D/IO/ClassIO/PointCloudIO.h"
-#include "Open3D/Utility/IJsonConvertible.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/geometry/Octree.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/io/ClassIO/OctreeIO.h"
+#include "open3d/io/ClassIO/PointCloudIO.h"
+#include "open3d/utility/IJsonConvertible.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

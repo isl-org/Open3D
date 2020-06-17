@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/KDTreeFlann.h"
+#include "open3d/geometry/KDTreeFlann.h"
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"

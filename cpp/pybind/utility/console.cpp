@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"

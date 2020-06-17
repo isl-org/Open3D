@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/IO/ClassIO/VoxelGridIO.h"
-#include "Open3D/Geometry/VoxelGrid.h"
-#include "Open3D/Visualization/Utility/DrawGeometry.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/io/ClassIO/VoxelGridIO.h"
+#include "open3d/geometry/VoxelGrid.h"
+#include "open3d/visualization/Utility/DrawGeometry.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

@@ -29,7 +29,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "Open3D/Utility/Eigen.h"
+#include "open3d/utility/Eigen.h"
 
 namespace open3d {
 namespace unit_test {

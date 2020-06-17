@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Registration/Feature.h"
-#include "Open3D/Geometry/PointCloud.h"
+#include "open3d/pipelines/registration/Feature.h"
+#include "open3d/geometry/PointCloud.h"
 
 #include "pybind/docstring.h"
 #include "pybind/registration/registration.h"

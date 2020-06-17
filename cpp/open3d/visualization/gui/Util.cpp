@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Util.h"
+#include "open3d/visualization/gui/Util.h"
 
-#include "Open3D/GUI/Color.h"
+#include "open3d/visualization/gui/Color.h"
 
 namespace open3d {
 namespace gui {

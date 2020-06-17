@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Button.h"
+#include "open3d/visualization/gui/Button.h"
 
 #include <imgui.h>
 #include <cmath>
 #include <string>
 
-#include "Open3D/GUI/Theme.h"
-#include "Open3D/GUI/Util.h"
+#include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Util.h"
 
 namespace open3d {
 namespace gui {

@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/RotationInteractorLogic.h"
+#include "open3d/visualization/Rendering/RotationInteractorLogic.h"
 
 namespace open3d {
 namespace visualization {

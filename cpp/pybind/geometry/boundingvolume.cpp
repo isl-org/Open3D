@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/BoundingVolume.h"
+#include "open3d/geometry/BoundingVolume.h"
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"

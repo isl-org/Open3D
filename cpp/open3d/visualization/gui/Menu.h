@@ -28,7 +28,7 @@
 
 #include <memory>
 
-#include "Open3D/GUI/Events.h"
+#include "open3d/visualization/gui/Events.h"
 
 #define GUI_USE_NATIVE_MENUS 1
 

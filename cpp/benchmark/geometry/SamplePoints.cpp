@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/io/ClassIO/TriangleMeshIO.h"
 #include "benchmark/benchmark.h"
 
 class SamplePointsFixture : public benchmark::Fixture {

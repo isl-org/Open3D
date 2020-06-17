@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
+#include "open3d/io/Sensor/AzureKinect/MKVMetadata.h"
 
 #include <json/json.h>
 #include <unordered_map>

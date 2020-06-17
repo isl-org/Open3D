@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/PointCloud.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

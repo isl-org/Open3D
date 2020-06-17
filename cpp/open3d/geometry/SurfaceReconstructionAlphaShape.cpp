@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/Qhull.h"
-#include "Open3D/Geometry/TetraMesh.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/Qhull.h"
+#include "open3d/geometry/TetraMesh.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/utility/Console.h"
 
 #include <Eigen/Dense>
 

@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Registration/TransformationEstimation.h"
+#include "open3d/pipelines/registration/TransformationEstimation.h"
 
 #include <Eigen/Geometry>
 
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Utility/Eigen.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/utility/Eigen.h"
 
 namespace open3d {
 namespace registration {

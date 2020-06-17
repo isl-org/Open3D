@@ -42,7 +42,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/ImguiFilamentBridge.h"
+#include "open3d/visualization/gui/ImguiFilamentBridge.h"
 
 #include <fcntl.h>
 #include <filamat/MaterialBuilder.h>
@@ -70,17 +70,17 @@
 #include <io.h>
 #endif
 
-#include "Open3D/GUI/Application.h"
-#include "Open3D/GUI/Color.h"
-#include "Open3D/GUI/Gui.h"
-#include "Open3D/GUI/Theme.h"
-#include "Open3D/GUI/Window.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentCamera.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentScene.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
+#include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/Color.h"
+#include "open3d/visualization/gui/Gui.h"
+#include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Window.h"
+#include "open3d/visualization/Rendering/Filament/FilamentCamera.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
+#include "open3d/visualization/Rendering/Filament/FilamentRenderer.h"
+#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "open3d/visualization/Rendering/Filament/FilamentScene.h"
+#include "open3d/visualization/Rendering/Filament/FilamentView.h"
 
 using namespace filament::math;
 using namespace filament;

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Color.h"
+#include "open3d/visualization/gui/Color.h"
 
 #include <algorithm>
 #include <cmath>

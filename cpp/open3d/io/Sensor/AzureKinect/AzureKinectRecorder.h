@@ -30,9 +30,9 @@
 #include <memory>
 #include <string>
 
-#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
-#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
-#include "Open3D/IO/Sensor/RGBDRecorder.h"
+#include "open3d/io/Sensor/AzureKinect/AzureKinectSensor.h"
+#include "open3d/io/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "open3d/io/Sensor/RGBDRecorder.h"
 
 struct _k4a_record_t;  // typedef _k4a_record_t* k4a_record_t;
 

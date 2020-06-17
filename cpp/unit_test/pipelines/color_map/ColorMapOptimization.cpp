@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Camera/PinholeCameraTrajectory.h"
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/camera/PinholeCameraTrajectory.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

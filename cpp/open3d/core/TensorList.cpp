@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/TensorList.h"
-#include "Open3D/Core/SizeVector.h"
+#include "open3d/core/TensorList.h"
+#include "open3d/core/SizeVector.h"
 
 namespace open3d {
 // Public

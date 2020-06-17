@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/Renderer.h"
+#include "open3d/visualization/Rendering/Renderer.h"
 
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Visualization/Rendering/RenderToBuffer.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/utility/Console.h"
+#include "open3d/visualization/Rendering/RenderToBuffer.h"
 
 namespace open3d {
 namespace visualization {

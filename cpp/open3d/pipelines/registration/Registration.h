@@ -30,9 +30,9 @@
 #include <tuple>
 #include <vector>
 
-#include "Open3D/Registration/CorrespondenceChecker.h"
-#include "Open3D/Registration/TransformationEstimation.h"
-#include "Open3D/Utility/Eigen.h"
+#include "open3d/pipelines/registration/CorrespondenceChecker.h"
+#include "open3d/pipelines/registration/TransformationEstimation.h"
+#include "open3d/utility/Eigen.h"
 
 namespace open3d {
 

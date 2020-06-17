@@ -28,7 +28,7 @@
 
 #include <Eigen/Core>
 
-#include "Open3D/Geometry/Geometry.h"
+#include "open3d/geometry/Geometry.h"
 
 namespace open3d {
 namespace geometry {

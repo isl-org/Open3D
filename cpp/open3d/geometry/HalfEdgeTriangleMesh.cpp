@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
-#include "Open3D/Geometry/TriangleMesh.h"
+#include "open3d/geometry/HalfEdgeTriangleMesh.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 #include <numeric>
 
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace geometry {

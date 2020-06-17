@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/IntersectionTest.h"
+#include "open3d/geometry/IntersectionTest.h"
 
 #include <tomasakeninemoeller/opttritri.h>
 #include <tomasakeninemoeller/tribox3.h>

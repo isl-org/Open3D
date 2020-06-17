@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/TensorList.h"
+#include "open3d/core/TensorList.h"
 
 #include <vector>
 
 #include "Core/CoreTest.h"
-#include "UnitTest/UnitTest.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

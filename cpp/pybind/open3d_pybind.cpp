@@ -36,7 +36,7 @@
 #include "pybind/utility/utility.h"
 #include "pybind/visualization/visualization.h"
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 

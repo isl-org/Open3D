@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Checkbox.h"
+#include "open3d/visualization/gui/Checkbox.h"
 
 #include <imgui.h>
 #include <cmath>
 #include <string>
 
-#include "Open3D/GUI/Theme.h"
-#include "Open3D/GUI/Util.h"
+#include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Util.h"
 
 using namespace open3d::gui::util;
 

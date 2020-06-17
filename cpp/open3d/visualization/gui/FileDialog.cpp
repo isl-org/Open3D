@@ -28,23 +28,23 @@
 // see FileDialogNative.cpp
 #else
 
-#include "Open3D/GUI/FileDialog.h"
+#include "open3d/visualization/gui/FileDialog.h"
 
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
-#include "Open3D/GUI/Button.h"
-#include "Open3D/GUI/Combobox.h"
-#include "Open3D/GUI/Label.h"
-#include "Open3D/GUI/Layout.h"
-#include "Open3D/GUI/ListView.h"
-#include "Open3D/GUI/TextEdit.h"
-#include "Open3D/GUI/Theme.h"
-#include "Open3D/GUI/Util.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/visualization/gui/Button.h"
+#include "open3d/visualization/gui/Combobox.h"
+#include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/Layout.h"
+#include "open3d/visualization/gui/ListView.h"
+#include "open3d/visualization/gui/TextEdit.h"
+#include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Util.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Helper.h"
 
 // macOS sorts directories in with the files
 // Windows and Linux (GTK) sort directories first.

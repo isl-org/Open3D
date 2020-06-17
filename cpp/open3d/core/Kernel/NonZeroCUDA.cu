@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/NonZero.h"
+#include "open3d/core/Kernel/NonZero.h"
 
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 #include <thrust/for_each.h>
 #include <thrust/iterator/zip_iterator.h>
 
-#include "Open3D/Core/Indexer.h"
+#include "open3d/core/Indexer.h"
 
 namespace open3d {
 namespace kernel {

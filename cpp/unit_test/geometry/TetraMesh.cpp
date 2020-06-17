@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/TetraMesh.h"
+#include "open3d/geometry/TetraMesh.h"
 #include <Eigen/Geometry>
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

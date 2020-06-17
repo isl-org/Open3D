@@ -27,9 +27,9 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-#include "Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
+#include "open3d/io/ClassIO/PinholeCameraTrajectoryIO.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
 
 // The TUM format for camera trajectories as used in
 // "A Benchmark for the Evaluation of RGB-D SLAM Systems" by

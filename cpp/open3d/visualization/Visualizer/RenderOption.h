@@ -28,7 +28,7 @@
 
 #include <Eigen/Core>
 
-#include "Open3D/Utility/IJsonConvertible.h"
+#include "open3d/utility/IJsonConvertible.h"
 
 namespace open3d {
 namespace visualization {

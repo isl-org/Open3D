@@ -33,8 +33,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "Open3D/Geometry/Geometry3D.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/geometry/Geometry3D.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace geometry {

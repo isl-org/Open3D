@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Visualizer/RenderOption.h"
+#include "open3d/visualization/Visualizer/RenderOption.h"
 
 #include <GL/glew.h>
 #include <json/json.h>
 
-#include "Open3D/Utility/Console.h"
+#include "open3d/utility/Console.h"
 
 #include <algorithm>
 

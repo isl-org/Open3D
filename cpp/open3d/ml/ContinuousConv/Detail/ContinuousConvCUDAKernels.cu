@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/ML/ContinuousConv/Detail/ContinuousConvCUDAKernels.h"
+#include "open3d/ml/ContinuousConv/Detail/ContinuousConvCUDAKernels.h"
 
-#include "Open3D/Utility/Helper.h"
+#include "open3d/utility/Helper.h"
 
 using open3d::utility::DivUp;
 

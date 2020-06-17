@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
 
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
 
 namespace open3d {
 namespace visualization {

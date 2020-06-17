@@ -29,8 +29,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "Open3D/IO/Sensor/RGBDSensorConfig.h"
-#include "Open3D/Utility/IJsonConvertible.h"
+#include "open3d/io/Sensor/RGBDSensorConfig.h"
+#include "open3d/utility/IJsonConvertible.h"
 
 struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 

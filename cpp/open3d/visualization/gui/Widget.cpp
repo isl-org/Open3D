@@ -29,8 +29,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "Open3D/GUI/Color.h"
-#include "Open3D/GUI/Events.h"
+#include "open3d/visualization/gui/Color.h"
+#include "open3d/visualization/gui/Events.h"
 
 namespace open3d {
 namespace gui {

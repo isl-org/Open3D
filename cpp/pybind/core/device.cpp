@@ -28,7 +28,7 @@
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
-#include "Open3D/Core/Device.h"
+#include "open3d/core/Device.h"
 
 namespace open3d {
 

@@ -26,8 +26,8 @@
 
 #include <json/json.h>
 
-#include "Open3D/Utility/IJsonConvertible.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/utility/IJsonConvertible.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

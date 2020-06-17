@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/io/ClassIO/TriangleMeshIO.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

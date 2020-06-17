@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Visualizer/ViewControl.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/visualization/Visualizer/ViewControl.h"
+#include "open3d/utility/Console.h"
 
 // Avoid warning caused by redefinition of APIENTRY macro
 // defined also in glfw3.h

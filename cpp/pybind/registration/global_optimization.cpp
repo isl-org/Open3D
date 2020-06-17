@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Registration/GlobalOptimization.h"
-#include "Open3D/Registration/GlobalOptimizationConvergenceCriteria.h"
-#include "Open3D/Registration/GlobalOptimizationMethod.h"
-#include "Open3D/Registration/PoseGraph.h"
+#include "open3d/pipelines/registration/GlobalOptimization.h"
+#include "open3d/pipelines/registration/GlobalOptimizationConvergenceCriteria.h"
+#include "open3d/pipelines/registration/GlobalOptimizationMethod.h"
+#include "open3d/pipelines/registration/PoseGraph.h"
 
 #include "pybind/docstring.h"
 #include "pybind/registration/registration.h"

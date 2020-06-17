@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/Geometry.h"
+#include "open3d/geometry/Geometry.h"
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"

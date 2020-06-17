@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/CUDAUtils.h"
+#include "open3d/core/CUDAUtils.h"
 
 #ifdef BUILD_CUDA_MODULE
-#include "Open3D/Core/CUDAState.cuh"
+#include "open3d/core/CUDAState.cuh"
 #endif
 
 namespace open3d {

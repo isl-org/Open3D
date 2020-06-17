@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "InvertNeighborsListOpKernel.h"
-#include "Open3D/ML/Misc/Detail/InvertNeighborsList.h"
+#include "open3d/ml/Misc/Detail/InvertNeighborsList.h"
 
 using namespace open3d::ml::detail;
 using namespace invert_neighbors_list_opkernel;

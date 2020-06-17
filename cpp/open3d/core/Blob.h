@@ -30,8 +30,8 @@
 #include <iostream>
 #include <string>
 
-#include "Open3D/Core/Device.h"
-#include "Open3D/Core/MemoryManager.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/MemoryManager.h"
 
 namespace open3d {
 

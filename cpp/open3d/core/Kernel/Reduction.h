@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/Helper.h"
 
 #include <unordered_set>
 

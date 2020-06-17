@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Shader/SimpleShader.h"
+#include "open3d/visualization/Shader/SimpleShader.h"
 
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Geometry/Octree.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TetraMesh.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Geometry/VoxelGrid.h"
-#include "Open3D/Visualization/Shader/Shader.h"
-#include "Open3D/Visualization/Utility/ColorMap.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/Octree.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TetraMesh.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/geometry/VoxelGrid.h"
+#include "open3d/visualization/Shader/Shader.h"
+#include "open3d/visualization/Utility/ColorMap.h"
 
 namespace open3d {
 namespace visualization {

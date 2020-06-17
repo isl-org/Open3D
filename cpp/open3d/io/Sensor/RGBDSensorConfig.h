@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/Utility/IJsonConvertible.h"
+#include "open3d/utility/IJsonConvertible.h"
 
 namespace open3d {
 namespace io {

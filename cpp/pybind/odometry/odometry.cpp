@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Odometry/Odometry.h"
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/Odometry/OdometryOption.h"
-#include "Open3D/Odometry/RGBDOdometryJacobian.h"
+#include "open3d/pipelines/odometry/Odometry.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/pipelines/odometry/OdometryOption.h"
+#include "open3d/pipelines/odometry/RGBDOdometryJacobian.h"
 
 #include "pybind/docstring.h"
 #include "pybind/odometry/odometry.h"

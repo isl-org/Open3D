@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/NonZero.h"
+#include "open3d/core/Kernel/NonZero.h"
 
-#include "Open3D/Core/Device.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace kernel {

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "UnitTest/TestUtility/Raw.h"
+#include "unit_test/test_utility/Raw.h"
 
 #include <fstream>
 #include <iostream>

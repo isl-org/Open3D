@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Integration/UniformTSDFVolume.h"
-#include "Open3D/Camera/PinholeCameraIntrinsic.h"
-#include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/Utility/FileSystem.h"
-#include "Open3D/Visualization/Utility/DrawGeometry.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/pipelines/integration/UniformTSDFVolume.h"
+#include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/io/ClassIO/ImageIO.h"
+#include "open3d/utility/FileSystem.h"
+#include "open3d/visualization/Utility/DrawGeometry.h"
+#include "unit_test/UnitTest.h"
 
 #include <sstream>
 

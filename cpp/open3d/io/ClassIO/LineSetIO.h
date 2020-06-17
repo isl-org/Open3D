@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include "Open3D/Geometry/LineSet.h"
+#include "open3d/geometry/LineSet.h"
 
 namespace open3d {
 namespace io {

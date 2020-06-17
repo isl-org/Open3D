@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/DLPack/DLPackConverter.h"
-#include "Open3D/Core/DLPack/dlpack.h"
-#include "Open3D/Core/Tensor.h"
+#include "open3d/core/DLPack/DLPackConverter.h"
+#include "open3d/core/DLPack/dlpack.h"
+#include "open3d/core/Tensor.h"
 
 #include "Core/CoreTest.h"
-#include "UnitTest/UnitTest.h"
+#include "unit_test/UnitTest.h"
 
 #include <vector>
 

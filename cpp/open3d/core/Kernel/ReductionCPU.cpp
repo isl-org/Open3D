@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/Reduction.h"
+#include "open3d/core/Kernel/Reduction.h"
 
 #include <limits>
 
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Core/Indexer.h"
-#include "Open3D/Core/ParallelUtil.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/Indexer.h"
+#include "open3d/core/ParallelUtil.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace kernel {

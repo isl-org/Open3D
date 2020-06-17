@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/MeshBase.h"
-#include "Open3D/Geometry/PointCloud.h"
+#include "open3d/geometry/MeshBase.h"
+#include "open3d/geometry/PointCloud.h"
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"

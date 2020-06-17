@@ -39,10 +39,10 @@
 #include <link.h>
 #endif
 
-#include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
-#include "Open3D/IO/Sensor/AzureKinect/PluginMacros.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/io/Sensor/AzureKinect/K4aPlugin.h"
+#include "open3d/io/Sensor/AzureKinect/PluginMacros.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace io {

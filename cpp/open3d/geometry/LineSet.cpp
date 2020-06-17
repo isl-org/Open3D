@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/LineSet.h"
-#include "Open3D/Geometry/BoundingVolume.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/BoundingVolume.h"
 
 #include <numeric>
 

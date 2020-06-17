@@ -30,7 +30,7 @@
 #include <memory>
 #include <vector>
 
-#include "Open3D/Geometry/Geometry3D.h"
+#include "open3d/geometry/Geometry3D.h"
 
 namespace open3d {
 namespace geometry {

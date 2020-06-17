@@ -28,7 +28,7 @@
 
 #include <Eigen/Core>
 
-#include "Open3D/Registration/Registration.h"
+#include "open3d/pipelines/registration/Registration.h"
 
 namespace open3d {
 

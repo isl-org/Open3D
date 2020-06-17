@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Shader/TexturePhongShader.h"
+#include "open3d/visualization/Shader/TexturePhongShader.h"
 
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Visualization/Shader/Shader.h"
-#include "Open3D/Visualization/Utility/ColorMap.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/visualization/Shader/Shader.h"
+#include "open3d/visualization/Utility/ColorMap.h"
 
 namespace open3d {
 namespace visualization {

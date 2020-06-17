@@ -26,7 +26,7 @@
 
 #include "FileFormatIO.h"
 
-#include "Open3D/Utility/FileSystem.h"
+#include "open3d/utility/FileSystem.h"
 
 #include <map>
 

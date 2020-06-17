@@ -27,12 +27,12 @@
 #include <numeric>
 #include <unordered_map>
 
-#include "Open3D/Geometry/IntersectionTest.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Geometry/VoxelGrid.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/geometry/IntersectionTest.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/geometry/VoxelGrid.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace geometry {

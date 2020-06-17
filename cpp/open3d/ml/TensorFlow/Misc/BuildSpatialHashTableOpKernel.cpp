@@ -26,7 +26,7 @@
 //
 
 #include "BuildSpatialHashTableOpKernel.h"
-#include "Open3D/ML/Misc/Detail/FixedRadiusSearch.h"
+#include "open3d/ml/Misc/Detail/FixedRadiusSearch.h"
 
 using namespace open3d::ml::detail;
 using namespace tensorflow;

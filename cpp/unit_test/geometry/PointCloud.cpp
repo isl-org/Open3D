@@ -26,17 +26,17 @@
 
 #include <algorithm>
 
-#include "Open3D/Camera/PinholeCameraIntrinsic.h"
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h"
-#include "Open3D/IO/ClassIO/PointCloudIO.h"
-#include "Open3D/Visualization/Utility/DrawGeometry.h"
-#include "UnitTest/UnitTest.h"
+#include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/io/ClassIO/ImageIO.h"
+#include "open3d/io/ClassIO/PinholeCameraTrajectoryIO.h"
+#include "open3d/io/ClassIO/PointCloudIO.h"
+#include "open3d/visualization/Utility/DrawGeometry.h"
+#include "unit_test/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

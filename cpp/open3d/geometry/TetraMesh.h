@@ -31,9 +31,9 @@
 #include <memory>
 #include <vector>
 
-#include "Open3D/Geometry/MeshBase.h"
-#include "Open3D/Utility/Eigen.h"
-#include "Open3D/Utility/Helper.h"
+#include "open3d/geometry/MeshBase.h"
+#include "open3d/utility/Eigen.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace geometry {

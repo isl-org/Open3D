@@ -32,7 +32,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "Open3D/Core/Device.h"
+#include "open3d/core/Device.h"
 
 namespace open3d {
 

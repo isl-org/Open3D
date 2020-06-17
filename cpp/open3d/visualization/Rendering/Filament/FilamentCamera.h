@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/Camera.h"
+#include "open3d/visualization/Rendering/Camera.h"
 
 namespace filament {
 class Camera;

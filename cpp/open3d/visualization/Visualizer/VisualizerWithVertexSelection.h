@@ -28,7 +28,7 @@
 
 #include <unordered_map>
 
-#include "Open3D/Visualization/Visualizer/Visualizer.h"
+#include "open3d/visualization/Visualizer/Visualizer.h"
 
 namespace open3d {
 

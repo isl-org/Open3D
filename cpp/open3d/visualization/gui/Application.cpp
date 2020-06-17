@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Application.h"
+#include "open3d/visualization/gui/Application.h"
 
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -34,17 +34,17 @@
 #include <thread>
 #include <unordered_set>
 
-#include "Open3D/GUI/Button.h"
-#include "Open3D/GUI/Events.h"
-#include "Open3D/GUI/Label.h"
-#include "Open3D/GUI/Layout.h"
-#include "Open3D/GUI/Native.h"
-#include "Open3D/GUI/Task.h"
-#include "Open3D/GUI/Theme.h"
-#include "Open3D/GUI/Window.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "open3d/visualization/gui/Button.h"
+#include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/Layout.h"
+#include "open3d/visualization/gui/Native.h"
+#include "open3d/visualization/gui/Task.h"
+#include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Window.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
 
 namespace {
 

@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Visualizer/Visualizer.h"
-#include "Open3D/Geometry/Image.h"
-#include "Open3D/Visualization/Visualizer/VisualizerWithEditing.h"
-#include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
-#include "Open3D/Visualization/Visualizer/VisualizerWithVertexSelection.h"
+#include "open3d/visualization/Visualizer/Visualizer.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/visualization/Visualizer/VisualizerWithEditing.h"
+#include "open3d/visualization/Visualizer/VisualizerWithKeyCallback.h"
+#include "open3d/visualization/Visualizer/VisualizerWithVertexSelection.h"
 
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"

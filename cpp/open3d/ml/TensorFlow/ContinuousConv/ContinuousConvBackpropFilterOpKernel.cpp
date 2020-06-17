@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "ContinuousConvBackpropFilterOpKernel.h"
-#include "Open3D/ML/ContinuousConv/Detail/ContinuousConvBackpropFilter.h"
+#include "open3d/ml/ContinuousConv/Detail/ContinuousConvBackpropFilter.h"
 
 using namespace open3d;
 using namespace open3d::ml::detail;

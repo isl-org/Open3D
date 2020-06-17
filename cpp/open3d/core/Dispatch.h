@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Utility/Console.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/utility/Console.h"
 
 /// Call a numerical templated funciton based on Dtype. Warp the function to
 /// a lambda function to use DISPATCH_DTYPE_TO_TEMPLATE.

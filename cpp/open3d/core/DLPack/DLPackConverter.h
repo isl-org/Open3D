@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/Core/DLPack/dlpack.h"
+#include "open3d/core/DLPack/dlpack.h"
 
 namespace open3d {
 class Tensor;
