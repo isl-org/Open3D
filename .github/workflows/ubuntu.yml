@@ -24,6 +24,6 @@ jobs:
       uses: termoshtt/rust-cuda-docker-action@v1.0/ubuntu1804-cuda10_1
     - name: Check CUDA
       run: |
-          nvcc --version
-          which nvcc
-          ls /usr/local/cuda/include | grep cudnn
+        nvcc --version
+        which nvcc
+        ls /usr/local/cuda/include | grep cudnn
