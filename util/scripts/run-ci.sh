@@ -75,7 +75,7 @@ if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
             reportRun pip install -U torch==1.5.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html
         else
-            reportRun pip install -U torch==1.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+            reportRun pip install -U torch==1.4.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         fi
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         reportRun pip install -U torch==1.4.0
