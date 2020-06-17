@@ -29,6 +29,7 @@ import numpy as np
 import time
 import pytest
 import os
+from open3d_test import test_data_dir
 
 _eight_cubes_colors = np.array([
     [0.0, 0.0, 0.0],
@@ -120,10 +121,7 @@ def test_octree_node_access():
 
 
 def test_octree_visualize():
-    pwd = os.path.dirname(os.path.realpath(__file__))
-    data_dir = os.path.join(pwd, os.pardir, os.pardir, os.pardir, "examples",
-                            "TestData")
-    pcd_path = os.path.join(data_dir, "fragment.ply")
+    pcd_path = os.path.join(test_data_dir, "fragment.ply")
     pcd = o3d.io.read_point_cloud(pcd_path)
     octree = o3d.geometry.Octree(8)
     octree.convert_from_point_cloud(pcd)
@@ -132,10 +130,7 @@ def test_octree_visualize():
 
 
 def test_octree_voxel_grid_convert():
-    pwd = os.path.dirname(os.path.realpath(__file__))
-    data_dir = os.path.join(pwd, os.pardir, os.pardir, os.pardir, "examples",
-                            "TestData")
-    pcd_path = os.path.join(data_dir, "fragment.ply")
+    pcd_path = os.path.join(test_data_dir, "fragment.ply")
     pcd = o3d.io.read_point_cloud(pcd_path)
     octree = o3d.geometry.Octree(8)
     octree.convert_from_point_cloud(pcd)
@@ -150,10 +145,7 @@ def test_octree_voxel_grid_convert():
 
 
 def test_locate_leaf_node():
-    pwd = os.path.dirname(os.path.realpath(__file__))
-    data_dir = os.path.join(pwd, os.pardir, os.pardir, os.pardir, "examples",
-                            "TestData")
-    pcd_path = os.path.join(data_dir, "fragment.ply")
+    pcd_path = os.path.join(test_data_dir, "fragment.ply")
     pcd = o3d.io.read_point_cloud(pcd_path)
 
     max_depth = 5

@@ -5,6 +5,7 @@ import os
 import sys
 import urllib.request
 import zipfile
+from open3d_test import download_fountain_dataset
 
 
 def get_file_list(path, extension=None):
@@ -31,26 +32,6 @@ def get_file_list(path, extension=None):
         ]
     file_list = sorted_alphanum(file_list)
     return file_list
-
-
-def download_fountain_dataset():
-
-    def relative_path(path):
-        script_path = os.path.realpath(__file__)
-        script_dir = os.path.dirname(script_path)
-        return os.path.join(script_dir, path)
-
-    fountain_path = relative_path("../../../examples/TestData/fountain_small")
-    fountain_zip_path = relative_path("../../../examples/TestData/fountain.zip")
-    if not os.path.exists(fountain_path):
-        print("downloading fountain dataset")
-        url = "https://storage.googleapis.com/isl-datasets/open3d-dev/fountain.zip"
-        urllib.request.urlretrieve(url, fountain_zip_path)
-        print("extract fountain dataset")
-        with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:
-            zip_ref.extractall(os.path.dirname(fountain_path))
-        os.remove(fountain_zip_path)
-    return fountain_path
 
 
 def test_color_map():
