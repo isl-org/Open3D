@@ -814,7 +814,6 @@ private:
     static constexpr float acc_buffer_multiplier =
             (float)sizeof(arg_t) / sizeof(out_scalar_t);
     ops_t ops_;
-    arg_t identity_;
     ReduceConfig config_;
     InputCalculator input_calc_;
     OutputCalculator output_calc_;
@@ -826,6 +825,7 @@ private:
     // cta_buf_ used for accumulation between blocks during global reduction
     void* cta_buf_;
     int* semaphores_;
+    arg_t identity_;
     bool accumulate_;
     bool final_output_;
 };
