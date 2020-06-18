@@ -131,18 +131,14 @@ void pybind_registration_classes(py::module &m) {
     py::class_<pipelines::registration::RANSACConvergenceCriteria>
             ransac_criteria(m, "RANSACConvergenceCriteria",
                             "Class that defines the convergence criteria of "
-                            "RANSAC. RANSAC "
-                            "algorithm stops if the iteration number hits "
-                            "``max_iteration``, "
-                            "or the validation has been run for "
-                            "``max_validation`` times. Note "
+                            "RANSAC. RANSAC algorithm stops if the iteration "
+                            "number hits ``max_iteration``, or the validation "
+                            "has been run for ``max_validation`` times. Note "
                             "that the validation is the most computational "
-                            "expensive operator "
-                            "in an iteration. Most iterations do not do full "
-                            "validation. It is "
+                            "expensive operator in an iteration. Most "
+                            "iterations do not do full validation. It is "
                             "crucial to control ``max_validation`` so that the "
-                            "computation "
-                            "time is acceptable.");
+                            "computation time is acceptable.");
     py::detail::bind_copy_functions<
             pipelines::registration::RANSACConvergenceCriteria>(
             ransac_criteria);
