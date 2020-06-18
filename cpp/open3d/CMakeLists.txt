@@ -32,17 +32,14 @@ add_source_group(visualization)
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
 add_library(${CMAKE_PROJECT_NAME}
     Open3DConfig.cpp
-    $<TARGET_OBJECTS:Camera>
-    $<TARGET_OBJECTS:ColorMap>
-    $<TARGET_OBJECTS:Core>
-    $<TARGET_OBJECTS:Geometry>
-    $<TARGET_OBJECTS:Integration>
-    $<TARGET_OBJECTS:Odometry>
-    $<TARGET_OBJECTS:Registration>
-    $<TARGET_OBJECTS:Utility>
-    $<TARGET_OBJECTS:IO>
+    $<TARGET_OBJECTS:camera>
+    $<TARGET_OBJECTS:core>
+    $<TARGET_OBJECTS:geometry>
+    $<TARGET_OBJECTS:io>
+    $<TARGET_OBJECTS:pipelines>
+    $<TARGET_OBJECTS:utility>
+    $<TARGET_OBJECTS:visualization>
     ${GUI_OBJECTS}
-    $<TARGET_OBJECTS:Visualization>
 )
 open3d_show_and_abort_on_warning(${PROJECT_NAME})
 open3d_set_global_properties(${PROJECT_NAME})

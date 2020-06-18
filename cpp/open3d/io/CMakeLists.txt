@@ -9,10 +9,10 @@ if (BUILD_AZURE_KINECT)
 endif ()
 
 # Create object library
-add_library(IO OBJECT
+add_library(io OBJECT
             ${IO_ALL_SOURCE_FILES}
             ${RPLY_SOURCE_FILES}
             ${LIBLZF_SOURCE_FILES})
-open3d_show_and_abort_on_warning(IO)
-open3d_set_global_properties(IO)
-open3d_link_3rdparty_libraries(IO)
+open3d_show_and_abort_on_warning(io)
+open3d_set_global_properties(io)
+open3d_link_3rdparty_libraries(io)

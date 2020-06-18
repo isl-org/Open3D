@@ -43,15 +43,15 @@ else ()
 endif()
 
 # create object library
-add_library(Visualization OBJECT
+add_library(visualization OBJECT
             ${SHADER_FILES}
             ${VISUALIZATION_ALL_HEADER_FILES}
             ${VISUALIZATION_ALL_SOURCE_FILES})
 
 source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
 
-add_dependencies(Visualization ShaderFileTarget)
+add_dependencies(visualization ShaderFileTarget)
 
-open3d_show_and_abort_on_warning(Visualization)
-open3d_set_global_properties(Visualization)
-open3d_link_3rdparty_libraries(Visualization)
+open3d_show_and_abort_on_warning(visualization)
+open3d_set_global_properties(visualization)
+open3d_link_3rdparty_libraries(visualization)
