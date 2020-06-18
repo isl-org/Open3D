@@ -469,7 +469,7 @@ Unit test
 `````````
 
 To build unit tests, set `BUILD_UNIT_TESTS=ON` at CMake config stage. The unit
-test executable will be located at `bin/unitTests` in the `build` directory.
+test executable will be located at `bin/UnitTest` in the `build` directory.
 
 Please also refer to `googletest <https://github.com/google/googletest.git>`_ for
 reference.
@@ -479,4 +479,4 @@ reference.
     # In the build directory
     cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
-    ./bin/unitTests
+    ./bin/UnitTest
