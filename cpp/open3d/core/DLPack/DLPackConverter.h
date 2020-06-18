@@ -29,6 +29,7 @@
 #include "open3d/core/DLPack/dlpack.h"
 
 namespace open3d {
+namespace core {
 class Tensor;
 
 namespace dlpack {
@@ -39,4 +40,5 @@ Tensor FromDLPack(const DLManagedTensor* dlmt);
 
 }  // namespace dlpack
 
+}  // namespace core
 }  // namespace open3d

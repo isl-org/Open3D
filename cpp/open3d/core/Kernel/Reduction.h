@@ -34,6 +34,7 @@
 #include <unordered_set>
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 enum class ReductionOpCode { Sum, Prod, Min, Max, ArgMin, ArgMax };
@@ -65,4 +66,5 @@ void ReductionCUDA(const Tensor& src,
 #endif
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

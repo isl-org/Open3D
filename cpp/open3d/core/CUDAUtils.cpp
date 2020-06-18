@@ -31,6 +31,7 @@
 #endif
 
 namespace open3d {
+namespace core {
 namespace cuda {
 
 int DeviceCount() {
@@ -45,4 +46,5 @@ int DeviceCount() {
 bool IsAvailable() { return cuda::DeviceCount() > 0; }
 
 }  // namespace cuda
+}  // namespace core
 }  // namespace open3d

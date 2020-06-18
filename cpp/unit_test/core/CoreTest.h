@@ -40,72 +40,76 @@
 namespace open3d {
 namespace unit_test {
 
-class PermuteDevices : public testing::TestWithParam<Device> {
+class PermuteDevices : public testing::TestWithParam<core::Device> {
 public:
-    static std::vector<Device> TestCases() {
+    static std::vector<core::Device> TestCases() {
 #ifdef BUILD_CUDA_MODULE
-        std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
+        std::shared_ptr<core::CUDAState> cuda_state =
+                core::CUDAState::GetInstance();
         if (cuda_state->GetNumDevices() >= 1) {
             return {
-                    Device("CPU:0"),
-                    Device("CUDA:0"),
+                    core::Device("CPU:0"),
+                    core::Device("CUDA:0"),
             };
         } else {
             return {
-                    Device("CPU:0"),
+                    core::Device("CPU:0"),
             };
         }
 #else
         return {
-                Device("CPU:0"),
+                core::Device("CPU:0"),
         };
 #endif
     }
 };
 
 class PermuteDevicePairs
-    : public testing::TestWithParam<std::pair<Device, Device>> {
+    : public testing::TestWithParam<std::pair<core::Device, core::Device>> {
 public:
-    static std::vector<std::pair<Device, Device>> TestCases() {
+    static std::vector<std::pair<core::Device, core::Device>> TestCases() {
 #ifdef BUILD_CUDA_MODULE
-        std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
+        std::shared_ptr<core::CUDAState> cuda_state =
+                core::CUDAState::GetInstance();
         if (cuda_state->GetNumDevices() > 1) {
             // To test multiple CUDA devices, we only need to test CUDA 0 and 1.
             return {
-                    {Device("CPU:0"), Device("CPU:0")},    // 0
-                    {Device("CPU:0"), Device("CUDA:0")},   // 1
-                    {Device("CPU:0"), Device("CUDA:1")},   // 2
-                    {Device("CUDA:0"), Device("CPU:0")},   // 3
-                    {Device("CUDA:0"), Device("CUDA:0")},  // 4
-                    {Device("CUDA:0"), Device("CUDA:1")},  // 5
-                    {Device("CUDA:1"), Device("CPU:0")},   // 6
-                    {Device("CUDA:1"), Device("CUDA:0")},  // 7
-                    {Device("CUDA:1"), Device("CUDA:1")},  // 8
+                    {core::Device("CPU:0"), core::Device("CPU:0")},    // 0
+                    {core::Device("CPU:0"), core::Device("CUDA:0")},   // 1
+                    {core::Device("CPU:0"), core::Device("CUDA:1")},   // 2
+                    {core::Device("CUDA:0"), core::Device("CPU:0")},   // 3
+                    {core::Device("CUDA:0"), core::Device("CUDA:0")},  // 4
+                    {core::Device("CUDA:0"), core::Device("CUDA:1")},  // 5
+                    {core::Device("CUDA:1"), core::Device("CPU:0")},   // 6
+                    {core::Device("CUDA:1"), core::Device("CUDA:0")},  // 7
+                    {core::Device("CUDA:1"), core::Device("CUDA:1")},  // 8
             };
         } else if (cuda_state->GetNumDevices() == 1) {
             return {
-                    {Device("CPU:0"), Device("CPU:0")},
-                    {Device("CPU:0"), Device("CUDA:0")},
-                    {Device("CUDA:0"), Device("CPU:0")},
-                    {Device("CUDA:0"), Device("CUDA:0")},
+                    {core::Device("CPU:0"), core::Device("CPU:0")},
+                    {core::Device("CPU:0"), core::Device("CUDA:0")},
+                    {core::Device("CUDA:0"), core::Device("CPU:0")},
+                    {core::Device("CUDA:0"), core::Device("CUDA:0")},
             };
         } else {
             return {
-                    {Device("CPU:0"), Device("CPU:0")},
+                    {core::Device("CPU:0"), core::Device("CPU:0")},
             };
         }
 #else
         return {
-                {Device("CPU:0"), Device("CPU:0")},
+                {core::Device("CPU:0"), core::Device("CPU:0")},
         };
 #endif
     }
 };
 
 class PermuteSizesDefaultStrides
-    : public testing::TestWithParam<std::pair<SizeVector, SizeVector>> {
+    : public testing::TestWithParam<
+              std::pair<core::SizeVector, core::SizeVector>> {
 public:
-    static std::vector<std::pair<SizeVector, SizeVector>> TestCases() {
+    static std::vector<std::pair<core::SizeVector, core::SizeVector>>
+    TestCases() {
         return {
                 {{}, {}},
                 {{0}, {1}},

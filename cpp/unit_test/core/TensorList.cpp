@@ -40,60 +40,69 @@ INSTANTIATE_TEST_SUITE_P(TensorList,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
 TEST_P(TensorListPermuteDevices, ConstructFromIterators) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
 
-    std::vector<Tensor> tensors = {t0, t1, t2};
-    TensorList tensor_list(tensors.begin(), tensors.end(), device);
+    std::vector<core::Tensor> tensors = {t0, t1, t2};
+    core::TensorList tensor_list(tensors.begin(), tensors.end(), device);
 
-    SizeVector shape({3, 2, 3});
+    core::SizeVector shape({3, 2, 3});
     EXPECT_EQ(tensor_list.AsTensor().GetShape(), shape);
     EXPECT_EQ(tensor_list.GetSize(), 3);
     EXPECT_EQ(tensor_list.GetReservedSize(), 8);
 }
 
 TEST_P(TensorListPermuteDevices, ConstructFromVector) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
 
-    std::vector<Tensor> tensors = {t0, t1, t2};
-    TensorList tensor_list(tensors, device);
+    std::vector<core::Tensor> tensors = {t0, t1, t2};
+    core::TensorList tensor_list(tensors, device);
 
-    SizeVector shape({3, 2, 3});
+    core::SizeVector shape({3, 2, 3});
     EXPECT_EQ(tensor_list.AsTensor().GetShape(), shape);
     EXPECT_EQ(tensor_list.GetSize(), 3);
     EXPECT_EQ(tensor_list.GetReservedSize(), 8);
 }
 
 TEST_P(TensorListPermuteDevices, ConstructFromInitList) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
 
-    TensorList tensor_list({t0, t1, t2}, device);
+    core::TensorList tensor_list({t0, t1, t2}, device);
 
-    SizeVector shape({3, 2, 3});
+    core::SizeVector shape({3, 2, 3});
     EXPECT_EQ(tensor_list.AsTensor().GetShape(), shape);
     EXPECT_EQ(tensor_list.GetSize(), 3);
     EXPECT_EQ(tensor_list.GetReservedSize(), 8);
 }
 
 TEST_P(TensorListPermuteDevices, TensorConstructFromTensor) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t(std::vector<float>(3 * 2 * 3, 1), {3, 2, 3}, Dtype::Float32,
-             device);
+    core::Tensor t(std::vector<float>(3 * 2 * 3, 1), {3, 2, 3},
+                   core::Dtype::Float32, device);
 
-    TensorList tensor_list(t);
-    SizeVector shape({2, 3});
+    core::TensorList tensor_list(t);
+    core::SizeVector shape({2, 3});
     EXPECT_EQ(tensor_list.GetShape(), shape);
     EXPECT_EQ(tensor_list.GetSize(), 3);
     EXPECT_EQ(tensor_list.GetReservedSize(), 8);
@@ -102,15 +111,18 @@ TEST_P(TensorListPermuteDevices, TensorConstructFromTensor) {
 }
 
 TEST_P(TensorListPermuteDevices, CopyConstruct) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
 
-    std::vector<Tensor> tensors = {t0, t1, t2};
-    TensorList tensor_list(tensors, device);
-    TensorList tensor_list_new(tensor_list);
+    std::vector<core::Tensor> tensors = {t0, t1, t2};
+    core::TensorList tensor_list(tensors, device);
+    core::TensorList tensor_list_new(tensor_list);
 
     EXPECT_EQ(tensor_list.AsTensor().ToFlatVector<float>(),
               tensor_list_new.AsTensor().ToFlatVector<float>());
@@ -122,16 +134,19 @@ TEST_P(TensorListPermuteDevices, CopyConstruct) {
 }
 
 TEST_P(TensorListPermuteDevices, AssignOperator) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
 
     /// Right value assignment
-    TensorList tensor_list_gt = {t0, t1, t2};
-    TensorList tensor_list_a = {t2, t2, t2};
-    TensorList tensor_list_b = {t0, t1};
+    core::TensorList tensor_list_gt = {t0, t1, t2};
+    core::TensorList tensor_list_a = {t2, t2, t2};
+    core::TensorList tensor_list_b = {t0, t1};
 
     tensor_list_a.AsTensor().Slice(0, 0, 2) = tensor_list_b.AsTensor();
     EXPECT_EQ(tensor_list_a.AsTensor().ToFlatVector<float>(),
@@ -139,14 +154,17 @@ TEST_P(TensorListPermuteDevices, AssignOperator) {
 }
 
 TEST_P(TensorListPermuteDevices, Resize) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
 
-    std::vector<Tensor> tensors = {t0, t1, t2};
-    TensorList tensor_list(tensors, device);
+    std::vector<core::Tensor> tensors = {t0, t1, t2};
+    core::TensorList tensor_list(tensors, device);
     EXPECT_EQ(tensor_list.GetSize(), 3);
     EXPECT_EQ(tensor_list.GetReservedSize(), 8);
     EXPECT_EQ(tensor_list.AsTensor().ToFlatVector<float>(),
@@ -169,13 +187,16 @@ TEST_P(TensorListPermuteDevices, Resize) {
 }
 
 TEST_P(TensorListPermuteDevices, PushBack) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
 
-    TensorList tensor_list({2, 3}, Dtype::Float32, device);
+    core::TensorList tensor_list({2, 3}, core::Dtype::Float32, device);
     EXPECT_EQ(tensor_list.GetSize(), 0);
     EXPECT_EQ(tensor_list.GetReservedSize(), 1);
 
@@ -200,14 +221,17 @@ TEST_P(TensorListPermuteDevices, PushBack) {
 }
 
 TEST_P(TensorListPermuteDevices, AccessOperator) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
 
-    std::vector<Tensor> tensors = {t0, t1, t2};
-    TensorList tensor_list(tensors, device);
+    std::vector<core::Tensor> tensors = {t0, t1, t2};
+    core::TensorList tensor_list(tensors, device);
 
     EXPECT_EQ(tensor_list.GetSize(), 3);
     EXPECT_EQ(tensor_list[0].ToFlatVector<float>(), t0.ToFlatVector<float>());
@@ -224,63 +248,75 @@ TEST_P(TensorListPermuteDevices, AccessOperator) {
 }
 
 TEST_P(TensorListPermuteDevices, Slice) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
-    Tensor t3(std::vector<float>(2 * 3, 3), {2, 3}, Dtype::Float32, device);
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t3(std::vector<float>(2 * 3, 3), {2, 3}, core::Dtype::Float32,
+                    device);
 
-    std::vector<Tensor> tensors = {t0, t1, t2, t3};
-    TensorList tensor_list(tensors, device);
+    std::vector<core::Tensor> tensors = {t0, t1, t2, t3};
+    core::TensorList tensor_list(tensors, device);
 
-    Tensor tensor = tensor_list.AsTensor().Slice(0, 0, 3, 2);
+    core::Tensor tensor = tensor_list.AsTensor().Slice(0, 0, 3, 2);
     EXPECT_EQ(tensor.ToFlatVector<float>(),
               std::vector<float>({0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2}));
 }
 
 TEST_P(TensorListPermuteDevices, IndexGet) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
-    Tensor t3(std::vector<float>(2 * 3, 3), {2, 3}, Dtype::Float32, device);
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t3(std::vector<float>(2 * 3, 3), {2, 3}, core::Dtype::Float32,
+                    device);
 
-    std::vector<Tensor> tensors = {t0, t1, t2, t3};
-    TensorList tensor_list(tensors, device);
+    std::vector<core::Tensor> tensors = {t0, t1, t2, t3};
+    core::TensorList tensor_list(tensors, device);
 
-    std::vector<Tensor> indices = {Tensor(std::vector<int64_t>({0, -1, 2}), {3},
-                                          Dtype::Int64, device)};
-    Tensor tensor = tensor_list.AsTensor().IndexGet(indices);
+    std::vector<core::Tensor> indices = {core::Tensor(
+            std::vector<int64_t>({0, -1, 2}), {3}, core::Dtype::Int64, device)};
+    core::Tensor tensor = tensor_list.AsTensor().IndexGet(indices);
     EXPECT_EQ(tensor.ToFlatVector<float>(),
               std::vector<float>(
                       {0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2}));
 }
 
 TEST_P(TensorListPermuteDevices, Concatenate) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    std::vector<Tensor> tensors0 = {t0};
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    std::vector<core::Tensor> tensors0 = {t0};
 
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
-    Tensor t3(std::vector<float>(2 * 3, 3), {2, 3}, Dtype::Float32, device);
-    std::vector<Tensor> tensors1 = {t1, t2, t3};
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t3(std::vector<float>(2 * 3, 3), {2, 3}, core::Dtype::Float32,
+                    device);
+    std::vector<core::Tensor> tensors1 = {t1, t2, t3};
 
-    TensorList tensor_list0(tensors0, device);
-    TensorList tensor_list1(tensors1, device);
+    core::TensorList tensor_list0(tensors0, device);
+    core::TensorList tensor_list1(tensors1, device);
 
-    TensorList tensor_list2 = tensor_list0 + tensor_list1;
+    core::TensorList tensor_list2 = tensor_list0 + tensor_list1;
     EXPECT_EQ(tensor_list2.GetSize(), 4);
     EXPECT_EQ(tensor_list2.GetReservedSize(), 8);
     EXPECT_EQ(tensor_list2.AsTensor().ToFlatVector<float>(),
               std::vector<float>({0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
                                   2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3}));
 
-    TensorList tensor_list3 =
-            TensorList::Concatenate(tensor_list1, tensor_list0);
+    core::TensorList tensor_list3 =
+            core::TensorList::Concatenate(tensor_list1, tensor_list0);
     EXPECT_EQ(tensor_list3.GetSize(), 4);
     EXPECT_EQ(tensor_list3.GetReservedSize(), 8);
     EXPECT_EQ(tensor_list3.AsTensor().ToFlatVector<float>(),
@@ -289,18 +325,22 @@ TEST_P(TensorListPermuteDevices, Concatenate) {
 }
 
 TEST_P(TensorListPermuteDevices, Extend) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    std::vector<Tensor> tensors0 = {t0};
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    std::vector<core::Tensor> tensors0 = {t0};
 
-    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
-    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
-    Tensor t3(std::vector<float>(2 * 3, 3), {2, 3}, Dtype::Float32, device);
-    std::vector<Tensor> tensors1 = {t1, t2, t3};
+    core::Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, core::Dtype::Float32,
+                    device);
+    core::Tensor t3(std::vector<float>(2 * 3, 3), {2, 3}, core::Dtype::Float32,
+                    device);
+    std::vector<core::Tensor> tensors1 = {t1, t2, t3};
 
-    TensorList tensor_list0(tensors0, device);
-    TensorList tensor_list1(tensors1, device);
+    core::TensorList tensor_list0(tensors0, device);
+    core::TensorList tensor_list1(tensors1, device);
 
     tensor_list0.Extend(tensor_list1);
     EXPECT_EQ(tensor_list0.GetSize(), 4);
@@ -319,12 +359,13 @@ TEST_P(TensorListPermuteDevices, Extend) {
 }
 
 TEST_P(TensorListPermuteDevices, Clear) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    std::vector<Tensor> tensors = {t0};
+    core::Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
+                    device);
+    std::vector<core::Tensor> tensors = {t0};
 
-    TensorList tensor_list(tensors, device);
+    core::TensorList tensor_list(tensors, device);
     tensor_list.Clear();
     EXPECT_EQ(tensor_list.GetSize(), 0);
     EXPECT_EQ(tensor_list.GetReservedSize(), 1);

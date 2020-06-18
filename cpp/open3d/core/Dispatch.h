@@ -49,23 +49,23 @@
 #define DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, ...)               \
     [&] {                                                    \
         switch (DTYPE) {                                     \
-            case open3d::Dtype::Float32: {                   \
+            case open3d::core::Dtype::Float32: {             \
                 using scalar_t = float;                      \
                 return __VA_ARGS__();                        \
             }                                                \
-            case open3d::Dtype::Float64: {                   \
+            case open3d::core::Dtype::Float64: {             \
                 using scalar_t = double;                     \
                 return __VA_ARGS__();                        \
             }                                                \
-            case open3d::Dtype::Int32: {                     \
+            case open3d::core::Dtype::Int32: {               \
                 using scalar_t = int32_t;                    \
                 return __VA_ARGS__();                        \
             }                                                \
-            case open3d::Dtype::Int64: {                     \
+            case open3d::core::Dtype::Int64: {               \
                 using scalar_t = int64_t;                    \
                 return __VA_ARGS__();                        \
             }                                                \
-            case open3d::Dtype::UInt8: {                     \
+            case open3d::core::Dtype::UInt8: {               \
                 using scalar_t = uint8_t;                    \
                 return __VA_ARGS__();                        \
             }                                                \
@@ -76,7 +76,7 @@
 
 #define DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(DTYPE, ...)    \
     [&] {                                                   \
-        if (DTYPE == open3d::Dtype::Bool) {                 \
+        if (DTYPE == open3d::core::Dtype::Bool) {           \
             using scalar_t = bool;                          \
             return __VA_ARGS__();                           \
         } else {                                            \

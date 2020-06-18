@@ -29,6 +29,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 
 NoneType None;
 
@@ -115,4 +116,5 @@ TensorKey::TensorKey(TensorKeyMode mode,
       step_is_none_(step_is_none),
       index_tensor_(std::make_shared<Tensor>(index_tensor)){};
 
-};  // namespace open3d
+}  // namespace core
+}  // namespace open3d

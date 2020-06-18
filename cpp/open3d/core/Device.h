@@ -32,6 +32,7 @@
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
+namespace core {
 
 /// Device context specifying device type and device id.
 /// For CPU, there is only one device with id 0
@@ -129,4 +130,5 @@ protected:
     int device_id_;
 };
 
+}  // namespace core
 }  // namespace open3d

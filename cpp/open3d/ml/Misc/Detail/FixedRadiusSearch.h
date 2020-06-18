@@ -113,7 +113,7 @@ void BuildSpatialHashTableCPU(const size_t num_points,
                                 hash_table_size;
 
                         // note the +1 because we want the first element to be 0
-                        AtomicFetchAddRelaxed(
+                        core::AtomicFetchAddRelaxed(
                                 &hash_table_cell_splits[first_cell_idx + hash +
                                                         1],
                                 1);
@@ -147,7 +147,7 @@ void BuildSpatialHashTableCPU(const size_t num_points,
 
                         hash_table_index
                                 [hash_table_cell_splits[hash + first_cell_idx] +
-                                 AtomicFetchAddRelaxed(
+                                 core::AtomicFetchAddRelaxed(
                                          &count_tmp[hash + first_cell_idx],
                                          1)] = i;
                     }
@@ -329,8 +329,8 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                         query_neighbors_row_splits[i + 1] = neighbors_count;
                     }
 
-                    AtomicFetchAddRelaxed((uint64_t*)&num_indices,
-                                          num_indices_local);
+                    core::AtomicFetchAddRelaxed((uint64_t*)&num_indices,
+                                                num_indices_local);
                 });
     }
 

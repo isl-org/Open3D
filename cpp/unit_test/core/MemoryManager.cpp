@@ -48,33 +48,34 @@ INSTANTIATE_TEST_SUITE_P(
         testing::ValuesIn(MemoryManagerPermuteDevicePairs::TestCases()));
 
 TEST_P(MemoryManagerPermuteDevices, MallocFree) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    void* ptr = MemoryManager::Malloc(10, device);
-    MemoryManager::Free(ptr, device);
+    void* ptr = core::MemoryManager::Malloc(10, device);
+    core::MemoryManager::Free(ptr, device);
 }
 
 TEST_P(MemoryManagerPermuteDevicePairs, Memcpy) {
-    Device dst_device;
-    Device src_device;
+    core::Device dst_device;
+    core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
 
     char dst_vals[6] = "xxxxx";
     char src_vals[6] = "hello";
     size_t num_bytes = strlen(src_vals) + 1;
 
-    void* dst_ptr = MemoryManager::Malloc(num_bytes, dst_device);
-    void* src_ptr = MemoryManager::Malloc(num_bytes, src_device);
-    MemoryManager::MemcpyFromHost(src_ptr, src_device, (void*)src_vals,
-                                  num_bytes);
+    void* dst_ptr = core::MemoryManager::Malloc(num_bytes, dst_device);
+    void* src_ptr = core::MemoryManager::Malloc(num_bytes, src_device);
+    core::MemoryManager::MemcpyFromHost(src_ptr, src_device, (void*)src_vals,
+                                        num_bytes);
 
-    MemoryManager::Memcpy(dst_ptr, dst_device, src_ptr, src_device, num_bytes);
-    MemoryManager::MemcpyToHost((void*)dst_vals, dst_ptr, dst_device,
+    core::MemoryManager::Memcpy(dst_ptr, dst_device, src_ptr, src_device,
                                 num_bytes);
+    core::MemoryManager::MemcpyToHost((void*)dst_vals, dst_ptr, dst_device,
+                                      num_bytes);
     ASSERT_STREQ(dst_vals, src_vals);
 
-    MemoryManager::Free(dst_ptr, dst_device);
-    MemoryManager::Free(src_ptr, src_device);
+    core::MemoryManager::Free(dst_ptr, dst_device);
+    core::MemoryManager::Free(src_ptr, src_device);
 }
 
 }  // namespace unit_test

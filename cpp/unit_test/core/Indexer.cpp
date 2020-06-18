@@ -49,7 +49,8 @@ INSTANTIATE_TEST_SUITE_P(
 
 class IndexerPermuteSizesDefaultStridesAndDevices
     : public testing::TestWithParam<
-              std::tuple<std::pair<SizeVector, SizeVector>, Device>> {};
+              std::tuple<std::pair<core::SizeVector, core::SizeVector>,
+                         core::Device>> {};
 INSTANTIATE_TEST_SUITE_P(
         Indexer,
         IndexerPermuteSizesDefaultStridesAndDevices,
@@ -58,37 +59,38 @@ INSTANTIATE_TEST_SUITE_P(
                 testing::ValuesIn(PermuteDevices::TestCases())));
 
 TEST_P(IndexerPermuteDevices, TensorRef) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor t({2, 1, 3}, Dtype::Float32, device);
-    TensorRef tr(t);
+    core::Tensor t({2, 1, 3}, core::Dtype::Float32, device);
+    core::TensorRef tr(t);
 
     EXPECT_EQ(tr.ndims_, 3);
     EXPECT_EQ(tr.dtype_byte_size_, 4);
     EXPECT_EQ(tr.data_ptr_, t.GetDataPtr());
-    EXPECT_EQ(SizeVector(tr.shape_, tr.shape_ + 3), SizeVector({2, 1, 3}));
-    EXPECT_EQ(SizeVector(tr.byte_strides_, tr.byte_strides_ + 3),
-              SizeVector({3 * 4, 3 * 4, 1 * 4}));
+    EXPECT_EQ(core::SizeVector(tr.shape_, tr.shape_ + 3),
+              core::SizeVector({2, 1, 3}));
+    EXPECT_EQ(core::SizeVector(tr.byte_strides_, tr.byte_strides_ + 3),
+              core::SizeVector({3 * 4, 3 * 4, 1 * 4}));
 
     // Test default copy constructor.
-    TensorRef tr_new = tr;
+    core::TensorRef tr_new = tr;
     EXPECT_EQ(tr_new.ndims_, tr.ndims_);
     EXPECT_EQ(tr_new.dtype_byte_size_, tr.dtype_byte_size_);
     EXPECT_EQ(tr_new.data_ptr_, tr.data_ptr_);
-    EXPECT_EQ(SizeVector(tr_new.shape_, tr_new.shape_ + 3),
-              SizeVector({2, 1, 3}));
-    EXPECT_EQ(SizeVector(tr_new.byte_strides_, tr_new.byte_strides_ + 3),
-              SizeVector({3 * 4, 3 * 4, 1 * 4}));
+    EXPECT_EQ(core::SizeVector(tr_new.shape_, tr_new.shape_ + 3),
+              core::SizeVector({2, 1, 3}));
+    EXPECT_EQ(core::SizeVector(tr_new.byte_strides_, tr_new.byte_strides_ + 3),
+              core::SizeVector({3 * 4, 3 * 4, 1 * 4}));
 }
 
 TEST_P(IndexerPermuteDevices, IndexerCopyConstructor) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor input0({2, 1, 1, 3}, Dtype::Float32, device);
-    Tensor input1({1, 3}, Dtype::Float32, device);
-    Tensor output({2, 2, 2, 1, 3}, Dtype::Float32, device);
-    Indexer indexer_a({input0, input1}, output);
-    Indexer indexer_b = indexer_a;
+    core::Tensor input0({2, 1, 1, 3}, core::Dtype::Float32, device);
+    core::Tensor input1({1, 3}, core::Dtype::Float32, device);
+    core::Tensor output({2, 2, 2, 1, 3}, core::Dtype::Float32, device);
+    core::Indexer indexer_a({input0, input1}, output);
+    core::Indexer indexer_b = indexer_a;
 
     EXPECT_EQ(indexer_a.NumInputs(), indexer_b.NumInputs());
     EXPECT_EQ(indexer_a.GetInput(0), indexer_b.GetInput(0));
@@ -104,63 +106,66 @@ TEST_P(IndexerPermuteDevices, IndexerCopyConstructor) {
 }
 
 TEST_P(IndexerPermuteDevices, BroadcastRestride) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor input0({2, 1, 1, 3}, Dtype::Float32, device);
-    Tensor input1({1, 3}, Dtype::Float32, device);
-    Tensor output({2, 2, 2, 1, 3}, Dtype::Float32, device);
-    Indexer indexer({input0, input1}, output);
+    core::Tensor input0({2, 1, 1, 3}, core::Dtype::Float32, device);
+    core::Tensor input1({1, 3}, core::Dtype::Float32, device);
+    core::Tensor output({2, 2, 2, 1, 3}, core::Dtype::Float32, device);
+    core::Indexer indexer({input0, input1}, output);
 
-    TensorRef input0_tr = indexer.GetInput(0);
-    TensorRef input1_tr = indexer.GetInput(1);
-    TensorRef output_tr = indexer.GetOutput();
+    core::TensorRef input0_tr = indexer.GetInput(0);
+    core::TensorRef input1_tr = indexer.GetInput(1);
+    core::TensorRef output_tr = indexer.GetOutput();
 
     EXPECT_EQ(input0_tr.ndims_, 5);
     EXPECT_EQ(input1_tr.ndims_, 5);
     EXPECT_EQ(output_tr.ndims_, 5);
 
-    // Check Indexer's global info
+    // Check core::Indexer's global info
     EXPECT_EQ(indexer.NumInputs(), 2);
     EXPECT_EQ(indexer.NumWorkloads(), 24);
-    EXPECT_EQ(SizeVector(indexer.GetMasterShape(),
-                         indexer.GetMasterShape() + indexer.NumDims()),
-              SizeVector({2, 2, 2, 1, 3}));
-    EXPECT_EQ(SizeVector(indexer.GetMasterStrides(),
-                         indexer.GetMasterStrides() + indexer.NumDims()),
-              SizeVector({12, 6, 3, 3, 1}));
+    EXPECT_EQ(core::SizeVector(indexer.GetMasterShape(),
+                               indexer.GetMasterShape() + indexer.NumDims()),
+              core::SizeVector({2, 2, 2, 1, 3}));
+    EXPECT_EQ(core::SizeVector(indexer.GetMasterStrides(),
+                               indexer.GetMasterStrides() + indexer.NumDims()),
+              core::SizeVector({12, 6, 3, 3, 1}));
 
     // Check tensor shape
-    EXPECT_EQ(SizeVector(input0_tr.shape_, input0_tr.shape_ + input0_tr.ndims_),
-              SizeVector({1, 2, 1, 1, 3}));
-    EXPECT_EQ(SizeVector(input1_tr.shape_, input1_tr.shape_ + input1_tr.ndims_),
-              SizeVector({1, 1, 1, 1, 3}));
-    EXPECT_EQ(SizeVector(output_tr.shape_, output_tr.shape_ + output_tr.ndims_),
-              SizeVector({2, 2, 2, 1, 3}));
+    EXPECT_EQ(core::SizeVector(input0_tr.shape_,
+                               input0_tr.shape_ + input0_tr.ndims_),
+              core::SizeVector({1, 2, 1, 1, 3}));
+    EXPECT_EQ(core::SizeVector(input1_tr.shape_,
+                               input1_tr.shape_ + input1_tr.ndims_),
+              core::SizeVector({1, 1, 1, 1, 3}));
+    EXPECT_EQ(core::SizeVector(output_tr.shape_,
+                               output_tr.shape_ + output_tr.ndims_),
+              core::SizeVector({2, 2, 2, 1, 3}));
 
     // Check tensor strides
-    EXPECT_EQ(SizeVector(input0_tr.byte_strides_,
-                         input0_tr.byte_strides_ + input0_tr.ndims_),
-              SizeVector({0, 3 * 4, 0, 3 * 4, 1 * 4}));
-    EXPECT_EQ(SizeVector(input1_tr.byte_strides_,
-                         input1_tr.byte_strides_ + input1_tr.ndims_),
-              SizeVector({0, 0, 0, 3 * 4, 1 * 4}));
-    EXPECT_EQ(SizeVector(output_tr.byte_strides_,
-                         output_tr.byte_strides_ + output_tr.ndims_),
-              SizeVector({12 * 4, 6 * 4, 3 * 4, 3 * 4, 1 * 4}));
+    EXPECT_EQ(core::SizeVector(input0_tr.byte_strides_,
+                               input0_tr.byte_strides_ + input0_tr.ndims_),
+              core::SizeVector({0, 3 * 4, 0, 3 * 4, 1 * 4}));
+    EXPECT_EQ(core::SizeVector(input1_tr.byte_strides_,
+                               input1_tr.byte_strides_ + input1_tr.ndims_),
+              core::SizeVector({0, 0, 0, 3 * 4, 1 * 4}));
+    EXPECT_EQ(core::SizeVector(output_tr.byte_strides_,
+                               output_tr.byte_strides_ + output_tr.ndims_),
+              core::SizeVector({12 * 4, 6 * 4, 3 * 4, 3 * 4, 1 * 4}));
 }
 
 TEST_P(IndexerPermuteDevices, GetPointers) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Tensor input0({3, 1, 1}, Dtype::Float32, device);
-    Tensor input1({2, 1}, Dtype::Float32, device);
-    Tensor output({3, 2, 1}, Dtype::Float32, device);
-    Indexer indexer({input0, input1}, output);
+    core::Tensor input0({3, 1, 1}, core::Dtype::Float32, device);
+    core::Tensor input1({2, 1}, core::Dtype::Float32, device);
+    core::Tensor output({3, 2, 1}, core::Dtype::Float32, device);
+    core::Indexer indexer({input0, input1}, output);
 
     char* input0_base_ptr = static_cast<char*>(input0.GetDataPtr());
     char* input1_base_ptr = static_cast<char*>(input1.GetDataPtr());
     char* output_base_ptr = static_cast<char*>(output.GetDataPtr());
-    int64_t dtype_byte_size = DtypeUtil::ByteSize(Dtype::Float32);
+    int64_t dtype_byte_size = core::DtypeUtil::ByteSize(core::Dtype::Float32);
 
     EXPECT_EQ(indexer.GetInputPtr(0, 0), input0_base_ptr + 0 * dtype_byte_size);
     EXPECT_EQ(indexer.GetInputPtr(0, 1), input0_base_ptr + 0 * dtype_byte_size);

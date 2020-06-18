@@ -35,6 +35,7 @@
 #include "open3d/core/Device.h"
 
 namespace open3d {
+namespace core {
 
 class DeviceMemoryManager;
 
@@ -104,4 +105,5 @@ protected:
 };
 #endif
 
+}  // namespace core
 }  // namespace open3d

@@ -34,48 +34,48 @@
 namespace open3d {
 
 void pybind_core_tensor_key(py::module& m) {
-    py::class_<NoneType> none_type(m, "NoneType");
-    none_type.def(py::init([]() { return new NoneType(); }));
+    py::class_<core::NoneType> none_type(m, "NoneType");
+    none_type.def(py::init([]() { return new core::NoneType(); }));
 
-    py::class_<TensorKey> tensor_key(m, "TensorKey");
-    tensor_key.def("get_start", &TensorKey::GetStart)
-            .def("get_stop", &TensorKey::GetStop)
-            .def("get_step", &TensorKey::GetStep);
+    py::class_<core::TensorKey> tensor_key(m, "TensorKey");
+    tensor_key.def("get_start", &core::TensorKey::GetStart)
+            .def("get_stop", &core::TensorKey::GetStop)
+            .def("get_step", &core::TensorKey::GetStep);
 
-    tensor_key.def_static("index", &TensorKey::Index);
+    tensor_key.def_static("index", &core::TensorKey::Index);
     tensor_key.def_static("slice",
                           [](int64_t start, int64_t stop, int64_t step) {
-                              return TensorKey::Slice(start, stop, step);
+                              return core::TensorKey::Slice(start, stop, step);
                           });
     tensor_key.def_static("slice",
-                          [](int64_t start, int64_t stop, NoneType step) {
-                              return TensorKey::Slice(start, stop, step);
+                          [](int64_t start, int64_t stop, core::NoneType step) {
+                              return core::TensorKey::Slice(start, stop, step);
                           });
     tensor_key.def_static("slice",
-                          [](int64_t start, NoneType stop, int64_t step) {
-                              return TensorKey::Slice(start, stop, step);
+                          [](int64_t start, core::NoneType stop, int64_t step) {
+                              return core::TensorKey::Slice(start, stop, step);
                           });
+    tensor_key.def_static("slice", [](int64_t start, core::NoneType stop,
+                                      core::NoneType step) {
+        return core::TensorKey::Slice(start, stop, step);
+    });
     tensor_key.def_static("slice",
-                          [](int64_t start, NoneType stop, NoneType step) {
-                              return TensorKey::Slice(start, stop, step);
+                          [](core::NoneType start, int64_t stop, int64_t step) {
+                              return core::TensorKey::Slice(start, stop, step);
                           });
-    tensor_key.def_static("slice",
-                          [](NoneType start, int64_t stop, int64_t step) {
-                              return TensorKey::Slice(start, stop, step);
-                          });
-    tensor_key.def_static("slice",
-                          [](NoneType start, int64_t stop, NoneType step) {
-                              return TensorKey::Slice(start, stop, step);
-                          });
-    tensor_key.def_static("slice",
-                          [](NoneType start, NoneType stop, int64_t step) {
-                              return TensorKey::Slice(start, stop, step);
-                          });
-    tensor_key.def_static("slice",
-                          [](NoneType start, NoneType stop, NoneType step) {
-                              return TensorKey::Slice(start, stop, step);
-                          });
-    tensor_key.def_static("index_tensor", &TensorKey::IndexTensor);
+    tensor_key.def_static("slice", [](core::NoneType start, int64_t stop,
+                                      core::NoneType step) {
+        return core::TensorKey::Slice(start, stop, step);
+    });
+    tensor_key.def_static("slice", [](core::NoneType start, core::NoneType stop,
+                                      int64_t step) {
+        return core::TensorKey::Slice(start, stop, step);
+    });
+    tensor_key.def_static("slice", [](core::NoneType start, core::NoneType stop,
+                                      core::NoneType step) {
+        return core::TensorKey::Slice(start, stop, step);
+    });
+    tensor_key.def_static("index_tensor", &core::TensorKey::IndexTensor);
 }
 
 }  // namespace open3d

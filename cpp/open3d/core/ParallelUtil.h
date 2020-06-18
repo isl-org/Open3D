@@ -27,6 +27,7 @@
 #pragma once
 
 namespace open3d {
+namespace core {
 namespace kernel {
 namespace parallel_util {
 
@@ -48,4 +49,5 @@ inline bool InParallel() {
 
 }  // namespace parallel_util
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

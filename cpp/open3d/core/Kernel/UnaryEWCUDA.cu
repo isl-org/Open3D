@@ -33,6 +33,7 @@
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 template <typename src_t, typename dst_t>
@@ -247,4 +248,5 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

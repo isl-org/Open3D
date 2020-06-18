@@ -106,7 +106,7 @@ void InvertNeighborsListCPU(const TIndex* const inp_neighbors_index,
                       [&](const tbb::blocked_range<size_t>& r) {
                           for (size_t i = r.begin(); i != r.end(); ++i) {
                               TIndex idx = inp_neighbors_index[i];
-                              AtomicFetchAddRelaxed(
+                              core::AtomicFetchAddRelaxed(
                                       &tmp_neighbors_count[idx + 1], 1);
                           }
                       });
@@ -132,7 +132,7 @@ void InvertNeighborsListCPU(const TIndex* const inp_neighbors_index,
 
                         size_t list_offset =
                                 out_neighbors_row_splits[neighbor_idx];
-                        size_t item_offset = AtomicFetchAddRelaxed(
+                        size_t item_offset = core::AtomicFetchAddRelaxed(
                                 &tmp_neighbors_count[neighbor_idx], 1);
                         out_neighbors_index[list_offset + item_offset] =
                                 query_idx;

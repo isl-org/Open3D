@@ -52,8 +52,8 @@ bool ShallDisableP2P(int argc, char** argv) {
 int main(int argc, char** argv) {
 #ifdef BUILD_CUDA_MODULE
     if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<open3d::CUDAState> cuda_state =
-                open3d::CUDAState::GetInstance();
+        std::shared_ptr<open3d::core::CUDAState> cuda_state =
+                open3d::core::CUDAState::GetInstance();
         cuda_state->ForceDisableP2PForTesting();
         open3d::utility::LogInfo("P2P device transfer has been disabled.");
     }

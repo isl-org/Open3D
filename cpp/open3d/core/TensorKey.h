@@ -29,6 +29,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 
 class Tensor;  // Avoids circular include
 
@@ -171,4 +172,5 @@ public:
     std::shared_ptr<Tensor> index_tensor_;
 };
 
-};  // namespace open3d
+}  // namespace core
+}  // namespace open3d

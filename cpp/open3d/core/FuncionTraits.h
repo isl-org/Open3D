@@ -27,6 +27,7 @@
 #pragma once
 
 namespace open3d {
+namespace core {
 
 /// This class is from: PyTorch's aten/src/ATen/detail/FunctionTraits.h
 /// Fallback, anything with an operator()
@@ -99,4 +100,5 @@ struct BinaryFunctionTraits {
     using arg1_t = typename traits::template arg<1>::type;
 };
 
+}  // namespace core
 }  // namespace open3d

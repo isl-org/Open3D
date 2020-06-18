@@ -36,9 +36,9 @@
 namespace open3d {
 namespace pybind_utils {
 
-Dtype ArrayFormatToDtype(const std::string& format);
+core::Dtype ArrayFormatToDtype(const std::string& format);
 
-std::string DtypeToArrayFormat(const Dtype& dtype);
+std::string DtypeToArrayFormat(const core::Dtype& dtype);
 
 }  // namespace pybind_utils
 

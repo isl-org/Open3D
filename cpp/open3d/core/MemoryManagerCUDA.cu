@@ -33,6 +33,7 @@
 #include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
+namespace core {
 
 CUDAMemoryManager::CUDAMemoryManager() {}
 
@@ -123,4 +124,5 @@ bool CUDAMemoryManager::IsCUDAPointer(const void* ptr) {
     return false;
 }
 
+}  // namespace core
 }  // namespace open3d

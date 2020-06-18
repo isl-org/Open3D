@@ -37,6 +37,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 template <typename src_t, typename dst_t>
@@ -183,4 +184,5 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

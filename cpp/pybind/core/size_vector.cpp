@@ -33,9 +33,10 @@
 namespace open3d {
 
 void pybind_core_size_vector(py::module &m) {
-    py::class_<SizeVector> size_vector(m, "SizeVector",
-                                       "SizeVector is a vector of int64_t for "
-                                       "specifying shape, strides and etc.");
+    py::class_<core::SizeVector> size_vector(
+            m, "SizeVector",
+            "SizeVector is a vector of int64_t for "
+            "specifying shape, strides and etc.");
 
     size_vector.def(py::init(
             [](py::array_t<int64_t, py::array::c_style | py::array::forcecast>
@@ -46,16 +47,16 @@ void pybind_core_size_vector(py::module &m) {
                 }
                 // The buffer is copied to avoid corruption.
                 int64_t *start = static_cast<int64_t *>(info.ptr);
-                return new SizeVector(start, start + info.shape[0]);
+                return new core::SizeVector(start, start + info.shape[0]);
             }));
-    size_vector.def("to_string", &SizeVector::ToString);
-    size_vector.def("__repr__", [](const SizeVector &size_vector) {
+    size_vector.def("to_string", &core::SizeVector::ToString);
+    size_vector.def("__repr__", [](const core::SizeVector &size_vector) {
         return size_vector.ToString();
     });
-    size_vector.def("__eq__",
-                    [](const SizeVector &src, const SizeVector &dst) -> bool {
-                        return src == dst;
-                    });
+    size_vector.def(
+            "__eq__",
+            [](const core::SizeVector &src,
+               const core::SizeVector &dst) -> bool { return src == dst; });
 }
 
 }  // namespace open3d

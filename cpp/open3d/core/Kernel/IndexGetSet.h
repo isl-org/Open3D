@@ -30,6 +30,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 void IndexGet(const Tensor& src,
@@ -73,4 +74,5 @@ void IndexSetCUDA(const Tensor& src,
 #endif
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

@@ -28,6 +28,7 @@
 #include "open3d/core/SizeVector.h"
 
 namespace open3d {
+namespace core {
 // Public
 TensorList::TensorList(const SizeVector& shape,
                        Dtype dtype,
@@ -253,4 +254,5 @@ std::string TensorList::ToString() const {
                       GetDevice().ToString());
     return rc.str();
 }
+}  // namespace core
 }  // namespace open3d

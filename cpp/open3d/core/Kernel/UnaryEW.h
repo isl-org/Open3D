@@ -30,6 +30,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 enum class UnaryEWOpCode { Sqrt, Sin, Cos, Neg, Exp, Abs, LogicalNot };
@@ -53,4 +54,5 @@ void CopyCUDA(const Tensor& src, Tensor& dst);
 #endif
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

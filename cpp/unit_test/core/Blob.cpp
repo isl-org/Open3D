@@ -40,24 +40,24 @@ INSTANTIATE_TEST_SUITE_P(Blob,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
 TEST_P(BlobPermuteDevices, BlobConstructor) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    Blob b(10, Device(device));
+    core::Blob b(10, core::Device(device));
 }
 
 TEST_P(BlobPermuteDevices, BlobConstructorWithExternalMemory) {
-    Device device = GetParam();
+    core::Device device = GetParam();
 
-    void* data_ptr = MemoryManager::Malloc(8, device);
+    void* data_ptr = core::MemoryManager::Malloc(8, device);
     bool deleter_called = false;
 
     auto deleter = [&device, &deleter_called, data_ptr](void* dummy) -> void {
-        MemoryManager::Free(data_ptr, device);
+        core::MemoryManager::Free(data_ptr, device);
         deleter_called = true;
     };
 
     {
-        Blob b(device, data_ptr, deleter);
+        core::Blob b(device, data_ptr, deleter);
         EXPECT_EQ(b.GetDataPtr(), data_ptr);
         EXPECT_FALSE(deleter_called);
     }

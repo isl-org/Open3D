@@ -34,6 +34,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 
 /// SizeVector is a vector of int64_t, typically used in Tensor shape and
 /// strides. A signed int64_t type is chosen to allow negative strides.
@@ -160,4 +161,5 @@ inline SizeVector InferShape(SizeVector shape, int64_t num_elements) {
                       num_elements);
 }
 
+}  // namespace core
 }  // namespace open3d

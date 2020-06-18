@@ -45,6 +45,7 @@ static_assert(sizeof(uint8_t) == 1,
 static_assert(sizeof(bool) == 1, "Unsupported platform: bool must be 1 byte");
 
 namespace open3d {
+namespace core {
 
 enum class Dtype {
     Undefined,  // Dtype for uninitialized Tensor
@@ -155,4 +156,5 @@ inline Dtype DtypeUtil::FromType<bool>() {
     return Dtype::Bool;
 }
 
+}  // namespace core
 }  // namespace open3d

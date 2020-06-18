@@ -40,7 +40,8 @@ class FixedRadiusSearchOpKernelCUDA : public FixedRadiusSearchOpKernel {
 public:
     explicit FixedRadiusSearchOpKernelCUDA(OpKernelConstruction* construction)
         : FixedRadiusSearchOpKernel(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

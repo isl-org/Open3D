@@ -36,6 +36,7 @@
 #include <sstream>
 
 namespace open3d {
+namespace core {
 
 class Indexer;
 
@@ -550,4 +551,5 @@ private:
     const Indexer& indexer_;
 };
 
+}  // namespace core
 }  // namespace open3d

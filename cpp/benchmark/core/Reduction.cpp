@@ -34,6 +34,7 @@
 #include <benchmark/benchmark.h>
 
 namespace open3d {
+namespace core {
 
 static void ReductionCPU(benchmark::State& state) {
     Device device("CPU:0");
@@ -70,4 +71,5 @@ BENCHMARK(ReductionCUDA)->Unit(benchmark::kMillisecond);
 
 #endif
 
+}  // namespace core
 }  // namespace open3d

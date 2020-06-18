@@ -40,7 +40,8 @@ public:
     explicit ContinuousConvTransposeBackpropFilterOpKernelCUDA(
             OpKernelConstruction* construction)
         : ContinuousConvTransposeBackpropFilterOpKernel<TIndex>(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

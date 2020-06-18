@@ -33,6 +33,7 @@
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 enum class BinaryEWOpCode {
@@ -88,4 +89,5 @@ inline void Div(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

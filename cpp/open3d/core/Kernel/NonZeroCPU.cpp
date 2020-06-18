@@ -30,6 +30,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 Tensor NonZeroCPU(const Tensor& src) {
@@ -76,4 +77,5 @@ Tensor NonZeroCPU(const Tensor& src) {
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

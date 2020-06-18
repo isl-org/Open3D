@@ -33,7 +33,8 @@ namespace open3d {
 namespace unit_test {
 
 TEST(CUDAState, InitState) {
-    std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
+    std::shared_ptr<core::CUDAState> cuda_state =
+            core::CUDAState::GetInstance();
     utility::LogInfo("Number of CUDA devices: {}", cuda_state->GetNumDevices());
     for (int i = 0; i < cuda_state->GetNumDevices(); ++i) {
         for (int j = 0; j < cuda_state->GetNumDevices(); ++j) {

@@ -38,7 +38,8 @@ class ContinuousConvOpKernelCUDA : public ContinuousConvOpKernel<TIndex> {
 public:
     explicit ContinuousConvOpKernelCUDA(OpKernelConstruction* construction)
         : ContinuousConvOpKernel<TIndex>(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

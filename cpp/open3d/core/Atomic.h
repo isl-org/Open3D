@@ -35,6 +35,7 @@
 #endif
 
 namespace open3d {
+namespace core {
 
 inline uint32_t AtomicFetchAddRelaxed(uint32_t* address, uint32_t val) {
 #ifdef __GNUC__
@@ -56,4 +57,5 @@ inline uint64_t AtomicFetchAddRelaxed(uint64_t* address, uint64_t val) {
 #endif
 }
 
+}  // namespace core
 }  // namespace open3d

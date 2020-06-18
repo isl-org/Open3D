@@ -40,6 +40,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 
 /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`
 Tensor& Tensor::operator=(const Tensor& other) & {
@@ -940,4 +941,5 @@ std::vector<Tensor> Tensor::NonZeroNumpy() const {
 
 Tensor Tensor::NonZero() const { return kernel::NonZero(*this); }
 
+}  // namespace core
 }  // namespace open3d

@@ -31,6 +31,7 @@
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace core {
 
 bool AdvancedIndexPreprocessor::IsIndexSplittedBySlice(
         const std::vector<Tensor>& index_tensors) {
@@ -261,4 +262,5 @@ std::vector<Tensor> AdvancedIndexPreprocessor::ExpandBoolTensors(
     return res_index_tensors;
 }
 
+}  // namespace core
 }  // namespace open3d

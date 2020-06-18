@@ -31,6 +31,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 
 class Tensor;
 
@@ -92,4 +93,5 @@ int64_t WrapDim(int64_t dim, int64_t max_dim);
 SizeVector InferShape(SizeVector shape, int64_t num_elements);
 
 }  // namespace shape_util
+}  // namespace core
 }  // namespace open3d

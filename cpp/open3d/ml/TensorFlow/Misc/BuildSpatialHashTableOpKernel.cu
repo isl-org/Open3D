@@ -40,7 +40,8 @@ public:
     explicit BuildSpatialHashTableOpKernelCUDA(
             OpKernelConstruction* construction)
         : BuildSpatialHashTableOpKernel(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

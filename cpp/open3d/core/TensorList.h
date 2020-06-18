@@ -38,6 +38,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorKey.h"
 namespace open3d {
+namespace core {
 
 /// A TensorList is an extendable tensor at the 0-th dimension.
 /// It is similar to std::vector<Tensor>, but uses Open3D's tensor memory
@@ -254,4 +255,5 @@ protected:
     /// The internal tensor for data storage.
     Tensor internal_tensor_;
 };
+}  // namespace core
 }  // namespace open3d

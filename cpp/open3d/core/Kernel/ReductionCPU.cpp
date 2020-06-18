@@ -35,6 +35,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 template <typename scalar_t>
@@ -323,4 +324,5 @@ void ReductionCPU(const Tensor& src,
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

@@ -88,6 +88,7 @@ OPEN3D_DEVICE __forceinline__ T WARP_SHFL_DOWN(T value,
 }
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 static inline int64_t DivUp(int64_t a, int64_t b) { return (a + b - 1) / b; }
@@ -1098,4 +1099,5 @@ void ReductionCUDA(const Tensor& src,
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

@@ -27,6 +27,7 @@
 #include "open3d/core/Indexer.h"
 
 namespace open3d {
+namespace core {
 
 Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                  const Tensor& output_tensor,
@@ -600,4 +601,5 @@ IndexerIterator::Iterator IndexerIterator::end() const {
     return IndexerIterator::Iterator();
 }
 
+}  // namespace core
 }  // namespace open3d

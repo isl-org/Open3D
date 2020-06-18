@@ -29,6 +29,7 @@
 #include <cstdlib>
 
 namespace open3d {
+namespace core {
 
 CPUMemoryManager::CPUMemoryManager() {}
 
@@ -55,4 +56,5 @@ void CPUMemoryManager::Memcpy(void* dst_ptr,
     std::memcpy(dst_ptr, src_ptr, num_bytes);
 }
 
+}  // namespace core
 }  // namespace open3d

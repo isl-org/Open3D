@@ -159,7 +159,7 @@ void _KnnSearchCPU(int64_t* query_neighbors_row_splits,
 
                               int64_t idx =
                                       query_neighbors_row_splits[pair.i] +
-                                      AtomicFetchAddRelaxed(
+                                      core::AtomicFetchAddRelaxed(
                                               &neighbors_count[pair.i], 1);
                               neighbors_indices_ptr[idx] = pair.j;
 

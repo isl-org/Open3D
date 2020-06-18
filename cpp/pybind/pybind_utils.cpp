@@ -36,36 +36,36 @@
 namespace open3d {
 namespace pybind_utils {
 
-Dtype ArrayFormatToDtype(const std::string& format) {
+core::Dtype ArrayFormatToDtype(const std::string& format) {
     if (format == py::format_descriptor<float>::format()) {
-        return Dtype::Float32;
+        return core::Dtype::Float32;
     } else if (format == py::format_descriptor<double>::format()) {
-        return Dtype::Float64;
+        return core::Dtype::Float64;
     } else if (format == py::format_descriptor<int32_t>::format()) {
-        return Dtype::Int32;
+        return core::Dtype::Int32;
     } else if (format == py::format_descriptor<int64_t>::format()) {
-        return Dtype::Int64;
+        return core::Dtype::Int64;
     } else if (format == py::format_descriptor<uint8_t>::format()) {
-        return Dtype::UInt8;
+        return core::Dtype::UInt8;
     } else if (format == py::format_descriptor<bool>::format()) {
-        return Dtype::Bool;
+        return core::Dtype::Bool;
     } else {
         utility::LogError("Unsupported data type.");
     }
 }
 
-std::string DtypeToArrayFormat(const Dtype& dtype) {
-    if (dtype == Dtype::Float32) {
+std::string DtypeToArrayFormat(const core::Dtype& dtype) {
+    if (dtype == core::Dtype::Float32) {
         return py::format_descriptor<float>::format();
-    } else if (dtype == Dtype::Float64) {
+    } else if (dtype == core::Dtype::Float64) {
         return py::format_descriptor<double>::format();
-    } else if (dtype == Dtype::Int32) {
+    } else if (dtype == core::Dtype::Int32) {
         return py::format_descriptor<int32_t>::format();
-    } else if (dtype == Dtype::Int64) {
+    } else if (dtype == core::Dtype::Int64) {
         return py::format_descriptor<int64_t>::format();
-    } else if (dtype == Dtype::UInt8) {
+    } else if (dtype == core::Dtype::UInt8) {
         return py::format_descriptor<uint8_t>::format();
-    } else if (dtype == Dtype::Bool) {
+    } else if (dtype == core::Dtype::Bool) {
         return py::format_descriptor<bool>::format();
     } else {
         utility::LogError("Unsupported data type.");

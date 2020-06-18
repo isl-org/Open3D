@@ -35,6 +35,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 template <typename scalar_t>
@@ -229,4 +230,5 @@ void BinaryEWCPU(const Tensor& lhs,
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

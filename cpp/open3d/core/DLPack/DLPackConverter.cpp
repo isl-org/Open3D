@@ -31,6 +31,7 @@
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace core {
 namespace dlpack {
 
 struct Open3DDLManagedTensor {
@@ -197,4 +198,5 @@ Tensor FromDLPack(const DLManagedTensor* src) {
 }
 
 }  // namespace dlpack
+}  // namespace core
 }  // namespace open3d

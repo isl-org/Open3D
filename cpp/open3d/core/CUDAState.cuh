@@ -40,6 +40,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 
 /// \class CUDADeviceSwitcher
 ///
@@ -230,4 +231,5 @@ private:
     std::vector<std::vector<bool>> p2p_enabled_;
 };
 
+}  // namespace core
 }  // namespace open3d

@@ -35,6 +35,7 @@
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
+namespace core {
 
 void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
     return GetDeviceMemoryManager(device)->Malloc(byte_size, device);
@@ -113,4 +114,5 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
     return map_device_type_to_memory_manager.at(device.GetType());
 }
 
+}  // namespace core
 }  // namespace open3d

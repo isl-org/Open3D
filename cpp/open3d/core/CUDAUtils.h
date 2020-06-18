@@ -45,7 +45,7 @@
     static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
                   #type " must be a __host__ __device__ lambda")
 #define OPEN3D_CUDA_CHECK(err) \
-    open3d::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
+    open3d::core::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
 #define OPEN3D_GET_LAST_CUDA_ERROR(message) \
     __OPEN3D_GET_LAST_CUDA_ERROR(message, __FILE__, __LINE__)
 
@@ -60,6 +60,7 @@
 #endif  // #ifdef BUILD_CUDA_MODULE
 
 namespace open3d {
+namespace core {
 
 #ifdef BUILD_CUDA_MODULE
 inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
@@ -110,4 +111,5 @@ int DeviceCount();
 bool IsAvailable();
 
 }  // namespace cuda
+}  // namespace core
 }  // namespace open3d

@@ -33,6 +33,7 @@
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace core {
 
 /// This class is based on PyTorch's aten/src/ATen/native/Indexing.cpp.
 class AdvancedIndexPreprocessor {
@@ -221,4 +222,5 @@ protected:
     int64_t indexed_strides_[MAX_DIMS];
 };
 
+}  // namespace core
 }  // namespace open3d

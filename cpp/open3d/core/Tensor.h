@@ -40,6 +40,7 @@
 #include "open3d/core/TensorKey.h"
 
 namespace open3d {
+namespace core {
 
 /// A Tensor is a "view" of a data Blob with shape, stride, data_ptr.
 /// Tensor can also be used to perform numerical operations.
@@ -813,7 +814,7 @@ protected:
 
     /// Underlying memory buffer for Tensor.
     std::shared_ptr<Blob> blob_ = nullptr;
-};  // namespace open3d
+};
 
 template <>
 inline Tensor::Tensor(const std::vector<bool>& init_vals,
@@ -892,4 +893,5 @@ inline Tensor operator/(T scalar_lhs, const Tensor& rhs) {
     return Tensor::Full({}, scalar_lhs, rhs.GetDtype(), rhs.GetDevice()) / rhs;
 }
 
+}  // namespace core
 }  // namespace open3d

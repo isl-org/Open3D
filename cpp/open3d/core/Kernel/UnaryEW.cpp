@@ -31,6 +31,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
@@ -90,4 +91,5 @@ void Copy(const Tensor& src, Tensor& dst) {
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

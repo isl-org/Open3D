@@ -28,6 +28,7 @@
 #include "open3d/core/SizeVector.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 void Reduction(const Tensor& src,
@@ -105,4 +106,5 @@ void Reduction(const Tensor& src,
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

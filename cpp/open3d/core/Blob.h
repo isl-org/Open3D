@@ -34,6 +34,7 @@
 #include "open3d/core/MemoryManager.h"
 
 namespace open3d {
+namespace core {
 
 /// Blob class refers to a blob of memory in device or host.
 ///
@@ -104,4 +105,5 @@ protected:
     Device device_;
 };
 
+}  // namespace core
 }  // namespace open3d

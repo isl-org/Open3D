@@ -30,6 +30,7 @@
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace core {
 namespace shape_util {
 
 /// Expand a shape with ones in front. Returning a shape with size of ndims.
@@ -210,4 +211,5 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
 }
 
 }  // namespace shape_util
+}  // namespace core
 }  // namespace open3d

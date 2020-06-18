@@ -34,6 +34,7 @@
 #include "open3d/core/Indexer.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 template <typename T>
@@ -117,4 +118,5 @@ Tensor NonZeroCUDA(const Tensor& src) {
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d

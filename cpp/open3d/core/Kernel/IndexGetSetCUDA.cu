@@ -33,6 +33,7 @@
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace core {
 namespace kernel {
 
 template <typename scalar_t>
@@ -80,4 +81,5 @@ void IndexSetCUDA(const Tensor& src,
 }
 
 }  // namespace kernel
+}  // namespace core
 }  // namespace open3d
