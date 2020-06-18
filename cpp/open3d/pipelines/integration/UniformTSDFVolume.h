@@ -48,6 +48,7 @@ public:
 
 }  // namespace geometry
 
+namespace pipelines {
 namespace integration {
 
 /// \class UniformTSDFVolume
@@ -110,4 +111,5 @@ private:
 };
 
 }  // namespace integration
+}  // namespace pipelines
 }  // namespace open3d

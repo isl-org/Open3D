@@ -36,11 +36,11 @@
 #include "open3d/utility/Timer.h"
 
 namespace open3d {
+namespace pipelines {
+namespace odometry {
 
-namespace {
-using namespace odometry;
-
-std::tuple<std::shared_ptr<geometry::Image>, std::shared_ptr<geometry::Image>>
+static std::tuple<std::shared_ptr<geometry::Image>,
+                  std::shared_ptr<geometry::Image>>
 InitializeCorrespondenceMap(int width, int height) {
     // initialization: filling with any (u,v) to (-1,-1)
     auto correspondence_map = std::make_shared<geometry::Image>();
@@ -57,13 +57,14 @@ InitializeCorrespondenceMap(int width, int height) {
     return std::make_tuple(correspondence_map, depth_buffer);
 }
 
-inline void AddElementToCorrespondenceMap(geometry::Image &correspondence_map,
-                                          geometry::Image &depth_buffer,
-                                          int u_s,
-                                          int v_s,
-                                          int u_t,
-                                          int v_t,
-                                          float transformed_d_t) {
+static inline void AddElementToCorrespondenceMap(
+        geometry::Image &correspondence_map,
+        geometry::Image &depth_buffer,
+        int u_s,
+        int v_s,
+        int u_t,
+        int v_t,
+        float transformed_d_t) {
     int exist_u_t, exist_v_t;
     double exist_d_t;
     exist_u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
@@ -83,10 +84,10 @@ inline void AddElementToCorrespondenceMap(geometry::Image &correspondence_map,
     }
 }
 
-void MergeCorrespondenceMaps(geometry::Image &correspondence_map,
-                             geometry::Image &depth_buffer,
-                             geometry::Image &correspondence_map_part,
-                             geometry::Image &depth_buffer_part) {
+static void MergeCorrespondenceMaps(geometry::Image &correspondence_map,
+                                    geometry::Image &depth_buffer,
+                                    geometry::Image &correspondence_map_part,
+                                    geometry::Image &depth_buffer_part) {
     for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
         for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
             int u_t = *correspondence_map_part.PointerAt<int>(u_s, v_s, 0);
@@ -102,7 +103,7 @@ void MergeCorrespondenceMaps(geometry::Image &correspondence_map,
     }
 }
 
-int CountCorrespondence(const geometry::Image &correspondence_map) {
+static int CountCorrespondence(const geometry::Image &correspondence_map) {
     int correspondence_count = 0;
     for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
         for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
@@ -116,7 +117,7 @@ int CountCorrespondence(const geometry::Image &correspondence_map) {
     return correspondence_count;
 }
 
-std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
+static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
         const Eigen::Matrix3d intrinsic_matrix,
         const Eigen::Matrix4d &extrinsic,
         const geometry::Image &depth_s,
@@ -198,7 +199,7 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
     return correspondence;
 }
 
-std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
+static std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
         const geometry::Image &depth, const Eigen::Matrix3d &intrinsic_matrix) {
     auto image_xyz = std::make_shared<geometry::Image>();
     if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
@@ -225,7 +226,7 @@ std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
     return image_xyz;
 }
 
-std::vector<Eigen::Matrix3d> CreateCameraMatrixPyramid(
+static std::vector<Eigen::Matrix3d> CreateCameraMatrixPyramid(
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         int levels) {
     std::vector<Eigen::Matrix3d> pyramid_camera_matrix;
@@ -242,7 +243,7 @@ std::vector<Eigen::Matrix3d> CreateCameraMatrixPyramid(
     return pyramid_camera_matrix;
 }
 
-Eigen::Matrix6d CreateInformationMatrix(
+static Eigen::Matrix6d CreateInformationMatrix(
         const Eigen::Matrix4d &extrinsic,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const geometry::Image &depth_s,
@@ -300,9 +301,9 @@ Eigen::Matrix6d CreateInformationMatrix(
     return GTG;
 }
 
-void NormalizeIntensity(geometry::Image &image_s,
-                        geometry::Image &image_t,
-                        CorrespondenceSetPixelWise &correspondence) {
+static void NormalizeIntensity(geometry::Image &image_s,
+                               geometry::Image &image_t,
+                               CorrespondenceSetPixelWise &correspondence) {
     if (image_s.width_ != image_t.width_ ||
         image_s.height_ != image_t.height_) {
         utility::LogError(
@@ -324,13 +325,13 @@ void NormalizeIntensity(geometry::Image &image_s,
     image_t.LinearTransform(0.5 / mean_t, 0.0);
 }
 
-inline std::shared_ptr<geometry::RGBDImage> PackRGBDImage(
+static inline std::shared_ptr<geometry::RGBDImage> PackRGBDImage(
         const geometry::Image &color, const geometry::Image &depth) {
     return std::make_shared<geometry::RGBDImage>(
             geometry::RGBDImage(color, depth));
 }
 
-std::shared_ptr<geometry::Image> PreprocessDepth(
+static std::shared_ptr<geometry::Image> PreprocessDepth(
         const geometry::Image &depth_orig, const OdometryOption &option) {
     std::shared_ptr<geometry::Image> depth_processed =
             std::make_shared<geometry::Image>();
@@ -345,18 +346,18 @@ std::shared_ptr<geometry::Image> PreprocessDepth(
     return depth_processed;
 }
 
-inline bool CheckImagePair(const geometry::Image &image_s,
-                           const geometry::Image &image_t) {
+static inline bool CheckImagePair(const geometry::Image &image_s,
+                                  const geometry::Image &image_t) {
     return (image_s.width_ == image_t.width_ &&
             image_s.height_ == image_t.height_);
 }
 
-inline bool IsColorImageRGB(const geometry::Image &image) {
+static inline bool IsColorImageRGB(const geometry::Image &image) {
     return (image.num_of_channels_ == 3);
 }
 
-inline bool CheckRGBDImagePair(const geometry::RGBDImage &source,
-                               const geometry::RGBDImage &target) {
+static inline bool CheckRGBDImagePair(const geometry::RGBDImage &source,
+                                      const geometry::RGBDImage &target) {
     if (IsColorImageRGB(source.color_) && IsColorImageRGB(target.color_)) {
         return (CheckImagePair(source.color_, target.color_) &&
                 CheckImagePair(source.depth_, target.depth_) &&
@@ -390,8 +391,8 @@ inline bool CheckRGBDImagePair(const geometry::RGBDImage &source,
     return false;
 }
 
-std::tuple<std::shared_ptr<geometry::RGBDImage>,
-           std::shared_ptr<geometry::RGBDImage>>
+static std::tuple<std::shared_ptr<geometry::RGBDImage>,
+                  std::shared_ptr<geometry::RGBDImage>>
 InitializeRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
@@ -428,7 +429,7 @@ InitializeRGBDOdometry(
     return std::make_tuple(source_out, target_out);
 }
 
-std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
+static std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
         int iter,
         int level,
         const geometry::RGBDImage &source,
@@ -473,7 +474,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
     }
 }
 
-std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
+static std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
@@ -531,10 +532,6 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
     return std::make_tuple(true, result_odo);
 }
 
-}  // unnamed namespace
-
-namespace odometry {
-
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
@@ -574,4 +571,5 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
 }
 
 }  // namespace odometry
+}  // namespace pipelines
 }  // namespace open3d

@@ -29,21 +29,13 @@
 #include <memory>
 #include <vector>
 
+#include "open3d/camera/PinholeCameraTrajectory.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/geometry/TriangleMesh.h"
+
 namespace open3d {
-
-namespace geometry {
-class TriangleMesh;
-}
-namespace geometry {
-class RGBDImage;
-}
-namespace geometry {
-class Image;
-}
-namespace camera {
-class PinholeCameraTrajectory;
-}
-
+namespace pipelines {
 namespace color_map {
 
 /// \class ColorMapOptimizationOption
@@ -151,5 +143,7 @@ void ColorMapOptimization(
         camera::PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option =
                 ColorMapOptimizationOption());
+
 }  // namespace color_map
+}  // namespace pipelines
 }  // namespace open3d

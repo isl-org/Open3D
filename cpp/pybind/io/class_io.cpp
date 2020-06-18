@@ -292,7 +292,7 @@ void pybind_class_io(py::module &m_io) {
     // open3d::registration
     m_io.def("read_feature",
              [](const std::string &filename) {
-                 registration::Feature feature;
+                 pipelines::registration::Feature feature;
                  io::ReadFeature(filename, feature);
                  return feature;
              },
@@ -302,7 +302,7 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def("write_feature",
              [](const std::string &filename,
-                const registration::Feature &feature) {
+                const pipelines::registration::Feature &feature) {
                  return io::WriteFeature(filename, feature);
              },
              "Function to write Feature to file", "filename"_a, "feature"_a);
@@ -311,7 +311,7 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def("read_pose_graph",
              [](const std::string &filename) {
-                 registration::PoseGraph pose_graph;
+                 pipelines::registration::PoseGraph pose_graph;
                  io::ReadPoseGraph(filename, pose_graph);
                  return pose_graph;
              },
@@ -321,7 +321,7 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def("write_pose_graph",
              [](const std::string &filename,
-                const registration::PoseGraph pose_graph) {
+                const pipelines::registration::PoseGraph pose_graph) {
                  io::WritePoseGraph(filename, pose_graph);
              },
              "Function to write PoseGraph to file", "filename"_a,

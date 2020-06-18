@@ -36,16 +36,17 @@
 namespace open3d {
 
 void pybind_color_map_classes(py::module &m) {
-    py::class_<color_map::ColorMapOptimizationOption>
+    py::class_<pipelines::color_map::ColorMapOptimizationOption>
             color_map_optimization_option(
                     m, "ColorMapOptimizationOption",
                     "Defines options for color map optimization.");
-    py::detail::bind_default_constructor<color_map::ColorMapOptimizationOption>(
+    py::detail::bind_default_constructor<
+            pipelines::color_map::ColorMapOptimizationOption>(
             color_map_optimization_option);
     color_map_optimization_option
             .def_readwrite(
                     "non_rigid_camera_coordinate",
-                    &color_map::ColorMapOptimizationOption::
+                    &pipelines::color_map::ColorMapOptimizationOption::
                             non_rigid_camera_coordinate_,
                     "bool: (Default ``False``) Set to ``True`` to enable "
                     "non-rigid optimization (optimizing camera "
@@ -55,7 +56,7 @@ void pybind_color_map_classes(py::module &m) {
                     "(optimize camera extrinsic params).")
             .def_readwrite(
                     "number_of_vertical_anchors",
-                    &color_map::ColorMapOptimizationOption::
+                    &pipelines::color_map::ColorMapOptimizationOption::
                             number_of_vertical_anchors_,
                     "int: (Default ``16``) Number of vertical anchor points "
                     "for image wrapping field. The number of horizontal anchor "
@@ -64,7 +65,7 @@ void pybind_color_map_classes(py::module &m) {
                     "only used when non-rigid optimization is enabled.")
             .def_readwrite(
                     "non_rigid_anchor_point_weight",
-                    &color_map::ColorMapOptimizationOption::
+                    &pipelines::color_map::ColorMapOptimizationOption::
                             non_rigid_anchor_point_weight_,
                     "float: (Default ``0.316``) Additional regularization "
                     "terms added to non-rigid regularization. A higher value "
@@ -74,14 +75,14 @@ void pybind_color_map_classes(py::module &m) {
                     "making iteration more conservative by increasing "
                     "the value. This option is only used when non-rigid "
                     "optimization is enabled.")
-            .def_readwrite(
-                    "maximum_iteration",
-                    &color_map::ColorMapOptimizationOption::maximum_iteration_,
-                    "int: (Default ``300``) Number of iterations for "
-                    "optimization steps.")
+            .def_readwrite("maximum_iteration",
+                           &pipelines::color_map::ColorMapOptimizationOption::
+                                   maximum_iteration_,
+                           "int: (Default ``300``) Number of iterations for "
+                           "optimization steps.")
             .def_readwrite(
                     "maximum_allowable_depth",
-                    &color_map::ColorMapOptimizationOption::
+                    &pipelines::color_map::ColorMapOptimizationOption::
                             maximum_allowable_depth_,
                     "float: (Default ``2.5``) Parameter to check the "
                     "visibility of a point. Points with depth larger than "
@@ -91,7 +92,7 @@ void pybind_color_map_classes(py::module &m) {
                     "ignoring unwanted points such as the background.")
             .def_readwrite(
                     "depth_threshold_for_visibility_check",
-                    &color_map::ColorMapOptimizationOption::
+                    &pipelines::color_map::ColorMapOptimizationOption::
                             depth_threshold_for_visibility_check_,
                     "float: (Default ``0.03``) Parameter for point visibility "
                     "check. When the difference of a point's depth "
@@ -102,7 +103,7 @@ void pybind_color_map_classes(py::module &m) {
                     "the RGB-D image.")
             .def_readwrite(
                     "depth_threshold_for_discontinuity_check",
-                    &color_map::ColorMapOptimizationOption::
+                    &pipelines::color_map::ColorMapOptimizationOption::
                             depth_threshold_for_discontinuity_check_,
                     "float: (Default ``0.1``) Parameter to check the "
                     "visibility of a point. It's often desirable "
@@ -113,7 +114,7 @@ void pybind_color_map_classes(py::module &m) {
                     "larger than ``depth_threshold_for_discontinuity_check``.")
             .def_readwrite(
                     "half_dilation_kernel_size_for_discontinuity_map",
-                    &color_map::ColorMapOptimizationOption::
+                    &pipelines::color_map::ColorMapOptimizationOption::
                             half_dilation_kernel_size_for_discontinuity_map_,
                     "int: (Default ``3``) Parameter to check the "
                     "visibility of a point. Related to "
@@ -125,7 +126,7 @@ void pybind_color_map_classes(py::module &m) {
                     "on the visibility mask image.")
             .def_readwrite(
                     "image_boundary_margin",
-                    &color_map::ColorMapOptimizationOption::
+                    &pipelines::color_map::ColorMapOptimizationOption::
                             image_boundary_margin_,
                     "int: (Default ``10``) If a projected 3D point onto a 2D "
                     "image lies in the image border within "
@@ -136,18 +137,18 @@ void pybind_color_map_classes(py::module &m) {
                     "assignment after color map optimization.")
             .def_readwrite(
                     "invisible_vertex_color_knn",
-                    &color_map::ColorMapOptimizationOption::
+                    &pipelines::color_map::ColorMapOptimizationOption::
                             invisible_vertex_color_knn_,
                     "int: (Default ``3``) If a vertex is invisible from all "
                     "images, we assign the averaged color of the k nearest "
                     "visible vertices to fill the invisible vertex. Set to "
                     "``0`` to disable this feature and all invisible vertices "
                     "will be black.")
-            .def("__repr__", [](const color_map::ColorMapOptimizationOption
-                                        &to) {
+            .def("__repr__", [](const pipelines::color_map::
+                                        ColorMapOptimizationOption &to) {
                 // clang-format off
                 return fmt::format(
-                    "color_map::ColorMapOptimizationOption with\n"
+                    "pipelines::color_map::ColorMapOptimizationOption with\n"
                     "- non_rigid_camera_coordinate: {}\n"
                     "- number_of_vertical_anchors: {}\n"
                     "- non_rigid_anchor_point_weight: {}\n"
@@ -174,7 +175,7 @@ void pybind_color_map_classes(py::module &m) {
 }
 
 void pybind_color_map_methods(py::module &m) {
-    m.def("color_map_optimization", &color_map::ColorMapOptimization,
+    m.def("color_map_optimization", &pipelines::color_map::ColorMapOptimization,
           "Function for color mapping of reconstructed scenes via "
           "optimization, "
           "This is implementation of following by paper Q-Y Zhou and V Koltun: "
@@ -182,7 +183,7 @@ void pybind_color_map_methods(py::module &m) {
           "optimization for 3D Reconstruction with Consumer Depth Cameras, "
           "SIGGRAPH 2014.",
           "mesh"_a, "imgs_rgbd"_a, "camera"_a,
-          "option"_a = color_map::ColorMapOptimizationOption());
+          "option"_a = pipelines::color_map::ColorMapOptimizationOption());
     docstring::FunctionDocInject(
             m, "color_map_optimization",
             {{"mesh", "The input geometry mesh."},

@@ -32,6 +32,7 @@
 #include "open3d/geometry/TriangleMesh.h"
 
 namespace open3d {
+namespace pipelines {
 namespace integration {
 
 /// \enum TSDFVolumeColorType
@@ -98,4 +99,5 @@ public:
 };
 
 }  // namespace integration
+}  // namespace pipelines
 }  // namespace open3d

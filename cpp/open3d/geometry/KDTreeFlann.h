@@ -65,7 +65,7 @@ public:
     ///
     /// \param feature Provides a set of features from which the KDTree is
     /// constructed.
-    KDTreeFlann(const registration::Feature &feature);
+    KDTreeFlann(const pipelines::registration::Feature &feature);
     ~KDTreeFlann();
     KDTreeFlann(const KDTreeFlann &) = delete;
     KDTreeFlann &operator=(const KDTreeFlann &) = delete;
@@ -82,7 +82,7 @@ public:
     /// Sets the data for the KDTree from the feature data.
     ///
     /// \param feature Set of features for KDTree construction.
-    bool SetFeature(const registration::Feature &feature);
+    bool SetFeature(const pipelines::registration::Feature &feature);
 
     template <typename T>
     int Search(const T &query,

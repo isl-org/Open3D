@@ -79,10 +79,10 @@ TEST(UniformTSDFVolume, Constructor) {
     double length = 4.0;
     int resolution = 128;
     double sdf_trunc = 0.04;
-    auto color_type = integration::TSDFVolumeColorType::RGB8;
-    integration::UniformTSDFVolume tsdf_volume(
+    auto color_type = pipelines::integration::TSDFVolumeColorType::RGB8;
+    pipelines::integration::UniformTSDFVolume tsdf_volume(
             length, resolution, sdf_trunc,
-            integration::TSDFVolumeColorType::RGB8);
+            pipelines::integration::TSDFVolumeColorType::RGB8);
 
     // TSDFVolume base class attributes
     EXPECT_EQ(tsdf_volume.voxel_length_, length / resolution);
@@ -118,8 +118,8 @@ TEST(UniformTSDFVolume, RealData) {
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     // TSDF init
-    integration::UniformTSDFVolume tsdf_volume(
-            4.0, 100, 0.04, integration::TSDFVolumeColorType::RGB8);
+    pipelines::integration::UniformTSDFVolume tsdf_volume(
+            4.0, 100, 0.04, pipelines::integration::TSDFVolumeColorType::RGB8);
 
     // Integrate RGBD frames
     for (size_t i = 0; i < poses.size(); ++i) {

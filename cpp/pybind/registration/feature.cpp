@@ -34,22 +34,25 @@ namespace open3d {
 
 void pybind_feature(py::module &m) {
     // open3d.registration.Feature
-    py::class_<registration::Feature, std::shared_ptr<registration::Feature>>
+    py::class_<pipelines::registration::Feature,
+               std::shared_ptr<pipelines::registration::Feature>>
             feature(m, "Feature", "Class to store featrues for registration.");
-    py::detail::bind_default_constructor<registration::Feature>(feature);
-    py::detail::bind_copy_functions<registration::Feature>(feature);
-    feature.def("resize", &registration::Feature::Resize, "dim"_a, "n"_a,
-                "Resize feature data buffer to ``dim x n``.")
-            .def("dimension", &registration::Feature::Dimension,
+    py::detail::bind_default_constructor<pipelines::registration::Feature>(
+            feature);
+    py::detail::bind_copy_functions<pipelines::registration::Feature>(feature);
+    feature.def("resize", &pipelines::registration::Feature::Resize, "dim"_a,
+                "n"_a, "Resize feature data buffer to ``dim x n``.")
+            .def("dimension", &pipelines::registration::Feature::Dimension,
                  "Returns feature dimensions per point.")
-            .def("num", &registration::Feature::Num,
+            .def("num", &pipelines::registration::Feature::Num,
                  "Returns number of points.")
-            .def_readwrite("data", &registration::Feature::data_,
+            .def_readwrite("data", &pipelines::registration::Feature::data_,
                            "``dim x n`` float64 numpy array: Data buffer "
                            "storing features.")
-            .def("__repr__", [](const registration::Feature &f) {
+            .def("__repr__", [](const pipelines::registration::Feature &f) {
                 return std::string(
-                               "registration::Feature class with dimension "
+                               "pipelines::registration::Feature class with "
+                               "dimension "
                                "= ") +
                        std::to_string(f.Dimension()) +
                        std::string(" and num = ") + std::to_string(f.Num()) +
@@ -63,7 +66,7 @@ void pybind_feature(py::module &m) {
 }
 
 void pybind_feature_methods(py::module &m) {
-    m.def("compute_fpfh_feature", &registration::ComputeFPFHFeature,
+    m.def("compute_fpfh_feature", &pipelines::registration::ComputeFPFHFeature,
           "Function to compute FPFH feature for a point cloud", "input"_a,
           "search_param"_a);
     docstring::FunctionDocInject(

@@ -32,7 +32,9 @@
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 
 namespace open3d {
+namespace pipelines {
 namespace color_map {
+
 void ColorMapOptimizationJacobian::ComputeJacobianAndResidualRigid(
         int row,
         Eigen::Vector6d& J_r,
@@ -174,5 +176,7 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     pattern(13) = 6 + ((ii + 1) + (jj + 1) * anchor_w) * 2 + 1;
     r = (gray - proxy_intensity[vid]);
 }
+
 }  // namespace color_map
+}  // namespace pipelines
 }  // namespace open3d

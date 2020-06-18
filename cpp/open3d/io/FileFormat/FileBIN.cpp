@@ -77,7 +77,7 @@ bool WriteMatrixXdToBINFile(FILE *file, const Eigen::MatrixXd &mat) {
 namespace io {
 
 bool ReadFeatureFromBIN(const std::string &filename,
-                        registration::Feature &feature) {
+                        pipelines::registration::Feature &feature) {
     FILE *fid = utility::filesystem::FOpen(filename, "rb");
     if (fid == NULL) {
         utility::LogWarning("Read BIN failed: unable to open file: {}",
@@ -90,7 +90,7 @@ bool ReadFeatureFromBIN(const std::string &filename,
 }
 
 bool WriteFeatureToBIN(const std::string &filename,
-                       const registration::Feature &feature) {
+                       const pipelines::registration::Feature &feature) {
     FILE *fid = utility::filesystem::FOpen(filename, "wb");
     if (fid == NULL) {
         utility::LogWarning("Write BIN failed: unable to open file: {}",

@@ -34,7 +34,9 @@
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 
 namespace open3d {
+namespace pipelines {
 namespace color_map {
+
 inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
         const Eigen::Vector3d X,
         const camera::PinholeCameraTrajectory& camera,
@@ -399,5 +401,7 @@ void SetGeometryColorAverage(
         }
     }
 }
+
 }  // namespace color_map
+}  // namespace pipelines
 }  // namespace open3d

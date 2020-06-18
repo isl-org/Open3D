@@ -35,6 +35,7 @@
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
+namespace pipelines {
 namespace integration {
 
 UniformTSDFVolume::UniformTSDFVolume(
@@ -417,4 +418,5 @@ double UniformTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
 }
 
 }  // namespace integration
+}  // namespace pipelines
 }  // namespace open3d

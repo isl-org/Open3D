@@ -35,11 +35,10 @@
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
+namespace pipelines {
+namespace registration {
 
-namespace {
-using namespace registration;
-
-RegistrationResult GetRegistrationResultAndCorrespondences(
+static RegistrationResult GetRegistrationResultAndCorrespondences(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const geometry::KDTreeFlann &target_kdtree,
@@ -97,7 +96,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
     return result;
 }
 
-RegistrationResult EvaluateRANSACBasedOnCorrespondence(
+static RegistrationResult EvaluateRANSACBasedOnCorrespondence(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
@@ -126,9 +125,6 @@ RegistrationResult EvaluateRANSACBasedOnCorrespondence(
     return result;
 }
 
-}  // unnamed namespace
-
-namespace registration {
 RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -426,4 +422,5 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 }
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

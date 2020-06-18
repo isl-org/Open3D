@@ -3,8 +3,6 @@ import numpy as np
 import re
 import os
 import sys
-import urllib.request
-import zipfile
 from open3d_test import download_fountain_dataset
 
 

@@ -38,6 +38,7 @@ namespace geometry {
 class PointCloud;
 }
 
+namespace pipelines {
 namespace registration {
 
 /// \class Feature
@@ -73,4 +74,5 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
                 geometry::KDTreeSearchParamKNN());
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

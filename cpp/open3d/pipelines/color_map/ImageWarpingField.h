@@ -29,6 +29,7 @@
 #include "open3d/utility/IJsonConvertible.h"
 
 namespace open3d {
+namespace pipelines {
 namespace color_map {
 
 class ImageWarpingField : public utility::IJsonConvertible {
@@ -53,4 +54,5 @@ public:
 };
 
 }  // namespace color_map
+}  // namespace pipelines
 }  // namespace open3d

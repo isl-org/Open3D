@@ -29,6 +29,7 @@
 #include <memory>
 
 namespace open3d {
+namespace pipelines {
 namespace registration {
 
 class PoseGraph;
@@ -96,4 +97,5 @@ public:
 };
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

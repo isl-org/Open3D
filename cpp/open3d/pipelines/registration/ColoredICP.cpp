@@ -36,9 +36,8 @@
 #include "open3d/utility/Eigen.h"
 
 namespace open3d {
-
-namespace {
-using namespace registration;
+namespace pipelines {
+namespace registration {
 
 class PointCloudForColoredICP : public geometry::PointCloud {
 public:
@@ -75,7 +74,8 @@ private:
             TransformationEstimationType::ColoredICP;
 };
 
-std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
+static std::shared_ptr<PointCloudForColoredICP>
+InitializePointCloudForColoredICP(
         const geometry::PointCloud &target,
         const geometry::KDTreeSearchParamHybrid &search_param) {
     utility::LogDebug("InitializePointCloudForColoredICP");
@@ -244,10 +244,6 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
     return residual;
 };
 
-}  // unnamed namespace
-
-namespace registration {
-
 RegistrationResult RegistrationColoredICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -263,4 +259,5 @@ RegistrationResult RegistrationColoredICP(
 }
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

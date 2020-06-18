@@ -37,6 +37,7 @@ namespace geometry {
 class PointCloud;
 }
 
+namespace pipelines {
 namespace registration {
 
 typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
@@ -151,4 +152,5 @@ private:
 };
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

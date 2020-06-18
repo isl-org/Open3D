@@ -39,6 +39,7 @@ namespace geometry {
 class PointCloud;
 }
 
+namespace pipelines {
 namespace registration {
 
 /// \class CorrespondenceChecker
@@ -164,4 +165,5 @@ public:
 };
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

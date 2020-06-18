@@ -33,6 +33,7 @@
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
+namespace pipelines {
 namespace integration {
 
 class UniformTSDFVolume;
@@ -113,4 +114,5 @@ private:
 };
 
 }  // namespace integration
+}  // namespace pipelines
 }  // namespace open3d

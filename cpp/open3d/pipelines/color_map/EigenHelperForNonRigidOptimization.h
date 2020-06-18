@@ -39,6 +39,7 @@ typedef Eigen::Matrix<int, 14, 1> Vector14i;
 }  // namespace Eigen
 
 namespace open3d {
+namespace pipelines {
 namespace color_map {
 
 /// Function to compute JTJ and Jtr
@@ -58,4 +59,5 @@ std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
         bool verbose = true);
 
 }  // namespace color_map
+}  // namespace pipelines
 }  // namespace open3d

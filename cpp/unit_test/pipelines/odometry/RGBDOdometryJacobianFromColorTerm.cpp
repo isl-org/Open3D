@@ -92,7 +92,7 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
     std::vector<Eigen::Vector4i, utility::Vector4i_allocator> corresps(rows);
     Rand(corresps, 0, 3, 0);
 
-    odometry::RGBDOdometryJacobianFromColorTerm jacobian_method;
+    pipelines::odometry::RGBDOdometryJacobianFromColorTerm jacobian_method;
 
     for (int row = 0; row < rows; row++) {
         std::vector<Eigen::Vector6d, utility::Vector6d_allocator> J_r;

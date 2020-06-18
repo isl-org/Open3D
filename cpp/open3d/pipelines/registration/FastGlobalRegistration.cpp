@@ -34,11 +34,10 @@
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
+namespace pipelines {
+namespace registration {
 
-namespace {
-using namespace registration;
-
-std::vector<std::pair<int, int>> AdvancedMatching(
+static std::vector<std::pair<int, int>> AdvancedMatching(
         const std::vector<geometry::PointCloud>& point_cloud_vec,
         const std::vector<Feature>& features_vec,
         const FastGlobalRegistrationOption& option) {
@@ -180,9 +179,9 @@ std::vector<std::pair<int, int>> AdvancedMatching(
 }
 
 // Normalize scale of points. X' = (X-\mu)/scale
-std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
-        std::vector<geometry::PointCloud>& point_cloud_vec,
-        const FastGlobalRegistrationOption& option) {
+static std::tuple<std::vector<Eigen::Vector3d>, double, double>
+NormalizePointCloud(std::vector<geometry::PointCloud>& point_cloud_vec,
+                    const FastGlobalRegistrationOption& option) {
     int num = 2;
     double scale = 0;
     std::vector<Eigen::Vector3d> pcd_mean_vec;
@@ -230,7 +229,7 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
     return std::make_tuple(pcd_mean_vec, scale_global, scale_start);
 }
 
-Eigen::Matrix4d OptimizePairwiseRegistration(
+static Eigen::Matrix4d OptimizePairwiseRegistration(
         const std::vector<geometry::PointCloud>& point_cloud_vec,
         const std::vector<std::pair<int, int>>& corres,
         double scale_start,
@@ -316,7 +315,7 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
 
 // Below line indicates how the transformation matrix aligns two point clouds
 // e.g. T * point_cloud_vec[1] is aligned with point_cloud_vec[0].
-Eigen::Matrix4d GetTransformationOriginalScale(
+static Eigen::Matrix4d GetTransformationOriginalScale(
         const Eigen::Matrix4d& transformation,
         const std::vector<Eigen::Vector3d>& pcd_mean_vec,
         const double scale_global) {
@@ -330,9 +329,6 @@ Eigen::Matrix4d GetTransformationOriginalScale(
     return transtemp;
 }
 
-}  // unnamed namespace
-
-namespace registration {
 RegistrationResult FastGlobalRegistration(
         const geometry::PointCloud& source,
         const geometry::PointCloud& target,
@@ -370,4 +366,5 @@ RegistrationResult FastGlobalRegistration(
 }
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

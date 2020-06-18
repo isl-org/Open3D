@@ -35,14 +35,15 @@
 namespace open3d {
 
 template <class GlobalOptimizationMethodBase =
-                  registration::GlobalOptimizationMethod>
+                  pipelines::registration::GlobalOptimizationMethod>
 class PyGlobalOptimizationMethod : public GlobalOptimizationMethodBase {
 public:
     using GlobalOptimizationMethodBase::GlobalOptimizationMethodBase;
     void OptimizePoseGraph(
-            registration::PoseGraph &pose_graph,
-            const registration::GlobalOptimizationConvergenceCriteria &criteria,
-            const registration::GlobalOptimizationOption &option)
+            pipelines::registration::PoseGraph &pose_graph,
+            const pipelines::registration::GlobalOptimizationConvergenceCriteria
+                    &criteria,
+            const pipelines::registration::GlobalOptimizationOption &option)
             const override {
         PYBIND11_OVERLOAD_PURE(void, GlobalOptimizationMethodBase, pose_graph,
                                criteria, option);
@@ -51,29 +52,33 @@ public:
 
 void pybind_global_optimization(py::module &m) {
     // open3d.registration.PoseGraphNode
-    py::class_<registration::PoseGraphNode,
-               std::shared_ptr<registration::PoseGraphNode>>
+    py::class_<pipelines::registration::PoseGraphNode,
+               std::shared_ptr<pipelines::registration::PoseGraphNode>>
             pose_graph_node(m, "PoseGraphNode", "Node of ``PoseGraph``.");
-    py::detail::bind_default_constructor<registration::PoseGraphNode>(
+    py::detail::bind_default_constructor<
+            pipelines::registration::PoseGraphNode>(pose_graph_node);
+    py::detail::bind_copy_functions<pipelines::registration::PoseGraphNode>(
             pose_graph_node);
-    py::detail::bind_copy_functions<registration::PoseGraphNode>(
-            pose_graph_node);
-    pose_graph_node.def_readwrite("pose", &registration::PoseGraphNode::pose_)
+    pose_graph_node
+            .def_readwrite("pose",
+                           &pipelines::registration::PoseGraphNode::pose_)
             .def(py::init([](Eigen::Matrix4d pose =
                                      Eigen::Matrix4d::Identity()) {
-                     return new registration::PoseGraphNode(pose);
+                     return new pipelines::registration::PoseGraphNode(pose);
                  }),
                  "pose"_a)
-            .def("__repr__", [](const registration::PoseGraphNode &rr) {
-                return std::string(
-                        "registration::PoseGraphNode, access pose to get its "
-                        "current pose.");
-            });
+            .def("__repr__",
+                 [](const pipelines::registration::PoseGraphNode &rr) {
+                     return std::string(
+                             "pipelines::registration::PoseGraphNode, access "
+                             "pose to get its "
+                             "current pose.");
+                 });
 
     // open3d.registration.PoseGraphNodeVector
-    auto pose_graph_node_vector =
-            py::bind_vector<std::vector<registration::PoseGraphNode>>(
-                    m, "PoseGraphNodeVector");
+    auto pose_graph_node_vector = py::bind_vector<
+            std::vector<pipelines::registration::PoseGraphNode>>(
+            m, "PoseGraphNodeVector");
     pose_graph_node_vector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Vector of PoseGraphNode";
@@ -81,34 +86,38 @@ void pybind_global_optimization(py::module &m) {
             py::none(), py::none(), "");
 
     // open3d.registration.PoseGraphEdge
-    py::class_<registration::PoseGraphEdge,
-               std::shared_ptr<registration::PoseGraphEdge>>
+    py::class_<pipelines::registration::PoseGraphEdge,
+               std::shared_ptr<pipelines::registration::PoseGraphEdge>>
             pose_graph_edge(m, "PoseGraphEdge", "Edge of ``PoseGraph``.");
-    py::detail::bind_default_constructor<registration::PoseGraphEdge>(
-            pose_graph_edge);
-    py::detail::bind_copy_functions<registration::PoseGraphEdge>(
+    py::detail::bind_default_constructor<
+            pipelines::registration::PoseGraphEdge>(pose_graph_edge);
+    py::detail::bind_copy_functions<pipelines::registration::PoseGraphEdge>(
             pose_graph_edge);
     pose_graph_edge
-            .def_readwrite("source_node_id",
-                           &registration::PoseGraphEdge::source_node_id_,
-                           "int: Source ``PoseGraphNode`` id.")
-            .def_readwrite("target_node_id",
-                           &registration::PoseGraphEdge::target_node_id_,
-                           "int: Target ``PoseGraphNode`` id.")
+            .def_readwrite(
+                    "source_node_id",
+                    &pipelines::registration::PoseGraphEdge::source_node_id_,
+                    "int: Source ``PoseGraphNode`` id.")
+            .def_readwrite(
+                    "target_node_id",
+                    &pipelines::registration::PoseGraphEdge::target_node_id_,
+                    "int: Target ``PoseGraphNode`` id.")
             .def_readwrite(
                     "transformation",
-                    &registration::PoseGraphEdge::transformation_,
+                    &pipelines::registration::PoseGraphEdge::transformation_,
                     "``4 x 4`` float64 numpy array: Transformation matrix.")
-            .def_readwrite("information",
-                           &registration::PoseGraphEdge::information_,
-                           "``6 x 6`` float64 numpy array: Information matrix.")
+            .def_readwrite(
+                    "information",
+                    &pipelines::registration::PoseGraphEdge::information_,
+                    "``6 x 6`` float64 numpy array: Information matrix.")
             .def_readwrite("uncertain",
-                           &registration::PoseGraphEdge::uncertain_,
+                           &pipelines::registration::PoseGraphEdge::uncertain_,
                            "bool: Whether the edge is uncertain. Odometry edge "
                            "has uncertain == false, loop closure edges has "
                            "uncertain == true")
             .def_readwrite(
-                    "confidence", &registration::PoseGraphEdge::confidence_,
+                    "confidence",
+                    &pipelines::registration::PoseGraphEdge::confidence_,
                     "float from 0 to 1: Confidence value of the edge. if "
                     "uncertain is true, it has confidence bounded in [0,1].   "
                     "1 means reliable, and 0 means "
@@ -119,7 +128,7 @@ void pybind_global_optimization(py::module &m) {
                              Eigen::Matrix4d transformation,
                              Eigen::Matrix6d information, bool uncertain,
                              double confidence) {
-                     return new registration::PoseGraphEdge(
+                     return new pipelines::registration::PoseGraphEdge(
                              source_node_id, target_node_id, transformation,
                              information, uncertain, confidence);
                  }),
@@ -127,20 +136,23 @@ void pybind_global_optimization(py::module &m) {
                  "transformation"_a = Eigen::Matrix4d::Identity(),
                  "information"_a = Eigen::Matrix6d::Identity(),
                  "uncertain"_a = false, "confidence"_a = 1.0)
-            .def("__repr__", [](const registration::PoseGraphEdge &rr) {
-                return std::string("registration::PoseGraphEdge from nodes ") +
-                       std::to_string(rr.source_node_id_) +
-                       std::string(" to ") +
-                       std::to_string(rr.target_node_id_) +
-                       std::string(
-                               ", access transformation to get relative "
-                               "transformation");
-            });
+            .def("__repr__",
+                 [](const pipelines::registration::PoseGraphEdge &rr) {
+                     return std::string(
+                                    "pipelines::registration::PoseGraphEdge "
+                                    "from nodes ") +
+                            std::to_string(rr.source_node_id_) +
+                            std::string(" to ") +
+                            std::to_string(rr.target_node_id_) +
+                            std::string(
+                                    ", access transformation to get relative "
+                                    "transformation");
+                 });
 
     // open3d.registration.PoseGraphEdgeVector
-    auto pose_graph_edge_vector =
-            py::bind_vector<std::vector<registration::PoseGraphEdge>>(
-                    m, "PoseGraphEdgeVector");
+    auto pose_graph_edge_vector = py::bind_vector<
+            std::vector<pipelines::registration::PoseGraphEdge>>(
+            m, "PoseGraphEdgeVector");
     pose_graph_edge_vector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Vector of PoseGraphEdge";
@@ -148,21 +160,23 @@ void pybind_global_optimization(py::module &m) {
             py::none(), py::none(), "");
 
     // open3d.registration.PoseGraph
-    py::class_<registration::PoseGraph,
-               std::shared_ptr<registration::PoseGraph>>
+    py::class_<pipelines::registration::PoseGraph,
+               std::shared_ptr<pipelines::registration::PoseGraph>>
             pose_graph(m, "PoseGraph",
                        "Data structure defining the pose graph.");
-    py::detail::bind_default_constructor<registration::PoseGraph>(pose_graph);
-    py::detail::bind_copy_functions<registration::PoseGraph>(pose_graph);
+    py::detail::bind_default_constructor<pipelines::registration::PoseGraph>(
+            pose_graph);
+    py::detail::bind_copy_functions<pipelines::registration::PoseGraph>(
+            pose_graph);
     pose_graph
             .def_readwrite(
-                    "nodes", &registration::PoseGraph::nodes_,
+                    "nodes", &pipelines::registration::PoseGraph::nodes_,
                     "``List(PoseGraphNode)``: List of ``PoseGraphNode``.")
             .def_readwrite(
-                    "edges", &registration::PoseGraph::edges_,
+                    "edges", &pipelines::registration::PoseGraph::edges_,
                     "``List(PoseGraphEdge)``: List of ``PoseGraphEdge``.")
-            .def("__repr__", [](const registration::PoseGraph &rr) {
-                return std::string("registration::PoseGraph with ") +
+            .def("__repr__", [](const pipelines::registration::PoseGraph &rr) {
+                return std::string("pipelines::registration::PoseGraph with ") +
                        std::to_string(rr.nodes_.size()) +
                        std::string(" nodes and ") +
                        std::to_string(rr.edges_.size()) +
@@ -170,15 +184,16 @@ void pybind_global_optimization(py::module &m) {
             });
 
     // open3d.registration.GlobalOptimizationMethod
-    py::class_<
-            registration::GlobalOptimizationMethod,
-            PyGlobalOptimizationMethod<registration::GlobalOptimizationMethod>>
+    py::class_<pipelines::registration::GlobalOptimizationMethod,
+               PyGlobalOptimizationMethod<
+                       pipelines::registration::GlobalOptimizationMethod>>
             global_optimization_method(
                     m, "GlobalOptimizationMethod",
                     "Base class for global optimization method.");
     global_optimization_method.def(
             "OptimizePoseGraph",
-            &registration::GlobalOptimizationMethod::OptimizePoseGraph,
+            &pipelines::registration::GlobalOptimizationMethod::
+                    OptimizePoseGraph,
             "pose_graph"_a, "criteria"_a, "option"_a,
             "Run pose graph optimization.");
     docstring::ClassMethodDocInject(
@@ -187,133 +202,137 @@ void pybind_global_optimization(py::module &m) {
              {"criteria", "Convergence criteria."},
              {"option", "Global optimization options."}});
 
-    py::class_<registration::GlobalOptimizationLevenbergMarquardt,
+    py::class_<pipelines::registration::GlobalOptimizationLevenbergMarquardt,
                PyGlobalOptimizationMethod<
-                       registration::GlobalOptimizationLevenbergMarquardt>,
-               registration::GlobalOptimizationMethod>
+                       pipelines::registration::
+                               GlobalOptimizationLevenbergMarquardt>,
+               pipelines::registration::GlobalOptimizationMethod>
             global_optimization_method_lm(
                     m, "GlobalOptimizationLevenbergMarquardt",
                     "Global optimization with Levenberg-Marquardt algorithm. "
                     "Recommended over the Gauss-Newton method since the LM has "
                     "better convergence characteristics.");
     py::detail::bind_default_constructor<
-            registration::GlobalOptimizationLevenbergMarquardt>(
+            pipelines::registration::GlobalOptimizationLevenbergMarquardt>(
             global_optimization_method_lm);
     py::detail::bind_copy_functions<
-            registration::GlobalOptimizationLevenbergMarquardt>(
+            pipelines::registration::GlobalOptimizationLevenbergMarquardt>(
             global_optimization_method_lm);
     global_optimization_method_lm.def(
-            "__repr__",
-            [](const registration::GlobalOptimizationLevenbergMarquardt &te) {
+            "__repr__", [](const pipelines::registration::
+                                   GlobalOptimizationLevenbergMarquardt &te) {
                 return std::string("GlobalOptimizationLevenbergMarquardt");
             });
 
-    py::class_<registration::GlobalOptimizationGaussNewton,
+    py::class_<pipelines::registration::GlobalOptimizationGaussNewton,
                PyGlobalOptimizationMethod<
-                       registration::GlobalOptimizationGaussNewton>,
-               registration::GlobalOptimizationMethod>
+                       pipelines::registration::GlobalOptimizationGaussNewton>,
+               pipelines::registration::GlobalOptimizationMethod>
             global_optimization_method_gn(
                     m, "GlobalOptimizationGaussNewton",
                     "Global optimization with Gauss-Newton algorithm.");
     py::detail::bind_default_constructor<
-            registration::GlobalOptimizationGaussNewton>(
+            pipelines::registration::GlobalOptimizationGaussNewton>(
             global_optimization_method_gn);
     py::detail::bind_copy_functions<
-            registration::GlobalOptimizationGaussNewton>(
+            pipelines::registration::GlobalOptimizationGaussNewton>(
             global_optimization_method_gn);
     global_optimization_method_gn.def(
             "__repr__",
-            [](const registration::GlobalOptimizationGaussNewton &te) {
+            [](const pipelines::registration::GlobalOptimizationGaussNewton
+                       &te) {
                 return std::string("GlobalOptimizationGaussNewton");
             });
 
-    py::class_<registration::GlobalOptimizationConvergenceCriteria> criteria(
-            m, "GlobalOptimizationConvergenceCriteria",
-            "Convergence criteria of GlobalOptimization.");
+    py::class_<pipelines::registration::GlobalOptimizationConvergenceCriteria>
+            criteria(m, "GlobalOptimizationConvergenceCriteria",
+                     "Convergence criteria of GlobalOptimization.");
     py::detail::bind_default_constructor<
-            registration::GlobalOptimizationConvergenceCriteria>(criteria);
+            pipelines::registration::GlobalOptimizationConvergenceCriteria>(
+            criteria);
     py::detail::bind_copy_functions<
-            registration::GlobalOptimizationConvergenceCriteria>(criteria);
+            pipelines::registration::GlobalOptimizationConvergenceCriteria>(
+            criteria);
     criteria.def_readwrite(
                     "max_iteration",
-                    &registration::GlobalOptimizationConvergenceCriteria::
-                            max_iteration_,
+                    &pipelines::registration::
+                            GlobalOptimizationConvergenceCriteria::
+                                    max_iteration_,
                     "int: Maximum iteration number for iterative optimization "
                     "module.")
-            .def_readwrite(
-                    "min_relative_increment",
-                    &registration::GlobalOptimizationConvergenceCriteria::
-                            min_relative_increment_,
-                    "float: Minimum relative increments.")
-            .def_readwrite(
-                    "min_relative_residual_increment",
-                    &registration::GlobalOptimizationConvergenceCriteria::
-                            min_relative_residual_increment_,
-                    "float: Minimum relative residual increments.")
-            .def_readwrite(
-                    "min_right_term",
-                    &registration::GlobalOptimizationConvergenceCriteria::
-                            min_right_term_,
-                    "float: Minimum right term value.")
-            .def_readwrite(
-                    "min_residual",
-                    &registration::GlobalOptimizationConvergenceCriteria::
-                            min_residual_,
-                    "float: Minimum residual value.")
+            .def_readwrite("min_relative_increment",
+                           &pipelines::registration::
+                                   GlobalOptimizationConvergenceCriteria::
+                                           min_relative_increment_,
+                           "float: Minimum relative increments.")
+            .def_readwrite("min_relative_residual_increment",
+                           &pipelines::registration::
+                                   GlobalOptimizationConvergenceCriteria::
+                                           min_relative_residual_increment_,
+                           "float: Minimum relative residual increments.")
+            .def_readwrite("min_right_term",
+                           &pipelines::registration::
+                                   GlobalOptimizationConvergenceCriteria::
+                                           min_right_term_,
+                           "float: Minimum right term value.")
+            .def_readwrite("min_residual",
+                           &pipelines::registration::
+                                   GlobalOptimizationConvergenceCriteria::
+                                           min_residual_,
+                           "float: Minimum residual value.")
             .def_readwrite(
                     "max_iteration_lm",
-                    &registration::GlobalOptimizationConvergenceCriteria::
-                            max_iteration_lm_,
+                    &pipelines::registration::
+                            GlobalOptimizationConvergenceCriteria::
+                                    max_iteration_lm_,
                     "int: Maximum iteration number for Levenberg Marquardt "
                     "method. max_iteration_lm is used for additional "
                     "Levenberg-Marquardt inner loop that automatically changes "
                     "steepest gradient gain.")
             .def_readwrite(
                     "upper_scale_factor",
-                    &registration::GlobalOptimizationConvergenceCriteria::
-                            upper_scale_factor_,
+                    &pipelines::registration::
+                            GlobalOptimizationConvergenceCriteria::
+                                    upper_scale_factor_,
                     "float: Upper scale factor value. Scaling factors are used "
                     "for levenberg marquardt algorithm these are scaling "
                     "factors that increase/decrease lambda used in H_LM = H + "
                     "lambda * I")
-            .def_readwrite(
-                    "lower_scale_factor",
-                    &registration::GlobalOptimizationConvergenceCriteria::
-                            lower_scale_factor_,
-                    "float: Lower scale factor value.")
-            .def("__repr__",
-                 [](const registration::GlobalOptimizationConvergenceCriteria
-                            &cr) {
-                     return std::string(
-                                    "GlobalOptimizationConvergenceCriteria") +
-                            std::string("\n> max_iteration : ") +
-                            std::to_string(cr.max_iteration_) +
-                            std::string("\n> min_relative_increment : ") +
-                            std::to_string(cr.min_relative_increment_) +
-                            std::string(
-                                    "\n> min_relative_residual_increment : ") +
-                            std::to_string(
-                                    cr.min_relative_residual_increment_) +
-                            std::string("\n> min_right_term : ") +
-                            std::to_string(cr.min_right_term_) +
-                            std::string("\n> min_residual : ") +
-                            std::to_string(cr.min_residual_) +
-                            std::string("\n> max_iteration_lm : ") +
-                            std::to_string(cr.max_iteration_lm_) +
-                            std::string("\n> upper_scale_factor : ") +
-                            std::to_string(cr.upper_scale_factor_) +
-                            std::string("\n> lower_scale_factor : ") +
-                            std::to_string(cr.lower_scale_factor_);
-                 });
+            .def_readwrite("lower_scale_factor",
+                           &pipelines::registration::
+                                   GlobalOptimizationConvergenceCriteria::
+                                           lower_scale_factor_,
+                           "float: Lower scale factor value.")
+            .def("__repr__", [](const pipelines::registration::
+                                        GlobalOptimizationConvergenceCriteria
+                                                &cr) {
+                return std::string("GlobalOptimizationConvergenceCriteria") +
+                       std::string("\n> max_iteration : ") +
+                       std::to_string(cr.max_iteration_) +
+                       std::string("\n> min_relative_increment : ") +
+                       std::to_string(cr.min_relative_increment_) +
+                       std::string("\n> min_relative_residual_increment : ") +
+                       std::to_string(cr.min_relative_residual_increment_) +
+                       std::string("\n> min_right_term : ") +
+                       std::to_string(cr.min_right_term_) +
+                       std::string("\n> min_residual : ") +
+                       std::to_string(cr.min_residual_) +
+                       std::string("\n> max_iteration_lm : ") +
+                       std::to_string(cr.max_iteration_lm_) +
+                       std::string("\n> upper_scale_factor : ") +
+                       std::to_string(cr.upper_scale_factor_) +
+                       std::string("\n> lower_scale_factor : ") +
+                       std::to_string(cr.lower_scale_factor_);
+            });
 
-    py::class_<registration::GlobalOptimizationOption> option(
+    py::class_<pipelines::registration::GlobalOptimizationOption> option(
             m, "GlobalOptimizationOption", "Option for GlobalOptimization.");
     py::detail::bind_default_constructor<
-            registration::GlobalOptimizationOption>(option);
-    py::detail::bind_copy_functions<registration::GlobalOptimizationOption>(
-            option);
+            pipelines::registration::GlobalOptimizationOption>(option);
+    py::detail::bind_copy_functions<
+            pipelines::registration::GlobalOptimizationOption>(option);
     option.def_readwrite("max_correspondence_distance",
-                         &registration::GlobalOptimizationOption::
+                         &pipelines::registration::GlobalOptimizationOption::
                                  max_correspondence_distance_,
                          "float: Identifies which distance value is used for "
                          "finding neighboring points when making information "
@@ -321,37 +340,40 @@ void pybind_global_optimization(py::module &m) {
                          "distance is used for determining $mu, a line process "
                          "weight.")
             .def_readwrite("edge_prune_threshold",
-                           &registration::GlobalOptimizationOption::
+                           &pipelines::registration::GlobalOptimizationOption::
                                    edge_prune_threshold_,
                            "float: According to [Choi et al 2015], "
                            "line_process weight < edge_prune_threshold (0.25) "
                            "is pruned.")
             .def_readwrite("preference_loop_closure",
-                           &registration::GlobalOptimizationOption::
+                           &pipelines::registration::GlobalOptimizationOption::
                                    preference_loop_closure_,
                            "float: Balancing parameter to decide which one is "
                            "more reliable: odometry vs loop-closure. [0,1] -> "
                            "try to unchange odometry edges, [1) -> try to "
                            "utilize loop-closure. Recommendation: 0.1 for RGBD "
                            "Odometry, 2.0 for fragment registration.")
-            .def_readwrite(
-                    "reference_node",
-                    &registration::GlobalOptimizationOption::reference_node_,
-                    "int: The pose of this node is unchanged after "
-                    "optimization.")
+            .def_readwrite("reference_node",
+                           &pipelines::registration::GlobalOptimizationOption::
+                                   reference_node_,
+                           "int: The pose of this node is unchanged after "
+                           "optimization.")
             .def(py::init([](double max_correspondence_distance,
                              double edge_prune_threshold,
                              double preference_loop_closure,
                              int reference_node) {
-                     return new registration::GlobalOptimizationOption(
-                             max_correspondence_distance, edge_prune_threshold,
-                             preference_loop_closure, reference_node);
+                     return new pipelines::registration::
+                             GlobalOptimizationOption(
+                                     max_correspondence_distance,
+                                     edge_prune_threshold,
+                                     preference_loop_closure, reference_node);
                  }),
                  "max_correspondence_distance"_a = 0.03,
                  "edge_prune_threshold"_a = 0.25,
                  "preference_loop_closure"_a = 1.0, "reference_node"_a = -1)
             .def("__repr__",
-                 [](const registration::GlobalOptimizationOption &goo) {
+                 [](const pipelines::registration::GlobalOptimizationOption
+                            &goo) {
                      return std::string("GlobalOptimizationOption") +
                             std::string("\n> max_correspondence_distance : ") +
                             std::to_string(goo.max_correspondence_distance_) +
@@ -366,23 +388,24 @@ void pybind_global_optimization(py::module &m) {
 
 void pybind_global_optimization_methods(py::module &m) {
     m.def("global_optimization",
-          [](registration::PoseGraph &pose_graph,
-             const registration::GlobalOptimizationMethod &method,
-             const registration::GlobalOptimizationConvergenceCriteria
-                     &criteria,
-             const registration::GlobalOptimizationOption &option) {
-              registration::GlobalOptimization(pose_graph, method, criteria,
-                                               option);
+          [](pipelines::registration::PoseGraph &pose_graph,
+             const pipelines::registration::GlobalOptimizationMethod &method,
+             const pipelines::registration::
+                     GlobalOptimizationConvergenceCriteria &criteria,
+             const pipelines::registration::GlobalOptimizationOption &option) {
+              pipelines::registration::GlobalOptimization(pose_graph, method,
+                                                          criteria, option);
           },
-          "Function to optimize registration::PoseGraph", "pose_graph"_a,
-          "method"_a, "criteria"_a, "option"_a);
+          "Function to optimize pipelines::registration::PoseGraph",
+          "pose_graph"_a, "method"_a, "criteria"_a, "option"_a);
     docstring::FunctionDocInject(
             m, "global_optimization",
             {{"pose_graph", "The pose_graph to be optimized (in-place)."},
              {"method",
               "Global optimization method. Either "
-              "``registration::GlobalOptimizationGaussNewton()`` or "
-              "``registration::GlobalOptimizationLevenbergMarquardt()``."},
+              "``pipelines::registration::GlobalOptimizationGaussNewton()`` or "
+              "``pipelines::registration::GlobalOptimizationLevenbergMarquardt("
+              ")``."},
              {"criteria", "Global optimization convergence criteria."},
              {"option", "Global optimization option."}});
 }

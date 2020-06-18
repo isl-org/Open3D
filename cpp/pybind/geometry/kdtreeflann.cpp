@@ -130,7 +130,8 @@ void pybind_kdtreeflann(py::module &m) {
             .def(py::init<const geometry::Geometry &>(), "geometry"_a)
             .def("set_geometry", &geometry::KDTreeFlann::SetGeometry,
                  "Sets the data for the KDTree from geometry.", "geometry"_a)
-            .def(py::init<const registration::Feature &>(), "feature"_a)
+            .def(py::init<const pipelines::registration::Feature &>(),
+                 "feature"_a)
             .def("set_feature", &geometry::KDTreeFlann::SetFeature,
                  "Sets the data for the KDTree from the feature data.",
                  "feature"_a)

@@ -34,6 +34,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace pipelines {
 namespace integration {
 
 ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length,
@@ -445,4 +446,6 @@ double ScalableTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
 }
 
 }  // namespace integration
+}  // namespace pipelines
+
 }  // namespace open3d

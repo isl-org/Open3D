@@ -32,6 +32,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace pipelines {
 namespace registration {
 
 bool CorrespondenceCheckerBasedOnEdgeLength::Check(
@@ -101,4 +102,5 @@ bool CorrespondenceCheckerBasedOnNormal::Check(
 }
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

@@ -40,11 +40,10 @@
 #include "open3d/utility/Eigen.h"
 
 namespace open3d {
+namespace pipelines {
+namespace color_map {
 
-namespace {
-
-using namespace color_map;
-void OptimizeImageCoorNonrigid(
+static void OptimizeImageCoorNonrigid(
         const geometry::TriangleMesh& mesh,
         const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
         const std::vector<std::shared_ptr<geometry::Image>>& images_dx,
@@ -143,7 +142,7 @@ void OptimizeImageCoorNonrigid(
     }
 }
 
-void OptimizeImageCoorRigid(
+static void OptimizeImageCoorRigid(
         const geometry::TriangleMesh& mesh,
         const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
         const std::vector<std::shared_ptr<geometry::Image>>& images_dx,
@@ -214,11 +213,11 @@ void OptimizeImageCoorRigid(
     }
 }
 
-std::tuple<std::vector<std::shared_ptr<geometry::Image>>,
-           std::vector<std::shared_ptr<geometry::Image>>,
-           std::vector<std::shared_ptr<geometry::Image>>,
-           std::vector<std::shared_ptr<geometry::Image>>,
-           std::vector<std::shared_ptr<geometry::Image>>>
+static std::tuple<std::vector<std::shared_ptr<geometry::Image>>,
+                  std::vector<std::shared_ptr<geometry::Image>>,
+                  std::vector<std::shared_ptr<geometry::Image>>,
+                  std::vector<std::shared_ptr<geometry::Image>>,
+                  std::vector<std::shared_ptr<geometry::Image>>>
 CreateGradientImages(
         const std::vector<std::shared_ptr<geometry::RGBDImage>>& images_rgbd) {
     std::vector<std::shared_ptr<geometry::Image>> images_gray;
@@ -244,7 +243,7 @@ CreateGradientImages(
                            images_depth);
 }
 
-std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
+static std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
         const std::vector<std::shared_ptr<geometry::Image>>& images_depth,
         const ColorMapOptimizationOption& option) {
     auto n_images = images_depth.size();
@@ -259,7 +258,7 @@ std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
     return masks;
 }
 
-std::vector<ImageWarpingField> CreateWarpingFields(
+static std::vector<ImageWarpingField> CreateWarpingFields(
         const std::vector<std::shared_ptr<geometry::Image>>& images,
         const ColorMapOptimizationOption& option) {
     std::vector<ImageWarpingField> fields;
@@ -272,9 +271,6 @@ std::vector<ImageWarpingField> CreateWarpingFields(
     return fields;
 }
 
-}  // unnamed namespace
-
-namespace color_map {
 void ColorMapOptimization(
         geometry::TriangleMesh& mesh,
         const std::vector<std::shared_ptr<geometry::RGBDImage>>& images_rgbd,
@@ -324,5 +320,7 @@ void ColorMapOptimization(
                                 option.invisible_vertex_color_knn_);
     }
 }
+
 }  // namespace color_map
+}  // namespace pipelines
 }  // namespace open3d

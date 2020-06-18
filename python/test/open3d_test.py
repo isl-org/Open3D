@@ -1,5 +1,7 @@
 import os
 import sys
+import urllib.request
+import zipfile
 
 # Avoid pathlib to be compatible with Python 3.5+.
 __pwd = os.path.dirname(os.path.realpath(__file__))

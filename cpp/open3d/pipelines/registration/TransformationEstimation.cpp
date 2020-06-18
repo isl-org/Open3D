@@ -32,6 +32,7 @@
 #include "open3d/utility/Eigen.h"
 
 namespace open3d {
+namespace pipelines {
 namespace registration {
 
 double TransformationEstimationPointToPoint::ComputeRMSE(
@@ -107,4 +108,5 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
 }
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

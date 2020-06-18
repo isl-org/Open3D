@@ -39,20 +39,20 @@ using namespace io;
 
 bool ReadImageWarpingFieldFromJSON(
         const std::string &filename,
-        color_map::ImageWarpingField &warping_field) {
+        pipelines::color_map::ImageWarpingField &warping_field) {
     return ReadIJsonConvertible(filename, warping_field);
 }
 
 bool WriteImageWarpingFieldToJSON(
         const std::string &filename,
-        const color_map::ImageWarpingField &warping_field) {
+        const pipelines::color_map::ImageWarpingField &warping_field) {
     return WriteIJsonConvertibleToJSON(filename, warping_field);
 }
 
 static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &,
-                           color_map::ImageWarpingField &)>>
+                           pipelines::color_map::ImageWarpingField &)>>
         file_extension_to_warping_field_read_function{
                 {"json", ReadImageWarpingFieldFromJSON},
         };
@@ -60,7 +60,7 @@ static const std::unordered_map<
 static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &,
-                           const color_map::ImageWarpingField &)>>
+                           const pipelines::color_map::ImageWarpingField &)>>
         file_extension_to_warping_field_write_function{
                 {"json", WriteImageWarpingFieldToJSON},
         };
@@ -69,20 +69,23 @@ static const std::unordered_map<
 
 namespace io {
 
-std::shared_ptr<color_map::ImageWarpingField> CreateImageWarpingFieldFromFile(
-        const std::string &filename) {
-    auto warping_field = std::make_shared<color_map::ImageWarpingField>();
+std::shared_ptr<pipelines::color_map::ImageWarpingField>
+CreateImageWarpingFieldFromFile(const std::string &filename) {
+    auto warping_field =
+            std::make_shared<pipelines::color_map::ImageWarpingField>();
     ReadImageWarpingField(filename, *warping_field);
     return warping_field;
 }
 
-bool ReadImageWarpingField(const std::string &filename,
-                           color_map::ImageWarpingField &warping_field) {
+bool ReadImageWarpingField(
+        const std::string &filename,
+        pipelines::color_map::ImageWarpingField &warping_field) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Read color_map::ImageWarpingField failed: unknown file "
+                "Read pipelines::color_map::ImageWarpingField failed: unknown "
+                "file "
                 "extension.");
         return false;
     }
@@ -90,20 +93,23 @@ bool ReadImageWarpingField(const std::string &filename,
             file_extension_to_warping_field_read_function.find(filename_ext);
     if (map_itr == file_extension_to_warping_field_read_function.end()) {
         utility::LogWarning(
-                "Read color_map::ImageWarpingField failed: unknown file "
+                "Read pipelines::color_map::ImageWarpingField failed: unknown "
+                "file "
                 "extension.");
         return false;
     }
     return map_itr->second(filename, warping_field);
 }
 
-bool WriteImageWarpingField(const std::string &filename,
-                            const color_map::ImageWarpingField &trajectory) {
+bool WriteImageWarpingField(
+        const std::string &filename,
+        const pipelines::color_map::ImageWarpingField &trajectory) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Write color_map::ImageWarpingField failed: unknown file "
+                "Write pipelines::color_map::ImageWarpingField failed: unknown "
+                "file "
                 "extension.");
         return false;
     }
@@ -111,7 +117,8 @@ bool WriteImageWarpingField(const std::string &filename,
             file_extension_to_warping_field_write_function.find(filename_ext);
     if (map_itr == file_extension_to_warping_field_write_function.end()) {
         utility::LogWarning(
-                "Write color_map::ImageWarpingField failed: unknown file "
+                "Write pipelines::color_map::ImageWarpingField failed: unknown "
+                "file "
                 "extension.");
         return false;
     }

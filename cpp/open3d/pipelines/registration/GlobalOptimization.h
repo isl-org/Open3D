@@ -32,6 +32,7 @@
 #include "open3d/pipelines/registration/GlobalOptimizationMethod.h"
 
 namespace open3d {
+namespace pipelines {
 namespace registration {
 
 class PoseGraph;
@@ -62,4 +63,5 @@ std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
         const PoseGraph &pose_graph, const GlobalOptimizationOption &option);
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

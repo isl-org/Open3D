@@ -36,6 +36,7 @@ namespace geometry {
 class PointCloud;
 }
 
+namespace pipelines {
 namespace registration {
 class RegistrationResult;
 
@@ -61,4 +62,5 @@ RegistrationResult RegistrationColoredICP(
         double lambda_geometric = 0.968);
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

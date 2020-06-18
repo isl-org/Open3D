@@ -32,12 +32,13 @@
 namespace open3d {
 namespace io {
 
-bool ReadFeature(const std::string &filename, registration::Feature &feature) {
+bool ReadFeature(const std::string &filename,
+                 pipelines::registration::Feature &feature) {
     return ReadFeatureFromBIN(filename, feature);
 }
 
 bool WriteFeature(const std::string &filename,
-                  const registration::Feature &feature) {
+                  const pipelines::registration::Feature &feature) {
     return WriteFeatureToBIN(filename, feature);
 }
 

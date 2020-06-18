@@ -29,6 +29,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace pipelines {
 namespace color_map {
 
 template <typename VecInTypeDouble,
@@ -99,4 +100,5 @@ ComputeJTJandJTrNonRigid(
         bool verbose);
 
 }  // namespace color_map
+}  // namespace pipelines
 }  // namespace open3d

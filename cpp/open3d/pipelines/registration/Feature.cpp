@@ -33,14 +33,13 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace pipelines {
+namespace registration {
 
-namespace {
-using namespace registration;
-
-Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
-                                    const Eigen::Vector3d &n1,
-                                    const Eigen::Vector3d &p2,
-                                    const Eigen::Vector3d &n2) {
+static Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
+                                           const Eigen::Vector3d &n1,
+                                           const Eigen::Vector3d &p2,
+                                           const Eigen::Vector3d &n2) {
     Eigen::Vector4d result;
     Eigen::Vector3d dp2p1 = p2 - p1;
     result(3) = dp2p1.norm();
@@ -71,7 +70,7 @@ Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
     return result;
 }
 
-std::shared_ptr<Feature> ComputeSPFHFeature(
+static std::shared_ptr<Feature> ComputeSPFHFeature(
         const geometry::PointCloud &input,
         const geometry::KDTreeFlann &kdtree,
         const geometry::KDTreeSearchParam &search_param) {
@@ -111,9 +110,6 @@ std::shared_ptr<Feature> ComputeSPFHFeature(
     return feature;
 }
 
-}  // unnamed namespace
-
-namespace registration {
 std::shared_ptr<Feature> ComputeFPFHFeature(
         const geometry::PointCloud &input,
         const geometry::KDTreeSearchParam
@@ -163,4 +159,5 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
 }
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

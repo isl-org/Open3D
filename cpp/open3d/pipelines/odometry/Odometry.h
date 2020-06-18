@@ -43,6 +43,7 @@ namespace geometry {
 class RGBDImage;
 }
 
+namespace pipelines {
 namespace odometry {
 
 /// \brief Function to estimate 6D rigid motion from two RGBD image pairs.
@@ -65,4 +66,5 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         const OdometryOption &option = OdometryOption());
 
 }  // namespace odometry
+}  // namespace pipelines
 }  // namespace open3d

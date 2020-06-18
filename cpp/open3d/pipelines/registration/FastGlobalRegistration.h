@@ -37,6 +37,7 @@ namespace geometry {
 class PointCloud;
 }
 
+namespace pipelines {
 namespace registration {
 
 class Feature;
@@ -105,4 +106,5 @@ RegistrationResult FastGlobalRegistration(
                 FastGlobalRegistrationOption());
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

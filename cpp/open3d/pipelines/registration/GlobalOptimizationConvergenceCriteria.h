@@ -27,6 +27,7 @@
 #pragma once
 
 namespace open3d {
+namespace pipelines {
 namespace registration {
 
 /// \class GlobalOptimizationOption
@@ -157,4 +158,5 @@ public:
 };
 
 }  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d

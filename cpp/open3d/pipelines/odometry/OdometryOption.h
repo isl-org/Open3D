@@ -29,6 +29,7 @@
 #include <string>
 
 namespace open3d {
+namespace pipelines {
 namespace odometry {
 
 /// \class OdometryOption
@@ -76,4 +77,5 @@ public:
 };
 
 }  // namespace odometry
+}  // namespace pipelines
 }  // namespace open3d

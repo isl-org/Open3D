@@ -29,23 +29,14 @@
 #include <memory>
 #include <vector>
 
+#include "open3d/camera/PinholeCameraTrajectory.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Eigen.h"
 
 namespace open3d {
-
-namespace geometry {
-class Image;
-}
-namespace geometry {
-class RGBDImage;
-}
-namespace geometry {
-class TriangleMesh;
-}
-namespace camera {
-class PinholeCameraTrajectory;
-}
-
+namespace pipelines {
 namespace color_map {
 
 class ImageWarpingField;
@@ -117,5 +108,7 @@ void SetGeometryColorAverage(
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         int image_boundary_margin = 10,
         int invisible_vertex_color_knn = 3);
+
 }  // namespace color_map
+}  // namespace pipelines
 }  // namespace open3d

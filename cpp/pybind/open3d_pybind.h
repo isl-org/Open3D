@@ -57,8 +57,10 @@ PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2i>);
 PYBIND11_MAKE_OPAQUE(temp_eigen_matrix4d);
 PYBIND11_MAKE_OPAQUE(temp_eigen_vector4i);
-PYBIND11_MAKE_OPAQUE(std::vector<open3d::registration::PoseGraphEdge>);
-PYBIND11_MAKE_OPAQUE(std::vector<open3d::registration::PoseGraphNode>);
+PYBIND11_MAKE_OPAQUE(
+        std::vector<open3d::pipelines::registration::PoseGraphEdge>);
+PYBIND11_MAKE_OPAQUE(
+        std::vector<open3d::pipelines::registration::PoseGraphNode>);
 
 // some helper functions
 namespace pybind11 {

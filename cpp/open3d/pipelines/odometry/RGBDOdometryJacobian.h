@@ -44,6 +44,7 @@ namespace geometry {
 class RGBDImage;
 }
 
+namespace pipelines {
 namespace odometry {
 
 typedef std::vector<Eigen::Vector4i, utility::Vector4i_allocator>
@@ -139,4 +140,5 @@ public:
 };
 
 }  // namespace odometry
+}  // namespace pipelines
 }  // namespace open3d

@@ -29,18 +29,13 @@
 #include <memory>
 #include <vector>
 
+#include "open3d/geometry/Image.h"
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/pipelines/color_map/EigenHelperForNonRigidOptimization.h"
 #include "open3d/utility/Eigen.h"
 
 namespace open3d {
-
-namespace geometry {
-class Image;
-}
-namespace geometry {
-class TriangleMesh;
-}
-
+namespace pipelines {
 namespace color_map {
 
 class ImageWarpingField;
@@ -89,5 +84,7 @@ public:
             const std::vector<int>& visibility_image_to_vertex,
             const int image_boundary_margin);
 };
+
 }  // namespace color_map
+}  // namespace pipelines
 }  // namespace open3d
