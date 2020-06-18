@@ -284,9 +284,9 @@ Indexer Indexer::GetPerOutputIndexer(int64_t output_idx) const {
     //       output_idx = 3 -> inputs (*, 1, 1) -> offset_indices (0, 1, 1)
     //       output_idx = 4 -> inputs (*, 2, 0) -> offset_indices (0, 2, 0)
     //       output_idx = 5 -> inputs (*, 2, 1) -> offset_indices (0, 2, 1)
-    int64_t output_shape[MAX_DIMS];
-    int64_t output_default_strides[MAX_DIMS];
-    int64_t offset_indices[MAX_DIMS];
+    int64_t output_shape[MAX_DIMS] = {0};
+    int64_t output_default_strides[MAX_DIMS] = {0};
+    int64_t offset_indices[MAX_DIMS] = {0};
 
     for (int64_t i = 0; i < ndims_; ++i) {
         if (IsReductionDim(i)) {
