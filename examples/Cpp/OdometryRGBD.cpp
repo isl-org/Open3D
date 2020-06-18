@@ -100,21 +100,21 @@ int main(int argc, char* argv[]) {
     auto source = CreateRGBDImage(*color_source, *depth_source, true);
     auto target = CreateRGBDImage(*color_target, *depth_target, true);
 
-    odometry::OdometryOption option;
+    pipelines::odometry::OdometryOption option;
     Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
     Eigen::Matrix4d trans_odo = Eigen::Matrix4d::Identity();
     Eigen::Matrix6d info_odo = Eigen::Matrix6d::Zero();
     bool is_success;
     if (utility::ProgramOptionExists(argc, argv, "--hybrid")) {
-        odometry::RGBDOdometryJacobianFromHybridTerm jacobian_method;
+        pipelines::odometry::RGBDOdometryJacobianFromHybridTerm jacobian_method;
         std::tie(is_success, trans_odo, info_odo) =
-                odometry::ComputeRGBDOdometry(*source, *target, intrinsic,
+                pipelines::odometry::ComputeRGBDOdometry(*source, *target, intrinsic,
                                               odo_init, jacobian_method,
                                               option);
     } else {
-        odometry::RGBDOdometryJacobianFromColorTerm jacobian_method;
+        pipelines::odometry::RGBDOdometryJacobianFromColorTerm jacobian_method;
         std::tie(is_success, trans_odo, info_odo) =
-                odometry::ComputeRGBDOdometry(*source, *target, intrinsic,
+                pipelines::odometry::ComputeRGBDOdometry(*source, *target, intrinsic,
                                               odo_init, jacobian_method,
                                               option);
     }

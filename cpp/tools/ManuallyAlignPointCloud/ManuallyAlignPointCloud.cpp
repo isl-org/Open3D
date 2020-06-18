@@ -130,11 +130,13 @@ int main(int argc, char **argv) {
         if (max_corres_distance > 0.0) {
             utility::LogInfo("ICP with max correspondence distance {:.4f}.",
                              max_corres_distance);
-            auto result = registration::RegistrationICP(
+            auto result = pipelines::registration::RegistrationICP(
                     *source_ptr, *target_ptr, max_corres_distance,
                     Eigen::Matrix4d::Identity(),
-                    registration::TransformationEstimationPointToPoint(true),
-                    registration::ICPConvergenceCriteria(1e-6, 1e-6, 30));
+                    pipelines::registration::
+                            TransformationEstimationPointToPoint(true),
+                    pipelines::registration::ICPConvergenceCriteria(1e-6, 1e-6,
+                                                                    30));
             utility::LogInfo(
                     "Registration finished with fitness {:.4f} and RMSE "
                     "{:.4f}.",

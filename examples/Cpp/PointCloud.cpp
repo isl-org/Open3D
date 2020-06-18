@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     {
         utility::ScopeTimer timer("FPFH estimation with Radius 0.25");
         // for (int i = 0; i < 20; i++) {
-        registration::ComputeFPFHFeature(
+        pipelines::registration::ComputeFPFHFeature(
                 *pcd, open3d::geometry::KDTreeSearchParamRadius(0.25));
         //}
     }
