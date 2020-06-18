@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-#$1 - name of the job
+# $1 - name of the job
 reportJobStart() {
     rj_ts=$(date +%s)
     ((rj_dt = rj_ts - rj_prevts)) || true
@@ -124,7 +124,6 @@ reportRun make install -j"$NPROC"
 reportRun make install-pip-package -j"$NPROC" || make VERBOSE=1 install-pip-package
 echo
 
-
 # skip unit tests if built with CUDA
 if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
     echo "running Open3D unit tests..."
@@ -137,10 +136,10 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
     if $runBenchmarks; then
         echo "running Open3D python tests..."
         date
-        pytest_args=(../src/UnitTest/Python/)
+        pytest_args=(../python/test/)
         if [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-            pytest_args+=(--ignore ../src/UnitTest/Python/test_tf_op_library.py)
-            pytest_args+=(--ignore ../src/UnitTest/Python/tf_ops/)
+            pytest_args+=(--ignore ../python/test/test_tf_op_library.py)
+            pytest_args+=(--ignore ../python/test/tf_ops/)
         fi
         reportRun pytest "${pytest_args[@]}"
         echo
