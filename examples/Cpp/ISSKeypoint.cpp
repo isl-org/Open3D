@@ -1,15 +1,38 @@
-// @file      ISSKeypoint.cpp
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
 // @author    Ignacio Vizzo     [ivizzo@uni-bonn.de]
 //
-// Copyright (c) 2020 Ignacio Vizzo, all rights reserved
-
-#include <Open3D/Keypoints/ISSDetector.h>
-#include <Open3D/Open3D.h>
+// ----------------------------------------------------------------------------
 
 #include <Eigen/Core>
 #include <cstdlib>
 #include <memory>
 #include <string>
+
+#include "Open3D/Open3D.h"
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
@@ -19,7 +42,7 @@ int main(int argc, char *argv[]) {
         utility::LogInfo("Open3D {}", OPEN3D_VERSION);
         utility::LogInfo("Usage:");
         utility::LogInfo("\t> {} [mesh|pointcloud] [filename] ...\n", argv[0]);
-        return 0;
+        return 1;
     }
 
     const std::string option(argv[1]);
@@ -31,14 +54,14 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", filename);
             return 1;
         }
-        cloud = mesh->SamplePointsUniformly(mesh->vertices_.size());
+        cloud = mesh->vertices_;
     } else if (option == "pointcloud") {
         if (!io::ReadPointCloud(filename, *cloud)) {
             utility::LogWarning("Failed to read {}\n\n", filename);
             return 1;
         }
     } else {
-        utility::LogError("Options {} not supported\n", option);
+        utility::LogError("option {} not supported\n", option);
     }
 
     // Compute the ISS Keypoints
