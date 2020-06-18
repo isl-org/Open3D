@@ -8,11 +8,9 @@ import time
 
 import open3d as o3d
 
-import meshes
-
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "../Misc"))
-
+import meshes
 
 def compute_iss_and_visualize(mesh):
     pcd = o3d.geometry.PointCloud()
@@ -36,7 +34,7 @@ def compute_iss_and_visualize_class(mesh):
 
     tic = time.time()
     keypoints = pcd.compute_iss_keypoints(salient_radius=0.005,
-                                          non_maxima_radius=0.005,
+                                          non_max_radius=0.005,
                                           gamma_21=0.5,
                                           gamma_32=0.5)
     toc = 1000 * (time.time() - tic)
