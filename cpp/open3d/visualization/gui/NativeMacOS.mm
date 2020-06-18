@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Native.h"
+#include "open3d/visualization/gui/Native.h"
 
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
@@ -33,7 +33,7 @@
 #define GLFW_EXPOSE_NATIVE_COCOA 1
 #include <GLFW/glfw3native.h>
 
-#include "Open3D/Utility/Helper.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace gui {

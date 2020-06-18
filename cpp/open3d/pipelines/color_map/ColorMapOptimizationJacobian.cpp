@@ -26,10 +26,10 @@
 
 #include "open3d/pipelines/color_map/ColorMapOptimizationJacobian.h"
 
-#include "open3d/pipelines/color_map/EigenHelperForNonRigidOptimization.h"
-#include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/pipelines/color_map/EigenHelperForNonRigidOptimization.h"
+#include "open3d/pipelines/color_map/ImageWarpingField.h"
 
 namespace open3d {
 namespace color_map {

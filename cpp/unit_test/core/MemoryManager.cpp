@@ -28,8 +28,8 @@
 #include "open3d/core/Blob.h"
 #include "open3d/core/Device.h"
 
-#include "unit_test/core/CoreTest.h"
 #include "unit_test/UnitTest.h"
+#include "unit_test/core/CoreTest.h"
 
 #include <vector>
 

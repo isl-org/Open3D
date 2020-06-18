@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Menu.h"  // defines GUI_USE_NATIVE_MENUS
+#include "open3d/visualization/gui/Menu.h"  // defines GUI_USE_NATIVE_MENUS
 
 #if GUI_USE_NATIVE_MENUS
 
@@ -34,7 +34,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Open3D/GUI/Application.h"
+#include "open3d/visualization/gui/Application.h"
 
 @interface Open3DRunnable : NSObject
 {

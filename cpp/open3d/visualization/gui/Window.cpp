@@ -35,6 +35,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "open3d/utility/Console.h"
+#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
+#include "open3d/visualization/Rendering/Filament/FilamentRenderer.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Dialog.h"
@@ -47,9 +50,6 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 #include "open3d/visualization/gui/Widget.h"
-#include "open3d/utility/Console.h"
-#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
-#include "open3d/visualization/Rendering/Filament/FilamentRenderer.h"
 
 using namespace open3d::gui::util;
 

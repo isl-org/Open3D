@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #define EIGEN_USE_GPU
-#include "open3d/ml/Misc/Detail/ReduceSubarraysSum.cuh"
 #include "ReduceSubarraysSumOpKernel.h"
+#include "open3d/ml/Misc/Detail/ReduceSubarraysSum.cuh"
 
 using namespace open3d::ml::detail;
 using namespace reduce_subarrays_sum_opkernel;

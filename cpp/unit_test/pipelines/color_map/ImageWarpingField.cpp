@@ -26,7 +26,7 @@
 
 #include "unit_test/UnitTest.h"
 
-// #include "Open3D/ColorMap/ImageWarpingField.h"
+// #include "open3d/pipelines/color_map/ImageWarpingField.h"
 
 namespace open3d {
 namespace unit_test {

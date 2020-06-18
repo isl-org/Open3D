@@ -30,9 +30,9 @@
 
 #include "Open3DViewer.h"
 
-#include "Open3D/GUI/Application.h"
-#include "Open3D/GUI/Native.h"
-#include "Open3D/Utility/FileSystem.h"
+#include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/Native.h"
+#include "open3d/utility/FileSystem.h"
 
 // ----------------------------------------------------------------------------
 @interface AppDelegate : NSObject <NSApplicationDelegate>

@@ -30,8 +30,8 @@
 
 #include <unordered_map>
 
-#include "unit_test/core/CoreTest.h"
 #include "unit_test/UnitTest.h"
+#include "unit_test/core/CoreTest.h"
 
 namespace open3d {
 namespace unit_test {

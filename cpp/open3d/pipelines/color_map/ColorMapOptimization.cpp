@@ -27,15 +27,15 @@
 #include "open3d/pipelines/color_map/ColorMapOptimization.h"
 
 #include "open3d/camera/PinholeCameraTrajectory.h"
-#include "open3d/pipelines/color_map/ColorMapOptimizationJacobian.h"
-#include "open3d/pipelines/color_map/ImageWarpingField.h"
-#include "open3d/pipelines/color_map/TriangleMeshAndImageUtilities.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/ClassIO/ImageWarpingFieldIO.h"
 #include "open3d/io/ClassIO/PinholeCameraTrajectoryIO.h"
+#include "open3d/pipelines/color_map/ColorMapOptimizationJacobian.h"
+#include "open3d/pipelines/color_map/ImageWarpingField.h"
+#include "open3d/pipelines/color_map/TriangleMeshAndImageUtilities.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
 
