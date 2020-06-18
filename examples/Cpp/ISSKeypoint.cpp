@@ -68,18 +68,11 @@ int main(int argc, char *argv[]) {
     auto iss_keypoints = std::make_shared<geometry::PointCloud>();
     {
         utility::ScopeTimer timer("ISS Keypoints estimation");
-        iss_keypoints = keypoints::ComputeISSKeypoints(cloud);
+        iss_keypoints = cloud.ComputeISSKeypoints();
         utility::LogInfo("Detected {} keypoints",
                          iss_keypoints->points_.size());
     }
-    {
-        utility::ScopeTimer timer("[class] ISS Keypoints estimation");
-        keypoints::ISSDetector detector(cloud);
-        detector.gamma_21_ = 0.975;
-        auto c_iss_keypoints = detector.ComputeKeypoints();
-        utility::LogInfo("Detected {} keypoints",
-                         c_iss_keypoints->points_.size());
-    }
+
     // Visualize the results
     cloud->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
     iss_keypoints->PaintUniformColor(Eigen::Vector3d(1.0, 0.75, 0.0));

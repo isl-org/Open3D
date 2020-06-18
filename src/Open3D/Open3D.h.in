@@ -74,7 +74,6 @@
 #include "Open3D/Integration/ScalableTSDFVolume.h"
 #include "Open3D/Integration/TSDFVolume.h"
 #include "Open3D/Integration/UniformTSDFVolume.h"
-#include "Open3D/Keypoints/ISSDetector.h"
 #include "Open3D/Odometry/Odometry.h"
 #include "Open3D/Open3DConfig.h"
 #include "Open3D/Registration/Feature.h"

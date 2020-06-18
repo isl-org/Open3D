@@ -31,7 +31,6 @@
 #include "pybind/geometry/geometry.h"
 #include "pybind/integration/integration.h"
 #include "pybind/io/io.h"
-#include "pybind/keypoints/keypoints.h"
 #include "pybind/odometry/odometry.h"
 #include "pybind/registration/registration.h"
 #include "pybind/utility/utility.h"
@@ -62,7 +61,6 @@ PYBIND11_MODULE(pybind, m) {
     pybind_integration(m);
     pybind_io(m);
     pybind_registration(m);
-    pybind_keypoints(m);
     pybind_odometry(m);
     pybind_visualization(m);
 }

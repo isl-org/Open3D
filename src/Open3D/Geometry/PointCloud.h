@@ -362,6 +362,31 @@ public:
     std::shared_ptr<PointCloud> CreateFromVoxelGrid(
             const VoxelGrid &voxel_grid);
 
+    /// \brief Function that computes the ISS Keypoints from an input point
+    /// cloud. This implements the keypoint detection modules proposed in Yu
+    /// Zhong
+    /// ,"Intrinsic Shape Signatures: A Shape Descriptor for 3D Object
+    /// Recognition", 2009. The implementation is heavily inspred in the PCL
+    /// implementation.
+    //
+    /// \param salient_radius The radius of the spherical neighborhood used to
+    /// detect the keypoints \param non_max_radius The non maxima supression
+    /// radius.
+    /// If non of the input parameters are specified or are 0.0, then they will
+    /// be computed from the input data, taking into account the Model
+    /// Resolution.
+    /// \param gamma_21 The upper bound on the ratio between the second and the
+    /// first eigenvalue \param gamma32 The upper bound on the ratio between the
+    /// third and the second eigenvalue \param min_neighbors Minimum number of
+    /// neighbors that has to be found to consider a keypoint. \authors Ignacio
+    /// Vizzo and Cyrill Stachniss, University of Bonn.
+    std::shared_ptr<geometry::PointCloud> ComputeISSKeypoints(
+            double salient_radius = 0.0,
+            double non_max_radius = 0.0,
+            double gamma_21 = 0.975,
+            double gamma_32 = 0.975,
+            int min_neighbors = 5);
+
 public:
     /// RGB colors of points.
     std::vector<Eigen::Vector3d> points_;
