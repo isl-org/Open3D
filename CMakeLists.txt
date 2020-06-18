@@ -106,7 +106,7 @@ if(ENABLE_GUI AND WIN32)
 endif()
 
 # Parse Open3D version number
-file(STRINGS "src/Open3D/version.txt" OPEN3D_VERSION_READ)
+file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
     if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH|TWEAK) +([^ ]+)$")
         set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
@@ -278,7 +278,7 @@ function(open3d_set_global_properties target)
     # Tell CMake we want a compiler that supports C++14 features
     target_compile_features(${target} PUBLIC cxx_variadic_templates cxx_constexpr cxx_override cxx_static_assert cxx_trailing_return_types cxx_return_type_deduction)
     target_include_directories(${target} PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp>
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
     )
     if(BUILD_CUDA_MODULE)
@@ -347,7 +347,7 @@ endmacro()
 include(3rdparty/find_dependencies.cmake)
 
 # Open3D library
-add_subdirectory(src)
+add_subdirectory(cpp)
 
 # Examples
 add_subdirectory(examples)
