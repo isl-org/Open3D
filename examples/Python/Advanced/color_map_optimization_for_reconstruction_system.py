@@ -102,9 +102,10 @@ def main(config, keys):
 
     # Before full optimization, let's just visualize texture map
     # with given geometry, RGBD images, and camera poses.
-    option = o3d.color_map.ColorMapOptimizationOption()
+    option = o3d.pipelines.color_map.ColorMapOptimizationOption()
     option.maximum_iteration = 0
-    o3d.color_map.color_map_optimization(mesh, rgbd_images, camera, option)
+    o3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images, camera,
+                                                   option)
     o3d.visualization.draw_geometries([mesh])
     o3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
@@ -117,7 +118,8 @@ def main(config, keys):
     # SIGGRAPH 2014
     option.maximum_iteration = 300
     option.non_rigid_camera_coordinate = True
-    o3d.color_map.color_map_optimization(mesh, rgbd_images, camera, option)
+    o3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images, camera,
+                                                   option)
     o3d.visualization.draw_geometries([mesh])
     o3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
