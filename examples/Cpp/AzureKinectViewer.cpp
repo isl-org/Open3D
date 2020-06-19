@@ -11,7 +11,7 @@
 #include <ctime>
 #include <iostream>
 
-#include "Open3D/Open3D.h"
+#include "open3d/Open3D.h"
 
 using namespace open3d;
 

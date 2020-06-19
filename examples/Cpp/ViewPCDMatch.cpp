@@ -28,7 +28,7 @@
 #include <iostream>
 #include <memory>
 
-#include "Open3D/Open3D.h"
+#include "open3d/Open3D.h"
 
 bool ReadLogFile(const std::string &filename,
                  std::vector<std::tuple<int, int, int>> &metadata,

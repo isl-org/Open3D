@@ -33,7 +33,7 @@
 #include <memory>
 #include <string>
 
-#include "Open3D/Open3D.h"
+#include "open3d/Open3D.h"
 
 int main(int argc, char *argv[]) {
     using namespace open3d;

@@ -28,18 +28,18 @@
 #include <iostream>
 #include <memory>
 
-#include "Open3D/Open3D.h"
+#include "open3d/Open3D.h"
 
 using namespace open3d;
 
 std::tuple<std::shared_ptr<geometry::PointCloud>,
-           std::shared_ptr<registration::Feature>>
+           std::shared_ptr<pipelines::registration::Feature>>
 PreprocessPointCloud(const char *file_name) {
     auto pcd = open3d::io::CreatePointCloudFromFile(file_name);
     auto pcd_down = pcd->VoxelDownSample(0.05);
     pcd_down->EstimateNormals(
             open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
-    auto pcd_fpfh = registration::ComputeFPFHFeature(
+    auto pcd_fpfh = pipelines::registration::ComputeFPFHFeature(
             *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
@@ -74,29 +74,34 @@ int main(int argc, char *argv[]) {
         visualize = true;
 
     std::shared_ptr<geometry::PointCloud> source, target;
-    std::shared_ptr<registration::Feature> source_fpfh, target_fpfh;
+    std::shared_ptr<pipelines::registration::Feature> source_fpfh, target_fpfh;
     std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1]);
     std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);
 
-    std::vector<
-            std::reference_wrapper<const registration::CorrespondenceChecker>>
+    std::vector<std::reference_wrapper<
+            const pipelines::registration::CorrespondenceChecker>>
             correspondence_checker;
     auto correspondence_checker_edge_length =
-            registration::CorrespondenceCheckerBasedOnEdgeLength(0.9);
+            pipelines::registration::CorrespondenceCheckerBasedOnEdgeLength(
+                    0.9);
     auto correspondence_checker_distance =
-            registration::CorrespondenceCheckerBasedOnDistance(0.075);
+            pipelines::registration::CorrespondenceCheckerBasedOnDistance(
+                    0.075);
     auto correspondence_checker_normal =
-            registration::CorrespondenceCheckerBasedOnNormal(0.52359878);
+            pipelines::registration::CorrespondenceCheckerBasedOnNormal(
+                    0.52359878);
 
     correspondence_checker.push_back(correspondence_checker_edge_length);
     correspondence_checker.push_back(correspondence_checker_distance);
     correspondence_checker.push_back(correspondence_checker_normal);
     auto registration_result =
-            registration::RegistrationRANSACBasedOnFeatureMatching(
+            pipelines::registration::RegistrationRANSACBasedOnFeatureMatching(
                     *source, *target, *source_fpfh, *target_fpfh, 0.075,
-                    registration::TransformationEstimationPointToPoint(false),
+                    pipelines::registration::
+                            TransformationEstimationPointToPoint(false),
                     4, correspondence_checker,
-                    registration::RANSACConvergenceCriteria(4000000, 1000));
+                    pipelines::registration::RANSACConvergenceCriteria(4000000,
+                                                                       1000));
 
     if (visualize)
         VisualizeRegistration(*source, *target,

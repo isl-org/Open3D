@@ -15,11 +15,14 @@ jobs:
       matrix:
         SHARED: [ON, OFF]
         BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
-        BUILD_TENSORFLOW_OPS: [ON, OFF]
+        BUILD_ML_OPS: [ON, OFF]
+        BUILD_CUDA: [ON, OFF]
     env:
       SHARED: ${{ matrix.SHARED }}
       BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
-      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_TENSORFLOW_OPS }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
       NPROC: 2
     steps:
     - name: Checkout source code

@@ -32,7 +32,7 @@
 #endif
 #include <Eigen/Dense>
 #include <Eigen/SVD>
-#include "Open3D/Open3D.h"
+#include "open3d/Open3D.h"
 
 #define NUM_THREADS 4
 #define NUM_START 1
