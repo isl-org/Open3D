@@ -26,13 +26,13 @@
 
 #include "pybind/open3d_pybind.h"
 #include "pybind/camera/camera.h"
-#include "pybind/color_map/color_map.h"
 #include "pybind/core/container.h"
 #include "pybind/geometry/geometry.h"
-#include "pybind/integration/integration.h"
 #include "pybind/io/io.h"
-#include "pybind/odometry/odometry.h"
-#include "pybind/registration/registration.h"
+#include "pybind/pipelines/color_map/color_map.h"
+#include "pybind/pipelines/integration/integration.h"
+#include "pybind/pipelines/odometry/odometry.h"
+#include "pybind/pipelines/registration/registration.h"
 #include "pybind/utility/utility.h"
 #include "pybind/visualization/visualization.h"
 
