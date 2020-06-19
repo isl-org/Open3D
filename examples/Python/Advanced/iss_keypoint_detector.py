@@ -32,7 +32,7 @@ def compute_iss_and_visualize(mesh):
     o3d.visualization.draw_geometries([keypoints, mesh])
 
 
-def compute_iss_and_visualize_class(mesh):
+def compute_iss_and_visualize_with_params(mesh):
     pcd = o3d.geometry.PointCloud()
     pcd.points = mesh.vertices
 
@@ -40,7 +40,8 @@ def compute_iss_and_visualize_class(mesh):
     keypoints = pcd.compute_iss_keypoints(salient_radius=0.005,
                                           non_max_radius=0.005,
                                           gamma_21=0.5,
-                                          gamma_32=0.5)
+                                          gamma_32=0.5,
+                                          min_neighbors=5)
     toc = 1000 * (time.time() - tic)
     print("ISS Computation took {:.0f} [ms]".format(toc))
 
@@ -64,4 +65,4 @@ if __name__ == "__main__":
     compute_iss_and_visualize(armadillo)
 
     print("Computing ISS (with params) Keypoint on Standford Bunny...")
-    compute_iss_and_visualize_class(bunny)
+    compute_iss_and_visualize_with_params(bunny)
