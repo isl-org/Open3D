@@ -30,6 +30,7 @@
 #include <cmath>
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 Color::Color() : rgba_{0.0f, 0.0f, 0.0f, 1.0f} {}
@@ -80,4 +81,5 @@ unsigned int Color::ToABGR32() const {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

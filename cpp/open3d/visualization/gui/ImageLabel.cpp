@@ -32,6 +32,7 @@
 #include "open3d/visualization/gui/Util.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct ImageLabel::Impl {
@@ -125,4 +126,5 @@ Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

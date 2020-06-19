@@ -57,6 +57,7 @@
 @end
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct Menu::Impl {
@@ -170,6 +171,7 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d
 
 #endif  // GUI_USE_NATIVE_MENUS

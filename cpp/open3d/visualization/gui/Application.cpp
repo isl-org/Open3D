@@ -92,6 +92,7 @@ std::string FindResourcePath(int argc, const char *argv[]) {
 }  // namespace
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct Application::Impl {
@@ -418,4 +419,5 @@ const char *Application::GetResourcePath() const {
 const Theme &Application::GetTheme() const { return impl_->theme_; }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

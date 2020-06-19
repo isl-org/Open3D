@@ -34,6 +34,7 @@
 #include "open3d/visualization/gui/Native.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct FileDialog::Impl {
@@ -80,6 +81,7 @@ void FileDialog::OnWillShow() {
 void FileDialog::OnDone() {}
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d
 
 #endif  // __APPLE__

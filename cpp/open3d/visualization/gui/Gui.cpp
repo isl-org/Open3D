@@ -29,6 +29,7 @@
 #include <algorithm>
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 Point::Point() : x(0), y(0) {}
@@ -77,4 +78,5 @@ bool Rect::operator==(const Rect& other) const {
 bool Rect::operator!=(const Rect& other) const { return !operator==(other); }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

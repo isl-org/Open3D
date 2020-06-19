@@ -62,6 +62,7 @@ namespace visualization {
 class FilamentRenderer;
 }
 
+namespace visualization {
 namespace gui {
 
 struct Size;
@@ -108,4 +109,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

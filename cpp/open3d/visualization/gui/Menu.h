@@ -33,6 +33,7 @@
 #define GUI_USE_NATIVE_MENUS 1
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct DrawContext;
@@ -78,4 +79,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

@@ -32,6 +32,7 @@
 #include "open3d/visualization/gui/Theme.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct ProgressBar::Impl {
@@ -71,4 +72,5 @@ Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

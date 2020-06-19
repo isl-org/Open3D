@@ -32,6 +32,7 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 namespace {
@@ -90,4 +91,5 @@ void Task::WaitToFinish() {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

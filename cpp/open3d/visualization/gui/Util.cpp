@@ -29,6 +29,7 @@
 #include "open3d/visualization/gui/Color.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 namespace util {
 
@@ -39,4 +40,5 @@ ImVec4 colorToImgui(const Color &color) {
 
 }  // namespace util
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

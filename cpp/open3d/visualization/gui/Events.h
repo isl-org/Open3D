@@ -29,6 +29,7 @@
 #include <cstdint>
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 enum class MouseButton {
@@ -183,4 +184,5 @@ struct TextInputEvent {
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

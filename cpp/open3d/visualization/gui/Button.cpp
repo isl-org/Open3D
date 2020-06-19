@@ -34,6 +34,7 @@
 #include "open3d/visualization/gui/Util.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct Button::Impl {
@@ -137,4 +138,5 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

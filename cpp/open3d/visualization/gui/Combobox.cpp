@@ -35,6 +35,7 @@
 #include "open3d/visualization/gui/Util.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 namespace {
@@ -207,4 +208,5 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

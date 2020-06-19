@@ -37,6 +37,7 @@ namespace visualization {
 class Renderer;
 }  // namespace visualization
 
+namespace visualization {
 namespace gui {
 
 class Color;
@@ -127,4 +128,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

@@ -42,6 +42,7 @@
 #include "open3d/visualization/gui/Events.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 static const double NEAR_PLANE = 0.1;
@@ -897,4 +898,5 @@ Widget::DrawResult SceneWidget::Tick(const TickEvent& e) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d
