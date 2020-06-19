@@ -28,6 +28,7 @@
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
 
+/// @cond
 // namespace for code that is common for all kernels
 namespace fixed_radius_search_opkernel {
 
@@ -151,3 +152,4 @@ protected:
     bool return_distances;
 };
 }  // namespace fixed_radius_search_opkernel
+/// @endcond

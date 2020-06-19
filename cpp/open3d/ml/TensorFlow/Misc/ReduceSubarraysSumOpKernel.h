@@ -26,6 +26,7 @@
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
 
+/// @cond
 // namespace for code that is common for all kernels
 namespace reduce_subarrays_sum_opkernel {
 
@@ -76,3 +77,4 @@ private:
 };
 
 }  // namespace reduce_subarrays_sum_opkernel
+/// @endcond
