@@ -28,7 +28,7 @@
 #include <Eigen/Geometry>
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "unit_test/UnitTest.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

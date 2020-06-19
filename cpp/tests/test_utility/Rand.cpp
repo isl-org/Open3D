@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "unit_test/test_utility/Rand.h"
+#include "tests/test_utility/Rand.h"
 
 #include <iostream>
 
-#include "unit_test/test_utility/Raw.h"
+#include "tests/test_utility/Raw.h"
 
 namespace open3d {
 namespace unit_test {

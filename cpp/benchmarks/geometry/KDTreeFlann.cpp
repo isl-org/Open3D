@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/KDTreeFlann.h"
-#include "benchmark/benchmark.h"
+#include "benchmarks/benchmark.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 

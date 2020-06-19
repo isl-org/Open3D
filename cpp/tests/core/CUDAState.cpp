@@ -27,7 +27,7 @@
 #ifdef BUILD_CUDA_MODULE
 
 #include "open3d/core/CUDAState.cuh"
-#include "unit_test/UnitTest.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
 namespace unit_test {

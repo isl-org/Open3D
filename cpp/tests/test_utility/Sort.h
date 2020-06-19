@@ -27,7 +27,7 @@
 #pragma once
 
 #include "open3d/utility/Console.h"
-#include "unit_test/test_utility/Compare.h"
+#include "tests/test_utility/Compare.h"
 
 #include <Eigen/Core>
 #include <algorithm>

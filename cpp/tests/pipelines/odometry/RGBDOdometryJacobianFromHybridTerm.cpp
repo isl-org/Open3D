@@ -26,8 +26,8 @@
 
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/pipelines/odometry/RGBDOdometryJacobian.h"
-#include "unit_test/UnitTest.h"
-#include "unit_test/pipelines/odometry/OdometryTools.h"
+#include "tests/UnitTest.h"
+#include "tests/pipelines/odometry/OdometryTools.h"
 
 namespace open3d {
 namespace unit_test {

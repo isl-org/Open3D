@@ -39,11 +39,11 @@
 #include <vector>
 
 #include "open3d/Macro.h"
-#include "unit_test/test_utility/Compare.h"
-#include "unit_test/test_utility/Print.h"
-#include "unit_test/test_utility/Rand.h"
-#include "unit_test/test_utility/Raw.h"
-#include "unit_test/test_utility/Sort.h"
+#include "tests/test_utility/Compare.h"
+#include "tests/test_utility/Print.h"
+#include "tests/test_utility/Rand.h"
+#include "tests/test_utility/Raw.h"
+#include "tests/test_utility/Sort.h"
 
 // GPU_CONDITIONAL_COMPILE_STR is "" if gpu is available, otherwise "DISABLED_"
 // The GPU_CONDITIONAL_COMPILE_STR value is configured in CMake

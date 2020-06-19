@@ -13,7 +13,7 @@ mvDir() {
 }
 
 #moves file/dir to new place and records the change
-#if you want git to figure out that the move happened, commit and then run applyIncludeChanges
+#if you want git to figure out that the move happened, commit and then run applyAllIncludeChanges
 #this way if the files are unchanged git heuristics will work for detecting file movement
 mvInclude() {
 	sd=cpp/$1

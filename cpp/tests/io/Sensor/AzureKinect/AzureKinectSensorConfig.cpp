@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "unit_test/UnitTest.h"
+#include "tests/UnitTest.h"
 
 #include <json/json.h>
 #include <k4a/k4a.h>

@@ -27,9 +27,9 @@
 #include "open3d/core/Blob.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/MemoryManager.h"
-#include "unit_test/UnitTest.h"
+#include "tests/UnitTest.h"
 
-#include "unit_test/core/CoreTest.h"
+#include "tests/core/CoreTest.h"
 
 namespace open3d {
 namespace unit_test {

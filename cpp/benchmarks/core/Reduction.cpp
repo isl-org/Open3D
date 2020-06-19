@@ -31,7 +31,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 
-#include <benchmark/benchmark.h>
+#include <benchmarks/benchmark.h>
 
 namespace open3d {
 namespace core {

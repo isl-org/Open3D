@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "unit_test/pipelines/odometry/OdometryTools.h"
+#include "tests/pipelines/odometry/OdometryTools.h"
 
 namespace open3d {
 namespace unit_test {
