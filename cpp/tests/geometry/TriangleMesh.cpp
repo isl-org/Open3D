@@ -1579,7 +1579,7 @@ TEST(TriangleMesh, SelectByIndex) {
     ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_);
     ExpectEQ(ref_triangles, output_tm->triangles_);
     ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_);
-}  // namespace tests
+}
 
 TEST(TriangleMesh, CropTriangleMesh) {
     std::vector<Eigen::Vector3d> ref_vertices = {

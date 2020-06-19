@@ -34,7 +34,7 @@
 
 #include "open3d/Macro.h"
 
-#define ExpectEQ(arg, ...)                                                   \
+#define ExpectEQ(arg, ...)                                               \
     ExpectEQInternal(::open3d::tests::LineInfo(__FILE__, __LINE__), arg, \
                      __VA_ARGS__)
 
