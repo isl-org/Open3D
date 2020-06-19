@@ -31,10 +31,10 @@ if __name__ == "__main__":
     save_image = False
 
     for i in range(icp_iteration):
-        reg_p2l = o3d.registration.registration_icp(
+        reg_p2l = o3d.pipelines.registration.registration_icp(
             source, target, threshold, np.identity(4),
-            o3d.registration.TransformationEstimationPointToPlane(),
-            o3d.registration.ICPConvergenceCriteria(max_iteration=1))
+            o3d.pipelines.registration.TransformationEstimationPointToPlane(),
+            o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=1))
         source.transform(reg_p2l.transformation)
         vis.update_geometry(source)
         vis.poll_events()

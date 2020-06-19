@@ -30,7 +30,7 @@
 #include "open3d/pipelines/integration/UniformTSDFVolume.h"
 
 #include "pybind/docstring.h"
-#include "pybind/integration/integration.h"
+#include "pybind/pipelines/integration/integration.h"
 
 namespace open3d {
 

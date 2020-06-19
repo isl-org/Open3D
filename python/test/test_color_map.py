@@ -54,25 +54,28 @@ def test_color_map():
         os.path.join(path, "scene", "integrated.ply"))
 
     # Computes averaged color without optimization
-    option = o3d.color_map.ColorMapOptimizationOption()
+    option = o3d.pipelines.color_map.ColorMapOptimizationOption()
     option.maximum_iteration = 0
     with o3d.utility.VerbosityContextManager(
             o3d.utility.VerbosityLevel.Debug) as cm:
-        o3d.color_map.color_map_optimization(mesh, rgbd_images, camera, option)
+        o3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images,
+                                                       camera, option)
 
     # Rigid Optimization
     option.maximum_iteration = 5
     option.non_rigid_camera_coordinate = False
     with o3d.utility.VerbosityContextManager(
             o3d.utility.VerbosityLevel.Debug) as cm:
-        o3d.color_map.color_map_optimization(mesh, rgbd_images, camera, option)
+        o3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images,
+                                                       camera, option)
 
     # Non-rigid Optimization
     option.maximum_iteration = 5
     option.non_rigid_camera_coordinate = True
     with o3d.utility.VerbosityContextManager(
             o3d.utility.VerbosityLevel.Debug) as cm:
-        o3d.color_map.color_map_optimization(mesh, rgbd_images, camera, option)
+        o3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images,
+                                                       camera, option)
 
     # Black box test with hard-coded result values. The results of
     # color_map_optimization are deterministic. This test ensures the refactored

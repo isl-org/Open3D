@@ -30,8 +30,8 @@
 #include "open3d/pipelines/color_map/ColorMapOptimization.h"
 #include "open3d/utility/Console.h"
 
-#include "pybind/color_map/color_map.h"
 #include "pybind/docstring.h"
+#include "pybind/pipelines/color_map/color_map.h"
 
 namespace open3d {
 

@@ -31,7 +31,7 @@
 #include "open3d/pipelines/odometry/RGBDOdometryJacobian.h"
 
 #include "pybind/docstring.h"
-#include "pybind/odometry/odometry.h"
+#include "pybind/pipelines/odometry/odometry.h"
 
 namespace open3d {
 

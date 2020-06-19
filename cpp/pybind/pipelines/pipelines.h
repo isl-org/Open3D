@@ -24,20 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/container.h"
+#pragma once
+
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
 
-void pybind_core(py::module &m) {
-    pybind_cuda_utils(m);
-    pybind_core_blob(m);
-    pybind_core_dtype(m);
-    pybind_core_device(m);
-    pybind_core_size_vector(m);
-    pybind_core_tensor_key(m);
-    pybind_core_tensor(m);
-    pybind_core_tensorlist(m);
-}
+void pybind_pipelines(py::module& m);
 
 }  // namespace open3d

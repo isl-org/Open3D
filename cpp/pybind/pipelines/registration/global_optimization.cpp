@@ -30,7 +30,7 @@
 #include "open3d/pipelines/registration/PoseGraph.h"
 
 #include "pybind/docstring.h"
-#include "pybind/registration/registration.h"
+#include "pybind/pipelines/registration/registration.h"
 
 namespace open3d {
 
