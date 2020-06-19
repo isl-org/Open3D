@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
             utility::LogWarning("Failed to read {}", filename);
             return 1;
         }
-        cloud = mesh->vertices_;
+        cloud->points_ = mesh->vertices_;
     } else if (option == "pointcloud") {
         if (!io::ReadPointCloud(filename, *cloud)) {
             utility::LogWarning("Failed to read {}\n\n", filename);
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     auto iss_keypoints = std::make_shared<geometry::PointCloud>();
     {
         utility::ScopeTimer timer("ISS Keypoints estimation");
-        iss_keypoints = cloud.ComputeISSKeypoints();
+        iss_keypoints = cloud->ComputeISSKeypoints();
         utility::LogInfo("Detected {} keypoints",
                          iss_keypoints->points_.size());
     }
