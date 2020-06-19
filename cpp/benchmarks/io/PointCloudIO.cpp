@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "benchmarks/benchmark.h"
-
 #include "open3d/io/ClassIO/PointCloudIO.h"
 #include "open3d/utility/Console.h"
+
+#include <benchmark/benchmark.h>
 
 namespace open3d {
 namespace benchmarks {
