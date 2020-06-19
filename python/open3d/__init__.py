@@ -46,12 +46,9 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 from open3d._build_config import _build_config
 from open3d.pybind import camera
-from open3d.pybind import color_map
 from open3d.pybind import geometry
-from open3d.pybind import integration
 from open3d.pybind import io
-from open3d.pybind import odometry
-from open3d.pybind import registration
+from open3d.pybind import pipelines
 from open3d.pybind import utility
 from open3d.pybind import visualization
 
