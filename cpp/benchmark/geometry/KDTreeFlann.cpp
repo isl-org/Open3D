@@ -29,9 +29,8 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 
-using namespace Eigen;
-using namespace open3d;
-using namespace std;
+namespace open3d {
+namespace benchmarks {
 
 class TestKDTreeLine0 {
     constexpr static double step = .139;
@@ -62,13 +61,13 @@ public:
             pos_ = radiusInSteps;
         }
 
-        Vector3d query = {(pos_ + 0.1) * step, 0., 0.};
+        Eigen::Vector3d query = {(pos_ + 0.1) * step, 0., 0.};
         double radius = radiusInSteps * step;
-        vector<int> indices;
-        vector<double> distance2;
+        std::vector<int> indices;
+        std::vector<double> distance2;
 
-        int result = kdtree_.SearchRadius<Vector3d>(query, radius, indices,
-                                                    distance2);
+        int result = kdtree_.SearchRadius<Eigen::Vector3d>(query, radius,
+                                                           indices, distance2);
         if (result != radiusInSteps * 2) {
             utility::LogError("size={:d} radiusInSteps={:d} pos={:d} num={:d}",
                               size_, radiusInSteps, pos_, result);
@@ -94,3 +93,6 @@ BENCHMARK(BM_TestKDTreeLine0)->Args({1 << 5, 1 << 10})->Args({1 << 9, 1 << 11});
 BENCHMARK(BM_TestKDTreeLine0)
         ->MinTime(0.1)
         ->Ranges({{1 << 0, 1 << 14}, {1 << 16, 1 << 22}});
+
+}  // namespace benchmarks
+}  // namespace open3d

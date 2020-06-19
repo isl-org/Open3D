@@ -164,6 +164,7 @@ typedef REHandle<EntityType::IndexBuffer> IndexBufferHandle;
 }  // namespace visualization
 }  // namespace open3d
 
+/// @cond
 namespace std {
 template <>
 class hash<open3d::visualization::REHandle_abstract> {
@@ -194,3 +195,4 @@ struct formatter<open3d::visualization::REHandle_abstract> {
     }
 };
 }  // namespace fmt
+/// @endcond

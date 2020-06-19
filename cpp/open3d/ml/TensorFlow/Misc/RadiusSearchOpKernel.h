@@ -28,6 +28,7 @@
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
 
+/// @cond
 // namespace for code that is common for all kernels
 namespace radius_search_opkernel {
 
@@ -107,3 +108,4 @@ protected:
 };
 
 }  // namespace radius_search_opkernel
+/// @endcond

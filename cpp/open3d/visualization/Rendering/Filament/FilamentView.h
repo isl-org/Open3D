@@ -32,12 +32,14 @@
 
 #include "open3d/visualization/Rendering/View.h"
 
+/// @cond
 namespace filament {
 class Engine;
 class Scene;
 class View;
 class Viewport;
 }  // namespace filament
+/// @endcond
 
 namespace open3d {
 namespace visualization {

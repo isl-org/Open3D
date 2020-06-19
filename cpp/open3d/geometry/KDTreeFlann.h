@@ -34,6 +34,7 @@
 #include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/pipelines/registration/Feature.h"
 
+/// @cond
 namespace flann {
 template <typename T>
 class Matrix;
@@ -42,6 +43,7 @@ struct L2;
 template <typename T>
 class Index;
 }  // namespace flann
+/// @endcond
 
 namespace open3d {
 namespace geometry {

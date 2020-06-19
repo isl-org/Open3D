@@ -50,6 +50,7 @@
 #include "open3d/visualization/Rendering/Filament/FilamentView.h"
 
 namespace {  // avoid polluting global namespace, since only used here
+/// @cond
 
 namespace defaults_mapping {
 
@@ -90,6 +91,7 @@ FilamentMatrix FilamentMatrixFromEigenMatrix(const EigenMatrix& em) {
 }
 }  // namespace converters
 
+/// @endcond
 }  // namespace
 
 namespace open3d {

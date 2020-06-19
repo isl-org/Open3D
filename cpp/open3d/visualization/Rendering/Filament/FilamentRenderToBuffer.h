@@ -28,12 +28,14 @@
 
 #include "open3d/visualization/Rendering/RenderToBuffer.h"
 
+/// @cond
 namespace filament {
 class Engine;
 class Renderer;
 class Scene;
 class SwapChain;
 }  // namespace filament
+/// @endcond
 
 namespace open3d {
 namespace visualization {
