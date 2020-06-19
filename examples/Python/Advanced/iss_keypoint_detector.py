@@ -1,7 +1,11 @@
-# @file      iss_keypoint_detector.py
-# @author    Ignacio Vizzo     [ivizzo@uni-bonn.de]
-#
-# Copyright (c) 2020 Ignacio Vizzo, all rights reserved
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+# @author Ignacio Vizzo [ivizzo@uni-bonn.de]
+# Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
+
+# examples/Python/Advanced/iss_keypoint_detector.py
+
 import os
 import sys
 import time

@@ -23,9 +23,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-// @author    Ignacio Vizzo     [ivizzo@uni-bonn.de]
+// @author Ignacio Vizzo     [ivizzo@uni-bonn.de]
 //
-// Copyright (c) 2020 Ignacio Vizzo, all rights reserved
+// Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
 // ----------------------------------------------------------------------------
 
 #include <Eigen/Core>
