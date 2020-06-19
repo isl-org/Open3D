@@ -32,7 +32,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(Sort, Sort) {
     std::vector<Eigen::Vector3d> points{
@@ -107,5 +107,5 @@ TEST(Sort, GetIndicesAToBClose) {
     ExpectEQ(ApplyIndices(b, GetIndicesAToB(b, a, threshold)), a, threshold);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(GlobalOptimizationConvergenceCriteria, DISABLED_GlobalOptimizationOption) {
     NotImplemented();
@@ -45,5 +45,5 @@ TEST(GlobalOptimizationConvergenceCriteria, DISABLED_MemberData) {
     NotImplemented();
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

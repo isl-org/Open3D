@@ -31,7 +31,7 @@
 #include "tests/test_utility/Raw.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 // ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector3d.
@@ -313,5 +313,5 @@ void Rand(std::vector<double> &v,
     Rand(&v[0], v.size(), vmin, vmax, seed);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

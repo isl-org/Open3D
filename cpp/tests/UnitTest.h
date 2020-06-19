@@ -51,7 +51,7 @@
     OPEN3D_CONCATENATE(GPU_CONDITIONAL_TEST_STR, test_name)
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 // Eigen Zero()
 const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();
@@ -62,5 +62,5 @@ const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
 // Mechanism for reporting unit tests for which there is no implementation yet.
 void NotImplemented();
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

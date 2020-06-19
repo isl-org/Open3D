@@ -35,7 +35,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
                              bool delete_temp = true) {
@@ -103,5 +103,5 @@ TEST(OctreeIO, JsonFileIOSevenCubes) {
     WriteReadAndAssertEqual(octree);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

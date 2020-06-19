@@ -39,7 +39,7 @@
 #include "tests/core/CoreTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 class TensorPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Tensor,
@@ -2441,5 +2441,5 @@ TEST_P(TensorPermuteDevices, ReduceMean) {
     EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

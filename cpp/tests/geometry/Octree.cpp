@@ -36,7 +36,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(Octree, ConstructorWithoutSize) {
     geometry::Octree octree(10);
@@ -315,5 +315,5 @@ TEST(Octree, ConvertToJsonValue) {
     EXPECT_TRUE(src_octree == dst_octree);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

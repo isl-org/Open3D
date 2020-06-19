@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(Feature, DISABLED_Resize) { NotImplemented(); }
 
@@ -39,5 +39,5 @@ TEST(Feature, DISABLED_ComputeFPFHFeature) { NotImplemented(); }
 
 TEST(Feature, DISABLED_KDTreeSearchParamKNN) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

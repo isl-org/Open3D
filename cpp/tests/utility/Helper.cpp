@@ -27,9 +27,9 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(Helper, DISABLED_SplitString) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

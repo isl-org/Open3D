@@ -32,7 +32,7 @@
 #include <vector>
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 // tab size used for formatting ref data.
 static const int TAB_SIZE = 4;
@@ -169,5 +169,5 @@ void Print(const std::vector<T>& v, const int& width = 12) {
     Print(&v[0], v.size(), width);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

@@ -32,7 +32,7 @@
 #include "tests/core/CoreTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 class BlobPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Blob,
@@ -64,5 +64,5 @@ TEST_P(BlobPermuteDevices, BlobConstructorWithExternalMemory) {
     EXPECT_TRUE(deleter_called);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

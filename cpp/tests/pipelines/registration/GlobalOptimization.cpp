@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(GlobalOptimization, DISABLED_Constructor) { NotImplemented(); }
 
@@ -49,5 +49,5 @@ TEST(GlobalOptimization, DISABLED_CreatePoseGraphWithoutInvalidEdges) {
     NotImplemented();
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

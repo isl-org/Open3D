@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(Registration, DISABLED_ICPConvergenceCriteria) { NotImplemented(); }
 
@@ -61,5 +61,5 @@ TEST(Registration, DISABLED_GetInformationMatrixFromPointClouds) {
     NotImplemented();
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

@@ -27,11 +27,11 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(FileXYZ, DISABLED_ReadPointCloudFromXYZ) { NotImplemented(); }
 
 TEST(FileXYZ, DISABLED_WritePointCloudToXYZ) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

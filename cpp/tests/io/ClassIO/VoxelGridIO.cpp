@@ -30,7 +30,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(VoxelGridIO, PLYWriteRead) {
     // Create voxel_grid (two voxels)
@@ -70,5 +70,5 @@ TEST(VoxelGridIO, PLYWriteRead) {
     // visualization::DrawGeometries({dst_voxel_grid});
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

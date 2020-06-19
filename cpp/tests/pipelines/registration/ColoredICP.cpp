@@ -27,11 +27,11 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(ColoredICP, DISABLED_RegistrationColoredICP) { NotImplemented(); }
 
 TEST(ColoredICP, DISABLED_ICPConvergenceCriteria) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

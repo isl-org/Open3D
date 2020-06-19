@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(TransformationEstimation, DISABLED_Constructor) { NotImplemented(); }
 
@@ -53,5 +53,5 @@ TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPlane) {
     NotImplemented();
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

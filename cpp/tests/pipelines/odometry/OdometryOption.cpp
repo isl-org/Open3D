@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(OdometryOption, DISABLED_Constructor) { NotImplemented(); }
 
@@ -35,5 +35,5 @@ TEST(OdometryOption, DISABLED_Destructor) { NotImplemented(); }
 
 TEST(OdometryOption, DISABLED_MemberData) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

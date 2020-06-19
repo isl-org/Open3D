@@ -46,3 +46,18 @@ applyAllIncludeChanges() {
 	rm reorg/applyIncludes.lst
 }
 
+#apply a perl change to all (most) files (exclude 3rdparty, builds, reorg, and some others)
+#$1 is a perl command to modify a line, usually would be s/// as in: s/unit_test/tests/g but can be other perl commands
+perlAllFiles() {
+	find CHANGELOG.md CMakeLists.txt cpp docs examples python README.md util -type f|while read f
+	do
+		cat $f |
+		perl -pe "$1" |
+		cat > $f.perlch
+		diff --brief $f $f.perlch > /dev/null || echo $f
+		#preserve permissions
+		cat $f.perlch > $f
+		rm $f.perlch
+	done
+	echo "$1" >> reorg/perlChanges.lst
+}

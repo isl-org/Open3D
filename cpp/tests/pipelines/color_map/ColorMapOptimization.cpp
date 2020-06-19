@@ -31,7 +31,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 /* TODO
 As the pipelines::color_map::ColorMapOptimization subcomponents go back into
@@ -1131,5 +1131,5 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
         ExpectEQ(ref_triangle_normals[i], mesh->triangle_normals_[i]);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

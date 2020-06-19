@@ -31,7 +31,7 @@
 #include <sstream>
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 // ----------------------------------------------------------------------------
 // Raw data with SIZE = 1021 elements.
 // ----------------------------------------------------------------------------
@@ -170,5 +170,5 @@ double Raw::Next() {
     return output;
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

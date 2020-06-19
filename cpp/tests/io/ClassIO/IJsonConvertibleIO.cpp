@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertible) { NotImplemented(); }
 
@@ -49,5 +49,5 @@ TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertibleToJSONString) {
     NotImplemented();
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

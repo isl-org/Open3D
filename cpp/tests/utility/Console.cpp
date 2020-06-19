@@ -28,7 +28,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(Logger, LogError) {
     EXPECT_THROW(utility::LogError("Example exeption message"),
@@ -65,5 +65,5 @@ TEST(Console, DISABLED_ProgramOptionExists) { NotImplemented(); }
 
 TEST(Console, DISABLED_ProgramOptionExistsAny) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

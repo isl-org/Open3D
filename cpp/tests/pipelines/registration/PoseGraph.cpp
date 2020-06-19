@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(PoseGraph, DISABLED_Constructor) { NotImplemented(); }
 
@@ -43,5 +43,5 @@ TEST(PoseGraph, DISABLED_ConvertFromJsonValue) { NotImplemented(); }
 
 TEST(PoseGraph, DISABLED_PoseGraphEdge) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

@@ -38,7 +38,7 @@
 #endif
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 class PermuteDevices : public testing::TestWithParam<core::Device> {
 public:
@@ -146,5 +146,5 @@ public:
     }
 };
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

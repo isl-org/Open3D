@@ -35,7 +35,7 @@
 #include <vector>
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 /// \brief Functor class for comparing Eigen matrices of the same size.
 template <class EigenMatrix>
@@ -136,5 +136,5 @@ std::vector<size_t> GetIndicesAToB(
     return indices_a_to_b;
 };
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

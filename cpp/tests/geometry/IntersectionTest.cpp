@@ -28,7 +28,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(IntersectionTest, PointsCoplanar) {
     Eigen::Vector3d p0(0, 0, 0);
@@ -85,5 +85,5 @@ TEST(IntersectionTest, LineSegmentsMinimumDistance) {
               1.);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

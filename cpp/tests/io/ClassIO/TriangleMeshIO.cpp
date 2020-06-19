@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(TriangleMeshIO, DISABLED_CreateMeshFromFile) { NotImplemented(); }
 
@@ -39,5 +39,5 @@ TEST(TriangleMeshIO, DISABLED_ReadTriangleMeshFromPLY) { NotImplemented(); }
 
 TEST(TriangleMeshIO, DISABLED_WriteTriangleMeshToPLY) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

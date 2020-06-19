@@ -30,7 +30,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 // ----------------------------------------------------------------------------
 // Test the conversion of Eigen::Vector3d to and from JsonArray.
@@ -209,5 +209,5 @@ TEST(IJsonConvertible, EigenMatrix6d_uToFromJsonArray) {
     }
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

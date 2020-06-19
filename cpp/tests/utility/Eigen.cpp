@@ -28,7 +28,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(Eigen, TransformVector6dToMatrix4d) {
     Eigen::Matrix4d ref_matrix4d;
@@ -293,5 +293,5 @@ TEST(Eigen, ColorToUint8ToDouble) {
     }
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

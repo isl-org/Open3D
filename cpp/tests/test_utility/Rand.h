@@ -32,7 +32,7 @@
 #include "open3d/utility/Eigen.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 // Initialize an Eigen::Vector3d.
 // Output range: [vmin:vmax].
@@ -149,5 +149,5 @@ void Rand(std::vector<double>& v,
           const double& vmax,
           const int& seed);
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

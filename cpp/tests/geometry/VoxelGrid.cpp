@@ -31,7 +31,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(VoxelGrid, Bounds) {
     auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
@@ -74,5 +74,5 @@ TEST(VoxelGrid, Visualization) {
     // visualization::DrawGeometries({voxel_grid});
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

@@ -29,7 +29,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(MaterialModifier, TextureSamplerParameters) {
     auto tsp = visualization::TextureSamplerParameters::Simple();
@@ -52,5 +52,5 @@ TEST(MaterialModifier, TextureSamplerParameters) {
     EXPECT_EQ(tsp.GetAnisotropy(), 128);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

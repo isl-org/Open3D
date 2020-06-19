@@ -34,7 +34,7 @@
 #include "tests/core/CoreTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 class IndexerPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Indexer,
@@ -189,5 +189,5 @@ TEST_P(IndexerPermuteDevices, GetPointers) {
     EXPECT_EQ(indexer.GetOutputPtr(5), output_base_ptr + 5 * dtype_byte_size);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

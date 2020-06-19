@@ -30,7 +30,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(KDTreeFlann, DISABLED_Search) { NotImplemented(); }
 
@@ -143,5 +143,5 @@ TEST(KDTreeFlann, SearchHybrid) {
     ExpectEQ(ref_distance2, distance2);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

@@ -39,7 +39,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(PointCloud, ConstructorDefault) {
     geometry::PointCloud pcd;
@@ -1113,5 +1113,5 @@ TEST(PointCloud, CreateFromRGBDImage) {
     // visualization::DrawGeometries({pcd}); // Uncomment for manual check
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

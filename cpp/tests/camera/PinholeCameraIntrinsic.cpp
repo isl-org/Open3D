@@ -30,7 +30,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(PinholeCameraIntrinsic, Constructor_Default) {
     camera::PinholeCameraIntrinsic intrinsic;
@@ -253,5 +253,5 @@ TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue) {
     ExpectEQ(reference, dst.intrinsic_matrix_);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

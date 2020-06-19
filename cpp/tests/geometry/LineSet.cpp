@@ -29,7 +29,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(LineSet, Constructor) {
     geometry::LineSet ls;
@@ -477,5 +477,5 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
     ExpectEQ(ref_lines, ls->lines_);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

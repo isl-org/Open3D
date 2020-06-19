@@ -27,7 +27,7 @@
 #include "tests/test_utility/Compare.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 std::string LineInfo(const char* file, int line) {
     std::stringstream ss;
@@ -135,5 +135,5 @@ void ExpectEQInternal(const std::string& line_info,
     ExpectEQInternal(line_info, v0.data(), v1.data(), v0.size(), threshold);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

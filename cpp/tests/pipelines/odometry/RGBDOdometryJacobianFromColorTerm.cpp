@@ -30,7 +30,7 @@
 #include "tests/pipelines/odometry/OdometryTools.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 using namespace odometry_tools;
 
@@ -107,5 +107,5 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
     }
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

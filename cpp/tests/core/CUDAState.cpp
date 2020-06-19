@@ -30,7 +30,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(CUDAState, InitState) {
     std::shared_ptr<core::CUDAState> cuda_state =
@@ -44,7 +44,7 @@ TEST(CUDAState, InitState) {
     }
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d
 
 #endif

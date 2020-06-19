@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(FilePLY, DISABLED_ReadVertexCallback) { NotImplemented(); }
 
@@ -49,5 +49,5 @@ TEST(FilePLY, DISABLED_WriteTriangleMeshToPLY) { NotImplemented(); }
 
 TEST(FilePLY, DISABLED_ResetConsoleProgress) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

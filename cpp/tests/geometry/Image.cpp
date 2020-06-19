@@ -29,7 +29,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 using ConversionType = geometry::Image::ColorToIntensityConversionType;
 using FilterType = geometry::Image::FilterType;
@@ -1079,5 +1079,5 @@ TEST(Image, CreatePyramid) {
     }
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

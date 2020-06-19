@@ -31,7 +31,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(TetraMesh, Constructor) {
     geometry::TetraMesh tm;
@@ -484,5 +484,5 @@ TEST(TetraMesh, ExtractTriangleMesh) {
     }
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

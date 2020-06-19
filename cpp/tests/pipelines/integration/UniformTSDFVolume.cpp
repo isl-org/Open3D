@@ -35,7 +35,7 @@
 #include <sstream>
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 bool ReadPoses(const std::string& trajectory_path,
                std::vector<Eigen::Matrix4d>& poses) {
@@ -218,5 +218,5 @@ TEST(UniformTSDFVolume, DISABLED_GetNormalAt) {}
 
 TEST(UniformTSDFVolume, DISABLED_GetTSDFAt) {}
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

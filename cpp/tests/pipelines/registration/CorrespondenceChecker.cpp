@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(CorrespondenceChecker, DISABLED_Constructor) { NotImplemented(); }
 
@@ -49,5 +49,5 @@ TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnNormal) {
     NotImplemented();
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

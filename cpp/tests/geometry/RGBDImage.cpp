@@ -31,7 +31,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(RGBDImage, Constructor) {
     geometry::Image image;
@@ -461,5 +461,5 @@ TEST(RGBDImage, CreatePyramid) {
     }
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

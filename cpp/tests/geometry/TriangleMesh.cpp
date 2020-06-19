@@ -30,7 +30,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 void ExpectMeshEQ(const open3d::geometry::TriangleMesh& mesh0,
                   const open3d::geometry::TriangleMesh& mesh1,
@@ -1579,7 +1579,7 @@ TEST(TriangleMesh, SelectByIndex) {
     ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_);
     ExpectEQ(ref_triangles, output_tm->triangles_);
     ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_);
-}  // namespace unit_test
+}  // namespace tests
 
 TEST(TriangleMesh, CropTriangleMesh) {
     std::vector<Eigen::Vector3d> ref_vertices = {
@@ -2183,5 +2183,5 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
     ExpectEQ(ref_triangle_normals, output->triangle_normals_);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

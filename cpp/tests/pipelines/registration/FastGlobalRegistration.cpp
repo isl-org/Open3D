@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(FastGlobalRegistration, DISABLED_FastGlobalRegistrationOption) {
     NotImplemented();
@@ -39,5 +39,5 @@ TEST(FastGlobalRegistration, DISABLED_Constructor) { NotImplemented(); }
 
 TEST(FastGlobalRegistration, DISABLED_MemberData) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

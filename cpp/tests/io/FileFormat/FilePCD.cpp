@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(FilePCD, DISABLED_CheckHeader) { NotImplemented(); }
 
@@ -59,5 +59,5 @@ TEST(FilePCD, DISABLED_ReadPointCloudFromPCD) { NotImplemented(); }
 
 TEST(FilePCD, DISABLED_WritePointCloudToPCD) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

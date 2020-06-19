@@ -29,7 +29,7 @@
 // #include "open3d/pipelines/color_map/ImageWarpingField.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 /* TODO
 As the pipelines::color_map::ColorMapOptimization subcomponents go back into
@@ -134,11 +134,11 @@ TEST(ImageWarpingField, DISABLED_Constructor) {
     // EXPECT_EQ(21, field.anchor_w_);
     // EXPECT_EQ(16, field.anchor_h_);
 
-    // EXPECT_NEAR(16, field.anchor_step_, unit_test::THRESHOLD_1E_6);
+    // EXPECT_NEAR(16, field.anchor_step_, tests::THRESHOLD_1E_6);
 
     // EXPECT_EQ(672, field.flow_.size());
     // for (size_t i = 0; i < field.flow_.size(); i++)
-    //     EXPECT_NEAR(ref[i], field.flow_[i], unit_test::THRESHOLD_1E_6);
+    //     EXPECT_NEAR(ref[i], field.flow_[i], tests::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ TEST(ImageWarpingField, QueryFlow) {
     // open3d::ImageWarpingField field(width, height, nr_anchors);
 
     // for (size_t i = 0; i < ref_output.size(); i++)
-    //     unit_test::ExpectEQ(ref_output[i], field.QueryFlow(x[i], y[i]));
+    //     tests::ExpectEQ(ref_output[i], field.QueryFlow(x[i], y[i]));
 }
 
 TEST(ImageWarpingField, GetImageWarpingField) {
@@ -233,9 +233,9 @@ TEST(ImageWarpingField, GetImageWarpingField) {
     // {
     //     Eigen::Vector2d elem = field.GetImageWarpingField(x[i], y[i]);
 
-    //     unit_test::ExpectEQ(ref_output[i], elem);
+    //     tests::ExpectEQ(ref_output[i], elem);
     // }
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

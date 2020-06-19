@@ -29,7 +29,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(FileGLTF, WriteReadTriangleMeshFromGLTF) {
     geometry::TriangleMesh tm_gt;
@@ -63,5 +63,5 @@ TEST(FileGLTF, WriteReadTriangleMeshFromGLB) {
     ExpectEQ(tm_gt.vertex_normals_, tm_test.vertex_normals_);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(Timer, DISABLED_Constructor) { NotImplemented(); }
 
@@ -51,5 +51,5 @@ TEST(Timer, DISABLED_FPSTimer) { NotImplemented(); }
 
 TEST(Timer, DISABLED_Signal) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

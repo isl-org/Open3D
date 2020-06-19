@@ -35,11 +35,11 @@
 #include "open3d/Macro.h"
 
 #define ExpectEQ(arg, ...)                                                   \
-    ExpectEQInternal(::open3d::unit_test::LineInfo(__FILE__, __LINE__), arg, \
+    ExpectEQInternal(::open3d::tests::LineInfo(__FILE__, __LINE__), arg, \
                      __VA_ARGS__)
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 // Thresholds for comparing floating point values
 const double THRESHOLD_1E_6 = 1e-6;
@@ -177,5 +177,5 @@ void ExpectEQInternal(const std::string& line_info,
                       const std::vector<double>& v1,
                       double threshold = THRESHOLD_1E_6);
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

@@ -33,7 +33,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 // ----------------------------------------------------------------------------
 // Get the file extension and convert to lower case.
@@ -545,5 +545,5 @@ TEST(FileSystem, GetPathComponents) {
     EXPECT_EQ(result, expected);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

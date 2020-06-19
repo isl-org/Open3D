@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(Odometry, DISABLED_ComputeRGBDOdometry) { NotImplemented(); }
 
@@ -39,5 +39,5 @@ TEST(Odometry, DISABLED_RGBDOdometryJacobianFromHybridTerm) {
 
 TEST(Odometry, DISABLED_OdometryOption) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

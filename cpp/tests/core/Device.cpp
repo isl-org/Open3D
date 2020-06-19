@@ -29,7 +29,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(Device, DefaultConstructor) {
     core::Device ctx;
@@ -61,5 +61,5 @@ TEST(Device, StringConstructorLower) {
     EXPECT_EQ(ctx.GetID(), 1);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

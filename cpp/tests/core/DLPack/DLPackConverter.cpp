@@ -34,7 +34,7 @@
 #include <vector>
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 class DLPackPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(DLPack,
@@ -82,5 +82,5 @@ TEST_P(DLPackPermuteDevices, ToDLPackFromDLPack) {
               std::vector<float>({12, 14, 20, 22}));
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

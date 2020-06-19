@@ -27,11 +27,11 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(EstimateNormals, DISABLED_FastEigen3x3) { NotImplemented(); }
 
 TEST(EstimateNormals, DISABLED_ComputeNormal) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

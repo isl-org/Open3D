@@ -29,7 +29,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 using open3d::io::ReadPointCloud;
 using open3d::io::ReadPointCloudOption;
@@ -446,5 +446,5 @@ TEST_P(ReadWritePC, UpdateProgressCallback) {
 
 TEST(PointCloudIO, DISABLED_CreatePointCloudFromFile) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

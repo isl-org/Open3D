@@ -29,7 +29,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(ShapeUtil, IsCompatibleBroadcastShape) {
     // A 0-dim tensor is compatible with any shape.
@@ -214,5 +214,5 @@ TEST(ShapeUtil, ReductionShape) {
               core::SizeVector({1, 3, 1}));
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

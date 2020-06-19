@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(FeatureIO, DISABLED_ReadFeature) { NotImplemented(); }
 
@@ -37,5 +37,5 @@ TEST(FeatureIO, DISABLED_ReadFeatureFromBIN) { NotImplemented(); }
 
 TEST(FeatureIO, DISABLED_WriteFeatureToBIN) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

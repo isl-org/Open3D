@@ -29,7 +29,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(FileSTL, WriteReadTriangleMeshFromSTL) {
     geometry::TriangleMesh tm_gt;
@@ -46,5 +46,5 @@ TEST(FileSTL, WriteReadTriangleMeshFromSTL) {
     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

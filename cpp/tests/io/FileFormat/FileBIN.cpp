@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(FileBIN, DISABLED_ReadMatrixXdFromBINFile) { NotImplemented(); }
 
@@ -37,5 +37,5 @@ TEST(FileBIN, DISABLED_ReadFeatureFromBIN) { NotImplemented(); }
 
 TEST(FileBIN, DISABLED_WriteFeatureToBIN) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

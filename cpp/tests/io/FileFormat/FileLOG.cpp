@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(FileLOG, DISABLED_ReadPinholeCameraTrajectoryFromLOG) { NotImplemented(); }
 
@@ -35,5 +35,5 @@ TEST(FileLOG, DISABLED_PinholeCameraIntrinsic) { NotImplemented(); }
 
 TEST(FileLOG, DISABLED_WritePinholeCameraTrajectoryToLOG) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

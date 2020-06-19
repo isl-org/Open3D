@@ -27,7 +27,7 @@
 #include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 TEST(FilePNG, DISABLED_SetPNGImageFromImage) { NotImplemented(); }
 
@@ -35,5 +35,5 @@ TEST(FilePNG, DISABLED_ReadImageFromPNG) { NotImplemented(); }
 
 TEST(FilePNG, DISABLED_WriteImageToPNG) { NotImplemented(); }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d
