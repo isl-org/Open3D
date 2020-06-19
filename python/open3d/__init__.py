@@ -52,16 +52,7 @@ from open3d.pybind import pipelines
 from open3d.pybind import utility
 from open3d.pybind import visualization
 
-from open3d.pybind import Dtype
-from open3d.pybind import Device
-from open3d.pybind import DtypeUtil
-from open3d.pybind import cuda
-from open3d.core import SizeVector
-from open3d.core import Tensor
-from open3d.core import TensorList
-
-from open3d.pybind import NoneType
-none = NoneType()
+import open3d.core
 
 __version__ = "@PROJECT_VERSION@"
 
