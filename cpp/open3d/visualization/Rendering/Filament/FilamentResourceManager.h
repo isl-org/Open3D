@@ -34,6 +34,7 @@
 #include "open3d/visualization/Rendering/Renderer.h"
 #include "open3d/visualization/Rendering/RendererHandle.h"
 
+/// @cond
 namespace filament {
 class Engine;
 class IndexBuffer;
@@ -44,6 +45,7 @@ class Skybox;
 class Texture;
 class VertexBuffer;
 }  // namespace filament
+/// @endcond
 
 namespace open3d {
 

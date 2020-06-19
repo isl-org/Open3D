@@ -30,9 +30,11 @@
 
 #include "open3d/utility/Eigen.h"
 
+/// @cond
 namespace Json {
 class Value;
 }  // namespace Json
+/// @endcond
 
 namespace open3d {
 namespace utility {

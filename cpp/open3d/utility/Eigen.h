@@ -31,6 +31,7 @@
 #include <tuple>
 #include <vector>
 
+/// @cond
 namespace Eigen {
 
 /// Extending Eigen namespace by adding frequently used matrix type
@@ -44,6 +45,7 @@ typedef Eigen::Matrix<double, 6, 6, Eigen::DontAlign> Matrix6d_u;
 typedef Eigen::Matrix<double, 4, 4, Eigen::DontAlign> Matrix4d_u;
 
 }  // namespace Eigen
+/// @endcond
 
 namespace open3d {
 namespace utility {

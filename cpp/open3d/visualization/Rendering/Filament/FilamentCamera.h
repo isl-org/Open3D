@@ -28,10 +28,12 @@
 
 #include "open3d/visualization/Rendering/Camera.h"
 
+/// @cond
 namespace filament {
 class Camera;
 class Engine;
 }  // namespace filament
+/// @endcond
 
 namespace open3d {
 namespace visualization {

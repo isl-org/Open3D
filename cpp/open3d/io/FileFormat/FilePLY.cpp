@@ -36,8 +36,10 @@
 
 namespace open3d {
 
+namespace io {
+
+/// @cond
 namespace {
-using namespace io;
 
 namespace ply_pointcloud_reader {
 
@@ -356,8 +358,7 @@ int ReadColorCallback(p_ply_argument argument) {
 }  // namespace ply_voxelgrid_reader
 
 }  // unnamed namespace
-
-namespace io {
+/// @endcond
 
 FileGeometry ReadFileGeometryTypePLY(const std::string &path) {
     p_ply ply_file = ply_open(path.c_str(), NULL, 0, NULL);

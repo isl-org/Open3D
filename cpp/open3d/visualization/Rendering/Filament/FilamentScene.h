@@ -34,6 +34,7 @@
 
 #include "open3d/visualization/Rendering/Scene.h"
 
+/// @cond
 namespace filament {
 class Engine;
 class IndirectLight;
@@ -43,6 +44,7 @@ class Skybox;
 class TransformManager;
 class VertexBuffer;
 }  // namespace filament
+/// @endcond
 
 namespace open3d {
 namespace visualization {

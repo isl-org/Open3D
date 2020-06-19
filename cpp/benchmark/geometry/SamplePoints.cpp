@@ -28,6 +28,9 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/ClassIO/TriangleMeshIO.h"
 
+namespace open3d {
+namespace benchmarks {
+
 class SamplePointsFixture : public benchmark::Fixture {
 public:
     void SetUp(const benchmark::State& state) {
@@ -55,3 +58,6 @@ BENCHMARK_DEFINE_F(SamplePointsFixture, Uniform)(benchmark::State& state) {
 }
 
 BENCHMARK_REGISTER_F(SamplePointsFixture, Uniform)->Args({123})->Args({1000});
+
+}  // namespace benchmarks
+}  // namespace open3d

@@ -30,10 +30,12 @@
 
 #include "open3d/visualization/Rendering/MaterialModifier.h"
 
+/// @cond
 namespace filament {
 class MaterialInstance;
 class TextureSampler;
 }  // namespace filament
+/// @endcond
 
 namespace open3d {
 namespace visualization {

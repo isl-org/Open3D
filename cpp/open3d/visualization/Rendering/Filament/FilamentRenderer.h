@@ -33,6 +33,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+/// @cond
 namespace filament {
 class Engine;
 class Renderer;
@@ -40,6 +41,7 @@ class Scene;
 class SwapChain;
 class VertexBuffer;
 }  // namespace filament
+/// @endcond
 
 namespace open3d {
 namespace visualization {

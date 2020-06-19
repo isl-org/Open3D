@@ -33,10 +33,6 @@
 
 namespace open3d {
 
-namespace color_map {
-class ImageWarpingField;
-}
-
 namespace io {
 
 /// Factory function to create a ImageWarpingField from a file
