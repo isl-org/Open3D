@@ -28,7 +28,7 @@
 #include <memory>
 #include <thread>
 
-#include <Open3D/Open3D.h>
+#include <open3d/Open3D.h>
 
 // A simplified version of examples/Cpp/Visualizer.cpp to demonstrate linking
 // an external project to Open3D.

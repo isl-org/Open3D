@@ -27,7 +27,7 @@
 #include <iostream>
 #include <memory>
 
-#include "Open3D/Open3D.h"
+#include "open3d/Open3D.h"
 
 void PrintHelp() {
     using namespace open3d;
@@ -93,9 +93,9 @@ int main(int argc, char *argv[]) {
     char buffer[DEFAULT_IO_BUFFER_SIZE];
     int index = 0;
     int save_index = 0;
-    integration::ScalableTSDFVolume volume(
+    pipelines::integration::ScalableTSDFVolume volume(
             length / (double)resolution, length * sdf_trunc_percentage,
-            integration::TSDFVolumeColorType::RGB8);
+            pipelines::integration::TSDFVolumeColorType::RGB8);
     utility::FPSTimer timer("Process RGBD stream",
                             (int)camera_trajectory->parameters_.size());
     geometry::Image depth, color;

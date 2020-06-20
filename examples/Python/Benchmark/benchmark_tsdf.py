@@ -20,11 +20,11 @@ def run_benchmark():
     camera_poses = read_trajectory(os.path.join(dataset_path, "odometry.log"))
     camera_intrinsics = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    volume = o3d.integration.UniformTSDFVolume(
+    volume = o3d.pipelines.integration.UniformTSDFVolume(
         length=4.0,
         resolution=512,
         sdf_trunc=0.04,
-        color_type=o3d.integration.TSDFVolumeColorType.RGB8,
+        color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8,
     )
 
     s = time.time()
