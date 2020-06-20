@@ -165,12 +165,10 @@ build, please see :ref:`compilation_options`.
 
     1. Check PyTorch and TensorFlow ABI with
 
-       .. code-block:: python
+       .. code-block:: bash
 
-           import torch
-           import tensorflow
-           print(torch._C._GLIBCXX_USE_CXX11_ABI)
-           print(tensorflow.__cxx11_abi_flag__)
+           python -c "import torch; print(torch._C._GLIBCXX_USE_CXX11_ABI)"
+           python -c "import tensorflow; print(tensorflow.__cxx11_abi_flag__)"
 
     2. Configure Open3D to compile all dependencies from source
        with the corresponding ABI version obtained from step 1.
@@ -178,10 +176,9 @@ build, please see :ref:`compilation_options`.
     After installation of the Python package, you can check Open3D ABI version
     with:
 
-    .. code-block:: python
+    .. code-block:: bash
 
-        import open3d
-        print(open3d.open3d._GLIBCXX_USE_CXX11_ABI)
+        python -c "import open3d; print(open3d.open3d_pybind._GLIBCXX_USE_CXX11_ABI)"
 
 .. _compilation_ubuntu_build:
 
@@ -472,7 +469,7 @@ Unit test
 `````````
 
 To build unit tests, set `BUILD_UNIT_TESTS=ON` at CMake config stage. The unit
-test executable will be located at `bin/unitTests` in the `build` directory.
+test executable will be located at `bin/UnitTest` in the `build` directory.
 
 Please also refer to `googletest <https://github.com/google/googletest.git>`_ for
 reference.
@@ -482,4 +479,4 @@ reference.
     # In the build directory
     cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
-    ./bin/unitTests
+    ./bin/UnitTest

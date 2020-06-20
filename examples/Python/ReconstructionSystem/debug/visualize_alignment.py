@@ -23,8 +23,8 @@ def list_posegraph_files(folder_posegraph):
         n_nodes = len(pose_graph.nodes)
         n_edges = len(pose_graph.edges)
         print(
-            "Fragment o3d.registration.PoseGraph %s has %d nodes and %d edges" %
-            (pose_graph_path, n_nodes, n_edges))
+            "Fragment o3d.pipelines.registration.PoseGraph %s has %d nodes and %d edges"
+            % (pose_graph_path, n_nodes, n_edges))
 
 
 if __name__ == "__main__":
@@ -70,12 +70,12 @@ if __name__ == "__main__":
         pose_graph = o3d.io.read_pose_graph(global_pose_graph_name)
         n_nodes = len(pose_graph.nodes)
         n_edges = len(pose_graph.edges)
-        print("Global o3d.registration.PoseGraph having %d nodes and %d edges" % \
+        print("Global o3d.pipelines.registration.PoseGraph having %d nodes and %d edges" % \
                 (n_nodes, n_edges))
 
         # visualize alignment of posegraph edges
         for edge in pose_graph.edges:
-            print("o3d.registration.PoseGraphEdge %d-%d" % \
+            print("o3d.pipelines.registration.PoseGraphEdge %d-%d" % \
                     (edge.source_node_id, edge.target_node_id))
             if ((args.adjacent and \
                     edge.target_node_id - edge.source_node_id == 1)) or \

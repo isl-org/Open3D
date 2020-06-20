@@ -20,10 +20,10 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     n_files = len(color_files)
     n_fragments = int(math.ceil(float(n_files) / \
             config['n_frames_per_fragment']))
-    volume = o3d.integration.ScalableTSDFVolume(
+    volume = o3d.pipelines.integration.ScalableTSDFVolume(
         voxel_length=config["tsdf_cubic_size"] / 512.0,
         sdf_trunc=0.04,
-        color_type=o3d.integration.TSDFVolumeColorType.RGB8)
+        color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
 
     pose_graph_fragment = o3d.io.read_pose_graph(
         join(path_dataset, config["template_refined_posegraph_optimized"]))

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Open3D.h"
+#include "open3d/Open3D.h"
 
 using namespace open3d;
 
@@ -78,10 +78,10 @@ int main(int argc, char* argv[]) {
 
     Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
     std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> rgbd_odo =
-            odometry::ComputeRGBDOdometry(
+            pipelines::odometry::ComputeRGBDOdometry(
                     *source, *target, intrinsic, odo_init,
-                    odometry::RGBDOdometryJacobianFromHybridTerm(),
-                    odometry::OdometryOption());
+                    pipelines::odometry::RGBDOdometryJacobianFromHybridTerm(),
+                    pipelines::odometry::OdometryOption());
     std::cout << "RGBD Odometry" << std::endl;
     std::cout << std::get<1>(rgbd_odo) << std::endl;
     return 0;
