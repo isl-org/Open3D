@@ -1,3 +1,0 @@
-s:(namespace gui \{):namespace visualization {\n$1:
-s:(}  // namespace gui):$1\n}  // namespace visualization:
-s/::gui/::visualization::gui/g
