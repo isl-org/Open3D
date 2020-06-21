@@ -130,7 +130,7 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
     unitTestFlags=
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     date
-    reportRun ./bin/UnitTest $unitTestFlags
+    reportRun ./bin/tests $unitTestFlags
     echo
 
     if $runBenchmarks; then
