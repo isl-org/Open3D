@@ -46,25 +46,13 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 from open3d._build_config import _build_config
 from open3d.pybind import camera
-from open3d.pybind import color_map
 from open3d.pybind import geometry
-from open3d.pybind import integration
 from open3d.pybind import io
-from open3d.pybind import odometry
-from open3d.pybind import registration
+from open3d.pybind import pipelines
 from open3d.pybind import utility
 from open3d.pybind import visualization
 
-from open3d.pybind import Dtype
-from open3d.pybind import Device
-from open3d.pybind import DtypeUtil
-from open3d.pybind import cuda
-from open3d.core import SizeVector
-from open3d.core import Tensor
-from open3d.core import TensorList
-
-from open3d.pybind import NoneType
-none = NoneType()
+import open3d.core
 
 __version__ = "@PROJECT_VERSION@"
 
