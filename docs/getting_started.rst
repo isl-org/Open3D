@@ -1,6 +1,6 @@
 .. _getting_started:
 
-Getting Started
+Getting started
 ###############
 
 .. _install_open3d_python:

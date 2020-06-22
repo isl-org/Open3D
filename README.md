@@ -27,7 +27,7 @@ the open-source community.
 [![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/)
 [![Build status](https://ci.appveyor.com/api/projects/status/3hasjo041lv6srsi/branch/master?svg=true)](https://ci.appveyor.com/project/yxlao/open3d/branch/master)
 
-#### Core features of Open3D includes:
+**Core features of Open3D include:**
 
 * 3D data structures
 * 3D data processing algorithms
