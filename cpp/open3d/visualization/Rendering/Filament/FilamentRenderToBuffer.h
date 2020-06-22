@@ -47,8 +47,8 @@ class FilamentView;
 class FilamentRenderToBuffer : public RenderToBuffer {
 public:
     // Use Renderer::CreateBufferRenderer to instantiate
-    // FilamentRenderToBuffer, unless you are NOT using open3d::visualization::gui or
-    // another FilamentRenderer instance.
+    // FilamentRenderToBuffer, unless you are NOT using
+    // open3d::visualization::gui or another FilamentRenderer instance.
     explicit FilamentRenderToBuffer(filament::Engine& engine);
     FilamentRenderToBuffer(filament::Engine& engine, FilamentRenderer& parent);
     ~FilamentRenderToBuffer() override;
