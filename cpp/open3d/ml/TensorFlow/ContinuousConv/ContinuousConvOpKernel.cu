@@ -26,10 +26,11 @@
 
 #define EIGEN_USE_GPU
 #include "ContinuousConvOpKernel.h"
-#include "open3d/core/CUDAUtils.h"
 #include "open3d/ml/ContinuousConv/Detail/ContinuousConv.cuh"
+#include "open3d/ml/Helper.h"
 
 using namespace open3d;
+using namespace open3d::ml;
 using namespace open3d::ml::detail;
 using namespace tensorflow;
 
@@ -38,8 +39,7 @@ class ContinuousConvOpKernelCUDA : public ContinuousConvOpKernel<TIndex> {
 public:
     explicit ContinuousConvOpKernelCUDA(OpKernelConstruction* construction)
         : ContinuousConvOpKernel<TIndex>(construction) {
-        texture_alignment =
-                open3d::core::GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,
