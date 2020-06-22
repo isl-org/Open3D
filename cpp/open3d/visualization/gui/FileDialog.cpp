@@ -55,6 +55,7 @@
 #endif  // __APPLE__
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 namespace {
@@ -394,6 +395,7 @@ Size FileDialog::CalcPreferredSize(const Theme &theme) const {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d
 
 #endif  // __APPLE__

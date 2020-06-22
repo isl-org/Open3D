@@ -87,6 +87,7 @@ using namespace filament;
 using namespace utils;
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 static std::string GetIOErrorString(int errno_val) {
@@ -269,7 +270,8 @@ ImguiFilamentBridge::ImguiFilamentBridge(
 
     auto native_view = impl_->view_->GetNativeView();
     native_view->setClearTargets(false, false, false);
-    native_view->setRenderTarget(View::TargetBufferFlags::DEPTH_AND_STENCIL);
+    native_view->setRenderTarget(
+            filament::View::TargetBufferFlags::DEPTH_AND_STENCIL);
     native_view->setPostProcessingEnabled(false);
     native_view->setShadowsEnabled(false);
 
@@ -586,4 +588,5 @@ void ImguiFilamentBridge::SyncThreads() {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

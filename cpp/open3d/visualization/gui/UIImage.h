@@ -29,6 +29,7 @@
 #include "open3d/visualization/Rendering/RendererHandle.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 class UIImage {
@@ -78,4 +79,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

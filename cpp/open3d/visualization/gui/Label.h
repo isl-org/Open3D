@@ -29,6 +29,7 @@
 #include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 class Label : public Widget {
@@ -56,4 +57,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

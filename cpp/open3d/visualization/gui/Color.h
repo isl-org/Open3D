@@ -27,6 +27,7 @@
 #pragma once
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 class Color {
@@ -59,4 +60,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

@@ -51,10 +51,11 @@
 #include "open3d/visualization/gui/Util.h"
 #include "open3d/visualization/gui/Widget.h"
 
-using namespace open3d::gui::util;
+using namespace open3d::visualization::gui::util;
 
 // ----------------------------------------------------------------------------
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 namespace {
@@ -364,7 +365,7 @@ void Window::RestoreDrawContext(void* oldContext) const {
 }
 
 void* Window::GetNativeDrawable() const {
-    return open3d::gui::GetNativeDrawable(impl_->window_);
+    return open3d::visualization::gui::GetNativeDrawable(impl_->window_);
 }
 
 const Theme& Window::GetTheme() const { return impl_->theme_; }
@@ -1223,4 +1224,5 @@ void Window::UpdateAfterEvent(Window* w) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

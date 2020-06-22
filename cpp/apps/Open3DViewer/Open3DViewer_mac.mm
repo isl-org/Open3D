@@ -78,7 +78,7 @@
     // in the Application object in main() getting destructed, but it still
     // thinks it is running. So tell Application to quit, which will post
     // the required events to the event loop to properly clean up.
-    open3d::gui::Application::GetInstance().OnTerminate();
+    open3d::visualization::gui::Application::GetInstance().OnTerminate();
 }
 @end
 
@@ -91,7 +91,7 @@ int main(int argc, const char *argv[]) {
         open3d::utility::filesystem::ChangeWorkingDirectory(homedir);
     }
 
-    open3d::gui::Application::GetInstance().Initialize(argc, argv);
+    open3d::visualization::gui::Application::GetInstance().Initialize(argc, argv);
 
     // Note: if NSApp is created (which happens in +sharedApplication)
     //       then GLFW will use our NSApp with our delegate instead of its
@@ -116,7 +116,7 @@ int main(int argc, const char *argv[]) {
     // ---- [NSApp run] equivalent ----
     // https://www.cocoawithlove.com/2009/01/demystifying-nsapplication-by.html
     [NSApp finishLaunching];
-    open3d::gui::Application::GetInstance().Run();
+    open3d::visualization::gui::Application::GetInstance().Run();
     // ----
 }
 

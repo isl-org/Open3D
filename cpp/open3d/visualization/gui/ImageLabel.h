@@ -31,6 +31,7 @@
 #include "open3d/visualization/gui/UIImage.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 class ImageLabel : public Widget {
@@ -67,4 +68,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

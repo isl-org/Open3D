@@ -30,6 +30,7 @@
 #include <memory>
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 class Task {
@@ -58,4 +59,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

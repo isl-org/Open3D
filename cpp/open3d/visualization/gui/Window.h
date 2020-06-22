@@ -39,6 +39,7 @@
 struct GLFWwindow;
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 class Dialog;
@@ -191,4 +192,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

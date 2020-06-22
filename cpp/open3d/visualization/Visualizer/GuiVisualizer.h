@@ -37,11 +37,12 @@ class AxisAlignedBoundingBox;
 class Geometry;
 }  // namespace geometry
 
+namespace visualization {
+
 namespace gui {
 struct Theme;
 }
 
-namespace visualization {
 class GuiVisualizer : public gui::Window {
     using Super = gui::Window;
 

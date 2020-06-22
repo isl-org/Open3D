@@ -41,6 +41,7 @@
 #include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 static const float EXTRA_PADDING_Y = 1.0f;
@@ -267,6 +268,7 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d
 
 #endif  // __APPLE__

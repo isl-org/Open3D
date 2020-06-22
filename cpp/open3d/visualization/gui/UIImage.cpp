@@ -37,6 +37,7 @@
 #include "open3d/visualization/gui/Theme.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct UIImage::Impl {
@@ -190,4 +191,5 @@ UIImage::DrawParams UIImage::CalcDrawParams(visualization::Renderer& renderer,
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d
