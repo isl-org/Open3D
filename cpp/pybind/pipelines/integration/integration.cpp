@@ -239,7 +239,8 @@ void pybind_integration_methods(py::module &m) {
 }
 
 void pybind_integration(py::module &m) {
-    py::module m_submodule = m.def_submodule("integration");
+    py::module m_submodule =
+            m.def_submodule("integration", "Integration pipeline.");
     pybind_integration_classes(m_submodule);
     pybind_integration_methods(m_submodule);
 }

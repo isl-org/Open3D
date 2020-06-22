@@ -48,6 +48,14 @@ Open3D: A Modern Library for 3D Data Processing
     tutorial/docker/index
     tutorial/reference
 
+.. _cpp_api_index:
+
+.. toctree::
+    :maxdepth: 1
+    :caption: C++ API
+
+    cpp
+
 .. _python_api_index:
 
 .. toctree::

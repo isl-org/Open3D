@@ -65,6 +65,10 @@ extensions = [
     'm2r',
 ]
 
+if os.environ["skip_notebooks"] == "true":
+    print("Skipping Jupyter notebooks")
+    extensions = [e for e in extensions if e != "nbsphinx"]
+
 # Allow for more time for notebook cell evaluation
 nbsphinx_timeout = 6000
 # nbsphinx_allow_errors = True

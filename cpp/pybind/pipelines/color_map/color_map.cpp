@@ -193,7 +193,8 @@ void pybind_color_map_methods(py::module &m) {
 }
 
 void pybind_color_map(py::module &m) {
-    py::module m_submodule = m.def_submodule("color_map");
+    py::module m_submodule =
+            m.def_submodule("color_map", "Color map optimization pipeline.");
     pybind_color_map_classes(m_submodule);
     pybind_color_map_methods(m_submodule);
 }
