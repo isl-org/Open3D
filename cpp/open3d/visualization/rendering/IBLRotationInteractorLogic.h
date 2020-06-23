@@ -26,58 +26,47 @@
 
 #pragma once
 
+#include "open3d/visualization/rendering/MatrixInteractorLogic.h"
+
 #include "open3d/visualization/rendering/RendererHandle.h"
 
 namespace open3d {
 namespace visualization {
-namespace gui {
 
-class UIImage {
+class Scene;
+
+class IBLRotationInteractorLogic : public MatrixInteractorLogic {
+    using Super = MatrixInteractorLogic;
+
 public:
-    /// Uses image from the specified path. Each ImageLabel will use one
-    /// draw call.
-    explicit UIImage(const char* image_path);
-    /// Uses an existing texture, using texture coordinates
-    /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
-    /// This is useful for using an icon atlas to reduce draw calls.
-    explicit UIImage(visualization::TextureHandle texture_id,
-                     float u0 = 0.0f,
-                     float v0 = 0.0f,
-                     float u1 = 1.0f,
-                     float v1 = 1.0f);
-    ~UIImage();
+    IBLRotationInteractorLogic(Scene* scene, Camera* camera);
 
-    enum class Scaling {
-        NONE,   /// No scaling, fixed size
-        ANY,    /// Scales to any size and aspect ratio
-        ASPECT  /// Scales to any size, but fixed aspect ratio (default)
-    };
-    void SetScaling(Scaling scaling);
-    Scaling GetScaling() const;
+    void Rotate(int dx, int dy) override;
+    void RotateZ(int dx, int dy) override;
 
-    Size CalcPreferredSize(const Theme& theme) const;
+    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool is_on);
 
-    struct DrawParams {
-        // Default values are to make GCC happy and contented,
-        // pos and size don't have reasonable defaults.
-        float pos_x = 0.0f;
-        float pos_y = 0.0f;
-        float width = 0.0f;
-        float height = 0.0f;
-        float u0 = 0.0f;
-        float v0 = 0.0f;
-        float u1 = 1.0f;
-        float v1 = 1.0f;
-        visualization::TextureHandle texture;
-    };
-    DrawParams CalcDrawParams(visualization::Renderer& renderer,
-                              const Rect& frame) const;
+    void StartMouseDrag();
+    void UpdateMouseDragUI();
+    void EndMouseDrag();
+
+    Camera::Transform GetCurrentRotation() const;
 
 private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+    Scene* scene_;
+    Camera* camera_;
+    visualization::SkyboxHandle skybox_;
+    bool skybox_is_normally_on_;
+    Camera::Transform ibl_rotation_at_mouse_down_;
+
+    struct UIObj {
+        GeometryHandle handle;
+        Camera::Transform transform;
+    };
+    std::vector<UIObj> ui_objs_;
+
+    void ClearUI();
 };
 
-}  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

@@ -37,11 +37,6 @@
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/Rendering/Camera.h"
-#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
-#include "open3d/visualization/Rendering/RenderToBuffer.h"
-#include "open3d/visualization/Rendering/RendererStructs.h"
-#include "open3d/visualization/Rendering/Scene.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Checkbox.h"
@@ -57,6 +52,11 @@
 #include "open3d/visualization/gui/Slider.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/VectorEdit.h"
+#include "open3d/visualization/rendering/Camera.h"
+#include "open3d/visualization/rendering/Filament/FilamentResourceManager.h"
+#include "open3d/visualization/rendering/RenderToBuffer.h"
+#include "open3d/visualization/rendering/RendererStructs.h"
+#include "open3d/visualization/rendering/Scene.h"
 
 #define LOAD_IN_NEW_WINDOW 0
 

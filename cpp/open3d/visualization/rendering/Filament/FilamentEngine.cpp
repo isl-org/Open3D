@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/MaterialModifier.h"
+#include "open3d/visualization/rendering/Filament/FilamentResourceManager.h"
 
-#include "tests/UnitTest.h"
+#include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
+
+#include "open3d/visualization/rendering/Filament/FilamentEngine.h"
 
 namespace open3d {
-namespace tests {
+namespace visualization {
 
-TEST(MaterialModifier, TextureSamplerParameters) {
-    auto tsp = visualization::TextureSamplerParameters::Simple();
-    EXPECT_EQ(tsp.GetAnisotropy(), 0);
-    tsp.SetAnisotropy(0);
-    EXPECT_EQ(tsp.GetAnisotropy(), 0);
-    tsp.SetAnisotropy(1);
-    EXPECT_EQ(tsp.GetAnisotropy(), 1);
-    tsp.SetAnisotropy(2);
-    EXPECT_EQ(tsp.GetAnisotropy(), 2);
-    tsp.SetAnisotropy(4);
-    EXPECT_EQ(tsp.GetAnisotropy(), 4);
-    tsp.SetAnisotropy(8);
-    EXPECT_EQ(tsp.GetAnisotropy(), 8);
-    tsp.SetAnisotropy(10);
-    EXPECT_EQ(tsp.GetAnisotropy(), 8);
-    tsp.SetAnisotropy(100);
-    EXPECT_EQ(tsp.GetAnisotropy(), 64);
-    tsp.SetAnisotropy(255);
-    EXPECT_EQ(tsp.GetAnisotropy(), 128);
+filament::backend::Backend EngineInstance::backend_ =
+        filament::backend::Backend::DEFAULT;
+
+void EngineInstance::SelectBackend(const filament::backend::Backend backend) {
+    backend_ = backend;
 }
 
-}  // namespace tests
+filament::Engine& EngineInstance::GetInstance() { return *Get().engine_; }
+
+FilamentResourceManager& EngineInstance::GetResourceManager() {
+    return *Get().resource_manager_;
+}
+
+EngineInstance::~EngineInstance() {
+    resource_manager_->DestroyAll();
+    delete resource_manager_;
+    resource_manager_ = nullptr;
+
+    filament::Engine::destroy(engine_);
+    engine_ = nullptr;
+}
+
+EngineInstance& EngineInstance::Get() {
+    static EngineInstance instance;
+    return instance;
+}
+
+EngineInstance::EngineInstance() {
+    engine_ = filament::Engine::create(backend_);
+    resource_manager_ = new FilamentResourceManager(*engine_);
+}
+
+}  // namespace visualization
 }  // namespace open3d

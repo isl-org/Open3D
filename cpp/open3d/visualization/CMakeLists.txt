@@ -36,7 +36,7 @@ AddSourceDir("utility")
 AddSourceDir("visualizer")
 
 if (ENABLE_GUI)
-    AddSourceDir("Rendering")
+    AddSourceDir("rendering")
 else ()
     list(FILTER VISUALIZATION_ALL_HEADER_FILES EXCLUDE REGEX .*GuiVisualizer.h)
     list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiVisualizer.cpp)

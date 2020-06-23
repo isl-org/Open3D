@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,43 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/MaterialModifier.h"
+#include "open3d/visualization/rendering/Filament/FilamentGeometryBuffersBuilder.h"
 
-#include "tests/UnitTest.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 namespace open3d {
-namespace tests {
+namespace visualization {
 
-TEST(MaterialModifier, TextureSamplerParameters) {
-    auto tsp = visualization::TextureSamplerParameters::Simple();
-    EXPECT_EQ(tsp.GetAnisotropy(), 0);
-    tsp.SetAnisotropy(0);
-    EXPECT_EQ(tsp.GetAnisotropy(), 0);
-    tsp.SetAnisotropy(1);
-    EXPECT_EQ(tsp.GetAnisotropy(), 1);
-    tsp.SetAnisotropy(2);
-    EXPECT_EQ(tsp.GetAnisotropy(), 2);
-    tsp.SetAnisotropy(4);
-    EXPECT_EQ(tsp.GetAnisotropy(), 4);
-    tsp.SetAnisotropy(8);
-    EXPECT_EQ(tsp.GetAnisotropy(), 8);
-    tsp.SetAnisotropy(10);
-    EXPECT_EQ(tsp.GetAnisotropy(), 8);
-    tsp.SetAnisotropy(100);
-    EXPECT_EQ(tsp.GetAnisotropy(), 64);
-    tsp.SetAnisotropy(255);
-    EXPECT_EQ(tsp.GetAnisotropy(), 128);
+std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
+        const geometry::Geometry3D& geometry) {
+    using GT = geometry::Geometry::GeometryType;
+
+    switch (geometry.GetGeometryType()) {
+        case GT::TriangleMesh:
+            return std::make_unique<TriangleMeshBuffersBuilder>(
+                    static_cast<const geometry::TriangleMesh&>(geometry));
+
+        case GT::PointCloud:
+            return std::make_unique<PointCloudBuffersBuilder>(
+                    static_cast<const geometry::PointCloud&>(geometry));
+
+        case GT::LineSet:
+            return std::make_unique<LineSetBuffersBuilder>(
+                    static_cast<const geometry::LineSet&>(geometry));
+        default:
+            break;
+    }
+
+    return nullptr;
 }
 
-}  // namespace tests
+void GeometryBuffersBuilder::DeallocateBuffer(void* buffer,
+                                              size_t size,
+                                              void* user_ptr) {
+    free(buffer);
+}
+
+}  // namespace visualization
 }  // namespace open3d

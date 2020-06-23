@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,40 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/MaterialModifier.h"
+#include "open3d/visualization/rendering/RendererHandle.h"
 
-#include "tests/UnitTest.h"
+#include <iostream>
 
 namespace open3d {
-namespace tests {
+namespace visualization {
 
-TEST(MaterialModifier, TextureSamplerParameters) {
-    auto tsp = visualization::TextureSamplerParameters::Simple();
-    EXPECT_EQ(tsp.GetAnisotropy(), 0);
-    tsp.SetAnisotropy(0);
-    EXPECT_EQ(tsp.GetAnisotropy(), 0);
-    tsp.SetAnisotropy(1);
-    EXPECT_EQ(tsp.GetAnisotropy(), 1);
-    tsp.SetAnisotropy(2);
-    EXPECT_EQ(tsp.GetAnisotropy(), 2);
-    tsp.SetAnisotropy(4);
-    EXPECT_EQ(tsp.GetAnisotropy(), 4);
-    tsp.SetAnisotropy(8);
-    EXPECT_EQ(tsp.GetAnisotropy(), 8);
-    tsp.SetAnisotropy(10);
-    EXPECT_EQ(tsp.GetAnisotropy(), 8);
-    tsp.SetAnisotropy(100);
-    EXPECT_EQ(tsp.GetAnisotropy(), 64);
-    tsp.SetAnisotropy(255);
-    EXPECT_EQ(tsp.GetAnisotropy(), 128);
+std::array<std::uint16_t, static_cast<size_t>(EntityType::Count)>
+        REHandle_abstract::uid_table;
+
+std::ostream& operator<<(std::ostream& os, const REHandle_abstract& uid) {
+    os << "[" << REHandle_abstract::TypeToString(uid.type) << ", "
+       << uid.GetId() << ", hash: " << uid.Hash() << "]";
+    return os;
 }
 
-}  // namespace tests
+const char* REHandle_abstract::TypeToString(EntityType type) {
+    static const size_t kTypesCount = static_cast<size_t>(EntityType::Count);
+    static const size_t kTypesMapped = 13;
+
+    static_assert(kTypesCount == kTypesMapped,
+                  "You forgot to add string value for new handle type.");
+
+    static const char* kTypesMapping[kTypesMapped] = {
+            "None",       "View",
+            "Scene",      "Geometry",
+            "Light",      "IndirectLight",
+            "Skybox",     "Camera",
+            "Material",   "MaterialInstance",
+            "Texture",    "VertexBuffer",
+            "IndexBuffer"};
+
+    return kTypesMapping[static_cast<size_t>(type)];
+}
+
+}  // namespace visualization
 }  // namespace open3d

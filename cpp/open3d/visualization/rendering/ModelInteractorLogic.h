@@ -26,58 +26,52 @@
 
 #pragma once
 
+#include <map>
+
 #include "open3d/visualization/rendering/RendererHandle.h"
+#include "open3d/visualization/rendering/RotationInteractorLogic.h"
 
 namespace open3d {
+
 namespace visualization {
-namespace gui {
 
-class UIImage {
+class Scene;
+
+class ModelInteractorLogic : public RotationInteractorLogic {
+    using Super = RotationInteractorLogic;
+
 public:
-    /// Uses image from the specified path. Each ImageLabel will use one
-    /// draw call.
-    explicit UIImage(const char* image_path);
-    /// Uses an existing texture, using texture coordinates
-    /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
-    /// This is useful for using an icon atlas to reduce draw calls.
-    explicit UIImage(visualization::TextureHandle texture_id,
-                     float u0 = 0.0f,
-                     float v0 = 0.0f,
-                     float u1 = 1.0f,
-                     float v1 = 1.0f);
-    ~UIImage();
+    ModelInteractorLogic(visualization::Scene* scene,
+                         visualization::Camera* camera,
+                         double min_far_plane);
+    virtual ~ModelInteractorLogic();
 
-    enum class Scaling {
-        NONE,   /// No scaling, fixed size
-        ANY,    /// Scales to any size and aspect ratio
-        ASPECT  /// Scales to any size, but fixed aspect ratio (default)
-    };
-    void SetScaling(Scaling scaling);
-    Scaling GetScaling() const;
+    void SetBoundingBox(
+            const geometry::AxisAlignedBoundingBox& bounds) override;
 
-    Size CalcPreferredSize(const Theme& theme) const;
+    void SetModel(GeometryHandle axes,
+                  const std::vector<GeometryHandle>& objects);
 
-    struct DrawParams {
-        // Default values are to make GCC happy and contented,
-        // pos and size don't have reasonable defaults.
-        float pos_x = 0.0f;
-        float pos_y = 0.0f;
-        float width = 0.0f;
-        float height = 0.0f;
-        float u0 = 0.0f;
-        float v0 = 0.0f;
-        float u1 = 1.0f;
-        float v1 = 1.0f;
-        visualization::TextureHandle texture;
-    };
-    DrawParams CalcDrawParams(visualization::Renderer& renderer,
-                              const Rect& frame) const;
+    void Rotate(int dx, int dy) override;
+    void RotateZ(int dx, int dy) override;
+    void Dolly(int dy, DragType drag_type) override;
+    void Pan(int dx, int dy) override;
+
+    void StartMouseDrag() override;
+    void UpdateMouseDragUI() override;
+    void EndMouseDrag() override;
 
 private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+    Scene* scene_;
+    GeometryHandle axes_;
+    std::vector<GeometryHandle> model_;
+    bool is_axes_visible_;
+
+    geometry::AxisAlignedBoundingBox bounds_at_mouse_down_;
+    std::map<GeometryHandle, Camera::Transform> transforms_at_mouse_down_;
+
+    void UpdateBoundingBox(const Camera::Transform& t);
 };
 
-}  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

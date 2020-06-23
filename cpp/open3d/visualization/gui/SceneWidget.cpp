@@ -30,16 +30,16 @@
 #include <set>
 
 #include "open3d/geometry/BoundingVolume.h"
-#include "open3d/visualization/Rendering/Camera.h"
-#include "open3d/visualization/Rendering/CameraInteractorLogic.h"
-#include "open3d/visualization/Rendering/IBLRotationInteractorLogic.h"
-#include "open3d/visualization/Rendering/LightDirectionInteractorLogic.h"
-#include "open3d/visualization/Rendering/ModelInteractorLogic.h"
-#include "open3d/visualization/Rendering/Scene.h"
-#include "open3d/visualization/Rendering/View.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/rendering/Camera.h"
+#include "open3d/visualization/rendering/CameraInteractorLogic.h"
+#include "open3d/visualization/rendering/IBLRotationInteractorLogic.h"
+#include "open3d/visualization/rendering/LightDirectionInteractorLogic.h"
+#include "open3d/visualization/rendering/ModelInteractorLogic.h"
+#include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/rendering/View.h"
 
 namespace open3d {
 namespace visualization {
