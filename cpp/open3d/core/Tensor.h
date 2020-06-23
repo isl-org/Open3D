@@ -31,13 +31,13 @@
 #include <string>
 
 #include "open3d/core/Blob.h"
-#include "open3d/core/DLPack/DLPackConverter.h"
-#include "open3d/core/DLPack/dlpack.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
+#include "open3d/core/dlpack/DLPackConverter.h"
+#include "open3d/core/dlpack/dlpack.h"
 
 namespace open3d {
 namespace core {

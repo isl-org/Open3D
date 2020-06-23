@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "open3d/core/DLPack/dlpack.h"
+#include "open3d/core/dlpack/dlpack.h"
 
 namespace open3d {
 namespace core {
