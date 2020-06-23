@@ -362,10 +362,10 @@ class JupyterDocsBuilder:
         # Jupyter notebooks
         os.environ["CI"] = "true"
 
-        # Copy TestData directory to the tutorial folder
+        # Copy test_data directory to the tutorial folder
         test_data_in_dir = (Path(self.current_file_dir).parent / "examples" /
-                            "TestData")
-        test_data_out_dir = Path(self.current_file_dir) / "TestData"
+                            "test_data")
+        test_data_out_dir = Path(self.current_file_dir) / "test_data"
         if test_data_out_dir.exists():
             shutil.rmtree(test_data_out_dir)
         shutil.copytree(test_data_in_dir, test_data_out_dir)

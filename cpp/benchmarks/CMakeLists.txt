@@ -6,7 +6,7 @@ endif()
 
 ################################################################################
 #
-# build benchmark dependency here so we can pass the _GLIBCXX_USE_CXX11_ABI 
+# build benchmark dependency here so we can pass the _GLIBCXX_USE_CXX11_ABI
 # definition
 #
 
@@ -24,9 +24,9 @@ add_subdirectory(${Open3D_3RDPARTY_DIR}/benchmark ${CMAKE_BINARY_DIR}/3rdparty/b
 # set the cache vars introduced by the benchmark lib as advanced to not
 # clutter the cmake interfaces
 mark_as_advanced(
-    BENCHMARK_ENABLE_INSTALL 
-    BENCHMARK_ENABLE_GTEST_TESTS 
-    BENCHMARK_ENABLE_TESTING 
+    BENCHMARK_ENABLE_INSTALL
+    BENCHMARK_ENABLE_GTEST_TESTS
+    BENCHMARK_ENABLE_TESTING
     BENCHMARK_ENABLE_ASSEMBLY_TESTS
     BENCHMARK_DOWNLOAD_DEPENDENCIES
     BENCHMARK_BUILD_32_BITS
@@ -45,7 +45,7 @@ set(BENCHMARK_SOURCE_FILES
 )
 
 add_executable(benchmarks ${BENCHMARK_SOURCE_FILES})
-add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/TestData")
+add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
 add_definitions(-DBENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
 
 target_link_libraries(benchmarks ${CMAKE_PROJECT_NAME} benchmark::benchmark benchmark::benchmark_main)

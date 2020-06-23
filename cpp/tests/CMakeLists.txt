@@ -26,7 +26,7 @@ if (NOT ENABLE_GUI)
 endif()
 
 add_executable(tests ${UNIT_TEST_SOURCE_FILES})
-add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/TestData")
+add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
 
 # If gpu not available, add "DISABLED_" to the gpu test names
 if(BUILD_CUDA_MODULE)

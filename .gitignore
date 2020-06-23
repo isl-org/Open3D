@@ -49,20 +49,20 @@ compile_commands.json
 
 # Example resources
 examples/Python/ReconstructionSystem/dataset/
-examples/TestData/fountain_small
-examples/TestData/Armadillo.ply
-examples/TestData/Bunny.ply
-examples/TestData/eagle.ply
-examples/TestData/voxelized.ply
+examples/test_data/fountain_small
+examples/test_data/Armadillo.ply
+examples/test_data/Bunny.ply
+examples/test_data/eagle.ply
+examples/test_data/voxelized.ply
 examples/Python/Basic/voxel_grid_test.ply
 examples/Python/Benchmark/testdata/
 examples/Python/Misc/test.jpg
-examples/TestData/GraphOptimization/pose_graph_example_fragment_optimized.json
-examples/TestData/GraphOptimization/pose_graph_example_global_optimized.json
-examples/TestData/depth/
-examples/TestData/image/
-examples/TestData/sync.ply
-examples/TestData/sync.png
+examples/test_data/GraphOptimization/pose_graph_example_fragment_optimized.json
+examples/test_data/GraphOptimization/pose_graph_example_global_optimized.json
+examples/test_data/depth/
+examples/test_data/image/
+examples/test_data/sync.ply
+examples/test_data/sync.png
 examples/Python/Advanced/multiway_registration.pcd
 examples/Python/Advanced/test.json
 examples/Python/Advanced/viewpoint.json
@@ -74,7 +74,7 @@ examples/Python/Basic/copy_of_crate.png
 examples/Python/Basic/copy_of_crate.obj
 
 # doc
-docs/TestData
+docs/test_data
 docs/tutorial/**/*.ipynb
 docs/tutorial/**/*.py
 docs/tutorial/**/*.jpg

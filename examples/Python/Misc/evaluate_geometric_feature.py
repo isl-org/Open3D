@@ -21,13 +21,13 @@ def evaluate(pcd_target, pcd_source, feature_target, feature_source):
 
 if __name__ == "__main__":
     pcd_target = o3d.io.read_point_cloud(
-        "../../TestData/Feature/cloud_bin_0.pcd")
+        "../../test_data/Feature/cloud_bin_0.pcd")
     pcd_source = o3d.io.read_point_cloud(
-        "../../TestData/Feature/cloud_bin_1.pcd")
+        "../../test_data/Feature/cloud_bin_1.pcd")
     feature_target = o3d.io.read_feature(
-        "../../TestData/Feature/cloud_bin_0.fpfh.bin")
+        "../../test_data/Feature/cloud_bin_0.fpfh.bin")
     feature_source = o3d.io.read_feature(
-        "../../TestData/Feature/cloud_bin_1.fpfh.bin")
+        "../../test_data/Feature/cloud_bin_1.fpfh.bin")
     pt_dis = evaluate(pcd_target, pcd_source, feature_target, feature_source)
     num_good = sum(pt_dis < 0.075)
     print(
