@@ -1,5 +1,5 @@
 # some black magic to automatically create a header file from shader files
-file(GLOB SHADER_FILES "shader/GLSL/*.glsl")
+file(GLOB SHADER_FILES "shader/glsl/*.glsl")
 
 add_custom_command(
     OUTPUT ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h
