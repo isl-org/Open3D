@@ -66,8 +66,9 @@ public:
 
     Scene* GetScene() const;
     Camera* GetCamera() const;
-    const std::vector<GeometryHandle>& GetModel() const;  // model geometry
-    GeometryHandle GetAxis() const;  // creates axis if necessary
+    const std::vector<GeometryHandle>& GetModel(
+            LOD lod = LOD::HIGH_DETAIL) const;
+    GeometryHandle GetAxis() const;
     SkyboxHandle GetSkybox() const;
     IndirectLightHandle GetIndirectLight() const;
     LightHandle GetSun() const;

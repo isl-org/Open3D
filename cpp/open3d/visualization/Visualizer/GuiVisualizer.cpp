@@ -1870,7 +1870,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
             auto menubar = gui::Application::GetInstance().GetMenubar();
             menubar->SetChecked(HELP_CAMERA, is_visible);
             if (is_visible) {
-                impl_->scene_wgt_->SetCameraChangedCallback(
+                impl_->scene_wgt_->SetOnCameraChanged(
                         [this](visualization::Camera *cam) {
                             auto children =
                                     this->impl_->help_camera_->GetChildren();
@@ -1891,7 +1891,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
                             this->SetNeedsLayout();
                         });
             } else {
-                impl_->scene_wgt_->SetCameraChangedCallback(
+                impl_->scene_wgt_->SetOnCameraChanged(
                         std::function<void(visualization::Camera *)>());
             }
             break;

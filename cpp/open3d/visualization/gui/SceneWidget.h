@@ -64,7 +64,7 @@ public:
     void SetupCamera(float verticalFoV,
                      const geometry::AxisAlignedBoundingBox& geometry_bounds,
                      const Eigen::Vector3f& center_of_rotation);
-    void SetCameraChangedCallback(
+    void SetOnCameraChanged(
             std::function<void(visualization::Camera*)> on_cam_changed);
 
     /// Enables changing the directional light with the mouse.

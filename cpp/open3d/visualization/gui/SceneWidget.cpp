@@ -63,18 +63,18 @@ public:
 
 class RotateSunInteractor : public MouseInteractor {
 public:
-    RotateSunInteractor(Scene* scene, Camera* camera)
-        : light_dir_(std::make_unique<LightDirectionInteractorLogic>(scene,
-                                                                     camera)) {}
+    RotateSunInteractor(Open3DScene* scene, Camera* camera)
+        : light_dir_(std::make_unique<LightDirectionInteractorLogic>(
+                  scene->GetScene(), camera)) {
+        light_dir_->SetDirectionalLight(scene->GetSun());
+    }
 
     MatrixInteractorLogic& GetMatrixInteractor() override {
         return *light_dir_.get();
     }
 
-    void SetDirectionalLight(
-            LightHandle dir_light,
+    void SetOnDirectionalLightChanged(
             std::function<void(const Eigen::Vector3f&)> on_changed) {
-        light_dir_->SetDirectionalLight(dir_light);
         on_light_dir_changed_ = on_changed;
     }
 
@@ -394,21 +394,41 @@ protected:
 };
 
 class RotateModelInteractor : public RotationInteractor {
+    using Super = RotationInteractor;
+
 public:
-    explicit RotateModelInteractor(Scene* scene, Camera* camera)
+    explicit RotateModelInteractor(Open3DScene* scene, Camera* camera)
         : RotationInteractor(),
-          rotation_(new ModelInteractorLogic(scene, camera, MIN_FAR_PLANE)) {
+          rotation_(new ModelInteractorLogic(
+                  scene->GetScene(), camera, MIN_FAR_PLANE)),
+          scene_(scene) {
         SetInteractor(rotation_.get());
     }
 
-    void SetModel(GeometryHandle axes,
-                  const std::vector<GeometryHandle>& objects) {
-        rotation_->SetModel(axes, objects);
+    void Mouse(const MouseEvent& e) override {
+        // We need to make sure rotation_ gets the geometry handles it
+        // needs to rotate. We can't just cache this in the constructor,
+        // because the caller may have given us an empty scene which it
+        // later fills. (Also, just in case the scene geometry is updated,
+        // if we all users to load a second model.) We need to make sure
+        // that all levels of detail are updated. The handles might be
+        // the same, but it turns that works out fine because rotation_
+        // calculates the new matrix from the matrix at mouse down, so
+        // the calculation is not cumulative if there are multiple copies
+        // of the object, merely duplicated.
+        if (e.type == MouseEvent::BUTTON_DOWN) {
+            std::vector<GeometryHandle> geometries = scene_->GetModel();
+            for (auto& fast : scene_->GetModel(Open3DScene::LOD::FAST)) {
+                geometries.push_back(fast);
+            }
+            rotation_->SetModel(scene_->GetAxis(), geometries);
+        }
+        Super::Mouse(e);
     }
 
 private:
     std::unique_ptr<ModelInteractorLogic> rotation_;
-    GeometryHandle axes_;
+    Open3DScene* scene_;
 };
 
 class RotateCameraInteractor : public RotationInteractor {
@@ -452,11 +472,12 @@ private:
 // ----------------------------------------------------------------------------
 class Interactors {
 public:
-    Interactors(Scene* scene, Camera* camera)
+    Interactors(Open3DScene* scene, Camera* camera)
         : rotate_(std::make_unique<RotateCameraInteractor>(camera)),
           fly_(std::make_unique<FlyInteractor>(camera)),
           sun_(std::make_unique<RotateSunInteractor>(scene, camera)),
-          ibl_(std::make_unique<RotateIBLInteractor>(scene, camera)),
+          ibl_(std::make_unique<RotateIBLInteractor>(scene->GetScene(),
+                                                     camera)),
           model_(std::make_unique<RotateModelInteractor>(scene, camera)) {
         current_ = rotate_.get();
     }
@@ -481,19 +502,13 @@ public:
         rotate_->SetCenterOfRotation(center);
     }
 
-    void SetDirectionalLight(
-            LightHandle dirLight,
+    void SetOnDirectionalLightChanged(
             std::function<void(const Eigen::Vector3f&)> onChanged) {
-        sun_->SetDirectionalLight(dirLight, onChanged);
+        sun_->SetOnDirectionalLightChanged(onChanged);
     }
 
     void SetSkyboxHandle(SkyboxHandle skybox, bool isOn) {
         ibl_->SetSkyboxHandle(skybox, isOn);
-    }
-
-    void SetModel(GeometryHandle axes,
-                  const std::vector<GeometryHandle>& objects) {
-        model_->SetModel(axes, objects);
     }
 
     SceneWidget::Controls GetControls() const {
@@ -639,7 +654,7 @@ void SceneWidget::SetupCamera(
                                Camera::FovType::Vertical);
 }
 
-void SceneWidget::SetCameraChangedCallback(
+void SceneWidget::SetOnCameraChanged(
         std::function<void(Camera*)> on_cam_changed) {
     impl_->on_camera_changed_ = on_cam_changed;
 }
@@ -647,8 +662,8 @@ void SceneWidget::SetCameraChangedCallback(
 void SceneWidget::SetOnSunDirectionChanged(
         std::function<void(const Eigen::Vector3f&)> on_dir_changed) {
     impl_->on_light_dir_changed_ = on_dir_changed;
-    impl_->controls_->SetDirectionalLight(
-            impl_->scene_->GetSun(), [this](const Eigen::Vector3f& dir) {
+    impl_->controls_->SetOnDirectionalLightChanged(
+            [this](const Eigen::Vector3f& dir) {
                 impl_->scene_->GetScene()->SetLightDirection(
                         impl_->scene_->GetSun(), dir);
                 if (impl_->on_light_dir_changed_) {
@@ -669,12 +684,9 @@ void SceneWidget::SetScene(std::shared_ptr<Open3DScene> scene) {
     impl_->scene_ = scene;
     if (impl_->scene_) {
         impl_->view_id_ = impl_->scene_->CreateView();
-        auto scene = GetScene()->GetScene();
         auto view = impl_->scene_->GetView(impl_->view_id_);
-        impl_->controls_ =
-                std::make_shared<Interactors>(scene, view->GetCamera());
-        std::vector<GeometryHandle> geometries = impl_->scene_->GetModel();
-        impl_->controls_->SetModel(impl_->scene_->GetAxis(), geometries);
+        impl_->controls_ = std::make_shared<Interactors>(impl_->scene_.get(),
+                                                         view->GetCamera());
     }
 }
 

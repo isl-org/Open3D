@@ -37,7 +37,7 @@ namespace open3d {
 namespace visualization {
 
 namespace {
-std::shared_ptr<geometry::TriangleMesh> CreateAxes(double axis_length) {
+std::shared_ptr<geometry::TriangleMesh> CreateAxisGeometry(double axis_length) {
     const double sphere_radius = 0.005 * axis_length;
     const double cyl_radius = 0.0025 * axis_length;
     const double cone_radius = 0.0075 * axis_length;
@@ -81,11 +81,38 @@ std::shared_ptr<geometry::TriangleMesh> CreateAxes(double axis_length) {
 
     return mesh_frame;
 }
+
+GeometryHandle RecreateAxis(Scene* scene,
+                            GeometryHandle old_id,
+                            const geometry::AxisAlignedBoundingBox& bounds,
+                            bool enabled) {
+    if (old_id) {
+        scene->RemoveGeometry(old_id);
+    }
+
+    // Axes length should be the longer of the bounds extent or 25% of the
+    // distance from the origin. The latter is necessary so that the axis is
+    // big enough to be visible even if the object is far from the origin.
+    // See caterpillar.ply from Tanks & Temples.
+    auto axis_length = bounds.GetMaxExtent();
+    if (axis_length < 0.001) {  // avoid div by zero errors in CreateAxes()
+        axis_length = 1.0;
+    }
+    axis_length = std::max(axis_length, 0.25 * bounds.GetCenter().norm());
+    auto mesh = CreateAxisGeometry(axis_length);
+    auto axis = scene->AddGeometry(*mesh);
+    scene->SetGeometryShadows(axis, false, false);
+    scene->SetEntityEnabled(axis, enabled);
+    return axis;
+}
+
 }  // namespace
 
 Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
+
+    axis_ = RecreateAxis(scene, axis_, bounds_, false);
 
     visualization::LightDescription desc;
     desc.intensity = 45000;
@@ -96,8 +123,9 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
 }
 
 Open3DScene::~Open3DScene() {
-    ClearGeometry();  // also clears axis_
+    ClearGeometry();
     auto scene = renderer_.GetScene(scene_);
+    scene->RemoveGeometry(axis_);
     scene->SetIndirectLight(IndirectLightHandle());
     scene->SetSkybox(SkyboxHandle());
 
@@ -148,8 +176,7 @@ void Open3DScene::ClearGeometry() {
     model_.clear();
     fast_model_.clear();
     bounds_ = geometry::AxisAlignedBoundingBox();
-    scene->RemoveGeometry(axis_);
-    axis_ = GeometryHandle();
+    axis_ = RecreateAxis(scene, axis_, bounds_, scene->GetEntityEnabled(axis_));
 }
 
 GeometryHandle Open3DScene::AddGeometry(
@@ -180,11 +207,7 @@ GeometryHandle Open3DScene::AddGeometry(
     }
 
     // Bounding box may have changed, force recreation of axes
-    if (axis_) {
-        scene->RemoveGeometry(axis_);
-        axis_ = GeometryHandle();
-        GetAxis();  // side-effect: creates the axes
-    }
+    axis_ = RecreateAxis(scene, axis_, bounds_, scene->GetEntityEnabled(axis_));
 
     return hgeom;
 }
@@ -223,28 +246,16 @@ Camera* Open3DScene::GetCamera() const {
     return view->GetCamera();
 }
 
-const std::vector<GeometryHandle>& Open3DScene::GetModel() const {
-    return model_;
-}
-
-GeometryHandle Open3DScene::GetAxis() const {
-    if (!axis_) {
-        // Axes length should be the longer of the bounds extent or 25% of the
-        // distance from the origin. The latter is necessary so that the axis is
-        // big enough to be visible even if the object is far from the origin.
-        // See caterpillar.ply from Tanks & Temples.
-        auto axis_length = bounds_.GetMaxExtent();
-        if (axis_length < 0.001) {  // avoid div by zero errors in CreateAxes()
-            axis_length = 1.0;
-        }
-        axis_length = std::max(axis_length, 0.25 * bounds_.GetCenter().norm());
-        auto mesh = CreateAxes(axis_length);
-        auto scene = renderer_.GetScene(scene_);
-        axis_ = scene->AddGeometry(*mesh);
+const std::vector<GeometryHandle>& Open3DScene::GetModel(
+        LOD lod /*= LOD::HIGH_DETAIL*/) const {
+    if (lod == LOD::FAST) {
+        return fast_model_;
+    } else {
+        return model_;
     }
-    return axis_;
 }
 
+GeometryHandle Open3DScene::GetAxis() const { return axis_; }
 SkyboxHandle Open3DScene::GetSkybox() const { return skybox_; }
 IndirectLightHandle Open3DScene::GetIndirectLight() const { return ibl_; }
 LightHandle Open3DScene::GetSun() const { return sun_; }
