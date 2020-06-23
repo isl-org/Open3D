@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/ClassIO/PointCloudIO.h"
+#include "open3d/io/PointCloudIO.h"
 
 #include <iostream>
 #include <unordered_map>

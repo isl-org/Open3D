@@ -26,7 +26,7 @@
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
+#include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/Utility/DrawGeometry.h"
 #include "open3d/visualization/Utility/SelectionPolygonVolume.h"

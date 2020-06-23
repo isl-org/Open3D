@@ -26,11 +26,11 @@
 
 #include <rply.h>
 
-#include "open3d/io/ClassIO/FileFormatIO.h"
-#include "open3d/io/ClassIO/LineSetIO.h"
-#include "open3d/io/ClassIO/PointCloudIO.h"
-#include "open3d/io/ClassIO/TriangleMeshIO.h"
-#include "open3d/io/ClassIO/VoxelGridIO.h"
+#include "open3d/io/FileFormatIO.h"
+#include "open3d/io/LineSetIO.h"
+#include "open3d/io/PointCloudIO.h"
+#include "open3d/io/TriangleMeshIO.h"
+#include "open3d/io/VoxelGridIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/ProgressReporters.h"
 

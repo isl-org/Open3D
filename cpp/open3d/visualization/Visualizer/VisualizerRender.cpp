@@ -26,9 +26,9 @@
 
 #include "open3d/camera/PinholeCameraTrajectory.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
-#include "open3d/io/ClassIO/ImageIO.h"
-#include "open3d/io/ClassIO/PointCloudIO.h"
+#include "open3d/io/IJsonConvertibleIO.h"
+#include "open3d/io/ImageIO.h"
+#include "open3d/io/PointCloudIO.h"
 #include "open3d/visualization/Utility/GLHelper.h"
 #include "open3d/visualization/Visualizer/ViewParameters.h"
 #include "open3d/visualization/Visualizer/ViewTrajectory.h"

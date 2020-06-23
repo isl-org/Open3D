@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/ClassIO/VoxelGridIO.h"
+#include "open3d/io/VoxelGridIO.h"
 
 #include <unordered_map>
 

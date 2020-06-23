@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/ClassIO/OctreeIO.h"
+#include "open3d/io/OctreeIO.h"
 
 #include <unordered_map>
 
-#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
+#include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 

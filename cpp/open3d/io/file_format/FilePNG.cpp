@@ -26,7 +26,7 @@
 
 #include <png.h>
 
-#include "open3d/io/ClassIO/ImageIO.h"
+#include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

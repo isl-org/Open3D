@@ -28,9 +28,9 @@
 #include <numeric>
 #include <vector>
 
-#include "open3d/io/ClassIO/FileFormatIO.h"
-#include "open3d/io/ClassIO/ImageIO.h"
-#include "open3d/io/ClassIO/TriangleMeshIO.h"
+#include "open3d/io/FileFormatIO.h"
+#include "open3d/io/ImageIO.h"
+#include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 

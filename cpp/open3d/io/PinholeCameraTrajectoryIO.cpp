@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/ClassIO/ImageWarpingFieldIO.h"
+#include "open3d/io/PinholeCameraTrajectoryIO.h"
 
 #include <unordered_map>
 
-#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
+#include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 
@@ -37,88 +37,86 @@ namespace open3d {
 namespace {
 using namespace io;
 
-bool ReadImageWarpingFieldFromJSON(
+bool ReadPinholeCameraTrajectoryFromJSON(
         const std::string &filename,
-        pipelines::color_map::ImageWarpingField &warping_field) {
-    return ReadIJsonConvertible(filename, warping_field);
+        camera::PinholeCameraTrajectory &trajectory) {
+    return ReadIJsonConvertible(filename, trajectory);
 }
 
-bool WriteImageWarpingFieldToJSON(
+bool WritePinholeCameraTrajectoryToJSON(
         const std::string &filename,
-        const pipelines::color_map::ImageWarpingField &warping_field) {
-    return WriteIJsonConvertibleToJSON(filename, warping_field);
+        const camera::PinholeCameraTrajectory &trajectory) {
+    return WriteIJsonConvertibleToJSON(filename, trajectory);
 }
 
 static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &,
-                           pipelines::color_map::ImageWarpingField &)>>
-        file_extension_to_warping_field_read_function{
-                {"json", ReadImageWarpingFieldFromJSON},
+                           camera::PinholeCameraTrajectory &)>>
+        file_extension_to_trajectory_read_function{
+                {"log", ReadPinholeCameraTrajectoryFromLOG},
+                {"json", ReadPinholeCameraTrajectoryFromJSON},
+                {"txt", ReadPinholeCameraTrajectoryFromTUM},
         };
 
 static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &,
-                           const pipelines::color_map::ImageWarpingField &)>>
-        file_extension_to_warping_field_write_function{
-                {"json", WriteImageWarpingFieldToJSON},
+                           const camera::PinholeCameraTrajectory &)>>
+        file_extension_to_trajectory_write_function{
+                {"log", WritePinholeCameraTrajectoryToLOG},
+                {"json", WritePinholeCameraTrajectoryToJSON},
+                {"txt", WritePinholeCameraTrajectoryToTUM},
         };
 
 }  // unnamed namespace
 
 namespace io {
 
-std::shared_ptr<pipelines::color_map::ImageWarpingField>
-CreateImageWarpingFieldFromFile(const std::string &filename) {
-    auto warping_field =
-            std::make_shared<pipelines::color_map::ImageWarpingField>();
-    ReadImageWarpingField(filename, *warping_field);
-    return warping_field;
+std::shared_ptr<camera::PinholeCameraTrajectory>
+CreatePinholeCameraTrajectoryFromFile(const std::string &filename) {
+    auto trajectory = std::make_shared<camera::PinholeCameraTrajectory>();
+    ReadPinholeCameraTrajectory(filename, *trajectory);
+    return trajectory;
 }
 
-bool ReadImageWarpingField(
-        const std::string &filename,
-        pipelines::color_map::ImageWarpingField &warping_field) {
+bool ReadPinholeCameraTrajectory(const std::string &filename,
+                                 camera::PinholeCameraTrajectory &trajectory) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Read pipelines::color_map::ImageWarpingField failed: unknown "
-                "file "
+                "Read camera::PinholeCameraTrajectory failed: unknown file "
                 "extension.");
         return false;
     }
     auto map_itr =
-            file_extension_to_warping_field_read_function.find(filename_ext);
-    if (map_itr == file_extension_to_warping_field_read_function.end()) {
+            file_extension_to_trajectory_read_function.find(filename_ext);
+    if (map_itr == file_extension_to_trajectory_read_function.end()) {
         utility::LogWarning(
-                "Read pipelines::color_map::ImageWarpingField failed: unknown "
-                "file "
+                "Read camera::PinholeCameraTrajectory failed: unknown file "
                 "extension.");
         return false;
     }
-    return map_itr->second(filename, warping_field);
+    return map_itr->second(filename, trajectory);
 }
 
-bool WriteImageWarpingField(
+bool WritePinholeCameraTrajectory(
         const std::string &filename,
-        const pipelines::color_map::ImageWarpingField &trajectory) {
+        const camera::PinholeCameraTrajectory &trajectory) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Write pipelines::color_map::ImageWarpingField failed: unknown "
-                "file "
+                "Write camera::PinholeCameraTrajectory failed: unknown file "
                 "extension.");
         return false;
     }
     auto map_itr =
-            file_extension_to_warping_field_write_function.find(filename_ext);
-    if (map_itr == file_extension_to_warping_field_write_function.end()) {
+            file_extension_to_trajectory_write_function.find(filename_ext);
+    if (map_itr == file_extension_to_trajectory_write_function.end()) {
         utility::LogWarning(
-                "Write pipelines::color_map::ImageWarpingField failed: unknown "
-                "file "
+                "Write camera::PinholeCameraTrajectory failed: unknown file "
                 "extension.");
         return false;
     }

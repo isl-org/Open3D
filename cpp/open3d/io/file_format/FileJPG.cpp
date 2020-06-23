@@ -29,7 +29,7 @@
 
 #include <jpeglib.h>  // Include after cstddef to define size_t
 
-#include "open3d/io/ClassIO/ImageIO.h"
+#include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 

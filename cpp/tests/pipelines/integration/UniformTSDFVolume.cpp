@@ -27,7 +27,7 @@
 #include "open3d/pipelines/integration/UniformTSDFVolume.h"
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/RGBDImage.h"
-#include "open3d/io/ClassIO/ImageIO.h"
+#include "open3d/io/ImageIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/Utility/DrawGeometry.h"
 #include "tests/UnitTest.h"

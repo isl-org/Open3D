@@ -26,7 +26,7 @@
 
 #include <Eigen/Dense>
 
-#include "open3d/io/ClassIO/PinholeCameraTrajectoryIO.h"
+#include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 

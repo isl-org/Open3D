@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/ClassIO/ImageIO.h"
+#include "open3d/io/IJsonConvertibleIO.h"
 
 #include <unordered_map>
 
@@ -38,67 +38,63 @@ using namespace io;
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, geometry::Image &)>>
-        file_extension_to_image_read_function{
-                {"png", ReadImageFromPNG},
-                {"jpg", ReadImageFromJPG},
-                {"jpeg", ReadImageFromJPG},
+        std::function<bool(const std::string &, utility::IJsonConvertible &)>>
+        file_extension_to_ijsonconvertible_read_function{
+                {"json", ReadIJsonConvertibleFromJSON},
         };
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, const geometry::Image &, int)>>
-        file_extension_to_image_write_function{
-                {"png", WriteImageToPNG},
-                {"jpg", WriteImageToJPG},
-                {"jpeg", WriteImageToJPG},
+        std::function<bool(const std::string &,
+                           const utility::IJsonConvertible &)>>
+        file_extension_to_ijsonconvertible_write_function{
+                {"json", WriteIJsonConvertibleToJSON},
         };
 
 }  // unnamed namespace
 
 namespace io {
 
-std::shared_ptr<geometry::Image> CreateImageFromFile(
-        const std::string &filename) {
-    auto image = std::make_shared<geometry::Image>();
-    ReadImage(filename, *image);
-    return image;
-}
-
-bool ReadImage(const std::string &filename, geometry::Image &image) {
+bool ReadIJsonConvertible(const std::string &filename,
+                          utility::IJsonConvertible &object) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Read geometry::Image failed: unknown file extension.");
+                "Read utility::IJsonConvertible failed: unknown file "
+                "extension.");
         return false;
     }
-    auto map_itr = file_extension_to_image_read_function.find(filename_ext);
-    if (map_itr == file_extension_to_image_read_function.end()) {
+    auto map_itr =
+            file_extension_to_ijsonconvertible_read_function.find(filename_ext);
+    if (map_itr == file_extension_to_ijsonconvertible_read_function.end()) {
         utility::LogWarning(
-                "Read geometry::Image failed: unknown file extension.");
+                "Read utility::IJsonConvertible failed: unknown file "
+                "extension.");
         return false;
     }
-    return map_itr->second(filename, image);
+    return map_itr->second(filename, object);
 }
 
-bool WriteImage(const std::string &filename,
-                const geometry::Image &image,
-                int quality /* = 90*/) {
+bool WriteIJsonConvertible(const std::string &filename,
+                           const utility::IJsonConvertible &object) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Write geometry::Image failed: unknown file extension.");
+                "Write utility::IJsonConvertible failed: unknown file "
+                "extension.");
         return false;
     }
-    auto map_itr = file_extension_to_image_write_function.find(filename_ext);
-    if (map_itr == file_extension_to_image_write_function.end()) {
+    auto map_itr = file_extension_to_ijsonconvertible_write_function.find(
+            filename_ext);
+    if (map_itr == file_extension_to_ijsonconvertible_write_function.end()) {
         utility::LogWarning(
-                "Write geometry::Image failed: unknown file extension.");
+                "Write utility::IJsonConvertible failed: unknown file "
+                "extension.");
         return false;
     }
-    return map_itr->second(filename, image, quality);
+    return map_itr->second(filename, object);
 }
 
 }  // namespace io

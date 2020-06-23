@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/ClassIO/TriangleMeshIO.h"
+#include "open3d/io/TriangleMeshIO.h"
 
 #include <unordered_map>
 

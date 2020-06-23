@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/ClassIO/FeatureIO.h"
+#include "open3d/io/FeatureIO.h"
 
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"

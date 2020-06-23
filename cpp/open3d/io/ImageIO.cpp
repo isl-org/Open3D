@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
+#include "open3d/io/ImageIO.h"
 
 #include <unordered_map>
 
@@ -38,63 +38,67 @@ using namespace io;
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, utility::IJsonConvertible &)>>
-        file_extension_to_ijsonconvertible_read_function{
-                {"json", ReadIJsonConvertibleFromJSON},
+        std::function<bool(const std::string &, geometry::Image &)>>
+        file_extension_to_image_read_function{
+                {"png", ReadImageFromPNG},
+                {"jpg", ReadImageFromJPG},
+                {"jpeg", ReadImageFromJPG},
         };
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &,
-                           const utility::IJsonConvertible &)>>
-        file_extension_to_ijsonconvertible_write_function{
-                {"json", WriteIJsonConvertibleToJSON},
+        std::function<bool(const std::string &, const geometry::Image &, int)>>
+        file_extension_to_image_write_function{
+                {"png", WriteImageToPNG},
+                {"jpg", WriteImageToJPG},
+                {"jpeg", WriteImageToJPG},
         };
 
 }  // unnamed namespace
 
 namespace io {
 
-bool ReadIJsonConvertible(const std::string &filename,
-                          utility::IJsonConvertible &object) {
-    std::string filename_ext =
-            utility::filesystem::GetFileExtensionInLowerCase(filename);
-    if (filename_ext.empty()) {
-        utility::LogWarning(
-                "Read utility::IJsonConvertible failed: unknown file "
-                "extension.");
-        return false;
-    }
-    auto map_itr =
-            file_extension_to_ijsonconvertible_read_function.find(filename_ext);
-    if (map_itr == file_extension_to_ijsonconvertible_read_function.end()) {
-        utility::LogWarning(
-                "Read utility::IJsonConvertible failed: unknown file "
-                "extension.");
-        return false;
-    }
-    return map_itr->second(filename, object);
+std::shared_ptr<geometry::Image> CreateImageFromFile(
+        const std::string &filename) {
+    auto image = std::make_shared<geometry::Image>();
+    ReadImage(filename, *image);
+    return image;
 }
 
-bool WriteIJsonConvertible(const std::string &filename,
-                           const utility::IJsonConvertible &object) {
+bool ReadImage(const std::string &filename, geometry::Image &image) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Write utility::IJsonConvertible failed: unknown file "
-                "extension.");
+                "Read geometry::Image failed: unknown file extension.");
         return false;
     }
-    auto map_itr = file_extension_to_ijsonconvertible_write_function.find(
-            filename_ext);
-    if (map_itr == file_extension_to_ijsonconvertible_write_function.end()) {
+    auto map_itr = file_extension_to_image_read_function.find(filename_ext);
+    if (map_itr == file_extension_to_image_read_function.end()) {
         utility::LogWarning(
-                "Write utility::IJsonConvertible failed: unknown file "
-                "extension.");
+                "Read geometry::Image failed: unknown file extension.");
         return false;
     }
-    return map_itr->second(filename, object);
+    return map_itr->second(filename, image);
+}
+
+bool WriteImage(const std::string &filename,
+                const geometry::Image &image,
+                int quality /* = 90*/) {
+    std::string filename_ext =
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
+    if (filename_ext.empty()) {
+        utility::LogWarning(
+                "Write geometry::Image failed: unknown file extension.");
+        return false;
+    }
+    auto map_itr = file_extension_to_image_write_function.find(filename_ext);
+    if (map_itr == file_extension_to_image_write_function.end()) {
+        utility::LogWarning(
+                "Write geometry::Image failed: unknown file extension.");
+        return false;
+    }
+    return map_itr->second(filename, image, quality);
 }
 
 }  // namespace io

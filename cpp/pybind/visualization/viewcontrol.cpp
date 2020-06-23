@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/Visualizer/ViewControl.h"
-#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
+#include "open3d/io/IJsonConvertibleIO.h"
 
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"
