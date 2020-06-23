@@ -36,6 +36,7 @@
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 
@@ -109,6 +110,10 @@ std::shared_ptr<geometry::PointCloud> PointCloud::ComputeISSKeypoints(
         const double resolution = ComputeModelResolution(points_, kdtree);
         salient_radius = 6 * resolution;
         non_max_radius = 4 * resolution;
+        utility::LogDebug(
+                "[ComputeISSKeypoints] Computed salient_radius = {}, "
+                "non_max_radius = {} from input model",
+                salient_radius, non_max_radius);
     }
     std::vector<double> third_eigen_values(points_.size());
 
@@ -151,8 +156,11 @@ std::shared_ptr<geometry::PointCloud> PointCloud::ComputeISSKeypoints(
         }
     }
 
+    utility::LogDebug(
+            "[ComputeISSKeypoints] Extracted {} Keypooints from input model",
+            keypoints.size());
     return std::make_shared<geometry::PointCloud>(keypoints);
-}  // namespace geometry
+}
 
 }  // namespace geometry
 }  // namespace open3d
