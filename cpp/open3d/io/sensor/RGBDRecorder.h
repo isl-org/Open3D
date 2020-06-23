@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,37 +26,36 @@
 
 #pragma once
 
-#include "open3d/geometry/RGBDImage.h"
-#include "open3d/io/Sensor/AzureKinect/MKVMetadata.h"
-#include "open3d/utility/IJsonConvertible.h"
-
-struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
-struct _k4a_device_t;                // typedef _k4a_device_t* k4a_device_t;
-struct _k4a_capture_t;               // typedef _k4a_capture_t* k4a_capture_t;
-struct _k4a_record_t;                // typedef _k4a_record_t* k4a_record_t;
+#include "open3d/io/sensor/RGBDSensorConfig.h"
 
 namespace open3d {
 namespace io {
 
-class MKVWriter {
+class RGBDRecorder {
 public:
-    MKVWriter();
-    virtual ~MKVWriter() {}
+    RGBDRecorder() {}
+    virtual ~RGBDRecorder() {}
 
-    bool IsOpened();
+    /// Init recorder, connect to sensor
+    virtual bool InitSensor() = 0;
 
-    /* We assume device is already set properly according to config */
-    bool Open(const std::string &filename,
-              const _k4a_device_configuration_t &config,
-              _k4a_device_t *device);
-    void Close();
+    /// Create recording file
+    virtual bool OpenRecord(const std::string &filename) = 0;
 
-    bool SetMetadata(const MKVMetadata &metadata);
-    bool NextFrame(_k4a_capture_t *);
+    /// Record one frame, return an RGBDImage. If \param write is true, the
+    /// RGBDImage frame will be written to file.
+    /// If \param enable_align_depth_to_color is true, the depth image will be
+    /// warped to align with the color image; otherwise the raw depth image
+    /// output will be saved. Setting \param enable_align_depth_to_color to
+    /// false is useful when recording at high resolution with high frame rates.
+    /// In this case, the depth image must be warped to align with the color
+    /// image with when reading from the recorded file.
+    virtual std::shared_ptr<geometry::RGBDImage> RecordFrame(
+            bool write, bool enable_align_depth_to_color) = 0;
 
-private:
-    _k4a_record_t *handle_;
-    MKVMetadata metadata_;
+    /// Flush data to recording file and disconnect from sensor
+    virtual bool CloseRecord() = 0;
 };
+
 }  // namespace io
 }  // namespace open3d

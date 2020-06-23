@@ -24,39 +24,58 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/Sensor/AzureKinect/MKVMetadata.h"
+#pragma once
 
-#include <json/json.h>
-#include <unordered_map>
+#include <memory>
+
+#include "open3d/io/sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "open3d/io/sensor/RGBDSensor.h"
+
+struct _k4a_capture_t;         // typedef _k4a_capture_t* k4a_capture_t;
+struct _k4a_device_t;          // typedef _k4a_device_t* k4a_device_t;
+struct _k4a_transformation_t;  // typedef _k4a_transformation_t*
+                               // k4a_transformation_t;
 
 namespace open3d {
+namespace geometry {
+class RGBDImage;
+class Image;
+}  // namespace geometry
+
 namespace io {
 
-bool MKVMetadata::ConvertToJsonValue(Json::Value &value) const {
-    intrinsics_.ConvertToJsonValue(value);
+// Avoid including AzureKinectRecorder.h
+class AzureKinectRecorder;
 
-    value["serial_number_"] = serial_number_;
-    value["color_mode"] = color_mode_;
-    value["depth_mode"] = depth_mode_;
+/// \class AzureKinectSensor
+///
+/// AzureKinect sensor.
+class AzureKinectSensor : public RGBDSensor {
+public:
+    /// \brief Default Constructor.
+    AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);
+    ~AzureKinectSensor();
 
-    value["stream_length_usec"] = stream_length_usec_;
-    value["width"] = width_;
-    value["height"] = height_;
+    bool Connect(size_t sensor_index) override;
+    std::shared_ptr<geometry::RGBDImage> CaptureFrame(
+            bool enable_align_depth_to_color) const override;
 
-    return true;
-}
-bool MKVMetadata::ConvertFromJsonValue(const Json::Value &value) {
-    intrinsics_.ConvertFromJsonValue(value);
+    static bool PrintFirmware(_k4a_device_t* device);
+    /// List available Azure Kinect devices.
+    static bool ListDevices();
+    static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
+            _k4a_capture_t* capture, _k4a_transformation_t* transformation);
 
-    serial_number_ = value["serial_number"].asString();
-    color_mode_ = value["color_mode"].asString();
-    depth_mode_ = value["depth_mode"].asString();
+protected:
+    _k4a_capture_t* CaptureRawFrame() const;
 
-    stream_length_usec_ = value["stream_length_usec"].asUInt64();
-    width_ = value["width"].asInt();
-    height_ = value["height"].asInt();
+    AzureKinectSensorConfig sensor_config_;
+    _k4a_transformation_t* transform_depth_to_color_;
+    _k4a_device_t* device_;
+    int timeout_;
 
-    return true;
-}
+    friend class AzureKinectRecorder;
+};
+
 }  // namespace io
 }  // namespace open3d

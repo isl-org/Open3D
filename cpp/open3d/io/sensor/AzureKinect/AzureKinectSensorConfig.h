@@ -26,55 +26,44 @@
 
 #pragma once
 
-#include <memory>
+#include <string>
+#include <unordered_map>
 
-#include "open3d/io/Sensor/AzureKinect/AzureKinectSensorConfig.h"
-#include "open3d/io/Sensor/RGBDSensor.h"
+#include "open3d/io/sensor/RGBDSensorConfig.h"
+#include "open3d/utility/IJsonConvertible.h"
 
-struct _k4a_capture_t;         // typedef _k4a_capture_t* k4a_capture_t;
-struct _k4a_device_t;          // typedef _k4a_device_t* k4a_device_t;
-struct _k4a_transformation_t;  // typedef _k4a_transformation_t*
-                               // k4a_transformation_t;
+struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 
 namespace open3d {
-namespace geometry {
-class RGBDImage;
-class Image;
-}  // namespace geometry
-
 namespace io {
 
-// Avoid including AzureKinectRecorder.h
-class AzureKinectRecorder;
+// Alternative implementation of _k4a_device_configuration_t with string values
 
-/// \class AzureKinectSensor
+/// \class AzureKinectSensorConfig
 ///
-/// AzureKinect sensor.
-class AzureKinectSensor : public RGBDSensor {
+/// AzureKinect sensor configuration.
+class AzureKinectSensorConfig : public RGBDSensorConfig {
 public:
-    /// \brief Default Constructor.
-    AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);
-    ~AzureKinectSensor();
+    /// Default constructor, default configs will be used
+    AzureKinectSensorConfig();
+    /// Initialize config with a map
+    AzureKinectSensorConfig(
+            const std::unordered_map<std::string, std::string> &config);
+    bool ConvertToJsonValue(Json::Value &value) const override;
+    bool ConvertFromJsonValue(const Json::Value &value) override;
 
-    bool Connect(size_t sensor_index) override;
-    std::shared_ptr<geometry::RGBDImage> CaptureFrame(
-            bool enable_align_depth_to_color) const override;
+public:
+    void ConvertFromNativeConfig(const _k4a_device_configuration_t &k4a_config);
+    _k4a_device_configuration_t ConvertToNativeConfig() const;
 
-    static bool PrintFirmware(_k4a_device_t* device);
-    /// List available Azure Kinect devices.
-    static bool ListDevices();
-    static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
-            _k4a_capture_t* capture, _k4a_transformation_t* transformation);
+public:
+    // To avoid including k4a or json header, configs is stored in a map
+    std::unordered_map<std::string, std::string> config_;
 
 protected:
-    _k4a_capture_t* CaptureRawFrame() const;
-
-    AzureKinectSensorConfig sensor_config_;
-    _k4a_transformation_t* transform_depth_to_color_;
-    _k4a_device_t* device_;
-    int timeout_;
-
-    friend class AzureKinectRecorder;
+    static bool IsValidConfig(
+            const std::unordered_map<std::string, std::string> &config,
+            bool verbose = true);
 };
 
 }  // namespace io

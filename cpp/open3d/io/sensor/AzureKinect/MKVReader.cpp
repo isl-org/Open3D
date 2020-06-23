@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/Sensor/AzureKinect/MKVReader.h"
+#include "open3d/io/sensor/AzureKinect/MKVReader.h"
 
 #include <json/json.h>
 #include <k4a/k4a.h>
@@ -33,8 +33,8 @@
 #include <turbojpeg.h>
 #include <iostream>
 
-#include "open3d/io/Sensor/AzureKinect/AzureKinectSensor.h"
-#include "open3d/io/Sensor/AzureKinect/K4aPlugin.h"
+#include "open3d/io/sensor/AzureKinect/AzureKinectSensor.h"
+#include "open3d/io/sensor/AzureKinect/K4aPlugin.h"
 
 namespace open3d {
 namespace io {

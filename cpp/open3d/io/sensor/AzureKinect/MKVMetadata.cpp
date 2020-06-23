@@ -24,34 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/io/sensor/AzureKinect/MKVMetadata.h"
 
-#include <memory>
-
-#include "open3d/io/Sensor/RGBDSensorConfig.h"
+#include <json/json.h>
+#include <unordered_map>
 
 namespace open3d {
-
-namespace geometry {
-class RGBDImage;
-};
-
 namespace io {
 
-class RGBDSensor {
-public:
-    RGBDSensor() {}
-    virtual bool Connect(size_t sensor_index) = 0;
-    virtual ~RGBDSensor(){};
+bool MKVMetadata::ConvertToJsonValue(Json::Value &value) const {
+    intrinsics_.ConvertToJsonValue(value);
 
-    /// Capture one frame, return an RGBDImage.
-    /// If \param enable_align_depth_to_color is true, the depth image will be
-    /// warped to align with the color image; otherwise the raw depth image
-    /// output will be saved. Setting \param enable_align_depth_to_color to
-    /// false is useful when capturing at high resolution with high frame rates.
-    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame(
-            bool enable_align_depth_to_color) const = 0;
-};
+    value["serial_number_"] = serial_number_;
+    value["color_mode"] = color_mode_;
+    value["depth_mode"] = depth_mode_;
 
+    value["stream_length_usec"] = stream_length_usec_;
+    value["width"] = width_;
+    value["height"] = height_;
+
+    return true;
+}
+bool MKVMetadata::ConvertFromJsonValue(const Json::Value &value) {
+    intrinsics_.ConvertFromJsonValue(value);
+
+    serial_number_ = value["serial_number"].asString();
+    color_mode_ = value["color_mode"].asString();
+    depth_mode_ = value["depth_mode"].asString();
+
+    stream_length_usec_ = value["stream_length_usec"].asUInt64();
+    width_ = value["width"].asInt();
+    height_ = value["height"].asInt();
+
+    return true;
+}
 }  // namespace io
 }  // namespace open3d

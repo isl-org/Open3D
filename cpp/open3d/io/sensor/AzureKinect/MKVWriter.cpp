@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/Sensor/AzureKinect/MKVWriter.h"
+#include "open3d/io/sensor/AzureKinect/MKVWriter.h"
 
 #include <k4a/k4a.h>
 #include <k4arecord/playback.h>
 #include <k4arecord/record.h>
 
-#include "open3d/io/Sensor/AzureKinect/K4aPlugin.h"
+#include "open3d/io/sensor/AzureKinect/K4aPlugin.h"
 
 namespace open3d {
 namespace io {

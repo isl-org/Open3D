@@ -31,7 +31,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "open3d/io/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "open3d/io/sensor/AzureKinect/AzureKinectSensorConfig.h"
 
 namespace open3d {
 namespace tests {

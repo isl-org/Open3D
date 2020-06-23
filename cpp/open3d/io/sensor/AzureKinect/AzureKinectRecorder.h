@@ -26,35 +26,59 @@
 
 #pragma once
 
-#include "open3d/io/Sensor/RGBDSensorConfig.h"
+#include <atomic>
+#include <memory>
+#include <string>
+
+#include "open3d/io/sensor/AzureKinect/AzureKinectSensor.h"
+#include "open3d/io/sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "open3d/io/sensor/RGBDRecorder.h"
+
+struct _k4a_record_t;  // typedef _k4a_record_t* k4a_record_t;
 
 namespace open3d {
+
+namespace geometry {
+class RGBDImage;
+class Image;
+}  // namespace geometry
+
 namespace io {
 
-class RGBDRecorder {
+/// \class AzureKinectRecorder
+///
+/// AzureKinect recorder.
+class AzureKinectRecorder : public RGBDRecorder {
 public:
-    RGBDRecorder() {}
-    virtual ~RGBDRecorder() {}
+    AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config,
+                        size_t sensor_index);
+    ~AzureKinectRecorder() override;
 
-    /// Init recorder, connect to sensor
-    virtual bool InitSensor() = 0;
+    /// Initialize sensor.
+    bool InitSensor() override;
+    /// Attempt to create and open an mkv file.
+    ///
+    /// \param filename Path to the mkv file.
+    bool OpenRecord(const std::string& filename) override;
+    /// Close the recorded mkv file.
+    bool CloseRecord() override;
+    /// Record a frame to mkv if flag is on and return an RGBD object.
+    ///
+    /// \param write Enable recording to mkv file.
+    /// \param enable_align_depth_to_color Enable aligning WFOV depth image to
+    /// the color image in visualizer.
+    std::shared_ptr<geometry::RGBDImage> RecordFrame(
+            bool write, bool enable_align_depth_to_color) override;
 
-    /// Create recording file
-    virtual bool OpenRecord(const std::string &filename) = 0;
+    /// Check if the mkv file is created.
+    bool IsRecordCreated() { return is_record_created_; }
 
-    /// Record one frame, return an RGBDImage. If \param write is true, the
-    /// RGBDImage frame will be written to file.
-    /// If \param enable_align_depth_to_color is true, the depth image will be
-    /// warped to align with the color image; otherwise the raw depth image
-    /// output will be saved. Setting \param enable_align_depth_to_color to
-    /// false is useful when recording at high resolution with high frame rates.
-    /// In this case, the depth image must be warped to align with the color
-    /// image with when reading from the recorded file.
-    virtual std::shared_ptr<geometry::RGBDImage> RecordFrame(
-            bool write, bool enable_align_depth_to_color) = 0;
+protected:
+    AzureKinectSensor sensor_;
+    _k4a_record_t* recording_;
+    size_t device_index_;
 
-    /// Flush data to recording file and disconnect from sensor
-    virtual bool CloseRecord() = 0;
+    bool is_record_created_ = false;
 };
 
 }  // namespace io

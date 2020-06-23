@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "open3d/io/sensor/AzureKinect/AzureKinectSensorConfig.h"
 
 #include <json/json.h>
 #include <k4a/k4a.h>
@@ -33,7 +33,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "open3d/io/Sensor/AzureKinect/K4aPlugin.h"
+#include "open3d/io/sensor/AzureKinect/K4aPlugin.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

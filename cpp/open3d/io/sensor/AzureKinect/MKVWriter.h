@@ -26,45 +26,37 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-
-#include "open3d/io/Sensor/RGBDSensorConfig.h"
+#include "open3d/geometry/RGBDImage.h"
+#include "open3d/io/sensor/AzureKinect/MKVMetadata.h"
 #include "open3d/utility/IJsonConvertible.h"
 
 struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
+struct _k4a_device_t;                // typedef _k4a_device_t* k4a_device_t;
+struct _k4a_capture_t;               // typedef _k4a_capture_t* k4a_capture_t;
+struct _k4a_record_t;                // typedef _k4a_record_t* k4a_record_t;
 
 namespace open3d {
 namespace io {
 
-// Alternative implementation of _k4a_device_configuration_t with string values
-
-/// \class AzureKinectSensorConfig
-///
-/// AzureKinect sensor configuration.
-class AzureKinectSensorConfig : public RGBDSensorConfig {
+class MKVWriter {
 public:
-    /// Default constructor, default configs will be used
-    AzureKinectSensorConfig();
-    /// Initialize config with a map
-    AzureKinectSensorConfig(
-            const std::unordered_map<std::string, std::string> &config);
-    bool ConvertToJsonValue(Json::Value &value) const override;
-    bool ConvertFromJsonValue(const Json::Value &value) override;
+    MKVWriter();
+    virtual ~MKVWriter() {}
 
-public:
-    void ConvertFromNativeConfig(const _k4a_device_configuration_t &k4a_config);
-    _k4a_device_configuration_t ConvertToNativeConfig() const;
+    bool IsOpened();
 
-public:
-    // To avoid including k4a or json header, configs is stored in a map
-    std::unordered_map<std::string, std::string> config_;
+    /* We assume device is already set properly according to config */
+    bool Open(const std::string &filename,
+              const _k4a_device_configuration_t &config,
+              _k4a_device_t *device);
+    void Close();
 
-protected:
-    static bool IsValidConfig(
-            const std::unordered_map<std::string, std::string> &config,
-            bool verbose = true);
+    bool SetMetadata(const MKVMetadata &metadata);
+    bool NextFrame(_k4a_capture_t *);
+
+private:
+    _k4a_record_t *handle_;
+    MKVMetadata metadata_;
 };
-
 }  // namespace io
 }  // namespace open3d
