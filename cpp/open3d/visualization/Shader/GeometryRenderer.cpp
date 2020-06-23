@@ -32,7 +32,7 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/Utility/PointCloudPicker.h"
 #include "open3d/visualization/Utility/SelectionPolygon.h"
-#include "open3d/visualization/Visualizer/RenderOptionWithEditing.h"
+#include "open3d/visualization/visualizer/RenderOptionWithEditing.h"
 
 namespace open3d {
 namespace visualization {

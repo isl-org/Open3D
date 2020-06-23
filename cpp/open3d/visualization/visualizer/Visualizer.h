@@ -42,8 +42,8 @@
 #include "open3d/geometry/Geometry.h"
 #include "open3d/visualization/Shader/GeometryRenderer.h"
 #include "open3d/visualization/Utility/ColorMap.h"
-#include "open3d/visualization/Visualizer/RenderOption.h"
-#include "open3d/visualization/Visualizer/ViewControl.h"
+#include "open3d/visualization/visualizer/RenderOption.h"
+#include "open3d/visualization/visualizer/ViewControl.h"
 
 namespace open3d {
 

@@ -30,7 +30,7 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/Utility/DrawGeometry.h"
 #include "open3d/visualization/Utility/SelectionPolygonVolume.h"
-#include "open3d/visualization/Visualizer/Visualizer.h"
+#include "open3d/visualization/visualizer/Visualizer.h"
 
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"

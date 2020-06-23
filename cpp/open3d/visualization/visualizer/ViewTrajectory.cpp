@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/ViewTrajectory.h"
+#include "open3d/visualization/visualizer/ViewTrajectory.h"
 
 #include <json/json.h>
 #include <Eigen/Dense>

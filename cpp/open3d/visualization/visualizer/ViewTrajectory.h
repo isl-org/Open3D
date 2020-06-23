@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "open3d/utility/IJsonConvertible.h"
-#include "open3d/visualization/Visualizer/ViewParameters.h"
+#include "open3d/visualization/visualizer/ViewParameters.h"
 
 namespace open3d {
 namespace visualization {

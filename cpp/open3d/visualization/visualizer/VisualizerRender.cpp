@@ -30,9 +30,9 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/visualization/Utility/GLHelper.h"
-#include "open3d/visualization/Visualizer/ViewParameters.h"
-#include "open3d/visualization/Visualizer/ViewTrajectory.h"
-#include "open3d/visualization/Visualizer/Visualizer.h"
+#include "open3d/visualization/visualizer/ViewParameters.h"
+#include "open3d/visualization/visualizer/ViewTrajectory.h"
+#include "open3d/visualization/visualizer/Visualizer.h"
 
 namespace open3d {
 namespace visualization {

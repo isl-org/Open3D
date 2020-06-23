@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/ViewParameters.h"
+#include "open3d/visualization/visualizer/ViewParameters.h"
 
 #include <json/json.h>
 #include <Eigen/Dense>

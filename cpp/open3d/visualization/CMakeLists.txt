@@ -33,7 +33,7 @@ macro(AddSourceDir DIR)
 endmacro(AddSourceDir)
 AddSourceDir("Shader")
 AddSourceDir("Utility")
-AddSourceDir("Visualizer")
+AddSourceDir("visualizer")
 
 if (ENABLE_GUI)
     AddSourceDir("Rendering")

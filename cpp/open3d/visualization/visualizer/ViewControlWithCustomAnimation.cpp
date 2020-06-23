@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/ViewControlWithCustomAnimation.h"
+#include "open3d/visualization/visualizer/ViewControlWithCustomAnimation.h"
 #include "open3d/utility/Console.h"
 
 #include "open3d/io/IJsonConvertibleIO.h"

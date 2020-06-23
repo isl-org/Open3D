@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/VisualizerWithEditing.h"
+#include "open3d/visualization/visualizer/VisualizerWithEditing.h"
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
 
@@ -40,8 +40,8 @@
 #include "open3d/visualization/Utility/PointCloudPicker.h"
 #include "open3d/visualization/Utility/SelectionPolygon.h"
 #include "open3d/visualization/Utility/SelectionPolygonVolume.h"
-#include "open3d/visualization/Visualizer/RenderOptionWithEditing.h"
-#include "open3d/visualization/Visualizer/ViewControlWithEditing.h"
+#include "open3d/visualization/visualizer/RenderOptionWithEditing.h"
+#include "open3d/visualization/visualizer/ViewControlWithEditing.h"
 
 namespace open3d {
 namespace visualization {

@@ -30,7 +30,7 @@
 
 #include "open3d/geometry/Image.h"
 #include "open3d/visualization/Shader/Shader.h"
-#include "open3d/visualization/Visualizer/RenderOptionWithEditing.h"
+#include "open3d/visualization/visualizer/RenderOptionWithEditing.h"
 
 namespace open3d {
 namespace visualization {

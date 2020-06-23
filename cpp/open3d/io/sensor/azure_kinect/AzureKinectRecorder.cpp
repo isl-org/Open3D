@@ -43,7 +43,7 @@
 #include "open3d/io/sensor/azure_kinect/K4aPlugin.h"
 #include "open3d/io/sensor/azure_kinect/MKVReader.h"
 #include "open3d/visualization/Utility/ColorMap.h"
-#include "open3d/visualization/Visualizer/VisualizerWithKeyCallback.h"
+#include "open3d/visualization/visualizer/VisualizerWithKeyCallback.h"
 
 namespace open3d {
 namespace io {

@@ -28,7 +28,7 @@
 
 #include <map>
 
-#include "open3d/visualization/Visualizer/Visualizer.h"
+#include "open3d/visualization/visualizer/Visualizer.h"
 
 namespace open3d {
 namespace visualization {

@@ -29,8 +29,8 @@
 #include <GL/glew.h>
 
 #include "open3d/geometry/Geometry.h"
-#include "open3d/visualization/Visualizer/RenderOption.h"
-#include "open3d/visualization/Visualizer/ViewControl.h"
+#include "open3d/visualization/visualizer/RenderOption.h"
+#include "open3d/visualization/visualizer/ViewControl.h"
 
 namespace open3d {
 namespace visualization {

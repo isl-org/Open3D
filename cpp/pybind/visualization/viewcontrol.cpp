@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/ViewControl.h"
+#include "open3d/visualization/visualizer/ViewControl.h"
 #include "open3d/io/IJsonConvertibleIO.h"
 
 #include "pybind/docstring.h"

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/VisualizerWithCustomAnimation.h"
+#include "open3d/visualization/visualizer/VisualizerWithCustomAnimation.h"
 
 #include <thread>
 
@@ -32,7 +32,7 @@
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/Visualizer/ViewControlWithCustomAnimation.h"
+#include "open3d/visualization/visualizer/ViewControlWithCustomAnimation.h"
 
 namespace open3d {
 namespace visualization {

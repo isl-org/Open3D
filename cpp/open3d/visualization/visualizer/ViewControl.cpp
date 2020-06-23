@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/ViewControl.h"
+#include "open3d/visualization/visualizer/ViewControl.h"
 #include "open3d/utility/Console.h"
 
 // Avoid warning caused by redefinition of APIENTRY macro

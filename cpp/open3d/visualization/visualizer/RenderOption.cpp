@@ -24,14 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/RenderOption.h"
+#include "open3d/visualization/visualizer/RenderOption.h"
 
 #include <GL/glew.h>
 #include <json/json.h>
+#include <algorithm>
 
 #include "open3d/utility/Console.h"
-
-#include <algorithm>
 
 namespace open3d {
 namespace visualization {

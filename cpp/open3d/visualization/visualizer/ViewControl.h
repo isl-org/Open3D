@@ -30,7 +30,7 @@
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Geometry.h"
 #include "open3d/visualization/Utility/GLHelper.h"
-#include "open3d/visualization/Visualizer/ViewParameters.h"
+#include "open3d/visualization/visualizer/ViewParameters.h"
 
 namespace open3d {
 namespace visualization {

@@ -31,8 +31,8 @@
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/Utility/GLHelper.h"
 #include "open3d/visualization/Utility/SelectionPolygonVolume.h"
-#include "open3d/visualization/Visualizer/ViewControl.h"
-#include "open3d/visualization/Visualizer/ViewControlWithEditing.h"
+#include "open3d/visualization/visualizer/ViewControl.h"
+#include "open3d/visualization/visualizer/ViewControlWithEditing.h"
 
 namespace open3d {
 namespace visualization {

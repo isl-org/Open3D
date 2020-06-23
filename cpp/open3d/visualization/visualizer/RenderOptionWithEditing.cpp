@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/RenderOptionWithEditing.h"
+#include "open3d/visualization/visualizer/RenderOptionWithEditing.h"
 
 #include <json/json.h>
 

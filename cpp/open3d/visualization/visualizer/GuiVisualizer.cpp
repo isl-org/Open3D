@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/GuiVisualizer.h"
+#include "open3d/visualization/visualizer/GuiVisualizer.h"
 
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/BoundingVolume.h"
