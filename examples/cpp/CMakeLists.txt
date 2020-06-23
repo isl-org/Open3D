@@ -9,7 +9,7 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
     endforeach()
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
-            FOLDER "examples/Cpp/"
+            FOLDER "examples/cpp/"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples")
 endmacro(EXAMPLE_CPP)
 

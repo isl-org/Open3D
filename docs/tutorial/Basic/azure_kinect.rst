@@ -70,7 +70,7 @@ Open3D Azure Kinect Viewer is used for previewing RGB and depth image stream
 captured by the Azure Kinect sensor.
 
 Open3D provides Python and C++ example code of Azure Kinect viewer. Please
-see ``examples/Cpp/AzureKinectViewer.cpp`` and
+see ``examples/cpp/AzureKinectViewer.cpp`` and
 ``examples/Python/ReconstructionSystem/sensors/azure_kinect_viewer.py``
 for details.
 
@@ -126,7 +126,7 @@ Open3D Azure Kinect Viewer is used for recording RGB and depth image stream
 to an MKV file.
 
 Open3D provides Python and C++ example code of Azure Kinect viewer. Please
-see ``examples/Cpp/AzureKinectRecord.cpp`` and
+see ``examples/cpp/AzureKinectRecord.cpp`` and
 ``examples/Python/ReconstructionSystem/sensors/azure_kinect_recorder.py``
 for details.
 
@@ -154,7 +154,7 @@ or not supporting the format at all. To view the customized MKV file, use the
 Open3D Azure Kinect MKV Reader.
 
 Open3D provides Python and C++ example code of Open3D Azure Kinect MKV Reader.
-Please see ``examples/Cpp/AzureKinectMKVReader.cpp`` and
+Please see ``examples/cpp/AzureKinectMKVReader.cpp`` and
 ``examples/Python/ReconstructionSystem/sensors/azure_kinect_mkv_reader.py``
 for details.
 

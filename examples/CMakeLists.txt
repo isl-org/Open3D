@@ -1,6 +1,6 @@
 # CPP examples
 if (BUILD_CPP_EXAMPLES)
-    add_subdirectory(Cpp)
+    add_subdirectory(cpp)
 endif ()
 
 # Python examples
