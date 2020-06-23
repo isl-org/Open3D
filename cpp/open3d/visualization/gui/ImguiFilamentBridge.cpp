@@ -75,12 +75,12 @@
 #include "open3d/visualization/gui/Gui.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Window.h"
-#include "open3d/visualization/rendering/Filament/FilamentCamera.h"
-#include "open3d/visualization/rendering/Filament/FilamentEngine.h"
-#include "open3d/visualization/rendering/Filament/FilamentRenderer.h"
-#include "open3d/visualization/rendering/Filament/FilamentResourceManager.h"
-#include "open3d/visualization/rendering/Filament/FilamentScene.h"
-#include "open3d/visualization/rendering/Filament/FilamentView.h"
+#include "open3d/visualization/rendering/filament/FilamentCamera.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderer.h"
+#include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
+#include "open3d/visualization/rendering/filament/FilamentScene.h"
+#include "open3d/visualization/rendering/filament/FilamentView.h"
 
 using namespace filament::math;
 using namespace filament;

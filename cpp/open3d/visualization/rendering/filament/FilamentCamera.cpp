@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/Filament/FilamentCamera.h"
+#include "open3d/visualization/rendering/filament/FilamentCamera.h"
 
 #include <filament/Camera.h>
 #include <filament/Engine.h>

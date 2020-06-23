@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/Filament/FilamentRenderer.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
@@ -34,12 +34,12 @@
 #include <filament/SwapChain.h>
 
 #include "open3d/utility/Console.h"
-#include "open3d/visualization/rendering/Filament/FilamentCamera.h"
-#include "open3d/visualization/rendering/Filament/FilamentEntitiesMods.h"
-#include "open3d/visualization/rendering/Filament/FilamentRenderToBuffer.h"
-#include "open3d/visualization/rendering/Filament/FilamentResourceManager.h"
-#include "open3d/visualization/rendering/Filament/FilamentScene.h"
-#include "open3d/visualization/rendering/Filament/FilamentView.h"
+#include "open3d/visualization/rendering/filament/FilamentCamera.h"
+#include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
+#include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
+#include "open3d/visualization/rendering/filament/FilamentScene.h"
+#include "open3d/visualization/rendering/filament/FilamentView.h"
 
 namespace open3d {
 namespace visualization {

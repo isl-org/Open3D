@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/Filament/FilamentResourceManager.h"
+#include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
@@ -43,7 +43,7 @@
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
-#include "open3d/visualization/rendering/Filament/FilamentEntitiesMods.h"
+#include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 
 namespace open3d {
 namespace visualization {

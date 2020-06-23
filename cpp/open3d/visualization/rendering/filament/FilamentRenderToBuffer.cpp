@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/Filament/FilamentRenderToBuffer.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 
 #include <filament/Engine.h>
 #include <filament/RenderableManager.h>
@@ -36,10 +36,10 @@
 #include <filament/Viewport.h>
 
 #include "open3d/utility/Console.h"
-#include "open3d/visualization/rendering/Filament/FilamentEngine.h"
-#include "open3d/visualization/rendering/Filament/FilamentRenderer.h"
-#include "open3d/visualization/rendering/Filament/FilamentScene.h"
-#include "open3d/visualization/rendering/Filament/FilamentView.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderer.h"
+#include "open3d/visualization/rendering/filament/FilamentScene.h"
+#include "open3d/visualization/rendering/filament/FilamentView.h"
 
 namespace open3d {
 namespace visualization {

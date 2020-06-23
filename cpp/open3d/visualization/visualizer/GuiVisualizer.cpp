@@ -53,10 +53,10 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Camera.h"
-#include "open3d/visualization/rendering/Filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
 #include "open3d/visualization/rendering/RendererStructs.h"
 #include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 
 #define LOAD_IN_NEW_WINDOW 0
 

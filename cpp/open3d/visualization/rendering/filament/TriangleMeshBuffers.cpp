@@ -36,9 +36,9 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/visualization/rendering/Filament/FilamentEngine.h"
-#include "open3d/visualization/rendering/Filament/FilamentGeometryBuffersBuilder.h"
-#include "open3d/visualization/rendering/Filament/FilamentResourceManager.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
+#include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 
 using namespace filament;
 

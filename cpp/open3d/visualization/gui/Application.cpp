@@ -44,7 +44,7 @@
 #include "open3d/visualization/gui/Task.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Window.h"
-#include "open3d/visualization/rendering/Filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
 
 namespace {
 

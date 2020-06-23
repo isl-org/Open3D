@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/Filament/FilamentScene.h"
+#include "open3d/visualization/rendering/filament/FilamentScene.h"
 
 #include <filament/Engine.h>
 #include <filament/IndirectLight.h>
@@ -44,10 +44,10 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
-#include "open3d/visualization/rendering/Filament/FilamentEntitiesMods.h"
-#include "open3d/visualization/rendering/Filament/FilamentGeometryBuffersBuilder.h"
-#include "open3d/visualization/rendering/Filament/FilamentResourceManager.h"
-#include "open3d/visualization/rendering/Filament/FilamentView.h"
+#include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
+#include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
+#include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
+#include "open3d/visualization/rendering/filament/FilamentView.h"
 
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond

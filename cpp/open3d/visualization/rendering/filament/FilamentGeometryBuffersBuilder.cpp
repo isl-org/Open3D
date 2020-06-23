@@ -24,45 +24,42 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/Filament/FilamentResourceManager.h"
+#include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 
-#include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
-
-#include "open3d/visualization/rendering/Filament/FilamentEngine.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace visualization {
 
-filament::backend::Backend EngineInstance::backend_ =
-        filament::backend::Backend::DEFAULT;
+std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
+        const geometry::Geometry3D& geometry) {
+    using GT = geometry::Geometry::GeometryType;
 
-void EngineInstance::SelectBackend(const filament::backend::Backend backend) {
-    backend_ = backend;
+    switch (geometry.GetGeometryType()) {
+        case GT::TriangleMesh:
+            return std::make_unique<TriangleMeshBuffersBuilder>(
+                    static_cast<const geometry::TriangleMesh&>(geometry));
+
+        case GT::PointCloud:
+            return std::make_unique<PointCloudBuffersBuilder>(
+                    static_cast<const geometry::PointCloud&>(geometry));
+
+        case GT::LineSet:
+            return std::make_unique<LineSetBuffersBuilder>(
+                    static_cast<const geometry::LineSet&>(geometry));
+        default:
+            break;
+    }
+
+    return nullptr;
 }
 
-filament::Engine& EngineInstance::GetInstance() { return *Get().engine_; }
-
-FilamentResourceManager& EngineInstance::GetResourceManager() {
-    return *Get().resource_manager_;
-}
-
-EngineInstance::~EngineInstance() {
-    resource_manager_->DestroyAll();
-    delete resource_manager_;
-    resource_manager_ = nullptr;
-
-    filament::Engine::destroy(engine_);
-    engine_ = nullptr;
-}
-
-EngineInstance& EngineInstance::Get() {
-    static EngineInstance instance;
-    return instance;
-}
-
-EngineInstance::EngineInstance() {
-    engine_ = filament::Engine::create(backend_);
-    resource_manager_ = new FilamentResourceManager(*engine_);
+void GeometryBuffersBuilder::DeallocateBuffer(void* buffer,
+                                              size_t size,
+                                              void* user_ptr) {
+    free(buffer);
 }
 
 }  // namespace visualization
