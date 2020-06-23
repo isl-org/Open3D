@@ -24,50 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Shader/PhongShader.h"
+#include "open3d/visualization/shader/NormalShader.h"
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/visualization/Shader/Shader.h"
-#include "open3d/visualization/utility/ColorMap.h"
+#include "open3d/visualization/shader/Shader.h"
 
 namespace open3d {
 namespace visualization {
 
 namespace glsl {
 
-bool PhongShader::Compile() {
-    if (!CompileShaders(PhongVertexShader, NULL, PhongFragmentShader)) {
+bool NormalShader::Compile() {
+    if (!CompileShaders(NormalVertexShader, NULL, NormalFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
     vertex_position_ = glGetAttribLocation(program_, "vertex_position");
     vertex_normal_ = glGetAttribLocation(program_, "vertex_normal");
-    vertex_color_ = glGetAttribLocation(program_, "vertex_color");
     MVP_ = glGetUniformLocation(program_, "MVP");
     V_ = glGetUniformLocation(program_, "V");
     M_ = glGetUniformLocation(program_, "M");
-    light_position_world_ =
-            glGetUniformLocation(program_, "light_position_world_4");
-    light_color_ = glGetUniformLocation(program_, "light_color_4");
-    light_diffuse_power_ =
-            glGetUniformLocation(program_, "light_diffuse_power_4");
-    light_specular_power_ =
-            glGetUniformLocation(program_, "light_specular_power_4");
-    light_specular_shininess_ =
-            glGetUniformLocation(program_, "light_specular_shininess_4");
-    light_ambient_ = glGetUniformLocation(program_, "light_ambient");
     return true;
 }
 
-void PhongShader::Release() {
+void NormalShader::Release() {
     UnbindGeometry();
     ReleaseProgram();
 }
 
-bool PhongShader::BindGeometry(const geometry::Geometry &geometry,
-                               const RenderOption &option,
-                               const ViewControl &view) {
+bool NormalShader::BindGeometry(const geometry::Geometry &geometry,
+                                const RenderOption &option,
+                                const ViewControl &view) {
     // If there is already geometry, we first unbind it.
     // We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
     // rebind the geometry. Note that this approach is slow. If the geometry is
@@ -79,8 +67,7 @@ bool PhongShader::BindGeometry(const geometry::Geometry &geometry,
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3f> normals;
-    std::vector<Eigen::Vector3f> colors;
-    if (!PrepareBinding(geometry, option, view, points, normals, colors)) {
+    if (!PrepareBinding(geometry, option, view, points, normals)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -94,17 +81,13 @@ bool PhongShader::BindGeometry(const geometry::Geometry &geometry,
     glBindBuffer(GL_ARRAY_BUFFER, vertex_normal_buffer_);
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(Eigen::Vector3f),
                  normals.data(), GL_STATIC_DRAW);
-    glGenBuffers(1, &vertex_color_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(Eigen::Vector3f),
-                 colors.data(), GL_STATIC_DRAW);
     bound_ = true;
     return true;
 }
 
-bool PhongShader::RenderGeometry(const geometry::Geometry &geometry,
-                                 const RenderOption &option,
-                                 const ViewControl &view) {
+bool NormalShader::RenderGeometry(const geometry::Geometry &geometry,
+                                  const RenderOption &option,
+                                  const ViewControl &view) {
     if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
@@ -113,77 +96,27 @@ bool PhongShader::RenderGeometry(const geometry::Geometry &geometry,
     glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
     glUniformMatrix4fv(V_, 1, GL_FALSE, view.GetViewMatrix().data());
     glUniformMatrix4fv(M_, 1, GL_FALSE, view.GetModelMatrix().data());
-    glUniformMatrix4fv(light_position_world_, 1, GL_FALSE,
-                       light_position_world_data_.data());
-    glUniformMatrix4fv(light_color_, 1, GL_FALSE, light_color_data_.data());
-    glUniform4fv(light_diffuse_power_, 1, light_diffuse_power_data_.data());
-    glUniform4fv(light_specular_power_, 1, light_specular_power_data_.data());
-    glUniform4fv(light_specular_shininess_, 1,
-                 light_specular_shininess_data_.data());
-    glUniform4fv(light_ambient_, 1, light_ambient_data_.data());
     glEnableVertexAttribArray(vertex_position_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray(vertex_normal_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_normal_buffer_);
     glVertexAttribPointer(vertex_normal_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray(vertex_color_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-    glVertexAttribPointer(vertex_color_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
     glDisableVertexAttribArray(vertex_position_);
     glDisableVertexAttribArray(vertex_normal_);
-    glDisableVertexAttribArray(vertex_color_);
     return true;
 }
 
-void PhongShader::UnbindGeometry() {
+void NormalShader::UnbindGeometry() {
     if (bound_) {
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_normal_buffer_);
-        glDeleteBuffers(1, &vertex_color_buffer_);
         bound_ = false;
     }
 }
 
-void PhongShader::SetLighting(const ViewControl &view,
-                              const RenderOption &option) {
-    const auto &box = view.GetBoundingBox();
-    light_position_world_data_.setOnes();
-    light_color_data_.setOnes();
-    for (int i = 0; i < 4; i++) {
-        light_position_world_data_.block<3, 1>(0, i) =
-                box.GetCenter().cast<GLfloat>() +
-                (float)box.GetMaxExtent() *
-                        ((float)option.light_position_relative_[i](0) *
-                                 view.GetRight() +
-                         (float)option.light_position_relative_[i](1) *
-                                 view.GetUp() +
-                         (float)option.light_position_relative_[i](2) *
-                                 view.GetFront());
-        light_color_data_.block<3, 1>(0, i) =
-                option.light_color_[i].cast<GLfloat>();
-    }
-    if (option.light_on_) {
-        light_diffuse_power_data_ =
-                Eigen::Vector4d(option.light_diffuse_power_).cast<GLfloat>();
-        light_specular_power_data_ =
-                Eigen::Vector4d(option.light_specular_power_).cast<GLfloat>();
-        light_specular_shininess_data_ =
-                Eigen::Vector4d(option.light_specular_shininess_)
-                        .cast<GLfloat>();
-        light_ambient_data_.block<3, 1>(0, 0) =
-                option.light_ambient_color_.cast<GLfloat>();
-        light_ambient_data_(3) = 1.0f;
-    } else {
-        light_diffuse_power_data_ = GLHelper::GLVector4f::Zero();
-        light_specular_power_data_ = GLHelper::GLVector4f::Zero();
-        light_specular_shininess_data_ = GLHelper::GLVector4f::Ones();
-        light_ambient_data_ = GLHelper::GLVector4f(1.0f, 1.0f, 1.0f, 1.0f);
-    }
-}
-
-bool PhongShaderForPointCloud::PrepareRendering(
+bool NormalShaderForPointCloud::PrepareRendering(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
@@ -195,17 +128,15 @@ bool PhongShaderForPointCloud::PrepareRendering(
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GLenum(option.GetGLDepthFunc()));
     glPointSize(GLfloat(option.point_size_));
-    SetLighting(view, option);
     return true;
 }
 
-bool PhongShaderForPointCloud::PrepareBinding(
+bool NormalShaderForPointCloud::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &normals,
-        std::vector<Eigen::Vector3f> &colors) {
+        std::vector<Eigen::Vector3f> &normals) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not geometry::PointCloud.");
@@ -221,48 +152,20 @@ bool PhongShaderForPointCloud::PrepareBinding(
         PrintShaderWarning("Binding failed with pointcloud with no normals.");
         return false;
     }
-    const ColorMap &global_color_map = *GetGlobalColorMap();
     points.resize(pointcloud.points_.size());
     normals.resize(pointcloud.points_.size());
-    colors.resize(pointcloud.points_.size());
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const auto &point = pointcloud.points_[i];
         const auto &normal = pointcloud.normals_[i];
         points[i] = point.cast<float>();
         normals[i] = normal.cast<float>();
-        Eigen::Vector3d color;
-        switch (option.point_color_option_) {
-            case RenderOption::PointColorOption::XCoordinate:
-                color = global_color_map.GetColor(
-                        view.GetBoundingBox().GetXPercentage(point(0)));
-                break;
-            case RenderOption::PointColorOption::YCoordinate:
-                color = global_color_map.GetColor(
-                        view.GetBoundingBox().GetYPercentage(point(1)));
-                break;
-            case RenderOption::PointColorOption::ZCoordinate:
-                color = global_color_map.GetColor(
-                        view.GetBoundingBox().GetZPercentage(point(2)));
-                break;
-            case RenderOption::PointColorOption::Color:
-            case RenderOption::PointColorOption::Default:
-            default:
-                if (pointcloud.HasColors()) {
-                    color = pointcloud.colors_[i];
-                } else {
-                    color = global_color_map.GetColor(
-                            view.GetBoundingBox().GetZPercentage(point(2)));
-                }
-                break;
-        }
-        colors[i] = color.cast<float>();
     }
     draw_arrays_mode_ = GL_POINTS;
     draw_arrays_size_ = GLsizei(points.size());
     return true;
 }
 
-bool PhongShaderForTriangleMesh::PrepareRendering(
+bool NormalShaderForTriangleMesh::PrepareRendering(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
@@ -287,17 +190,15 @@ bool PhongShaderForTriangleMesh::PrepareRendering(
     } else {
         glDisable(GL_POLYGON_OFFSET_FILL);
     }
-    SetLighting(view, option);
     return true;
 }
 
-bool PhongShaderForTriangleMesh::PrepareBinding(
+bool NormalShaderForTriangleMesh::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &normals,
-        std::vector<Eigen::Vector3f> &colors) {
+        std::vector<Eigen::Vector3f> &normals) {
     if (geometry.GetGeometryType() !=
                 geometry::Geometry::GeometryType::TriangleMesh &&
         geometry.GetGeometryType() !=
@@ -316,11 +217,8 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
         PrintShaderWarning("Call ComputeVertexNormals() before binding.");
         return false;
     }
-    const ColorMap &global_color_map = *GetGlobalColorMap();
     points.resize(mesh.triangles_.size() * 3);
     normals.resize(mesh.triangles_.size() * 3);
-    colors.resize(mesh.triangles_.size() * 3);
-
     for (size_t i = 0; i < mesh.triangles_.size(); i++) {
         const auto &triangle = mesh.triangles_[i];
         for (size_t j = 0; j < 3; j++) {
@@ -328,33 +226,6 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
             size_t vi = triangle(j);
             const auto &vertex = mesh.vertices_[vi];
             points[idx] = vertex.cast<float>();
-
-            Eigen::Vector3d color;
-            switch (option.mesh_color_option_) {
-                case RenderOption::MeshColorOption::XCoordinate:
-                    color = global_color_map.GetColor(
-                            view.GetBoundingBox().GetXPercentage(vertex(0)));
-                    break;
-                case RenderOption::MeshColorOption::YCoordinate:
-                    color = global_color_map.GetColor(
-                            view.GetBoundingBox().GetYPercentage(vertex(1)));
-                    break;
-                case RenderOption::MeshColorOption::ZCoordinate:
-                    color = global_color_map.GetColor(
-                            view.GetBoundingBox().GetZPercentage(vertex(2)));
-                    break;
-                case RenderOption::MeshColorOption::Color:
-                    if (mesh.HasVertexColors()) {
-                        color = mesh.vertex_colors_[vi];
-                        break;
-                    }
-                case RenderOption::MeshColorOption::Default:
-                default:
-                    color = option.default_mesh_color_;
-                    break;
-            }
-            colors[idx] = color.cast<float>();
-
             if (option.mesh_shade_option_ ==
                 RenderOption::MeshShadeOption::FlatShade) {
                 normals[idx] = mesh.triangle_normals_[i].cast<float>();

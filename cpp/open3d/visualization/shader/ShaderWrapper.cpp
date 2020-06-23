@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Shader/ShaderWrapper.h"
+#include "open3d/visualization/shader/ShaderWrapper.h"
 
 #include "open3d/geometry/Geometry.h"
 #include "open3d/utility/Console.h"

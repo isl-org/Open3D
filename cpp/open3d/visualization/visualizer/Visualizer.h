@@ -40,7 +40,7 @@
 #include <unordered_set>
 
 #include "open3d/geometry/Geometry.h"
-#include "open3d/visualization/Shader/GeometryRenderer.h"
+#include "open3d/visualization/shader/GeometryRenderer.h"
 #include "open3d/visualization/utility/ColorMap.h"
 #include "open3d/visualization/visualizer/RenderOption.h"
 #include "open3d/visualization/visualizer/ViewControl.h"

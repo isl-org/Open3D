@@ -1,25 +1,25 @@
 # some black magic to automatically create a header file from shader files
-file(GLOB SHADER_FILES "Shader/GLSL/*.glsl")
+file(GLOB SHADER_FILES "shader/GLSL/*.glsl")
 
 add_custom_command(
-    OUTPUT ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/Shader/Shader.h
+    OUTPUT ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h
     COMMAND EncodeShader Shader.h
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/Shader/
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/
     DEPENDS ${SHADER_FILES} EncodeShader
 )
 
 foreach(file ${SHADER_FILES})
     add_custom_command(
-        OUTPUT ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/Shader/Shader.h
+        OUTPUT ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h
         COMMAND EncodeShader Shader.h ${file}
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/Shader/
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/
         DEPENDS ${SHADER_FILES} EncodeShader
         APPEND
     )
 endforeach(file)
 
 add_custom_target(ShaderFileTarget ALL
-                  DEPENDS ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/Shader/Shader.h)
+                  DEPENDS ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h)
 set_target_properties(ShaderFileTarget PROPERTIES FOLDER "Custom")
 
 # build
@@ -31,7 +31,7 @@ macro(AddSourceDir DIR)
     list(APPEND VISUALIZATION_ALL_HEADER_FILES ${HEADER_FILES})
     list(APPEND VISUALIZATION_ALL_SOURCE_FILES ${SOURCE_FILES})
 endmacro(AddSourceDir)
-AddSourceDir("Shader")
+AddSourceDir("shader")
 AddSourceDir("utility")
 AddSourceDir("visualizer")
 

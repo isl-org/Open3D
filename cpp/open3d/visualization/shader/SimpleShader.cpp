@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Shader/SimpleShader.h"
+#include "open3d/visualization/shader/SimpleShader.h"
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/LineSet.h"
@@ -33,7 +33,7 @@
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/geometry/VoxelGrid.h"
-#include "open3d/visualization/Shader/Shader.h"
+#include "open3d/visualization/shader/Shader.h"
 #include "open3d/visualization/utility/ColorMap.h"
 
 namespace open3d {

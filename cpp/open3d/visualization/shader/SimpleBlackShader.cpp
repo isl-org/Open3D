@@ -24,49 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Shader/PickingShader.h"
+#include "open3d/visualization/shader/SimpleBlackShader.h"
 
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/visualization/Shader/Shader.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/visualization/shader/Shader.h"
 #include "open3d/visualization/utility/ColorMap.h"
-#include "open3d/visualization/utility/GLHelper.h"
 
 namespace open3d {
 namespace visualization {
 
 namespace glsl {
 
-bool PickingShader::Compile() {
-    if (!CompileShaders(PickingVertexShader, NULL, PickingFragmentShader)) {
+bool SimpleBlackShader::Compile() {
+    if (!CompileShaders(SimpleBlackVertexShader, NULL,
+                        SimpleBlackFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
     vertex_position_ = glGetAttribLocation(program_, "vertex_position");
-    vertex_index_ = glGetAttribLocation(program_, "vertex_index");
     MVP_ = glGetUniformLocation(program_, "MVP");
     return true;
 }
 
-void PickingShader::Release() {
+void SimpleBlackShader::Release() {
     UnbindGeometry();
     ReleaseProgram();
 }
 
-bool PickingShader::BindGeometry(const geometry::Geometry &geometry,
-                                 const RenderOption &option,
-                                 const ViewControl &view) {
+bool SimpleBlackShader::BindGeometry(const geometry::Geometry &geometry,
+                                     const RenderOption &option,
+                                     const ViewControl &view) {
     // If there is already geometry, we first unbind it.
     // We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
     // rebind the geometry. Note that this approach is slow. If the geometry is
     // changing per frame, consider implementing a new ShaderWrapper using
-    // GL_STREAM_DRAW, and replace InvalidateGeometry() with Buffer Object
+    // GL_STREAM_DRAW, and replace UnbindGeometry() with Buffer Object
     // Streaming mechanisms.
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
-    std::vector<float> indices;
-    if (!PrepareBinding(geometry, option, view, points, indices)) {
+    if (!PrepareBinding(geometry, option, view, points)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -76,18 +75,14 @@ bool PickingShader::BindGeometry(const geometry::Geometry &geometry,
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
                  points.data(), GL_STATIC_DRAW);
-    glGenBuffers(1, &vertex_index_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_index_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, indices.size() * sizeof(float),
-                 indices.data(), GL_STATIC_DRAW);
 
     bound_ = true;
     return true;
 }
 
-bool PickingShader::RenderGeometry(const geometry::Geometry &geometry,
-                                   const RenderOption &option,
-                                   const ViewControl &view) {
+bool SimpleBlackShader::RenderGeometry(const geometry::Geometry &geometry,
+                                       const RenderOption &option,
+                                       const ViewControl &view) {
     if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
@@ -97,24 +92,19 @@ bool PickingShader::RenderGeometry(const geometry::Geometry &geometry,
     glEnableVertexAttribArray(vertex_position_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray(vertex_index_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_index_buffer_);
-    glVertexAttribPointer(vertex_index_, 1, GL_FLOAT, GL_FALSE, 0, NULL);
     glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
     glDisableVertexAttribArray(vertex_position_);
-    glDisableVertexAttribArray(vertex_index_);
     return true;
 }
 
-void PickingShader::UnbindGeometry() {
+void SimpleBlackShader::UnbindGeometry() {
     if (bound_) {
         glDeleteBuffers(1, &vertex_position_buffer_);
-        glDeleteBuffers(1, &vertex_index_buffer_);
         bound_ = false;
     }
 }
 
-bool PickingShaderForPointCloud::PrepareRendering(
+bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
@@ -123,18 +113,16 @@ bool PickingShaderForPointCloud::PrepareRendering(
         PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
-    glPointSize(GLfloat(option.point_size_));
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
-bool PickingShaderForPointCloud::PrepareBinding(
+bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
-        std::vector<Eigen::Vector3f> &points,
-        std::vector<float> &indices) {
+        std::vector<Eigen::Vector3f> &points) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not geometry::PointCloud.");
@@ -146,14 +134,68 @@ bool PickingShaderForPointCloud::PrepareBinding(
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
-    points.resize(pointcloud.points_.size());
-    indices.resize(pointcloud.points_.size());
+    points.resize(pointcloud.points_.size() * 2);
+    double line_length =
+            option.point_size_ * 0.01 * view.GetBoundingBox().GetMaxExtent();
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const auto &point = pointcloud.points_[i];
-        points[i] = point.cast<float>();
-        indices[i] = (float)i;
+        const auto &normal = pointcloud.normals_[i];
+        points[i * 2] = point.cast<float>();
+        points[i * 2 + 1] = (point + normal * line_length).cast<float>();
     }
-    draw_arrays_mode_ = GL_POINTS;
+    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(points.size());
+    return true;
+}
+
+bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::TriangleMesh &&
+        geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
+        PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
+        return false;
+    }
+    glLineWidth(1.0f);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    return true;
+}
+
+bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points) {
+    if (geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::TriangleMesh &&
+        geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
+        PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
+        return false;
+    }
+    const geometry::TriangleMesh &mesh =
+            (const geometry::TriangleMesh &)geometry;
+    if (!mesh.HasTriangles()) {
+        PrintShaderWarning("Binding failed with empty geometry::TriangleMesh.");
+        return false;
+    }
+    points.resize(mesh.triangles_.size() * 3);
+    for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+        const auto &triangle = mesh.triangles_[i];
+        for (size_t j = 0; j < 3; j++) {
+            size_t idx = i * 3 + j;
+            size_t vi = triangle(j);
+            const auto &vertex = mesh.vertices_[vi];
+            points[idx] = vertex.cast<float>();
+        }
+    }
+    draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(points.size());
     return true;
 }

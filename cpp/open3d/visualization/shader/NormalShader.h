@@ -26,24 +26,22 @@
 
 #pragma once
 
-#include "open3d/geometry/Image.h"
-#include "open3d/visualization/Shader/ShaderWrapper.h"
+#include <Eigen/Core>
+#include <vector>
+
+#include "open3d/visualization/shader/ShaderWrapper.h"
 
 namespace open3d {
 namespace visualization {
 
 namespace glsl {
 
-enum ImageTextureMode { Depth = 0, RGB = 1, Grayscale = 2 };
-
-class RGBDImageShader : public ShaderWrapper {
+class NormalShader : public ShaderWrapper {
 public:
-    ~RGBDImageShader() override { Release(); }
+    ~NormalShader() override { Release(); }
 
 protected:
-    RGBDImageShader(const std::string &name) : ShaderWrapper(name) {
-        Compile();
-    }
+    NormalShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
 protected:
     bool Compile() final;
@@ -62,40 +60,49 @@ protected:
                                   const ViewControl &view) = 0;
     virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
-                                const ViewControl &view) = 0;
+                                const ViewControl &view,
+                                std::vector<Eigen::Vector3f> &points,
+                                std::vector<Eigen::Vector3f> &normals) = 0;
 
 protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
-    GLuint vertex_UV_;
-    GLuint vertex_UV_buffer_;
-    GLuint image_texture_;
-    GLuint color_texture_buffer_;
-    GLuint depth_texture_;
-    GLuint depth_texture_buffer_;
-    GLuint vertex_scale_;
-    GLuint texture_mode_;
-    GLuint depth_max_;
-    float depth_max_data_;
-    float color_rel_ratio_ = 0.5f;
-
-    /* Switches corresponding to the glsl shader */
-    ImageTextureMode depth_texture_mode_;
-    ImageTextureMode color_texture_mode_;
-    GLHelper::GLVector3f vertex_scale_data_;
+    GLuint vertex_normal_;
+    GLuint vertex_normal_buffer_;
+    GLuint MVP_;
+    GLuint V_;
+    GLuint M_;
 };
 
-class RGBDImageShaderForImage : public RGBDImageShader {
+class NormalShaderForPointCloud : public NormalShader {
 public:
-    RGBDImageShaderForImage() : RGBDImageShader("RGBDImageShaderForImage") {}
+    NormalShaderForPointCloud() : NormalShader("NormalShaderForPointCloud") {}
 
 protected:
-    virtual bool PrepareRendering(const geometry::Geometry &geometry,
-                                  const RenderOption &option,
-                                  const ViewControl &view) final;
-    virtual bool PrepareBinding(const geometry::Geometry &geometry,
-                                const RenderOption &option,
-                                const ViewControl &view) final;
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &normals) final;
+};
+
+class NormalShaderForTriangleMesh : public NormalShader {
+public:
+    NormalShaderForTriangleMesh()
+        : NormalShader("NormalShaderForTriangleMesh") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &normals) final;
 };
 
 }  // namespace glsl

@@ -29,7 +29,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "open3d/visualization/Shader/ShaderWrapper.h"
+#include "open3d/visualization/shader/ShaderWrapper.h"
 
 namespace open3d {
 namespace visualization {

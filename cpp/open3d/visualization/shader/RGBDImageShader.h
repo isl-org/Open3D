@@ -27,19 +27,23 @@
 #pragma once
 
 #include "open3d/geometry/Image.h"
-#include "open3d/visualization/Shader/ShaderWrapper.h"
+#include "open3d/visualization/shader/ShaderWrapper.h"
 
 namespace open3d {
 namespace visualization {
 
 namespace glsl {
 
-class ImageShader : public ShaderWrapper {
+enum ImageTextureMode { Depth = 0, RGB = 1, Grayscale = 2 };
+
+class RGBDImageShader : public ShaderWrapper {
 public:
-    ~ImageShader() override { Release(); }
+    ~RGBDImageShader() override { Release(); }
 
 protected:
-    ImageShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
+    RGBDImageShader(const std::string &name) : ShaderWrapper(name) {
+        Compile();
+    }
 
 protected:
     bool Compile() final;
@@ -58,8 +62,7 @@ protected:
                                   const ViewControl &view) = 0;
     virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
-                                const ViewControl &view,
-                                geometry::Image &image) = 0;
+                                const ViewControl &view) = 0;
 
 protected:
     GLuint vertex_position_;
@@ -67,15 +70,24 @@ protected:
     GLuint vertex_UV_;
     GLuint vertex_UV_buffer_;
     GLuint image_texture_;
-    GLuint image_texture_buffer_;
+    GLuint color_texture_buffer_;
+    GLuint depth_texture_;
+    GLuint depth_texture_buffer_;
     GLuint vertex_scale_;
+    GLuint texture_mode_;
+    GLuint depth_max_;
+    float depth_max_data_;
+    float color_rel_ratio_ = 0.5f;
 
+    /* Switches corresponding to the glsl shader */
+    ImageTextureMode depth_texture_mode_;
+    ImageTextureMode color_texture_mode_;
     GLHelper::GLVector3f vertex_scale_data_;
 };
 
-class ImageShaderForImage : public ImageShader {
+class RGBDImageShaderForImage : public RGBDImageShader {
 public:
-    ImageShaderForImage() : ImageShader("ImageShaderForImage") {}
+    RGBDImageShaderForImage() : RGBDImageShader("RGBDImageShaderForImage") {}
 
 protected:
     virtual bool PrepareRendering(const geometry::Geometry &geometry,
@@ -83,8 +95,7 @@ protected:
                                   const ViewControl &view) final;
     virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
-                                const ViewControl &view,
-                                geometry::Image &render_image) final;
+                                const ViewControl &view) final;
 };
 
 }  // namespace glsl

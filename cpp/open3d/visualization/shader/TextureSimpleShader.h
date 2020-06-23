@@ -29,19 +29,21 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "open3d/visualization/Shader/ShaderWrapper.h"
+#include "open3d/visualization/shader/ShaderWrapper.h"
 
 namespace open3d {
 namespace visualization {
 
 namespace glsl {
 
-class Simple2DShader : public ShaderWrapper {
+class TextureSimpleShader : public ShaderWrapper {
 public:
-    ~Simple2DShader() override { Release(); }
+    ~TextureSimpleShader() override { Release(); }
 
 protected:
-    Simple2DShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
+    TextureSimpleShader(const std::string &name) : ShaderWrapper(name) {
+        Compile();
+    }
 
 protected:
     bool Compile() final;
@@ -62,19 +64,27 @@ protected:
                                 const RenderOption &option,
                                 const ViewControl &view,
                                 std::vector<Eigen::Vector3f> &points,
-                                std::vector<Eigen::Vector3f> &colors) = 0;
+                                std::vector<Eigen::Vector2f> &uvs) = 0;
 
 protected:
     GLuint vertex_position_;
-    GLuint vertex_position_buffer_;
-    GLuint vertex_color_;
-    GLuint vertex_color_buffer_;
+    GLuint vertex_uv_;
+    GLuint texture_;
+    GLuint MVP_;
+
+    int num_materials_;
+    std::vector<int> array_offsets_;
+    std::vector<GLsizei> draw_array_sizes_;
+
+    std::vector<GLuint> vertex_position_buffers_;
+    std::vector<GLuint> vertex_uv_buffers_;
+    std::vector<GLuint> texture_buffers_;
 };
 
-class Simple2DShaderForSelectionPolygon : public Simple2DShader {
+class TextureSimpleShaderForTriangleMesh : public TextureSimpleShader {
 public:
-    Simple2DShaderForSelectionPolygon()
-        : Simple2DShader("Simple2DShaderForSelectionPolygon") {}
+    TextureSimpleShaderForTriangleMesh()
+        : TextureSimpleShader("TextureSimpleShaderForTriangleMesh") {}
 
 protected:
     bool PrepareRendering(const geometry::Geometry &geometry,
@@ -84,7 +94,7 @@ protected:
                         const RenderOption &option,
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
-                        std::vector<Eigen::Vector3f> &colors) final;
+                        std::vector<Eigen::Vector2f> &uvs) final;
 };
 
 }  // namespace glsl

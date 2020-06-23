@@ -24,35 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Shader/Simple2DShader.h"
+#include "open3d/visualization/shader/PickingShader.h"
 
-#include "open3d/visualization/Shader/Shader.h"
-#include "open3d/visualization/utility/SelectionPolygon.h"
-#include "open3d/visualization/visualizer/RenderOptionWithEditing.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/visualization/shader/Shader.h"
+#include "open3d/visualization/utility/ColorMap.h"
+#include "open3d/visualization/utility/GLHelper.h"
 
 namespace open3d {
 namespace visualization {
 
 namespace glsl {
 
-bool Simple2DShader::Compile() {
-    if (!CompileShaders(Simple2DVertexShader, NULL, Simple2DFragmentShader)) {
+bool PickingShader::Compile() {
+    if (!CompileShaders(PickingVertexShader, NULL, PickingFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
     vertex_position_ = glGetAttribLocation(program_, "vertex_position");
-    vertex_color_ = glGetAttribLocation(program_, "vertex_color");
+    vertex_index_ = glGetAttribLocation(program_, "vertex_index");
+    MVP_ = glGetUniformLocation(program_, "MVP");
     return true;
 }
 
-void Simple2DShader::Release() {
+void PickingShader::Release() {
     UnbindGeometry();
     ReleaseProgram();
 }
 
-bool Simple2DShader::BindGeometry(const geometry::Geometry &geometry,
-                                  const RenderOption &option,
-                                  const ViewControl &view) {
+bool PickingShader::BindGeometry(const geometry::Geometry &geometry,
+                                 const RenderOption &option,
+                                 const ViewControl &view) {
     // If there is already geometry, we first unbind it.
     // We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
     // rebind the geometry. Note that this approach is slow. If the geometry is
@@ -63,8 +65,8 @@ bool Simple2DShader::BindGeometry(const geometry::Geometry &geometry,
 
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
-    std::vector<Eigen::Vector3f> colors;
-    if (!PrepareBinding(geometry, option, view, points, colors)) {
+    std::vector<float> indices;
+    if (!PrepareBinding(geometry, option, view, points, indices)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -74,105 +76,84 @@ bool Simple2DShader::BindGeometry(const geometry::Geometry &geometry,
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
                  points.data(), GL_STATIC_DRAW);
-    glGenBuffers(1, &vertex_color_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(Eigen::Vector3f),
-                 colors.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &vertex_index_buffer_);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_index_buffer_);
+    glBufferData(GL_ARRAY_BUFFER, indices.size() * sizeof(float),
+                 indices.data(), GL_STATIC_DRAW);
 
     bound_ = true;
     return true;
 }
 
-bool Simple2DShader::RenderGeometry(const geometry::Geometry &geometry,
-                                    const RenderOption &option,
-                                    const ViewControl &view) {
+bool PickingShader::RenderGeometry(const geometry::Geometry &geometry,
+                                   const RenderOption &option,
+                                   const ViewControl &view) {
     if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
     glUseProgram(program_);
+    glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
     glEnableVertexAttribArray(vertex_position_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray(vertex_color_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-    glVertexAttribPointer(vertex_color_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(vertex_index_);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_index_buffer_);
+    glVertexAttribPointer(vertex_index_, 1, GL_FLOAT, GL_FALSE, 0, NULL);
     glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
     glDisableVertexAttribArray(vertex_position_);
-    glDisableVertexAttribArray(vertex_color_);
+    glDisableVertexAttribArray(vertex_index_);
     return true;
 }
 
-void Simple2DShader::UnbindGeometry() {
+void PickingShader::UnbindGeometry() {
     if (bound_) {
         glDeleteBuffers(1, &vertex_position_buffer_);
-        glDeleteBuffers(1, &vertex_color_buffer_);
+        glDeleteBuffers(1, &vertex_index_buffer_);
         bound_ = false;
     }
 }
 
-bool Simple2DShaderForSelectionPolygon::PrepareRendering(
+bool PickingShaderForPointCloud::PrepareRendering(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
     if (geometry.GetGeometryType() !=
-        geometry::Geometry::GeometryType::Unspecified) {
-        PrintShaderWarning("Rendering type is illegal.");
+        geometry::Geometry::GeometryType::PointCloud) {
+        PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
-    glLineWidth(1.0f);
-    glDisable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glPointSize(GLfloat(option.point_size_));
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
-bool Simple2DShaderForSelectionPolygon::PrepareBinding(
+bool PickingShaderForPointCloud::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &colors) {
+        std::vector<float> &indices) {
     if (geometry.GetGeometryType() !=
-        geometry::Geometry::GeometryType::Unspecified) {
-        PrintShaderWarning("Rendering type is illegal.");
+        geometry::Geometry::GeometryType::PointCloud) {
+        PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
-    const SelectionPolygon &polygon = (const SelectionPolygon &)geometry;
-    if (polygon.IsEmpty()) {
-        PrintShaderWarning("Binding failed with empty SelectionPolygon.");
+    const geometry::PointCloud &pointcloud =
+            (const geometry::PointCloud &)geometry;
+    if (!pointcloud.HasPoints()) {
+        PrintShaderWarning("Binding failed with empty pointcloud.");
+        return false;
     }
-    size_t segment_num = polygon.polygon_.size() - 1;
-    if (polygon.is_closed_) {
-        segment_num++;
+    points.resize(pointcloud.points_.size());
+    indices.resize(pointcloud.points_.size());
+    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
+        const auto &point = pointcloud.points_[i];
+        points[i] = point.cast<float>();
+        indices[i] = (float)i;
     }
-    points.resize(segment_num * 2);
-    colors.resize(segment_num * 2);
-    for (size_t i = 0; i < segment_num; i++) {
-    }
-    if (polygon.is_closed_) {
-        points.resize(polygon.polygon_.size() * 2);
-        colors.resize(polygon.polygon_.size() * 2);
-    } else {
-        points.resize(polygon.polygon_.size() * 2 - 2);
-        colors.resize(polygon.polygon_.size() * 2 - 2);
-    }
-    double width = (double)view.GetWindowWidth();
-    double height = (double)view.GetWindowHeight();
-    const auto &_option = (RenderOptionWithEditing &)option;
-    for (size_t i = 0; i < segment_num; i++) {
-        size_t j = (i + 1) % polygon.polygon_.size();
-        const auto &vi = polygon.polygon_[i];
-        const auto &vj = polygon.polygon_[j];
-        points[i * 2] =
-                Eigen::Vector3f((float)(vi(0) / width * 2.0 - 1.0),
-                                (float)(vi(1) / height * 2.0 - 1.0), 0.0f);
-        points[i * 2 + 1] =
-                Eigen::Vector3f((float)(vj(0) / width * 2.0 - 1.0),
-                                (float)(vj(1) / height * 2.0 - 1.0), 0.0f);
-        colors[i * 2] = colors[i * 2 + 1] =
-                _option.selection_polygon_boundary_color_.cast<float>();
-    }
-    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_mode_ = GL_POINTS;
     draw_arrays_size_ = GLsizei(points.size());
     return true;
 }

@@ -26,22 +26,22 @@
 
 #pragma once
 
-#include <Eigen/Core>
-#include <vector>
-
-#include "open3d/visualization/Shader/ShaderWrapper.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/visualization/shader/ShaderWrapper.h"
 
 namespace open3d {
 namespace visualization {
 
 namespace glsl {
 
-class PickingShader : public ShaderWrapper {
+class ImageMaskShader : public ShaderWrapper {
 public:
-    ~PickingShader() override { Release(); }
+    ~ImageMaskShader() override { Release(); }
 
 protected:
-    PickingShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
+    ImageMaskShader(const std::string &name) : ShaderWrapper(name) {
+        Compile();
+    }
 
 protected:
     bool Compile() final;
@@ -61,31 +61,34 @@ protected:
     virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view,
-                                std::vector<Eigen::Vector3f> &points,
-                                std::vector<float> &indices) = 0;
+                                geometry::Image &image) = 0;
 
 protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
-    GLuint vertex_index_;
-    GLuint vertex_index_buffer_;
-    GLuint MVP_;
+    GLuint vertex_UV_;
+    GLuint vertex_UV_buffer_;
+    GLuint image_texture_;
+    GLuint image_texture_buffer_;
+    GLuint mask_color_;
+    GLuint mask_alpha_;
+
+    GLHelper::GLVector3f mask_color_data_;
+    GLfloat mask_alpha_data_;
 };
 
-class PickingShaderForPointCloud : public PickingShader {
+class ImageMaskShaderForImage : public ImageMaskShader {
 public:
-    PickingShaderForPointCloud()
-        : PickingShader("PickingShaderForPointCloud") {}
+    ImageMaskShaderForImage() : ImageMaskShader("ImageMaskShaderForImage") {}
 
 protected:
-    bool PrepareRendering(const geometry::Geometry &geometry,
-                          const RenderOption &option,
-                          const ViewControl &view) final;
-    bool PrepareBinding(const geometry::Geometry &geometry,
-                        const RenderOption &option,
-                        const ViewControl &view,
-                        std::vector<Eigen::Vector3f> &points,
-                        std::vector<float> &indices) final;
+    virtual bool PrepareRendering(const geometry::Geometry &geometry,
+                                  const RenderOption &option,
+                                  const ViewControl &view) final;
+    virtual bool PrepareBinding(const geometry::Geometry &geometry,
+                                const RenderOption &option,
+                                const ViewControl &view,
+                                geometry::Image &render_image) final;
 };
 
 }  // namespace glsl
