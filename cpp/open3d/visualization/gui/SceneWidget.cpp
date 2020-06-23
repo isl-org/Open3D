@@ -35,6 +35,7 @@
 #include "open3d/visualization/Rendering/IBLRotationInteractorLogic.h"
 #include "open3d/visualization/Rendering/LightDirectionInteractorLogic.h"
 #include "open3d/visualization/Rendering/ModelInteractorLogic.h"
+#include "open3d/visualization/Rendering/Open3DScene.h"
 #include "open3d/visualization/Rendering/Scene.h"
 #include "open3d/visualization/Rendering/View.h"
 #include "open3d/visualization/gui/Application.h"
@@ -593,31 +594,22 @@ private:
 
 // ----------------------------------------------------------------------------
 struct SceneWidget::Impl {
-    visualization::Scene& scene_;
+    std::shared_ptr<visualization::Open3DScene> scene_;
     visualization::ViewHandle view_id_;
-    visualization::Camera* camera_;
     geometry::AxisAlignedBoundingBox bounds_;
     std::shared_ptr<Interactors> controls_;
-    ModelDescription model_;
-    visualization::LightHandle dir_light_;
     std::function<void(const Eigen::Vector3f&)> on_light_dir_changed_;
     std::function<void(visualization::Camera*)> on_camera_changed_;
     int buttons_down_ = 0;
     double last_fast_time_ = 0.0;
     bool frame_rect_changed_ = false;
-
-    explicit Impl(visualization::Scene& scene) : scene_(scene) {}
 };
 
-SceneWidget::SceneWidget(visualization::Scene& scene) : impl_(new Impl(scene)) {
-    impl_->view_id_ = scene.AddView(0, 0, 1, 1);
+SceneWidget::SceneWidget() : impl_(new Impl()) {}
 
-    auto view = impl_->scene_.GetView(impl_->view_id_);
-    impl_->camera_ = view->GetCamera();
-    impl_->controls_ = std::make_shared<Interactors>(&scene, view->GetCamera());
+SceneWidget::~SceneWidget() {
+    SetScene(nullptr);  // will do any necessary cleanup
 }
-
-SceneWidget::~SceneWidget() { impl_->scene_.RemoveView(impl_->view_id_); }
 
 void SceneWidget::SetFrame(const Rect& f) {
     Super::SetFrame(f);
@@ -631,14 +623,8 @@ void SceneWidget::SetFrame(const Rect& f) {
 }
 
 void SceneWidget::SetBackgroundColor(const Color& color) {
-    auto view = impl_->scene_.GetView(impl_->view_id_);
+    auto view = impl_->scene_->GetView(impl_->view_id_);
     view->SetClearColor({color.GetRed(), color.GetGreen(), color.GetBlue()});
-}
-
-void SceneWidget::SetDiscardBuffers(
-        const visualization::View::TargetBuffers& buffers) {
-    auto view = impl_->scene_.GetView(impl_->view_id_);
-    view->SetDiscardBuffers(buffers);
 }
 
 void SceneWidget::SetupCamera(
@@ -674,14 +660,13 @@ void SceneWidget::SetCameraChangedCallback(
     impl_->on_camera_changed_ = on_cam_changed;
 }
 
-void SceneWidget::SelectDirectionalLight(
-        visualization::LightHandle dir_light,
+void SceneWidget::SetOnSunDirectionChanged(
         std::function<void(const Eigen::Vector3f&)> on_dir_changed) {
-    impl_->dir_light_ = dir_light;
     impl_->on_light_dir_changed_ = on_dir_changed;
     impl_->controls_->SetDirectionalLight(
-            dir_light, [this, dir_light](const Eigen::Vector3f& dir) {
-                impl_->scene_.SetLightDirection(dir_light, dir);
+            impl_->scene_->GetSun(), [this](const Eigen::Vector3f& dir) {
+                impl_->scene_->GetScene()->SetLightDirection(
+                        impl_->scene_->GetSun(), dir);
                 if (impl_->on_light_dir_changed_) {
                     impl_->on_light_dir_changed_(dir);
                 }
@@ -693,24 +678,31 @@ void SceneWidget::SetSkyboxHandle(visualization::SkyboxHandle skybox,
     impl_->controls_->SetSkyboxHandle(skybox, is_on);
 }
 
-void SceneWidget::SetModel(const ModelDescription& desc) {
-    impl_->model_ = desc;
-    for (auto p : desc.fast_point_clouds) {
-        impl_->scene_.SetEntityEnabled(p, false);
+void SceneWidget::SetScene(std::shared_ptr<Open3DScene> scene) {
+    if (impl_->scene_) {
+        impl_->scene_->DestroyView(impl_->view_id_);
+        impl_->view_id_ = ViewHandle();
     }
+    impl_->scene_ = scene;
+    if (impl_->scene_) {
+        impl_->view_id_ = impl_->scene_->CreateView();
+        auto scene = GetScene()->GetScene();
+        auto view = impl_->scene_->GetView(impl_->view_id_);
+        impl_->controls_ =
+                std::make_shared<Interactors>(scene, view->GetCamera());
+    }
+}
 
-    std::vector<visualization::GeometryHandle> objects;
-    objects.reserve(desc.point_clouds.size() + desc.meshes.size());
-    for (auto p : desc.point_clouds) {
-        objects.push_back(p);
+std::shared_ptr<Open3DScene> SceneWidget::GetScene() const {
+    return impl_->scene_;
+}
+
+View* SceneWidget::GetRenderView() const {
+    if (impl_->scene_) {
+        return impl_->scene_->GetView(impl_->view_id_);
+    } else {
+        return nullptr;
     }
-    for (auto m : desc.meshes) {
-        objects.push_back(m);
-    }
-    for (auto p : desc.fast_point_clouds) {
-        objects.push_back(p);
-    }
-    impl_->controls_->SetModel(desc.axes, objects);
 }
 
 void SceneWidget::SetViewControls(Controls mode) {
@@ -723,11 +715,12 @@ void SceneWidget::SetViewControls(Controls mode) {
         // panning distance so that the cursor stays in roughly the same
         // position as the user moves the mouse. Use the distance to the
         // center of the model, which should be reasonable.
+        auto camera = GetCamera();
         Eigen::Vector3f to_center = impl_->bounds_.GetCenter().cast<float>() -
-                                    impl_->camera_->GetPosition();
-        Eigen::Vector3f forward = impl_->camera_->GetForwardVector();
+                                    camera->GetPosition();
+        Eigen::Vector3f forward = camera->GetForwardVector();
         Eigen::Vector3f center =
-                impl_->camera_->GetPosition() + to_center.norm() * forward;
+                camera->GetPosition() + to_center.norm() * forward;
         impl_->controls_->SetCenterOfRotation(center);
     } else {
         impl_->controls_->SetControls(mode);
@@ -738,27 +731,21 @@ void SceneWidget::SetRenderQuality(Quality quality) {
     auto currentQuality = GetRenderQuality();
     if (currentQuality != quality) {
         bool is_fast = false;
-        auto view = impl_->scene_.GetView(impl_->view_id_);
+        auto view = impl_->scene_->GetView(impl_->view_id_);
         if (quality == Quality::FAST) {
             view->SetSampleCount(1);
+            impl_->scene_->SetLOD(Open3DScene::LOD::FAST);
             is_fast = true;
         } else {
             view->SetSampleCount(4);
+            impl_->scene_->SetLOD(Open3DScene::LOD::HIGH_DETAIL);
             is_fast = false;
-        }
-        if (!impl_->model_.fast_point_clouds.empty()) {
-            for (auto p : impl_->model_.point_clouds) {
-                impl_->scene_.SetEntityEnabled(p, !is_fast);
-            }
-            for (auto p : impl_->model_.fast_point_clouds) {
-                impl_->scene_.SetEntityEnabled(p, is_fast);
-            }
         }
     }
 }
 
 SceneWidget::Quality SceneWidget::GetRenderQuality() const {
-    int n = impl_->scene_.GetView(impl_->view_id_)->GetSampleCount();
+    int n = impl_->scene_->GetView(impl_->view_id_)->GetSampleCount();
     if (n == 1) {
         return Quality::FAST;
     } else {
@@ -793,18 +780,12 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
             break;
         }
     }
-    impl_->camera_->LookAt(center, eye, up);
+    GetCamera()->LookAt(center, eye, up);
     impl_->controls_->SetCenterOfRotation(center);
 }
 
-visualization::View* SceneWidget::GetView() const {
-    return impl_->scene_.GetView(impl_->view_id_);
-}
-
-visualization::Scene* SceneWidget::GetScene() const { return &impl_->scene_; }
-
 visualization::Camera* SceneWidget::GetCamera() const {
-    auto view = impl_->scene_.GetView(impl_->view_id_);
+    auto view = impl_->scene_->GetView(impl_->view_id_);
     return view->GetCamera();
 }
 
@@ -821,7 +802,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
 
-        auto view = impl_->scene_.GetView(impl_->view_id_);
+        auto view = impl_->scene_->GetView(impl_->view_id_);
         view->SetViewport(f.x, y, f.width, f.height);
 
         auto* camera = GetCamera();

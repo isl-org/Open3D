@@ -39,7 +39,7 @@ class AxisAlignedBoundingBox;
 namespace visualization {
 class Camera;
 class CameraManipulator;
-class Scene;
+class Open3DScene;
 class View;
 }  // namespace visualization
 
@@ -52,13 +52,11 @@ class SceneWidget : public Widget {
     using Super = Widget;
 
 public:
-    explicit SceneWidget(visualization::Scene& scene);
+    explicit SceneWidget();
     ~SceneWidget() override;
 
     void SetFrame(const Rect& f) override;
-
     void SetBackgroundColor(const Color& color);
-    void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
 
     enum Controls { ROTATE_OBJ, FLY, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL };
     void SetViewControls(Controls mode);
@@ -72,22 +70,15 @@ public:
     /// Enables changing the directional light with the mouse.
     /// SceneWidget will update the light's direction, so onDirChanged is
     /// only needed if other things need to be updated (like a UI).
-    void SelectDirectionalLight(
-            visualization::LightHandle dirLight,
+    void SetOnSunDirectionChanged(
             std::function<void(const Eigen::Vector3f&)> on_dir_changed);
     /// Enables showing the skybox while in skybox ROTATE_IBL mode.
     void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool is_on);
 
-    struct ModelDescription {
-        visualization::GeometryHandle axes;
-        std::vector<visualization::GeometryHandle> point_clouds;
-        std::vector<visualization::GeometryHandle> meshes;
-        // Optional point clouds drawn instead of 'pointClouds' when rotating.
-        // These should have substantially fewer points than the originals
-        // so that rotations are faster.
-        std::vector<visualization::GeometryHandle> fast_point_clouds;
-    };
-    void SetModel(const ModelDescription& desc);
+    void SetScene(std::shared_ptr<Open3DScene> scene);
+    std::shared_ptr<Open3DScene> GetScene() const;
+
+    View* GetRenderView() const;  // is nullptr if no scene
 
     enum class Quality { FAST, BEST };
     void SetRenderQuality(Quality level);
@@ -99,9 +90,6 @@ public:
         PLUS_Z   // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
     };
     void GoToCameraPreset(CameraPreset preset);
-
-    visualization::View* GetView() const;
-    visualization::Scene* GetScene() const;
 
     Widget::DrawResult Draw(const DrawContext& context) override;
 
