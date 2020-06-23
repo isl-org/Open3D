@@ -240,7 +240,7 @@ class SphinxDocsBuilder:
     def __init__(self, html_output_dir, is_release, skip_notebooks):
         # Get the modules for which we want to build the documentation.
         # We use the modules listed in the index.rst file here.
-        self.documented_modules = self._get_module_names_from_index_rst()
+        self.documented_modules = self._get_documented_module_names()
 
         # self.documented_modules = "open3d.pybind"  # Points to the open3d.so
         # self.c_module_relative = "open3d"  # The relative module reference to open3d.so
@@ -250,26 +250,18 @@ class SphinxDocsBuilder:
         self.skip_notebooks = skip_notebooks
 
     @staticmethod
-    def _get_module_names_from_index_rst():
+    def _get_documented_module_names():
         """Reads the modules of the python api from the index.rst"""
-        module_names = [
-            "open3d.camera",
-            "open3d.core",
-            "open3d.geometry",
-            "open3d.io",
-            "open3d.pipelines",
-            "open3d.pipelines.color_map",
-            "open3d.pipelines.integration",
-            "open3d.pipelines.odometry",
-            "open3d.pipelines.registration",
-            "open3d.utility",
-            "open3d.visualization",
-        ]
-        # with open("index.rst", "r") as f:
-        #     for line in f:
-        #         m = re.match("^\s*python_api/(.*)\s*$", line)
-        #         if m:
-        #             module_names.append(m.group(1))
+        module_names = []
+        with open("documented_modules.txt", "r") as f:
+            for line in f:
+                print(line)
+                m = re.match("^(open3d\..*)\s*$", line)
+                if m:
+                    module_names.append(m.group(1))
+        print("Documented modules:")
+        for module_name in module_names:
+            print("-", module_name)
         return module_names
 
     def run(self):

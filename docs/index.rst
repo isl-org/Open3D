@@ -58,6 +58,8 @@ Open3D: A Modern Library for 3D Data Processing
 
 .. _python_api_index:
 
+.. Note: when adding new modules, please also update documented_modules.txt.
+
 .. toctree::
     :maxdepth: 1
     :caption: Python API
