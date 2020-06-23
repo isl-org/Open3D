@@ -11,7 +11,7 @@ file(GLOB_RECURSE UNIT_TEST_SOURCE_FILES "*.cpp")
 
 # TODO: consider explicitly listing the files
 if (NOT BUILD_AZURE_KINECT)
-    set (EXCLUDE_DIR "io/Sensor")
+    set (EXCLUDE_DIR "io/sensor")
     foreach (TMP_PATH ${UNIT_TEST_SOURCE_FILES})
         string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
         if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
@@ -22,7 +22,7 @@ endif()
 
 # TODO: handle conditional compilation more systematically
 if (NOT ENABLE_GUI)
-    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/visualization/Rendering/.*cpp)
+    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/visualization/rendering/.*cpp)
 endif()
 
 add_executable(tests ${UNIT_TEST_SOURCE_FILES})
