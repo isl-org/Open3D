@@ -39,8 +39,8 @@
 #include <link.h>
 #endif
 
-#include "open3d/io/sensor/AzureKinect/K4aPlugin.h"
-#include "open3d/io/sensor/AzureKinect/PluginMacros.h"
+#include "open3d/io/sensor/azure_kinect/K4aPlugin.h"
+#include "open3d/io/sensor/azure_kinect/PluginMacros.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 

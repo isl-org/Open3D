@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,18 +26,17 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
-#include <string>
 
-#include "open3d/io/sensor/AzureKinect/AzureKinectSensor.h"
-#include "open3d/io/sensor/AzureKinect/AzureKinectSensorConfig.h"
-#include "open3d/io/sensor/RGBDRecorder.h"
+#include "open3d/io/sensor/RGBDSensor.h"
+#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
 
-struct _k4a_record_t;  // typedef _k4a_record_t* k4a_record_t;
+struct _k4a_capture_t;         // typedef _k4a_capture_t* k4a_capture_t;
+struct _k4a_device_t;          // typedef _k4a_device_t* k4a_device_t;
+struct _k4a_transformation_t;  // typedef _k4a_transformation_t*
+                               // k4a_transformation_t;
 
 namespace open3d {
-
 namespace geometry {
 class RGBDImage;
 class Image;
@@ -45,40 +44,37 @@ class Image;
 
 namespace io {
 
-/// \class AzureKinectRecorder
+// Avoid including AzureKinectRecorder.h
+class AzureKinectRecorder;
+
+/// \class AzureKinectSensor
 ///
-/// AzureKinect recorder.
-class AzureKinectRecorder : public RGBDRecorder {
+/// AzureKinect sensor.
+class AzureKinectSensor : public RGBDSensor {
 public:
-    AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config,
-                        size_t sensor_index);
-    ~AzureKinectRecorder() override;
+    /// \brief Default Constructor.
+    AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);
+    ~AzureKinectSensor();
 
-    /// Initialize sensor.
-    bool InitSensor() override;
-    /// Attempt to create and open an mkv file.
-    ///
-    /// \param filename Path to the mkv file.
-    bool OpenRecord(const std::string& filename) override;
-    /// Close the recorded mkv file.
-    bool CloseRecord() override;
-    /// Record a frame to mkv if flag is on and return an RGBD object.
-    ///
-    /// \param write Enable recording to mkv file.
-    /// \param enable_align_depth_to_color Enable aligning WFOV depth image to
-    /// the color image in visualizer.
-    std::shared_ptr<geometry::RGBDImage> RecordFrame(
-            bool write, bool enable_align_depth_to_color) override;
+    bool Connect(size_t sensor_index) override;
+    std::shared_ptr<geometry::RGBDImage> CaptureFrame(
+            bool enable_align_depth_to_color) const override;
 
-    /// Check if the mkv file is created.
-    bool IsRecordCreated() { return is_record_created_; }
+    static bool PrintFirmware(_k4a_device_t* device);
+    /// List available Azure Kinect devices.
+    static bool ListDevices();
+    static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
+            _k4a_capture_t* capture, _k4a_transformation_t* transformation);
 
 protected:
-    AzureKinectSensor sensor_;
-    _k4a_record_t* recording_;
-    size_t device_index_;
+    _k4a_capture_t* CaptureRawFrame() const;
 
-    bool is_record_created_ = false;
+    AzureKinectSensorConfig sensor_config_;
+    _k4a_transformation_t* transform_depth_to_color_;
+    _k4a_device_t* device_;
+    int timeout_;
+
+    friend class AzureKinectRecorder;
 };
 
 }  // namespace io

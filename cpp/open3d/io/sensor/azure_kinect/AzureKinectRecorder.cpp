@@ -27,7 +27,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "open3d/io/sensor/AzureKinect/AzureKinectRecorder.h"
+#include "open3d/io/sensor/azure_kinect/AzureKinectRecorder.h"
 
 #include <assert.h>
 #include <Eigen/Core>
@@ -40,8 +40,8 @@
 #include <k4arecord/record.h>
 
 #include "open3d/geometry/RGBDImage.h"
-#include "open3d/io/sensor/AzureKinect/K4aPlugin.h"
-#include "open3d/io/sensor/AzureKinect/MKVReader.h"
+#include "open3d/io/sensor/azure_kinect/K4aPlugin.h"
+#include "open3d/io/sensor/azure_kinect/MKVReader.h"
 #include "open3d/visualization/Utility/ColorMap.h"
 #include "open3d/visualization/Visualizer/VisualizerWithKeyCallback.h"
 

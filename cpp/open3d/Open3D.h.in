@@ -97,12 +97,12 @@
 #include "open3d/visualization/gui/Window.h"
 
 // clang-format off
-@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/AzureKinect/AzureKinectRecorder.h"
-@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/AzureKinect/AzureKinectSensorConfig.h"
-@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/AzureKinect/AzureKinectSensor.h"
-@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/AzureKinect/MKVMetadata.h"
-@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/AzureKinect/MKVReader.h"
-@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/AzureKinect/MKVWriter.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/AzureKinectRecorder.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/AzureKinectSensor.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/MKVMetadata.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/MKVReader.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/MKVWriter.h"
 @BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/RGBDRecorder.h"
 @BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/RGBDSensorConfig.h"
 @BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/RGBDSensor.h"

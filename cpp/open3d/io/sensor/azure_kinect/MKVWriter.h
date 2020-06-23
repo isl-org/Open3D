@@ -27,53 +27,36 @@
 #pragma once
 
 #include "open3d/geometry/RGBDImage.h"
-#include "open3d/io/sensor/AzureKinect/MKVMetadata.h"
+#include "open3d/io/sensor/azure_kinect/MKVMetadata.h"
 #include "open3d/utility/IJsonConvertible.h"
 
-struct _k4a_playback_t;        // typedef _k4a_playback_t* k4a_playback_t;
-struct _k4a_capture_t;         // typedef _k4a_capture_t* k4a_capture_t;
-struct _k4a_transformation_t;  // typedef _k4a_transformation_t*
-                               // k4a_transformation_t;
+struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
+struct _k4a_device_t;                // typedef _k4a_device_t* k4a_device_t;
+struct _k4a_capture_t;               // typedef _k4a_capture_t* k4a_capture_t;
+struct _k4a_record_t;                // typedef _k4a_record_t* k4a_record_t;
 
 namespace open3d {
 namespace io {
 
-/// \class MKVReader
-///
-/// AzureKinect mkv file reader.
-class MKVReader {
+class MKVWriter {
 public:
-    /// \brief Default Constructor.
-    MKVReader();
-    virtual ~MKVReader() {}
+    MKVWriter();
+    virtual ~MKVWriter() {}
 
-    /// Check If the mkv file is opened.
     bool IsOpened();
-    /// Check if the mkv file is all read.
-    bool IsEOF() { return is_eof_; }
 
-    /// Open an mkv playback.
-    ///
-    /// \param filename Path to the mkv file.
-    bool Open(const std::string &filename);
-    /// Close the opened mkv playback.
+    /* We assume device is already set properly according to config */
+    bool Open(const std::string &filename,
+              const _k4a_device_configuration_t &config,
+              _k4a_device_t *device);
     void Close();
 
-    /// Get metadata of the mkv playback.
-    MKVMetadata &GetMetadata() { return metadata_; }
-    /// Seek to the timestamp (in us).
-    bool SeekTimestamp(size_t timestamp);
-    /// Get next frame from the mkv playback and returns the RGBD object.
-    std::shared_ptr<geometry::RGBDImage> NextFrame();
+    bool SetMetadata(const MKVMetadata &metadata);
+    bool NextFrame(_k4a_capture_t *);
 
 private:
-    _k4a_playback_t *handle_;
-    _k4a_transformation_t *transformation_;
+    _k4a_record_t *handle_;
     MKVMetadata metadata_;
-    bool is_eof_ = false;
-
-    Json::Value GetMetadataJson();
-    std::string GetTagInMetadata(const std::string &tag_name);
 };
 }  // namespace io
 }  // namespace open3d

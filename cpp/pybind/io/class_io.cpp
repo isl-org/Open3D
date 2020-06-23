@@ -43,8 +43,8 @@
 #include "pybind/io/io.h"
 
 #ifdef BUILD_AZURE_KINECT
-#include "open3d/io/sensor/AzureKinect/AzureKinectSensorConfig.h"
-#include "open3d/io/sensor/AzureKinect/MKVMetadata.h"
+#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+#include "open3d/io/sensor/azure_kinect/MKVMetadata.h"
 #endif
 
 namespace open3d {
