@@ -29,7 +29,7 @@
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/Utility/DrawGeometry.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
 #include <sstream>

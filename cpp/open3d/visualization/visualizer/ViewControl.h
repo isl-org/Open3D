@@ -29,7 +29,7 @@
 #include "open3d/camera/PinholeCameraParameters.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Geometry.h"
-#include "open3d/visualization/Utility/GLHelper.h"
+#include "open3d/visualization/utility/GLHelper.h"
 #include "open3d/visualization/visualizer/ViewParameters.h"
 
 namespace open3d {

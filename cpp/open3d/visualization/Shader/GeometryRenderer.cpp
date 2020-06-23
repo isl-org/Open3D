@@ -30,8 +30,8 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/visualization/Utility/PointCloudPicker.h"
-#include "open3d/visualization/Utility/SelectionPolygon.h"
+#include "open3d/visualization/utility/PointCloudPicker.h"
+#include "open3d/visualization/utility/SelectionPolygon.h"
 #include "open3d/visualization/visualizer/RenderOptionWithEditing.h"
 
 namespace open3d {

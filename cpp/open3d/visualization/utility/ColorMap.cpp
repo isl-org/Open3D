@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Utility/ColorMap.h"
+#include "open3d/visualization/utility/ColorMap.h"
 
 #include "open3d/utility/Console.h"
 

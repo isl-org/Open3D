@@ -32,7 +32,7 @@ macro(AddSourceDir DIR)
     list(APPEND VISUALIZATION_ALL_SOURCE_FILES ${SOURCE_FILES})
 endmacro(AddSourceDir)
 AddSourceDir("Shader")
-AddSourceDir("Utility")
+AddSourceDir("utility")
 AddSourceDir("visualizer")
 
 if (ENABLE_GUI)

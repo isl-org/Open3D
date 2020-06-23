@@ -28,8 +28,8 @@
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/visualization/Shader/Shader.h"
-#include "open3d/visualization/Utility/ColorMap.h"
-#include "open3d/visualization/Utility/GLHelper.h"
+#include "open3d/visualization/utility/ColorMap.h"
+#include "open3d/visualization/utility/GLHelper.h"
 
 namespace open3d {
 namespace visualization {

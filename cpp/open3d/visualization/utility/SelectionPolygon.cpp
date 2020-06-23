@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Utility/SelectionPolygon.h"
+#include "open3d/visualization/utility/SelectionPolygon.h"
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
-#include "open3d/visualization/Utility/GLHelper.h"
-#include "open3d/visualization/Utility/SelectionPolygonVolume.h"
+#include "open3d/visualization/utility/GLHelper.h"
+#include "open3d/visualization/utility/SelectionPolygonVolume.h"
 #include "open3d/visualization/visualizer/ViewControl.h"
 #include "open3d/visualization/visualizer/ViewControlWithEditing.h"
 

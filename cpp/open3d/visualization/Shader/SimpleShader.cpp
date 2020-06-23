@@ -34,7 +34,7 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/visualization/Shader/Shader.h"
-#include "open3d/visualization/Utility/ColorMap.h"
+#include "open3d/visualization/utility/ColorMap.h"
 
 namespace open3d {
 namespace visualization {

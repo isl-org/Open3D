@@ -28,8 +28,8 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/Utility/DrawGeometry.h"
-#include "open3d/visualization/Utility/SelectionPolygonVolume.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
+#include "open3d/visualization/utility/SelectionPolygonVolume.h"
 #include "open3d/visualization/visualizer/Visualizer.h"
 
 #include "pybind/docstring.h"

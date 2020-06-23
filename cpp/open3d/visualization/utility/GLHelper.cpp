@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Utility/GLHelper.h"
+#include "open3d/visualization/utility/GLHelper.h"
 
 #include <Eigen/Dense>
 #include <cmath>

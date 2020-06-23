@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Utility/SelectionPolygonVolume.h"
+#include "open3d/visualization/utility/SelectionPolygonVolume.h"
 
 #include <json/json.h>
 
