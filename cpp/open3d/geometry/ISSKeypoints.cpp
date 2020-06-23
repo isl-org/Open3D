@@ -58,11 +58,9 @@ double ComputeModelResolution(const std::vector<Eigen::Vector3d>& points,
     std::vector<int> indices(2);
     std::vector<double> distances(2);
     double resolution = 0.0;
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static) reduction(+ : resolution)
-#endif
-    for (int i = 0; i < (int)points.size(); i++) {
-        if (kdtree.SearchKNN(points[i], 2, indices, distances) != 0) {
+
+    for (const auto& point : points) {
+        if (kdtree.SearchKNN(point, 2, indices, distances) != 0) {
             resolution += std::sqrt(distances[1]);
         }
     }
