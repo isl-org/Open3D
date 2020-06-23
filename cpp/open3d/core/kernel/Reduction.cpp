@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Kernel/Reduction.h"
+#include "open3d/core/kernel/Reduction.h"
 #include "open3d/core/SizeVector.h"
 
 namespace open3d {

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Kernel/UnaryEW.h"
+#include "open3d/core/kernel/UnaryEW.h"
 
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"

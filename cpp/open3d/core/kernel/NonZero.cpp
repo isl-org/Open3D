@@ -24,11 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Kernel/IndexGetSet.h"
+#include "open3d/core/kernel/NonZero.h"
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Dispatch.h"
-#include "open3d/core/Kernel/CPULauncher.h"
+#include "open3d/core/Device.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
 
@@ -36,37 +34,19 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-template <typename scalar_t>
-static void CPUCopyElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
-}
-
-void IndexGetCPU(const Tensor& src,
-                 Tensor& dst,
-                 const std::vector<Tensor>& index_tensors,
-                 const SizeVector& indexed_shape,
-                 const SizeVector& indexed_strides) {
-    Dtype dtype = src.GetDtype();
-    AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
-                       AdvancedIndexer::AdvancedIndexerMode::GET);
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        CPULauncher::LaunchAdvancedIndexerKernel(
-                ai, CPUCopyElementKernel<scalar_t>);
-    });
-}
-
-void IndexSetCPU(const Tensor& src,
-                 Tensor& dst,
-                 const std::vector<Tensor>& index_tensors,
-                 const SizeVector& indexed_shape,
-                 const SizeVector& indexed_strides) {
-    Dtype dtype = src.GetDtype();
-    AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
-                       AdvancedIndexer::AdvancedIndexerMode::SET);
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        CPULauncher::LaunchAdvancedIndexerKernel(
-                ai, CPUCopyElementKernel<scalar_t>);
-    });
+Tensor NonZero(const Tensor& src) {
+    Device::DeviceType device_type = src.GetDevice().GetType();
+    if (device_type == Device::DeviceType::CPU) {
+        return NonZeroCPU(src);
+    } else if (device_type == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        return NonZeroCUDA(src);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("NonZero: Unimplemented device");
+    }
 }
 
 }  // namespace kernel

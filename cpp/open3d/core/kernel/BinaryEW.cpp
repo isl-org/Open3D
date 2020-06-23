@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Kernel/BinaryEW.h"
+#include "open3d/core/kernel/BinaryEW.h"
 
 #include <vector>
 
