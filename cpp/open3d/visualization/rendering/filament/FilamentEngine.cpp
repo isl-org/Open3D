@@ -32,6 +32,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 filament::backend::Backend EngineInstance::backend_ =
         filament::backend::Backend::DEFAULT;
@@ -65,5 +66,6 @@ EngineInstance::EngineInstance() {
     resource_manager_ = new FilamentResourceManager(*engine_);
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

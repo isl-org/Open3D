@@ -43,6 +43,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 FilamentRenderToBuffer::FilamentRenderToBuffer(filament::Engine& engine)
     : engine_(engine) {
@@ -176,5 +177,6 @@ void FilamentRenderToBuffer::Render() {
     pending_ = false;
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

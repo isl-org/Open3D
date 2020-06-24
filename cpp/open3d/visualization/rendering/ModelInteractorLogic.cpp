@@ -30,9 +30,10 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
-ModelInteractorLogic::ModelInteractorLogic(visualization::Scene* scene,
-                                           visualization::Camera* camera,
+ModelInteractorLogic::ModelInteractorLogic(Scene* scene,
+                                           Camera* camera,
                                            double min_far_plane)
     : RotationInteractorLogic(camera, min_far_plane),
       scene_(scene),
@@ -45,7 +46,7 @@ void ModelInteractorLogic::SetBoundingBox(
     Super::SetBoundingBox(bounds);
     // Initialize parent's matrix_ (in case we do a mouse wheel, which
     // doesn't involve a mouse down) and the center of rotation.
-    SetMouseDownInfo(visualization::Camera::Transform::Identity(),
+    SetMouseDownInfo(Camera::Transform::Identity(),
                      bounds.GetCenter().cast<float>());
 }
 
@@ -168,5 +169,6 @@ void ModelInteractorLogic::EndMouseDrag() {
     scene_->SetEntityEnabled(axes_, is_axes_visible_);
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

@@ -32,6 +32,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
         const geometry::Geometry3D& geometry) {
@@ -62,5 +63,6 @@ void GeometryBuffersBuilder::DeallocateBuffer(void* buffer,
     free(buffer);
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

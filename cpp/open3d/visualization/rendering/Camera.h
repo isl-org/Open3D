@@ -30,6 +30,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class Camera {
 public:
@@ -100,5 +101,6 @@ public:
     virtual Transform GetProjectionMatrix() const = 0;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

@@ -30,6 +30,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 std::array<std::uint16_t, static_cast<size_t>(EntityType::Count)>
         REHandle_abstract::uid_table;
@@ -59,5 +60,6 @@ const char* REHandle_abstract::TypeToString(EntityType type) {
     return kTypesMapping[static_cast<size_t>(type)];
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

@@ -32,6 +32,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 static const ResourceLoadRequest::ErrorCallback kDefaultErrorHandler =
         [](const ResourceLoadRequest& request,
@@ -104,5 +105,6 @@ void Renderer::RenderToImage(
             });
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

@@ -30,13 +30,13 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class RotationInteractorLogic : public MatrixInteractorLogic {
     using Super = MatrixInteractorLogic;
 
 public:
-    explicit RotationInteractorLogic(visualization::Camera *camera,
-                                     double min_far_plane);
+    explicit RotationInteractorLogic(Camera *camera, double min_far_plane);
     ~RotationInteractorLogic();
 
     virtual void SetCenterOfRotation(const Eigen::Vector3f &center);
@@ -51,11 +51,12 @@ public:
 
 protected:
     double min_far_plane_;
-    visualization::Camera *camera_;
+    Camera *camera_;
 
     Eigen::Vector3f CalcPanVectorWorld(int dx, int dy);
     void UpdateCameraFarPlane();
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

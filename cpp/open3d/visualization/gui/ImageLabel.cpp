@@ -43,7 +43,7 @@ ImageLabel::ImageLabel(const char* image_path) : impl_(new ImageLabel::Impl()) {
     impl_->image_ = std::make_shared<UIImage>(image_path);
 }
 
-ImageLabel::ImageLabel(visualization::TextureHandle texture_id,
+ImageLabel::ImageLabel(visualization::rendering::TextureHandle texture_id,
                        float u0 /*= 0.0f*/,
                        float v0 /*= 0.0f*/,
                        float u1 /*= 1.0f*/,
@@ -81,7 +81,7 @@ Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
         params = impl_->image_->CalcDrawParams(context.renderer, frame);
     }
 
-    if (params.texture != visualization::TextureHandle::kBad) {
+    if (params.texture != visualization::rendering::TextureHandle::kBad) {
         ImTextureID image_id =
                 reinterpret_cast<ImTextureID>(params.texture.GetId());
         ImGui::SetCursorPos(ImVec2(params.pos_x - context.uiOffsetX,

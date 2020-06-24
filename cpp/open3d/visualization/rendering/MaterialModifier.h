@@ -32,6 +32,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 struct TextureSamplerParameters {
     enum class MinFilter : uint8_t {
@@ -137,5 +138,6 @@ public:
     virtual MaterialInstanceHandle Finish() = 0;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
