@@ -362,10 +362,10 @@ class JupyterDocsBuilder:
         # Jupyter notebooks
         os.environ["CI"] = "true"
 
-        # Copy TestData directory to the tutorial folder
+        # Copy test_data directory to the tutorial folder
         test_data_in_dir = (Path(self.current_file_dir).parent / "examples" /
-                            "TestData")
-        test_data_out_dir = Path(self.current_file_dir) / "TestData"
+                            "test_data")
+        test_data_out_dir = Path(self.current_file_dir) / "test_data"
         if test_data_out_dir.exists():
             shutil.rmtree(test_data_out_dir)
         shutil.copytree(test_data_in_dir, test_data_out_dir)
@@ -375,7 +375,7 @@ class JupyterDocsBuilder:
         example_dirs = ["Basic", "Advanced"]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir).parent / "examples" /
-                      "Python" / example_dir)
+                      "python" / example_dir)
             out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
             shutil.copy(
                 in_dir.parent / "open3d_tutorial.py",
@@ -447,7 +447,7 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help=("Whether to clean existing notebooks in docs/tutorial. "
-              "Notebooks are copied from examples/Python to docs/tutorial."),
+              "Notebooks are copied from examples/python to docs/tutorial."),
     )
     parser.add_argument(
         "--execute_notebooks",
