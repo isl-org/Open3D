@@ -88,8 +88,7 @@ public:
     void Run(const func_t& reduce_func, scalar_t identity) {
         // See: PyTorch's TensorIterator::parallel_reduce for the reference
         // design of reduction strategy.
-        if (GetMaxThreads() == 1 ||
-            InParallel()) {
+        if (GetMaxThreads() == 1 || InParallel()) {
             LaunchReductionKernelSerial<scalar_t>(indexer_, reduce_func);
         } else if (indexer_.NumOutputElements() <= 1) {
             LaunchReductionKernelTwoPass<scalar_t>(indexer_, reduce_func,
