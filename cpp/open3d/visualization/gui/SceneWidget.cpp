@@ -727,16 +727,13 @@ void SceneWidget::SetViewControls(Controls mode) {
 void SceneWidget::SetRenderQuality(Quality quality) {
     auto currentQuality = GetRenderQuality();
     if (currentQuality != quality) {
-        bool is_fast = false;
         auto view = impl_->scene_->GetView(impl_->view_id_);
         if (quality == Quality::FAST) {
             view->SetSampleCount(1);
             impl_->scene_->SetLOD(Open3DScene::LOD::FAST);
-            is_fast = true;
         } else {
             view->SetSampleCount(4);
             impl_->scene_->SetLOD(Open3DScene::LOD::HIGH_DETAIL);
-            is_fast = false;
         }
     }
 }
