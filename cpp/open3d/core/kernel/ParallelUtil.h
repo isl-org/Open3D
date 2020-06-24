@@ -29,7 +29,6 @@
 namespace open3d {
 namespace core {
 namespace kernel {
-namespace parallel_util {
 
 inline int GetMaxThreads() {
 #ifdef _OPENMP
@@ -47,7 +46,6 @@ inline bool InParallel() {
 #endif
 }
 
-}  // namespace parallel_util
 }  // namespace kernel
 }  // namespace core
 }  // namespace open3d

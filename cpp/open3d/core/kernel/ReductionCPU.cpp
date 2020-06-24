@@ -30,8 +30,8 @@
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
-#include "open3d/core/ParallelUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/kernel/ParallelUtil.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -88,8 +88,8 @@ public:
     void Run(const func_t& reduce_func, scalar_t identity) {
         // See: PyTorch's TensorIterator::parallel_reduce for the reference
         // design of reduction strategy.
-        if (parallel_util::GetMaxThreads() == 1 ||
-            parallel_util::InParallel()) {
+        if (GetMaxThreads() == 1 ||
+            InParallel()) {
             LaunchReductionKernelSerial<scalar_t>(indexer_, reduce_func);
         } else if (indexer_.NumOutputElements() <= 1) {
             LaunchReductionKernelTwoPass<scalar_t>(indexer_, reduce_func,
@@ -125,7 +125,7 @@ private:
                     "single-output reduction ops.");
         }
         int64_t num_workloads = indexer.NumWorkloads();
-        int64_t num_threads = parallel_util::GetMaxThreads();
+        int64_t num_threads = GetMaxThreads();
         int64_t workload_per_thread =
                 (num_workloads + num_threads - 1) / num_threads;
         std::vector<scalar_t> thread_results(num_threads, identity);
@@ -156,7 +156,7 @@ private:
         // Prefers outer dimension >= num_threads.
         const int64_t* indexer_shape = indexer.GetMasterShape();
         const int64_t num_dims = indexer.NumDims();
-        int64_t num_threads = parallel_util::GetMaxThreads();
+        int64_t num_threads = GetMaxThreads();
 
         // Init best_dim as the outer-most non-reduction dim.
         int64_t best_dim = num_dims - 1;
