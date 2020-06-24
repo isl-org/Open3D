@@ -34,7 +34,7 @@ function(style_apply_file_python FILE)
 endfunction()
 
 set(DIRECTORIES_OF_INTEREST_PYTHON
-    examples/Python
+    examples/python
     docs
     python
 )

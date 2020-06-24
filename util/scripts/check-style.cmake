@@ -41,7 +41,7 @@ macro(style_check_file_python FILE)
 endmacro()
 
 set(DIRECTORIES_OF_INTEREST_PYTHON
-    examples/Python
+    examples/python
     docs
     python
 )

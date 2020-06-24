@@ -5,7 +5,7 @@ Interactive visualization
 
 This tutorial introduces user interaction features of the visualizer window.
 
-.. literalinclude:: ../../../examples/Python/Advanced/interactive_visualization.py
+.. literalinclude:: ../../../examples/python/Advanced/interactive_visualization.py
    :language: python
    :lineno-start: 5
    :lines: 5-
@@ -18,7 +18,7 @@ This script executes two applications of user interaction: ``demo_crop_geometry`
 Crop geometry
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/Advanced/interactive_visualization.py
+.. literalinclude:: ../../../examples/python/Advanced/interactive_visualization.py
    :language: python
    :lineno-start: 12
    :lines: 12-23
@@ -63,7 +63,7 @@ Select correspondences
 
 The following script registers two point clouds using point-to-point ICP. It gets initial alignment via user interaction.
 
-.. literalinclude:: ../../../examples/Python/Advanced/interactive_visualization.py
+.. literalinclude:: ../../../examples/python/Advanced/interactive_visualization.py
    :language: python
    :lineno-start: 51
    :lines: 51-60
@@ -74,7 +74,7 @@ The script reads two point clouds, and visualizes the point clouds before alignm
 .. image:: ../../_static/Advanced/interactive_visualization/manual_icp_initial.png
     :width: 400px
 
-.. literalinclude:: ../../../examples/Python/Advanced/interactive_visualization.py
+.. literalinclude:: ../../../examples/python/Advanced/interactive_visualization.py
    :language: python
    :lineno-start: 35
    :lines: 35-48
@@ -113,7 +113,7 @@ This will print:
 Registration using user correspondences
 =======================================
 
-.. literalinclude:: ../../../examples/Python/Advanced/interactive_visualization.py
+.. literalinclude:: ../../../examples/python/Advanced/interactive_visualization.py
    :language: python
    :lineno-start: 61
    :lines: 61-80

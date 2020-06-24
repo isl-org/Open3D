@@ -13,7 +13,7 @@ The script runs with ``python run_system.py [config] --integrate``. In ``[config
 Integrate RGBD frames
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/integrate_scene.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/integrate_scene.py
    :language: python
    :lineno-start: 13
    :lines: 5,17-54
