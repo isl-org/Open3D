@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Rendering/Open3DScene.h"
+#include "open3d/visualization/rendering/Open3DScene.h"
 
 #include <algorithm>
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/visualization/Rendering/Scene.h"
-#include "open3d/visualization/Rendering/View.h"
+#include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/rendering/View.h"
 
 namespace open3d {
 namespace visualization {
