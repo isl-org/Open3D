@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "open3d/visualization/Rendering/RendererHandle.h"
+#include "open3d/visualization/rendering/RendererHandle.h"
 
 namespace open3d {
 namespace visualization {

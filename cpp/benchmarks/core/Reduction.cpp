@@ -26,10 +26,10 @@
 
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Dtype.h"
-#include "open3d/core/Kernel/Kernel.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/kernel/Kernel.h"
 
 #include <benchmark/benchmark.h>
 

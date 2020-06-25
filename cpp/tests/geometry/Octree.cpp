@@ -31,8 +31,8 @@
 #include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/VoxelGrid.h"
-#include "open3d/io/ClassIO/PointCloudIO.h"
-#include "open3d/visualization/Utility/DrawGeometry.h"
+#include "open3d/io/PointCloudIO.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {

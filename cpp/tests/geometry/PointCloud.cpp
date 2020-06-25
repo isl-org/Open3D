@@ -32,10 +32,10 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/io/ClassIO/ImageIO.h"
-#include "open3d/io/ClassIO/PinholeCameraTrajectoryIO.h"
-#include "open3d/io/ClassIO/PointCloudIO.h"
-#include "open3d/visualization/Utility/DrawGeometry.h"
+#include "open3d/io/ImageIO.h"
+#include "open3d/io/PinholeCameraTrajectoryIO.h"
+#include "open3d/io/PointCloudIO.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {

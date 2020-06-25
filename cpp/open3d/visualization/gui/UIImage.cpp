@@ -30,11 +30,11 @@
 #include <string>
 
 #include "open3d/geometry/Image.h"
-#include "open3d/io/ClassIO/ImageIO.h"
-#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
-#include "open3d/visualization/Rendering/Filament/FilamentResourceManager.h"
-#include "open3d/visualization/Rendering/Renderer.h"
+#include "open3d/io/ImageIO.h"
 #include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/rendering/Renderer.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 
 namespace open3d {
 namespace visualization {

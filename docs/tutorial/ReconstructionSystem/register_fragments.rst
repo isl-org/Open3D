@@ -16,7 +16,7 @@ The main function runs ``make_posegraph_for_scene`` and ``optimize_posegraph_for
 Preprocess point cloud
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/register_fragments.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/register_fragments.py
    :language: python
    :lineno-start: 17
    :lines: 5,18-28
@@ -28,7 +28,7 @@ This function downsamples a point cloud to make it sparser and regularly distrib
 Compute initial registration
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/register_fragments.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/register_fragments.py
    :language: python
    :lineno-start: 54
    :lines: 5,55-81
@@ -42,7 +42,7 @@ This function computes a rough alignment between two fragments. If the fragments
 Pairwise global registration
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/register_fragments.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/register_fragments.py
    :language: python
    :lineno-start: 30
    :lines: 5,31-52
@@ -56,7 +56,7 @@ This function uses :ref:`/tutorial/Advanced/global_registration.ipynb#RANSAC` or
 Multiway registration
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/register_fragments.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/register_fragments.py
    :language: python
    :lineno-start: 83
    :lines: 5,84-103
@@ -66,7 +66,7 @@ This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway
 
 Once a pose graph is built, the function ``optimize_posegraph_for_scene`` is called for multiway registration.
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/optimize_posegraph.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/optimize_posegraph.py
    :language: python
    :lineno-start: 42
    :lines: 5,43-50
@@ -77,7 +77,7 @@ Main registration loop
 
 The function ``make_posegraph_for_scene`` below calls all the functions introduced above. The main workflow is: pairwise global registration -> multiway registration.
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/register_fragments.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/register_fragments.py
    :language: python
    :lineno-start: 135
    :lines: 5,136-176

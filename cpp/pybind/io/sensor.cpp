@@ -25,10 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/RGBDImage.h"
-#include "open3d/io/Sensor/AzureKinect/AzureKinectRecorder.h"
-#include "open3d/io/Sensor/AzureKinect/AzureKinectSensor.h"
-#include "open3d/io/Sensor/AzureKinect/AzureKinectSensorConfig.h"
-#include "open3d/io/Sensor/AzureKinect/MKVReader.h"
+#include "open3d/io/sensor/azure_kinect/AzureKinectRecorder.h"
+#include "open3d/io/sensor/azure_kinect/AzureKinectSensor.h"
+#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+#include "open3d/io/sensor/azure_kinect/MKVReader.h"
 
 #include "pybind/docstring.h"
 #include "pybind/io/io.h"
