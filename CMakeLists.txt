@@ -358,16 +358,14 @@ export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
 
 # `make check-style` errors if styling is not compliant
 add_custom_target(check-style
-    COMMAND ${CMAKE_COMMAND}
-    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check-style.cmake
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_style.py
 )
 
 # `make apply-style` runs clang-format to format all source code
 add_custom_target(apply-style
-    COMMAND ${CMAKE_COMMAND}
-    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/apply-style.cmake
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_style.py --do_apply_style
 )
 
 function(open3d_aligned_print first second)
