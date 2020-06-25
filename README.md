@@ -80,7 +80,7 @@ $ python -c "import open3d as o3d"
 ```
 
 and follow the [basic tutorials](http://www.open3d.org/docs/release/tutorial/Basic/index.html)
-or [Python examples](https://github.com/intel-isl/Open3D/tree/master/examples/Python) to get
+or [Python examples](https://github.com/intel-isl/Open3D/tree/master/examples/python) to get
 started.
 
 ## C++ quick start

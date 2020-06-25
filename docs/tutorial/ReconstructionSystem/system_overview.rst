@@ -33,12 +33,12 @@ Put all color images in the ``image`` folder, and all depth images in the ``dept
 
 .. code-block:: sh
 
-    cd examples/Python/ReconstructionSystem/
+    cd examples/python/ReconstructionSystem/
     python run_system.py [config_file] [--make] [--register] [--refine] [--integrate]
 
 ``config_file`` has parameters and file paths. For example, ReconstructionSystem/config/tutorial.json has the following script.
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/config/tutorial.json
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/config/tutorial.json
    :language: json
    :lineno-start: 1
    :lines: 1-
