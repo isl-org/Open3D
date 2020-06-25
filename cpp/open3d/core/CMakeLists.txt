@@ -37,17 +37,29 @@ set (CORE_CUDA_SRC
     MemoryManagerCUDA.cu
 )
 
+set(ALGEBRA_SRC
+  algebra/Matmul.cpp
+  algebra/MatmulCPU.cpp
+)
+
+set(ALGEBRA_CUDA_SRC
+  algebra/MatmulCUDA.cu
+)
+
 if (BUILD_CUDA_MODULE)
     set (ALL_CORE_SRC
         ${CORE_SRC}
         ${CORE_CUDA_SRC}
         ${KERNEL_SRC}
         ${KERNEL_CUDA_SRC}
+        ${ALGEBRA_SRC}
+        ${ALGEBRA_CUDA_SRC}
     )
 else()
     set (ALL_CORE_SRC
         ${CORE_SRC}
         ${KERNEL_SRC}
+        ${ALGEBRA_SRC}
     )
 endif()
 
@@ -57,6 +69,12 @@ open3d_set_global_properties(core)
 open3d_link_3rdparty_libraries(core)
 open3d_show_and_abort_on_warning(core)
 
+
 if (BUILD_CUDA_MODULE)
-    target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+   target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+   add_executable(TestMatmul algebra/TestMatmul.cpp)
+
+   # TODO: incorporate CUBLAS LIBRARY in main CMakeList
+   find_package(BLAS REQUIRED)
+   target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME} ${CUDA_CUBLAS_LIBRARIES} ${BLAS_LIBRARIES})
 endif()

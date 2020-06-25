@@ -26,13 +26,22 @@
 
 #pragma once
 
+#include "open3d/core/Tensor.h"
+
 // Pytorch reference
 // https://discuss.pytorch.org/t/matrix-multiplication-source-code/71071
 
-// CUDA converges to
-// https://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemmbatched
+namespace open3d {
+namespace core {
 
-// CPU converges to
-// http://netlib.org/blas/#_level_3
-// https://software.intel.com/content/www/us/en/develop/documentation/mkl-developer-reference-c/top/blas-and-sparse-blas-routines/blas-routines/blas-level-3-routines/cblas-gemm.html
-// https://oneapi-src.github.io/oneDNN/group__dnnl__api__blas.html
+Tensor Matmul(const Tensor& A, const Tensor& B);
+
+namespace _detail {
+#ifdef BUILD_CUDA_MODULE
+Tensor MatmulCUDA(const Tensor& A, const Tensor& B);
+#endif
+
+Tensor MatmulCPU(const Tensor& A, const Tensor& B);
+}  // namespace _detail
+}  // namespace core
+}  // namespace open3d
