@@ -28,7 +28,7 @@
 #include <string>
 #include <vector>
 
-#include     "open3d/utility/Console.h"
+#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 
 namespace open3d {

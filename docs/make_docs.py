@@ -79,7 +79,7 @@ class PyAPIDocsBuilder:
             self._generate_module_class_function_docs(module_name, module,
                                                       self.output_dir)
 
-    def _get_open3d_module(self,    full_module_name):
+    def _get_open3d_module(self, full_module_name):
         """Returns the module object for the given module path"""
         import open3d  # make sure the root module is loaded
 

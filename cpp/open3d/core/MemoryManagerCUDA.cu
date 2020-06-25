@@ -37,7 +37,7 @@ namespace core {
 
 CUDAMemoryManager::CUDAMemoryManager() {}
 
-void*     CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
+void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
     CUDADeviceSwitcher switcher(device);
     void* ptr;
     if (device.GetType() == Device::DeviceType::CUDA) {

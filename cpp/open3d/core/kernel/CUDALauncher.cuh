@@ -41,7 +41,7 @@
 // The kernel launch mechanism is inspired by PyTorch's launch Loops.cuh.
 // See: https://tinyurl.com/y4lak257
 
-static constexpr     int64_t default_block_size = 128;
+static constexpr int64_t default_block_size = 128;
 static constexpr int64_t default_thread_size = 4;
 
 namespace open3d {

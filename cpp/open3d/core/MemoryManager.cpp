@@ -37,7 +37,7 @@
 namespace open3d {
 namespace core {
 
-void* MemoryManager::Malloc   (size_t byte_size, const Device& device) {
+void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
     return GetDeviceMemoryManager(device)->Malloc(byte_size, device);
 }
 
