@@ -53,6 +53,7 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Camera.h"
+#include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
 #include "open3d/visualization/rendering/RendererStructs.h"
 #include "open3d/visualization/rendering/Scene.h"
@@ -256,51 +257,6 @@ std::shared_ptr<gui::Dialog> CreateContactDialog(gui::Window *window) {
     return dlg;
 }
 
-std::shared_ptr<geometry::TriangleMesh> CreateAxes(double axis_length) {
-    const double sphere_radius = 0.005 * axis_length;
-    const double cyl_radius = 0.0025 * axis_length;
-    const double cone_radius = 0.0075 * axis_length;
-    const double cyl_height = 0.975 * axis_length;
-    const double cone_height = 0.025 * axis_length;
-
-    auto mesh_frame = geometry::TriangleMesh::CreateSphere(sphere_radius);
-    mesh_frame->ComputeVertexNormals();
-    mesh_frame->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
-
-    std::shared_ptr<geometry::TriangleMesh> mesh_arrow;
-    Eigen::Matrix4d transformation;
-
-    mesh_arrow = geometry::TriangleMesh::CreateArrow(cyl_radius, cone_radius,
-                                                     cyl_height, cone_height);
-    mesh_arrow->ComputeVertexNormals();
-    mesh_arrow->PaintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
-    transformation << 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1;
-    mesh_arrow->Transform(transformation);
-    *mesh_frame += *mesh_arrow;
-
-    mesh_arrow = geometry::TriangleMesh::CreateArrow(cyl_radius, cone_radius,
-                                                     cyl_height, cone_height);
-    mesh_arrow->ComputeVertexNormals();
-    mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
-    transformation << 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1;
-    mesh_arrow->Transform(transformation);
-    *mesh_frame += *mesh_arrow;
-
-    mesh_arrow = geometry::TriangleMesh::CreateArrow(cyl_radius, cone_radius,
-                                                     cyl_height, cone_height);
-    mesh_arrow->ComputeVertexNormals();
-    mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));
-    transformation << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
-    mesh_arrow->Transform(transformation);
-    *mesh_frame += *mesh_arrow;
-
-    // Add UVs because material shader for axes expects them
-    mesh_frame->triangle_uvs_.resize(mesh_frame->triangles_.size() * 3,
-                                     {0.0, 0.0});
-
-    return mesh_frame;
-}
-
 bool ColorArrayIsUniform(const std::vector<Eigen::Vector3d> &colors) {
     static const double e = 1.0 / 255.0;
     static const double SQ_EPSILON = Eigen::Vector3d(e, e, e).squaredNorm();
@@ -465,9 +421,7 @@ enum MenuId {
 };
 
 struct GuiVisualizer::Impl {
-    std::vector<visualization::GeometryHandle> geometry_handles_;
-
-    std::shared_ptr<gui::SceneWidget> scene_;
+    std::shared_ptr<gui::SceneWidget> scene_wgt_;
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
 
@@ -571,8 +525,6 @@ struct GuiVisualizer::Impl {
     struct Settings {
         visualization::IndirectLightHandle ibl;
         visualization::SkyboxHandle sky;
-        visualization::LightHandle directional_light;
-        visualization::GeometryHandle axes;
 
         std::shared_ptr<gui::Vert> wgt_base;
         std::shared_ptr<gui::Checkbox> wgt_show_axes;
@@ -770,8 +722,8 @@ struct GuiVisualizer::Impl {
         using MaterialType = Impl::Settings::MaterialType;
         using ViewMode = visualization::View::Mode;
 
-        auto render_scene = scene_->GetScene();
-        auto view = scene_->GetView();
+        auto render_scene = scene_wgt_->GetScene()->GetScene();
+        auto view = scene_wgt_->GetRenderView();
         settings_.selected_type = type;
         settings_.wgt_material_type->SetSelectedIndex(int(type));
 
@@ -781,7 +733,7 @@ struct GuiVisualizer::Impl {
         switch (type) {
             case MaterialType::LIT: {
                 view->SetMode(ViewMode::Color);
-                for (const auto &handle : geometry_handles_) {
+                for (const auto &handle : scene_wgt_->GetScene()->GetModel()) {
                     auto mat = settings_.current_materials.lit.handle;
                     render_scene->AssignMaterial(handle, mat);
                 }
@@ -797,7 +749,7 @@ struct GuiVisualizer::Impl {
             }
             case MaterialType::UNLIT: {
                 view->SetMode(ViewMode::Color);
-                for (const auto &handle : geometry_handles_) {
+                for (const auto &handle : scene_wgt_->GetScene()->GetModel()) {
                     auto mat = settings_.current_materials.unlit.handle;
                     render_scene->AssignMaterial(handle, mat);
                 }
@@ -864,14 +816,16 @@ struct GuiVisualizer::Impl {
     void SetMaterialByName(visualization::Renderer &renderer,
                            const std::string &name) {
         if (name == MATERIAL_FROM_FILE_NAME) {
-            for (size_t i = 0; i < geometry_handles_.size(); ++i) {
+            for (size_t i = 0; i < scene_wgt_->GetScene()->GetModel().size();
+                 ++i) {
                 auto mat_desc = settings_.loaded_materials_.find(i);
                 if (mat_desc == settings_.loaded_materials_.end()) {
                     continue;
                 }
                 auto mat = settings_.current_materials.lit.handle;
                 mat = this->CreateLitMaterial(renderer, mat, mat_desc->second);
-                scene_->GetScene()->AssignMaterial(geometry_handles_[i], mat);
+                scene_wgt_->GetScene()->GetScene()->AssignMaterial(
+                        scene_wgt_->GetScene()->GetModel()[i], mat);
                 settings_.current_materials.lit.handle = mat;
             }
             if (!settings_.user_has_changed_color &&
@@ -901,8 +855,9 @@ struct GuiVisualizer::Impl {
                 }
                 auto mat = settings_.current_materials.lit.handle;
                 mat = this->CreateLitMaterial(renderer, mat, prefab);
-                for (const auto &handle : geometry_handles_) {
-                    scene_->GetScene()->AssignMaterial(handle, mat);
+                for (const auto &handle : scene_wgt_->GetScene()->GetModel()) {
+                    scene_wgt_->GetScene()->GetScene()->AssignMaterial(handle,
+                                                                       mat);
                 }
                 settings_.current_materials.lit.handle = mat;
             }
@@ -923,7 +878,7 @@ struct GuiVisualizer::Impl {
 
     void SetLightingProfile(visualization::Renderer &renderer,
                             const LightingProfile &profile) {
-        auto *render_scene = scene_->GetScene();
+        auto *render_scene = scene_wgt_->GetScene()->GetScene();
         if (profile.use_default_ibl) {
             this->SetIBL(renderer, nullptr);
             settings_.wgt_ibls->SetSelectedValue(DEFAULT_IBL.c_str());
@@ -936,24 +891,26 @@ struct GuiVisualizer::Impl {
         render_scene->SetIndirectLightIntensity(profile.ibl_intensity);
         render_scene->SetIndirectLightRotation(profile.ibl_rotation);
         render_scene->SetSkybox(SkyboxHandle());
-        render_scene->SetEntityEnabled(settings_.directional_light,
+        render_scene->SetEntityEnabled(scene_wgt_->GetScene()->GetSun(),
                                        profile.sun_enabled);
-        render_scene->SetLightIntensity(settings_.directional_light,
+        render_scene->SetLightIntensity(scene_wgt_->GetScene()->GetSun(),
                                         profile.sun_intensity);
-        render_scene->SetLightDirection(settings_.directional_light,
+        render_scene->SetLightDirection(scene_wgt_->GetScene()->GetSun(),
                                         profile.sun_dir);
-        render_scene->SetLightColor(settings_.directional_light,
+        render_scene->SetLightColor(scene_wgt_->GetScene()->GetSun(),
                                     profile.sun_color);
-        settings_.wgt_ibl_enabled->SetChecked(profile.ibl_enabled);
-        settings_.wgt_sky_enabled->SetChecked(false);
-        settings_.wgt_directional_enabled->SetChecked(profile.sun_enabled);
-        settings_.wgt_ibls->SetSelectedValue(DEFAULT_IBL.c_str());
-        settings_.wgt_ibl_intensity->SetValue(profile.ibl_intensity);
-        settings_.wgt_sun_intensity->SetValue(profile.sun_intensity);
-        settings_.wgt_sun_dir->SetValue(profile.sun_dir);
-        settings_.wgt_sun_color->SetValue(gui::Color(profile.sun_color[0],
-                                                     profile.sun_color[1],
-                                                     profile.sun_color[2]));
+        if (settings_.wgt_base) {
+            settings_.wgt_ibl_enabled->SetChecked(profile.ibl_enabled);
+            settings_.wgt_sky_enabled->SetChecked(false);
+            settings_.wgt_directional_enabled->SetChecked(profile.sun_enabled);
+            settings_.wgt_ibls->SetSelectedValue(DEFAULT_IBL.c_str());
+            settings_.wgt_ibl_intensity->SetValue(profile.ibl_intensity);
+            settings_.wgt_sun_intensity->SetValue(profile.sun_intensity);
+            settings_.wgt_sun_dir->SetValue(profile.sun_dir);
+            settings_.wgt_sun_color->SetValue(gui::Color(profile.sun_color[0],
+                                                         profile.sun_color[1],
+                                                         profile.sun_color[2]));
+        }
     }
 
     bool SetIBL(visualization::Renderer &renderer, const char *path) {
@@ -971,7 +928,7 @@ struct GuiVisualizer::Impl {
                     ResourceLoadRequest(ibl_path.c_str()));
         }
         if (new_ibl) {
-            auto *render_scene = scene_->GetScene();
+            auto *render_scene = scene_wgt_->GetScene()->GetScene();
             settings_.ibl = new_ibl;
             auto intensity = render_scene->GetIndirectLightIntensity();
             render_scene->SetIndirectLight(new_ibl);
@@ -989,9 +946,9 @@ struct GuiVisualizer::Impl {
                 }
                 bool is_on = settings_.wgt_sky_enabled->IsChecked();
                 if (is_on) {
-                    scene_->GetScene()->SetSkybox(settings_.sky);
+                    scene_wgt_->GetScene()->SetSkybox(settings_.sky);
                 }
-                scene_->SetSkyboxHandle(settings_.sky, is_on);
+                scene_wgt_->SetSkyboxHandle(settings_.sky, is_on);
             }
             return true;
         }
@@ -1001,8 +958,8 @@ struct GuiVisualizer::Impl {
     void SetMouseControls(gui::Window &window,
                           gui::SceneWidget::Controls mode) {
         using Controls = gui::SceneWidget::Controls;
-        scene_->SetViewControls(mode);
-        window.SetFocusWidget(scene_.get());
+        scene_wgt_->SetViewControls(mode);
+        window.SetFocusWidget(scene_wgt_.get());
         settings_.wgt_mouse_arcball->SetOn(mode == Controls::ROTATE_OBJ);
         settings_.wgt_mouse_fly->SetOn(mode == Controls::FLY);
         settings_.wgt_mouse_model->SetOn(mode == Controls::ROTATE_MODEL);
@@ -1059,38 +1016,27 @@ GuiVisualizer::GuiVisualizer(
     }
 
     // Create scene
-    auto scene_id = GetRenderer().CreateScene();
-    auto scene = std::make_shared<gui::SceneWidget>(
-            *GetRenderer().GetScene(scene_id));
-    auto render_scene = scene->GetScene();
-    impl_->scene_ = scene;
-    scene->SetBackgroundColor(gui::Color(1.0, 1.0, 1.0));
+    impl_->scene_wgt_ = std::make_shared<gui::SceneWidget>();
+    impl_->scene_wgt_->SetScene(std::make_shared<Open3DScene>(GetRenderer()));
+    auto render_scene = impl_->scene_wgt_->GetScene()->GetScene();
+    impl_->scene_wgt_->SetBackgroundColor(gui::Color(1.0, 1.0, 1.0));
 
     // Create light
     const int default_lighting_profile_idx = 0;
     auto &lighting_profile = g_lighting_profiles[default_lighting_profile_idx];
-    visualization::LightDescription light_description;
-    light_description.intensity = lighting_profile.sun_intensity;
-    light_description.direction = lighting_profile.sun_dir;
-    light_description.cast_shadows = true;
-    light_description.custom_attributes["custom_type"] = "SUN";
-
-    impl_->settings_.directional_light =
-            scene->GetScene()->AddLight(light_description);
-
     auto &settings = impl_->settings_;
     std::string resource_path = app.GetResourcePath();
     auto ibl_path = resource_path + "/default_ibl.ktx";
     settings.ibl = GetRenderer().AddIndirectLight(
             ResourceLoadRequest(ibl_path.data()));
-    render_scene->SetIndirectLight(settings.ibl);
-    render_scene->SetIndirectLightIntensity(lighting_profile.ibl_intensity);
-    render_scene->SetIndirectLightRotation(lighting_profile.ibl_rotation);
+    impl_->scene_wgt_->GetScene()->SetIndirectLight(settings.ibl);
+
+    impl_->SetLightingProfile(GetRenderer(), lighting_profile);
 
     auto sky_path = resource_path + "/" + DEFAULT_IBL + "_skybox.ktx";
     settings.sky =
             GetRenderer().AddSkybox(ResourceLoadRequest(sky_path.data()));
-    scene->SetSkyboxHandle(settings.sky, DEFAULT_SHOW_SKYBOX);
+    impl_->scene_wgt_->SetSkyboxHandle(settings.sky, DEFAULT_SHOW_SKYBOX);
 
     // Create materials
     auto lit_path = resource_path + "/defaultLit.filamat";
@@ -1108,7 +1054,7 @@ GuiVisualizer::GuiVisualizer(
     const int lm = std::ceil(0.5 * em);
     const int grid_spacing = std::ceil(0.25 * em);
 
-    AddChild(scene);
+    AddChild(impl_->scene_wgt_);
 
     // Add settings widget
     const int separation_height = std::ceil(0.75 * em);
@@ -1147,7 +1093,8 @@ GuiVisualizer::GuiVisualizer(
 
     auto reset_camera = std::make_shared<SmallButton>("Reset camera");
     reset_camera->SetOnClicked([this]() {
-        impl_->scene_->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_Z);
+        impl_->scene_wgt_->GoToCameraPreset(
+                gui::SceneWidget::CameraPreset::PLUS_Z);
     });
 
     auto camera_controls1 = std::make_shared<gui::Horiz>(grid_spacing);
@@ -1177,15 +1124,15 @@ GuiVisualizer::GuiVisualizer(
         } else {
             render_scene->SetSkybox(SkyboxHandle());
         }
-        impl_->scene_->SetSkyboxHandle(impl_->settings_.sky, checked);
+        impl_->scene_wgt_->SetSkyboxHandle(impl_->settings_.sky, checked);
         impl_->settings_.wgt_bg_color->SetEnabled(!checked);
     });
 
     impl_->settings_.wgt_bg_color = std::make_shared<gui::ColorEdit>();
     impl_->settings_.wgt_bg_color->SetValue({1, 1, 1});
     impl_->settings_.wgt_bg_color->SetOnValueChanged(
-            [scene](const gui::Color &newColor) {
-                scene->SetBackgroundColor(newColor);
+            [this](const gui::Color &newColor) {
+                impl_->scene_wgt_->SetBackgroundColor(newColor);
             });
     auto bg_layout = std::make_shared<gui::VGrid>(2, grid_spacing);
     bg_layout->AddChild(std::make_shared<gui::Label>("BG Color"));
@@ -1200,7 +1147,8 @@ GuiVisualizer::GuiVisualizer(
     settings.wgt_show_axes = std::make_shared<gui::Checkbox>("Show axes");
     settings.wgt_show_axes->SetChecked(DEFAULT_SHOW_AXES);
     settings.wgt_show_axes->SetOnChecked([this, render_scene](bool isChecked) {
-        render_scene->SetEntityEnabled(this->impl_->settings_.axes, isChecked);
+        render_scene->SetEntityEnabled(
+                this->impl_->scene_wgt_->GetScene()->GetAxis(), isChecked);
     });
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(settings.wgt_show_axes);
@@ -1265,7 +1213,7 @@ GuiVisualizer::GuiVisualizer(
             [this, render_scene](bool checked) {
                 impl_->settings_.SetCustomProfile();
                 render_scene->SetEntityEnabled(
-                        impl_->settings_.directional_light, checked);
+                        impl_->scene_wgt_->GetScene()->GetSun(), checked);
             });
     checkboxes->AddChild(settings.wgt_directional_enabled);
     settings.wgtAdvanced->AddChild(checkboxes);
@@ -1332,34 +1280,33 @@ GuiVisualizer::GuiVisualizer(
     settings.wgt_sun_intensity->SetOnValueChanged(
             [this, render_scene](double new_value) {
                 render_scene->SetLightIntensity(
-                        impl_->settings_.directional_light, new_value);
-                this->impl_->settings_.SetCustomProfile();
+                        impl_->scene_wgt_->GetScene()->GetSun(), new_value);
+                impl_->settings_.SetCustomProfile();
             });
 
     auto SetSunDir = [this, render_scene](const Eigen::Vector3f &dir) {
-        this->impl_->settings_.wgt_sun_dir->SetValue(dir);
-        render_scene->SetLightDirection(impl_->settings_.directional_light,
+        impl_->settings_.wgt_sun_dir->SetValue(dir);
+        render_scene->SetLightDirection(impl_->scene_wgt_->GetScene()->GetSun(),
                                         dir.normalized());
-        this->impl_->settings_.SetCustomProfile();
+        impl_->settings_.SetCustomProfile();
     };
-
-    this->impl_->scene_->SelectDirectionalLight(
-            settings.directional_light, [this](const Eigen::Vector3f &new_dir) {
+    impl_->scene_wgt_->SetOnSunDirectionChanged(
+            [this](const Eigen::Vector3f &new_dir) {
                 impl_->settings_.wgt_sun_dir->SetValue(new_dir);
-                this->impl_->settings_.SetCustomProfile();
+                impl_->settings_.SetCustomProfile();
             });
 
     settings.wgt_sun_dir = std::make_shared<gui::VectorEdit>();
-    settings.wgt_sun_dir->SetValue(light_description.direction);
+    settings.wgt_sun_dir->SetValue(lighting_profile.sun_dir);
     settings.wgt_sun_dir->SetOnValueChanged(SetSunDir);
 
     settings.wgt_sun_color = std::make_shared<gui::ColorEdit>();
     settings.wgt_sun_color->SetValue({1, 1, 1});
     settings.wgt_sun_color->SetOnValueChanged(
             [this, render_scene](const gui::Color &new_color) {
-                this->impl_->settings_.SetCustomProfile();
+                impl_->settings_.SetCustomProfile();
                 render_scene->SetLightColor(
-                        impl_->settings_.directional_light,
+                        impl_->scene_wgt_->GetScene()->GetSun(),
                         {new_color.GetRed(), new_color.GetGreen(),
                          new_color.GetBlue()});
             });
@@ -1429,7 +1376,8 @@ GuiVisualizer::GuiVisualizer(
                 mat = renderer.ModifyMaterial(mat)
                               .SetColor("baseColor", color3)
                               .Finish();
-                for (const auto &handle : impl_->geometry_handles_) {
+                for (const auto &handle :
+                     impl_->scene_wgt_->GetScene()->GetModel()) {
                     render_scene->AssignMaterial(handle, mat);
                 }
             });
@@ -1500,18 +1448,8 @@ void GuiVisualizer::SetTitle(const std::string &title) {
 void GuiVisualizer::SetGeometry(
         const std::vector<std::shared_ptr<const geometry::Geometry>>
                 &geometries) {
-    const std::size_t MIN_POINT_CLOUD_POINTS_FOR_DECIMATION = 6000000;
-
-    gui::SceneWidget::ModelDescription desc;
-
-    auto *scene3d = impl_->scene_->GetScene();
-    if (impl_->settings_.axes) {
-        scene3d->RemoveGeometry(impl_->settings_.axes);
-    }
-    for (auto &h : impl_->geometry_handles_) {
-        scene3d->RemoveGeometry(h);
-    }
-    impl_->geometry_handles_.clear();
+    auto scene3d = impl_->scene_wgt_->GetScene();
+    scene3d->ClearGeometry();
 
     impl_->SetMaterialsToDefault(GetRenderer());
 
@@ -1649,30 +1587,12 @@ void GuiVisualizer::SetGeometry(
         }
 
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
-        auto handle = scene3d->AddGeometry(*g3, selected_material);
-        bounds += scene3d->GetEntityBoundingBox(handle);
-        impl_->geometry_handles_.push_back(handle);
-
-        if (g->GetGeometryType() ==
-            geometry::Geometry::GeometryType::PointCloud) {
-            desc.point_clouds.push_back(handle);
-            auto pcd = std::static_pointer_cast<const geometry::PointCloud>(g);
-            if (num_point_cloud_points >
-                MIN_POINT_CLOUD_POINTS_FOR_DECIMATION) {
-                int sample_rate = num_point_cloud_points /
-                                  (MIN_POINT_CLOUD_POINTS_FOR_DECIMATION / 2);
-                auto small = pcd->UniformDownSample(sample_rate);
-                handle = scene3d->AddGeometry(*small, selected_material);
-                desc.fast_point_clouds.push_back(handle);
-                impl_->geometry_handles_.push_back(handle);
-            }
-        } else {
-            desc.meshes.push_back(handle);
-        }
+        auto handle = scene3d->AddGeometry(g3, selected_material);
+        bounds += scene3d->GetScene()->GetEntityBoundingBox(handle);
     }
 
     if (!geometries.empty()) {
-        auto view_mode = impl_->scene_->GetView()->GetMode();
+        auto view_mode = impl_->scene_wgt_->GetRenderView()->GetMode();
         if (view_mode == visualization::View::Mode::Normals) {
             impl_->SetMaterialType(Impl::Settings::NORMAL_MAP);
         } else if (view_mode == visualization::View::Mode::Depth) {
@@ -1711,30 +1631,14 @@ void GuiVisualizer::SetGeometry(
                 (DEFAULT_MATERIAL_NAME + " [default]").c_str());
     }
 
-    // Add axes. Axes length should be the longer of the bounds extent
-    // or 25% of the distance from the origin. The latter is necessary
-    // so that the axis is big enough to be visible even if the object
-    // is far from the origin. See caterpillar.ply from Tanks & Temples.
-    auto axis_length = bounds.GetMaxExtent();
-    if (axis_length < 0.001) {  // avoid div by zero errors in CreateAxes()
-        axis_length = 1.0;
-    }
-    axis_length = std::max(axis_length, 0.25 * bounds.GetCenter().norm());
-    auto axes = CreateAxes(axis_length);
-    impl_->settings_.axes = scene3d->AddGeometry(*axes);
-    scene3d->SetGeometryShadows(impl_->settings_.axes, false, false);
-    scene3d->SetEntityEnabled(impl_->settings_.axes,
-                              impl_->settings_.wgt_show_axes->IsChecked());
-    desc.axes = impl_->settings_.axes;
-    impl_->scene_->SetModel(desc);
-
-    impl_->scene_->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
+    impl_->scene_wgt_->SetupCamera(60.0, bounds,
+                                   bounds.GetCenter().cast<float>());
 }
 
 void GuiVisualizer::Layout(const gui::Theme &theme) {
     auto r = GetContentRect();
     const auto em = theme.font_size;
-    impl_->scene_->SetFrame(r);
+    impl_->scene_wgt_->SetFrame(r);
 
     // Draw help keys HUD in upper left
     const auto pref = impl_->help_keys_->CalcPreferredSize(theme);
@@ -1879,7 +1783,8 @@ void GuiVisualizer::ExportCurrentImage(int width,
                                        int height,
                                        const std::string &path) {
     GetRenderer().RenderToImage(
-            width, height, impl_->scene_->GetView(), impl_->scene_->GetScene(),
+            width, height, impl_->scene_wgt_->GetRenderView(),
+            impl_->scene_wgt_->GetScene()->GetScene(),
             [this, path](std::shared_ptr<geometry::Image> image) mutable {
                 if (!io::WriteImage(path, *image)) {
                     this->ShowMessageBox(
@@ -1965,7 +1870,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
             auto menubar = gui::Application::GetInstance().GetMenubar();
             menubar->SetChecked(HELP_CAMERA, is_visible);
             if (is_visible) {
-                impl_->scene_->SetCameraChangedCallback(
+                impl_->scene_wgt_->SetOnCameraChanged(
                         [this](visualization::Camera *cam) {
                             auto children =
                                     this->impl_->help_camera_->GetChildren();
@@ -1986,7 +1891,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
                             this->SetNeedsLayout();
                         });
             } else {
-                impl_->scene_->SetCameraChangedCallback(
+                impl_->scene_wgt_->SetOnCameraChanged(
                         std::function<void(visualization::Camera *)>());
             }
             break;
