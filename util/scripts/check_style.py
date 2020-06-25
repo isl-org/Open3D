@@ -3,15 +3,17 @@ import re
 import os
 import shutil
 import argparse
-from packaging import version
 from pathlib import Path
 import multiprocessing
 from functools import partial
 import time
-
 import sys
-if sys.version_info[0] < 3:
-    raise RuntimeError("Must be using Python 3")
+
+# Yapf requires python 3.6+
+if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
+    raise RuntimeError(
+        "Requires Python 3.6+, currently using Python {}.{}.".format(
+            sys.version_info.major, sys.version_info.minor))
 
 # Check and import yapf
 # > not found: throw exception
@@ -92,15 +94,22 @@ def _find_clang_format():
             "for help on clang-format installation.")
     version_str = subprocess.check_output([clang_format_bin, "--version"
                                           ]).decode("utf-8").strip()
-    m = re.match("^clang-format version ([0-9.-]*) .*$", version_str)
-    if m:
-        version_str = m.group(1)
-        version_obj = version.parse(version_str)
-        if version_obj.major != 5 or version_obj.minor != 0:
-            print("Warning: clang-format 5.0 required, but got {}.".format(
-                version_str))
-    else:
-        print("Failed to parse version string {}".format(version_str))
+    try:
+        m = re.match("^clang-format version ([0-9.-]*) .*$", version_str)
+        if m:
+            version_str = m.group(1)
+            version_str_token = version_str.split(".")
+            major = int(version_str_token[0])
+            minor = int(version_str_token[1])
+            if major != 5 or minor != 0:
+                print("Warning: clang-format 5.0 required, but got {}.".format(
+                    version_str))
+        else:
+            raise
+    except:
+        print("Warning: failed to parse clang-format version {}".format(
+            version_str))
+        print("Please ensure clang-format 5.0 is used.")
     print("Using clang-format version {}.".format(version_str))
 
     return clang_format_bin
