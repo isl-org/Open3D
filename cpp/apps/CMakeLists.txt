@@ -80,8 +80,9 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
         if (UNIX)
             install(DIRECTORY   "${APP_DIR}"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
-                    USE_SOURCE_PERMISSIONS)
-            if (CMAKE_INSTALL_PREFIX MATCHES "^(/usr/local|/opt)")
+                    USE_SOURCE_PERMISSIONS
+                    COMPONENT open3d_component)
+            if (CMAKE_INSTALL_PREFIX MATCHES "^(/usr/local|/opt|/usr)")
                 set(DESKTOP_INSTALL_DIR "/usr/share")
             else()
                 set(DESKTOP_INSTALL_DIR "$ENV{HOME}/.local/share")
@@ -90,15 +91,37 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
                            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop")
             # Install using freedesktop.org standards
             install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop"
-                    DESTINATION "${DESKTOP_INSTALL_DIR}/applications")
+              DESTINATION "${DESKTOP_INSTALL_DIR}/applications"
+              COMPONENT open3d_component)
             install(FILES "${SOURCE_DIR}/icon.svg"
                     DESTINATION "${DESKTOP_INSTALL_DIR}/icons/hicolor/scalable/apps"
-                    RENAME "${APP_NAME}.svg")
+                    RENAME "${APP_NAME}.svg"
+                    COMPONENT open3d_component)
             install(FILES "${SOURCE_DIR}/${TARGET_NAME}.xml"
                     DESTINATION "${DESKTOP_INSTALL_DIR}/mime/packages"
-                    RENAME "${APP_NAME}.xml")
+                    RENAME "${APP_NAME}.xml"
+                    COMPONENT open3d_component)
             # Various caches need to be updated for the app to become visible
             install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
+
+            # CPACK parameters
+            set(CPACK_GENERATOR "DEB")
+            set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Open3D Viewer")
+            set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Intel ISL")
+            set(CPACK_PACKAGE_NAME "open3d-viewer")
+            set(CPACK_PACKAGE_VERSION_MAJOR "0")
+            set(CPACK_PACKAGE_VERSION_MINOR "10")
+            set(CPACK_PACKAGE_VERSION_PATCH "1")
+            set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+            set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc, libc++1, libgomp1, libpng16-16, libglfw3")
+            set(CPACK_PACKAGE_HOMEPAGE_URL "http://www.open3d.org")
+
+            # How to set cpack prefix: https://stackoverflow.com/a/7363073/1255535
+            set(CPACK_SET_DESTDIR true)
+            set(CPACK_INSTALL_PREFIX /usr)
+            set(CPACK_COMPONENTS_ALL open3d_component)
+            set(CPACK_DEB_COMPONENT_INSTALL ON)
+            include(CPack)
         endif()
     endif()
 endmacro(APP)
