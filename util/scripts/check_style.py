@@ -84,7 +84,7 @@ def _find_clang_format():
     # > version mismatch: print warning
     clang_format_bin = shutil.which("clang-format-5.0")
     if clang_format_bin is None:
-        shutil.which("clang-format")
+        clang_format_bin = shutil.which("clang-format")
     if clang_format_bin is None:
         raise RuntimeError(
             "clang-format not found. "
