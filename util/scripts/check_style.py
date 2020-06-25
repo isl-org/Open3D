@@ -132,7 +132,6 @@ class PythonFormatter:
             print("Applying Python style...")
         else:
             print("Checking Python style...")
-        pass
 
         if verbose:
             print("To format:")
@@ -209,7 +208,6 @@ class JupyterFormatter:
             print("Applying Jupyter style...")
         else:
             print("Checking Jupyter style...")
-        pass
 
         if verbose:
             print("To format:")
