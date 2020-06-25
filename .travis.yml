@@ -34,7 +34,7 @@ matrix:
         - mkdir build
         - cd build
         - cmake ..
-        - pip install -U yapf==0.28.0
+        - pip install -U yapf==0.28.0 nbformat
         - make check-style
 
     # Build headless and docs
