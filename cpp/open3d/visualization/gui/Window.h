@@ -79,7 +79,7 @@ public:
     virtual ~Window();
 
     const Theme& GetTheme() const;
-    visualization::Renderer& GetRenderer() const;
+    visualization::rendering::Renderer& GetRenderer() const;
 
     /// Gets the window's size and position in OS pixels, not actual
     /// device pixels.

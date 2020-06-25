@@ -47,6 +47,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 namespace {
 template <class ResourceType>
@@ -725,5 +726,6 @@ void FilamentResourceManager::LoadDefaults() {
             MakeShared(colormap_mat_inst, engine_);
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

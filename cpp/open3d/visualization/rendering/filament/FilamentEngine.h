@@ -30,6 +30,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class FilamentResourceManager;
 
@@ -55,5 +56,6 @@ private:
     FilamentResourceManager* resource_manager_;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

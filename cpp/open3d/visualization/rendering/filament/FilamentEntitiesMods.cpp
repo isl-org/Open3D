@@ -35,6 +35,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 namespace {
 
@@ -222,5 +223,6 @@ MaterialInstanceHandle FilamentMaterialModifier::Finish() {
     return res;
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

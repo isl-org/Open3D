@@ -30,8 +30,8 @@
 #include "open3d/visualization/rendering/Camera.h"
 
 namespace open3d {
-
 namespace visualization {
+namespace rendering {
 
 /// Base class for rotating and dollying (translating along forward axis).
 /// Could be used for a camera, or also something else, like a the
@@ -94,5 +94,6 @@ protected:
     float CalcDollyDist(int dy, DragType drag_type);
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

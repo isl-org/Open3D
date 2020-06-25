@@ -44,6 +44,7 @@ using namespace filament;
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 namespace {
 
@@ -468,5 +469,6 @@ filament::Box TriangleMeshBuffersBuilder::ComputeAABB() {
     return aabb;
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

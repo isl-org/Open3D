@@ -28,6 +28,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 TextureSamplerParameters TextureSamplerParameters::Simple() {
     return TextureSamplerParameters();
@@ -82,5 +83,6 @@ void TextureSamplerParameters::SetAnisotropy(std::uint8_t a) {
     }
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

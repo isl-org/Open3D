@@ -30,6 +30,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class Scene;
 class Camera;
@@ -82,5 +83,6 @@ public:
     virtual Camera* GetCamera() const = 0;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

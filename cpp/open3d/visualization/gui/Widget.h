@@ -34,7 +34,9 @@
 namespace open3d {
 
 namespace visualization {
+namespace rendering {
 class Renderer;
+}
 }  // namespace visualization
 
 namespace visualization {
@@ -48,7 +50,7 @@ struct Theme;
 
 struct DrawContext {
     const Theme& theme;
-    visualization::Renderer& renderer;
+    visualization::rendering::Renderer& renderer;
     int uiOffsetX;
     int uiOffsetY;
     int screenWidth;

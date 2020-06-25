@@ -33,6 +33,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 namespace {
 
@@ -199,5 +200,6 @@ Eigen::Vector3f LightDirectionInteractorLogic::GetCurrentDirection() const {
     return GetMatrix() * light_dir_at_mouse_down_;
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
