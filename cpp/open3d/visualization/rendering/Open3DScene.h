@@ -27,7 +27,7 @@
 #pragma once
 
 #include "open3d/geometry/BoundingVolume.h"
-#include "open3d/visualization/Rendering/Renderer.h"
+#include "open3d/visualization/rendering/Renderer.h"
 
 namespace open3d {
 
