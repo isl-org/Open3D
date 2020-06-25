@@ -106,6 +106,74 @@ def _find_clang_format():
     return clang_format_bin
 
 
+class CppFormatter:
+
+    def __init__(self, file_paths, clang_format_bin):
+        self.file_paths = file_paths
+        self.clang_format_bin = clang_format_bin
+
+    @staticmethod
+    def _check_style(file_path, clang_format_bin):
+        """
+        Returns true if style is valid.
+        """
+        cmd = [
+            clang_format_bin,
+            "-style=file",
+            "-output-replacements-xml",
+            file_path,
+        ]
+        result = subprocess.check_output(cmd).decode("utf-8")
+        if "<replacement " in result:
+            return False
+        else:
+            return True
+
+    @staticmethod
+    def _apply_style(file_path, clang_format_bin):
+        cmd = [
+            clang_format_bin,
+            "-style=file",
+            "-i",
+            file_path,
+        ]
+        subprocess.check_output(cmd)
+
+    def run(self, do_apply_style, no_parallel, verbose):
+        if do_apply_style:
+            print("Applying C++/CUDA style...")
+        else:
+            print("Checking C++/CUDA style...")
+
+        if verbose:
+            print("To format:")
+            for file_path in self.file_paths:
+                print("> {}".format(file_path))
+
+        start_time = time.time()
+        if no_parallel:
+            is_valid_files = map(
+                partial(self._check_style,
+                        clang_format_bin=self.clang_format_bin),
+                self.file_paths)
+        else:
+            with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+                is_valid_files = pool.map(
+                    partial(self._check_style,
+                            clang_format_bin=self.clang_format_bin),
+                    self.file_paths)
+
+        changed_files = []
+        for is_valid, file_path in zip(is_valid_files, self.file_paths):
+            if not is_valid:
+                changed_files.append(file_path)
+                if do_apply_style:
+                    self._apply_style(file_path, self.clang_format_bin)
+        print("Formatting takes {:.2f}s".format(time.time() - start_time))
+
+        return changed_files
+
+
 class PythonFormatter:
 
     def __init__(self, file_paths, style_config):
@@ -235,74 +303,6 @@ class JupyterFormatter:
                     self._check_or_apply_style(file_path,
                                                style_config=self.style_config,
                                                do_apply_style=True)
-        print("Formatting takes {:.2f}s".format(time.time() - start_time))
-
-        return changed_files
-
-
-class CppFormatter:
-
-    def __init__(self, file_paths, clang_format_bin):
-        self.file_paths = file_paths
-        self.clang_format_bin = clang_format_bin
-
-    @staticmethod
-    def _check_style(file_path, clang_format_bin):
-        """
-        Returns true if style is valid.
-        """
-        cmd = [
-            clang_format_bin,
-            "-style=file",
-            "-output-replacements-xml",
-            file_path,
-        ]
-        result = subprocess.check_output(cmd).decode("utf-8")
-        if "<replacement " in result:
-            return False
-        else:
-            return True
-
-    @staticmethod
-    def _apply_style(file_path, clang_format_bin):
-        cmd = [
-            clang_format_bin,
-            "-style=file",
-            "-i",
-            file_path,
-        ]
-        subprocess.check_output(cmd)
-
-    def run(self, do_apply_style, no_parallel, verbose):
-        if do_apply_style:
-            print("Applying C++/CUDA style...")
-        else:
-            print("Checking C++/CUDA style...")
-
-        if verbose:
-            print("To format:")
-            for file_path in self.file_paths:
-                print("> {}".format(file_path))
-
-        start_time = time.time()
-        if no_parallel:
-            is_valid_files = map(
-                partial(self._check_style,
-                        clang_format_bin=self.clang_format_bin),
-                self.file_paths)
-        else:
-            with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-                is_valid_files = pool.map(
-                    partial(self._check_style,
-                            clang_format_bin=self.clang_format_bin),
-                    self.file_paths)
-
-        changed_files = []
-        for is_valid, file_path in zip(is_valid_files, self.file_paths):
-            if not is_valid:
-                changed_files.append(file_path)
-                if do_apply_style:
-                    self._apply_style(file_path, self.clang_format_bin)
         print("Formatting takes {:.2f}s".format(time.time() - start_time))
 
         return changed_files
