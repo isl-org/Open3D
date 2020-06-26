@@ -30,7 +30,7 @@
 
 #include <open3d/Open3D.h>
 
-// A simplified version of examples/Cpp/Visualizer.cpp to demonstrate linking
+// A simplified version of examples/cpp/Visualizer.cpp to demonstrate linking
 // an external project to Open3D.
 int main(int argc, char *argv[]) {
     using namespace open3d;

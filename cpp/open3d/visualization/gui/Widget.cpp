@@ -33,6 +33,7 @@
 #include "open3d/visualization/gui/Events.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 // This should not be Color(0, 0, 0, 0), since transparent is a valid and
@@ -177,4 +178,5 @@ Widget::DrawResult Widget::Tick(const TickEvent& e) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

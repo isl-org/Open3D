@@ -15,7 +15,7 @@ The script runs with ``python run_system.py [config] --make``. In ``[config]``, 
 Register RGBD image pairs
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/make_fragments.py
    :language: python
    :lineno-start: 33
    :lines: 5,34-59
@@ -29,7 +29,7 @@ The function reads a pair of RGBD images and registers the ``source_rgbd_image``
 Multiway registration
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/make_fragments.py
    :language: python
    :lineno-start: 61
    :lines: 5,62-108
@@ -39,7 +39,7 @@ This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway
 
 Once a pose graph is created, multiway registration is performed by calling the function ``optimize_posegraph_for_fragment``.
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/optimize_posegraph.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/optimize_posegraph.py
    :language: python
    :lineno-start: 12
    :lines: 5,13-40
@@ -52,7 +52,7 @@ This function calls ``global_optimization`` to estimate poses of the RGBD images
 Make a fragment
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/make_fragments.py
    :language: python
    :lineno-start: 110
    :lines: 5,111-145
@@ -63,7 +63,7 @@ Once the poses are estimates, :ref:`/tutorial/Advanced/rgbd_integration.ipynb` i
 Batch processing
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/make_fragments.py
    :language: python
    :lineno-start: 167
    :lines: 5,168-187

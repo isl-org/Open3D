@@ -82,7 +82,7 @@ As a final step, test a Python script that saves depth and surface normal sequen
 
 .. code-block:: shell
 
-    (py3env) $ cd ~/Open3D/examples/Python/Advanced
+    (py3env) $ cd ~/Open3D/examples/python/Advanced
     (py3env) $ python headless_rendering.py
 
 This should print the following:
@@ -98,7 +98,7 @@ This should print the following:
     :
     Capture image 00030
 
-Rendered images are at ~/Open3D/examples/TestData/depth and the image folder.
+Rendered images are at ~/Open3D/examples/test_data/depth and the image folder.
 
 .. Note:: | ``headless_rendering.py`` saves png files.
           | This may take some time, so try to tweak the script for your purpose.

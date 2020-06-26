@@ -27,7 +27,7 @@ the open-source community.
 [![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/)
 [![Build status](https://ci.appveyor.com/api/projects/status/3hasjo041lv6srsi/branch/master?svg=true)](https://ci.appveyor.com/project/yxlao/open3d/branch/master)
 
-#### Core features of Open3D includes:
+**Core features of Open3D include:**
 
 * 3D data structures
 * 3D data processing algorithms
@@ -80,7 +80,7 @@ $ python -c "import open3d as o3d"
 ```
 
 and follow the [basic tutorials](http://www.open3d.org/docs/release/tutorial/Basic/index.html)
-or [Python examples](https://github.com/intel-isl/Open3D/tree/master/examples/Python) to get
+or [Python examples](https://github.com/intel-isl/Open3D/tree/master/examples/python) to get
 started.
 
 ## C++ quick start

@@ -31,6 +31,7 @@
 #include "open3d/visualization/gui/Window.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct Dialog::Impl {
@@ -68,4 +69,5 @@ Widget::DrawResult Dialog::Draw(const DrawContext &context) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

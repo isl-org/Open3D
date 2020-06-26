@@ -1,6 +1,6 @@
 .. _builddocs:
 
-Building Documentation
+Building documentation
 ======================
 
 The main documentation and Python documentation is written in

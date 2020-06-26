@@ -26,13 +26,10 @@
 
 #include "pybind/open3d_pybind.h"
 #include "pybind/camera/camera.h"
-#include "pybind/color_map/color_map.h"
-#include "pybind/core/container.h"
+#include "pybind/core/core.h"
 #include "pybind/geometry/geometry.h"
-#include "pybind/integration/integration.h"
 #include "pybind/io/io.h"
-#include "pybind/odometry/odometry.h"
-#include "pybind/registration/registration.h"
+#include "pybind/pipelines/pipelines.h"
 #include "pybind/utility/utility.h"
 #include "pybind/visualization/visualization.h"
 
@@ -52,16 +49,16 @@ PYBIND11_MODULE(pybind, m) {
     m.add_object("_GLIBCXX_USE_CXX11_ABI",
                  _GLIBCXX_USE_CXX11_ABI ? Py_True : Py_False);
 
-    // Register this first, other submodule (e.g. odometry) might depend on this
+    // The binding order matters: if a class haven't been binded, binding the
+    // user of this class will result in "could not convert default argument
+    // into a Python object" error.
     pybind_utility(m);
-    pybind_core(m);
+
     pybind_camera(m);
-    pybind_color_map(m);
+    pybind_core(m);
     pybind_geometry(m);
-    pybind_integration(m);
     pybind_io(m);
-    pybind_registration(m);
-    pybind_odometry(m);
+    pybind_pipelines(m);
     pybind_visualization(m);
 }
 

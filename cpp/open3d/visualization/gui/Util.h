@@ -32,6 +32,7 @@
 #include <vector>
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 class Color;
@@ -43,4 +44,5 @@ ImVec4 colorToImgui(const Color& color);
 }  // namespace util
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

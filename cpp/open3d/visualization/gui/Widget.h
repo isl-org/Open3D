@@ -34,9 +34,12 @@
 namespace open3d {
 
 namespace visualization {
+namespace rendering {
 class Renderer;
+}
 }  // namespace visualization
 
+namespace visualization {
 namespace gui {
 
 class Color;
@@ -47,7 +50,7 @@ struct Theme;
 
 struct DrawContext {
     const Theme& theme;
-    visualization::Renderer& renderer;
+    visualization::rendering::Renderer& renderer;
     int uiOffsetX;
     int uiOffsetY;
     int screenWidth;
@@ -127,4 +130,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

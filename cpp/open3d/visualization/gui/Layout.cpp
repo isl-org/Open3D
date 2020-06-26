@@ -36,6 +36,7 @@
 #include "open3d/visualization/gui/Util.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 namespace {
@@ -550,4 +551,5 @@ void VGrid::Layout(const Theme& theme) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

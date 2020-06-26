@@ -33,6 +33,7 @@
 #include <winuser.h>
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 void* GetNativeDrawable(GLFWwindow* glfw_window) {
@@ -48,4 +49,5 @@ void ShowNativeAlert(const char* message) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

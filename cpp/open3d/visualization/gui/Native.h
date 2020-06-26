@@ -27,6 +27,7 @@
 struct GLFWwindow;
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 void* GetNativeDrawable(GLFWwindow* glfw_window);
@@ -47,4 +48,5 @@ void ShowNativeFileDialog(
 #endif  // __APPLE__ || _WIN32
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d
