@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Eigen/Core>
+
 #include "open3d/visualization/utility/DrawGeometry.h"
 
 #include "open3d/visualization/gui/Application.h"
@@ -48,7 +50,11 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     int top /* = 50*/,
                     bool point_show_normal /* = false */,
                     bool mesh_show_wireframe /* = false */,
-                    bool mesh_show_back_face /* = false */) {
+                    bool mesh_show_back_face /* = false */,
+                    Eigen::Vector3d *lookat /* = nullptr */,
+                    Eigen::Vector3d *up /* = nullptr */,
+                    Eigen::Vector3d *front /* = nullptr */,
+                    double *zoom /* = zoom */) {
     Visualizer visualizer;
     if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                            top)) {
@@ -78,6 +84,21 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
             }
         }
     }
+
+    ViewControl &view_control = visualizer.GetViewControl();
+    if (lookat != nullptr) {
+        view_control.SetLookat(*lookat);
+    }
+    if (up != nullptr) {
+        view_control.SetUp(*up);
+    }
+    if (front != nullptr) {
+        view_control.SetFront(*front);
+    }
+    if (zoom != nullptr) {
+        view_control.SetZoom(*zoom);
+    }
+
     visualizer.Run();
     visualizer.DestroyVisualizerWindow();
     return true;
