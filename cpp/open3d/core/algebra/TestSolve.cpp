@@ -24,27 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/Open3D.h"
 
-#include "open3d/core/Tensor.h"
+#include "open3d/core/algebra/Solver.h"
 
-// MKL
-// https://github.com/pytorch/pytorch/blob/afb2d27b24b515f380e889028fe53998d29d4e38/aten/src/ATen/native/BatchLinearAlgebra.cpp
-// MAGMA
-// https://github.com/pytorch/pytorch/blob/e98ad6c05b21f9ee04447de69e809af42f4e114a/aten/src/ATen/native/cuda/BatchLinearAlgebra.cu
+using namespace open3d;
+using namespace open3d::core;
 
-namespace open3d {
-namespace core {
-// Solve AX = B with *gesv in MKL (CPU) and MAGMA (CUDA)
-Tensor Solve(const Tensor& A, const Tensor& B);
+// https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesv_ex.c.htm
+int main() {
+    std::vector<Device> devices{Device("CPU:0"), Device("CUDA:0")};
 
-namespace _detail {
-#ifdef BUILD_CUDA_MODULE
-Tensor SolveCUDA(const Tensor& A, const Tensor& B);
-#endif
+    std::vector<float> A_vals{6.80f,  -2.11f, 5.66f,  5.97f,  8.23f,
+                              -6.05f, -3.30f, 5.36f,  -4.44f, 1.08f,
+                              -0.45f, 2.58f,  -2.70f, 0.27f,  9.04f,
+                              8.32f,  2.71f,  4.35f,  -7.17f, 2.14f,
+                              -9.67f, -5.14f, -7.26f, 6.08f,  -6.87f};
+    std::vector<float> B_vals{4.02f,  6.19f,  -8.22f, -7.57f, -3.03f,
+                              -1.56f, 4.00f,  -8.67f, 1.75f,  2.86f,
+                              9.81f,  -4.09f, -4.57f, -8.61f, 8.99f};
+    Tensor A(A_vals, {5, 5}, core::Dtype::Float32, Device("CPU:0"));
+    A = A.T();
+    Tensor B(B_vals, {3, 5}, core::Dtype::Float32, Device("CPU:0"));
+    B = B.T();
 
-Tensor SolveCPU(const Tensor& A, const Tensor& B);
-}  // namespace _detail
+    std::cout << A.ToString() << "\n";
+    std::cout << B.ToString() << "\n";
 
-}  // namespace core
-}  // namespace open3d
+    for (auto device : devices) {
+        Tensor A_device = A.Copy(device);
+        Tensor B_device = B.Copy(device);
+        Tensor X = Solve(A_device, B_device);
+        std::cout << X.ToString() << "\n";
+    }
+}

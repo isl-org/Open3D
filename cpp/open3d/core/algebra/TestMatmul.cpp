@@ -5,8 +5,6 @@
 using namespace open3d;
 using namespace open3d::core;
 
-#define apply(...) element_kernel(__VAR_ARGS__)
-
 int main() {
     std::vector<Device> devices{Device("CUDA:0"), Device("CPU:0")};
 
