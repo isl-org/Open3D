@@ -31,14 +31,12 @@
 namespace open3d {
 namespace visualization {
 namespace gui {
-namespace util {
 
 ImVec4 colorToImgui(const Color &color) {
     return ImVec4(color.GetRed(), color.GetGreen(), color.GetBlue(),
                   color.GetAlpha());
 }
 
-}  // namespace util
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

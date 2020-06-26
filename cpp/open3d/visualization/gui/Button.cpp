@@ -92,16 +92,16 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
     if (was_on) {
         ImGui::PushStyleColor(
                 ImGuiCol_Text,
-                util::colorToImgui(context.theme.button_on_text_color));
+                colorToImgui(context.theme.button_on_text_color));
         ImGui::PushStyleColor(
                 ImGuiCol_Button,
-                util::colorToImgui(context.theme.button_on_color));
+                colorToImgui(context.theme.button_on_color));
         ImGui::PushStyleColor(
                 ImGuiCol_ButtonHovered,
-                util::colorToImgui(context.theme.button_on_hover_color));
+                colorToImgui(context.theme.button_on_hover_color));
         ImGui::PushStyleColor(
                 ImGuiCol_ButtonActive,
-                util::colorToImgui(context.theme.button_on_active_color));
+                colorToImgui(context.theme.button_on_active_color));
     }
     DrawImGuiPushEnabledState();
     bool pressed = false;

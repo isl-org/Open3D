@@ -37,11 +37,7 @@ namespace gui {
 
 class Color;
 
-namespace util {
-
 ImVec4 colorToImgui(const Color& color);
-
-}  // namespace util
 
 }  // namespace gui
 }  // namespace visualization

@@ -33,8 +33,6 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
-using namespace open3d::visualization::gui::util;
-
 namespace open3d {
 namespace visualization {
 namespace gui {
