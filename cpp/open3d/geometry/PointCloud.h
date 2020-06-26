@@ -363,11 +363,9 @@ public:
             const VoxelGrid &voxel_grid);
 
     /// \brief Function that computes the ISS Keypoints from an input point
-    /// cloud. This implements the keypoint detection modules proposed in Yu
-    /// Zhong
-    /// ,"Intrinsic Shape Signatures: A Shape Descriptor for 3D Object
-    /// Recognition", 2009. The implementation is heavily inspred in the PCL
-    /// implementation.
+    /// cloud. This implements the keypoint detection module proposed in Yu
+    /// Zhong ,"Intrinsic Shape Signatures: A Shape Descriptor for 3D Object
+    /// Recognition", 2009. The implementation is inspired by the PCL one.
     //
     /// \param salient_radius The radius of the spherical neighborhood used to
     /// detect the keypoints \param non_max_radius The non maxima supression
