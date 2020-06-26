@@ -236,8 +236,9 @@ void Visualizer::BuildUtilities() {
 
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
+    double extent = std::max(0.01, boundingbox.GetMaxExtent() * 0.2);
     coordinate_frame_mesh_ptr_ = geometry::TriangleMesh::CreateCoordinateFrame(
-            boundingbox.GetMaxExtent() * 0.2, boundingbox.min_bound_);
+            extent, boundingbox.min_bound_);
     coordinate_frame_mesh_renderer_ptr_ =
             std::make_shared<glsl::CoordinateFrameRenderer>();
     if (!coordinate_frame_mesh_renderer_ptr_->AddGeometry(
