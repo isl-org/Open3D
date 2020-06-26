@@ -34,3 +34,15 @@
 
 // CPU converges to
 // https://oneapi-src.github.io/oneDNN/modules.html
+// https://github.com/oneapi-src/oneDNN
+
+namespace open3d {
+namespace core {
+
+Tensor Conv2d(const Tensor &input,
+              const Tensor &filters,
+              const SizeVector &strides,
+              const SizeVector &padding,
+              const SizeVector &dilations);
+}  // namespace core
+}  // namespace open3d

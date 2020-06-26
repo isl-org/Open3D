@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <cblas.h>
+#include <mkl.h>
 #include "Matmul.h"
 
 namespace open3d {

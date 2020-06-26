@@ -69,12 +69,22 @@ open3d_set_global_properties(core)
 open3d_link_3rdparty_libraries(core)
 open3d_show_and_abort_on_warning(core)
 
+find_package(BLAS REQUIRED)
+
+# config: https://github.com/eddelbuettel/mkl4deb
+# https://github.com/Eyescale/CMake/blob/master/FindMKL.cmake
+find_package(MKL REQUIRED)
+
 
 if (BUILD_CUDA_MODULE)
-   target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+   target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${MKL_INCLUDE_DIR})
    add_executable(TestMatmul algebra/TestMatmul.cpp)
 
+
    # TODO: incorporate CUBLAS LIBRARY in main CMakeList
-   find_package(BLAS REQUIRED)
-   target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME} ${CUDA_CUBLAS_LIBRARIES} ${BLAS_LIBRARIES})
+   target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME} ${CUDA_CUBLAS_LIBRARIES} ${MKL_LIBRARIES})
+
+   # add_executable(TestSolver algebra/SolverCPU.cpp)
+   # target_include_directories(TestSolver SYSTEM PRIVATE ${MKL_INCLUDE_DIR})
+   # target_link_libraries(TestSolver ${CMAKE_PROJECT_NAME})
 endif()
