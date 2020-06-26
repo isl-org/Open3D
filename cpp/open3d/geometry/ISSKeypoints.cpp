@@ -42,16 +42,15 @@ namespace open3d {
 
 namespace {
 
-inline bool IsLocalMaxima(int i,
-                          const std::vector<int>& nn_indices,
-                          const std::vector<double>& third_eigen_values) {
-    bool is_max = true;
-    for (const auto& n_idx : nn_indices) {
-        if (third_eigen_values[i] < third_eigen_values[n_idx]) {
-            is_max = false;
+bool IsLocalMaxima(int query_idx,
+                   const std::vector<int>& indices,
+                   const std::vector<double>& third_eigen_values) {
+    for (const auto& idx : indices) {
+        if (third_eigen_values[query_idx] < third_eigen_values[idx]) {
+            return false;
         }
     }
-    return is_max;
+    return true;
 }
 
 double ComputeModelResolution(const std::vector<Eigen::Vector3d>& points,
