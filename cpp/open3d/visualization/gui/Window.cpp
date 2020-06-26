@@ -594,8 +594,7 @@ Widget::DrawResult DrawChild(DrawContext& dc,
         ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
         if (bg_color_not_default) {
             auto& bgColor = child->GetBackgroundColor();
-            ImGui::PushStyleColor(ImGuiCol_WindowBg,
-                                  colorToImgui(bgColor));
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, colorToImgui(bgColor));
         }
         ImGui::Begin(name, nullptr, flags);
     } else {

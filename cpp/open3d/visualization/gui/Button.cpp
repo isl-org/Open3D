@@ -90,12 +90,10 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
 
     bool was_on = impl_->is_on_;
     if (was_on) {
-        ImGui::PushStyleColor(
-                ImGuiCol_Text,
-                colorToImgui(context.theme.button_on_text_color));
-        ImGui::PushStyleColor(
-                ImGuiCol_Button,
-                colorToImgui(context.theme.button_on_color));
+        ImGui::PushStyleColor(ImGuiCol_Text,
+                              colorToImgui(context.theme.button_on_text_color));
+        ImGui::PushStyleColor(ImGuiCol_Button,
+                              colorToImgui(context.theme.button_on_color));
         ImGui::PushStyleColor(
                 ImGuiCol_ButtonHovered,
                 colorToImgui(context.theme.button_on_hover_color));
