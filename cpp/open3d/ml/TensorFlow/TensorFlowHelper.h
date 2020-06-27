@@ -52,8 +52,7 @@ inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
     return shape;
 }
 
-template <open3d::ml::op_util::CSOpt Opt =
-                  open3d::ml::op_util::CSOpt::NONE,
+template <open3d::ml::op_util::CSOpt Opt = open3d::ml::op_util::CSOpt::NONE,
           class TDimX,
           class... TArgs>
 std::tuple<bool, std::string> CheckShape(
@@ -65,9 +64,9 @@ std::tuple<bool, std::string> CheckShape(
         // without rank we cannot check
         return std::make_tuple(true, std::string());
     }
-    return open3d::ml::op_util::CheckShape<Opt>(
-            GetShapeVector(c, shape_handle), std::forward<TDimX>(dimex),
-            std::forward<TArgs>(args)...);
+    return open3d::ml::op_util::CheckShape<Opt>(GetShapeVector(c, shape_handle),
+                                                std::forward<TDimX>(dimex),
+                                                std::forward<TArgs>(args)...);
 }
 
 inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
@@ -81,16 +80,15 @@ inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
     return shape;
 }
 
-template <open3d::ml::op_util::CSOpt Opt =
-                  open3d::ml::op_util::CSOpt::NONE,
+template <open3d::ml::op_util::CSOpt Opt = open3d::ml::op_util::CSOpt::NONE,
           class TDimX,
           class... TArgs>
 std::tuple<bool, std::string> CheckShape(const tensorflow::Tensor& tensor,
                                          TDimX&& dimex,
                                          TArgs&&... args) {
-    return open3d::ml::op_util::CheckShape<Opt>(
-            GetShapeVector(tensor), std::forward<TDimX>(dimex),
-            std::forward<TArgs>(args)...);
+    return open3d::ml::op_util::CheckShape<Opt>(GetShapeVector(tensor),
+                                                std::forward<TDimX>(dimex),
+                                                std::forward<TArgs>(args)...);
 }
 
 //
