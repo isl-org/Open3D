@@ -48,6 +48,7 @@ JUPYTER_FORMAT_DIRS = [
     "examples",
 ]
 
+# Note: also modify CPP_FORMAT_DIRS in check_cpp_style.cmake.
 CPP_FORMAT_DIRS = [
     "cpp",
     "examples",
@@ -331,7 +332,7 @@ if __name__ == "__main__":
         dest="no_parallel",
         action="store_true",
         default=False,
-        help="Disable parallled execution.",
+        help="Disable parallel execution.",
     )
     parser.add_argument(
         "--verbose",
@@ -349,7 +350,7 @@ if __name__ == "__main__":
 
     # Check or apply style
     cpp_formatter = CppFormatter(_glob_files(CPP_FORMAT_DIRS,
-                                             ["cpp", "h", "cu", "cuh"]),
+                                             ["cpp", "h", "h.in", "cu", "cuh"]),
                                  clang_format_bin=clang_format_bin)
     python_formatter = PythonFormatter(_glob_files(PYTHON_FORMAT_DIRS, ["py"]),
                                        style_config=python_style_config)
