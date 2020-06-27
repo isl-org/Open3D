@@ -58,7 +58,7 @@ REGISTER_OP("Open3DInvertNeighborsList")
 
             // check input shapes
             {
-                using namespace open3d::ml::shape_checking;
+                using namespace open3d::ml::op_util;
                 Dim num_neighbors("num_neighbors");
 
                 CHECK_SHAPE_HANDLE(c, inp_neighbors_index, num_neighbors);

@@ -32,7 +32,7 @@
 
 namespace open3d {
 namespace ml {
-namespace shape_checking {
+namespace op_util {
 
 /// Class for representing a possibly unknown dimension value
 class DimValue {
@@ -689,6 +689,6 @@ std::tuple<bool, std::string> CheckShape(const std::vector<DimValue>& shape,
     }
 }
 
-}  // namespace shape_checking
+}  // namespace op_util
 }  // namespace ml
 }  // namespace open3d

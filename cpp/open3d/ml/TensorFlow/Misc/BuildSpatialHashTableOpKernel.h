@@ -43,7 +43,7 @@ public:
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
-        using namespace open3d::ml::shape_checking;
+        using namespace open3d::ml::op_util;
 
         const Tensor& points = context->input(0);
         const Tensor& radius = context->input(1);

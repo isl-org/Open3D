@@ -69,7 +69,7 @@ public:
         const Tensor& points_row_splits = context->input(3);
         const Tensor& queries_row_splits = context->input(4);
         {
-            using namespace open3d::ml::shape_checking;
+            using namespace open3d::ml::op_util;
 
             Dim num_points("num_points");
             Dim num_queries("num_queries");

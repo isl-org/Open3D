@@ -109,7 +109,7 @@ public:
         const Tensor& hash_table_cell_splits = context->input(7);
 
         {
-            using namespace open3d::ml::shape_checking;
+            using namespace open3d::ml::op_util;
 
             Dim num_points("num_points");
             Dim num_queries("num_queries");
