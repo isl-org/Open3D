@@ -42,12 +42,85 @@
 namespace open3d {
 namespace core {
 
+/// Open3D DLPack Tensor manager.
 struct Open3DDLManagedTensor {
-    Tensor o3d_tensor_;
-    DLManagedTensor dl_managed_tensor_;
+    Open3DDLManagedTensor(const Tensor& o3d_tensor) {
+        o3d_tensor_ = o3d_tensor;
+
+        // Prepare dl_device_type
+        DLDeviceType dl_device_type;
+        Device device = o3d_tensor_.GetDevice();
+        switch (device.GetType()) {
+            case Device::DeviceType::CPU:
+                dl_device_type = DLDeviceType::kDLCPU;
+                break;
+            case Device::DeviceType::CUDA:
+                dl_device_type = DLDeviceType::kDLGPU;
+                break;
+            default:
+                utility::LogError("ToDLPack: unsupported device type {}",
+                                  device.ToString());
+        }
+
+        // Prepare dl_context
+        DLContext dl_context;
+        dl_context.device_type = dl_device_type;
+        dl_context.device_id = device.GetID();
+
+        // Prepare dl_data_type
+        DLDataType dl_data_type;
+        Dtype dtype = o3d_tensor_.GetDtype();
+        switch (dtype) {
+            case Dtype::Float32:
+                dl_data_type.code = DLDataTypeCode::kDLFloat;
+                break;
+            case Dtype::Float64:
+                dl_data_type.code = DLDataTypeCode::kDLFloat;
+                break;
+            case Dtype::Int32:
+                dl_data_type.code = DLDataTypeCode::kDLInt;
+                break;
+            case Dtype::Int64:
+                dl_data_type.code = DLDataTypeCode::kDLInt;
+                break;
+            case Dtype::UInt8:
+                dl_data_type.code = DLDataTypeCode::kDLUInt;
+                break;
+            default:
+                utility::LogError("Unsupported data type");
+        }
+        dl_data_type.bits =
+                static_cast<uint8_t>(DtypeUtil::ByteSize(dtype) * 8);
+        dl_data_type.lanes = 1;
+
+        // Prepare dl_tensor, this uses dl_device_type, dl_context and
+        // dl_data_type prepared above.
+        DLTensor dl_tensor;
+        // Not Blob's data pointer.
+        dl_tensor.data = const_cast<void*>(o3d_tensor_.GetDataPtr());
+        dl_tensor.ctx = dl_context;
+        dl_tensor.ndim = static_cast<int>(o3d_tensor_.GetShape().size());
+        dl_tensor.dtype = dl_data_type;
+        // The shape pointer is alive for the lifetime of Open3DDLManagedTensor.
+        dl_tensor.shape =
+                const_cast<int64_t*>(o3d_tensor_.GetShapeRef().data());
+        // The strides pointer is alive for the lifetime of
+        // Open3DDLManagedTensor.
+        dl_tensor.strides =
+                const_cast<int64_t*>(o3d_tensor_.GetStridesRef().data());
+        dl_tensor.byte_offset = 0;
+
+        dl_managed_tensor_.manager_ctx = this;
+        dl_managed_tensor_.deleter = &Open3DDLManagedTensor::Deleter;
+        dl_managed_tensor_.dl_tensor = dl_tensor;
+    }
+
     static void Deleter(DLManagedTensor* arg) {
         delete static_cast<Open3DDLManagedTensor*>(arg->manager_ctx);
     }
+
+    Tensor o3d_tensor_;
+    DLManagedTensor dl_managed_tensor_;
 };
 
 /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`
@@ -950,68 +1023,11 @@ std::vector<Tensor> Tensor::NonZeroNumpy() const {
 Tensor Tensor::NonZero() const { return kernel::NonZero(*this); }
 
 DLManagedTensor* Tensor::ToDLPack() const {
-    DLDeviceType dl_device_type;
-    switch (GetDevice().GetType()) {
-        case Device::DeviceType::CPU:
-            dl_device_type = DLDeviceType::kDLCPU;
-            break;
-        case Device::DeviceType::CUDA:
-            dl_device_type = DLDeviceType::kDLGPU;
-            break;
-        default:
-            utility::LogError("ToDLPack: unsupported device type {}",
-                              GetDevice().ToString());
-    }
-
-    DLContext dl_context;
-    dl_context.device_type = dl_device_type;
-    dl_context.device_id = GetDevice().GetID();
-
-    DLDataType dl_data_type;
-    switch (GetDtype()) {
-        case Dtype::Float32:
-            dl_data_type.code = DLDataTypeCode::kDLFloat;
-            break;
-        case Dtype::Float64:
-            dl_data_type.code = DLDataTypeCode::kDLFloat;
-            break;
-        case Dtype::Int32:
-            dl_data_type.code = DLDataTypeCode::kDLInt;
-            break;
-        case Dtype::Int64:
-            dl_data_type.code = DLDataTypeCode::kDLInt;
-            break;
-        case Dtype::UInt8:
-            dl_data_type.code = DLDataTypeCode::kDLUInt;
-            break;
-        default:
-            utility::LogError("Unsupported data type");
-    }
-    dl_data_type.bits =
-            static_cast<uint8_t>(DtypeUtil::ByteSize(GetDtype()) * 8);
-    dl_data_type.lanes = 1;
-
-    Open3DDLManagedTensor* o3d_dl_tensor(new Open3DDLManagedTensor);
-    o3d_dl_tensor->o3d_tensor_ = *this;
-
-    DLTensor dl_tensor;
-    // Not Blob's data pointer.
-    dl_tensor.data = const_cast<void*>(GetDataPtr());
-    dl_tensor.ctx = dl_context;
-    dl_tensor.ndim = static_cast<int>(GetShape().size());
-    dl_tensor.dtype = dl_data_type;
-    // The shape pointer is alive for the lifetime of Open3DDLManagedTensor.
-    dl_tensor.shape = const_cast<int64_t*>(
-            o3d_dl_tensor->o3d_tensor_.GetShapeRef().data());
-    // The strides pointer is alive for the lifetime of Open3DDLManagedTensor.
-    dl_tensor.strides = const_cast<int64_t*>(
-            o3d_dl_tensor->o3d_tensor_.GetStridesRef().data());
-    dl_tensor.byte_offset = 0;
-
-    o3d_dl_tensor->dl_managed_tensor_.manager_ctx = o3d_dl_tensor;
-    o3d_dl_tensor->dl_managed_tensor_.deleter = &Open3DDLManagedTensor::Deleter;
-    o3d_dl_tensor->dl_managed_tensor_.dl_tensor = dl_tensor;
-
+    // When the DLPack python object goes out of scope, it calls
+    // Open3DDLManagedTensor::Deleter to delete the Open3DDLManagedTensor
+    // object, which, decreases the reference count to the actual data buffer
+    // (Open3DDLManagedTensor->o3d_tensor_.GetBlob()) by 1.
+    Open3DDLManagedTensor* o3d_dl_tensor(new Open3DDLManagedTensor(*this));
     return &(o3d_dl_tensor->dl_managed_tensor_);
 }
 
