@@ -1,6 +1,6 @@
 #include <ATen/cuda/CUDAContext.h>
 #include "../TorchHelper.h"
-#include "open3d/ml/Misc/Detail/InvertNeighborsList.cuh"
+#include "open3d/ml/impl/misc/InvertNeighborsList.cuh"
 #include "torch/script.h"
 
 template <class TIndex, class TAttr>

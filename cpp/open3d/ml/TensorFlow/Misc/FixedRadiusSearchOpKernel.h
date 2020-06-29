@@ -23,7 +23,7 @@
 #pragma once
 
 #include "../TensorFlowHelper.h"
-#include "open3d/ml/Misc/Detail/FixedRadiusSearch.h"
+#include "open3d/ml/impl/misc/FixedRadiusSearch.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -109,7 +109,7 @@ public:
         const Tensor& hash_table_cell_splits = context->input(7);
 
         {
-            using namespace open3d::ml::shape_checking;
+            using namespace open3d::ml::op_util;
 
             Dim num_points("num_points");
             Dim num_queries("num_queries");
