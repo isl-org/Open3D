@@ -113,7 +113,7 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
             set(CPACK_PACKAGE_VERSION_MINOR "10")
             set(CPACK_PACKAGE_VERSION_PATCH "1")
             set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-            set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc, libc++1, libgomp1, libpng16-16, libglfw3")
+            set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc++1, libgomp1, libpng16-16, libglfw3")
             set(CPACK_PACKAGE_HOMEPAGE_URL "http://www.open3d.org")
 
             # How to set cpack prefix: https://stackoverflow.com/a/7363073/1255535
