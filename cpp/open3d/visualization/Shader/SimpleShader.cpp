@@ -300,7 +300,7 @@ bool SimpleShaderForTetraMesh::PrepareBinding(
         return false;
     }
 
-    std::unordered_set<Index2, utility::hash_tuple::hash<Index2>>
+    std::unordered_set<Index2, utility::hash_tuple<Index2>>
             inserted_edges;
     auto InsertEdge = [&](Index vidx0, Index vidx1) {
         Index2 edge(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
