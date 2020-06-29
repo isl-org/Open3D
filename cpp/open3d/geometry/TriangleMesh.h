@@ -307,21 +307,6 @@ public:
     /// triangle index
     double GetTriangleArea(size_t triangle_idx) const;
 
-    static inline Eigen::Vector3i GetOrderedTriangle(int vidx0,
-                                                     int vidx1,
-                                                     int vidx2) {
-        if (vidx0 > vidx2) {
-            std::swap(vidx0, vidx2);
-        }
-        if (vidx0 > vidx1) {
-            std::swap(vidx0, vidx1);
-        }
-        if (vidx1 > vidx2) {
-            std::swap(vidx1, vidx2);
-        }
-        return Eigen::Vector3i(vidx0, vidx1, vidx2);
-    }
-
     /// Function that computes the surface area of the mesh, i.e. the sum of
     /// the individual triangle surfaces.
     double GetSurfaceArea() const;
@@ -427,67 +412,6 @@ public:
             DeformAsRigidAsPossibleEnergy energy =
                     DeformAsRigidAsPossibleEnergy::Spokes,
             double smoothed_alpha = 0.01) const;
-
-    /// \brief Alpha shapes are a generalization of the convex hull. With
-    /// decreasing alpha value the shape schrinks and creates cavities.
-    /// See Edelsbrunner and Muecke, "Three-Dimensional Alpha Shapes", 1994.
-    /// \param pcd PointCloud for what the alpha shape should be computed.
-    /// \param alpha parameter to control the shape. A very big value will
-    /// give a shape close to the convex hull.
-    /// \param tetra_mesh If not a nullptr, then uses this to construct the
-    /// alpha shape. Otherwise, ComputeDelaunayTetrahedralization is called.
-    /// \param pt_map Optional map from tetra_mesh vertex indices to pcd
-    /// points.
-    /// \return TriangleMesh of the alpha shape.
-    static std::shared_ptr<TriangleMesh> CreateFromPointCloudAlphaShape(
-            const PointCloud &pcd,
-            double alpha,
-            std::shared_ptr<TetraMesh> tetra_mesh = nullptr,
-            std::vector<size_t> *pt_map = nullptr);
-
-    /// Function that computes a triangle mesh from an oriented PointCloud \p
-    /// pcd. This implements the Ball Pivoting algorithm proposed in F.
-    /// Bernardini et al., "The ball-pivoting algorithm for surface
-    /// reconstruction", 1999. The implementation is also based on the
-    /// algorithms outlined in Digne, "An Analysis and Implementation of a
-    /// Parallel Ball Pivoting Algorithm", 2014. The surface reconstruction is
-    /// done by rolling a ball with a given radius (cf. \p radii) over the
-    /// point cloud, whenever the ball touches three points a triangle is
-    /// created.
-    /// \param pcd defines the PointCloud from which the TriangleMesh surface is
-    /// reconstructed. Has to contain normals.
-    /// \param radii defines the radii of
-    /// the ball that are used for the surface reconstruction.
-    static std::shared_ptr<TriangleMesh> CreateFromPointCloudBallPivoting(
-            const PointCloud &pcd, const std::vector<double> &radii);
-
-    /// \brief Function that computes a triangle mesh from an oriented
-    /// PointCloud pcd. This implements the Screened Poisson Reconstruction
-    /// proposed in Kazhdan and Hoppe, "Screened Poisson Surface
-    /// Reconstruction", 2013. This function uses the original implementation by
-    /// Kazhdan. See https://github.com/mkazhdan/PoissonRecon
-    ///
-    /// \param pcd PointCloud with normals and optionally colors.
-    /// \param depth Maximum depth of the tree that will be used for surface
-    /// reconstruction. Running at depth d corresponds to solving on a grid
-    /// whose resolution is no larger than 2^d x 2^d x 2^d. Note that since the
-    /// reconstructor adapts the octree to the sampling density, the specified
-    /// reconstruction depth is only an upper bound.
-    /// \param width Specifies the
-    /// target width of the finest level octree cells. This parameter is ignored
-    /// if depth is specified.
-    /// \param scale Specifies the ratio between the
-    /// diameter of the cube used for reconstruction and the diameter of the
-    /// samples' bounding cube. \param linear_fit If true, the reconstructor use
-    /// linear interpolation to estimate the positions of iso-vertices.
-    /// \return The estimated TriangleMesh, and per vertex densitie values that
-    /// can be used to to trim the mesh.
-    static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
-    CreateFromPointCloudPoisson(const PointCloud &pcd,
-                                size_t depth = 8,
-                                size_t width = 0,
-                                float scale = 1.1f,
-                                bool linear_fit = false);
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base

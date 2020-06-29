@@ -290,47 +290,6 @@ void pybind_trianglemesh(py::module &m) {
                  "energy"_a = geometry::MeshBase::
                          DeformAsRigidAsPossibleEnergy::Spokes,
                  "smoothed_alpha"_a = 0.01)
-            .def_static("create_from_point_cloud_alpha_shape",
-                        [](const geometry::PointCloud &pcd, double alpha) {
-                            return geometry::TriangleMesh::
-                                    CreateFromPointCloudAlphaShape(pcd, alpha);
-                        },
-                        "Alpha shapes are a generalization of the convex hull. "
-                        "With decreasing alpha value the shape schrinks and "
-                        "creates cavities. See Edelsbrunner and Muecke, "
-                        "\"Three-Dimensional Alpha Shapes\", 1994.",
-                        "pcd"_a, "alpha"_a)
-            .def_static("create_from_point_cloud_alpha_shape",
-                        &geometry::TriangleMesh::CreateFromPointCloudAlphaShape,
-                        "Alpha shapes are a generalization of the convex hull. "
-                        "With decreasing alpha value the shape schrinks and "
-                        "creates cavities. See Edelsbrunner and Muecke, "
-                        "\"Three-Dimensional Alpha Shapes\", 1994.",
-                        "pcd"_a, "alpha"_a, "tetra_mesh"_a, "pt_map"_a)
-            .def_static(
-                    "create_from_point_cloud_ball_pivoting",
-                    &geometry::TriangleMesh::CreateFromPointCloudBallPivoting,
-                    "Function that computes a triangle mesh from a oriented "
-                    "PointCloud. This implements the Ball Pivoting algorithm "
-                    "proposed in F. Bernardini et al., \"The ball-pivoting "
-                    "algorithm for surface reconstruction\", 1999. The "
-                    "implementation is also based on the algorithms outlined "
-                    "in Digne, \"An Analysis and Implementation of a Parallel "
-                    "Ball Pivoting Algorithm\", 2014. The surface "
-                    "reconstruction is done by rolling a ball with a given "
-                    "radius over the point cloud, whenever the ball touches "
-                    "three points a triangle is created.",
-                    "pcd"_a, "radii"_a)
-            .def_static("create_from_point_cloud_poisson",
-                        &geometry::TriangleMesh::CreateFromPointCloudPoisson,
-                        "Function that computes a triangle mesh from a "
-                        "oriented PointCloud pcd. This implements the Screened "
-                        "Poisson Reconstruction proposed in Kazhdan and Hoppe, "
-                        "\"Screened Poisson Surface Reconstruction\", 2013. "
-                        "This function uses the original implementation by "
-                        "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
-                        "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
-                        "linear_fit"_a = false)
             .def_readwrite("vertices", &geometry::TriangleMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
@@ -505,48 +464,6 @@ void pybind_trianglemesh(py::module &m) {
              {"smoothed_alpha",
               "trade-off parameter for the smoothed energy functional for the "
               "regularization term."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "create_from_point_cloud_alpha_shape",
-            {{"pcd",
-              "PointCloud from whicht the TriangleMesh surface is "
-              "reconstructed."},
-             {"alpha",
-              "Parameter to control the shape. A very big value will give a "
-              "shape close to the convex hull."},
-             {"tetra_mesh",
-              "If not None, than uses this to construct the alpha shape. "
-              "Otherwise, TetraMesh is computed from pcd."},
-             {"pt_map",
-              "Optional map from tetra_mesh vertex indices to pcd points."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "create_from_point_cloud_ball_pivoting",
-            {{"pcd",
-              "PointCloud from which the TriangleMesh surface is "
-              "reconstructed. Has to contain normals."},
-             {"radii",
-              "The radii of the ball that are used for the surface "
-              "reconstruction."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "create_from_point_cloud_poisson",
-            {{"pcd",
-              "PointCloud from which the TriangleMesh surface is "
-              "reconstructed. Has to contain normals."},
-             {"depth",
-              "Maximum depth of the tree that will be used for surface "
-              "reconstruction. Running at depth d corresponds to solving on a "
-              "grid whose resolution is no larger than 2^d x 2^d x 2^d. Note "
-              "that since the reconstructor adapts the octree to the sampling "
-              "density, the specified reconstruction depth is only an upper "
-              "bound."},
-             {"width",
-              "Specifies the target width of the finest level octree cells. "
-              "This parameter is ignored if depth is specified"},
-             {"scale",
-              "Specifies the ratio between the diameter of the cube used for "
-              "reconstruction and the diameter of the samples' bounding cube."},
-             {"linear_fit",
-              "If true, the reconstructor will use linear interpolation to "
-              "estimate the positions of iso-vertices."}});
 }
 
 void pybind_trianglemesh_methods(py::module &m) {}

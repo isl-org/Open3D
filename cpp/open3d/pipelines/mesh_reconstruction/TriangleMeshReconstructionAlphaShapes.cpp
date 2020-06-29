@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,40 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/PointCloud.h"
+#include "open3d/pipelines/mesh_reconstruction/TriangleMeshReconstruction.h"
+
 #include "open3d/geometry/Qhull.h"
-#include "open3d/geometry/TetraMesh.h"
-#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
 
-#include <Eigen/Dense>
-
-#include <iostream>
-#include <list>
-
 namespace open3d {
-namespace geometry {
+namespace pipelines {
+namespace mesh_reconstruction {
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
-        const PointCloud& pcd,
+std::shared_ptr<geometry::TriangleMesh> ReconstructAlphaShape(
+        const geometry::PointCloud& pcd,
         double alpha,
-        std::shared_ptr<TetraMesh> tetra_mesh,
+        std::shared_ptr<geometry::TetraMesh> tetra_mesh,
         std::vector<size_t>* pt_map) {
     std::vector<size_t> pt_map_computed;
     if (tetra_mesh == nullptr) {
         utility::LogDebug(
-                "[CreateFromPointCloudAlphaShape] "
+                "[ReconstructAlphaShape] "
                 "ComputeDelaunayTetrahedralization");
         std::tie(tetra_mesh, pt_map_computed) =
-                Qhull::ComputeDelaunayTetrahedralization(pcd.points_);
+                geometry::Qhull::ComputeDelaunayTetrahedralization(pcd.points_);
         pt_map = &pt_map_computed;
         utility::LogDebug(
-                "[CreateFromPointCloudAlphaShape] done "
+                "[ReconstructAlphaShape] done "
                 "ComputeDelaunayTetrahedralization");
     }
 
-    utility::LogDebug("[CreateFromPointCloudAlphaShape] init triangle mesh");
-    auto mesh = std::make_shared<TriangleMesh>();
+    utility::LogDebug("[ReconstructAlphaShape] init triangle mesh");
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = tetra_mesh->vertices_;
     if (pcd.HasNormals()) {
         mesh->vertex_normals_.resize(mesh->vertices_.size());
@@ -71,8 +66,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
             mesh->vertex_colors_[idx] = pcd.colors_[(*pt_map)[idx]];
         }
     }
-    utility::LogDebug(
-            "[CreateFromPointCloudAlphaShape] done init triangle mesh");
+    utility::LogDebug("[ReconstructAlphaShape] done init triangle mesh");
 
     std::vector<double> vsqn(tetra_mesh->vertices_.size());
     for (size_t vidx = 0; vidx < vsqn.size(); ++vidx) {
@@ -80,7 +74,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
     }
 
     utility::LogDebug(
-            "[CreateFromPointCloudAlphaShape] add triangles from tetras that "
+            "[ReconstructAlphaShape] add triangles from tetras that "
             "satisfy constraint");
     const auto& verts = tetra_mesh->vertices_;
     for (size_t tidx = 0; tidx < tetra_mesh->tetras_.size(); ++tidx) {
@@ -115,29 +109,29 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
         // clang-format on
         if (a == 0) {
             utility::LogError(
-                    "[CreateFromPointCloudAlphaShape] invalid tetra in "
+                    "[ReconstructAlphaShape] invalid tetra in "
                     "TetraMesh");
         }
         double r = std::sqrt(dx * dx + dy * dy + dz * dz - 4 * a * c) /
                    (2 * std::abs(a));
 
         if (r <= alpha) {
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(0), tetra(1), tetra(2)));
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(0), tetra(1), tetra(3)));
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(0), tetra(2), tetra(3)));
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(1), tetra(2), tetra(3)));
+            mesh->triangles_.push_back(
+                    GetOrderedTriangle(tetra(0), tetra(1), tetra(2)));
+            mesh->triangles_.push_back(
+                    GetOrderedTriangle(tetra(0), tetra(1), tetra(3)));
+            mesh->triangles_.push_back(
+                    GetOrderedTriangle(tetra(0), tetra(2), tetra(3)));
+            mesh->triangles_.push_back(
+                    GetOrderedTriangle(tetra(1), tetra(2), tetra(3)));
         }
     }
     utility::LogDebug(
-            "[CreateFromPointCloudAlphaShape] done add triangles from tetras "
+            "[ReconstructAlphaShape] done add triangles from tetras "
             "that satisfy constraint");
 
     utility::LogDebug(
-            "[CreateFromPointCloudAlphaShape] remove triangles within "
+            "[ReconstructAlphaShape] remove triangles within "
             "the mesh");
     std::unordered_map<Eigen::Vector3i, int,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
@@ -161,20 +155,21 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
     }
     mesh->triangles_.resize(to_idx);
     utility::LogDebug(
-            "[CreateFromPointCloudAlphaShape] done remove triangles within "
+            "[ReconstructAlphaShape] done remove triangles within "
             "the mesh");
 
     utility::LogDebug(
-            "[CreateFromPointCloudAlphaShape] remove duplicate triangles and "
+            "[ReconstructAlphaShape] remove duplicate triangles and "
             "unreferenced vertices");
     mesh->RemoveDuplicatedTriangles();
     mesh->RemoveUnreferencedVertices();
     utility::LogDebug(
-            "[CreateFromPointCloudAlphaShape] done remove duplicate triangles "
+            "[ReconstructAlphaShape] done remove duplicate triangles "
             "and unreferenced vertices");
 
     return mesh;
 }
 
-}  // namespace geometry
+}  // namespace mesh_reconstruction
+}  // namespace pipelines
 }  // namespace open3d

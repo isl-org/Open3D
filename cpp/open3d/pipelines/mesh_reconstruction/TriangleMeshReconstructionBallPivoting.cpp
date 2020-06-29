@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/pipelines/mesh_reconstruction/TriangleMeshReconstruction.h"
+
 #include "open3d/geometry/IntersectionTest.h"
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
 
-#include <Eigen/Dense>
-
-#include <iostream>
 #include <list>
 
 namespace open3d {
-namespace geometry {
+namespace pipelines {
+namespace mesh_reconstruction {
 
 class BallPivotingVertex;
 class BallPivotingEdge;
@@ -159,9 +159,9 @@ BallPivotingVertexPtr BallPivotingEdge::GetOppositeVertex() {
 
 class BallPivoting {
 public:
-    BallPivoting(const PointCloud& pcd)
+    BallPivoting(const geometry::PointCloud& pcd)
         : has_normals_(pcd.HasNormals()), kdtree_(pcd) {
-        mesh_ = std::make_shared<TriangleMesh>();
+        mesh_ = std::make_shared<geometry::TriangleMesh>();
         mesh_->vertices_ = pcd.points_;
         mesh_->vertex_normals_ = pcd.normals_;
         mesh_->vertex_colors_ = pcd.colors_;
@@ -380,14 +380,15 @@ public:
             utility::LogDebug("[FindCandidateVertex] candidate={:d} => {}",
                               candidate->idx_, candidate->point_.transpose());
 
-            bool coplanar = IntersectionTest::PointsCoplanar(
+            bool coplanar = geometry::IntersectionTest::PointsCoplanar(
                     src->point_, tgt->point_, opp->point_, candidate->point_);
-            if (coplanar && (IntersectionTest::LineSegmentsMinimumDistance(
-                                     mp, candidate->point_, src->point_,
-                                     opp->point_) < 1e-12 ||
-                             IntersectionTest::LineSegmentsMinimumDistance(
-                                     mp, candidate->point_, tgt->point_,
-                                     opp->point_) < 1e-12)) {
+            if (coplanar &&
+                (geometry::IntersectionTest::LineSegmentsMinimumDistance(
+                         mp, candidate->point_, src->point_, opp->point_) <
+                         1e-12 ||
+                 geometry::IntersectionTest::LineSegmentsMinimumDistance(
+                         mp, candidate->point_, tgt->point_, opp->point_) <
+                         1e-12)) {
                 utility::LogDebug(
                         "[FindCandidateVertex] candidate {:d} is intersecting "
                         "the existing triangle",
@@ -666,7 +667,8 @@ public:
         }
     }
 
-    std::shared_ptr<TriangleMesh> Run(const std::vector<double>& radii) {
+    std::shared_ptr<geometry::TriangleMesh> Run(
+            const std::vector<double>& radii) {
         if (!has_normals_) {
             utility::LogError("ReconstructBallPivoting requires normals");
         }
@@ -740,18 +742,19 @@ public:
 
 private:
     bool has_normals_;
-    KDTreeFlann kdtree_;
+    geometry::KDTreeFlann kdtree_;
     std::list<BallPivotingEdgePtr> edge_front_;
     std::list<BallPivotingEdgePtr> border_edges_;
     std::vector<BallPivotingVertexPtr> vertices;
-    std::shared_ptr<TriangleMesh> mesh_;
+    std::shared_ptr<geometry::TriangleMesh> mesh_;
 };
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudBallPivoting(
-        const PointCloud& pcd, const std::vector<double>& radii) {
+std::shared_ptr<geometry::TriangleMesh> ReconstructBallPivoting(
+        const geometry::PointCloud& pcd, const std::vector<double>& radii) {
     BallPivoting bp(pcd);
     return bp.Run(radii);
 }
 
-}  // namespace geometry
+}  // namespace mesh_reconstruction
+}  // namespace pipelines
 }  // namespace open3d

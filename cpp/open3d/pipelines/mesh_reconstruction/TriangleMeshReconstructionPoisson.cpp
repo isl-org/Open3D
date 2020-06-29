@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+
+#include "open3d/pipelines/mesh_reconstruction//TriangleMeshReconstruction.h"
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
@@ -44,10 +46,11 @@
 #include "PoissonRecon/Src/PPolynomial.h"
 #include "PoissonRecon/Src/PointStreamData.h"
 // clang-format on
-
 namespace open3d {
-namespace geometry {
-namespace poisson {
+namespace pipelines {
+namespace mesh_reconstruction {
+
+namespace {
 
 // The order of the B-Spline used to splat in data for color interpolation
 static const int DATA_DEGREE = 0;
@@ -723,18 +726,17 @@ void Execute(const open3d::geometry::PointCloud& pcd,
                       Time() - startTime, FEMTree<Dim, Real>::MaxMemoryUsage());
 }
 
-}  // namespace poisson
+}  // namespace
 
-std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
-TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
-                                          size_t depth,
-                                          size_t width,
-                                          float scale,
-                                          bool linear_fit) {
-    static const BoundaryType BType = poisson::DEFAULT_FEM_BOUNDARY;
+std::tuple<std::shared_ptr<geometry::TriangleMesh>, std::vector<double>>
+ReconstructPoisson(const geometry::PointCloud& pcd,
+                   size_t depth,
+                   size_t width,
+                   float scale,
+                   bool linear_fit) {
+    static const BoundaryType BType = DEFAULT_FEM_BOUNDARY;
     typedef IsotropicUIntPack<
-            poisson::DIMENSION,
-            FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
+            DIMENSION, FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
             FEMSigs;
 
     if (!pcd.HasNormals()) {
@@ -749,15 +751,16 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
                      std::thread::hardware_concurrency());
 #endif
 
-    auto mesh = std::make_shared<TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     std::vector<double> densities;
-    poisson::Execute<float>(pcd, mesh, densities, static_cast<int>(depth),
-                            width, scale, linear_fit, FEMSigs());
+    Execute<float>(pcd, mesh, densities, static_cast<int>(depth), width, scale,
+                   linear_fit, FEMSigs());
 
     ThreadPool::Terminate();
 
     return std::make_tuple(mesh, densities);
 }
 
-}  // namespace geometry
+}  // namespace mesh_reconstruction
+}  // namespace pipelines
 }  // namespace open3d
