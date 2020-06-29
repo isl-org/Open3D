@@ -46,26 +46,30 @@ void CPUBackend(Dtype dtype,
     switch (dtype) {
         case Dtype::Float32: {
             float alpha = 1, beta = 0;
-            cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n,
-                        k,  // dimensions
-                        alpha, static_cast<const float*>(A_data), m,
-                        static_cast<const float*>(B_data),
-                        k,  // input and their leading dims
-                        beta, static_cast<float*>(C_data),
-                        m);  // output and its leading dim
+            // clang-format off
+            cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+                        m, n, k,  // dimensions
+                        alpha,
+                        static_cast<const float*>(A_data), m,
+                        static_cast<const float*>(B_data), k,  // input and their leading dims
+                        beta,
+                        static_cast<float*>(C_data), m);  // output and its leading dim
+            // clang-format on
             break;
         }
 
         case Dtype::Float64: {
             double alpha = 1, beta = 0;
-            cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n,
-                        k,  // dimensions
-                        alpha, static_cast<const double*>(A_data), m,
-                        static_cast<const double*>(B_data),
-                        k,  // input and their leading dims
-                        beta, static_cast<double*>(C_data),
-                        m);  // output and its leading dim
+            // clang-format off
+            cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+                        m, n, k,  // dimensions
+                        alpha,
+                        static_cast<const double*>(A_data), m,
+                        static_cast<const double*>(B_data), k,  // input and their leading dims
+                        beta,
+                        static_cast<double*>(C_data), m);  // output and its leading dim
             break;
+            // clang-format on
         }
 
         default: {  // should never reach here
