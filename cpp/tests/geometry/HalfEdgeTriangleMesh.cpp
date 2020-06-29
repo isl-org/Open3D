@@ -28,7 +28,7 @@
 #include <string>
 
 #include "open3d/geometry/HalfEdgeTriangleMesh.h"
-#include "open3d/io/ClassIO/TriangleMeshIO.h"
+#include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Helper.h"
 #include "tests/UnitTest.h"
 

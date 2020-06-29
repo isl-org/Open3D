@@ -30,11 +30,11 @@
 #include <memory>
 #include <string>
 
-#include "open3d/visualization/Rendering/Renderer.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/Gui.h"
 #include "open3d/visualization/gui/Menu.h"
 #include "open3d/visualization/gui/Widget.h"
+#include "open3d/visualization/rendering/Renderer.h"
 
 struct GLFWwindow;
 
@@ -79,7 +79,7 @@ public:
     virtual ~Window();
 
     const Theme& GetTheme() const;
-    visualization::Renderer& GetRenderer() const;
+    visualization::rendering::Renderer& GetRenderer() const;
 
     /// Gets the window's size and position in OS pixels, not actual
     /// device pixels.

@@ -36,8 +36,6 @@
 #include <vector>
 
 #include "open3d/utility/Console.h"
-#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
-#include "open3d/visualization/Rendering/Filament/FilamentRenderer.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Dialog.h"
@@ -50,6 +48,8 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 #include "open3d/visualization/gui/Widget.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
 using namespace open3d::visualization::gui::util;
 
@@ -147,7 +147,7 @@ struct Window::Impl {
     double last_render_time_ = 0.0;
 
     Theme theme_;  // so that the font size can be different based on scaling
-    std::unique_ptr<visualization::FilamentRenderer> renderer_;
+    std::unique_ptr<visualization::rendering::FilamentRenderer> renderer_;
     struct {
         std::unique_ptr<ImguiFilamentBridge> imgui_bridge;
         ImGuiContext* context = nullptr;
@@ -244,12 +244,13 @@ Window::Window(const std::string& title,
     impl_->theme_.default_margin *= scaling;
     impl_->theme_.default_layout_spacing *= scaling;
 
-    auto& engine = visualization::EngineInstance::GetInstance();
+    auto& engine = visualization::rendering::EngineInstance::GetInstance();
     auto& resource_manager =
-            visualization::EngineInstance::GetResourceManager();
+            visualization::rendering::EngineInstance::GetResourceManager();
 
-    impl_->renderer_ = std::make_unique<visualization::FilamentRenderer>(
-            engine, GetNativeDrawable(), resource_manager);
+    impl_->renderer_ =
+            std::make_unique<visualization::rendering::FilamentRenderer>(
+                    engine, GetNativeDrawable(), resource_manager);
 
     auto& theme = impl_->theme_;  // shorter alias
     impl_->imgui_.context = ImGui::CreateContext();
@@ -370,7 +371,7 @@ void* Window::GetNativeDrawable() const {
 
 const Theme& Window::GetTheme() const { return impl_->theme_; }
 
-visualization::Renderer& Window::GetRenderer() const {
+visualization::rendering::Renderer& Window::GetRenderer() const {
     return *impl_->renderer_;
 }
 

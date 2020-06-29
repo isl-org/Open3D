@@ -36,7 +36,6 @@
 
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/Rendering/Filament/FilamentEngine.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/Label.h"
@@ -45,6 +44,7 @@
 #include "open3d/visualization/gui/Task.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Window.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
 
 namespace {
 
@@ -195,7 +195,7 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.dialog_border_width = 1;
     impl_->theme_.dialog_border_radius = 10;
 
-    visualization::EngineInstance::SelectBackend(
+    visualization::rendering::EngineInstance::SelectBackend(
             filament::backend::Backend::OPENGL);
 
     // Init GLFW here so that we can create windows before running

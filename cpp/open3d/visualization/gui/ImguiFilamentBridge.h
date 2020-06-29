@@ -59,8 +59,10 @@ struct ImDrawData;
 namespace open3d {
 
 namespace visualization {
+namespace rendering {
 class FilamentRenderer;
 }
+}  // namespace visualization
 
 namespace visualization {
 namespace gui {
@@ -74,7 +76,7 @@ class Window;
 // ImGui::GetIO() directly and set the mouse state.
 class ImguiFilamentBridge {
 public:
-    ImguiFilamentBridge(visualization::FilamentRenderer* renderer,
+    ImguiFilamentBridge(visualization::rendering::FilamentRenderer* renderer,
                         const Size& window_size);
     ~ImguiFilamentBridge();
 

@@ -46,7 +46,7 @@ Make a new configuration file
 
 A new configuration file is required to specify path to the new dataset. ``config/realsense.json`` is provided for this purpose.
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/config/realsense.json
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/config/realsense.json
    :language: json
    :lineno-start: 1
    :lines: 1-
@@ -62,5 +62,5 @@ Run the system by using the new configuration file.
 
 .. code-block:: sh
 
-    cd examples/Python/ReconstructionSystem/
+    cd examples/python/ReconstructionSystem/
     python run_system.py config/realsense.json [--make] [--register] [--refine] [--integrate]

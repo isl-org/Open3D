@@ -1,11 +1,11 @@
-.. _cplusplus_interface_tutorial:
+.. _cplusplus_example_project:
 
-C++ interface
--------------
+Building C++ projects with Open3D
+---------------------------------
 
 This page explains how to create a CMake based C++ project using the Open3D C++ interface.
 
-.. note:: For help on the C++ interfaces, refer to examples in [examples/Cpp/Test], [examples/Cpp/Experimental] and [src/Tools] folder and check `Doxygen document for C++ API <../../cpp_api/index.html>`_.
+.. note:: For help on the C++ interfaces, refer to examples in [examples/cpp/Test], [examples/cpp/Experimental] and [src/Tools] folder and check `Doxygen document for C++ API <../../cpp_api/index.html>`_.
 
 .. _install_open3d_from_source:
 

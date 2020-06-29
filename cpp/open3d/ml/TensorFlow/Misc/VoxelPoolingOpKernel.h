@@ -68,7 +68,6 @@ public:
         : OpKernel(construction) {
         using namespace tensorflow;
         using namespace open3d::ml::detail;
-        using namespace open3d::ml::detail::voxel_pooling;
         std::string pos_fn_str;
         OP_REQUIRES_OK(construction,
                        construction->GetAttr("position_fn", &pos_fn_str));
@@ -123,8 +122,8 @@ public:
                         const tensorflow::Tensor& voxel_size) = 0;
 
 protected:
-    open3d::ml::detail::voxel_pooling::AccumulationFn position_fn;
-    open3d::ml::detail::voxel_pooling::AccumulationFn feature_fn;
+    open3d::ml::detail::AccumulationFn position_fn;
+    open3d::ml::detail::AccumulationFn feature_fn;
     bool debug;
 };
 

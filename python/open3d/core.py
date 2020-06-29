@@ -28,6 +28,9 @@ def _numpy_dtype_to_dtype(numpy_dtype):
 
 
 class SizeVector(o3d.pybind.core.SizeVector):
+    """
+    SizeVector is a vector of integers for specifying shape, strides, etc.
+    """
 
     def __init__(self, values=None):
         if values is None:
