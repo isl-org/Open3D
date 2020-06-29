@@ -168,64 +168,6 @@ public:
     /// This function might help to close triangle soups.
     TriangleMesh &MergeCloseVertices(double eps);
 
-    /// \brief Function to sharpen triangle mesh.
-    ///
-    /// The output value (\f$v_o\f$) is the input value (\f$v_i\f$) plus
-    /// strength times the input value minus the sum of he adjacent values.
-    /// \f$v_o = v_i + strength (v_i * |N| - \sum_{n \in N} v_n)\f$.
-    ///
-    /// \param number_of_iterations defines the number of repetitions
-    /// of this operation.
-    /// \param strength - The strength of the filter.
-    std::shared_ptr<TriangleMesh> FilterSharpen(
-            int number_of_iterations,
-            double strength,
-            FilterScope scope = FilterScope::All) const;
-
-    /// \brief Function to smooth triangle mesh with simple neighbour average.
-    ///
-    /// \f$v_o = \frac{v_i + \sum_{n \in N} v_n)}{|N| + 1}\f$, with \f$v_i\f$
-    /// being the input value, \f$v_o\f$ the output value, and \f$N\f$ is the
-    /// set of adjacent neighbours.
-    ///
-    /// \param number_of_iterations defines the number of repetitions
-    /// of this operation.
-    std::shared_ptr<TriangleMesh> FilterSmoothSimple(
-            int number_of_iterations,
-            FilterScope scope = FilterScope::All) const;
-
-    /// \brief Function to smooth triangle mesh using Laplacian.
-    ///
-    /// \f$v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)\f$,
-    /// with \f$v_i\f$ being the input value, \f$v_o\f$ the output value,
-    /// \f$N\f$ is the set of adjacent neighbours, \f$w_n\f$ is the weighting of
-    /// the neighbour based on the inverse distance (closer neighbours have
-    /// higher weight),
-    ///
-    /// \param number_of_iterations defines the number of repetitions
-    /// of this operation.
-    /// \param lambda is the smoothing parameter.
-    std::shared_ptr<TriangleMesh> FilterSmoothLaplacian(
-            int number_of_iterations,
-            double lambda,
-            FilterScope scope = FilterScope::All) const;
-
-    /// \brief Function to smooth triangle mesh using method of Taubin,
-    /// "Curve and Surface Smoothing Without Shrinkage", 1995.
-    /// Applies in each iteration two times FilterSmoothLaplacian, first
-    /// with lambda and second with mu as smoothing parameter.
-    /// This method avoids shrinkage of the triangle mesh.
-    ///
-    /// \param number_of_iterations defines the number of repetitions
-    /// of this operation.
-    /// \param lambda is the filter parameter
-    /// \param mu is the filter parameter
-    std::shared_ptr<TriangleMesh> FilterSmoothTaubin(
-            int number_of_iterations,
-            double lambda = 0.5,
-            double mu = -0.53,
-            FilterScope scope = FilterScope::All) const;
-
     /// Function that computes the Euler-Poincaré characteristic, i.e.,
     /// V + F - E, where V is the number of vertices, F is the number
     /// of triangles, and E is the number of edges.
@@ -392,59 +334,9 @@ public:
     /// Should have same size as \ref vertices_.
     void RemoveVerticesByMask(const std::vector<bool> &vertex_mask);
 
-    /// \brief This function deforms the mesh using the method by
-    /// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
-    ///
-    /// \param constraint_vertex_indices Indices of the triangle vertices that
-    /// should be constrained by the vertex positions in
-    /// constraint_vertex_positions.
-    /// \param constraint_vertex_positions Vertex positions used for the
-    /// constraints.
-    /// \param max_iter maximum number of iterations to minimize energy
-    /// functional.
-    /// \param energy energy model that should be optimized
-    /// \param smoothed_alpha alpha parameter of the smoothed ARAP model
-    /// \return The deformed TriangleMesh
-    std::shared_ptr<TriangleMesh> DeformAsRigidAsPossible(
-            const std::vector<int> &constraint_vertex_indices,
-            const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
-            size_t max_iter,
-            DeformAsRigidAsPossibleEnergy energy =
-                    DeformAsRigidAsPossibleEnergy::Spokes,
-            double smoothed_alpha = 0.01) const;
-
 protected:
     // Forward child class type to avoid indirect nonvirtual base
     TriangleMesh(Geometry::GeometryType type) : MeshBase(type) {}
-
-    void FilterSmoothLaplacianHelper(
-            std::shared_ptr<TriangleMesh> &mesh,
-            const std::vector<Eigen::Vector3d> &prev_vertices,
-            const std::vector<Eigen::Vector3d> &prev_vertex_normals,
-            const std::vector<Eigen::Vector3d> &prev_vertex_colors,
-            const std::vector<std::unordered_set<int>> &adjacency_list,
-            double lambda,
-            bool filter_vertex,
-            bool filter_normal,
-            bool filter_color) const;
-
-    /// \brief Function that computes for each edge in the triangle mesh and
-    /// passed as parameter edges_to_vertices the cot weight.
-    ///
-    /// \param edges_to_vertices map from edge to vector of neighbouring
-    /// vertices.
-    /// \param min_weight minimum weight returned. Weights smaller than this
-    /// get clamped.
-    /// \return cot weight per edge.
-    std::unordered_map<Eigen::Vector2i,
-                       double,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
-    ComputeEdgeWeightsCot(
-            const std::unordered_map<Eigen::Vector2i,
-                                     std::vector<int>,
-                                     utility::hash_eigen::hash<Eigen::Vector2i>>
-                    &edges_to_vertices,
-            double min_weight = std::numeric_limits<double>::lowest()) const;
 
 public:
     /// List of triangles denoted by the index of points forming the triangle.

@@ -50,21 +50,6 @@ class TriangleMesh;
 /// vertex normals and vertex colors.
 class MeshBase : public Geometry3D {
 public:
-    /// \brief Indicates the scope of filter operations.
-    ///
-    /// \param All indicates that all properties (color, normal,
-    /// vertex position) are filtered.
-    /// \param Color indicates that only the colors are filtered.
-    /// \param Normal indicates that only the normals are filtered.
-    /// \param Vertex indicates that only the vertex positions are filtered.
-    enum class FilterScope { All, Color, Normal, Vertex };
-
-    /// Energy model that is minimized in the DeformAsRigidAsPossible method.
-    /// \param Spokes is the original energy as formulated in
-    /// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
-    /// \param Smoothed adds a rotation smoothing term to the rotations.
-    enum class DeformAsRigidAsPossibleEnergy { Spokes, Smoothed };
-
     /// \brief Default Constructor.
     MeshBase() : Geometry3D(Geometry::GeometryType::MeshBase) {}
     ~MeshBase() override {}

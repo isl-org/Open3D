@@ -43,29 +43,6 @@ void pybind_meshbase(py::module &m) {
     py::detail::bind_default_constructor<geometry::MeshBase>(meshbase);
     py::detail::bind_copy_functions<geometry::MeshBase>(meshbase);
 
-    py::enum_<geometry::MeshBase::FilterScope>(m, "FilterScope")
-            .value("All", geometry::MeshBase::FilterScope::All,
-                   "All properties (color, normal, vertex position) are "
-                   "filtered.")
-            .value("Color", geometry::MeshBase::FilterScope::Color,
-                   "Only the color values are filtered.")
-            .value("Normal", geometry::MeshBase::FilterScope::Normal,
-                   "Only the normal values are filtered.")
-            .value("Vertex", geometry::MeshBase::FilterScope::Vertex,
-                   "Only the vertex positions are filtered.")
-            .export_values();
-
-    py::enum_<geometry::MeshBase::DeformAsRigidAsPossibleEnergy>(
-            m, "DeformAsRigidAsPossibleEnergy")
-            .value("Spokes",
-                   geometry::MeshBase::DeformAsRigidAsPossibleEnergy::Spokes,
-                   "is the original energy as formulated in orkine and Alexa, "
-                   "\"As-Rigid-As-Possible Surface Modeling\", 2007.")
-            .value("Smoothed",
-                   geometry::MeshBase::DeformAsRigidAsPossibleEnergy::Smoothed,
-                   "adds a rotation smoothing term to the rotations.")
-            .export_values();
-
     meshbase.def("__repr__",
                  [](const geometry::MeshBase &mesh) {
                      return std::string("geometry::MeshBase with ") +

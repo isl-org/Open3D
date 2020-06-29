@@ -29,7 +29,7 @@
 
 namespace open3d {
 
-void pybind_mesh_sampling(py::module &m) {
+void pybind_mesh_reconstruction(py::module &m) {
     m.def("create_from_point_cloud_alpha_shape",
           [](const geometry::PointCloud &pcd, double alpha) {
               return pipelines::mesh_reconstruction::ReconstructAlphaShape(

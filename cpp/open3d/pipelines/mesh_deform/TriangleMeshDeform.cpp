@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,37 +24,80 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/pipelines/mesh_deform/TriangleMeshDeform.h"
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+
 #include <algorithm>
 
-#include "open3d/utility/Console.h"
-
 namespace open3d {
-namespace geometry {
+namespace pipelines {
+namespace mesh_deform {
 
 /// Helper function to get an edge with ordered vertex indices.
 inline Eigen::Vector2i GetOrderedEdge(int vidx0, int vidx1) {
     return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
+/// \brief Function that computes for each edge in the triangle mesh and
+/// passed as parameter edges_to_vertices the cot weight.
+///
+/// \param edges_to_vertices map from edge to vector of neighbouring
+/// vertices.
+/// \param min_weight minimum weight returned. Weights smaller than this
+/// get clamped.
+/// \return cot weight per edge.
+std::unordered_map<Eigen::Vector2i,
+                   double,
+                   utility::hash_eigen::hash<Eigen::Vector2i>>
+ComputeEdgeWeightsCot(
+        const geometry::TriangleMesh &mesh,
+        const std::unordered_map<Eigen::Vector2i,
+                                 std::vector<int>,
+                                 utility::hash_eigen::hash<Eigen::Vector2i>>
+                &edges_to_vertices,
+        double min_weight) {
+    std::unordered_map<Eigen::Vector2i, double,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+            weights;
+    for (const auto &edge_v2s : edges_to_vertices) {
+        Eigen::Vector2i edge = edge_v2s.first;
+        double weight_sum = 0;
+        int N = 0;
+        for (int v2 : edge_v2s.second) {
+            Eigen::Vector3d a = mesh.vertices_[edge(0)] - mesh.vertices_[v2];
+            Eigen::Vector3d b = mesh.vertices_[edge(1)] - mesh.vertices_[v2];
+            double weight = a.dot(b) / (a.cross(b)).norm();
+            weight_sum += weight;
+            N++;
+        }
+        double weight = N > 0 ? weight_sum / N : 0;
+        if (weight < min_weight) {
+            weights[edge] = min_weight;
+        } else {
+            weights[edge] = weight;
+        }
+    }
+    return weights;
+}
+
+std::shared_ptr<geometry::TriangleMesh> DeformAsRigidAsPossible(
+        const geometry::TriangleMesh &mesh,
         const std::vector<int> &constraint_vertex_indices,
         const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
         size_t max_iter,
         DeformAsRigidAsPossibleEnergy energy_model,
-        double smoothed_alpha) const {
-    auto prime = std::make_shared<TriangleMesh>();
-    prime->vertices_ = this->vertices_;
-    prime->triangles_ = this->triangles_;
+        double smoothed_alpha) {
+    auto prime = std::make_shared<geometry::TriangleMesh>();
+    prime->vertices_ = mesh.vertices_;
+    prime->triangles_ = mesh.triangles_;
 
     utility::LogDebug("[DeformAsRigidAsPossible] setting up S'");
     prime->ComputeAdjacencyList();
     auto edges_to_vertices = prime->GetEdgeToVerticesMap();
     auto edge_weights =
-            prime->ComputeEdgeWeightsCot(edges_to_vertices, /*min_weight=*/0);
+            ComputeEdgeWeightsCot(*prime, edges_to_vertices, /*min_weight=*/0);
     utility::LogDebug("[DeformAsRigidAsPossible] done setting up S'");
 
     std::unordered_map<int, Eigen::Vector3d> constraints;
@@ -68,17 +111,17 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
     double surface_area = -1;
     // std::vector<Eigen::Matrix3d> Rs(vertices_.size(),
     // Eigen::Matrix3d::Identity());
-    std::vector<Eigen::Matrix3d> Rs(vertices_.size());
+    std::vector<Eigen::Matrix3d> Rs(mesh.vertices_.size());
     std::vector<Eigen::Matrix3d> Rs_old;
     if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
         surface_area = prime->GetSurfaceArea();
-        Rs_old.resize(vertices_.size());
+        Rs_old.resize(mesh.vertices_.size());
     }
 
     // Build system matrix L and its solver
     utility::LogDebug("[DeformAsRigidAsPossible] setting up system matrix L");
     std::vector<Eigen::Triplet<double>> triplets;
-    for (int i = 0; i < int(vertices_.size()); ++i) {
+    for (int i = 0; i < int(mesh.vertices_.size()); ++i) {
         if (constraints.count(i) > 0) {
             triplets.push_back(Eigen::Triplet<double>(i, i, 1));
         } else {
@@ -93,7 +136,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             }
         }
     }
-    Eigen::SparseMatrix<double> L(vertices_.size(), vertices_.size());
+    Eigen::SparseMatrix<double> L(mesh.vertices_.size(), mesh.vertices_.size());
     L.setFromTriplets(triplets.begin(), triplets.end());
     utility::LogDebug(
             "[DeformAsRigidAsPossible] done setting up system matrix L");
@@ -110,9 +153,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
                 "[DeformAsRigidAsPossible] done setting up sparse solver");
     }
 
-    std::vector<Eigen::VectorXd> b = {Eigen::VectorXd(vertices_.size()),
-                                      Eigen::VectorXd(vertices_.size()),
-                                      Eigen::VectorXd(vertices_.size())};
+    std::vector<Eigen::VectorXd> b = {Eigen::VectorXd(mesh.vertices_.size()),
+                                      Eigen::VectorXd(mesh.vertices_.size()),
+                                      Eigen::VectorXd(mesh.vertices_.size())};
     for (size_t iter = 0; iter < max_iter; ++iter) {
         if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
             std::swap(Rs, Rs_old);
@@ -121,13 +164,13 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int i = 0; i < int(vertices_.size()); ++i) {
+        for (int i = 0; i < int(mesh.vertices_.size()); ++i) {
             // Update rotations
             Eigen::Matrix3d S = Eigen::Matrix3d::Zero();
             Eigen::Matrix3d R = Eigen::Matrix3d::Zero();
             int n_nbs = 0;
             for (int j : prime->adjacency_list_[i]) {
-                Eigen::Vector3d e0 = vertices_[i] - vertices_[j];
+                Eigen::Vector3d e0 = mesh.vertices_[i] - mesh.vertices_[j];
                 Eigen::Vector3d e1 = prime->vertices_[i] - prime->vertices_[j];
                 double w = edge_weights[GetOrderedEdge(i, j)];
                 S += w * (e0 * e1.transpose());
@@ -159,7 +202,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int i = 0; i < int(vertices_.size()); ++i) {
+        for (int i = 0; i < int(mesh.vertices_.size()); ++i) {
             // Update Positions
             Eigen::Vector3d bi(0, 0, 0);
             if (constraints.count(i) > 0) {
@@ -168,7 +211,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
                 for (int j : prime->adjacency_list_[i]) {
                     double w = edge_weights[GetOrderedEdge(i, j)];
                     bi += w / 2 *
-                          ((Rs[i] + Rs[j]) * (vertices_[i] - vertices_[j]));
+                          ((Rs[i] + Rs[j]) *
+                           (mesh.vertices_[i] - mesh.vertices_[j]));
                 }
             }
             b[0](i) = bi(0);
@@ -184,7 +228,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
                 utility::LogError(
                         "[DeformAsRigidAsPossible] Cholesky solve failed");
             }
-            for (int i = 0; i < int(vertices_.size()); ++i) {
+            for (int i = 0; i < int(mesh.vertices_.size()); ++i) {
                 prime->vertices_[i](comp) = p_prime(i);
             }
         }
@@ -192,10 +236,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
         // Compute energy and log
         double energy = 0;
         double reg = 0;
-        for (int i = 0; i < int(vertices_.size()); ++i) {
+        for (int i = 0; i < int(mesh.vertices_.size()); ++i) {
             for (int j : prime->adjacency_list_[i]) {
                 double w = edge_weights[GetOrderedEdge(i, j)];
-                Eigen::Vector3d e0 = vertices_[i] - vertices_[j];
+                Eigen::Vector3d e0 = mesh.vertices_[i] - mesh.vertices_[j];
                 Eigen::Vector3d e1 = prime->vertices_[i] - prime->vertices_[j];
                 Eigen::Vector3d diff = e1 - Rs[i] * e0;
                 energy += w * diff.squaredNorm();
@@ -214,5 +258,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
     return prime;
 }
 
-}  // namespace geometry
+}  // namespace mesh_deform
+}  // namespace pipelines
 }  // namespace open3d

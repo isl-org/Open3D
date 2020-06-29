@@ -41,6 +41,7 @@ TEST(TriangleMeshSampling, SamplePointsUniformly) {
 
     // use triangle normal instead of the vertex normals
     EXPECT_FALSE(mesh_simple.HasTriangleNormals());
+    mesh_simple.ComputeTriangleNormals();
     pcd_simple = pipelines::mesh_sampling::SamplePointsUniformly(
             mesh_simple, n_points, true);
     // the mesh now has triangle normals as a side effect.

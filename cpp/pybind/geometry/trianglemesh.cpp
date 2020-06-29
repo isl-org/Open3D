@@ -118,44 +118,6 @@ void pybind_trianglemesh(py::module &m) {
                  "function might help to "
                  "close triangle soups.",
                  "eps"_a)
-            .def("filter_sharpen", &geometry::TriangleMesh::FilterSharpen,
-                 "Function to sharpen triangle mesh. The output value "
-                 "(:math:`v_o`) is the input value (:math:`v_i`) plus strength "
-                 "times the input value minus he sum of he adjacent values. "
-                 ":math:`v_o = v_i x strength (v_i * |N| - \\sum_{n \\in N} "
-                 "v_n)`",
-                 "number_of_iterations"_a = 1, "strength"_a = 1,
-                 "filter_scope"_a = geometry::MeshBase::FilterScope::All)
-            .def("filter_smooth_simple",
-                 &geometry::TriangleMesh::FilterSmoothSimple,
-                 "Function to smooth triangle mesh with simple neighbour "
-                 "average. :math:`v_o = \\frac{v_i + \\sum_{n \\in N} "
-                 "v_n)}{|N| + 1}`, with :math:`v_i` being the input value, "
-                 ":math:`v_o` the output value, and :math:`N` is the set of "
-                 "adjacent neighbours.",
-                 "number_of_iterations"_a = 1,
-                 "filter_scope"_a = geometry::MeshBase::FilterScope::All)
-            .def("filter_smooth_laplacian",
-                 &geometry::TriangleMesh::FilterSmoothLaplacian,
-                 "Function to smooth triangle mesh using Laplacian. :math:`v_o "
-                 "= v_i \\cdot \\lambda (sum_{n \\in N} w_n v_n - v_i)`, with "
-                 ":math:`v_i` being the input value, :math:`v_o` the output "
-                 "value, :math:`N` is the  set of adjacent neighbours, "
-                 ":math:`w_n` is the weighting of the neighbour based on the "
-                 "inverse distance (closer neighbours have higher weight), and "
-                 "lambda is the smoothing parameter.",
-                 "number_of_iterations"_a = 1, "lambda"_a = 0.5,
-                 "filter_scope"_a = geometry::MeshBase::FilterScope::All)
-            .def("filter_smooth_taubin",
-                 &geometry::TriangleMesh::FilterSmoothTaubin,
-                 "Function to smooth triangle mesh using method of Taubin, "
-                 "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
-                 "Applies in each iteration two times filter_smooth_laplacian, "
-                 "first with filter parameter lambda and second with filter "
-                 "parameter mu as smoothing parameter. This method avoids "
-                 "shrinkage of the triangle mesh.",
-                 "number_of_iterations"_a = 1, "lambda"_a = 0.5, "mu"_a = -0.53,
-                 "filter_scope"_a = geometry::MeshBase::FilterScope::All)
             .def("has_vertices", &geometry::TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &geometry::TriangleMesh::HasTriangles,
@@ -280,16 +242,6 @@ void pybind_trianglemesh(py::module &m) {
                  "vertex_mask. Note that also all triangles associated with "
                  "the vertices are removed.",
                  "vertex_mask"_a)
-            .def("deform_as_rigid_as_possible",
-                 &geometry::TriangleMesh::DeformAsRigidAsPossible,
-                 "This function deforms the mesh using the method by Sorkine "
-                 "and Alexa, "
-                 "'As-Rigid-As-Possible Surface Modeling', 2007",
-                 "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
-                 "max_iter"_a,
-                 "energy"_a = geometry::MeshBase::
-                         DeformAsRigidAsPossibleEnergy::Spokes,
-                 "smoothed_alpha"_a = 0.01)
             .def_readwrite("vertices", &geometry::TriangleMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
@@ -394,30 +346,6 @@ void pybind_trianglemesh(py::module &m) {
             {{"eps",
               "Parameter that defines the distance between close vertices."}});
     docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "filter_sharpen",
-            {{"number_of_iterations",
-              " Number of repetitions of this operation"},
-             {"strengh", "Filter parameter."},
-             {"scope", "Mesh property that should be filtered."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "filter_smooth_simple",
-            {{"number_of_iterations",
-              " Number of repetitions of this operation"},
-             {"scope", "Mesh property that should be filtered."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "filter_smooth_laplacian",
-            {{"number_of_iterations",
-              " Number of repetitions of this operation"},
-             {"lambda", "Filter parameter."},
-             {"scope", "Mesh property that should be filtered."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "filter_smooth_taubin",
-            {{"number_of_iterations",
-              " Number of repetitions of this operation"},
-             {"lambda", "Filter parameter."},
-             {"mu", "Filter parameter."},
-             {"scope", "Mesh property that should be filtered."}});
-    docstring::ClassMethodDocInject(
             m, "TriangleMesh", "select_by_index",
             {{"indices", "Indices of vertices to be selected."},
              {"cleanup",
@@ -449,21 +377,6 @@ void pybind_trianglemesh(py::module &m) {
                                     {{"vertex_mask",
                                       "1D bool array, True values indicate "
                                       "vertices that should be removed."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "deform_as_rigid_as_possible",
-            {{"constraint_vertex_indices",
-              "Indices of the triangle vertices that should be constrained by "
-              "the vertex positions "
-              "in constraint_vertex_positions."},
-             {"constraint_vertex_positions",
-              "Vertex positions used for the constraints."},
-             {"max_iter",
-              "Maximum number of iterations to minimize energy functional."},
-             {"energy",
-              "Energy model that is minimized in the deformation process"},
-             {"smoothed_alpha",
-              "trade-off parameter for the smoothed energy functional for the "
-              "regularization term."}});
 }
 
 void pybind_trianglemesh_methods(py::module &m) {}
