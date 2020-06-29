@@ -66,8 +66,8 @@ static std::tuple<bool, T> QueryImageIntensity(
         if (optional_warping_field.has_value()) {
             Eigen::Vector2d uv_shift =
                     optional_warping_field.value().GetImageWarpingField(u, v);
-            u = uv_shift(0);
-            v = uv_shift(1);
+            u = static_cast<float>(uv_shift(0));
+            v = static_cast<float>(uv_shift(1));
         }
         if (img.TestImageBoundary(u, v, image_boundary_margin)) {
             int u_round = int(u);
@@ -87,7 +87,7 @@ static std::tuple<bool, T> QueryImageIntensity(
 std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
         const std::vector<std::shared_ptr<geometry::Image>>& images_depth,
         double depth_threshold_for_discontinuity_check,
-        double half_dilation_kernel_size_for_discontinuity_map) {
+        int half_dilation_kernel_size_for_discontinuity_map) {
     auto n_images = images_depth.size();
     std::vector<std::shared_ptr<geometry::Image>> masks;
     for (size_t i = 0; i < n_images; i++) {
