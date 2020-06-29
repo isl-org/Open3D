@@ -36,12 +36,23 @@ namespace core {
 
 Tensor Matmul(const Tensor& A, const Tensor& B);
 
-namespace _detail {
+namespace detail {
 #ifdef BUILD_CUDA_MODULE
-Tensor MatmulCUDA(const Tensor& A, const Tensor& B);
+void CUDABackend(Dtype dtype,
+                 void* A_data,
+                 void* B_data,
+                 void* C_data,
+                 int m,
+                 int k,
+                 int n);
 #endif
-
-Tensor MatmulCPU(const Tensor& A, const Tensor& B);
-}  // namespace _detail
+void CPUBackend(Dtype dtype,
+                void* A_data,
+                void* B_data,
+                void* C_data,
+                int m,
+                int k,
+                int n);
+}  // namespace detail
 }  // namespace core
 }  // namespace open3d

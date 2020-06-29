@@ -29,67 +29,82 @@
 #include "Matmul.h"
 namespace open3d {
 namespace core {
-namespace _detail {
+namespace detail {
 
 // Reference
 // https://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemmbatched
 // https://developer.nvidia.com/sites/default/files/akamai/cuda/files/Misc/mygpu.pdf
+class CuBLASHandle {
+public:
+    static std::shared_ptr<CuBLASHandle> GetInstance() {
+        if (instance_ == nullptr) {
+            instance_ = std::make_shared<CuBLASHandle>();
+        }
+        return instance_;
+    };
 
-Tensor MatmulCUDA(const Tensor& A, const Tensor& B) {
-    // Check dimensions
-    SizeVector A_shape = A.GetShape();
-    SizeVector B_shape = B.GetShape();
-
-    if (A_shape.size() != 2) {
-        utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
+    CuBLASHandle() {
+        if (cublasCreate(&handle_) != CUBLAS_STATUS_SUCCESS) {
+            utility::LogError("Unable to create cublas handle");
+        }
     }
-    if (B_shape.size() != 2) {
-        utility::LogError("Tensor B must be 2D, but got {}D", B_shape.size());
+    ~CuBLASHandle() { cublasDestroy(handle_); }
+
+    cublasHandle_t& GetHandle() { return handle_; }
+
+private:
+    cublasHandle_t handle_;
+
+    static std::shared_ptr<CuBLASHandle> instance_;
+};
+
+std::shared_ptr<CuBLASHandle> CuBLASHandle::instance_ =
+        CuBLASHandle::GetInstance();
+
+void CUDABackend(Dtype dtype,
+                 void* A_data,
+                 void* B_data,
+                 void* C_data,
+                 int m,
+                 int k,
+                 int n) {
+    cublasHandle_t handle = CuBLASHandle::GetInstance()->GetHandle();
+
+    switch (dtype) {
+        case Dtype::Float32: {
+            float alpha = 1, beta = 0;
+            cublasSgemm(handle, CUBLAS_OP_N,
+                        CUBLAS_OP_N,  // A, B transpose flag
+                        m, n,
+                        k,  // dimensions
+                        &alpha, static_cast<const float*>(A_data), m,
+                        static_cast<const float*>(B_data),
+                        k,  // input and their leading dims
+                        &beta, static_cast<float*>(C_data),
+                        m);  // output and its leading dim
+            break;
+        }
+
+        case Dtype::Float64: {
+            double alpha = 1, beta = 0;
+            cublasDgemm(handle, CUBLAS_OP_N,
+                        CUBLAS_OP_N,  // A, B transpose flag
+                        m, n,
+                        k,  // dimensions
+                        &alpha, static_cast<const double*>(A_data), m,
+                        static_cast<const double*>(B_data),
+                        k,  // input and their leading dims
+                        &beta, static_cast<double*>(C_data),
+                        m);  // output and its leading dim
+            break;
+        }
+
+        default: {  // should never reach here
+            utility::LogError("Unsupported dtype {} in CUDA backend.",
+                              DtypeUtil::ToString(dtype));
+        }
     }
-    if (A_shape[1] != B_shape[0]) {
-        utility::LogError("Tensor A columns {} mismatch with Tensor B rows {}",
-                          A_shape[1], B_shape[0]);
-    }
-
-    int64_t m = A_shape[0], k = A_shape[1], n = B_shape[1];
-
-    // TODO: dtype and device check
-
-    Tensor C = Tensor::Zeros({m, n}, A.GetDtype(), A.GetDevice());
-
-    cublasStatus_t stat;
-    cublasHandle_t handle;
-
-    float alpha = 1.0f;
-    float beta = 0.0f;
-
-    void* A_data = A.Contiguous().GetDataPtr();
-    void* B_data = B.Contiguous().GetDataPtr();
-    void* C_data = C.GetDataPtr();
-
-    stat = cublasCreate(&handle);
-    if (stat != CUBLAS_STATUS_SUCCESS) {
-        utility::LogError("Unable to create cublas handle");
-    }
-
-    // A: m x k
-    // B: k x n
-    // C: m x n
-    // clang-format off
-    cublasSgemm(handle,
-                CUBLAS_OP_N, CUBLAS_OP_N, // A, B transpose flag
-                m, n, k, // dimensions
-                &alpha,
-                static_cast<const float*>(A_data), m,
-                static_cast<const float*>(B_data), k, // input and their leading dims
-                &beta,
-                static_cast<float*>(C_data), m); // output and its leading dim
-    // clang-format on
-
-    cublasDestroy(handle);
-
-    return C;
 }
-}  // namespace _detail
+}  // namespace detail
 }  // namespace core
 }  // namespace open3d
