@@ -30,22 +30,25 @@
 namespace open3d {
 
 void pybind_mesh_sampling(py::module &m) {
-    m.def("sample_points_uniformly",
-          &pipelines::mesh_sampling::SamplePointsUniformly,
-          "Function to uniformly sample points from the mesh.", "mesh"_a,
-          "number_of_points"_a = 100, "use_triangle_normal"_a = false,
-          "seed"_a = -1);
-    m.def("sample_points_poisson_disk",
-          &pipelines::mesh_sampling::SamplePointsPoissonDisk,
-          "Function to sample points from the mesh, where each point has "
-          "approximately the same distance to the neighbouring points (blue "
-          "noise). Method is based on Yuksel, \"Sample Elimination for "
-          "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
-          "mesh"_a, "number_of_points"_a, "init_factor"_a = 5,
-          "pcl"_a = nullptr, "use_triangle_normal"_a = false, "seed"_a = -1);
+    py::module m_sub = m.def_submodule("mesh_sampling", "Mesh sampling.");
+
+    m_sub.def("sample_points_uniformly",
+              &pipelines::mesh_sampling::SamplePointsUniformly,
+              "Function to uniformly sample points from the mesh.", "mesh"_a,
+              "number_of_points"_a = 100, "use_triangle_normal"_a = false,
+              "seed"_a = -1);
+    m_sub.def(
+            "sample_points_poisson_disk",
+            &pipelines::mesh_sampling::SamplePointsPoissonDisk,
+            "Function to sample points from the mesh, where each point has "
+            "approximately the same distance to the neighbouring points (blue "
+            "noise). Method is based on Yuksel, \"Sample Elimination for "
+            "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
+            "mesh"_a, "number_of_points"_a, "init_factor"_a = 5,
+            "pcl"_a = nullptr, "use_triangle_normal"_a = false, "seed"_a = -1);
 
     docstring::FunctionDocInject(
-            m, "sample_points_uniformly",
+            m_sub, "sample_points_uniformly",
             {{"mesh", "The input mesh."},
              {"number_of_points",
               "Number of points that should be uniformly sampled."},
@@ -58,7 +61,7 @@ void pybind_mesh_sampling(py::module &m) {
               "Seed value used in the random generator, set to -1 to use a "
               "random seed value with each function call."}});
     docstring::FunctionDocInject(
-            m, "sample_points_poisson_disk",
+            m_sub, "sample_points_poisson_disk",
             {{"mesh", "The input mesh."},
              {"number_of_points", "Number of points that should be sampled."},
              {"init_factor",

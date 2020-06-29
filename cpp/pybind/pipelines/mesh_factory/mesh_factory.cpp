@@ -30,79 +30,81 @@
 namespace open3d {
 
 void pybind_mesh_factory(py::module &m) {
-    m.def("create_box", &pipelines::mesh_factory::CreateBox,
-          "Factory function to create a box. The left bottom "
-          "corner on the "
-          "front will be placed at (0, 0, 0).",
-          "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0);
-    m.def("create_tetrahedron", &pipelines::mesh_factory::CreateTetrahedron,
-          "Factory function to create a tetrahedron. The "
-          "centroid of the mesh "
-          "will be placed at (0, 0, 0) and the vertices have a "
-          "distance of "
-          "radius to the center.",
-          "radius"_a = 1.0);
-    m.def("create_octahedron", &pipelines::mesh_factory::CreateOctahedron,
-          "Factory function to create a octahedron. The centroid "
-          "of the mesh "
-          "will be placed at (0, 0, 0) and the vertices have a "
-          "distance of "
-          "radius to the center.",
-          "radius"_a = 1.0);
-    m.def("create_icosahedron", &pipelines::mesh_factory::CreateIcosahedron,
-          "Factory function to create a icosahedron. The "
-          "centroid of the mesh "
-          "will be placed at (0, 0, 0) and the vertices have a "
-          "distance of "
-          "radius to the center.",
-          "radius"_a = 1.0);
-    m.def("create_sphere", &pipelines::mesh_factory::CreateSphere,
-          "Factory function to create a sphere mesh centered at "
-          "(0, 0, 0).",
-          "radius"_a = 1.0, "resolution"_a = 20);
-    m.def("create_cylinder", &pipelines::mesh_factory::CreateCylinder,
-          "Factory function to create a cylinder mesh.", "radius"_a = 1.0,
-          "height"_a = 2.0, "resolution"_a = 20, "split"_a = 4);
-    m.def("create_cone", &pipelines::mesh_factory::CreateCone,
-          "Factory function to create a cone mesh.", "radius"_a = 1.0,
-          "height"_a = 2.0, "resolution"_a = 20, "split"_a = 1);
-    m.def("create_torus", &pipelines::mesh_factory::CreateTorus,
-          "Factory function to create a torus mesh.", "torus_radius"_a = 1.0,
-          "tube_radius"_a = 0.5, "radial_resolution"_a = 30,
-          "tubular_resolution"_a = 20);
-    m.def("create_arrow", &pipelines::mesh_factory::CreateArrow,
-          "Factory function to create an arrow mesh", "cylinder_radius"_a = 1.0,
-          "cone_radius"_a = 1.5, "cylinder_height"_a = 5.0,
-          "cone_height"_a = 4.0, "resolution"_a = 20, "cylinder_split"_a = 4,
-          "cone_split"_a = 1);
-    m.def("create_coordinate_frame",
-          &pipelines::mesh_factory::CreateCoordinateFrame,
-          "Factory function to create a coordinate frame mesh. "
-          "The coordinate "
-          "frame will be centered at ``origin``. The x, y, z "
-          "axis will be "
-          "rendered as red, green, and blue arrows respectively.",
-          "size"_a = 1.0, "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
-    m.def("create_moebius", &pipelines::mesh_factory::CreateMoebius,
-          "Factory function to create a Moebius strip.", "length_split"_a = 70,
-          "width_split"_a = 15, "twists"_a = 1, "raidus"_a = 1,
-          "flatness"_a = 1, "width"_a = 1, "scale"_a = 1);
+    py::module m_sub = m.def_submodule("mesh_factory", "Mesh factory.");
 
-    docstring::FunctionDocInject(m, "create_box",
+    m_sub.def("create_box", &pipelines::mesh_factory::CreateBox,
+              "Factory function to create a box. The left bottom "
+              "corner on the "
+              "front will be placed at (0, 0, 0).",
+              "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0);
+    m_sub.def("create_tetrahedron", &pipelines::mesh_factory::CreateTetrahedron,
+              "Factory function to create a tetrahedron. The "
+              "centroid of the mesh "
+              "will be placed at (0, 0, 0) and the vertices have a "
+              "distance of "
+              "radius to the center.",
+              "radius"_a = 1.0);
+    m_sub.def("create_octahedron", &pipelines::mesh_factory::CreateOctahedron,
+              "Factory function to create a octahedron. The centroid "
+              "of the mesh "
+              "will be placed at (0, 0, 0) and the vertices have a "
+              "distance of "
+              "radius to the center.",
+              "radius"_a = 1.0);
+    m_sub.def("create_icosahedron", &pipelines::mesh_factory::CreateIcosahedron,
+              "Factory function to create a icosahedron. The "
+              "centroid of the mesh "
+              "will be placed at (0, 0, 0) and the vertices have a "
+              "distance of "
+              "radius to the center.",
+              "radius"_a = 1.0);
+    m_sub.def("create_sphere", &pipelines::mesh_factory::CreateSphere,
+              "Factory function to create a sphere mesh centered at "
+              "(0, 0, 0).",
+              "radius"_a = 1.0, "resolution"_a = 20);
+    m_sub.def("create_cylinder", &pipelines::mesh_factory::CreateCylinder,
+              "Factory function to create a cylinder mesh.", "radius"_a = 1.0,
+              "height"_a = 2.0, "resolution"_a = 20, "split"_a = 4);
+    m_sub.def("create_cone", &pipelines::mesh_factory::CreateCone,
+              "Factory function to create a cone mesh.", "radius"_a = 1.0,
+              "height"_a = 2.0, "resolution"_a = 20, "split"_a = 1);
+    m_sub.def("create_torus", &pipelines::mesh_factory::CreateTorus,
+              "Factory function to create a torus mesh.",
+              "torus_radius"_a = 1.0, "tube_radius"_a = 0.5,
+              "radial_resolution"_a = 30, "tubular_resolution"_a = 20);
+    m_sub.def("create_arrow", &pipelines::mesh_factory::CreateArrow,
+              "Factory function to create an arrow mesh",
+              "cylinder_radius"_a = 1.0, "cone_radius"_a = 1.5,
+              "cylinder_height"_a = 5.0, "cone_height"_a = 4.0,
+              "resolution"_a = 20, "cylinder_split"_a = 4, "cone_split"_a = 1);
+    m_sub.def("create_coordinate_frame",
+              &pipelines::mesh_factory::CreateCoordinateFrame,
+              "Factory function to create a coordinate frame mesh. "
+              "The coordinate "
+              "frame will be centered at ``origin``. The x, y, z "
+              "axis will be "
+              "rendered as red, green, and blue arrows respectively.",
+              "size"_a = 1.0, "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
+    m_sub.def("create_moebius", &pipelines::mesh_factory::CreateMoebius,
+              "Factory function to create a Moebius strip.",
+              "length_split"_a = 70, "width_split"_a = 15, "twists"_a = 1,
+              "raidus"_a = 1, "flatness"_a = 1, "width"_a = 1, "scale"_a = 1);
+
+    docstring::FunctionDocInject(m_sub, "create_box",
                                  {{"width", "x-directional length."},
                                   {"height", "y-directional length."},
                                   {"depth", "z-directional length."}});
     docstring::FunctionDocInject(
-            m, "create_tetrahedron",
+            m_sub, "create_tetrahedron",
             {{"radius", "Distance from centroid to mesh vetices."}});
     docstring::FunctionDocInject(
-            m, "create_octahedron",
+            m_sub, "create_octahedron",
             {{"radius", "Distance from centroid to mesh vetices."}});
     docstring::FunctionDocInject(
-            m, "create_icosahedron",
+            m_sub, "create_icosahedron",
             {{"radius", "Distance from centroid to mesh vetices."}});
     docstring::FunctionDocInject(
-            m, "create_sphere",
+            m_sub, "create_sphere",
             {{"radius", "The radius of the sphere."},
              {"resolution",
               "The resolution of the sphere. The longitues will be split into "
@@ -111,7 +113,7 @@ void pybind_mesh_factory(py::module &m) {
               "latitudes will be split into ```2 * resolution`` segments (i.e. "
               "there are ``2 * resolution`` longitude lines.)"}});
     docstring::FunctionDocInject(
-            m, "create_cylinder",
+            m_sub, "create_cylinder",
             {{"radius", "The radius of the cylinder."},
              {"height",
               "The height of the cylinder. The axis of the cylinder will be "
@@ -121,7 +123,7 @@ void pybind_mesh_factory(py::module &m) {
              {"split",
               "The ``height`` will be split into ``split`` segments."}});
     docstring::FunctionDocInject(
-            m, "create_cone",
+            m_sub, "create_cone",
             {{"radius", "The radius of the cone."},
              {"height",
               "The height of the cone. The axis of the cone will be from (0, "
@@ -131,7 +133,7 @@ void pybind_mesh_factory(py::module &m) {
              {"split",
               "The ``height`` will be split into ``split`` segments."}});
     docstring::FunctionDocInject(
-            m, "create_torus",
+            m_sub, "create_torus",
             {{"torus_radius",
               "The radius from the center of the torus to the center of the "
               "tube."},
@@ -141,7 +143,7 @@ void pybind_mesh_factory(py::module &m) {
              {"tubular_resolution",
               "The number of segments along the tubular direction."}});
     docstring::FunctionDocInject(
-            m, "create_arrow",
+            m_sub, "create_arrow",
             {{"cylinder_radius", "The radius of the cylinder."},
              {"cone_radius", "The radius of the cone."},
              {"cylinder_height",
@@ -159,11 +161,11 @@ void pybind_mesh_factory(py::module &m) {
               "The ``cone_height`` will be split into ``cone_split`` "
               "segments."}});
     docstring::FunctionDocInject(
-            m, "create_coordinate_frame",
+            m_sub, "create_coordinate_frame",
             {{"size", "The size of the coordinate frame."},
              {"origin", "The origin of the cooridnate frame."}});
     docstring::FunctionDocInject(
-            m, "create_moebius",
+            m_sub, "create_moebius",
             {{"length_split",
               "The number of segments along the Moebius strip."},
              {"width_split",

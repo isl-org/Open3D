@@ -30,8 +30,10 @@
 namespace open3d {
 
 void pybind_mesh_deform(py::module &m) {
+    py::module m_sub = m.def_submodule("mesh_deform", "Mesh deformation.");
+
     py::enum_<pipelines::mesh_deform::DeformAsRigidAsPossibleEnergy>(
-            m, "DeformAsRigidAsPossibleEnergy")
+            m_sub, "DeformAsRigidAsPossibleEnergy")
             .value("Spokes",
                    pipelines::mesh_deform::DeformAsRigidAsPossibleEnergy::
                            Spokes,
@@ -43,19 +45,19 @@ void pybind_mesh_deform(py::module &m) {
                    "adds a rotation smoothing term to the rotations.")
             .export_values();
 
-    m.def("deform_as_rigid_as_possible",
-          &pipelines::mesh_deform::DeformAsRigidAsPossible,
-          "This function deforms the mesh using the method by Sorkine "
-          "and Alexa, "
-          "'As-Rigid-As-Possible Surface Modeling', 2007",
-          "mesh"_a, "constraint_vertex_indices"_a,
-          "constraint_vertex_positions"_a, "max_iter"_a,
-          "energy"_a =
-                  pipelines::mesh_deform::DeformAsRigidAsPossibleEnergy::Spokes,
-          "smoothed_alpha"_a = 0.01);
+    m_sub.def("deform_as_rigid_as_possible",
+              &pipelines::mesh_deform::DeformAsRigidAsPossible,
+              "This function deforms the mesh using the method by Sorkine "
+              "and Alexa, "
+              "'As-Rigid-As-Possible Surface Modeling', 2007",
+              "mesh"_a, "constraint_vertex_indices"_a,
+              "constraint_vertex_positions"_a, "max_iter"_a,
+              "energy"_a = pipelines::mesh_deform::
+                      DeformAsRigidAsPossibleEnergy::Spokes,
+              "smoothed_alpha"_a = 0.01);
 
     docstring::FunctionDocInject(
-            m, "deform_as_rigid_as_possible",
+            m_sub, "deform_as_rigid_as_possible",
             {{"mesh", "The input mesh."},
              {"constraint_vertex_indices",
               "Indices of the triangle vertices that should be constrained by "

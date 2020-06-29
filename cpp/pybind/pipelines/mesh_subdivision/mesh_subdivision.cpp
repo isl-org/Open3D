@@ -30,22 +30,25 @@
 namespace open3d {
 
 void pybind_mesh_subdivision(py::module &m) {
-    m.def("subdivide_midpoint", &pipelines::mesh_subdivision::SubdivideMidpoint,
-          "Function subdivide mesh using midpoint algorithm.", "mesh"_a,
-          "number_of_iterations"_a = 1);
-    m.def("subdivide_loop", &pipelines::mesh_subdivision::SubdivideLoop,
-          "Function subdivide mesh using Loop's algorithm. Loop, \"Smooth "
-          "subdivision surfaces based on triangles\", 1987.",
-          "mesh"_a, "number_of_iterations"_a = 1);
+    py::module m_sub = m.def_submodule("mesh_subdivision", "Mesh subdivision.");
+
+    m_sub.def("subdivide_midpoint",
+              &pipelines::mesh_subdivision::SubdivideMidpoint,
+              "Function subdivide mesh using midpoint algorithm.", "mesh"_a,
+              "number_of_iterations"_a = 1);
+    m_sub.def("subdivide_loop", &pipelines::mesh_subdivision::SubdivideLoop,
+              "Function subdivide mesh using Loop's algorithm. Loop, \"Smooth "
+              "subdivision surfaces based on triangles\", 1987.",
+              "mesh"_a, "number_of_iterations"_a = 1);
 
     docstring::FunctionDocInject(
-            m, "subdivide_midpoint",
+            m_sub, "subdivide_midpoint",
             {{"mesh", "The input mesh."},
              {"number_of_iterations",
               "Number of iterations. A single iteration splits each triangle "
               "into four triangles that cover the same surface."}});
     docstring::FunctionDocInject(
-            m, "subdivide_loop",
+            m_sub, "subdivide_loop",
             {{"mesh", "The input mesh."},
              {" number_of_iterations ",
               "Number of iterations. A single iteration splits each triangle "

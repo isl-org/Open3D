@@ -30,8 +30,11 @@
 namespace open3d {
 
 void pybind_mesh_simplification(py::module &m) {
+    py::module m_sub =
+            m.def_submodule("mesh_simplification", "Mesh simplification.");
+
     py::enum_<pipelines::mesh_simplification::SimplificationContraction>(
-            m, "SimplificationContraction")
+            m_sub, "SimplificationContraction")
             .value("Average",
                    pipelines::mesh_simplification::SimplificationContraction::
                            Average,
@@ -43,20 +46,20 @@ void pybind_mesh_simplification(py::module &m) {
                    "distance to the adjacent triangle planes.")
             .export_values();
 
-    m.def("simplify_vertex_clustering",
-          &pipelines::mesh_simplification::SimplifyVertexClustering,
-          "Function to simplify mesh using vertex clustering.", "mesh"_a,
-          "voxel_size"_a,
-          "contraction"_a = pipelines::mesh_simplification::
-                  SimplificationContraction::Average);
-    m.def("simplify_quadric_decimation",
-          &pipelines::mesh_simplification::SimplifyQuadricDecimation,
-          "Function to simplify mesh using Quadric Error Metric "
-          "Decimation by Garland and Heckbert",
-          "mesh"_a, "target_number_of_triangles"_a);
+    m_sub.def("simplify_vertex_clustering",
+              &pipelines::mesh_simplification::SimplifyVertexClustering,
+              "Function to simplify mesh using vertex clustering.", "mesh"_a,
+              "voxel_size"_a,
+              "contraction"_a = pipelines::mesh_simplification::
+                      SimplificationContraction::Average);
+    m_sub.def("simplify_quadric_decimation",
+              &pipelines::mesh_simplification::SimplifyQuadricDecimation,
+              "Function to simplify mesh using Quadric Error Metric "
+              "Decimation by Garland and Heckbert",
+              "mesh"_a, "target_number_of_triangles"_a);
 
     docstring::FunctionDocInject(
-            m, "simplify_vertex_clustering",
+            m_sub, "simplify_vertex_clustering",
             {{"mesh", "The input mesh."},
              {"voxel_size",
               "The size of the voxel within vertices are pooled."},
@@ -65,7 +68,7 @@ void pybind_mesh_simplification(py::module &m) {
               "simple average, Quadric minimizes the distance to the adjacent "
               "planes."}});
     docstring::FunctionDocInject(
-            m, "simplify_quadric_decimation",
+            m_sub, "simplify_quadric_decimation",
             {{"mesh", "The input mesh."},
              {"target_number_of_triangles",
               "The number of triangles that the simplified mesh should have. "

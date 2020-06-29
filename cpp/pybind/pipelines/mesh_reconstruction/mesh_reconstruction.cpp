@@ -30,49 +30,52 @@
 namespace open3d {
 
 void pybind_mesh_reconstruction(py::module &m) {
-    m.def("create_from_point_cloud_alpha_shape",
-          [](const geometry::PointCloud &pcd, double alpha) {
-              return pipelines::mesh_reconstruction::ReconstructAlphaShape(
-                      pcd, alpha);
-          },
-          "Alpha shapes are a generalization of the convex hull. "
-          "With decreasing alpha value the shape schrinks and "
-          "creates cavities. See Edelsbrunner and Muecke, "
-          "\"Three-Dimensional Alpha Shapes\", 1994.",
-          "pcd"_a, "alpha"_a);
-    m.def("create_from_point_cloud_alpha_shape",
-          &pipelines::mesh_reconstruction::ReconstructAlphaShape,
-          "Alpha shapes are a generalization of the convex hull. "
-          "With decreasing alpha value the shape schrinks and "
-          "creates cavities. See Edelsbrunner and Muecke, "
-          "\"Three-Dimensional Alpha Shapes\", 1994.",
-          "pcd"_a, "alpha"_a, "tetra_mesh"_a, "pt_map"_a);
-    m.def("create_from_point_cloud_ball_pivoting",
-          &pipelines::mesh_reconstruction::ReconstructBallPivoting,
-          "Function that computes a triangle mesh from a oriented "
-          "PointCloud. This implements the Ball Pivoting algorithm "
-          "proposed in F. Bernardini et al., \"The ball-pivoting "
-          "algorithm for surface reconstruction\", 1999. The "
-          "implementation is also based on the algorithms outlined "
-          "in Digne, \"An Analysis and Implementation of a Parallel "
-          "Ball Pivoting Algorithm\", 2014. The surface "
-          "reconstruction is done by rolling a ball with a given "
-          "radius over the point cloud, whenever the ball touches "
-          "three points a triangle is created.",
-          "pcd"_a, "radii"_a);
-    m.def("create_from_point_cloud_poisson",
-          &pipelines::mesh_reconstruction::ReconstructPoisson,
-          "Function that computes a triangle mesh from a "
-          "oriented PointCloud pcd. This implements the Screened "
-          "Poisson Reconstruction proposed in Kazhdan and Hoppe, "
-          "\"Screened Poisson Surface Reconstruction\", 2013. "
-          "This function uses the original implementation by "
-          "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
-          "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
-          "linear_fit"_a = false);
+    py::module m_sub =
+            m.def_submodule("mesh_reconstruction", "Mesh reconstruction.");
+
+    m_sub.def("reconstruct_alpha_shape",
+              [](const geometry::PointCloud &pcd, double alpha) {
+                  return pipelines::mesh_reconstruction::ReconstructAlphaShape(
+                          pcd, alpha);
+              },
+              "Alpha shapes are a generalization of the convex hull. "
+              "With decreasing alpha value the shape schrinks and "
+              "creates cavities. See Edelsbrunner and Muecke, "
+              "\"Three-Dimensional Alpha Shapes\", 1994.",
+              "pcd"_a, "alpha"_a);
+    m_sub.def("reconstruct_alpha_shape",
+              &pipelines::mesh_reconstruction::ReconstructAlphaShape,
+              "Alpha shapes are a generalization of the convex hull. "
+              "With decreasing alpha value the shape schrinks and "
+              "creates cavities. See Edelsbrunner and Muecke, "
+              "\"Three-Dimensional Alpha Shapes\", 1994.",
+              "pcd"_a, "alpha"_a, "tetra_mesh"_a, "pt_map"_a);
+    m_sub.def("reconstruct_ball_pivoting",
+              &pipelines::mesh_reconstruction::ReconstructBallPivoting,
+              "Function that computes a triangle mesh from a oriented "
+              "PointCloud. This implements the Ball Pivoting algorithm "
+              "proposed in F. Bernardini et al., \"The ball-pivoting "
+              "algorithm for surface reconstruction\", 1999. The "
+              "implementation is also based on the algorithms outlined "
+              "in Digne, \"An Analysis and Implementation of a Parallel "
+              "Ball Pivoting Algorithm\", 2014. The surface "
+              "reconstruction is done by rolling a ball with a given "
+              "radius over the point cloud, whenever the ball touches "
+              "three points a triangle is created.",
+              "pcd"_a, "radii"_a);
+    m_sub.def("reconstruct_poisson",
+              &pipelines::mesh_reconstruction::ReconstructPoisson,
+              "Function that computes a triangle mesh from a "
+              "oriented PointCloud pcd. This implements the Screened "
+              "Poisson Reconstruction proposed in Kazhdan and Hoppe, "
+              "\"Screened Poisson Surface Reconstruction\", 2013. "
+              "This function uses the original implementation by "
+              "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
+              "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
+              "linear_fit"_a = false);
 
     docstring::FunctionDocInject(
-            m, "create_from_point_cloud_alpha_shape",
+            m_sub, "reconstruct_alpha_shape",
             {{"pcd",
               "PointCloud from whicht the TriangleMesh surface is "
               "reconstructed."},
@@ -85,7 +88,7 @@ void pybind_mesh_reconstruction(py::module &m) {
              {"pt_map",
               "Optional map from tetra_mesh vertex indices to pcd points."}});
     docstring::FunctionDocInject(
-            m, "create_from_point_cloud_ball_pivoting",
+            m_sub, "reconstruct_ball_pivoting",
             {{"pcd",
               "PointCloud from which the TriangleMesh surface is "
               "reconstructed. Has to contain normals."},
@@ -93,7 +96,7 @@ void pybind_mesh_reconstruction(py::module &m) {
               "The radii of the ball that are used for the surface "
               "reconstruction."}});
     docstring::FunctionDocInject(
-            m, "create_from_point_cloud_poisson",
+            m_sub, "reconstruct_poisson",
             {{"pcd",
               "PointCloud from which the TriangleMesh surface is "
               "reconstructed. Has to contain normals."},

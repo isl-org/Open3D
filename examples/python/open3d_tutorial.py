@@ -15,19 +15,19 @@ interactive = True
 
 
 def jupyter_draw_geometries(
-        geoms,
-        window_name="Open3D",
-        width=1920,
-        height=1080,
-        left=50,
-        top=50,
-        point_show_normal=False,
-        mesh_show_wireframe=False,
-        mesh_show_back_face=False,
-        lookat=None,
-        up=None,
-        front=None,
-        zoom=None,
+    geoms,
+    window_name="Open3D",
+    width=1920,
+    height=1080,
+    left=50,
+    top=50,
+    point_show_normal=False,
+    mesh_show_wireframe=False,
+    mesh_show_back_face=False,
+    lookat=None,
+    up=None,
+    front=None,
+    zoom=None,
 ):
     vis = o3d.visualization.Visualizer()
     vis.create_window(
@@ -127,16 +127,18 @@ def get_non_manifold_vertex_mesh():
         ],
         dtype=np.float64,
     )
-    triangles = np.array([
-        [0, 1, 2],
-        [0, 1, 3],
-        [1, 2, 3],
-        [2, 0, 3],
-        [4, 5, 6],
-        [4, 5, 3],
-        [5, 6, 3],
-        [4, 6, 3],
-    ])
+    triangles = np.array(
+        [
+            [0, 1, 2],
+            [0, 1, 3],
+            [1, 2, 3],
+            [2, 0, 3],
+            [4, 5, 6],
+            [4, 5, 3],
+            [5, 6, 3],
+            [4, 6, 3],
+        ]
+    )
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(verts)
     mesh.triangles = o3d.utility.Vector3iVector(triangles)
@@ -149,7 +151,7 @@ def get_non_manifold_vertex_mesh():
 
 
 def get_open_box_mesh():
-    mesh = o3d.geometry.TriangleMesh.create_box()
+    mesh = o3d.pipelines.mesh_factory.create_box()
     mesh.triangles = o3d.utility.Vector3iVector(np.asarray(mesh.triangles)[:-2])
     mesh.compute_vertex_normals()
     mesh.rotate(
@@ -160,10 +162,10 @@ def get_open_box_mesh():
 
 
 def get_intersecting_boxes_mesh():
-    mesh0 = o3d.geometry.TriangleMesh.create_box()
+    mesh0 = o3d.pipelines.mesh_factory.create_box()
     T = np.eye(4)
     T[:, 3] += (0.5, 0.5, 0.5, 0)
-    mesh1 = o3d.geometry.TriangleMesh.create_box()
+    mesh1 = o3d.pipelines.mesh_factory.create_box()
     mesh1.transform(T)
     mesh = mesh0 + mesh1
     mesh.compute_vertex_normals()
