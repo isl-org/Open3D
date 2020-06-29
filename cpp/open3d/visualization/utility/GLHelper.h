@@ -79,6 +79,6 @@ Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
 
 int ColorCodeToPickIndex(const Eigen::Vector4i &color);
 
-}  // namespace GLHelper
+}  // namespace gl_util
 }  // namespace visualization
 }  // namespace open3d

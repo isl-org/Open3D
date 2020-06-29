@@ -86,7 +86,7 @@ void ViewControl::SetViewMatrices(
                          : distance_ + 3.0 * bounding_box_.GetMaxExtent();
         projection_matrix_ =
                 gl_util::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
-                                -view_ratio_, view_ratio_, z_near_, z_far_);
+                               -view_ratio_, view_ratio_, z_near_, z_far_);
     }
     view_matrix_ = gl_util::LookAt(eye_, lookat_, up_);
     model_matrix_ = model_matrix.cast<GLfloat>();
