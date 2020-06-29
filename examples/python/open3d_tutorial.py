@@ -15,19 +15,19 @@ interactive = True
 
 
 def jupyter_draw_geometries(
-    geoms,
-    window_name="Open3D",
-    width=1920,
-    height=1080,
-    left=50,
-    top=50,
-    point_show_normal=False,
-    mesh_show_wireframe=False,
-    mesh_show_back_face=False,
-    lookat=None,
-    up=None,
-    front=None,
-    zoom=None,
+        geoms,
+        window_name="Open3D",
+        width=1920,
+        height=1080,
+        left=50,
+        top=50,
+        point_show_normal=False,
+        mesh_show_wireframe=False,
+        mesh_show_back_face=False,
+        lookat=None,
+        up=None,
+        front=None,
+        zoom=None,
 ):
     vis = o3d.visualization.Visualizer()
     vis.create_window(
@@ -127,18 +127,16 @@ def get_non_manifold_vertex_mesh():
         ],
         dtype=np.float64,
     )
-    triangles = np.array(
-        [
-            [0, 1, 2],
-            [0, 1, 3],
-            [1, 2, 3],
-            [2, 0, 3],
-            [4, 5, 6],
-            [4, 5, 3],
-            [5, 6, 3],
-            [4, 6, 3],
-        ]
-    )
+    triangles = np.array([
+        [0, 1, 2],
+        [0, 1, 3],
+        [1, 2, 3],
+        [2, 0, 3],
+        [4, 5, 6],
+        [4, 5, 3],
+        [5, 6, 3],
+        [4, 6, 3],
+    ])
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(verts)
     mesh.triangles = o3d.utility.Vector3iVector(triangles)
