@@ -1,3 +1,13 @@
+// This file is retrived from:
+// https://github.com/dmlc/dlpack/blob/master/include/dlpack/dlpack.h
+// Commit: 3ec0443, Feb 16 2020
+//
+// License:
+// https://github.com/dmlc/dlpack/blob/master/LICENSE
+//
+// Open3D changes:
+// No changes except for automatic style changed by clang-format.
+
 /*!
  *  Copyright (c) 2017 by Contributors
  * \file dlpack.h
@@ -80,6 +90,7 @@ typedef enum {
     kDLInt = 0U,
     kDLUInt = 1U,
     kDLFloat = 2U,
+    kDLBfloat = 4U,
 } DLDataTypeCode;
 
 /*!
@@ -112,7 +123,7 @@ typedef struct {
     /*!
      * \brief The opaque data pointer points to the allocated data. This will be
      * CUDA device pointer or cl_mem handle in OpenCL. This pointer is always
-     * aligns to 256 bytes as in CUDA.
+     * aligned to 256 bytes as in CUDA.
      *
      * For given DLTensor, the size of memory required to store the contents of
      * data is calculated as follows:
@@ -148,7 +159,7 @@ typedef struct {
 
 /*!
  * \brief C Tensor object, manage memory of DLTensor. This data structure is
- *  intended to faciliate the borrowing of DLTensor by another framework. It is
+ *  intended to facilitate the borrowing of DLTensor by another framework. It is
  *  not meant to transfer the tensor. When the borrowing framework doesn't need
  *  the tensor, it should call the deleter to notify the host that the resource
  *  is no longer needed.
