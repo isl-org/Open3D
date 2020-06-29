@@ -56,35 +56,35 @@ int main(int argc, char *argv[]) {
 
     std::string option(argv[1]);
     if (option == "sphere") {
-        auto mesh = geometry::TriangleMesh::CreateSphere(0.05);
+        auto mesh = pipelines::mesh_factory::CreateSphere(0.05);
         mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("sphere.ply", *mesh, true, true);
     } else if (option == "cylinder") {
-        auto mesh = geometry::TriangleMesh::CreateCylinder(0.5, 2.0);
+        auto mesh = pipelines::mesh_factory::CreateCylinder(0.5, 2.0);
         mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("cylinder.ply", *mesh, true, true);
     } else if (option == "cone") {
-        auto mesh = geometry::TriangleMesh::CreateCone(0.5, 2.0, 20, 3);
+        auto mesh = pipelines::mesh_factory::CreateCone(0.5, 2.0, 20, 3);
         mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("cone.ply", *mesh, true, true);
     } else if (option == "arrow") {
-        auto mesh = geometry::TriangleMesh::CreateArrow();
+        auto mesh = pipelines::mesh_factory::CreateArrow();
         mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("arrow.ply", *mesh, true, true);
     } else if (option == "frame") {
         if (argc < 3) {
-            auto mesh = geometry::TriangleMesh::CreateCoordinateFrame();
+            auto mesh = pipelines::mesh_factory::CreateCoordinateFrame();
             visualization::DrawGeometries({mesh});
             io::WriteTriangleMesh("frame.ply", *mesh, true, true);
         } else {
             auto mesh = io::CreateMeshFromFile(argv[2]);
             mesh->ComputeVertexNormals();
             auto boundingbox = mesh->GetAxisAlignedBoundingBox();
-            auto mesh_frame = geometry::TriangleMesh::CreateCoordinateFrame(
+            auto mesh_frame = pipelines::mesh_factory::CreateCoordinateFrame(
                     boundingbox.GetMaxExtent() * 0.2, boundingbox.min_bound_);
             visualization::DrawGeometries({mesh, mesh_frame});
         }
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
         int idx = 3000;
         std::vector<std::shared_ptr<const geometry::Geometry>> ptrs;
         ptrs.push_back(mesh);
-        auto mesh_sphere = geometry::TriangleMesh::CreateSphere(0.05);
+        auto mesh_sphere = pipelines::mesh_factory::CreateSphere(0.05);
         Eigen::Matrix4d trans;
         trans.setIdentity();
         trans.block<3, 1>(0, 3) = mesh->vertices_[idx];

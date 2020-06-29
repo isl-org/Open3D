@@ -24,24 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/pipelines/pipelines.h"
+#pragma once
 
 #include "pybind/open3d_pybind.h"
-#include "pybind/pipelines/color_map/color_map.h"
-#include "pybind/pipelines/integration/integration.h"
-#include "pybind/pipelines/mesh_factory/mesh_factory.h"
-#include "pybind/pipelines/odometry/odometry.h"
-#include "pybind/pipelines/registration/registration.h"
 
 namespace open3d {
 
-void pybind_pipelines(py::module& m) {
-    py::module m_pipelines = m.def_submodule("pipelines");
-    pybind_color_map(m_pipelines);
-    pybind_integration(m_pipelines);
-    pybind_mesh_factory(m_pipelines);
-    pybind_registration(m_pipelines);
-    pybind_odometry(m_pipelines);
-}
+void pybind_mesh_factory(py::module &m);
 
 }  // namespace open3d

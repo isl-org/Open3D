@@ -35,6 +35,7 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
+#include "open3d/pipelines/mesh_factory/TriangleMeshFactory.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
@@ -263,31 +264,31 @@ std::shared_ptr<geometry::TriangleMesh> CreateAxes(double axis_length) {
     const double cyl_height = 0.975 * axis_length;
     const double cone_height = 0.025 * axis_length;
 
-    auto mesh_frame = geometry::TriangleMesh::CreateSphere(sphere_radius);
+    auto mesh_frame = pipelines::mesh_factory::CreateSphere(sphere_radius);
     mesh_frame->ComputeVertexNormals();
     mesh_frame->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
 
     std::shared_ptr<geometry::TriangleMesh> mesh_arrow;
     Eigen::Matrix4d transformation;
 
-    mesh_arrow = geometry::TriangleMesh::CreateArrow(cyl_radius, cone_radius,
-                                                     cyl_height, cone_height);
+    mesh_arrow = pipelines::mesh_factory::CreateArrow(cyl_radius, cone_radius,
+                                                      cyl_height, cone_height);
     mesh_arrow->ComputeVertexNormals();
     mesh_arrow->PaintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
     transformation << 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1;
     mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
-    mesh_arrow = geometry::TriangleMesh::CreateArrow(cyl_radius, cone_radius,
-                                                     cyl_height, cone_height);
+    mesh_arrow = pipelines::mesh_factory::CreateArrow(cyl_radius, cone_radius,
+                                                      cyl_height, cone_height);
     mesh_arrow->ComputeVertexNormals();
     mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
     transformation << 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1;
     mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
-    mesh_arrow = geometry::TriangleMesh::CreateArrow(cyl_radius, cone_radius,
-                                                     cyl_height, cone_height);
+    mesh_arrow = pipelines::mesh_factory::CreateArrow(cyl_radius, cone_radius,
+                                                      cyl_height, cone_height);
     mesh_arrow->ComputeVertexNormals();
     mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));
     transformation << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;

@@ -29,6 +29,7 @@
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PointCloudIO.h"
+#include "open3d/pipelines/mesh_factory/TriangleMeshFactory.h"
 #include "open3d/visualization/utility/GLHelper.h"
 #include "open3d/visualization/visualizer/ViewParameters.h"
 #include "open3d/visualization/visualizer/ViewTrajectory.h"
@@ -101,7 +102,7 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
         if (coordinate_frame_mesh_ptr_ && coordinate_frame_mesh_renderer_ptr_) {
             const auto &boundingbox = view_control_ptr_->GetBoundingBox();
             *coordinate_frame_mesh_ptr_ =
-                    *geometry::TriangleMesh::CreateCoordinateFrame(
+                    *pipelines::mesh_factory::CreateCoordinateFrame(
                             boundingbox.GetMaxExtent() * 0.2,
                             boundingbox.min_bound_);
             coordinate_frame_mesh_renderer_ptr_->UpdateGeometry();

@@ -27,6 +27,7 @@
 #include "open3d/visualization/visualizer/Visualizer.h"
 
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/pipelines/mesh_factory/TriangleMeshFactory.h"
 
 namespace open3d {
 
@@ -236,7 +237,7 @@ void Visualizer::BuildUtilities() {
 
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
-    coordinate_frame_mesh_ptr_ = geometry::TriangleMesh::CreateCoordinateFrame(
+    coordinate_frame_mesh_ptr_ = pipelines::mesh_factory::CreateCoordinateFrame(
             boundingbox.GetMaxExtent() * 0.2, boundingbox.min_bound_);
     coordinate_frame_mesh_renderer_ptr_ =
             std::make_shared<glsl::CoordinateFrameRenderer>();

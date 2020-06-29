@@ -28,6 +28,7 @@
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/pipelines/mesh_factory/TriangleMeshFactory.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -196,7 +197,7 @@ TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility) {
     size_t size = 10;
 
     std::shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::TriangleMesh::CreateSphere(10.0, 20);
+            pipelines::mesh_factory::CreateSphere(10.0, 20);
     std::vector<geometry::RGBDImage> images_rgbd =
             GenerateRGBDImages(width, height, size);
     std::vector<geometry::Image> images_mask = GenerateImages(
@@ -480,7 +481,7 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex) {
     int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::TriangleMesh::CreateSphere(10.0, 10);
+            pipelines::mesh_factory::CreateSphere(10.0, 10);
 
     std::vector<std::shared_ptr<geometry::Image>> images_gray =
             GenerateSharedImages(width, height, num_of_channels,
@@ -550,7 +551,7 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
     int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::TriangleMesh::CreateSphere(10.0, 10);
+            pipelines::mesh_factory::CreateSphere(10.0, 10);
 
     // TODO: change the initialization in such a way that the fields have an
     // effect on the outcome of QueryImageIntensity.
@@ -605,7 +606,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
     int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::TriangleMesh::CreateSphere(10.0, 5);
+            pipelines::mesh_factory::CreateSphere(10.0, 5);
 
     std::vector<std::shared_ptr<geometry::Image>> images_gray =
             GenerateSharedImages(width, height, num_of_channels,
@@ -687,7 +688,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
     int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::TriangleMesh::CreateSphere(10.0, 5);
+            pipelines::mesh_factory::CreateSphere(10.0, 5);
 
     std::vector<std::shared_ptr<geometry::Image>> images_gray =
             GenerateSharedImages(width, height, num_of_channels,
@@ -766,7 +767,7 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage) {
     int height = 240;
 
     std::shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::TriangleMesh::CreateSphere(10.0, 5);
+            pipelines::mesh_factory::CreateSphere(10.0, 5);
 
     std::vector<geometry::RGBDImage> images_rgbd =
             GenerateRGBDImages(width, height, size);
@@ -821,7 +822,7 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
     int height = 240;
 
     std::shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::TriangleMesh::CreateSphere(10.0, 5);
+            pipelines::mesh_factory::CreateSphere(10.0, 5);
 
     // TODO: change the initialization in such a way that the fields have an
     // effect on the outcome of QueryImageIntensity.
@@ -1090,7 +1091,7 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
     // int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::TriangleMesh::CreateSphere(10.0, 5);
+            pipelines::mesh_factory::CreateSphere(10.0, 5);
 
     std::vector<geometry::RGBDImage> rgbdImages =
             GenerateRGBDImages(width, height, size);

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,15 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/pipelines/mesh_factory/TriangleMeshFactory.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
-namespace geometry {
+namespace pipelines {
+namespace mesh_factory {
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateTetrahedron(
+std::shared_ptr<geometry::TriangleMesh> CreateTetrahedron(
         double radius /* = 1.0*/) {
-    auto mesh = std::make_shared<TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     if (radius <= 0) {
         utility::LogError("[CreateTetrahedron] radius <= 0");
     }
@@ -52,9 +53,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateTetrahedron(
     return mesh;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateOctahedron(
+std::shared_ptr<geometry::TriangleMesh> CreateOctahedron(
         double radius /* = 1.0*/) {
-    auto mesh = std::make_shared<TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     if (radius <= 0) {
         utility::LogError("[CreateOctahedron] radius <= 0");
     }
@@ -75,9 +76,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateOctahedron(
     return mesh;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateIcosahedron(
+std::shared_ptr<geometry::TriangleMesh> CreateIcosahedron(
         double radius /* = 1.0*/) {
-    auto mesh = std::make_shared<TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     if (radius <= 0) {
         utility::LogError("[CreateIcosahedron] radius <= 0");
     }
@@ -117,10 +118,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateIcosahedron(
     return mesh;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateBox(double width /* = 1.0*/,
-                                                      double height /* = 1.0*/,
-                                                      double depth /* = 1.0*/) {
-    auto mesh_ptr = std::make_shared<TriangleMesh>();
+std::shared_ptr<geometry::TriangleMesh> CreateBox(double width /* = 1.0*/,
+                                                  double height /* = 1.0*/,
+                                                  double depth /* = 1.0*/) {
+    auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
     if (width <= 0) {
         utility::LogError("[CreateBox] width <= 0");
     }
@@ -154,9 +155,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateBox(double width /* = 1.0*/,
     return mesh_ptr;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateSphere(
-        double radius /* = 1.0*/, int resolution /* = 20*/) {
-    auto mesh_ptr = std::make_shared<TriangleMesh>();
+std::shared_ptr<geometry::TriangleMesh> CreateSphere(double radius /* = 1.0*/,
+                                                     int resolution /* = 20*/) {
+    auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
     if (radius <= 0) {
         utility::LogError("[CreateSphere] radius <= 0");
     }
@@ -199,12 +200,11 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateSphere(
     return mesh_ptr;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
-        double radius /* = 1.0*/,
-        double height /* = 2.0*/,
-        int resolution /* = 20*/,
-        int split /* = 4*/) {
-    auto mesh_ptr = std::make_shared<TriangleMesh>();
+std::shared_ptr<geometry::TriangleMesh> CreateCylinder(double radius /* = 1.0*/,
+                                                       double height /* = 2.0*/,
+                                                       int resolution /* = 20*/,
+                                                       int split /* = 4*/) {
+    auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
     if (radius <= 0) {
         utility::LogError("[CreateCylinder] radius <= 0");
     }
@@ -251,11 +251,11 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
     return mesh_ptr;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateCone(double radius /* = 1.0*/,
-                                                       double height /* = 2.0*/,
-                                                       int resolution /* = 20*/,
-                                                       int split /* = 4*/) {
-    auto mesh_ptr = std::make_shared<TriangleMesh>();
+std::shared_ptr<geometry::TriangleMesh> CreateCone(double radius /* = 1.0*/,
+                                                   double height /* = 2.0*/,
+                                                   int resolution /* = 20*/,
+                                                   int split /* = 4*/) {
+    auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
     if (radius <= 0) {
         utility::LogError("[CreateCone] radius <= 0");
     }
@@ -304,12 +304,12 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCone(double radius /* = 1.0*/,
     return mesh_ptr;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateTorus(
+std::shared_ptr<geometry::TriangleMesh> CreateTorus(
         double torus_radius /* = 1.0 */,
         double tube_radius /* = 0.5 */,
         int radial_resolution /* = 20 */,
         int tubular_resolution /* = 20 */) {
-    auto mesh = std::make_shared<TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     if (torus_radius <= 0) {
         utility::LogError("[CreateTorus] torus_radius <= 0");
     }
@@ -356,7 +356,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateTorus(
     return mesh;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateArrow(
+std::shared_ptr<geometry::TriangleMesh> CreateArrow(
         double cylinder_radius /* = 1.0*/,
         double cone_radius /* = 1.5*/,
         double cylinder_height /* = 5.0*/,
@@ -399,7 +399,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateArrow(
     return mesh_arrow;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateCoordinateFrame(
+std::shared_ptr<geometry::TriangleMesh> CreateCoordinateFrame(
         double size /* = 1.0*/,
         const Eigen::Vector3d &origin /* = Eigen::Vector3d(0.0, 0.0, 0.0)*/) {
     if (size <= 0) {
@@ -409,7 +409,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCoordinateFrame(
     mesh_frame->ComputeVertexNormals();
     mesh_frame->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
 
-    std::shared_ptr<TriangleMesh> mesh_arrow;
+    std::shared_ptr<geometry::TriangleMesh> mesh_arrow;
     Eigen::Matrix4d transformation;
 
     mesh_arrow = CreateArrow(0.035 * size, 0.06 * size, 0.8 * size, 0.2 * size);
@@ -438,7 +438,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCoordinateFrame(
     return mesh_frame;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateMoebius(
+std::shared_ptr<geometry::TriangleMesh> CreateMoebius(
         int length_split /* = 70 */,
         int width_split /* = 15 */,
         int twists /* = 1 */,
@@ -446,7 +446,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateMoebius(
         double flatness /* = 1 */,
         double width /* = 1 */,
         double scale /* = 1 */) {
-    auto mesh = std::make_shared<TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     if (length_split <= 0) {
         utility::LogError("[CreateMoebius] length_split <= 0");
     }
@@ -555,5 +555,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateMoebius(
     return mesh;
 }
 
-}  // namespace geometry
+}  // namespace mesh_factory
+}  // namespace pipelines
 }  // namespace open3d

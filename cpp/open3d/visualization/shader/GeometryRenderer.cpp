@@ -30,6 +30,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/pipelines/mesh_factory/TriangleMeshFactory.h"
 #include "open3d/visualization/utility/PointCloudPicker.h"
 #include "open3d/visualization/utility/SelectionPolygon.h"
 #include "open3d/visualization/visualizer/RenderOptionWithEditing.h"
@@ -410,7 +411,7 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
     for (size_t i = 0; i < picker.picked_indices_.size(); i++) {
         size_t index = picker.picked_indices_[i];
         if (index < pointcloud.points_.size()) {
-            auto sphere = geometry::TriangleMesh::CreateSphere(
+            auto sphere = pipelines::mesh_factory::CreateSphere(
                     view.GetBoundingBox().GetMaxExtent() *
                     _option.pointcloud_picker_sphere_size_);
             sphere->ComputeVertexNormals();

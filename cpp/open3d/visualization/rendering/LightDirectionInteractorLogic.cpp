@@ -28,6 +28,7 @@
 
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/pipelines/mesh_factory/TriangleMeshFactory.h"
 #include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/Scene.h"
 
@@ -147,7 +148,7 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
         size = 10;
     }
     double sphere_size = 0.5 * size;  // size is a diameter
-    auto sphere_tris = geometry::TriangleMesh::CreateSphere(sphere_size, 20);
+    auto sphere_tris = pipelines::mesh_factory::CreateSphere(sphere_size, 20);
     auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphere_tris);
     sphere->PaintUniformColor(kSkyColor);
     auto t0 = Camera::Transform::Identity();
@@ -156,7 +157,7 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     scene_->SetGeometryShadows(ui_objs_[0].handle, false, false);
 
     auto sun_radius = 0.05 * size;
-    auto sun = geometry::TriangleMesh::CreateSphere(sun_radius, 20);
+    auto sun = pipelines::mesh_factory::CreateSphere(sun_radius, 20);
     sun->PaintUniformColor(kSunColor);
     auto t1 = Camera::Transform::Identity();
     t1.translate(-sphere_size * dir);
