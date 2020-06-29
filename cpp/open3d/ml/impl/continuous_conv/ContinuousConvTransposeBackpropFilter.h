@@ -27,15 +27,16 @@
 #pragma once
 
 #include <tbb/parallel_for.h>
+#include <mutex>
 
-#include "open3d/ml/ContinuousConv/Detail/CoordinateTransformation.h"
+#include "open3d/ml/impl/continuous_conv/CoordinateTransformation.h"
 
 namespace open3d {
 namespace ml {
 namespace detail {
 
-/// Implementation of CConvComputeFeatures with template parameters for
-/// configuration.
+/// Implementation of CConvTransposeBackpropFilterCPU with template parameters
+/// for configuration.
 template <class TReal,
           class TIndex,
           InterpolationMode INTERPOLATION,
@@ -44,25 +45,24 @@ template <class TReal,
           bool INDIVIDUAL_EXTENT,
           bool ISOTROPIC_EXTENT,
           bool NORMALIZE>
-void _CConvTransposeComputeFeaturesCPU(
-        TReal* out_features,
-        const std::vector<int>& filter_dims,
-        const TReal* filter,
-        size_t num_out,
-        const TReal* out_positions,
-        const TReal* out_importance,
-        size_t num_inp,
-        const TReal* inp_positions,
-        const TReal* inp_features,
-        const TReal* inp_neighbors_importance_sum,
-        const int64_t* inp_neighbors_row_splits,
-        size_t neighbors_index_size,
-        const TIndex* neighbor_index,
-        const TReal* neighbor_importance,
-        const int64_t* neighbors_row_splits,
-        const TReal* extents,
-        const TReal* offsets) {
-    const bool NEIGHBOR_IMPORTANCE = inp_neighbors_importance_sum;
+void _CConvTransposeBackpropFilterCPU(TReal* filter_backprop,
+                                      const std::vector<int>& filter_dims,
+                                      size_t num_out,
+                                      const TReal* out_positions,
+                                      const TReal* out_importance,
+                                      size_t num_inp,
+                                      const TReal* inp_positions,
+                                      const TReal* inp_features,
+                                      const TReal* inp_neighbors_importance_sum,
+                                      const int64_t* inp_neighbors_row_splits,
+                                      size_t num_indices,
+                                      const TIndex* neighbors_index,
+                                      const TReal* neighbors_importance,
+                                      const int64_t* neighbors_row_splits,
+                                      const TReal* extents,
+                                      const TReal* offsets,
+                                      const TReal* out_features_gradient) {
+    const bool NEIGHBOR_IMPORTANCE = neighbors_importance;
     const int VECSIZE = 32;
     typedef Eigen::Array<TReal, VECSIZE, 1> Vec_t;
     typedef InterpolationVec<TReal, VECSIZE, INTERPOLATION> InterpolationVec_t;
@@ -76,7 +76,9 @@ void _CConvTransposeComputeFeaturesCPU(
     Eigen::Array<int, 3, 1> filter_size_xyz(filter_dims[2], filter_dims[1],
                                             filter_dims[0]);
 
-    memset(out_features, 0, sizeof(TReal) * num_out * out_channels);
+    memset(filter_backprop, 0,
+           sizeof(TReal) * spatial_filter_size * in_channels * out_channels);
+    std::mutex filter_backprop_mutex;
 
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
@@ -87,6 +89,8 @@ void _CConvTransposeComputeFeaturesCPU(
                 Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> B(
                         in_channels * spatial_filter_size, range_length);
                 B.setZero();
+                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> C(
+                        out_channels, range_length);
 
                 typedef Eigen::Array<TReal, VECSIZE, Eigen::Dynamic> Matrix;
                 Matrix infeat(VECSIZE, in_channels);
@@ -110,9 +114,12 @@ void _CConvTransposeComputeFeaturesCPU(
                     const int out_col = out_idx - r.begin();
                     const size_t neighbor_start = neighbors_row_splits[out_idx];
                     const size_t neighbor_end =
-                            (out_idx + 1 < num_out
-                                     ? neighbors_row_splits[out_idx + 1]
-                                     : neighbors_index_size);
+                            neighbors_row_splits[out_idx + 1];
+
+                    C.col(out_col) = Eigen::Map<
+                            const Eigen::Array<TReal, Eigen::Dynamic, 1>>(
+                            out_features_gradient + out_idx * out_channels,
+                            out_channels, 1);
 
                     typename InterpolationVec_t::Weight_t interp_weights;
                     typename InterpolationVec_t::Idx_t interp_indices;
@@ -126,7 +133,7 @@ void _CConvTransposeComputeFeaturesCPU(
                     y.setZero();
                     z.setZero();
                     for (size_t n = neighbor_start; n < neighbor_end; ++n) {
-                        const size_t inp_idx = neighbor_index[n];
+                        const size_t inp_idx = neighbors_index[n];
 
                         const int i = vec_valid_count;
                         x(i) = out_positions[out_idx * 3 + 0] -
@@ -150,7 +157,7 @@ void _CConvTransposeComputeFeaturesCPU(
                         }
 
                         TReal n_importance = NEIGHBOR_IMPORTANCE
-                                                     ? neighbor_importance[n]
+                                                     ? neighbors_importance[n]
                                                      : 1;
                         for (int ic = 0; ic < in_channels; ++ic)
                             infeat(i, ic) =
@@ -202,27 +209,35 @@ void _CConvTransposeComputeFeaturesCPU(
 
                 }  // out_idx
 
-                Eigen::Map<const Eigen::Matrix<TReal, Eigen::Dynamic,
-                                               Eigen::Dynamic>>
-                        A(filter, out_channels,
-                          spatial_filter_size * in_channels);
-                Eigen::Map<Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic>>
-                        C(out_features + (r.begin() * out_channels),
-                          out_channels, range_length);
-
-                C = A * B;
                 if (out_importance) {
-                    for (int i = 0; i < range_length; ++i)
-                        C.col(i) *= out_importance[r.begin() + i];
+                    for (size_t out_idx = r.begin(); out_idx != r.end();
+                         ++out_idx) {
+                        const int out_col = out_idx - r.begin();
+                        C.col(out_col) *= out_importance[out_idx];
+                    }
+                }
+
+                Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> A(
+                        out_channels, spatial_filter_size * in_channels);
+
+                A = C * B.transpose();
+
+                {
+                    std::lock_guard<std::mutex> lock(filter_backprop_mutex);
+                    int linear_i = 0;
+                    for (int j = 0; j < spatial_filter_size * in_channels; ++j)
+                        for (int i = 0; i < out_channels; ++i, ++linear_i) {
+                            filter_backprop[linear_i] += A(i, j);
+                        }
                 }
 
             });
 }
 
-/// Computes the output features of a transpose continuous convolution.
+/// Computes the backprop for the filter of a transpose continuous convolution.
 ///
-/// \param out_features    Output array for the computed features with shape
-///        [num_out, out channels]
+/// \param filter_backrop    Output array for the computed filter gradient
+///        with shape [depth,height,witdth, inp channels, out channels]
 ///
 /// \param filter_dims    The sizes of the filter dimensions. The size of
 ///        filter_dims must be 5. The order is
@@ -274,6 +289,9 @@ void _CConvTransposeComputeFeaturesCPU(
 /// \param offsets    A single 3D vector used in the filter coordinate
 ///        computation. The shape is [3].
 ///
+/// \param out_features_gradient    The gradient from the features with shape
+///        [num_out, out_channels]
+///
 /// \param interpolation    The interpolation mode. Either LINEAR or
 ///        NEAREST_NEIGHBOR.
 ///
@@ -296,35 +314,35 @@ void _CConvTransposeComputeFeaturesCPU(
 ///        the respective values in neighbors_importance.
 ///
 template <class TReal, class TIndex>
-void CConvTransposeComputeFeaturesCPU(TReal* out_features,
-                                      const std::vector<int>& filter_dims,
-                                      const TReal* filter,
-                                      size_t num_out,
-                                      const TReal* out_positions,
-                                      const TReal* out_importance,
-                                      size_t num_inp,
-                                      const TReal* inp_positions,
-                                      const TReal* inp_features,
-                                      const TReal* inp_neighbors_importance_sum,
-                                      const int64_t* inp_neighbors_row_splits,
-                                      size_t neighbors_index_size,
-                                      const TIndex* neighbor_index,
-                                      const TReal* neighbor_importance,
-                                      const int64_t* neighbors_row_splits,
-                                      const TReal* extents,
-                                      const TReal* offsets,
-                                      InterpolationMode interpolation,
-                                      CoordinateMapping coordinate_mapping,
-                                      bool align_corners,
-                                      bool individual_extent,
-                                      bool isotropic_extent,
-                                      bool normalize) {
-#define FN_PARAMETERS                                                          \
-    out_features, filter_dims, filter, num_out, out_positions, out_importance, \
-            num_inp, inp_positions, inp_features,                              \
-            inp_neighbors_importance_sum, inp_neighbors_row_splits,            \
-            neighbors_index_size, neighbor_index, neighbor_importance,         \
-            neighbors_row_splits, extents, offsets
+void CConvTransposeBackpropFilterCPU(TReal* filter_backprop,
+                                     const std::vector<int>& filter_dims,
+                                     size_t num_out,
+                                     const TReal* out_positions,
+                                     const TReal* out_importance,
+                                     size_t num_inp,
+                                     const TReal* inp_positions,
+                                     const TReal* inp_features,
+                                     const TReal* inp_neighbors_importance_sum,
+                                     const int64_t* inp_neighbors_row_splits,
+                                     size_t num_indices,
+                                     const TIndex* neighbors_index,
+                                     const TReal* neighbors_importance,
+                                     const int64_t* neighbors_row_splits,
+                                     const TReal* extents,
+                                     const TReal* offsets,
+                                     const TReal* out_features_gradient,
+                                     InterpolationMode interpolation,
+                                     CoordinateMapping coordinate_mapping,
+                                     bool align_corners,
+                                     bool individual_extent,
+                                     bool isotropic_extent,
+                                     bool normalize) {
+#define FN_PARAMETERS                                                     \
+    filter_backprop, filter_dims, num_out, out_positions, out_importance, \
+            num_inp, inp_positions, inp_features,                         \
+            inp_neighbors_importance_sum, inp_neighbors_row_splits,       \
+            num_indices, neighbors_index, neighbors_importance,           \
+            neighbors_row_splits, extents, offsets, out_features_gradient
 
 #define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS,               \
                       INDIVIDUAL_EXTENT, ISOTROPIC_EXTENT, NORMALIZE)      \
@@ -332,7 +350,7 @@ void CConvTransposeComputeFeaturesCPU(TReal* out_features,
         ALIGN_CORNERS == align_corners &&                                  \
         INDIVIDUAL_EXTENT == individual_extent &&                          \
         ISOTROPIC_EXTENT == isotropic_extent && NORMALIZE == normalize)    \
-        _CConvTransposeComputeFeaturesCPU<                                 \
+        _CConvTransposeBackpropFilterCPU<                                  \
                 TReal, TIndex, INTERPOLATION, MAPPING, ALIGN_CORNERS,      \
                 INDIVIDUAL_EXTENT, ISOTROPIC_EXTENT, NORMALIZE>(           \
                 FN_PARAMETERS);

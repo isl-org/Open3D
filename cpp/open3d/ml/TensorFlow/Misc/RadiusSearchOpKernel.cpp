@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "RadiusSearchOpKernel.h"
-#include "open3d/ml/Misc/Detail/RadiusSearch.h"
+#include "open3d/ml/impl/misc/RadiusSearch.h"
 
 using namespace open3d::ml::detail;
 using namespace radius_search_opkernel;

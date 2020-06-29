@@ -28,7 +28,7 @@
 
 #include <tbb/parallel_for.h>
 
-#include "open3d/ml/ContinuousConv/Detail/CoordinateTransformation.h"
+#include "open3d/ml/impl/continuous_conv/CoordinateTransformation.h"
 
 namespace open3d {
 namespace ml {

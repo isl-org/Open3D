@@ -27,7 +27,7 @@
 #define EIGEN_USE_GPU
 #include "InvertNeighborsListOpKernel.h"
 #include "open3d/ml/Helper.h"
-#include "open3d/ml/Misc/Detail/InvertNeighborsList.cuh"
+#include "open3d/ml/impl/misc/InvertNeighborsList.cuh"
 
 using namespace open3d;
 using namespace open3d::ml;
