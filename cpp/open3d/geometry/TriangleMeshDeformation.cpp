@@ -35,6 +35,11 @@
 namespace open3d {
 namespace geometry {
 
+/// Helper function to get an edge with ordered vertex indices.
+inline Eigen::Vector2i GetOrderedEdge(int vidx0, int vidx1) {
+    return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
+}
+
 std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
         const std::vector<int> &constraint_vertex_indices,
         const std::vector<Eigen::Vector3d> &constraint_vertex_positions,

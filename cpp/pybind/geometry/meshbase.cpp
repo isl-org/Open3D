@@ -43,17 +43,6 @@ void pybind_meshbase(py::module &m) {
     py::detail::bind_default_constructor<geometry::MeshBase>(meshbase);
     py::detail::bind_copy_functions<geometry::MeshBase>(meshbase);
 
-    py::enum_<geometry::MeshBase::SimplificationContraction>(
-            m, "SimplificationContraction")
-            .value("Average",
-                   geometry::MeshBase::SimplificationContraction::Average,
-                   "The vertex positions are computed by the averaging.")
-            .value("Quadric",
-                   geometry::MeshBase::SimplificationContraction::Quadric,
-                   "The vertex positions are computed by minimizing the "
-                   "distance to the adjacent triangle planes.")
-            .export_values();
-
     py::enum_<geometry::MeshBase::FilterScope>(m, "FilterScope")
             .value("All", geometry::MeshBase::FilterScope::All,
                    "All properties (color, normal, vertex position) are "

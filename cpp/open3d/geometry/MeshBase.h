@@ -50,16 +50,6 @@ class TriangleMesh;
 /// vertex normals and vertex colors.
 class MeshBase : public Geometry3D {
 public:
-    /// \brief Indicates the method that is used for mesh simplification if
-    /// multiple vertices are combined to a single one.
-    ///
-    /// \param Average indicates that the average position is computed as
-    /// output.
-    /// \param Quadric indicates that the distance to the adjacent triangle
-    /// planes is minimized. Cf. "Simplifying Surfaces with Color and Texture
-    /// using Quadric Error Metrics" by Garland and Heckbert.
-    enum class SimplificationContraction { Average, Quadric };
-
     /// \brief Indicates the scope of filter operations.
     ///
     /// \param All indicates that all properties (color, normal,

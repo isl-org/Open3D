@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,30 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/pipelines/pipelines.h"
+#pragma once
 
-#include "pybind/open3d_pybind.h"
-#include "pybind/pipelines/color_map/color_map.h"
-#include "pybind/pipelines/integration/integration.h"
-#include "pybind/pipelines/mesh_factory/mesh_factory.h"
-#include "pybind/pipelines/mesh_sampling/mesh_sampling.h"
-#include "pybind/pipelines/mesh_simplification/mesh_simplification.h"
-#include "pybind/pipelines/mesh_subdivision/mesh_subdivision.h"
-#include "pybind/pipelines/odometry/odometry.h"
-#include "pybind/pipelines/registration/registration.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 namespace open3d {
+namespace pipelines {
+namespace mesh_subdivision {
 
-void pybind_pipelines(py::module& m) {
-    py::module m_pipelines = m.def_submodule("pipelines");
-    pybind_color_map(m_pipelines);
-    pybind_integration(m_pipelines);
-    pybind_mesh_factory(m_pipelines);
-    pybind_mesh_sampling(m_pipelines);
-    pybind_mesh_simplification(m_pipelines);
-    pybind_mesh_subdivision(m_pipelines);
-    pybind_registration(m_pipelines);
-    pybind_odometry(m_pipelines);
-}
+/// Function to subdivide triangle mesh using the simple midpoint algorithm.
+/// Each triangle is subdivided into four triangles per iteration and the
+/// new vertices lie on the midpoint of the triangle edges.
+/// \param number_of_iterations defines a single iteration splits each
+/// triangle into four triangles that cover the same surface.
+std::shared_ptr<geometry::TriangleMesh> SubdivideMidpoint(
+        const geometry::TriangleMesh& mesh, int number_of_iterations);
 
+/// Function to subdivide triangle mesh using Loop's scheme.
+/// Cf. Charles T. Loop, "Smooth subdivision surfaces based on triangles",
+/// 1987. Each triangle is subdivided into four triangles per iteration.
+/// \param number_of_iterations defines a single iteration splits each
+/// triangle into four triangles that cover the same surface.
+std::shared_ptr<geometry::TriangleMesh> SubdivideLoop(
+        const geometry::TriangleMesh& mesh, int number_of_iterations);
+
+}  // namespace mesh_subdivision
+}  // namespace pipelines
 }  // namespace open3d

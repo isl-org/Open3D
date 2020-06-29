@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,16 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/TriangleMesh.h"
-
-#include <Eigen/Dense>
-#include <queue>
-#include <tuple>
-
+#include "open3d/pipelines/mesh_simplification/TriangleMeshSimplification.h"
 #include "open3d/utility/Console.h"
 
+#include <queue>
+
 namespace open3d {
-namespace geometry {
+namespace pipelines {
+namespace mesh_simplification {
 
 /// Error quadric that is used to minimize the squared distance of a point to
 /// its neigbhouring triangle planes.
@@ -89,24 +87,24 @@ public:
     double c_;
 };
 
-std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
+std::shared_ptr<geometry::TriangleMesh> SimplifyVertexClustering(
+        const geometry::TriangleMesh& mesh,
         double voxel_size,
-        SimplificationContraction
-                contraction /* = SimplificationContraction::Average */) const {
-    if (HasTriangleUvs()) {
+        SimplificationContraction contraction) {
+    if (mesh.HasTriangleUvs()) {
         utility::LogWarning(
                 "[SimplifyVertexClustering] This mesh contains triangle uvs "
                 "that are not handled in this function");
     }
-    auto mesh = std::make_shared<TriangleMesh>();
+    auto out_mesh = std::make_shared<geometry::TriangleMesh>();
     if (voxel_size <= 0.0) {
         utility::LogError("[VoxelGridFromPointCloud] voxel_size <= 0.0");
     }
 
     Eigen::Vector3d voxel_size3 =
             Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
-    Eigen::Vector3d voxel_min_bound = GetMinBound() - voxel_size3 * 0.5;
-    Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
+    Eigen::Vector3d voxel_min_bound = mesh.GetMinBound() - voxel_size3 * 0.5;
+    Eigen::Vector3d voxel_max_bound = mesh.GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
         utility::LogError("[VoxelGridFromPointCloud] voxel_size is too small.");
@@ -126,8 +124,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
                        utility::hash_eigen::hash<Eigen::Vector3i>>
             voxel_vert_ind;
     int new_vidx = 0;
-    for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
-        const Eigen::Vector3i vox_idx = GetVoxelIdx(vertices_[vidx]);
+    for (size_t vidx = 0; vidx < mesh.vertices_.size(); ++vidx) {
+        const Eigen::Vector3i vox_idx = GetVoxelIdx(mesh.vertices_[vidx]);
         voxel_vertices[vox_idx].insert(int(vidx));
 
         if (voxel_vert_ind.count(vox_idx) == 0) {
@@ -137,20 +135,20 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     }
 
     // aggregate vertex info
-    bool has_vert_normal = HasVertexNormals();
-    bool has_vert_color = HasVertexColors();
-    mesh->vertices_.resize(voxel_vertices.size());
+    bool has_vert_normal = mesh.HasVertexNormals();
+    bool has_vert_color = mesh.HasVertexColors();
+    out_mesh->vertices_.resize(voxel_vertices.size());
     if (has_vert_normal) {
-        mesh->vertex_normals_.resize(voxel_vertices.size());
+        out_mesh->vertex_normals_.resize(voxel_vertices.size());
     }
     if (has_vert_color) {
-        mesh->vertex_colors_.resize(voxel_vertices.size());
+        out_mesh->vertex_colors_.resize(voxel_vertices.size());
     }
 
     auto AvgVertex = [&](const std::unordered_set<int> ind) {
         Eigen::Vector3d aggr(0, 0, 0);
         for (int vidx : ind) {
-            aggr += vertices_[vidx];
+            aggr += mesh.vertices_[vidx];
         }
         aggr /= double(ind.size());
         return aggr;
@@ -158,7 +156,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     auto AvgNormal = [&](const std::unordered_set<int> ind) {
         Eigen::Vector3d aggr(0, 0, 0);
         for (int vidx : ind) {
-            aggr += vertex_normals_[vidx];
+            aggr += mesh.vertex_normals_[vidx];
         }
         aggr /= double(ind.size());
         return aggr;
@@ -166,7 +164,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     auto AvgColor = [&](const std::unordered_set<int> ind) {
         Eigen::Vector3d aggr(0, 0, 0);
         for (int vidx : ind) {
-            aggr += vertex_colors_[vidx];
+            aggr += mesh.vertex_colors_[vidx];
         }
         aggr /= double(ind.size());
         return aggr;
@@ -175,21 +173,22 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     if (contraction == SimplificationContraction::Average) {
         for (const auto& voxel : voxel_vertices) {
             int vox_vidx = voxel_vert_ind[voxel.first];
-            mesh->vertices_[vox_vidx] = AvgVertex(voxel.second);
+            out_mesh->vertices_[vox_vidx] = AvgVertex(voxel.second);
             if (has_vert_normal) {
-                mesh->vertex_normals_[vox_vidx] = AvgNormal(voxel.second);
+                out_mesh->vertex_normals_[vox_vidx] = AvgNormal(voxel.second);
             }
             if (has_vert_color) {
-                mesh->vertex_colors_[vox_vidx] = AvgColor(voxel.second);
+                out_mesh->vertex_colors_[vox_vidx] = AvgColor(voxel.second);
             }
         }
     } else if (contraction == SimplificationContraction::Quadric) {
         // Map triangles
         std::unordered_map<int, std::unordered_set<int>> vert_to_triangles;
-        for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
-            vert_to_triangles[triangles_[tidx](0)].emplace(int(tidx));
-            vert_to_triangles[triangles_[tidx](1)].emplace(int(tidx));
-            vert_to_triangles[triangles_[tidx](2)].emplace(int(tidx));
+        for (size_t tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
+            Eigen::Vector3i triangle = mesh.triangles_[tidx];
+            vert_to_triangles[triangle(0)].emplace(int(tidx));
+            vert_to_triangles[triangle(1)].emplace(int(tidx));
+            vert_to_triangles[triangle(2)].emplace(int(tidx));
         }
 
         for (const auto& voxel : voxel_vertices) {
@@ -198,23 +197,23 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
             Quadric q;
             for (int vidx : voxel.second) {
                 for (int tidx : vert_to_triangles[vidx]) {
-                    Eigen::Vector4d p = GetTrianglePlane(tidx);
-                    double area = GetTriangleArea(tidx);
+                    Eigen::Vector4d p = mesh.GetTrianglePlane(tidx);
+                    double area = mesh.GetTriangleArea(tidx);
                     q += Quadric(p, area);
                 }
             }
             if (q.IsInvertible()) {
                 Eigen::Vector3d v = q.Minimum();
-                mesh->vertices_[vox_vidx] = v;
+                out_mesh->vertices_[vox_vidx] = v;
             } else {
-                mesh->vertices_[vox_vidx] = AvgVertex(voxel.second);
+                out_mesh->vertices_[vox_vidx] = AvgVertex(voxel.second);
             }
 
             if (has_vert_normal) {
-                mesh->vertex_normals_[vox_vidx] = AvgNormal(voxel.second);
+                out_mesh->vertex_normals_[vox_vidx] = AvgNormal(voxel.second);
             }
             if (has_vert_color) {
-                mesh->vertex_colors_[vox_vidx] = AvgColor(voxel.second);
+                out_mesh->vertex_colors_[vox_vidx] = AvgColor(voxel.second);
             }
         }
     }
@@ -223,10 +222,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     std::unordered_set<Eigen::Vector3i,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
             triangles;
-    for (const auto& triangle : triangles_) {
-        int vidx0 = voxel_vert_ind[GetVoxelIdx(vertices_[triangle(0)])];
-        int vidx1 = voxel_vert_ind[GetVoxelIdx(vertices_[triangle(1)])];
-        int vidx2 = voxel_vert_ind[GetVoxelIdx(vertices_[triangle(2)])];
+    for (const auto& triangle : mesh.triangles_) {
+        int vidx0 = voxel_vert_ind[GetVoxelIdx(mesh.vertices_[triangle(0)])];
+        int vidx1 = voxel_vert_ind[GetVoxelIdx(mesh.vertices_[triangle(1)])];
+        int vidx2 = voxel_vert_ind[GetVoxelIdx(mesh.vertices_[triangle(2)])];
 
         // only connect if in different voxels
         if (vidx0 == vidx1 || vidx0 == vidx2 || vidx1 == vidx2) {
@@ -250,61 +249,63 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
         triangles.emplace(Eigen::Vector3i(vidx0, vidx1, vidx2));
     }
 
-    mesh->triangles_.resize(triangles.size());
+    out_mesh->triangles_.resize(triangles.size());
     int tidx = 0;
     for (const Eigen::Vector3i& triangle : triangles) {
-        mesh->triangles_[tidx] = triangle;
+        out_mesh->triangles_[tidx] = triangle;
         tidx++;
     }
 
-    if (HasTriangleNormals()) {
-        mesh->ComputeTriangleNormals();
+    if (mesh.HasTriangleNormals()) {
+        out_mesh->ComputeTriangleNormals();
     }
 
-    return mesh;
+    return out_mesh;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
-        int target_number_of_triangles) const {
-    if (HasTriangleUvs()) {
+std::shared_ptr<geometry::TriangleMesh> SimplifyQuadricDecimation(
+        const geometry::TriangleMesh& mesh, int target_number_of_triangles) {
+    if (mesh.HasTriangleUvs()) {
         utility::LogWarning(
                 "[SimplifyQuadricDecimation] This mesh contains triangle uvs "
                 "that are not handled in this function");
     }
     typedef std::tuple<double, int, int> CostEdge;
 
-    auto mesh = std::make_shared<TriangleMesh>();
-    mesh->vertices_ = vertices_;
-    mesh->vertex_normals_ = vertex_normals_;
-    mesh->vertex_colors_ = vertex_colors_;
-    mesh->triangles_ = triangles_;
+    auto out_mesh = std::make_shared<geometry::TriangleMesh>();
+    out_mesh->vertices_ = mesh.vertices_;
+    out_mesh->vertex_normals_ = mesh.vertex_normals_;
+    out_mesh->vertex_colors_ = mesh.vertex_colors_;
+    out_mesh->triangles_ = mesh.triangles_;
 
-    std::vector<bool> vertices_deleted(vertices_.size(), false);
-    std::vector<bool> triangles_deleted(triangles_.size(), false);
+    std::vector<bool> vertices_deleted(mesh.vertices_.size(), false);
+    std::vector<bool> triangles_deleted(mesh.triangles_.size(), false);
 
     // Map vertices to triangles and compute triangle planes and areas
-    std::vector<std::unordered_set<int>> vert_to_triangles(vertices_.size());
-    std::vector<Eigen::Vector4d> triangle_planes(triangles_.size());
-    std::vector<double> triangle_areas(triangles_.size());
-    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
-        vert_to_triangles[triangles_[tidx](0)].emplace(static_cast<int>(tidx));
-        vert_to_triangles[triangles_[tidx](1)].emplace(static_cast<int>(tidx));
-        vert_to_triangles[triangles_[tidx](2)].emplace(static_cast<int>(tidx));
+    std::vector<std::unordered_set<int>> vert_to_triangles(
+            mesh.vertices_.size());
+    std::vector<Eigen::Vector4d> triangle_planes(mesh.triangles_.size());
+    std::vector<double> triangle_areas(mesh.triangles_.size());
+    for (size_t tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
+        Eigen::Vector3i triangle = mesh.triangles_[tidx];
+        vert_to_triangles[triangle(0)].emplace(static_cast<int>(tidx));
+        vert_to_triangles[triangle(1)].emplace(static_cast<int>(tidx));
+        vert_to_triangles[triangle(2)].emplace(static_cast<int>(tidx));
 
-        triangle_planes[tidx] = GetTrianglePlane(tidx);
-        triangle_areas[tidx] = GetTriangleArea(tidx);
+        triangle_planes[tidx] = mesh.GetTrianglePlane(tidx);
+        triangle_areas[tidx] = mesh.GetTriangleArea(tidx);
     }
 
     // Compute the error metric per vertex
-    std::vector<Quadric> Qs(vertices_.size());
-    for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+    std::vector<Quadric> Qs(mesh.vertices_.size());
+    for (size_t vidx = 0; vidx < mesh.vertices_.size(); ++vidx) {
         for (int tidx : vert_to_triangles[vidx]) {
             Qs[vidx] += Quadric(triangle_planes[tidx], triangle_areas[tidx]);
         }
     }
 
     // For boundary edges add perpendicular plane quadric
-    auto edge_triangle_count = GetEdgeToTrianglesMap();
+    auto edge_triangle_count = mesh.GetEdgeToTrianglesMap();
     auto AddPerpPlaneQuadric = [&](int vidx0, int vidx1, int vidx2,
                                    double area) {
         int min = std::min(vidx0, vidx1);
@@ -313,17 +314,17 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         if (edge_triangle_count[edge].size() != 1) {
             return;
         }
-        const auto& vert0 = mesh->vertices_[vidx0];
-        const auto& vert1 = mesh->vertices_[vidx1];
-        const auto& vert2 = mesh->vertices_[vidx2];
+        const auto& vert0 = out_mesh->vertices_[vidx0];
+        const auto& vert1 = out_mesh->vertices_[vidx1];
+        const auto& vert2 = out_mesh->vertices_[vidx2];
         Eigen::Vector3d vert2p = (vert2 - vert0).cross(vert2 - vert1);
-        Eigen::Vector4d plane = ComputeTrianglePlane(vert0, vert1, vert2p);
+        Eigen::Vector4d plane = mesh.ComputeTrianglePlane(vert0, vert1, vert2p);
         Quadric quad(plane, area);
         Qs[vidx0] += quad;
         Qs[vidx1] += quad;
     };
-    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
-        const auto& tria = triangles_[tidx];
+    for (size_t tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
+        const auto& tria = mesh.triangles_[tidx];
         double area = triangle_areas[tidx];
         AddPerpPlaneQuadric(tria(0), tria(1), tria(2), area);
         AddPerpPlaneQuadric(tria(1), tria(2), tria(0), area);
@@ -358,8 +359,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
                 vbar = Qbar.Minimum();
                 cost = Qbar.Eval(vbar);
             } else {
-                const Eigen::Vector3d& v0 = mesh->vertices_[vidx0];
-                const Eigen::Vector3d& v1 = mesh->vertices_[vidx0];
+                const Eigen::Vector3d& v0 = out_mesh->vertices_[vidx0];
+                const Eigen::Vector3d& v1 = out_mesh->vertices_[vidx0];
                 Eigen::Vector3d vmid = (v0 + v1) / 2;
                 double cost0 = Qbar.Eval(v0);
                 double cost1 = Qbar.Eval(v1);
@@ -380,16 +381,16 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
     };
 
     // add all edges to priority queue
-    for (const auto& triangle : triangles_) {
+    for (const auto& triangle : mesh.triangles_) {
         AddEdge(triangle(0), triangle(1), false);
         AddEdge(triangle(1), triangle(2), false);
         AddEdge(triangle(2), triangle(0), false);
     }
 
     // perform incremental edge collapse
-    bool has_vert_normal = HasVertexNormals();
-    bool has_vert_color = HasVertexColors();
-    int n_triangles = int(triangles_.size());
+    bool has_vert_normal = mesh.HasVertexNormals();
+    bool has_vert_color = mesh.HasVertexColors();
+    int n_triangles = int(mesh.triangles_.size());
     while (n_triangles > target_number_of_triangles && !queue.empty()) {
         // retrieve edge from queue
         double cost;
@@ -412,7 +413,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
                 continue;
             }
 
-            const Eigen::Vector3i& tria = mesh->triangles_[tidx];
+            const Eigen::Vector3i& tria = out_mesh->triangles_[tidx];
             bool has_vidx0 =
                     vidx0 == tria(0) || vidx0 == tria(1) || vidx0 == tria(2);
             bool has_vidx1 =
@@ -421,9 +422,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
                 continue;
             }
 
-            Eigen::Vector3d vert0 = mesh->vertices_[tria(0)];
-            Eigen::Vector3d vert1 = mesh->vertices_[tria(1)];
-            Eigen::Vector3d vert2 = mesh->vertices_[tria(2)];
+            Eigen::Vector3d vert0 = out_mesh->vertices_[tria(0)];
+            Eigen::Vector3d vert1 = out_mesh->vertices_[tria(1)];
+            Eigen::Vector3d vert2 = out_mesh->vertices_[tria(2)];
             Eigen::Vector3d norm_before = (vert1 - vert0).cross(vert2 - vert0);
             norm_before /= norm_before.norm();
 
@@ -452,7 +453,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
                 continue;
             }
 
-            Eigen::Vector3i& tria = mesh->triangles_[tidx];
+            Eigen::Vector3i& tria = out_mesh->triangles_[tidx];
             bool has_vidx0 =
                     vidx0 == tria(0) || vidx0 == tria(1) || vidx0 == tria(2);
             bool has_vidx1 =
@@ -475,15 +476,17 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         }
 
         // update vertex vidx0 to vbar
-        mesh->vertices_[vidx0] = vbars[edge];
+        out_mesh->vertices_[vidx0] = vbars[edge];
         Qs[vidx0] += Qs[vidx1];
         if (has_vert_normal) {
-            mesh->vertex_normals_[vidx0] = 0.5 * (mesh->vertex_normals_[vidx0] +
-                                                  mesh->vertex_normals_[vidx1]);
+            out_mesh->vertex_normals_[vidx0] =
+                    0.5 * (out_mesh->vertex_normals_[vidx0] +
+                           out_mesh->vertex_normals_[vidx1]);
         }
         if (has_vert_color) {
-            mesh->vertex_colors_[vidx0] = 0.5 * (mesh->vertex_colors_[vidx0] +
-                                                 mesh->vertex_colors_[vidx1]);
+            out_mesh->vertex_colors_[vidx0] =
+                    0.5 * (out_mesh->vertex_colors_[vidx0] +
+                           out_mesh->vertex_colors_[vidx1]);
         }
         vertices_deleted[vidx1] = true;
 
@@ -492,7 +495,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
             if (triangles_deleted[tidx]) {
                 continue;
             }
-            const Eigen::Vector3i& tria = mesh->triangles_[tidx];
+            const Eigen::Vector3i& tria = out_mesh->triangles_[tidx];
             if (tria(0) == vidx0 || tria(1) == vidx0) {
                 AddEdge(tria(0), tria(1), true);
             }
@@ -508,45 +511,48 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
     // Apply changes to the triangle mesh
     int next_free = 0;
     std::unordered_map<int, int> vert_remapping;
-    for (size_t idx = 0; idx < mesh->vertices_.size(); ++idx) {
+    for (size_t idx = 0; idx < out_mesh->vertices_.size(); ++idx) {
         if (!vertices_deleted[idx]) {
             vert_remapping[int(idx)] = next_free;
-            mesh->vertices_[next_free] = mesh->vertices_[idx];
+            out_mesh->vertices_[next_free] = out_mesh->vertices_[idx];
             if (has_vert_normal) {
-                mesh->vertex_normals_[next_free] = mesh->vertex_normals_[idx];
+                out_mesh->vertex_normals_[next_free] =
+                        out_mesh->vertex_normals_[idx];
             }
             if (has_vert_color) {
-                mesh->vertex_colors_[next_free] = mesh->vertex_colors_[idx];
+                out_mesh->vertex_colors_[next_free] =
+                        out_mesh->vertex_colors_[idx];
             }
             next_free++;
         }
     }
-    mesh->vertices_.resize(next_free);
+    out_mesh->vertices_.resize(next_free);
     if (has_vert_normal) {
-        mesh->vertex_normals_.resize(next_free);
+        out_mesh->vertex_normals_.resize(next_free);
     }
     if (has_vert_color) {
-        mesh->vertex_colors_.resize(next_free);
+        out_mesh->vertex_colors_.resize(next_free);
     }
 
     next_free = 0;
-    for (size_t idx = 0; idx < mesh->triangles_.size(); ++idx) {
+    for (size_t idx = 0; idx < out_mesh->triangles_.size(); ++idx) {
         if (!triangles_deleted[idx]) {
-            Eigen::Vector3i tria = mesh->triangles_[idx];
-            mesh->triangles_[next_free](0) = vert_remapping[tria(0)];
-            mesh->triangles_[next_free](1) = vert_remapping[tria(1)];
-            mesh->triangles_[next_free](2) = vert_remapping[tria(2)];
+            Eigen::Vector3i tria = out_mesh->triangles_[idx];
+            out_mesh->triangles_[next_free](0) = vert_remapping[tria(0)];
+            out_mesh->triangles_[next_free](1) = vert_remapping[tria(1)];
+            out_mesh->triangles_[next_free](2) = vert_remapping[tria(2)];
             next_free++;
         }
     }
-    mesh->triangles_.resize(next_free);
+    out_mesh->triangles_.resize(next_free);
 
-    if (HasTriangleNormals()) {
-        mesh->ComputeTriangleNormals();
+    if (mesh.HasTriangleNormals()) {
+        out_mesh->ComputeTriangleNormals();
     }
 
-    return mesh;
+    return out_mesh;
 }
 
-}  // namespace geometry
+}  // namespace mesh_simplification
+}  // namespace pipelines
 }  // namespace open3d

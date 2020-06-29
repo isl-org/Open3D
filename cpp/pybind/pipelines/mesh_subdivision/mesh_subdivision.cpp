@@ -24,30 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/pipelines/pipelines.h"
-
-#include "pybind/open3d_pybind.h"
-#include "pybind/pipelines/color_map/color_map.h"
-#include "pybind/pipelines/integration/integration.h"
-#include "pybind/pipelines/mesh_factory/mesh_factory.h"
-#include "pybind/pipelines/mesh_sampling/mesh_sampling.h"
-#include "pybind/pipelines/mesh_simplification/mesh_simplification.h"
-#include "pybind/pipelines/mesh_subdivision/mesh_subdivision.h"
-#include "pybind/pipelines/odometry/odometry.h"
-#include "pybind/pipelines/registration/registration.h"
+#include "open3d/pipelines/mesh_subdivision/TriangleMeshSubdivision.h"
+#include "pybind/docstring.h"
 
 namespace open3d {
 
-void pybind_pipelines(py::module& m) {
-    py::module m_pipelines = m.def_submodule("pipelines");
-    pybind_color_map(m_pipelines);
-    pybind_integration(m_pipelines);
-    pybind_mesh_factory(m_pipelines);
-    pybind_mesh_sampling(m_pipelines);
-    pybind_mesh_simplification(m_pipelines);
-    pybind_mesh_subdivision(m_pipelines);
-    pybind_registration(m_pipelines);
-    pybind_odometry(m_pipelines);
+void pybind_mesh_subdivision(py::module &m) {
+    m.def("subdivide_midpoint", &pipelines::mesh_subdivision::SubdivideMidpoint,
+          "Function subdivide mesh using midpoint algorithm.", "mesh"_a,
+          "number_of_iterations"_a = 1);
+    m.def("subdivide_loop", &pipelines::mesh_subdivision::SubdivideLoop,
+          "Function subdivide mesh using Loop's algorithm. Loop, \"Smooth "
+          "subdivision surfaces based on triangles\", 1987.",
+          "mesh"_a, "number_of_iterations"_a = 1);
+
+    docstring::FunctionDocInject(
+            m, "subdivide_midpoint",
+            {{"mesh", "The input mesh."},
+             {"number_of_iterations",
+              "Number of iterations. A single iteration splits each triangle "
+              "into four triangles that cover the same surface."}});
+    docstring::FunctionDocInject(
+            m, "subdivide_loop",
+            {{"mesh", "The input mesh."},
+             {" number_of_iterations ",
+              "Number of iterations. A single iteration splits each triangle "
+              "into four triangles."}});
 }
 
 }  // namespace open3d

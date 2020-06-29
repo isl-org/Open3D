@@ -245,42 +245,6 @@ void pybind_trianglemesh(py::module &m) {
                          geometry::TriangleMesh::GetSurfaceArea,
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.")
-            .def("sample_points_uniformly",
-                 &geometry::TriangleMesh::SamplePointsUniformly,
-                 "Function to uniformly sample points from the mesh.",
-                 "number_of_points"_a = 100, "use_triangle_normal"_a = false,
-                 "seed"_a = -1)
-            .def("sample_points_poisson_disk",
-                 &geometry::TriangleMesh::SamplePointsPoissonDisk,
-                 "Function to sample points from the mesh, where each point "
-                 "has "
-                 "approximately the same distance to the neighbouring points "
-                 "(blue "
-                 "noise). Method is based on Yuksel, \"Sample Elimination for "
-                 "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
-                 "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
-                 "use_triangle_normal"_a = false, "seed"_a = -1)
-            .def("subdivide_midpoint",
-                 &geometry::TriangleMesh::SubdivideMidpoint,
-                 "Function subdivide mesh using midpoint algorithm.",
-                 "number_of_iterations"_a = 1)
-            .def("subdivide_loop", &geometry::TriangleMesh::SubdivideLoop,
-                 "Function subdivide mesh using Loop's algorithm. Loop, "
-                 "\"Smooth "
-                 "subdivision surfaces based on triangles\", 1987.",
-                 "number_of_iterations"_a = 1)
-            .def("simplify_vertex_clustering",
-                 &geometry::TriangleMesh::SimplifyVertexClustering,
-                 "Function to simplify mesh using vertex clustering.",
-                 "voxel_size"_a,
-                 "contraction"_a =
-                         geometry::MeshBase::SimplificationContraction::Average)
-            .def("simplify_quadric_decimation",
-                 &geometry::TriangleMesh::SimplifyQuadricDecimation,
-                 "Function to simplify mesh using Quadric Error Metric "
-                 "Decimation by "
-                 "Garland and Heckbert",
-                 "target_number_of_triangles"_a)
             .def("compute_convex_hull",
                  &geometry::TriangleMesh::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
@@ -503,58 +467,6 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "crop",
             {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "sample_points_uniformly",
-            {{"number_of_points",
-              "Number of points that should be uniformly sampled."},
-             {"use_triangle_normal",
-              "If True assigns the triangle normals instead of the "
-              "interpolated vertex normals to the returned points. The "
-              "triangle normals will be computed and added to the mesh if "
-              "necessary."},
-             {"seed",
-              "Seed value used in the random generator, set to -1 to use a "
-              "random seed value with each function call."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "sample_points_poisson_disk",
-            {{"number_of_points", "Number of points that should be sampled."},
-             {"init_factor",
-              "Factor for the initial uniformly sampled PointCloud. This init "
-              "PointCloud is used for sample elimination."},
-             {"pcl",
-              "Initial PointCloud that is used for sample elimination. If this "
-              "parameter is provided the init_factor is ignored."},
-             {"use_triangle_normal",
-              "If True assigns the triangle normals instead of the "
-              "interpolated vertex normals to the returned points. The "
-              "triangle normals will be computed and added to the mesh if "
-              "necessary."},
-             {"seed",
-              "Seed value used in the random generator, set to -1 to use a "
-              "random seed value with each function call."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "subdivide_midpoint",
-            {{"number_of_iterations",
-              "Number of iterations. A single iteration splits each triangle "
-              "into four triangles that cover the same surface."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "subdivide_loop",
-            {{"number_of_iterations",
-              "Number of iterations. A single iteration splits each triangle "
-              "into four triangles."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "simplify_vertex_clustering",
-            {{"voxel_size",
-              "The size of the voxel within vertices are pooled."},
-             {"contraction",
-              "Method to aggregate vertex information. Average computes a "
-              "simple average, Quadric minimizes the distance to the adjacent "
-              "planes."}});
-    docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "simplify_quadric_decimation",
-            {{"target_number_of_triangles",
-              "The number of triangles that the simplified mesh should have. "
-              "It is not guaranteed that this number will be reached."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "cluster_connected_triangles");
