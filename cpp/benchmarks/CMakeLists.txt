@@ -39,7 +39,7 @@ mark_as_advanced(
 
 set(BENCHMARK_SOURCE_FILES
     geometry/KDTreeFlann.cpp
-    geometry/SamplePoints.cpp
+    pipelines/mesh_sampling/MeshSampling.cpp
     core/Reduction.cpp
     io/PointCloudIO.cpp
 )
