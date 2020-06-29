@@ -38,21 +38,21 @@ Tensor Matmul(const Tensor& A, const Tensor& B);
 
 namespace detail {
 #ifdef BUILD_CUDA_MODULE
-void CUDABackend(Dtype dtype,
-                 void* A_data,
-                 void* B_data,
-                 void* C_data,
-                 int m,
-                 int k,
-                 int n);
+void MatmulCUDABackend(Dtype dtype,
+                       void* A_data,
+                       void* B_data,
+                       void* C_data,
+                       int m,
+                       int k,
+                       int n);
 #endif
-void CPUBackend(Dtype dtype,
-                void* A_data,
-                void* B_data,
-                void* C_data,
-                int m,
-                int k,
-                int n);
+void MatmulCPUBackend(Dtype dtype,
+                      void* A_data,
+                      void* B_data,
+                      void* C_data,
+                      int m,
+                      int k,
+                      int n);
 }  // namespace detail
 }  // namespace core
 }  // namespace open3d

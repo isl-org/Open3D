@@ -69,7 +69,8 @@ Tensor Matmul(const Tensor& A, const Tensor& B) {
     }
 
     // Dispatch to backends
-    int64_t m = A_shape[0], k = A_shape[1], n = B_shape[1];
+    int64_t m = A_shape[0], k = A_shape[1],
+            n = B_shape.size() == 2 ? B_shape[1] : 1;
     Tensor C = Tensor::Zeros({m, n}, dtype, device);
 
     void* A_data = A.Contiguous().GetDataPtr();
@@ -82,9 +83,9 @@ Tensor Matmul(const Tensor& A, const Tensor& B) {
             utility::hash_enum_class::hash>
             map_device_type_to_gemm = {
 #ifdef BUILD_CUDA_MODULE
-                    {Device::DeviceType::CUDA, detail::CUDABackend},
+                    {Device::DeviceType::CUDA, detail::MatmulCUDABackend},
 #endif
-                    {Device::DeviceType::CPU, detail::CPUBackend}};
+                    {Device::DeviceType::CPU, detail::MatmulCPUBackend}};
 
     auto backend_it = map_device_type_to_gemm.find(device.GetType());
     if (backend_it == map_device_type_to_gemm.end()) {

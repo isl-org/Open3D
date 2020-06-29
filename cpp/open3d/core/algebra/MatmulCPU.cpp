@@ -36,13 +36,13 @@ namespace detail {
 // https://software.intel.com/content/www/us/en/develop/documentation/mkl-developer-reference-c/top/blas-and-sparse-blas-routines/blas-routines/blas-level-3-routines/cblas-gemm.html
 // https://oneapi-src.github.io/oneDNN/group__dnnl__api__blas.html
 
-void CPUBackend(Dtype dtype,
-                void* A_data,
-                void* B_data,
-                void* C_data,
-                int m,
-                int k,
-                int n) {
+void MatmulCPUBackend(Dtype dtype,
+                      void* A_data,
+                      void* B_data,
+                      void* C_data,
+                      int m,
+                      int k,
+                      int n) {
     switch (dtype) {
         case Dtype::Float32: {
             float alpha = 1, beta = 0;

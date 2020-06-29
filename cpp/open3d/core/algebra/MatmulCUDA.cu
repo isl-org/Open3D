@@ -61,13 +61,13 @@ private:
 std::shared_ptr<CuBLASHandle> CuBLASHandle::instance_ =
         CuBLASHandle::GetInstance();
 
-void CUDABackend(Dtype dtype,
-                 void* A_data,
-                 void* B_data,
-                 void* C_data,
-                 int m,
-                 int k,
-                 int n) {
+void MatmulCUDABackend(Dtype dtype,
+                       void* A_data,
+                       void* B_data,
+                       void* C_data,
+                       int m,
+                       int k,
+                       int n) {
     cublasHandle_t handle = CuBLASHandle::GetInstance()->GetHandle();
 
     switch (dtype) {

@@ -32,59 +32,47 @@
 
 namespace open3d {
 namespace core {
-namespace _detail {
+namespace detail {
 
-Tensor SolveCUDA(const Tensor& A, const Tensor& B) {
-    // Check dimensions
-    SizeVector A_shape = A.GetShape();
-    SizeVector B_shape = B.GetShape();
-
-    // A(n x n) X = B(n x m)
-    if (A_shape.size() != 2) {
-        utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
-    }
-    if (A_shape[0] != A_shape[1]) {
-        utility::LogError("Tensor A must be square, but got {} x {}",
-                          A_shape[0], A_shape[1]);
-    }
-    if (B_shape.size() != 2) {
-        utility::LogError("Tensor B must be 2D, but got {}D", B_shape.size());
-    }
-    if (A_shape[1] != B_shape[0]) {
-        utility::LogError("Tensor A columns {} mismatch with Tensor B rows {}",
-                          A_shape[1], B_shape[0]);
-    }
-
-    int n = A_shape[0], m = B_shape[1];
+void SolverCUDABackend(Dtype dtype,
+                       void* A_data,
+                       void* B_data,
+                       void* ipiv_data,
+                       int n,
+                       int m) {
     int info;
-
-    // TODO: dtype and device check
-    Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, Device("CPU:0"));
-
-    // we need copies, as the solver will override A and B in matrix
-    // decomposition
-    // LAPACK follows column major, so we need to transpose too
-    Tensor A_copy = A.T().Copy(A.GetDevice());
-    Tensor B_copy = B.T().Copy(A.GetDevice());
-
-    void* A_data = A_copy.GetDataPtr();
-    void* B_data = B_copy.GetDataPtr();
-    void* ipiv_data = ipiv.GetDataPtr();
-
-    // clang-format off
     magma_init();
-    std::cout << "initialized\n";
-    magma_sgesv_gpu(n, m,
-                static_cast<float*>(A_data), n,
-                static_cast<int*>(ipiv_data),
-                static_cast<float*>(B_data), n,
-                &info);
-    std::cout << "sgesv finished\n";
+    switch (dtype) {
+        case Dtype::Float32: {
+            // clang-format off
+            magma_sgesv_gpu(n, m,
+                            static_cast<float*>(A_data), n,
+                            static_cast<int*>(ipiv_data),
+                            static_cast<float*>(B_data), n,
+                            &info);
+            // clang-format on
+            break;
+        }
+
+        case Dtype::Float64: {
+            // clang-format off
+            magma_dgesv_gpu(n, m,
+                            static_cast<double*>(A_data), n,
+                            static_cast<int*>(ipiv_data),
+                            static_cast<double*>(B_data), n,
+                            &info);
+            break;
+            // clang-format on
+        }
+
+        default: {  // should never reach here
+            utility::LogError("Unsupported dtype {} in CPU backend.",
+                              DtypeUtil::ToString(dtype));
+        }
+    }
+
     magma_finalize();
-    std::cout << "finalized\n";
-    // clang-format on
-    return B_copy.T();
 }
-}  // namespace _detail
+}  // namespace detail
 }  // namespace core
 }  // namespace open3d

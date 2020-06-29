@@ -35,16 +35,19 @@
 
 namespace open3d {
 namespace core {
+
 // Solve AX = B with *gesv in MKL (CPU) and MAGMA (CUDA)
 Tensor Solve(const Tensor& A, const Tensor& B);
 
-namespace _detail {
+namespace detail {
 #ifdef BUILD_CUDA_MODULE
-Tensor SolveCUDA(const Tensor& A, const Tensor& B);
+void SolverCUDABackend(
+        Dtype dtype, void* A_data, void* B_data, void* ipiv_data, int n, int m);
 #endif
 
-Tensor SolveCPU(const Tensor& A, const Tensor& B);
-}  // namespace _detail
+void SolverCPUBackend(
+        Dtype dtype, void* A_data, void* B_data, void* ipiv_data, int n, int m);
+}  // namespace detail
 
 }  // namespace core
 }  // namespace open3d
