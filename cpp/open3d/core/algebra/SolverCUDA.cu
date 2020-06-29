@@ -34,6 +34,25 @@ namespace open3d {
 namespace core {
 namespace detail {
 
+class MAGMAContext {
+public:
+    static std::shared_ptr<MAGMAContext> GetInstance() {
+        if (instance_ == nullptr) {
+            instance_ = std::make_shared<MAGMAContext>();
+        }
+        return instance_;
+    };
+
+    MAGMAContext() { magma_init(); }
+    ~MAGMAContext() { magma_finalize(); }
+
+private:
+    static std::shared_ptr<MAGMAContext> instance_;
+};
+
+std::shared_ptr<MAGMAContext> MAGMAContext::instance_ =
+        MAGMAContext::GetInstance();
+
 void SolverCUDABackend(Dtype dtype,
                        void* A_data,
                        void* B_data,
@@ -41,7 +60,7 @@ void SolverCUDABackend(Dtype dtype,
                        int n,
                        int m) {
     int info;
-    magma_init();
+
     switch (dtype) {
         case Dtype::Float32: {
             // clang-format off
@@ -70,8 +89,6 @@ void SolverCUDABackend(Dtype dtype,
                               DtypeUtil::ToString(dtype));
         }
     }
-
-    magma_finalize();
 }
 }  // namespace detail
 }  // namespace core

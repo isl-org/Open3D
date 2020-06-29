@@ -34,32 +34,32 @@ namespace detail {
 // Reference
 // https://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemmbatched
 // https://developer.nvidia.com/sites/default/files/akamai/cuda/files/Misc/mygpu.pdf
-class CuBLASHandle {
+class CuBLASContext {
 public:
-    static std::shared_ptr<CuBLASHandle> GetInstance() {
+    static std::shared_ptr<CuBLASContext> GetInstance() {
         if (instance_ == nullptr) {
-            instance_ = std::make_shared<CuBLASHandle>();
+            instance_ = std::make_shared<CuBLASContext>();
         }
         return instance_;
     };
 
-    CuBLASHandle() {
+    CuBLASContext() {
         if (cublasCreate(&handle_) != CUBLAS_STATUS_SUCCESS) {
             utility::LogError("Unable to create cublas handle");
         }
     }
-    ~CuBLASHandle() { cublasDestroy(handle_); }
+    ~CuBLASContext() { cublasDestroy(handle_); }
 
     cublasHandle_t& GetHandle() { return handle_; }
 
 private:
     cublasHandle_t handle_;
 
-    static std::shared_ptr<CuBLASHandle> instance_;
+    static std::shared_ptr<CuBLASContext> instance_;
 };
 
-std::shared_ptr<CuBLASHandle> CuBLASHandle::instance_ =
-        CuBLASHandle::GetInstance();
+std::shared_ptr<CuBLASContext> CuBLASContext::instance_ =
+        CuBLASContext::GetInstance();
 
 void MatmulCUDABackend(Dtype dtype,
                        void* A_data,
@@ -68,7 +68,7 @@ void MatmulCUDABackend(Dtype dtype,
                        int m,
                        int k,
                        int n) {
-    cublasHandle_t handle = CuBLASHandle::GetInstance()->GetHandle();
+    cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
 
     switch (dtype) {
         case Dtype::Float32: {
