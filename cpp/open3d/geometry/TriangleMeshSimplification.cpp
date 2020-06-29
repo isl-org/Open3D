@@ -220,8 +220,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     }
 
     //  connect vertices
-    std::unordered_set<Eigen::Vector3i,
-                       utility::hash_eigen<Eigen::Vector3i>>
+    std::unordered_set<Eigen::Vector3i, utility::hash_eigen<Eigen::Vector3i>>
             triangles;
     for (const auto& triangle : triangles_) {
         int vidx0 = voxel_vert_ind[GetVoxelIdx(vertices_[triangle(0)])];

@@ -67,8 +67,7 @@ TetraMesh TetraMesh::operator+(const TetraMesh &mesh) const {
 TetraMesh &TetraMesh::RemoveDuplicatedVertices() {
     typedef decltype(tetras_)::value_type::Scalar Index;
     typedef std::tuple<double, double, double> Coordinate3;
-    std::unordered_map<Coordinate3, size_t,
-                       utility::hash_tuple<Coordinate3>>
+    std::unordered_map<Coordinate3, size_t, utility::hash_tuple<Coordinate3>>
             point_to_old_index;
     std::vector<Index> index_old_to_new(vertices_.size());
     size_t old_vertex_num = vertices_.size();

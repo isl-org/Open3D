@@ -665,8 +665,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
 
 TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     typedef std::tuple<double, double, double> Coordinate3;
-    std::unordered_map<Coordinate3, size_t,
-                       utility::hash_tuple<Coordinate3>>
+    std::unordered_map<Coordinate3, size_t, utility::hash_tuple<Coordinate3>>
             point_to_old_index;
     std::vector<int> index_old_to_new(vertices_.size());
     bool has_vert_normal = HasVertexNormals();
@@ -1213,8 +1212,7 @@ Eigen::Vector4d TriangleMesh::GetTrianglePlane(size_t triangle_idx) const {
 }
 
 int TriangleMesh::EulerPoincareCharacteristic() const {
-    std::unordered_set<Eigen::Vector2i,
-                       utility::hash_eigen<Eigen::Vector2i>>
+    std::unordered_set<Eigen::Vector2i, utility::hash_eigen<Eigen::Vector2i>>
             edges;
     for (auto triangle : triangles_) {
         edges.emplace(GetOrderedEdge(triangle(0), triangle(1)));

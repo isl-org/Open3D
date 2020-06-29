@@ -80,8 +80,7 @@ void ScalableTSDFVolume::Integrate(
     auto pointcloud = geometry::PointCloud::CreateFromDepthImage(
             image.depth_, intrinsic, extrinsic, 1000.0, 1000.0,
             depth_sampling_stride_);
-    std::unordered_set<Eigen::Vector3i,
-                       utility::hash_eigen<Eigen::Vector3i>>
+    std::unordered_set<Eigen::Vector3i, utility::hash_eigen<Eigen::Vector3i>>
             touched_volume_units_;
     for (const auto &point : pointcloud->points_) {
         auto min_bound = LocateVolumeUnit(
