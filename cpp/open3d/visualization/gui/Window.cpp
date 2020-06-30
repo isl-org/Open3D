@@ -51,8 +51,6 @@
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
-using namespace open3d::visualization::gui::util;
-
 // ----------------------------------------------------------------------------
 namespace open3d {
 namespace visualization {
@@ -596,8 +594,7 @@ Widget::DrawResult DrawChild(DrawContext& dc,
         ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
         if (bg_color_not_default) {
             auto& bgColor = child->GetBackgroundColor();
-            ImGui::PushStyleColor(ImGuiCol_WindowBg,
-                                  util::colorToImgui(bgColor));
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, colorToImgui(bgColor));
         }
         ImGui::Begin(name, nullptr, flags);
     } else {
