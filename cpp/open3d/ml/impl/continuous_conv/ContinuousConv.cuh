@@ -31,8 +31,8 @@
 #include <cutlass/gemm/gemm.h>
 #include <cutlass/gemm/sgemm_traits.h>
 
-#include "open3d/ml/ContinuousConv/Detail/ContinuousConvCUDAKernels.h"
-#include "open3d/ml/Misc/Detail/MemoryAllocation.h"
+#include "open3d/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
+#include "open3d/ml/impl/misc/MemoryAllocation.h"
 #include "open3d/utility/Helper.h"
 
 using open3d::utility::DivUp;

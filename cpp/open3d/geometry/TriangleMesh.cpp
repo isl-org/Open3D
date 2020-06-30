@@ -665,8 +665,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
 
 TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     typedef std::tuple<double, double, double> Coordinate3;
-    std::unordered_map<Coordinate3, size_t,
-                       utility::hash_tuple::hash<Coordinate3>>
+    std::unordered_map<Coordinate3, size_t, utility::hash_tuple<Coordinate3>>
             point_to_old_index;
     std::vector<int> index_old_to_new(vertices_.size());
     bool has_vert_normal = HasVertexNormals();
@@ -714,7 +713,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
                 "that are not handled in this function");
     }
     typedef std::tuple<int, int, int> Index3;
-    std::unordered_map<Index3, size_t, utility::hash_tuple::hash<Index3>>
+    std::unordered_map<Index3, size_t, utility::hash_tuple<Index3>>
             triangle_to_old_index;
     bool has_tri_normal = HasTriangleNormals();
     size_t old_triangle_num = triangles_.size();
@@ -996,11 +995,11 @@ template <typename F>
 bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
                           F &swap) {
     std::unordered_map<Eigen::Vector2i, Eigen::Vector2i,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             edge_to_orientation;
     std::unordered_set<int> unvisited_triangles;
     std::unordered_map<Eigen::Vector2i, std::unordered_set<int>,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             adjacent_triangles;
     std::queue<int> triangle_queue;
 
@@ -1115,10 +1114,10 @@ bool TriangleMesh::OrientTriangles() {
 
 std::unordered_map<Eigen::Vector2i,
                    std::vector<int>,
-                   utility::hash_eigen::hash<Eigen::Vector2i>>
+                   utility::hash_eigen<Eigen::Vector2i>>
 TriangleMesh::GetEdgeToTrianglesMap() const {
     std::unordered_map<Eigen::Vector2i, std::vector<int>,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             trias_per_edge;
     auto AddEdge = [&](int vidx0, int vidx1, int tidx) {
         trias_per_edge[GetOrderedEdge(vidx0, vidx1)].push_back(tidx);
@@ -1134,10 +1133,10 @@ TriangleMesh::GetEdgeToTrianglesMap() const {
 
 std::unordered_map<Eigen::Vector2i,
                    std::vector<int>,
-                   utility::hash_eigen::hash<Eigen::Vector2i>>
+                   utility::hash_eigen<Eigen::Vector2i>>
 TriangleMesh::GetEdgeToVerticesMap() const {
     std::unordered_map<Eigen::Vector2i, std::vector<int>,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             trias_per_edge;
     auto AddEdge = [&](int vidx0, int vidx1, int vidx2) {
         trias_per_edge[GetOrderedEdge(vidx0, vidx1)].push_back(vidx2);
@@ -1213,8 +1212,7 @@ Eigen::Vector4d TriangleMesh::GetTrianglePlane(size_t triangle_idx) const {
 }
 
 int TriangleMesh::EulerPoincareCharacteristic() const {
-    std::unordered_set<Eigen::Vector2i,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+    std::unordered_set<Eigen::Vector2i, utility::hash_eigen<Eigen::Vector2i>>
             edges;
     for (auto triangle : triangles_) {
         edges.emplace(GetOrderedEdge(triangle(0), triangle(1)));
@@ -1630,15 +1628,15 @@ std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
 
 std::unordered_map<Eigen::Vector2i,
                    double,
-                   utility::hash_eigen::hash<Eigen::Vector2i>>
+                   utility::hash_eigen<Eigen::Vector2i>>
 TriangleMesh::ComputeEdgeWeightsCot(
         const std::unordered_map<Eigen::Vector2i,
                                  std::vector<int>,
-                                 utility::hash_eigen::hash<Eigen::Vector2i>>
+                                 utility::hash_eigen<Eigen::Vector2i>>
                 &edges_to_vertices,
         double min_weight) const {
     std::unordered_map<Eigen::Vector2i, double,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             weights;
     for (const auto &edge_v2s : edges_to_vertices) {
         Eigen::Vector2i edge = edge_v2s.first;

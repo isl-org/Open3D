@@ -26,8 +26,8 @@
 
 #define EIGEN_USE_GPU
 #include "ContinuousConvOpKernel.h"
-#include "open3d/ml/ContinuousConv/Detail/ContinuousConv.cuh"
 #include "open3d/ml/Helper.h"
+#include "open3d/ml/impl/continuous_conv/ContinuousConv.cuh"
 
 using namespace open3d;
 using namespace open3d::ml;

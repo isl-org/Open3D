@@ -176,10 +176,10 @@ void PhongShader::SetLighting(const ViewControl &view,
                 option.light_ambient_color_.cast<GLfloat>();
         light_ambient_data_(3) = 1.0f;
     } else {
-        light_diffuse_power_data_ = GLHelper::GLVector4f::Zero();
-        light_specular_power_data_ = GLHelper::GLVector4f::Zero();
-        light_specular_shininess_data_ = GLHelper::GLVector4f::Ones();
-        light_ambient_data_ = GLHelper::GLVector4f(1.0f, 1.0f, 1.0f, 1.0f);
+        light_diffuse_power_data_ = gl_util::GLVector4f::Zero();
+        light_specular_power_data_ = gl_util::GLVector4f::Zero();
+        light_specular_shininess_data_ = gl_util::GLVector4f::Ones();
+        light_ambient_data_ = gl_util::GLVector4f(1.0f, 1.0f, 1.0f, 1.0f);
     }
 }
 

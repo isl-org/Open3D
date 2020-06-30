@@ -52,7 +52,7 @@ enum class BinaryEWOpCode {
     Ne,
 };
 
-extern const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class::hash>
+extern const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class>
         s_boolean_binary_ew_op_codes;
 
 void BinaryEW(const Tensor& lhs,

@@ -28,7 +28,7 @@
 
 #include <cub/cub.cuh>
 
-#include "open3d/ml/Misc/Detail/MemoryAllocation.h"
+#include "open3d/ml/impl/misc/MemoryAllocation.h"
 #include "open3d/utility/Helper.h"
 
 namespace open3d {

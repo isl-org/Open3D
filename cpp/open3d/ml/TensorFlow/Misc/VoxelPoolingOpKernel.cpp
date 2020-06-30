@@ -25,10 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "VoxelPoolingOpKernel.h"
-#include "open3d/ml/Misc/Detail/VoxelPooling.h"
+#include "open3d/ml/impl/misc/VoxelPooling.h"
 
 using namespace open3d::ml::detail;
-using namespace open3d::ml::detail::voxel_pooling;
 using namespace voxel_pooling_opkernel;
 using namespace tensorflow;
 

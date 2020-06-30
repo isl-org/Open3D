@@ -40,7 +40,7 @@
 
 namespace open3d {
 namespace visualization {
-namespace GLHelper {
+namespace gl_util {
 
 const static std::unordered_map<int, GLenum> texture_format_map_ = {
         {1, GL_RED}, {3, GL_RGB}, {4, GL_RGBA}};
@@ -79,6 +79,6 @@ Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
 
 int ColorCodeToPickIndex(const Eigen::Vector4i &color);
 
-}  // namespace GLHelper
+}  // namespace gl_util
 }  // namespace visualization
 }  // namespace open3d

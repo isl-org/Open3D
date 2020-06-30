@@ -36,8 +36,6 @@ namespace open3d {
 namespace ml {
 namespace detail {
 
-namespace voxel_pooling {
-
 enum AccumulationFn { AVERAGE = 0, NEAREST_NEIGHBOR, MAX, CENTER };
 
 template <class TReal,
@@ -297,7 +295,7 @@ void _VoxelPooling(size_t num_inp,
     typedef Eigen::Array<TFeat, Eigen::Dynamic, 1> FeatureVec_t;
 
     std::unordered_map<Eigen::Vector3i, ACCUMULATOR,
-                       open3d::utility::hash_eigen::hash<Eigen::Vector3i>>
+                       open3d::utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_accpoint;
 
     Vec3_t voxel_center;
@@ -365,7 +363,7 @@ void _VoxelPoolingBackprop(TFeat* features_backprop,
     tbb::task_group task_group;
 
     std::unordered_map<Eigen::Vector3i, ACCUMULATOR,
-                       open3d::utility::hash_eigen::hash<Eigen::Vector3i>>
+                       open3d::utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_accpoint;
 
     task_group.run([&] {
@@ -390,7 +388,7 @@ void _VoxelPoolingBackprop(TFeat* features_backprop,
     });
 
     std::unordered_map<Eigen::Vector3i, size_t,
-                       open3d::utility::hash_eigen::hash<Eigen::Vector3i>>
+                       open3d::utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_gradindex;
 
     task_group.run([&] {
@@ -457,8 +455,6 @@ void _VoxelPoolingBackprop(TFeat* features_backprop,
     }
 }
 
-}  // namespace voxel_pooling
-
 /// Pooling operation for point clouds. Aggregates points that are inside the
 /// same voxel.
 ///
@@ -510,9 +506,8 @@ void VoxelPooling(size_t num_inp,
                   const TFeat* inp_features,
                   TReal voxel_size,
                   OUTPUT_ALLOCATOR& output_allocator,
-                  voxel_pooling::AccumulationFn position_fn,
-                  voxel_pooling::AccumulationFn feature_fn) {
-    using namespace voxel_pooling;
+                  AccumulationFn position_fn,
+                  AccumulationFn feature_fn) {
 #define CALL_TEMPLATE(POS_FN, FEAT_FN)                                         \
     if (POS_FN == position_fn && FEAT_FN == feature_fn) {                      \
         _VoxelPooling<TReal, TFeat,                                            \
@@ -559,9 +554,8 @@ void VoxelPoolingBackprop(TFeat* features_backprop,
                           const TReal* const pooled_positions,
                           const TFeat* const pooled_features_gradient,
                           TReal voxel_size,
-                          voxel_pooling::AccumulationFn position_fn,
-                          voxel_pooling::AccumulationFn feature_fn) {
-    using namespace voxel_pooling;
+                          AccumulationFn position_fn,
+                          AccumulationFn feature_fn) {
 #define CALL_TEMPLATE(POS_FN, FEAT_FN)                                        \
     if (POS_FN == position_fn && FEAT_FN == feature_fn) {                     \
         _VoxelPoolingBackprop<                                                \

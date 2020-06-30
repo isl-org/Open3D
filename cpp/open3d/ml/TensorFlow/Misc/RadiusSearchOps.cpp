@@ -48,7 +48,7 @@ REGISTER_OP("Open3DRadiusSearch")
         .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
-            using namespace open3d::ml::shape_checking;
+            using namespace open3d::ml::op_util;
             ShapeHandle points_shape, queries_shape, radii_shape,
                     points_row_splits_shape, queries_row_splits_shape,
                     neighbors_index_shape, neighbors_row_splits_shape,

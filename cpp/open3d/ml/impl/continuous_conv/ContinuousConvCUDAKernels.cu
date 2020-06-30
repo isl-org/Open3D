@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/ContinuousConv/Detail/ContinuousConvCUDAKernels.h"
+#include "open3d/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 
 #include "open3d/utility/Helper.h"
 

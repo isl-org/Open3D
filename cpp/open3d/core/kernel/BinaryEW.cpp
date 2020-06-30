@@ -36,7 +36,7 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class::hash>
+const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class>
         s_boolean_binary_ew_op_codes{
                 BinaryEWOpCode::LogicalAnd, BinaryEWOpCode::LogicalOr,
                 BinaryEWOpCode::LogicalXor, BinaryEWOpCode::Gt,
