@@ -143,7 +143,7 @@ void pybind_color_map_classes(py::module &m) {
             py::init([](int maximum_iteration, double maximum_allowable_depth,
                         double depth_threshold_for_visibility_check,
                         double depth_threshold_for_discontinuity_check,
-                        double half_dilation_kernel_size_for_discontinuity_map,
+                        int half_dilation_kernel_size_for_discontinuity_map,
                         int image_boundary_margin,
                         int invisible_vertex_color_knn) {
                 auto option = new pipelines::color_map::RigidOptimizerOption;
@@ -179,7 +179,7 @@ void pybind_color_map_classes(py::module &m) {
                         int maximum_iteration, double maximum_allowable_depth,
                         double depth_threshold_for_visibility_check,
                         double depth_threshold_for_discontinuity_check,
-                        double half_dilation_kernel_size_for_discontinuity_map,
+                        int half_dilation_kernel_size_for_discontinuity_map,
                         int image_boundary_margin,
                         int invisible_vertex_color_knn) {
                 auto option = new pipelines::color_map::NonRigidOptimizerOption;
