@@ -58,6 +58,9 @@
 #include "open3d/visualization/rendering/RendererStructs.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
+#include "open3d/visualization/visualizer/GuiSettingsModel.h"
+#include "open3d/visualization/visualizer/GuiSettingsView.h"
+#include "open3d/visualization/visualizer/GuiWidgets.h"
 
 #define LOAD_IN_NEW_WINDOW 0
 
@@ -285,16 +288,6 @@ bool MeshHasUniformColor(const geometry::MeshBase &mesh) {
     return ColorArrayIsUniform(mesh.vertex_colors_);
 };
 
-std::shared_ptr<gui::Slider> MakeSlider(const gui::Slider::Type type,
-                                        const double min,
-                                        const double max,
-                                        const double value) {
-    auto slider = std::make_shared<gui::Slider>(type);
-    slider->SetLimits(min, max);
-    slider->SetValue(value);
-    return slider;
-}
-
 //----
 class DrawTimeLabel : public gui::Label {
     using Super = Label;
@@ -321,93 +314,7 @@ private:
     gui::Window *window_;
 };
 
-//----
-class SmallButton : public gui::Button {
-    using Super = Button;
-
-public:
-    explicit SmallButton(const char *title) : Button(title) {}
-
-    gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
-        auto em = theme.font_size;
-        auto size = Super::CalcPreferredSize(theme);
-        return gui::Size(size.width - em, 1.2 * em);
-    }
-};
-
-//----
-class SmallToggleButton : public SmallButton {
-    using Super = SmallButton;
-
-public:
-    explicit SmallToggleButton(const char *title) : SmallButton(title) {
-        SetToggleable(true);
-    }
-};
-
 }  // namespace
-
-struct LightingProfile {
-    std::string name;
-    double ibl_intensity;
-    double sun_intensity;
-    Eigen::Vector3f sun_dir;
-    Eigen::Vector3f sun_color = {1.0f, 1.0f, 1.0f};
-    Scene::Transform ibl_rotation = Scene::Transform::Identity();
-    bool ibl_enabled = true;
-    bool use_default_ibl = false;
-    bool sun_enabled = true;
-};
-
-static const std::string DEFAULT_IBL = "default";
-static const std::string DEFAULT_MATERIAL_NAME = "Polished ceramic";
-static const std::string MATERIAL_FROM_FILE_NAME =
-        "Material from file [default]";
-static const std::string POINT_CLOUD_PROFILE_NAME =
-        "Cloudy day (no direct sun)";
-static const bool DEFAULT_SHOW_SKYBOX = false;
-static const bool DEFAULT_SHOW_AXES = false;
-
-static const std::vector<LightingProfile> g_lighting_profiles = {
-        {.name = "Bright day with sun at +Y [default]",
-         .ibl_intensity = 45000,
-         .sun_intensity = 45000,
-         .sun_dir = {0.577f, -0.577f, -0.577f}},
-        {.name = "Bright day with sun at -Y",
-         .ibl_intensity = 45000,
-         .sun_intensity = 45000,
-         .sun_dir = {0.577f, 0.577f, 0.577f},
-         .sun_color = {1.0f, 1.0f, 1.0f},
-         .ibl_rotation = Scene::Transform(
-                 Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
-        {.name = "Bright day with sun at +Z",
-         .ibl_intensity = 45000,
-         .sun_intensity = 45000,
-         .sun_dir = {0.577f, 0.577f, -0.577f}},
-        {.name = "Less bright day with sun at +Y",
-         .ibl_intensity = 35000,
-         .sun_intensity = 50000,
-         .sun_dir = {0.577f, -0.577f, -0.577f}},
-        {.name = "Less bright day with sun at -Y",
-         .ibl_intensity = 35000,
-         .sun_intensity = 50000,
-         .sun_dir = {0.577f, 0.577f, 0.577f},
-         .sun_color = {1.0f, 1.0f, 1.0f},
-         .ibl_rotation = Scene::Transform(
-                 Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
-        {.name = "Less bright day with sun at +Z",
-         .ibl_intensity = 35000,
-         .sun_intensity = 50000,
-         .sun_dir = {0.577f, 0.577f, -0.577f}},
-        {.name = POINT_CLOUD_PROFILE_NAME,
-         .ibl_intensity = 60000,
-         .sun_intensity = 50000,
-         .sun_dir = {0.577f, -0.577f, -0.577f},
-         .sun_color = {1.0f, 1.0f, 1.0f},
-         .ibl_rotation = Scene::Transform::Identity(),
-         .ibl_enabled = true,
-         .use_default_ibl = true,
-         .sun_enabled = false}};
 
 enum MenuId {
     FILE_OPEN,
@@ -425,26 +332,6 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
 
-    struct LitMaterial {
-        visualization::MaterialInstanceHandle handle;
-        Eigen::Vector3f base_color = {0.9f, 0.9f, 0.9f};
-        float metallic = 0.f;
-        float roughness = 0.7;
-        float reflectance = 0.5f;
-        float clear_coat = 0.2f;
-        float clear_coat_roughness = 0.2f;
-        float anisotropy = 0.f;
-        float point_size = 5.f;
-    };
-
-    struct UnlitMaterial {
-        visualization::MaterialInstanceHandle handle;
-        // The base color should NOT be {1, 1, 1}, because then the
-        // model will be invisible against the default white background.
-        Eigen::Vector3f base_color = {0.9f, 0.9f, 0.9f};
-        float point_size = 5.f;
-    };
-
     struct TextureMaps {
         TextureHandle albedo_map = FilamentResourceManager::kDefaultTexture;
         TextureHandle normal_map = FilamentResourceManager::kDefaultNormalMap;
@@ -460,470 +347,112 @@ struct GuiVisualizer::Impl {
         TextureHandle anisotropy_map = FilamentResourceManager::kDefaultTexture;
     };
 
-    std::map<std::string, LitMaterial> prefab_materials_ = {
-            {DEFAULT_MATERIAL_NAME, {}},
-            {"Metal (rougher)",
-             {visualization::MaterialInstanceHandle::kBad,
-              {1.0f, 1.0f, 1.0f},
-              1.0f,
-              0.5f,
-              0.9f,
-              0.0f,
-              0.0f,
-              0.0f,
-              3.0f}},
-            {"Metal (smoother)",
-             {visualization::MaterialInstanceHandle::kBad,
-              {1.0f, 1.0f, 1.0f},
-              1.0f,
-              0.3f,
-              0.9f,
-              0.0f,
-              0.0f,
-              0.0f,
-              3.0f}},
-            {"Plastic",
-             {visualization::MaterialInstanceHandle::kBad,
-              {1.0f, 1.0f, 1.0f},
-              0.0f,
-              0.5f,
-              0.5f,
-              0.5f,
-              0.2f,
-              0.0f,
-              3.0f}},
-            {"Glazed ceramic",
-             {visualization::MaterialInstanceHandle::kBad,
-              {1.0f, 1.0f, 1.0f},
-              0.0f,
-              0.5f,
-              0.9f,
-              1.0f,
-              0.1f,
-              0.0f,
-              3.0f}},
-            {"Clay",
-             {visualization::MaterialInstanceHandle::kBad,
-              {0.7725f, 0.7725f, 0.7725f},
-              0.0f,
-              1.0f,
-              0.5f,
-              0.1f,
-              0.287f,
-              0.0f,
-              3.0f}},
-    };
-
-    struct Materials {
-        LitMaterial lit;
-        UnlitMaterial unlit;
-        TextureMaps maps;
-    };
-    visualization::MaterialHandle lit_material_;
-    visualization::MaterialHandle unlit_material_;
-
     struct Settings {
-        visualization::IndirectLightHandle ibl;
-        visualization::SkyboxHandle sky;
+        MaterialHandle lit_template;
+        MaterialHandle unlit_template;
 
+        IndirectLightHandle ibl;
+        SkyboxHandle sky;
+        MaterialInstanceHandle lit;
+        MaterialInstanceHandle unlit;
+        TextureMaps maps;
+
+        // geometry -> material  (entry exists if mesh HasMaterials())
+        std::map<GeometryHandle, GuiSettingsModel::LitMaterial> loaded_materials_;
+
+        GuiSettingsModel model_;
         std::shared_ptr<gui::Vert> wgt_base;
-        std::shared_ptr<gui::Checkbox> wgt_show_axes;
-        std::shared_ptr<gui::ColorEdit> wgt_bg_color;
         std::shared_ptr<gui::Button> wgt_mouse_arcball;
         std::shared_ptr<gui::Button> wgt_mouse_fly;
+        std::shared_ptr<gui::Button> wgt_mouse_model;
         std::shared_ptr<gui::Button> wgt_mouse_sun;
         std::shared_ptr<gui::Button> wgt_mouse_ibl;
-        std::shared_ptr<gui::Button> wgt_mouse_model;
-        std::shared_ptr<gui::Combobox> wgt_lighting_profile;
-        std::shared_ptr<gui::CollapsableVert> wgtAdvanced;
-        std::shared_ptr<gui::Checkbox> wgt_ibl_enabled;
-        std::shared_ptr<gui::Checkbox> wgt_sky_enabled;
-        std::shared_ptr<gui::Checkbox> wgt_directional_enabled;
-        std::shared_ptr<gui::Combobox> wgt_ibls;
-        std::shared_ptr<gui::Slider> wgt_ibl_intensity;
-        std::shared_ptr<gui::Slider> wgt_sun_intensity;
-        std::shared_ptr<gui::VectorEdit> wgt_sun_dir;
-        std::shared_ptr<gui::ColorEdit> wgt_sun_color;
-
-        enum MaterialType {
-            LIT = 0,
-            UNLIT,
-            NORMAL_MAP,
-            DEPTH,
-        };
-
-        MaterialType selected_type = LIT;
-        Materials current_materials;
-        // geometry index -> material  (entry exists if mesh HasMaterials())
-        std::map<int, LitMaterial> loaded_materials_;
-        std::shared_ptr<gui::Combobox> wgt_material_type;
-
-        std::shared_ptr<gui::Combobox> wgt_prefab_material;
-        std::shared_ptr<gui::ColorEdit> wgt_material_color;
-        std::shared_ptr<gui::Button> wgt_reset_material_color;
-        std::shared_ptr<gui::Slider> wgt_point_size;
-
-        bool user_has_changed_color = false;
-        bool user_has_changed_lighting = false;
-
-        void SetCustomProfile() {
-            wgt_lighting_profile->SetSelectedIndex(g_lighting_profiles.size());
-            user_has_changed_lighting = true;
-        }
+        std::shared_ptr<GuiSettingsView> view_;
     } settings_;
 
-    void SetMaterialsToDefault(visualization::Renderer &renderer) {
+    void InitializeMaterials(Renderer &renderer,
+                             const std::string& resource_path) {
+        auto lit_path = resource_path + "/defaultLit.filamat";
+        settings_.lit_template = renderer.AddMaterial(
+                visualization::ResourceLoadRequest(lit_path.data()));
+
+        auto unlit_path = resource_path + "/defaultUnlit.filamat";
+        settings_.unlit_template = renderer.AddMaterial(
+                visualization::ResourceLoadRequest(unlit_path.data()));
+
+        Eigen::Vector3f grey = {0.5f, 0.5f, 0.5f};
+        settings_.lit = renderer.ModifyMaterial(settings_.lit_template)
+                                .SetColor("baseColor", grey)
+                                .Finish();
+        settings_.unlit = renderer.ModifyMaterial(settings_.unlit_template)
+                                .SetColor("baseColor", grey)
+                                .Finish();
+
+        auto &defaults = settings_.model_.GetCurrentMaterials();
+
+        settings_.maps.albedo_map = FilamentResourceManager::kDefaultTexture;
+        settings_.maps.normal_map = FilamentResourceManager::kDefaultNormalMap;
+        settings_.maps.ambient_occlusion_map =
+                FilamentResourceManager::kDefaultTexture;
+        settings_.maps.roughness_map = FilamentResourceManager::kDefaultTexture;
+        settings_.maps.metallic_map = FilamentResourceManager::kDefaultTexture;
+        settings_.maps.reflectance_map =
+                FilamentResourceManager::kDefaultTexture;
+        settings_.maps.clear_coat_map = FilamentResourceManager::kDefaultTexture;
+        settings_.maps.clear_coat_roughness_map =
+                FilamentResourceManager::kDefaultTexture;
+        settings_.maps.anisotropy_map = FilamentResourceManager::kDefaultTexture;
+
+        UpdateMaterials(renderer, defaults);
+    }
+
+    void SetMaterialsToDefault() {
         settings_.loaded_materials_.clear();
-        if (settings_.wgt_prefab_material) {
-            settings_.wgt_prefab_material->RemoveItem(
-                    MATERIAL_FROM_FILE_NAME.c_str());
-        }
+        settings_.view_->ShowFileMaterialEntry(false);
 
-        Materials defaults;
-        if (settings_.user_has_changed_color) {
-            defaults.unlit.base_color =
-                    settings_.current_materials.unlit.base_color;
-            defaults.lit.base_color =
-                    settings_.current_materials.lit.base_color;
-        }
-        defaults.maps.albedo_map = FilamentResourceManager::kDefaultTexture;
-        defaults.maps.normal_map = FilamentResourceManager::kDefaultNormalMap;
-        defaults.maps.ambient_occlusion_map =
+        settings_.maps.albedo_map = FilamentResourceManager::kDefaultTexture;
+        settings_.maps.normal_map = FilamentResourceManager::kDefaultNormalMap;
+        settings_.maps.ambient_occlusion_map =
                 FilamentResourceManager::kDefaultTexture;
-        defaults.maps.roughness_map = FilamentResourceManager::kDefaultTexture;
-        defaults.maps.metallic_map = FilamentResourceManager::kDefaultTexture;
-        defaults.maps.reflectance_map =
+        settings_.maps.roughness_map = FilamentResourceManager::kDefaultTexture;
+        settings_.maps.metallic_map = FilamentResourceManager::kDefaultTexture;
+        settings_.maps.reflectance_map =
                 FilamentResourceManager::kDefaultTexture;
-        defaults.maps.clear_coat_map = FilamentResourceManager::kDefaultTexture;
-        defaults.maps.clear_coat_roughness_map =
+        settings_.maps.clear_coat_map = FilamentResourceManager::kDefaultTexture;
+        settings_.maps.clear_coat_roughness_map =
                 FilamentResourceManager::kDefaultTexture;
-        defaults.maps.anisotropy_map = FilamentResourceManager::kDefaultTexture;
-        settings_.current_materials = defaults;
+        settings_.maps.anisotropy_map = FilamentResourceManager::kDefaultTexture;
 
-        auto lit_handle = renderer.AddMaterialInstance(lit_material_);
-        settings_.current_materials.lit.handle =
-                renderer.ModifyMaterial(lit_handle)
-                        .SetColor("baseColor", defaults.lit.base_color)
-                        .SetParameter("baseRoughness", defaults.lit.roughness)
-                        .SetParameter("baseMetallic", defaults.lit.metallic)
-                        .SetParameter("reflectance", defaults.lit.reflectance)
-                        .SetParameter("clearCoat", defaults.lit.clear_coat)
-                        .SetParameter("clearCoatRoughness",
-                                      defaults.lit.clear_coat_roughness)
-                        .SetParameter("anisotropy", defaults.lit.anisotropy)
-                        .SetParameter("pointSize", defaults.lit.point_size)
-                        .SetTexture("albedo", defaults.maps.albedo_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("normalMap", defaults.maps.normal_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("ambientOcclusionMap",
-                                    defaults.maps.ambient_occlusion_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("roughnessMap", defaults.maps.roughness_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("metallicMap", defaults.maps.metallic_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("reflectanceMap",
-                                    defaults.maps.reflectance_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("clearCoatMap",
-                                    defaults.maps.clear_coat_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("clearCoatRoughnessMap",
-                                    defaults.maps.clear_coat_roughness_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("anisotropyMap",
-                                    defaults.maps.anisotropy_map,
-                                    TextureSamplerParameters::Pretty())
-                        .Finish();
-
-        auto unlit_handle = renderer.AddMaterialInstance(unlit_material_);
-        settings_.current_materials.unlit.handle =
-                renderer.ModifyMaterial(unlit_handle)
-                        .SetColor("baseColor", defaults.unlit.base_color)
-                        .SetParameter("pointSize", defaults.unlit.point_size)
-                        .SetTexture("albedo", defaults.maps.albedo_map,
-                                    TextureSamplerParameters::Pretty())
-                        .Finish();
-
-        if (settings_.wgt_prefab_material) {
-            settings_.wgt_prefab_material->SetSelectedValue(
-                    DEFAULT_MATERIAL_NAME.c_str());
-        }
-        if (settings_.wgt_material_color) {
-            Eigen::Vector3f color =
-                    (settings_.selected_type == Settings::MaterialType::LIT
-                             ? defaults.lit.base_color
-                             : defaults.unlit.base_color);
-            settings_.wgt_material_color->SetValue(color.x(), color.y(),
-                                                   color.z());
-        }
+        settings_.model_.SetMaterialsToDefault();
+        // model's OnChanged callback will get called (if set), which will
+        // update everything.
     }
 
-    void SetMaterialsToCurrentSettings(visualization::Renderer &renderer,
-                                       LitMaterial material,
-                                       TextureMaps maps) {
-        // Update the material settings
-        settings_.current_materials.lit.base_color = material.base_color;
-        settings_.current_materials.lit.roughness = material.roughness;
-        settings_.current_materials.lit.metallic = material.metallic;
-        settings_.current_materials.lit.reflectance = material.reflectance;
-        settings_.current_materials.lit.clear_coat = material.clear_coat;
-        settings_.current_materials.lit.clear_coat_roughness =
-                material.clear_coat_roughness;
-        settings_.current_materials.lit.anisotropy = material.anisotropy;
-        settings_.current_materials.unlit.base_color = material.base_color;
+    void SetLoadedMaterial(Renderer &renderer,
+                           GuiSettingsModel::LitMaterial material,
+                           TextureMaps maps) {
+        settings_.maps = maps;
 
-        // Update maps
-        settings_.current_materials.maps = maps;
+        GuiSettingsModel::Materials materials;
+        materials.lit = material;
+        materials.unlit.base_color = material.base_color;
 
-        // update materials
-        settings_.current_materials.lit.handle =
-                renderer.ModifyMaterial(settings_.current_materials.lit.handle)
-                        .SetColor("baseColor", material.base_color)
-                        .SetParameter("baseRoughness", material.roughness)
-                        .SetParameter("baseMetallic", material.metallic)
-                        .SetParameter("reflectance", material.reflectance)
-                        .SetParameter("clearCoat", material.clear_coat)
-                        .SetParameter("clearCoatRoughness",
-                                      material.clear_coat_roughness)
-                        .SetParameter("anisotropy", material.anisotropy)
-                        .SetTexture("albedo", maps.albedo_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("normalMap", maps.normal_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("ambientOcclusionMap",
-                                    maps.ambient_occlusion_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("roughnessMap", maps.roughness_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("metallicMap", maps.metallic_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("reflectanceMap", maps.reflectance_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("clearCoatMap", maps.clear_coat_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("clearCoatRoughnessMap",
-                                    maps.clear_coat_roughness_map,
-                                    TextureSamplerParameters::Pretty())
-                        .SetTexture("anisotropyMap", maps.anisotropy_map,
-                                    TextureSamplerParameters::Pretty())
-                        .Finish();
-        settings_.current_materials.unlit.handle =
-                renderer.ModifyMaterial(
-                                settings_.current_materials.unlit.handle)
-                        .SetColor("baseColor", material.base_color)
-                        .SetTexture("albedo", maps.albedo_map,
-                                    TextureSamplerParameters::Pretty())
-                        .Finish();
+        settings_.model_.SetCurrentMaterials(materials, GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
+        // model's OnChanged callback will get called (if set), which will
+        // update everything.
     }
 
-    void SetMaterialType(Impl::Settings::MaterialType type) {
-        using MaterialType = Impl::Settings::MaterialType;
-        using ViewMode = visualization::View::Mode;
-
-        auto render_scene = scene_wgt_->GetScene()->GetScene();
-        auto view = scene_wgt_->GetRenderView();
-        settings_.selected_type = type;
-        settings_.wgt_material_type->SetSelectedIndex(int(type));
-
-        bool is_lit = (type == MaterialType::LIT);
-        settings_.wgt_prefab_material->SetEnabled(is_lit);
-
-        switch (type) {
-            case MaterialType::LIT: {
-                view->SetMode(ViewMode::Color);
-                for (const auto &handle : scene_wgt_->GetScene()->GetModel()) {
-                    auto mat = settings_.current_materials.lit.handle;
-                    render_scene->AssignMaterial(handle, mat);
-                }
-                settings_.wgt_material_color->SetEnabled(true);
-                gui::Color color(
-                        settings_.current_materials.lit.base_color.x(),
-                        settings_.current_materials.lit.base_color.y(),
-                        settings_.current_materials.lit.base_color.z());
-                settings_.wgt_material_color->SetValue(color);
-                settings_.wgt_reset_material_color->SetEnabled(
-                        settings_.user_has_changed_color);
-                break;
-            }
-            case MaterialType::UNLIT: {
-                view->SetMode(ViewMode::Color);
-                for (const auto &handle : scene_wgt_->GetScene()->GetModel()) {
-                    auto mat = settings_.current_materials.unlit.handle;
-                    render_scene->AssignMaterial(handle, mat);
-                }
-                settings_.wgt_material_color->SetEnabled(true);
-                gui::Color color(
-                        settings_.current_materials.unlit.base_color.x(),
-                        settings_.current_materials.unlit.base_color.y(),
-                        settings_.current_materials.unlit.base_color.z());
-                settings_.wgt_material_color->SetValue(color);
-                settings_.wgt_reset_material_color->SetEnabled(
-                        settings_.user_has_changed_color);
-                break;
-            }
-            case MaterialType::NORMAL_MAP:
-                view->SetMode(ViewMode::Normals);
-                settings_.wgt_material_color->SetEnabled(false);
-                settings_.wgt_reset_material_color->SetEnabled(false);
-                break;
-            case MaterialType::DEPTH:
-                view->SetMode(ViewMode::Depth);
-                settings_.wgt_material_color->SetEnabled(false);
-                settings_.wgt_reset_material_color->SetEnabled(false);
-                break;
-        }
-    }
-
-    visualization::MaterialInstanceHandle CreateUnlitMaterial(
-            visualization::Renderer &renderer,
-            visualization::MaterialInstanceHandle mat) {
-        auto color = settings_.wgt_material_color->GetValue();
-        Eigen::Vector3f color3(color.GetRed(), color.GetGreen(),
-                               color.GetBlue());
-        float point_size = settings_.wgt_point_size->GetDoubleValue();
-        return renderer.ModifyMaterial(mat)
-                .SetColor("baseColor", color3)
-                .SetParameter("pointSize", point_size)
-                .Finish();
-    }
-
-    visualization::MaterialInstanceHandle CreateLitMaterial(
-            visualization::Renderer &renderer,
-            visualization::MaterialInstanceHandle mat,
-            const LitMaterial &prefab) {
-        Eigen::Vector3f color;
-        if (settings_.user_has_changed_color) {
-            auto c = settings_.wgt_material_color->GetValue();
-            color = Eigen::Vector3f(c.GetRed(), c.GetGreen(), c.GetBlue());
-        } else {
-            color = prefab.base_color;
-        }
-        float point_size = settings_.wgt_point_size->GetDoubleValue();
-        return renderer.ModifyMaterial(mat)
-                .SetColor("baseColor", color)
-                .SetParameter("baseRoughness", prefab.roughness)
-                .SetParameter("baseMetallic", prefab.metallic)
-                .SetParameter("reflectance", prefab.reflectance)
-                .SetParameter("clearCoat", prefab.clear_coat)
-                .SetParameter("clearCoatRoughness", prefab.clear_coat_roughness)
-                .SetParameter("anisotropy", prefab.anisotropy)
-                .SetParameter("pointSize", point_size)
-                .Finish();
-    }
-
-    void SetMaterialByName(visualization::Renderer &renderer,
-                           const std::string &name) {
-        if (name == MATERIAL_FROM_FILE_NAME) {
-            for (size_t i = 0; i < scene_wgt_->GetScene()->GetModel().size();
-                 ++i) {
-                auto mat_desc = settings_.loaded_materials_.find(i);
-                if (mat_desc == settings_.loaded_materials_.end()) {
-                    continue;
-                }
-                auto mat = settings_.current_materials.lit.handle;
-                mat = this->CreateLitMaterial(renderer, mat, mat_desc->second);
-                scene_wgt_->GetScene()->GetScene()->AssignMaterial(
-                        scene_wgt_->GetScene()->GetModel()[i], mat);
-                settings_.current_materials.lit.handle = mat;
-            }
-            if (!settings_.user_has_changed_color &&
-                settings_.loaded_materials_.size() == 1) {
-                auto color =
-                        settings_.loaded_materials_.begin()->second.base_color;
-                settings_.wgt_material_color->SetValue(color.x(), color.y(),
-                                                       color.z());
-                settings_.current_materials.lit.base_color = color;
-            }
-        } else {
-            auto prefab_it = prefab_materials_.find(name);
-            // DEFAULT_MATERIAL_NAME may have "[default]" appended, if the model
-            // doesn't have its own material, so search again if that happened.
-            if (prefab_it == prefab_materials_.end() &&
-                name.find(DEFAULT_MATERIAL_NAME) == 0) {
-                prefab_it = prefab_materials_.find(DEFAULT_MATERIAL_NAME);
-            }
-            if (prefab_it != prefab_materials_.end()) {
-                auto &prefab = prefab_it->second;
-                if (!settings_.user_has_changed_color) {
-                    settings_.current_materials.lit.base_color =
-                            prefab.base_color;
-                    settings_.wgt_material_color->SetValue(
-                            prefab.base_color.x(), prefab.base_color.y(),
-                            prefab.base_color.z());
-                }
-                auto mat = settings_.current_materials.lit.handle;
-                mat = this->CreateLitMaterial(renderer, mat, prefab);
-                for (const auto &handle : scene_wgt_->GetScene()->GetModel()) {
-                    scene_wgt_->GetScene()->GetScene()->AssignMaterial(handle,
-                                                                       mat);
-                }
-                settings_.current_materials.lit.handle = mat;
-            }
-        }
-    }
-
-    void SetLightingProfile(visualization::Renderer &renderer,
-                            const std::string &name) {
-        for (size_t i = 0; i < g_lighting_profiles.size(); ++i) {
-            if (g_lighting_profiles[i].name == name) {
-                SetLightingProfile(renderer, g_lighting_profiles[i]);
-                settings_.wgt_lighting_profile->SetSelectedValue(name.c_str());
-                return;
-            }
-        }
-        utility::LogWarning("Could not find lighting profile '{}'", name);
-    }
-
-    void SetLightingProfile(visualization::Renderer &renderer,
-                            const LightingProfile &profile) {
-        auto *render_scene = scene_wgt_->GetScene()->GetScene();
-        if (profile.use_default_ibl) {
-            this->SetIBL(renderer, nullptr);
-            settings_.wgt_ibls->SetSelectedValue(DEFAULT_IBL.c_str());
-        }
-        if (profile.ibl_enabled) {
-            render_scene->SetIndirectLight(settings_.ibl);
-        } else {
-            render_scene->SetIndirectLight(IndirectLightHandle());
-        }
-        render_scene->SetIndirectLightIntensity(profile.ibl_intensity);
-        render_scene->SetIndirectLightRotation(profile.ibl_rotation);
-        render_scene->SetSkybox(SkyboxHandle());
-        render_scene->SetEntityEnabled(scene_wgt_->GetScene()->GetSun(),
-                                       profile.sun_enabled);
-        render_scene->SetLightIntensity(scene_wgt_->GetScene()->GetSun(),
-                                        profile.sun_intensity);
-        render_scene->SetLightDirection(scene_wgt_->GetScene()->GetSun(),
-                                        profile.sun_dir);
-        render_scene->SetLightColor(scene_wgt_->GetScene()->GetSun(),
-                                    profile.sun_color);
-        if (settings_.wgt_base) {
-            settings_.wgt_ibl_enabled->SetChecked(profile.ibl_enabled);
-            settings_.wgt_sky_enabled->SetChecked(false);
-            settings_.wgt_directional_enabled->SetChecked(profile.sun_enabled);
-            settings_.wgt_ibls->SetSelectedValue(DEFAULT_IBL.c_str());
-            settings_.wgt_ibl_intensity->SetValue(profile.ibl_intensity);
-            settings_.wgt_sun_intensity->SetValue(profile.sun_intensity);
-            settings_.wgt_sun_dir->SetValue(profile.sun_dir);
-            settings_.wgt_sun_color->SetValue(gui::Color(profile.sun_color[0],
-                                                         profile.sun_color[1],
-                                                         profile.sun_color[2]));
-        }
-    }
-
-    bool SetIBL(visualization::Renderer &renderer, const char *path) {
-        visualization::IndirectLightHandle new_ibl;
+    bool SetIBL(Renderer &renderer, const std::string& path) {
+        IndirectLightHandle new_ibl;
         std::string ibl_path;
-        if (path) {
-            new_ibl = renderer.AddIndirectLight(ResourceLoadRequest(path));
+        if (!path.empty()) {
+            new_ibl = renderer.AddIndirectLight(ResourceLoadRequest(path.c_str()));
             ibl_path = path;
         } else {
             ibl_path =
                     std::string(
                             gui::Application::GetInstance().GetResourcePath()) +
-                    "/" + DEFAULT_IBL + "_ibl.ktx";
+                    "/" + GuiSettingsModel::DEFAULT_IBL + "_ibl.ktx";
             new_ibl = renderer.AddIndirectLight(
                     ResourceLoadRequest(ibl_path.c_str()));
         }
@@ -944,7 +473,7 @@ struct GuiVisualizer::Impl {
                     settings_.sky = renderer.AddSkybox(
                             ResourceLoadRequest(ibl_path.c_str()));
                 }
-                bool is_on = settings_.wgt_sky_enabled->IsChecked();
+                bool is_on = settings_.model_.GetShowSkybox();
                 if (is_on) {
                     scene_wgt_->GetScene()->SetSkybox(settings_.sky);
                 }
@@ -965,6 +494,173 @@ struct GuiVisualizer::Impl {
         settings_.wgt_mouse_model->SetOn(mode == Controls::ROTATE_MODEL);
         settings_.wgt_mouse_sun->SetOn(mode == Controls::ROTATE_SUN);
         settings_.wgt_mouse_ibl->SetOn(mode == Controls::ROTATE_IBL);
+    }
+
+    void UpdateFromModel(Renderer &renderer, bool material_type_changed) {
+        scene_wgt_->SetBackgroundColor(settings_.model_.GetBackgroundColor());
+        auto *render_scene = scene_wgt_->GetScene()->GetScene();
+
+        if (settings_.model_.GetShowSkybox()) {
+            scene_wgt_->GetScene()->SetSkybox(settings_.sky);
+        } else {
+            scene_wgt_->GetScene()->SetSkybox(SkyboxHandle());
+        }
+        scene_wgt_->SetSkyboxHandle(settings_.sky,
+                                    settings_.model_.GetShowSkybox());
+
+        render_scene->SetEntityEnabled(scene_wgt_->GetScene()->GetAxis(),
+                                       settings_.model_.GetShowAxes());
+
+        UpdateLighting(renderer, settings_.model_.GetLighting());
+
+        auto &current_materials = settings_.model_.GetCurrentMaterials();
+        if (settings_.model_.GetCurrentMaterials().lit_name == GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+            ResetToLoadedMaterials(renderer);
+            for (auto g : scene_wgt_->GetScene()->GetModel()) {
+                auto &mods = renderer.ModifyMaterial(render_scene->GetMaterial(g))
+                                     .SetParameter("pointSize",
+                                                   current_materials.point_size);
+                if (settings_.model_.GetUserHasChangedColor()) {
+                    mods = mods.SetColor("baseColor", current_materials.lit.base_color);
+                }
+                mods.Finish();
+            }
+        } else {
+            UpdateMaterials(renderer, current_materials);
+        }
+
+        if (material_type_changed) {
+            auto *view = scene_wgt_->GetRenderView();
+            switch (settings_.model_.GetMaterialType()) {
+                case GuiSettingsModel::MaterialType::LIT: {
+                    view->SetMode(View::Mode::Color);
+                    for (const auto &handle : scene_wgt_->GetScene()->GetModel()) {
+                        render_scene->AssignMaterial(handle, settings_.lit);
+                    }
+                    break;
+                }
+                case GuiSettingsModel::MaterialType::UNLIT: {
+                    view->SetMode(View::Mode::Color);
+                    for (const auto &handle : scene_wgt_->GetScene()->GetModel()) {
+                        render_scene->AssignMaterial(handle, settings_.unlit);
+                    }
+                    break;
+                }
+                case GuiSettingsModel::MaterialType::NORMAL_MAP:
+                    view->SetMode(View::Mode::Normals);
+                    break;
+                case GuiSettingsModel::MaterialType::DEPTH:
+                    view->SetMode(View::Mode::Depth);
+                    break;
+            }
+        }
+    }
+
+private:
+    void UpdateLighting(Renderer &renderer,
+                        const GuiSettingsModel::LightingProfile& lighting) {
+        auto scene = scene_wgt_->GetScene();
+        auto *render_scene = scene->GetScene();
+        if (lighting.use_default_ibl) {
+            this->SetIBL(renderer, "");
+        }
+        if (lighting.ibl_enabled) {
+            render_scene->SetIndirectLight(settings_.ibl);
+        } else {
+            render_scene->SetIndirectLight(IndirectLightHandle());
+        }
+        render_scene->SetIndirectLightIntensity(lighting.ibl_intensity);
+        render_scene->SetIndirectLightRotation(lighting.ibl_rotation);
+        render_scene->SetEntityEnabled(scene->GetSun(), lighting.sun_enabled);
+        render_scene->SetLightIntensity(scene->GetSun(), lighting.sun_intensity);
+        render_scene->SetLightDirection(scene->GetSun(), lighting.sun_dir);
+        render_scene->SetLightColor(scene->GetSun(), lighting.sun_color);
+    }
+
+    void UpdateMaterials(Renderer &renderer,
+                         const GuiSettingsModel::Materials& materials) {
+        UpdateLitMaterial(renderer, settings_.lit, materials.lit,
+                          materials.point_size);
+        auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        for (auto geom_mat : settings_.loaded_materials_) {
+            auto hgeom = geom_mat.first;
+            UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
+                              materials.lit, materials.point_size);
+        }
+        settings_.unlit = renderer.ModifyMaterial(settings_.unlit)
+                    .SetColor("baseColor", materials.unlit.base_color)
+                    .SetParameter("pointSize", materials.point_size)
+                    .SetTexture("albedo", settings_.maps.albedo_map,
+                                TextureSamplerParameters::Pretty())
+                    .Finish();
+    }
+
+    void UpdateLitMaterial(Renderer &renderer,
+                           MaterialInstanceHandle mat_instance,
+                           const GuiSettingsModel::LitMaterial& material,
+                           float point_size) {
+        renderer.ModifyMaterial(mat_instance)
+                    .SetColor("baseColor", material.base_color)
+                    .SetParameter("baseRoughness", material.roughness)
+                    .SetParameter("baseMetallic", material.metallic)
+                    .SetParameter("reflectance", material.reflectance)
+                    .SetParameter("clearCoat", material.clear_coat)
+                    .SetParameter("clearCoatRoughness",
+                                  material.clear_coat_roughness)
+                    .SetParameter("anisotropy", material.anisotropy)
+                    .SetParameter("pointSize", point_size)
+                    .SetTexture("albedo", settings_.maps.albedo_map,
+                                TextureSamplerParameters::Pretty())
+                    .SetTexture("normalMap", settings_.maps.normal_map,
+                                TextureSamplerParameters::Pretty())
+                    .SetTexture("ambientOcclusionMap",
+                                settings_.maps.ambient_occlusion_map,
+                                TextureSamplerParameters::Pretty())
+                    .SetTexture("roughnessMap", settings_.maps.roughness_map,
+                                TextureSamplerParameters::Pretty())
+                    .SetTexture("metallicMap", settings_.maps.metallic_map,
+                                TextureSamplerParameters::Pretty())
+                    .SetTexture("reflectanceMap", settings_.maps.reflectance_map,
+                                TextureSamplerParameters::Pretty())
+                    .SetTexture("clearCoatMap", settings_.maps.clear_coat_map,
+                                TextureSamplerParameters::Pretty())
+                    .SetTexture("clearCoatRoughnessMap",
+                                settings_.maps.clear_coat_roughness_map,
+                                TextureSamplerParameters::Pretty())
+                    .SetTexture("anisotropyMap", settings_.maps.anisotropy_map,
+                                TextureSamplerParameters::Pretty())
+                    .Finish();
+    }
+
+    void ResetToLoadedMaterials(Renderer &renderer) {
+        auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        auto point_size = settings_.model_.GetPointSize();
+        for (auto model_mat : settings_.loaded_materials_) {
+            auto hgeom = model_mat.first;
+            auto &loaded = model_mat.second;
+            UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
+                              loaded, point_size);
+        }
+    }
+
+    void OnNewIBL(Window &window, const char *name) {
+        std::string path = gui::Application::GetInstance().GetResourcePath();
+        path += std::string("/") + name + "_ibl.ktx";
+        if (!SetIBL(window.GetRenderer(), path)) {
+            // must be the "Custom..." option
+            auto dlg = std::make_shared<gui::FileDialog>(
+                    gui::FileDialog::Mode::OPEN, "Open HDR Map", window.GetTheme());
+            dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
+            dlg->SetOnCancel([&window]() { window.CloseDialog(); });
+            dlg->SetOnDone([this, &window](const char *path) {
+                window.CloseDialog();
+                SetIBL(window.GetRenderer(), path);
+                // We need to set the "custom" bit, so just call the current
+                // profile a custom profile.
+                settings_.model_.SetCustomLighting(settings_.model_.GetLighting());
+            });
+            window.ShowDialog(dlg);
+        }
     }
 };
 
@@ -1018,12 +714,13 @@ GuiVisualizer::GuiVisualizer(
     // Create scene
     impl_->scene_wgt_ = std::make_shared<gui::SceneWidget>();
     impl_->scene_wgt_->SetScene(std::make_shared<Open3DScene>(GetRenderer()));
-    auto render_scene = impl_->scene_wgt_->GetScene()->GetScene();
-    impl_->scene_wgt_->SetBackgroundColor(gui::Color(1.0, 1.0, 1.0));
+    impl_->scene_wgt_->SetOnSunDirectionChanged([this](const Eigen::Vector3f& new_dir) {
+        auto lighting = impl_->settings_.model_.GetLighting(); // copy
+        lighting.sun_dir = new_dir.normalized();
+        impl_->settings_.model_.SetCustomLighting(lighting);
+    });
 
     // Create light
-    const int default_lighting_profile_idx = 0;
-    auto &lighting_profile = g_lighting_profiles[default_lighting_profile_idx];
     auto &settings = impl_->settings_;
     std::string resource_path = app.GetResourcePath();
     auto ibl_path = resource_path + "/default_ibl.ktx";
@@ -1031,23 +728,16 @@ GuiVisualizer::GuiVisualizer(
             ResourceLoadRequest(ibl_path.data()));
     impl_->scene_wgt_->GetScene()->SetIndirectLight(settings.ibl);
 
-    impl_->SetLightingProfile(GetRenderer(), lighting_profile);
-
-    auto sky_path = resource_path + "/" + DEFAULT_IBL + "_skybox.ktx";
+    auto sky_path = resource_path + "/" + GuiSettingsModel::DEFAULT_IBL + "_skybox.ktx";
     settings.sky =
             GetRenderer().AddSkybox(ResourceLoadRequest(sky_path.data()));
-    impl_->scene_wgt_->SetSkyboxHandle(settings.sky, DEFAULT_SHOW_SKYBOX);
+    impl_->scene_wgt_->SetSkyboxHandle(settings.sky, settings.model_.GetShowSkybox());
 
     // Create materials
-    auto lit_path = resource_path + "/defaultLit.filamat";
-    impl_->lit_material_ = GetRenderer().AddMaterial(
-            visualization::ResourceLoadRequest(lit_path.data()));
+    impl_->InitializeMaterials(GetRenderer(), resource_path);
 
-    auto unlit_path = resource_path + "/defaultUnlit.filamat";
-    impl_->unlit_material_ = GetRenderer().AddMaterial(
-            visualization::ResourceLoadRequest(unlit_path.data()));
-
-    impl_->SetMaterialsToDefault(GetRenderer());
+    // Apply model settings (which should be defaults) to the rendering entities
+    impl_->UpdateFromModel(GetRenderer(), false);
 
     // Setup UI
     const auto em = theme.font_size;
@@ -1065,7 +755,7 @@ GuiVisualizer::GuiVisualizer(
 
     gui::Margins indent(em, 0, 0, 0);
     auto view_ctrls =
-            std::make_shared<gui::CollapsableVert>("View controls", 0, indent);
+            std::make_shared<gui::CollapsableVert>("Mouse controls", 0, indent);
 
     // ... view manipulator buttons
     settings.wgt_mouse_arcball = std::make_shared<SmallToggleButton>("Arcball");
@@ -1108,322 +798,25 @@ GuiVisualizer::GuiVisualizer(
     camera_controls2->AddChild(settings.wgt_mouse_sun);
     camera_controls2->AddChild(settings.wgt_mouse_ibl);
     camera_controls2->AddStretch();
-    view_ctrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
     view_ctrls->AddChild(camera_controls1);
     view_ctrls->AddFixed(0.25 * em);
     view_ctrls->AddChild(camera_controls2);
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(gui::Horiz::MakeCentered(reset_camera));
-
-    // ... background
-    settings.wgt_sky_enabled = std::make_shared<gui::Checkbox>("Show skymap");
-    settings.wgt_sky_enabled->SetChecked(DEFAULT_SHOW_SKYBOX);
-    settings.wgt_sky_enabled->SetOnChecked([this, render_scene](bool checked) {
-        if (checked) {
-            render_scene->SetSkybox(impl_->settings_.sky);
-        } else {
-            render_scene->SetSkybox(SkyboxHandle());
-        }
-        impl_->scene_wgt_->SetSkyboxHandle(impl_->settings_.sky, checked);
-        impl_->settings_.wgt_bg_color->SetEnabled(!checked);
-    });
-
-    impl_->settings_.wgt_bg_color = std::make_shared<gui::ColorEdit>();
-    impl_->settings_.wgt_bg_color->SetValue({1, 1, 1});
-    impl_->settings_.wgt_bg_color->SetOnValueChanged(
-            [this](const gui::Color &newColor) {
-                impl_->scene_wgt_->SetBackgroundColor(newColor);
-            });
-    auto bg_layout = std::make_shared<gui::VGrid>(2, grid_spacing);
-    bg_layout->AddChild(std::make_shared<gui::Label>("BG Color"));
-    bg_layout->AddChild(impl_->settings_.wgt_bg_color);
-
-    view_ctrls->AddFixed(separation_height);
-    view_ctrls->AddChild(settings.wgt_sky_enabled);
-    view_ctrls->AddFixed(0.25 * em);
-    view_ctrls->AddChild(bg_layout);
-
-    // ... show axes
-    settings.wgt_show_axes = std::make_shared<gui::Checkbox>("Show axes");
-    settings.wgt_show_axes->SetChecked(DEFAULT_SHOW_AXES);
-    settings.wgt_show_axes->SetOnChecked([this, render_scene](bool isChecked) {
-        render_scene->SetEntityEnabled(
-                this->impl_->scene_wgt_->GetScene()->GetAxis(), isChecked);
-    });
-    view_ctrls->AddFixed(separation_height);
-    view_ctrls->AddChild(settings.wgt_show_axes);
-
-    // ... lighting profiles
-    settings.wgt_lighting_profile = std::make_shared<gui::Combobox>();
-    for (size_t i = 0; i < g_lighting_profiles.size(); ++i) {
-        settings.wgt_lighting_profile->AddItem(
-                g_lighting_profiles[i].name.c_str());
-    }
-    settings.wgt_lighting_profile->AddItem("Custom");
-    settings.wgt_lighting_profile->SetSelectedIndex(
-            default_lighting_profile_idx);
-    settings.wgt_lighting_profile->SetOnValueChanged(
-            [this](const char *, int index) {
-                if (index < int(g_lighting_profiles.size())) {
-                    this->impl_->SetLightingProfile(this->GetRenderer(),
-                                                    g_lighting_profiles[index]);
-                    this->impl_->settings_.user_has_changed_lighting = true;
-                } else {
-                    this->impl_->settings_.wgtAdvanced->SetIsOpen(true);
-                    this->SetNeedsLayout();
-                }
-            });
-
-    auto profile_layout = std::make_shared<gui::Vert>();
-    profile_layout->AddChild(std::make_shared<gui::Label>("Lighting profiles"));
-    profile_layout->AddChild(settings.wgt_lighting_profile);
-    view_ctrls->AddFixed(separation_height);
-    view_ctrls->AddChild(profile_layout);
-
     settings.wgt_base->AddChild(view_ctrls);
-    settings.wgt_base->AddFixed(separation_height);
 
-    // ... advanced lighting
-    settings.wgtAdvanced = std::make_shared<gui::CollapsableVert>(
-            "Advanced lighting", 0, indent);
-    settings.wgtAdvanced->SetIsOpen(false);
-    settings.wgt_base->AddChild(settings.wgtAdvanced);
-
-    // ....... lighting on/off
-    settings.wgtAdvanced->AddChild(
-            std::make_shared<gui::Label>("Light sources"));
-    auto checkboxes = std::make_shared<gui::Horiz>();
-    settings.wgt_ibl_enabled = std::make_shared<gui::Checkbox>("HDR map");
-    settings.wgt_ibl_enabled->SetChecked(true);
-    settings.wgt_ibl_enabled->SetOnChecked([this, render_scene](bool checked) {
-        impl_->settings_.SetCustomProfile();
-        if (checked) {
-            render_scene->SetIndirectLight(impl_->settings_.ibl);
-            render_scene->SetIndirectLightIntensity(
-                    impl_->settings_.wgt_ibl_intensity->GetDoubleValue());
-        } else {
-            render_scene->SetIndirectLight(IndirectLightHandle());
-        }
-        this->impl_->settings_.user_has_changed_lighting = true;
+    // ... lighting and materials
+    settings.view_ = std::make_shared<GuiSettingsView>(settings.model_, theme,
+                                                       resource_path,
+                                                       [this](const char *name) {
+        std::string resource_path = gui::Application::GetInstance().GetResourcePath();
+        impl_->SetIBL(GetRenderer(), resource_path + "/" + name + "_ibl.ktx");
     });
-    checkboxes->AddChild(settings.wgt_ibl_enabled);
-    settings.wgt_directional_enabled = std::make_shared<gui::Checkbox>("Sun");
-    settings.wgt_directional_enabled->SetChecked(true);
-    settings.wgt_directional_enabled->SetOnChecked(
-            [this, render_scene](bool checked) {
-                impl_->settings_.SetCustomProfile();
-                render_scene->SetEntityEnabled(
-                        impl_->scene_wgt_->GetScene()->GetSun(), checked);
-            });
-    checkboxes->AddChild(settings.wgt_directional_enabled);
-    settings.wgtAdvanced->AddChild(checkboxes);
-
-    settings.wgtAdvanced->AddFixed(separation_height);
-
-    // ....... IBL
-    settings.wgt_ibls = std::make_shared<gui::Combobox>();
-    std::vector<std::string> resource_files;
-    utility::filesystem::ListFilesInDirectory(resource_path, resource_files);
-    std::sort(resource_files.begin(), resource_files.end());
-    int n = 0;
-    for (auto &f : resource_files) {
-        if (f.find("_ibl.ktx") == f.size() - 8) {
-            auto name = utility::filesystem::GetFileNameWithoutDirectory(f);
-            name = name.substr(0, name.size() - 8);
-            settings.wgt_ibls->AddItem(name.c_str());
-            if (name == DEFAULT_IBL) {
-                settings.wgt_ibls->SetSelectedIndex(n);
-            }
-            n++;
-        }
-    }
-    settings.wgt_ibls->AddItem("Custom KTX file...");
-    settings.wgt_ibls->SetOnValueChanged([this](const char *name, int) {
-        std::string path = gui::Application::GetInstance().GetResourcePath();
-        path += std::string("/") + name + "_ibl.ktx";
-        if (!this->SetIBL(path.c_str())) {
-            // must be the "Custom..." option
-            auto dlg = std::make_shared<gui::FileDialog>(
-                    gui::FileDialog::Mode::OPEN, "Open HDR Map", GetTheme());
-            dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
-            dlg->SetOnCancel([this]() { this->CloseDialog(); });
-            dlg->SetOnDone([this](const char *path) {
-                this->CloseDialog();
-                this->SetIBL(path);
-                this->impl_->settings_.SetCustomProfile();
-            });
-            ShowDialog(dlg);
-        }
+    settings.model_.SetOnChanged([this](bool material_type_changed) {
+        impl_->settings_.view_->Update();
+        impl_->UpdateFromModel(GetRenderer(), material_type_changed);
     });
-
-    settings.wgt_ibl_intensity = MakeSlider(gui::Slider::INT, 0.0, 150000.0,
-                                            lighting_profile.ibl_intensity);
-    settings.wgt_ibl_intensity->SetOnValueChanged(
-            [this, render_scene](double newValue) {
-                render_scene->SetIndirectLightIntensity(newValue);
-                this->impl_->settings_.SetCustomProfile();
-            });
-
-    auto ambient_layout = std::make_shared<gui::VGrid>(2, grid_spacing);
-    ambient_layout->AddChild(std::make_shared<gui::Label>("HDR map"));
-    ambient_layout->AddChild(settings.wgt_ibls);
-    ambient_layout->AddChild(std::make_shared<gui::Label>("Intensity"));
-    ambient_layout->AddChild(settings.wgt_ibl_intensity);
-
-    settings.wgtAdvanced->AddChild(std::make_shared<gui::Label>("Environment"));
-    settings.wgtAdvanced->AddChild(ambient_layout);
-    settings.wgtAdvanced->AddFixed(separation_height);
-
-    // ... directional light (sun)
-    settings.wgt_sun_intensity = MakeSlider(gui::Slider::INT, 0.0, 500000.0,
-                                            lighting_profile.sun_intensity);
-    settings.wgt_sun_intensity->SetOnValueChanged(
-            [this, render_scene](double new_value) {
-                render_scene->SetLightIntensity(
-                        impl_->scene_wgt_->GetScene()->GetSun(), new_value);
-                impl_->settings_.SetCustomProfile();
-            });
-
-    auto SetSunDir = [this, render_scene](const Eigen::Vector3f &dir) {
-        impl_->settings_.wgt_sun_dir->SetValue(dir);
-        render_scene->SetLightDirection(impl_->scene_wgt_->GetScene()->GetSun(),
-                                        dir.normalized());
-        impl_->settings_.SetCustomProfile();
-    };
-    impl_->scene_wgt_->SetOnSunDirectionChanged(
-            [this](const Eigen::Vector3f &new_dir) {
-                impl_->settings_.wgt_sun_dir->SetValue(new_dir);
-                impl_->settings_.SetCustomProfile();
-            });
-
-    settings.wgt_sun_dir = std::make_shared<gui::VectorEdit>();
-    settings.wgt_sun_dir->SetValue(lighting_profile.sun_dir);
-    settings.wgt_sun_dir->SetOnValueChanged(SetSunDir);
-
-    settings.wgt_sun_color = std::make_shared<gui::ColorEdit>();
-    settings.wgt_sun_color->SetValue({1, 1, 1});
-    settings.wgt_sun_color->SetOnValueChanged(
-            [this, render_scene](const gui::Color &new_color) {
-                impl_->settings_.SetCustomProfile();
-                render_scene->SetLightColor(
-                        impl_->scene_wgt_->GetScene()->GetSun(),
-                        {new_color.GetRed(), new_color.GetGreen(),
-                         new_color.GetBlue()});
-            });
-
-    auto sun_layout = std::make_shared<gui::VGrid>(2, grid_spacing);
-    sun_layout->AddChild(std::make_shared<gui::Label>("Intensity"));
-    sun_layout->AddChild(settings.wgt_sun_intensity);
-    sun_layout->AddChild(std::make_shared<gui::Label>("Direction"));
-    sun_layout->AddChild(settings.wgt_sun_dir);
-    sun_layout->AddChild(std::make_shared<gui::Label>("Color"));
-    sun_layout->AddChild(settings.wgt_sun_color);
-
-    settings.wgtAdvanced->AddChild(
-            std::make_shared<gui::Label>("Sun (Directional light)"));
-    settings.wgtAdvanced->AddChild(sun_layout);
-
-    // materials settings
-    auto materials = std::make_shared<gui::CollapsableVert>("Material settings",
-                                                            0, indent);
-
-    auto mat_grid = std::make_shared<gui::VGrid>(2, grid_spacing);
-    mat_grid->AddChild(std::make_shared<gui::Label>("Type"));
-    settings.wgt_material_type.reset(
-            new gui::Combobox({"Lit", "Unlit", "Normal map", "Depth"}));
-    settings.wgt_material_type->SetOnValueChanged([this](const char *,
-                                                         int selected_idx) {
-        impl_->SetMaterialType(Impl::Settings::MaterialType(selected_idx));
-    });
-    mat_grid->AddChild(settings.wgt_material_type);
-
-    settings.wgt_prefab_material = std::make_shared<gui::Combobox>();
-    for (auto &prefab : impl_->prefab_materials_) {
-        settings.wgt_prefab_material->AddItem(prefab.first.c_str());
-    }
-    settings.wgt_prefab_material->SetSelectedValue(
-            DEFAULT_MATERIAL_NAME.c_str());
-    settings.wgt_prefab_material->SetOnValueChanged(
-            [this](const char *name, int) {
-                auto &renderer = this->GetRenderer();
-                impl_->SetMaterialByName(renderer, name);
-            });
-
-    mat_grid->AddChild(std::make_shared<gui::Label>("Material"));
-    mat_grid->AddChild(settings.wgt_prefab_material);
-
-    settings.wgt_material_color = std::make_shared<gui::ColorEdit>();
-    settings.wgt_material_color->SetOnValueChanged(
-            [this, render_scene](const gui::Color &color) {
-                auto &renderer = this->GetRenderer();
-                auto &settings = impl_->settings_;
-                Eigen::Vector3f color3(color.GetRed(), color.GetGreen(),
-                                       color.GetBlue());
-                if (settings.selected_type == Impl::Settings::LIT) {
-                    settings.current_materials.lit.base_color = color3;
-                } else {
-                    settings.current_materials.unlit.base_color = color3;
-                }
-                settings.user_has_changed_color = true;
-                settings.wgt_reset_material_color->SetEnabled(true);
-
-                visualization::MaterialInstanceHandle mat;
-                if (settings.selected_type == Impl::Settings::UNLIT) {
-                    mat = settings.current_materials.unlit.handle;
-                } else {
-                    mat = settings.current_materials.lit.handle;
-                }
-                mat = renderer.ModifyMaterial(mat)
-                              .SetColor("baseColor", color3)
-                              .Finish();
-                for (const auto &handle :
-                     impl_->scene_wgt_->GetScene()->GetModel()) {
-                    render_scene->AssignMaterial(handle, mat);
-                }
-            });
-    settings.wgt_reset_material_color = std::make_shared<SmallButton>("Reset");
-    settings.wgt_reset_material_color->SetEnabled(
-            impl_->settings_.user_has_changed_color);
-    settings.wgt_reset_material_color->SetOnClicked([this]() {
-        auto &renderer = this->GetRenderer();
-        impl_->settings_.user_has_changed_color = false;
-        impl_->settings_.wgt_reset_material_color->SetEnabled(false);
-        impl_->SetMaterialByName(
-                renderer,
-                impl_->settings_.wgt_prefab_material->GetSelectedValue());
-    });
-
-    mat_grid->AddChild(std::make_shared<gui::Label>("Color"));
-    auto color_layout = std::make_shared<gui::Horiz>();
-    color_layout->AddChild(settings.wgt_material_color);
-    color_layout->AddFixed(0.25 * em);
-    color_layout->AddChild(impl_->settings_.wgt_reset_material_color);
-    mat_grid->AddChild(color_layout);
-
-    mat_grid->AddChild(std::make_shared<gui::Label>("Point size"));
-    settings.wgt_point_size = MakeSlider(gui::Slider::INT, 1.0, 10.0, 3);
-    settings.wgt_point_size->SetOnValueChanged([this](double value) {
-        float size = float(value);
-        impl_->settings_.current_materials.unlit.point_size = size;
-        auto &renderer = GetRenderer();
-        renderer.ModifyMaterial(impl_->settings_.current_materials.lit.handle)
-                .SetParameter("pointSize", size)
-                .Finish();
-        renderer.ModifyMaterial(impl_->settings_.current_materials.unlit.handle)
-                .SetParameter("pointSize", size)
-                .Finish();
-        renderer.ModifyMaterial(FilamentResourceManager::kDepthMaterial)
-                .SetParameter("pointSize", size)
-                .Finish();
-        renderer.ModifyMaterial(FilamentResourceManager::kNormalsMaterial)
-                .SetParameter("pointSize", size)
-                .Finish();
-    });
-    mat_grid->AddChild(settings.wgt_point_size);
-    materials->AddChild(mat_grid);
-
-    settings.wgt_base->AddFixed(separation_height);
-    settings.wgt_base->AddChild(materials);
+    settings.wgt_base->AddChild(settings.view_);
 
     AddChild(settings.wgt_base);
 
@@ -1451,7 +844,7 @@ void GuiVisualizer::SetGeometry(
     auto scene3d = impl_->scene_wgt_->GetScene();
     scene3d->ClearGeometry();
 
-    impl_->SetMaterialsToDefault(GetRenderer());
+    impl_->SetMaterialsToDefault();
 
     std::size_t num_point_clouds = 0;
     std::size_t num_point_cloud_points = 0;
@@ -1469,9 +862,9 @@ void GuiVisualizer::SetGeometry(
     std::size_t num_unlit = 0;
     for (size_t i = 0; i < geometries.size(); ++i) {
         std::shared_ptr<const geometry::Geometry> g = geometries[i];
-        Impl::Materials materials = impl_->settings_.current_materials;
-
-        visualization::MaterialInstanceHandle selected_material;
+        MaterialInstanceHandle selected_material;
+        bool material_is_loaded = false;
+        GuiSettingsModel::LitMaterial loaded_material;
 
         // If a point cloud or mesh has no vertex colors or a single uniform
         // color (usually white), then we want to display it normally, that is,
@@ -1484,14 +877,14 @@ void GuiVisualizer::SetGeometry(
                         std::static_pointer_cast<const geometry::PointCloud>(g);
 
                 if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
-                    selected_material = materials.unlit.handle;
+                    selected_material = impl_->settings_.unlit;
                     num_unlit += 1;
                 } else {
-                    selected_material = materials.lit.handle;
+                    selected_material = impl_->settings_.lit;
                 }
             } break;
             case geometry::Geometry::GeometryType::LineSet: {
-                selected_material = materials.unlit.handle;
+                selected_material = impl_->settings_.unlit;
                 num_unlit += 1;
             } break;
             case geometry::Geometry::GeometryType::TriangleMesh: {
@@ -1502,7 +895,7 @@ void GuiVisualizer::SetGeometry(
                 bool albedo_only = true;
                 if (mesh->HasMaterials()) {
                     auto mesh_material = mesh->materials_.begin()->second;
-                    Impl::LitMaterial material;
+                    GuiSettingsModel::LitMaterial material;
                     Impl::TextureMaps maps;
                     material.base_color.x() = mesh_material.baseColor.r();
                     material.base_color.y() = mesh_material.baseColor.g();
@@ -1567,17 +960,17 @@ void GuiVisualizer::SetGeometry(
                                 mesh_material.anisotropy);
                         albedo_only = false;
                     }
-                    impl_->SetMaterialsToCurrentSettings(GetRenderer(),
-                                                         material, maps);
-                    impl_->settings_.loaded_materials_[i] = material;
+                    impl_->SetLoadedMaterial(GetRenderer(), material, maps);
+                    material_is_loaded = true;
+                    loaded_material = material;
                 }
 
                 if ((mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) ||
                     (mesh->HasMaterials() && albedo_only)) {
-                    selected_material = materials.unlit.handle;
+                    selected_material = impl_->settings_.unlit;
                     num_unlit += 1;
                 } else {
-                    selected_material = materials.lit.handle;
+                    selected_material = impl_->settings_.lit;
                 }
             } break;
             default:
@@ -1589,47 +982,46 @@ void GuiVisualizer::SetGeometry(
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         auto handle = scene3d->AddGeometry(g3, selected_material);
         bounds += scene3d->GetScene()->GetEntityBoundingBox(handle);
+        if (material_is_loaded) {
+            impl_->settings_.loaded_materials_[handle] = loaded_material;
+        }
     }
 
     if (!geometries.empty()) {
-        auto view_mode = impl_->scene_wgt_->GetRenderView()->GetMode();
-        if (view_mode == visualization::View::Mode::Normals) {
-            impl_->SetMaterialType(Impl::Settings::NORMAL_MAP);
-        } else if (view_mode == visualization::View::Mode::Depth) {
-            impl_->SetMaterialType(Impl::Settings::DEPTH);
+        if (num_point_clouds == geometries.size()) {
+            impl_->settings_.model_.SetDisplayingPointClouds(true);
+            if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
+                auto &profile = GuiSettingsModel::GetDefaultPointCloudLightingProfile();
+                impl_->settings_.model_.SetLightingProfile(profile);
+            }
         } else {
+            impl_->settings_.model_.SetDisplayingPointClouds(false);
+        }
+
+        auto type = impl_->settings_.model_.GetMaterialType();
+        if (type == GuiSettingsModel::MaterialType::LIT || type == GuiSettingsModel::MaterialType::UNLIT) {
             if (num_unlit == geometries.size()) {
-                impl_->SetMaterialType(Impl::Settings::UNLIT);
+                impl_->settings_.model_.SetMaterialType(GuiSettingsModel::MaterialType::UNLIT);
             } else {
-                impl_->SetMaterialType(Impl::Settings::LIT);
+                impl_->settings_.model_.SetMaterialType(GuiSettingsModel::MaterialType::LIT);
             }
         }
-
-        if (num_point_clouds == geometries.size() &&
-            !impl_->settings_.user_has_changed_lighting) {
-            impl_->SetLightingProfile(GetRenderer(), POINT_CLOUD_PROFILE_NAME);
-        }
-        impl_->settings_.wgt_point_size->SetEnabled(num_point_clouds > 0);
     }
 
+    impl_->settings_.model_.UnsetCustomDefaultColor();
     if (!impl_->settings_.loaded_materials_.empty()) {
         if (impl_->settings_.loaded_materials_.size() == 1) {
             auto color = impl_->settings_.loaded_materials_.begin()
-                                 ->second.base_color;
-            impl_->settings_.wgt_material_color->SetValue(color.x(), color.y(),
-                                                          color.z());
+                              ->second.base_color;
+            impl_->settings_.model_.SetCustomDefaultColor(color);
         }
-        int resetIdx = impl_->settings_.wgt_prefab_material->AddItem(
-                MATERIAL_FROM_FILE_NAME.c_str());
-        impl_->settings_.wgt_prefab_material->SetSelectedIndex(resetIdx);
-        impl_->settings_.wgt_prefab_material->ChangeItem(
-                (DEFAULT_MATERIAL_NAME + " [default]").c_str(),
-                DEFAULT_MATERIAL_NAME.c_str());
+        impl_->settings_.view_->ShowFileMaterialEntry(true);
     } else {
-        impl_->settings_.wgt_prefab_material->ChangeItem(
-                DEFAULT_MATERIAL_NAME.c_str(),
-                (DEFAULT_MATERIAL_NAME + " [default]").c_str());
+        auto color = impl_->settings_.loaded_materials_.begin()
+                          ->second.base_color;
+        impl_->settings_.view_->ShowFileMaterialEntry(true);
     }
+    impl_->settings_.view_->Update();  // make sure prefab material is correct
 
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
                                    bounds.GetCenter().cast<float>());

@@ -58,6 +58,8 @@ public:
     /// Removes the item at \param index.
     void RemoveItem(int index);
 
+    int GetNumberOfItems() const;
+
     /// Returns the text of the item at \param index. \param index must be
     /// valid.
     const char* GetItem(int index) const;
@@ -69,8 +71,8 @@ public:
     /// callback.
     void SetSelectedIndex(int index);
     /// Sets the selected item by value. Does nothing if \param value is not an
-    /// item. Does not call the onValueChanged callback
-    void SetSelectedValue(const char* value);
+    /// item, but will return false. Does not call the onValueChanged callback
+    bool SetSelectedValue(const char* value);
 
     Size CalcPreferredSize(const Theme& theme) const override;
 

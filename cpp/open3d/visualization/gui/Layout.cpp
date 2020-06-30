@@ -216,6 +216,9 @@ int Layout1D::GetSpacing() const { return impl_->spacing_; }
 const Margins& Layout1D::GetMargins() const { return impl_->margins_; }
 Margins& Layout1D::GetMutableMargins() { return impl_->margins_; }
 
+void Layout1D::SetSpacing(int spacing) { impl_->spacing_ = spacing; }
+void Layout1D::SetMargins(const Margins& margins) { impl_->margins_ = margins; }
+
 void Layout1D::AddFixed(int size) {
     AddChild(std::make_shared<Fixed>(size, impl_->dir_));
 }

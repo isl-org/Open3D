@@ -24,44 +24,26 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/visualization/visualizer/GuiWidgets.h"
 
-#include <Eigen/Geometry>
+#include "open3d/visualization/gui/Theme.h"
 
 namespace open3d {
 namespace visualization {
-namespace gui {
 
-class Color {
-public:
-    Color();
-    Color(float r, float g, float b, float a = 1.0);
-    Color(const Eigen::Vector3f& rgb);  // not explicit: want auto-convert
+SmallButton::SmallButton(const char *title) : gui::Button(title) {}
 
-    float GetRed() const;
-    float GetGreen() const;
-    float GetBlue() const;
-    float GetAlpha() const;
+gui::Size SmallButton::CalcPreferredSize(const gui::Theme &theme) const {
+    auto em = theme.font_size;
+    auto size = Super::CalcPreferredSize(theme);
+    return gui::Size(size.width - em, 1.2 * em);
+}
 
-    void SetColor(float r, float g, float b, float a = 1.0);
+//----
+SmallToggleButton::SmallToggleButton(const char *title) : SmallButton(title) {
+    SetToggleable(true);
+}
 
-    const float* GetPointer() const;
-    float* GetMutablePointer();
-
-    /// Returns a lighter color.
-    /// \param amount is between 0 and 1, with 0 being the same color and
-    /// 1 being white.
-    Color Lightened(float amount);
-
-    unsigned int ToABGR32() const;
-
-    bool operator==(const Color& rhs) const;
-    bool operator!=(const Color& rhs) const;
-
-private:
-    float rgba_[4];
-};
-
-}  // namespace gui
 }  // namespace visualization
 }  // namespace open3d
+
