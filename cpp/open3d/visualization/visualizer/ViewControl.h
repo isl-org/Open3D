@@ -148,17 +148,17 @@ public:
 
     /// Function to get field of view.
     double GetFieldOfView() const { return field_of_view_; }
-    GLHelper::GLMatrix4f GetMVPMatrix() const { return MVP_matrix_; }
-    GLHelper::GLMatrix4f GetProjectionMatrix() const {
+    gl_util::GLMatrix4f GetMVPMatrix() const { return MVP_matrix_; }
+    gl_util::GLMatrix4f GetProjectionMatrix() const {
         return projection_matrix_;
     }
-    GLHelper::GLMatrix4f GetViewMatrix() const { return view_matrix_; }
-    GLHelper::GLMatrix4f GetModelMatrix() const { return model_matrix_; }
-    GLHelper::GLVector3f GetEye() const { return eye_.cast<GLfloat>(); }
-    GLHelper::GLVector3f GetLookat() const { return lookat_.cast<GLfloat>(); }
-    GLHelper::GLVector3f GetUp() const { return up_.cast<GLfloat>(); }
-    GLHelper::GLVector3f GetFront() const { return front_.cast<GLfloat>(); }
-    GLHelper::GLVector3f GetRight() const { return right_.cast<GLfloat>(); }
+    gl_util::GLMatrix4f GetViewMatrix() const { return view_matrix_; }
+    gl_util::GLMatrix4f GetModelMatrix() const { return model_matrix_; }
+    gl_util::GLVector3f GetEye() const { return eye_.cast<GLfloat>(); }
+    gl_util::GLVector3f GetLookat() const { return lookat_.cast<GLfloat>(); }
+    gl_util::GLVector3f GetUp() const { return up_.cast<GLfloat>(); }
+    gl_util::GLVector3f GetFront() const { return front_.cast<GLfloat>(); }
+    gl_util::GLVector3f GetRight() const { return right_.cast<GLfloat>(); }
     int GetWindowWidth() const { return window_width_; }
     int GetWindowHeight() const { return window_height_; }
     double GetZNear() const { return z_near_; }
@@ -201,10 +201,10 @@ protected:
     double z_far_;
     double constant_z_near_ = -1;
     double constant_z_far_ = -1;
-    GLHelper::GLMatrix4f projection_matrix_;
-    GLHelper::GLMatrix4f view_matrix_;
-    GLHelper::GLMatrix4f model_matrix_;
-    GLHelper::GLMatrix4f MVP_matrix_;
+    gl_util::GLMatrix4f projection_matrix_;
+    gl_util::GLMatrix4f view_matrix_;
+    gl_util::GLMatrix4f model_matrix_;
+    gl_util::GLMatrix4f MVP_matrix_;
 };
 
 }  // namespace visualization
