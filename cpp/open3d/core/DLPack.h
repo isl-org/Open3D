@@ -1,3 +1,39 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+//
+// This file is retrived from:
+// https://github.com/dmlc/dlpack/blob/master/include/dlpack/dlpack.h
+// Commit: 3ec0443, Feb 16 2020
+//
+// License:
+// https://github.com/dmlc/dlpack/blob/master/LICENSE
+//
+// Open3D changes:
+// No changes except for automatic style changed by clang-format.
+
 /*!
  *  Copyright (c) 2017 by Contributors
  * \file dlpack.h
@@ -80,6 +116,7 @@ typedef enum {
     kDLInt = 0U,
     kDLUInt = 1U,
     kDLFloat = 2U,
+    kDLBfloat = 4U,
 } DLDataTypeCode;
 
 /*!
@@ -112,7 +149,7 @@ typedef struct {
     /*!
      * \brief The opaque data pointer points to the allocated data. This will be
      * CUDA device pointer or cl_mem handle in OpenCL. This pointer is always
-     * aligns to 256 bytes as in CUDA.
+     * aligned to 256 bytes as in CUDA.
      *
      * For given DLTensor, the size of memory required to store the contents of
      * data is calculated as follows:
@@ -148,7 +185,7 @@ typedef struct {
 
 /*!
  * \brief C Tensor object, manage memory of DLTensor. This data structure is
- *  intended to faciliate the borrowing of DLTensor by another framework. It is
+ *  intended to facilitate the borrowing of DLTensor by another framework. It is
  *  not meant to transfer the tensor. When the borrowing framework doesn't need
  *  the tensor, it should call the deleter to notify the host that the resource
  *  is no longer needed.

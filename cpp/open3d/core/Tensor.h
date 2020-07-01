@@ -31,13 +31,12 @@
 #include <string>
 
 #include "open3d/core/Blob.h"
+#include "open3d/core/DLPack.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
-#include "open3d/core/dlpack/DLPackConverter.h"
-#include "open3d/core/dlpack/dlpack.h"
 
 namespace open3d {
 namespace core {
@@ -253,12 +252,6 @@ public:
     ///           Tensor({2, 5}, Dtype::Float32));
     /// ```
     Tensor SetItem(const std::vector<TensorKey>& tks, const Tensor& value);
-
-    DLManagedTensor* ToDLPack() const { return dlpack::ToDLPack(*this); }
-
-    static Tensor FromDLPack(DLManagedTensor* src) {
-        return dlpack::FromDLPack(src);
-    }
 
     /// Assign (copy) values from another Tensor, shape, dtype, device may
     /// change. Slices of the original Tensor still keeps the original memory.
@@ -778,6 +771,12 @@ public:
             const SizeVector& old_shape,
             const SizeVector& old_strides,
             const SizeVector& new_shape);
+
+    /// Convert the Tensor to DLManagedTensor.
+    DLManagedTensor* ToDLPack() const;
+
+    /// Convert DLManagedTensor to Tensor.
+    static Tensor FromDLPack(const DLManagedTensor* dlmt);
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
