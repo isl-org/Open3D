@@ -154,13 +154,21 @@ After CMake config, to check style, run
 
 .. code:: bash
 
+   # For c++/cuda/python/ipynb files
    make check-style
+
+   # Or, only for c++/cuda files
+   make check-cpp-style
 
 After CMake config, to apply proper style, run
 
 .. code:: bash
 
+   # For c++/cuda/python/ipynb files
    make apply-style
+
+   # Or, only for c++/cuda files
+   make apply-cpp-style
 
 .. _32-windows:
 
@@ -171,12 +179,20 @@ After CMake config, to check style, run
 
 .. code:: batch
 
+   # For c++/cuda/python/ipynb files
    cmake --build . --target check-style
+
+   # Or, only for c++/cuda files
+   cmake --build . --target check-cpp-style
 
 After CMake config, to apply the proper style, run
 
 .. code:: batch
 
+   # For c++/cuda/python/ipynb files
    cmake --build . --target apply-style
+
+   # Or, only for c++/cuda files
+   cmake --build . --target apply-cpp-style
 
 .. _LLVM Download Page: http://releases.llvm.org/download.html
