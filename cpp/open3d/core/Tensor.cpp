@@ -43,7 +43,8 @@ namespace open3d {
 namespace core {
 
 /// Open3D DLPack Tensor manager.
-struct Open3DDLManagedTensor {
+class Open3DDLManagedTensor {
+private:
     Open3DDLManagedTensor(const Tensor& o3d_tensor) {
         o3d_tensor_ = o3d_tensor;
 
@@ -115,12 +116,24 @@ struct Open3DDLManagedTensor {
         dl_managed_tensor_.dl_tensor = dl_tensor;
     }
 
-    static void Deleter(DLManagedTensor* arg) {
-        delete static_cast<Open3DDLManagedTensor*>(arg->manager_ctx);
-    }
-
     Tensor o3d_tensor_;
     DLManagedTensor dl_managed_tensor_;
+
+public:
+    /// `DLManagedTensor* dmlt` is destroyed by calling `dmlt->deleter(dmlt)`.
+    /// The destruction happens when the DLPack python object goes out of scope,
+    /// and ultimately it decreases the reference count to the actual data
+    /// buffer (i.e. `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
+    static DLManagedTensor* Create(const Tensor& o3d_tensor) {
+        Open3DDLManagedTensor* o3d_dl_tensor =
+                new Open3DDLManagedTensor(o3d_tensor);
+        return &o3d_dl_tensor->dl_managed_tensor_;
+    }
+
+    static void Deleter(DLManagedTensor* arg) {
+        utility::LogInfo("Deleter called");
+        delete static_cast<Open3DDLManagedTensor*>(arg->manager_ctx);
+    }
 };
 
 /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`
@@ -1023,12 +1036,7 @@ std::vector<Tensor> Tensor::NonZeroNumpy() const {
 Tensor Tensor::NonZero() const { return kernel::NonZero(*this); }
 
 DLManagedTensor* Tensor::ToDLPack() const {
-    // When the DLPack python object goes out of scope, it calls
-    // Open3DDLManagedTensor::Deleter to delete the Open3DDLManagedTensor
-    // object, which, decreases the reference count to the actual data buffer
-    // (Open3DDLManagedTensor->o3d_tensor_.GetBlob()) by 1.
-    Open3DDLManagedTensor* o3d_dl_tensor(new Open3DDLManagedTensor(*this));
-    return &(o3d_dl_tensor->dl_managed_tensor_);
+    return Open3DDLManagedTensor::Create(*this);
 }
 
 Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
