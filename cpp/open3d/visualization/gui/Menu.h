@@ -55,6 +55,15 @@ public:
     void AddMenu(const char* name, std::shared_ptr<Menu> submenu);
     void AddSeparator();
 
+    void InsertItem(int index,
+                    const char* name,
+                    ItemId item_id = NO_ITEM,
+                    KeyName key = KEY_NONE);
+    void InsertMenu(int index, const char* name, std::shared_ptr<Menu> submenu);
+    void InsertSeparator(int index);
+
+    int GetNumberOfItems() const;
+
     /// Searches the menu hierarchy down from this menu to find the item
     /// and returns true if the item is enabled.
     bool IsEnabled(ItemId item_id) const;
