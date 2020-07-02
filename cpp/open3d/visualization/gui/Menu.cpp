@@ -105,39 +105,36 @@ void *Menu::GetNativePointer() { return nullptr; }
 void Menu::AddItem(const char *name,
                    ItemId itemId /*= NO_ITEM*/,
                    KeyName key /*= KEY_NONE*/) {
-    impl_->id2idx_[itemId] = impl_->items_.size();
-    impl_->items_.push_back({itemId, name, key, nullptr});
+    InsertItem(impl_->items_.size(), name, itemId, key);
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
-    impl_->items_.push_back(
-            {NO_ITEM, name, KEY_NONE, submenu, submenu->impl_.get()});
+    InsertMenu(impl_->items_.size(), name, submenu);
 }
 
 void Menu::AddSeparator() {
-    impl_->items_.push_back(
-            {NO_ITEM, "", KEY_NONE, nullptr, nullptr, false, false, true});
+    InsertSeparator(impl_->items_.size());
 }
 
 void Menu::InsertItem(int index,
                       const char* name,
-                      ItemId item_id = NO_ITEM,
-                      KeyName key = KEY_NONE) {
-    for (auto &kv : impl_->id2idx) {
-        if (kv.second >= index) {
+                      ItemId item_id /*= NO_ITEM*/,
+                      KeyName key /*= KEY_NONE*/) {
+    for (auto &kv : impl_->id2idx_) {
+        if (int(kv.second) >= index) {
             kv.second += 1;
         }
     }
-    impl_->id2idx_[itemId] = impl_->items_.size();
+    impl_->id2idx_[item_id] = impl_->items_.size();
     impl_->items_.insert(impl_->items_.begin() + index,
-                         {itemId, name, key, nullptr});
+                         {item_id, name, key, nullptr});
 }
 
 void Menu::InsertMenu(int index,
                       const char* name,
                       std::shared_ptr<Menu> submenu) {
-    for (auto &kv : impl_->id2idx) {
-        if (kv.second >= index) {
+    for (auto &kv : impl_->id2idx_) {
+        if (int(kv.second) >= index) {
             kv.second += 1;
         }
     }
@@ -147,8 +144,8 @@ void Menu::InsertMenu(int index,
 }
     
 void Menu::InsertSeparator(int index) {
-    for (auto &kv : impl_->id2idx) {
-        if (kv.second >= index) {
+    for (auto &kv : impl_->id2idx_) {
+        if (int(kv.second) >= index) {
             kv.second += 1;
         }
     }
