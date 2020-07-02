@@ -30,86 +30,9 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_knnfaiss(py::module &m) {
-    // open3d.geometry.KDTreeSearchParam
-    /*py::class_<geometry::KDTreeSearchParam> kdtreesearchparam(
-            m, "KDTreeSearchParam", "Base class for KDTree search parameters.");
-    kdtreesearchparam.def("get_search_type",
-                          &geometry::KDTreeSearchParam::GetSearchType,
-                          "Get the search type (KNN, Radius, Hybrid) for the "
-                          "search parameter.");
-    docstring::ClassMethodDocInject(m, "KDTreeSearchParam", "get_search_type");
-
-    // open3d.geometry.KDTreeSearchParam.Type
-    py::enum_<geometry::KDTreeSearchParam::SearchType> kdtree_search_param_type(
-            kdtreesearchparam, "Type", py::arithmetic());
-    kdtree_search_param_type
-            .value("KNNSearch", geometry::KDTreeSearchParam::SearchType::Knn)
-            .value("RadiusSearch",
-                   geometry::KDTreeSearchParam::SearchType::Radius)
-            .value("HybridSearch",
-                   geometry::KDTreeSearchParam::SearchType::Hybrid)
-            .export_values();
-    kdtree_search_param_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Geometry types.";
-            }),
-            py::none(), py::none(), "");
-
-    // open3d.geometry.KDTreeSearchParamKNN
-    py::class_<geometry::KDTreeSearchParamKNN> kdtreesearchparam_knn(
-            m, "KDTreeSearchParamKNN", kdtreesearchparam,
-            "KDTree search parameters for pure KNN search.");
-    kdtreesearchparam_knn.def(py::init<int>(), "knn"_a = 30)
-            .def("__repr__",
-                 [](const geometry::KDTreeSearchParamKNN &param) {
-                     return std::string(
-                                    "geometry::KDTreeSearchParamKNN with knn "
-                                    "= ") +
-                            std::to_string(param.knn_);
-                 })
-            .def_readwrite("knn", &geometry::KDTreeSearchParamKNN::knn_,
-                           "Number of the neighbors that will be searched.");
-
-    // open3d.geometry.KDTreeSearchParamRadius
-    py::class_<geometry::KDTreeSearchParamRadius> kdtreesearchparam_radius(
-            m, "KDTreeSearchParamRadius", kdtreesearchparam,
-            "KDTree search parameters for pure radius search.");
-    kdtreesearchparam_radius.def(py::init<double>(), "radius"_a)
-            .def("__repr__",
-                 [](const geometry::KDTreeSearchParamRadius &param) {
-                     return std::string(
-                                    "geometry::KDTreeSearchParamRadius with "
-                                    "radius = ") +
-                            std::to_string(param.radius_);
-                 })
-            .def_readwrite("radius",
-                           &geometry::KDTreeSearchParamRadius::radius_,
-                           "Search radius.");
-
-    // open3d.geometry.KDTreeSearchParamHybrid
-    py::class_<geometry::KDTreeSearchParamHybrid> kdtreesearchparam_hybrid(
-            m, "KDTreeSearchParamHybrid", kdtreesearchparam,
-            "KDTree search parameters for hybrid KNN and radius search.");
-    kdtreesearchparam_hybrid
-            .def(py::init<double, int>(), "radius"_a, "max_nn"_a)
-            .def("__repr__",
-                 [](const geometry::KDTreeSearchParamHybrid &param) {
-                     return std::string(
-                                    "geometry::KDTreeSearchParamHybrid with "
-                                    "radius = ") +
-                            std::to_string(param.radius_) +
-                            " and max_nn = " + std::to_string(param.max_nn_);
-                 })
-            .def_readwrite("radius",
-                           &geometry::KDTreeSearchParamHybrid::radius_,
-                           "Search radius.")
-            .def_readwrite(
-                    "max_nn", &geometry::KDTreeSearchParamHybrid::max_nn_,
-                    "At maximum, ``max_nn`` neighbors will be searched.");*/
-
     // open3d.geometry.KnnFaiss
     static const std::unordered_map<std::string, std::string>
             map_knn_faiss_method_docs = {
@@ -119,13 +42,17 @@ void pybind_knnfaiss(py::module &m) {
                      "At maximum, ``max_nn`` neighbors will be searched."},
                     {"knn", "``knn`` neighbors will be searched."},
                     {"feature", "Feature data."},
-                    {"data", "Matrix data."}};
+                    {"data", "Matrix data."},
+                    {"tensor", "Tensor data."}};
     py::class_<geometry::KnnFaiss, std::shared_ptr<geometry::KnnFaiss>>
-            KnnFaiss(m, "KnnFaiss", "Faiss for nearest neighbor search.");
-    KnnFaiss.def(py::init<>())
+            knnfaiss(m, "KnnFaiss", "Faiss for nearest neighbor search.");
+    knnfaiss.def(py::init<>())
             .def(py::init<const Eigen::MatrixXd &>(), "data"_a)
             .def("set_matrix_data", &geometry::KnnFaiss::SetMatrixData,
                  "Sets the data for the Faiss Index from a matrix.", "data"_a)
+            .def(py::init<const Tensor &>(), "tensor"_a)
+            .def("set_tensor_data", &geometry::KnnFaiss::SetTensorData,
+                 "Sets the data for the Faiss Index from a tensor.", "tensor"_a)
             .def(py::init<const geometry::Geometry &>(), "geometry"_a)
             .def("set_geometry", &geometry::KnnFaiss::SetGeometry,
                  "Sets the data for the Faiss Index from geometry.",
@@ -134,35 +61,6 @@ void pybind_knnfaiss(py::module &m) {
             .def("set_feature", &geometry::KnnFaiss::SetFeature,
                  "Sets the data for the Faiss Index from the feature data.",
                  "feature"_a)
-            // Although these C++ style functions are fast by orders of
-            // magnitudes when similar queries are performed for a large number
-            // of times and memory management is involved, we prefer not to
-            // expose them in Python binding. Considering writing C++ functions
-            // if performance is an issue.
-            //.def("search_vector_3d_in_place",
-            //&KDTreeFlann::Search<Eigen::Vector3d>,
-            //        "query"_a, "search_param"_a, "indices"_a, "distance2"_a)
-            //.def("search_knn_vector_3d_in_place",
-            //        &KDTreeFlann::SearchKNN<Eigen::Vector3d>,
-            //        "query"_a, "knn"_a, "indices"_a, "distance2"_a)
-            //.def("search_radius_vector_3d_in_place",
-            //        &KDTreeFlann::SearchRadius<Eigen::Vector3d>, "query"_a,
-            //        "radius"_a, "indices"_a, "distance2"_a)
-            //.def("search_hybrid_vector_3d_in_place",
-            //        &KDTreeFlann::SearchHybrid<Eigen::Vector3d>, "query"_a,
-            //        "radius"_a, "max_nn"_a, "indices"_a, "distance2"_a)
-            /*.def("search_vector_3d",
-                 [](const geometry::KnnFaiss &tree,
-                    const Eigen::Vector3d &query,
-                    const geometry::KDTreeSearchParam &param) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.Search(query, param, indices, distance2);
-                     if (k < 0)
-                         throw std::runtime_error("search_vector_3d() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "search_param"_a)*/
             .def("search_knn_vector_3d",
                  [](const geometry::KnnFaiss &index,
                     const Eigen::Vector3d &query, int knn) {
@@ -188,37 +86,13 @@ void pybind_knnfaiss(py::module &m) {
                      return std::make_tuple(k, indices, distance2);
                  },
                  "query"_a, "radius"_a)
-            /*.def("search_hybrid_vector_3d",
-                 [](const geometry::KnnFaiss &tree,
-                    const Eigen::Vector3d &query, double radius, int max_nn) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.SearchHybrid(query, radius, max_nn, indices,
-                                               distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_hybrid_vector_3d() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "radius"_a, "max_nn"_a)*/
-            /*.def("search_vector_xd",
-                 [](const geometry::KnnFaiss &tree,
-                    const Eigen::VectorXd &query,
-                    const geometry::KDTreeSearchParam &param) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.Search(query, param, indices, distance2);
-                     if (k < 0)
-                         throw std::runtime_error("search_vector_xd() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "search_param"_a)*/
             .def("search_knn_vector_xd",
                  [](const geometry::KnnFaiss &index,
                     const Eigen::VectorXd &query, int knn) {
                      std::vector<long> indices;
                      std::vector<float> distance2;
                      int k = index.SearchKNN(query, knn, indices, distance2);
+
                      if (k < 0)
                          throw std::runtime_error(
                                  "search_knn_vector_xd() error!");
@@ -238,23 +112,6 @@ void pybind_knnfaiss(py::module &m) {
                      return std::make_tuple(k, indices, distance2);
                  },
                  "query"_a, "radius"_a);
-    /*.def("search_hybrid_vector_xd",
-         [](const geometry::KnnFaiss &tree,
-            const Eigen::VectorXd &query, double radius, int max_nn) {
-             std::vector<int> indices;
-             std::vector<double> distance2;
-             int k = tree.SearchHybrid(query, radius, max_nn, indices,
-                                       distance2);
-             if (k < 0)
-                 throw std::runtime_error(
-                         "search_hybrid_vector_xd() error!");
-             return std::make_tuple(k, indices, distance2);
-         },
-         "query"_a, "radius"_a, "max_nn"_a);*/
-    /*docstring::ClassMethodDocInject(m, "KnnFaiss", "search_hybrid_vector_3d",
-                                    map_knn_faiss_method_docs);
-    docstring::ClassMethodDocInject(m, "KnnFaiss", "search_hybrid_vector_xd",
-                                    map_knn_faiss_method_docs);*/
     docstring::ClassMethodDocInject(m, "KnnFaiss", "search_knn_vector_3d",
                                     map_knn_faiss_method_docs);
     docstring::ClassMethodDocInject(m, "KnnFaiss", "search_knn_vector_xd",
@@ -263,14 +120,14 @@ void pybind_knnfaiss(py::module &m) {
                                     map_knn_faiss_method_docs);
     docstring::ClassMethodDocInject(m, "KnnFaiss", "search_radius_vector_xd",
                                     map_knn_faiss_method_docs);
-    /*docstring::ClassMethodDocInject(m, "KnnFaiss", "search_vector_3d",
-                                    map_knn_faiss_method_docs);
-    docstring::ClassMethodDocInject(m, "KnnFaiss", "search_vector_xd",
-                                    map_knn_faiss_method_docs);*/
     docstring::ClassMethodDocInject(m, "KnnFaiss", "set_feature",
                                     map_knn_faiss_method_docs);
     docstring::ClassMethodDocInject(m, "KnnFaiss", "set_geometry",
                                     map_knn_faiss_method_docs);
     docstring::ClassMethodDocInject(m, "KnnFaiss", "set_matrix_data",
                                     map_knn_faiss_method_docs);
+    docstring::ClassMethodDocInject(m, "KnnFaiss", "set_tensor_data",
+                                    map_knn_faiss_method_docs);
 }
+
+}  // namespace open3d
