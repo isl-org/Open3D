@@ -1045,11 +1045,8 @@ struct GuiVisualizer::Impl {
     }
 };
 
-GuiVisualizer::GuiVisualizer(const std::string &title,
-                             int width,
-                             int height)
-    : gui::Window(title, width, height),
-      impl_(new GuiVisualizer::Impl()) {
+GuiVisualizer::GuiVisualizer(const std::string &title, int width, int height)
+    : gui::Window(title, width, height), impl_(new GuiVisualizer::Impl()) {
     Init();
 }
 
@@ -1557,7 +1554,8 @@ void GuiVisualizer::SetTitle(const std::string &title) {
     Super::SetTitle(title.c_str());
 }
 
-void GuiVisualizer::AddItemsToAppMenu(const std::vector<std::pair<std::string, gui::Menu::ItemId>>& items) {
+void GuiVisualizer::AddItemsToAppMenu(
+        const std::vector<std::pair<std::string, gui::Menu::ItemId>> &items) {
 #if !defined(__APPLE__)
     return;  // application menu only exists on macOS
 #endif
@@ -1567,7 +1565,8 @@ void GuiVisualizer::AddItemsToAppMenu(const std::vector<std::pair<std::string, g
             impl_->app_menu_->InsertItem(impl_->app_menu_custom_items_index_++,
                                          it.first.c_str(), it.second);
         }
-        impl_->app_menu_->InsertSeparator(impl_->app_menu_custom_items_index_++);
+        impl_->app_menu_->InsertSeparator(
+                impl_->app_menu_custom_items_index_++);
     }
 }
 

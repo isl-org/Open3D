@@ -73,8 +73,10 @@ public:
 
 protected:
     // Add custom items to the application menu (only relevant on macOS)
-    void AddItemsToAppMenu(const std::vector<std::pair<std::string, gui::Menu::ItemId>>& items);
-    
+    void AddItemsToAppMenu(
+            const std::vector<std::pair<std::string, gui::Menu::ItemId>>&
+                    items);
+
     void OnMenuItemSelected(gui::Menu::ItemId item_id) override;
     void OnDragDropped(const char* path) override;
 

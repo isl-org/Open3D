@@ -191,7 +191,8 @@ Window::Window(const std::string& title,
                int flags /*= 0*/)
     : impl_(new Window::Impl()) {
     impl_->wants_auto_center_ = (x == CENTERED_X || y == CENTERED_Y);
-    impl_->wants_auto_size_ = (width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT);
+    impl_->wants_auto_size_ =
+            (width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT);
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
