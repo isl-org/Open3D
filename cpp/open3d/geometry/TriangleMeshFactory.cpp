@@ -433,7 +433,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCoordinateFrame(
     mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
-    mesh_frame->Translate(-origin, true);
+    mesh_frame->Translate(origin, true);
 
     return mesh_frame;
 }
