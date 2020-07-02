@@ -64,6 +64,9 @@ static constexpr int CENTERED_Y = -10000;
 static constexpr int AUTOSIZE_WIDTH = 0;
 static constexpr int AUTOSIZE_HEIGHT = 0;
 
+static constexpr int FALLBACK_MONITOR_WIDTH = 1024;
+static constexpr int FALLBACK_MONITOR_HEIGHT = 768;
+
 // Assumes the correct ImGuiContext is current
 void UpdateImGuiForScaling(float new_scaling) {
     ImGuiStyle& style = ImGui::GetStyle();
@@ -824,8 +827,8 @@ void Window::OnResize() {
     io.DisplayFramebufferScale.y = 1.0f;
 
     if (impl_->wants_auto_size_ || impl_->wants_auto_center_) {
-        int screen_width = 1024;  // defaults in case monitor == nullptr
-        int screen_height = 768;
+        int screen_width = FALLBACK_MONITOR_WIDTH;
+        int screen_height = FALLBACK_MONITOR_HEIGHT;
         auto* monitor = glfwGetWindowMonitor(impl_->window_);
         if (!monitor) {
             monitor = glfwGetPrimaryMonitor();
