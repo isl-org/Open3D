@@ -26,42 +26,17 @@
 
 #pragma once
 
-// TEST_DATA_DIR defined in CMakeLists.txt
-// Put it here to avoid editor warnings
-#ifndef TEST_DATA_DIR
-#define TEST_DATA_DIR
-#endif
+#include <cstdlib>
 
-#include <gtest/gtest.h>
-#include <Eigen/Core>
-#include <sstream>
-#include <string>
-#include <vector>
-
-#include "open3d/Macro.h"
-#include "tests/test_utility/Compare.h"
-#include "tests/test_utility/MemoryLimit.h"
-#include "tests/test_utility/Print.h"
-#include "tests/test_utility/Rand.h"
-#include "tests/test_utility/Raw.h"
-#include "tests/test_utility/Sort.h"
-
-// GPU_CONDITIONAL_COMPILE_STR is "" if gpu is available, otherwise "DISABLED_"
-// The GPU_CONDITIONAL_COMPILE_STR value is configured in CMake
-#define CUDA_CONDITIONAL_TEST(test_name) \
-    OPEN3D_CONCATENATE(GPU_CONDITIONAL_TEST_STR, test_name)
+#include "open3d/core/Device.h"
 
 namespace open3d {
 namespace tests {
 
-// Eigen Zero()
-const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();
-const Eigen::Vector3d Zero3d = Eigen::Vector3d::Zero();
-const Eigen::Matrix<double, 6, 1> Zero6d = Eigen::Matrix<double, 6, 1>::Zero();
-const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
-
-// Mechanism for reporting unit tests for which there is no implementation yet.
-void NotImplemented();
+bool OverMemoryLimit(std::string test_name,
+                     int cpu_mb,
+                     int gpu_mb = 0,
+                     open3d::core::Device device = {});
 
 }  // namespace tests
 }  // namespace open3d
