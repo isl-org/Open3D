@@ -1382,6 +1382,9 @@ TEST_P(TensorPermuteDevices, ReduceSumSpecialShapes) {
 
 TEST_P(TensorPermuteDevices, ReduceMultipleOutputsSumLargeArray) {
     core::Device device = GetParam();
+    if (OverMemoryLimit("ReduceMultipleOutputsSumLargeArray", 3300, 1601,
+                        device))
+        return;
     core::SizeVector shape{3, 7, 8234719};
     int64_t size = shape.NumElements();
     std::vector<int> vals(size, 1);
@@ -1399,6 +1402,7 @@ TEST_P(TensorPermuteDevices, ReduceMultipleOutputsSumLargeArray) {
 
 TEST_P(TensorPermuteDevices, ReduceSum64bit1D) {
     core::Device device = GetParam();
+    if (OverMemoryLimit("ReduceSum64bit1D", 4097, 2113, device)) return;
     // num_bytes = 8 * (2 ^ 28) + 1 = 2 ^ 31 + 1 ~= 2GB
     // max_offsets = num_bytes - 1 = 2 ^ 31
     // max_32_bit_indexing = 2 ^ 31 - 1
@@ -1417,6 +1421,7 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit1D) {
 // np.sum(np.ones((2, large_dim)), dim=0)
 TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase0) {
     core::Device device = GetParam();
+    if (OverMemoryLimit("ReduceSum64bit2DCase0", 7169, 4000, device)) return;
     int64_t large_dim = (1ULL << 27) + 10;
     core::SizeVector shape{2, large_dim};
     int64_t num_elements = shape.NumElements();
@@ -1441,6 +1446,7 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase0) {
 // np.sum(np.ones((2, large_dim)), dim=1)
 TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase1) {
     core::Device device = GetParam();
+    if (OverMemoryLimit("ReduceSum64bit2DCase1", 4097, 4000, device)) return;
     int64_t large_dim = (1ULL << 27) + 10;
     core::SizeVector shape{2, large_dim};
     int64_t num_elements = shape.NumElements();
@@ -1465,6 +1471,7 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase1) {
 // np.sum(np.ones((large_dim, 2)), dim=0)
 TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase2) {
     core::Device device = GetParam();
+    if (OverMemoryLimit("ReduceSum64bit2DCase2", 4097, 2115, device)) return;
     int64_t large_dim = (1ULL << 27) + 10;
     core::SizeVector shape{large_dim, 2};
     int64_t num_elements = shape.NumElements();
@@ -1489,6 +1496,7 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase2) {
 // np.sum(np.ones((large_dim, 2)), dim=1)
 TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase3) {
     core::Device device = GetParam();
+    if (OverMemoryLimit("ReduceSum64bit2DCase3", 7169, 4000, device)) return;
     int64_t large_dim = (1ULL << 27) + 10;
     core::SizeVector shape{large_dim, 2};
     int64_t num_elements = shape.NumElements();
@@ -1512,6 +1520,7 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase3) {
 
 TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {
     core::Device device = GetParam();
+    if (OverMemoryLimit("ReduceSumLargeArray", 385, 4000, device)) return;
 
     std::vector<int64_t> sizes = TensorSizes::TestCases();
     int64_t max_size = *std::max_element(sizes.begin(), sizes.end());
