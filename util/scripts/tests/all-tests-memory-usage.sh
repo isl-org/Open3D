@@ -17,7 +17,7 @@ rm -f testlimits.txt
 cat testlist.txt|
 while read test
 do
-    $(dirname $0)/get-cpu-gpu-memory-usage.sh "$test" > mibinfo.txt
+    OPEN3D_TEST_REPORT_MEMORY_LIMITS=1 $(dirname $0)/get-cpu-gpu-memory-usage.sh "$test" > mibinfo.txt
     set -- $(cat mibinfo.txt)
     [ "$1" = "cpumib" -a "$3" = "gpumib" ] || {
         echo "Failed to collect memory usage information:"
@@ -62,8 +62,7 @@ do
     fi
     codeline="if (OverMemoryLimit(\"$testname\",$cpumib)) return;"
     [ $gpumib -gt 0 ] && codeline="if (OverMemoryLimit(\"$testname\",$cpumib,$gpumib,device)) return;"
-    [ $gpumib -lt $gpumib_mincheck -a $cpumib -lt $cpumib_mincheck -a $havelimit = false ] && codeline=
-    [ -n "$codeline" ] || continue
+    [ $gpumib -lt $gpumib_mincheck -a $cpumib -lt $cpumib_mincheck -a $havelimit = false ] && continue
     if $missing_tests
     then
         echo "MISSING DATA ($skip skipped): $test $op $codeline" >> testlimits.txt

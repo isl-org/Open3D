@@ -51,6 +51,10 @@ touch mongpu
 monitorGpuUsage &
 
 extractHeapAndInfo() {
+    # If caller sets OPEN3D_TEST_REPORT_MEMORY_LIMITS=1 then OverMemoryUsage will print
+    # lines to stderr with Open3dTestMemoryLimits indicating currently set parameters.
+    # In that case this should be the only type of test that runs (multiple invocations
+    # of this test with different parameters is allowed)
     perl -ne '
     if (/^Open3dTestMemoryLimits /) {
         if (/^Open3dTestMemoryLimits test_name (.*) cpu_mb (\d+) gpu_mb (\d+) skip (\w+) device/) {
@@ -73,7 +77,7 @@ extractHeapAndInfo() {
     '
 }
 #grab output from stderr and extract heap peak from it and Open3dTestMemoryLimits if present; still provide stdout on stderr
-meminfo=$(OPEN3D_TEST_REPORT_MEMORY_LIMITS=1 LD_PRELOAD=$libmemusage $testbin --gtest_filter="$1" 3>&1 1>&2 2>&3 |extractHeapAndInfo)
+meminfo=$(LD_PRELOAD=$libmemusage $testbin --gtest_filter="$1" 3>&1 1>&2 2>&3 |extractHeapAndInfo)
 #note: set -e -u pipefail will cause us to exit if bin/tests return failure
 echo meminfo = $meminfo >&2
 rm mongpu
