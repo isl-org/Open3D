@@ -109,9 +109,15 @@ Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
         num_digits += 1;
     }
 
-    auto pref = Super::CalcPreferredSize(theme);
-    auto padding = pref.height - theme.font_size;
-    return Size((num_digits * theme.font_size) / 2 + padding, pref.height);
+    int height = ImGui::GetTextLineHeightWithSpacing();
+    auto padding = height - ImGui::GetTextLineHeight();
+    int incdec_width = 0;
+    if (impl_->type_ == INT) {
+        // padding is for the spacing between buttons and between text box
+        incdec_width = 2 * height + padding;
+    }
+    return Size((num_digits * theme.font_size) / 2 + padding + incdec_width,
+                height);
 }
 
 Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {

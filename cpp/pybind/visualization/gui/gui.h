@@ -24,24 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/visualization/visualization.h"
+#pragma once
 
-#include "pybind/visualization/gui/gui.h"
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
 
-void pybind_visualization(py::module &m) {
-    py::module m_visualization = m.def_submodule("visualization");
-    pybind_renderoption(m_visualization);
-    pybind_viewcontrol(m_visualization);
-    pybind_visualizer(m_visualization);
-    pybind_visualization_utility(m_visualization);
-    pybind_renderoption_method(m_visualization);
-    pybind_viewcontrol_method(m_visualization);
-    pybind_visualizer_method(m_visualization);
-    pybind_visualization_utility_methods(m_visualization);
-
-    pybind_gui(m_visualization);
-}
+void pybind_gui(py::module &m);
 
 }  // namespace open3d
