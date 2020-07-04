@@ -480,3 +480,17 @@ reference.
     cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
     ./bin/tests
+
+Unit tests use about 8gig of RAM and 4gig of GPU memory to run all tests.
+You can limit how much memory tests should take, and it will skip tests which
+need more memory than that.  You can set the following environment variables:
+
+.. code-block:: bash
+
+    export TEST_MAX_CPU_MEMORY_MB=3500
+    export TEST_MAX_GPU_MEMORY_MB=2500
+    # In the build directory
+    ./bin/tests
+
+This would skip tests that use either more than 3500MiB on CPU or 2500MiB on GPU.
+(The tests that are skipped will be reported as skipped.)

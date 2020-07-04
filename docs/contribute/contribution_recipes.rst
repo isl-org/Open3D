@@ -68,6 +68,55 @@ Don’ts
 | [DON'T]  Do not create a massive pull request with dozens of commits and files                                          |
 +-------------------------------------------------------------------------------------------------------------------------+
 
+Unit Tests
+-----------------------
+
+* If you are adding code, please add unit tests.
+* If you are providing a fix: if possible please add a unit test for the failure and test that it fails on current code, and passes on code with your changes.
+* If you are adding python code or pybind, please add python tests in python/test
+* If your C++ TEST needs a lot of memory (more than 100MiB of CPU or GPU memory), you will need to run a check to see how much memory it uses and add a line of code to your test so this test can be skipped in situations when the amount of memory needs to be limited.  (If you modify a test that is already using a lot of memory you need to rerun the check and update the checking code line.):
+
+.. code-block:: bash
+
+    # In the build directory
+    $ ./bin/tests
+    # make sure tests succeed
+    $ ../util/scripts/tests/all-tests-memory-usage.sh
+    ...
+    ======================================================================
+    Tensor/TensorPermuteDevices.ReduceSum64bit1D/* ADD: if (OverMemoryLimit("ReduceSum64bit1D",4097,2113,device)) return;
+
+    Full list in testlimits.txt
+    $
+
+This tells you that for TensorPermuteDevices.ReduceSum64bit1D test you need to add:
+
+.. code:: cpp
+
+    if (OverMemoryLimit("ReduceSum64bit1D",4097,2113,device)) return;
+
+up top.  If your test has multiple cases, some for CPU and some for GPU, device parameter needs to specify CUDA if you are going to use GPU.  If your test always uses GPU then you should provide device parameter that always specifies CUDA.  If your test does not use GPU at all then all-tests-memory-usage.sh will generate a line with only 2 parameters for OverMemoryLimit.
+
+Once you update your test and rerun all-tests-memory-usage.sh it should indicate that everything is marked correctly:
+
+.. code-block:: bash
+
+    # In the build directory
+    $ make tests
+    ...
+    $ ../util/scripts/tests/all-tests-memory-usage.sh
+    ...
+    ======================================================================
+    All tests marked correctly!
+
+    Full list in testlimits.txt
+    $
+
+You can also ask all-tests-memory-usage.sh to only check tests that match a specific pattern:
+
+.. code-block:: bash
+
+    $ ../util/scripts/tests/all-tests-memory-usage.sh --gtest_filter='*ReduceSum64bit1D*'
 
 .. _review_contribution:
 
