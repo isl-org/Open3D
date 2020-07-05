@@ -17,13 +17,14 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCPU(
             torch::empty_like(inp_neighbors_attributes);
 
     open3d::ml::detail::InvertNeighborsListCPU(
-            inp_neighbors_index.data<TIndex>(),
-            num_attributes ? inp_neighbors_attributes.data<TAttr>() : nullptr,
-            num_attributes, inp_neighbors_row_splits.data<int64_t>(),
+            inp_neighbors_index.data_ptr<TIndex>(),
+            num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()
+                           : nullptr,
+            num_attributes, inp_neighbors_row_splits.data_ptr<int64_t>(),
             inp_neighbors_row_splits.size(0) - 1,
-            neighbors_index.data<TIndex>(),
-            num_attributes ? neighbors_attributes.data<TAttr>() : nullptr,
-            neighbors_index.size(0), neighbors_row_splits.data<int64_t>(),
+            neighbors_index.data_ptr<TIndex>(),
+            num_attributes ? neighbors_attributes.data_ptr<TAttr>() : nullptr,
+            neighbors_index.size(0), neighbors_row_splits.data_ptr<int64_t>(),
             neighbors_row_splits.size(0) - 1);
 
     return std::make_tuple(neighbors_index, neighbors_row_splits,
