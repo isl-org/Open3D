@@ -39,7 +39,7 @@ using open3d::utility::DivUp;
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 /// Computes the output features of a continuous convolution.
 ///
@@ -274,6 +274,6 @@ void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
     }
 }
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

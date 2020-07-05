@@ -28,7 +28,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 /// Interpolation modes
 /// LINEAR is a standard trilinear interpolation with coordinate clamping
@@ -48,6 +48,6 @@ enum class CoordinateMapping {
     IDENTITY
 };
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

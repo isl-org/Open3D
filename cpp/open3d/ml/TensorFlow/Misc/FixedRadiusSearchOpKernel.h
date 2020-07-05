@@ -68,7 +68,7 @@ public:
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
         using namespace tensorflow;
-        using namespace open3d::ml::detail;
+        using namespace open3d::ml::impl;
 
         std::string metric_str;
         OP_REQUIRES_OK(construction,
@@ -147,7 +147,7 @@ public:
                         tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:
-    open3d::ml::detail::Metric metric;
+    open3d::ml::impl::Metric metric;
     bool ignore_query_point;
     bool return_distances;
 };

@@ -34,7 +34,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 enum AccumulationFn { AVERAGE = 0, NEAREST_NEIGHBOR, MAX, CENTER };
 
@@ -579,6 +579,6 @@ void VoxelPoolingBackprop(TFeat* features_backprop,
 #undef CALL_TEMPLATE
 }
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

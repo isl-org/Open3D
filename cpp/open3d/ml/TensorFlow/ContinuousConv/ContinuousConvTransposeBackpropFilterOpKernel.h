@@ -35,7 +35,7 @@ public:
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
         using namespace tensorflow;
-        using namespace open3d::ml::detail;
+        using namespace open3d::ml::impl;
         OP_REQUIRES_OK(construction,
                        construction->GetAttr("align_corners", &align_corners));
         OP_REQUIRES_OK(construction,
@@ -236,7 +236,7 @@ public:
 public:
     bool align_corners;
     bool normalize;
-    open3d::ml::detail::InterpolationMode interpolation;
-    open3d::ml::detail::CoordinateMapping coordinate_mapping;
+    open3d::ml::impl::InterpolationMode interpolation;
+    open3d::ml::impl::CoordinateMapping coordinate_mapping;
     int max_temp_mem_MB;
 };

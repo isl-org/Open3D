@@ -16,7 +16,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCPU(
     torch::Tensor neighbors_attributes =
             torch::empty_like(inp_neighbors_attributes);
 
-    open3d::ml::detail::InvertNeighborsListCPU(
+    open3d::ml::impl::InvertNeighborsListCPU(
             inp_neighbors_index.data_ptr<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()
                            : nullptr,

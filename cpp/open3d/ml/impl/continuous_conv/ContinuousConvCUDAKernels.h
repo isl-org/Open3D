@@ -32,7 +32,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 /// Copies and transforms the features to a column, which can be multiplied
 /// with the filter matrix.
@@ -195,6 +195,6 @@ void MultiplyAndCopyColumns(const cudaStream_t& stream,
                             const T* const __restrict__ col_major_matrix,
                             const T* const __restrict__ vector);
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

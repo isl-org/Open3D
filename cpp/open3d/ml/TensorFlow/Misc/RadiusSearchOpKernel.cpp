@@ -27,7 +27,7 @@
 #include "RadiusSearchOpKernel.h"
 #include "open3d/ml/impl/misc/RadiusSearch.h"
 
-using namespace open3d::ml::detail;
+using namespace open3d::ml::impl;
 using namespace radius_search_opkernel;
 using namespace tensorflow;
 

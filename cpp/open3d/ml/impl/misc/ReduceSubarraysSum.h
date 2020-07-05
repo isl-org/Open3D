@@ -30,7 +30,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 /// Reduces subarrays in linear memory with the sum operation.
 /// The sum for empty subarrays is 0.
@@ -65,6 +65,6 @@ void ReduceSubarraysSumCPU(const T* const values,
                       });
 }
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d
