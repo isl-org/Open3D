@@ -157,25 +157,9 @@ make
 ./TestVisualizer
 echo
 
-reportJobStart "cleanup"
-echo "cleanup the C++ example..."
-date
-cd ../
-rm -rf build
-
-echo "uninstall Open3D..."
+echo "test uninstalling Open3D..."
 date
 cd ../../../build
 make uninstall
-
-echo "cleanup Open3D..."
-date
-cd ../
-rm -rf build
-rm -rf ${OPEN3D_INSTALL_DIR}
-if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-    rm -rf "$CUDA_TOOLKIT_DIR"
-fi
-echo
 
 reportJobFinishSession
