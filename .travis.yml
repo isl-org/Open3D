@@ -29,7 +29,8 @@ matrix:
             - cmake
             - clang-7
             - clang-format-5.0
-      install: ./util/scripts/setup-linux.sh
+      install:
+        - ./util/scripts/install-deps-ubuntu.sh assume-yes
       script:
         - mkdir build
         - cd build
@@ -57,7 +58,7 @@ matrix:
             - libosmesa6-dev
       install:
         # Install ubuntu dependencies
-        - ./util/scripts/setup-linux.sh
+        - ./util/scripts/install-deps-ubuntu.sh assume-yes
         # Install Kinect k4a package
         - curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
         - sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
