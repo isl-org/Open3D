@@ -54,6 +54,7 @@ jobs:
         ccache -M 1G  # GitHub's overall cache limit is 5GB
     - name: Config and build
       run: |
+        PATH=/user/lib/ccache:$PATH
         ccache -s
         ./util/scripts/run-ci.sh
         ccache -s
