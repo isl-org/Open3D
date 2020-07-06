@@ -159,7 +159,7 @@ echo
 
 echo "test uninstalling Open3D..."
 date
-cd ../../../build
+cd ../../../../build
 make uninstall
 
 reportJobFinishSession
