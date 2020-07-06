@@ -28,6 +28,19 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Setup cache
+      uses: actions/cache@v2
+      with:
+        # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
+        path: ~/.ccache
+        # We include the commit sha in the cache key, as new cache entries are
+        # only created if there is no existing entry for the key yet.
+        key: ${{ runner.os }}-ccache-${{ github.sha }}
+        # Restore any ccache cache entry, if none for
+        # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+        # Common prefix will be used so that ccache can be used across commits.
+        restore-keys: |
+          ${{ runner.os }}-ccache
     - name: Set up Python version
       uses: actions/setup-python@v2
       with:
@@ -35,6 +48,10 @@ jobs:
     - name: Install dependencies
       run: |
         ./util/scripts/install-deps-osx.sh
+        brew install ccache
+        ccache -M 500M  # Github's overall cache limit is 5GB
     - name: Config and build
       run: |
+        ccache -s
         ./util/scripts/run-ci.sh
+        ccache -s

@@ -97,38 +97,6 @@ matrix:
         - ./util/scripts/make-documentation.sh
         - ./.travis/deploy_docs.sh
 
-<<<<<<< Updated upstream
-    - os: osx
-      osx_image: xcode11.5
-      env: BUILD_TENSORFLOW_OPS=ON BUILD_PYTORCH_OPS=ON LOW_MEM_USAGE=ON
-      install:
-        - echo "Travis processors:"
-        - nproc
-        - brew update
-        - brew upgrade python || true
-          #python@3 on Travis is 3.7
-        - /usr/local/opt/python@3/bin/pip3 install virtualenv
-        - /usr/local/opt/python@3/bin/python3 -m venv ~/py3env
-        - source ~/py3env/bin/activate
-        - ./util/scripts/install-deps-osx.sh
-      script: ./util/scripts/run-ci.sh
-
-    - os: osx
-      osx_image: xcode11.5
-      env: BUILD_TENSORFLOW_OPS=OFF BUILD_PYTORCH_OPS=OFF LOW_MEM_USAGE=ON
-      install:
-        - echo "Travis processors:"
-        - nproc
-        - brew update
-        - brew upgrade python || true
-        - /usr/local/opt/python@3.8/bin/pip3 install virtualenv
-        - /usr/local/opt/python@3.8/bin/python3 -m venv ~/py3env
-        - source ~/py3env/bin/activate
-        - ./util/scripts/install-deps-osx.sh
-      script: ./util/scripts/run-ci.sh
-
-=======
->>>>>>> Stashed changes
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
     #   install: sudo apt-get update && sudo apt-get install -y realpath
