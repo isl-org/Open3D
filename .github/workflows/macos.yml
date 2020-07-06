@@ -37,4 +37,4 @@ jobs:
         ./util/scripts/install-deps-osx.sh
     - name: Config and build
       run: |
-        ./util/scripts/run-travis.sh
+        ./util/scripts/run-ci.sh
