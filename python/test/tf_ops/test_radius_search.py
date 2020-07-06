@@ -28,11 +28,11 @@ import open3d as o3d
 import numpy as np
 from scipy.spatial import cKDTree
 import pytest
-import mark_helper
+import mltest
 
 # skip all tests if the tf ops were not built and disable warnings caused by
 # tensorflow
-pytestmark = mark_helper.tf_marks
+pytestmark = mltest.default_marks
 
 # the supported dtypes for the point coordinates
 dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])

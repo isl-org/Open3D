@@ -27,12 +27,12 @@
 import open3d as o3d
 import numpy as np
 import pytest
-import mark_helper
+import mltest
 from check_gradients import check_gradients
 
 # skip all tests if the tf ops were not built and disable warnings caused by
 # tensorflow
-pytestmark = mark_helper.tf_marks
+pytestmark = mltest.default_marks
 
 # the supported dtypes
 position_dtypes = pytest.mark.parametrize('pos_dtype', [np.float32, np.float64])

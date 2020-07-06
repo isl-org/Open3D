@@ -30,9 +30,8 @@ import numpy as np
 np.set_printoptions(linewidth=600)
 np.set_printoptions(threshold=np.inf)
 import pytest
-import mark_helper
+import mltest
 from check_gradients import check_gradients
-# from cconv_python import *
 
 # the tests in this file require the tensorflow ops
 pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
@@ -47,9 +46,9 @@ pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                              ([5,5,5],            5,           3,               False,               True),
                         ])
 # yapf: enable
-@mark_helper.devices
+@mltest.parameterize.device
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_compare_to_conv3d(dtype, device_name, filter_size, out_channels,
+def test_compare_to_conv3d(dtype, device, filter_size, out_channels,
                            in_channels, with_inp_importance,
                            with_normalization):
     """Compares to the 3D convolution in tensorflow"""
@@ -100,13 +99,13 @@ def test_compare_to_conv3d(dtype, device_name, filter_size, out_channels,
 
     neighbors_importance = np.empty((0,))
 
-    with tf.device(device_name):
+    with tf.device(device):
         y = ml3d.ops.continuous_conv(filters, out_positions, extent, offset,
                                      inp_positions, inp_features,
                                      inp_importance, neighbors_index,
                                      neighbors_importance, neighbors_row_splits,
                                      **conv_attrs)
-        assert device_name in y.device
+        assert device in y.device
         y = y.numpy()
 
     # Compare the output to a standard 3d conv
@@ -149,13 +148,12 @@ def test_compare_to_conv3d(dtype, device_name, filter_size, out_channels,
                              ([5,1,3],            3,           4,               False,                      True,                  False,              False,         False,           'identity',        'linear'),
                         ])
 # yapf: enable
-@mark_helper.devices
+@mltest.parameterize.device
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_cconv_gradient(dtype, device_name, filter_size, out_channels,
-                        in_channels, with_inp_importance,
-                        with_neighbors_importance, with_individual_extent,
-                        with_normalization, align_corners, coordinate_mapping,
-                        interpolation):
+def test_cconv_gradient(dtype, device, filter_size, out_channels, in_channels,
+                        with_inp_importance, with_neighbors_importance,
+                        with_individual_extent, with_normalization,
+                        align_corners, coordinate_mapping, interpolation):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
 
@@ -221,23 +219,23 @@ def test_cconv_gradient(dtype, device_name, filter_size, out_channels,
 
     # define functions for the gradient checker
     def conv_infeats(inp_features):
-        with tf.device(device_name):
+        with tf.device(device):
             y = ml3d.ops.continuous_conv(filters, out_positions, extent, offset,
                                          inp_positions, inp_features,
                                          inp_importance, neighbors_index,
                                          neighbors_importance,
                                          neighbors_row_splits, **conv_attrs)
-            assert device_name in y.device
+            assert device in y.device
             return y.numpy()
 
     def conv_filter(filter):
-        with tf.device(device_name):
+        with tf.device(device):
             y = ml3d.ops.continuous_conv(filter, out_positions, extent, offset,
                                          inp_positions, inp_features,
                                          inp_importance, neighbors_index,
                                          neighbors_importance,
                                          neighbors_row_splits, **conv_attrs)
-            assert device_name in y.device
+            assert device in y.device
             return y.numpy()
 
     def conv_filter_backprop(out_features_gradient, filter):
@@ -264,25 +262,25 @@ def test_cconv_gradient(dtype, device_name, filter_size, out_channels,
         return dy_dx.numpy()
 
     def conv_transpose_filter(filter):
-        with tf.device(device_name):
+        with tf.device(device):
             y = ml3d.ops.continuous_conv_transpose(
                 filter, inp_positions, inp_importance, extent, offset,
                 out_positions, y_arr, neighbors_index, neighbors_importance_sum,
                 neighbors_row_splits, inverted_neighbors_index,
                 inverted_neighbors_importance, inverted_neighbors_row_splits,
                 **conv_attrs)
-            assert device_name in y.device
+            assert device in y.device
             return y.numpy()
 
     def conv_transpose_infeats(inp_features):
-        with tf.device(device_name):
+        with tf.device(device):
             y = ml3d.ops.continuous_conv_transpose(
                 filters.transpose([0, 1, 2, 4, 3]), inp_positions,
                 inp_importance, extent, offset, out_positions, inp_features,
                 neighbors_index, neighbors_importance_sum, neighbors_row_splits,
                 inverted_neighbors_index, inverted_neighbors_importance,
                 inverted_neighbors_row_splits, **conv_attrs)
-            assert device_name in y.device
+            assert device in y.device
             return y.numpy()
 
     def conv_transpose_filter_backprop(out_features_gradient, filter):
