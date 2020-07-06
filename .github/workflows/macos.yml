@@ -49,7 +49,7 @@ jobs:
       run: |
         ./util/scripts/install-deps-osx.sh skip-upgrade
         brew install ccache
-        ccache -M 1G  # GitHub's overall cache limit is 5GB
+        ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
     - name: Config and build
       run: |
         PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH

@@ -51,7 +51,7 @@ jobs:
       run: |
         ./util/scripts/install-deps-ubuntu.sh assume-yes
         sudo apt-get --yes install ccache
-        ccache -M 1G  # GitHub's overall cache limit is 5GB
+        ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
     - name: Config and build
       run: |
         PATH=/usr/lib/ccache:$PATH
