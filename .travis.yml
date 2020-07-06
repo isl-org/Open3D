@@ -97,8 +97,9 @@ matrix:
         - ./util/scripts/make-documentation.sh
         - ./.travis/deploy_docs.sh
 
+<<<<<<< Updated upstream
     - os: osx
-      osx_image: xcode11
+      osx_image: xcode11.5
       env: BUILD_TENSORFLOW_OPS=ON BUILD_PYTORCH_OPS=ON LOW_MEM_USAGE=ON
       install:
         - echo "Travis processors:"
@@ -126,6 +127,8 @@ matrix:
         - ./util/scripts/install-deps-osx.sh
       script: ./util/scripts/run-ci.sh
 
+=======
+>>>>>>> Stashed changes
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
     #   install: sudo apt-get update && sudo apt-get install -y realpath

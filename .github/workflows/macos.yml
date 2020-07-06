@@ -1,0 +1,40 @@
+
+name: macOS CI
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+
+jobs:
+  macos:
+    runs-on: macos-10.15
+    strategy:
+      fail-fast: false
+      matrix:
+        BUILD_ML_OPS: [ON, OFF]
+    env:
+      SHARED: OFF
+      NPROC: 2
+      BUILD_DEPENDENCY_FROM_SOURCE: OFF
+      BUILD_CUDA_MODULE: OFF
+      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
+      LOW_MEM_USAGE: ON
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      run: |
+        ./util/scripts/install-deps-osx.sh
+    - name: Config and build
+      run: |
+        ./util/scripts/run-travis.sh
