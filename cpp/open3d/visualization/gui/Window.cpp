@@ -30,6 +30,7 @@
 #include <filament/Engine.h>
 #include <imgui.h>
 #include <imgui_internal.h>  // so we can examine the current context
+#include <algorithm>
 #include <cmath>
 #include <queue>
 #include <unordered_map>
@@ -62,6 +63,9 @@ static constexpr int CENTERED_X = -10000;
 static constexpr int CENTERED_Y = -10000;
 static constexpr int AUTOSIZE_WIDTH = 0;
 static constexpr int AUTOSIZE_HEIGHT = 0;
+
+static constexpr int FALLBACK_MONITOR_WIDTH = 1024;
+static constexpr int FALLBACK_MONITOR_HEIGHT = 768;
 
 // Assumes the correct ImGuiContext is current
 void UpdateImGuiForScaling(float new_scaling) {
@@ -167,7 +171,8 @@ struct Window::Impl {
     Widget* mouse_grabber_widget_ = nullptr;  // only if not ImGUI widget
     Widget* focus_widget_ =
             nullptr;  // only used if ImGUI isn't taking keystrokes
-    bool wants_auto_size_and_center_ = false;
+    bool wants_auto_size_ = false;
+    bool wants_auto_center_ = false;
     bool needs_layout_ = true;
     bool is_resizing_ = false;
 };
@@ -188,10 +193,10 @@ Window::Window(const std::string& title,
                int height,
                int flags /*= 0*/)
     : impl_(new Window::Impl()) {
-    if (x == CENTERED_X || y == CENTERED_Y || width == AUTOSIZE_WIDTH ||
-        height == AUTOSIZE_HEIGHT) {
-        impl_->wants_auto_size_and_center_ = true;
-    }
+    impl_->wants_auto_center_ = (x == CENTERED_X || y == CENTERED_Y);
+    impl_->wants_auto_size_ =
+            (width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT);
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -206,8 +211,8 @@ Window::Window(const std::string& title,
 #if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
 #endif
-    glfwWindowHint(GLFW_VISIBLE,
-                   impl_->wants_auto_size_and_center_ ? GLFW_TRUE : GLFW_FALSE);
+    bool visible = (impl_->wants_auto_size_ || impl_->wants_auto_center_);
+    glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FLOATING,
                    ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
 
@@ -821,11 +826,13 @@ void Window::OnResize() {
     io.DisplayFramebufferScale.x = 1.0f;
     io.DisplayFramebufferScale.y = 1.0f;
 
-    if (impl_->wants_auto_size_and_center_) {
-        impl_->wants_auto_size_and_center_ = false;
-        int screen_width = 1024;  // defaults in case monitor == nullptr
-        int screen_height = 768;
+    if (impl_->wants_auto_size_ || impl_->wants_auto_center_) {
+        int screen_width = FALLBACK_MONITOR_WIDTH;
+        int screen_height = FALLBACK_MONITOR_HEIGHT;
         auto* monitor = glfwGetWindowMonitor(impl_->window_);
+        if (!monitor) {
+            monitor = glfwGetPrimaryMonitor();
+        }
         if (monitor) {
             const GLFWvidmode* mode = glfwGetVideoMode(monitor);
             if (mode) {
@@ -833,16 +840,32 @@ void Window::OnResize() {
                 screen_height = mode->height;
             }
         }
-        ImGui::NewFrame();
-        ImGui::PushFont(impl_->imgui_.system_font);
-        auto pref = CalcPreferredSize();
-        Size size(pref.width / this->impl_->imgui_.scaling,
-                  pref.height / this->impl_->imgui_.scaling);
-        glfwSetWindowSize(impl_->window_, size.width, size.height);
-        glfwSetWindowPos(impl_->window_, (screen_width - size.width) / 2,
-                         (screen_height - size.height) / 2);
-        ImGui::PopFont();
-        ImGui::EndFrame();
+
+        int w = GetOSFrame().width;
+        int h = GetOSFrame().height;
+
+        if (impl_->wants_auto_size_) {
+            ImGui::NewFrame();
+            ImGui::PushFont(impl_->imgui_.system_font);
+            auto pref = CalcPreferredSize();
+            ImGui::PopFont();
+            ImGui::EndFrame();
+
+            w = std::min(screen_width,
+                         int(std::round(pref.width / impl_->imgui_.scaling)));
+            h = std::min(screen_height,
+                         int(std::round(pref.height / impl_->imgui_.scaling)));
+            glfwSetWindowSize(impl_->window_, w, h);
+        }
+
+        if (impl_->wants_auto_center_) {
+            glfwSetWindowPos(impl_->window_, (screen_width - w) / 2,
+                             (screen_height - h) / 2);
+        }
+
+        impl_->wants_auto_size_ = false;
+        impl_->wants_auto_center_ = false;
+
         OnResize();
     }
 

@@ -40,26 +40,6 @@ namespace {
 static const std::string gUsage = "Usage: Open3DViewer [meshfile|pointcloud]";
 }  // namespace
 
-void LoadAndCreateWindow(const char *path) {
-    static int x = 50, y = 50;
-
-    bool is_path_valid = (path && path[0] != '\0');
-    std::vector<std::shared_ptr<const Geometry>> empty;
-    std::string title = "Open3D";
-    if (is_path_valid) {
-        title += " - ";
-        title += path;
-    }
-    auto vis =
-            std::make_shared<GuiVisualizer>(empty, title, WIDTH, HEIGHT, x, y);
-    x += 20;  // so next window (if any) doesn't hide this one
-    y += 20;
-    if (is_path_valid) {
-        vis->LoadGeometry(path);
-    }
-    gui::Application::GetInstance().AddWindow(vis);
-}
-
 int Run(int argc, const char *argv[]) {
     const char *path = nullptr;
     if (argc > 1) {
@@ -72,7 +52,12 @@ int Run(int argc, const char *argv[]) {
     auto &app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
 
-    LoadAndCreateWindow(path);
+    auto vis = std::make_shared<GuiVisualizer>("Open3D", WIDTH, HEIGHT);
+    bool is_path_valid = (path && path[0] != '\0');
+    if (is_path_valid) {
+        vis->LoadGeometry(path);
+    }
+    gui::Application::GetInstance().AddWindow(vis);
 
     app.Run();
 
