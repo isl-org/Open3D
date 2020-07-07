@@ -36,6 +36,7 @@
 #include "open3d/visualization/gui/ColorEdit.h"
 #include "open3d/visualization/gui/Combobox.h"
 #include "open3d/visualization/gui/Dialog.h"
+#include "open3d/visualization/gui/FileDialog.h"
 #include "open3d/visualization/gui/Gui.h"
 #include "open3d/visualization/gui/ImageLabel.h"
 #include "open3d/visualization/gui/Label.h"
@@ -44,7 +45,9 @@
 #include "open3d/visualization/gui/NumberEdit.h"
 #include "open3d/visualization/gui/ProgressBar.h"
 #include "open3d/visualization/gui/Slider.h"
+#include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/TextEdit.h"
+#include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/gui/Window.h"
@@ -131,7 +134,7 @@ void pybind_gui_classes(py::module &m) {
              "Returns the size of the window in device pixels, including "
              "menubar (except on macOS)")
         .def("set_size", &Window::SetSize,
-             "Setsthe size of the window in device pixels, including "
+             "Sets the size of the window in device pixels, including "
              "menubar (except on macOS)")
         .def("get_content_rect", &Window::GetContentRect,
              "Returns the frame in device pixels, relative to the window, "
@@ -150,12 +153,28 @@ void pybind_gui_classes(py::module &m) {
              "Returns True if the window is currently the active window")
         .def("set_focus_widget", &Window::SetFocusWidget,
              "Makes specified widget have text focus")
+        .def("get_theme", &Window::GetTheme, "Get's window's theme info")
         .def("show_dialog", &Window::ShowDialog, "Displays the dialog")
         .def("close_dialog", &Window::CloseDialog, "Closes the current dialog")
         .def("show_message_box", &Window::ShowMessageBox,
              "Displays a simple dialog with a title and message and okay button")
         ;
 
+    // ---- Theme ----
+    // Note: no constructor because themes are created by Open3D
+    py::class_<Theme, std::shared_ptr<Theme>> theme(m, "Theme", "Theme class");
+    theme
+        .def_readonly("font_size", &Theme::font_size,
+                      "Font size (which is also the conventional size of the "
+                      "em unit) [read-only]")
+        .def_readonly("default_margin", &Theme::default_margin,
+                      "Good default value for margins, useful for layouts "
+                      "[read-only")
+        .def_readonly("default_layout_spacing", &Theme::default_layout_spacing,
+                      "Good value for the spacing parameter in layouts "
+                      "[read-only]")
+        ;
+    
     // ---- Color ----
     py::class_<Color, std::shared_ptr<Color>> color(m, "Color", "Color class");
     color
@@ -318,12 +337,6 @@ void pybind_gui_classes(py::module &m) {
              "are the selected value and selected index, respectively")
         ;
 
-    // ---- Dialog ----
-    py::class_<Dialog, std::shared_ptr<Dialog>, Widget> dialog(m, "Dialog", "Dialog class");
-    dialog
-        .def(py::init<const char *>())
-        ;
-
     // ---- ImageLabel ----
     py::class_<ImageLabel, std::shared_ptr<ImageLabel>, Widget> imagelabel(m, "ImageLabel", "ImageLabel class");
     imagelabel
@@ -480,6 +493,13 @@ void pybind_gui_classes(py::module &m) {
              "widget's value")
         ;
 
+    // ---- TabControl ----
+    py::class_<TabControl, std::shared_ptr<TabControl>, Widget> tabctrl(m, "TabControl", "TabControl class");
+    tabctrl
+        .def(py::init<>())
+        .def("add_tab", &TabControl::AddTab, "Adds a tab")
+        ;
+
     // ---- TextEdit ----
     py::class_<TextEdit, std::shared_ptr<TextEdit>, Widget> textedit(m, "TextEdit", "TextEdit class");
     textedit
@@ -603,6 +623,36 @@ void pybind_gui_classes(py::module &m) {
         .def("get_margins", &VGrid::GetMargins, "Returns the margins")
         ;
 
+    // ---- Dialog ----
+    py::class_<Dialog, std::shared_ptr<Dialog>, Widget> dialog(m, "Dialog", "Dialog class");
+    dialog
+        .def(py::init<const char *>())
+        ;
+
+    // ---- FileDialog ----
+    py::class_<FileDialog, std::shared_ptr<FileDialog>, Dialog> filedlg(m, "FileDialog", "FileDialog class");
+    py::enum_<FileDialog::Mode> filedlg_mode(filedlg, "Mode", py::arithmetic());
+    // Trick to write docs without listing the members in the enum class again.
+    filedlg_mode.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Enum class for FileDialog modes.";
+            }),
+            py::none(), py::none(), "");
+    filedlg_mode
+        .value("OPEN", FileDialog::Mode::OPEN)
+        .value("SAVE", FileDialog::Mode::SAVE)
+        .export_values();
+    filedlg
+        .def(py::init<FileDialog::Mode, const char*, const Theme&>())
+        .def("set_path", &FileDialog::SetPath,
+             "Sets path to directory the dialog start in")
+        .def("add_filter", &FileDialog::AddFilter,
+             "Adds a selectable file-type filter: "
+             "add_filter('.stl', 'Stereolithography mesh'")
+        .def("set_on_cancel", &FileDialog::SetOnCancel,
+             "Cancel callback; required")
+        .def("set_on_done", &FileDialog::SetOnDone, "Done callback; required")
+        ;
 }
 
 void pybind_gui(py::module &m) {
