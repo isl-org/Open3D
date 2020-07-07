@@ -1,5 +1,5 @@
 #include <ATen/cuda/CUDAContext.h>
-#include "../TorchHelper.h"
+#include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/InvertNeighborsList.cuh"
 #include "torch/script.h"
 

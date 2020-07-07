@@ -27,7 +27,7 @@
 #pragma once
 #include <torch/script.h>
 #include <type_traits>
-#include "../ShapeChecking.h"
+#include "open3d/ml/ShapeChecking.h"
 
 // Macros for checking tensor properties
 #define CHECK_CUDA(x)                                         \
