@@ -1,4 +1,4 @@
-#include "../TorchHelper.h"
+#include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/ReduceSubarraysSum.h"
 #include "torch/script.h"
 
