@@ -111,6 +111,8 @@ if ( BUILD_TENSORFLOW_OPS )
                         COMMENT "Generating python ops.py" )
 
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py")
+    # find tensorflow to get some info for the _build_config.py
+    find_package(Tensorflow)
 endif ()
 
 # add additional optional compiled modules
@@ -123,6 +125,8 @@ if ( BUILD_PYTORCH_OPS )
                         COMMENT "Generating python ops.py and return_types.py" )
 
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py")
+    # find torch to get some info for the _build_config.py
+    find_package(Pytorch)
 endif ()
 
 configure_file("_build_config.py.in"
