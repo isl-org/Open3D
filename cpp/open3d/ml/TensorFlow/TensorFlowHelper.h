@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "../ShapeChecking.h"
+#include "open3d/ml/ShapeChecking.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
 #include "tensorflow/core/framework/tensor.h"

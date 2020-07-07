@@ -39,4 +39,3 @@ class GuiVisualizer;
 #define HEIGHT 960
 
 int Run(int argc, const char *argv[]);
-void LoadAndCreateWindow(const char *path);
