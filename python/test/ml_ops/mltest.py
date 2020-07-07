@@ -28,7 +28,7 @@ try:
         tf.config.experimental.set_memory_growth(dev, True)
     if tf_gpu_devices:
         _device_names.add('GPU:0')
-except ModuleNotFoundError:
+except ImportError:
     pass
 
 try:
@@ -36,7 +36,7 @@ try:
     ml3d_ops = importlib.import_module('open3d.ml.torch.nn.functional')
     _ml_modules['torch'] = MLModules(torch, ml3d_ops)
     if torch.cuda.is_available(): _device_names.add('GPU:0')
-except ModuleNotFoundError:
+except ImportError:
     pass
 
 

@@ -31,9 +31,8 @@ import pytest
 from check_gradients import check_gradients
 from cconv_python import *
 
-# the tests in this file require the tensorflow ops
-pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
-                   reason='tf ops not built'),
+# skip all tests if the ml ops were not built
+pytestmark = mltest.default_marks
 
 
 # yapf: disable
