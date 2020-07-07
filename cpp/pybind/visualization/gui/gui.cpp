@@ -93,6 +93,16 @@ void pybind_gui_classes(py::module &m) {
         .def("quit",
              []() { Application::GetInstance().Quit(); },
              "Closes all the windows, exiting as a result")
+        .def("get_menubar",
+             []() -> std::shared_ptr<Menu> {
+                 return Application::GetInstance().GetMenubar();
+             },
+             "Returns the Menu for the application")
+        .def("set_menubar",
+             [](std::shared_ptr<Menu> menu) {
+                 Application::GetInstance().SetMenubar(menu);
+             },
+             "Sets the Menu for the application")
         .def("add_window",
              [](std::shared_ptr<Window> w) {
                  Application::GetInstance().AddWindow(w);
@@ -161,6 +171,8 @@ void pybind_gui_classes(py::module &m) {
              "Returns True if the window is currently the active window")
         .def("set_focus_widget", &Window::SetFocusWidget,
              "Makes specified widget have text focus")
+        .def("set_on_menu_item_activated", &Window::SetOnMenuItemActivated,
+             "Sets callback function for menu item:  callback()")
         .def("get_theme", &Window::GetTheme, "Get's window's theme info")
         .def("show_dialog", &Window::ShowDialog, "Displays the dialog")
         .def("close_dialog", &Window::CloseDialog, "Closes the current dialog")
@@ -168,19 +180,36 @@ void pybind_gui_classes(py::module &m) {
              "Displays a simple dialog with a title and message and okay button")
         ;
 
-    // ---- Theme ----
-    // Note: no constructor because themes are created by Open3D
-    py::class_<Theme, std::shared_ptr<Theme>> theme(m, "Theme", "Theme class");
-    theme
-        .def_readonly("font_size", &Theme::font_size,
-                      "Font size (which is also the conventional size of the "
-                      "em unit) [read-only]")
-        .def_readonly("default_margin", &Theme::default_margin,
-                      "Good default value for margins, useful for layouts "
-                      "[read-only")
-        .def_readonly("default_layout_spacing", &Theme::default_layout_spacing,
-                      "Good value for the spacing parameter in layouts "
-                      "[read-only]")
+    // ---- Menu ----
+    py::class_<Menu, std::shared_ptr<Menu>> menu(m, "Menu", "Menu class");
+    menu
+        .def(py::init<>())
+        .def("add_item", [](std::shared_ptr<Menu> menu, const char* text,
+                            int item_id) {
+                menu->AddItem(text, item_id);
+             },
+             "Adds a menu item with id to the menu")
+        .def("add_menu", [](std::shared_ptr<Menu> menu, const char* text,
+                            std::shared_ptr<Menu> submenu) {
+                menu->AddMenu(text, submenu);
+             },
+             "Adds a submenu to the menu")
+        .def("add_separator", &Menu::AddSeparator,
+             "Adds a separator to the menu")
+        .def("set_enabled", [](std::shared_ptr<Menu> menu, int item_id,
+                               bool enabled) {
+                 menu->SetEnabled(item_id, enabled);
+             },
+             "Sets menu item enabled or disabled")
+        .def("is_checked", [](std::shared_ptr<Menu> menu, int item_id) -> bool {
+                return menu->IsChecked(item_id);
+             },
+             "Returns True if menu item is checked")
+        .def("set_checked", [](std::shared_ptr<Menu> menu, int item_id,
+                               bool checked) {
+                 menu->SetChecked(item_id, checked);
+             },
+             "Sets menu item (un)checked")
         ;
     
     // ---- Color ----
@@ -201,6 +230,21 @@ void pybind_gui_classes(py::module &m) {
         .def("set_color", &Color::SetColor,
              "Sets red, green, blue, and alpha channels, (range: [0.0, 1.0])",
              "r"_a, "g"_a, "b"_a, "a"_a = 1.0)
+        ;
+
+    // ---- Theme ----
+    // Note: no constructor because themes are created by Open3D
+    py::class_<Theme, std::shared_ptr<Theme>> theme(m, "Theme", "Theme class");
+    theme
+        .def_readonly("font_size", &Theme::font_size,
+                      "Font size (which is also the conventional size of the "
+                      "em unit) [read-only]")
+        .def_readonly("default_margin", &Theme::default_margin,
+                      "Good default value for margins, useful for layouts "
+                      "[read-only")
+        .def_readonly("default_layout_spacing", &Theme::default_layout_spacing,
+                      "Good value for the spacing parameter in layouts "
+                      "[read-only]")
         ;
 
     // ---- Rect ----

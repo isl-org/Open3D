@@ -142,6 +142,7 @@ const int Window::FLAG_TOPMOST = (1 << 0);
 struct Window::Impl {
     GLFWwindow* window_ = nullptr;
     std::string title_;  // there is no glfwGetWindowTitle()...
+    std::unordered_map<Menu::ItemId, std::function<void()>> menu_callbacks_;
     // We need these for mouse moves and wheel events.
     // The only source of ground truth is button events, so the rest of
     // the time we monitor key up/down events.
@@ -505,6 +506,11 @@ void Window::AddChild(std::shared_ptr<Widget> w) {
     impl_->needs_layout_ = true;
 }
 
+void Window::SetOnMenuItemActivated(Menu::ItemId item_id,
+                                    std::function<void()> callback) {
+    impl_->menu_callbacks_[item_id] = callback;
+}
+
 void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     if (impl_->active_dialog_) {
         CloseDialog();
@@ -561,7 +567,13 @@ void Window::Layout(const Theme& theme) {
     }
 }
 
-void Window::OnMenuItemSelected(Menu::ItemId item_id) {}
+void Window::OnMenuItemSelected(Menu::ItemId item_id) {
+    auto callback = impl_->menu_callbacks_.find(item_id);
+    if (callback != impl_->menu_callbacks_.end()) {
+        callback->second();
+        PostRedraw();  // might not be in a draw if from native menu
+    }
+}
 
 namespace {
 enum Mode { NORMAL, DIALOG, NO_INPUT };

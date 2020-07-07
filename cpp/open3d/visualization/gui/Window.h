@@ -130,6 +130,12 @@ public:
 
     void AddChild(std::shared_ptr<Widget> w);
 
+    /// Sets a callback for menu items. If you inherit from Window you can
+    /// also override OnMenuItemSelected(); however, you should choose one or
+    /// the other, but don't use both.
+    void SetOnMenuItemActivated(Menu::ItemId item_id,
+                                std::function<void()> callback);
+
     /// Shows the dialog. If a dialog is currently being shown it will be
     /// closed.
     void ShowDialog(std::shared_ptr<Dialog> dlg);
