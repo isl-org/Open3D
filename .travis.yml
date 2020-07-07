@@ -29,7 +29,8 @@ matrix:
             - cmake
             - clang-7
             - clang-format-5.0
-      install: ./util/scripts/setup-linux.sh
+      install:
+        - ./util/scripts/install-deps-ubuntu.sh assume-yes
       script:
         - mkdir build
         - cd build
@@ -57,7 +58,7 @@ matrix:
             - libosmesa6-dev
       install:
         # Install ubuntu dependencies
-        - ./util/scripts/setup-linux.sh
+        - ./util/scripts/install-deps-ubuntu.sh assume-yes
         # Install Kinect k4a package
         - curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
         - sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
@@ -96,35 +97,6 @@ matrix:
         - cd .. # Back to Open3D/
         - ./util/scripts/make-documentation.sh
         - ./.travis/deploy_docs.sh
-
-    - os: osx
-      osx_image: xcode11
-      env: BUILD_TENSORFLOW_OPS=ON BUILD_PYTORCH_OPS=ON LOW_MEM_USAGE=ON
-      install:
-        - echo "Travis processors:"
-        - nproc
-        - brew update
-        - brew upgrade python || true
-          #python@3 on Travis is 3.7
-        - /usr/local/opt/python@3/bin/pip3 install virtualenv
-        - /usr/local/opt/python@3/bin/python3 -m venv ~/py3env
-        - source ~/py3env/bin/activate
-        - ./util/scripts/install-deps-osx.sh
-      script: ./util/scripts/run-ci.sh
-
-    - os: osx
-      osx_image: xcode11.5
-      env: BUILD_TENSORFLOW_OPS=OFF BUILD_PYTORCH_OPS=OFF LOW_MEM_USAGE=ON
-      install:
-        - echo "Travis processors:"
-        - nproc
-        - brew update
-        - brew upgrade python || true
-        - /usr/local/opt/python@3.8/bin/pip3 install virtualenv
-        - /usr/local/opt/python@3.8/bin/python3 -m venv ~/py3env
-        - source ~/py3env/bin/activate
-        - ./util/scripts/install-deps-osx.sh
-      script: ./util/scripts/run-ci.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK

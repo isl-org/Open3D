@@ -2,11 +2,12 @@
 #
 # The following environment variables are required:
 # - SHARED
-# - BUILD_TENSORFLOW_OPS
-# - BUILD_PYTORCH_OPS
+# - NPROC
 # - BUILD_DEPENDENCY_FROM_SOURCE
 # - BUILD_CUDA_MODULE
-# - NPROC
+# - BUILD_TENSORFLOW_OPS
+# - BUILD_PYTORCH_OPS
+# - LOW_MEM_USAGE
 
 set -euo pipefail
 
