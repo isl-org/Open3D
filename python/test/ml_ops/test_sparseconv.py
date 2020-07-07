@@ -32,9 +32,8 @@ np.set_printoptions(threshold=np.inf)
 import pytest
 import mltest
 
-# the tests in this file require the tensorflow ops
-pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
-                   reason='tf ops not built'),
+# skip all tests if the ml ops were not built
+pytestmark = mltest.default_marks
 
 
 # yapf: disable

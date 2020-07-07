@@ -30,8 +30,7 @@ import pytest
 import mltest
 from check_gradients import check_gradients
 
-# skip all tests if the tf ops were not built and disable warnings caused by
-# tensorflow
+# skip all tests if the ml ops were not built
 pytestmark = mltest.default_marks
 
 # the supported dtypes
@@ -51,7 +50,6 @@ feature_functions = pytest.mark.parametrize(
 @position_functions
 @feature_functions
 def test_voxel_pooling(pos_dtype, feat_dtype, position_fn, feature_fn):
-    import tensorflow as tf
     import open3d.ml.tf as ml3d
 
     # yapf: disable

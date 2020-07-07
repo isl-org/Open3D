@@ -30,8 +30,7 @@ from scipy.spatial import cKDTree
 import pytest
 import mltest
 
-# skip all tests if the tf ops were not built and disable warnings caused by
-# tensorflow
+# skip all tests if the ml ops were not built
 pytestmark = mltest.default_marks
 
 # the supported dtypes for the point coordinates
@@ -46,7 +45,6 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 @pytest.mark.parametrize('return_distances', [False, True])
 def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
                     return_distances):
-    import tensorflow as tf
     import open3d.ml.tf as ml3d
 
     rng = np.random.RandomState(123)
@@ -132,7 +130,6 @@ def test_knn_search_empty_point_sets():
     # no input points
     points = rng.random(size=(0, 3)).astype(dtype)
     queries = rng.random(size=(100, 3)).astype(dtype)
-    radii = rng.uniform(0.1, 0.3, size=(100,)).astype(dtype)
 
     layer = ml3d.layers.KNNSearch(return_distances=True)
     ans = layer(points, queries, k)

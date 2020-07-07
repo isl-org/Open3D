@@ -26,16 +26,17 @@ try:
     tf_gpu_devices = tf.config.experimental.list_physical_devices('GPU')
     for dev in tf_gpu_devices:
         tf.config.experimental.set_memory_growth(dev, True)
-    if tf_gpu_devices: _device_names.add(['GPU:0'])
-except:
+    if tf_gpu_devices:
+        _device_names.add('GPU:0')
+except ModuleNotFoundError:
     pass
 
 try:
     torch = importlib.import_module('torch')
     ml3d_ops = importlib.import_module('open3d.ml.torch.nn.functional')
     _ml_modules['torch'] = MLModules(torch, ml3d_ops)
-    if torch.cuda.is_available(): _device_names.add(['GPU:0'])
-except:
+    if torch.cuda.is_available(): _device_names.add('GPU:0')
+except ModuleNotFoundError:
     pass
 
 
