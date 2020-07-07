@@ -155,7 +155,7 @@ For building Open3D with CUDA support, ensure that CUDA is installed properly by
     nvidia-smi      # Prints GPU Information
     nvcc -V         # Prints compiler version
 
-If you see an output similar to `command not found`, you can install CUDA toolkit
+If you see an output similar to ``command not found``, you can install CUDA toolkit
 by following the `official
 documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
 
