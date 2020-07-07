@@ -33,7 +33,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 namespace {
 
@@ -326,6 +326,6 @@ void InvertNeighborsListCUDA(const cudaStream_t& stream,
     }
 }
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

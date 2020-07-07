@@ -32,7 +32,7 @@ using namespace open3d::utility;
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 /// Kernel for ReduceSubarraysSumCUDA
 template <class T>
@@ -85,6 +85,6 @@ void ReduceSubarraysSumCUDA(const cudaStream_t& stream,
     }
 }
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

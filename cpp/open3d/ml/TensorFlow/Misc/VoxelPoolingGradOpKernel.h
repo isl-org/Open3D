@@ -67,7 +67,7 @@ public:
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
         using namespace tensorflow;
-        using namespace open3d::ml::detail;
+        using namespace open3d::ml::impl;
         std::string pos_fn_str;
         OP_REQUIRES_OK(construction,
                        construction->GetAttr("position_fn", &pos_fn_str));
@@ -93,7 +93,7 @@ public:
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
-        using namespace open3d::ml::detail;
+        using namespace open3d::ml::impl;
 
         const Tensor& positions = context->input(0);
         OP_REQUIRES(
@@ -140,8 +140,8 @@ public:
                         const tensorflow::Tensor& voxel_size) = 0;
 
 protected:
-    open3d::ml::detail::AccumulationFn position_fn;
-    open3d::ml::detail::AccumulationFn feature_fn;
+    open3d::ml::impl::AccumulationFn position_fn;
+    open3d::ml::impl::AccumulationFn feature_fn;
 };
 
 }  // namespace voxel_pooling_opkernel

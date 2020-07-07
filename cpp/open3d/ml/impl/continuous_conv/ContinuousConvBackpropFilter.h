@@ -33,7 +33,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 // Implementation of CConvBackropFilterCPU
 template <class TReal,
@@ -392,6 +392,6 @@ void CConvBackpropFilterCPU(TReal* filter_backprop,
 #undef FN_PARAMETERS
 }
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

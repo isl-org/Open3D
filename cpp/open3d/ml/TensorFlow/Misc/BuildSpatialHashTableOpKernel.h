@@ -34,7 +34,7 @@ public:
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
         using namespace tensorflow;
-        using namespace open3d::ml::detail;
+        using namespace open3d::ml::impl;
 
         OP_REQUIRES_OK(construction,
                        construction->GetAttr("max_hash_table_size",

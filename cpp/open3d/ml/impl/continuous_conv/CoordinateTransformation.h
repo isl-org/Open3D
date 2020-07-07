@@ -32,7 +32,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 /// Maps coordinates in a sphere with radius 1 to a cylinder. The input and
 /// output range of the coordinates is [-1,1]. The cylinder axis is along z.
@@ -421,6 +421,6 @@ struct InterpolationVec<T, VECSIZE, InterpolationMode::LINEAR_BORDER> {
     }
 };
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

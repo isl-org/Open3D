@@ -31,7 +31,7 @@
 
 using namespace open3d;
 using namespace open3d::ml;
-using namespace open3d::ml::detail;
+using namespace open3d::ml::impl;
 using namespace invert_neighbors_list_opkernel;
 using namespace tensorflow;
 
