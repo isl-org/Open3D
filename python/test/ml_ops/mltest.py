@@ -106,6 +106,6 @@ def run_op(ml, device_name, fn, check_device, *args, **kwargs):
 
 
 # add parameterizations for the ml module and the device
-parameterize = SimpleNamespace(
+parametrize = SimpleNamespace(
     ml=pytest.mark.parametrize('ml', _ml_modules.values()),
     device=pytest.mark.parametrize('device', _device_names))

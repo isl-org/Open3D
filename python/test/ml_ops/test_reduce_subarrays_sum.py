@@ -39,8 +39,8 @@ value_dtypes = pytest.mark.parametrize(
 
 @pytest.mark.parametrize('seed', range(3))
 @value_dtypes
-@mltest.parameterize.device
-@mltest.parameterize.ml
+@mltest.parametrize.device
+@mltest.parametrize.ml
 def test_reduce_subarrays_sum_random(seed, dtype, device, ml):
 
     rng = np.random.RandomState(seed)

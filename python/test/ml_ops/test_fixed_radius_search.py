@@ -41,7 +41,7 @@ gpu_dtypes = [np.float32]
 
 
 @dtypes
-@mltest.parameterize.device
+@mltest.parametrize.device
 @pytest.mark.parametrize('num_points_queries', [(10, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('radius', [0.1, 0.3])
@@ -115,7 +115,7 @@ def test_fixed_radius_search(dtype, device, num_points_queries, radius,
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
 
 
-@mltest.parameterize.device
+@mltest.parametrize.device
 def test_fixed_radius_search_empty_point_sets(device):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
@@ -161,7 +161,7 @@ def test_fixed_radius_search_empty_point_sets(device):
 
 
 @dtypes
-@mltest.parameterize.device
+@mltest.parametrize.device
 @pytest.mark.parametrize('batch_size', [2, 3, 8])
 @pytest.mark.parametrize('radius', [0.1, 0.3])
 @pytest.mark.parametrize('hash_table_size_factor', [1 / 8, 1 / 64])

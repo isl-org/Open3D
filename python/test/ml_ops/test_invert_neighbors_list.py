@@ -42,8 +42,8 @@ attributes = pytest.mark.parametrize('attributes',
 
 @value_dtypes
 @attributes
-@mltest.parameterize.device
-@mltest.parameterize.ml
+@mltest.parametrize.device
+@mltest.parametrize.ml
 def test_invert_neighbors_list(dtype, attributes, device, ml):
 
     # yapf: disable
@@ -128,7 +128,7 @@ def test_invert_neighbors_list(dtype, attributes, device, ml):
                 np.testing.assert_equal(attr, edge_attr_map[key])
 
 
-@mltest.parameterize.ml
+@mltest.parametrize.ml
 def test_invert_neighbors_list_shape_checking(ml):
 
     num_points = 3

@@ -45,7 +45,7 @@ pytestmark = mltest.default_marks
                              ([5,5,5],            5,           3,               False,               True),
                         ])
 # yapf: enable
-@mltest.parameterize.device
+@mltest.parametrize.device
 @pytest.mark.parametrize('dtype', [np.float32])
 def test_compare_to_conv3d(dtype, device, kernel_size, out_channels,
                            in_channels, with_inp_importance,
@@ -137,7 +137,7 @@ def test_compare_to_conv3d(dtype, device, kernel_size, out_channels,
                              ([5,5,5],            5,           3,               False,               True),
                         ])
 # yapf: enable
-@mltest.parameterize.device
+@mltest.parametrize.device
 @pytest.mark.parametrize('dtype', [np.float32])
 def test_compare_to_conv3dtranspose(dtype, device, kernel_size, out_channels,
                                     in_channels, with_out_importance,
