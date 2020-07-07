@@ -1648,14 +1648,6 @@ TEST(TriangleMesh, CropTriangleMesh) {
 }
 
 TEST(TriangleMesh, CreateFromPointCloudPoisson) {
-#if __APPLE__
-    // TODO: macOS could sometimes be stuck on this test. To investigate.
-    // Examples:
-    // https://github.com/intel-isl/Open3D/runs/844549493#step:6:3150
-    // https://github.com/intel-isl/Open3D/runs/741891346#step:5:3146
-    // https://github.com/intel-isl/Open3D/runs/734021844#step:5:3169
-    return;
-#endif
     geometry::PointCloud pcd;
     pcd.points_ = {
             {-0.215279, 0.121252, 0.965784},  {0.079266, 0.643799, 0.755848},
@@ -1883,8 +1875,25 @@ TEST(TriangleMesh, CreateFromPointCloudPoisson) {
 
     std::shared_ptr<geometry::TriangleMesh> mesh_es;
     std::vector<double> densities_es;
+#if __APPLE__
+    // TODO: To be investigated.
+    //
+    // macOS could sometimes be stuck on this test. Examples:
+    // - https://github.com/intel-isl/Open3D/runs/844549493#step:6:3150
+    // - https://github.com/intel-isl/Open3D/runs/741891346#step:5:3146
+    // - https://github.com/intel-isl/Open3D/runs/734021844#step:5:3169
+    //
+    // We suspect that this is related to threading. Here we set n_threads=1,
+    // and if the macOS CI still stuck on this test occasionally, we might need
+    // to look somewhere else.
+    std::tie(mesh_es, densities_es) =
+            geometry::TriangleMesh::CreateFromPointCloudPoisson(
+                    pcd, 2, 0, 1.1f, false, /*n_threads=*/1);
+#else
     std::tie(mesh_es, densities_es) =
             geometry::TriangleMesh::CreateFromPointCloudPoisson(pcd, 2);
+#endif
+
     ExpectMeshEQ(*mesh_es, mesh_gt, 1e-4);
     ExpectEQ(densities_es, densities_gt, 1e-4);
 }
