@@ -226,7 +226,11 @@ void Application::Initialize() {
 }
 
 void Application::Initialize(int argc, const char *argv[]) {
-    impl_->resource_path_ = FindResourcePath(argc, argv);
+    Initialize(FindResourcePath(argc, argv).c_str());
+}
+
+void Application::Initialize(const char *resource_path) {
+    impl_->resource_path_ = resource_path;
     if (!utility::filesystem::DirectoryExists(impl_->resource_path_)) {
         utility::LogError(("Can't find resource directory: " + impl_->resource_path_).c_str());
     }

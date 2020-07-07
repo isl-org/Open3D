@@ -47,3 +47,6 @@ global-exclude *.py[co]
 
 # ml module
 recursive-include open3d/ml *.py
+
+# gui
+include open3d/resources/*

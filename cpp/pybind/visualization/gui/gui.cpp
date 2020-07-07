@@ -29,6 +29,7 @@
 #include "pybind/docstring.h"
 #include "pybind11/functional.h"
 
+#include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Checkbox.h"
@@ -66,11 +67,18 @@ void pybind_gui_classes(py::module &m) {
              })
         .def("initialize",
              []() {
-                 Application::GetInstance().Initialize();
+                 // We need to find the resources directory. Fortunately, Python
+                 // knows where the module lives (open3d.__file__ is the path to
+                 // __init__.py), so we can use that to find the resources
+                 // included in the wheel.
+                 py::object o3d = py::module::import("open3d");
+                 auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
+                 auto module_path = utility::filesystem::GetFileParentDirectory(o3d_init_path);
+                 auto resource_path = module_path + "/resources";
+                 Application::GetInstance().Initialize(resource_path.c_str());
              })
         .def("initialize", [](const char *resource_dir) {
-                 const char *argv[] = { resource_dir };
-                 Application::GetInstance().Initialize(1, argv);
+                 Application::GetInstance().Initialize(resource_dir);
              })
         .def("run",
              []() {
