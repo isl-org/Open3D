@@ -27,23 +27,21 @@
 import open3d as o3d
 import numpy as np
 import pytest
-import mark_helper
+import mltest
 
-# skip all tests if the tf ops were not built and disable warnings caused by
-# tensorflow
-pytestmark = mark_helper.tf_marks
+# skip all tests if the ml ops were not built
+pytestmark = mltest.default_marks
 
 # the supported input dtypes
 value_dtypes = pytest.mark.parametrize(
     'dtype', [np.int32, np.int64, np.float32, np.float64])
 
 
-@mark_helper.devices
-@value_dtypes
 @pytest.mark.parametrize('seed', range(3))
-def test_reduce_subarray_sum_random(seed, dtype, device_name):
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+@value_dtypes
+@mltest.parametrize.device
+@mltest.parametrize.ml
+def test_reduce_subarrays_sum_random(seed, dtype, device, ml):
 
     rng = np.random.RandomState(seed)
 
@@ -64,15 +62,14 @@ def test_reduce_subarray_sum_random(seed, dtype, device_name):
 
     row_splits = np.array(row_splits, dtype=np.int64)
 
-    with tf.device(device_name):
-        result = ml3d.ops.reduce_subarrays_sum(values, row_splits)
-        assert device_name in result.device
-    result = result.numpy()
+    ans = mltest.run_op(ml,
+                        device,
+                        ml.ops.reduce_subarrays_sum,
+                        check_device=True,
+                        values=values,
+                        row_splits=row_splits)
 
     if np.issubdtype(dtype, np.integer):
-        np.testing.assert_equal(result, expected_result)
+        np.testing.assert_equal(ans, expected_result)
     else:  # floating point types
-        np.testing.assert_allclose(result,
-                                   expected_result,
-                                   rtol=1e-5,
-                                   atol=1e-8)
+        np.testing.assert_allclose(ans, expected_result, rtol=1e-5, atol=1e-8)

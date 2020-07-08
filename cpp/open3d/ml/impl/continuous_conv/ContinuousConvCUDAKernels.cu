@@ -32,7 +32,7 @@ using open3d::utility::DivUp;
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 /// Kernel for FillColumn
 template <class TReal,
@@ -589,6 +589,6 @@ template void MultiplyAndCopyColumns<float>(
         const float* const __restrict__ col_major_matrix,
         const float* const __restrict__ vector);
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

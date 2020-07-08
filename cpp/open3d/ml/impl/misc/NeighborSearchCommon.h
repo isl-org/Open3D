@@ -32,7 +32,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 /// Supported metrics
 enum Metric { L1, L2, Linf };
@@ -106,6 +106,6 @@ struct SelectNanoflannAdaptor<L1, T> {
     typedef nanoflann::L1_Adaptor<T, Adaptor<T>> Adaptor_t;
 };
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

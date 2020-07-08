@@ -27,11 +27,10 @@
 import open3d as o3d
 import numpy as np
 import pytest
-import mark_helper
+import mltest
 
-# skip all tests if the tf ops were not built and disable warnings caused by
-# tensorflow
-pytestmark = mark_helper.tf_marks
+# skip all tests if the ml ops were not built
+pytestmark = mltest.default_marks
 
 # the supported dtypes for the attributes
 value_dtypes = pytest.mark.parametrize(
@@ -43,9 +42,9 @@ attributes = pytest.mark.parametrize('attributes',
 
 @value_dtypes
 @attributes
-@mark_helper.devices
-@mark_helper.ml
-def test_invert_neighbors_list(dtype, attributes, device_name, ml):
+@mltest.parametrize.device
+@mltest.parametrize.ml
+def test_invert_neighbors_list(dtype, attributes, device, ml):
 
     # yapf: disable
 
@@ -82,14 +81,14 @@ def test_invert_neighbors_list(dtype, attributes, device_name, ml):
 
 # yapf: enable
 
-    ans = mark_helper.run_op(ml.framework,
-                             device_name,
-                             ml.ops.invert_neighbors_list,
-                             check_device=True,
-                             num_points=num_points,
-                             inp_neighbors_index=neighbors_index,
-                             inp_neighbors_row_splits=neighbors_row_splits,
-                             inp_neighbors_attributes=neighbors_attributes)
+    ans = mltest.run_op(ml,
+                        device,
+                        ml.ops.invert_neighbors_list,
+                        check_device=True,
+                        num_points=num_points,
+                        inp_neighbors_index=neighbors_index,
+                        inp_neighbors_row_splits=neighbors_row_splits,
+                        inp_neighbors_attributes=neighbors_attributes)
 
     expected_neighbors_row_splits = [0, 1, 3, edges.shape[0]]
     np.testing.assert_equal(ans.neighbors_row_splits,
@@ -129,9 +128,8 @@ def test_invert_neighbors_list(dtype, attributes, device_name, ml):
                 np.testing.assert_equal(attr, edge_attr_map[key])
 
 
-def test_invert_neighbors_list_shape_checking():
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+@mltest.parametrize.ml
+def test_invert_neighbors_list_shape_checking(ml):
 
     num_points = 3
     inp_neighbors_index = np.array([0, 1, 2, 2, 1, 2], dtype=np.int32)
@@ -141,15 +139,22 @@ def test_invert_neighbors_list_shape_checking():
 
     # test the shape checking by passing arrays with wrong rank and/or size
     with pytest.raises(Exception) as einfo:
-        ans = ml3d.ops.invert_neighbors_list(
-            num_points=num_points,
-            inp_neighbors_index=inp_neighbors_index[1:],
-            inp_neighbors_row_splits=inp_neighbors_row_splits,
-            inp_neighbors_attributes=inp_neighbors_attributes)
+        _ = mltest.run_op(ml,
+                          mltest.cpu_device,
+                          ml.ops.invert_neighbors_list,
+                          check_device=False,
+                          num_points=num_points,
+                          inp_neighbors_index=inp_neighbors_index[1:],
+                          inp_neighbors_row_splits=inp_neighbors_row_splits,
+                          inp_neighbors_attributes=inp_neighbors_attributes)
     assert 'invalid shape' in str(einfo.value)
 
     with pytest.raises(Exception) as einfo:
-        ans = ml3d.ops.invert_neighbors_list(
+        _ = mltest.run_op(
+            ml,
+            mltest.cpu_device,
+            ml.ops.invert_neighbors_list,
+            check_device=False,
             num_points=num_points,
             inp_neighbors_index=inp_neighbors_index[:, np.newaxis],
             inp_neighbors_row_splits=inp_neighbors_row_splits,
@@ -157,7 +162,11 @@ def test_invert_neighbors_list_shape_checking():
     assert 'invalid shape' in str(einfo.value)
 
     with pytest.raises(Exception) as einfo:
-        ans = ml3d.ops.invert_neighbors_list(
+        _ = mltest.run_op(
+            ml,
+            mltest.cpu_device,
+            ml.ops.invert_neighbors_list,
+            check_device=False,
             num_points=num_points,
             inp_neighbors_index=inp_neighbors_index,
             inp_neighbors_row_splits=inp_neighbors_row_splits[:, np.newaxis],
@@ -165,9 +174,12 @@ def test_invert_neighbors_list_shape_checking():
     assert 'invalid shape' in str(einfo.value)
 
     with pytest.raises(Exception) as einfo:
-        ans = ml3d.ops.invert_neighbors_list(
-            num_points=num_points,
-            inp_neighbors_index=inp_neighbors_index,
-            inp_neighbors_row_splits=inp_neighbors_row_splits,
-            inp_neighbors_attributes=inp_neighbors_attributes[1:])
+        _ = mltest.run_op(ml,
+                          mltest.cpu_device,
+                          ml.ops.invert_neighbors_list,
+                          check_device=False,
+                          num_points=num_points,
+                          inp_neighbors_index=inp_neighbors_index,
+                          inp_neighbors_row_splits=inp_neighbors_row_splits,
+                          inp_neighbors_attributes=inp_neighbors_attributes[1:])
     assert 'invalid shape' in str(einfo.value)

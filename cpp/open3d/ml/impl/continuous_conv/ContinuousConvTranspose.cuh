@@ -38,7 +38,7 @@ using open3d::utility::DivUp;
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 template <class TReal, class TIndex>
 void CConvTransposeComputeFeaturesCUDA(
@@ -195,6 +195,6 @@ void CConvTransposeComputeFeaturesCUDA(
     }
 }
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

@@ -28,37 +28,27 @@ import open3d as o3d
 import numpy as np
 from scipy.spatial import cKDTree
 import pytest
-import mark_helper
+import mltest
 
 # skip all tests if the tf ops were not built and disable warnings caused by
 # tensorflow
-pytestmark = mark_helper.tf_marks
+pytestmark = mltest.default_marks
 
 # the supported dtypes for the point coordinates
 dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
-# the GPU only supports single precision float
-gpu_dtypes = [np.float32]
-
 
 @dtypes
-@mark_helper.devices
 @pytest.mark.parametrize('num_points_queries', [(10, 5), (31, 33), (33, 31),
                                                 (123, 345)])
-@pytest.mark.parametrize('radius', [0.1, 0.3])
-@pytest.mark.parametrize('hash_table_size_factor', [1 / 8, 1 / 64])
-@pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
+@pytest.mark.parametrize('metric', ['L1', 'L2'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
-def test_fixed_radius_search(dtype, device_name, num_points_queries, radius,
-                             hash_table_size_factor, metric, ignore_query_point,
-                             return_distances):
+@pytest.mark.parametrize('normalize_distances', [False, True])
+def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
+                       return_distances, normalize_distances):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
-
-    # skip dtype not supported on GPU
-    if 'GPU' in device_name and not dtype in gpu_dtypes:
-        return
 
     rng = np.random.RandomState(123)
 
@@ -70,23 +60,20 @@ def test_fixed_radius_search(dtype, device_name, num_points_queries, radius,
     else:
         queries = rng.random(size=(num_queries, 3)).astype(dtype)
 
+    radii = rng.uniform(0.1, 0.3, size=queries.shape[:1]).astype(dtype)
+
     # kd tree for computing the ground truth
     tree = cKDTree(points, copy_data=True)
     p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
-    gt_neighbors_index = tree.query_ball_point(queries, radius, p=p_norm)
+    gt_neighbors_index = [
+        tree.query_ball_point(q, r, p=p_norm) for q, r in zip(queries, radii)
+    ]
 
-    with tf.device(device_name):
-        layer = ml3d.layers.FixedRadiusSearch(
-            metric=metric,
-            ignore_query_point=ignore_query_point,
-            return_distances=return_distances)
-        ans = layer(
-            points,
-            queries,
-            radius,
-            hash_table_size_factor=hash_table_size_factor,
-        )
-        assert device_name in ans.neighbors_index.device
+    layer = ml3d.layers.RadiusSearch(metric=metric,
+                                     ignore_query_point=ignore_query_point,
+                                     return_distances=return_distances,
+                                     normalize_distances=normalize_distances)
+    ans = layer(points, queries, radii)
 
     # convert to numpy for convenience
     ans_neighbors_index = ans.neighbors_index.numpy()
@@ -111,32 +98,30 @@ def test_fixed_radius_search(dtype, device_name, num_points_queries, radius,
             for j, dist in zip(q_neighbors_index, q_neighbors_dist):
                 if metric == 'L2':
                     gt_dist = np.sum((q - points[j])**2)
+                    if normalize_distances:
+                        gt_dist /= radii[i]**2
                 else:
                     gt_dist = np.linalg.norm(q - points[j], ord=p_norm)
+                    if normalize_distances:
+                        gt_dist /= radii[i]
+
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
 
 
-@mark_helper.devices
-def test_fixed_radius_search_empty_point_sets(device_name):
+def test_radius_search_empty_point_sets():
     import tensorflow as tf
     import open3d.ml.tf as ml3d
     rng = np.random.RandomState(123)
 
     dtype = np.float32
-    radius = 1
-    hash_table_size_factor = 1 / 64
 
     # no query points
     points = rng.random(size=(100, 3)).astype(dtype)
     queries = rng.random(size=(0, 3)).astype(dtype)
+    radii = rng.uniform(0.1, 0.3, size=(0,)).astype(dtype)
 
-    with tf.device(device_name):
-        layer = ml3d.layers.FixedRadiusSearch(return_distances=True)
-        ans = layer(points,
-                    queries,
-                    radius,
-                    hash_table_size_factor=hash_table_size_factor)
-        assert device_name in ans.neighbors_index.device
+    layer = ml3d.layers.RadiusSearch(return_distances=True)
+    ans = layer(points, queries, radii)
 
     assert ans.neighbors_index.shape.as_list() == [0]
     assert ans.neighbors_row_splits.shape.as_list() == [1]
@@ -145,14 +130,13 @@ def test_fixed_radius_search_empty_point_sets(device_name):
     # no input points
     points = rng.random(size=(0, 3)).astype(dtype)
     queries = rng.random(size=(100, 3)).astype(dtype)
+    radii = rng.uniform(0.1, 0.3, size=(100,)).astype(dtype)
 
-    with tf.device(device_name):
-        layer = ml3d.layers.FixedRadiusSearch(return_distances=True)
-        ans = layer(points,
-                    queries,
-                    radius,
-                    hash_table_size_factor=hash_table_size_factor)
-        assert device_name in ans.neighbors_index.device
+    ans = layer(
+        points,
+        queries,
+        radii,
+    )
 
     assert ans.neighbors_index.shape.as_list() == [0]
     assert ans.neighbors_row_splits.shape.as_list() == [101]
@@ -161,24 +145,17 @@ def test_fixed_radius_search_empty_point_sets(device_name):
     assert ans.neighbors_distance.shape.as_list() == [0]
 
 
-@dtypes
-@mark_helper.devices
 @pytest.mark.parametrize('batch_size', [2, 3, 8])
-@pytest.mark.parametrize('radius', [0.1, 0.3])
-@pytest.mark.parametrize('hash_table_size_factor', [1 / 8, 1 / 64])
-@pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
-@pytest.mark.parametrize('ignore_query_point', [False, True])
-@pytest.mark.parametrize('return_distances', [False, True])
-def test_fixed_radius_search_batches(dtype, device_name, batch_size, radius,
-                                     hash_table_size_factor, metric,
-                                     ignore_query_point, return_distances):
+def test_radius_search_batches(batch_size):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
 
-    # skip dtype not supported on GPU
-    if 'GPU' in device_name and not dtype in gpu_dtypes:
-        return
-
+    dtype = np.float32
+    metric = 'L2'
+    p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
+    ignore_query_point = False
+    return_distances = True
+    normalize_distances = True
     rng = np.random.RandomState(123)
 
     # create array defining start and end of each batch
@@ -198,34 +175,32 @@ def test_fixed_radius_search_batches(dtype, device_name, batch_size, radius,
     else:
         queries = rng.random(size=(num_queries, 3)).astype(dtype)
 
+    radii = rng.uniform(0.1, 0.3, size=queries.shape[:1]).astype(dtype)
+
     # kd trees for computing the ground truth
-    p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
     gt_neighbors_index = []
     for i in range(batch_size):
         points_i = points[points_row_splits[i]:points_row_splits[i + 1]]
         queries_i = queries[queries_row_splits[i]:queries_row_splits[i + 1]]
+        radii_i = radii[queries_row_splits[i]:queries_row_splits[i + 1]]
 
         tree = cKDTree(points_i, copy_data=True)
         gt_neighbors_index.extend([
-            list(
-                tree.query_ball_point(q, radius, p=p_norm) +
-                points_row_splits[i]) for q in queries_i
+            list(tree.query_ball_point(q, r, p=p_norm) + points_row_splits[i])
+            for q, r in zip(queries_i, radii_i)
         ])
 
-    with tf.device(device_name):
-        layer = ml3d.layers.FixedRadiusSearch(
-            metric=metric,
-            ignore_query_point=ignore_query_point,
-            return_distances=return_distances)
-        ans = layer(
-            points,
-            queries,
-            radius,
-            points_row_splits=points_row_splits,
-            queries_row_splits=queries_row_splits,
-            hash_table_size_factor=hash_table_size_factor,
-        )
-        assert device_name in ans.neighbors_index.device
+    layer = ml3d.layers.RadiusSearch(metric=metric,
+                                     ignore_query_point=ignore_query_point,
+                                     normalize_distances=normalize_distances,
+                                     return_distances=return_distances)
+    ans = layer(
+        points,
+        queries,
+        radii,
+        points_row_splits=points_row_splits,
+        queries_row_splits=queries_row_splits,
+    )
 
     # convert to numpy for convenience
     ans_neighbors_index = ans.neighbors_index.numpy()
@@ -250,6 +225,11 @@ def test_fixed_radius_search_batches(dtype, device_name, batch_size, radius,
             for j, dist in zip(q_neighbors_index, q_neighbors_dist):
                 if metric == 'L2':
                     gt_dist = np.sum((q - points[j])**2)
+                    if normalize_distances:
+                        gt_dist /= radii[i]**2
                 else:
                     gt_dist = np.linalg.norm(q - points[j], ord=p_norm)
+                    if normalize_distances:
+                        gt_dist /= radii[i]
+
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)

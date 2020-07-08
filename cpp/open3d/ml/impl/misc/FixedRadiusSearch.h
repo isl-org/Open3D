@@ -37,7 +37,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 namespace {
 
@@ -591,6 +591,6 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 #undef FN_PARAMETERS
 }
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

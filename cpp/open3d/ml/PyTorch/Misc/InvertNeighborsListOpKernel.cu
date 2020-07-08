@@ -1,5 +1,5 @@
 #include <ATen/cuda/CUDAContext.h>
-#include "../TorchHelper.h"
+#include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/InvertNeighborsList.cuh"
 #include "torch/script.h"
 
@@ -29,7 +29,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
     size_t temp_size = 0;
 
     // determine temp_size
-    open3d::ml::detail::InvertNeighborsListCUDA(
+    open3d::ml::impl::InvertNeighborsListCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             inp_neighbors_index.data_ptr<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()
@@ -49,7 +49,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
     temp_ptr = temp_tensor.data_ptr<uint8_t>();
 
     // actually invert the list
-    open3d::ml::detail::InvertNeighborsListCUDA(
+    open3d::ml::impl::InvertNeighborsListCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             inp_neighbors_index.data_ptr<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()

@@ -33,7 +33,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 /// Implementation of CConvTransposeBackpropFilterCPU with template parameters
 /// for configuration.
@@ -394,6 +394,6 @@ void CConvTransposeBackpropFilterCPU(TReal* filter_backprop,
 #undef FN_PARAMETERS
 }
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

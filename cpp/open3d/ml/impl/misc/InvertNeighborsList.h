@@ -33,7 +33,7 @@
 
 namespace open3d {
 namespace ml {
-namespace detail {
+namespace impl {
 
 /// Inverts a neighbors list, which is a tuple of the form
 /// (neighbors_index, neighbors_row_splits, neighbors_attributes).
@@ -155,6 +155,6 @@ void InvertNeighborsListCPU(const TIndex* const inp_neighbors_index,
             });
 }
 
-}  // namespace detail
+}  // namespace impl
 }  // namespace ml
 }  // namespace open3d

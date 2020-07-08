@@ -28,7 +28,7 @@
 #include "open3d/ml/impl/continuous_conv/ContinuousConv.h"
 
 using namespace open3d;
-using namespace open3d::ml::detail;
+using namespace open3d::ml::impl;
 using namespace tensorflow;
 
 template <class TReal, class TIndex>

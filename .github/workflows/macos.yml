@@ -1,4 +1,4 @@
-name: Ubuntu CI
+name: macOS CI
 
 on:
   push:
@@ -8,22 +8,20 @@ on:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
 jobs:
-  ubuntu:
-    runs-on: ubuntu-18.04
+  macos:
+    runs-on: macos-10.15
     strategy:
       fail-fast: false
       matrix:
-        SHARED: [ON, OFF]
-        BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
         BUILD_ML_OPS: [ON, OFF]
-        BUILD_CUDA: [ON, OFF]
     env:
-      SHARED: ${{ matrix.SHARED }}
-      BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
+      SHARED: OFF
+      NPROC: 2
+      BUILD_DEPENDENCY_FROM_SOURCE: OFF
+      BUILD_CUDA_MODULE: OFF
       BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
       BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
-      BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
-      NPROC: 2
+      LOW_MEM_USAGE: ON
     steps:
     - name: Checkout source code
       uses: actions/checkout@v2
@@ -45,16 +43,15 @@ jobs:
     - name: Set up Python version
       uses: actions/setup-python@v2
       with:
-        python-version: 3.5
-    # Pre-installed 18.04 packages: https://git.io/JfHmW
+        python-version: 3.6
     - name: Install dependencies
       run: |
-        ./util/scripts/install-deps-ubuntu.sh assume-yes
-        sudo apt-get --yes install ccache
+        ./util/scripts/install-deps-osx.sh skip-upgrade
+        brew install ccache
         ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
     - name: Config and build
       run: |
-        PATH=/usr/lib/ccache:$PATH
+        PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
         ccache -s
         ./util/scripts/run-ci.sh
         ccache -s
