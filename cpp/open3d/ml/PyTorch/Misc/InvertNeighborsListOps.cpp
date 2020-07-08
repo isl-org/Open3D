@@ -1,5 +1,5 @@
 #include <vector>
-#include "../TorchHelper.h"
+#include "open3d/ml/PyTorch/TorchHelper.h"
 #include "torch/script.h"
 
 template <class TIndex, class TAttr>

@@ -28,26 +28,23 @@ import open3d as o3d
 import numpy as np
 from scipy.spatial import cKDTree
 import pytest
-import mark_helper
+import mltest
 
-# skip all tests if the tf ops were not built and disable warnings caused by
-# tensorflow
-pytestmark = mark_helper.tf_marks
+# skip all tests if the ml ops were not built
+pytestmark = mltest.default_marks
 
 # the supported dtypes for the point coordinates
 dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
 
 @dtypes
-@pytest.mark.parametrize('num_points_queries', [(10, 5), (31, 33), (33, 31),
+@pytest.mark.parametrize('num_points_queries', [(2, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('metric', ['L1', 'L2'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
-@pytest.mark.parametrize('normalize_distances', [False, True])
-def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
-                       return_distances, normalize_distances):
-    import tensorflow as tf
+def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
+                    return_distances):
     import open3d.ml.tf as ml3d
 
     rng = np.random.RandomState(123)
@@ -60,20 +57,23 @@ def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
     else:
         queries = rng.random(size=(num_queries, 3)).astype(dtype)
 
-    radii = rng.uniform(0.1, 0.3, size=queries.shape[:1]).astype(dtype)
+    k = rng.randint(1, 11)
 
     # kd tree for computing the ground truth
     tree = cKDTree(points, copy_data=True)
     p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
-    gt_neighbors_index = [
-        tree.query_ball_point(q, r, p=p_norm) for q, r in zip(queries, radii)
-    ]
+    if k > num_points:
+        gt_neighbors_index = [tree.query(q, k, p=p_norm) for q in queries]
+        gt_neighbors_index = [
+            idxs[np.isfinite(dists)] for dists, idxs in gt_neighbors_index
+        ]
+    else:
+        gt_neighbors_index = [tree.query(q, k, p=p_norm)[1] for q in queries]
 
-    layer = ml3d.layers.RadiusSearch(metric=metric,
-                                     ignore_query_point=ignore_query_point,
-                                     return_distances=return_distances,
-                                     normalize_distances=normalize_distances)
-    ans = layer(points, queries, radii)
+    layer = ml3d.layers.KNNSearch(metric=metric,
+                                  ignore_query_point=ignore_query_point,
+                                  return_distances=return_distances)
+    ans = layer(points, queries, k)
 
     # convert to numpy for convenience
     ans_neighbors_index = ans.neighbors_index.numpy()
@@ -87,7 +87,11 @@ def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
         end = ans_neighbors_row_splits[i + 1]
         q_neighbors_index = ans_neighbors_index[start:end]
 
-        gt_set = set(gt_neighbors_index[i])
+        if k == 1:
+            gt_set = set([gt_neighbors_index[i]])
+        else:
+            gt_set = set(gt_neighbors_index[i])
+
         if ignore_query_point:
             gt_set.remove(i)
         assert gt_set == set(q_neighbors_index)
@@ -98,17 +102,13 @@ def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
             for j, dist in zip(q_neighbors_index, q_neighbors_dist):
                 if metric == 'L2':
                     gt_dist = np.sum((q - points[j])**2)
-                    if normalize_distances:
-                        gt_dist /= radii[i]**2
                 else:
                     gt_dist = np.linalg.norm(q - points[j], ord=p_norm)
-                    if normalize_distances:
-                        gt_dist /= radii[i]
 
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
 
 
-def test_radius_search_empty_point_sets():
+def test_knn_search_empty_point_sets():
     import tensorflow as tf
     import open3d.ml.tf as ml3d
     rng = np.random.RandomState(123)
@@ -118,10 +118,10 @@ def test_radius_search_empty_point_sets():
     # no query points
     points = rng.random(size=(100, 3)).astype(dtype)
     queries = rng.random(size=(0, 3)).astype(dtype)
-    radii = rng.uniform(0.1, 0.3, size=(0,)).astype(dtype)
+    k = rng.randint(1, 11)
 
-    layer = ml3d.layers.RadiusSearch(return_distances=True)
-    ans = layer(points, queries, radii)
+    layer = ml3d.layers.KNNSearch(return_distances=True)
+    ans = layer(points, queries, k)
 
     assert ans.neighbors_index.shape.as_list() == [0]
     assert ans.neighbors_row_splits.shape.as_list() == [1]
@@ -130,13 +130,9 @@ def test_radius_search_empty_point_sets():
     # no input points
     points = rng.random(size=(0, 3)).astype(dtype)
     queries = rng.random(size=(100, 3)).astype(dtype)
-    radii = rng.uniform(0.1, 0.3, size=(100,)).astype(dtype)
 
-    ans = layer(
-        points,
-        queries,
-        radii,
-    )
+    layer = ml3d.layers.KNNSearch(return_distances=True)
+    ans = layer(points, queries, k)
 
     assert ans.neighbors_index.shape.as_list() == [0]
     assert ans.neighbors_row_splits.shape.as_list() == [101]
@@ -146,7 +142,7 @@ def test_radius_search_empty_point_sets():
 
 
 @pytest.mark.parametrize('batch_size', [2, 3, 8])
-def test_radius_search_batches(batch_size):
+def test_knn_search_batches(batch_size):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
 
@@ -155,7 +151,6 @@ def test_radius_search_batches(batch_size):
     p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
     ignore_query_point = False
     return_distances = True
-    normalize_distances = True
     rng = np.random.RandomState(123)
 
     # create array defining start and end of each batch
@@ -175,32 +170,36 @@ def test_radius_search_batches(batch_size):
     else:
         queries = rng.random(size=(num_queries, 3)).astype(dtype)
 
-    radii = rng.uniform(0.1, 0.3, size=queries.shape[:1]).astype(dtype)
+    k = rng.randint(1, 11)
 
-    # kd trees for computing the ground truth
+    # kd tree for computing the ground truth
     gt_neighbors_index = []
     for i in range(batch_size):
         points_i = points[points_row_splits[i]:points_row_splits[i + 1]]
         queries_i = queries[queries_row_splits[i]:queries_row_splits[i + 1]]
-        radii_i = radii[queries_row_splits[i]:queries_row_splits[i + 1]]
 
         tree = cKDTree(points_i, copy_data=True)
-        gt_neighbors_index.extend([
-            list(tree.query_ball_point(q, r, p=p_norm) + points_row_splits[i])
-            for q, r in zip(queries_i, radii_i)
-        ])
+        if k > points_i.shape[0]:
+            tmp = [tree.query(q, k, p=p_norm) for q in queries_i]
+            tmp = [
+                list(idxs[np.isfinite(dists)] + points_row_splits[i])
+                for dists, idxs in tmp
+            ]
+        else:
+            tmp = [
+                list(tree.query(q, k, p=p_norm)[1] + points_row_splits[i])
+                for q in queries_i
+            ]
+        gt_neighbors_index.extend(tmp)
 
-    layer = ml3d.layers.RadiusSearch(metric=metric,
-                                     ignore_query_point=ignore_query_point,
-                                     normalize_distances=normalize_distances,
-                                     return_distances=return_distances)
-    ans = layer(
-        points,
-        queries,
-        radii,
-        points_row_splits=points_row_splits,
-        queries_row_splits=queries_row_splits,
-    )
+    layer = ml3d.layers.KNNSearch(metric=metric,
+                                  ignore_query_point=ignore_query_point,
+                                  return_distances=return_distances)
+    ans = layer(points,
+                queries,
+                k,
+                points_row_splits=points_row_splits,
+                queries_row_splits=queries_row_splits)
 
     # convert to numpy for convenience
     ans_neighbors_index = ans.neighbors_index.numpy()
@@ -214,7 +213,11 @@ def test_radius_search_batches(batch_size):
         end = ans_neighbors_row_splits[i + 1]
         q_neighbors_index = ans_neighbors_index[start:end]
 
-        gt_set = set(gt_neighbors_index[i])
+        if k == 1:
+            gt_set = set([gt_neighbors_index[i]])
+        else:
+            gt_set = set(gt_neighbors_index[i])
+
         if ignore_query_point:
             gt_set.remove(i)
         assert gt_set == set(q_neighbors_index)
@@ -225,11 +228,7 @@ def test_radius_search_batches(batch_size):
             for j, dist in zip(q_neighbors_index, q_neighbors_dist):
                 if metric == 'L2':
                     gt_dist = np.sum((q - points[j])**2)
-                    if normalize_distances:
-                        gt_dist /= radii[i]**2
                 else:
                     gt_dist = np.linalg.norm(q - points[j], ord=p_norm)
-                    if normalize_distances:
-                        gt_dist /= radii[i]
 
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)

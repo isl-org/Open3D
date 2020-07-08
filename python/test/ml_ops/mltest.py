@@ -3,20 +3,20 @@ import open3d as o3d
 import pytest
 from collections import namedtuple
 import importlib
+from types import SimpleNamespace
 
-# skip all tests if the tf ops were not built and disable warnings caused by
-# tensorflow
-tf_marks = [
-    pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
-                       reason='tf ops not built'),
-    pytest.mark.filterwarnings(
-        'ignore::DeprecationWarning:.*(tensorflow|protobuf).*'),
+# skip all tests if the ml ops were not built
+default_marks = [
+    pytest.mark.skipif(not (o3d._build_config['BUILD_TENSORFLOW_OPS'] or
+                            o3d._build_config['BUILD_PYTORCH_OPS']),
+                       reason='ml ops not built'),
 ]
 
 MLModules = namedtuple('MLModules', ['framework', 'ops'])
 
-# define the list of devices for running the ops
-device_names = set(['CPU:0'])
+# define the list of devices for running the ops and the ml frameworks
+cpu_device = 'CPU:0'
+_device_names = set([cpu_device])
 _ml_modules = {}
 try:
     tf = importlib.import_module('tensorflow')
@@ -26,16 +26,17 @@ try:
     tf_gpu_devices = tf.config.experimental.list_physical_devices('GPU')
     for dev in tf_gpu_devices:
         tf.config.experimental.set_memory_growth(dev, True)
-    if tf_gpu_devices: device_names.add(['GPU:0'])
-except:
+    if tf_gpu_devices:
+        _device_names.add('GPU:0')
+except ImportError:
     pass
 
 try:
     torch = importlib.import_module('torch')
     ml3d_ops = importlib.import_module('open3d.ml.torch.nn.functional')
     _ml_modules['torch'] = MLModules(torch, ml3d_ops)
-    if torch.cuda.is_available(): device_names.add(['GPU:0'])
-except:
+    if torch.cuda.is_available(): _device_names.add('GPU:0')
+except ImportError:
     pass
 
 
@@ -55,8 +56,9 @@ def to_torch(x, device):
         return x
 
 
-def run_op(ml_framework, device_name, fn, check_device, *args, **kwargs):
-    if ml_framework.__name__ == 'tensorflow':
+def run_op(ml, device_name, fn, check_device, *args, **kwargs):
+    """Runs an op using an ml framework"""
+    if ml.framework.__name__ == 'tensorflow':
         with tf.device(device_name):
             ans = fn(*args, **kwargs)
 
@@ -69,7 +71,7 @@ def run_op(ml_framework, device_name, fn, check_device, *args, **kwargs):
                         tensor_on_device = True
                 assert tensor_on_device
 
-    elif ml_framework.__name__ == 'torch':
+    elif ml.framework.__name__ == 'torch':
         if 'GPU' in device_name:
             device = 'cuda'
         else:
@@ -89,14 +91,21 @@ def run_op(ml_framework, device_name, fn, check_device, *args, **kwargs):
             assert tensor_on_device
 
     else:
-        raise ValueError('unsupported ml_framework {}'.format(ml_framework))
+        raise ValueError('unsupported ml framework {}'.format(ml.framework))
 
-    # convert outputs to numpy. we assume the output is a (named)tuple
-    return_type = type(ans)
-    output_as_numpy = [to_numpy(x) for x in ans]
-    new_ans = return_type(*output_as_numpy)
+    # convert outputs to numpy.
+    if hasattr(ans, 'numpy'):
+        new_ans = to_numpy(ans)
+    else:
+        # we assume the output is a (named)tuple if there is no numpy() function
+        return_type = type(ans)
+        output_as_numpy = [to_numpy(x) for x in ans]
+        new_ans = return_type(*output_as_numpy)
+
     return new_ans
 
 
-ml = pytest.mark.parametrize('ml', _ml_modules.values())
-devices = pytest.mark.parametrize('device_name', device_names)
+# add parameterizations for the ml module and the device
+parametrize = SimpleNamespace(
+    ml=pytest.mark.parametrize('ml', _ml_modules.values()),
+    device=pytest.mark.parametrize('device', _device_names))

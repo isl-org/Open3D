@@ -28,26 +28,36 @@ import open3d as o3d
 import numpy as np
 from scipy.spatial import cKDTree
 import pytest
-import mark_helper
+import mltest
 
-# skip all tests if the tf ops were not built and disable warnings caused by
-# tensorflow
-pytestmark = mark_helper.tf_marks
+# skip all tests if the ml ops were not built
+pytestmark = mltest.default_marks
 
 # the supported dtypes for the point coordinates
 dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
+# the GPU only supports single precision float
+gpu_dtypes = [np.float32]
+
 
 @dtypes
-@pytest.mark.parametrize('num_points_queries', [(2, 5), (31, 33), (33, 31),
+@mltest.parametrize.device
+@pytest.mark.parametrize('num_points_queries', [(10, 5), (31, 33), (33, 31),
                                                 (123, 345)])
-@pytest.mark.parametrize('metric', ['L1', 'L2'])
+@pytest.mark.parametrize('radius', [0.1, 0.3])
+@pytest.mark.parametrize('hash_table_size_factor', [1 / 8, 1 / 64])
+@pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
-def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
-                    return_distances):
+def test_fixed_radius_search(dtype, device, num_points_queries, radius,
+                             hash_table_size_factor, metric, ignore_query_point,
+                             return_distances):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
+
+    # skip dtype not supported on GPU
+    if 'GPU' in device and not dtype in gpu_dtypes:
+        return
 
     rng = np.random.RandomState(123)
 
@@ -59,23 +69,23 @@ def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
     else:
         queries = rng.random(size=(num_queries, 3)).astype(dtype)
 
-    k = rng.randint(1, 11)
-
     # kd tree for computing the ground truth
     tree = cKDTree(points, copy_data=True)
     p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
-    if k > num_points:
-        gt_neighbors_index = [tree.query(q, k, p=p_norm) for q in queries]
-        gt_neighbors_index = [
-            idxs[np.isfinite(dists)] for dists, idxs in gt_neighbors_index
-        ]
-    else:
-        gt_neighbors_index = [tree.query(q, k, p=p_norm)[1] for q in queries]
+    gt_neighbors_index = tree.query_ball_point(queries, radius, p=p_norm)
 
-    layer = ml3d.layers.KNNSearch(metric=metric,
-                                  ignore_query_point=ignore_query_point,
-                                  return_distances=return_distances)
-    ans = layer(points, queries, k)
+    with tf.device(device):
+        layer = ml3d.layers.FixedRadiusSearch(
+            metric=metric,
+            ignore_query_point=ignore_query_point,
+            return_distances=return_distances)
+        ans = layer(
+            points,
+            queries,
+            radius,
+            hash_table_size_factor=hash_table_size_factor,
+        )
+        assert device in ans.neighbors_index.device
 
     # convert to numpy for convenience
     ans_neighbors_index = ans.neighbors_index.numpy()
@@ -89,11 +99,7 @@ def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
         end = ans_neighbors_row_splits[i + 1]
         q_neighbors_index = ans_neighbors_index[start:end]
 
-        if k == 1:
-            gt_set = set([gt_neighbors_index[i]])
-        else:
-            gt_set = set(gt_neighbors_index[i])
-
+        gt_set = set(gt_neighbors_index[i])
         if ignore_query_point:
             gt_set.remove(i)
         assert gt_set == set(q_neighbors_index)
@@ -106,24 +112,30 @@ def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
                     gt_dist = np.sum((q - points[j])**2)
                 else:
                     gt_dist = np.linalg.norm(q - points[j], ord=p_norm)
-
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
 
 
-def test_knn_search_empty_point_sets():
+@mltest.parametrize.device
+def test_fixed_radius_search_empty_point_sets(device):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
     rng = np.random.RandomState(123)
 
     dtype = np.float32
+    radius = 1
+    hash_table_size_factor = 1 / 64
 
     # no query points
     points = rng.random(size=(100, 3)).astype(dtype)
     queries = rng.random(size=(0, 3)).astype(dtype)
-    k = rng.randint(1, 11)
 
-    layer = ml3d.layers.KNNSearch(return_distances=True)
-    ans = layer(points, queries, k)
+    with tf.device(device):
+        layer = ml3d.layers.FixedRadiusSearch(return_distances=True)
+        ans = layer(points,
+                    queries,
+                    radius,
+                    hash_table_size_factor=hash_table_size_factor)
+        assert device in ans.neighbors_index.device
 
     assert ans.neighbors_index.shape.as_list() == [0]
     assert ans.neighbors_row_splits.shape.as_list() == [1]
@@ -132,10 +144,14 @@ def test_knn_search_empty_point_sets():
     # no input points
     points = rng.random(size=(0, 3)).astype(dtype)
     queries = rng.random(size=(100, 3)).astype(dtype)
-    radii = rng.uniform(0.1, 0.3, size=(100,)).astype(dtype)
 
-    layer = ml3d.layers.KNNSearch(return_distances=True)
-    ans = layer(points, queries, k)
+    with tf.device(device):
+        layer = ml3d.layers.FixedRadiusSearch(return_distances=True)
+        ans = layer(points,
+                    queries,
+                    radius,
+                    hash_table_size_factor=hash_table_size_factor)
+        assert device in ans.neighbors_index.device
 
     assert ans.neighbors_index.shape.as_list() == [0]
     assert ans.neighbors_row_splits.shape.as_list() == [101]
@@ -144,16 +160,24 @@ def test_knn_search_empty_point_sets():
     assert ans.neighbors_distance.shape.as_list() == [0]
 
 
+@dtypes
+@mltest.parametrize.device
 @pytest.mark.parametrize('batch_size', [2, 3, 8])
-def test_knn_search_batches(batch_size):
+@pytest.mark.parametrize('radius', [0.1, 0.3])
+@pytest.mark.parametrize('hash_table_size_factor', [1 / 8, 1 / 64])
+@pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
+@pytest.mark.parametrize('ignore_query_point', [False, True])
+@pytest.mark.parametrize('return_distances', [False, True])
+def test_fixed_radius_search_batches(dtype, device, batch_size, radius,
+                                     hash_table_size_factor, metric,
+                                     ignore_query_point, return_distances):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
 
-    dtype = np.float32
-    metric = 'L2'
-    p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
-    ignore_query_point = False
-    return_distances = True
+    # skip dtype not supported on GPU
+    if 'GPU' in device and not dtype in gpu_dtypes:
+        return
+
     rng = np.random.RandomState(123)
 
     # create array defining start and end of each batch
@@ -173,36 +197,34 @@ def test_knn_search_batches(batch_size):
     else:
         queries = rng.random(size=(num_queries, 3)).astype(dtype)
 
-    k = rng.randint(1, 11)
-
-    # kd tree for computing the ground truth
+    # kd trees for computing the ground truth
+    p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
     gt_neighbors_index = []
     for i in range(batch_size):
         points_i = points[points_row_splits[i]:points_row_splits[i + 1]]
         queries_i = queries[queries_row_splits[i]:queries_row_splits[i + 1]]
 
         tree = cKDTree(points_i, copy_data=True)
-        if k > points_i.shape[0]:
-            tmp = [tree.query(q, k, p=p_norm) for q in queries_i]
-            tmp = [
-                list(idxs[np.isfinite(dists)] + points_row_splits[i])
-                for dists, idxs in tmp
-            ]
-        else:
-            tmp = [
-                list(tree.query(q, k, p=p_norm)[1] + points_row_splits[i])
-                for q in queries_i
-            ]
-        gt_neighbors_index.extend(tmp)
+        gt_neighbors_index.extend([
+            list(
+                tree.query_ball_point(q, radius, p=p_norm) +
+                points_row_splits[i]) for q in queries_i
+        ])
 
-    layer = ml3d.layers.KNNSearch(metric=metric,
-                                  ignore_query_point=ignore_query_point,
-                                  return_distances=return_distances)
-    ans = layer(points,
-                queries,
-                k,
-                points_row_splits=points_row_splits,
-                queries_row_splits=queries_row_splits)
+    with tf.device(device):
+        layer = ml3d.layers.FixedRadiusSearch(
+            metric=metric,
+            ignore_query_point=ignore_query_point,
+            return_distances=return_distances)
+        ans = layer(
+            points,
+            queries,
+            radius,
+            points_row_splits=points_row_splits,
+            queries_row_splits=queries_row_splits,
+            hash_table_size_factor=hash_table_size_factor,
+        )
+        assert device in ans.neighbors_index.device
 
     # convert to numpy for convenience
     ans_neighbors_index = ans.neighbors_index.numpy()
@@ -216,11 +238,7 @@ def test_knn_search_batches(batch_size):
         end = ans_neighbors_row_splits[i + 1]
         q_neighbors_index = ans_neighbors_index[start:end]
 
-        if k == 1:
-            gt_set = set([gt_neighbors_index[i]])
-        else:
-            gt_set = set(gt_neighbors_index[i])
-
+        gt_set = set(gt_neighbors_index[i])
         if ignore_query_point:
             gt_set.remove(i)
         assert gt_set == set(q_neighbors_index)
@@ -233,5 +251,4 @@ def test_knn_search_batches(batch_size):
                     gt_dist = np.sum((q - points[j])**2)
                 else:
                     gt_dist = np.linalg.norm(q - points[j], ord=p_norm)
-
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)

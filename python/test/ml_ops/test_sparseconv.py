@@ -30,11 +30,10 @@ import numpy as np
 np.set_printoptions(linewidth=600)
 np.set_printoptions(threshold=np.inf)
 import pytest
-import mark_helper
+import mltest
 
-# the tests in this file require the tensorflow ops
-pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
-                   reason='tf ops not built'),
+# skip all tests if the ml ops were not built
+pytestmark = mltest.default_marks
 
 
 # yapf: disable
@@ -46,9 +45,9 @@ pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                              ([5,5,5],            5,           3,               False,               True),
                         ])
 # yapf: enable
-@mark_helper.devices
+@mltest.parametrize.device
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_compare_to_conv3d(dtype, device_name, kernel_size, out_channels,
+def test_compare_to_conv3d(dtype, device, kernel_size, out_channels,
                            in_channels, with_inp_importance,
                            with_normalization):
     """Compares to the 3D convolution in tensorflow"""
@@ -88,10 +87,10 @@ def test_compare_to_conv3d(dtype, device_name, kernel_size, out_channels,
         kernel_initializer=tf.constant_initializer(filters),
         bias_initializer=tf.constant_initializer(bias))
 
-    with tf.device(device_name):
+    with tf.device(device):
         y = sparse_conv(inp_features, inp_positions * voxel_size,
                         out_positions * voxel_size, voxel_size, inp_importance)
-        assert device_name in y.device
+        assert device in y.device
         y = y.numpy()
 
     # Compare the output to a standard 3d conv
@@ -138,11 +137,11 @@ def test_compare_to_conv3d(dtype, device_name, kernel_size, out_channels,
                              ([5,5,5],            5,           3,               False,               True),
                         ])
 # yapf: enable
-@mark_helper.devices
+@mltest.parametrize.device
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size,
-                                    out_channels, in_channels,
-                                    with_out_importance, with_normalization):
+def test_compare_to_conv3dtranspose(dtype, device, kernel_size, out_channels,
+                                    in_channels, with_out_importance,
+                                    with_normalization):
     """Compares to the 3D transposed convolution in tensorflow"""
     import tensorflow as tf
     import open3d.ml.tf as ml3d
@@ -181,11 +180,11 @@ def test_compare_to_conv3dtranspose(dtype, device_name, kernel_size,
         kernel_initializer=tf.constant_initializer(filters),
         bias_initializer=tf.constant_initializer(bias))
 
-    with tf.device(device_name):
+    with tf.device(device):
         y = sparse_conv_transpose(inp_features, inp_positions * voxel_size,
                                   out_positions * voxel_size, voxel_size,
                                   out_importance)
-        assert device_name in y.device
+        assert device in y.device
         y = y.numpy()
 
     # Compare the output to a standard 3d conv
