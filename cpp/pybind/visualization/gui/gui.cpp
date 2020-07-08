@@ -65,8 +65,18 @@ void pybind_gui_classes(py::module &m) {
              [](const Application &app) {
                  return std::string("Application singleton instance");
              })
+        .def_property_readonly_static("instance",
+             // Seems like we ought to be able to specify
+             // &Application::GetInstance but that gives runtime errors about
+             // number of arguments. It seems that property calls are made from
+             // an object, so that object needs to be in the function signature.
+             [](py::object) -> Application& {
+                 return Application::GetInstance();
+             },
+             py::return_value_policy::reference,
+             "Gets the Application singleton (read-only)")
         .def("initialize",
-             []() {
+             [](Application& instance) {
                  // We need to find the resources directory. Fortunately, Python
                  // knows where the module lives (open3d.__file__ is the path to
                  // __init__.py), so we can use that to find the resources
@@ -75,14 +85,14 @@ void pybind_gui_classes(py::module &m) {
                  auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
                  auto module_path = utility::filesystem::GetFileParentDirectory(o3d_init_path);
                  auto resource_path = module_path + "/resources";
-                 Application::GetInstance().Initialize(resource_path.c_str());
+                 instance.Initialize(resource_path.c_str());
              })
-        .def("initialize", [](const char *resource_dir) {
-                 Application::GetInstance().Initialize(resource_dir);
+        .def("initialize", [](Application& instance, const char *resource_dir) {
+                 instance.Initialize(resource_dir);
              })
         .def("run",
-             []() {
-                 while (Application::GetInstance().RunOneTick()) {
+             [](Application& instance) {
+                 while (instance.RunOneTick()) {
                      // Enable Ctrl-C to kill Python
                      if (PyErr_CheckSignals() != 0) {
                          throw py::error_already_set();
@@ -91,35 +101,19 @@ void pybind_gui_classes(py::module &m) {
              },
              "Runs the event loop")
         .def("quit",
-             []() { Application::GetInstance().Quit(); },
+             [](Application& instance) { instance.Quit(); },
              "Closes all the windows, exiting as a result")
-        .def("get_menubar",
-             []() -> std::shared_ptr<Menu> {
-                 return Application::GetInstance().GetMenubar();
-             },
-             "Returns the Menu for the application")
-        .def("set_menubar",
-             [](std::shared_ptr<Menu> menu) {
-                 Application::GetInstance().SetMenubar(menu);
-             },
-             "Sets the Menu for the application")
+        .def_property("menubar",
+                      &Application::GetMenubar, &Application::SetMenubar,
+                      "The Menu for the application (initially None)")
         .def("add_window",
-             [](std::shared_ptr<Window> w) {
-                 Application::GetInstance().AddWindow(w);
-             },
+             &Application::AddWindow,
              "Adds the window to the application")
         .def("remove_window",
-             [](Window *w) {
-                 Application::GetInstance().RemoveWindow(w);
-             },
+             &Application::AddWindow,
              "Removes the window from the application, closing it. If there "
              "are no open windows left the run loop will exit.")
         ;
-    docstring::ClassMethodDocInject(m, "Application", "initialize");
-    docstring::ClassMethodDocInject(m, "Application", "run");
-    docstring::ClassMethodDocInject(m, "Application", "quit");
-    docstring::ClassMethodDocInject(m, "Application", "add_window");
-    docstring::ClassMethodDocInject(m, "Application", "remove_window");
 
     // ---- Window ----
     py::class_<Window, std::shared_ptr<Window>> window(m, "Window", "Application window");
@@ -140,40 +134,39 @@ void pybind_gui_classes(py::module &m) {
              [](const Window &w) { return "Application window"; })
         .def("add_child", &Window::AddChild,
              "Adds a widget to the window")
-        .def("get_os_frame", &Window::GetOSFrame,
-             "Returns frame of window in OS coords, not device pixels")
-        .def("set_os_frame", &Window::SetOSFrame,
-             "Sets frame of window in OS coords")
-        .def("get_title", &Window::GetTitle, "Returns the title of the window")
-        .def("set_title", &Window::SetTitle, "Sets the title of the window")
+        .def_property("os_frame", &Window::GetOSFrame, &Window::SetOSFrame,
+                      "Window rect in OS coords, not device pixels")
+        .def_property("title", &Window::GetTitle, &Window::SetTitle,
+                      "Returns the title of the window")
         .def("size_to_fit", &Window::SizeToFit,
              "Sets the width and height of window to its preferred size")
-        .def("get_size", &Window::GetSize,
-             "Returns the size of the window in device pixels, including "
-             "menubar (except on macOS)")
-        .def("set_size", &Window::SetSize,
-             "Sets the size of the window in device pixels, including "
-             "menubar (except on macOS)")
-        .def("get_content_rect", &Window::GetContentRect,
-             "Returns the frame in device pixels, relative to the window, "
-             "which is available for widgets")
-        .def("get_scaling", &Window::GetScaling,
-             "Returns the scaling factor between OS pixels and device pixels")
-        .def("is_visible", &Window::IsVisible,
-             "Returns True if window is visible")
+        .def_property("get_size", &Window::GetSize, &Window::SetSize,
+                      "The size of the window in device pixels, including "
+                      "menubar (except on macOS)")
+        .def_property_readonly("content_rect", &Window::GetContentRect,
+                               "Returns the frame in device pixels, relative "
+                               " to the window, which is available for widgets "
+                               "(read-only)")
+        .def_property_readonly("scaling", &Window::GetScaling,
+                               "Returns the scaling factor between OS pixels "
+                               "and device pixels (read-only)")
+        .def_property_readonly("is_visible", &Window::IsVisible,
+                               "True if window is visible (read-only)")
         .def("show", &Window::Show, "Shows or hides the window")
         .def("close", &Window::Close, "Closes the window and destroys it")
         .def("set_needs_layout", &Window::SetNeedsLayout,
              "Flags window to re-layout")
         .def("post_redraw", &Window::PostRedraw,
              "Sends a redraw message to the OS message queue")
-        .def("is_active_window", &Window::IsActiveWindow,
-             "Returns True if the window is currently the active window")
+        .def_property_readonly("is_active_window", &Window::IsActiveWindow,
+                               "True if the window is currently the active "
+                               "window (read-only)")
         .def("set_focus_widget", &Window::SetFocusWidget,
              "Makes specified widget have text focus")
         .def("set_on_menu_item_activated", &Window::SetOnMenuItemActivated,
              "Sets callback function for menu item:  callback()")
-        .def("get_theme", &Window::GetTheme, "Get's window's theme info")
+        .def_property_readonly("theme", &Window::GetTheme,
+                               "Get's window's theme info")
         .def("show_dialog", &Window::ShowDialog, "Displays the dialog")
         .def("close_dialog", &Window::CloseDialog, "Closes the current dialog")
         .def("show_message_box", &Window::ShowMessageBox,
@@ -219,14 +212,18 @@ void pybind_gui_classes(py::module &m) {
                           return new Color(r, g, b, a);
                       }),
              "r"_a = 1.0, "g"_a = 1.0, "b"_a = 1.0, "a"_a = 1.0)
-        .def("get_red", &Color::GetRed, "Returns red channel in the range "
-             "[0.0, 1.0]")
-        .def("get_green", &Color::GetGreen, "Returns green channel in the "
-             "range [0.0, 1.0]")
-        .def("get_blue", &Color::GetBlue, "Returns blue channel in the "
-             "range [0.0, 1.0]")
-        .def("get_alpha", &Color::GetAlpha, "Returns alpha channel in the "
-             "range [0.0, 1.0]")
+        .def_property_readonly("red", &Color::GetRed,
+                               "Returns red channel in the range [0.0, 1.0] "
+                               "(read-only)")
+        .def_property_readonly("green", &Color::GetGreen,
+                               "Returns green channel in the range [0.0, 1.0]"
+                               "(read-only)")
+        .def_property_readonly("blue", &Color::GetBlue,
+                               "Returns blue channel in the range [0.0, 1.0]"
+                               "(read-only)")
+        .def_property_readonly("alpha", &Color::GetAlpha,
+                               "Returns alpha channel in the range [0.0, 1.0]"
+                               "(read-only)")
         .def("set_color", &Color::SetColor,
              "Sets red, green, blue, and alpha channels, (range: [0.0, 1.0])",
              "r"_a, "g"_a, "b"_a, "a"_a = 1.0)
@@ -276,15 +273,13 @@ void pybind_gui_classes(py::module &m) {
         .def("add_child", &Widget::AddChild, "Adds a child widget")
         .def("get_children", &Widget::GetChildren,
              "Returns the child array. Do not modify")
-        .def("get_frame", &Widget::GetFrame, "Returns the widget's frame")
-        .def("set_frame", &Widget::SetFrame, "Sets the widget's frame")
-        .def("is_visible", &Widget::IsVisible,
-             "Returns true if widget is visible")
-        .def("set_visible", &Widget::SetVisible, "Set widget visibility")
-        .def("is_enabled", &Widget::IsEnabled,
-             "Returns true if widget is enabled")
-        .def("set_enabled", &Widget::SetEnabled,
-             "Sets widget enabled/disabled")
+        .def_property("frame", &Widget::GetFrame, &Widget::SetFrame,
+                      "The widget's frame. Setting this value will be "
+                      "overridden if the frame is within a layout.")
+        .def_property("visible", &Widget::IsVisible, &Widget::SetVisible,
+                      "True if widget is visible, False otherwise")
+        .def_property("enabled", &Widget::IsEnabled, &Widget::SetEnabled,
+                      "True if widget is enabled, False if disabled")
         ;
 
     // ---- Button ----
@@ -297,15 +292,11 @@ void pybind_gui_classes(py::module &m) {
                   << "), " << b.GetFrame().width << " x " << b.GetFrame().height;
                 return s.str().c_str();
              })
-        .def("get_is_toggleable", &Button::GetIsToggleable,
-             "Returns true if the button is toggleable, false if it is a push "
-             "button")
-        .def("set_toggleable", &Button::GetIsToggleable,
-             "Sets button toggleable (True) or to be a push button (False)")
-        .def("get_is_on", &Button::GetIsOn,
-             "Returns true if the button is toggleable and in the on state")
-        .def("set_on", &Button::SetOn,
-             "Sets button to on state if it is toggleable")
+        .def_property("toggleable",
+                      &Button::GetIsToggleable, &Button::SetToggleable,
+                      "True if button is toggleable, False if a push button")
+        .def_property("is_on", &Button::GetIsOn, &Button::SetOn,
+                      "True if the button is toggleable and in the on state")
         .def("set_on_clicked", &Button::SetOnClicked,
              "Calls passed function when button is pressed")
         ;
@@ -320,9 +311,8 @@ void pybind_gui_classes(py::module &m) {
                   << "), " << c.GetFrame().width << " x " << c.GetFrame().height;
                 return s.str().c_str();
              })
-        .def("is_checked", &Checkbox::IsChecked, "Returns True if checked")
-        .def("set_checked", &Checkbox::SetChecked,
-             "Sets checked if passed True, unchecked if False")
+        .def_property("checked", &Checkbox::IsChecked, &Checkbox::SetChecked,
+                      "True if checked, False otherwise")
         .def("set_on_checked", &Checkbox::SetOnChecked,
              "Calls passed function when checkbox changes state")
         ;
@@ -341,13 +331,10 @@ void pybind_gui_classes(py::module &m) {
                   << c.GetFrame().height;
                 return s.str().c_str();
              })
-        .def("set_value",
-             (void (ColorEdit::*)(float, float, float))&ColorEdit::SetValue,
-             "Set color value: set_value(r, g, b)")
-        .def("set_value",
-             (void (ColorEdit::*)(const Color&))&ColorEdit::SetValue,
-             "Set color value: set_value(color)")
-        .def("get_value", &ColorEdit::GetValue, "Get color value")
+        .def_property("color_value",
+                      &ColorEdit::GetValue,
+                      (void (ColorEdit::*)(const Color&))&ColorEdit::SetValue,
+                      "Color value (gui.Color)")
         .def("set_on_value_changed", &ColorEdit::SetOnValueChanged,
              "Calls f(Color) when color changes by user input")
         ;
@@ -372,21 +359,21 @@ void pybind_gui_classes(py::module &m) {
         .def("remove_item",
              (void (Combobox::*)(int))&Combobox::RemoveItem,
              "Removes the item at the index")
-//        .def("get_number_of_items", &Combobox::GetNumberOfItems,
-//             "Returns the number of items")
+//        .def_readonly("number_of_items", &Combobox::GetNumberOfItems,
+//             "The number of items (read-only)")
         .def("get_item", &Combobox::GetItem,
              "Returns the item at the given index")
-        .def("get_selected_index", &Combobox::GetSelectedIndex,
-             "Returns the index of the currently selected item")
-        .def("get_selected_value", &Combobox::GetSelectedValue,
-             "Returns the text of the currently selected item")
-        .def("set_selected_index", &Combobox::SetSelectedIndex,
-             "Sets currently selected item by index")
-        .def("set_selected_value", &Combobox::SetSelectedValue,
-             "Sets currently selected item to the first item of the given text")
-        .def("set_on_value_changed", &Combobox::SetOnValueChanged,
+        .def_property("selected_index",
+                      &Combobox::GetSelectedIndex,
+                      &Combobox::SetSelectedIndex,
+                      "The index of the currently selected item")
+        .def_property("selected_text",
+                      &Combobox::GetSelectedValue,
+                      &Combobox::SetSelectedValue,
+                      "The index of the currently selected item")
+        .def("set_on_selection_changed", &Combobox::SetOnValueChanged,
              "Calls f(str, int) when user selects item from combobox. Arguments "
-             "are the selected value and selected index, respectively")
+             "are the selected text and selected index, respectively")
         ;
 
     // ---- ImageLabel ----
@@ -415,11 +402,10 @@ void pybind_gui_classes(py::module &m) {
                   << " x " << lbl.GetFrame().height;
                 return s.str().c_str();
              })
-        .def("get_text", &Label::GetText, "Returns the text of the label")
-        .def("set_text", &Label::SetText, "Sets the text of the label")
-        .def("get_text_color", &Label::GetTextColor,
-             "Returns the text color")
-        .def("set_text_color", &Label::SetTextColor, "Sets the text color")
+        .def_property("text", &Label::GetText, &Label::SetText,
+                      "The text of the label")
+        .def_property("text_color", &Label::GetTextColor, &Label::SetTextColor,
+                      "The color of the text (gui.Color)")
         ;
 
     // ---- ListView ----
@@ -435,13 +421,12 @@ void pybind_gui_classes(py::module &m) {
              })
         .def("set_items", &ListView::SetItems,
              "Sets the list to display the list of items provided")
-        .def("get_selected_index", &ListView::GetSelectedIndex,
-             "Returns the index of the currently selected item")
-        .def("get_selected_value", &ListView::GetSelectedValue,
-             "Returns the text of the currently selected item")
-        .def("set_selected_index", &ListView::SetSelectedIndex,
-             "Sets currently selected item by index")
-        .def("set_on_value_changed", &ListView::SetOnValueChanged,
+        .def_property("selected_index",
+                      &ListView::GetSelectedIndex, &ListView::SetSelectedIndex,
+                      "The index of the currently selected item")
+        .def_property_readonly("selected_value", &ListView::GetSelectedValue,
+                               "The text of the currently selected item")
+        .def("set_on_selection_changed", &ListView::SetOnValueChanged,
              "Calls f(new_val, is_double_click) when user changes selection")
         ;
 
@@ -469,17 +454,26 @@ void pybind_gui_classes(py::module &m) {
                   << " x " << ne.GetFrame().height;
                 return s.str().c_str();
              })
-        .def("get_int_value", &NumberEdit::GetIntValue,
-             "Returns current value (int)")
-        .def("get_double_value", &NumberEdit::GetDoubleValue,
-             "Returns current value (double)")
+        .def_property("int_value",
+                      &NumberEdit::GetIntValue,
+                      [](std::shared_ptr<NumberEdit> ne, int val) {
+                          ne->SetValue(double(val));
+                      },
+                      "Current value (int)")
+        .def_property("double_value",
+                      &NumberEdit::GetDoubleValue, &NumberEdit::SetValue,
+                      "Current value (double)")
         .def("set_value", &NumberEdit::SetValue, "Sets value")
-        .def("set_decimal_precision", &NumberEdit::SetDecimalPrecision,
-             "Sets number of fractional digits shown")
-        .def("get_minimum_value", &NumberEdit::GetMinimumValue,
-             "Returns the minimum value number can contain")
-        .def("get_maximum_value", &NumberEdit::GetMaximumValue,
-             "Returns the maximum value number can contain")
+        .def_property("decimal_precision",
+                      &NumberEdit::GetDecimalPrecision,
+                      &NumberEdit::SetDecimalPrecision,
+                      "Number of fractional digits shown")
+        .def_property_readonly("minimum_value", &NumberEdit::GetMinimumValue,
+                               "The minimum value number can contain "
+                               "(read-only, use set_limits() to set)")
+        .def_property_readonly("maximum_value", &NumberEdit::GetMaximumValue,
+                               "The maximum value number can contain "
+                               "(read-only, use set_limits() to set)")
         .def("set_limits", &NumberEdit::SetLimits,
              "Sets the minimum and maximum values for the number")
         .def("set_on_value_changed", &NumberEdit::SetOnValueChanged,
@@ -498,11 +492,8 @@ void pybind_gui_classes(py::module &m) {
                   << pb.GetFrame().width << " x " << pb.GetFrame().height;
                 return s.str().c_str();
              })
-        .def("get_value", &ProgressBar::GetValue,
-             "Returns the value of the progress bar")
-        .def("set_value", &ProgressBar::SetValue,
-             "Sets the value of the progress bar, must be within 0.0 and 1.0, "
-             "inclusive")
+        .def_property("value", &ProgressBar::GetValue, &ProgressBar::SetValue,
+                      "The value of the progress bar, ranges from 0.0 to 1.0")
         ;
 
     // ---- Slider ----
@@ -529,15 +520,21 @@ void pybind_gui_classes(py::module &m) {
                   << " x " << sl.GetFrame().height;
                 return s.str().c_str();
              })
-        .def("get_int_value", &Slider::GetIntValue, "Get slider value (int)")
-        .def("get_double_value", &Slider::GetDoubleValue,
-             "Get slider value (double)")
-        // TODO: does pybind let you pass an int in the python code?
-        .def("set_value", &Slider::SetValue, "Set slider value (double)")
-        .def("get_minimum_value", &Slider::GetMinimumValue,
-             "Returns the minimum value slider can contain")
-        .def("get_maximum_value", &Slider::GetMaximumValue,
-             "Returns the maximum value slider can contain")
+        .def_property("int_value",
+                      &Slider::GetIntValue,
+                      [](std::shared_ptr<Slider> ne, int val) {
+                          ne->SetValue(double(val));
+                      },
+                      "Slider value (int)")
+        .def_property("double_value",
+                      &Slider::GetDoubleValue, &Slider::SetValue,
+                      "Slider value (double)")
+        .def_property_readonly("get_minimum_value", &Slider::GetMinimumValue,
+                               "The minimum value number can contain "
+                               "(read-only, use set_limits() to set)")
+        .def_property_readonly("get_maximum_value", &Slider::GetMaximumValue,
+                               "The maximum value number can contain "
+                               "(read-only, use set_limits() to set)")
         .def("set_limits", &Slider::SetLimits,
              "Sets the minimum and maximum values for the slider")
         .def("set_on_value_changed", &Slider::SetOnValueChanged,
@@ -564,12 +561,12 @@ void pybind_gui_classes(py::module &m) {
                   << " x " << te.GetFrame().height;
                 return s.str().c_str();
              })
-        .def("get_value", &TextEdit::GetText, "Returns text")
-        .def("set_value", &TextEdit::SetText, "Sets text")
-        .def("get_placeholder_text", &TextEdit::GetPlaceholderText,
-             "Returns the placeholder text")
-        .def("set_placeholder_text", &TextEdit::SetPlaceholderText,
-             "Sets the placeholder text")
+        .def_property("text_value", &TextEdit::GetText, &TextEdit::SetText,
+                      "The value of text")
+        .def_property("placeholder_text",
+                      &TextEdit::GetPlaceholderText,
+                      &TextEdit::SetPlaceholderText,
+                      "The placeholder text displayed when text value is empty")
         .def("set_on_text_changed", &TextEdit::SetOnTextChanged,
              "Sets f(new_text) which is called whenever the the user makes a "
              "change to the text")
@@ -591,8 +588,9 @@ void pybind_gui_classes(py::module &m) {
                   << " x " << ve.GetFrame().height;
                 return s.str().c_str();
              })
-        .def("get_value", &VectorEdit::GetValue, "Returns value [x, y, z]")
-        .def("set_value", &VectorEdit::SetValue, "Sets value [x, y, z]")
+        .def_property("vector_value",
+                      &VectorEdit::GetValue, &VectorEdit::SetValue,
+                      "Returns value [x, y, z]")
         .def("set_on_value_changed", &VectorEdit::SetOnValueChanged,
              "Sets f([x, y, z]) which is called whenever the user changes the "
              "value of a component")
@@ -670,9 +668,10 @@ void pybind_gui_classes(py::module &m) {
                           return new VGrid(n_cols, spacing, margins);
                       }),
             "cols"_a, "spacing"_a = 0, "margins"_a = Margins())
-        .def("get_spacing", &VGrid::GetSpacing,
-             "Returns the spacing between rows and columns")
-        .def("get_margins", &VGrid::GetMargins, "Returns the margins")
+        .def_property_readonly("spacing", &VGrid::GetSpacing,
+                               "Returns the spacing between rows and columns")
+        .def_property_readonly("margins", &VGrid::GetMargins,
+                               "Returns the margins")
         ;
 
     // ---- Dialog ----
