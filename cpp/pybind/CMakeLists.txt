@@ -34,6 +34,11 @@ set(PACKAGE_NAME pybind)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
 
+if (NOT ENABLE_GUI)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp")
+endif()
+
 if (NOT BUILD_AZURE_KINECT)
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
