@@ -93,9 +93,7 @@ void NumberEdit::SetLimits(double min_value, double max_value) {
     impl_->value_ = std::min(max_value, std::max(min_value, impl_->value_));
 }
 
-int NumberEdit::GetDecimalPrecision() {
-    return impl_->num_decimal_digits_;
-}
+int NumberEdit::GetDecimalPrecision() { return impl_->num_decimal_digits_; }
 
 void NumberEdit::SetDecimalPrecision(int num_digits) {
     impl_->num_decimal_digits_ = num_digits;

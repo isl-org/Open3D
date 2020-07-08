@@ -232,10 +232,16 @@ void Application::Initialize(int argc, const char *argv[]) {
 void Application::Initialize(const char *resource_path) {
     impl_->resource_path_ = resource_path;
     if (!utility::filesystem::DirectoryExists(impl_->resource_path_)) {
-        utility::LogError(("Can't find resource directory: " + impl_->resource_path_).c_str());
+        utility::LogError(
+                ("Can't find resource directory: " + impl_->resource_path_)
+                        .c_str());
     }
-    if (!utility::filesystem::FileExists(impl_->resource_path_ + "/ui_blit.filamat")) {
-        utility::LogError(("Resource directory does not have Open3D resources: " + impl_->resource_path_).c_str());
+    if (!utility::filesystem::FileExists(impl_->resource_path_ +
+                                         "/ui_blit.filamat")) {
+        utility::LogError(
+                ("Resource directory does not have Open3D resources: " +
+                 impl_->resource_path_)
+                        .c_str());
     }
     impl_->theme_.font_path =
             impl_->resource_path_ + "/" + impl_->theme_.font_path;

@@ -10,7 +10,7 @@ w = gui.Window("Test")
 em = w.theme.font_size
 layout = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
 
-MENU_CHECKABLE =1
+MENU_CHECKABLE = 1
 MENU_DISABLED = 2
 MENU_QUIT = 3
 if gui.Application.instance.menubar is None:
@@ -29,25 +29,34 @@ if gui.Application.instance.menubar is None:
     def on_checkable():
         test_menu.set_checked(MENU_CHECKABLE,
                               not test_menu.is_checked(MENU_CHECKABLE))
+
     def on_quit():
         gui.Application.instance.quit()
+
     w.set_on_menu_item_activated(MENU_CHECKABLE, on_checkable)
     w.set_on_menu_item_activated(MENU_QUIT, on_quit)
-    
+
 fileedit = gui.TextEdit()
 filedlgbutton = gui.Button("...")
+
+
 def on_filedlg():
     filedlg = gui.FileDialog(gui.FileDialog.OPEN, "Select file", w.theme)
     filedlg.add_filter(".obj .ply .stl", "Triangle mesh (.obj, .ply, .stl)")
     filedlg.add_filter("", "All files")
+
     def filedlg_cancel():
         w.close_dialog()
+
     def filedlg_done(path):
         fileedit.text_value = path
         w.close_dialog()
+
     filedlg.set_on_cancel(filedlg_cancel)
     filedlg.set_on_done(filedlg_done)
     w.show_dialog(filedlg)
+
+
 filedlgbutton.set_on_clicked(on_filedlg)
 fileedit_layout = gui.Horiz()
 fileedit_layout.add_child(gui.Label("Model file"))
@@ -62,6 +71,8 @@ label.text_color = gui.Color(1.0, 0.5, 0.0)
 collapse.add_child(label)
 
 cb = gui.Checkbox("Enable some really cool effects")
+
+
 def on_cb(is_checked):
     if is_checked:
         text = "Sorry, effects are unimplemented"
@@ -72,22 +83,29 @@ def on_cb(is_checked):
     dlg_layout.add_child(gui.Label(text))
     button_layout = gui.Horiz()
     ok_button = gui.Button("Ok")
+
     def on_ok():
         w.close_dialog()
+
     ok_button.set_on_clicked(on_ok)
     button_layout.add_stretch()
     button_layout.add_child(ok_button)
     dlg_layout.add_child(button_layout)
     dlg.add_child(dlg_layout)
     w.show_dialog(dlg)
-    
+
+
 cb.set_on_checked(on_cb)
 collapse.add_child(cb)
 
 color = gui.ColorEdit()
 color.color_value = gui.Color(1.0, 0.5, 0.0)
+
+
 def on_color(new_color):
-    label.text_color = new_color;
+    label.text_color = new_color
+
+
 color.set_on_value_changed(on_color)
 collapse.add_child(color)
 
@@ -95,8 +113,12 @@ combo = gui.Combobox()
 combo.add_item("Show point labels")
 combo.add_item("Show point velocity")
 combo.add_item("Show bounding boxes")
+
+
 def on_combo(new_val, new_idx):
     print(new_idx, new_val)
+
+
 combo.set_on_selection_changed(on_combo)
 collapse.add_child(combo)
 
@@ -106,8 +128,12 @@ collapse.add_child(logo)
 lv = gui.ListView()
 lv.set_items(["Ground", "Trees", "Buildings" "Cars", "People"])
 lv.selected_index = lv.selected_index + 2  # initial value is -1, so will be 1
+
+
 def on_list(new_val, is_dbl_click):
     print(new_val)
+
+
 lv.set_on_selection_changed(on_list)
 collapse.add_child(lv)
 
@@ -134,25 +160,39 @@ collapse.add_child(prog_layout)
 
 slider = gui.Slider(gui.Slider.INT)
 slider.set_limits(5, 13)
+
+
 def on_slider(new_val):
     progress.value = new_val / 20.0
+
+
 slider.set_on_value_changed(on_slider)
 collapse.add_child(slider)
 
 tedit = gui.TextEdit()
 tedit.placeholder_text = "Edit me some text here"
+
+
 def on_text_changed(new_text):
     print("edit:", new_text)
+
+
 def on_value_changed(new_text):
     print("value:", new_text)
+
+
 tedit.set_on_text_changed(on_text_changed)
 tedit.set_on_value_changed(on_value_changed)
 collapse.add_child(tedit)
 
 vedit = gui.VectorEdit()
 vedit.vector_value = [1, 2, 3]
+
+
 def on_vedit(new_val):
     print(new_val)
+
+
 vedit.set_on_value_changed(on_vedit)
 collapse.add_child(vedit)
 
@@ -180,8 +220,12 @@ collapse.add_child(tabs)
 
 button_layout = gui.Horiz()
 ok_button = gui.Button("Ok")
+
+
 def on_ok():
     gui.Application.instance.quit()
+
+
 ok_button.set_on_clicked(on_ok)
 button_layout.add_stretch()
 button_layout.add_child(ok_button)

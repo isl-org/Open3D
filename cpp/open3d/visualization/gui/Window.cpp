@@ -853,8 +853,8 @@ void Window::OnResize() {
             }
             // TODO: if we can update GLFW we can replace the above with this
             //       Also, see below.
-            //int xpos, ypos;
-            //glfwGetMonitorWorkarea(monitor, &xpos, &ypos,
+            // int xpos, ypos;
+            // glfwGetMonitorWorkarea(monitor, &xpos, &ypos,
             //                       &screen_width, &screen_height);
         }
 
@@ -1263,9 +1263,7 @@ void Window::CloseCallback(GLFWwindow* window) {
     Application::GetInstance().RemoveWindow(w);
 }
 
-void Window::UpdateAfterEvent(Window* w) {
-    w->PostRedraw();
-}
+void Window::UpdateAfterEvent(Window* w) { w->PostRedraw(); }
 
 }  // namespace gui
 }  // namespace visualization
