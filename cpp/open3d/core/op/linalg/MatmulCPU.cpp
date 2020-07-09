@@ -31,10 +31,7 @@ namespace open3d {
 namespace core {
 
 // CPU converges to
-// http://netlib.org/blas/#_level_3
 // https://software.intel.com/content/www/us/en/develop/documentation/mkl-developer-reference-c/top/blas-and-sparse-blas-routines/blas-routines/blas-level-3-routines/cblas-gemm.html
-// https://oneapi-src.github.io/oneDNN/group__dnnl__api__blas.html
-
 void CPUMatmul(Dtype dtype,
                void* A_data,
                void* B_data,
@@ -46,13 +43,13 @@ void CPUMatmul(Dtype dtype,
         case Dtype::Float32: {
             float alpha = 1, beta = 0;
             // clang-format off
-            cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+            cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                         m, n, k,  // dimensions
                         alpha,
-                        static_cast<const float*>(A_data), m,
-                        static_cast<const float*>(B_data), k,  // input and their leading dims
+                        static_cast<const float*>(A_data), k,
+                        static_cast<const float*>(B_data), n,  // input and their leading dims
                         beta,
-                        static_cast<float*>(C_data), m);  // output and its leading dim
+                        static_cast<float*>(C_data), n);  // output and its leading dim
             // clang-format on
             break;
         }
@@ -60,13 +57,13 @@ void CPUMatmul(Dtype dtype,
         case Dtype::Float64: {
             double alpha = 1, beta = 0;
             // clang-format off
-            cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
+            cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                         m, n, k,  // dimensions
                         alpha,
-                        static_cast<const double*>(A_data), m,
-                        static_cast<const double*>(B_data), k,  // input and their leading dims
+                        static_cast<const double*>(A_data), k,
+                        static_cast<const double*>(B_data), n,  // input and their leading dims
                         beta,
-                        static_cast<double*>(C_data), m);  // output and its leading dim
+                        static_cast<double*>(C_data), n);  // output and its leading dim
             break;
             // clang-format on
         }

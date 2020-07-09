@@ -72,10 +72,10 @@ Tensor Matmul(const Tensor& A, const Tensor& B) {
     // Dispatch to backends
     int64_t m = A_shape[0], k = A_shape[1],
             n = B_shape.size() == 2 ? B_shape[1] : 1;
-    Tensor C = Tensor::Zeros({n, m}, dtype, device);
+    Tensor C = Tensor::Zeros({m, n}, dtype, device);
 
-    Tensor A_contiguous = A.T().Contiguous();
-    Tensor B_contiguous = B.T().Contiguous();
+    Tensor A_contiguous = A.Contiguous();
+    Tensor B_contiguous = B.Contiguous();
     void* A_data = A_contiguous.GetDataPtr();
     void* B_data = B_contiguous.GetDataPtr();
     void* C_data = C.GetDataPtr();
@@ -97,7 +97,7 @@ Tensor Matmul(const Tensor& A, const Tensor& B) {
 
     (backend_it->second)(dtype, A_data, B_data, C_data, m, k, n);
 
-    return C.T();
+    return C;
 }
 }  // namespace core
 }  // namespace open3d
