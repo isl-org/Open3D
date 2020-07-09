@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/Reduction.h"
+#include "open3d/core/op/kernel/Reduction.h"
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -46,7 +46,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
+#include "open3d/core/op/kernel/CUDALauncher.cuh"
 #include "open3d/utility/Console.h"
 
 // CUDA reduction is based on PyTorch's CUDA reduction implementation.

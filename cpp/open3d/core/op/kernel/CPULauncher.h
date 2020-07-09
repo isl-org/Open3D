@@ -32,7 +32,7 @@
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/ParallelUtil.h"
+#include "open3d/core/op/kernel/ParallelUtil.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

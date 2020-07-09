@@ -24,48 +24,59 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/IndexGetSet.h"
+#include "open3d/core/op/kernel/IndexGetSet.h"
 
-#include "open3d/core/AdvancedIndexing.h"
+#include "open3d/core/CUDAState.cuh"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CPULauncher.h"
-#include "open3d/utility/Console.h"
+#include "open3d/core/op/kernel/CUDALauncher.cuh"
 
 namespace open3d {
 namespace core {
 namespace kernel {
 
 template <typename scalar_t>
-static void CPUCopyElementKernel(const void* src, void* dst) {
+static OPEN3D_HOST_DEVICE void CUDACopyElementKernel(const void* src,
+                                                     void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
 }
 
-void IndexGetCPU(const Tensor& src,
-                 Tensor& dst,
-                 const std::vector<Tensor>& index_tensors,
-                 const SizeVector& indexed_shape,
-                 const SizeVector& indexed_strides) {
+void IndexGetCUDA(const Tensor& src,
+                  Tensor& dst,
+                  const std::vector<Tensor>& index_tensors,
+                  const SizeVector& indexed_shape,
+                  const SizeVector& indexed_strides) {
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
+    CUDADeviceSwitcher switcher(src.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        CPULauncher::LaunchAdvancedIndexerKernel(
-                ai, CPUCopyElementKernel<scalar_t>);
+        CUDALauncher::LaunchAdvancedIndexerKernel(
+                ai,
+                // Need to wrap as extended CUDA lambda function
+                [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                    CUDACopyElementKernel<scalar_t>(src, dst);
+                });
     });
 }
 
-void IndexSetCPU(const Tensor& src,
-                 Tensor& dst,
-                 const std::vector<Tensor>& index_tensors,
-                 const SizeVector& indexed_shape,
-                 const SizeVector& indexed_strides) {
+void IndexSetCUDA(const Tensor& src,
+                  Tensor& dst,
+                  const std::vector<Tensor>& index_tensors,
+                  const SizeVector& indexed_shape,
+                  const SizeVector& indexed_strides) {
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
+    CUDADeviceSwitcher switcher(dst.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        CPULauncher::LaunchAdvancedIndexerKernel(
-                ai, CPUCopyElementKernel<scalar_t>);
+        CUDALauncher::LaunchAdvancedIndexerKernel(
+                ai,
+                // Need to wrap as extended CUDA lambda function
+                [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                    CUDACopyElementKernel<scalar_t>(src, dst);
+                });
     });
 }
 

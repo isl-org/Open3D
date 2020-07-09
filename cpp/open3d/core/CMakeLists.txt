@@ -1,22 +1,22 @@
 set (KERNEL_SRC
-    kernel/IndexGetSet.cpp
-    kernel/IndexGetSetCPU.cpp
-    kernel/NonZero.cpp
-    kernel/NonZeroCPU.cpp
-    kernel/UnaryEW.cpp
-    kernel/UnaryEWCPU.cpp
-    kernel/BinaryEW.cpp
-    kernel/BinaryEWCPU.cpp
-    kernel/Reduction.cpp
-    kernel/ReductionCPU.cpp
+    op/kernel/IndexGetSet.cpp
+    op/kernel/IndexGetSetCPU.cpp
+    op/kernel/NonZero.cpp
+    op/kernel/NonZeroCPU.cpp
+    op/kernel/UnaryEW.cpp
+    op/kernel/UnaryEWCPU.cpp
+    op/kernel/BinaryEW.cpp
+    op/kernel/BinaryEWCPU.cpp
+    op/kernel/Reduction.cpp
+    op/kernel/ReductionCPU.cpp
 )
 
 set (KERNEL_CUDA_SRC
-    kernel/IndexGetSetCUDA.cu
-    kernel/NonZeroCUDA.cu
-    kernel/UnaryEWCUDA.cu
-    kernel/BinaryEWCUDA.cu
-    kernel/ReductionCUDA.cu
+    op/kernel/IndexGetSetCUDA.cu
+    op/kernel/NonZeroCUDA.cu
+    op/kernel/UnaryEWCUDA.cu
+    op/kernel/BinaryEWCUDA.cu
+    op/kernel/ReductionCUDA.cu
 )
 
 set (CORE_SRC

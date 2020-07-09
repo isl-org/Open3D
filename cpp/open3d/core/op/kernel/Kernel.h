@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "open3d/core/kernel/BinaryEW.h"
-#include "open3d/core/kernel/IndexGetSet.h"
-#include "open3d/core/kernel/NonZero.h"
-#include "open3d/core/kernel/Reduction.h"
-#include "open3d/core/kernel/UnaryEW.h"
+#include "open3d/core/op/kernel/BinaryEW.h"
+#include "open3d/core/op/kernel/IndexGetSet.h"
+#include "open3d/core/op/kernel/NonZero.h"
+#include "open3d/core/op/kernel/Reduction.h"
+#include "open3d/core/op/kernel/UnaryEW.h"
