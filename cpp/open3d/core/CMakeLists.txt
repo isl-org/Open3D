@@ -17,6 +17,15 @@ set (KERNEL_CUDA_SRC
     op/kernel/UnaryEWCUDA.cu
     op/kernel/BinaryEWCUDA.cu
     op/kernel/ReductionCUDA.cu
+    )
+
+set (LINALG_SRC
+  op/linalg/Matmul.cpp
+  op/linalg/MatmulCPU.cpp
+  )
+
+set (LINALG_CUDA_SRC
+  op/linalg/MatmulCUDA.cu
 )
 
 set (CORE_SRC
@@ -40,12 +49,15 @@ if (BUILD_CUDA_MODULE)
     set (ALL_CORE_SRC
         ${CORE_SRC}
         ${CORE_CUDA_SRC}
+        ${LINALG_SRC}
+        ${LINALG_CUDA_SRC}
         ${KERNEL_SRC}
         ${KERNEL_CUDA_SRC}
     )
 else()
-    set (ALL_CORE_SRC
+  set (ALL_CORE_SRC
         ${CORE_SRC}
+        ${LINALG_SRC}
         ${KERNEL_SRC}
     )
 endif()
@@ -56,6 +68,14 @@ open3d_set_global_properties(core)
 open3d_link_3rdparty_libraries(core)
 open3d_show_and_abort_on_warning(core)
 
+# TODO: fix the cmake system for headers
+find_package(MKL REQUIRED)
+target_include_directories(core SYSTEM PRIVATE ${MKL_INCLUDE_DIR})
+
 if (BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
+
+add_executable(TestMatmul op/linalg/TestMatmul.cpp)
+target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME})
+
