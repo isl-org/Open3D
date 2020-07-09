@@ -61,7 +61,7 @@ namespace core {
 // std::shared_ptr<CuBLASContext> CuBLASContext::instance_ =
 //         CuBLASContext::GetInstance();
 
-void CUDAMatmul(Dtype dtype,
+void MatmulCUDA(Dtype dtype,
                 void* A_data,
                 void* B_data,
                 void* C_data,

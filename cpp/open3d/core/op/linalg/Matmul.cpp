@@ -30,21 +30,21 @@
 namespace open3d {
 namespace core {
 
-Tensor Matmul(const Tensor& A, const Tensor& B) {
+void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     // Check devices
-    if (A.GetDevice() != B.GetDevice()) {
+    Device device = A.GetDevice();
+    if (device != B.GetDevice()) {
         utility::LogError("Tensor A device {} and Tensor B device {} mismatch",
                           A.GetDevice().ToString(), B.GetDevice().ToString());
     }
-    Device device = A.GetDevice();
 
     // Check dtypes
-    if (A.GetDtype() != B.GetDtype()) {
+    Dtype dtype = A.GetDtype();
+    if (dtype != B.GetDtype()) {
         utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch",
                           DtypeUtil::ToString(A.GetDtype()),
                           DtypeUtil::ToString(B.GetDtype()));
     }
-    Dtype dtype = A.GetDtype();
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
@@ -70,34 +70,27 @@ Tensor Matmul(const Tensor& A, const Tensor& B) {
     }
 
     // Dispatch to backends
-    int64_t m = A_shape[0], k = A_shape[1],
-            n = B_shape.size() == 2 ? B_shape[1] : 1;
-    Tensor C = Tensor::Zeros({m, n}, dtype, device);
+    int64_t m = A_shape[0];
+    int64_t k = A_shape[1];
+    int64_t n = B_shape.size() == 2 ? B_shape[1] : 1;
+    output = Tensor::Empty({m, n}, dtype, device);
 
     Tensor A_contiguous = A.Contiguous();
     Tensor B_contiguous = B.Contiguous();
     void* A_data = A_contiguous.GetDataPtr();
     void* B_data = B_contiguous.GetDataPtr();
-    void* C_data = C.GetDataPtr();
+    void* C_data = output.GetDataPtr();
 
-    static std::unordered_map<
-            Device::DeviceType,
-            std::function<void(Dtype, void*, void*, void*, int, int, int)>,
-            utility::hash_enum_class>
-            map_device_type_to_gemm = {
+    if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-                    {Device::DeviceType::CUDA, CUDAMatmul},
+        MatmulCUDA(dtype, A_data, B_data, C_data, m, k, n);
+#else
+        utility::LogError("Unimplemented device.");
 #endif
-                    {Device::DeviceType::CPU, CPUMatmul}};
-
-    auto backend_it = map_device_type_to_gemm.find(device.GetType());
-    if (backend_it == map_device_type_to_gemm.end()) {
-        utility::LogError("Unimplemented backend {}", device.ToString());
+    } else {
+        MatmulCPU(dtype, A_data, B_data, C_data, m, k, n);
     }
+};
 
-    (backend_it->second)(dtype, A_data, B_data, C_data, m, k, n);
-
-    return C;
-}
 }  // namespace core
 }  // namespace open3d
