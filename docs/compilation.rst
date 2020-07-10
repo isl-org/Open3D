@@ -144,7 +144,7 @@ compilation options to ``OFF``:
     mkdir build
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
-    
+
 The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
 Open3D to a user location. In the absence of this argument Open3D will be
 installed to a system location (sudo required). For more customizations of the
