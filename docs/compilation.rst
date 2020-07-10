@@ -179,16 +179,16 @@ build, please see :ref:`compilation_options`.
     .. code-block:: bash
 
         python -c "import open3d; print(open3d.open3d_pybind._GLIBCXX_USE_CXX11_ABI)"
-    
-    Building with CUDA support.
+
+    To build Open3D with CUDA support, configure with:
 
     .. code-block:: bash
 
         cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
 
     Please note that CUDA support is work in progress and experimental. For building
-    Open3D with CUDA support, ensure that CUDA is properly installed by running following commands
-    
+    Open3D with CUDA support, ensure that CUDA is properly installed by running following commands:
+
     .. code-block:: bash
 
         nvidia-smi      # Prints CUDA-enabled GPU information
