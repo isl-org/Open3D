@@ -145,20 +145,6 @@ compilation options to ``OFF``:
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
     
-    # Building with CUDA
-    cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
-
-For building Open3D with CUDA support, ensure that CUDA is installed properly by running following commands
-
-.. code-block:: bash
-
-    nvidia-smi      # Prints GPU Information
-    nvcc -V         # Prints compiler version
-
-If you see an output similar to ``command not found``, you can install CUDA toolkit
-by following the `official
-documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
-
 The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
 Open3D to a user location. In the absence of this argument Open3D will be
 installed to a system location (sudo required). For more customizations of the
@@ -193,6 +179,24 @@ build, please see :ref:`compilation_options`.
     .. code-block:: bash
 
         python -c "import open3d; print(open3d.open3d_pybind._GLIBCXX_USE_CXX11_ABI)"
+    
+    Building with CUDA support.
+
+    .. code-block:: bash
+
+        cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
+
+    Please note that CUDA support is work in progress and experimental. For building
+    Open3D with CUDA support, ensure that CUDA is properly installed by running following commands
+    
+    .. code-block:: bash
+
+        nvidia-smi      # Prints CUDA-enabled GPU information
+        nvcc -V         # Prints compiler version
+
+    If you see an output similar to ``command not found``, you can install CUDA toolkit
+    by following the `official
+    documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
 
 .. _compilation_ubuntu_build:
 
