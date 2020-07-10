@@ -37,13 +37,34 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-enum class ReductionOpCode { Sum, Prod, Min, Max, ArgMin, ArgMax };
+enum class ReductionOpCode {
+    Sum,
+    Prod,
+    Min,
+    Max,
+    ArgMin,
+    ArgMax,
+    All,
+    Any,
+};
 
 static const std::unordered_set<ReductionOpCode, utility::hash_enum_class>
-        regular_reduce_ops = {ReductionOpCode::Sum, ReductionOpCode::Prod,
-                              ReductionOpCode::Min, ReductionOpCode::Max};
+        s_regular_reduce_ops = {
+                ReductionOpCode::Sum,
+                ReductionOpCode::Prod,
+                ReductionOpCode::Min,
+                ReductionOpCode::Max,
+};
 static const std::unordered_set<ReductionOpCode, utility::hash_enum_class>
-        arg_reduce_ops = {ReductionOpCode::ArgMin, ReductionOpCode::ArgMax};
+        s_arg_reduce_ops = {
+                ReductionOpCode::ArgMin,
+                ReductionOpCode::ArgMax,
+};
+static const std::unordered_set<ReductionOpCode, utility::hash_enum_class>
+        s_boolean_reduce_ops = {
+                ReductionOpCode::All,
+                ReductionOpCode::Any,
+};
 
 void Reduction(const Tensor& src,
                Tensor& dst,

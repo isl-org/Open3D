@@ -95,34 +95,28 @@ public:
           dtype_(dtype),
           blob_(blob) {}
 
-    /// Shallow copy constructor with lvalue input, e.g. `Tensor dst(src)`.
-    Tensor(const Tensor& other)
-        : Tensor(other.GetShape(),
-                 other.GetStrides(),
-                 const_cast<void*>(other.GetDataPtr()),
-                 other.GetDtype(),
-                 other.GetBlob()) {}
+    /// Copy constructor performs a "shallow" copy of the Tensor.
+    /// This takes a lvalue input, e.g. `Tensor dst(src)`.
+    Tensor(const Tensor& other) = default;
 
-    /// Shallow copy constructor with rvalue input, e.g. `Tensor dst(src[0])`.
-    Tensor(Tensor&& other)
-        : Tensor(other.GetShape(),
-                 other.GetStrides(),
-                 other.GetDataPtr(),
-                 other.GetDtype(),
-                 other.GetBlob()) {}
+    /// Move constructor performs a "shallow" copy of the Tensor.
+    /// This takes a rvalue input, e.g. `Tensor dst(src[0])`.
+    Tensor(Tensor&& other) = default;
 
-    /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`, resulting
-    /// in a "shallow" copy.
-    Tensor& operator=(const Tensor& other) &;
+    /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`.
+    /// This results in a "shallow" copy.
+    Tensor& operator=(const Tensor& other) & = default;
 
-    /// Tensor assignment lvalue = rvalue, e.g. `tensor_a = tensor_b[0]`,
-    /// resulting in a "shallow" copy.
-    Tensor& operator=(Tensor&& other) &;
+    /// Tensor assignment lvalue = rvalue, e.g. `tensor_a = tensor_b[0]`.
+    /// This results in a "shallow" copy.
+    Tensor& operator=(Tensor&& other) & = default;
 
-    /// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`
+    /// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`.
+    /// An actual copy of the data will be performed.
     Tensor& operator=(const Tensor& other) &&;
 
-    /// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`
+    /// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`.
+    /// An actual copy of the data will be performed.
     Tensor& operator=(Tensor&& other) &&;
 
     /// Tensor assignment rvalue = rvalue_scalar, e.g. `tensor_a[0] = 100`
@@ -154,6 +148,12 @@ public:
     static Tensor Empty(const SizeVector& shape,
                         Dtype dtype,
                         const Device& device = Device("CPU:0"));
+
+    /// Create a tensor with uninitilized values with the same dtype and device
+    /// as the other tensor.
+    static Tensor EmptyLike(const Tensor& other) {
+        return Tensor::Empty(other.shape_, other.dtype_, other.GetDevice());
+    }
 
     /// Create a tensor fill with specified value.
     template <typename T>
@@ -302,6 +302,9 @@ public:
     /// Copy Tensor to a specified device
     /// The resulting Tensor will be compacted and contiguous
     Tensor Copy(const Device& device) const;
+
+    /// Copy Tensor to the same device.
+    Tensor Copy() const { return Copy(GetDevice()); };
 
     /// Copy Tensor values to current tensor for source tensor
     void CopyFrom(const Tensor& other);
@@ -691,6 +694,64 @@ public:
     /// tensor.
     Tensor NonZero() const;
 
+    /// Returns true if all elements in the tensor are true. Only works for
+    /// boolean tensors. This function does not take reduction dimensions, and
+    /// the reduction is apply to all dimensions.
+    bool All() const;
+
+    /// Returns true if any elements in the tensor are true. Only works for
+    /// boolean tensors. This function does not take reduction dimensions, and
+    /// the reduction is apply to all dimensions.
+    bool Any() const;
+
+    /// Returns true if the two tensors are element-wise equal within a
+    /// tolerance.
+    ///
+    /// - If the device is not the same: throws exception.
+    /// - If the dtype is not the same: throws exception.
+    /// - If the shape is not the same: returns false.
+    /// - Returns true if: abs(self - other) <= (atol + rtol * abs(other)).
+    ///
+    /// The equation is not symmetrial, i.e. a.AllClose(b) might not be the same
+    /// as b.AllClose(a). Also see Numpy's documentation:
+    /// https://numpy.org/doc/stable/reference/generated/numpy.allclose.html.
+    ///
+    /// TODO: support nan
+    ///
+    /// \param other The other tensor to compare with.
+    /// \param rtol Relative tolerance.
+    /// \param atol Absolute tolerance.
+    bool AllClose(const Tensor& other,
+                  double rtol = 1e-5,
+                  double atol = 1e-8) const;
+
+    /// Element-wise version of Tensor::AllClose.
+    ///
+    /// - If the device is not the same: throws exception.
+    /// - If the dtype is not the same: throws exception.
+    /// - If the shape is not the same: throws exception.
+    /// - For each element in the returned tensor:
+    ///   abs(self - other) <= (atol + rtol * abs(other)).
+    ///
+    /// The equation is not symmetrial, i.e. a.AllClose(b) might not be the same
+    /// as b.AllClose(a). Also see Numpy's documentation:
+    /// https://numpy.org/doc/stable/reference/generated/numpy.allclose.html.
+    ///
+    /// TODO: support nan
+    ///
+    /// \param other The other tensor to compare with.
+    /// \param rtol Relative tolerance.
+    /// \param atol Absolute tolerance.
+    /// \return A boolean tensor indicating whether the tensor is close.
+    Tensor IsClose(const Tensor& other,
+                   double rtol = 1e-5,
+                   double atol = 1e-8) const;
+
+    /// Returns true iff the tensor is the other tensor. This means that, the
+    /// two tensors have the same underlying memory, device, dtype, shape,
+    /// strides and etc.
+    bool IsSame(const Tensor& other) const;
+
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>
     std::vector<T> ToFlatVector() const {
@@ -834,11 +895,9 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
 
     // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
     // uses 1-byte-sized boolean storage for easy indexing.
-    std::vector<unsigned char> init_vals_uchar(init_vals.size());
+    std::vector<uint8_t> init_vals_uchar(init_vals.size());
     std::transform(init_vals.begin(), init_vals.end(), init_vals_uchar.begin(),
-                   [](bool v) -> unsigned char {
-                       return static_cast<unsigned char>(v);
-                   });
+                   [](bool v) -> uint8_t { return static_cast<uint8_t>(v); });
 
     MemoryManager::MemcpyFromHost(
             blob_->GetDataPtr(), GetDevice(), init_vals_uchar.data(),
@@ -849,17 +908,28 @@ template <>
 inline std::vector<bool> Tensor::ToFlatVector() const {
     AssertTemplateDtype<bool>();
     std::vector<bool> values(NumElements());
-    std::vector<unsigned char> values_uchar(NumElements());
+    std::vector<uint8_t> values_uchar(NumElements());
     MemoryManager::MemcpyToHost(
             values_uchar.data(), Contiguous().GetDataPtr(), GetDevice(),
             DtypeUtil::ByteSize(GetDtype()) * NumElements());
 
     // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
     // uses 1-byte-sized boolean storage for easy indexing.
-    std::transform(
-            values_uchar.begin(), values_uchar.end(), values.begin(),
-            [](unsigned char v) -> bool { return static_cast<bool>(v); });
+    std::transform(values_uchar.begin(), values_uchar.end(), values.begin(),
+                   [](uint8_t v) -> bool { return static_cast<bool>(v); });
     return values;
+}
+
+template <>
+inline bool Tensor::Item() const {
+    if (shape_.size() != 0) {
+        utility::LogError("Item only works for scalar Tensor of shape ()");
+    }
+    AssertTemplateDtype<bool>();
+    uint8_t value;
+    MemoryManager::MemcpyToHost(&value, data_ptr_, GetDevice(),
+                                sizeof(uint8_t));
+    return static_cast<bool>(value);
 }
 
 template <typename Scalar>
