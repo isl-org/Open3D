@@ -105,11 +105,11 @@ public:
 
     /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`.
     /// This results in a "shallow" copy.
-    Tensor& operator=(const Tensor& other) & = default;
+    Tensor& operator=(const Tensor& other) &;
 
     /// Tensor assignment lvalue = rvalue, e.g. `tensor_a = tensor_b[0]`.
     /// This results in a "shallow" copy.
-    Tensor& operator=(Tensor&& other) & = default;
+    Tensor& operator=(Tensor&& other) &;
 
     /// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`.
     /// An actual copy of the data will be performed.

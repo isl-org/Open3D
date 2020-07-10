@@ -136,6 +136,30 @@ public:
     }
 };
 
+// Equivalent to `Tensor& operator=(const Tensor& other) & = default;`.
+// Manual implentaiton is need to avoid MSVC bug (error C2580:  multiple
+// versions of a defaulted special member functions are not allowed.)
+Tensor& Tensor::operator=(const Tensor& other) & {
+    shape_ = other.shape_;
+    strides_ = other.strides_;
+    dtype_ = other.dtype_;
+    blob_ = other.blob_;
+    data_ptr_ = other.data_ptr_;
+    return *this;
+}
+
+// Equivalent to `Tensor& operator=(Tensor&& other) & = default;`.
+// Manual implentaiton is need to avoid MSVC bug (error C2580:  multiple
+// versions of a defaulted special member functions are not allowed.)
+Tensor& Tensor::operator=(Tensor&& other) & {
+    shape_ = other.shape_;
+    strides_ = other.strides_;
+    dtype_ = other.dtype_;
+    blob_ = other.blob_;
+    data_ptr_ = other.data_ptr_;
+    return *this;
+}
+
 /// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`
 Tensor& Tensor::operator=(const Tensor& other) && {
     kernel::Copy(other, *this);
