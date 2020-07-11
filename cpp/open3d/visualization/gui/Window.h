@@ -163,6 +163,8 @@ protected:
     // Override to handle drag and drop on the windows.
     virtual void OnDragDropped(const char* path);
 
+    const std::vector<std::shared_ptr<Widget>>& GetChildren() const;
+
 private:
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw();

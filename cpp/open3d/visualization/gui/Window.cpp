@@ -359,6 +359,10 @@ Window::~Window() {
     glfwDestroyWindow(impl_->window_);
 }
 
+const std::vector<std::shared_ptr<Widget>>& Window::GetChildren() const {
+    return impl_->children_;
+}
+
 void* Window::MakeDrawContextCurrent() const {
     auto old_context = ImGui::GetCurrentContext();
     ImGui::SetCurrentContext(impl_->imgui_.context);

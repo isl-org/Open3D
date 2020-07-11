@@ -14,7 +14,6 @@ MENU_CHECKABLE = 1
 MENU_DISABLED = 2
 MENU_QUIT = 3
 if gui.Application.instance.menubar is None:
-    print("[py] adding menubar")
     menubar = gui.Menu()
     test_menu = gui.Menu()
     test_menu.add_item("An option", MENU_CHECKABLE)

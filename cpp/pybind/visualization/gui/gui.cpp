@@ -45,6 +45,7 @@
 #include "open3d/visualization/gui/ListView.h"
 #include "open3d/visualization/gui/NumberEdit.h"
 #include "open3d/visualization/gui/ProgressBar.h"
+#include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Slider.h"
 #include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/TextEdit.h"
@@ -52,6 +53,9 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/gui/Window.h"
+
+// These are temporary until visualization::rendering gets bindings
+#include "open3d/visualization/rendering/Renderer.h"
 
 using namespace open3d::visualization::gui;
 
@@ -119,64 +123,112 @@ void pybind_gui_classes(py::module &m) {
                  "Removes the window from the application, closing it. If "
                  "there "
                  "are no open windows left the run loop will exit.");
+    ;
 
     // ---- Window ----
-    py::class_<Window, std::shared_ptr<Window>> window(m, "Window",
-                                                       "Application window");
+    class PyWindow : public Window {
+        using Super = Window;
+
+    public:
+        explicit PyWindow(const std::string &title, int flags = 0)
+            : Super(title, flags) {}
+        PyWindow(const std::string &title, int width, int height, int flags = 0)
+            : Super(title, width, height, flags) {}
+        PyWindow(const std::string &title,
+                 int x,
+                 int y,
+                 int width,
+                 int height,
+                 int flags = 0)
+            : Super(title, x, y, width, height, flags) {}
+
+        std::function<void(const Theme)> on_layout_;
+
+    protected:
+        void Layout(const Theme &theme) {
+            if (on_layout_) {
+                // the Python callback sizes the children
+                on_layout_(theme);
+                // and then we need to layout the children
+                for (auto child : GetChildren()) {
+                    child->Layout(theme);
+                }
+            } else {
+                Super::Layout(theme);
+            }
+        }
+    };
+
+    // Pybind appears to need to know about the base class. It doesn't have
+    // to be named the same as the C++ class, though.
+    py::class_<Window, std::shared_ptr<Window>> window_base(
+            m, "WindowBase", "Application window");
+    py::class_<PyWindow, std::shared_ptr<PyWindow>, Window> window(
+            m, "Window", "Application window");
     window.def(py::init([](const std::string &title, int width, int height,
                            int x, int y, int flags) {
                    if (x < 0 && y < 0 && width < 0 && height < 0) {
-                       return new Window(title, flags);
+                       return new PyWindow(title, flags);
                    } else if (x < 0 && y < 0) {
-                       return new Window(title, width, height, flags);
+                       return new PyWindow(title, width, height, flags);
                    } else {
-                       return new Window(title, x, y, width, height, flags);
+                       return new PyWindow(title, x, y, width, height, flags);
                    }
                }),
                "title"_a = std::string(), "width"_a = -1, "height"_a = -1,
                "x"_a = -1, "y"_a = -1, "flags"_a = 0)
             .def("__repr__",
-                 [](const Window &w) { return "Application window"; })
-            .def("add_child", &Window::AddChild, "Adds a widget to the window")
-            .def_property("os_frame", &Window::GetOSFrame, &Window::SetOSFrame,
+                 [](const PyWindow &w) { return "Application window"; })
+            .def("add_child", &PyWindow::AddChild,
+                 "Adds a widget to the window")
+            .def_property("os_frame", &PyWindow::GetOSFrame,
+                          &PyWindow::SetOSFrame,
                           "Window rect in OS coords, not device pixels")
-            .def_property("title", &Window::GetTitle, &Window::SetTitle,
+            .def_property("title", &PyWindow::GetTitle, &PyWindow::SetTitle,
                           "Returns the title of the window")
-            .def("size_to_fit", &Window::SizeToFit,
+            .def("size_to_fit", &PyWindow::SizeToFit,
                  "Sets the width and height of window to its preferred size")
-            .def_property("get_size", &Window::GetSize, &Window::SetSize,
+            .def_property("get_size", &PyWindow::GetSize, &PyWindow::SetSize,
                           "The size of the window in device pixels, including "
                           "menubar (except on macOS)")
             .def_property_readonly(
-                    "content_rect", &Window::GetContentRect,
+                    "content_rect", &PyWindow::GetContentRect,
                     "Returns the frame in device pixels, relative "
                     " to the window, which is available for widgets "
                     "(read-only)")
             .def_property_readonly(
-                    "scaling", &Window::GetScaling,
+                    "scaling", &PyWindow::GetScaling,
                     "Returns the scaling factor between OS pixels "
                     "and device pixels (read-only)")
-            .def_property_readonly("is_visible", &Window::IsVisible,
+            .def_property_readonly("is_visible", &PyWindow::IsVisible,
                                    "True if window is visible (read-only)")
-            .def("show", &Window::Show, "Shows or hides the window")
-            .def("close", &Window::Close, "Closes the window and destroys it")
-            .def("set_needs_layout", &Window::SetNeedsLayout,
+            .def("show", &PyWindow::Show, "Shows or hides the window")
+            .def("close", &PyWindow::Close, "Closes the window and destroys it")
+            .def("set_needs_layout", &PyWindow::SetNeedsLayout,
                  "Flags window to re-layout")
-            .def("post_redraw", &Window::PostRedraw,
+            .def("post_redraw", &PyWindow::PostRedraw,
                  "Sends a redraw message to the OS message queue")
-            .def_property_readonly("is_active_window", &Window::IsActiveWindow,
+            .def_property_readonly("is_active_window",
+                                   &PyWindow::IsActiveWindow,
                                    "True if the window is currently the active "
                                    "window (read-only)")
-            .def("set_focus_widget", &Window::SetFocusWidget,
+            .def("set_focus_widget", &PyWindow::SetFocusWidget,
                  "Makes specified widget have text focus")
-            .def("set_on_menu_item_activated", &Window::SetOnMenuItemActivated,
+            .def("set_on_menu_item_activated",
+                 &PyWindow::SetOnMenuItemActivated,
                  "Sets callback function for menu item:  callback()")
-            .def_property_readonly("theme", &Window::GetTheme,
+            .def("set_on_layout",
+                 [](PyWindow *w, std::function<void(const Theme &)> f) {
+                     w->on_layout_ = f;
+                 },
+                 "Sets a callback function that manually sets the frames of "
+                 "children of the window")
+            .def_property_readonly("theme", &PyWindow::GetTheme,
                                    "Get's window's theme info")
-            .def("show_dialog", &Window::ShowDialog, "Displays the dialog")
-            .def("close_dialog", &Window::CloseDialog,
+            .def("show_dialog", &PyWindow::ShowDialog, "Displays the dialog")
+            .def("close_dialog", &PyWindow::CloseDialog,
                  "Closes the current dialog")
-            .def("show_message_box", &Window::ShowMessageBox,
+            .def("show_message_box", &PyWindow::ShowMessageBox,
                  "Displays a simple dialog with a title and message and okay "
                  "button");
 
@@ -258,6 +310,10 @@ void pybind_gui_classes(py::module &m) {
     rect.def(py::init<>())
             .def(py::init([](int x, int y, int w, int h) {
                 return new Rect(x, y, w, h);
+            }))
+            .def(py::init([](float x, float y, float w, float h) {
+                return new Rect(int(std::round(x)), int(std::round(y)),
+                                int(std::round(w)), int(std::round(h)));
             }))
             .def_readwrite("x", &Rect::x)
             .def_readwrite("y", &Rect::y)
@@ -514,6 +570,22 @@ void pybind_gui_classes(py::module &m) {
                     "value", &ProgressBar::GetValue, &ProgressBar::SetValue,
                     "The value of the progress bar, ranges from 0.0 to 1.0");
 
+    // ---- SceneWidget ----
+    py::class_<SceneWidget, std::shared_ptr<SceneWidget>, Widget> scene(
+            m, "SceneWidget", "SceneWidget class");
+    scene.def(py::init<>([](std::shared_ptr<PyWindow> w) {
+             auto scene_id = w->GetRenderer().CreateScene();
+             // Memory leak is intentional: this is a placeholder until
+             // rendering refactor has been completed. To minimize changes,
+             // just leak this scene; after the refactor this will be done
+             // properly.
+             auto *scene =
+                     new SceneWidget(*w->GetRenderer().GetScene(scene_id));
+             return std::shared_ptr<SceneWidget>(scene);
+         }))
+            .def("set_background_color", &SceneWidget::SetBackgroundColor,
+                 "Sets the background color of the widget");
+
     // ---- Slider ----
     py::class_<Slider, std::shared_ptr<Slider>, Widget> slider(m, "Slider",
                                                                "Slider class");
@@ -655,7 +727,11 @@ void pybind_gui_classes(py::module &m) {
     vlayout.def(py::init([](int spacing, const Margins &margins) {
                     return new Vert(spacing, margins);
                 }),
-                "spacing"_a = 0, "margins"_a = Margins());
+                "spacing"_a = 0, "margins"_a = Margins())
+            .def(py::init([](float spacing, const Margins &margins) {
+                     return new Vert(int(std::round(spacing)), margins);
+                 }),
+                 "spacing"_a = 0.0f, "margins"_a = Margins());
 
     // ---- CollapsableVert ----
     py::class_<CollapsableVert, std::shared_ptr<CollapsableVert>, Vert>
@@ -666,6 +742,12 @@ void pybind_gui_classes(py::module &m) {
                      return new CollapsableVert(text, spacing, margins);
                  }),
                  "text"_a, "spacing"_a = 0, "margins"_a = Margins())
+            .def(py::init([](const char *text, float spacing,
+                             const Margins &margins) {
+                     return new CollapsableVert(text, int(std::round(spacing)),
+                                                margins);
+                 }),
+                 "text"_a, "spacing"_a = 0.0f, "margins"_a = Margins())
             .def("set_is_open", &CollapsableVert::SetIsOpen,
                  "Sets to collapsed (False) or open (True). Requires a call to "
                  "Window.SetNeedsLayout() afterwards, unless calling before "
@@ -678,7 +760,11 @@ void pybind_gui_classes(py::module &m) {
     hlayout.def(py::init([](int spacing, const Margins &margins) {
                     return new Horiz(spacing, margins);
                 }),
-                "spacing"_a = 0, "margins"_a = Margins());
+                "spacing"_a = 0, "margins"_a = Margins())
+            .def(py::init([](float spacing, const Margins &margins) {
+                     return new Horiz(int(std::round(spacing)), margins);
+                 }),
+                 "spacing"_a = 0.0f, "margins"_a = Margins());
 
     // ---- VGrid ----
     py::class_<VGrid, std::shared_ptr<VGrid>, Widget> vgrid(m, "VGrid",
@@ -687,6 +773,12 @@ void pybind_gui_classes(py::module &m) {
                   return new VGrid(n_cols, spacing, margins);
               }),
               "cols"_a, "spacing"_a = 0, "margins"_a = Margins())
+            .def(py::init(
+                         [](int n_cols, float spacing, const Margins &margins) {
+                             return new VGrid(n_cols, int(std::round(spacing)),
+                                              margins);
+                         }),
+                 "cols"_a, "spacing"_a = 0.0f, "margins"_a = Margins())
             .def_property_readonly(
                     "spacing", &VGrid::GetSpacing,
                     "Returns the spacing between rows and columns")
