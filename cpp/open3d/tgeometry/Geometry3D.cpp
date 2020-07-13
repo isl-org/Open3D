@@ -27,9 +27,9 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Core/TensorList.h"
-#include "Open3D/TGeometry/Geometry3D.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/core/TensorList.h"
+#include "open3d/tgeometry/Geometry3D.h"
 
 namespace open3d {
 namespace tgeometry {}  // namespace tgeometry

@@ -26,37 +26,40 @@
 
 #include <random>
 
-#include "Open3D/Core/EigenAdaptor.h"
-#include "TestUtility/UnitTest.h"
+#include "open3d/core/EigenAdaptor.h"
+#include "open3d/core/Tensor.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
+
 TEST(EigenAdaptor, FromEigen) {
     Eigen::MatrixXd matrix(2, 3);
     matrix << 0, 1, 2, 3, 4, 5;
 
-    Tensor tensor_f64 = FromEigen(matrix);
-    EXPECT_EQ(tensor_f64.GetShape(), SizeVector({2, 3}));
-    EXPECT_EQ(tensor_f64.GetDevice(), Device("CPU:0"));
-    EXPECT_EQ(tensor_f64.GetDtype(), Dtype::Float64);
+    core::Tensor tensor_f64 = core::FromEigen(matrix);
+    EXPECT_EQ(tensor_f64.GetShape(), core::SizeVector({2, 3}));
+    EXPECT_EQ(tensor_f64.GetDevice(), core::Device("CPU:0"));
+    EXPECT_EQ(tensor_f64.GetDtype(), core::Dtype::Float64);
     EXPECT_EQ(tensor_f64.ToFlatVector<double>(),
               std::vector<double>({0, 1, 2, 3, 4, 5}));
 
-    Tensor tensor_f32 = FromEigen(matrix.cast<float>().eval());
-    EXPECT_EQ(tensor_f32.GetShape(), SizeVector({2, 3}));
-    EXPECT_EQ(tensor_f32.GetDevice(), Device("CPU:0"));
-    EXPECT_EQ(tensor_f32.GetDtype(), Dtype::Float32);
+    core::Tensor tensor_f32 = core::FromEigen(matrix.cast<float>().eval());
+    EXPECT_EQ(tensor_f32.GetShape(), core::SizeVector({2, 3}));
+    EXPECT_EQ(tensor_f32.GetDevice(), core::Device("CPU:0"));
+    EXPECT_EQ(tensor_f32.GetDtype(), core::Dtype::Float32);
     EXPECT_EQ(tensor_f32.ToFlatVector<float>(),
               std::vector<float>({0, 1, 2, 3, 4, 5}));
 }
 
 TEST(EigenAdaptor, ToEigen) {
-    Tensor t(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32);
+    core::Tensor t(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3},
+                   core::Dtype::Float32);
 
     Eigen::Matrix<float, -1, -1, Eigen::RowMajor> ref_row_major(2, 3);
     ref_row_major << 0, 1, 2, 3, 4, 5;
     Eigen::Matrix<float, -1, -1, Eigen::RowMajor> row_major =
-            ToEigen<float>(t, Eigen::RowMajor);
+            core::ToEigen<float>(t, Eigen::RowMajor);
     ExpectEQ(row_major, ref_row_major);
     EXPECT_EQ(row_major.rows(), ref_row_major.rows());
     EXPECT_EQ(row_major.cols(), ref_row_major.cols());
@@ -64,10 +67,10 @@ TEST(EigenAdaptor, ToEigen) {
     Eigen::Matrix<float, -1, -1, Eigen::ColMajor> ref_col_major(2, 3);
     ref_col_major << 0, 1, 2, 3, 4, 5;
     Eigen::Matrix<float, -1, -1, Eigen::ColMajor> col_major =
-            ToEigen<float>(t, Eigen::ColMajor);
+            core::ToEigen<float>(t, Eigen::ColMajor);
     ExpectEQ(col_major, ref_col_major);
     EXPECT_EQ(col_major.rows(), ref_col_major.rows());
     EXPECT_EQ(col_major.cols(), ref_col_major.cols());
 }
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

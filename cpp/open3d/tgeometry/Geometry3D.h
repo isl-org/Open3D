@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "Open3D/Core/TensorList.h"
-#include "Open3D/TGeometry/Geometry.h"
+#include "open3d/core/TensorList.h"
+#include "open3d/tgeometry/Geometry.h"
 
 namespace open3d {
 namespace tgeometry {
@@ -50,19 +50,19 @@ public:
     bool IsEmpty() const override = 0;
 
     /// Returns min bounds for geometry coordinates.
-    virtual Tensor GetMinBound() const = 0;
+    virtual core::Tensor GetMinBound() const = 0;
 
     /// Returns max bounds for geometry coordinates.
-    virtual Tensor GetMaxBound() const = 0;
+    virtual core::Tensor GetMaxBound() const = 0;
 
     /// Returns the center of the geometry coordinates.
-    virtual Tensor GetCenter() const = 0;
+    virtual core::Tensor GetCenter() const = 0;
 
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
     ///
     /// \param transformation A Tensor of shape (4, 4). The transformation
     /// matrix,
-    virtual Geometry3D& Transform(const Tensor& transformation) = 0;
+    virtual Geometry3D& Transform(const core::Tensor& transformation) = 0;
 
     /// \brief Apply translation to the geometry coordinates.
     ///
@@ -70,7 +70,7 @@ public:
     /// geometry.
     /// \param relative If `true`, the \p translation is directly applied to the
     /// geometry. Otherwise, the geometry center is moved to the \p translation.
-    virtual Geometry3D& Translate(const Tensor& translation,
+    virtual Geometry3D& Translate(const core::Tensor& translation,
                                   bool relative = true) = 0;
 
     /// \brief Apply scaling to the geometry coordinates.
@@ -81,7 +81,7 @@ public:
     /// points/vertices of the geometry.
     /// \param center A Tensor of shape (3,). The scale center used to resize
     /// the geometry.
-    virtual Geometry3D& Scale(double scale, const Tensor& center) = 0;
+    virtual Geometry3D& Scale(double scale, const core::Tensor& center) = 0;
 
     /// \brief Apply rotation to the geometry coordinates and normals.
     /// Given a rotation matrix \f$R\f$, and center \f$c\f$, a given point
@@ -90,7 +90,8 @@ public:
     /// \param R A Tensor of shape (3, 3). The rotation matrix.
     /// \param center A Tensor of shape (3,). Rotation center that is used for
     /// the rotation.
-    virtual Geometry3D& Rotate(const Tensor& R, const Tensor& center) = 0;
+    virtual Geometry3D& Rotate(const core::Tensor& R,
+                               const core::Tensor& center) = 0;
 };
 
 }  // namespace tgeometry

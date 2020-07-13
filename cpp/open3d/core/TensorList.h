@@ -56,7 +56,7 @@ namespace core {
 ///   - internal_tensor.shape: (M, 8, 8, 8)
 class TensorList {
 public:
-    TensorList() = delete;
+    TensorList() : TensorList(SizeVector({}), Dtype::Float32) {}
 
     /// Constructs an empty tensorlist.
     ///
@@ -243,6 +243,13 @@ public:
     std::string ToString() const;
 
     SizeVector GetElementShape() const { return element_shape_; }
+
+    void AssertElementShape(const SizeVector& element_shape) const {
+        if (element_shape != element_shape_) {
+            utility::LogError("TensorList shape mismatch, {} != {}",
+                              element_shape, element_shape_);
+        }
+    }
 
     Device GetDevice() const { return internal_tensor_.GetDevice(); }
 

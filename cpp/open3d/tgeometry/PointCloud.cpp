@@ -24,19 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/TGeometry/PointCloud.h"
+#include "open3d/tgeometry/PointCloud.h"
 
 #include <Eigen/Core>
 #include <unordered_map>
 
-#include "Open3D/Core/ShapeUtil.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Core/TensorList.h"
+#include "open3d/core/ShapeUtil.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/core/TensorList.h"
 
 namespace open3d {
 namespace tgeometry {
 
-PointCloud::PointCloud(const Tensor &points_tensor)
+PointCloud::PointCloud(const core::Tensor &points_tensor)
     : Geometry3D(Geometry::GeometryType::PointCloud),
       dtype_(points_tensor.GetDtype()),
       device_(points_tensor.GetDevice()) {
@@ -44,11 +44,11 @@ PointCloud::PointCloud(const Tensor &points_tensor)
     if (shape[1] != 3) {
         utility::LogError("PointCloud must be constructed from (N, 3) points.");
     }
-    point_dict_.emplace("points", TensorList(points_tensor));
+    point_dict_.emplace("points", core::TensorList::FromTensor(points_tensor));
 }
 
 PointCloud::PointCloud(
-        const std::unordered_map<std::string, TensorList> &point_dict)
+        const std::unordered_map<std::string, core::TensorList> &point_dict)
     : Geometry3D(Geometry::GeometryType::PointCloud) {
     auto it = point_dict.find("points");
     if (it == point_dict.end()) {
@@ -58,7 +58,7 @@ PointCloud::PointCloud(
     dtype_ = it->second.GetDtype();
     device_ = it->second.GetDevice();
 
-    auto shape = it->second.GetShape();
+    auto shape = it->second.GetElementShape();
     if (shape[0] != 3) {
         utility::LogError("PointCloud must be constructed from (N, 3) points.");
     }
@@ -71,7 +71,7 @@ PointCloud::PointCloud(
     }
 }
 
-TensorList &PointCloud::operator[](const std::string &key) {
+core::TensorList &PointCloud::operator[](const std::string &key) {
     auto it = point_dict_.find(key);
     if (it == point_dict_.end()) {
         utility::LogError("Unknown key {} in PointCloud point_dict_.", key);
@@ -81,7 +81,7 @@ TensorList &PointCloud::operator[](const std::string &key) {
 }
 
 void PointCloud::SyncPushBack(
-        const std::unordered_map<std::string, Tensor> &point_struct) {
+        const std::unordered_map<std::string, core::Tensor> &point_struct) {
     // Check if "point"" exists
     auto it = point_struct.find("points");
     if (it == point_struct.end()) {
@@ -114,30 +114,31 @@ PointCloud &PointCloud::Clear() {
 
 bool PointCloud::IsEmpty() const { return !HasPoints(); }
 
-Tensor PointCloud::GetMinBound() const {
-    point_dict_.at("points").AssertShape({3});
+core::Tensor PointCloud::GetMinBound() const {
+    point_dict_.at("points").AssertElementShape({3});
     return point_dict_.at("points").AsTensor().Min({0});
 }
 
-Tensor PointCloud::GetMaxBound() const {
-    point_dict_.at("points").AssertShape({3});
+core::Tensor PointCloud::GetMaxBound() const {
+    point_dict_.at("points").AssertElementShape({3});
     return point_dict_.at("points").AsTensor().Max({0});
 }
 
-Tensor PointCloud::GetCenter() const {
-    point_dict_.at("points").AssertShape({3});
+core::Tensor PointCloud::GetCenter() const {
+    point_dict_.at("points").AssertElementShape({3});
     return point_dict_.at("points").AsTensor().Mean({0});
 }
 
-PointCloud &PointCloud::Transform(const Tensor &transformation) {
+PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
     utility::LogError("Unimplemented");
     return *this;
 }
 
-PointCloud &PointCloud::Translate(const Tensor &translation, bool relative) {
-    shape_util::AssertShape(translation, {3},
-                            "translation must have shape (3,)");
-    Tensor transform = translation.Copy();
+PointCloud &PointCloud::Translate(const core::Tensor &translation,
+                                  bool relative) {
+    core::shape_util::AssertShape(translation, {3},
+                                  "translation must have shape (3,)");
+    core::Tensor transform = translation.Copy();
     if (!relative) {
         transform -= GetCenter();
     }
@@ -145,14 +146,15 @@ PointCloud &PointCloud::Translate(const Tensor &translation, bool relative) {
     return *this;
 }
 
-PointCloud &PointCloud::Scale(double scale, const Tensor &center) {
-    shape_util::AssertShape(center, {3}, "center must have shape (3,)");
-    point_dict_.at("points") = TensorList(
-            (point_dict_.at("points").AsTensor() - center) * scale + center);
+PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
+    core::shape_util::AssertShape(center, {3}, "center must have shape (3,)");
+    point_dict_.at("points").AsTensor() =
+            (point_dict_.at("points").AsTensor() - center) * scale + center;
     return *this;
 }
 
-PointCloud &PointCloud::Rotate(const Tensor &R, const Tensor &center) {
+PointCloud &PointCloud::Rotate(const core::Tensor &R,
+                               const core::Tensor &center) {
     utility::LogError("Unimplemented");
     return *this;
 }

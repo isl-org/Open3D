@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/TGeometry/PointCloud.h"
-#include "Open3D/Core/TensorList.h"
+#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/core/TensorList.h"
 
-#include "Core/CoreTest.h"
-#include "TestUtility/UnitTest.h"
+#include "core/CoreTest.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
-namespace unit_test {
+namespace tests {
 
 class PointCloudPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(PointCloud,
@@ -59,14 +59,14 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
 }
 
 TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
-    Device device = GetParam();
-    PointCloud pc(Dtype::Float32, device);
+    core::Device device = GetParam();
+    PointCloud pc(core::Dtype::Float32, device);
 
-    TensorList& points = pc.point_dict_["points"];
-    points.PushBack(
-            Tensor(std::vector<float>{1, 2, 3}, {3}, Dtype::Float32, device));
-    points.PushBack(
-            Tensor(std::vector<float>{4, 5, 6}, {3}, Dtype::Float32, device));
+    core::TensorList& points = pc.point_dict_["points"];
+    points.PushBack(core::Tensor(std::vector<float>{1, 2, 3}, {3},
+                                 core::Dtype::Float32, device));
+    points.PushBack(core::Tensor(std::vector<float>{4, 5, 6}, {3},
+                                 core::Dtype::Float32, device));
 
     EXPECT_FALSE(pc.IsEmpty());
     EXPECT_TRUE(pc.HasPoints());
@@ -79,17 +79,19 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 }
 
 TEST_P(PointCloudPermuteDevices, Scale) {
-    Device device = GetParam();
+    core::Device device = GetParam();
     PointCloud pc;
-    TensorList& points = pc.point_dict_["points"];
-    points = TensorList(Tensor(std::vector<float>{0, 0, 0, 1, 1, 1, 2, 2, 2},
-                               {3, 3}, Dtype::Float32, device));
-    Tensor center(std::vector<float>{1, 1, 1}, {3}, Dtype::Float32, device);
+    core::TensorList& points = pc.point_dict_["points"];
+    points = core::TensorList::FromTensor(
+            core::Tensor(std::vector<float>{0, 0, 0, 1, 1, 1, 2, 2, 2}, {3, 3},
+                         core::Dtype::Float32, device));
+    core::Tensor center(std::vector<float>{1, 1, 1}, {3}, core::Dtype::Float32,
+                        device);
     float scale = 4;
     pc.Scale(scale, center);
     EXPECT_EQ(points.AsTensor().ToFlatVector<float>(),
               std::vector<float>({-3, -3, -3, 1, 1, 1, 5, 5, 5}));
 }
 
-}  // namespace unit_test
+}  // namespace tests
 }  // namespace open3d

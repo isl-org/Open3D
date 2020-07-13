@@ -31,10 +31,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Core/TensorList.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/TGeometry/Geometry3D.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/core/TensorList.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/tgeometry/Geometry3D.h"
 
 namespace open3d {
 namespace tgeometry {
@@ -44,45 +44,48 @@ namespace tgeometry {
 /// and point normals.
 class PointCloud : public Geometry3D {
 public:
-    PointCloud(Dtype dtype = Dtype::Float32, Device device = Device("CPU:0"))
+    PointCloud(core::Dtype dtype = core::Dtype::Float32,
+               core::Device device = core::Device("CPU:0"))
         : Geometry3D(Geometry::GeometryType::PointCloud),
           dtype_(dtype),
           device_(device) {
-        point_dict_["points"] = TensorList({3}, dtype_, device_);
+        point_dict_.emplace("points", core::TensorList({3}, dtype_, device_));
     }
 
     /// Construct from default points
     /// points_tensor: (N, 3)
-    PointCloud(const Tensor &points_tensor);
+    PointCloud(const core::Tensor &points_tensor);
 
     /// Construct from points and various other properties
-    PointCloud(const std::unordered_map<std::string, TensorList> &point_dict);
+    PointCloud(const std::unordered_map<std::string, core::TensorList>
+                       &point_dict);
 
     ~PointCloud() override {}
 
-    TensorList &operator[](const std::string &key);
+    core::TensorList &operator[](const std::string &key);
 
     void SyncPushBack(
-            const std::unordered_map<std::string, Tensor> &point_struct);
+            const std::unordered_map<std::string, core::Tensor> &point_struct);
 
     PointCloud &Clear() override;
 
     bool IsEmpty() const override;
 
-    Tensor GetMinBound() const override;
+    core::Tensor GetMinBound() const override;
 
-    Tensor GetMaxBound() const override;
+    core::Tensor GetMaxBound() const override;
 
-    Tensor GetCenter() const override;
+    core::Tensor GetCenter() const override;
 
-    PointCloud &Transform(const Tensor &transformation) override;
+    PointCloud &Transform(const core::Tensor &transformation) override;
 
-    PointCloud &Translate(const Tensor &translation,
+    PointCloud &Translate(const core::Tensor &translation,
                           bool relative = true) override;
 
-    PointCloud &Scale(double scale, const Tensor &center) override;
+    PointCloud &Scale(double scale, const core::Tensor &center) override;
 
-    PointCloud &Rotate(const Tensor &R, const Tensor &center) override;
+    PointCloud &Rotate(const core::Tensor &R,
+                       const core::Tensor &center) override;
 
 public:
     bool HasPoints() const {
@@ -101,7 +104,7 @@ public:
     }
 
 public:
-    std::unordered_map<std::string, TensorList> point_dict_;
+    std::unordered_map<std::string, core::TensorList> point_dict_;
 
 public:
     // Usage:
@@ -113,15 +116,15 @@ public:
     //         tgeometry::PointCloud::ToLegacyPointCloud(pcd);
     static tgeometry::PointCloud FromLegacyPointCloud(
             const geometry::PointCloud &pcd_legacy,
-            Dtype dtype = Dtype::Float32,
-            Device device = Device("CPU:0"));
+            core::Dtype dtype = core::Dtype::Float32,
+            core::Device device = core::Device("CPU:0"));
 
     static geometry::PointCloud ToLegacyPointCloud(
             const tgeometry::PointCloud &pcd);
 
 protected:
-    Dtype dtype_ = Dtype::Float32;
-    Device device_ = Device("CPU:0");
+    core::Dtype dtype_ = core::Dtype::Float32;
+    core::Device device_ = core::Device("CPU:0");
 };
 
 }  // namespace tgeometry
