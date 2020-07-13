@@ -21,7 +21,6 @@ option(BUILD_FMT                 "Build fmtlib from source"                 ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
 option(BUILD_GLFW                "Build glfw from source"                   OFF)
 option(BUILD_IMGUI               "Build Dear ImGui from source"             ON)
-option(BUILD_JSONCPP             "Build jsoncpp from source"                ON)
 option(BUILD_LIBLZF              "Build liblzf from source"                 ON)
 option(BUILD_PNG                 "Build png from source"                    OFF)
 option(BUILD_ZLIB                "Build zlib from source"                   OFF)
@@ -36,6 +35,7 @@ option(BUILD_TINYOBJLOADER       "Build tinyobjloader from source"          ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(BUILD_CUDA_MODULE         "Build the CUDA module"                    OFF)
 option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
+option(BUILD_PYTORCH_OPS         "Build ops for Pytorch"                    OFF)
 option(ENABLE_GUI                "Builds new GUI"                           ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
@@ -105,7 +105,7 @@ if(ENABLE_GUI AND WIN32)
 endif()
 
 # Parse Open3D version number
-file(STRINGS "src/Open3D/version.txt" OPEN3D_VERSION_READ)
+file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
     if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH|TWEAK) +([^ ]+)$")
         set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
@@ -120,6 +120,12 @@ string(CONCAT OPEN3D_VERSION
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${PROJECT_VERSION}")
+
+# CMake modules
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
+
+# setup PYTHON_EXECUTABLE if not set
+find_package(PythonExecutable REQUIRED) # invokes the module in 3rdparty/CMake
 
 # npm version has to be MAJOR.MINOR.PATCH
 string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
@@ -172,19 +178,34 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 if (BUILD_CUDA_MODULE)
     include(CheckLanguage)
     check_language(CUDA)
+    message(STATUS "CMAKE_CUDA_COMPILER: ${CMAKE_CUDA_COMPILER}")
+    message(STATUS "CMAKE_CUDA_COMPILER_VERSION: ${CMAKE_CUDA_COMPILER_VERSION}")
     if(CMAKE_CUDA_COMPILER)
         find_package(CUDA REQUIRED) # required for cuda_select_nvcc_arch_flags
         message(STATUS "Building CUDA enabled")
         enable_language(CUDA)
-        # get gencode flags
+        # Get gencode flags
         if("${CUDA_ARCH}" STREQUAL "User")
             cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
         elseif("${CUDA_ARCH}" STREQUAL "BasicPTX")
-            # include oldest and most recent PTX and rely on JIT compilation
+            # Include oldest and most recent PTX and rely on JIT compilation
             set(CUDA_GENCODES "-gencode arch=compute_30,code=compute_30;-gencode arch=compute_75,code=compute_75")
         else()
             cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH}")
         endif()
+        # Make CUDA_GENCODES a string to avoid deduplication in target_compile_options
+        string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
+        message(STATUS "CUDA_GENCODES: ${CUDA_GENCODES}")
+        # Allows CUDA headers to be included as "system" headers for CMake prior
+        # to 3.17,
+        # https://gitlab.kitware.com/cmake/cmake/-/issues/20270
+        # https://github.com/intel-isl/Open3D/issues/2040
+        if(CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES)
+            list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES
+                ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+        endif()
+        message(STATUS "CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES: ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}")
+        message(STATUS "CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES: ${CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES}")
     else()
         set(BUILD_CUDA_MODULE OFF)
         message(STATUS "No CUDA support")
@@ -223,9 +244,6 @@ if(WIN32)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     endif()
 endif()
-
-# CMake modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
 
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -269,18 +287,16 @@ function(open3d_set_global_properties target)
     # Tell CMake we want a compiler that supports C++14 features
     target_compile_features(${target} PUBLIC cxx_variadic_templates cxx_constexpr cxx_override cxx_static_assert cxx_trailing_return_types cxx_return_type_deduction)
     target_include_directories(${target} PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp>
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
     )
     if(BUILD_CUDA_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
     endif()
-    if (NOT HAS_GLIBCXX_USE_CXX11_ABI)
-        if(GLIBCXX_USE_CXX11_ABI)
-            target_compile_definitions(${target} PRIVATE _GLIBCXX_USE_CXX11_ABI=1)
-        else()
-            target_compile_definitions(${target} PRIVATE _GLIBCXX_USE_CXX11_ABI=0)
-        endif()
+    if(GLIBCXX_USE_CXX11_ABI)
+        target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
+    else()
+        target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
     endif()
     if(ENABLE_HEADLESS_RENDERING)
         target_compile_definitions(${target} PRIVATE HEADLESS_RENDERING)
@@ -335,12 +351,12 @@ macro(add_source_group module_name)
 endmacro()
 
 # Enumerate all third-party libraries which we need later
-# This creates the necessary targets and sets the 
+# This creates the necessary targets and sets the
 # Open3D_3RDPARTY_*_TARGETS variables we use in open3d_link_3rdparty_libraries
 include(3rdparty/find_dependencies.cmake)
 
 # Open3D library
-add_subdirectory(src)
+add_subdirectory(cpp)
 
 # Examples
 add_subdirectory(examples)
@@ -349,18 +365,36 @@ add_subdirectory(examples)
 install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})
 export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
 
-# `make check-style` errors if styling is not compliant
+# `make check-style` checks style for c++/cuda/python/ipynb files
 add_custom_target(check-style
-    COMMAND ${CMAKE_COMMAND}
-    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check-style.cmake
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_style.py
+    COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
 )
 
-# `make apply-style` runs clang-format to format all source code
+# `make apply-style` applies style for c++/cuda/python/ipynb files
 add_custom_target(apply-style
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_style.py --do_apply_style
+    COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
+)
+
+# `make check-cpp-style` checks style for c++/cuda files.
+# This works outside of python virtualenv.
+add_custom_target(check-cpp-style
     COMMAND ${CMAKE_COMMAND}
     -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/apply-style.cmake
+    -DDO_APPLY_STYLE=OFF
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_cpp_style.cmake
+)
+
+# `make apply-cpp-style` applies style for c++/cuda files.
+# This works outside of python virtualenv.
+add_custom_target(apply-cpp-style
+    COMMAND ${CMAKE_COMMAND}
+    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    -DDO_APPLY_STYLE=ON
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_cpp_style.cmake
 )
 
 function(open3d_aligned_print first second)
@@ -388,15 +422,14 @@ if(BUILD_PYTHON_MODULE)
     open3d_aligned_print("- with Jupyter Notebook Support" "${ENABLE_JUPYTER}")
 endif()
 open3d_aligned_print("Build Tensorflow Ops" "${BUILD_TENSORFLOW_OPS}")
+open3d_aligned_print("Build Pytorch Ops" "${BUILD_PYTORCH_OPS}")
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
-if(NOT HAS_GLIBCXX_USE_CXX11_ABI)
-    if(GLIBCXX_USE_CXX11_ABI)
-        set(usage "1")
-    else()
-        set(usage "0")
-    endif()
-    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
+if(GLIBCXX_USE_CXX11_ABI)
+    set(usage "1")
+else()
+    set(usage "0")
 endif()
+open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
 message(STATUS "========================================================================")
 message(STATUS "Third-Party Dependencies:")
 foreach(dep IN ITEMS EIGEN3 FILAMENT FLANN FMT GLEW GLFW GOOGLETEST IMGUI JPEG JSONCPP LIBLZF OPENGL PNG PYBIND11 QHULL LIBREALSENSE TINYFILEDIALOGS TINYGLTF TINYOBJLOADER)

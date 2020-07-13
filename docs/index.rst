@@ -48,18 +48,26 @@ Open3D: A Modern Library for 3D Data Processing
     tutorial/docker/index
     tutorial/reference
 
+.. _cpp_api_index:
+
+.. toctree::
+    :maxdepth: 1
+    :caption: C++ API
+
+    cpp
+
 .. _python_api_index:
+
+.. Note: when adding new modules, please also update documented_modules.txt.
 
 .. toctree::
     :maxdepth: 1
     :caption: Python API
 
     python_api/open3d.camera
-    python_api/open3d.color_map
+    python_api/open3d.core
     python_api/open3d.geometry
     python_api/open3d.io
-    python_api/open3d.integration
-    python_api/open3d.odometry
-    python_api/open3d.registration
+    python_api/open3d.pipelines
     python_api/open3d.utility
     python_api/open3d.visualization

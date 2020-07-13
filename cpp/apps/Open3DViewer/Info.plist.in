@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleName</key>
+    <string>Open3D</string>
+    <key>CFBundleExecutable</key>
+    <string>${MACOSX_BUNDLE_EXECUTABLE_NAME}</string>
+    <key>CFBundleGetInfoString</key>
+    <string>${MACOSX_BUNDLE_INFO_STRING}</string>
+    <key>CFBundleIconFile</key> <!-- macOS 10.12-; uses .icns file -->
+    <string>${MACOSX_BUNDLE_ICON_FILE}</string>
+    <key>CFBundleIconName</key> <!-- macOS 10.13+; requires Assets.car -->
+    <string>${MACOSX_BUNDLE_ICON_FILE}</string>
+    <key>CFBundleIdentifier</key>
+    <string>${MACOSX_BUNDLE_GUI_IDENTIFIER}</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleSupportedPlatforms</key>
+    <array>
+        <string>MacOSX</string>
+    </array>
+    <key>CFBundleVersion</key>
+    <string>${MACOSX_BUNDLE_LONG_VERSION_STRING}</string>
+    <key>CFBundleLongVersionString</key>
+    <string>${MACOSX_BUNDLE_LONG_VERSION_STRING}</string>
+    <key>CFBundleShortVersionString</key>
+    <string>${MACOSX_BUNDLE_SHORT_VERSION_STRING}</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>${MACOSX_BUNDLE_COPYRIGHT}</string>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict> <!-- GLTF -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>GL Transmission Format</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.gl-transmission-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+         <dict> <!-- GLTB -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>GL Binary Transmission Format</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.gl-binary-transmission-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+        <dict> <!-- OBJ -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>Geometry Definition File Format</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.geometry-definition-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+        <dict> <!-- OFF -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>Object File Format</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.object-file-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+        <dict> <!-- PCD -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>Point Cloud Library File</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.point-cloud-library-file</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+        <dict> <!-- PLY -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>Polygon File Format</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.polygon-file-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+         <dict> <!-- PTS -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>3D Points File</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.3d-points-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+        <dict> <!-- STL -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>Standard Tesselated Geometry Format</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.standard-tesselated-geometry-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+        <dict> <!-- XYZ -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>XYZ File</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.xyz-points-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+        <dict> <!-- XYZN-->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>XYZN File</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.xyzn-points-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+        <dict> <!-- XYZRGB-->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>XYZ RGB File</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.xyzrgb-points-format</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+    </array>
+    <key>UTImportedTypeDeclarations</key>
+    <array>
+        <dict> <!-- GLTF -->
+            <key>UTTypeIdentifier</key>
+            <string>public.gl-transmission-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>GL Transmission Format</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>gltf</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/gltf</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- GLB -->
+            <key>UTTypeIdentifier</key>
+            <string>public.gl-binary-transmission-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>GL Binary Transmission Format</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>glb</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/glb</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- OBJ -->
+            <key>UTTypeIdentifier</key>
+            <string>public.geometry-definition-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>Geometry Definition Format</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>obj</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/obj</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- OFF -->
+            <key>UTTypeIdentifier</key>
+            <string>public.object-file-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>Object File Format</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>off</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/off</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- PCD -->
+            <key>UTTypeIdentifier</key>
+            <string>public.point-cloud-library-file</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>Point Cloud Library File</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>pcd</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/pcd</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- PLY -->
+            <key>UTTypeIdentifier</key>
+            <string>public.polygon-file-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>Polygon File Format</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>ply</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/ply</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- PTS -->
+            <key>UTTypeIdentifier</key>
+            <string>public.3d-points-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>3D Points File</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>pts</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/pts</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- STL -->
+            <key>UTTypeIdentifier</key>
+            <string>public.standard-tesselated-geometry-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>Standard Tesselated Geometry Format</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>stl</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/stl</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- XYZ -->
+            <key>UTTypeIdentifier</key>
+            <string>public.xyz-points-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>XYZ Files</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>xyz</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/xyz</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- XYZN -->
+            <key>UTTypeIdentifier</key>
+            <string>public.xyz-points-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>XYZN File</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>xyzn</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/xyzn</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- XYZRGB -->
+            <key>UTTypeIdentifier</key>
+            <string>public.xyzrgb-points-format</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>XYZ RGB Files</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>xyzrgb</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/xyzrgb</string>
+                </array>
+            </dict>
+        </dict>
+    </array>
+</dict>
+</plist>

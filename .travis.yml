@@ -4,6 +4,7 @@ env:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - BUILD_TENSORFLOW_OPS=ON
+    - BUILD_CUDA_MODULE=OFF
     - NPROC=2
 
 notifications:
@@ -28,12 +29,13 @@ matrix:
             - cmake
             - clang-7
             - clang-format-5.0
-      install: ./util/scripts/setup-linux.sh
+      install:
+        - ./util/scripts/install-deps-ubuntu.sh assume-yes
       script:
         - mkdir build
         - cd build
-        - cmake -DPYTHON_EXECUTABLE=`which python` ..
-        - pip install -U yapf==0.28.0
+        - cmake ..
+        - pip install -U yapf==0.28.0 nbformat
         - make check-style
 
     # Build headless and docs
@@ -56,7 +58,7 @@ matrix:
             - libosmesa6-dev
       install:
         # Install ubuntu dependencies
-        - ./util/scripts/setup-linux.sh
+        - ./util/scripts/install-deps-ubuntu.sh assume-yes
         # Install Kinect k4a package
         - curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
         - sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
@@ -75,10 +77,11 @@ matrix:
         # https://github.com/sphinx-doc/sphinx/issues/7420
         - pip install -U -q git+https://github.com/intel-isl/m2r@dev#egg=m2r
       script:
+        - nproc
         - mkdir build
         - cd build
         - |
-          cmake -DPYTHON_EXECUTABLE=`which python` \
+          cmake \
                 -DENABLE_HEADLESS_RENDERING=ON \
                 -DENABLE_JUPYTER=ON \
                 -DENABLE_GUI=OFF \
@@ -92,56 +95,8 @@ matrix:
         - bin/GLInfo
         - python -c "from open3d import *; import open3d; print(open3d)"
         - cd .. # Back to Open3D/
-        - travis_wait 40 ./util/scripts/make-documentation.sh
+        - ./util/scripts/make-documentation.sh
         - ./.travis/deploy_docs.sh
-
-    # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=OFF
-    - os: linux
-      dist: bionic
-      sudo: required
-      language: python
-      python: "3.5"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-      env: SHARED=ON
-      install: ./util/scripts/setup-linux.sh
-      script: ./util/scripts/run-travis.sh
-
-    # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=ON
-    - os: linux
-      dist: bionic
-      sudo: required
-      language: python
-      python: "3.6"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-      env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      install: ./util/scripts/setup-linux.sh
-      script: ./util/scripts/run-travis.sh
-
-    # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=ON
-    - os: linux
-      dist: bionic
-      sudo: required
-      language: python
-      python: "3.7" # bionic has Python 3.7 on travis
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-      env: SHARED=ON BUILD_DEPENDENCY_FROM_SOURCE=ON
-      install: ./util/scripts/setup-linux.sh
-      script: ./util/scripts/run-travis.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK

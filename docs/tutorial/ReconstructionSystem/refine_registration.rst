@@ -14,7 +14,7 @@ The main function runs ``local_refinement`` and ``optimize_posegraph_for_scene``
 Fine-grained registration
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/refine_registration.py
    :language: python
    :lineno-start: 38
    :lines: 5,39-90
@@ -26,17 +26,17 @@ Two options are given for the fine-grained registration. The ``color`` option is
 Multiway registration
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/refine_registration.py
    :language: python
    :lineno-start: 16
    :lines: 5,17-36
    :linenos:
 
-This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. Function ``update_posegrph_for_refined_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
+This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. Function ``update_posegraph_for_refined_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
 Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called for multiway registration.
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/optimize_posegraph.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/optimize_posegraph.py
    :language: python
    :lineno-start: 52
    :lines: 5,53-60
@@ -47,7 +47,7 @@ Main registration loop
 
 The function ``make_posegraph_for_refined_scene`` below calls all the functions introduced above.
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/refine_registration.py
    :language: python
    :lineno-start: 129
    :lines: 5,130-176
@@ -57,8 +57,7 @@ The main workflow is: pairwise local refinement -> multiway registration.
 
 Results
 ``````````````````````````````````````
-
-The following is messages from pose graph optimization.
+The pose graph optimization outputs the following messages:
 
 .. code-block:: sh
 
@@ -78,4 +77,4 @@ The following is messages from pose graph optimization.
     CompensateReferencePoseGraphNode : reference : 0
 
 
-There are 14 fragments and 52 valid matching pairs between fragments. After 23 iteration, 11 edges are detected to be false positive. After they are pruned, pose graph optimization runs again to achieve tight alignment.
+There are 14 fragments and 52 valid matching pairs between fragments. After 23 iterations, 11 edges are detected to be false positives. After they are pruned, pose graph optimization runs again to achieve tight alignment.

@@ -800,7 +800,7 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = ../README.md \
-                         ../src
+                         ../cpp
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -827,6 +827,8 @@ INPUT_ENCODING         = UTF-8
 
 FILE_PATTERNS          = *.c \
                          *.cc \
+                         *.cu \
+                         *.cuh \
                          *.cxx \
                          *.cpp \
                          *.c++ \
@@ -883,9 +885,11 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = ../src/Python \
-                         ../src/Tools \
-                         ../src/UnitTest
+EXCLUDE                = ../cpp/tools \
+                         ../cpp/apps \
+                         ../cpp/benchmarks \
+                         ../cpp/pybind \
+                         ../cpp/tests
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

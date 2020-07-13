@@ -5,9 +5,9 @@ CMakeSettings.json
 .travis/*.tar.gz
 
 # CMake configured files
-src/Open3D/Open3D.h
-src/Open3D/Open3DConfig.h
-src/Open3D/Visualization/Shader/Shader.h
+cpp/open3d/Open3D.h
+cpp/open3d/Open3DConfig.h
+cpp/open3d/visualization/shader/Shader.h
 util/pip_package/setup.py
 
 # CMake temp file from Visual Studio
@@ -48,33 +48,33 @@ static/
 compile_commands.json
 
 # Example resources
-examples/Python/ReconstructionSystem/dataset/
-examples/TestData/fountain_small
-examples/TestData/Armadillo.ply
-examples/TestData/Bunny.ply
-examples/TestData/eagle.ply
-examples/TestData/voxelized.ply
-examples/Python/Basic/voxel_grid_test.ply
-examples/Python/Benchmark/testdata/
-examples/Python/Misc/test.jpg
-examples/TestData/GraphOptimization/pose_graph_example_fragment_optimized.json
-examples/TestData/GraphOptimization/pose_graph_example_global_optimized.json
-examples/TestData/depth/
-examples/TestData/image/
-examples/TestData/sync.ply
-examples/TestData/sync.png
-examples/Python/Advanced/multiway_registration.pcd
-examples/Python/Advanced/test.json
-examples/Python/Advanced/viewpoint.json
-examples/Python/Basic/copy_of_fragment.pcd
-examples/Python/Basic/copy_of_knot.ply
-examples/Python/Basic/copy_of_lena_color.jpg
-examples/Python/Basic/copy_of_crate.mtl
-examples/Python/Basic/copy_of_crate.png
-examples/Python/Basic/copy_of_crate.obj
+examples/python/ReconstructionSystem/dataset/
+examples/test_data/fountain_small
+examples/test_data/Armadillo.ply
+examples/test_data/Bunny.ply
+examples/test_data/eagle.ply
+examples/test_data/voxelized.ply
+examples/python/Basic/voxel_grid_test.ply
+examples/python/Benchmark/testdata/
+examples/python/Misc/test.jpg
+examples/test_data/GraphOptimization/pose_graph_example_fragment_optimized.json
+examples/test_data/GraphOptimization/pose_graph_example_global_optimized.json
+examples/test_data/depth/
+examples/test_data/image/
+examples/test_data/sync.ply
+examples/test_data/sync.png
+examples/python/Advanced/multiway_registration.pcd
+examples/python/Advanced/test.json
+examples/python/Advanced/viewpoint.json
+examples/python/Basic/copy_of_fragment.pcd
+examples/python/Basic/copy_of_knot.ply
+examples/python/Basic/copy_of_lena_color.jpg
+examples/python/Basic/copy_of_crate.mtl
+examples/python/Basic/copy_of_crate.png
+examples/python/Basic/copy_of_crate.obj
 
 # doc
-docs/TestData
+docs/test_data
 docs/tutorial/**/*.ipynb
 docs/tutorial/**/*.py
 docs/tutorial/**/*.jpg

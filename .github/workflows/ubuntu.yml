@@ -1,0 +1,60 @@
+name: Ubuntu CI
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+      matrix:
+        SHARED: [ON, OFF]
+        BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
+        BUILD_ML_OPS: [ON, OFF]
+        BUILD_CUDA: [ON, OFF]
+    env:
+      SHARED: ${{ matrix.SHARED }}
+      BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
+      NPROC: 2
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Setup cache
+      uses: actions/cache@v2
+      with:
+        # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
+        path: ~/.ccache
+        # We include the commit sha in the cache key, as new cache entries are
+        # only created if there is no existing entry for the key yet.
+        key: ${{ runner.os }}-ccache-${{ github.sha }}
+        # Restore any ccache cache entry, if none for
+        # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+        # Common prefix will be used so that ccache can be used across commits.
+        restore-keys: |
+          ${{ runner.os }}-ccache
+    - name: Set up Python version
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.5
+    # Pre-installed 18.04 packages: https://git.io/JfHmW
+    - name: Install dependencies
+      run: |
+        ./util/scripts/install-deps-ubuntu.sh assume-yes
+        sudo apt-get --yes install ccache
+        ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+    - name: Config and build
+      run: |
+        PATH=/usr/lib/ccache:$PATH
+        ccache -s
+        ./util/scripts/run-ci.sh
+        ccache -s

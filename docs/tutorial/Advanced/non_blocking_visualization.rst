@@ -3,12 +3,12 @@
 Non-blocking visualization
 -------------------------------------
 
-``draw_geometries()`` is a useful function for quick overview of static geometries. However, this function holds a process until a visualization window is closed. This is not optimal when geometry is updated and needs to be visualized without closing the window. This tutorial introduces an example to customize the rendering loop.
+``draw_geometries()`` is a useful function to get a quick overview of static geometries. However, this function holds a process until a visualization window is closed. This is not optimal when geometry is updated and needs to be visualized without closing the window. This tutorial introduces an example to customize the rendering loop.
 
 Review draw_geometries
 ````````````````````````````````````````````````````
 
-``draw_geometries()`` has the following rendering-loop (see ``Visualizer::Run()`` for the c++ implementation):
+``draw_geometries`` has the following rendering-loop (see ``Visualizer::Run()`` for the C++ implementation):
 
 .. code-block:: bash
 
@@ -20,7 +20,7 @@ Review draw_geometries
         if (any user mouse/keyboard input):
             respond to it and set flags for re-rendering
 
-Note that both binding geometry and rendering are costly operations, thus they are executed in a lazy way. There are two flags that control them individually. The functions ``update_geometry()`` and ``update_renderer()`` set these flags on. After rebinding/rendering, these flags are cleared once again.
+Note that both binding geometry and rendering are costly operations, thus they are executed in a lazy way. There are two flags that control them individually. The functions ``update_geometry`` and ``update_renderer`` set these flags. After rebinding/rendering, these flags are cleared once again.
 
 This rendering loop can be readily customized. For example, a custom loop can be made in this way to visualize ICP registration:
 
@@ -37,7 +37,7 @@ This rendering loop can be readily customized. For example, a custom loop can be
 
 The full script implementing this idea is displayed below.
 
-.. literalinclude:: ../../../examples/Python/Advanced/non_blocking_visualization.py
+.. literalinclude:: ../../../examples/python/Advanced/non_blocking_visualization.py
    :language: python
    :lineno-start: 5
    :lines: 5-
@@ -48,7 +48,7 @@ The following sections explain this script.
 Prepare example data
 ````````````````````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/Advanced/non_blocking_visualization.py
+.. literalinclude:: ../../../examples/python/Advanced/non_blocking_visualization.py
    :language: python
    :lineno-start: 13
    :lines: 13-23
@@ -60,7 +60,7 @@ This part reads two point clouds and downsamples them. The source point cloud is
 Initialize Visualizer class
 ````````````````````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/Advanced/non_blocking_visualization.py
+.. literalinclude:: ../../../examples/python/Advanced/non_blocking_visualization.py
    :language: python
    :lineno-start: 25
    :lines: 25-28
@@ -71,7 +71,7 @@ These lines make an instance of the visualizer class, open a visualizer window, 
 Transform geometry and visualize it
 ````````````````````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/Advanced/non_blocking_visualization.py
+.. literalinclude:: ../../../examples/python/Advanced/non_blocking_visualization.py
    :language: python
    :lineno-start: 33
    :lines: 33-44

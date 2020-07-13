@@ -116,7 +116,7 @@ echo
 
 echo "running the Open3D unit tests..."
 date
-./bin/unitTests
+./bin/tests
 echo
 
 echo "test building a C++ example with installed Open3D..."

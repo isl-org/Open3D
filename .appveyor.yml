@@ -1,7 +1,0 @@
-# .appveyor.yml is intentionally left blank.
-# Checkout .github/workflows/windows.yml instead.
-
-version: 1.0.{build}
-image:
-- Visual Studio 2019
-build: off

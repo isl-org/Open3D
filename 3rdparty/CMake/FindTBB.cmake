@@ -14,7 +14,7 @@ if( NOT TBB_INCLUDE_DIR )
 endif()
 
 if( NOT TBB_LIBRARY )
-    find_library( TBB_LIBRARY tbb 
+    find_library( TBB_LIBRARY tbb
             HINTS $ENV{CONDA_PREFIX}/lib )
 endif()
 

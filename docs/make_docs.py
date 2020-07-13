@@ -33,10 +33,9 @@ from __future__ import print_function
 import argparse
 import subprocess
 import sys
-import multiprocessing
 import importlib
 import os
-from inspect import getmembers, isbuiltin, isclass, ismodule
+import inspect
 import shutil
 import warnings
 import weakref
@@ -77,11 +76,10 @@ class PyAPIDocsBuilder:
 
         for module_name in self.module_names:
             module = self._get_open3d_module(module_name)
-            PyAPIDocsBuilder._generate_sub_module_class_function_docs(
-                module_name, module, self.output_dir)
+            self._generate_module_class_function_docs(module_name, module,
+                                                      self.output_dir)
 
-    @staticmethod
-    def _get_open3d_module(full_module_name):
+    def _get_open3d_module(self, full_module_name):
         """Returns the module object for the given module path"""
         import open3d  # make sure the root module is loaded
 
@@ -99,27 +97,25 @@ class PyAPIDocsBuilder:
                 current_module = getattr(current_module, sub_module_name)
             return current_module
 
-    @staticmethod
-    def _generate_function_doc(sub_module_full_name, function_name,
+    def _generate_function_doc(self, full_module_name, function_name,
                                output_path):
         # print("Generating docs: %s" % (output_path,))
         out_string = ""
-        out_string += "%s.%s" % (sub_module_full_name, function_name)
+        out_string += "%s.%s" % (full_module_name, function_name)
         out_string += "\n" + "-" * len(out_string)
-        out_string += "\n\n" + ".. currentmodule:: %s" % sub_module_full_name
+        out_string += "\n\n" + ".. currentmodule:: %s" % full_module_name
         out_string += "\n\n" + ".. autofunction:: %s" % function_name
         out_string += "\n"
 
         with open(output_path, "w") as f:
             f.write(out_string)
 
-    @staticmethod
-    def _generate_class_doc(sub_module_full_name, class_name, output_path):
+    def _generate_class_doc(self, full_module_name, class_name, output_path):
         # print("Generating docs: %s" % (output_path,))
         out_string = ""
-        out_string += "%s.%s" % (sub_module_full_name, class_name)
+        out_string += "%s.%s" % (full_module_name, class_name)
         out_string += "\n" + "-" * len(out_string)
-        out_string += "\n\n" + ".. currentmodule:: %s" % sub_module_full_name
+        out_string += "\n\n" + ".. currentmodule:: %s" % full_module_name
         out_string += "\n\n" + ".. autoclass:: %s" % class_name
         out_string += "\n    :members:"
         out_string += "\n    :undoc-members:"
@@ -129,16 +125,16 @@ class PyAPIDocsBuilder:
         with open(output_path, "w") as f:
             f.write(out_string)
 
-    @staticmethod
-    def _generate_sub_module_doc(sub_module_full_name, class_names,
-                                 function_names, sub_module_doc_path):
+    def _generate_module_doc(self, full_module_name, class_names,
+                             function_names, sub_module_names,
+                             sub_module_doc_path):
         # print("Generating docs: %s" % (sub_module_doc_path,))
         class_names = sorted(class_names)
         function_names = sorted(function_names)
         out_string = ""
-        out_string += sub_module_full_name
+        out_string += full_module_name
         out_string += "\n" + "-" * len(out_string)
-        out_string += "\n\n" + ".. currentmodule:: %s" % sub_module_full_name
+        out_string += "\n\n" + ".. currentmodule:: %s" % full_module_name
 
         if len(class_names) > 0:
             out_string += "\n\n**Classes**"
@@ -156,7 +152,15 @@ class PyAPIDocsBuilder:
                 out_string += "\n    " + "%s" % (function_name,)
             out_string += "\n"
 
-        obj_names = class_names + function_names
+        if len(sub_module_names) > 0:
+            out_string += "\n\n**Modules**"
+            out_string += "\n\n.. autosummary::"
+            out_string += "\n"
+            for sub_module_name in sub_module_names:
+                out_string += "\n    " + "%s" % (sub_module_name,)
+            out_string += "\n"
+
+        obj_names = class_names + function_names + sub_module_names
         if len(obj_names) > 0:
             out_string += "\n\n.. toctree::"
             out_string += "\n    :hidden:"
@@ -164,7 +168,7 @@ class PyAPIDocsBuilder:
             for obj_name in obj_names:
                 out_string += "\n    %s <%s.%s>" % (
                     obj_name,
-                    sub_module_full_name,
+                    full_module_name,
                     obj_name,
                 )
             out_string += "\n"
@@ -172,38 +176,53 @@ class PyAPIDocsBuilder:
         with open(sub_module_doc_path, "w") as f:
             f.write(out_string)
 
-    @staticmethod
-    def _generate_sub_module_class_function_docs(sub_module_full_name,
-                                                 sub_module, output_dir):
-        print("Generating docs for submodule: %s" % sub_module_full_name)
+    def _generate_module_class_function_docs(self, full_module_name, module,
+                                             output_dir):
+        print("Generating docs for submodule: %s" % full_module_name)
 
         # Class docs
         class_names = [
-            obj[0] for obj in getmembers(sub_module) if isclass(obj[1])
+            obj[0]
+            for obj in inspect.getmembers(module)
+            if inspect.isclass(obj[1])
         ]
         for class_name in class_names:
-            file_name = "%s.%s.rst" % (sub_module_full_name, class_name)
+            file_name = "%s.%s.rst" % (full_module_name, class_name)
             output_path = os.path.join(output_dir, file_name)
-            PyAPIDocsBuilder._generate_class_doc(sub_module_full_name,
-                                                 class_name, output_path)
+            self._generate_class_doc(full_module_name, class_name, output_path)
 
         # Function docs
         function_names = [
-            obj[0] for obj in getmembers(sub_module) if isbuiltin(obj[1])
+            obj[0]
+            for obj in inspect.getmembers(module)
+            if inspect.isbuiltin(obj[1])
         ]
         for function_name in function_names:
-            file_name = "%s.%s.rst" % (sub_module_full_name, function_name)
+            file_name = "%s.%s.rst" % (full_module_name, function_name)
             output_path = os.path.join(output_dir, file_name)
-            PyAPIDocsBuilder._generate_function_doc(sub_module_full_name,
-                                                    function_name, output_path)
+            self._generate_function_doc(full_module_name, function_name,
+                                        output_path)
 
-        # Submodule docs
+        # Submodule docs, only supports 2-level nesting
+        # (i.e. open3d.pipeline.registration)
+        sub_module_names = [
+            obj[0]
+            for obj in inspect.getmembers(module)
+            if inspect.ismodule(obj[1])
+        ]
+        documented_sub_module_names = [
+            sub_module_name for sub_module_name in sub_module_names if "%s.%s" %
+            (full_module_name, sub_module_name) in self.module_names
+        ]
+
+        # Path
         sub_module_doc_path = os.path.join(output_dir,
-                                           sub_module_full_name + ".rst")
-        PyAPIDocsBuilder._generate_sub_module_doc(
-            sub_module_full_name,
+                                           full_module_name + ".rst")
+        self._generate_module_doc(
+            full_module_name,
             class_names,
             function_names,
+            documented_sub_module_names,
             sub_module_doc_path,
         )
 
@@ -218,26 +237,31 @@ class SphinxDocsBuilder:
     (3) Calls `sphinx-build` with the user argument
     """
 
-    def __init__(self, html_output_dir, is_release):
+    def __init__(self, html_output_dir, is_release, skip_notebooks):
         # Get the modules for which we want to build the documentation.
         # We use the modules listed in the index.rst file here.
-        self.documented_modules = self._get_module_names_from_index_rst()
+        self.documented_modules = self._get_documented_module_names()
 
-        # self.documented_modules = "open3d.open3d_pybind"  # Points to the open3d.so
+        # self.documented_modules = "open3d.pybind"  # Points to the open3d.so
         # self.c_module_relative = "open3d"  # The relative module reference to open3d.so
         self.python_api_output_dir = "python_api"
         self.html_output_dir = html_output_dir
         self.is_release = is_release
+        self.skip_notebooks = skip_notebooks
 
     @staticmethod
-    def _get_module_names_from_index_rst():
+    def _get_documented_module_names():
         """Reads the modules of the python api from the index.rst"""
         module_names = []
-        with open("index.rst", "r") as f:
+        with open("documented_modules.txt", "r") as f:
             for line in f:
-                m = re.match("^\s*python_api/(.*)\s*$", line)
+                print(line)
+                m = re.match("^(open3d\..*)\s*$", line)
                 if m:
                     module_names.append(m.group(1))
+        print("Documented modules:")
+        for module_name in module_names:
+            print("-", module_name)
         return module_names
 
     def run(self):
@@ -277,8 +301,6 @@ class SphinxDocsBuilder:
                 "version=" + release_version,
                 "-D",
                 "release=" + release_version,
-                "-j",
-                str(multiprocessing.cpu_count()),
                 ".",
                 build_dir,
             ]
@@ -287,13 +309,20 @@ class SphinxDocsBuilder:
                 "sphinx-build",
                 "-b",
                 "html",
-                "-j",
-                str(multiprocessing.cpu_count()),
                 ".",
                 build_dir,
             ]
+
+        sphinx_env = os.environ.copy()
+        sphinx_env[
+            "skip_notebooks"] = "true" if self.skip_notebooks else "false"
+
         print('Calling: "%s"' % " ".join(cmd))
-        subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
+        print('Env: "%s"' % sphinx_env)
+        subprocess.check_call(cmd,
+                              env=sphinx_env,
+                              stdout=sys.stdout,
+                              stderr=sys.stderr)
 
 
 class DoxygenDocsBuilder:
@@ -320,25 +349,23 @@ class DoxygenDocsBuilder:
 class JupyterDocsBuilder:
 
     def __init__(self, current_file_dir, clean_notebooks, execute_notebooks):
-        """
-        execute_notebooks is one of {"auto", "always"}
-        """
-        if execute_notebooks not in {"auto", "always"}:
-            raise ValueError(f"Invalid execute option: {execute_notebooks}.")
         self.clean_notebooks = clean_notebooks
         self.execute_notebooks = execute_notebooks
         self.current_file_dir = current_file_dir
         print("Notebook execution mode: {}".format(self.execute_notebooks))
 
     def run(self):
+        if self.execute_notebooks == "never":
+            return
+
         # Setting os.environ["CI"] will disable interactive (blocking) mode in
         # Jupyter notebooks
         os.environ["CI"] = "true"
 
-        # Copy TestData directory to the tutorial folder
+        # Copy test_data directory to the tutorial folder
         test_data_in_dir = (Path(self.current_file_dir).parent / "examples" /
-                            "TestData")
-        test_data_out_dir = Path(self.current_file_dir) / "TestData"
+                            "test_data")
+        test_data_out_dir = Path(self.current_file_dir) / "test_data"
         if test_data_out_dir.exists():
             shutil.rmtree(test_data_out_dir)
         shutil.copytree(test_data_in_dir, test_data_out_dir)
@@ -348,7 +375,7 @@ class JupyterDocsBuilder:
         example_dirs = ["Basic", "Advanced"]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir).parent / "examples" /
-                      "Python" / example_dir)
+                      "python" / example_dir)
             out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
             shutil.copy(
                 in_dir.parent / "open3d_tutorial.py",
@@ -420,13 +447,13 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help=("Whether to clean existing notebooks in docs/tutorial. "
-              "Notebooks are copied from examples/Python to docs/tutorial."),
+              "Notebooks are copied from examples/python to docs/tutorial."),
     )
     parser.add_argument(
         "--execute_notebooks",
         dest="execute_notebooks",
         default="auto",
-        help="Jupyter notebook execution mode, one of {auto, always}.",
+        help="Jupyter notebook execution mode, one of {auto, always, never}.",
     )
     parser.add_argument(
         "--sphinx",
@@ -451,6 +478,10 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    # Sanity checks
+    if args.execute_notebooks not in {"auto", "always", "never"}:
+        raise ValueError(f"Invalid execute option: {execute_notebooks}.")
+
     pwd = os.path.dirname(os.path.realpath(__file__))
 
     # Clear output dir if new docs are to be built
@@ -472,7 +503,9 @@ if __name__ == "__main__":
                                  args.execute_notebooks)
         jdb.run()
         print("Building Sphinx docs")
-        sdb = SphinxDocsBuilder(html_output_dir, args.is_release)
+        skip_notebooks = args.execute_notebooks == "never"
+        sdb = SphinxDocsBuilder(html_output_dir, args.is_release,
+                                skip_notebooks)
         sdb.run()
     else:
         print("Sphinx build disabled, use --sphinx to enable")

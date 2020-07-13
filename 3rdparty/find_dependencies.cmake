@@ -83,11 +83,11 @@ function(build_3rdparty_library name)
             else()
                 get_filename_component(incl_path "${incl}" DIRECTORY)
             endif()
-            target_include_directories(${name} SYSTEM PUBLIC 
+            target_include_directories(${name} SYSTEM PUBLIC
                 $<BUILD_INTERFACE:${incl_path}>
             )
         endforeach()
-        target_include_directories(${name} PUBLIC 
+        target_include_directories(${name} PUBLIC
             $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty>
         )
         open3d_set_global_properties(${name})
@@ -105,7 +105,7 @@ function(build_3rdparty_library name)
             else()
                 get_filename_component(incl_path "${incl}" DIRECTORY)
             endif()
-            target_include_directories(${name} SYSTEM INTERFACE 
+            target_include_directories(${name} SYSTEM INTERFACE
                 $<BUILD_INTERFACE:${incl_path}>
             )
         endforeach()
@@ -434,38 +434,17 @@ if (BUILD_JPEG)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JPEG_TARGET}")
 
-# jsoncpp
-if(NOT BUILD_JSONCPP)
-    find_package(jsoncpp)
-    if(TARGET jsoncpp_lib)
-        message(STATUS "Using installed third-party library jsoncpp")
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "jsoncpp")
-        endif()
-        set(JSONCPP_TARGET "jsoncpp_lib")
-    elseif(TARGET jsoncpp)
-        message(STATUS "Using installed third-party library jsoncpp")
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "jsoncpp")
-        endif()
-        set(JSONCPP_TARGET "jsoncpp")
-    else()
-        message(STATUS "Unable to find installed third-party library jsoncpp")
-        set(BUILD_JSONCPP ON)
-    endif()
-endif()
-if(BUILD_JSONCPP)
-    build_3rdparty_library(3rdparty_jsoncpp DIRECTORY jsoncpp
-        SOURCES
-            json_reader.cpp
-            json_value.cpp
-            json_writer.cpp
-        INCLUDE_DIRS
-            include/
-    )
-    target_compile_features(3rdparty_jsoncpp PUBLIC cxx_override cxx_noexcept cxx_rvalue_references)
-    set(JSONCPP_TARGET "3rdparty_jsoncpp")
-endif()
+# jsoncpp: always compile from source to avoid ABI issues.
+build_3rdparty_library(3rdparty_jsoncpp DIRECTORY jsoncpp
+    SOURCES
+        json_reader.cpp
+        json_value.cpp
+        json_writer.cpp
+    INCLUDE_DIRS
+        include/
+)
+target_compile_features(3rdparty_jsoncpp PUBLIC cxx_override cxx_noexcept cxx_rvalue_references)
+set(JSONCPP_TARGET "3rdparty_jsoncpp")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JSONCPP_TARGET}")
 
 # liblzf
@@ -868,26 +847,4 @@ if(ENABLE_GUI)
     endif()
     set(FILAMENT_TARGET "3rdparty_filament")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
-endif()
-
-# Benchmark
-if(BUILD_BENCHMARKS)
-    # turn off installing and testing of the benchmark lib
-    set(BENCHMARK_ENABLE_INSTALL  OFF CACHE BOOL "This should be OFF. Enables installing the benchmark lib")
-    set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "This should be OFF. Enables gtest framework for the benchmark lib")
-    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "This should be OFF. Enables tests for the benchmark lib")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/benchmark)
-    # set the cache vars introduced by the benchmark lib as advanced to not
-    # clutter the cmake interfaces
-    mark_as_advanced(
-        BENCHMARK_ENABLE_INSTALL 
-        BENCHMARK_ENABLE_GTEST_TESTS 
-        BENCHMARK_ENABLE_TESTING 
-        BENCHMARK_ENABLE_ASSEMBLY_TESTS
-        BENCHMARK_DOWNLOAD_DEPENDENCIES
-        BENCHMARK_BUILD_32_BITS
-        BENCHMARK_ENABLE_EXCEPTIONS
-        BENCHMARK_ENABLE_LTO
-        BENCHMARK_USE_LIBCXX
-    )
 endif()
