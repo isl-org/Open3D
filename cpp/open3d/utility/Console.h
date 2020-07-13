@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -155,10 +156,7 @@ protected:
 public:
     VerbosityLevel verbosity_level_;
     std::function<void(const std::string &)> print_fcn_ =
-            [](const std::string &msg) {
-                fmt::print(msg);
-                fmt::print("\n");
-            };
+            [](const std::string &msg) { std::cout << msg << std::endl; };
 };
 
 /// Set global verbosity level of Open3D
