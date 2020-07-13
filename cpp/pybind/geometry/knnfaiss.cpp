@@ -57,7 +57,8 @@ void pybind_knnfaiss(py::module &m) {
             .def("set_geometry", &geometry::KnnFaiss::SetGeometry,
                  "Sets the data for the Faiss Index from geometry.",
                  "geometry"_a)
-            .def(py::init<const pipelines::registration::Feature &>(), "feature"_a)
+            .def(py::init<const pipelines::registration::Feature &>(),
+                 "feature"_a)
             .def("set_feature", &geometry::KnnFaiss::SetFeature,
                  "Sets the data for the Faiss Index from the feature data.",
                  "feature"_a)

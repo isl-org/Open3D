@@ -76,7 +76,8 @@ bool KnnFaiss::SetTensorData(const core::Tensor &tensor) {
     }
 
     data_.resize(dataset_size_ * dimension_);
-    if (tensor.GetBlob()->GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (tensor.GetBlob()->GetDevice().GetType() ==
+        core::Device::DeviceType::CUDA) {
         faiss::gpu::StandardGpuResources res;
         index.reset(new faiss::gpu::GpuIndexFlatL2(&res, dimension_));
         core::Tensor tensor1 = tensor.Copy(core::Device("CPU:0"));
@@ -84,14 +85,12 @@ bool KnnFaiss::SetTensorData(const core::Tensor &tensor) {
         void *_data_ptr = tensor1.GetBlob()->GetDataPtr();
         index->add(dataset_size_, (float *)_data_ptr);
         return true;
-    }
-    else {
+    } else {
         index.reset(new faiss::IndexFlatL2(dimension_));
         void *_data_ptr = tensor.GetBlob()->GetDataPtr();
         index->add(dataset_size_, (float *)_data_ptr);
         return true;
     }
-
 }
 
 bool KnnFaiss::SetGeometry(const Geometry &geometry) {

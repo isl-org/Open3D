@@ -39,7 +39,7 @@ using namespace open3d;
 using namespace std;
 
 namespace open3d {
-namespace tests{
+namespace tests {
 
 TEST(KnnFaiss, DISABLED_Search) { NotImplemented(); }
 
@@ -226,5 +226,5 @@ TEST(KnnFaiss, SetTensorData_GPU) {
     ExpectEQ(ref_distance2, distance2, threshold);
 }
 
-} //namespace tests
-} //namespace open3d
+}  // namespace tests
+}  // namespace open3d
