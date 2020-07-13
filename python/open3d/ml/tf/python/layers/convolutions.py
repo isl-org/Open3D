@@ -249,14 +249,9 @@ class ContinuousConv(tf.keras.layers.Layer):
 
             elif extents.shape.rank == 1:
                 radii = 0.5 * extents
-                self.nns = ops.radius_search(
-                    ignore_query_point=self.radius_search_ignore_query_points,
-                    return_distances=return_distances,
-                    normalize_distances=return_distances,
-                    metric=self.radius_search_metric,
-                    points=inp_positions,
-                    queries=out_positions,
-                    radii=radii)
+                self.nns = self.radius_search(inp_positions,
+                                              queries=out_positions,
+                                              radii=radii)
 
             else:
                 raise Exception("extents rank must be 0 or 1")
