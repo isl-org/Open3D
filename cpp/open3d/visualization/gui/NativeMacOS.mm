@@ -47,7 +47,22 @@ void* GetNativeDrawable(GLFWwindow* glfw_window) {
 
 void PostNativeExposeEvent(GLFWwindow* glfw_window) {
     NSWindow* win = glfwGetCocoaWindow(glfw_window);
-    [win contentView].needsDisplay = YES;
+    // You'd think there would be no way that needsDisplay == YES, especially
+    // when we are within a draw, but you'd be wrong. In particular, it seems
+    // to happen when clicking an OK button in a dialog or the inc/dec buttons
+    // in an integer NumericEdit while running the UI in Python.
+    // If the view already needDisplay, then nothing will happen, so post it
+    // to the queue, which gives this draw call time to finish and get whatever
+    // is causing the problem cleared up. (It's unclear to me why needsDisplay
+    // would be YES if we actually within a draw, but there we are...)
+    // This situation does not seem to get triggered by the viewer app.
+    if ([win contentView].needsDisplay == YES) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [win contentView].needsDisplay = YES;
+        });
+    } else {
+        [win contentView].needsDisplay = YES;
+    }
 }
 
 void ShowNativeAlert(const char *message) {
