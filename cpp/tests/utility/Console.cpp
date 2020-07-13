@@ -35,6 +35,10 @@ TEST(Logger, LogError) {
                  std::runtime_error);
 }
 
+TEST(Logger, LogInfo) {
+    utility::LogInfo("{}", "Example shape print {1, 2, 3}");
+}
+
 TEST(Console, DISABLED_SetVerbosityLevel) { NotImplemented(); }
 
 TEST(Console, DISABLED_GetVerbosityLevel) { NotImplemented(); }
