@@ -172,6 +172,7 @@ private:
 
     static void DrawCallback(GLFWwindow* window);
     static void ResizeCallback(GLFWwindow* window, int os_width, int os_height);
+    static void WindowMovedCallback(GLFWwindow* window, int os_x, int os_y);
     static void RescaleCallback(GLFWwindow* window, float xscale, float yscale);
     static void MouseMoveCallback(GLFWwindow* window, double x, double y);
     static void MouseButtonCallback(GLFWwindow* window,
