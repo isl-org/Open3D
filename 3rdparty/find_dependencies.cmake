@@ -849,6 +849,17 @@ if(ENABLE_GUI)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
 endif()
 
-find_package(MKL REQUIRED)
-list(APPEND Open3D_3RDPARTY_HEADER_TARGETS "${MKL_INCLUDE_DIR}")
-list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${MKL_LIBRARIES}")
+add_subdirectory(${Open3D_3RDPARTY_DIR}/OpenBLAS)
+import_3rdparty_library(3rdparty_openblas
+  HEADER INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/OpenBLAS
+  LIBRARIES openblas)
+add_dependencies(3rdparty_openblas openblas)
+set(OPENBLAS_TARGET "3rdparty_openblas")
+list(APPEND Open3D_3RDPARTY_HEADER_TARGETS "${OPENBLAS_TARGET}")
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
+
+# Dirty code to make it temporarily work
+# Seems $<Config> is not instantiated if we use CMAKE_LIBRARY_OUTPUT_DIRECTORY
+configure_file(${PROJECT_BINARY_DIR}/3rdparty/OpenBLAS/lib/libopenblas.a
+  ${PROJECT_BINARY_DIR}/lib/RelWithDebInfo/libopenblas.a
+  COPYONLY)

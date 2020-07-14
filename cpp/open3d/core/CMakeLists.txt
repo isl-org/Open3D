@@ -68,10 +68,6 @@ open3d_set_global_properties(core)
 open3d_link_3rdparty_libraries(core)
 open3d_show_and_abort_on_warning(core)
 
-# TODO: fix the cmake system for headers
-find_package(MKL REQUIRED)
-target_include_directories(core SYSTEM PRIVATE ${MKL_INCLUDE_DIR})
-
 if (BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
