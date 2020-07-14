@@ -1,19 +1,45 @@
 #!/usr/bin/env python3
 import open3d as o3d
 gui = o3d.visualization.gui
+import platform
 
+isMacOS = (platform.system() == "Darwin")
+
+# We need to initalize the application, which finds the necessary shaders for
+# rendering and prepares the cross-platform window abstraction.
 gui.Application.instance.initialize()
+
+# Now we can create the window
 w = gui.Window("Open3D", 1024, 768)
 
+# Create the widget for rendering now, so that we can refer to it in callback
+# functions.
 scene = gui.SceneWidget(w)
 
-# Settings
+# ---- Settings panel ----
+# Rather than specifying sizes in pixels, which may vary in size based on the
+# monitor, especially on macOS which has 220 dpi monitors, use the em-size.
+# This way sizings will be proportional to the font size,
 em = w.theme.font_size
 separation_height = int(round(0.5 * em))
+
+# Widgets are laid out in layouts: gui.Horiz, gui.Vert, gui.CollapsableVert,
+# and gui.VGrid. By nesting the layouts we can achieve complex designs.
+# Usually we use a vertical layout as the topmost widget, since widgets tend
+# to be organized from top to bottom. Within that, we usually have a series
+# of horizontal layouts for each row. All layouts take a spacing parameter,
+# which is the spacinging between items in the widget, and a margins parameter,
+# which specifies the spacing of the left, top, right, bottom margins. (This
+# acts like the 'padding' property in CSS.)
 settings_panel = gui.Vert(
     0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
 
-view_ctrls = gui.CollapsableVert("View controls", 0, gui.Margins(em, 0, 0, 0))
+# Create a collapsable vertical widget, which takes up enough vertical space for
+# all its children when open, but only enough for text when closed. This is
+# useful for property pages, so the user can hide sets of properties they rarely
+# use.
+view_ctrls = gui.CollapsableVert("View controls", 0.25 * em,
+                                 gui.Margins(em, 0, 0, 0))
 
 arcball_button = gui.Button("Arcball")
 fly_button = gui.Button("Fly")
@@ -21,14 +47,18 @@ model_button = gui.Button("Model")
 sun_button = gui.Button("Sun")
 ibl_button = gui.Button("Environment")
 view_ctrls.add_child(gui.Label("Mouse controls"))
-h = gui.Horiz(0.25 * em)
+# We want two rows of buttons, so make two horizontal layouts. We also want the
+# buttons centered, which we can do be putting a stretch item as the first
+# and last item. Stretch items take up as much space as possible, and since there
+# are two, they will each take half the extra space, thus centering the buttons.
+h = gui.Horiz(0.25 * em)  # row 1
 h.add_stretch()
 h.add_child(arcball_button)
 h.add_child(fly_button)
 h.add_child(model_button)
 h.add_stretch()
 view_ctrls.add_child(h)
-h = gui.Horiz(0.25 * em)
+h = gui.Horiz(0.25 * em)  # row 2
 h.add_stretch()
 h.add_child(sun_button)
 h.add_child(ibl_button)
@@ -154,7 +184,15 @@ material_settings.add_child(grid)
 
 settings_panel.add_fixed(separation_height)
 settings_panel.add_child(material_settings)
+# ----
 
+# Normally our user interface can be children of all one layout (usually a
+# vertical layout), which is then the only child of the window. In our case
+# we want the scene to take up all the space and the settings panel to go
+# above it. We can do this custom layout by providing an on_layout callback.
+# The on_layout callback should set the frame (position + size) of every
+# child correctly. After the callback is done the window will layout the
+# grandchildren.
 w.add_child(scene)
 w.add_child(settings_panel)
 
@@ -168,19 +206,26 @@ def on_layout(theme):
 
 w.set_on_layout(on_layout)
 
-# Menu
+# ---- Menu ----
 MENU_OPEN = 1
 MENU_EXPORT = 2
 MENU_QUIT = 3
 MENU_SHOW_SETTINGS = 11
 MENU_ABOUT = 21
+# The menu is global (because the macOS menu is global), so only create it once
 if gui.Application.instance.menubar is None:
+    if isMacOS:
+        app_menu = gui.Menu()
+        app_menu.add_item("About", MENU_ABOUT)
+        app_menu.add_separator()
+        app_menu.add_item("Quit", MENU_QUIT)
     file_menu = gui.Menu()
     file_menu.add_item("Open...", MENU_OPEN)
     file_menu.add_item("Export Current Image...", MENU_EXPORT)
     file_menu.set_enabled(MENU_EXPORT, False)
-    file_menu.add_separator()
-    file_menu.add_item("Quit", MENU_QUIT)
+    if not isMacOS:
+        file_menu.add_separator()
+        file_menu.add_item("Quit", MENU_QUIT)
     settings_menu = gui.Menu()
     settings_menu.add_item("Lighting & Materials", MENU_SHOW_SETTINGS)
     settings_menu.set_checked(MENU_SHOW_SETTINGS, True)
@@ -188,15 +233,26 @@ if gui.Application.instance.menubar is None:
     help_menu.add_item("About", MENU_ABOUT)
 
     menu = gui.Menu()
-    menu.add_menu("File", file_menu)
-    menu.add_menu("Settings", settings_menu)
-    menu.add_menu("Help", help_menu)
+    if isMacOS:
+        # On macOS the first menu item will be named for the running application
+        # (in our case, probably "Python"), regardless of what we call it.
+        # This is the application menu, and it is where the About...,
+        # Preferences..., and Quit menu items typically go
+        menu.add_menu("Example", app_menu)
+        menu.add_menu("File", file_menu)
+        menu.add_menu("Settings", settings_menu)
+        # Don't include help menu unless it has something more than About...
+    else:
+        menu.add_menu("File", file_menu)
+        menu.add_menu("Settings", settings_menu)
+        menu.add_menu("Help", help_menu)
     gui.Application.instance.menubar = menu
 
-
+# Define the menu callbacks
 def on_open():
     dlg = gui.FileDialog(gui.FileDialog.OPEN, "Choose file to load", w.theme)
 
+    # A file dialog MUST define on_cancel and on_done functions
     def on_cancel():
         w.close_dialog()
 
@@ -220,30 +276,49 @@ def on_toggle_settings_panel():
 
 
 def on_about():
+    # Show a simple dialog. Although the Dialog is actually a widget, you can
+    # treat it similar to a Window for layout and put all the widgets in a
+    # layout which you make the only child of the Dialog.
     em = w.theme.font_size
     dlg = gui.Dialog("About")
+
+    # Add the text
     dlg_layout = gui.Vert(em, gui.Margins(em, em, em, em))
     dlg_layout.add_child(gui.Label("Open3D GUI Example"))
+
+    # Add the Ok button. We need to define a callback function to handle
+    # the click.
     ok = gui.Button("OK")
 
     def on_ok():
         w.close_dialog()
 
     ok.set_on_clicked(on_ok)
+
+    # We want the Ok button to be an the right side, so we need to add
+    # a stretch item to the layout, otherwise the button will be the size
+    # of the entire row. A stretch item takes up as much space as it can,
+    # which forces the button to be its minimum size.
     h = gui.Horiz()
     h.add_stretch()
     h.add_child(ok)
     h.add_stretch()
     dlg_layout.add_child(h)
+
     dlg.add_child(dlg_layout)
     w.show_dialog(dlg)
 
-
+# The menubar is global, but we need to connect the menu items to the window,
+# so that the window can call the appropriate function when the menu item is
+# activated.
 w.set_on_menu_item_activated(MENU_OPEN, on_open)
 w.set_on_menu_item_activated(MENU_QUIT, on_quit)
 w.set_on_menu_item_activated(MENU_SHOW_SETTINGS, on_toggle_settings_panel)
 w.set_on_menu_item_activated(MENU_ABOUT, on_about)
+#----
 
-# Start
+# Add the window to the applicaiton, which will make it visible
 gui.Application.instance.add_window(w)
+
+# Run the event loop. This will not return until the last window is closed.
 gui.Application.instance.run()
