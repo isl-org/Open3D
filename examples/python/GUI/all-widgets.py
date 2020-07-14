@@ -47,14 +47,17 @@ if gui.Application.instance.menubar is None:
     menubar.add_menu("Test", test_menu)
     gui.Application.instance.menubar = menubar
 
+
 # Each window needs to know what to do with the menu items, so we need to
 # tell the window how to handle menu items.
 def on_checkable():
     test_menu.set_checked(MENU_CHECKABLE,
                           not test_menu.is_checked(MENU_CHECKABLE))
 
+
 def on_quit():
     gui.Application.instance.quit()
+
 
 w.set_on_menu_item_activated(MENU_CHECKABLE, on_checkable)
 w.set_on_menu_item_activated(MENU_QUIT, on_quit)
@@ -64,6 +67,7 @@ w.set_on_menu_item_activated(MENU_QUIT, on_quit)
 # file dialog.
 fileedit = gui.TextEdit()
 filedlgbutton = gui.Button("...")
+
 
 def on_filedlg():
     filedlg = gui.FileDialog(gui.FileDialog.OPEN, "Select file", w.theme)
@@ -80,6 +84,7 @@ def on_filedlg():
     filedlg.set_on_cancel(filedlg_cancel)
     filedlg.set_on_done(filedlg_done)
     w.show_dialog(filedlg)
+
 
 filedlgbutton.set_on_clicked(on_filedlg)
 
@@ -98,8 +103,7 @@ layout.add_child(fileedit_layout)  # add to the top-level (vertical) layout
 # items in the widget, and a margins parameter, which specifies the spacing
 # of the left, top, right, bottom margins. (This acts like the 'padding'
 # property in CSS.)
-collapse = gui.CollapsableVert("Widgets", 0.33 * em,
-                               gui.Margins(em, 0, 0, 0))
+collapse = gui.CollapsableVert("Widgets", 0.33 * em, gui.Margins(em, 0, 0, 0))
 label = gui.Label("Lorem ipsum dolor")
 label.text_color = gui.Color(1.0, 0.5, 0.0)
 collapse.add_child(label)
@@ -109,13 +113,14 @@ collapse.add_child(label)
 # illustrates how to create simple dialogs.
 cb = gui.Checkbox("Enable some really cool effect")
 
+
 def on_cb(is_checked):
     if is_checked:
         text = "Sorry, effects are unimplemented"
     else:
         text = "Good choice"
     # A Dialog is just a widget, so you make its child a layout just like
-    # a Window. 
+    # a Window.
     dlg = gui.Dialog("There might be a problem...")
 
     # Add the message text
@@ -145,6 +150,7 @@ def on_cb(is_checked):
     dlg.add_child(dlg_layout)
     # ... and now we can show it in the window.
     w.show_dialog(dlg)
+
 
 cb.set_on_checked(on_cb)  # set the callback function
 collapse.add_child(cb)

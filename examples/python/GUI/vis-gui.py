@@ -248,6 +248,7 @@ if gui.Application.instance.menubar is None:
         menu.add_menu("Help", help_menu)
     gui.Application.instance.menubar = menu
 
+
 # Define the menu callbacks
 def on_open():
     dlg = gui.FileDialog(gui.FileDialog.OPEN, "Choose file to load", w.theme)
@@ -307,6 +308,7 @@ def on_about():
 
     dlg.add_child(dlg_layout)
     w.show_dialog(dlg)
+
 
 # The menubar is global, but we need to connect the menu items to the window,
 # so that the window can call the appropriate function when the menu item is
