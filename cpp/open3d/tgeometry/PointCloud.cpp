@@ -27,6 +27,7 @@
 #include "open3d/tgeometry/PointCloud.h"
 
 #include <Eigen/Core>
+#include <string>
 #include <unordered_map>
 
 #include "open3d/core/ShapeUtil.h"
@@ -36,74 +37,80 @@
 namespace open3d {
 namespace tgeometry {
 
-PointCloud::PointCloud(const core::Tensor &points_tensor)
+static Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor) {
+    // TODO: Tensor::To(dtype, device).
+    core::Tensor dtensor =
+            tensor.To(core::Dtype::Float64).Copy(core::Device("CPU:0"));
+    return Eigen::Vector3d(dtensor[0].Item<double>(), dtensor[1].Item<double>(),
+                           dtensor[2].Item<double>());
+}
+
+static core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
+                                          core::Dtype dtype,
+                                          const core::Device &device) {
+    return core::Tensor(value.data(), {3}, core::Dtype::Float64, device)
+            .To(dtype);
+}
+
+PointCloud::PointCloud(const core::TensorList &points)
     : Geometry3D(Geometry::GeometryType::PointCloud),
-      dtype_(points_tensor.GetDtype()),
-      device_(points_tensor.GetDevice()) {
-    auto shape = points_tensor.GetShape();
-    if (shape[1] != 3) {
-        utility::LogError("PointCloud must be constructed from (N, 3) points.");
-    }
-    point_dict_.emplace("points", core::TensorList::FromTensor(points_tensor));
+      dtype_(points.GetDtype()),
+      device_(points.GetDevice()) {
+    points.AssertElementShape({3});
+    point_dict_["points"] = points;
 }
 
 PointCloud::PointCloud(
         const std::unordered_map<std::string, core::TensorList> &point_dict)
     : Geometry3D(Geometry::GeometryType::PointCloud) {
-    auto it = point_dict.find("points");
-    if (it == point_dict.end()) {
-        utility::LogError("PointCloud must include key \"points\".");
+    if (point_dict.find("points") == point_dict.end()) {
+        utility::LogError("point_dict must have key \"points\".");
     }
 
-    dtype_ = it->second.GetDtype();
-    device_ = it->second.GetDevice();
+    core::TensorList points = point_dict.at("points");
+    points.AssertElementShape({3});
+    dtype_ = points.GetDtype();
+    device_ = points.GetDevice();
 
-    auto shape = it->second.GetElementShape();
-    if (shape[0] != 3) {
-        utility::LogError("PointCloud must be constructed from (N, 3) points.");
-    }
-
-    for (auto kv : point_dict) {
+    for (auto &kv : point_dict) {
         if (device_ != kv.second.GetDevice()) {
-            utility::LogError("TensorList device mismatch!");
+            utility::LogError(
+                    "points have device {}, however, a property has device {}.",
+                    device_.ToString(), kv.second.GetDevice().ToString());
         }
         point_dict_.emplace(kv.first, kv.second);
     }
 }
 
 core::TensorList &PointCloud::operator[](const std::string &key) {
-    auto it = point_dict_.find(key);
-    if (it == point_dict_.end()) {
-        utility::LogError("Unknown key {} in PointCloud point_dict_.", key);
-    }
-
-    return it->second;
+    return point_dict_.at(key);
 }
 
 void PointCloud::SyncPushBack(
         const std::unordered_map<std::string, core::Tensor> &point_struct) {
-    // Check if "point"" exists
-    auto it = point_struct.find("points");
-    if (it == point_struct.end()) {
-        utility::LogError("Point must include key \"points\".");
+    // Check that the current tensorlists in point_dict_ have the same size.
+    int64_t common_size = point_dict_.at("points").GetSize();
+    for (auto &kv : point_dict_) {
+        if (kv.second.GetSize() != common_size) {
+            utility::LogError(
+                    "Cannot perform SyncPushBack: \"points\" has length {}, "
+                    "however, property \"{}\" has length {}.",
+                    common_size, kv.second.GetSize());
+        }
     }
 
-    auto size = point_dict_.find("points")->second.GetSize();
-    for (auto kv : point_struct) {
-        // Check existance of key in point_dict
-        auto it = point_dict_.find(kv.first);
-        if (it == point_dict_.end()) {
-            utility::LogError("Unknown key {} in PointCloud dictionary.",
-                              kv.first);
-        }
-
-        // Check size consistency
-        auto size_it = it->second.GetSize();
-        if (size_it != size) {
-            utility::LogError("Size mismatch ({}, {}) between ({}, {}).",
-                              "points", size, kv.first, size_it);
-        }
-        it->second.PushBack(kv.second);
+    // If two maps have the same size, and one map contains all keys of the
+    // other map, the two maps have exactly the same keys.
+    if (point_dict_.size() != point_struct.size()) {
+        utility::LogError(
+                "Pointcloud's point_dict has size {} values, but the input "
+                "point_struct has {} values.",
+                point_dict_.size(), point_struct.size());
+    }
+    for (auto &kv : point_struct) {
+        // TensorList::PushBack checks for dtype, shape, device.
+        // point_dict_.at checks if the key exists.
+        point_dict_.at(kv.first).PushBack(kv.second);
     }
 }
 
@@ -157,6 +164,64 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
     utility::LogError("Unimplemented");
     return *this;
+}
+
+tgeometry::PointCloud PointCloud::FromLegacyPointCloud(
+        const geometry::PointCloud &pcd_legacy,
+        core::Dtype dtype,
+        const core::Device &device) {
+    tgeometry::PointCloud pcd(dtype, device);
+    if (pcd_legacy.HasPoints()) {
+        pcd.point_dict_["points"] = core::TensorList({3}, dtype, device);
+        // TODO: optimization always create host tensorlist first, and then copy
+        // to device.
+        for (const Eigen::Vector3d &point : pcd_legacy.points_) {
+            pcd.point_dict_.at("points").PushBack(
+                    EigenVector3dToTensor(point, dtype, device));
+        }
+    } else {
+        utility::LogWarning(
+                "Creating from an empty legacy pointcloud, an empty pointcloud "
+                "with default dtype and device will be created.");
+    }
+    if (pcd_legacy.HasColors()) {
+        pcd.point_dict_["colors"] = core::TensorList({3}, dtype, device);
+        for (const Eigen::Vector3d &color : pcd_legacy.colors_) {
+            pcd.point_dict_.at("colors").PushBack(
+                    EigenVector3dToTensor(color, dtype, device));
+        }
+    }
+    if (pcd_legacy.HasNormals()) {
+        pcd.point_dict_["normals"] = core::TensorList({3}, dtype, device);
+        for (const Eigen::Vector3d &normal : pcd_legacy.normals_) {
+            pcd.point_dict_.at("normals").PushBack(
+                    EigenVector3dToTensor(normal, dtype, device));
+        }
+    }
+    return pcd;
+}
+
+geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
+    geometry::PointCloud pcd_legacy;
+    if (HasPoints()) {
+        core::TensorList points = point_dict_.at("points");
+        for (int64_t i = 0; i < points.GetSize(); i++) {
+            pcd_legacy.points_.push_back(TensorToEigenVector3d(points[i]));
+        }
+    }
+    if (HasColors()) {
+        core::TensorList colors = point_dict_.at("colors");
+        for (int64_t i = 0; i < colors.GetSize(); i++) {
+            pcd_legacy.colors_.push_back(TensorToEigenVector3d(colors[i]));
+        }
+    }
+    if (HasNormals()) {
+        core::TensorList normals = point_dict_.at("normals");
+        for (int64_t i = 0; i < normals.GetSize(); i++) {
+            pcd_legacy.normals_.push_back(TensorToEigenVector3d(normals[i]));
+        }
+    }
+    return pcd_legacy;
 }
 
 }  // namespace tgeometry

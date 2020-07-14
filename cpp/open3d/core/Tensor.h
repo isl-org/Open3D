@@ -83,7 +83,7 @@ public:
                 init_vals.size() * DtypeUtil::ByteSize(dtype));
     }
 
-    /// Constructor from raw data
+    /// Constructor from raw host buffer. The memory will be copied.
     template <typename T>
     Tensor(const T* init_vals,
            const SizeVector& shape,
