@@ -99,11 +99,6 @@ int64_t WrapDim(int64_t dim, int64_t max_dim, bool inclusive = false);
 /// Ref: PyTorch's aten/src/ATen/InferSize.h
 SizeVector InferShape(SizeVector shape, int64_t num_elements);
 
-/// \brief Check if Tensor has the correct shape.
-void AssertShape(const Tensor& tensor,
-                 const SizeVector& expected_shape,
-                 const std::string& msg);
-
 /// Concatenate two shapes.
 SizeVector Concat(const SizeVector& l_shape, const SizeVector& r_shape);
 

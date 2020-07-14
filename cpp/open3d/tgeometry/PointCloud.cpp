@@ -143,8 +143,7 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
 
 PointCloud &PointCloud::Translate(const core::Tensor &translation,
                                   bool relative) {
-    core::shape_util::AssertShape(translation, {3},
-                                  "translation must have shape (3,)");
+    translation.AssertShape({3});
     core::Tensor transform = translation.Copy();
     if (!relative) {
         transform -= GetCenter();
@@ -154,7 +153,7 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
 }
 
 PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
-    core::shape_util::AssertShape(center, {3}, "center must have shape (3,)");
+    center.AssertShape({3});
     point_dict_.at("points").AsTensor() =
             (point_dict_.at("points").AsTensor() - center) * scale + center;
     return *this;

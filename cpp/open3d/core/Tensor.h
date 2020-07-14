@@ -855,6 +855,9 @@ public:
     /// Convert DLManagedTensor to Tensor.
     static Tensor FromDLPack(const DLManagedTensor* dlmt);
 
+    /// Assert that the Tensor has the specified shape.
+    void AssertShape(const SizeVector& expected_shape) const ;
+
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 

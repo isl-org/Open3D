@@ -24,11 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-
-#include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 #include "open3d/tgeometry/Geometry3D.h"
 
 namespace open3d {
