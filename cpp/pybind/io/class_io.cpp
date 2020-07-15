@@ -319,7 +319,7 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def("write_feature",
              [](const std::string &filename,
-                 const pipelines::registration::Feature &feature) {
+                const pipelines::registration::Feature &feature) {
                  py::gil_scoped_release release;
                  return io::WriteFeature(filename, feature);
              },
@@ -340,7 +340,7 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def("write_pose_graph",
              [](const std::string &filename,
-                 const pipelines::registration::PoseGraph pose_graph) {
+                const pipelines::registration::PoseGraph pose_graph) {
                  py::gil_scoped_release release;
                  io::WritePoseGraph(filename, pose_graph);
              },
