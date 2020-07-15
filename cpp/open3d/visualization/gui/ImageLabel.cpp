@@ -102,7 +102,7 @@ Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
                 ImVec2(frame.x, frame.y),
                 ImVec2(frame.GetRight(), frame.GetBottom()),
                 IM_COL32(255, 255, 255, 255));
-        ImGui::PushStyleColor(ImGuiCol_Text, util::colorToImgui(fg));
+        ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(fg));
 
         auto padding = ImGui::GetStyle().FramePadding;
         float wrap_width = frame.width - std::ceil(2.0f * padding.x);

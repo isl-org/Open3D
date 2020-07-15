@@ -31,8 +31,12 @@ namespace open3d {
 namespace tests {
 
 TEST(Logger, LogError) {
-    EXPECT_THROW(utility::LogError("Example exeption message"),
+    EXPECT_THROW(utility::LogError("Example exception message."),
                  std::runtime_error);
+}
+
+TEST(Logger, LogInfo) {
+    utility::LogInfo("{}", "Example shape print {1, 2, 3}.");
 }
 
 TEST(Console, DISABLED_SetVerbosityLevel) { NotImplemented(); }

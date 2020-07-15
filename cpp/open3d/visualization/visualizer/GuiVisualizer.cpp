@@ -627,6 +627,9 @@ struct GuiVisualizer::Impl {
         }
     } settings_;
 
+    int app_menu_custom_items_index_ = -1;
+    std::shared_ptr<gui::Menu> app_menu_;
+
     void SetMaterialsToDefault(rendering::Renderer &renderer) {
         settings_.loaded_materials_.clear();
         if (settings_.wgt_prefab_material) {
@@ -1042,6 +1045,11 @@ struct GuiVisualizer::Impl {
     }
 };
 
+GuiVisualizer::GuiVisualizer(const std::string &title, int width, int height)
+    : gui::Window(title, width, height), impl_(new GuiVisualizer::Impl()) {
+    Init();
+}
+
 GuiVisualizer::GuiVisualizer(
         const std::vector<std::shared_ptr<const geometry::Geometry>>
                 &geometries,
@@ -1052,33 +1060,51 @@ GuiVisualizer::GuiVisualizer(
         int top)
     : gui::Window(title, left, top, width, height),
       impl_(new GuiVisualizer::Impl()) {
+    Init();
+    SetGeometry(geometries);  // also updates the camera
+}
+
+void GuiVisualizer::Init() {
     auto &app = gui::Application::GetInstance();
     auto &theme = GetTheme();
 
     // Create menu
     if (!gui::Application::GetInstance().GetMenubar()) {
+        auto menu = std::make_shared<gui::Menu>();
+#if defined(__APPLE__)
+        // The first menu item to be added on macOS becomes the application
+        // menu (no matter its name)
+        auto app_menu = std::make_shared<gui::Menu>();
+        app_menu->AddItem("About", HELP_ABOUT);
+        app_menu->AddSeparator();
+        impl_->app_menu_custom_items_index_ = app_menu->GetNumberOfItems();
+        app_menu->AddItem("Quit", FILE_QUIT, gui::KEY_Q);
+        menu->AddMenu("Open3D", app_menu);
+        impl_->app_menu_ = app_menu;
+#endif  // __APPLE__
         auto file_menu = std::make_shared<gui::Menu>();
         file_menu->AddItem("Open...", FILE_OPEN, gui::KEY_O);
         file_menu->AddItem("Export Current Image...", FILE_EXPORT_RGB);
         file_menu->AddSeparator();
 #if WIN32
         file_menu->AddItem("Exit", FILE_QUIT);
-#else
+#elif !defined(__APPLE__)  // quit goes in app menu on macOS
         file_menu->AddItem("Quit", FILE_QUIT, gui::KEY_Q);
 #endif
+        menu->AddMenu("File", file_menu);
+
+        auto settings_menu = std::make_shared<gui::Menu>();
+        settings_menu->AddItem("Lighting & Materials",
+                               SETTINGS_LIGHT_AND_MATERIALS);
+        settings_menu->SetChecked(SETTINGS_LIGHT_AND_MATERIALS, true);
+        menu->AddMenu("Settings", settings_menu);
+
         auto help_menu = std::make_shared<gui::Menu>();
         help_menu->AddItem("Show Controls", HELP_KEYS);
         help_menu->AddItem("Show Camera Info", HELP_CAMERA);
         help_menu->AddSeparator();
         help_menu->AddItem("About", HELP_ABOUT);
         help_menu->AddItem("Contact", HELP_CONTACT);
-        auto settings_menu = std::make_shared<gui::Menu>();
-        settings_menu->AddItem("Lighting & Materials",
-                               SETTINGS_LIGHT_AND_MATERIALS);
-        settings_menu->SetChecked(SETTINGS_LIGHT_AND_MATERIALS, true);
-        auto menu = std::make_shared<gui::Menu>();
-        menu->AddMenu("File", file_menu);
-        menu->AddMenu("Settings", settings_menu);
 #if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
         // macOS adds a special search item to menus named "Help",
         // so add a space to avoid that.
@@ -1086,6 +1112,7 @@ GuiVisualizer::GuiVisualizer(
 #else
         menu->AddMenu("Help", help_menu);
 #endif
+
         gui::Application::GetInstance().SetMenubar(menu);
     }
 
@@ -1519,15 +1546,28 @@ GuiVisualizer::GuiVisualizer(
     impl_->help_camera_ = CreateCameraDisplay(this);
     impl_->help_camera_->SetVisible(false);
     AddChild(impl_->help_camera_);
-
-    // Set the actual geometries
-    SetGeometry(geometries);  // also updates the camera
 }
 
 GuiVisualizer::~GuiVisualizer() {}
 
 void GuiVisualizer::SetTitle(const std::string &title) {
     Super::SetTitle(title.c_str());
+}
+
+void GuiVisualizer::AddItemsToAppMenu(
+        const std::vector<std::pair<std::string, gui::Menu::ItemId>> &items) {
+#if !defined(__APPLE__)
+    return;  // application menu only exists on macOS
+#endif
+
+    if (impl_->app_menu_ && impl_->app_menu_custom_items_index_ >= 0) {
+        for (auto &it : items) {
+            impl_->app_menu_->InsertItem(impl_->app_menu_custom_items_index_++,
+                                         it.first.c_str(), it.second);
+        }
+        impl_->app_menu_->InsertSeparator(
+                impl_->app_menu_custom_items_index_++);
+    }
 }
 
 void GuiVisualizer::SetGeometry(

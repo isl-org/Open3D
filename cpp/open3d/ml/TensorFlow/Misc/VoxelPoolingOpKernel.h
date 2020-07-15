@@ -22,7 +22,7 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
-#include "open3d/ml/Misc/Detail/VoxelPooling.h"
+#include "open3d/ml/impl/misc/VoxelPooling.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -67,8 +67,7 @@ public:
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
         using namespace tensorflow;
-        using namespace open3d::ml::detail;
-        using namespace open3d::ml::detail::voxel_pooling;
+        using namespace open3d::ml::impl;
         std::string pos_fn_str;
         OP_REQUIRES_OK(construction,
                        construction->GetAttr("position_fn", &pos_fn_str));
@@ -96,7 +95,7 @@ public:
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
-        using namespace open3d::ml::detail;
+        using namespace open3d::ml::impl;
         const Tensor& positions = context->input(0);
         OP_REQUIRES(
                 context, positions.shape().dims() == 2,
@@ -123,8 +122,8 @@ public:
                         const tensorflow::Tensor& voxel_size) = 0;
 
 protected:
-    open3d::ml::detail::voxel_pooling::AccumulationFn position_fn;
-    open3d::ml::detail::voxel_pooling::AccumulationFn feature_fn;
+    open3d::ml::impl::AccumulationFn position_fn;
+    open3d::ml::impl::AccumulationFn feature_fn;
     bool debug;
 };
 

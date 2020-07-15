@@ -82,7 +82,7 @@ protected:
     /* Switches corresponding to the glsl shader */
     ImageTextureMode depth_texture_mode_;
     ImageTextureMode color_texture_mode_;
-    GLHelper::GLVector3f vertex_scale_data_;
+    gl_util::GLVector3f vertex_scale_data_;
 };
 
 class RGBDImageShaderForImage : public RGBDImageShader {

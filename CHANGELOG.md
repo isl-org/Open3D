@@ -9,7 +9,7 @@
 * Fixed a bug in open3d::geometry::TriangleMesh::ClusterConnectedTriangles.
 * Added option BUILD_BENCHMARKS for building microbenchmarks
 * Extend Python API of UniformTSDFVolume to allow setting the origin
-
+* Corrected documentation of PointCloud.h
 ## 0.9.0
 
 * Version bump to 0.9.0

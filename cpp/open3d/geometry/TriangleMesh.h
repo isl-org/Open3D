@@ -288,14 +288,14 @@ public:
     /// triangle indices the given edge belongs to.
     std::unordered_map<Eigen::Vector2i,
                        std::vector<int>,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
     GetEdgeToTrianglesMap() const;
 
     /// Function that returns a map from edges (vertex0, vertex1) to the
     /// vertex (vertex2) indices the given edge belongs to.
     std::unordered_map<Eigen::Vector2i,
                        std::vector<int>,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
     GetEdgeToVerticesMap() const;
 
     /// Function that computes the area of a mesh triangle
@@ -557,6 +557,8 @@ public:
     /// diameter of the cube used for reconstruction and the diameter of the
     /// samples' bounding cube. \param linear_fit If true, the reconstructor use
     /// linear interpolation to estimate the positions of iso-vertices.
+    /// \param n_threads Number of threads used for reconstruction. Set to -1
+    /// to automatically determine it.
     /// \return The estimated TriangleMesh, and per vertex densitie values that
     /// can be used to to trim the mesh.
     static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
@@ -564,7 +566,8 @@ public:
                                 size_t depth = 8,
                                 size_t width = 0,
                                 float scale = 1.1f,
-                                bool linear_fit = false);
+                                bool linear_fit = false,
+                                int n_threads = -1);
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
@@ -729,11 +732,11 @@ protected:
     /// \return cot weight per edge.
     std::unordered_map<Eigen::Vector2i,
                        double,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
     ComputeEdgeWeightsCot(
             const std::unordered_map<Eigen::Vector2i,
                                      std::vector<int>,
-                                     utility::hash_eigen::hash<Eigen::Vector2i>>
+                                     utility::hash_eigen<Eigen::Vector2i>>
                     &edges_to_vertices,
             double min_weight = std::numeric_limits<double>::lowest()) const;
 

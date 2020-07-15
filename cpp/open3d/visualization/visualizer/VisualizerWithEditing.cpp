@@ -245,7 +245,7 @@ int VisualizerWithEditing::PickPoint(double x, double y) {
     uint8_t rgba[4];
     glReadPixels((int)(x + 0.5), (int)(view.GetWindowHeight() - y + 0.5), 1, 1,
                  GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-    int index = GLHelper::ColorCodeToPickIndex(
+    int index = gl_util::ColorCodeToPickIndex(
             Eigen::Vector4i(rgba[0], rgba[1], rgba[2], rgba[3]));
     // Recover rendering state
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

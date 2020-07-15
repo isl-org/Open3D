@@ -27,12 +27,120 @@
 #ifdef __APPLE__
 
 #import <Cocoa/Cocoa.h>
+#import <CoreServices/CoreServices.h>
 
 #include "Open3DViewer.h"
 
-#include "open3d/visualization/gui/Application.h"
-#include "open3d/visualization/gui/Native.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/Button.h"
+#include "open3d/visualization/gui/Dialog.h"
+#include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/Layout.h"
+#include "open3d/visualization/gui/Native.h"
+#include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/visualizer/GuiVisualizer.h"
+
+// ----------------------------------------------------------------------------
+using namespace open3d::visualization::gui;
+
+class Open3DVisualizer : public open3d::visualization::GuiVisualizer {
+    using Super = GuiVisualizer;
+public:
+    Open3DVisualizer()
+        : open3d::visualization::GuiVisualizer("Open3D", WIDTH, HEIGHT) {
+        AddItemsToAppMenu({{"Make Default 3D Viewer", MAC_MAKE_DEFAULT_APP}});
+    }
+
+protected:
+    static constexpr Menu::ItemId MAC_MAKE_DEFAULT_APP = 100;
+
+    void OnMenuItemSelected(Menu::ItemId item_id) override {
+        if (item_id == MAC_MAKE_DEFAULT_APP) {
+            auto em = GetTheme().font_size;
+            auto dlg = std::make_shared<Dialog>("Make Open3D default");
+
+            auto cancel = std::make_shared<Button>("Cancel");
+            cancel->SetOnClicked([this]() { this->CloseDialog(); });
+
+            auto ok = std::make_shared<Button>("Make Default");
+            ok->SetOnClicked([this]() {
+                // This will set the users personal default to use Open3D for
+                // the file types below. THIS SHOULD ONLY BE CALLED
+                // AFTER THE USER EXPLICITLY CONFIRMS THAT THEY WANT TO DO THIS!
+                CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.intel-isl.open3d.Open3D";
+                // The UTIs should match what we declare in Info.plist
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.gl-transmission-format",
+                    kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.gl-binary-transmission-format",
+                    kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.geometry-definition-format",
+                    kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.object-file-format",
+                    kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.point-cloud-library-file",
+                    kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.polygon-file-format",
+                    kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.3d-points-format",
+                    kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.standard-tesselated-geometry-format",
+                    kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.xyz-points-format",
+                    kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.xyzn-points-format",
+                    kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                    (__bridge CFStringRef)@"public.xyzrgb-points-format",
+                    kLSRolesAll, open3dBundleId);
+
+                this->CloseDialog();
+            });
+
+            auto vert = std::make_shared<Vert>(0, Margins(em));
+            vert->AddChild(std::make_shared<Label>(
+                "This will make Open3D the default application for the "
+                "following file types:"));
+            vert->AddFixed(em);
+            auto table = std::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));
+            table->AddChild(std::make_shared<Label>("Mesh:"));
+            table->AddChild(std::make_shared<Label>(".gltf, .glb, .obj, .off, .ply, .stl"));
+            table->AddChild(std::make_shared<Label>("Point clouds:"));
+            table->AddChild(std::make_shared<Label>(".pcd, .ply, .pts, .xyz, .xyzn, .xyzrgb"));
+            vert->AddChild(table);
+            vert->AddFixed(em);
+            auto buttons = std::make_shared<Horiz>(0.5 * em);
+            buttons->AddStretch();
+            buttons->AddChild(cancel);
+            buttons->AddChild(ok);
+            vert->AddChild(buttons);
+            dlg->AddChild(vert);
+            ShowDialog(dlg);
+        } else {
+            Super::OnMenuItemSelected(item_id);
+        }
+    }
+};
+
+// ----------------------------------------------------------------------------
+static void LoadAndCreateWindow(const char *path) {
+    auto vis = std::make_shared<Open3DVisualizer>();
+    bool is_path_valid = (path && path[0] != '\0');
+    if (is_path_valid) {
+        vis->LoadGeometry(path);
+    }
+    Application::GetInstance().AddWindow(vis);
+}
 
 // ----------------------------------------------------------------------------
 @interface AppDelegate : NSObject <NSApplicationDelegate>
@@ -78,7 +186,7 @@
     // in the Application object in main() getting destructed, but it still
     // thinks it is running. So tell Application to quit, which will post
     // the required events to the event loop to properly clean up.
-    open3d::visualization::gui::Application::GetInstance().OnTerminate();
+    Application::GetInstance().OnTerminate();
 }
 @end
 
@@ -91,7 +199,7 @@ int main(int argc, const char *argv[]) {
         open3d::utility::filesystem::ChangeWorkingDirectory(homedir);
     }
 
-    open3d::visualization::gui::Application::GetInstance().Initialize(argc, argv);
+    Application::GetInstance().Initialize(argc, argv);
 
     // Note: if NSApp is created (which happens in +sharedApplication)
     //       then GLFW will use our NSApp with our delegate instead of its
@@ -116,7 +224,7 @@ int main(int argc, const char *argv[]) {
     // ---- [NSApp run] equivalent ----
     // https://www.cocoawithlove.com/2009/01/demystifying-nsapplication-by.html
     [NSApp finishLaunching];
-    open3d::visualization::gui::Application::GetInstance().Run();
+    Application::GetInstance().Run();
     // ----
 }
 

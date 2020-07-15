@@ -20,17 +20,16 @@ if(CUDA_ENABLED)
         open3d_torch_ops_SOURCES
         "*.cpp"
         "*.cu"
-        "../*/Detail/*.cc"
-        "../*/Detail/*.cpp"
-        "../*/Detail/*.cu")
+        "../impl/*/*.cc"
+        "../impl/*/*.cpp"
+        "../impl/*/*.cu")
 else()
-    file(GLOB_RECURSE open3d_torch_ops_SOURCES "*.cpp" "../*/Detail/*.cc"
-         "../*/Detail/*.cpp")
+    file(GLOB_RECURSE open3d_torch_ops_SOURCES "*.cpp" "../impl/*/*.cc"
+         "../impl/*/*.cpp")
 endif()
 message(STATUS ${open3d_torch_ops_SOURCES})
 
 add_library(open3d_torch_ops SHARED ${open3d_torch_ops_SOURCES})
-open3d_set_global_properties(open3d_torch_ops)
 open3d_show_and_abort_on_warning(open3d_torch_ops)
 
 # Do not add "lib" prefix

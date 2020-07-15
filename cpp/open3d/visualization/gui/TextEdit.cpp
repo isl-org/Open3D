@@ -110,13 +110,13 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
 
     ImGui::PushStyleColor(
             ImGuiCol_FrameBg,
-            util::colorToImgui(context.theme.text_edit_background_color));
+            colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgHovered,
-            util::colorToImgui(context.theme.text_edit_background_color));
+            colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgActive,
-            util::colorToImgui(context.theme.text_edit_background_color));
+            colorToImgui(context.theme.text_edit_background_color));
 
     int text_flags = ImGuiInputTextFlags_CallbackResize;
     if (!IsEnabled()) {

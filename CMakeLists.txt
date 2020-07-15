@@ -184,18 +184,28 @@ if (BUILD_CUDA_MODULE)
         find_package(CUDA REQUIRED) # required for cuda_select_nvcc_arch_flags
         message(STATUS "Building CUDA enabled")
         enable_language(CUDA)
-        # get gencode flags
+        # Get gencode flags
         if("${CUDA_ARCH}" STREQUAL "User")
             cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
         elseif("${CUDA_ARCH}" STREQUAL "BasicPTX")
-            # include oldest and most recent PTX and rely on JIT compilation
+            # Include oldest and most recent PTX and rely on JIT compilation
             set(CUDA_GENCODES "-gencode arch=compute_30,code=compute_30;-gencode arch=compute_75,code=compute_75")
         else()
             cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH}")
         endif()
-        # make CUDA_GENCODES a string to avoid deduplication in target_compile_options
+        # Make CUDA_GENCODES a string to avoid deduplication in target_compile_options
         string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
         message(STATUS "CUDA_GENCODES: ${CUDA_GENCODES}")
+        # Allows CUDA headers to be included as "system" headers for CMake prior
+        # to 3.17,
+        # https://gitlab.kitware.com/cmake/cmake/-/issues/20270
+        # https://github.com/intel-isl/Open3D/issues/2040
+        if(CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES)
+            list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES
+                ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+        endif()
+        message(STATUS "CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES: ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}")
+        message(STATUS "CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES: ${CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES}")
     else()
         set(BUILD_CUDA_MODULE OFF)
         message(STATUS "No CUDA support")
@@ -355,16 +365,36 @@ add_subdirectory(examples)
 install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})
 export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
 
-# `make check-style` errors if styling is not compliant
+# `make check-style` checks style for c++/cuda/python/ipynb files
 add_custom_target(check-style
     COMMAND ${PYTHON_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_style.py
+    COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
 )
 
-# `make apply-style` runs clang-format to format all source code
+# `make apply-style` applies style for c++/cuda/python/ipynb files
 add_custom_target(apply-style
     COMMAND ${PYTHON_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_style.py --do_apply_style
+    COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
+)
+
+# `make check-cpp-style` checks style for c++/cuda files.
+# This works outside of python virtualenv.
+add_custom_target(check-cpp-style
+    COMMAND ${CMAKE_COMMAND}
+    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    -DDO_APPLY_STYLE=OFF
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_cpp_style.cmake
+)
+
+# `make apply-cpp-style` applies style for c++/cuda files.
+# This works outside of python virtualenv.
+add_custom_target(apply-cpp-style
+    COMMAND ${CMAKE_COMMAND}
+    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    -DDO_APPLY_STYLE=ON
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_cpp_style.cmake
 )
 
 function(open3d_aligned_print first second)

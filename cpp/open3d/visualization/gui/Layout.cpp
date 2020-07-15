@@ -400,10 +400,9 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
     auto padding = ImGui::GetStyle().FramePadding;
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, padding.y));
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
-                          util::colorToImgui(context.theme.button_hover_color));
-    ImGui::PushStyleColor(
-            ImGuiCol_HeaderActive,
-            util::colorToImgui(context.theme.button_active_color));
+                          colorToImgui(context.theme.button_hover_color));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive,
+                          colorToImgui(context.theme.button_active_color));
 
     ImGui::SetNextTreeNodeOpen(impl_->is_open_);
     if (ImGui::TreeNode(impl_->id_.c_str())) {

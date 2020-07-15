@@ -386,11 +386,11 @@ public:
             int min_neighbors = 5);
 
 public:
-    /// RGB colors of points.
+    /// Points coordinates.
     std::vector<Eigen::Vector3d> points_;
     /// Points normals.
     std::vector<Eigen::Vector3d> normals_;
-    /// Points coordinates.
+    /// RGB colors of points.
     std::vector<Eigen::Vector3d> colors_;
 };
 

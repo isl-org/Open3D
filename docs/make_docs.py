@@ -399,7 +399,7 @@ class JupyterDocsBuilder:
         # Execute Jupyter notebooks
         for nb_path in nb_paths:
             print("[Processing notebook {}]".format(nb_path.name))
-            with open(nb_path) as f:
+            with open(nb_path, encoding="utf-8") as f:
                 nb = nbformat.read(f, as_version=4)
 
             # https://github.com/spatialaudio/nbsphinx/blob/master/src/nbsphinx.py

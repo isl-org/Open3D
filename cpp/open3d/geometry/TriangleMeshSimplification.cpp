@@ -120,10 +120,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     };
 
     std::unordered_map<Eigen::Vector3i, std::unordered_set<int>,
-                       utility::hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen<Eigen::Vector3i>>
             voxel_vertices;
     std::unordered_map<Eigen::Vector3i, int,
-                       utility::hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen<Eigen::Vector3i>>
             voxel_vert_ind;
     int new_vidx = 0;
     for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
@@ -220,8 +220,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     }
 
     //  connect vertices
-    std::unordered_set<Eigen::Vector3i,
-                       utility::hash_eigen::hash<Eigen::Vector3i>>
+    std::unordered_set<Eigen::Vector3i, utility::hash_eigen<Eigen::Vector3i>>
             triangles;
     for (const auto& triangle : triangles_) {
         int vidx0 = voxel_vert_ind[GetVoxelIdx(vertices_[triangle(0)])];
@@ -333,10 +332,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
     // Get valid edges and compute cost
     // Note: We could also select all vertex pairs as edges with dist < eps
     std::unordered_map<Eigen::Vector2i, Eigen::Vector3d,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             vbars;
     std::unordered_map<Eigen::Vector2i, double,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             costs;
     auto CostEdgeComp = [](const CostEdge& a, const CostEdge& b) {
         return std::get<0>(a) > std::get<0>(b);
