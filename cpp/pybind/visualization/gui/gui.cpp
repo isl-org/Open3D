@@ -64,7 +64,9 @@ namespace open3d {
 void pybind_gui_classes(py::module &m) {
     // ---- Application ----
     py::class_<Application> application(m, "Application",
-                                        "Global application singleton. This owns the menubar, windows, and event loop");
+                                        "Global application singleton. This "
+                                        "owns the menubar, windows, and event "
+                                        "loop");
     application
             .def("__repr__",
                  [](const Application &app) {
@@ -238,7 +240,8 @@ void pybind_gui_classes(py::module &m) {
                  "button");
 
     // ---- Menu ----
-    py::class_<Menu, std::shared_ptr<Menu>> menu(m, "Menu", "A menu, possibly a menu tree");
+    py::class_<Menu, std::shared_ptr<Menu>> menu(
+            m, "Menu", "A menu, possibly a menu tree");
     menu.def(py::init<>())
             .def("add_item",
                  [](std::shared_ptr<Menu> menu, const char *text, int item_id) {
@@ -270,7 +273,8 @@ void pybind_gui_classes(py::module &m) {
                  "Sets menu item (un)checked");
 
     // ---- Color ----
-    py::class_<Color, std::shared_ptr<Color>> color(m, "Color", "Stores color for gui classes");
+    py::class_<Color, std::shared_ptr<Color>> color(
+            m, "Color", "Stores color for gui classes");
     color.def(py::init([](float r, float g, float b, float a) {
                   return new Color(r, g, b, a);
               }),
@@ -298,7 +302,10 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Theme ----
     // Note: no constructor because themes are created by Open3D
-    py::class_<Theme, std::shared_ptr<Theme>> theme(m, "Theme", "Theme parameters such as colors used for drawing widgets (read-only)");
+    py::class_<Theme, std::shared_ptr<Theme>> theme(m, "Theme",
+                                                    "Theme parameters such as "
+                                                    "colors used for drawing "
+                                                    "widgets (read-only)");
     theme.def_readonly("font_size", &Theme::font_size,
                        "Font size (which is also the conventional size of the "
                        "em unit) (read-only)")
@@ -311,7 +318,8 @@ void pybind_gui_classes(py::module &m) {
                           "(read-only)");
 
     // ---- Rect ----
-    py::class_<Rect, std::shared_ptr<Rect>> rect(m, "Rect", "Represents a widget frame");
+    py::class_<Rect, std::shared_ptr<Rect>> rect(m, "Rect",
+                                                 "Represents a widget frame");
     rect.def(py::init<>())
             .def(py::init([](int x, int y, int w, int h) {
                 return new Rect(x, y, w, h);
@@ -355,8 +363,7 @@ void pybind_gui_classes(py::module &m) {
     // ---- Button ----
     py::class_<Button, std::shared_ptr<Button>, Widget> button(m, "Button",
                                                                "Button");
-    button.def(py::init<const char *>(),
-               "Creates a button with the given text")
+    button.def(py::init<const char *>(), "Creates a button with the given text")
             .def("__repr__",
                  [](const Button &b) {
                      std::stringstream s;
@@ -459,9 +466,8 @@ void pybind_gui_classes(py::module &m) {
             m, "ImageLabel", "Displays a bitmap");
     imagelabel
             .def(py::init<>(
-                     [](const char *path) { return new ImageLabel(path); }),
-                 "Creates an ImageLabel from the image at the specified path"
-                )
+                         [](const char *path) { return new ImageLabel(path); }),
+                 "Creates an ImageLabel from the image at the specified path")
             .def("__repr__", [](const ImageLabel &il) {
                 std::stringstream s;
                 s << "ImageLabel (" << il.GetFrame().x << ", "
@@ -532,7 +538,8 @@ void pybind_gui_classes(py::module &m) {
 
     numedit.def(py::init<NumberEdit::Type>(),
                 "Creates a NumberEdit that is either integers (INT) or "
-                "floating point (DOUBLE). The initial value is 0 and the limits "
+                "floating point (DOUBLE). The initial value is 0 and the "
+                "limits "
                 "are +/- max integer (roughly).")
             .def("__repr__",
                  [](const NumberEdit &ne) {
@@ -602,8 +609,8 @@ void pybind_gui_classes(py::module &m) {
                  "Sets the background color of the widget");
 
     // ---- Slider ----
-    py::class_<Slider, std::shared_ptr<Slider>, Widget> slider(m, "Slider",
-                                                               "A slider widget for visually selecting numbers");
+    py::class_<Slider, std::shared_ptr<Slider>, Widget> slider(
+            m, "Slider", "A slider widget for visually selecting numbers");
     py::enum_<Slider::Type> slider_type(slider, "Type", py::arithmetic());
     // Trick to write docs without listing the members in the enum class again.
     slider_type.attr("__doc__") = docstring::static_property(
@@ -654,14 +661,17 @@ void pybind_gui_classes(py::module &m) {
     py::class_<TabControl, std::shared_ptr<TabControl>, Widget> tabctrl(
             m, "TabControl", "Tab control");
     tabctrl.def(py::init<>())
-        .def("add_tab", &TabControl::AddTab,
-             "Adds a tab. The first parameter is the title of the tab, and "
-             "the second parameter is a widget--normally this is a layout.");
+            .def("add_tab", &TabControl::AddTab,
+                 "Adds a tab. The first parameter is the title of the tab, and "
+                 "the second parameter is a widget--normally this is a "
+                 "layout.");
 
     // ---- TextEdit ----
     py::class_<TextEdit, std::shared_ptr<TextEdit>, Widget> textedit(
             m, "TextEdit", "Allows the user to enter or modify text");
-    textedit.def(py::init<>(), "Creates a TextEdit widget with an initial value of an empty string.")
+    textedit.def(py::init<>(),
+                 "Creates a TextEdit widget with an initial value of an empty "
+                 "string.")
             .def("__repr__",
                  [](const TextEdit &te) {
                      auto val = te.GetText();
@@ -708,8 +718,8 @@ void pybind_gui_classes(py::module &m) {
                  "value of a component");
 
     // ---- Margins ----
-    py::class_<Margins, std::shared_ptr<Margins>> margins(m, "Margins",
-                                                          "Margins for layouts");
+    py::class_<Margins, std::shared_ptr<Margins>> margins(
+            m, "Margins", "Margins for layouts");
     margins.def(py::init([](int left, int top, int right, int bottom) {
                     return new Margins(left, top, right, bottom);
                 }),
@@ -733,7 +743,7 @@ void pybind_gui_classes(py::module &m) {
                  "are the spacing from the edge of the widget's frame to its "
                  "content area. They act similar to the 'padding' property in "
                  "CSS")
-           .def_readwrite("left", &Margins::left)
+            .def_readwrite("left", &Margins::left)
             .def_readwrite("top", &Margins::top)
             .def_readwrite("right", &Margins::right)
             .def_readwrite("bottom", &Margins::bottom)
@@ -754,8 +764,8 @@ void pybind_gui_classes(py::module &m) {
                  "extra space as there is available in the layout");
 
     // ---- Vert ----
-    py::class_<Vert, std::shared_ptr<Vert>, Layout1D> vlayout(m, "Vert",
-                                                              "Vertical layout");
+    py::class_<Vert, std::shared_ptr<Vert>, Layout1D> vlayout(
+            m, "Vert", "Vertical layout");
     vlayout.def(py::init([](int spacing, const Margins &margins) {
                     return new Vert(spacing, margins);
                 }),
@@ -769,24 +779,28 @@ void pybind_gui_classes(py::module &m) {
                  }),
                  "spacing"_a = 0.0f, "margins"_a = Margins(),
                  "Creates a layout that arranges widgets vertically, top to "
-                 "bottom, making their width equal to the layout's width. First "
+                 "bottom, making their width equal to the layout's width. "
+                 "First "
                  "argument is the spacing between widgets, the second is the "
                  "margins. Both default to 0.");
 
     // ---- CollapsableVert ----
     py::class_<CollapsableVert, std::shared_ptr<CollapsableVert>, Vert>
-            collapsable(m, "CollapsableVert", "Vertical layout with title, whose contents are collapsable");
+            collapsable(m, "CollapsableVert",
+                        "Vertical layout with title, whose contents are "
+                        "collapsable");
     collapsable
             .def(py::init([](const char *text, int spacing,
                              const Margins &margins) {
                      return new CollapsableVert(text, spacing, margins);
                  }),
                  "text"_a, "spacing"_a = 0, "margins"_a = Margins(),
-                "Creates a layout that arranges widgets vertically, top to "
-                "bottom, making their width equal to the layout's width. First "
-                "argument is the heading text, the second is the spacing "
-                "between widgets, and the third is the margins. Both the "
-                "spacing and the margins default to 0.")
+                 "Creates a layout that arranges widgets vertically, top to "
+                 "bottom, making their width equal to the layout's width. "
+                 "First "
+                 "argument is the heading text, the second is the spacing "
+                 "between widgets, and the third is the margins. Both the "
+                 "spacing and the margins default to 0.")
             .def(py::init([](const char *text, float spacing,
                              const Margins &margins) {
                      return new CollapsableVert(text, int(std::round(spacing)),
@@ -794,7 +808,8 @@ void pybind_gui_classes(py::module &m) {
                  }),
                  "text"_a, "spacing"_a = 0.0f, "margins"_a = Margins(),
                  "Creates a layout that arranges widgets vertically, top to "
-                 "bottom, making their width equal to the layout's width. First "
+                 "bottom, making their width equal to the layout's width. "
+                 "First "
                  "argument is the heading text, the second is the spacing "
                  "between widgets, and the third is the margins. Both the "
                  "spacing and the margins default to 0.")
@@ -805,14 +820,15 @@ void pybind_gui_classes(py::module &m) {
                  "is visible");
 
     // ---- Horiz ----
-    py::class_<Horiz, std::shared_ptr<Horiz>, Layout1D> hlayout(m, "Horiz",
-                                                                "Horizontal layout");
+    py::class_<Horiz, std::shared_ptr<Horiz>, Layout1D> hlayout(
+            m, "Horiz", "Horizontal layout");
     hlayout.def(py::init([](int spacing, const Margins &margins) {
                     return new Horiz(spacing, margins);
                 }),
                 "spacing"_a = 0, "margins"_a = Margins(),
                 "Creates a layout that arranges widgets vertically, left to "
-                "right, making their height equal to the layout's height (which "
+                "right, making their height equal to the layout's height "
+                "(which "
                 "will generally be the largest height of the items). First "
                 "argument is the spacing between widgets, the second is the "
                 "margins. Both default to 0.")
@@ -820,11 +836,12 @@ void pybind_gui_classes(py::module &m) {
                      return new Horiz(int(std::round(spacing)), margins);
                  }),
                  "spacing"_a = 0.0f, "margins"_a = Margins(),
-                "Creates a layout that arranges widgets vertically, left to "
-                "right, making their height equal to the layout's height (which "
-                "will generally be the largest height of the items). First "
-                "argument is the spacing between widgets, the second is the "
-                "margins. Both default to 0.");
+                 "Creates a layout that arranges widgets vertically, left to "
+                 "right, making their height equal to the layout's height "
+                 "(which "
+                 "will generally be the largest height of the items). First "
+                 "argument is the spacing between widgets, the second is the "
+                 "margins. Both default to 0.");
 
     // ---- VGrid ----
     py::class_<VGrid, std::shared_ptr<VGrid>, Widget> vgrid(m, "VGrid",
@@ -844,11 +861,14 @@ void pybind_gui_classes(py::module &m) {
                                               margins);
                          }),
                  "cols"_a, "spacing"_a = 0.0f, "margins"_a = Margins(),
-              "Creates a layout that orders its children in a grid, left to "
-              "right, top to bottom, according to the number of columns. "
-              "The first argument is the number of columns, the second is the "
-              "spacing between items (both vertically and horizontally), and "
-              "third is the margins. Both spacing and margins default to zero.")
+                 "Creates a layout that orders its children in a grid, left to "
+                 "right, top to bottom, according to the number of columns. "
+                 "The first argument is the number of columns, the second is "
+                 "the "
+                 "spacing between items (both vertically and horizontally), "
+                 "and "
+                 "third is the margins. Both spacing and margins default to "
+                 "zero.")
             .def_property_readonly(
                     "spacing", &VGrid::GetSpacing,
                     "Returns the spacing between rows and columns")
@@ -877,7 +897,8 @@ void pybind_gui_classes(py::module &m) {
     filedlg.def(py::init<FileDialog::Mode, const char *, const Theme &>(),
                 "Creates either an open or save file dialog. The first "
                 "parameter is either FileDialog.OPEN or FileDialog.SAVE. The "
-                "second is the title of the dialog, and the third is the theme, "
+                "second is the title of the dialog, and the third is the "
+                "theme, "
                 "which is used internally by the dialog for layout. The theme "
                 "should normally be retrieved from window.theme.")
             .def("set_path", &FileDialog::SetPath,
