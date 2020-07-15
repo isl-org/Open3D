@@ -5,6 +5,7 @@ import os.path
 
 basedir = os.path.dirname(os.path.realpath(__file__))
 
+
 class ExampleWindow:
     MENU_CHECKABLE = 1
     MENU_DISABLED = 2
@@ -28,7 +29,8 @@ class ExampleWindow:
         # topmost widget, since widgets tend to be organized from top to bottom.
         # Within that, we usually have a series of horizontal layouts for each
         # row.
-        layout = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
+        layout = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em,
+                                         0.5 * em))
 
         # Create the menu. The menu is global (because the macOS menu is global),
         # so only create it once.
@@ -53,7 +55,7 @@ class ExampleWindow:
         # tell the window how to handle menu items.
         w.set_on_menu_item_activated(ExampleWindow.MENU_CHECKABLE,
                                      self._on_menu_checkable)
-        w.set_on_menu_item_activated(ExampleWindow.MENU_QUIT, 
+        w.set_on_menu_item_activated(ExampleWindow.MENU_QUIT,
                                      self._on_menu_quit)
 
         # Create a file-chooser widget. One part will be a text edit widget for
@@ -63,7 +65,8 @@ class ExampleWindow:
         filedlgbutton = gui.Button("...")
 
         def on_filedlg():
-            filedlg = gui.FileDialog(gui.FileDialog.OPEN, "Select file", w.theme)
+            filedlg = gui.FileDialog(gui.FileDialog.OPEN, "Select file",
+                                     w.theme)
             filedlg.add_filter(".obj .ply .stl",
                                "Triangle mesh (.obj, .ply, .stl)")
             filedlg.add_filter("", "All files")
@@ -78,7 +81,6 @@ class ExampleWindow:
             filedlg.set_on_cancel(filedlg_cancel)
             filedlg.set_on_done(filedlg_done)
             w.show_dialog(filedlg)
-
 
         filedlgbutton.set_on_clicked(on_filedlg)
 
@@ -108,7 +110,6 @@ class ExampleWindow:
         # a binary property, but in this case it will show a simple message box,
         # which illustrates how to create simple dialogs.
         cb = gui.Checkbox("Enable some really cool effect")
-
 
         def on_cb(is_checked):
             if is_checked:
@@ -147,7 +148,6 @@ class ExampleWindow:
             # ... and now we can show it in the window.
             w.show_dialog(dlg)
 
-
         cb.set_on_checked(on_cb)  # set the callback function
         collapse.add_child(cb)
 
@@ -156,10 +156,8 @@ class ExampleWindow:
         color = gui.ColorEdit()
         color.color_value = label.text_color
 
-
         def on_color(new_color):
             label.text_color = new_color
-
 
         color.set_on_value_changed(on_color)
         collapse.add_child(color)
@@ -171,10 +169,8 @@ class ExampleWindow:
         combo.add_item("Show point velocity")
         combo.add_item("Show bounding boxes")
 
-
         def on_combo(new_val, new_idx):
             print(new_idx, new_val)
-
 
         combo.set_on_selection_changed(on_combo)
         collapse.add_child(combo)
@@ -188,10 +184,8 @@ class ExampleWindow:
         lv.set_items(["Ground", "Trees", "Buildings" "Cars", "People"])
         lv.selected_index = lv.selected_index + 2  # initially is -1, so now 1
 
-
         def on_list(new_val, is_dbl_click):
             print(new_val)
-
 
         lv.set_on_selection_changed(on_list)
         collapse.add_child(lv)
@@ -226,10 +220,8 @@ class ExampleWindow:
         slider = gui.Slider(gui.Slider.INT)
         slider.set_limits(5, 13)
 
-
         def on_slider(new_val):
             progress.value = new_val / 20.0
-
 
         slider.set_on_value_changed(on_slider)
         collapse.add_child(slider)
@@ -239,14 +231,11 @@ class ExampleWindow:
         tedit = gui.TextEdit()
         tedit.placeholder_text = "Edit me some text here"
 
-
         def on_text_changed(new_text):
             print("edit:", new_text)
 
-
         def on_value_changed(new_text):
             print("value:", new_text)
-
 
         # on_text_changed fires whenever the user changes the text (but not if
         # the text_value property is assigned to).
@@ -262,10 +251,8 @@ class ExampleWindow:
         vedit = gui.VectorEdit()
         vedit.vector_value = [1, 2, 3]
 
-
         def on_vedit(new_val):
             print(new_val)
-
 
         vedit.set_on_value_changed(on_vedit)
         collapse.add_child(vedit)
@@ -308,10 +295,8 @@ class ExampleWindow:
         button_layout = gui.Horiz()
         ok_button = gui.Button("Ok")
 
-
         def on_ok():
             gui.Application.instance.quit()
-
 
         ok_button.set_on_clicked(on_ok)
         button_layout.add_stretch()
@@ -332,6 +317,7 @@ class ExampleWindow:
     def _on_menu_quit(self):
         gui.Application.instance.quit()
 
+
 def main():
     # We need to initalize the application, which finds the necessary shaders for
     # rendering and prepares the cross-platform window abstraction.
@@ -342,7 +328,7 @@ def main():
 
     # Run the event loop. This will not return until the last window is closed.
     gui.Application.instance.run()
-    
+
 
 if __name__ == "__main__":
     main()

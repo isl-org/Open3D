@@ -5,6 +5,7 @@ import platform
 
 isMacOS = (platform.system() == "Darwin")
 
+
 class AppWindow:
     MENU_OPEN = 1
     MENU_EXPORT = 2
@@ -104,8 +105,8 @@ class AppWindow:
         self._settings_panel.add_fixed(separation_height)
         self._settings_panel.add_child(view_ctrls)
 
-        advanced = gui.CollapsableVert("Advanced lighting",
-                                       0, gui.Margins(em, 0, 0, 0))
+        advanced = gui.CollapsableVert("Advanced lighting", 0,
+                                       gui.Margins(em, 0, 0, 0))
 
         self._show_skybox = gui.Checkbox("HDR map")
         self._show_skybox.checked = True
@@ -250,8 +251,10 @@ class AppWindow:
         # ----
 
     def _make_callback(self, member_function):
+
         def cb():
             self.member_function()
+
         return cb
 
     def _on_layout(self, theme):
@@ -261,8 +264,8 @@ class AppWindow:
         r = self.window.content_rect
         self._scene.frame = r
         width = 17 * theme.font_size
-        self._settings_panel.frame = gui.Rect(r.get_right() - width, r.y,
-                                              width, r.height)
+        self._settings_panel.frame = gui.Rect(r.get_right() - width, r.y, width,
+                                              r.height)
 
     def _on_bg_color(self, new_color):
         self._scene.set_background_color(new_color)
@@ -279,8 +282,8 @@ class AppWindow:
 
         def on_done(filename):
             self.window.close_dialog()
-            self.window.show_message_box("Error",
-                                         "Loading has not been implemented yet")
+            self.window.show_message_box(
+                "Error", "Loading has not been implemented yet")
 
         dlg.set_on_cancel(on_cancel)
         dlg.set_on_done(on_done)
@@ -291,7 +294,8 @@ class AppWindow:
 
     def _on_menu_toggle_settings_panel(self):
         self._settings_panel.visible = not self._settings_panel.visible
-        gui.Application.instance.menubar.set_checked(AppWindow.MENU_SHOW_SETTINGS, self._settings_panel.visible)
+        gui.Application.instance.menubar.set_checked(
+            AppWindow.MENU_SHOW_SETTINGS, self._settings_panel.visible)
 
     def _on_menu_about(self):
         # Show a simple dialog. Although the Dialog is actually a widget, you can
@@ -326,19 +330,20 @@ class AppWindow:
         dlg.add_child(dlg_layout)
         self.window.show_dialog(dlg)
 
+
 def main():
     # We need to initalize the application, which finds the necessary shaders
     # for rendering and prepares the cross-platform window abstraction.
     gui.Application.instance.initialize()
 
     w = AppWindow(1024, 768)
-    
+
     # Add the window to the applicaiton, which will make it visible
     gui.Application.instance.add_window(w.window)
 
     # Run the event loop. This will not return until the last window is closed.
     gui.Application.instance.run()
 
-    
+
 if __name__ == "__main__":
     main()
