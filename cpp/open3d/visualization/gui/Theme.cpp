@@ -27,5 +27,7 @@
 #include "open3d/visualization/gui/Theme.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {}
+}  // namespace visualization
 }  // namespace open3d

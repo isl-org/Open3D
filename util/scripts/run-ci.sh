@@ -2,11 +2,12 @@
 #
 # The following environment variables are required:
 # - SHARED
-# - BUILD_TENSORFLOW_OPS
-# - BUILD_PYTORCH_OPS
+# - NPROC
 # - BUILD_DEPENDENCY_FROM_SOURCE
 # - BUILD_CUDA_MODULE
-# - NPROC
+# - BUILD_TENSORFLOW_OPS
+# - BUILD_PYTORCH_OPS
+# - LOW_MEM_USAGE
 
 set -euo pipefail
 
@@ -130,7 +131,7 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
     unitTestFlags=
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     date
-    reportRun ./bin/UnitTest $unitTestFlags
+    reportRun ./bin/tests $unitTestFlags
     echo
 
     if $runBenchmarks; then
@@ -157,25 +158,9 @@ make
 ./TestVisualizer
 echo
 
-reportJobStart "cleanup"
-echo "cleanup the C++ example..."
+echo "test uninstalling Open3D..."
 date
-cd ../
-rm -rf build
-
-echo "uninstall Open3D..."
-date
-cd ../../../build
+cd ../../../../build
 make uninstall
-
-echo "cleanup Open3D..."
-date
-cd ../
-rm -rf build
-rm -rf ${OPEN3D_INSTALL_DIR}
-if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-    rm -rf "$CUDA_TOOLKIT_DIR"
-fi
-echo
 
 reportJobFinishSession

@@ -23,11 +23,12 @@ data structures and algorithms in both C++ and Python. The backend is highly
 optimized and is set up for parallelization. We welcome contributions from
 the open-source community.
 
-[![C/C++ CI](https://github.com/intel-isl/Open3D/workflows/C/C++%20CI/badge.svg)](https://github.com/intel-isl/Open3D/actions)
+[![Ubuntu CI](https://github.com/intel-isl/Open3D/workflows/Ubuntu%20CI/badge.svg)](https://github.com/intel-isl/Open3D/actions?query=workflow%3A%22Ubuntu+CI%22)
+[![macOS CI](https://github.com/intel-isl/Open3D/workflows/macOS%20CI/badge.svg)](https://github.com/intel-isl/Open3D/actions?query=workflow%3A%22macOS+CI%22)
+[![Windows CI](https://github.com/intel-isl/Open3D/workflows/Windows%20CI/badge.svg)](https://github.com/intel-isl/Open3D/actions?query=workflow%3A%22Windows+CI%22)
 [![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/)
-[![Build status](https://ci.appveyor.com/api/projects/status/3hasjo041lv6srsi/branch/master?svg=true)](https://ci.appveyor.com/project/yxlao/open3d/branch/master)
 
-#### Core features of Open3D includes:
+**Core features of Open3D include:**
 
 * 3D data structures
 * 3D data processing algorithms
@@ -80,7 +81,7 @@ $ python -c "import open3d as o3d"
 ```
 
 and follow the [basic tutorials](http://www.open3d.org/docs/release/tutorial/Basic/index.html)
-or [Python examples](https://github.com/intel-isl/Open3D/tree/master/examples/Python) to get
+or [Python examples](https://github.com/intel-isl/Open3D/tree/master/examples/python) to get
 started.
 
 ## C++ quick start

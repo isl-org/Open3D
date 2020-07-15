@@ -220,7 +220,7 @@ void pybind_odometry_methods(py::module &m) {
 }
 
 void pybind_odometry(py::module &m) {
-    py::module m_submodule = m.def_submodule("odometry");
+    py::module m_submodule = m.def_submodule("odometry", "Odometry pipeline.");
     pybind_odometry_classes(m_submodule);
     pybind_odometry_methods(m_submodule);
 }

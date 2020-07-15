@@ -387,9 +387,11 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("logical_not", &core::Tensor::LogicalNot);
     tensor.def("logical_not_", &core::Tensor::LogicalNot_);
 
-    // Boolean find
+    // Boolean
     tensor.def("_non_zero", &core::Tensor::NonZero);
     tensor.def("_non_zero_numpy", &core::Tensor::NonZeroNumpy);
+    tensor.def("all", &core::Tensor::All);
+    tensor.def("any", &core::Tensor::Any);
 
     // Reduction ops
     tensor.def("sum", &core::Tensor::Sum);
@@ -400,6 +402,14 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("argmin_", &core::Tensor::ArgMin);
     tensor.def("argmax_", &core::Tensor::ArgMax);
 
+    // Comparison
+    tensor.def("allclose", &core::Tensor::AllClose, "other"_a, "rtol"_a = 1e-5,
+               "atol"_a = 1e-8);
+    tensor.def("isclose", &core::Tensor::IsClose, "other"_a, "rtol"_a = 1e-5,
+               "atol"_a = 1e-8);
+    tensor.def("issame", &core::Tensor::IsSame);
+
+    // Print tensor
     tensor.def("__repr__",
                [](const core::Tensor& tensor) { return tensor.ToString(); });
     tensor.def("__str__",

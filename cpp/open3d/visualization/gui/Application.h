@@ -32,6 +32,7 @@
 #include "open3d/visualization/gui/Menu.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct Theme;
@@ -126,4 +127,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

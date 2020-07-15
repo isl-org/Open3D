@@ -36,7 +36,7 @@
 namespace open3d {
 namespace utility {
 
-/// The namespace hash_tuple defines a general hash function for std::tuple
+/// hash_tuple defines a general hash function for std::tuple
 /// See this post for details:
 ///   http://stackoverflow.com/questions/7110301
 /// The hash_combine code is from boost
@@ -44,10 +44,8 @@ namespace utility {
 /// See Mike Seymour in magic-numbers-in-boosthash-combine:
 ///   http://stackoverflow.com/questions/4948780
 
-namespace hash_tuple {
-
 template <typename TT>
-struct hash {
+struct hash_tuple {
     size_t operator()(TT const& tt) const { return std::hash<TT>()(tt); }
 };
 
@@ -55,7 +53,7 @@ namespace {
 
 template <class T>
 inline void hash_combine(std::size_t& seed, T const& v) {
-    seed ^= hash_tuple::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= hash_tuple<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
@@ -76,7 +74,7 @@ struct HashValueImpl<Tuple, 0> {
 }  // unnamed namespace
 
 template <typename... TT>
-struct hash<std::tuple<TT...>> {
+struct hash_tuple<std::tuple<TT...>> {
     size_t operator()(std::tuple<TT...> const& tt) const {
         size_t seed = 0;
         HashValueImpl<std::tuple<TT...>>::apply(seed, tt);
@@ -84,12 +82,8 @@ struct hash<std::tuple<TT...>> {
     }
 };
 
-}  // namespace hash_tuple
-
-namespace hash_eigen {
-
 template <typename T>
-struct hash {
+struct hash_eigen {
     std::size_t operator()(T const& matrix) const {
         size_t seed = 0;
         for (int i = 0; i < (int)matrix.size(); i++) {
@@ -101,20 +95,14 @@ struct hash {
     }
 };
 
-}  // namespace hash_eigen
-
-namespace hash_enum_class {
-
 // Hash function for enum class for C++ standard less than C++14
 // https://stackoverflow.com/a/24847480/1255535
-struct hash {
+struct hash_enum_class {
     template <typename T>
     std::size_t operator()(T t) const {
         return static_cast<std::size_t>(t);
     }
 };
-
-}  // namespace hash_enum_class
 
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c

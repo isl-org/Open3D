@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/Visualizer/RenderOption.h"
-#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
+#include "open3d/visualization/visualizer/RenderOption.h"
+#include "open3d/io/IJsonConvertibleIO.h"
 
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"

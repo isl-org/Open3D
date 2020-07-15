@@ -1,6 +1,6 @@
 .. _getting_started:
 
-Getting Started
+Getting started
 ###############
 
 .. _install_open3d_python:
@@ -78,7 +78,7 @@ Running Open3D tutorials
 ========================
 
 A complete set of Python tutorials and testing data will also be copied to
-demonstrate the usage of Open3D Python interface. See ``examples/Python`` for all Python examples.
+demonstrate the usage of Open3D Python interface. See ``examples/python`` for all Python examples.
 
 .. note:: Open3D's Python tutorial utilizes some external packages: ``numpy``,
     ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction

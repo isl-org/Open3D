@@ -79,23 +79,8 @@ public:
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
                                            bool relative = true) override;
-
-    /// \brief Scales the oriented bounding boxs.
-    /// The extent parameter is multiplied by the scale factor and
-    /// the center is set to the given parameter..
-    ///
-    /// \param scale The scale parameter that is multiplied to the
-    /// extent parameter of the oriented bounding box.
-    /// \param center New center of the oriented bounding box.
     virtual OrientedBoundingBox& Scale(const double scale,
                                        const Eigen::Vector3d& center) override;
-
-    /// \brief Rotates the oriented bounding boxs.
-    /// Sets the rotation and center of the oriented bounding box
-    /// to the given parameters.
-    ///
-    /// \param R New rotation matrix of the oriented bounding box.
-    /// \param center New center of the oriented bounding box.
     virtual OrientedBoundingBox& Rotate(const Eigen::Matrix3d& R,
                                         const Eigen::Vector3d& center) override;
 

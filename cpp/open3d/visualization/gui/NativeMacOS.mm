@@ -36,6 +36,7 @@
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 void* GetNativeDrawable(GLFWwindow* glfw_window) {
@@ -133,5 +134,6 @@ void ShowNativeFileDialog(FileDialog::Mode type,
     }];
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace visualization
+}  // namespace open3d

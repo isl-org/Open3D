@@ -6,7 +6,7 @@ import zipfile
 # Avoid pathlib to be compatible with Python 3.5+.
 __pwd = os.path.dirname(os.path.realpath(__file__))
 test_data_dir = os.path.join(__pwd, os.pardir, os.pardir, "examples",
-                             "TestData")
+                             "test_data")
 
 
 def download_fountain_dataset():

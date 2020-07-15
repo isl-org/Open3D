@@ -70,15 +70,15 @@ Open3D Azure Kinect Viewer is used for previewing RGB and depth image stream
 captured by the Azure Kinect sensor.
 
 Open3D provides Python and C++ example code of Azure Kinect viewer. Please
-see ``examples/Cpp/AzureKinectViewer.cpp`` and
-``examples/Python/ReconstructionSystem/sensors/azure_kinect_viewer.py``
+see ``examples/cpp/AzureKinectViewer.cpp`` and
+``examples/python/ReconstructionSystem/sensors/azure_kinect_viewer.py``
 for details.
 
 We'll use the Python version as an example.
 
 .. code-block:: sh
 
-    python examples/Python/ReconstructionSystem/sensors/azure_kinect_viewer.py --align_depth_to_color
+    python examples/python/ReconstructionSystem/sensors/azure_kinect_viewer.py --align_depth_to_color
 
 .. image:: https://storage.googleapis.com/open3d-bin/docs/images/azure_kinect_viewer_aligned.png
     :alt: azure_kinect_viewer_aligned.png
@@ -88,7 +88,7 @@ helpful to use the raw depth image without transformation to reduce computation.
 
 .. code-block:: sh
 
-    python examples/Python/ReconstructionSystem/sensors/azure_kinect_viewer.py
+    python examples/python/ReconstructionSystem/sensors/azure_kinect_viewer.py
 
 .. image:: https://storage.googleapis.com/open3d-bin/docs/images/azure_kinect_viewer_unaligned.png
     :alt: azure_kinect_viewer_unaligned.png
@@ -99,7 +99,7 @@ You may also specify the sensor config with a ``json`` file.
 
 .. code-block:: sh
 
-    python examples/Python/ReconstructionSystem/sensors/azure_kinect_viewer.py --config config.json
+    python examples/python/ReconstructionSystem/sensors/azure_kinect_viewer.py --config config.json
 
 An sensor config will look like the following. For the full list of available
 configs, refer to `this file <https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/include/k4a/k4atypes.h>`_.
@@ -126,15 +126,15 @@ Open3D Azure Kinect Viewer is used for recording RGB and depth image stream
 to an MKV file.
 
 Open3D provides Python and C++ example code of Azure Kinect viewer. Please
-see ``examples/Cpp/AzureKinectRecord.cpp`` and
-``examples/Python/ReconstructionSystem/sensors/azure_kinect_recorder.py``
+see ``examples/cpp/AzureKinectRecord.cpp`` and
+``examples/python/ReconstructionSystem/sensors/azure_kinect_recorder.py``
 for details.
 
 We'll use the Python version as an example.
 
 .. code-block:: sh
 
-    python examples/Python/ReconstructionSystem/sensors/azure_kinect_recorder.py --output record.mkv
+    python examples/python/ReconstructionSystem/sensors/azure_kinect_recorder.py --output record.mkv
 
 You may optionally specify the camera config when running the recorder script.
 
@@ -154,13 +154,13 @@ or not supporting the format at all. To view the customized MKV file, use the
 Open3D Azure Kinect MKV Reader.
 
 Open3D provides Python and C++ example code of Open3D Azure Kinect MKV Reader.
-Please see ``examples/Cpp/AzureKinectMKVReader.cpp`` and
-``examples/Python/ReconstructionSystem/sensors/azure_kinect_mkv_reader.py``
+Please see ``examples/cpp/AzureKinectMKVReader.cpp`` and
+``examples/python/ReconstructionSystem/sensors/azure_kinect_mkv_reader.py``
 for details.
 
 .. code-block:: sh
 
-    python examples/Python/ReconstructionSystem/sensors/azure_kinect_mkv_reader.py --input record.mkv
+    python examples/python/ReconstructionSystem/sensors/azure_kinect_mkv_reader.py --input record.mkv
 
 .. image:: https://storage.googleapis.com/open3d-bin/docs/images/azure_kinect_mkv_reader.png
     :alt: azure_kinect_mkv_reader.png
@@ -173,7 +173,7 @@ flag.
 
 .. code-block:: sh
 
-    python examples/Python/ReconstructionSystem/sensors/azure_kinect_mkv_reader.py --input record.mkv --output frames
+    python examples/python/ReconstructionSystem/sensors/azure_kinect_mkv_reader.py --input record.mkv --output frames
 
 .. image:: https://storage.googleapis.com/open3d-bin/docs/images/azure_kinect_mkv_reader_extract.png
     :alt: azure_kinect_mkv_reader_extract.png

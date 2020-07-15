@@ -47,59 +47,61 @@ void pybind_core_tensorlist(py::module& m) {
             m, "TensorList",
             "A TensorList is an extendable tensor at the 0-th dimension.");
 
-    tensorlist
-            .def(py::init(
-                    [](const core::SizeVector& shape, const core::Dtype& dtype,
-                       const core::Device& device, const int64_t& size = 0) {
-                        core::TensorList tl =
-                                core::TensorList(shape, dtype, device, size);
-                        return tl;
-                    }))
-            .def("shallow_copy_from", &core::TensorList::ShallowCopyFrom)
-            .def("copy_from", &core::TensorList::CopyFrom)
-            // Construct from existing tensors with compatible shapes
-            .def("from_tensors",
-                 [](const std::vector<core::Tensor>& tensors,
-                    const core::Device& device) {
-                     core::TensorList tl = core::TensorList(tensors, device);
-                     return tl;
-                 })
-            // Construct from existing internal tensor with at least one valid
-            // dimension
-            .def_static("from_tensor", &core::TensorList::FromTensor)
-            .def("tensor",
-                 [](const core::TensorList& tl) { return tl.AsTensor(); })
-            .def("push_back",
-                 [](core::TensorList& tl, const core::Tensor& tensor) {
-                     return tl.PushBack(tensor);
-                 })
-            .def("resize",
-                 [](core::TensorList& tl, int64_t n) { return tl.Resize(n); })
-            .def("extend",
-                 [](core::TensorList& tl_a, const core::TensorList& tl_b) {
-                     return tl_a.Extend(tl_b);
-                 })
-            .def("size",
-                 [](const core::TensorList& tl) { return tl.GetSize(); })
+    // Constructors.
+    tensorlist.def(
+            py::init([](const core::SizeVector& element_shape,
+                        const core::Dtype& dtype, const core::Device& device) {
+                return new core::TensorList(element_shape, dtype, device);
+            }),
+            "element_shape"_a, "dtype"_a, "device"_a);
+    tensorlist.def(py::init([](const std::vector<core::Tensor>& tensors) {
+                       return new core::TensorList(tensors);
+                   }),
+                   "tensors"_a);
+    tensorlist.def(py::init([](const core::TensorList& other) {
+                       return new core::TensorList(other);
+                   }),
+                   "other"_a);
 
-            .def("_getitem",
-                 [](core::TensorList& tl, int64_t index) { return tl[index]; })
-            .def("_setitem",
-                 [](core::TensorList& tl, int64_t index,
-                    const core::Tensor& value) { tl[index].SetItem(value); })
+    // Factory function.
+    tensorlist.def_static("from_tensor", &core::TensorList::FromTensor,
+                          "tensor"_a, "inplace"_a = false);
 
-            .def(py::self + py::self)
-            .def(py::self += py::self)
-            .def("__repr__",
-                 [](const core::TensorList& tl) { return tl.ToString(); })
-            .def_static("concat", [](const core::TensorList& tl_a,
-                                     const core::TensorList& tl_b) {
-                return core::TensorList::Concatenate(tl_a, tl_b);
-            });
+    // Copiers.
+    tensorlist.def("shallow_copy_from", &core::TensorList::ShallowCopyFrom);
+    tensorlist.def("copy_from", &core::TensorList::CopyFrom);
+    tensorlist.def("copy", &core::TensorList::Copy);
 
-    tensorlist.def_property_readonly("shape", &core::TensorList::GetShape);
+    // Accessors.
+    tensorlist.def("__getitem__", [](core::TensorList& tl, int64_t index) {
+        return tl[index];
+    });
+    tensorlist.def("__setitem__",
+                   [](core::TensorList& tl, int64_t index,
+                      const core::Tensor& value) { tl[index] = value; });
+    tensorlist.def("as_tensor",
+                   [](const core::TensorList& tl) { return tl.AsTensor(); });
+    tensorlist.def("__repr__",
+                   [](const core::TensorList& tl) { return tl.ToString(); });
+    tensorlist.def("__str__",
+                   [](const core::TensorList& tl) { return tl.ToString(); });
+
+    // Manipulations.
+    tensorlist.def("push_back", &core::TensorList::PushBack);
+    tensorlist.def("resize", &core::TensorList::Resize);
+    tensorlist.def("extend", &core::TensorList::Extend);
+    tensorlist.def("__iadd__", &core::TensorList::operator+=);
+    tensorlist.def("__add__", &core::TensorList::operator+);
+    tensorlist.def_static("concat", &core::TensorList::Concatenate);
+
+    // Properties.
+    tensorlist.def_property_readonly("size", &core::TensorList::GetSize);
+    tensorlist.def_property_readonly("element_shape",
+                                     &core::TensorList::GetElementShape);
     tensorlist.def_property_readonly("dtype", &core::TensorList::GetDtype);
     tensorlist.def_property_readonly("device", &core::TensorList::GetDevice);
+    tensorlist.def_property_readonly("is_resizable",
+                                     &core::TensorList::IsResizable);
 }
 
 }  // namespace open3d
