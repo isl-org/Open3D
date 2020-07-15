@@ -544,6 +544,11 @@ void Window::CloseDialog() {
         SetFocusWidget(nullptr);
     }
     impl_->active_dialog_.reset();
+    // The dialog might not be closing from within a draw call, such as when
+    // a native file dialog closes, so we need to post a redraw, just in case.
+    // If it is from within a draw call, then any redraw request from that will
+    // get merged in with this one by the OS.
+    PostRedraw();
 }
 
 void Window::ShowMessageBox(const char* title, const char* message) {
