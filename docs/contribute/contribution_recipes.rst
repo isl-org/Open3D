@@ -268,11 +268,8 @@ Case 4: When adding a Python tutorial
 .. note::
    When you commit a ipynb notebook file make sure to remove the output cells
    to keep the commit sizes small.
-   You can use the script ``examples/Python/jupyter_strip_output.sh`` for
+   You can use the script ``examples/python/jupyter_strip_output.sh`` for
    stripping the output cells of all tutorials.
-   Alternatively, you can enable a pre-commit filter by running the script
-   ``utils/scripts/git_enable_ipynb_filter.sh`` once. In any case you need to
-   have ``jupyter`` in your ``PATH`` and ``nbconvert`` installed.
 
 Dos
 -----------------------

@@ -29,22 +29,22 @@
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/camera/PinholeCameraTrajectory.h"
-#include "open3d/io/ClassIO/FeatureIO.h"
-#include "open3d/io/ClassIO/IJsonConvertibleIO.h"
-#include "open3d/io/ClassIO/ImageIO.h"
-#include "open3d/io/ClassIO/LineSetIO.h"
-#include "open3d/io/ClassIO/PinholeCameraTrajectoryIO.h"
-#include "open3d/io/ClassIO/PointCloudIO.h"
-#include "open3d/io/ClassIO/PoseGraphIO.h"
-#include "open3d/io/ClassIO/TriangleMeshIO.h"
-#include "open3d/io/ClassIO/VoxelGridIO.h"
+#include "open3d/io/FeatureIO.h"
+#include "open3d/io/IJsonConvertibleIO.h"
+#include "open3d/io/ImageIO.h"
+#include "open3d/io/LineSetIO.h"
+#include "open3d/io/PinholeCameraTrajectoryIO.h"
+#include "open3d/io/PointCloudIO.h"
+#include "open3d/io/PoseGraphIO.h"
+#include "open3d/io/TriangleMeshIO.h"
+#include "open3d/io/VoxelGridIO.h"
 
 #include "pybind/docstring.h"
 #include "pybind/io/io.h"
 
 #ifdef BUILD_AZURE_KINECT
-#include "open3d/io/Sensor/AzureKinect/AzureKinectSensorConfig.h"
-#include "open3d/io/Sensor/AzureKinect/MKVMetadata.h"
+#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+#include "open3d/io/sensor/azure_kinect/MKVMetadata.h"
 #endif
 
 namespace open3d {

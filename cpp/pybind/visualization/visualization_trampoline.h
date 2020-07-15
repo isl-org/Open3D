@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "open3d/visualization/Visualizer/ViewControl.h"
-#include "open3d/visualization/Visualizer/Visualizer.h"
+#include "open3d/visualization/visualizer/ViewControl.h"
+#include "open3d/visualization/visualizer/Visualizer.h"
 
 #include "pybind/open3d_pybind.h"
 

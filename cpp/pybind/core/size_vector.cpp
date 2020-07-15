@@ -36,7 +36,7 @@ void pybind_core_size_vector(py::module &m) {
     py::class_<core::SizeVector> size_vector(
             m, "SizeVector",
             "SizeVector is a vector of int64_t for "
-            "specifying shape, strides and etc.");
+            "specifying shape, strides, etc.");
 
     size_vector.def(py::init(
             [](py::array_t<int64_t, py::array::c_style | py::array::forcecast>

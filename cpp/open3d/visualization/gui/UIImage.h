@@ -26,9 +26,15 @@
 
 #pragma once
 
-#include "open3d/visualization/Rendering/RendererHandle.h"
+#include "open3d/visualization/rendering/RendererHandle.h"
 
 namespace open3d {
+namespace visualization {
+
+namespace rendering {
+class Renderer;
+}
+
 namespace gui {
 
 class UIImage {
@@ -39,7 +45,7 @@ public:
     /// Uses an existing texture, using texture coordinates
     /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
     /// This is useful for using an icon atlas to reduce draw calls.
-    explicit UIImage(visualization::TextureHandle texture_id,
+    explicit UIImage(visualization::rendering::TextureHandle texture_id,
                      float u0 = 0.0f,
                      float v0 = 0.0f,
                      float u1 = 1.0f,
@@ -67,9 +73,9 @@ public:
         float v0 = 0.0f;
         float u1 = 1.0f;
         float v1 = 1.0f;
-        visualization::TextureHandle texture;
+        visualization::rendering::TextureHandle texture;
     };
-    DrawParams CalcDrawParams(visualization::Renderer& renderer,
+    DrawParams CalcDrawParams(visualization::rendering::Renderer& renderer,
                               const Rect& frame) const;
 
 private:
@@ -78,4 +84,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

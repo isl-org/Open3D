@@ -13,6 +13,13 @@ if(NOT Tensorflow_FOUND)
 
     message(STATUS "Getting Tensorflow properties ...")
 
+    # Get Tensorflow_VERSION
+    execute_process(
+        COMMAND
+            ${PYTHON_EXECUTABLE} "-c"
+            "import tensorflow as tf; print(tf.__version__, end='')"
+            OUTPUT_VARIABLE Tensorflow_VERSION)
+
     # Get Tensorflow_INCLUDE_DIR
     execute_process(
         COMMAND
@@ -52,7 +59,8 @@ if(NOT Tensorflow_FOUND)
     )
 endif()
 
-message(STATUS "Tensorflow   include dir: ${Tensorflow_INCLUDE_DIR}")
+message(STATUS "Tensorflow       version: ${Tensorflow_VERSION}")
+message(STATUS "             include dir: ${Tensorflow_INCLUDE_DIR}")
 message(STATUS "             library dir: ${Tensorflow_LIB_DIR}")
 message(STATUS "           framework lib: ${Tensorflow_FRAMEWORK_LIB}")
 message(STATUS "             definitions: ${Tensorflow_DEFINITIONS}")

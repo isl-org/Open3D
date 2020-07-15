@@ -27,6 +27,7 @@
 #pragma once
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 struct Point {
@@ -84,4 +85,5 @@ constexpr Alignment operator|(Alignment x, Alignment y) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

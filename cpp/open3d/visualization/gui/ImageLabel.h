@@ -31,6 +31,7 @@
 #include "open3d/visualization/gui/UIImage.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 class ImageLabel : public Widget {
@@ -44,7 +45,7 @@ public:
     /// Uses an existing texture, using texture coordinates
     /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
     /// This is useful for using an icon atlas to reduce draw calls.
-    explicit ImageLabel(visualization::TextureHandle texture_id,
+    explicit ImageLabel(visualization::rendering::TextureHandle texture_id,
                         float u0 = 0.0f,
                         float v0 = 0.0f,
                         float u1 = 1.0f,
@@ -67,4 +68,5 @@ private:
 };
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

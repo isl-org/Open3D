@@ -14,7 +14,7 @@ The main function runs ``local_refinement`` and ``optimize_posegraph_for_scene``
 Fine-grained registration
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/refine_registration.py
    :language: python
    :lineno-start: 38
    :lines: 5,39-90
@@ -26,7 +26,7 @@ Two options are given for the fine-grained registration. The ``color`` option is
 Multiway registration
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/refine_registration.py
    :language: python
    :lineno-start: 16
    :lines: 5,17-36
@@ -36,7 +36,7 @@ This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway
 
 Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called for multiway registration.
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/optimize_posegraph.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/optimize_posegraph.py
    :language: python
    :lineno-start: 52
    :lines: 5,53-60
@@ -47,7 +47,7 @@ Main registration loop
 
 The function ``make_posegraph_for_refined_scene`` below calls all the functions introduced above.
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
+.. literalinclude:: ../../../examples/python/ReconstructionSystem/refine_registration.py
    :language: python
    :lineno-start: 129
    :lines: 5,130-176

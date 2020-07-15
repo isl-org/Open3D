@@ -27,11 +27,12 @@
 
 #define EIGEN_USE_GPU
 #include "FixedRadiusSearchOpKernel.h"
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/ml/Misc/Detail/FixedRadiusSearch.cuh"
+#include "open3d/ml/Helper.h"
+#include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
 
 using namespace open3d;
-using namespace open3d::ml::detail;
+using namespace open3d::ml;
+using namespace open3d::ml::impl;
 using namespace fixed_radius_search_opkernel;
 using namespace tensorflow;
 
@@ -40,8 +41,7 @@ class FixedRadiusSearchOpKernelCUDA : public FixedRadiusSearchOpKernel {
 public:
     explicit FixedRadiusSearchOpKernelCUDA(OpKernelConstruction* construction)
         : FixedRadiusSearchOpKernel(construction) {
-        texture_alignment =
-                open3d::core::GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

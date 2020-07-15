@@ -35,6 +35,7 @@
 #include "open3d/visualization/gui/Util.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 namespace {
@@ -168,13 +169,13 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
 
     ImGui::PushStyleColor(
             ImGuiCol_Button,
-            util::colorToImgui(context.theme.combobox_arrow_background_color));
+            colorToImgui(context.theme.combobox_arrow_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_ButtonHovered,
-            util::colorToImgui(context.theme.combobox_arrow_background_color));
+            colorToImgui(context.theme.combobox_arrow_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_ButtonActive,
-            util::colorToImgui(context.theme.combobox_arrow_background_color));
+            colorToImgui(context.theme.combobox_arrow_background_color));
 
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(frame.width);
@@ -207,4 +208,5 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

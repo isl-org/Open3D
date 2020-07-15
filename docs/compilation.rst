@@ -180,6 +180,24 @@ build, please see :ref:`compilation_options`.
 
         python -c "import open3d; print(open3d.open3d_pybind._GLIBCXX_USE_CXX11_ABI)"
 
+    To build Open3D with CUDA support, configure with:
+
+    .. code-block:: bash
+
+        cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
+
+    Please note that CUDA support is work in progress and experimental. For building
+    Open3D with CUDA support, ensure that CUDA is properly installed by running following commands:
+
+    .. code-block:: bash
+
+        nvidia-smi      # Prints CUDA-enabled GPU information
+        nvcc -V         # Prints compiler version
+
+    If you see an output similar to ``command not found``, you can install CUDA toolkit
+    by following the `official
+    documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
+
 .. _compilation_ubuntu_build:
 
 4. Build
@@ -469,7 +487,7 @@ Unit test
 `````````
 
 To build unit tests, set `BUILD_UNIT_TESTS=ON` at CMake config stage. The unit
-test executable will be located at `bin/UnitTest` in the `build` directory.
+test executable will be located at `bin/tests` in the `build` directory.
 
 Please also refer to `googletest <https://github.com/google/googletest.git>`_ for
 reference.
@@ -479,4 +497,4 @@ reference.
     # In the build directory
     cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
-    ./bin/UnitTest
+    ./bin/tests

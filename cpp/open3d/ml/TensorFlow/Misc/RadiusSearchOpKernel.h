@@ -23,7 +23,7 @@
 #pragma once
 
 #include "../TensorFlowHelper.h"
-#include "open3d/ml/Misc/Detail/RadiusSearch.h"
+#include "open3d/ml/impl/misc/RadiusSearch.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -37,7 +37,7 @@ public:
     explicit RadiusSearchOpKernel(
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
-        using namespace open3d::ml::detail;
+        using namespace open3d::ml::impl;
         using namespace tensorflow;
         std::string metric_str;
         OP_REQUIRES_OK(construction,
@@ -69,7 +69,7 @@ public:
         const Tensor& points_row_splits = context->input(3);
         const Tensor& queries_row_splits = context->input(4);
         {
-            using namespace open3d::ml::shape_checking;
+            using namespace open3d::ml::op_util;
 
             Dim num_points("num_points");
             Dim num_queries("num_queries");
@@ -101,7 +101,7 @@ public:
                         tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:
-    open3d::ml::detail::Metric metric;
+    open3d::ml::impl::Metric metric;
     bool ignore_query_point;
     bool return_distances;
     bool normalize_distances;

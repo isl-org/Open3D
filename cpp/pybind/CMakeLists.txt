@@ -111,6 +111,8 @@ if ( BUILD_TENSORFLOW_OPS )
                         COMMENT "Generating python ops.py" )
 
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py")
+    # find tensorflow to get some info for the _build_config.py
+    find_package(Tensorflow)
 endif ()
 
 # add additional optional compiled modules
@@ -123,6 +125,12 @@ if ( BUILD_PYTORCH_OPS )
                         COMMENT "Generating python ops.py and return_types.py" )
 
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py")
+    # get the pytorch version information again here for _build_config.py
+    # because it is not safe to call find_package(Pytorch) again.
+    execute_process(
+        COMMAND ${PYTHON_EXECUTABLE} "-c"
+                "import torch; print(torch.__version__, end='')"
+        OUTPUT_VARIABLE Pytorch_VERSION)
 endif ()
 
 configure_file("_build_config.py.in"

@@ -730,7 +730,8 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
                                           size_t depth,
                                           size_t width,
                                           float scale,
-                                          bool linear_fit) {
+                                          bool linear_fit,
+                                          int n_threads) {
     static const BoundaryType BType = poisson::DEFAULT_FEM_BOUNDARY;
     typedef IsotropicUIntPack<
             poisson::DIMENSION,
@@ -741,12 +742,16 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
         utility::LogError("[CreateFromPointCloudPoisson] pcd has no normals");
     }
 
+    if (n_threads <= 0) {
+        n_threads = (int)std::thread::hardware_concurrency();
+    }
+
 #ifdef _OPENMP
     ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::OPEN_MP,
-                     std::thread::hardware_concurrency());
+                     n_threads);
 #else
     ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::THREAD_POOL,
-                     std::thread::hardware_concurrency());
+                     n_threads);
 #endif
 
     auto mesh = std::make_shared<TriangleMesh>();

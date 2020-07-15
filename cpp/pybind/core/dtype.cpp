@@ -33,7 +33,7 @@
 namespace open3d {
 
 void pybind_core_dtype(py::module &m) {
-    py::enum_<core::Dtype>(m, "Dtype")
+    py::enum_<core::Dtype>(m, "Dtype", "Open3D data types.")
             .value("Undefined", core::Dtype::Undefined)
             .value("Float32", core::Dtype::Float32)
             .value("Float64", core::Dtype::Float64)
@@ -43,7 +43,7 @@ void pybind_core_dtype(py::module &m) {
             .value("Bool", core::Dtype::Bool)
             .export_values();
 
-    py::class_<core::DtypeUtil> dtype_util(m, "DtypeUtil");
+    py::class_<core::DtypeUtil> dtype_util(m, "DtypeUtil", "Dtype utilities.");
     dtype_util.def(py::init<>()).def("byte_size", &core::DtypeUtil::ByteSize);
 }
 

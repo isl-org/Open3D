@@ -1,26 +1,25 @@
 set (KERNEL_SRC
-    Kernel/IndexGetSet.cpp
-    Kernel/IndexGetSetCPU.cpp
-    Kernel/NonZero.cpp
-    Kernel/NonZeroCPU.cpp
-    Kernel/UnaryEW.cpp
-    Kernel/UnaryEWCPU.cpp
-    Kernel/BinaryEW.cpp
-    Kernel/BinaryEWCPU.cpp
-    Kernel/Reduction.cpp
-    Kernel/ReductionCPU.cpp
+    kernel/IndexGetSet.cpp
+    kernel/IndexGetSetCPU.cpp
+    kernel/NonZero.cpp
+    kernel/NonZeroCPU.cpp
+    kernel/UnaryEW.cpp
+    kernel/UnaryEWCPU.cpp
+    kernel/BinaryEW.cpp
+    kernel/BinaryEWCPU.cpp
+    kernel/Reduction.cpp
+    kernel/ReductionCPU.cpp
 )
 
 set (KERNEL_CUDA_SRC
-    Kernel/IndexGetSetCUDA.cu
-    Kernel/NonZeroCUDA.cu
-    Kernel/UnaryEWCUDA.cu
-    Kernel/BinaryEWCUDA.cu
-    Kernel/ReductionCUDA.cu
+    kernel/IndexGetSetCUDA.cu
+    kernel/NonZeroCUDA.cu
+    kernel/UnaryEWCUDA.cu
+    kernel/BinaryEWCUDA.cu
+    kernel/ReductionCUDA.cu
 )
 
 set (CORE_SRC
-    DLPack/DLPackConverter.cpp
     AdvancedIndexing.cpp
     ShapeUtil.cpp
     CUDAUtils.cpp

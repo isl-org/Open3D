@@ -33,6 +33,7 @@
 #include "open3d/visualization/gui/Util.h"
 
 namespace open3d {
+namespace visualization {
 namespace gui {
 
 namespace {
@@ -84,13 +85,13 @@ Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
 
     ImGui::PushStyleColor(
             ImGuiCol_FrameBg,
-            util::colorToImgui(context.theme.text_edit_background_color));
+            colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgHovered,
-            util::colorToImgui(context.theme.text_edit_background_color));
+            colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgActive,
-            util::colorToImgui(context.theme.text_edit_background_color));
+            colorToImgui(context.theme.text_edit_background_color));
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
@@ -115,4 +116,5 @@ Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
 }
 
 }  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

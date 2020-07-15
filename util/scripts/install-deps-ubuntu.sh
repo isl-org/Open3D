@@ -18,7 +18,7 @@ if [ "$1" == "assume-yes" ]; then
     sudo apt-get --yes install libc++-7-dev || true
     sudo apt-get --yes install libc++abi-7-dev || true
     sudo apt-get --yes install ninja-build || true
-    sudo apt-get --yes install libxi-dev
+    sudo apt-get --yes install libxi-dev || true
 else
     sudo apt-get install xorg-dev libglu1-mesa-dev libgl1-mesa-glx || true
     sudo apt-get install libglew-dev || true
@@ -34,5 +34,5 @@ else
     sudo apt-get install libc++-7-dev || true
     sudo apt-get install libc++abi-7-dev || true
     sudo apt-get install ninja-build || true
-    sudo apt-get install libxi-dev
+    sudo apt-get install libxi-dev || true
 fi

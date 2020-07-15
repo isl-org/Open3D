@@ -34,7 +34,7 @@
 namespace open3d {
 
 void pybind_core_tensor_key(py::module& m) {
-    py::class_<core::NoneType> none_type(m, "NoneType");
+    py::class_<core::NoneType> none_type(m, "NoneType", "Open3D None type.");
     none_type.def(py::init([]() { return new core::NoneType(); }));
 
     py::class_<core::TensorKey> tensor_key(m, "TensorKey");
