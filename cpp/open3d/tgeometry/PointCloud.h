@@ -147,6 +147,7 @@ public:
 
     /// Clear all data in the pointcloud.
     PointCloud &Clear() override;
+
     core::Tensor GetMinBound() const override;
 
     core::Tensor GetMaxBound() const override;
