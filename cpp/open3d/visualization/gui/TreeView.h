@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,51 +24,51 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/ProgressBar.h"
+#pragma once
 
-#include <imgui.h>
-#include <cmath>
-
-#include "open3d/visualization/gui/Theme.h"
-#include "open3d/visualization/gui/Util.h"
+#include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
 namespace visualization {
 namespace gui {
 
-struct ProgressBar::Impl {
-    float value_ = 0.0f;
+class TreeView : public Widget {
+    using Super = Widget;
+public:
+    using ItemId = int;
+
+    TreeView();
+    ~TreeView();
+
+    /// Returns the ID of the root item, that is,
+    /// AddItem(GetRootItem(), "...") will be a top-level item.
+    ItemId GetRootItem() const;
+    /// Adds an item to the tree
+    ItemId AddItem(ItemId parent_id, const char *text);
+    /// Removes an item an all its children (if any) from the tree
+    void RemoveItem(ItemId item_id);
+    std::vector<ItemId> GetItemChildren(ItemId parent_id) const;
+
+    /// Returns the currently selected item id in the tree.
+    ItemId GetSelectedItemId() const;
+    /// Selects the indicated item of the list. Does not call onValueChanged.
+    void SetSelectedItemId(ItemId item_id);
+
+    Size CalcPreferredSize(const Theme& theme) const override;
+
+    DrawResult Draw(const DrawContext& context) override;
+
+    /// Calls onValueChanged(const char *selectedText, ItemId selectedItemId)
+    /// when the list selection changes because of user action.
+    void SetOnValueChanged(
+            std::function<void(const char*, ItemId)> on_value_changed);
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
-
-ProgressBar::ProgressBar() : impl_(new ProgressBar::Impl()) {}
-
-ProgressBar::~ProgressBar() {}
-
-/// ProgressBar values ranges from 0.0 (incomplete) to 1.0 (complete)
-void ProgressBar::SetValue(float value) { impl_->value_ = value; }
-
-float ProgressBar::GetValue() const { return impl_->value_; }
-
-Size ProgressBar::CalcPreferredSize(const Theme& theme) const {
-    return Size(Widget::DIM_GROW, 0.25 * theme.font_size);
-}
-
-Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {
-    auto& frame = GetFrame();
-    auto fg = context.theme.border_color;
-    auto color = colorToImguiRGBA(fg);
-    float rounding = frame.height / 2.0f;
-    ImGui::GetWindowDrawList()->AddRect(
-            ImVec2(frame.x, frame.y),
-            ImVec2(frame.GetRight(), frame.GetBottom()), color, rounding);
-    float x = float(frame.x) + float(frame.width) * impl_->value_;
-    x = std::max(x, float(frame.x + rounding));
-    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(frame.x, frame.y),
-                                              ImVec2(x, frame.GetBottom()),
-                                              color, frame.height / 2.0f);
-    return DrawResult::NONE;
-}
 
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d
+
