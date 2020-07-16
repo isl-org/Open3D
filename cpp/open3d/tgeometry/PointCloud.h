@@ -40,13 +40,14 @@ namespace open3d {
 namespace tgeometry {
 
 /// \class PointCloud
-/// \brief A PointCloud contains point coordinates, and optionally point colors
-/// and point normals.
+/// \brief A pointcloud contains a set of 3D points. By default, a pointcloud
+/// contains "points", "colors" and "normals" attributes. Users can create other
+/// attributes when needed.
 class PointCloud : public Geometry3D {
 public:
     /// At construction time, a pointcloud has default point attributes:
     /// "points", "colors" and "normals". Users can create other attributes
-    /// later when needed.
+    /// when needed.
     PointCloud(core::Dtype dtype = core::Dtype::Float32,
                const core::Device &device = core::Device("CPU:0"))
         : Geometry3D(Geometry::GeometryType::PointCloud),
