@@ -127,26 +127,14 @@ public:
     /// Returns !HasPoints().
     bool IsEmpty() const override;
 
-    /// Returns true if the "points" attribute exists and its size is larger
-    /// than 0.
-    bool HasPoints() const {
-        return point_attr_.find("points") != point_attr_.end() &&
-               point_attr_.at("points").GetSize() > 0;
-    }
+    /// Returns true if the point cloud contains 1 or more points.
+    bool HasPoints() const { return point_attr_.at("points").GetSize() > 0; }
 
-    /// Returns true if the "colors" attribute exists and its size is larger
-    /// than 0.
-    bool HasColors() const {
-        return point_attr_.find("colors") != point_attr_.end() &&
-               point_attr_.at("colors").GetSize() > 0;
-    }
+    /// Returns true if the point cloud contains 1 or more colors for points.
+    bool HasColors() const { return point_attr_.at("colors").GetSize() > 0; }
 
-    /// Returns true if the "normals" attribute exists and its size is larger
-    /// than 0.
-    bool HasNormals() const {
-        return point_attr_.find("normals") != point_attr_.end() &&
-               point_attr_.at("normals").GetSize() > 0;
-    }
+    /// Returns true if the point cloud contains 1 or more normals for points.
+    bool HasNormals() const { return point_attr_.at("normals").GetSize() > 0; }
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static tgeometry::PointCloud FromLegacyPointCloud(
