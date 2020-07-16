@@ -82,8 +82,17 @@ PointCloud::PointCloud(
     }
 }
 
-core::TensorList &PointCloud::operator[](const std::string &key) {
+core::TensorList &PointCloud::GetPointAttr(const std::string &key) {
     return point_attr_.at(key);
+}
+
+void PointCloud::SetPointAttr(const std::string &key,
+                              const core::TensorList &value) {
+    point_attr_[key] = value;
+}
+
+core::TensorList &PointCloud::operator[](const std::string &key) {
+    return GetPointAttr(key);
 }
 
 void PointCloud::SyncPushBack(

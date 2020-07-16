@@ -44,15 +44,17 @@ namespace tgeometry {
 /// and point normals.
 class PointCloud : public Geometry3D {
 public:
+    /// At construction time, a pointcloud has default point attributes:
+    /// "points", "colors" and "normals". Users can create other attributes
+    /// later when needed.
     PointCloud(core::Dtype dtype = core::Dtype::Float32,
                const core::Device &device = core::Device("CPU:0"))
         : Geometry3D(Geometry::GeometryType::PointCloud),
           dtype_(dtype),
           device_(device) {
-        // point_attr_ is able to accept tensor of any dtype. However, it might
-        // be useful to enforce some dtypes, e.g. point coordinates shall be
-        // float32 or float64. For the time being, we don't enforce any dtypes.
         point_attr_["points"] = core::TensorList({3}, dtype_, device_);
+        point_attr_["colors"] = core::TensorList({3}, dtype_, device_);
+        point_attr_["normals"] = core::TensorList({3}, dtype_, device_);
     }
 
     /// Construct from points.
@@ -75,17 +77,18 @@ public:
 
     virtual ~PointCloud() override {}
 
-    /// Get point attributes.
+    /// Get point attributes. Throws exception if the attribute name does not
+    /// exist.
     ///
     /// \param key Attribute name. Typical attribute name includes "points",
-    /// "colors", "normals",
+    /// "colors", "normals".
     core::TensorList &GetPointAttr(const std::string &key);
 
-    /// Set point attributes.
+    /// Set point attributes. If the attribute key already exists, its value
+    /// will be overwritten, otherwise, the new key will be created.
     ///
     /// \param key Attribute name. Typical attribute name includes "points",
-    /// "colors", "normals". If the attribute key already exists, its value will
-    /// be overwritten, otherwise, the new key will be created.
+    /// "colors", "normals".
     /// \param value A tensorlist.
     void SetPointAttr(const std::string &key, const core::TensorList &value);
 
@@ -104,9 +107,6 @@ public:
 
     /// Clear all data in the point cloud.
     PointCloud &Clear() override;
-
-    bool IsEmpty() const override;
-
     core::Tensor GetMinBound() const override;
 
     core::Tensor GetMaxBound() const override;
@@ -123,32 +123,41 @@ public:
     PointCloud &Rotate(const core::Tensor &R,
                        const core::Tensor &center) override;
 
+    /// Returns !HasPoints().
+    bool IsEmpty() const override;
+
+    /// Returns true if the "points" attribute exists and its size is larger
+    /// than 0.
     bool HasPoints() const {
         return point_attr_.find("points") != point_attr_.end() &&
                point_attr_.at("points").GetSize() > 0;
     }
 
+    /// Returns true if the "colors" attribute exists and its size is larger
+    /// than 0.
     bool HasColors() const {
         return point_attr_.find("colors") != point_attr_.end() &&
                point_attr_.at("colors").GetSize() > 0;
     }
 
+    /// Returns true if the "normals" attribute exists and its size is larger
+    /// than 0.
     bool HasNormals() const {
         return point_attr_.find("normals") != point_attr_.end() &&
                point_attr_.at("normals").GetSize() > 0;
     }
 
+    /// Create a PointCloud from a legacy Open3D PointCloud.
     static tgeometry::PointCloud FromLegacyPointCloud(
             const geometry::PointCloud &pcd_legacy,
             core::Dtype dtype = core::Dtype::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Convert to a legacy Open3D PointCloud.
     geometry::PointCloud ToLegacyPointCloud() const;
 
-public:
-    std::unordered_map<std::string, core::TensorList> point_attr_;
-
 protected:
+    std::unordered_map<std::string, core::TensorList> point_attr_;
     core::Dtype dtype_ = core::Dtype::Float32;
     core::Device device_ = core::Device("CPU:0");
 };
