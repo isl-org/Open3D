@@ -132,7 +132,7 @@ protected:
     }
 };
 
- constexpr Menu::ItemId Open3DVisualizer::MAC_MAKE_DEFAULT_APP;  // for Xcode
+constexpr Menu::ItemId Open3DVisualizer::MAC_MAKE_DEFAULT_APP;  // for Xcode
 
 // ----------------------------------------------------------------------------
 static void LoadAndCreateWindow(const char *path) {
