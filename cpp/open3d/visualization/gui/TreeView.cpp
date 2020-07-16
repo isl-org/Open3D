@@ -195,16 +195,16 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
 
     std::function<void(Impl::Item &)> DrawItem;
     DrawItem =
-            [&DrawItem, this, &frame, &theme = context.theme,
+            [&DrawItem, this, &frame, &context,
              &new_selection ](Impl::Item & item) {
         // ImGUI's tree doesn't seem to support selected items,
         // so we have to draw our own selection.
         if (item.id == impl_->selected_id_) {
             auto h = ImGui::GetTextLineHeightWithSpacing();
-            auto y = ImGui::GetCursorPosY();
+            auto y = ImGui::GetCursorPosY() + context.uiOffsetY;
             ImGui::GetWindowDrawList()->AddRectFilled(
                     ImVec2(frame.x, y), ImVec2(frame.GetRight(), y + h),
-                    colorToImguiRGBA(theme.tree_selected_color));
+                    colorToImguiRGBA(context.theme.tree_selected_color));
         }
 
         int flags = ImGuiTreeNodeFlags_DefaultOpen;
