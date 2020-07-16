@@ -40,22 +40,32 @@ namespace open3d {
 namespace tgeometry {
 
 /// \class PointCloud
-/// \brief A pointcloud contains a set of 3D points. By default, a pointcloud
-/// contains "points", "colors" and "normals" attributes. Users can create other
-/// attributes when needed.
+/// \brief A pointcloud contains a set of 3D points.
+///
+/// The PointCloud class stores the attribute data in a key-value pair manner,
+/// where the key is a string representing the attribute name and value is a
+/// TensorList containing the attribute data.
+///
+/// By default, a pointcloud only contains the "points" attribute representing
+/// the 3D point coordinates. Users can extend a PointCloud object with other
+/// attributes such as "colors", "normals" and "labels" when needed.
+///
+/// We treat {"points", "colors", "normals"} as common attributes. For common
+/// attributes the PointCloud class provides convenient accessing methods such
+/// as `PointCloud::GetPoints` and `PointCloud::GetNormals`, and they should
+/// be used preferably when available. For other attributes, use the generalized
+/// getter `PointCloud::GetPointAttr` and setter `SetPointAttr`.
 class PointCloud : public Geometry3D {
 public:
-    /// At construction time, a pointcloud has default point attributes:
-    /// "points", "colors" and "normals". Users can create other attributes
-    /// when needed.
+    /// At construction time, a pointcloud contains the "points" attributes with
+    /// 0 points.has default point attributes: "points", "colors" and "normals".
+    /// Users can create other attributes when needed.
     PointCloud(core::Dtype dtype = core::Dtype::Float32,
                const core::Device &device = core::Device("CPU:0"))
         : Geometry3D(Geometry::GeometryType::PointCloud),
           dtype_(dtype),
           device_(device) {
         point_attr_["points"] = core::TensorList({3}, dtype_, device_);
-        point_attr_["colors"] = core::TensorList({3}, dtype_, device_);
-        point_attr_["normals"] = core::TensorList({3}, dtype_, device_);
     }
 
     /// Construct a point cloud from points.

@@ -135,20 +135,20 @@ TEST_P(PointCloudPermuteDevices, SyncPushBack) {
     EXPECT_EQ(pcd["points"].GetSize(), 11);
     EXPECT_EQ(pcd["colors"].GetSize(), 11);
 
-    // Missing key.
-    point_struct.clear();
-    point_struct["points"] = core::Tensor::Ones({3}, dtype, device);
-    EXPECT_ANY_THROW(pcd.SyncPushBack(point_struct));
+    // // Missing key.
+    // point_struct.clear();
+    // point_struct["points"] = core::Tensor::Ones({3}, dtype, device);
+    // EXPECT_ANY_THROW(pcd.SyncPushBack(point_struct));
 
-    // Wrong dtype.
-    point_struct["points"] = core::Tensor::Ones({3}, core::Dtype::Bool, device);
-    point_struct["colors"] = core::Tensor::Ones({3}, dtype, device);
-    EXPECT_ANY_THROW(pcd.SyncPushBack(point_struct));
+    // // Wrong dtype.
+    // point_struct["points"] = core::Tensor::Ones({3}, core::Dtype::Bool,
+    // device); point_struct["colors"] = core::Tensor::Ones({3}, dtype, device);
+    // EXPECT_ANY_THROW(pcd.SyncPushBack(point_struct));
 
-    // Wrong shape.
-    point_struct["points"] = core::Tensor::Ones({5}, core::Dtype::Bool, device);
-    point_struct["colors"] = core::Tensor::Ones({3}, dtype, device);
-    EXPECT_ANY_THROW(pcd.SyncPushBack(point_struct));
+    // // Wrong shape.
+    // point_struct["points"] = core::Tensor::Ones({5}, core::Dtype::Bool,
+    // device); point_struct["colors"] = core::Tensor::Ones({3}, dtype, device);
+    // EXPECT_ANY_THROW(pcd.SyncPushBack(point_struct));
 }
 
 TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {

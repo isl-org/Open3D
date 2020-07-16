@@ -60,23 +60,17 @@ PointCloud::PointCloud(const core::TensorList &points)
 
 PointCloud::PointCloud(
         const std::unordered_map<std::string, core::TensorList> &point_attr)
-    : Geometry3D(Geometry::GeometryType::PointCloud) {
-    if (point_attr.find("points") == point_attr.end()) {
-        utility::LogError("point_attr must have key \"points\".");
-    }
-
+    : PointCloud(point_attr.at("points").GetDtype(),
+                 point_attr.at("points").GetDevice()) {
     core::TensorList points = point_attr.at("points");
     points.AssertElementShape({3});
-    dtype_ = points.GetDtype();
-    device_ = points.GetDevice();
-
     for (auto &kv : point_attr) {
         if (device_ != kv.second.GetDevice()) {
             utility::LogError(
                     "points have device {}, however, a property has device {}.",
                     device_.ToString(), kv.second.GetDevice().ToString());
         }
-        point_attr_.emplace(kv.first, kv.second);
+        point_attr_[kv.first] = kv.second;
     }
 }
 
