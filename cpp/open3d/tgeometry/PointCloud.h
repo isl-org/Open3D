@@ -84,9 +84,7 @@ namespace tgeometry {
 ///           PointCloud::HasPointAttr("normals")
 class PointCloud : public Geometry3D {
 public:
-    /// At construction time, a pointcloud contains the "points" attributes with
-    /// 0 points.has default point attributes: "points", "colors" and "normals".
-    /// Users can create other attributes when needed.
+    /// Construct an empty pointcloud.
     PointCloud(core::Dtype dtype = core::Dtype::Float32,
                const core::Device &device = core::Device("CPU:0"))
         : Geometry3D(Geometry::GeometryType::PointCloud),
@@ -95,7 +93,7 @@ public:
         point_attr_["points"] = core::TensorList({3}, dtype_, device_);
     }
 
-    /// Construct a point cloud from points.
+    /// Construct a pointcloud from points.
     ///
     /// \param points A tensorlist with element shape (3,).
     /// - The resulting pointcloud will have the same dtype and device as the
@@ -147,7 +145,7 @@ public:
     void SyncPushBack(
             const std::unordered_map<std::string, core::Tensor> &point_struct);
 
-    /// Clear all data in the point cloud.
+    /// Clear all data in the pointcloud.
     PointCloud &Clear() override;
     core::Tensor GetMinBound() const override;
 
@@ -168,13 +166,13 @@ public:
     /// Returns !HasPoints().
     bool IsEmpty() const override;
 
-    /// Returns true if the point cloud contains 1 or more points.
+    /// Returns true if the pointcloud contains 1 or more points.
     bool HasPoints() const { return point_attr_.at("points").GetSize() > 0; }
 
-    /// Returns true if the point cloud contains 1 or more colors for points.
+    /// Returns true if the pointcloud contains 1 or more colors for points.
     bool HasColors() const { return point_attr_.at("colors").GetSize() > 0; }
 
-    /// Returns true if the point cloud contains 1 or more normals for points.
+    /// Returns true if the pointcloud contains 1 or more normals for points.
     bool HasNormals() const { return point_attr_.at("normals").GetSize() > 0; }
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
