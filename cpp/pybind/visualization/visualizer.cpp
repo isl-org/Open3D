@@ -99,7 +99,8 @@ void pybind_visualizer(py::module &m) {
                  "Function to inform render needed to be updated")
             .def("set_full_screen", &visualization::Visualizer::SetFullScreen,
                  "Function to change between fullscreen and windowed")
-            .def("toggle_full_screen", &visualization::Visualizer::ToggleFullScreen,
+            .def("toggle_full_screen",
+                 &visualization::Visualizer::ToggleFullScreen,
                  "Function to toggle between fullscreen and windowed")
             .def("is_full_screen", &visualization::Visualizer::IsFullScreen,
                  "Function to query whether in fullscreen mode")
