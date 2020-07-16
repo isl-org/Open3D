@@ -171,10 +171,18 @@ public:
     bool HasPoints() const { return point_attr_.at("points").GetSize() > 0; }
 
     /// Returns true if the pointcloud contains 1 or more colors for points.
-    bool HasColors() const { return point_attr_.at("colors").GetSize() > 0; }
+    bool HasColors() const {
+        return HasPoints() && point_attr_.count("colors") != 0 &&
+               point_attr_.at("colors").GetSize() ==
+                       point_attr_.at("points").GetSize();
+    }
 
     /// Returns true if the pointcloud contains 1 or more normals for points.
-    bool HasNormals() const { return point_attr_.at("normals").GetSize() > 0; }
+    bool HasNormals() const {
+        return HasPoints() && point_attr_.count("normals") != 0 &&
+               point_attr_.at("normals").GetSize() ==
+                       point_attr_.at("points").GetSize();
+    }
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static tgeometry::PointCloud FromLegacyPointCloud(
