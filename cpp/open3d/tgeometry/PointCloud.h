@@ -49,10 +49,10 @@ public:
         : Geometry3D(Geometry::GeometryType::PointCloud),
           dtype_(dtype),
           device_(device) {
-        // point_dict_ is able to accept tensor of any dtype. However, it might
+        // point_attr_ is able to accept tensor of any dtype. However, it might
         // be useful to enforce some dtypes, e.g. point coordinates shall be
         // float32 or float64. For the time being, we don't enforce any dtypes.
-        point_dict_["points"] = core::TensorList({3}, dtype_, device_);
+        point_attr_["points"] = core::TensorList({3}, dtype_, device_);
     }
 
     /// Construct from points.
@@ -75,19 +75,34 @@ public:
 
     virtual ~PointCloud() override {}
 
+    /// Get point attributes.
+    ///
+    /// \param key Attribute name. Typical attribute name includes "points",
+    /// "colors", "normals",
+    core::TensorList &GetPointAttr(const std::string &key);
+
+    /// Set point attributes.
+    ///
+    /// \param key Attribute name. Typical attribute name includes "points",
+    /// "colors", "normals". If the attribute key already exists, its value will
+    /// be overwritten, otherwise, the new key will be created.
+    /// \param value A tensorlist.
+    void SetPointAttr(const std::string &key, const core::TensorList &value);
+
     core::TensorList &operator[](const std::string &key);
 
-    /// Syncronized push back. Before push back, the function asserts that all
-    /// the tensorlists in the point_dict_ have the same length.
+    /// Synchronized push back. Before push back, the function asserts that all
+    /// the tensorlists in the point_attr_ have the same length.
     ///
     /// \param point_struct The keys and values to be pushed back to
-    /// PointCloud::point_dict_. \p point_struct 's keys must be exactly the
-    /// same as PointCloud::point_dict_'s keys and the each of the corresponding
+    /// PointCloud::point_attr_. \p point_struct 's keys must be exactly the
+    /// same as PointCloud::point_attr_'s keys and the each of the corresponding
     /// tensors must have the same shape, dtype, devie as the ones stored in
-    /// point_dict_.
+    /// point_attr_.
     void SyncPushBack(
             const std::unordered_map<std::string, core::Tensor> &point_struct);
 
+    /// Clear all data in the point cloud.
     PointCloud &Clear() override;
 
     bool IsEmpty() const override;
@@ -109,18 +124,18 @@ public:
                        const core::Tensor &center) override;
 
     bool HasPoints() const {
-        return point_dict_.find("points") != point_dict_.end() &&
-               point_dict_.at("points").GetSize() > 0;
+        return point_attr_.find("points") != point_attr_.end() &&
+               point_attr_.at("points").GetSize() > 0;
     }
 
     bool HasColors() const {
-        return point_dict_.find("colors") != point_dict_.end() &&
-               point_dict_.at("colors").GetSize() > 0;
+        return point_attr_.find("colors") != point_attr_.end() &&
+               point_attr_.at("colors").GetSize() > 0;
     }
 
     bool HasNormals() const {
-        return point_dict_.find("normals") != point_dict_.end() &&
-               point_dict_.at("normals").GetSize() > 0;
+        return point_attr_.find("normals") != point_attr_.end() &&
+               point_attr_.at("normals").GetSize() > 0;
     }
 
     static tgeometry::PointCloud FromLegacyPointCloud(
@@ -131,7 +146,7 @@ public:
     geometry::PointCloud ToLegacyPointCloud() const;
 
 public:
-    std::unordered_map<std::string, core::TensorList> point_dict_;
+    std::unordered_map<std::string, core::TensorList> point_attr_;
 
 protected:
     core::Dtype dtype_ = core::Dtype::Float32;
