@@ -194,9 +194,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     Impl::Item *new_selection = nullptr;
 
     std::function<void(Impl::Item &)> DrawItem;
-    DrawItem =
-            [&DrawItem, this, &frame, &context,
-             &new_selection ](Impl::Item & item) {
+    DrawItem = [&DrawItem, this, &frame, &context,
+                &new_selection](Impl::Item &item) {
         // ImGUI's tree doesn't seem to support selected items,
         // so we have to draw our own selection.
         if (item.id == impl_->selected_id_) {
