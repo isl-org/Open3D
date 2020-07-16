@@ -64,24 +64,24 @@ namespace tgeometry {
 ///     - Level 1 attributes are not created by default.
 ///     - Level 1 function has convenience functions. Note the naming convention
 ///     is different from level 0 attributes. Examples:
-///          - PointCloud::GetPointNormals()
-///          - PointCloud::SetPointNormals(normals_tensorlist)
-///          - PointCloud::HasPointNormals()
-///          - PointCloud::GetPointColors()
-///          - PointCloud::SetPointColors(colors_tensorlist)
-///          - PointCloud::HasPointColors()
+///         - PointCloud::GetPointNormals()
+///         - PointCloud::SetPointNormals(normals_tensorlist)
+///         - PointCloud::HasPointNormals()
+///         - PointCloud::GetPointColors()
+///         - PointCloud::SetPointColors(colors_tensorlist)
+///         - PointCloud::HasPointColors()
 /// - Level 2: Custom attributes, e.g. {"labels", "alphas", "intensities"}.
 ///     - Level 2 attributes are created by users.
 ///     - Generalized helper functions are provided. Examples:
-///          - PointCloud::GetPointAttr("labels")
-///          - PointCloud::SetPointAttr("labels", labels_tensorlist)
-///          - PointCloud::HasPointAttr("labels")
+///         - PointCloud::GetPointAttr("labels")
+///         - PointCloud::SetPointAttr("labels", labels_tensorlist)
+///         - PointCloud::HasPointAttr("labels")
 ///     - Note that the level 0 and level 1 convenience functions can also be
 ///     achieved via the generalized helper functions:
-///          - PointCloud::GetPoints() is the same as
-///            PointCloud::GetPointAttr("points")
-///          - PointCloud::HasPointNormals() is the same as
-///            PointCloud::HasPointAttr("normals")
+///         - PointCloud::GetPoints() is the same as
+///           PointCloud::GetPointAttr("points")
+///         - PointCloud::HasPointNormals() is the same as
+///           PointCloud::HasPointAttr("normals")
 class PointCloud : public Geometry3D {
 public:
     /// At construction time, a pointcloud contains the "points" attributes with
