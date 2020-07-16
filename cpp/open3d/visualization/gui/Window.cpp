@@ -226,6 +226,7 @@ Window::Window(const std::string& title,
 
     glfwSetWindowUserPointer(impl_->window_, this);
     glfwSetWindowSizeCallback(impl_->window_, ResizeCallback);
+    glfwSetWindowPosCallback(impl_->window_, WindowMovedCallback);
     glfwSetWindowRefreshCallback(impl_->window_, DrawCallback);
     glfwSetCursorPosCallback(impl_->window_, MouseMoveCallback);
     glfwSetMouseButtonCallback(impl_->window_, MouseButtonCallback);
@@ -1068,6 +1069,16 @@ void Window::ResizeCallback(GLFWwindow* window, int os_width, int os_height) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     w->OnResize();
     UpdateAfterEvent(w);
+}
+
+void Window::WindowMovedCallback(GLFWwindow* window, int os_x, int os_y) {
+#ifdef __APPLE__
+    // On macOS we need to recreate the swap chain if the window changes
+    // size OR MOVES!
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    w->OnResize();
+    UpdateAfterEvent(w);
+#endif
 }
 
 void Window::RescaleCallback(GLFWwindow* window, float xscale, float yscale) {
