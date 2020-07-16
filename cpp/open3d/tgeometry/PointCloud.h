@@ -58,7 +58,7 @@ public:
         point_attr_["normals"] = core::TensorList({3}, dtype_, device_);
     }
 
-    /// Construct from points.
+    /// Construct a point cloud from points.
     ///
     /// \param points A tensorlist with element shape (3,).
     /// - The resulting pointcloud will have the same dtype and device as the
@@ -71,10 +71,10 @@ public:
 
     /// Construct from points and other attributes of the points.
     ///
-    /// \param point_dict A map of string to TensorList containing points and
+    /// \param point_attr A map of string to TensorList containing points and
     /// their attributes. point_dict must contain at least the "points" key.
     PointCloud(const std::unordered_map<std::string, core::TensorList>
-                       &point_dict);
+                       &point_attr);
 
     virtual ~PointCloud() override {}
 

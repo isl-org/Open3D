@@ -61,18 +61,18 @@ PointCloud::PointCloud(const core::TensorList &points)
 }
 
 PointCloud::PointCloud(
-        const std::unordered_map<std::string, core::TensorList> &point_dict)
+        const std::unordered_map<std::string, core::TensorList> &point_attr)
     : Geometry3D(Geometry::GeometryType::PointCloud) {
-    if (point_dict.find("points") == point_dict.end()) {
-        utility::LogError("point_dict must have key \"points\".");
+    if (point_attr.find("points") == point_attr.end()) {
+        utility::LogError("point_attr must have key \"points\".");
     }
 
-    core::TensorList points = point_dict.at("points");
+    core::TensorList points = point_attr.at("points");
     points.AssertElementShape({3});
     dtype_ = points.GetDtype();
     device_ = points.GetDevice();
 
-    for (auto &kv : point_dict) {
+    for (auto &kv : point_attr) {
         if (device_ != kv.second.GetDevice()) {
             utility::LogError(
                     "points have device {}, however, a property has device {}.",
@@ -112,7 +112,7 @@ void PointCloud::SyncPushBack(
     // other map, the two maps have exactly the same keys.
     if (point_attr_.size() != point_struct.size()) {
         utility::LogError(
-                "Pointcloud's point_dict has size {} values, but the input "
+                "Pointcloud's point_attr has size {} values, but the input "
                 "point_struct has {} values.",
                 point_attr_.size(), point_struct.size());
     }
