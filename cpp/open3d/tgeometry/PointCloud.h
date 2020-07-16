@@ -42,19 +42,46 @@ namespace tgeometry {
 /// \class PointCloud
 /// \brief A pointcloud contains a set of 3D points.
 ///
-/// The PointCloud class stores the attribute data in a key-value pair manner,
-/// where the key is a string representing the attribute name and value is a
-/// TensorList containing the attribute data.
+/// The PointCloud class stores the attribute data in key-value pairs for
+/// flexibility, where the key is a string representing the attribute name and
+/// value is a TensorList containing the attribute data. In most cases, the
+/// length of an attribute should be equal to the length of the "points", the
+/// pointcloud class provides helper functions to check and facilitates this
+/// consistency.
 ///
-/// By default, a pointcloud only contains the "points" attribute representing
-/// the 3D point coordinates. Users can extend a PointCloud object with other
-/// attributes such as "colors", "normals" and "labels" when needed.
+/// Although the attributes are all stored in a key-value pair dictionary, the
+/// attributes has different levels:
 ///
-/// We treat {"points", "colors", "normals"} as common attributes. For common
-/// attributes the PointCloud class provides convenient accessing methods such
-/// as `PointCloud::GetPoints` and `PointCloud::GetNormals`, and they should
-/// be used preferably when available. For other attributes, use the generalized
-/// getter `PointCloud::GetPointAttr` and setter `SetPointAttr`.
+/// - Level 0: Default attribute {"points"}.
+///     - Level 0 attribute "points" is created by default.
+///     - Level 0 attribute is present in all pointclouds and it is enforced
+///       programatically.
+///     - Level 0 attribute has convenience functions. Examples:
+///         - PointCloud::GetPoints()
+///         - PointCloud::SetPoints(points_tensorlist)
+///         - PointCloud::HasPoints()
+/// - Level 1: Commonly-used attributes {"normals", "colors"}.
+///     - Level 1 attributes are not created by default.
+///     - Level 1 function has convenience functions. Note the naming convention
+///     is different from level 0 attributes. Examples:
+///          - PointCloud::GetPointNormals()
+///          - PointCloud::SetPointNormals(normals_tensorlist)
+///          - PointCloud::HasPointNormals()
+///          - PointCloud::GetPointColors()
+///          - PointCloud::SetPointColors(colors_tensorlist)
+///          - PointCloud::HasPointColors()
+/// - Level 2: Custom attributes, e.g. {"labels", "alphas", "intensities"}.
+///     - Level 2 attributes are created by users.
+///     - Generalized helper functions are provided. Examples:
+///          - PointCloud::GetPointAttr("labels")
+///          - PointCloud::SetPointAttr("labels", labels_tensorlist)
+///          - PointCloud::HasPointAttr("labels")
+///     - Note that the level 0 and level 1 convenience functions can also be
+///     achieved via the generalized helper functions:
+///          - PointCloud::GetPoints() is the same as
+///            PointCloud::GetPointAttr("points")
+///          - PointCloud::HasPointNormals() is the same as
+///            PointCloud::HasPointAttr("normals")
 class PointCloud : public Geometry3D {
 public:
     /// At construction time, a pointcloud contains the "points" attributes with
@@ -94,6 +121,10 @@ public:
     /// \param key Attribute name. Typical attribute name includes "points",
     /// "colors", "normals".
     core::TensorList &GetPointAttr(const std::string &key);
+
+    const core::TensorList &GetConstAttr(const std::string &key) const {
+        return point_attr_.at(key);
+    }
 
     /// Set point attributes. If the attribute key already exists, its value
     /// will be overwritten, otherwise, the new key will be created.
