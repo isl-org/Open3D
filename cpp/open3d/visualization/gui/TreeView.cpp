@@ -28,8 +28,8 @@
 
 #include <imgui.h>
 #include <list>
-#include <unordered_map>
 #include <sstream>
+#include <unordered_map>
 
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
@@ -51,9 +51,9 @@ struct TreeView::Impl {
         std::list<Item> children;
     };
     Item root_;
-    std::unordered_map<TreeView::ItemId, Item*> id2item_;
+    std::unordered_map<TreeView::ItemId, Item *> id2item_;
     TreeView::ItemId selected_id_ = -1;
-    std::function<void(const char*, TreeView::ItemId)> on_value_changed_;
+    std::function<void(const char *, TreeView::ItemId)> on_value_changed_;
 };
 
 TreeView::ItemId TreeView::Impl::g_next_id = 0;
@@ -65,9 +65,7 @@ TreeView::TreeView() : impl_(new TreeView::Impl()) {
 
 TreeView::~TreeView() {}
 
-TreeView::ItemId TreeView::GetRootItem() const {
-    return impl_->root_.id;
-}
+TreeView::ItemId TreeView::GetRootItem() const { return impl_->root_.id; }
 
 TreeView::ItemId TreeView::AddItem(ItemId parent_id, const char *text) {
     Impl::Item item;
@@ -111,7 +109,7 @@ void TreeView::RemoveItem(ItemId item_id) {
         // Remove ourself from our parent's list of children
         if (item->parent) {
             for (auto sibling = item->parent->children.begin();
-                 sibling != item->parent->children.end();  ++sibling) {
+                 sibling != item->parent->children.end(); ++sibling) {
                 if (sibling->id == item_id) {
                     item->parent->children.erase(sibling);
                     break;
@@ -121,7 +119,8 @@ void TreeView::RemoveItem(ItemId item_id) {
     }
 }
 
-std::vector<TreeView::ItemId> TreeView::GetItemChildren(ItemId parent_id) const {
+std::vector<TreeView::ItemId> TreeView::GetItemChildren(
+        ItemId parent_id) const {
     std::vector<TreeView::ItemId> children;
     auto item_it = impl_->id2item_.find(parent_id);
     if (item_it != impl_->id2item_.end()) {
@@ -148,28 +147,30 @@ void TreeView::SetSelectedItemId(ItemId item_id) {
     impl_->selected_id_ = item_id;
 }
 
-void TreeView::SetOnValueChanged(std::function<void(const char*, ItemId)> on_value_changed) {
+void TreeView::SetOnValueChanged(
+        std::function<void(const char *, ItemId)> on_value_changed) {
     impl_->on_value_changed_ = on_value_changed;
 }
 
-Size TreeView::CalcPreferredSize(const Theme& theme) const {
+Size TreeView::CalcPreferredSize(const Theme &theme) const {
     return Size(Widget::DIM_GROW, Widget::DIM_GROW);
 }
 
-Widget::DrawResult TreeView::Draw(const DrawContext& context) {
+Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
 
     // ImGUI's tree can't draw a frame, so we have to do it ourselves
-    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(frame.x, frame.y),
-                                              ImVec2(frame.GetRight(), frame.GetBottom()),
-                                              colorToImguiRGBA(context.theme.tree_background_color),
-                                              context.theme.border_radius);
-    ImGui::GetWindowDrawList()->AddRect(ImVec2(frame.x, frame.y),
-                                        ImVec2(frame.GetRight(), frame.GetBottom()),
-                                        colorToImguiRGBA(context.theme.border_color),
-                                        context.theme.border_radius,
-                                        ImDrawCornerFlags_All,
-                                        context.theme.border_width);
+    ImGui::GetWindowDrawList()->AddRectFilled(
+            ImVec2(frame.x, frame.y),
+            ImVec2(frame.GetRight(), frame.GetBottom()),
+            colorToImguiRGBA(context.theme.tree_background_color),
+            context.theme.border_radius);
+    ImGui::GetWindowDrawList()->AddRect(
+            ImVec2(frame.x, frame.y),
+            ImVec2(frame.GetRight(), frame.GetBottom()),
+            colorToImguiRGBA(context.theme.border_color),
+            context.theme.border_radius, ImDrawCornerFlags_All,
+            context.theme.border_width);
 
     DrawImGuiPushEnabledState();
     auto x = frame.x - context.uiOffsetX;
@@ -192,17 +193,18 @@ Widget::DrawResult TreeView::Draw(const DrawContext& context) {
 
     Impl::Item *new_selection = nullptr;
 
-    std::function<void(Impl::Item&)> DrawItem;
-    DrawItem = [&DrawItem, this, &frame, &theme=context.theme, &new_selection](Impl::Item& item) {
+    std::function<void(Impl::Item &)> DrawItem;
+    DrawItem =
+            [&DrawItem, this, &frame, &theme = context.theme,
+             &new_selection ](Impl::Item & item) {
         // ImGUI's tree doesn't seem to support selected items,
         // so we have to draw our own selection.
         if (item.id == impl_->selected_id_) {
             auto h = ImGui::GetTextLineHeightWithSpacing();
             auto y = ImGui::GetCursorPosY();
             ImGui::GetWindowDrawList()->AddRectFilled(
-                                ImVec2(frame.x, y),
-                                ImVec2(frame.GetRight(), y + h),
-                                colorToImguiRGBA(theme.tree_selected_color));
+                    ImVec2(frame.x, y), ImVec2(frame.GetRight(), y + h),
+                    colorToImguiRGBA(theme.tree_selected_color));
         }
 
         int flags = ImGuiTreeNodeFlags_DefaultOpen;
@@ -245,7 +247,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext& context) {
     auto result = Widget::DrawResult::NONE;
     if (new_selection) {
         if (impl_->on_value_changed_) {
-            impl_->on_value_changed_(new_selection->text.c_str(), new_selection->id);
+            impl_->on_value_changed_(new_selection->text.c_str(),
+                                     new_selection->id);
         }
         result = Widget::DrawResult::REDRAW;
     }
@@ -256,4 +259,3 @@ Widget::DrawResult TreeView::Draw(const DrawContext& context) {
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d
-

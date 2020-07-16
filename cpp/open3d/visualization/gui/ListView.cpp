@@ -130,8 +130,9 @@ Widget::DrawResult ListView::Draw(const DrawContext &context) {
             // we need hover to be the selected color iff this item is
             // selected, otherwise we want it to be transparent.
             if (is_selected) {
-                ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
-                                      colorToImgui(context.theme.list_selected_color));
+                ImGui::PushStyleColor(
+                        ImGuiCol_HeaderHovered,
+                        colorToImgui(context.theme.list_selected_color));
             } else {
                 ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
                                       colorToImgui(Color(0, 0, 0, 0)));

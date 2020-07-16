@@ -34,6 +34,7 @@ namespace gui {
 
 class TreeView : public Widget {
     using Super = Widget;
+
 public:
     using ItemId = int;
 
@@ -44,7 +45,7 @@ public:
     /// AddItem(GetRootItem(), "...") will be a top-level item.
     ItemId GetRootItem() const;
     /// Adds an item to the tree
-    ItemId AddItem(ItemId parent_id, const char *text);
+    ItemId AddItem(ItemId parent_id, const char* text);
     /// Removes an item an all its children (if any) from the tree
     void RemoveItem(ItemId item_id);
     std::vector<ItemId> GetItemChildren(ItemId parent_id) const;
@@ -71,4 +72,3 @@ private:
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d
-
