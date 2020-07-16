@@ -53,9 +53,7 @@ static core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
 }
 
 PointCloud::PointCloud(const core::TensorList &points)
-    : Geometry3D(Geometry::GeometryType::PointCloud),
-      dtype_(points.GetDtype()),
-      device_(points.GetDevice()) {
+    : PointCloud(points.GetDtype(), points.GetDevice()) {
     points.AssertElementShape({3});
     point_attr_["points"] = points;
 }
