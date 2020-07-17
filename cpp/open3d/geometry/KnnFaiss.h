@@ -14,7 +14,7 @@ struct Index;
 namespace gpu {
 class StandardGpuResources;
 }
-}
+}  // namespace faiss
 
 namespace open3d {
 namespace geometry {
