@@ -88,7 +88,7 @@ function(build_3rdparty_library name)
             )
         endforeach()
         target_include_directories(${name} PUBLIC
-            $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty>
+            $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>
         )
         open3d_set_global_properties(${name})
         set_target_properties(${name} PROPERTIES
@@ -110,7 +110,7 @@ function(build_3rdparty_library name)
             )
         endforeach()
         target_include_directories(${name} INTERFACE
-            $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty>
+            $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>
         )
     endif()
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
@@ -124,11 +124,11 @@ function(build_3rdparty_library name)
         foreach(incl IN LISTS include_dirs)
             if(arg_INCLUDE_ALL)
                 install(DIRECTORY ${incl}
-                    DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty
+                    DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty
                 )
             else()
                 install(DIRECTORY ${incl}
-                    DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty
+                    DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty
                     FILES_MATCHING
                         PATTERN "*.h"
                         PATTERN "*.hpp"
@@ -210,10 +210,10 @@ function(import_3rdparty_library name)
         endif()
         target_include_directories(${name} SYSTEM INTERFACE $<BUILD_INTERFACE:${incl_path}>)
         if(arg_PUBLIC OR arg_HEADER)
-            install(DIRECTORY ${arg_INCLUDE_DIR} DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty
+            install(DIRECTORY ${arg_INCLUDE_DIR} DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty
                 FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
             )
-            target_include_directories(${name} INTERFACE $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty>)
+            target_include_directories(${name} INTERFACE $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>)
         endif()
     endif()
     if(arg_LIBRARIES)
