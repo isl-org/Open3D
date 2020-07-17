@@ -53,11 +53,12 @@ namespace tgeometry {
 /// attributes has different levels:
 ///
 /// - Level 0: Default attribute {"points"}.
-///     - Created by default, required for all pointclouds
+///     - Created by default, required for all pointclouds.
 ///     - Convenience functions:
 ///         - PointCloud::GetPoints()
 ///         - PointCloud::SetPoints(points_tensorlist)
 ///         - PointCloud::HasPoints()
+///     - The "points"'s device determines the device of the pointcloud.
 /// - Level 1: Commonly-used attributes {"normals", "colors"}.
 ///     - Not created by default.
 ///     - Convenience functions:
@@ -67,6 +68,7 @@ namespace tgeometry {
 ///         - PointCloud::GetPointColors()
 ///         - PointCloud::SetPointColors(colors_tensorlist)
 ///         - PointCloud::HasPointColors()
+///     - Device must be the same as "points"'s device. Dtype can be different.
 /// - Level 2: Custom attributes, e.g. {"labels", "alphas", "intensities"}.
 ///     - Not created by default. Created by users.
 ///     - No convenience functions.
@@ -74,6 +76,7 @@ namespace tgeometry {
 ///         - PointCloud::GetPointAttr("labels")
 ///         - PointCloud::SetPointAttr("labels", labels_tensorlist)
 ///         - PointCloud::HasPointAttr("labels")
+///     - Device must be the same as "points"'s device. Dtype can be different.
 ///
 /// Note that the level 0 and level 1 convenience functions can also be achieved
 /// via the generalized helper functions:
@@ -86,10 +89,8 @@ public:
     /// Construct an empty pointcloud.
     PointCloud(core::Dtype dtype = core::Dtype::Float32,
                const core::Device &device = core::Device("CPU:0"))
-        : Geometry3D(Geometry::GeometryType::PointCloud),
-          dtype_(dtype),
-          device_(device) {
-        point_attr_["points"] = core::TensorList({3}, dtype_, device_);
+        : Geometry3D(Geometry::GeometryType::PointCloud), device_(device) {
+        point_attr_["points"] = core::TensorList({3}, dtype, device_);
     }
 
     /// Construct a pointcloud from points.
@@ -194,7 +195,6 @@ public:
 
 protected:
     std::unordered_map<std::string, core::TensorList> point_attr_;
-    core::Dtype dtype_ = core::Dtype::Float32;
     core::Device device_ = core::Device("CPU:0");
 };
 
