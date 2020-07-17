@@ -145,7 +145,7 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
 PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
     center.AssertShape({3});
     core::Tensor points = GetPoints().AsTensor();
-    points.AsRvalue() = (points - center) * scale + center;
+    points.Sub_(center).Mul_(scale).Add_(center);
     return *this;
 }
 

@@ -353,7 +353,7 @@ public:
     /// Convert to rvalue such that the Tensor can be assigned.
     /// E.g. in numpy
     /// tensor_a = tensor_b     # tensor_a is lvalue, tensor_a variable will
-    ///                         # now referecne tensor_b, that is, tensor_a
+    ///                         # now reference tensor_b, that is, tensor_a
     ///                         # and tensor_b share exactly the same memory.
     /// tensor_a[:] = tensor_b  # tensor_a[:] is rvalue, tensor_b's values are
     ///                         # assigned to tensor_a's memory.
