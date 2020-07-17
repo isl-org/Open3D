@@ -127,7 +127,7 @@ void TreeView::RemoveItem(ItemId item_id) {
     }
 }
 
-const char* TreeView::GetItemText(ItemId item_id) const {
+const char *TreeView::GetItemText(ItemId item_id) const {
     auto item_it = impl_->id2item_.find(item_id);
     if (item_it != impl_->id2item_.end()) {
         return item_it->second->text.c_str();
@@ -135,7 +135,7 @@ const char* TreeView::GetItemText(ItemId item_id) const {
     return nullptr;
 }
 
-void TreeView::SetItemText(ItemId item_id, const char* text) {
+void TreeView::SetItemText(ItemId item_id, const char *text) {
     auto item_it = impl_->id2item_.find(item_id);
     if (item_it != impl_->id2item_.end()) {
         item_it->second->text = text;
@@ -245,8 +245,10 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         if (item.children.empty()) {
             flags |= ImGuiTreeNodeFlags_Leaf;
         }
-        bool is_selectable = (item.children.empty() || impl_->can_select_parents_);
-        if (ImGui::TreeNodeEx(item.id_string.c_str(), flags, "%s", item.text.c_str())) {
+        bool is_selectable =
+                (item.children.empty() || impl_->can_select_parents_);
+        if (ImGui::TreeNodeEx(item.id_string.c_str(), flags, "%s",
+                              item.text.c_str())) {
             if (ImGui::IsItemClicked() && is_selectable) {
                 impl_->selected_id_ = item.id;
                 new_selection = &item;
