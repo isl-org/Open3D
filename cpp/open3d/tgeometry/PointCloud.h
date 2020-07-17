@@ -207,8 +207,6 @@ public:
         return HasPointAttr("normals");
     }
 
-    core::TensorList &operator[](const std::string &key);
-
     /// Synchronized push back. Before push back, the function asserts that all
     /// the tensorlists in the point_attr_ have the same length.
     ///

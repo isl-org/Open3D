@@ -79,10 +79,6 @@ PointCloud::PointCloud(
     }
 }
 
-core::TensorList &PointCloud::operator[](const std::string &key) {
-    return GetPointAttr(key);
-}
-
 void PointCloud::SyncPushBack(
         const std::unordered_map<std::string, core::Tensor> &point_struct) {
     // Check that the current tensorlists in point_attr_ have the same size.

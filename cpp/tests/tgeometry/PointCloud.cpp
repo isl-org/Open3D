@@ -70,16 +70,16 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
             core::TensorList::FromTensor(t, /*inplace=*/false);
     tgeometry::PointCloud pcd(points);
     EXPECT_TRUE(pcd.HasPoints());
-    EXPECT_EQ(pcd["points"].GetSize(), 10);
-    pcd["points"].PushBack(single_point);
-    EXPECT_EQ(pcd["points"].GetSize(), 11);
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 10);
+    pcd.GetPoints().PushBack(single_point);
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 11);
 
     // Inplace tensorlist: cannot push_back
     points = core::TensorList::FromTensor(t, /*inplace=*/true);
     pcd = tgeometry::PointCloud(points);
     EXPECT_TRUE(pcd.HasPoints());
-    EXPECT_EQ(pcd["points"].GetSize(), 10);
-    EXPECT_ANY_THROW(pcd["points"].PushBack(single_point));
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 10);
+    EXPECT_ANY_THROW(pcd.GetPoints().PushBack(single_point));
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
@@ -103,11 +103,11 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
     EXPECT_TRUE(pcd.HasColors());
     EXPECT_TRUE(pcd.HasNormals());
 
-    EXPECT_TRUE(pcd["points"].AsTensor().AllClose(
+    EXPECT_TRUE(pcd.GetPoints().AsTensor().AllClose(
             core::Tensor::Ones({10, 3}, dtype, device)));
-    EXPECT_TRUE(pcd["colors"].AsTensor().AllClose(
+    EXPECT_TRUE(pcd.GetPointColors().AsTensor().AllClose(
             core::Tensor::Ones({10, 3}, dtype, device) * 0.5));
-    EXPECT_TRUE(pcd["normals"].AsTensor().AllClose(
+    EXPECT_TRUE(pcd.GetPointNormals().AsTensor().AllClose(
             core::Tensor::Ones({10, 3}, dtype, device) * 0.25));
 }
 
@@ -127,13 +127,13 @@ TEST_P(PointCloudPermuteDevices, SyncPushBack) {
 
     // Good.
     std::unordered_map<std::string, core::Tensor> point_struct;
-    EXPECT_EQ(pcd["points"].GetSize(), 10);
-    EXPECT_EQ(pcd["colors"].GetSize(), 10);
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 10);
+    EXPECT_EQ(pcd.GetPointColors().GetSize(), 10);
     point_struct["points"] = core::Tensor::Ones({3}, dtype, device);
     point_struct["colors"] = core::Tensor::Ones({3}, dtype, device);
     pcd.SyncPushBack(point_struct);
-    EXPECT_EQ(pcd["points"].GetSize(), 11);
-    EXPECT_EQ(pcd["colors"].GetSize(), 11);
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 11);
+    EXPECT_EQ(pcd.GetPointColors().GetSize(), 11);
 
     // // Missing key.
     // point_struct.clear();
@@ -201,9 +201,9 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
     EXPECT_TRUE(pcd.HasPoints());
     EXPECT_TRUE(pcd.HasColors());
     EXPECT_FALSE(pcd.HasNormals());
-    EXPECT_TRUE(pcd["points"].AsTensor().AllClose(
+    EXPECT_TRUE(pcd.GetPoints().AsTensor().AllClose(
             core::Tensor::Zeros({2, 3}, dtype, device)));
-    EXPECT_TRUE(pcd["colors"].AsTensor().AllClose(
+    EXPECT_TRUE(pcd.GetPointColors().AsTensor().AllClose(
             core::Tensor::Ones({2, 3}, dtype, device)));
 
     // Float64 case.
@@ -213,9 +213,9 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
     EXPECT_TRUE(pcd.HasPoints());
     EXPECT_TRUE(pcd.HasColors());
     EXPECT_FALSE(pcd.HasNormals());
-    EXPECT_TRUE(pcd["points"].AsTensor().AllClose(
+    EXPECT_TRUE(pcd.GetPoints().AsTensor().AllClose(
             core::Tensor::Zeros({2, 3}, dtype, device)));
-    EXPECT_TRUE(pcd["colors"].AsTensor().AllClose(
+    EXPECT_TRUE(pcd.GetPointColors().AsTensor().AllClose(
             core::Tensor::Ones({2, 3}, dtype, device)));
 }
 
