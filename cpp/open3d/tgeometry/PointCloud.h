@@ -119,13 +119,13 @@ public:
         return point_attr_.at(key);
     }
 
-    /// Get the value of the "points" attribute.
+    /// Get the value of the "points" attribute. Convenience function.
     core::TensorList &GetPoints() { return GetPointAttr("points"); }
 
-    /// Get the value of the "colors" attribute.
+    /// Get the value of the "colors" attribute. Convenience function.
     core::TensorList &GetPointColors() { return GetPointAttr("colors"); }
 
-    /// Get the value of the "normals" attribute.
+    /// Get the value of the "normals" attribute. Convenience function.
     core::TensorList &GetPointNormals() { return GetPointAttr("normals"); }
 
     /// Get attributes. Throws exception if the attribute does not exist.
@@ -135,15 +135,15 @@ public:
         return point_attr_.at(key);
     }
 
-    /// Get the value of the "points" attribute.
+    /// Get the value of the "points" attribute. Convenience function.
     const core::TensorList &GetPoints() const { return GetPointAttr("points"); }
 
-    /// Get the value of the "colors" attribute.
+    /// Get the value of the "colors" attribute. Convenience function.
     const core::TensorList &GetPointColors() const {
         return GetPointAttr("colors");
     }
 
-    /// Get the value of the "normals" attribute.
+    /// Get the value of the "normals" attribute. Convenience function.
     const core::TensorList &GetPointNormals() const {
         return GetPointAttr("normals");
     }
@@ -157,17 +157,17 @@ public:
         point_attr_[key] = value;
     }
 
-    /// Set the value of the "points" attribute.
+    /// Set the value of the "points" attribute. Convenience function.
     void SetPoints(const core::TensorList &value) {
         SetPointAttr("points", value);
     }
 
-    /// Set the value of the "colors" attribute.
+    /// Set the value of the "colors" attribute. Convenience function.
     void SetPointColors(const core::TensorList &value) {
         SetPointAttr("colors", value);
     }
 
-    /// Set the value of the "normals" attribute.
+    /// Set the value of the "normals" attribute. Convenience function.
     void SetPointNormals(const core::TensorList &value) {
         SetPointAttr("normals", value);
     }
@@ -184,6 +184,7 @@ public:
     }
 
     /// Check if the "points" attribute's value has length > 0.
+    /// This is a convenience function.
     bool HasPoints(const std::string &key) const {
         return HasPointAttr("points");
     }
@@ -192,6 +193,7 @@ public:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as points' length
     /// 3) attribute "colors"'s length > 0
+    /// This is a convenience function.
     bool HasPointColors(const std::string &key) const {
         return HasPointAttr("colors");
     }
@@ -200,6 +202,7 @@ public:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as points' length
     /// 3) attribute "normals"'s length > 0
+    /// This is a convenience function.
     bool HasPointNormals(const std::string &key) const {
         return HasPointAttr("normals");
     }
