@@ -146,6 +146,18 @@ public:
                        point_attr_.at("points").GetSize();
     }
 
+    core::TensorList &GetPoints() { return GetPointAttr("points"); }
+
+    const core::TensorList &GetPoints() const { return GetPointAttr("points"); }
+
+    void SetPoints(const core::TensorList &value) {
+        SetPointAttr("points", value);
+    }
+
+    bool HasPoints(const std::string &key) const {
+        return HasPointAttr("points");
+    }
+
     core::TensorList &operator[](const std::string &key);
 
     /// Synchronized push back. Before push back, the function asserts that all
