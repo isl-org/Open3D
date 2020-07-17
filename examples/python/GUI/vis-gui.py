@@ -250,13 +250,6 @@ class AppWindow:
         w.set_on_menu_item_activated(AppWindow.MENU_ABOUT, self._on_menu_about)
         # ----
 
-    def _make_callback(self, member_function):
-
-        def cb():
-            self.member_function()
-
-        return cb
-
     def _on_layout(self, theme):
         # The on_layout callback should set the frame (position + size) of every
         # child correctly. After the callback is done the window will layout
