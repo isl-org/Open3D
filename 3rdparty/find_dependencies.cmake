@@ -48,6 +48,10 @@ find_package(PkgConfig QUIET)
 #        include headers are in the subdirectories <dir>. Trailing slashes
 #        have the same meaning as with install(DIRECTORY). <dir> must be
 #        relative to the library source directory.
+#        If your include is "#include <x.hpp>" and the path of the file is
+#        "path/to/libx/x.hpp" then you need to pass "path/to/libx/"
+#        with the trailing "/". If you have "#include <libx/x.hpp>" then you
+#        need to pass "path/to/libx".
 #    SOURCES <src> [<src> ...]
 #        the library sources. Can be omitted for header-only libraries.
 #        All sources must be relative to the library source directory.
@@ -187,7 +191,8 @@ endfunction()
 #        Trailing slashes have the same meaning as with install(DIRECTORY).
 #        If your include is "#include <x.hpp>" and the path of the file is
 #        "/path/to/libx/x.hpp" then you need to pass "/path/to/libx/"
-#        with the trailing "/".
+#        with the trailing "/". If you have "#include <libx/x.hpp>" then you
+#        need to pass "/path/to/libx".
 #    LIBRARIES
 #        the built library name(s). It is assumed that the library is static.
 #        If the library is PUBLIC, it will be renamed to Open3D_${name} at
@@ -197,7 +202,7 @@ endfunction()
 #        CMAKE_ARCHIVE_OUTPUT_DIRECTORY.
 #
 function(import_3rdparty_library name)
-        cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
     endif()
