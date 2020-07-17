@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
-#include "pybind/utility/utility.h"
+#pragma once
+
+#include <memory>
+#include <zmq.hpp>
 
 namespace open3d {
+namespace utility {
 
-void pybind_utility(py::module &m) {
-    py::module m_submodule = m.def_submodule("utility");
-    pybind_console(m_submodule);
-    pybind_eigen(m_submodule);
-    pybind_remote_functions(m_submodule);
-}
+class Connection {
+public:
+    Connection();
+    Connection(const std::string& address, int connect_timeout, int timeout);
+    ~Connection();
 
+    std::shared_ptr<zmq::message_t> send(const void* buffer, size_t len);
+
+private:
+    void init();
+
+    std::unique_ptr<zmq::socket_t> socket;
+    const std::string address;
+    const int connect_timeout;
+    const int timeout;
+};
+}  // namespace utility
 }  // namespace open3d

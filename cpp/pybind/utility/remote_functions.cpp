@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,31 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/utility/RemoteFunctions.h"
+
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
-#include "pybind/utility/utility.h"
 
 namespace open3d {
 
-void pybind_utility(py::module &m) {
-    py::module m_submodule = m.def_submodule("utility");
-    pybind_console(m_submodule);
-    pybind_eigen(m_submodule);
-    pybind_remote_functions(m_submodule);
-}
+void pybind_remote_functions(py::module& m) {
+    py::class_<utility::Connection, std::shared_ptr<utility::Connection>>(
+            m, "_Connection");
 
+    m.def("set_point_cloud", &utility::SetPointCloud, "pcd"_a, "path"_a = "",
+          "time"_a = 0, "layer"_a = "",
+          "connection"_a = std::shared_ptr<utility::Connection>(),
+          "Sends a point cloud message to a viewer.");
+    docstring::FunctionDocInject(
+            m, "set_point_cloud",
+            {
+                    {"pcd", "Point cloud object."},
+                    {"path", "A path descriptor, e.g., 'mygroup/points'."},
+                    {"time", "The time associated with this data."},
+                    {"layer", "The layer associated with this data."},
+                    {"connection",
+                     "A Connection object. Use None to automatically create "
+                     "the connection."},
+            });
+}
 }  // namespace open3d

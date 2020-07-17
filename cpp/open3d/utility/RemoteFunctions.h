@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
-#include "pybind/utility/utility.h"
+#pragma once
+
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/utility/Connection.h"
 
 namespace open3d {
-
-void pybind_utility(py::module &m) {
-    py::module m_submodule = m.def_submodule("utility");
-    pybind_console(m_submodule);
-    pybind_eigen(m_submodule);
-    pybind_remote_functions(m_submodule);
+namespace utility {
+void SetPointCloud(
+        const open3d::geometry::PointCloud& pcd,
+        const std::string& path = std::string(),
+        int time = 0,
+        const std::string& layer = std::string(),
+        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
 }
-
 }  // namespace open3d

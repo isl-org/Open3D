@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
-#include "pybind/utility/utility.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/Messages.h"
+#include "open3d/utility/RemoteFunctions.h"
 
 namespace open3d {
+namespace utility {
+void SetPointCloud(const open3d::geometry::PointCloud& pcd,
+                   const std::string& path,
+                   int time,
+                   const std::string& layer,
+                   std::shared_ptr<Connection> connection) {
+    if (pcd.HasPoints() == 0) {
+        LogInfo("SetMeshData: point cloud is empty");
+        return;
+    }
 
-void pybind_utility(py::module &m) {
-    py::module m_submodule = m.def_submodule("utility");
-    pybind_console(m_submodule);
-    pybind_eigen(m_submodule);
-    pybind_remote_functions(m_submodule);
+    messages::SetMeshData msg;
+    msg.path = path;
+    msg.time = time;
+    msg.layer = layer;
+
+    msg.data.vertices = messages::Array::fromPtr((double*)pcd.points_.data(),
+                                                 {pcd.points_.size(), 3});
+    if (pcd.HasNormals()) {
+        msg.data.vertex_attributes["normals"] = messages::Array::fromPtr(
+                (double*)pcd.normals_.data(), {pcd.normals_.size(), 3});
+    }
+    if (pcd.HasColors()) {
+        msg.data.vertex_attributes["colors"] = messages::Array::fromPtr(
+                (double*)pcd.colors_.data(), {pcd.colors_.size(), 3});
+    }
+
+    msgpack::sbuffer sbuf;
+    messages::Request request{msg.msg_id()};
+    msgpack::pack(sbuf, request);
+    msgpack::pack(sbuf, msg);
+
+    if (!connection) {
+        connection = std::shared_ptr<Connection>(new Connection());
+    }
+    connection->send(sbuf.data(), sbuf.size());
 }
 
+}  // namespace utility
 }  // namespace open3d
