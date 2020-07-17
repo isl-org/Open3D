@@ -112,35 +112,43 @@ public:
 
     virtual ~PointCloud() override {}
 
-    /// Get point attributes. Throws exception if the attribute name does not
-    /// exist.
+    /// Get attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
     core::TensorList &GetPointAttr(const std::string &key) {
         return point_attr_.at(key);
     }
 
+    /// Get the value of the "points" attribute.
     core::TensorList &GetPoints() { return GetPointAttr("points"); }
+
+    /// Get the value of the "colors" attribute.
     core::TensorList &GetPointColors() { return GetPointAttr("colors"); }
+
+    /// Get the value of the "normals" attribute.
     core::TensorList &GetPointNormals() { return GetPointAttr("normals"); }
 
-    /// Const version of get point attributes. Throws exception if the attribute
-    /// name does not exist.
+    /// Get attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
     const core::TensorList &GetPointAttr(const std::string &key) const {
         return point_attr_.at(key);
     }
 
+    /// Get the value of the "points" attribute.
     const core::TensorList &GetPoints() const { return GetPointAttr("points"); }
+
+    /// Get the value of the "colors" attribute.
     const core::TensorList &GetPointColors() const {
         return GetPointAttr("colors");
     }
+
+    /// Get the value of the "normals" attribute.
     const core::TensorList &GetPointNormals() const {
         return GetPointAttr("normals");
     }
 
-    /// Set point attributes. If the attribute key already exists, its value
+    /// Set attributes. If the attribute key already exists, its value
     /// will be overwritten, otherwise, the new key will be created.
     ///
     /// \param key Attribute name.
@@ -149,18 +157,23 @@ public:
         point_attr_[key] = value;
     }
 
+    /// Set the value of the "points" attribute.
     void SetPoints(const core::TensorList &value) {
         SetPointAttr("points", value);
     }
+
+    /// Set the value of the "colors" attribute.
     void SetPointColors(const core::TensorList &value) {
         SetPointAttr("colors", value);
     }
+
+    /// Set the value of the "normals" attribute.
     void SetPointNormals(const core::TensorList &value) {
         SetPointAttr("normals", value);
     }
 
     /// Returns true if all of the following is true:
-    /// 1) attribute key exist &&
+    /// 1) attribute key exist
     /// 2) attribute's length as points' length
     /// 3) attribute's length > 0
     bool HasPointAttr(const std::string &key) const {
@@ -170,12 +183,23 @@ public:
                        point_attr_.at("points").GetSize();
     }
 
+    /// Check if the "points" attribute's value has length > 0.
     bool HasPoints(const std::string &key) const {
         return HasPointAttr("points");
     }
+
+    /// Returns true if all of the following is true:
+    /// 1) attribute "colors" exist
+    /// 2) attribute "colors"'s length as points' length
+    /// 3) attribute "colors"'s length > 0
     bool HasPointColors(const std::string &key) const {
         return HasPointAttr("colors");
     }
+
+    /// Returns true if all of the following is true:
+    /// 1) attribute "normals" exist
+    /// 2) attribute "normals"'s length as points' length
+    /// 3) attribute "normals"'s length > 0
     bool HasPointNormals(const std::string &key) const {
         return HasPointAttr("normals");
     }
