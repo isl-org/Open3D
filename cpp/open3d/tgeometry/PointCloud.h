@@ -88,10 +88,7 @@ class PointCloud : public Geometry3D {
 public:
     /// Construct an empty pointcloud.
     PointCloud(core::Dtype dtype = core::Dtype::Float32,
-               const core::Device &device = core::Device("CPU:0"))
-        : Geometry3D(Geometry::GeometryType::PointCloud), device_(device) {
-        point_attr_["points"] = core::TensorList({3}, dtype, device_);
-    }
+               const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a pointcloud from points.
     ///
@@ -120,9 +117,12 @@ public:
     /// "colors", "normals".
     core::TensorList &GetPointAttr(const std::string &key);
 
-    const core::TensorList &GetConstAttr(const std::string &key) const {
-        return point_attr_.at(key);
-    }
+    /// Const version of get point attributes. Throws exception if the attribute
+    /// name does not exist.
+    ///
+    /// \param key Attribute name. Typical attribute name includes "points",
+    /// "colors", "normals".
+    const core::TensorList &GetPointAttr(const std::string &key) const;
 
     /// Set point attributes. If the attribute key already exists, its value
     /// will be overwritten, otherwise, the new key will be created.

@@ -52,6 +52,11 @@ static core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
             .To(dtype);
 }
 
+PointCloud::PointCloud(core::Dtype dtype, const core::Device &device)
+    : Geometry3D(Geometry::GeometryType::PointCloud), device_(device) {
+    point_attr_["points"] = core::TensorList({3}, dtype, device_);
+}
+
 PointCloud::PointCloud(const core::TensorList &points)
     : PointCloud(points.GetDtype(), points.GetDevice()) {
     points.AssertElementShape({3});
@@ -62,7 +67,7 @@ PointCloud::PointCloud(
         const std::unordered_map<std::string, core::TensorList> &point_attr)
     : PointCloud(point_attr.at("points").GetDtype(),
                  point_attr.at("points").GetDevice()) {
-    core::TensorList points = point_attr.at("points");
+    const core::TensorList &points = point_attr.at("points");
     points.AssertElementShape({3});
     for (auto &kv : point_attr) {
         if (device_ != kv.second.GetDevice()) {
@@ -75,6 +80,10 @@ PointCloud::PointCloud(
 }
 
 core::TensorList &PointCloud::GetPointAttr(const std::string &key) {
+    return point_attr_.at(key);
+}
+
+const core::TensorList &PointCloud::GetPointAttr(const std::string &key) const {
     return point_attr_.at(key);
 }
 
