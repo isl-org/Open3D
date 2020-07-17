@@ -46,11 +46,20 @@ public:
     /// Returns the ID of the root item, that is,
     /// AddItem(GetRootItem(), "...") will be a top-level item.
     ItemId GetRootItem() const;
-    /// Adds an item to the tree
+    /// Adds an item to the tree.
     ItemId AddItem(ItemId parent_id, const char* text);
     /// Removes an item an all its children (if any) from the tree
     void RemoveItem(ItemId item_id);
+    /// Returns the text of the item, or nullptr if item_id cannot be found.
+    const char* GetItemText(ItemId item_id) const;
+    void SetItemText(ItemId item_id, const char* text);
     std::vector<ItemId> GetItemChildren(ItemId parent_id) const;
+
+    bool GetCanSelectItemsWithChildren() const;
+    /// If true, enables selecting items that have children.
+    /// Items can be toggled open/closed with the triangles or by
+    /// double-clicking. Default is false.
+    void SetCanSelectItemsWithChildren(bool can_select);
 
     /// Returns the currently selected item id in the tree.
     ItemId GetSelectedItemId() const;
@@ -61,10 +70,10 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
-    /// Calls onValueChanged(const char *selectedText, ItemId selectedItemId)
+    /// Calls onSelectionChanged(const char *sel_text, ItemId sel_item_id)
     /// when the list selection changes because of user action.
-    void SetOnValueChanged(
-            std::function<void(const char*, ItemId)> on_value_changed);
+    void SetOnSelectionChanged(
+            std::function<void(const char*, ItemId)> on_selection_changed);
 
 private:
     struct Impl;

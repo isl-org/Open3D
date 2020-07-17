@@ -38,6 +38,10 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
+namespace {
+static int g_treeview_id = 1;
+}
+
 struct TreeView::Impl {
     static TreeView::ItemId g_next_id;
 
@@ -46,19 +50,23 @@ struct TreeView::Impl {
     //       array
     struct Item {
         TreeView::ItemId id = -1;
+        std::string id_string;
         std::string text;
         Item *parent = nullptr;
         std::list<Item> children;
     };
+    int id_;
     Item root_;
     std::unordered_map<TreeView::ItemId, Item *> id2item_;
     TreeView::ItemId selected_id_ = -1;
-    std::function<void(const char *, TreeView::ItemId)> on_value_changed_;
+    bool can_select_parents_ = false;
+    std::function<void(const char *, TreeView::ItemId)> on_selection_changed_;
 };
 
 TreeView::ItemId TreeView::Impl::g_next_id = 0;
 
 TreeView::TreeView() : impl_(new TreeView::Impl()) {
+    impl_->id_ = g_treeview_id++;
     impl_->root_.id = Impl::g_next_id++;
     impl_->id2item_[impl_->root_.id] = &impl_->root_;
 }
@@ -70,11 +78,11 @@ TreeView::ItemId TreeView::GetRootItem() const { return impl_->root_.id; }
 TreeView::ItemId TreeView::AddItem(ItemId parent_id, const char *text) {
     Impl::Item item;
     item.id = Impl::g_next_id++;
-    // ImGUI uses the text to identify the item, so append ##id in case
-    // we have multiple items with the same text, as the ID is unique.
+    // ImGUI uses the text to identify the item, create a ID string
     std::stringstream s;
-    s << text << "##" << item.id;
-    item.text = s.str();
+    s << "treeview" << impl_->id_ << "item" << item.id;
+    item.id_string = s.str();
+    item.text = text;
 
     Impl::Item *parent = &impl_->root_;
     auto parent_it = impl_->id2item_.find(parent_id);
@@ -119,6 +127,21 @@ void TreeView::RemoveItem(ItemId item_id) {
     }
 }
 
+const char* TreeView::GetItemText(ItemId item_id) const {
+    auto item_it = impl_->id2item_.find(item_id);
+    if (item_it != impl_->id2item_.end()) {
+        return item_it->second->text.c_str();
+    }
+    return nullptr;
+}
+
+void TreeView::SetItemText(ItemId item_id, const char* text) {
+    auto item_it = impl_->id2item_.find(item_id);
+    if (item_it != impl_->id2item_.end()) {
+        item_it->second->text = text;
+    }
+}
+
 std::vector<TreeView::ItemId> TreeView::GetItemChildren(
         ItemId parent_id) const {
     std::vector<TreeView::ItemId> children;
@@ -135,6 +158,14 @@ std::vector<TreeView::ItemId> TreeView::GetItemChildren(
     return children;
 }
 
+bool TreeView::GetCanSelectItemsWithChildren() const {
+    return impl_->can_select_parents_;
+}
+
+void TreeView::SetCanSelectItemsWithChildren(bool can_select) {
+    impl_->can_select_parents_ = can_select;
+}
+
 TreeView::ItemId TreeView::GetSelectedItemId() const {
     if (impl_->selected_id_ < 0) {
         return impl_->root_.id;
@@ -147,9 +178,9 @@ void TreeView::SetSelectedItemId(ItemId item_id) {
     impl_->selected_id_ = item_id;
 }
 
-void TreeView::SetOnValueChanged(
-        std::function<void(const char *, ItemId)> on_value_changed) {
-    impl_->on_value_changed_ = on_value_changed;
+void TreeView::SetOnSelectionChanged(
+        std::function<void(const char *, ItemId)> on_selection_changed) {
+    impl_->on_selection_changed_ = on_selection_changed;
 }
 
 Size TreeView::CalcPreferredSize(const Theme &theme) const {
@@ -207,11 +238,16 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         }
 
         int flags = ImGuiTreeNodeFlags_DefaultOpen;
+        if (impl_->can_select_parents_) {
+            flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
+            flags |= ImGuiTreeNodeFlags_OpenOnArrow;
+        }
         if (item.children.empty()) {
             flags |= ImGuiTreeNodeFlags_Leaf;
         }
-        if (ImGui::TreeNodeEx(item.text.c_str(), flags)) {
-            if (ImGui::IsItemClicked() && item.children.empty()) {
+        bool is_selectable = (item.children.empty() || impl_->can_select_parents_);
+        if (ImGui::TreeNodeEx(item.id_string.c_str(), flags, "%s", item.text.c_str())) {
+            if (ImGui::IsItemClicked() && is_selectable) {
                 impl_->selected_id_ = item.id;
                 new_selection = &item;
             }
@@ -220,7 +256,7 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             }
             ImGui::TreePop();
         } else {
-            if (ImGui::IsItemClicked() && item.children.empty()) {
+            if (ImGui::IsItemClicked() && is_selectable) {
                 impl_->selected_id_ = item.id;
                 new_selection = &item;
             }
@@ -245,9 +281,9 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     // drawing, e.g. deleting the current item).
     auto result = Widget::DrawResult::NONE;
     if (new_selection) {
-        if (impl_->on_value_changed_) {
-            impl_->on_value_changed_(new_selection->text.c_str(),
-                                     new_selection->id);
+        if (impl_->on_selection_changed_) {
+            impl_->on_selection_changed_(new_selection->text.c_str(),
+                                         new_selection->id);
         }
         result = Widget::DrawResult::REDRAW;
     }
