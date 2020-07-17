@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-import open3d as o3d
-gui = o3d.visualization.gui
+import open3d.visualization.gui as gui
 import os.path
 
 basedir = os.path.dirname(os.path.realpath(__file__))
@@ -61,34 +60,15 @@ class ExampleWindow:
         # Create a file-chooser widget. One part will be a text edit widget for
         # the filename and clicking on the button will let the user choose using
         # the file dialog.
-        fileedit = gui.TextEdit()
+        self._fileedit = gui.TextEdit()
         filedlgbutton = gui.Button("...")
-
-        def on_filedlg():
-            filedlg = gui.FileDialog(gui.FileDialog.OPEN, "Select file",
-                                     w.theme)
-            filedlg.add_filter(".obj .ply .stl",
-                               "Triangle mesh (.obj, .ply, .stl)")
-            filedlg.add_filter("", "All files")
-
-            def filedlg_cancel():
-                w.close_dialog()
-
-            def filedlg_done(path):
-                fileedit.text_value = path
-                w.close_dialog()
-
-            filedlg.set_on_cancel(filedlg_cancel)
-            filedlg.set_on_done(filedlg_done)
-            w.show_dialog(filedlg)
-
-        filedlgbutton.set_on_clicked(on_filedlg)
+        filedlgbutton.set_on_clicked(self._on_filedlg_button)
 
         # (Create the horizontal widget for the row. This will make sure the
         # text editor takes up as much space as it can.)
         fileedit_layout = gui.Horiz()
         fileedit_layout.add_child(gui.Label("Model file"))
-        fileedit_layout.add_child(fileedit)
+        fileedit_layout.add_child(self._fileedit)
         fileedit_layout.add_child(filedlgbutton)
         # add to the top-level (vertical) layout
         layout.add_child(fileedit_layout)
@@ -102,64 +82,22 @@ class ExampleWindow:
         # bottom margins. (This acts like the 'padding' property in CSS.)
         collapse = gui.CollapsableVert("Widgets", 0.33 * em,
                                        gui.Margins(em, 0, 0, 0))
-        label = gui.Label("Lorem ipsum dolor")
-        label.text_color = gui.Color(1.0, 0.5, 0.0)
-        collapse.add_child(label)
+        self._label = gui.Label("Lorem ipsum dolor")
+        self._label.text_color = gui.Color(1.0, 0.5, 0.0)
+        collapse.add_child(self._label)
 
         # Create a checkbox. Checking or unchecking would usually be used to set
         # a binary property, but in this case it will show a simple message box,
         # which illustrates how to create simple dialogs.
         cb = gui.Checkbox("Enable some really cool effect")
-
-        def on_cb(is_checked):
-            if is_checked:
-                text = "Sorry, effects are unimplemented"
-            else:
-                text = "Good choice"
-            # A Dialog is just a widget, so you make its child a layout just like
-            # a Window.
-            dlg = gui.Dialog("There might be a problem...")
-
-            # Add the message text
-            dlg_layout = gui.Vert(em, gui.Margins(em, em, em, em))
-            dlg_layout.add_child(gui.Label(text))
-
-            # Add the Ok button. We need to define a callback function to handle
-            # the click.
-            ok_button = gui.Button("Ok")
-
-            def on_ok():
-                w.close_dialog()
-
-            ok_button.set_on_clicked(on_ok)
-
-            # We want the Ok button to be an the right side, so we need to add
-            # a stretch item to the layout, otherwise the button will be the size
-            # of the entire row. A stretch item takes up as much space as it can,
-            # which forces the button to be its minimum size.
-            button_layout = gui.Horiz()
-            button_layout.add_stretch()
-            button_layout.add_child(ok_button)
-
-            # Add the button layout,
-            dlg_layout.add_child(button_layout)
-            # ... then add the layout as the child of the Dialog
-            dlg.add_child(dlg_layout)
-            # ... and now we can show it in the window.
-            w.show_dialog(dlg)
-
-        cb.set_on_checked(on_cb)  # set the callback function
+        cb.set_on_checked(self._on_cb)  # set the callback function
         collapse.add_child(cb)
 
         # Create a color editor. We will change the color of the orange label
         # above when the color changes.
         color = gui.ColorEdit()
-        color.color_value = label.text_color
-
-        def on_color(new_color):
-            label.text_color = new_color
-
-        color.set_on_value_changed(on_color)
+        color.color_value = self._label.text_color
+        color.set_on_value_changed(self._on_color)
         collapse.add_child(color)
 
         # This is a combobox, nothing fancy here, just set a simple function to
@@ -168,11 +106,7 @@ class ExampleWindow:
         combo.add_item("Show point labels")
         combo.add_item("Show point velocity")
         combo.add_item("Show bounding boxes")
-
-        def on_combo(new_val, new_idx):
-            print(new_idx, new_val)
-
-        combo.set_on_selection_changed(on_combo)
+        combo.set_on_selection_changed(self._on_combo)
         collapse.add_child(combo)
 
         # Add a simple image
@@ -183,11 +117,7 @@ class ExampleWindow:
         lv = gui.ListView()
         lv.set_items(["Ground", "Trees", "Buildings" "Cars", "People"])
         lv.selected_index = lv.selected_index + 2  # initially is -1, so now 1
-
-        def on_list(new_val, is_dbl_click):
-            print(new_val)
-
-        lv.set_on_selection_changed(on_list)
+        lv.set_on_selection_changed(self._on_list)
         collapse.add_child(lv)
 
         # Add two number editors, one for integers and one for floating point
@@ -207,23 +137,19 @@ class ExampleWindow:
         collapse.add_child(numlayout)
 
         # Create a progress bar. It ranges from 0.0 to 1.0.
-        progress = gui.ProgressBar()
-        progress.value = 0.25  # 25% complete
-        progress.value = progress.value + 0.08  # 0.25 + 0.08 = 33% complete
+        self._progress = gui.ProgressBar()
+        self._progress.value = 0.25  # 25% complete
+        self._progress.value = self._progress.value + 0.08  # 0.25 + 0.08 = 33%
         prog_layout = gui.Horiz(em)
         prog_layout.add_child(gui.Label("Progress..."))
-        prog_layout.add_child(progress)
+        prog_layout.add_child(self._progress)
         collapse.add_child(prog_layout)
 
         # Create a slider. It acts very similar to NumberEdit except that the
         # user moves a slider and cannot type the number.
         slider = gui.Slider(gui.Slider.INT)
         slider.set_limits(5, 13)
-
-        def on_slider(new_val):
-            progress.value = new_val / 20.0
-
-        slider.set_on_value_changed(on_slider)
+        slider.set_on_value_changed(self._on_slider)
         collapse.add_child(slider)
 
         # Create a text editor. The placeholder text (if not empty) will be
@@ -231,30 +157,20 @@ class ExampleWindow:
         tedit = gui.TextEdit()
         tedit.placeholder_text = "Edit me some text here"
 
-        def on_text_changed(new_text):
-            print("edit:", new_text)
-
-        def on_value_changed(new_text):
-            print("value:", new_text)
-
         # on_text_changed fires whenever the user changes the text (but not if
         # the text_value property is assigned to).
-        tedit.set_on_text_changed(on_text_changed)
+        tedit.set_on_text_changed(self._on_text_changed)
 
         # on_value_changed fires whenever the user signals that they are finished
         # editing the text, either by pressing return or by clicking outside of
         # the text editor, thus losing text focus.
-        tedit.set_on_value_changed(on_value_changed)
+        tedit.set_on_value_changed(self._on_value_changed)
         collapse.add_child(tedit)
 
         # Create a widget for showing/editing a 3D vector
         vedit = gui.VectorEdit()
         vedit.vector_value = [1, 2, 3]
-
-        def on_vedit(new_val):
-            print(new_val)
-
-        vedit.set_on_value_changed(on_vedit)
+        vedit.set_on_value_changed(self._on_vedit)
         collapse.add_child(vedit)
 
         # Create a VGrid layout. This layout specifies the number of columns
@@ -294,11 +210,7 @@ class ExampleWindow:
         # Quit button. (Typically this is a menu item)
         button_layout = gui.Horiz()
         ok_button = gui.Button("Ok")
-
-        def on_ok():
-            gui.Application.instance.quit()
-
-        ok_button.set_on_clicked(on_ok)
+        ok_button.set_on_clicked(self._on_ok)
         button_layout.add_stretch()
         button_layout.add_child(ok_button)
 
@@ -307,6 +219,91 @@ class ExampleWindow:
 
         # We're done, set the window's layout
         w.add_child(layout)
+
+    def _on_filedlg_button(self):
+        filedlg = gui.FileDialog(gui.FileDialog.OPEN, "Select file",
+                                 self.window.theme)
+        filedlg.add_filter(".obj .ply .stl",
+                           "Triangle mesh (.obj, .ply, .stl)")
+        filedlg.add_filter("", "All files")
+        filedlg.set_on_cancel(self._on_filedlg_cancel)
+        filedlg.set_on_done(self._on_filedlg_done)
+        self.window.show_dialog(filedlg)
+
+    def _on_filedlg_cancel(self):
+        self.window.close_dialog()
+
+    def _on_filedlg_done(self, path):
+        self._fileedit.text_value = path
+        self.window.close_dialog()
+
+    def _on_cb(self, is_checked):
+        if is_checked:
+            text = "Sorry, effects are unimplemented"
+        else:
+            text = "Good choice"
+
+        self.show_message_dialog("There might be a problem...", text)
+
+    # This function is essentially the same as window.show_message_box(),
+    # so for something this simple just use that, but it illustrates making a
+    # dialog.
+    def show_message_dialog(self, title, message):
+        # A Dialog is just a widget, so you make its child a layout just like
+        # a Window.
+        dlg = gui.Dialog(title)
+
+        # Add the message text
+        em = self.window.theme.font_size
+        dlg_layout = gui.Vert(em, gui.Margins(em, em, em, em))
+        dlg_layout.add_child(gui.Label(message))
+
+        # Add the Ok button. We need to define a callback function to handle
+        # the click.
+        ok_button = gui.Button("Ok")
+        ok_button.set_on_clicked(self._on_dialog_ok)
+
+        # We want the Ok button to be an the right side, so we need to add
+        # a stretch item to the layout, otherwise the button will be the size
+        # of the entire row. A stretch item takes up as much space as it can,
+        # which forces the button to be its minimum size.
+        button_layout = gui.Horiz()
+        button_layout.add_stretch()
+        button_layout.add_child(ok_button)
+
+        # Add the button layout,
+        dlg_layout.add_child(button_layout)
+        # ... then add the layout as the child of the Dialog
+        dlg.add_child(dlg_layout)
+        # ... and now we can show the dialog
+        self.window.show_dialog(dlg)
+
+    def _on_dialog_ok(self):
+        self.window.close_dialog()
+
+    def _on_color(self, new_color):
+        self._label.text_color = new_color
+
+    def _on_combo(self, new_val, new_idx):
+        print(new_idx, new_val)
+
+    def _on_list(self, new_val, is_dbl_click):
+        print(new_val)
+
+    def _on_slider(self, new_val):
+        self._progress.value = new_val / 20.0
+
+    def _on_text_changed(self, new_text):
+        print("edit:", new_text)
+
+    def _on_value_changed(self, new_text):
+        print("value:", new_text)
+
+    def _on_vedit(self, new_val):
+        print(new_val)
+
+    def _on_ok(self):
+        gui.Application.instance.quit()
 
     def _on_menu_checkable(self):
         gui.Application.instance.menubar.set_checked(
@@ -317,6 +314,45 @@ class ExampleWindow:
     def _on_menu_quit(self):
         gui.Application.instance.quit()
 
+# This class is essentially the same as window.show_message_box(),
+# so for something this simple just use that, but it illustrates making a
+# dialog.
+class MessageBox:
+    def __init__(self, title, message):
+        self._window = None
+
+        # A Dialog is just a widget, so you make its child a layout just like
+        # a Window.
+        dlg = gui.Dialog(title)
+
+        # Add the message text
+        em = self.window.theme.font_size
+        dlg_layout = gui.Vert(em, gui.Margins(em, em, em, em))
+        dlg_layout.add_child(gui.Label(message))
+
+        # Add the Ok button. We need to define a callback function to handle
+        # the click.
+        ok_button = gui.Button("Ok")
+        ok_button.set_on_clicked(self._on_ok)
+
+        # We want the Ok button to be an the right side, so we need to add
+        # a stretch item to the layout, otherwise the button will be the size
+        # of the entire row. A stretch item takes up as much space as it can,
+        # which forces the button to be its minimum size.
+        button_layout = gui.Horiz()
+        button_layout.add_stretch()
+        button_layout.add_child(ok_button)
+
+        # Add the button layout,
+        dlg_layout.add_child(button_layout)
+        # ... then add the layout as the child of the Dialog
+        dlg.add_child(dlg_layout)
+
+    def show(window):
+        self._window = window
+
+    def _on_ok(self):
+        self._window.close_dialog()
 
 def main():
     # We need to initalize the application, which finds the necessary shaders for

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-import open3d as o3d
-gui = o3d.visualization.gui
+import open3d.visualization.gui as gui
 import platform
 
 isMacOS = (platform.system() == "Darwin")
@@ -270,17 +269,17 @@ class AppWindow:
         dlg.add_filter("*.*", "All files")
 
         # A file dialog MUST define on_cancel and on_done functions
-        def on_cancel():
-            self.window.close_dialog()
-
-        def on_done(filename):
-            self.window.close_dialog()
-            self.window.show_message_box(
-                "Error", "Loading has not been implemented yet")
-
-        dlg.set_on_cancel(on_cancel)
-        dlg.set_on_done(on_done)
+        dlg.set_on_cancel(self._on_file_dialog_cancel)
+        dlg.set_on_done(self._on_file_dialog_done)
         self.window.show_dialog(dlg)
+
+    def _on_file_dialog_cancel(self):
+        self.window.close_dialog()
+
+    def _on_file_dialog_done(self, filename):
+        self.window.close_dialog()
+        self.window.show_message_box(
+            "Error", "Loading has not been implemented yet")
 
     def _on_menu_quit(self):
         gui.Application.instance.quit()
@@ -304,11 +303,7 @@ class AppWindow:
         # Add the Ok button. We need to define a callback function to handle
         # the click.
         ok = gui.Button("OK")
-
-        def on_ok():
-            self.window.close_dialog()
-
-        ok.set_on_clicked(on_ok)
+        ok.set_on_clicked(self._on_about_ok)
 
         # We want the Ok button to be an the right side, so we need to add
         # a stretch item to the layout, otherwise the button will be the size
@@ -323,6 +318,8 @@ class AppWindow:
         dlg.add_child(dlg_layout)
         self.window.show_dialog(dlg)
 
+    def _on_about_ok(self):
+        self.window.close_dialog()
 
 def main():
     # We need to initalize the application, which finds the necessary shaders
