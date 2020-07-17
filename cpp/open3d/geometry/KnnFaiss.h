@@ -48,21 +48,27 @@ public:
     KnnFaiss &operator=(const KnnFaiss &) = delete;
 
 public:
-    /// Sets the data for the KDTree from a matrix.
+    /// Sets the data for the Faiss Index from a matrix.
     ///
-    /// \param data Data points for KDTree Construction.
+    /// \param data Data points for Faiss Index Construction.
     bool SetMatrixData(const Eigen::MatrixXd &data);
-    /// Sets the data for the KDTree from a matrix.
+    /// Sets the data for the Faiss Index from a matrix.
     ///
     /// \param data Data points for Faiss Index Construction.
     bool SetTensorData(const core::Tensor &data);
-    /// Sets the data for the KDTree from geometry.
+    /// Sets the data and type for the Faiss Index from a matrix and index factory string.
     ///
-    /// \param geometry Geometry for KDTree Construction.
+    /// \param description_in const char pointer for Construction Faiss Index with Index Factory.
+    /// \param support_cpu whether the index is supported on gpu.
+    /// \param ivf whether the index contains IVF.
+    bool SetTensorData(const core::Tensor &data, const char *description_in, bool support_on_gpu=false, bool ivf=false);
+    /// Sets the data for the Faiss Index from geometry.
+    ///
+    /// \param geometry Geometry for Faiss Index Construction.
     bool SetGeometry(const Geometry &geometry);
-    /// Sets the data for the KDTree from the feature data.
+    /// Sets the data for the Faiss Index from the feature data.
     ///
-    /// \param feature Set of features for KDTree construction.
+    /// \param feature Set of features for Faiss Index construction.
     bool SetFeature(const pipelines::registration::Feature &feature);
 
     template <typename T>
@@ -84,9 +90,9 @@ public:
                      std::vector<float> &distance2) const;
 
 private:
-    /// \brief Sets the KDTree data from the data provided by the other methods.
+    /// \brief Sets the Faiss Index data from the data provided by the other methods.
     ///
-    /// Internal method that sets all the members of KDTree by data provided by
+    /// Internal method that sets all the members of Faiss Index by data provided by
     /// features, geometry, etc.
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
 

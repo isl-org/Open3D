@@ -34,6 +34,7 @@
 #include <faiss/gpu/GpuIndexFlat.h>
 #include <faiss/gpu/StandardGpuResources.h>
 #include <faiss/impl/AuxIndexStructures.h>
+#include <faiss/index_factory.h>
 
 #include "open3d/core/Device.h"
 #include "open3d/core/SizeVector.h"
@@ -85,6 +86,35 @@ bool KnnFaiss::SetTensorData(const core::Tensor &tensor) {
                 res.get(), dimension_, faiss::MetricType::METRIC_L2, config));
     } else {
         index.reset(new faiss::IndexFlatL2(dimension_));
+    }
+    float *_data_ptr = static_cast<float *>(tensor.GetBlob()->GetDataPtr());
+    index->add(dataset_size_, _data_ptr);
+    return true;
+}
+
+bool SetTensorData(const core::Tensor &data, const char *description_in, bool support_on_gpu){
+    core::SizeVector size = tensor.GetShape();
+    dimension_ = size[1];
+    dataset_size_ = size[0];
+
+    if (dimension_ == 0 || dataset_size_ == 0) {
+        utility::LogWarning("[KnnFaiss::SetTensorData] Failed due to no data.");
+        return false;
+    }
+
+    data_.resize(dataset_size_ * dimension_);
+    faiss::Index *tmp_index = faiss::index_factory(dimension_, description_in); // cpu_index
+    if (tensor.GetBlob()->GetDevice().GetType() ==
+        core::Device::DeviceType::CUDA) {
+        if (support_on_gpu){
+            // tranforme cpu_index to gpu_index and train it if necessary
+        }
+        else{
+            // copy tensor to cpu and use it
+        }
+    } else {
+        index.reset(tmp_index);
+        // train index if necessary
     }
     float *_data_ptr = static_cast<float *>(tensor.GetBlob()->GetDataPtr());
     index->add(dataset_size_, _data_ptr);
