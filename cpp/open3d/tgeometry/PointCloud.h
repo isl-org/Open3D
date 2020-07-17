@@ -53,17 +53,14 @@ namespace tgeometry {
 /// attributes has different levels:
 ///
 /// - Level 0: Default attribute {"points"}.
-///     - Level 0 attribute "points" is created by default.
-///     - Level 0 attribute is present in all pointclouds and it is enforced
-///       programatically.
-///     - Level 0 attribute has convenience functions. Examples:
+///     - Created by default, required for all pointclouds
+///     - Convenience functions:
 ///         - PointCloud::GetPoints()
 ///         - PointCloud::SetPoints(points_tensorlist)
 ///         - PointCloud::HasPoints()
 /// - Level 1: Commonly-used attributes {"normals", "colors"}.
-///     - Level 1 attributes are not created by default.
-///     - Level 1 function has convenience functions. Note the naming convention
-///     is different from level 0 attributes. Examples:
+///     - Not created by default.
+///     - Convenience functions:
 ///         - PointCloud::GetPointNormals()
 ///         - PointCloud::SetPointNormals(normals_tensorlist)
 ///         - PointCloud::HasPointNormals()
@@ -71,17 +68,19 @@ namespace tgeometry {
 ///         - PointCloud::SetPointColors(colors_tensorlist)
 ///         - PointCloud::HasPointColors()
 /// - Level 2: Custom attributes, e.g. {"labels", "alphas", "intensities"}.
-///     - Level 2 attributes are created by users.
-///     - Generalized helper functions are provided. Examples:
+///     - Not created by default. Created by users.
+///     - No convenience functions.
+///     - Use generalized helper functions. Examples:
 ///         - PointCloud::GetPointAttr("labels")
 ///         - PointCloud::SetPointAttr("labels", labels_tensorlist)
 ///         - PointCloud::HasPointAttr("labels")
-///     - Note that the level 0 and level 1 convenience functions can also be
-///     achieved via the generalized helper functions:
-///         - PointCloud::GetPoints() is the same as
-///           PointCloud::GetPointAttr("points")
-///         - PointCloud::HasPointNormals() is the same as
-///           PointCloud::HasPointAttr("normals")
+///
+/// Note that the level 0 and level 1 convenience functions can also be achieved
+/// via the generalized helper functions:
+///     - PointCloud::GetPoints() is the same as
+///       PointCloud::GetPointAttr("points")
+///     - PointCloud::HasPointNormals() is the same as
+///       PointCloud::HasPointAttr("normals")
 class PointCloud : public Geometry3D {
 public:
     /// Construct an empty pointcloud.
