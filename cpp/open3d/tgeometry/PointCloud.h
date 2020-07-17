@@ -114,20 +114,37 @@ public:
     /// exist.
     ///
     /// \param key Attribute name.
-    core::TensorList &GetPointAttr(const std::string &key);
+    core::TensorList &GetPointAttr(const std::string &key) {
+        return point_attr_.at(key);
+    }
 
     /// Const version of get point attributes. Throws exception if the attribute
     /// name does not exist.
     ///
     /// \param key Attribute name.
-    const core::TensorList &GetPointAttr(const std::string &key) const;
+    const core::TensorList &GetPointAttr(const std::string &key) const {
+        return point_attr_.at(key);
+    }
 
     /// Set point attributes. If the attribute key already exists, its value
     /// will be overwritten, otherwise, the new key will be created.
     ///
     /// \param key Attribute name.
     /// \param value A tensorlist.
-    void SetPointAttr(const std::string &key, const core::TensorList &value);
+    void SetPointAttr(const std::string &key, const core::TensorList &value) {
+        point_attr_[key] = value;
+    }
+
+    /// Returns true if all of the following is true:
+    /// 1) attribute key exist &&
+    /// 2) attribute's length as points' length
+    /// 3) attribute's length > 0
+    bool HasPointAttr(const std::string &key) const {
+        return point_attr_.count(key) != 0 &&
+               point_attr_.at(key).GetSize() > 0 &&
+               point_attr_.at(key).GetSize() ==
+                       point_attr_.at("points").GetSize();
+    }
 
     core::TensorList &operator[](const std::string &key);
 
