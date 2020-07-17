@@ -54,6 +54,7 @@ namespace tgeometry {
 ///
 /// - Level 0: Default attribute {"points"}.
 ///     - Created by default, required for all pointclouds.
+///     - The tensorlist must be of shape N x {3,}.
 ///     - Convenience functions:
 ///         - PointCloud::GetPoints()
 ///         - PointCloud::SetPoints(points_tensorlist)
@@ -61,6 +62,7 @@ namespace tgeometry {
 ///     - The "points"'s device determines the device of the pointcloud.
 /// - Level 1: Commonly-used attributes {"normals", "colors"}.
 ///     - Not created by default.
+///     - The tensorlist must be of shape N x {3,}.
 ///     - Convenience functions:
 ///         - PointCloud::GetPointNormals()
 ///         - PointCloud::SetPointNormals(normals_tensorlist)
@@ -118,12 +120,24 @@ public:
         return point_attr_.at(key);
     }
 
+    core::TensorList &GetPoints() { return GetPointAttr("points"); }
+    core::TensorList &GetPointColors() { return GetPointAttr("colors"); }
+    core::TensorList &GetPointNormals() { return GetPointAttr("normals"); }
+
     /// Const version of get point attributes. Throws exception if the attribute
     /// name does not exist.
     ///
     /// \param key Attribute name.
     const core::TensorList &GetPointAttr(const std::string &key) const {
         return point_attr_.at(key);
+    }
+
+    const core::TensorList &GetPoints() const { return GetPointAttr("points"); }
+    const core::TensorList &GetPointColors() const {
+        return GetPointAttr("colors");
+    }
+    const core::TensorList &GetPointNormals() const {
+        return GetPointAttr("normals");
     }
 
     /// Set point attributes. If the attribute key already exists, its value
@@ -133,6 +147,16 @@ public:
     /// \param value A tensorlist.
     void SetPointAttr(const std::string &key, const core::TensorList &value) {
         point_attr_[key] = value;
+    }
+
+    void SetPoints(const core::TensorList &value) {
+        SetPointAttr("points", value);
+    }
+    void SetPointColors(const core::TensorList &value) {
+        SetPointAttr("colors", value);
+    }
+    void SetPointNormals(const core::TensorList &value) {
+        SetPointAttr("normals", value);
     }
 
     /// Returns true if all of the following is true:
@@ -146,16 +170,14 @@ public:
                        point_attr_.at("points").GetSize();
     }
 
-    core::TensorList &GetPoints() { return GetPointAttr("points"); }
-
-    const core::TensorList &GetPoints() const { return GetPointAttr("points"); }
-
-    void SetPoints(const core::TensorList &value) {
-        SetPointAttr("points", value);
-    }
-
     bool HasPoints(const std::string &key) const {
         return HasPointAttr("points");
+    }
+    bool HasPointColors(const std::string &key) const {
+        return HasPointAttr("colors");
+    }
+    bool HasPointNormals(const std::string &key) const {
+        return HasPointAttr("normals");
     }
 
     core::TensorList &operator[](const std::string &key);
