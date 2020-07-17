@@ -54,13 +54,13 @@ static core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
 
 PointCloud::PointCloud(core::Dtype dtype, const core::Device &device)
     : Geometry3D(Geometry::GeometryType::PointCloud), device_(device) {
-    point_attr_["points"] = core::TensorList({3}, dtype, device_);
+    SetPoints(core::TensorList({3}, dtype, device_));
 }
 
 PointCloud::PointCloud(const core::TensorList &points)
     : PointCloud(points.GetDtype(), points.GetDevice()) {
     points.AssertElementShape({3});
-    point_attr_["points"] = points;
+    SetPoints(points);
 }
 
 PointCloud::PointCloud(
@@ -82,7 +82,7 @@ PointCloud::PointCloud(
 void PointCloud::SyncPushBack(
         const std::unordered_map<std::string, core::Tensor> &point_struct) {
     // Check that the current tensorlists in point_attr_ have the same size.
-    int64_t common_size = point_attr_.at("points").GetSize();
+    int64_t common_size = GetPoints().GetSize();
     for (auto &kv : point_attr_) {
         if (kv.second.GetSize() != common_size) {
             utility::LogError(
@@ -115,18 +115,15 @@ PointCloud &PointCloud::Clear() {
 bool PointCloud::IsEmpty() const { return !HasPoints(); }
 
 core::Tensor PointCloud::GetMinBound() const {
-    point_attr_.at("points").AssertElementShape({3});
-    return point_attr_.at("points").AsTensor().Min({0});
+    return GetPoints().AsTensor().Min({0});
 }
 
 core::Tensor PointCloud::GetMaxBound() const {
-    point_attr_.at("points").AssertElementShape({3});
-    return point_attr_.at("points").AsTensor().Max({0});
+    return GetPoints().AsTensor().Max({0});
 }
 
 core::Tensor PointCloud::GetCenter() const {
-    point_attr_.at("points").AssertElementShape({3});
-    return point_attr_.at("points").AsTensor().Mean({0});
+    return GetPoints().AsTensor().Mean({0});
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
@@ -141,14 +138,13 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
     if (!relative) {
         transform -= GetCenter();
     }
-    point_attr_.at("points").AsTensor() += transform;
+    GetPoints().AsTensor() += transform;
     return *this;
 }
 
 PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
     center.AssertShape({3});
-    point_attr_.at("points").AsTensor() =
-            (point_attr_.at("points").AsTensor() - center) * scale + center;
+    GetPoints().AsTensor() = (GetPoints().AsTensor() - center) * scale + center;
     return *this;
 }
 
@@ -164,11 +160,11 @@ tgeometry::PointCloud PointCloud::FromLegacyPointCloud(
         const core::Device &device) {
     tgeometry::PointCloud pcd(dtype, device);
     if (pcd_legacy.HasPoints()) {
-        pcd.point_attr_["points"] = core::TensorList({3}, dtype, device);
+        pcd.GetPoints() = core::TensorList({3}, dtype, device);
         // TODO: optimization always create host tensorlist first, and then copy
         // to device.
         for (const Eigen::Vector3d &point : pcd_legacy.points_) {
-            pcd.point_attr_.at("points").PushBack(
+            pcd.GetPoints().PushBack(
                     EigenVector3dToTensor(point, dtype, device));
         }
     } else {
@@ -177,16 +173,16 @@ tgeometry::PointCloud PointCloud::FromLegacyPointCloud(
                 "with default dtype and device will be created.");
     }
     if (pcd_legacy.HasColors()) {
-        pcd.point_attr_["colors"] = core::TensorList({3}, dtype, device);
+        pcd.SetPointColors(core::TensorList({3}, dtype, device));
         for (const Eigen::Vector3d &color : pcd_legacy.colors_) {
-            pcd.point_attr_.at("colors").PushBack(
+            pcd.GetPointColors().PushBack(
                     EigenVector3dToTensor(color, dtype, device));
         }
     }
     if (pcd_legacy.HasNormals()) {
-        pcd.point_attr_["normals"] = core::TensorList({3}, dtype, device);
+        pcd.SetPointNormals(core::TensorList({3}, dtype, device));
         for (const Eigen::Vector3d &normal : pcd_legacy.normals_) {
-            pcd.point_attr_.at("normals").PushBack(
+            pcd.GetPointNormals().PushBack(
                     EigenVector3dToTensor(normal, dtype, device));
         }
     }
@@ -196,19 +192,19 @@ tgeometry::PointCloud PointCloud::FromLegacyPointCloud(
 geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
     geometry::PointCloud pcd_legacy;
     if (HasPoints()) {
-        core::TensorList points = point_attr_.at("points");
+        const core::TensorList &points = GetPoints();
         for (int64_t i = 0; i < points.GetSize(); i++) {
             pcd_legacy.points_.push_back(TensorToEigenVector3d(points[i]));
         }
     }
-    if (HasColors()) {
-        core::TensorList colors = point_attr_.at("colors");
+    if (HasPointColors()) {
+        const core::TensorList &colors = GetPointColors();
         for (int64_t i = 0; i < colors.GetSize(); i++) {
             pcd_legacy.colors_.push_back(TensorToEigenVector3d(colors[i]));
         }
     }
-    if (HasNormals()) {
-        core::TensorList normals = point_attr_.at("normals");
+    if (HasPointNormals()) {
+        const core::TensorList &normals = GetPointNormals();
         for (int64_t i = 0; i < normals.GetSize(); i++) {
             pcd_legacy.normals_.push_back(TensorToEigenVector3d(normals[i]));
         }

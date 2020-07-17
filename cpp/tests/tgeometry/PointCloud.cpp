@@ -55,8 +55,8 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
     // Public members.
     EXPECT_TRUE(pcd.IsEmpty());
     EXPECT_FALSE(pcd.HasPoints());
-    EXPECT_FALSE(pcd.HasColors());
-    EXPECT_FALSE(pcd.HasNormals());
+    EXPECT_FALSE(pcd.HasPointColors());
+    EXPECT_FALSE(pcd.HasPointNormals());
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
@@ -100,8 +100,8 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
 
     tgeometry::PointCloud pcd(point_dict);
     EXPECT_TRUE(pcd.HasPoints());
-    EXPECT_TRUE(pcd.HasColors());
-    EXPECT_TRUE(pcd.HasNormals());
+    EXPECT_TRUE(pcd.HasPointColors());
+    EXPECT_TRUE(pcd.HasPointNormals());
 
     EXPECT_TRUE(pcd.GetPoints().AsTensor().AllClose(
             core::Tensor::Ones({10, 3}, dtype, device)));
@@ -199,8 +199,8 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
     tgeometry::PointCloud pcd = tgeometry::PointCloud::FromLegacyPointCloud(
             legacy_pcd, dtype, device);
     EXPECT_TRUE(pcd.HasPoints());
-    EXPECT_TRUE(pcd.HasColors());
-    EXPECT_FALSE(pcd.HasNormals());
+    EXPECT_TRUE(pcd.HasPointColors());
+    EXPECT_FALSE(pcd.HasPointNormals());
     EXPECT_TRUE(pcd.GetPoints().AsTensor().AllClose(
             core::Tensor::Zeros({2, 3}, dtype, device)));
     EXPECT_TRUE(pcd.GetPointColors().AsTensor().AllClose(
@@ -211,8 +211,8 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
     pcd = tgeometry::PointCloud::FromLegacyPointCloud(legacy_pcd, dtype,
                                                       device);
     EXPECT_TRUE(pcd.HasPoints());
-    EXPECT_TRUE(pcd.HasColors());
-    EXPECT_FALSE(pcd.HasNormals());
+    EXPECT_TRUE(pcd.HasPointColors());
+    EXPECT_FALSE(pcd.HasPointNormals());
     EXPECT_TRUE(pcd.GetPoints().AsTensor().AllClose(
             core::Tensor::Zeros({2, 3}, dtype, device)));
     EXPECT_TRUE(pcd.GetPointColors().AsTensor().AllClose(

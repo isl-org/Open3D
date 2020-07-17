@@ -159,16 +159,19 @@ public:
 
     /// Set the value of the "points" attribute. Convenience function.
     void SetPoints(const core::TensorList &value) {
+        value.AssertElementShape({3});
         SetPointAttr("points", value);
     }
 
     /// Set the value of the "colors" attribute. Convenience function.
     void SetPointColors(const core::TensorList &value) {
+        value.AssertElementShape({3});
         SetPointAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute. Convenience function.
     void SetPointNormals(const core::TensorList &value) {
+        value.AssertElementShape({3});
         SetPointAttr("normals", value);
     }
 
@@ -185,27 +188,21 @@ public:
 
     /// Check if the "points" attribute's value has length > 0.
     /// This is a convenience function.
-    bool HasPoints(const std::string &key) const {
-        return HasPointAttr("points");
-    }
+    bool HasPoints() const { return HasPointAttr("points"); }
 
     /// Returns true if all of the following is true:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as points' length
     /// 3) attribute "colors"'s length > 0
     /// This is a convenience function.
-    bool HasPointColors(const std::string &key) const {
-        return HasPointAttr("colors");
-    }
+    bool HasPointColors() const { return HasPointAttr("colors"); }
 
     /// Returns true if all of the following is true:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as points' length
     /// 3) attribute "normals"'s length > 0
     /// This is a convenience function.
-    bool HasPointNormals(const std::string &key) const {
-        return HasPointAttr("normals");
-    }
+    bool HasPointNormals() const { return HasPointAttr("normals"); }
 
     /// Synchronized push back. Before push back, the function asserts that all
     /// the tensorlists in the point_attr_ have the same length.
@@ -239,23 +236,6 @@ public:
 
     /// Returns !HasPoints().
     bool IsEmpty() const override;
-
-    /// Returns true if the pointcloud contains 1 or more points.
-    bool HasPoints() const { return point_attr_.at("points").GetSize() > 0; }
-
-    /// Returns true if the pointcloud contains 1 or more colors for points.
-    bool HasColors() const {
-        return HasPoints() && point_attr_.count("colors") != 0 &&
-               point_attr_.at("colors").GetSize() ==
-                       point_attr_.at("points").GetSize();
-    }
-
-    /// Returns true if the pointcloud contains 1 or more normals for points.
-    bool HasNormals() const {
-        return HasPoints() && point_attr_.count("normals") != 0 &&
-               point_attr_.at("normals").GetSize() ==
-                       point_attr_.at("points").GetSize();
-    }
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static tgeometry::PointCloud FromLegacyPointCloud(
