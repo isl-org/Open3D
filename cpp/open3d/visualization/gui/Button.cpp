@@ -107,10 +107,11 @@ Size Button::CalcPreferredSize(const Theme& theme) const {
         // 1 * imguiVertPadding on the bottom, we need to add 2x on the sides.
         // Note that padding of 0 doesn't actually produce a padding of zero,
         // because that would look horrible. (And also because if we do that,
-        // ImGUI will position the text so that the descender is cut off, because
-        // it is assuming that it gets a little extra on the bottom. This looks
-        // really bad...)
-        return Size(std::ceil(size.x + 2.0f + imguiVertPadding + 2.0f * padding_horiz),
+        // ImGUI will position the text so that the descender is cut off,
+        // because it is assuming that it gets a little extra on the bottom.
+        // This looks really bad...)
+        return Size(std::ceil(size.x + 2.0f + imguiVertPadding +
+                              2.0f * padding_horiz),
                     std::ceil(ImGui::GetTextLineHeight() + imguiVertPadding +
                               2.0f * padding_vert));
     }
