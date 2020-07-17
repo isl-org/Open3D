@@ -113,22 +113,19 @@ public:
     /// Get point attributes. Throws exception if the attribute name does not
     /// exist.
     ///
-    /// \param key Attribute name. Typical attribute name includes "points",
-    /// "colors", "normals".
+    /// \param key Attribute name.
     core::TensorList &GetPointAttr(const std::string &key);
 
     /// Const version of get point attributes. Throws exception if the attribute
     /// name does not exist.
     ///
-    /// \param key Attribute name. Typical attribute name includes "points",
-    /// "colors", "normals".
+    /// \param key Attribute name.
     const core::TensorList &GetPointAttr(const std::string &key) const;
 
     /// Set point attributes. If the attribute key already exists, its value
     /// will be overwritten, otherwise, the new key will be created.
     ///
-    /// \param key Attribute name. Typical attribute name includes "points",
-    /// "colors", "normals".
+    /// \param key Attribute name.
     /// \param value A tensorlist.
     void SetPointAttr(const std::string &key, const core::TensorList &value);
 
