@@ -11,6 +11,9 @@
 
 namespace faiss {
 struct Index;
+namespace gpu {
+class StandardGpuResources;
+}
 }
 
 namespace open3d {
@@ -90,6 +93,7 @@ private:
 protected:
     std::vector<float> data_;
     std::unique_ptr<faiss::Index> index;
+    std::unique_ptr<faiss::gpu::StandardGpuResources> res;
     size_t dimension_ = 0;
     size_t dataset_size_ = 0;
 };

@@ -176,7 +176,6 @@ TEST(KnnFaiss, SetTensorData) {
     ExpectEQ(ref_distance2, distance2, threshold);
 }
 TEST(KnnFaiss, SetTensorData_GPU) {
-    std::cout << "Test" << std::endl;
     vector<int> ref_indices = {27, 48, 4,  77, 90, 7,  54, 17, 76, 38,
                                39, 60, 15, 84, 11, 57, 3,  32, 99, 36,
                                52, 40, 26, 59, 22, 97, 20, 42, 73, 24};
@@ -189,7 +188,7 @@ TEST(KnnFaiss, SetTensorData_GPU) {
             27.998463, 28.262975, 28.581313, 28.816608, 31.603230, 31.610916};
 
     int size = 100;
-    float threshold = 1e-5;
+    float threshold = 1e-4;
 
     geometry::PointCloud pc;
 
