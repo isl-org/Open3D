@@ -50,7 +50,7 @@ namespace tgeometry {
 /// consistency.
 ///
 /// Although the attributes are all stored in a key-value pair dictionary, the
-/// attributes has different levels:
+/// attributes have different levels:
 ///
 /// - Level 0: Default attribute {"points"}.
 ///     - Created by default, required for all pointclouds.
@@ -59,7 +59,7 @@ namespace tgeometry {
 ///         - PointCloud::GetPoints()
 ///         - PointCloud::SetPoints(points_tensorlist)
 ///         - PointCloud::HasPoints()
-///     - The "points"'s device determines the device of the pointcloud.
+///     - The device of "points" determines the device of the pointcloud.
 /// - Level 1: Commonly-used attributes {"normals", "colors"}.
 ///     - Not created by default.
 ///     - The tensorlist must be of shape N x {3,}.
@@ -70,7 +70,8 @@ namespace tgeometry {
 ///         - PointCloud::GetPointColors()
 ///         - PointCloud::SetPointColors(colors_tensorlist)
 ///         - PointCloud::HasPointColors()
-///     - Device must be the same as "points"'s device. Dtype can be different.
+///     - Device must be the same as the device of "points". Dtype can be
+///       different.
 /// - Level 2: Custom attributes, e.g. {"labels", "alphas", "intensities"}.
 ///     - Not created by default. Created by users.
 ///     - No convenience functions.
@@ -78,7 +79,8 @@ namespace tgeometry {
 ///         - PointCloud::GetPointAttr("labels")
 ///         - PointCloud::SetPointAttr("labels", labels_tensorlist)
 ///         - PointCloud::HasPointAttr("labels")
-///     - Device must be the same as "points"'s device. Dtype can be different.
+///     - Device must be the same as the device of "points". Dtype can be
+///       different.
 ///
 /// Note that the level 0 and level 1 convenience functions can also be achieved
 /// via the generalized helper functions:
@@ -180,10 +182,8 @@ public:
     /// 2) attribute's length as points' length
     /// 3) attribute's length > 0
     bool HasPointAttr(const std::string &key) const {
-        return point_attr_.count(key) != 0 &&
-               point_attr_.at(key).GetSize() > 0 &&
-               point_attr_.at(key).GetSize() ==
-                       point_attr_.at("points").GetSize();
+        return point_attr_.count(key) != 0 && GetPointAttr(key).GetSize() > 0 &&
+               GetPointAttr(key).GetSize() == GetPoints().GetSize();
     }
 
     /// Check if the "points" attribute's value has length > 0.
