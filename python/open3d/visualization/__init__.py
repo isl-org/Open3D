@@ -23,4 +23,5 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-from open3d.pybind.visualization import gui
+if "@ENABLE_GUI@" == "ON":
+    from open3d.pybind.visualization import gui
