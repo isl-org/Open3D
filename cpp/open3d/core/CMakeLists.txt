@@ -23,6 +23,7 @@ set (CORE_SRC
     AdvancedIndexing.cpp
     ShapeUtil.cpp
     CUDAUtils.cpp
+    EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
