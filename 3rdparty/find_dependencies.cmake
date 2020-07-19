@@ -254,7 +254,7 @@ endfunction()
 
 # Threads
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
 find_package(Threads REQUIRED)
 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Threads")
 
