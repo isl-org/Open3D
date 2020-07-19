@@ -7,7 +7,7 @@ ExternalProject_Add(
     GIT_TAG v0.3.10
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
-    INSTALL_COMMAND ""
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E rename "libopenblas_nehalemp-r0.3.10.a" "libopenblas.a"
     # OpenBLAS builds in source directory.
     BUILD_IN_SOURCE True
     # Avoids libopenblas.so, only use libopenblas.a.
