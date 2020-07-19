@@ -253,6 +253,8 @@ function(import_3rdparty_library name)
 endfunction()
 
 # Threads
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Threads")
 
@@ -870,5 +872,5 @@ import_3rdparty_library(3rdparty_openblas
 )
 set(OPENBLAS_TARGET "3rdparty_openblas")
 add_dependencies(3rdparty_openblas ext_openblas)
-target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
