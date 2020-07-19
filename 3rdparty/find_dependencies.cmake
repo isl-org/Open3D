@@ -861,7 +861,7 @@ endif()
 
 # OpenBLAS
 message(STATUS "Building OpenBLAS from source")
-include(${Open3D_3RDPARTY_DIR}/OpenBLAS/openblas.cmake)
+include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
 import_3rdparty_library(3rdparty_openblas
     INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
     LIB_DIR ${OPENBLAS_LIB_DIR}
