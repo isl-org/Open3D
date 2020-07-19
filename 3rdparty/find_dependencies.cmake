@@ -237,7 +237,8 @@ function(import_3rdparty_library name)
             endif()
             target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
             if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
-                install(FILES ${arg_LIB_DIR}/${library_filename}
+                get_filename_component(src_library_filename ${arg_LIB_DIR}/${library_filename} REALPATH)
+                install(FILES ${src_library_filename}
                     DESTINATION ${Open3D_INSTALL_LIB_DIR}
                     RENAME ${installed_library_filename}
                 )
