@@ -870,5 +870,5 @@ import_3rdparty_library(3rdparty_openblas
 )
 set(OPENBLAS_TARGET "3rdparty_openblas")
 add_dependencies(3rdparty_openblas ext_openblas)
-target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads) # `-pthread`
+target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
