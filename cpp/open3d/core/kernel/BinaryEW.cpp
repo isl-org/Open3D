@@ -26,6 +26,7 @@
 
 #include "open3d/core/kernel/BinaryEW.h"
 
+#include <cblas.h>
 #include <vector>
 
 #include "open3d/core/ShapeUtil.h"
@@ -45,10 +46,25 @@ const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class>
                 BinaryEWOpCode::Ne,
         };
 
+void DummyOpenBlasTest() {
+    int i = 0;
+    double A[6] = {1.0, 2.0, 1.0, -3.0, 4.0, -1.0};
+    double B[6] = {1.0, 2.0, 1.0, -3.0, 4.0, -1.0};
+    double C[9] = {.5, .5, .5, .5, .5, .5, .5, .5, .5};
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, 3, 3, 2, 1, A, 3, B, 3,
+                2, C, 3);
+    for (i = 0; i < 9; i++) {
+        std::cout << C[i] << " ";
+    }
+    std::cout << std::endl;
+}
+
 void BinaryEW(const Tensor& lhs,
               const Tensor& rhs,
               Tensor& dst,
               BinaryEWOpCode op_code) {
+    DummyOpenBlasTest();
+
     // lhs, rhs and dst must be on the same device.
     for (auto device :
          std::vector<Device>({rhs.GetDevice(), dst.GetDevice()})) {

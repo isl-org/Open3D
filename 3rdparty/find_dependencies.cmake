@@ -858,3 +858,15 @@ if(ENABLE_GUI)
     set(FILAMENT_TARGET "3rdparty_filament")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
 endif()
+
+# OpenBLAS
+message(STATUS "Building OpenBLAS from source")
+include(${Open3D_3RDPARTY_DIR}/OpenBLAS/openblas.cmake)
+import_3rdparty_library(3rdparty_openblas
+    INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
+    LIB_DIR ${OPENBLAS_LIB_DIR}
+    LIBRARIES ${OPENBLAS_LIBRARIES}
+)
+set(OPENBLAS_TARGET "3rdparty_openblas")
+add_dependencies(3rdparty_openblas ext_openblas)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
