@@ -24,7 +24,7 @@ bool NeighborSearch::SetTensorData(const core::Tensor &tensor){
     }
 
     tensor_ = tensor;
-    search_object_.reset(new KnnFaiss::KnnFaiss());
+    search_object_.reset(new geometry::KnnFaiss());
     if (dataset_size_ <= 2e5){
         search_object_->SetTensorData(tensor_);
     }
@@ -40,6 +40,7 @@ bool NeighborSearch::SetTensorData(const core::Tensor &tensor){
     else{
         search_object_->SetTensorData2(tensor_, "IVF1048576_HNSW32", false, 1048576*30);
     }
+    return true;
 }
 
 template <typename T>

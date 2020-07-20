@@ -40,7 +40,7 @@ public:
                                     
 protected:
     core::Tensor tensor_;
-    std::unique_ptr<KnnFaiss::KnnFaiss> search_object_;
+    std::unique_ptr<geometry::KnnFaiss> search_object_;
     size_t dimension_ = 0;
     size_t dataset_size_ = 0;
 };
