@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#ifdef BUILD_RPC_INTERFACE
 #include "open3d/utility/RemoteFunctions.h"
 
 #include "pybind/docstring.h"
@@ -32,10 +33,6 @@
 namespace open3d {
 
 void pybind_remote_functions(py::module& m) {
-#ifdef BUILD_RPC_INTERFACE
-    // py::class_<utility::Connection, std::shared_ptr<utility::Connection>>(
-    // m, "_Connection");
-
     m.def("set_point_cloud", &utility::SetPointCloud, "pcd"_a, "path"_a = "",
           "time"_a = 0, "layer"_a = "",
           "connection"_a = std::shared_ptr<utility::Connection>(),
@@ -83,7 +80,6 @@ void pybind_remote_functions(py::module& m) {
                      "A Connection object. Use None to automatically create "
                      "the connection."},
             });
-
-#endif
 }
 }  // namespace open3d
+#endif

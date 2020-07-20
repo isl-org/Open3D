@@ -8,7 +8,7 @@ class ExternalVisualizer:
 
     Example:
         This example sends a point cloud to the visualizer::
-            
+
             import open3d as o3d
             import numpy as np
             ev = o3d.visualizer.ExternalVisualizer()
@@ -16,7 +16,7 @@ class ExternalVisualizer:
             ev.set(pcd)
 
     Args:
-        address: The address where the visualizer is running. 
+        address: The address where the visualizer is running.
             The default is localhost.
         timeout: The timeout for sending data in milliseconds.
     """
@@ -34,7 +34,7 @@ class ExternalVisualizer:
 
             To place the object at a specific location in the scene tree do::
                 ev.set(point_cloud, path='group/mypoints', time=42, layer='')
-            Note that depending on the visualizer some arguments like time or 
+            Note that depending on the visualizer some arguments like time or
             layer may not be supported and will be ignored.
 
             To pass multiple objects use the ``objs`` keyword argument to pass

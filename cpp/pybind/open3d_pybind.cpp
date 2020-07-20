@@ -61,9 +61,11 @@ PYBIND11_MODULE(pybind, m) {
     pybind_pipelines(m);
     pybind_visualization(m);
 
+#ifdef BUILD_RPC_INTERFACE
     // part of utility but requires core
     py::module m_submodule = m.def_submodule("utility");
     pybind_remote_functions(m_submodule);
+#endif
 }
 
 }  // namespace open3d

@@ -23,6 +23,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+#ifdef BUILD_RPC_INTERFACE
 
 #include "open3d/utility/Connection.h"
 
@@ -32,7 +33,6 @@
 namespace open3d {
 
 void pybind_connection(py::module& m) {
-#ifdef BUILD_RPC_INTERFACE
     py::class_<utility::Connection, std::shared_ptr<utility::Connection>>(
             m, "Connection")
             .def(py::init([](std::string address, int connect_timeout,
@@ -41,9 +41,9 @@ void pybind_connection(py::module& m) {
                              new utility::Connection(address, connect_timeout,
                                                      timeout));
                  }),
+                 "Creates a connection object",
                  "address"_a = "tcp://127.0.0.1:51454",
                  "connect_timeout"_a = 5000, "timeout"_a = 10000);
-
-#endif
 }
 }  // namespace open3d
+#endif
