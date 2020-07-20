@@ -26,6 +26,8 @@
 
 #include "pybind/visualization/visualization.h"
 
+#include "pybind/visualization/gui/gui.h"
+
 namespace open3d {
 
 void pybind_visualization(py::module &m) {
@@ -38,6 +40,10 @@ void pybind_visualization(py::module &m) {
     pybind_viewcontrol_method(m_visualization);
     pybind_visualizer_method(m_visualization);
     pybind_visualization_utility_methods(m_visualization);
+
+#ifdef ENABLE_GUI
+    pybind_gui(m_visualization);
+#endif
 }
 
 }  // namespace open3d

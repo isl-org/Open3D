@@ -34,6 +34,11 @@ set(PACKAGE_NAME pybind)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
 
+if (NOT ENABLE_GUI)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp")
+endif()
+
 if (NOT BUILD_AZURE_KINECT)
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
@@ -66,6 +71,9 @@ open3d_set_global_properties(${PACKAGE_NAME})
 # use the target_compile_definitions approach. Otherwise, use configure_file.
 if (BUILD_AZURE_KINECT)
     target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_AZURE_KINECT)
+endif()
+if (ENABLE_GUI)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE ENABLE_GUI)
 endif()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
@@ -145,6 +153,8 @@ add_custom_target(python-package
             -DENABLE_JUPYTER=${ENABLE_JUPYTER}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+            -DENABLE_GUI=${ENABLE_GUI}
+            -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}
