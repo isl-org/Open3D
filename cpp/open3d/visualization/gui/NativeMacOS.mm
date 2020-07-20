@@ -47,7 +47,22 @@ void* GetNativeDrawable(GLFWwindow* glfw_window) {
 
 void PostNativeExposeEvent(GLFWwindow* glfw_window) {
     NSWindow* win = glfwGetCocoaWindow(glfw_window);
-    [win contentView].needsDisplay = YES;
+    // You'd think there would be no way that needsDisplay == YES, especially
+    // when we are within a draw, but you'd be wrong. In particular, it seems
+    // to happen when clicking an OK button in a dialog or the inc/dec buttons
+    // in an integer NumericEdit while running the UI in Python.
+    // If the view already needDisplay, then nothing will happen, so post it
+    // to the queue, which gives this draw call time to finish and get whatever
+    // is causing the problem cleared up. (It's unclear to me why needsDisplay
+    // would be YES if we actually within a draw, but there we are...)
+    // This situation does not seem to get triggered by the viewer app.
+    if ([win contentView].needsDisplay == YES) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [win contentView].needsDisplay = YES;
+        });
+    } else {
+        [win contentView].needsDisplay = YES;
+    }
 }
 
 void ShowNativeAlert(const char *message) {
@@ -106,21 +121,23 @@ void ShowNativeFileDialog(FileDialog::Mode type,
     }
     dlg.directoryURL = [NSURL fileURLWithPath:[NSString stringWithUTF8String:path.c_str()]];
 
-    NSMutableArray *allowed = [NSMutableArray arrayWithCapacity:2 * filters.size()];
-    for (auto &f : filters) {
-        if (f.first.empty() || f.first == "*.*") {
-            continue;
-        }
-        std::vector<std::string> exts;
-        utility::SplitString(exts, f.first, ", ");
-        for (auto &ext : exts) {
-            if (ext[0] == '.') {  // macOS assumes the dot in the extension
-                ext = ext.substr(1);
+    if (!filters.empty()) {  // [NSMutableArray arrayWidthCapacity:0] returns nil
+        NSMutableArray *allowed = [NSMutableArray arrayWithCapacity:2 * filters.size()];
+        for (auto &f : filters) {
+            if (f.first.empty() || f.first == "*.*") {
+                continue;
             }
-            [allowed addObject:[NSString stringWithUTF8String:ext.c_str()]];
+            std::vector<std::string> exts;
+            utility::SplitString(exts, f.first, ", ");
+            for (std::string ext : exts) {  // ext is a copy; might modify it
+                if (ext[0] == '.') {  // macOS assumes the dot in the extension
+                    ext = ext.substr(1);
+                }
+                [allowed addObject:[NSString stringWithUTF8String:ext.c_str()]];
+            }
         }
+        dlg.allowedFileTypes = allowed;
     }
-    dlg.allowedFileTypes = allowed;
     dlg.allowsOtherFileTypes = YES;
 
     NSWindow *current = NSApp.mainWindow;
