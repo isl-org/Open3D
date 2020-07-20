@@ -88,6 +88,14 @@ fi
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" -o "$BUILD_PYTORCH_OPS" == "ON" ]; then
     reportRun pip install -U yapf==0.28.0
 fi
+
+# build the rpc interface only if we do not build the cuda module and the
+# ml module to keep build times short
+if [ "$BUILD_CUDA_MODULE" == "OFF" -a "$BUILD_TENSORFLOW_OPS" == "OFF"]; then
+    BUILD_RPC_INTERFACE="ON"
+else
+    BUILD_RPC_INTERFACE="OFF"
+fi
 mkdir build
 cd build
 
@@ -98,6 +106,7 @@ cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
         -DCUDA_ARCH=BasicPTX \
         -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
         -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
+        -DBUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE} \
         -DBUILD_UNIT_TESTS=ON \
         -DBUILD_BENCHMARKS=ON \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
