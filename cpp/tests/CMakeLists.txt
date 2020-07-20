@@ -47,3 +47,7 @@ if (BUILD_CUDA_MODULE)
     target_link_libraries(tests PRIVATE ${CUDA_LIBRARIES})
     target_include_directories(tests SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
+
+if (BUILD_RPC_INTERFACE)
+    target_link_libraries(tests PRIVATE ${ZEROMQ_TARGET} ${MSGPACK_TARGET} Boost_headers )
+endif()

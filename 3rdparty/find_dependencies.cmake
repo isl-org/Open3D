@@ -858,3 +858,27 @@ if(ENABLE_GUI)
     set(FILAMENT_TARGET "3rdparty_filament")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
 endif()
+
+if(BUILD_RPC_INTERFACE)
+    include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
+    import_3rdparty_library(3rdparty_zeromq 
+        INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS} 
+        LIB_DIR ${ZEROMQ_LIB_DIR}
+        LIBRARIES ${ZEROMQ_LIBRARIES}
+    )
+    set(ZEROMQ_TARGET "3rdparty_zeromq")
+    add_dependencies( ${ZEROMQ_TARGET} ext_zeromq )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZEROMQ_TARGET}")
+
+    include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
+    import_3rdparty_library(3rdparty_msgpack 
+        INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
+        )
+    set(MSGPACK_TARGET "3rdparty_msgpack")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MSGPACK_TARGET}")
+
+    find_package(Boost REQUIRED)
+    add_library(Boost_headers INTERFACE)
+    target_include_directories(Boost_headers SYSTEM INTERFACE $<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>)
+    list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Boost_headers")
+endif()
