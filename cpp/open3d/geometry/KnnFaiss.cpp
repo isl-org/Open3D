@@ -33,6 +33,7 @@
 #include <faiss/IndexFlat.h>
 #include <faiss/gpu/GpuIndexFlat.h>
 #include <faiss/gpu/StandardGpuResources.h>
+#include <faiss/gpu/GpuCloner.h>
 #include <faiss/impl/AuxIndexStructures.h>
 #include <faiss/index_factory.h>
 
@@ -92,13 +93,13 @@ bool KnnFaiss::SetTensorData(const core::Tensor &tensor) {
     return true;
 }
 
-bool SetTensorData(const core::Tensor &data, const char *description_in, bool support_on_gpu){
+bool KnnFaiss::SetTensorData2(const core::Tensor &tensor, const char *description_in, bool support_on_gpu, long train_size){
     core::SizeVector size = tensor.GetShape();
     dimension_ = size[1];
     dataset_size_ = size[0];
 
     if (dimension_ == 0 || dataset_size_ == 0) {
-        utility::LogWarning("[KnnFaiss::SetTensorData] Failed due to no data.");
+        utility::LogWarning("[KnnFaiss::SetTensorData2] Failed due to no data.");
         return false;
     }
 
@@ -107,14 +108,21 @@ bool SetTensorData(const core::Tensor &data, const char *description_in, bool su
     if (tensor.GetBlob()->GetDevice().GetType() ==
         core::Device::DeviceType::CUDA) {
         if (support_on_gpu){
-            // tranforme cpu_index to gpu_index and train it if necessary
+            res.reset(new faiss::gpu::StandardGpuResources());
+            int _device_id = tensor.GetBlob()->GetDevice().GetID();
+            index.reset(faiss::gpu::index_cpu_to_gpu(res.get(), _device_id, tmp_index));
         }
         else{
-            // copy tensor to cpu and use it
+            core::Tensor tensor = tensor.Copy(core::Device("CPU:0"));
+            index.reset(tmp_index);
         }
     } else {
         index.reset(tmp_index);
-        // train index if necessary
+    }
+    if(!index->is_trained){
+        core::Tensor xt = tensor.Slice(dimension_, 0, train_size, 1);
+        float *_train_ptr = static_cast<float *>(tensor.GetBlob()->GetDataPtr());
+        index->train(train_size, _train_ptr);
     }
     float *_data_ptr = static_cast<float *>(tensor.GetBlob()->GetDataPtr());
     index->add(dataset_size_, _data_ptr);

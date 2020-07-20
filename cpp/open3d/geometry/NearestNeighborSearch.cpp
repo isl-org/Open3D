@@ -29,16 +29,16 @@ bool NeighborSearch::SetTensorData(const core::Tensor &tensor){
         search_object_->SetTensorData(tensor_);
     }
     else if (dataset_size_ <= 2e6){
-        search_object_->SetTensorData(tensor_, "IVF4096");
+        search_object_->SetTensorData2(tensor_, "IVF4096", true, 4096*30);
     }
     else if (dataset_size_ <= 1e7){
-        search_object_->SetTensorData(tensor_, "IVF65536_HNSW32");
+        search_object_->SetTensorData2(tensor_, "IVF65536_HNSW32", false, 65536*30);
     }
     else if (dataset_size_ <= 1e8){
-        search_object_->SetTensorData(tensor_, "IVF262144_HNSW32");
+        search_object_->SetTensorData2(tensor_, "IVF262144_HNSW32", false, 262144*30);
     }
     else{
-        search_object_->SetTensorData(tensor_, "IVF1048576_HNSW32");
+        search_object_->SetTensorData2(tensor_, "IVF1048576_HNSW32", false, 1048576*30);
     }
 }
 

@@ -61,7 +61,7 @@ public:
     /// \param description_in const char pointer for Construction Faiss Index with Index Factory.
     /// \param support_cpu whether the index is supported on gpu.
     /// \param ivf whether the index contains IVF.
-    bool SetTensorData(const core::Tensor &data, const char *description_in, bool support_on_gpu=false, bool ivf=false);
+    bool SetTensorData2(const core::Tensor &data, const char *description_in, bool support_on_gpu=false, long train_size=0);
     /// Sets the data for the Faiss Index from geometry.
     ///
     /// \param geometry Geometry for Faiss Index Construction.
