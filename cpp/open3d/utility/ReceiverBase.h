@@ -35,8 +35,14 @@
 namespace open3d {
 namespace utility {
 
+/// Base class for the server side receiving requests from a client.
+/// Subclass from this and implement the overloaded ProcessMessage functions as
+/// needed.
 class ReceiverBase {
 public:
+    /// Constructs a receiver listening on the specified address.
+    /// \param bind_address  Address to listen on.
+    /// \param timeout       Timeout in milliseconds for sending the repy.
     ReceiverBase(const std::string& bind_address = "tcp://127.0.0.1:51454",
                  int timeout = 10000);
 
@@ -45,6 +51,13 @@ public:
 
     ~ReceiverBase();
 
+    /// Function for processing a msg.
+    /// \param req  The Request object that accompanies the \param msg object.
+    ///
+    /// \param msg  The message to be processed
+    ///
+    /// \param obj  The object from which the \param msg was unpacked. Can be
+    /// used for custom unpacking.
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetMeshData& msg,
@@ -100,7 +113,12 @@ public:
         return std::shared_ptr<zmq::message_t>();
     }
 
+    /// Starts the receiver mainloop in a new thread.
     void Run();
+
+    /// Stops the receiver mainloop and joins the thread.
+    /// This function blocks until the mainloop is done with processing
+    /// messages that have already been received.
     void Stop();
 
 private:
