@@ -1,3 +1,5 @@
+include(FetchContent)
+
 if (FILAMENT_PRECOMPILED_ROOT)
     if (EXISTS "${FILAMENT_PRECOMPILED_ROOT}")
         set(FILAMENT_ROOT "${FILAMENT_PRECOMPILED_ROOT}")
@@ -5,42 +7,36 @@ if (FILAMENT_PRECOMPILED_ROOT)
         message(FATAL_ERROR "Filament binaries not found in ${FILAMENT_PRECOMPILED_ROOT}")
     endif()
 else()
-    set(FILAMENT_ROOT ${CMAKE_BINARY_DIR}/downloads/filament)
+    # Setup download links
+    if(WIN32)
+        set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-windows.tgz")
+        set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.5/filament-20200127-windows.tgz")
+    elseif(APPLE)
+        set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-mac-10.14-resizefix2.tgz")
+        set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.5/filament-20200127-mac.tgz")
+    else()
+        set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200220-linux.tgz")
+        set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.5/filament-20200127-linux.tgz")
+    endif()
 
     if (USE_VULKAN AND (ANDROID OR WIN32 OR WEBGL OR IOS))
         MESSAGE(FATAL_ERROR "Downloadable version of Filament supports vulkan only on Linux and Apple")
     endif()
 
-    if (NOT EXISTS ${FILAMENT_ROOT}/README.md)
-        set(DOWNLOAD_PATH ${CMAKE_BINARY_DIR}/downloads)
-        set(TAR_PWD ${DOWNLOAD_PATH})
+    FetchContent_Declare(
+        fetch_filament
+        URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
+    )
 
-        if (NOT EXISTS ${ARCHIVE_FILE})
-            set(ARCHIVE_FILE ${CMAKE_BINARY_DIR}/downloads/filament.tgz)
-
-            # Setup download links ============================================================================
-            set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200220-linux.tgz")
-            set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.5/filament-20200127-linux.tgz")
-
-            if (WIN32)
-                set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-windows.tgz")
-                set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.5/filament-20200127-windows.tgz")
-                
-                file(MAKE_DIRECTORY ${FILAMENT_ROOT})
-                set(TAR_PWD ${FILAMENT_ROOT})
-            elseif (APPLE)
-                set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-mac-10.14-resizefix2.tgz")
-                set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.5/filament-20200127-mac.tgz")
-            endif()
-            # =================================================================================================
-
-            file(DOWNLOAD ${DOWNLOAD_URL_PRIMARY} ${ARCHIVE_FILE} SHOW_PROGRESS STATUS DOWNLOAD_RESULT)
-            if (NOT DOWNLOAD_RESULT EQUAL 0)
-                file(DOWNLOAD ${DOWNLOAD_URL_FALLBACK} ${ARCHIVE_FILE} SHOW_PROGRESS STATUS DOWNLOAD_RESULT)
-            endif()
-        endif()
-
-        execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf ${ARCHIVE_FILE} WORKING_DIRECTORY ${TAR_PWD})
+    # FetchContent happends at config time.
+    FetchContent_GetProperties(fetch_filament)
+    if(NOT fetch_filament_POPULATED)
+        message(STATUS "Downloading Filament...")
+        FetchContent_Populate(fetch_filament)
+        # We use the default download and unpack directories for FetchContent.
+        message(STATUS "Filament has been downloaded to ${fetch_filament_DOWNLOADED_FILE}.")
+        message(STATUS "Filament has been extracted to ${fetch_filament_SOURCE_DIR}.")
+        set(FILAMENT_ROOT "${fetch_filament_SOURCE_DIR}")
     endif()
 endif()
 

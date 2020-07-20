@@ -55,3 +55,8 @@ add_dependencies(visualization ShaderFileTarget)
 open3d_show_and_abort_on_warning(visualization)
 open3d_set_global_properties(visualization)
 open3d_link_3rdparty_libraries(visualization)
+
+# export GUI_RESOURCE_DIR to parent scope
+if (ENABLE_GUI)
+    set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
+endif()
