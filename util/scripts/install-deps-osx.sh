@@ -20,7 +20,7 @@ else
     fi
 fi
 
-for pkg in libusb glew glfw3 libjpeg libpng pkg-config eigen tbb; do
+for pkg in libusb glew glfw3 libjpeg libpng pkg-config eigen tbb boost; do
     if brew list -1 | grep -q "^${pkg}\$"; then
         if [ "$1" == "skip-upgrade" ]; then
             echo "Package '$pkg' has already been installed."
