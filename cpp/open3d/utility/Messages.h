@@ -46,47 +46,47 @@ namespace messages {
 /// Teemplate function for converting types to their string representation.
 /// E.g. TypeStr<float>() -> "<f4"
 template <class T>
-std::string TypeStr() {
+inline std::string TypeStr() {
     return "";
 }
 template <>
-std::string TypeStr<float>() {
+inline std::string TypeStr<float>() {
     return ENDIANNESS_STR "f4";
 }
 template <>
-std::string TypeStr<double>() {
+inline std::string TypeStr<double>() {
     return ENDIANNESS_STR "f8";
 }
 template <>
-std::string TypeStr<int8_t>() {
+inline std::string TypeStr<int8_t>() {
     return "|i1";
 }
 template <>
-std::string TypeStr<int16_t>() {
+inline std::string TypeStr<int16_t>() {
     return ENDIANNESS_STR "i2";
 }
 template <>
-std::string TypeStr<int32_t>() {
+inline std::string TypeStr<int32_t>() {
     return ENDIANNESS_STR "i4";
 }
 template <>
-std::string TypeStr<int64_t>() {
+inline std::string TypeStr<int64_t>() {
     return ENDIANNESS_STR "i8";
 }
 template <>
-std::string TypeStr<uint8_t>() {
+inline std::string TypeStr<uint8_t>() {
     return "|u1";
 }
 template <>
-std::string TypeStr<uint16_t>() {
+inline std::string TypeStr<uint16_t>() {
     return ENDIANNESS_STR "u2";
 }
 template <>
-std::string TypeStr<uint32_t>() {
+inline std::string TypeStr<uint32_t>() {
     return ENDIANNESS_STR "u4";
 }
 template <>
-std::string TypeStr<uint64_t>() {
+inline std::string TypeStr<uint64_t>() {
     return ENDIANNESS_STR "u8";
 }
 
@@ -113,25 +113,26 @@ std::string TypeStr<uint64_t>() {
 //       dtype=np.dtype(dic['type'])).reshape(dic['shape'])
 //
 struct Array {
-    static std::string msg_id() { return "array"; }
+    static std::string MsgId() { return "array"; }
 
     template <class T>
-    static Array fromPtr(const T* const ptr, const std::vector<size_t>& shape) {
+    static Array FromPtr(const T* const ptr,
+                         const std::vector<int64_t>& shape) {
         Array arr;
         arr.type = TypeStr<T>();
         arr.shape = shape;
         arr.data.ptr = (const char*)ptr;
-        size_t num = 1;
-        for (size_t n : shape) num *= n;
+        int64_t num = 1;
+        for (int64_t n : shape) num *= n;
         arr.data.size = sizeof(T) * num;
         return arr;
     }
     std::string type;
-    std::vector<size_t> shape;
+    std::vector<int64_t> shape;
     msgpack::type::raw_ref data;
 
     template <class T>
-    const T* ptr() {
+    const T* Ptr() {
         return (T*)data.ptr;
     }
 
@@ -140,7 +141,7 @@ struct Array {
 
 /// struct for storing MeshData, e.g., PointClouds, TriangleMesh, ..
 struct MeshData {
-    static std::string msg_id() { return "mesh_data"; }
+    static std::string MsgId() { return "mesh_data"; }
 
     /// shape must be [num_verts,3]
     Array vertices;
@@ -184,7 +185,7 @@ struct MeshData {
 /// struct for defining a "set_mesh_data" message, which adds or replaces mesh
 /// data.
 struct SetMeshData {
-    static std::string msg_id() { return "set_mesh_data"; }
+    static std::string MsgId() { return "set_mesh_data"; }
 
     SetMeshData() : time(0) {}
 
@@ -203,7 +204,7 @@ struct SetMeshData {
 
 /// struct for defining a "get_mesh_data" message, which requests mesh data.
 struct GetMeshData {
-    static std::string msg_id() { return "get_mesh_data"; }
+    static std::string MsgId() { return "get_mesh_data"; }
 
     GetMeshData() : time(0) {}
 
@@ -219,7 +220,7 @@ struct GetMeshData {
 
 /// struct for storing camera data
 struct CameraData {
-    static std::string msg_id() { return "camera_data"; }
+    static std::string MsgId() { return "camera_data"; }
 
     CameraData() : width(0), height(0) {}
 
@@ -251,7 +252,7 @@ struct CameraData {
 /// struct for defining a "set_camera_data" message, which adds or replaces a
 /// camera in the scene tree.
 struct SetCameraData {
-    static std::string msg_id() { return "set_camera_data"; }
+    static std::string MsgId() { return "set_camera_data"; }
 
     SetCameraData() : time(0) {}
 
@@ -271,7 +272,7 @@ struct SetCameraData {
 /// struct for defining a "set_time" message, which sets the current time
 /// to the specified value.
 struct SetTime {
-    static std::string msg_id() { return "set_time"; }
+    static std::string MsgId() { return "set_time"; }
     SetTime() : time(0) {}
     int32_t time;
 
@@ -281,7 +282,7 @@ struct SetTime {
 /// struct for defining a "set_active_camera" message, which sets the active
 /// camera as the object with the specified path in the scene tree.
 struct SetActiveCamera {
-    static std::string msg_id() { return "set_active_camera"; }
+    static std::string MsgId() { return "set_active_camera"; }
     std::string path;
 
     MSGPACK_DEFINE_MAP(path);
@@ -290,7 +291,7 @@ struct SetActiveCamera {
 /// struct for defining a "set_properties" message, which sets properties for
 /// the object in the scene tree
 struct SetProperties {
-    static std::string msg_id() { return "set_properties"; }
+    static std::string MsgId() { return "set_properties"; }
     std::string path;
 
     // application specific members go here.
@@ -315,13 +316,23 @@ struct Reply {
 /// struct for defining a "status" message, which will be used for returning
 /// error codes or returning code 0 if the call does not return something else.
 struct Status {
-    static std::string msg_id() { return "status"; }
+    static std::string MsgId() { return "status"; }
 
     Status() : code(0) {}
+    Status(int code, const std::string& str) : code(code), str(str) {}
+    static Status OK() { return Status(); }
+    static Status ErrorUnsupportedMsgId() {
+        return Status(1, "unsupported msg_id");
+    }
+    static Status ErrorUnpackingFailed() {
+        return Status(2, "error during unpacking");
+    }
+
     /// return code. 0 means everything is OK.
     int32_t code;
     /// string representation of the code
     std::string str;
+
     MSGPACK_DEFINE_MAP(code, str);
 };
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "pybind/open3d_pybind.h"
+#include "open3d/utility/ZMQContext.h"
 
 namespace open3d {
+namespace utility {
 
-void pybind_utility(py::module &m);
+zmq::context_t& GetZMQContext() {
+    static zmq::context_t context;
+    return context;
+}
 
-void pybind_console(py::module &m);
-void pybind_eigen(py::module &m);
-void pybind_connection(py::module &m);
-// requires core
-void pybind_remote_functions(py::module &m);
-
+}  // namespace utility
 }  // namespace open3d

@@ -26,21 +26,23 @@
 
 #include "open3d/utility/Connection.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/ZMQContext.h"
+
 namespace {
-zmq::context_t context;
 
 struct ConnectionDefaults {
     std::string address = "tcp://localhost:51454";
-    int connect_timeout = 1000;
+    int connect_timeout = 5000;
     int timeout = 10000;
 } defaults;
+
 }  // namespace
 
 namespace open3d {
 namespace utility {
 
 Connection::Connection()
-    : socket(new zmq::socket_t(context, ZMQ_REQ)),
+    : socket(new zmq::socket_t(GetZMQContext(), ZMQ_REQ)),
       address(defaults.address),
       connect_timeout(defaults.connect_timeout),
       timeout(defaults.timeout) {
@@ -50,7 +52,7 @@ Connection::Connection()
 Connection::Connection(const std::string& address,
                        int connect_timeout,
                        int timeout)
-    : socket(new zmq::socket_t(context, ZMQ_REQ)),
+    : socket(new zmq::socket_t(GetZMQContext(), ZMQ_REQ)),
       address(address),
       connect_timeout(connect_timeout),
       timeout(timeout) {
@@ -67,24 +69,23 @@ void Connection::init() {
     socket->connect(address.c_str());
 }
 
-std::shared_ptr<zmq::message_t> Connection::send(const void* buffer,
-                                                 size_t len) {
-    zmq::message_t send_msg(buffer, len);
-    if (socket->send(send_msg)) {
-#ifndef NDEBUG
-        LogDebug("Connection::send {} bytes", len);
-#endif
-    } else {
-        // TODO print warning or info
+std::shared_ptr<zmq::message_t> Connection::Send(zmq::message_t& send_msg) {
+    if (!socket->send(send_msg)) {
+        zmq::error_t err;
+        if (err.num()) {
+            LogInfo("Connection::send() send failed with: {}", err.what());
+        }
     }
 
     std::shared_ptr<zmq::message_t> msg(new zmq::message_t());
     if (socket->recv(*msg)) {
-#ifndef NDEBUG
-        LogDebug("Connection::send received answer with {} bytes", msg->size());
-#endif
+        LogDebug("Connection::send() received answer with {} bytes",
+                 msg->size());
     } else {
-        // TODO print warning or info
+        zmq::error_t err;
+        if (err.num()) {
+            LogInfo("Connection::send() recv failed with: {}", err.what());
+        }
     }
     return msg;
 }

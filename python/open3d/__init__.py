@@ -50,9 +50,9 @@ from open3d.pybind import geometry
 from open3d.pybind import io
 from open3d.pybind import pipelines
 from open3d.pybind import utility
-from open3d.pybind import visualization
 
 import open3d.core
+import open3d.visualization
 
 __version__ = "@PROJECT_VERSION@"
 

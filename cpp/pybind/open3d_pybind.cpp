@@ -60,6 +60,10 @@ PYBIND11_MODULE(pybind, m) {
     pybind_io(m);
     pybind_pipelines(m);
     pybind_visualization(m);
+
+    // part of utility but requires core
+    py::module m_submodule = m.def_submodule("utility");
+    pybind_remote_functions(m_submodule);
 }
 
 }  // namespace open3d

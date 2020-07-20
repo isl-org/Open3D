@@ -35,10 +35,20 @@ namespace utility {
 class Connection {
 public:
     Connection();
+
+    /// Creates a Connection object used for sending data.
+    /// \param address          The address of the receiving end.
+    ///
+    /// \param connect_timeout  The timeout for the connect operation of the
+    /// socket.
+    ///
+    /// \param timeout          The timeout for sending data
+    ///
     Connection(const std::string& address, int connect_timeout, int timeout);
     ~Connection();
 
-    std::shared_ptr<zmq::message_t> send(const void* buffer, size_t len);
+    /// Function for sending data wrapped in a zmq message object.
+    std::shared_ptr<zmq::message_t> Send(zmq::message_t& send_msg);
 
 private:
     void init();

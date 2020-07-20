@@ -32,8 +32,9 @@
 namespace open3d {
 
 void pybind_remote_functions(py::module& m) {
-    py::class_<utility::Connection, std::shared_ptr<utility::Connection>>(
-            m, "_Connection");
+#ifdef BUILD_RPC_INTERFACE
+    // py::class_<utility::Connection, std::shared_ptr<utility::Connection>>(
+    // m, "_Connection");
 
     m.def("set_point_cloud", &utility::SetPointCloud, "pcd"_a, "path"_a = "",
           "time"_a = 0, "layer"_a = "",
@@ -50,5 +51,39 @@ void pybind_remote_functions(py::module& m) {
                      "A Connection object. Use None to automatically create "
                      "the connection."},
             });
+
+    m.def("set_mesh_data", &utility::SetMeshData, "vertices"_a, "path"_a = "",
+          "time"_a = 0, "layer"_a = "",
+          "vertex_attributes"_a = std::map<std::string, core::Tensor>(),
+          "faces"_a = core::Tensor({0}, core::Dtype::Int32),
+          "face_attributes"_a = std::map<std::string, core::Tensor>(),
+          "lines"_a = core::Tensor({0}, core::Dtype::Int32),
+          "line_attributes"_a = std::map<std::string, core::Tensor>(),
+          "textures"_a = std::map<std::string, core::Tensor>(),
+          "connection"_a = std::shared_ptr<utility::Connection>(),
+          "Sends a set_mesh_data message.");
+
+    docstring::FunctionDocInject(
+            m, "set_mesh_data",
+            {
+                    {"vertices", "Tensor defining the vertices."},
+                    {"path", "A path descriptor, e.g., 'mygroup/points'."},
+                    {"time", "The time associated with this data."},
+                    {"layer", "The layer associated with this data."},
+                    {"vertex_attributes",
+                     "dict of Tensors with vertex attributes."},
+                    {"faces", "Tensor defining the faces with vertex indices."},
+                    {"face_attributes",
+                     "dict of Tensors with face attributes."},
+                    {"lines", "Tensor defining lines with vertex indices."},
+                    {"line_attributes",
+                     "dict of Tensors with line attributes."},
+                    {"textures", "dict of Tensors with textures."},
+                    {"connection",
+                     "A Connection object. Use None to automatically create "
+                     "the connection."},
+            });
+
+#endif
 }
 }  // namespace open3d

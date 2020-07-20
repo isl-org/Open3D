@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,26 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/utility/Connection.h"
 
+#include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
 
-void pybind_utility(py::module &m);
+void pybind_connection(py::module& m) {
+#ifdef BUILD_RPC_INTERFACE
+    py::class_<utility::Connection, std::shared_ptr<utility::Connection>>(
+            m, "Connection")
+            .def(py::init([](std::string address, int connect_timeout,
+                             int timeout) {
+                     return std::shared_ptr<utility::Connection>(
+                             new utility::Connection(address, connect_timeout,
+                                                     timeout));
+                 }),
+                 "address"_a = "tcp://127.0.0.1:51454",
+                 "connect_timeout"_a = 5000, "timeout"_a = 10000);
 
-void pybind_console(py::module &m);
-void pybind_eigen(py::module &m);
-void pybind_connection(py::module &m);
-// requires core
-void pybind_remote_functions(py::module &m);
-
+#endif
+}
 }  // namespace open3d
