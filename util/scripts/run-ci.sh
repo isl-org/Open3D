@@ -91,7 +91,7 @@ fi
 
 # build the rpc interface only if we do not build the cuda module and the
 # ml module to keep build times short
-if [ "$BUILD_CUDA_MODULE" == "OFF" -a "$BUILD_TENSORFLOW_OPS" == "OFF"]; then
+if [ "$BUILD_CUDA_MODULE" == "OFF" -a "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
     BUILD_RPC_INTERFACE="ON"
 else
     BUILD_RPC_INTERFACE="OFF"
