@@ -278,8 +278,8 @@ class AppWindow:
 
     def _on_file_dialog_done(self, filename):
         self.window.close_dialog()
-        self.window.show_message_box(
-            "Error", "Loading has not been implemented yet")
+        self.window.show_message_box("Error",
+                                     "Loading has not been implemented yet")
 
     def _on_menu_quit(self):
         gui.Application.instance.quit()
@@ -320,6 +320,7 @@ class AppWindow:
 
     def _on_about_ok(self):
         self.window.close_dialog()
+
 
 def main():
     # We need to initalize the application, which finds the necessary shaders

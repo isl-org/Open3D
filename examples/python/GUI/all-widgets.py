@@ -223,8 +223,7 @@ class ExampleWindow:
     def _on_filedlg_button(self):
         filedlg = gui.FileDialog(gui.FileDialog.OPEN, "Select file",
                                  self.window.theme)
-        filedlg.add_filter(".obj .ply .stl",
-                           "Triangle mesh (.obj, .ply, .stl)")
+        filedlg.add_filter(".obj .ply .stl", "Triangle mesh (.obj, .ply, .stl)")
         filedlg.add_filter("", "All files")
         filedlg.set_on_cancel(self._on_filedlg_cancel)
         filedlg.set_on_done(self._on_filedlg_done)
@@ -314,10 +313,12 @@ class ExampleWindow:
     def _on_menu_quit(self):
         gui.Application.instance.quit()
 
+
 # This class is essentially the same as window.show_message_box(),
 # so for something this simple just use that, but it illustrates making a
 # dialog.
 class MessageBox:
+
     def __init__(self, title, message):
         self._window = None
 
@@ -353,6 +354,7 @@ class MessageBox:
 
     def _on_ok(self):
         self._window.close_dialog()
+
 
 def main():
     # We need to initalize the application, which finds the necessary shaders for
