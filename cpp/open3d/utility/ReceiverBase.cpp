@@ -78,6 +78,13 @@ void ReceiverBase::Mainloop() {
     socket.setsockopt(ZMQ_RCVTIMEO, 1000);
     socket.setsockopt(ZMQ_SNDTIMEO, timeout);
 
+    auto limits = msgpack::unpack_limit(0xffffffff,  // array
+                                        0xffffffff,  // map
+                                        65536,       // str
+                                        0xffffffff,  // bin
+                                        0xffffffff,  // ext
+                                        100          // depth
+    );
     try {
         socket.bind(bind_address.c_str());
     } catch (const zmq::error_t& err) {
@@ -103,22 +110,25 @@ void ReceiverBase::Mainloop() {
 
             size_t offset = 0;
             while (offset < buffer_size) {
-                auto obj_handle = msgpack::unpack(buffer, buffer_size, offset);
                 messages::Request req;
                 try {
+                    auto obj_handle =
+                            msgpack::unpack(buffer, buffer_size, offset,
+                                            nullptr, nullptr, limits);
                     auto obj = obj_handle.get();
                     req = obj.as<messages::Request>();
 
                     if (false) {
                     }
-#define PROCESS_MESSAGE(MSGTYPE)                                \
-    else if (MSGTYPE::MsgId() == req.msg_id) {                  \
-        auto oh = msgpack::unpack(buffer, buffer_size, offset); \
-        auto obj = oh.get();                                    \
-        MSGTYPE msg;                                            \
-        msg = obj.as<MSGTYPE>();                                \
-        auto reply = ProcessMessage(req, msg, obj);             \
-        replies.push_back(reply);                               \
+#define PROCESS_MESSAGE(MSGTYPE)                                        \
+    else if (MSGTYPE::MsgId() == req.msg_id) {                          \
+        auto oh = msgpack::unpack(buffer, buffer_size, offset, nullptr, \
+                                  nullptr, limits);                     \
+        auto obj = oh.get();                                            \
+        MSGTYPE msg;                                                    \
+        msg = obj.as<MSGTYPE>();                                        \
+        auto reply = ProcessMessage(req, msg, obj);                     \
+        replies.push_back(reply);                                       \
     }
                     PROCESS_MESSAGE(messages::SetMeshData)
                     PROCESS_MESSAGE(messages::GetMeshData)
