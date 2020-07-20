@@ -70,7 +70,7 @@ endif()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 if( BUILD_RPC_INTERFACE )
-    target_link_libraries(${PACKAGE_NAME} PRIVATE ${MSGPACK_TARGET})
+    target_link_libraries(${PACKAGE_NAME} PRIVATE ${ZEROMQ_TARGET} ${MSGPACK_TARGET} Boost_headers)
 endif()
 if (WIN32)
     target_link_options(${PACKAGE_NAME} PUBLIC "/force:multiple")
