@@ -460,6 +460,12 @@ def test_setitem(device):
 
     np_t = np_ref.copy()
     o3_t = o3d.core.Tensor(np_t, device=device)
+    np_t[0, 0, 0] = 1
+    o3_t[0, 0, 0] = 1
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.core.Tensor(np_t, device=device)
     np_fill_t = np.random.rand(*np_t[:].shape)
     o3_fill_t = o3d.core.Tensor(np_fill_t, device=device)
     np_t[:] = np_fill_t
@@ -831,6 +837,10 @@ def test_comparision_ops(device):
     o3_a = o3d.core.Tensor(np_a, device=device)
     o3_b = o3d.core.Tensor(np_b, device=device)
 
+    np.testing.assert_equal((o3_a >= 1).cpu().numpy(), np_a >= 1)
+    np.testing.assert_equal((o3_a < 1).cpu().numpy(), np_a < 1)
+    np.testing.assert_equal((o3_a == 1).cpu().numpy(), np_a == 1)
+    np.testing.assert_equal((o3_a != 1).cpu().numpy(), np_a != 1)
     np.testing.assert_equal((o3_a > o3_b).cpu().numpy(), np_a > np_b)
     np.testing.assert_equal((o3_a >= o3_b).cpu().numpy(), np_a >= np_b)
     np.testing.assert_equal((o3_a < o3_b).cpu().numpy(), np_a < np_b)
