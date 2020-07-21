@@ -92,7 +92,8 @@ namespace open3d {
 void pybind_receiver(py::module& m) {
     py::class_<DummyReceiver, std::shared_ptr<DummyReceiver>>(
             m, "_DummyReceiver",
-            "Base class for the server side receiving requests from a client.")
+            "Dummy receiver for the server side receiving requests from a "
+            "client.")
             .def(py::init([](std::string address, int timeout) {
                      return std::shared_ptr<DummyReceiver>(
                              new DummyReceiver(address, timeout));

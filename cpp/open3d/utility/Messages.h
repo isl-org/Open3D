@@ -43,7 +43,7 @@ namespace open3d {
 namespace utility {
 namespace messages {
 
-/// Teemplate function for converting types to their string representation.
+/// Template function for converting types to their string representation.
 /// E.g. TypeStr<float>() -> "<f4"
 template <class T>
 inline std::string TypeStr() {
