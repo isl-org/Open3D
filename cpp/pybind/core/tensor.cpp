@@ -278,63 +278,12 @@ void pybind_core_tensor(py::module& m) {
     // Binary element-wise ops
     BIND_BINARY_OP_ALL_DTYPES(add, Add, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(add_, Add_, NON_CONST_ARG);
-
-    tensor.def("sub", [](const core::Tensor& self, const core::Tensor& other) {
-        return self.Sub(other);
-    });
-    tensor.def("sub", &core::Tensor::Sub<float>);
-    tensor.def("sub", &core::Tensor::Sub<double>);
-    tensor.def("sub", &core::Tensor::Sub<int32_t>);
-    tensor.def("sub", &core::Tensor::Sub<int64_t>);
-    tensor.def("sub", &core::Tensor::Sub<uint8_t>);
-    tensor.def("sub", &core::Tensor::Sub<bool>);
-    tensor.def("sub_", [](core::Tensor& self, const core::Tensor& other) {
-        return self.Sub_(other);
-    });
-    tensor.def("sub_", &core::Tensor::Sub_<float>);
-    tensor.def("sub_", &core::Tensor::Sub_<double>);
-    tensor.def("sub_", &core::Tensor::Sub_<int32_t>);
-    tensor.def("sub_", &core::Tensor::Sub_<int64_t>);
-    tensor.def("sub_", &core::Tensor::Sub_<uint8_t>);
-    tensor.def("sub_", &core::Tensor::Sub_<bool>);
-
-    tensor.def("mul", [](const core::Tensor& self, const core::Tensor& other) {
-        return self.Mul(other);
-    });
-    tensor.def("mul", &core::Tensor::Mul<float>);
-    tensor.def("mul", &core::Tensor::Mul<double>);
-    tensor.def("mul", &core::Tensor::Mul<int32_t>);
-    tensor.def("mul", &core::Tensor::Mul<int64_t>);
-    tensor.def("mul", &core::Tensor::Mul<uint8_t>);
-    tensor.def("mul", &core::Tensor::Mul<bool>);
-    tensor.def("mul_", [](core::Tensor& self, const core::Tensor& other) {
-        return self.Mul_(other);
-    });
-    tensor.def("mul_", &core::Tensor::Mul_<float>);
-    tensor.def("mul_", &core::Tensor::Mul_<double>);
-    tensor.def("mul_", &core::Tensor::Mul_<int32_t>);
-    tensor.def("mul_", &core::Tensor::Mul_<int64_t>);
-    tensor.def("mul_", &core::Tensor::Mul_<uint8_t>);
-    tensor.def("mul_", &core::Tensor::Mul_<bool>);
-
-    tensor.def("div", [](const core::Tensor& self, const core::Tensor& other) {
-        return self.Div(other);
-    });
-    tensor.def("div", &core::Tensor::Div<float>);
-    tensor.def("div", &core::Tensor::Div<double>);
-    tensor.def("div", &core::Tensor::Div<int32_t>);
-    tensor.def("div", &core::Tensor::Div<int64_t>);
-    tensor.def("div", &core::Tensor::Div<uint8_t>);
-    tensor.def("div", &core::Tensor::Div<bool>);
-    tensor.def("div_", [](core::Tensor& self, const core::Tensor& other) {
-        return self.Div_(other);
-    });
-    tensor.def("div_", &core::Tensor::Div_<float>);
-    tensor.def("div_", &core::Tensor::Div_<double>);
-    tensor.def("div_", &core::Tensor::Div_<int32_t>);
-    tensor.def("div_", &core::Tensor::Div_<int64_t>);
-    tensor.def("div_", &core::Tensor::Div_<uint8_t>);
-    tensor.def("div_", &core::Tensor::Div_<bool>);
+    BIND_BINARY_OP_ALL_DTYPES(sub, Sub, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(sub_, Sub_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(mul, Mul, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(mul_, Mul_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(div, Div, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(div_, Div_, NON_CONST_ARG);
 
     // Binary boolean element-wise ops
     tensor.def("logical_and", &core::Tensor::LogicalAnd);
