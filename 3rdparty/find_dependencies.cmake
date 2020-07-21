@@ -436,16 +436,25 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JPEG_TARGET}")
 
 # faiss
 if (BUILD_FAISS)
-    find_package(BLAS REQUIRED)
     message(STATUS "Building third-party library faiss from source")
-    include(${Open3D_3RDPARTY_DIR}/faiss/faiss.cmake)
+    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
+else()
+    message(STATUS "Using prebuilt third-party library faiss")
+    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_download.cmake)
+    set(BUILD_FAISS ON)
+endif()
+message(STATUS "faiss root ${FAISS_ROOT}")
+if (BUILD_FAISS)
+    find_package(BLAS REQUIRED)
     import_3rdparty_library(3rdparty_faiss
-            INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libfaiss-install/include/
-            LIBRARIES ${FAISS_LIBRARIES}
-            LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libfaiss-install/lib
+        INCLUDE_DIR ${FAISS_ROOT}/include/
+        LIBRARIES ${FAISS_LIBRARIES}
+        LIB_DIR ${FAISS_ROOT}/lib
     )
     target_link_libraries(3rdparty_faiss INTERFACE ${BLAS_LIBRARIES})
-    target_link_libraries(3rdparty_faiss INTERFACE -lcublas)
+    if (BUILD_CUDA_MODULE)
+        target_link_libraries(3rdparty_faiss INTERFACE -lcublas)
+    endif()
     add_dependencies(3rdparty_faiss ext_faiss)
     set(FAISS_TARGET "3rdparty_faiss")
 endif()
