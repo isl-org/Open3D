@@ -271,6 +271,7 @@ Window::Window(const std::string& title,
     style.WindowBorderSize = 0;
     style.FrameBorderSize = theme.border_width;
     style.FrameRounding = theme.border_radius;
+    style.ChildRounding = theme.border_radius;
     style.Colors[ImGuiCol_WindowBg] = colorToImgui(theme.background_color);
     style.Colors[ImGuiCol_Text] = colorToImgui(theme.text_color);
     style.Colors[ImGuiCol_Border] = colorToImgui(theme.border_color);

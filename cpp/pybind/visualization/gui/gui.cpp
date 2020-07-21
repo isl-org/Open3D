@@ -50,6 +50,7 @@
 #include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/TextEdit.h"
 #include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/gui/Window.h"
@@ -458,8 +459,8 @@ void pybind_gui_classes(py::module &m) {
                           "The index of the currently selected item")
             .def("set_on_selection_changed", &Combobox::SetOnValueChanged,
                  "Calls f(str, int) when user selects item from combobox. "
-                 "Arguments "
-                 "are the selected text and selected index, respectively");
+                 "Arguments are the selected text and selected index, "
+                 "respectively");
 
     // ---- ImageLabel ----
     py::class_<ImageLabel, std::shared_ptr<ImageLabel>, Widget> imagelabel(
@@ -539,8 +540,7 @@ void pybind_gui_classes(py::module &m) {
     numedit.def(py::init<NumberEdit::Type>(),
                 "Creates a NumberEdit that is either integers (INT) or "
                 "floating point (DOUBLE). The initial value is 0 and the "
-                "limits "
-                "are +/- max integer (roughly).")
+                "limits are +/- max integer (roughly).")
             .def("__repr__",
                  [](const NumberEdit &ne) {
                      auto val = ne.GetDoubleValue();
@@ -573,8 +573,7 @@ void pybind_gui_classes(py::module &m) {
                  "Sets the minimum and maximum values for the number")
             .def("set_on_value_changed", &NumberEdit::SetOnValueChanged,
                  "Sets f(new_value) which is called with a Float when user "
-                 "changes "
-                 "widget's value");
+                 "changes widget's value");
 
     // ---- ProgressBar----
     py::class_<ProgressBar, std::shared_ptr<ProgressBar>, Widget> progress(
@@ -654,8 +653,7 @@ void pybind_gui_classes(py::module &m) {
                  "Sets the minimum and maximum values for the slider")
             .def("set_on_value_changed", &Slider::SetOnValueChanged,
                  "Sets f(new_value) which is called with a Float when user "
-                 "changes "
-                 "widget's value");
+                 "changes widget's value");
 
     // ---- TabControl ----
     py::class_<TabControl, std::shared_ptr<TabControl>, Widget> tabctrl(
@@ -689,12 +687,51 @@ void pybind_gui_classes(py::module &m) {
                     "The placeholder text displayed when text value is empty")
             .def("set_on_text_changed", &TextEdit::SetOnTextChanged,
                  "Sets f(new_text) which is called whenever the the user makes "
-                 "a "
-                 "change to the text")
+                 "a change to the text")
             .def("set_on_value_changed", &TextEdit::SetOnValueChanged,
                  "Sets f(new_text) which is called with the new text when the "
+                 "user completes text editing");
+
+    // ---- TreeView ----
+    py::class_<TreeView, std::shared_ptr<TreeView>, Widget> treeview(
+            m, "TreeView", "Hierarchical list");
+    treeview.def(py::init<>(), "Creates an empty TreeView widget")
+            .def("__repr__",
+                 [](const TreeView &tv) {
+                     std::stringstream s;
+                     s << "TreeView (" << tv.GetFrame().x << ", "
+                       << tv.GetFrame().y << "), " << tv.GetFrame().width
+                       << " x " << tv.GetFrame().height;
+                     return s.str().c_str();
+                 })
+            .def("get_root_item", &TreeView::GetRootItem,
+                 "Returns the root item. This item is invisible, so its child "
+                 "are "
+                 "the top-level items")
+            .def("add_item", &TreeView::AddItem,
+                 "Adds a child item to the parent. add_item(parent, text)")
+            .def("remove_item", &TreeView::RemoveItem,
+                 "Removes an item and all its children (if any)")
+            .def("get_item_text", &TreeView::GetItemText,
+                 "Returns the text of the item")
+            .def("set_item_text", &TreeView::SetItemText,
+                 "Sets the text of an item")
+            .def_property(
+                    "can_select_items_with_children",
+                    &TreeView::GetCanSelectItemsWithChildren,
+                    &TreeView::SetCanSelectItemsWithChildren,
+                    "If set to False, clicking anywhere on an item with "
+                    "will toggle the item open or closed; the item cannot be "
+                    "selected. If set to True, items with children can be "
+                    "selected, and to toggle open/closed requires clicking "
+                    "the arrow or double-clicking the item")
+            .def_property("selected_item", &TreeView::GetSelectedItemId,
+                          &TreeView::SetSelectedItemId,
+                          "The currently selected item")
+            .def("set_on_selection_changed", &TreeView::SetOnSelectionChanged,
+                 "Sets f(new_item_text, new_item_id) which is called when the "
                  "user "
-                 "completes text editing");
+                 "changes the selection.");
 
     // ---- VectorEdit ----
     py::class_<VectorEdit, std::shared_ptr<VectorEdit>, Widget> vectoredit(
