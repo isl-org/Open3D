@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #ifdef BUILD_RPC_INTERFACE
-#include "open3d/utility/RemoteFunctions.h"
 #include "open3d/utility/ReceiverBase.h"
+#include "open3d/utility/RemoteFunctions.h"
 #include "tests/UnitTest.h"
 
 using namespace open3d::utility;
@@ -96,7 +96,7 @@ template <class TMsg>
 void TestSendReceiveUnpackMessages() {
     // start receiver
     Receiver receiver;
-    receiver.Run();
+    receiver.Start();
 
     // create message to send
     TMsg msg;
@@ -127,7 +127,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
     {
         // start receiver
         Receiver receiver;
-        receiver.Run();
+        receiver.Start();
 
         // create message to send
         msgpack::sbuffer sbuf;
@@ -171,7 +171,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
 TEST(RemoteFunctions, SendGarbage) {
     // start receiver
     Receiver receiver;
-    receiver.Run();
+    receiver.Start();
 
     // send invalid msg id
     {
@@ -238,8 +238,6 @@ TEST(RemoteFunctions, SendGarbage) {
 
     receiver.Stop();
 }
-
-TEST(RemoteFunctions, SetMeshData) {}
 
 }  // namespace tests
 }  // namespace open3d

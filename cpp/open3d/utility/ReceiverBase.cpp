@@ -49,7 +49,7 @@ ReceiverBase::ReceiverBase(const std::string& bind_address, int timeout)
 
 ReceiverBase::~ReceiverBase() { Stop(); }
 
-void ReceiverBase::Run() {
+void ReceiverBase::Start() {
     const std::lock_guard<std::mutex> lock(mutex);
     if (!keep_running) {
         keep_running = true;

@@ -114,7 +114,7 @@ public:
     }
 
     /// Starts the receiver mainloop in a new thread.
-    void Run();
+    void Start();
 
     /// Stops the receiver mainloop and joins the thread.
     /// This function blocks until the mainloop is done with processing
