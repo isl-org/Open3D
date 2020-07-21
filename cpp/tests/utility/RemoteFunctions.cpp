@@ -34,9 +34,11 @@ using namespace open3d::utility;
 namespace open3d {
 namespace tests {
 
+const std::string connection_address = "ipc:///tmp/open3d_ipc";
+
 class Receiver : public ReceiverBase {
 public:
-    Receiver() : ReceiverBase("tcp://127.0.0.1:51455", 500) {}
+    Receiver() : ReceiverBase(connection_address, 500) {}
 
     std::shared_ptr<zmq::message_t> CreateStatusOKMsg() {
         auto OK = messages::Status::OK();
@@ -101,7 +103,7 @@ void TestSendReceiveUnpackMessages() {
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
 
     // send to receiver
-    Connection connection("tcp://127.0.0.1:51455", 500, 500);
+    Connection connection(connection_address, 500, 500);
     auto reply = connection.Send(send_msg);
 
     // check reply and stop listening
@@ -146,7 +148,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
         zmq::message_t send_msg(sbuf.data(), sbuf.size());
 
         // send to receiver
-        Connection connection("tcp://127.0.0.1:51455", 500, 500);
+        Connection connection(connection_address, 500, 500);
         auto reply = connection.Send(send_msg);
 
         // check reply and stop listening
@@ -175,7 +177,7 @@ TEST(RemoteFunctions, SendGarbage) {
         zmq::message_t send_msg(sbuf.data(), sbuf.size());
 
         // send to receiver
-        Connection connection("tcp://127.0.0.1:51455", 500, 500);
+        Connection connection(connection_address, 500, 500);
         auto reply = connection.Send(send_msg);
         size_t offset = 0;
         bool ok;
@@ -199,7 +201,7 @@ TEST(RemoteFunctions, SendGarbage) {
         zmq::message_t send_msg(sbuf.data(), sbuf.size());
 
         // send to receiver
-        Connection connection("tcp://127.0.0.1:51455", 500, 500);
+        Connection connection(connection_address, 500, 500);
         auto reply = connection.Send(send_msg);
         size_t offset = 0;
         bool ok;
@@ -221,7 +223,7 @@ TEST(RemoteFunctions, SendGarbage) {
         zmq::message_t send_msg(sbuf.data(), sbuf.size());
 
         // send to receiver
-        Connection connection("tcp://127.0.0.1:51455", 500, 500);
+        Connection connection(connection_address, 500, 500);
         auto reply = connection.Send(send_msg);
         size_t offset = 0;
         bool ok;
