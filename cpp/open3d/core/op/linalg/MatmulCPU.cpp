@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "cblas.h"
+#include <cblas.h>
 #include "open3d/core/op/linalg/Matmul.h"
 
 namespace open3d {
@@ -39,40 +39,41 @@ void MatmulCPU(Dtype dtype,
                int m,
                int k,
                int n) {
-    switch (dtype) {
-        case Dtype::Float32: {
-            float alpha = 1, beta = 0;
-            // clang-format off
-            cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                        m, n, k,  // dimensions
-                        alpha,
-                        static_cast<const float*>(A_data), k,
-                        static_cast<const float*>(B_data), n,  // input and their leading dims
-                        beta,
-                        static_cast<float*>(C_data), n);  // output and its leading dim
-            // clang-format on
-            break;
-        }
+    // switch (dtype) {
+    //     case Dtype::Float32: {
+    //         float alpha = 1, beta = 0;
+    //         // clang-format off
+    //         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+    //                     m, n, k,  // dimensions
+    //                     alpha,
+    //                     static_cast<const float*>(A_data), k,
+    //                     static_cast<const float*>(B_data), n,  // input and
+    //                     their leading dims beta, static_cast<float*>(C_data),
+    //                     n);  // output and its leading dim
+    //         // clang-format on
+    //         break;
+    //     }
 
-        case Dtype::Float64: {
-            double alpha = 1, beta = 0;
-            // clang-format off
-            cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                        m, n, k,  // dimensions
-                        alpha,
-                        static_cast<const double*>(A_data), k,
-                        static_cast<const double*>(B_data), n,  // input and their leading dims
-                        beta,
-                        static_cast<double*>(C_data), n);  // output and its leading dim
-            break;
-            // clang-format on
-        }
+    //     case Dtype::Float64: {
+    //         double alpha = 1, beta = 0;
+    //         // clang-format off
+    //         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+    //                     m, n, k,  // dimensions
+    //                     alpha,
+    //                     static_cast<const double*>(A_data), k,
+    //                     static_cast<const double*>(B_data), n,  // input and
+    //                     their leading dims beta,
+    //                     static_cast<double*>(C_data), n);  // output and its
+    //                     leading dim
+    //         break;
+    //         // clang-format on
+    //     }
 
-        default: {  // should never reach here
-            utility::LogError("Unsupported dtype {} in CPU backend.",
-                              DtypeUtil::ToString(dtype));
-        }
-    }
+    //     default: {  // should never reach here
+    //         utility::LogError("Unsupported dtype {} in CPU backend.",
+    //                           DtypeUtil::ToString(dtype));
+    //     }
+    // }
 }
 
 }  // namespace core

@@ -38,7 +38,7 @@ void Reduction(const Tensor& src,
                ReductionOpCode op_code) {
     // For ArgMin and ArgMax, keepdim == false, and dims can only contain one or
     // all dimensions.
-    if (arg_reduce_ops.find(op_code) != arg_reduce_ops.end()) {
+    if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
         if (keepdim) {
             utility::LogError("Arg-reduction keepdim must be false");
         }

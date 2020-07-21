@@ -21,14 +21,14 @@ set (KERNEL_CUDA_SRC
 
 set (LINALG_SRC
   op/linalg/Matmul.cpp
-  op/linalg/Solver.cpp
+  # op/linalg/Solver.cpp
   op/linalg/MatmulCPU.cpp
-  op/linalg/SolverCPU.cpp
+  # op/linalg/SolverCPU.cpp
   )
 
 set (LINALG_CUDA_SRC
   op/linalg/MatmulCUDA.cu
-  op/linalg/SolverCUDA.cu
+  # op/linalg/SolverCUDA.cu
 )
 
 set (CORE_SRC
