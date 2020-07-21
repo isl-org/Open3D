@@ -25,6 +25,7 @@ bool NeighborSearch::SetTensorData(const core::Tensor &tensor){
 
     tensor_ = tensor;
     search_object_.reset(new geometry::KnnFaiss());
+    // the following setups are based on ~~
     if (dataset_size_ <= 2e5){
         search_object_->SetTensorData(tensor_);
     }
@@ -45,6 +46,7 @@ bool NeighborSearch::SetTensorData(const core::Tensor &tensor){
 
 template <typename T>
 std::pair<core::Tensor, core::Tensor> NeighborSearch::KNNSearch(const T& query_tensor, int knn){
+    // 수정
     std::vector<long> indices;
     std::vector<float> distance2;
     search_object_->SearchKNN(query_tensor, knn, indices, distance2);
@@ -56,6 +58,7 @@ std::pair<core::Tensor, core::Tensor> NeighborSearch::KNNSearch(const T& query_t
 
 template <typename T>
 std::pair<core::Tensor, core::Tensor> NeighborSearch::RadiusSearch(const T& query_tensor, core::Tensor radii){
+    // 수정
     std::vector<long> indices;
     std::vector<float> distance2;
     int result_num_ = search_object_->SearchKNN(query_tensor, radii, indices, distance2);

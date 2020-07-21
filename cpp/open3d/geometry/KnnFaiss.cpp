@@ -184,6 +184,7 @@ int KnnFaiss::SearchKNN(const T &query,
         size_t(query.rows()) != dimension_ || knn < 0) {
         return -1;
     }
+    // index cpu일때 tensor가 gpu에 있으면 어떻게 될까요
     std::vector<float> tmp_query(query.size());
     for (unsigned int i = 0; i < query.size(); i++) {
         tmp_query[i] = (float)query.data()[i];
