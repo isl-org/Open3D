@@ -594,6 +594,10 @@ public:
     /// non-zero values will be treated as True.
     Tensor LogicalAnd(const Tensor& value) const;
     Tensor operator&&(const Tensor& value) const { return LogicalAnd(value); }
+    template <typename T>
+    Tensor LogicalAnd(T scalar_value) const {
+        return LogicalAnd(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Element-wise logical and of tensors, in-place. This operation won't
     /// change the tensor's dtype.

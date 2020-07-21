@@ -286,7 +286,7 @@ void pybind_core_tensor(py::module& m) {
     BIND_BINARY_OP_ALL_DTYPES(div_, Div_, NON_CONST_ARG);
 
     // Binary boolean element-wise ops
-    tensor.def("logical_and", &core::Tensor::LogicalAnd);
+    BIND_BINARY_OP_ALL_DTYPES(logical_and, LogicalAnd, CONST_ARG);
     tensor.def("logical_and_", &core::Tensor::LogicalAnd_);
     tensor.def("logical_or", &core::Tensor::LogicalOr);
     tensor.def("logical_or_", &core::Tensor::LogicalOr_);

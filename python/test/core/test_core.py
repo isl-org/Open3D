@@ -844,6 +844,52 @@ def test_scalar_op(device):
     a /= True
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 2.5))
 
+    # logical_and
+    a = o3d.core.Tensor([True, False, True, False], device=device)
+    np.testing.assert_equal(
+        a.logical_and(True).cpu().numpy(), np.array([True, False, True, False]))
+    np.testing.assert_equal(
+        a.logical_and(5).cpu().numpy(), np.array([True, False, True, False]))
+    np.testing.assert_equal(
+        a.logical_and(False).cpu().numpy(),
+        np.array([False, False, False, False]))
+    np.testing.assert_equal(
+        a.logical_and(0).cpu().numpy(), np.array([False, False, False, False]))
+
+    # logical_and_
+
+    # logical_or
+
+    # logical_or_
+
+    # logical_xor
+
+    # logical_xor_
+
+    # gt
+
+    # gt_
+
+    # lt
+
+    # lt_
+
+    # ge
+
+    # ge_
+
+    # le
+
+    # le_
+
+    # eq
+
+    # eq_
+
+    # ne
+
+    # ne_
+
 
 @pytest.mark.parametrize("device", core_test_utils.list_devices())
 def test_all_any(device):
