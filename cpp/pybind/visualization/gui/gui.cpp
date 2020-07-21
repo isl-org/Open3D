@@ -661,7 +661,8 @@ void pybind_gui_classes(py::module &m) {
     tabctrl.def(py::init<>())
             .def("add_tab", &TabControl::AddTab,
                  "Adds a tab. The first parameter is the title of the tab, and "
-                 "the second parameter is a widget--normally this is a layout.");
+                 "the second parameter is a widget--normally this is a "
+                 "layout.");
 
     // ---- TextEdit ----
     py::class_<TextEdit, std::shared_ptr<TextEdit>, Widget> textedit(
@@ -698,37 +699,39 @@ void pybind_gui_classes(py::module &m) {
             .def("__repr__",
                  [](const TreeView &tv) {
                      std::stringstream s;
-                     s << "TreeView ("
-                       << tv.GetFrame().x << ", " << tv.GetFrame().y << "), "
-                       << tv.GetFrame().width << " x " << tv.GetFrame().height;
+                     s << "TreeView (" << tv.GetFrame().x << ", "
+                       << tv.GetFrame().y << "), " << tv.GetFrame().width
+                       << " x " << tv.GetFrame().height;
                      return s.str().c_str();
                  })
-        .def("get_root_item", &TreeView::GetRootItem,
-             "Returns the root item. This item is invisible, so its child are "
-             "the top-level items")
-        .def("add_item", &TreeView::AddItem,
-             "Adds a child item to the parent. add_item(parent, text)")
-        .def("remove_item", &TreeView::RemoveItem,
-             "Removes an item and all its children (if any)")
-        .def("get_item_text", &TreeView::GetItemText,
-             "Returns the text of the item")
-        .def("set_item_text", &TreeView::SetItemText,
-             "Sets the text of an item")
-        .def_property("can_select_items_with_children",
-                      &TreeView::GetCanSelectItemsWithChildren,
-                      &TreeView::SetCanSelectItemsWithChildren,
-                      "If set to False, clicking anywhere on an item with "
-                      "will toggle the item open or closed; the item cannot be "
-                      "selected. If set to True, items with children can be "
-                      "selected, and to toggle open/closed requires clicking "
-                      "the arrow or double-clicking the item")
-        .def_property("selected_item",
-                      &TreeView::GetSelectedItemId, &TreeView::SetSelectedItemId,
-                      "The currently selected item")
-        .def("set_on_selection_changed", &TreeView::SetOnSelectionChanged,
-             "Sets f(new_item_text, new_item_id) which is called when the user "
-             "changes the selection.")
-        ;
+            .def("get_root_item", &TreeView::GetRootItem,
+                 "Returns the root item. This item is invisible, so its child "
+                 "are "
+                 "the top-level items")
+            .def("add_item", &TreeView::AddItem,
+                 "Adds a child item to the parent. add_item(parent, text)")
+            .def("remove_item", &TreeView::RemoveItem,
+                 "Removes an item and all its children (if any)")
+            .def("get_item_text", &TreeView::GetItemText,
+                 "Returns the text of the item")
+            .def("set_item_text", &TreeView::SetItemText,
+                 "Sets the text of an item")
+            .def_property(
+                    "can_select_items_with_children",
+                    &TreeView::GetCanSelectItemsWithChildren,
+                    &TreeView::SetCanSelectItemsWithChildren,
+                    "If set to False, clicking anywhere on an item with "
+                    "will toggle the item open or closed; the item cannot be "
+                    "selected. If set to True, items with children can be "
+                    "selected, and to toggle open/closed requires clicking "
+                    "the arrow or double-clicking the item")
+            .def_property("selected_item", &TreeView::GetSelectedItemId,
+                          &TreeView::SetSelectedItemId,
+                          "The currently selected item")
+            .def("set_on_selection_changed", &TreeView::SetOnSelectionChanged,
+                 "Sets f(new_item_text, new_item_id) which is called when the "
+                 "user "
+                 "changes the selection.");
 
     // ---- VectorEdit ----
     py::class_<VectorEdit, std::shared_ptr<VectorEdit>, Widget> vectoredit(
