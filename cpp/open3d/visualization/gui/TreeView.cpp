@@ -228,7 +228,7 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             // of the tree's frame. To draw directly to the window list we
             // need to the absolute coordinates (relative the OS window's
             // upper left)
-            auto y = frame.y + context.uiOffsetY + ImGui::GetCursorPosY();
+            auto y = frame.y + ImGui::GetCursorPosY() - ImGui::GetScrollY();
             ImGui::GetWindowDrawList()->AddRectFilled(
                     ImVec2(frame.x, y), ImVec2(frame.GetRight(), y + h),
                     colorToImguiRGBA(context.theme.tree_selected_color));
