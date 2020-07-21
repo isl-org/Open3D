@@ -849,17 +849,15 @@ if(ENABLE_GUI)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
 endif()
 
-add_subdirectory(${Open3D_3RDPARTY_DIR}/OpenBLAS)
+# OpenBLAS
+message(STATUS "Building OpenBLAS from source")
+include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
 import_3rdparty_library(3rdparty_openblas
-  HEADER INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/OpenBLAS
-  LIBRARIES openblas)
-add_dependencies(3rdparty_openblas openblas)
+  INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
+  LIB_DIR ${OPENBLAS_LIB_DIR}
+  LIBRARIES ${OPENBLAS_LIBRARIES}
+  )
 set(OPENBLAS_TARGET "3rdparty_openblas")
-list(APPEND Open3D_3RDPARTY_HEADER_TARGETS "${OPENBLAS_TARGET}")
+add_dependencies(3rdparty_openblas ext_openblas)
+target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
-
-# Dirty code to make it temporarily work
-# Seems $<Config> is not instantiated if we use CMAKE_LIBRARY_OUTPUT_DIRECTORY
-configure_file(${PROJECT_BINARY_DIR}/3rdparty/OpenBLAS/lib/libopenblas.a
-  ${PROJECT_BINARY_DIR}/lib/RelWithDebInfo/libopenblas.a
-  COPYONLY)
