@@ -44,7 +44,6 @@ public:
         messages::Reply reply{OK.MsgId()};
         msgpack::pack(sbuf, reply);
         msgpack::pack(sbuf, OK);
-        auto msg = std::make_shared<zmq::message_t>();
         return std::shared_ptr<zmq::message_t>(
                 new zmq::message_t(sbuf.data(), sbuf.size()));
     }

@@ -62,9 +62,9 @@ class ExternalVisualizer:
 
             layer: The layer associated with the object.
 
-            objs: List of objects or tuples to pass multiple objects. See the 
+            objs: List of objects or tuples to pass multiple objects. See the
                 example section for usage instructions.
-                
+
             connection: A connection object to use for sending data. This
                 parameter can be used to override the default object.
         """
