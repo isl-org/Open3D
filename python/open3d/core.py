@@ -101,7 +101,7 @@ class Tensor(o3d.pybind.core.Tensor):
     """
 
     def __init__(self, data, dtype=None, device=None):
-        if isinstance(data, (tuple, list, int, float)):
+        if isinstance(data, tuple) or isinstance(data, list):
             data = np.array(data)
         if not isinstance(data, np.ndarray):
             raise ValueError("data must be a list, tuple, or Numpy array.")
@@ -125,8 +125,6 @@ class Tensor(o3d.pybind.core.Tensor):
 
     @cast_to_py_tensor
     def __setitem__(self, key, value):
-        if not isinstance(value, Tensor):
-            value = Tensor(value, self.dtype, self.device)
         if isinstance(key, tuple):
             o3d_tensor_keys = [_to_o3d_tensor_key(k) for k in key]
             super(Tensor, self)._setitem_vector(o3d_tensor_keys, value)
@@ -652,33 +650,21 @@ class Tensor(o3d.pybind.core.Tensor):
         return super(Tensor, self).argmax_(dim)
 
     def __lt__(self, value):
-        if not isinstance(value, Tensor):
-            value = Tensor(value, self.dtype, self.device)
         return self.lt(value)
 
     def __le__(self, value):
-        if not isinstance(value, Tensor):
-            value = Tensor(value, self.dtype, self.device)
         return self.le(value)
 
     def __eq__(self, value):
-        if not isinstance(value, Tensor):
-            value = Tensor(value, self.dtype, self.device)
         return self.eq(value)
 
     def __ne__(self, value):
-        if not isinstance(value, Tensor):
-            value = Tensor(value, self.dtype, self.device)
         return self.ne(value)
 
     def __gt__(self, value):
-        if not isinstance(value, Tensor):
-            value = Tensor(value, self.dtype, self.device)
         return self.gt(value)
 
     def __ge__(self, value):
-        if not isinstance(value, Tensor):
-            value = Tensor(value, self.dtype, self.device)
         return self.ge(value)
 
 
