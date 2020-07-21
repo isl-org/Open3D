@@ -49,6 +49,22 @@ void pybind_remote_functions(py::module& m) {
                      "the connection."},
             });
 
+    m.def("set_triangle_mesh", &utility::SetTriangleMesh, "mesh"_a,
+          "path"_a = "", "time"_a = 0, "layer"_a = "",
+          "connection"_a = std::shared_ptr<utility::Connection>(),
+          "Sends a point cloud message to a viewer.");
+    docstring::FunctionDocInject(
+            m, "set_triangle_mesh",
+            {
+                    {"mesh", "The TriangleMesh object."},
+                    {"path", "A path descriptor, e.g., 'mygroup/mesh'."},
+                    {"time", "The time associated with this data."},
+                    {"layer", "The layer associated with this data."},
+                    {"connection",
+                     "A Connection object. Use None to automatically create "
+                     "the connection."},
+            });
+
     m.def("set_mesh_data", &utility::SetMeshData, "vertices"_a, "path"_a = "",
           "time"_a = 0, "layer"_a = "",
           "vertex_attributes"_a = std::map<std::string, core::Tensor>(),

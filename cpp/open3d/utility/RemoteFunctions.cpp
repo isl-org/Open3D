@@ -81,7 +81,7 @@ bool SetPointCloud(const open3d::geometry::PointCloud& pcd,
                    const std::string& layer,
                    std::shared_ptr<Connection> connection) {
     // TODO use SetMeshData here after switching to the new PointCloud class.
-    if (pcd.HasPoints() == 0) {
+    if (!pcd.HasPoints()) {
         LogInfo("SetMeshData: point cloud is empty");
         return false;
     }
@@ -101,6 +101,84 @@ bool SetPointCloud(const open3d::geometry::PointCloud& pcd,
     if (pcd.HasColors()) {
         msg.data.vertex_attributes["colors"] = messages::Array::FromPtr(
                 (double*)pcd.colors_.data(), {int64_t(pcd.colors_.size()), 3});
+    }
+
+    msgpack::sbuffer sbuf;
+    messages::Request request{msg.MsgId()};
+    msgpack::pack(sbuf, request);
+    msgpack::pack(sbuf, msg);
+
+    if (!connection) {
+        connection = std::make_shared<Connection>();
+    }
+    zmq::message_t send_msg(sbuf.data(), sbuf.size());
+    auto reply = connection->Send(send_msg);
+    return ReplyIsOKStatus(*reply);
+}
+
+bool SetTriangleMesh(const open3d::geometry::TriangleMesh& mesh,
+                     const std::string& path,
+                     int time,
+                     const std::string& layer,
+                     std::shared_ptr<Connection> connection) {
+    // TODO use SetMeshData here after switching to the new TriangleMesh class.
+    if (!mesh.HasTriangles()) {
+        LogInfo("SetMeshData: triangle mesh is empty");
+        return false;
+    }
+
+    messages::SetMeshData msg;
+    msg.path = path;
+    msg.time = time;
+    msg.layer = layer;
+
+    msg.data.vertices =
+            messages::Array::FromPtr((double*)mesh.vertices_.data(),
+                                     {int64_t(mesh.vertices_.size()), 3});
+    msg.data.faces = messages::Array::FromPtr(
+            (int*)mesh.triangles_.data(), {int64_t(mesh.triangles_.size()), 3});
+    if (mesh.HasVertexNormals()) {
+        msg.data.vertex_attributes["normals"] = messages::Array::FromPtr(
+                (double*)mesh.vertex_normals_.data(),
+                {int64_t(mesh.vertex_normals_.size()), 3});
+    }
+    if (mesh.HasVertexColors()) {
+        msg.data.vertex_attributes["colors"] = messages::Array::FromPtr(
+                (double*)mesh.vertex_colors_.data(),
+                {int64_t(mesh.vertex_colors_.size()), 3});
+    }
+    if (mesh.HasTriangleNormals()) {
+        msg.data.face_attributes["normals"] = messages::Array::FromPtr(
+                (double*)mesh.triangle_normals_.data(),
+                {int64_t(mesh.triangle_normals_.size()), 3});
+    }
+    if (mesh.HasTriangleUvs()) {
+        msg.data.face_attributes["uvs"] = messages::Array::FromPtr(
+                (double*)mesh.triangle_uvs_.data(),
+                {int64_t(mesh.triangle_uvs_.size()), 2});
+    }
+    if (mesh.HasTextures()) {
+        int tex_id = 0;
+        for (const auto& image : mesh.textures_) {
+            if (!image.IsEmpty()) {
+                std::vector<int64_t> shape(
+                        {image.height_, image.width_, image.num_of_channels_});
+                if (image.bytes_per_channel_ == sizeof(uint8_t)) {
+                    msg.data.textures[std::to_string(tex_id)] =
+                            messages::Array::FromPtr(
+                                    (uint8_t*)image.data_.data(), shape);
+                } else if (image.bytes_per_channel_ == sizeof(float)) {
+                    msg.data.textures[std::to_string(tex_id)] =
+                            messages::Array::FromPtr((float*)image.data_.data(),
+                                                     shape);
+                } else if (image.bytes_per_channel_ == sizeof(double)) {
+                    msg.data.textures[std::to_string(tex_id)] =
+                            messages::Array::FromPtr(
+                                    (double*)image.data_.data(), shape);
+                }
+            }
+            ++tex_id;
+        }
     }
 
     msgpack::sbuffer sbuf;

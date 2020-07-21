@@ -81,6 +81,25 @@ bool SetPointCloud(
         const std::string& layer = std::string(),
         std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
 
+/// Function for sending a TriangleMesh.
+/// \param pcd         The TriangleMesh object.
+///
+/// \param path        Path descriptor defining a location in the scene tree.
+/// E.g., 'mygroup/mypoints'.
+///
+/// \param time        The time point associated with the object.
+///
+/// \param layer       The layer for this object.
+///
+/// \param connection  The connection object used for sending the data.
+///
+bool SetTriangleMesh(
+        const open3d::geometry::TriangleMesh& mesh,
+        const std::string& path = std::string(),
+        int time = 0,
+        const std::string& layer = std::string(),
+        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+
 /// Function for sending general mesh data.
 /// \param vertices    Tensor with vertices of shape [N,3]
 ///

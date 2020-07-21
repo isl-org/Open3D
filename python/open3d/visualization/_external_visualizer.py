@@ -80,6 +80,13 @@ class ExternalVisualizer:
                                                      layer=layer,
                                                      connection=connection)
                 result.append(status)
+            elif isinstance(obj, o3d.geometry.TriangleMesh):
+                status = o3d.utility.set_triangle_mesh(obj,
+                                                       path=path,
+                                                       time=time,
+                                                       layer=layer,
+                                                       connection=connection)
+                result.append(status)
             elif isinstance(obj, o3d.camera.PinholeCameraParameters):
                 status = o3d.utility.set_legacy_camera(obj,
                                                        path=path,
@@ -105,10 +112,7 @@ class ExternalVisualizer:
                 else:
                     result.append(self.set(item, connection=connection))
 
-        if len(result) == 1:
-            return result[0]
-        else:
-            return tuple(result)
+        return all(result)
 
     def set_time(self, time):
         """Sets the time in the external visualizer
