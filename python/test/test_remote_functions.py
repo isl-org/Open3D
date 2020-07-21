@@ -24,6 +24,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import os
 import open3d as o3d
 import numpy as np
 import pytest
@@ -31,8 +32,10 @@ import pytest
 # skip all tests if the ml ops were not built
 pytestmark = pytest.mark.skipif(not o3d._build_config['BUILD_RPC_INTERFACE'],
                                 reason='rpc interface not built.')
-
-address = 'ipc:///tmp/open3d_ipc'
+if os.name == 'nt':
+    address = 'tcp://127.0.0.1:51455'
+else:
+    address = 'ipc:///tmp/open3d_ipc'
 
 
 def test_external_visualizer():
