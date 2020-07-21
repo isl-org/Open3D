@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <mutex>
 #include <thread>
 #include <zmq.hpp>
@@ -130,6 +131,7 @@ private:
     std::thread thread;
     std::mutex mutex;
     bool keep_running;
+    std::atomic<bool> loop_running;
 };
 
 }  // namespace utility

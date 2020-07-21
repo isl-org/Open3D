@@ -45,7 +45,10 @@ namespace open3d {
 namespace utility {
 
 ReceiverBase::ReceiverBase(const std::string& bind_address, int timeout)
-    : bind_address(bind_address), timeout(timeout), keep_running(false) {}
+    : bind_address(bind_address),
+      timeout(timeout),
+      keep_running(false),
+      loop_running(false) {}
 
 ReceiverBase::~ReceiverBase() { Stop(); }
 
@@ -54,6 +57,11 @@ void ReceiverBase::Start() {
     if (!keep_running) {
         keep_running = true;
         thread = std::thread(&ReceiverBase::Mainloop, this);
+        while (!loop_running.load()) {
+            // empty
+            // wait for the loop to start running
+        };
+
         LogDebug("ReceiverBase: started");
     } else {
         LogDebug("ReceiverBase: already running");
@@ -98,6 +106,7 @@ void ReceiverBase::Mainloop() {
                  err.what());
     }
 
+    loop_running.store(true);
     while (true) {
         {
             const std::lock_guard<std::mutex> lock(mutex);
@@ -178,6 +187,7 @@ void ReceiverBase::Mainloop() {
         }
     }
     socket.close();
+    loop_running.store(false);
 }  // namespace utility
 
 }  // namespace utility
