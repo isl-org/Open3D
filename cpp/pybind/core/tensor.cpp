@@ -40,6 +40,18 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorKey.h"
 
+#define BIND_BINARY_OP_ALL_DTYPES(py_name, cpp_name)                     \
+    tensor.def(#py_name,                                                 \
+               [](const core::Tensor& self, const core::Tensor& other) { \
+                   return self.cpp_name(other);                          \
+               });                                                       \
+    tensor.def(#py_name, &core::Tensor::cpp_name<float>);                \
+    tensor.def(#py_name, &core::Tensor::cpp_name<double>);               \
+    tensor.def(#py_name, &core::Tensor::cpp_name<int32_t>);              \
+    tensor.def(#py_name, &core::Tensor::cpp_name<int64_t>);              \
+    tensor.def(#py_name, &core::Tensor::cpp_name<uint8_t>);              \
+    tensor.def(#py_name, &core::Tensor::cpp_name<bool>);
+
 namespace open3d {
 
 template <typename T>
@@ -262,15 +274,8 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("to", &core::Tensor::To);
 
     // Binary element-wise ops
-    tensor.def("add", [](const core::Tensor& self, const core::Tensor& other) {
-        return self.Add(other);
-    });
-    tensor.def("add", &core::Tensor::Add<float>);
-    tensor.def("add", &core::Tensor::Add<double>);
-    tensor.def("add", &core::Tensor::Add<int32_t>);
-    tensor.def("add", &core::Tensor::Add<int64_t>);
-    tensor.def("add", &core::Tensor::Add<uint8_t>);
-    tensor.def("add", &core::Tensor::Add<bool>);
+    BIND_BINARY_OP_ALL_DTYPES(add, Add);
+
     tensor.def("add_", [](core::Tensor& self, const core::Tensor& other) {
         return self.Add_(other);
     });
