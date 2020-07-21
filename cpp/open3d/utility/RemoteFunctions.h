@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "open3d/camera/PinholeCameraParameters.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
@@ -132,6 +133,44 @@ bool SetMeshData(
                 std::map<std::string, open3d::core::Tensor>(),
         const std::map<std::string, open3d::core::Tensor>& textures =
                 std::map<std::string, open3d::core::Tensor>(),
+        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+
+/// Function for sending Camera data.
+/// \param camera      The PinholeCameraParameters object.
+///
+/// \param path        Path descriptor defining a location in the scene tree.
+/// E.g., 'mygroup/mycam'.
+///
+/// \param time        The time point associated with the object.
+///
+/// \param layer       The layer for this object.
+///
+/// \param connection  The connection object used for sending the data.
+///
+bool SetLegacyCamera(
+        const open3d::camera::PinholeCameraParameters& camera,
+        const std::string& path = std::string(),
+        int time = 0,
+        const std::string& layer = std::string(),
+        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+
+/// Sets the time in the external visualizer.
+/// \param time        The time value
+///
+/// \param connection  The connection object used for sending the data.
+///
+bool SetTime(
+        int time,
+        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+
+/// Sets the object with the specified path as the active camera.
+/// \param path        Path descriptor defining a location in the scene tree.
+/// E.g., 'mygroup/mycam'.
+///
+/// \param connection  The connection object used for sending the data.
+///
+bool SetActiveCamera(
+        const std::string& path,
         std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
 
 }  // namespace utility

@@ -25,7 +25,13 @@ class ExternalVisualizer:
         self.address = address
         self.timeout = timeout
 
-    def set(self, obj=None, path='', time=0, layer='', objs=None):
+    def set(self,
+            obj=None,
+            path='',
+            time=0,
+            layer='',
+            objs=None,
+            connection=None):
         """Send Open3D objects for visualization to the visualizer.
 
         Example:
@@ -46,15 +52,40 @@ class ExternalVisualizer:
                              (mesh, 'group/mymesh'),
                              camera
                             ]
-        """
 
+        Args:
+            obj: A geometry or camera object.
+
+            path: A path describing a location in the scene tree.
+
+            time: An integer time value associated with the object.
+
+            layer: The layer associated with the object.
+
+            objs: List of objects or tuples to pass multiple objects. See the 
+                example section for usage instructions.
+                
+            connection: A connection object to use for sending data. This
+                parameter can be used to override the default object.
+        """
+        if connection is None:
+            connection = o3d.utility.Connection(address=self.address,
+                                                timeout=self.timeout)
         result = []
         if not obj is None:
             if isinstance(obj, o3d.geometry.PointCloud):
                 status = o3d.utility.set_point_cloud(obj,
                                                      path=path,
                                                      time=time,
-                                                     layer=layer)
+                                                     layer=layer,
+                                                     connection=connection)
+                result.append(status)
+            elif isinstance(obj, o3d.camera.PinholeCameraParameters):
+                status = o3d.utility.set_legacy_camera(obj,
+                                                       path=path,
+                                                       time=time,
+                                                       layer=layer,
+                                                       connection=connection)
                 result.append(status)
             else:
                 raise Exception("Unsupported object type '{}'".format(
@@ -70,14 +101,34 @@ class ExternalVisualizer:
             for item in objs:
                 if isinstance(item, (tuple, list)):
                     if len(item) in range(1, 5):
-                        result.append(self.set(*item))
+                        result.append(self.set(*item, connection=connection))
                 else:
-                    result.append(self.set(item))
+                    result.append(self.set(item, connection=connection))
 
         if len(result) == 1:
             return result[0]
         else:
             return tuple(result)
+
+    def set_time(self, time):
+        """Sets the time in the external visualizer
+
+        Args:
+            time: The time value
+        """
+        connection = o3d.utility.Connection(address=self.address,
+                                            timeout=self.timeout)
+        return o3d.utility.set_time(time, connection)
+
+    def set_active_camera(self, path):
+        """Sets the time in the external visualizer
+
+        Args:
+            path: A path describing a location in the scene tree.
+        """
+        connection = o3d.utility.Connection(address=self.address,
+                                            timeout=self.timeout)
+        return o3d.utility.set_active_camera(path, connection)
 
 
 # convenience default external visualizer

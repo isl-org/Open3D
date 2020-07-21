@@ -24,8 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/RemoteFunctions.h"
+#include <Eigen/Geometry>
 #include "open3d/utility/Console.h"
+#include "open3d/utility/RemoteFunctions.h"
 
 namespace open3d {
 namespace utility {
@@ -279,6 +280,98 @@ bool SetMeshData(
             LogError("SetMeshData: Texture {} is empty", item.first);
         }
     }
+
+    msgpack::sbuffer sbuf;
+    messages::Request request{msg.MsgId()};
+    msgpack::pack(sbuf, request);
+    msgpack::pack(sbuf, msg);
+
+    if (!connection) {
+        connection = std::make_shared<Connection>();
+    }
+    zmq::message_t send_msg(sbuf.data(), sbuf.size());
+    auto reply = connection->Send(send_msg);
+    return ReplyIsOKStatus(*reply);
+}
+
+bool SetLegacyCamera(const open3d::camera::PinholeCameraParameters& camera,
+                     const std::string& path,
+                     int time,
+                     const std::string& layer,
+                     std::shared_ptr<Connection> connection) {
+    messages::SetCameraData msg;
+    msg.path = path;
+    msg.time = time;
+    msg.layer = layer;
+
+    // convert extrinsics
+    Eigen::Matrix3d R = camera.extrinsic_.block<3, 3>(0, 0);
+    Eigen::Vector3d t = camera.extrinsic_.block<3, 1>(0, 3);
+    Eigen::Quaterniond q(R);
+    msg.data.R[0] = q.x();
+    msg.data.R[1] = q.y();
+    msg.data.R[2] = q.z();
+    msg.data.R[3] = q.w();
+
+    msg.data.t[0] = t[0];
+    msg.data.t[1] = t[1];
+    msg.data.t[2] = t[2];
+
+    // convert intrinsics
+    if (camera.intrinsic_.IsValid()) {
+        msg.data.width = camera.intrinsic_.width_;
+        msg.data.height = camera.intrinsic_.height_;
+        msg.data.intrinsic_model = "PINHOLE";
+        msg.data.intrinsic_parameters.resize(4);
+        msg.data.intrinsic_parameters[0] =
+                camera.intrinsic_.intrinsic_matrix_(0, 0);
+        msg.data.intrinsic_parameters[1] =
+                camera.intrinsic_.intrinsic_matrix_(1, 1);
+        msg.data.intrinsic_parameters[2] =
+                camera.intrinsic_.intrinsic_matrix_(0, 2);
+        msg.data.intrinsic_parameters[3] =
+                camera.intrinsic_.intrinsic_matrix_(1, 2);
+        if (camera.intrinsic_.GetSkew() != 0.0) {
+            LogWarning(
+                    "SetLegacyCamera: Nonzero skew parameteer in "
+                    "PinholeCameraParameters will be ignored!");
+        }
+    }
+
+    msgpack::sbuffer sbuf;
+    messages::Request request{msg.MsgId()};
+    msgpack::pack(sbuf, request);
+    msgpack::pack(sbuf, msg);
+
+    if (!connection) {
+        connection = std::make_shared<Connection>();
+    }
+    zmq::message_t send_msg(sbuf.data(), sbuf.size());
+    auto reply = connection->Send(send_msg);
+    return ReplyIsOKStatus(*reply);
+}
+
+bool SetTime(int time, std::shared_ptr<Connection> connection) {
+    messages::SetTime msg;
+    msg.time = time;
+
+    msgpack::sbuffer sbuf;
+    messages::Request request{msg.MsgId()};
+    msgpack::pack(sbuf, request);
+    msgpack::pack(sbuf, msg);
+
+    if (!connection) {
+        connection = std::make_shared<Connection>();
+    }
+    zmq::message_t send_msg(sbuf.data(), sbuf.size());
+    auto reply = connection->Send(send_msg);
+    return ReplyIsOKStatus(*reply);
+}
+
+bool SetActiveCamera(const std::string& path,
+                     std::shared_ptr<Connection> connection) {
+    messages::SetActiveCamera msg;
+    msg.path = path;
 
     msgpack::sbuffer sbuf;
     messages::Request request{msg.MsgId()};

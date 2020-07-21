@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/utility/utility.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
+#include "pybind/utility/utility.h"
 
 namespace open3d {
 
@@ -36,6 +36,7 @@ void pybind_utility(py::module &m) {
     pybind_eigen(m_submodule);
 #ifdef BUILD_RPC_INTERFACE
     pybind_connection(m_submodule);
+    pybind_receiver(m_submodule);
 #endif
 }
 

@@ -54,6 +54,9 @@ void ReceiverBase::Start() {
     if (!keep_running) {
         keep_running = true;
         thread = std::thread(&ReceiverBase::Mainloop, this);
+        LogDebug("ReceiverBase: started");
+    } else {
+        LogDebug("ReceiverBase: already running");
     }
 }
 
@@ -68,6 +71,9 @@ void ReceiverBase::Stop() {
     }
     if (keep_running_old) {
         thread.join();
+        LogDebug("ReceiverBase: stopped");
+    } else {
+        LogDebug("ReceiverBase: already stopped");
     }
 }
 

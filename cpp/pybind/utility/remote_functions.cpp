@@ -59,7 +59,6 @@ void pybind_remote_functions(py::module& m) {
           "textures"_a = std::map<std::string, core::Tensor>(),
           "connection"_a = std::shared_ptr<utility::Connection>(),
           "Sends a set_mesh_data message.");
-
     docstring::FunctionDocInject(
             m, "set_mesh_data",
             {
@@ -76,6 +75,45 @@ void pybind_remote_functions(py::module& m) {
                     {"line_attributes",
                      "dict of Tensors with line attributes."},
                     {"textures", "dict of Tensors with textures."},
+                    {"connection",
+                     "A Connection object. Use None to automatically create "
+                     "the connection."},
+            });
+
+    m.def("set_legacy_camera", &utility::SetLegacyCamera, "camera"_a,
+          "path"_a = "", "time"_a = 0, "layer"_a = "",
+          "connection"_a = std::shared_ptr<utility::Connection>(),
+          "Sends a PinholeCameraParameters object.");
+    docstring::FunctionDocInject(
+            m, "set_legacy_camera",
+            {
+                    {"path", "A path descriptor, e.g., 'mygroup/camera'."},
+                    {"time", "The time associated with this data."},
+                    {"layer", "The layer associated with this data."},
+                    {"connection",
+                     "A Connection object. Use None to automatically create "
+                     "the connection."},
+            });
+
+    m.def("set_time", &utility::SetTime, "time"_a,
+          "connection"_a = std::shared_ptr<utility::Connection>(),
+          "Sets the time in the external visualizer.");
+    docstring::FunctionDocInject(
+            m, "set_time",
+            {
+                    {"time", "The time value to set."},
+                    {"connection",
+                     "A Connection object. Use None to automatically create "
+                     "the connection."},
+            });
+
+    m.def("set_active_camera", &utility::SetActiveCamera, "path"_a,
+          "connection"_a = std::shared_ptr<utility::Connection>(),
+          "Sets the object with the specified path as the active camera.");
+    docstring::FunctionDocInject(
+            m, "set_active_camera",
+            {
+                    {"path", "A path descriptor, e.g., 'mygroup/camera'."},
                     {"connection",
                      "A Connection object. Use None to automatically create "
                      "the connection."},
