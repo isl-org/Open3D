@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/utility/RemoteFunctions.h"
 #include <Eigen/Geometry>
 #include "open3d/utility/Console.h"
-#include "open3d/utility/RemoteFunctions.h"
 
 namespace open3d {
 namespace utility {

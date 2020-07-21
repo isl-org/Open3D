@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #ifdef BUILD_RPC_INTERFACE
-#include "open3d/utility/ReceiverBase.h"
 #include "open3d/utility/RemoteFunctions.h"
+#include "open3d/utility/ReceiverBase.h"
 #include "tests/UnitTest.h"
 
 using namespace open3d::utility;
