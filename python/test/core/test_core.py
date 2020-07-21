@@ -845,16 +845,15 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 2.5))
 
     # logical_and
-    a = o3d.core.Tensor([True, False, True, False], device=device)
+    a = o3d.core.Tensor([True, False], device=device)
     np.testing.assert_equal(
-        a.logical_and(True).cpu().numpy(), np.array([True, False, True, False]))
+        a.logical_and(True).cpu().numpy(), np.array([True, False]))
     np.testing.assert_equal(
-        a.logical_and(5).cpu().numpy(), np.array([True, False, True, False]))
+        a.logical_and(5).cpu().numpy(), np.array([True, False]))
     np.testing.assert_equal(
-        a.logical_and(False).cpu().numpy(),
-        np.array([False, False, False, False]))
+        a.logical_and(False).cpu().numpy(), np.array([False, False]))
     np.testing.assert_equal(
-        a.logical_and(0).cpu().numpy(), np.array([False, False, False, False]))
+        a.logical_and(0).cpu().numpy(), np.array([False, False]))
 
     # logical_and_
 
