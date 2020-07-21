@@ -24,30 +24,31 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/Open3D.h"
 
-#include "open3d/core/Tensor.h"
+#include "open3d/core/op/linalg/Solve.h"
 
-// MKL
-// https://github.com/pytorch/pytorch/blob/afb2d27b24b515f380e889028fe53998d29d4e38/aten/src/ATen/native/BatchLinearAlgebra.cpp
-// MAGMA
-// https://github.com/pytorch/pytorch/blob/e98ad6c05b21f9ee04447de69e809af42f4e114a/aten/src/ATen/native/cuda/BatchLinearAlgebra.cu
+using namespace open3d;
+using namespace open3d::core;
 
-namespace open3d {
-namespace core {
+// https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesv_ex.c.htm
+int main() {
+    std::vector<Device> devices{Device("CPU:0"), Device("CUDA:0")};
 
-// Solve AX = B with *gesv in MKL (CPU) and MAGMA (CUDA)
-Tensor Solve(const Tensor& A, const Tensor& B);
+    // Equation from https://www.mathworks.com/help/symbolic/linsolve.html
+    std::vector<float> A_vals{2, 1, 1, -1, 1, -1, 1, 2, 3};
+    std::vector<float> B_vals{2, 3, -10};
+    Tensor A(A_vals, {3, 3}, core::Dtype::Float32, Device("CPU:0"));
+    Tensor B(B_vals, {3, 1}, core::Dtype::Float32, Device("CPU:0"));
 
-namespace detail {
-#ifdef BUILD_CUDA_MODULE
-void SolverCUDABackend(
-        Dtype dtype, void* A_data, void* B_data, void* ipiv_data, int n, int m);
-#endif
+    std::cout << A.ToString() << "\n";
+    std::cout << B.ToString() << "\n";
 
-void SolverCPUBackend(
-        Dtype dtype, void* A_data, void* B_data, void* ipiv_data, int n, int m);
-}  // namespace detail
-
-}  // namespace core
-}  // namespace open3d
+    for (auto device : devices) {
+        Tensor A_device = A.Copy(device);
+        Tensor B_device = B.Copy(device);
+        Tensor X;
+        Solve(A_device, B_device, X);
+        std::cout << X.ToString() << "\n";
+    }
+}

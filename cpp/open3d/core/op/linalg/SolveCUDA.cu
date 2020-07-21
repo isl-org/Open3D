@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/op/linalg/Solver.h"
+#include "open3d/core/op/linalg/Solve.h"
 
 // #include <magma_v2.h>
 #include <stdio.h>
@@ -32,7 +32,6 @@
 
 namespace open3d {
 namespace core {
-namespace detail {
 
 // class MAGMAContext {
 // public:
@@ -53,13 +52,13 @@ namespace detail {
 // std::shared_ptr<MAGMAContext> MAGMAContext::instance_ =
 //         MAGMAContext::GetInstance();
 
-void SolverCUDABackend(Dtype dtype,
-                       void* A_data,
-                       void* B_data,
-                       void* ipiv_data,
-                       int n,
-                       int m) {
-      utility::LogError("Unimplemented Device");
+void SolveCUDA(Dtype dtype,
+               void* A_data,
+               void* B_data,
+               void* ipiv_data,
+               int n,
+               int m) {
+    utility::LogError("Unimplemented Device");
     // int info;
 
     // switch (dtype) {
@@ -91,6 +90,5 @@ void SolverCUDABackend(Dtype dtype,
     //     }
     // }
 }
-}  // namespace detail
 }  // namespace core
 }  // namespace open3d

@@ -24,27 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/op/linalg/Solver.h"
+#include "open3d/core/op/linalg/Solve.h"
 #include <unordered_map>
 
 namespace open3d {
 namespace core {
 
-Tensor Solve(const Tensor &A, const Tensor &B) {
+void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     // Check devices
-    if (A.GetDevice() != B.GetDevice()) {
+    Device device = A.GetDevice();
+    if (device != B.GetDevice()) {
         utility::LogError("Tensor A device {} and Tensor B device {} mismatch",
                           A.GetDevice().ToString(), B.GetDevice().ToString());
     }
-    Device device = A.GetDevice();
 
     // Check dtypes
-    if (A.GetDtype() != B.GetDtype()) {
+    Dtype dtype = A.GetDtype();
+    if (dtype != B.GetDtype()) {
         utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch",
                           DtypeUtil::ToString(A.GetDtype()),
                           DtypeUtil::ToString(B.GetDtype()));
     }
-    Dtype dtype = A.GetDtype();
+
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
@@ -77,35 +78,25 @@ Tensor Solve(const Tensor &A, const Tensor &B) {
     // We need copies, as the solver will override A and B
     // in matrix decomposition.
     // LAPACK follows column major convention, so we also need transposes.
-    Tensor A_copy = A.T().Copy(A.GetDevice());
-    Tensor B_copy = B.T().Copy(A.GetDevice());
+    Tensor A_copy = A.Copy(device);
+    X = B.Copy(device);
 
     // ipiv stores pivots in LU decomposition and has to be on host
     Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, Device("CPU:0"));
 
     void *A_data = A_copy.GetDataPtr();
-    void *B_data = B_copy.GetDataPtr();
+    void *B_data = X.GetDataPtr();
     void *ipiv_data = ipiv.GetDataPtr();
 
-    static std::unordered_map<
-            Device::DeviceType,
-            std::function<void(Dtype, void *, void *, void *, int, int)>,
-            utility::hash_enum_class>
-            map_device_type_to_gesv = {
+    if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-                    {Device::DeviceType::CUDA, detail::SolverCUDABackend},
+        SolveCUDA(dtype, A_data, B_data, ipiv_data, n, m);
+#else
+        utility::LogError("Unimplemented device.");
 #endif
-                    {Device::DeviceType::CPU, detail::SolverCPUBackend}};
-
-    auto backend_it = map_device_type_to_gesv.find(device.GetType());
-    if (backend_it == map_device_type_to_gesv.end()) {
-        utility::LogError("Unimplemented backend {}", device.ToString());
+    } else {
+        SolveCPU(dtype, A_data, B_data, ipiv_data, n, m);
     }
-
-    (backend_it->second)(dtype, A_data, B_data, ipiv_data, n, m);
-
-    // Transpose back from column major layout back to ours
-    return B_copy.T();
 }
 }  // namespace core
 }  // namespace open3d

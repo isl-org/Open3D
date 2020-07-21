@@ -24,50 +24,45 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/op/linalg/Matmul.h"
+// https://
+// software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_sgesv_row.c.htm
+#include <stdio.h>
+#include <stdlib.h>
 
-// Put cblas.h here, otherwise there will be a macro hell
-// https://stackoverflow.com/questions/3128497/compiler-error-coming-out-of-yaml-cpp
-#include <cblas.h>
+#include "open3d/core/op/linalg/Solve.h"
+
+#include "lapack-netlib/LAPACKE/include/lapacke.h"
 
 namespace open3d {
 namespace core {
 
-// CPU converges to
-// https://software.intel.com/content/www/us/en/develop/documentation/mkl-developer-reference-c/top/blas-and-sparse-blas-routines/blas-routines/blas-level-3-routines/cblas-gemm.html
-void MatmulCPU(Dtype dtype,
-               void* A_data,
-               void* B_data,
-               void* C_data,
-               int m,
-               int k,
-               int n) {
+void SolveCPU(Dtype dtype,
+              void* A_data,
+              void* B_data,
+              void* ipiv_data,
+              int n,
+              int m) {
     switch (dtype) {
         case Dtype::Float32: {
-            float alpha = 1, beta = 0;
             // clang-format off
-            cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                        m, n, k,  // dimensions
-                        alpha,
-                        static_cast<const float*>(A_data), k,
-                        static_cast<const float*>(B_data), n,  // input an their leading dims
-                        beta,
-                        static_cast<float*>(C_data), n);  // output and its leading dim
+          LAPACKE_sgesv(LAPACK_ROW_MAJOR, n, m,
+                        static_cast<float*>(A_data),
+                        n,
+                        static_cast<int*>(ipiv_data),
+                        static_cast<float*>(B_data),
+                        m);
             // clang-format on
             break;
         }
 
         case Dtype::Float64: {
-            double alpha = 1, beta = 0;
             // clang-format off
-            cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                        m, n, k,  // dimensions
-                        alpha,
-                        static_cast<const double*>(A_data), k,
-                        static_cast<const double*>(B_data), n,  // input and their leading dims
-                        beta,
-                        static_cast<double*>(C_data), n);  // output and its
-            // leading dim
+          LAPACKE_dgesv(LAPACK_ROW_MAJOR, n, m,
+                        static_cast<double*>(A_data),
+                        n,
+                        static_cast<int*>(ipiv_data),
+                        static_cast<double*>(B_data),
+                        m);
             break;
             // clang-format on
         }

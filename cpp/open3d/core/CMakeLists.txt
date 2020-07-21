@@ -20,16 +20,16 @@ set (KERNEL_CUDA_SRC
     )
 
 set (LINALG_SRC
-  op/linalg/Matmul.cpp
-  # op/linalg/Solver.cpp
-  op/linalg/MatmulCPU.cpp
-  # op/linalg/SolverCPU.cpp
-  )
+    op/linalg/Matmul.cpp
+    op/linalg/Solve.cpp
+    op/linalg/MatmulCPU.cpp
+    op/linalg/SolveCPU.cpp
+    )
 
 set (LINALG_CUDA_SRC
-  op/linalg/MatmulCUDA.cu
-  # op/linalg/SolverCUDA.cu
-)
+    op/linalg/MatmulCUDA.cu
+    op/linalg/SolveCUDA.cu
+    )
 
 set (CORE_SRC
     AdvancedIndexing.cpp
@@ -77,4 +77,6 @@ endif()
 
 add_executable(TestMatmul op/linalg/TestMatmul.cpp)
 target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME})
+add_executable(TestSolve op/linalg/TestSolve.cpp)
+target_link_libraries(TestSolve ${CMAKE_PROJECT_NAME})
 
