@@ -606,6 +606,10 @@ public:
     /// will be treated as True. The tensor will be filled with 0 or 1 casted to
     /// the tensor's dtype.
     Tensor LogicalAnd_(const Tensor& value);
+    template <typename T>
+    Tensor LogicalAnd_(T scalar_value) {
+        return LogicalAnd_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Element-wise logical or of tensors, returning a new boolean tensor.
     ///
