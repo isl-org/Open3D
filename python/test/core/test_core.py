@@ -917,6 +917,10 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([True, False]))
 
     # gt
+    dtype = o3d.core.Dtype.Float32
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    np.testing.assert_equal(
+        a.gt(0).cpu().numpy(), np.array([False, False, True]))
 
     # gt_
 
