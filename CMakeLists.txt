@@ -104,6 +104,10 @@ if(ENABLE_GUI AND WIN32)
     message(STATUS "New GUI is currently unsupported on Windows")
     set(ENABLE_GUI OFF)
 endif()
+if(BUILD_RPC_INTERFACE AND WIN32)
+    message(STATUS "The RPC interface is currently unsupported on Windows")
+    set(BUILD_RPC_INTERFACE OFF)
+endif()
 
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
