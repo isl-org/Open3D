@@ -26,15 +26,23 @@
 
 #include "open3d/visualization/gui/Util.h"
 
+#include <cmath>
 #include "open3d/visualization/gui/Color.h"
 
 namespace open3d {
 namespace visualization {
 namespace gui {
 
-ImVec4 colorToImgui(const Color &color) {
+ImVec4 colorToImgui(const Color& color) {
     return ImVec4(color.GetRed(), color.GetGreen(), color.GetBlue(),
                   color.GetAlpha());
+}
+
+uint32_t colorToImguiRGBA(const Color& color) {
+    return IM_COL32(int(std::round(255.0f * color.GetRed())),
+                    int(std::round(255.0f * color.GetGreen())),
+                    int(std::round(255.0f * color.GetBlue())),
+                    int(std::round(255.0f * color.GetAlpha())));
 }
 
 }  // namespace gui

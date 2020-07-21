@@ -106,6 +106,8 @@ setup(
     name="@PYPI_PACKAGE_NAME@",
     packages=[
         'open3d',
+        'open3d.visualization',
+        'open3d.visualization.gui',
     ],
     url="@PROJECT_HOME@",
     project_urls={

@@ -30,6 +30,7 @@
 #include <cmath>
 
 #include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/Util.h"
 
 namespace open3d {
 namespace visualization {
@@ -55,10 +56,7 @@ Size ProgressBar::CalcPreferredSize(const Theme& theme) const {
 Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
     auto fg = context.theme.border_color;
-    auto color = IM_COL32(int(std::round(255.0f * fg.GetRed())),
-                          int(std::round(255.0f * fg.GetGreen())),
-                          int(std::round(255.0f * fg.GetBlue())),
-                          int(std::round(255.0f * fg.GetAlpha())));
+    auto color = colorToImguiRGBA(fg);
     float rounding = frame.height / 2.0f;
     ImGui::GetWindowDrawList()->AddRect(
             ImVec2(frame.x, frame.y),
