@@ -292,18 +292,18 @@ void pybind_core_tensor(py::module& m) {
     BIND_BINARY_OP_ALL_DTYPES(logical_or_, LogicalOr_, NON_CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(logical_xor, LogicalXor, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(logical_xor_, LogicalXor_, NON_CONST_ARG);
-    tensor.def("gt", &core::Tensor::Gt);
-    tensor.def("gt_", &core::Tensor::Gt_);
-    tensor.def("lt", &core::Tensor::Lt);
-    tensor.def("lt_", &core::Tensor::Lt_);
-    tensor.def("ge", &core::Tensor::Ge);
-    tensor.def("ge_", &core::Tensor::Ge_);
-    tensor.def("le", &core::Tensor::Le);
-    tensor.def("le_", &core::Tensor::Le_);
-    tensor.def("eq", &core::Tensor::Eq);
-    tensor.def("eq_", &core::Tensor::Eq_);
-    tensor.def("ne", &core::Tensor::Ne);
-    tensor.def("ne_", &core::Tensor::Ne_);
+    BIND_BINARY_OP_ALL_DTYPES(gt, Gt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(gt_, Gt_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(lt, Lt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(lt_, Lt_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(ge, Ge, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(ge_, Ge_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(le, Le, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(le_, Le_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(eq, Eq, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(eq_, Eq_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(ne, Ne, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(ne_, Ne_, NON_CONST_ARG);
 
     // Getters and setters as peoperty
     tensor.def_property_readonly("shape", [](const core::Tensor& tensor) {
