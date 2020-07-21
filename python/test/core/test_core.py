@@ -919,30 +919,80 @@ def test_scalar_op(device):
     # gt
     dtype = o3d.core.Dtype.Float32
     a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
-    np.testing.assert_equal(
-        a.gt(0).cpu().numpy(), np.array([False, False, True]))
+    np.testing.assert_equal((a.gt(0)).cpu().numpy(),
+                            np.array([False, False, True]))
+    np.testing.assert_equal((a > 0).cpu().numpy(),
+                            np.array([False, False, True]))
 
     # gt_
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    a.gt_(0)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([False, False, True]))
 
     # lt
+    dtype = o3d.core.Dtype.Float32
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    np.testing.assert_equal((a.lt(0)).cpu().numpy(),
+                            np.array([True, False, False]))
+    np.testing.assert_equal((a < 0).cpu().numpy(),
+                            np.array([True, False, False]))
 
     # lt_
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    a.lt_(0)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([True, False, False]))
 
     # ge
+    dtype = o3d.core.Dtype.Float32
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    np.testing.assert_equal((a.ge(0)).cpu().numpy(),
+                            np.array([False, True, True]))
+    np.testing.assert_equal((a >= 0).cpu().numpy(),
+                            np.array([False, True, True]))
 
     # ge_
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    a.ge_(0)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([False, True, True]))
 
     # le
+    dtype = o3d.core.Dtype.Float32
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    np.testing.assert_equal((a.le(0)).cpu().numpy(),
+                            np.array([True, True, False]))
+    np.testing.assert_equal((a <= 0).cpu().numpy(),
+                            np.array([True, True, False]))
 
     # le_
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    a.le_(0)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([True, True, False]))
 
     # eq
+    dtype = o3d.core.Dtype.Float32
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    np.testing.assert_equal((a.eq(0)).cpu().numpy(),
+                            np.array([False, True, False]))
+    np.testing.assert_equal((a == 0).cpu().numpy(),
+                            np.array([False, True, False]))
 
     # eq_
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    a.eq_(0)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([False, True, False]))
 
     # ne
+    dtype = o3d.core.Dtype.Float32
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    np.testing.assert_equal((a.ne(0)).cpu().numpy(),
+                            np.array([True, False, True]))
+    np.testing.assert_equal((a != 0).cpu().numpy(),
+                            np.array([True, False, True]))
 
     # ne_
+    a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
+    a.ne_(0)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([True, False, True]))
 
 
 @pytest.mark.parametrize("device", core_test_utils.list_devices())
