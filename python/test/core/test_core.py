@@ -740,7 +740,7 @@ def test_non_zero(device):
 
 
 @pytest.mark.parametrize("device", core_test_utils.list_devices())
-def boolean_advanced_indexing(device):
+def test_boolean_advanced_indexing(device):
     np_a = np.array([1, -1, -2, 3])
     o3_a = o3d.core.Tensor(np_a, device=device)
     np_a[np_a < 0] = 0
