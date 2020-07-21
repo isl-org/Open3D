@@ -57,9 +57,9 @@ void ReceiverBase::Start() {
     if (!keep_running) {
         keep_running = true;
         thread = std::thread(&ReceiverBase::Mainloop, this);
+        // wait for the loop to start running
         while (!loop_running.load()) {
-            // empty
-            // wait for the loop to start running
+            std::this_thread::yield();
         };
 
         LogDebug("ReceiverBase: started");
