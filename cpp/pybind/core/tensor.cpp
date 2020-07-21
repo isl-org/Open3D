@@ -40,16 +40,18 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorKey.h"
 
-#define BIND_BINARY_OP_ALL_DTYPES(py_name, cpp_name)                     \
-    tensor.def(#py_name,                                                 \
-               [](const core::Tensor& self, const core::Tensor& other) { \
-                   return self.cpp_name(other);                          \
-               });                                                       \
-    tensor.def(#py_name, &core::Tensor::cpp_name<float>);                \
-    tensor.def(#py_name, &core::Tensor::cpp_name<double>);               \
-    tensor.def(#py_name, &core::Tensor::cpp_name<int32_t>);              \
-    tensor.def(#py_name, &core::Tensor::cpp_name<int64_t>);              \
-    tensor.def(#py_name, &core::Tensor::cpp_name<uint8_t>);              \
+#define CONST_ARG const
+#define NON_CONST_ARG
+#define BIND_BINARY_OP_ALL_DTYPES(py_name, cpp_name, self_const)              \
+    tensor.def(#py_name,                                                      \
+               [](self_const core::Tensor& self, const core::Tensor& other) { \
+                   return self.cpp_name(other);                               \
+               });                                                            \
+    tensor.def(#py_name, &core::Tensor::cpp_name<float>);                     \
+    tensor.def(#py_name, &core::Tensor::cpp_name<double>);                    \
+    tensor.def(#py_name, &core::Tensor::cpp_name<int32_t>);                   \
+    tensor.def(#py_name, &core::Tensor::cpp_name<int64_t>);                   \
+    tensor.def(#py_name, &core::Tensor::cpp_name<uint8_t>);                   \
     tensor.def(#py_name, &core::Tensor::cpp_name<bool>);
 
 namespace open3d {
@@ -274,17 +276,8 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("to", &core::Tensor::To);
 
     // Binary element-wise ops
-    BIND_BINARY_OP_ALL_DTYPES(add, Add);
-
-    tensor.def("add_", [](core::Tensor& self, const core::Tensor& other) {
-        return self.Add_(other);
-    });
-    tensor.def("add_", &core::Tensor::Add_<float>);
-    tensor.def("add_", &core::Tensor::Add_<double>);
-    tensor.def("add_", &core::Tensor::Add_<int32_t>);
-    tensor.def("add_", &core::Tensor::Add_<int64_t>);
-    tensor.def("add_", &core::Tensor::Add_<uint8_t>);
-    tensor.def("add_", &core::Tensor::Add_<bool>);
+    BIND_BINARY_OP_ALL_DTYPES(add, Add, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(add_, Add_, NON_CONST_ARG);
 
     tensor.def("sub", [](const core::Tensor& self, const core::Tensor& other) {
         return self.Sub(other);
