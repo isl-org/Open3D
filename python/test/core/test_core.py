@@ -869,12 +869,52 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([False, False]))
 
     # logical_or
+    a = o3d.core.Tensor([True, False], device=device)
+    np.testing.assert_equal(
+        a.logical_or(True).cpu().numpy(), np.array([True, True]))
+    np.testing.assert_equal(
+        a.logical_or(5).cpu().numpy(), np.array([True, True]))
+    np.testing.assert_equal(
+        a.logical_or(False).cpu().numpy(), np.array([True, False]))
+    np.testing.assert_equal(
+        a.logical_or(0).cpu().numpy(), np.array([True, False]))
 
     # logical_or_
+    a = o3d.core.Tensor([True, False], device=device)
+    a.logical_or_(True)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([True, True]))
+    a = o3d.core.Tensor([True, False], device=device)
+    a.logical_or_(5)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([True, True]))
+    a = o3d.core.Tensor([True, False], device=device)
+    a.logical_or_(False)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([True, False]))
+    a.logical_or_(0)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([True, False]))
 
     # logical_xor
+    a = o3d.core.Tensor([True, False], device=device)
+    np.testing.assert_equal(
+        a.logical_xor(True).cpu().numpy(), np.array([False, True]))
+    np.testing.assert_equal(
+        a.logical_xor(5).cpu().numpy(), np.array([False, True]))
+    np.testing.assert_equal(
+        a.logical_xor(False).cpu().numpy(), np.array([True, False]))
+    np.testing.assert_equal(
+        a.logical_xor(0).cpu().numpy(), np.array([True, False]))
 
     # logical_xor_
+    a = o3d.core.Tensor([True, False], device=device)
+    a.logical_xor_(True)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([False, True]))
+    a = o3d.core.Tensor([True, False], device=device)
+    a.logical_xor_(5)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([False, True]))
+    a = o3d.core.Tensor([True, False], device=device)
+    a.logical_xor_(False)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([True, False]))
+    a.logical_xor_(0)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([True, False]))
 
     # gt
 

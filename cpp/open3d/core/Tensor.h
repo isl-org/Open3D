@@ -617,6 +617,10 @@ public:
     /// non-zero values will be treated as True.
     Tensor LogicalOr(const Tensor& value) const;
     Tensor operator||(const Tensor& value) const { return LogicalOr(value); }
+    template <typename T>
+    Tensor LogicalOr(T scalar_value) const {
+        return LogicalOr(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Element-wise logical or of tensors, in-place. This operation won't
     /// change the tensor's dtype.
@@ -625,6 +629,10 @@ public:
     /// will be treated as True. The tensor will be filled with 0 or 1 casted to
     /// the tensor's dtype.
     Tensor LogicalOr_(const Tensor& value);
+    template <typename T>
+    Tensor LogicalOr_(T scalar_value) {
+        return LogicalOr_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Element-wise logical exclusive-or of tensors, returning a new boolean
     /// tensor.
@@ -632,6 +640,10 @@ public:
     /// If the tensor is not boolean, zero will be treated as False, while
     /// non-zero values will be treated as True.
     Tensor LogicalXor(const Tensor& value) const;
+    template <typename T>
+    Tensor LogicalXor(T scalar_value) const {
+        return LogicalXor(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Element-wise logical exclusive-or of tensors, in-place. This operation
     /// won't change the tensor's dtype.
@@ -640,6 +652,10 @@ public:
     /// non-zero values will be treated as True. The tensor will be filled with
     /// 0 or 1 casted to the tensor's dtype.
     Tensor LogicalXor_(const Tensor& value);
+    template <typename T>
+    Tensor LogicalXor_(T scalar_value) {
+        return LogicalXor_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Element-wise greater-than of tensors, returning a new boolean tensor.
     Tensor Gt(const Tensor& value) const;

@@ -288,10 +288,10 @@ void pybind_core_tensor(py::module& m) {
     // Binary boolean element-wise ops
     BIND_BINARY_OP_ALL_DTYPES(logical_and, LogicalAnd, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES(logical_and_, LogicalAnd_, NON_CONST_ARG);
-    tensor.def("logical_or", &core::Tensor::LogicalOr);
-    tensor.def("logical_or_", &core::Tensor::LogicalOr_);
-    tensor.def("logical_xor", &core::Tensor::LogicalXor);
-    tensor.def("logical_xor_", &core::Tensor::LogicalXor_);
+    BIND_BINARY_OP_ALL_DTYPES(logical_or, LogicalOr, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(logical_or_, LogicalOr_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(logical_xor, LogicalXor, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(logical_xor_, LogicalXor_, NON_CONST_ARG);
     tensor.def("gt", &core::Tensor::Gt);
     tensor.def("gt_", &core::Tensor::Gt_);
     tensor.def("lt", &core::Tensor::Lt);
