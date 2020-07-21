@@ -95,7 +95,7 @@ private:
     GeometryType geometry_type_ = GeometryType::Unspecified;
 
     /// Number of dimensions of the geometry.
-    int dimension_ = 3;
+    int dimension_;
 };
 
 }  // namespace tgeometry

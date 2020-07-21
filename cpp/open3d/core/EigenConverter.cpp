@@ -32,6 +32,10 @@ namespace eigen_converter {
 
 Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor) {
     // TODO: Tensor::To(dtype, device).
+    if (tensor.GetShape() != SizeVector{3}) {
+        utility::LogError("Tensor shape must be {3}, but got {}.",
+                          tensor.GetShape().ToString());
+    }
     core::Tensor dtensor =
             tensor.To(core::Dtype::Float64).Copy(core::Device("CPU:0"));
     return Eigen::Vector3d(dtensor[0].Item<double>(), dtensor[1].Item<double>(),

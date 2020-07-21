@@ -121,7 +121,7 @@ private:
     /// The primary key's tensorlist's size is used as the primary size and
     /// primary device. Other tensorlist's size and device should be
     /// synchronized according to the primary.
-    std::string primary_key_ = "UNDEFINED";
+    std::string primary_key_;
 };
 
 }  // namespace tgeometry
