@@ -37,31 +37,31 @@ namespace tgeometry {
 /// Map of string to TensorList. Provides helper function to maintain a
 /// synchronized size (length) for the tensorlists.
 ///
-/// The master key's tensorlist's size is used as the master size and master
+/// The primary key's tensorlist's size is used as the primary size and primary
 /// device. Other tensorlist's size and device should be synchronized according
-/// to the master.
+/// to the primary.
 class TensorListMap : public std::unordered_map<std::string, core::TensorList> {
 public:
-    /// Create empty TensorListMap and set master key.
-    TensorListMap(const std::string& master_key)
+    /// Create empty TensorListMap and set primary key.
+    TensorListMap(const std::string& primary_key)
         : std::unordered_map<std::string, core::TensorList>(),
-          master_key_(master_key) {}
+          primary_key_(primary_key) {}
 
     /// Create TensorListMap with pre-populated values.
-    TensorListMap(const std::string& master_key,
+    TensorListMap(const std::string& primary_key,
                   const std::unordered_map<std::string, core::TensorList>&
                           map_keys_to_tensorlists)
         : std::unordered_map<std::string, core::TensorList>(),
-          master_key_(master_key) {
+          primary_key_(primary_key) {
         Assign(map_keys_to_tensorlists);
     }
 
-    /// A master key is always required.
+    /// A primary key is always required.
     TensorListMap() = delete;
 
-    /// Clear the current map and assign new keys and values. The master key
+    /// Clear the current map and assign new keys and values. The primary key
     /// remains unchanged. The input \p map_keys_to_tensorlists must at least
-    /// contain the master key. Data won't be copied, tensorlists still share
+    /// contain the primary key. Data won't be copied, tensorlists still share
     /// the same memory as the input.
     ///
     /// \param map_keys_to_tensorlists. The keys and values to be assigned.
@@ -78,8 +78,8 @@ public:
             const std::unordered_map<std::string, core::Tensor>&
                     map_keys_to_tensors);
 
-    /// Returns the master key of the tensorlistmap.
-    std::string GetMasterKey() const { return master_key_; }
+    /// Returns the primary key of the tensorlistmap.
+    std::string GetPrimaryKey() const { return primary_key_; }
 
     /// Returns true if all tensorlists in the map have the same size.
     bool IsSizeSynchronized() const;
@@ -102,7 +102,7 @@ private:
                     map_keys_to_tensors) const;
 
     /// Asserts that all of the tensors in \p map_keys_to_tensors have the same
-    /// device as the master tensorlist.
+    /// device as the primary tensorlist.
     ///
     /// \param map_keys_to_tensors A map of string to Tensor. Typically the map
     /// is used for SynchronizedPushBack.
@@ -110,16 +110,18 @@ private:
             const std::unordered_map<std::string, core::Tensor>&
                     map_keys_to_tensors) const;
 
-    /// Returns the size (length) of the master key's tensorlist.
-    int64_t GetMasterSize() const { return at(master_key_).GetSize(); }
+    /// Returns the size (length) of the primary key's tensorlist.
+    int64_t GetPrimarySize() const { return at(primary_key_).GetSize(); }
 
-    /// Returns the device of the master key's tensorlist.
-    core::Device GetMasterDevice() const { return at(master_key_).GetDevice(); }
+    /// Returns the device of the primary key's tensorlist.
+    core::Device GetPrimaryDevice() const {
+        return at(primary_key_).GetDevice();
+    }
 
-    /// The master key's tensorlist's size is used as the master size and master
-    /// device. Other tensorlist's size and device should be synchronized
-    /// according to the master.
-    std::string master_key_ = "UNDEFINED";
+    /// The primary key's tensorlist's size is used as the primary size and
+    /// primary device. Other tensorlist's size and device should be
+    /// synchronized according to the primary.
+    std::string primary_key_ = "UNDEFINED";
 };
 
 }  // namespace tgeometry

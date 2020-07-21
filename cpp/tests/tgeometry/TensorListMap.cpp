@@ -33,9 +33,9 @@
 namespace open3d {
 namespace tests {
 
-TEST(TensorListMap, Constructor_GetMasterKey) {
+TEST(TensorListMap, Constructor_GetPrimaryKey) {
     tgeometry::TensorListMap tm("points");
-    EXPECT_EQ(tm.GetMasterKey(), "points");
+    EXPECT_EQ(tm.GetPrimaryKey(), "points");
 }
 
 TEST(TensorListMap, Assign) {

@@ -38,20 +38,21 @@ namespace tgeometry {
 void TensorListMap::Assign(
         const std::unordered_map<std::string, core::TensorList>&
                 map_keys_to_tensorlists) {
-    if (!map_keys_to_tensorlists.count(master_key_)) {
+    if (!map_keys_to_tensorlists.count(primary_key_)) {
         utility::LogError(
-                "The input tensorlist map does not contain the master key {}.",
-                master_key_);
+                "The input tensorlist map does not contain the primary key {}.",
+                primary_key_);
     }
     this->clear();
-    const core::Device& master_device =
-            map_keys_to_tensorlists.at(master_key_).GetDevice();
+    const core::Device& primary_device =
+            map_keys_to_tensorlists.at(primary_key_).GetDevice();
     for (auto& kv : map_keys_to_tensorlists) {
-        if (master_device != kv.second.GetDevice()) {
+        if (primary_device != kv.second.GetDevice()) {
             utility::LogError(
-                    "Master tensorlist has device {}, however, another "
+                    "Primary tensorlist has device {}, however, another "
                     "tensorlist has device {}.",
-                    master_device.ToString(), kv.second.GetDevice().ToString());
+                    primary_device.ToString(),
+                    kv.second.GetDevice().ToString());
         }
         this->operator[](kv.first) = kv.second;
     }
@@ -59,7 +60,7 @@ void TensorListMap::Assign(
 
 bool TensorListMap::IsSizeSynchronized() const {
     for (auto& kv : *this) {
-        if (kv.second.GetSize() != GetMasterSize()) {
+        if (kv.second.GetSize() != GetPrimarySize()) {
             return false;
         }
     }
@@ -69,11 +70,11 @@ bool TensorListMap::IsSizeSynchronized() const {
 void TensorListMap::AssertSizeSynchronized() const {
     if (!IsSizeSynchronized()) {
         std::stringstream ss;
-        ss << fmt::format("Master TensorList \"{}\" has size {}, however: \n",
-                          master_key_, GetMasterSize());
+        ss << fmt::format("Primary TensorList \"{}\" has size {}, however: \n",
+                          primary_key_, GetPrimarySize());
         for (auto& kv : *this) {
-            if (kv.first != master_key_ &&
-                kv.second.GetSize() != GetMasterSize()) {
+            if (kv.first != primary_key_ &&
+                kv.second.GetSize() != GetPrimarySize()) {
                 fmt::format("    > TensorList \"{}\" has size {}.\n", kv.first,
                             kv.second.GetSize());
             }
@@ -109,7 +110,7 @@ void TensorListMap::AssertTensorMapSameKeys(
     }
     if (!is_same) {
         utility::LogError(
-                "The input map does not have the same keys as the master "
+                "The input map does not have the same keys as the primary "
                 "tensorlist.");
     }
 }
@@ -117,13 +118,14 @@ void TensorListMap::AssertTensorMapSameKeys(
 void TensorListMap::AssertTensorMapSameDevice(
         const std::unordered_map<std::string, core::Tensor>&
                 map_keys_to_tensors) const {
-    const core::Device& master_device = GetMasterDevice();
+    const core::Device& primary_device = GetPrimaryDevice();
     for (auto& kv : map_keys_to_tensors) {
-        if (kv.second.GetDevice() != master_device) {
+        if (kv.second.GetDevice() != primary_device) {
             utility::LogError(
                     "Tensor in the input map does not have the same device as "
-                    "the master tensorlist: {} != {}.",
-                    kv.second.GetDevice().ToString(), master_device.ToString());
+                    "the primary tensorlist: {} != {}.",
+                    kv.second.GetDevice().ToString(),
+                    primary_device.ToString());
         }
     }
 }
