@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #ifdef BUILD_RPC_INTERFACE
-#include "open3d/utility/RemoteFunctions.h"
 #include "open3d/utility/ReceiverBase.h"
+#include "open3d/utility/RemoteFunctions.h"
 #include "tests/UnitTest.h"
 
 using namespace open3d::utility;
@@ -34,7 +34,11 @@ using namespace open3d::utility;
 namespace open3d {
 namespace tests {
 
+#ifdef _WIN32
+const std::string connection_address = "tcp://127.0.0.1:51454";
+#else
 const std::string connection_address = "ipc:///tmp/open3d_ipc";
+#endif
 
 class Receiver : public ReceiverBase {
 public:
