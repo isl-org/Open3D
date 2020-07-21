@@ -113,12 +113,27 @@ class ExampleWindow:
         logo = gui.ImageLabel(basedir + "/icon-32.png")
         collapse.add_child(logo)
 
-        # Add a list of items.
+        # Add a list of items
         lv = gui.ListView()
         lv.set_items(["Ground", "Trees", "Buildings" "Cars", "People"])
         lv.selected_index = lv.selected_index + 2  # initially is -1, so now 1
         lv.set_on_selection_changed(self._on_list)
         collapse.add_child(lv)
+
+        # Add a tree view
+        tree = gui.TreeView()
+        tree.add_item(tree.get_root_item(), "Camera")
+        geo_id = tree.add_item(tree.get_root_item(), "Geometries")
+        mesh_id = tree.add_item(geo_id, "Mesh")
+        tree.add_item(mesh_id, "Triangles")
+        tree.add_item(mesh_id, "Albedo texture")
+        tree.add_item(mesh_id, "Normal map")
+        points_id = tree.add_item(geo_id, "Points")
+        tree.can_select_items_with_children = True
+        tree.set_on_selection_changed(self._on_tree)
+        # does not call on_selection_changed: user did not change selection
+        tree.selected_item = points_id
+        collapse.add_child(tree)
 
         # Add two number editors, one for integers and one for floating point
         # Number editor can clamp numbers to a range, although this is more
@@ -288,6 +303,9 @@ class ExampleWindow:
 
     def _on_list(self, new_val, is_dbl_click):
         print(new_val)
+
+    def _on_tree(self, new_text, new_item):
+        print(new_text)
 
     def _on_slider(self, new_val):
         self._progress.value = new_val / 20.0

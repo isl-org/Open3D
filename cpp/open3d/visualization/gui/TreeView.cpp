@@ -190,23 +190,9 @@ Size TreeView::CalcPreferredSize(const Theme &theme) const {
 Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
 
-    // ImGUI's tree can't draw a frame, so we have to do it ourselves
-    ImGui::GetWindowDrawList()->AddRectFilled(
-            ImVec2(frame.x, frame.y),
-            ImVec2(frame.GetRight(), frame.GetBottom()),
-            colorToImguiRGBA(context.theme.tree_background_color),
-            context.theme.border_radius);
-    ImGui::GetWindowDrawList()->AddRect(
-            ImVec2(frame.x, frame.y),
-            ImVec2(frame.GetRight(), frame.GetBottom()),
-            colorToImguiRGBA(context.theme.border_color),
-            context.theme.border_radius, ImDrawCornerFlags_All,
-            context.theme.border_width);
-
     DrawImGuiPushEnabledState();
-    auto x = frame.x - context.uiOffsetX;
+    ImGui::SetCursorPosX(frame.x - context.uiOffsetX);
     ImGui::SetCursorPosY(frame.y - context.uiOffsetY);
-    ImGui::PushItemWidth(frame.width);
 
     // ImGUI's tree wants to highlight the row as the user moves over it.
     // There are several problems here. First, there seems to be a bug in
@@ -222,6 +208,13 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
                           colorToImgui(Color(0, 0, 0, 0)));
 
+    ImGui::PushStyleColor(ImGuiCol_ChildBg,
+                          colorToImgui(context.theme.tree_background_color));
+
+    // ImGUI's tree is basically a layout in the parent ImGUI window.
+    // Make this a child so it's all in a nice frame.
+    ImGui::BeginChild(impl_->id_, ImVec2(frame.width, frame.height), true);
+
     Impl::Item *new_selection = nullptr;
 
     std::function<void(Impl::Item &)> DrawItem;
@@ -231,7 +224,11 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         // so we have to draw our own selection.
         if (item.id == impl_->selected_id_) {
             auto h = ImGui::GetTextLineHeightWithSpacing();
-            auto y = ImGui::GetCursorPosY() + context.uiOffsetY;
+            // Since we are in a child, the cursor is relative to the upper left
+            // of the tree's frame. To draw directly to the window list we
+            // need to the absolute coordinates (relative the OS window's
+            // upper left)
+            auto y = frame.y + context.uiOffsetY + ImGui::GetCursorPosY();
             ImGui::GetWindowDrawList()->AddRectFilled(
                     ImVec2(frame.x, y), ImVec2(frame.GetRight(), y + h),
                     colorToImguiRGBA(context.theme.tree_selected_color));
@@ -265,16 +262,12 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         }
     };
     for (auto &top : impl_->root_.children) {
-        // Need to set x for each of the top-level items. Children will
-        // take their x position relative to their parent, so we don't want
-        // to set their x positions.
-        ImGui::SetCursorPosX(x);
         DrawItem(top);
     }
 
-    ImGui::PopStyleColor(2);
+    ImGui::EndChild();
 
-    ImGui::PopItemWidth();
+    ImGui::PopStyleColor(3);
     DrawImGuiPopEnabledState();
 
     // If the selection changed, handle the callback here, after we have
