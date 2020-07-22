@@ -81,10 +81,11 @@ if (BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
 
+# TODO: link these dynamic libraries in ${CMAKE_PROJECT_NAME}
 add_executable(TestMatmul op/linalg/TestMatmul.cpp)
-target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME})
+target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME} ${CUDA_CUBLAS_LIBRARIES})
 add_executable(TestSolve op/linalg/TestSolve.cpp)
-target_link_libraries(TestSolve ${CMAKE_PROJECT_NAME})
+target_link_libraries(TestSolve ${CMAKE_PROJECT_NAME} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
 add_executable(TestInverse op/linalg/TestInverse.cpp)
 target_link_libraries(TestInverse ${CMAKE_PROJECT_NAME})
 add_executable(TestSVD op/linalg/TestSVD.cpp)

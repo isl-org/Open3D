@@ -24,71 +24,115 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/op/linalg/Solve.h"
+// https://
+// software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_sgesv_row.c.htm
 
-// #include <magma_v2.h>
+#include <cuda_runtime.h>
+#include <cusolverDn.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "open3d/core/op/linalg/Solve.h"
+
 namespace open3d {
 namespace core {
+class CuSolverContext {
+public:
+    static std::shared_ptr<CuSolverContext> GetInstance() {
+        if (instance_ == nullptr) {
+            instance_ = std::make_shared<CuSolverContext>();
+        }
+        return instance_;
+    };
 
-// class MAGMAContext {
-// public:
-//     static std::shared_ptr<MAGMAContext> GetInstance() {
-//         if (instance_ == nullptr) {
-//             instance_ = std::make_shared<MAGMAContext>();
-//         }
-//         return instance_;
-//     };
+    CuSolverContext() {
+        if (cusolverDnCreate(&handle_) != CUSOLVER_STATUS_SUCCESS) {
+            utility::LogError("Unable to create cuSolver handle");
+        }
+        utility::LogInfo("Instance created");
+    }
+    ~CuSolverContext() {
+        if (cusolverDnDestroy(handle_) != CUSOLVER_STATUS_SUCCESS) {
+            utility::LogError("Unable to destroy cuSolver handle");
+        }
+    }
 
-//     MAGMAContext() { magma_init(); }
-//     ~MAGMAContext() { magma_finalize(); }
+    cusolverDnHandle_t& GetHandle() { return handle_; }
 
-// private:
-//     static std::shared_ptr<MAGMAContext> instance_;
-// };
+private:
+    cusolverDnHandle_t handle_;
 
-// std::shared_ptr<MAGMAContext> MAGMAContext::instance_ =
-//         MAGMAContext::GetInstance();
+    static std::shared_ptr<CuSolverContext> instance_;
+};
+
+std::shared_ptr<CuSolverContext> CuSolverContext::instance_ =
+        CuSolverContext::GetInstance();
 
 void SolveCUDA(Dtype dtype,
                void* A_data,
                void* B_data,
                void* ipiv_data,
+               void* X_data,
                int n,
                int m) {
-    utility::LogError("Unimplemented Device");
-    // int info;
+    cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
+    int niters;
+    int* dinfo = static_cast<int*>(
+            MemoryManager::Malloc(sizeof(int), Device("CUDA:0")));
 
-    // switch (dtype) {
-    //     case Dtype::Float32: {
-    //         // clang-format off
-    //         magma_sgesv_gpu(n, m,
-    //                         static_cast<float*>(A_data), n,
-    //                         static_cast<int*>(ipiv_data),
-    //                         static_cast<float*>(B_data), n,
-    //                         &info);
-    //         // clang-format on
-    //         break;
-    //     }
+    switch (dtype) {
+        case Dtype::Float32: {
+            size_t byte_size;
+            if (CUSOLVER_STATUS_SUCCESS !=
+                cusolverDnSSgesv_bufferSize(handle, n, m, NULL, n, NULL, NULL,
+                                            n, NULL, n, NULL, &byte_size)) {
+                utility::LogError("Unable to get workspace byte size");
+            }
 
-    //     case Dtype::Float64: {
-    //         // clang-format off
-    //         magma_dgesv_gpu(n, m,
-    //                         static_cast<double*>(A_data), n,
-    //                         static_cast<int*>(ipiv_data),
-    //                         static_cast<double*>(B_data), n,
-    //                         &info);
-    //         break;
-    //         // clang-format on
-    //     }
+            void* workspace =
+                    MemoryManager::Malloc(byte_size, Device("CUDA:0"));
 
-    //     default: {  // should never reach here
-    //         utility::LogError("Unsupported dtype {} in CPU backend.",
-    //                           DtypeUtil::ToString(dtype));
-    //     }
-    // }
+            int status = cusolverDnSSgesv(
+                    handle, n, m, static_cast<float*>(A_data), n,
+                    static_cast<int*>(ipiv_data), static_cast<float*>(B_data),
+                    n, static_cast<float*>(X_data), n, workspace, byte_size,
+                    &niters, dinfo);
+            if (status != CUSOLVER_STATUS_SUCCESS) {
+                utility::LogError("SSgesv failed with error code = {}", status);
+            }
+            break;
+        }
+
+        case Dtype::Float64: {
+            size_t byte_size;
+            if (CUSOLVER_STATUS_SUCCESS !=
+                cusolverDnDDgesv_bufferSize(handle, n, m, NULL, n, NULL, NULL,
+                                            n, NULL, n, NULL, &byte_size)) {
+                utility::LogError("Unable to get workspace byte size");
+            }
+
+            void* workspace =
+                    MemoryManager::Malloc(byte_size, Device("CUDA:0"));
+
+            int status = cusolverDnDDgesv(
+                    handle, n, m, static_cast<double*>(A_data), n,
+                    static_cast<int*>(ipiv_data), static_cast<double*>(B_data),
+                    n, static_cast<double*>(X_data), n, workspace, byte_size,
+                    &niters, dinfo);
+            if (status != CUSOLVER_STATUS_SUCCESS) {
+                utility::LogError("DDgesv failed with error code = {}", status);
+            }
+            break;
+        }
+
+        default: {  // should never reach here
+            utility::LogError("Unsupported dtype {} in CPU backend.",
+                              DtypeUtil::ToString(dtype));
+        }
+    }
+
+    MemoryManager::Free(dinfo, Device("CUDA:0"));
 }
+
 }  // namespace core
 }  // namespace open3d

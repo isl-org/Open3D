@@ -40,6 +40,7 @@ void SolveCPU(Dtype dtype,
               void* A_data,
               void* B_data,
               void* ipiv_data,
+              void* X_data,  // unused place-holder for CPU
               int n,
               int m) {
     switch (dtype) {

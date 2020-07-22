@@ -75,27 +75,35 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
 
     int n = A_shape[0], m = B_shape.size() == 2 ? B_shape[1] : 1;
 
-    // We need copies, as the solver will override A and B
-    // in matrix decomposition.
-    // LAPACK follows column major convention, so we also need transposes.
-    Tensor A_copy = A.Copy(device);
-    X = B.Copy(device);
-
-    // ipiv stores pivots in LU decomposition and has to be on host
-    Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, Device("CPU:0"));
-
-    void *A_data = A_copy.GetDataPtr();
-    void *B_data = X.GetDataPtr();
+    Tensor ipiv = Tensor::Empty({n}, Dtype::Int32, device);
     void *ipiv_data = ipiv.GetDataPtr();
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        SolveCUDA(dtype, A_data, B_data, ipiv_data, n, m);
+        // cuSolver uses column-wise storage
+        Tensor A_copy = A.T().Copy(device);
+        void *A_data = A_copy.GetDataPtr();
+
+        Tensor B_copy = B.T().Copy(device);
+        void *B_data = B_copy.GetDataPtr();
+
+        X = Tensor::Empty(B_copy.GetShape(), B.GetDtype(), device);
+        void *X_data = X.GetDataPtr();
+
+        SolveCUDA(dtype, A_data, B_data, ipiv_data, X_data, n, m);
+        X = X.T();
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        SolveCPU(dtype, A_data, B_data, ipiv_data, n, m);
+        Tensor A_copy = A.Copy(device);
+        void *A_data = A_copy.GetDataPtr();
+
+        // LAPACKE changes solves X by modifying B in-place
+        X = B.Copy(device);
+        void *B_data = X.GetDataPtr();
+
+        SolveCPU(dtype, A_data, B_data, ipiv_data, nullptr, n, m);
     }
 }
 }  // namespace core

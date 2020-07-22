@@ -34,6 +34,7 @@ using namespace open3d::core;
 // https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesv_ex.c.htm
 int main() {
     std::vector<Device> devices{Device("CPU:0"), Device("CUDA:0")};
+    std::vector<Dtype> dtypes{Dtype::Float32, Dtype::Float64};
 
     // Equation from https://www.mathworks.com/help/symbolic/linsolve.html
     std::vector<float> A_vals{2, 1, 1, -1, 1, -1, 1, 2, 3};
@@ -44,11 +45,13 @@ int main() {
     std::cout << A.ToString() << "\n";
     std::cout << B.ToString() << "\n";
 
-    for (auto device : devices) {
-        Tensor A_device = A.Copy(device);
-        Tensor B_device = B.Copy(device);
-        Tensor X;
-        Solve(A_device, B_device, X);
-        std::cout << X.ToString() << "\n";
+    for (auto dtype : dtypes) {
+        for (auto device : devices) {
+            Tensor A_device = A.Copy(device).To(dtype);
+            Tensor B_device = B.Copy(device).To(dtype);
+            Tensor X;
+            Solve(A_device, B_device, X);
+            std::cout << X.ToString() << "\n";
+        }
     }
 }

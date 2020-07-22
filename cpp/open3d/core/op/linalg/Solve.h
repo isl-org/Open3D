@@ -40,12 +40,22 @@ namespace core {
 void Solve(const Tensor& A, const Tensor& B, Tensor& X);
 
 #ifdef BUILD_CUDA_MODULE
-void SolveCUDA(
-        Dtype dtype, void* A_data, void* B_data, void* ipiv_data, int n, int m);
+void SolveCUDA(Dtype dtype,
+               void* A_data,
+               void* B_data,
+               void* ipiv_data,
+               void* X_data,
+               int n,
+               int m);
 #endif
 
-void SolveCPU(
-        Dtype dtype, void* A_data, void* B_data, void* ipiv_data, int n, int m);
+void SolveCPU(Dtype dtype,
+              void* A_data,
+              void* B_data,
+              void* ipiv_data,
+              void* X_data,
+              int n,
+              int m);
 
 }  // namespace core
 }  // namespace open3d
