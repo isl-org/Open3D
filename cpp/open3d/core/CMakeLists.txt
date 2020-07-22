@@ -26,12 +26,15 @@ set (LINALG_SRC
   op/linalg/SolveCPU.cpp
   op/linalg/Inverse.cpp
   op/linalg/InverseCPU.cpp
+  op/linalg/SVD.cpp
+  op/linalg/SVDCPU.cpp
   )
 
 set (LINALG_CUDA_SRC
     op/linalg/MatmulCUDA.cu
     op/linalg/SolveCUDA.cu
     op/linalg/InverseCUDA.cu
+    op/linalg/SVDCUDA.cu
     )
 
 set (CORE_SRC
@@ -84,4 +87,7 @@ add_executable(TestSolve op/linalg/TestSolve.cpp)
 target_link_libraries(TestSolve ${CMAKE_PROJECT_NAME})
 add_executable(TestInverse op/linalg/TestInverse.cpp)
 target_link_libraries(TestInverse ${CMAKE_PROJECT_NAME})
+add_executable(TestSVD op/linalg/TestSVD.cpp)
+target_link_libraries(TestSVD ${CMAKE_PROJECT_NAME})
+
 
