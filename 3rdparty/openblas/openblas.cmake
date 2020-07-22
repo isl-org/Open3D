@@ -1,19 +1,19 @@
 include(ExternalProject)
 
 if(WIN32)
-    set(OPENBLAS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/openblas)
     ExternalProject_Add(
         ext_openblas
         PREFIX openblas
-        GIT_REPOSITORY https://github.com/xianyi/OpenBLAS.git
-        GIT_TAG v0.3.10
-        CMAKE_ARGS
-            -DMSVC_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}
-            -DCMAKE_INSTALL_PREFIX=${OPENBLAS_INSTALL_PREFIX}
+        URL https://github.com/intel-isl/Open3D/files/4961518/openblas_0.3.10.zip
+        BUILD_COMMAND ""
+        CONFIGURE_COMMAND ""
+        INSTALL_COMMAND ""
     )
-    set(OPENBLAS_INCLUDE_DIR "${OPENBLAS_INSTALL_PREFIX}/include/openblas/")
-    set(OPENBLAS_LIB_DIR "${OPENBLAS_INSTALL_PREFIX}/lib")
-    set(OPENBLAS_LIBRARIES openblas)  # Extends to openblas.lib automatically.
+    ExternalProject_Get_property(ext_openblas SOURCE_DIR)
+    message(STATUS "openblas SOURCE_DIR: ${SOURCE_DIR}")
+    set(OPENBLAS_INCLUDE_DIR "${SOURCE_DIR}/include/")
+    set(OPENBLAS_LIB_DIR "${SOURCE_DIR}/lib")
+    set(OPENBLAS_LIBRARIES openblas flangmain flang flangrti ompstub)  # Extends to openblas.lib automatically.
 else()
     ExternalProject_Add(
         ext_openblas
