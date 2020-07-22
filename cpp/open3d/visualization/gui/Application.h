@@ -52,6 +52,8 @@ public:
     /// the resources. If you can provide the argc/argv arguments it is more
     /// reliable.
     void Initialize(int argc, const char *argv[]);
+    /// Initializes the application, with a specific path to the resources.
+    void Initialize(const char *resource_path);
 
     /// Does not return until the UI is completely finished. Use this if you
     /// just need something simple.

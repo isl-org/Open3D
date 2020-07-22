@@ -32,6 +32,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 IBLRotationInteractorLogic::IBLRotationInteractorLogic(Scene* scene,
                                                        Camera* camera)
@@ -52,8 +53,8 @@ void IBLRotationInteractorLogic::RotateZ(int dx, int dy) {
     UpdateMouseDragUI();
 }
 
-void IBLRotationInteractorLogic::SetSkyboxHandle(
-        visualization::SkyboxHandle skybox, bool is_on) {
+void IBLRotationInteractorLogic::SetSkyboxHandle(SkyboxHandle skybox,
+                                                 bool is_on) {
     skybox_ = skybox;
     skybox_is_normally_on_ = is_on;
 }
@@ -82,7 +83,7 @@ void IBLRotationInteractorLogic::UpdateMouseDragUI() {
 void IBLRotationInteractorLogic::EndMouseDrag() {
     ClearUI();
     if (!skybox_is_normally_on_) {
-        scene_->SetSkybox(visualization::SkyboxHandle());
+        scene_->SetSkybox(SkyboxHandle());
     }
 }
 
@@ -97,5 +98,6 @@ Camera::Transform IBLRotationInteractorLogic::GetCurrentRotation() const {
     return GetMatrix() * ibl_rotation_at_mouse_down_;
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

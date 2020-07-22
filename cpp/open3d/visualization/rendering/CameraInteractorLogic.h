@@ -30,6 +30,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class CameraInteractorLogic : public RotationInteractorLogic {
     using Super = RotationInteractorLogic;
@@ -64,5 +65,6 @@ private:
     double fov_at_mouse_down_;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

@@ -48,6 +48,10 @@ find_package(PkgConfig QUIET)
 #        include headers are in the subdirectories <dir>. Trailing slashes
 #        have the same meaning as with install(DIRECTORY). <dir> must be
 #        relative to the library source directory.
+#        If your include is "#include <x.hpp>" and the path of the file is
+#        "path/to/libx/x.hpp" then you need to pass "path/to/libx/"
+#        with the trailing "/". If you have "#include <libx/x.hpp>" then you
+#        need to pass "path/to/libx".
 #    SOURCES <src> [<src> ...]
 #        the library sources. Can be omitted for header-only libraries.
 #        All sources must be relative to the library source directory.
@@ -83,12 +87,12 @@ function(build_3rdparty_library name)
             else()
                 get_filename_component(incl_path "${incl}" DIRECTORY)
             endif()
-            target_include_directories(${name} SYSTEM PUBLIC 
+            target_include_directories(${name} SYSTEM PUBLIC
                 $<BUILD_INTERFACE:${incl_path}>
             )
         endforeach()
-        target_include_directories(${name} PUBLIC 
-            $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty>
+        target_include_directories(${name} PUBLIC
+            $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>
         )
         open3d_set_global_properties(${name})
         set_target_properties(${name} PROPERTIES
@@ -105,12 +109,12 @@ function(build_3rdparty_library name)
             else()
                 get_filename_component(incl_path "${incl}" DIRECTORY)
             endif()
-            target_include_directories(${name} SYSTEM INTERFACE 
+            target_include_directories(${name} SYSTEM INTERFACE
                 $<BUILD_INTERFACE:${incl_path}>
             )
         endforeach()
         target_include_directories(${name} INTERFACE
-            $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty>
+            $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>
         )
     endif()
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
@@ -124,11 +128,11 @@ function(build_3rdparty_library name)
         foreach(incl IN LISTS include_dirs)
             if(arg_INCLUDE_ALL)
                 install(DIRECTORY ${incl}
-                    DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty
+                    DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty
                 )
             else()
                 install(DIRECTORY ${incl}
-                    DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty
+                    DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty
                     FILES_MATCHING
                         PATTERN "*.h"
                         PATTERN "*.hpp"
@@ -182,9 +186,13 @@ endfunction()
 #    HEADER
 #        the library headers belong to the public interface and will be
 #        installed, but the library is linked privately.
-#    INCLUDE_DIR
+#    INCLUDE_DIRS
 #        the temporary location where the library headers have been installed.
 #        Trailing slashes have the same meaning as with install(DIRECTORY).
+#        If your include is "#include <x.hpp>" and the path of the file is
+#        "/path/to/libx/x.hpp" then you need to pass "/path/to/libx/"
+#        with the trailing "/". If you have "#include <libx/x.hpp>" then you
+#        need to pass "/path/to/libx".
 #    LIBRARIES
 #        the built library name(s). It is assumed that the library is static.
 #        If the library is PUBLIC, it will be renamed to Open3D_${name} at
@@ -194,7 +202,7 @@ endfunction()
 #        CMAKE_ARCHIVE_OUTPUT_DIRECTORY.
 #
 function(import_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER" "INCLUDE_DIR;LIB_DIR" "LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
     endif()
@@ -202,19 +210,21 @@ function(import_3rdparty_library name)
         set(arg_LIB_DIR "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
     endif()
     add_library(${name} INTERFACE)
-    if(arg_INCLUDE_DIR)
-        if (arg_INCLUDE_DIR MATCHES "(.*)/$")
-            set(incl_path ${CMAKE_MATCH_1})
-        else()
-            get_filename_component(incl_path "${incl}" DIRECTORY)
-        endif()
-        target_include_directories(${name} SYSTEM INTERFACE $<BUILD_INTERFACE:${incl_path}>)
-        if(arg_PUBLIC OR arg_HEADER)
-            install(DIRECTORY ${arg_INCLUDE_DIR} DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty
-                FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-            )
-            target_include_directories(${name} INTERFACE $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty>)
-        endif()
+    if(arg_INCLUDE_DIRS)
+        foreach(incl IN LISTS arg_INCLUDE_DIRS)
+            if (incl MATCHES "(.*)/$")
+                set(incl_path ${CMAKE_MATCH_1})
+            else()
+                get_filename_component(incl_path "${incl}" DIRECTORY)
+            endif()
+            target_include_directories(${name} SYSTEM INTERFACE $<BUILD_INTERFACE:${incl_path}>)
+            if(arg_PUBLIC OR arg_HEADER)
+                install(DIRECTORY ${incl} DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty
+                    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+                )
+                target_include_directories(${name} INTERFACE $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>)
+            endif()
+        endforeach()
     endif()
     if(arg_LIBRARIES)
         list(LENGTH arg_LIBRARIES libcount)
@@ -357,7 +367,7 @@ endif()
 if(BUILD_GLFW)
     message(STATUS "Building library 3rdparty_glfw3 from source")
     add_subdirectory(${Open3D_3RDPARTY_DIR}/GLFW)
-    import_3rdparty_library(3rdparty_glfw3 HEADER INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/GLFW/include/ LIBRARIES glfw3)
+    import_3rdparty_library(3rdparty_glfw3 HEADER INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/GLFW/include/ LIBRARIES glfw3)
     add_dependencies(3rdparty_glfw3 glfw)
     target_link_libraries(3rdparty_glfw3 INTERFACE Threads::Threads)
     if(UNIX AND NOT APPLE)
@@ -425,7 +435,7 @@ if (BUILD_JPEG)
     message(STATUS "Building third-party library JPEG from source")
     include(${Open3D_3RDPARTY_DIR}/libjpeg-turbo/libjpeg-turbo.cmake)
     import_3rdparty_library(3rdparty_jpeg
-        INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/include/
+        INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/include/
         LIBRARIES ${JPEG_TURBO_LIBRARIES}
         LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/lib
     )
@@ -434,38 +444,17 @@ if (BUILD_JPEG)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JPEG_TARGET}")
 
-# jsoncpp
-if(NOT BUILD_JSONCPP)
-    find_package(jsoncpp)
-    if(TARGET jsoncpp_lib)
-        message(STATUS "Using installed third-party library jsoncpp")
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "jsoncpp")
-        endif()
-        set(JSONCPP_TARGET "jsoncpp_lib")
-    elseif(TARGET jsoncpp)
-        message(STATUS "Using installed third-party library jsoncpp")
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "jsoncpp")
-        endif()
-        set(JSONCPP_TARGET "jsoncpp")
-    else()
-        message(STATUS "Unable to find installed third-party library jsoncpp")
-        set(BUILD_JSONCPP ON)
-    endif()
-endif()
-if(BUILD_JSONCPP)
-    build_3rdparty_library(3rdparty_jsoncpp DIRECTORY jsoncpp
-        SOURCES
-            json_reader.cpp
-            json_value.cpp
-            json_writer.cpp
-        INCLUDE_DIRS
-            include/
-    )
-    target_compile_features(3rdparty_jsoncpp PUBLIC cxx_override cxx_noexcept cxx_rvalue_references)
-    set(JSONCPP_TARGET "3rdparty_jsoncpp")
-endif()
+# jsoncpp: always compile from source to avoid ABI issues.
+build_3rdparty_library(3rdparty_jsoncpp DIRECTORY jsoncpp
+    SOURCES
+        json_reader.cpp
+        json_value.cpp
+        json_writer.cpp
+    INCLUDE_DIRS
+        include/
+)
+target_compile_features(3rdparty_jsoncpp PUBLIC cxx_override cxx_noexcept cxx_rvalue_references)
+set(JSONCPP_TARGET "3rdparty_jsoncpp")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JSONCPP_TARGET}")
 
 # liblzf
@@ -501,7 +490,7 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TRITRIINTERSECT_TARGET}")
 if (BUILD_LIBREALSENSE)
     message(STATUS "Building third-party library librealsense from source")
     add_subdirectory(${Open3D_3RDPARTY_DIR}/librealsense)
-    import_3rdparty_library(3rdparty_realsense INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/librealsense/include/ LIBRARIES ${REALSENSE_LIBRARY})
+    import_3rdparty_library(3rdparty_realsense INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/librealsense/include/ LIBRARIES ${REALSENSE_LIBRARY})
     add_dependencies(3rdparty_realsense ${REALSENSE_LIBRARY})
     set(LIBREALSENSE_TARGET "3rdparty_realsense")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
@@ -524,11 +513,11 @@ endif()
 if(BUILD_PNG)
     message(STATUS "Building third-party library zlib from source")
     add_subdirectory(${Open3D_3RDPARTY_DIR}/zlib)
-    import_3rdparty_library(3rdparty_zlib INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/zlib LIBRARIES ${ZLIB_LIBRARY})
+    import_3rdparty_library(3rdparty_zlib INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/zlib LIBRARIES ${ZLIB_LIBRARY})
     add_dependencies(3rdparty_zlib ${ZLIB_LIBRARY})
     message(STATUS "Building third-party library libpng from source")
     add_subdirectory(${Open3D_3RDPARTY_DIR}/libpng)
-    import_3rdparty_library(3rdparty_png INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/libpng/ LIBRARIES ${PNG_LIBRARIES})
+    import_3rdparty_library(3rdparty_png INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/libpng/ LIBRARIES ${PNG_LIBRARIES})
     add_dependencies(3rdparty_png ${PNG_LIBRARIES})
     target_link_libraries(3rdparty_png INTERFACE 3rdparty_zlib)
     set(PNG_TARGET "3rdparty_png")
@@ -840,7 +829,7 @@ if(ENABLE_GUI)
         include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
     endif()
     import_3rdparty_library(3rdparty_filament HEADER
-        INCLUDE_DIR ${FILAMENT_ROOT}/include/
+        INCLUDE_DIRS ${FILAMENT_ROOT}/include/
         LIB_DIR ${FILAMENT_ROOT}/lib/x86_64
         LIBRARIES ${filament_LIBRARIES}
     )

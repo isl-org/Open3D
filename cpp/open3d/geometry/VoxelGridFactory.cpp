@@ -76,7 +76,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
     output->voxel_size_ = voxel_size;
     output->origin_ = min_bound;
     std::unordered_map<Eigen::Vector3i, AvgColorVoxel,
-                       utility::hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;

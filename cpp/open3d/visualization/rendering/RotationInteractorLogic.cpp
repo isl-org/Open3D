@@ -28,8 +28,9 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
-RotationInteractorLogic::RotationInteractorLogic(visualization::Camera* camera,
+RotationInteractorLogic::RotationInteractorLogic(Camera* camera,
                                                  double min_far_plane)
     : min_far_plane_(min_far_plane), camera_(camera) {}
 
@@ -114,5 +115,6 @@ void RotationInteractorLogic::UpdateCameraFarPlane() {
                            camera_->GetFieldOfViewType());
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

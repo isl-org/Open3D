@@ -140,7 +140,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
             "[CreateFromPointCloudAlphaShape] remove triangles within "
             "the mesh");
     std::unordered_map<Eigen::Vector3i, int,
-                       utility::hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen<Eigen::Vector3i>>
             triangle_count;
     for (size_t tidx = 0; tidx < mesh->triangles_.size(); ++tidx) {
         Eigen::Vector3i triangle = mesh->triangles_[tidx];

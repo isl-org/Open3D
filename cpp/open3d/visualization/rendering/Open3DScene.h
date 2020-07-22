@@ -36,6 +36,7 @@ class Geometry3D;
 }  // namespace geometry
 
 namespace visualization {
+namespace rendering {
 
 class Camera;
 
@@ -88,5 +89,6 @@ private:
     geometry::AxisAlignedBoundingBox bounds_;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

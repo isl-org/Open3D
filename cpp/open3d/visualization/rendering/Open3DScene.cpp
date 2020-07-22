@@ -35,6 +35,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 namespace {
 std::shared_ptr<geometry::TriangleMesh> CreateAxisGeometry(double axis_length) {
@@ -114,7 +115,7 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
 
     axis_ = RecreateAxis(scene, axis_, bounds_, false);
 
-    visualization::LightDescription desc;
+    LightDescription desc;
     desc.intensity = 45000;
     desc.direction = {0.577f, -0.577f, -0.577f};
     desc.cast_shadows = true;
@@ -260,5 +261,6 @@ SkyboxHandle Open3DScene::GetSkybox() const { return skybox_; }
 IndirectLightHandle Open3DScene::GetIndirectLight() const { return ibl_; }
 LightHandle Open3DScene::GetSun() const { return sun_; }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

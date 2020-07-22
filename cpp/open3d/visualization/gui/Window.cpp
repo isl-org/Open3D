@@ -30,6 +30,7 @@
 #include <filament/Engine.h>
 #include <imgui.h>
 #include <imgui_internal.h>  // so we can examine the current context
+#include <algorithm>
 #include <cmath>
 #include <queue>
 #include <unordered_map>
@@ -51,8 +52,6 @@
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
-using namespace open3d::visualization::gui::util;
-
 // ----------------------------------------------------------------------------
 namespace open3d {
 namespace visualization {
@@ -64,6 +63,9 @@ static constexpr int CENTERED_X = -10000;
 static constexpr int CENTERED_Y = -10000;
 static constexpr int AUTOSIZE_WIDTH = 0;
 static constexpr int AUTOSIZE_HEIGHT = 0;
+
+static constexpr int FALLBACK_MONITOR_WIDTH = 1024;
+static constexpr int FALLBACK_MONITOR_HEIGHT = 768;
 
 // Assumes the correct ImGuiContext is current
 void UpdateImGuiForScaling(float new_scaling) {
@@ -140,6 +142,7 @@ const int Window::FLAG_TOPMOST = (1 << 0);
 struct Window::Impl {
     GLFWwindow* window_ = nullptr;
     std::string title_;  // there is no glfwGetWindowTitle()...
+    std::unordered_map<Menu::ItemId, std::function<void()>> menu_callbacks_;
     // We need these for mouse moves and wheel events.
     // The only source of ground truth is button events, so the rest of
     // the time we monitor key up/down events.
@@ -147,7 +150,7 @@ struct Window::Impl {
     double last_render_time_ = 0.0;
 
     Theme theme_;  // so that the font size can be different based on scaling
-    std::unique_ptr<visualization::FilamentRenderer> renderer_;
+    std::unique_ptr<visualization::rendering::FilamentRenderer> renderer_;
     struct {
         std::unique_ptr<ImguiFilamentBridge> imgui_bridge;
         ImGuiContext* context = nullptr;
@@ -169,7 +172,8 @@ struct Window::Impl {
     Widget* mouse_grabber_widget_ = nullptr;  // only if not ImGUI widget
     Widget* focus_widget_ =
             nullptr;  // only used if ImGUI isn't taking keystrokes
-    bool wants_auto_size_and_center_ = false;
+    bool wants_auto_size_ = false;
+    bool wants_auto_center_ = false;
     bool needs_layout_ = true;
     bool is_resizing_ = false;
 };
@@ -190,10 +194,10 @@ Window::Window(const std::string& title,
                int height,
                int flags /*= 0*/)
     : impl_(new Window::Impl()) {
-    if (x == CENTERED_X || y == CENTERED_Y || width == AUTOSIZE_WIDTH ||
-        height == AUTOSIZE_HEIGHT) {
-        impl_->wants_auto_size_and_center_ = true;
-    }
+    impl_->wants_auto_center_ = (x == CENTERED_X || y == CENTERED_Y);
+    impl_->wants_auto_size_ =
+            (width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT);
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -208,8 +212,8 @@ Window::Window(const std::string& title,
 #if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
 #endif
-    glfwWindowHint(GLFW_VISIBLE,
-                   impl_->wants_auto_size_and_center_ ? GLFW_TRUE : GLFW_FALSE);
+    bool visible = (impl_->wants_auto_size_ || impl_->wants_auto_center_);
+    glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FLOATING,
                    ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
 
@@ -223,6 +227,7 @@ Window::Window(const std::string& title,
 
     glfwSetWindowUserPointer(impl_->window_, this);
     glfwSetWindowSizeCallback(impl_->window_, ResizeCallback);
+    glfwSetWindowPosCallback(impl_->window_, WindowMovedCallback);
     glfwSetWindowRefreshCallback(impl_->window_, DrawCallback);
     glfwSetCursorPosCallback(impl_->window_, MouseMoveCallback);
     glfwSetMouseButtonCallback(impl_->window_, MouseButtonCallback);
@@ -244,12 +249,13 @@ Window::Window(const std::string& title,
     impl_->theme_.default_margin *= scaling;
     impl_->theme_.default_layout_spacing *= scaling;
 
-    auto& engine = visualization::EngineInstance::GetInstance();
+    auto& engine = visualization::rendering::EngineInstance::GetInstance();
     auto& resource_manager =
-            visualization::EngineInstance::GetResourceManager();
+            visualization::rendering::EngineInstance::GetResourceManager();
 
-    impl_->renderer_ = std::make_unique<visualization::FilamentRenderer>(
-            engine, GetNativeDrawable(), resource_manager);
+    impl_->renderer_ =
+            std::make_unique<visualization::rendering::FilamentRenderer>(
+                    engine, GetNativeDrawable(), resource_manager);
 
     auto& theme = impl_->theme_;  // shorter alias
     impl_->imgui_.context = ImGui::CreateContext();
@@ -265,6 +271,7 @@ Window::Window(const std::string& title,
     style.WindowBorderSize = 0;
     style.FrameBorderSize = theme.border_width;
     style.FrameRounding = theme.border_radius;
+    style.ChildRounding = theme.border_radius;
     style.Colors[ImGuiCol_WindowBg] = colorToImgui(theme.background_color);
     style.Colors[ImGuiCol_Text] = colorToImgui(theme.text_color);
     style.Colors[ImGuiCol_Border] = colorToImgui(theme.border_color);
@@ -354,6 +361,10 @@ Window::~Window() {
     glfwDestroyWindow(impl_->window_);
 }
 
+const std::vector<std::shared_ptr<Widget>>& Window::GetChildren() const {
+    return impl_->children_;
+}
+
 void* Window::MakeDrawContextCurrent() const {
     auto old_context = ImGui::GetCurrentContext();
     ImGui::SetCurrentContext(impl_->imgui_.context);
@@ -370,7 +381,7 @@ void* Window::GetNativeDrawable() const {
 
 const Theme& Window::GetTheme() const { return impl_->theme_; }
 
-visualization::Renderer& Window::GetRenderer() const {
+visualization::rendering::Renderer& Window::GetRenderer() const {
     return *impl_->renderer_;
 }
 
@@ -501,6 +512,11 @@ void Window::AddChild(std::shared_ptr<Widget> w) {
     impl_->needs_layout_ = true;
 }
 
+void Window::SetOnMenuItemActivated(Menu::ItemId item_id,
+                                    std::function<void()> callback) {
+    impl_->menu_callbacks_[item_id] = callback;
+}
+
 void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     if (impl_->active_dialog_) {
         CloseDialog();
@@ -530,6 +546,11 @@ void Window::CloseDialog() {
         SetFocusWidget(nullptr);
     }
     impl_->active_dialog_.reset();
+    // The dialog might not be closing from within a draw call, such as when
+    // a native file dialog closes, so we need to post a redraw, just in case.
+    // If it is from within a draw call, then any redraw request from that will
+    // get merged in with this one by the OS.
+    PostRedraw();
 }
 
 void Window::ShowMessageBox(const char* title, const char* message) {
@@ -557,7 +578,13 @@ void Window::Layout(const Theme& theme) {
     }
 }
 
-void Window::OnMenuItemSelected(Menu::ItemId item_id) {}
+void Window::OnMenuItemSelected(Menu::ItemId item_id) {
+    auto callback = impl_->menu_callbacks_.find(item_id);
+    if (callback != impl_->menu_callbacks_.end()) {
+        callback->second();
+        PostRedraw();  // might not be in a draw if from native menu
+    }
+}
 
 namespace {
 enum Mode { NORMAL, DIALOG, NO_INPUT };
@@ -595,8 +622,7 @@ Widget::DrawResult DrawChild(DrawContext& dc,
         ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
         if (bg_color_not_default) {
             auto& bgColor = child->GetBackgroundColor();
-            ImGui::PushStyleColor(ImGuiCol_WindowBg,
-                                  util::colorToImgui(bgColor));
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, colorToImgui(bgColor));
         }
         ImGui::Begin(name, nullptr, flags);
     } else {
@@ -823,28 +849,57 @@ void Window::OnResize() {
     io.DisplayFramebufferScale.x = 1.0f;
     io.DisplayFramebufferScale.y = 1.0f;
 
-    if (impl_->wants_auto_size_and_center_) {
-        impl_->wants_auto_size_and_center_ = false;
-        int screen_width = 1024;  // defaults in case monitor == nullptr
-        int screen_height = 768;
+    if (impl_->wants_auto_size_ || impl_->wants_auto_center_) {
+        int screen_width = FALLBACK_MONITOR_WIDTH;
+        int screen_height = FALLBACK_MONITOR_HEIGHT;
         auto* monitor = glfwGetWindowMonitor(impl_->window_);
+        if (!monitor) {
+            monitor = glfwGetPrimaryMonitor();
+        }
         if (monitor) {
             const GLFWvidmode* mode = glfwGetVideoMode(monitor);
             if (mode) {
                 screen_width = mode->width;
                 screen_height = mode->height;
             }
+            // TODO: if we can update GLFW we can replace the above with this
+            //       Also, see below.
+            // int xpos, ypos;
+            // glfwGetMonitorWorkarea(monitor, &xpos, &ypos,
+            //                       &screen_width, &screen_height);
         }
-        ImGui::NewFrame();
-        ImGui::PushFont(impl_->imgui_.system_font);
-        auto pref = CalcPreferredSize();
-        Size size(pref.width / this->impl_->imgui_.scaling,
-                  pref.height / this->impl_->imgui_.scaling);
-        glfwSetWindowSize(impl_->window_, size.width, size.height);
-        glfwSetWindowPos(impl_->window_, (screen_width - size.width) / 2,
-                         (screen_height - size.height) / 2);
-        ImGui::PopFont();
-        ImGui::EndFrame();
+
+        int w = GetOSFrame().width;
+        int h = GetOSFrame().height;
+
+        if (impl_->wants_auto_size_) {
+            ImGui::NewFrame();
+            ImGui::PushFont(impl_->imgui_.system_font);
+            auto pref = CalcPreferredSize();
+            ImGui::PopFont();
+            ImGui::EndFrame();
+
+            w = std::min(screen_width,
+                         int(std::round(pref.width / impl_->imgui_.scaling)));
+            // screen_height is the screen height, not the usable screen height.
+            // If we cannot call glfwGetMonitorWorkarea(), then we need to guess
+            // at the size. The window titlebar is about 2 * em, and then there
+            // is often a global menubar (Linux/GNOME, macOS) or a toolbar
+            // (Windows). A toolbar is somewhere around 2 - 3 ems.
+            int unusable_height = 4 * impl_->theme_.font_size;
+            h = std::min(screen_height - unusable_height,
+                         int(std::round(pref.height / impl_->imgui_.scaling)));
+            glfwSetWindowSize(impl_->window_, w, h);
+        }
+
+        if (impl_->wants_auto_center_) {
+            glfwSetWindowPos(impl_->window_, (screen_width - w) / 2,
+                             (screen_height - h) / 2);
+        }
+
+        impl_->wants_auto_size_ = false;
+        impl_->wants_auto_center_ = false;
+
         OnResize();
     }
 
@@ -1039,7 +1094,7 @@ void Window::DrawCallback(GLFWwindow* window) {
         // Can't just draw here, because Filament sometimes fences within
         // a draw, and then you can get two draws happening at the same
         // time, which ends up with a crash.
-        PostNativeExposeEvent(w->impl_->window_);
+        w->PostRedraw();
     }
 }
 
@@ -1047,6 +1102,16 @@ void Window::ResizeCallback(GLFWwindow* window, int os_width, int os_height) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     w->OnResize();
     UpdateAfterEvent(w);
+}
+
+void Window::WindowMovedCallback(GLFWwindow* window, int os_x, int os_y) {
+#ifdef __APPLE__
+    // On macOS we need to recreate the swap chain if the window changes
+    // size OR MOVES!
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    w->OnResize();
+    UpdateAfterEvent(w);
+#endif
 }
 
 void Window::RescaleCallback(GLFWwindow* window, float xscale, float yscale) {
@@ -1219,9 +1284,7 @@ void Window::CloseCallback(GLFWwindow* window) {
     Application::GetInstance().RemoveWindow(w);
 }
 
-void Window::UpdateAfterEvent(Window* w) {
-    PostNativeExposeEvent(w->impl_->window_);
-}
+void Window::UpdateAfterEvent(Window* w) { w->PostRedraw(); }
 
 }  // namespace gui
 }  // namespace visualization

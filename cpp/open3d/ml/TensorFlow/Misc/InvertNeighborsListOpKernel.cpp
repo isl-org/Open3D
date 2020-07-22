@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "InvertNeighborsListOpKernel.h"
-#include "open3d/ml/Misc/Detail/InvertNeighborsList.h"
+#include "open3d/ml/impl/misc/InvertNeighborsList.h"
 
-using namespace open3d::ml::detail;
+using namespace open3d::ml::impl;
 using namespace invert_neighbors_list_opkernel;
 using namespace tensorflow;
 

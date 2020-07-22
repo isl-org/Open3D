@@ -43,6 +43,7 @@
 namespace open3d {
 
 namespace visualization {
+namespace rendering {
 
 // If you add entry here, don't forget to update TypeToString!
 enum class EntityType : std::uint16_t {
@@ -161,16 +162,17 @@ typedef REHandle<EntityType::Texture> TextureHandle;
 typedef REHandle<EntityType::VertexBuffer> VertexBufferHandle;
 typedef REHandle<EntityType::IndexBuffer> IndexBufferHandle;
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
 
 /// @cond
 namespace std {
 template <>
-class hash<open3d::visualization::REHandle_abstract> {
+class hash<open3d::visualization::rendering::REHandle_abstract> {
 public:
-    size_t operator()(
-            const open3d::visualization::REHandle_abstract& uid) const {
+    size_t operator()(const open3d::visualization::rendering::REHandle_abstract&
+                              uid) const {
         return uid.Hash();
     }
 };
@@ -179,13 +181,13 @@ public:
 namespace fmt {
 using namespace open3d::visualization;
 template <>
-struct formatter<open3d::visualization::REHandle_abstract> {
+struct formatter<open3d::visualization::rendering::REHandle_abstract> {
     template <typename FormatContext>
-    auto format(const open3d::visualization::REHandle_abstract& uid,
+    auto format(const open3d::visualization::rendering::REHandle_abstract& uid,
                 FormatContext& ctx) {
         return format_to(ctx.out(), "[{}, {}, hash: {}]",
-                         open3d::visualization::REHandle_abstract::TypeToString(
-                                 uid.type),
+                         open3d::visualization::rendering::REHandle_abstract::
+                                 TypeToString(uid.type),
                          uid.GetId(), uid.Hash());
     }
 

@@ -317,7 +317,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         utility::LogError("[VoxelDownSample] voxel_size is too small.");
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
-                       utility::hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_accpoint;
 
     Eigen::Vector3d ref_coord;
@@ -366,7 +366,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
         utility::LogError("[VoxelDownSample] voxel_size is too small.");
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPointForTrace,
-                       utility::hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_accpoint;
     int cid_temp[3] = {1, 2, 4};
     for (size_t i = 0; i < points_.size(); i++) {

@@ -39,6 +39,7 @@ class SwapChain;
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class FilamentRenderer;
 class FilamentScene;
@@ -81,5 +82,6 @@ private:
     void Render();
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

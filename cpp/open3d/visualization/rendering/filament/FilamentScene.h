@@ -48,6 +48,7 @@ class VertexBuffer;
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class FilamentResourceManager;
 class FilamentView;
@@ -170,5 +171,6 @@ private:
     std::weak_ptr<filament::Skybox> skybox_;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

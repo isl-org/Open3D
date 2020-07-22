@@ -31,6 +31,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class Camera;
 class Scene;
@@ -66,5 +67,6 @@ private:
     void ClearUI();
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

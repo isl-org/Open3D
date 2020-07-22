@@ -45,6 +45,7 @@ class TriangleMesh;
 }  // namespace geometry
 
 namespace visualization {
+namespace rendering {
 
 class GeometryBuffersBuilder {
 public:
@@ -107,5 +108,6 @@ private:
     const geometry::LineSet& geometry_;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

@@ -39,23 +39,31 @@ namespace core {
 namespace kernel {
 
 template <typename scalar_t>
-static inline scalar_t CPUSumReductionKernel(scalar_t src, scalar_t dst) {
-    return src + dst;
+static inline scalar_t CPUSumReductionKernel(scalar_t a, scalar_t b) {
+    return a + b;
 }
 
 template <typename scalar_t>
-static inline scalar_t CPUProdReductionKernel(scalar_t src, scalar_t dst) {
-    return src * dst;
+static inline scalar_t CPUProdReductionKernel(scalar_t a, scalar_t b) {
+    return a * b;
 }
 
 template <typename scalar_t>
-static inline scalar_t CPUMinReductionKernel(scalar_t src, scalar_t dst) {
-    return std::min(src, dst);
+static inline scalar_t CPUMinReductionKernel(scalar_t a, scalar_t b) {
+    return std::min(a, b);
 }
 
 template <typename scalar_t>
-static inline scalar_t CPUMaxReductionKernel(scalar_t src, scalar_t dst) {
-    return std::max(src, dst);
+static inline scalar_t CPUMaxReductionKernel(scalar_t a, scalar_t b) {
+    return std::max(a, b);
+}
+
+static inline uint8_t CPUAllReductionKernel(uint8_t a, uint8_t b) {
+    return a && b;
+}
+
+static inline uint8_t CPUAnyReductionKernel(uint8_t a, uint8_t b) {
+    return a || b;
 }
 
 template <typename scalar_t>
@@ -236,9 +244,8 @@ void ReductionCPU(const Tensor& src,
                   const SizeVector& dims,
                   bool keepdim,
                   ReductionOpCode op_code) {
-    if (regular_reduce_ops.find(op_code) != regular_reduce_ops.end()) {
-        DtypePolicy dtype_policy = DtypePolicy::ALL_SAME;
-        Indexer indexer({src}, dst, dtype_policy, dims);
+    if (s_regular_reduce_ops.find(op_code) != s_regular_reduce_ops.end()) {
+        Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         CPUReductionEngine re(indexer);
         DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
             scalar_t identity;
@@ -278,16 +285,14 @@ void ReductionCPU(const Tensor& src,
                     break;
             }
         });
-    } else if (arg_reduce_ops.find(op_code) != arg_reduce_ops.end()) {
+    } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
         if (dst.GetDtype() != Dtype::Int64) {
             utility::LogError("Arg-reduction must have int64 output dtype.");
         }
-        DtypePolicy dtype_policy = DtypePolicy::INPUT_SAME;
-
         // Accumulation buffer to store temporary min/max values.
         Tensor dst_acc(dst.GetShape(), src.GetDtype(), src.GetDevice());
 
-        Indexer indexer({src}, {dst, dst_acc}, dtype_policy, dims);
+        Indexer indexer({src}, {dst, dst_acc}, DtypePolicy::INPUT_SAME, dims);
         CPUArgReductionEngine re(indexer);
         DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
             scalar_t identity;
@@ -317,6 +322,33 @@ void ReductionCPU(const Tensor& src,
                     break;
             }
         });
+    } else if (s_boolean_reduce_ops.find(op_code) !=
+               s_boolean_reduce_ops.end()) {
+        if (src.GetDtype() != Dtype::Bool) {
+            utility::LogError(
+                    "Boolean reduction only supports boolean input tensor.");
+        }
+        if (dst.GetDtype() != Dtype::Bool) {
+            utility::LogError(
+                    "Boolean reduction only supports boolean output tensor.");
+        }
+        Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
+        CPUReductionEngine re(indexer);
+        switch (op_code) {
+            case ReductionOpCode::All:
+                // Identity == true. 0-sized tensor, returns true.
+                dst.Fill(true);
+                re.Run(CPUAllReductionKernel, static_cast<uint8_t>(true));
+                break;
+            case ReductionOpCode::Any:
+                // Identity == false. 0-sized tensor, returns false.
+                dst.Fill(false);
+                re.Run(CPUAnyReductionKernel, static_cast<uint8_t>(false));
+                break;
+            default:
+                utility::LogError("Unsupported op code.");
+                break;
+        }
     } else {
         utility::LogError("Unsupported op code.");
     }

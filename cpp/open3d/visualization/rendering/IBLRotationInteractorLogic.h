@@ -32,6 +32,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class Scene;
 
@@ -44,7 +45,8 @@ public:
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
 
-    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool is_on);
+    void SetSkyboxHandle(visualization::rendering::SkyboxHandle skybox,
+                         bool is_on);
 
     void StartMouseDrag();
     void UpdateMouseDragUI();
@@ -55,7 +57,7 @@ public:
 private:
     Scene* scene_;
     Camera* camera_;
-    visualization::SkyboxHandle skybox_;
+    visualization::rendering::SkyboxHandle skybox_;
     bool skybox_is_normally_on_;
     Camera::Transform ibl_rotation_at_mouse_down_;
 
@@ -68,5 +70,6 @@ private:
     void ClearUI();
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

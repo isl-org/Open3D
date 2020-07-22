@@ -28,6 +28,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 CameraInteractorLogic::CameraInteractorLogic(Camera* c, double min_far_plane)
     : RotationInteractorLogic(c, min_far_plane), fov_at_mouse_down_(60.0) {}
@@ -161,5 +162,6 @@ void CameraInteractorLogic::UpdateMouseDragUI() {}
 
 void CameraInteractorLogic::EndMouseDrag() {}
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

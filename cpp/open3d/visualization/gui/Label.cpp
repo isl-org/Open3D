@@ -120,7 +120,7 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     ImGui::PushItemWidth(frame.width);
     bool is_default_color = (impl_->color_ == DEFAULT_COLOR);
     if (!is_default_color) {
-        ImGui::PushStyleColor(ImGuiCol_Text, util::colorToImgui(impl_->color_));
+        ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(impl_->color_));
     }
     if (impl_->is_single_line) {
         ImGui::TextUnformatted(impl_->text_.c_str());

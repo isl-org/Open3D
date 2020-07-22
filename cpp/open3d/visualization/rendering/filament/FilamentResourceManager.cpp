@@ -47,6 +47,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 namespace {
 template <class ResourceType>
@@ -148,7 +149,6 @@ filament::Material* LoadMaterialFromFile(const std::string& path,
     return nullptr;
 }
 
-namespace texture_loading {
 struct TextureSettings {
     filament::Texture::Format image_format = filament::Texture::Format::RGB;
     filament::Texture::Type image_type = filament::Texture::Type::UBYTE;
@@ -195,7 +195,6 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image) {
 
     return settings;
 }
-}  // namespace texture_loading
 
 }  // namespace
 
@@ -604,7 +603,7 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     using namespace filament;
 
     auto retained_img_id = RetainImageForLoading(image);
-    auto texture_settings = texture_loading::GetSettingsFromImage(*image);
+    auto texture_settings = GetSettingsFromImage(*image);
 
     Texture::PixelBufferDescriptor pb(
             image->data_.data(), image->data_.size(),
@@ -725,5 +724,6 @@ void FilamentResourceManager::LoadDefaults() {
             MakeShared(colormap_mat_inst, engine_);
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

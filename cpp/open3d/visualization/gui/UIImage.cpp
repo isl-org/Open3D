@@ -50,8 +50,9 @@ struct UIImage::Impl {
     float v0_;
     float u1_;
     float v1_;
-    visualization::Renderer* renderer_;  // nullptr if texture_ isn't ours
-    visualization::TextureHandle texture_;
+    visualization::rendering::Renderer*
+            renderer_;  // nullptr if texture_ isn't ours
+    visualization::rendering::TextureHandle texture_;
 };
 
 UIImage::UIImage(const char* image_path) : impl_(new UIImage::Impl()) {
@@ -71,14 +72,14 @@ UIImage::UIImage(const char* image_path) : impl_(new UIImage::Impl()) {
     impl_->renderer_ = nullptr;
 }
 
-UIImage::UIImage(visualization::TextureHandle texture_id,
+UIImage::UIImage(visualization::rendering::TextureHandle texture_id,
                  float u0 /*= 0.0f*/,
                  float v0 /*= 0.0f*/,
                  float u1 /*= 1.0f*/,
                  float v1 /*= 1.0f*/)
     : impl_(new UIImage::Impl()) {
     auto& resource_manager =
-            visualization::EngineInstance::GetResourceManager();
+            visualization::rendering::EngineInstance::GetResourceManager();
     auto tex_weak = resource_manager.GetTexture(texture_id);
     auto tex_sh = tex_weak.lock();
     if (tex_sh) {
@@ -113,15 +114,15 @@ Size UIImage::CalcPreferredSize(const Theme& theme) const {
     }
 }
 
-UIImage::DrawParams UIImage::CalcDrawParams(visualization::Renderer& renderer,
-                                            const Rect& frame) const {
+UIImage::DrawParams UIImage::CalcDrawParams(
+        visualization::rendering::Renderer& renderer, const Rect& frame) const {
     if (impl_->image_data_ &&
-        impl_->texture_ == visualization::TextureHandle::kBad) {
+        impl_->texture_ == visualization::rendering::TextureHandle::kBad) {
         impl_->texture_ = renderer.AddTexture(impl_->image_data_);
-        if (impl_->texture_ != visualization::TextureHandle::kBad) {
+        if (impl_->texture_ != visualization::rendering::TextureHandle::kBad) {
             impl_->renderer_ = &renderer;
         } else {
-            impl_->texture_ = visualization::TextureHandle();
+            impl_->texture_ = visualization::rendering::TextureHandle();
         }
         impl_->image_data_.reset();
     }
@@ -131,7 +132,7 @@ UIImage::DrawParams UIImage::CalcDrawParams(visualization::Renderer& renderer,
 
     float width_px = impl_->image_width_;
     float height_px = impl_->image_height_;
-    if (impl_->texture_ != visualization::TextureHandle::kBad) {
+    if (impl_->texture_ != visualization::rendering::TextureHandle::kBad) {
         switch (impl_->scaling_) {
             case Scaling::NONE: {
                 float w = std::min(float(frame.width), width_px);

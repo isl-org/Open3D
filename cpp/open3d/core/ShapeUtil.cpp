@@ -26,6 +26,8 @@
 
 #include "open3d/core/ShapeUtil.h"
 
+#include <numeric>
+
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 
@@ -145,15 +147,18 @@ SizeVector ReductionShape(const SizeVector& src_shape,
     return out_shape;
 }
 
-int64_t WrapDim(int64_t dim, int64_t max_dim) {
+int64_t WrapDim(int64_t dim, int64_t max_dim, bool inclusive) {
     if (max_dim <= 0) {
         utility::LogError("max_dim {} must be >= 0");
     }
-    if (dim < -max_dim || dim > max_dim - 1) {
+    int64_t min = -max_dim;
+    int64_t max = inclusive ? max_dim : max_dim - 1;
+
+    if (dim < min || dim > max) {
         utility::LogError(
                 "Index out-of-range: dim == {}, but it must satisfy {} <= dim "
                 "<= {}",
-                dim, 0, max_dim - 1);
+                dim, min, max);
     }
     if (dim < 0) {
         dim += max_dim;
@@ -208,6 +213,21 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
 
     utility::LogError("Shape {} is invalid for {} number of elements.", shape,
                       num_elements);
+}
+
+SizeVector Concat(const SizeVector& l_shape, const SizeVector& r_shape) {
+    SizeVector dst_shape = l_shape;
+    dst_shape.insert(dst_shape.end(), r_shape.begin(), r_shape.end());
+    return dst_shape;
+}
+
+SizeVector Iota(int64_t n) {
+    if (n < 0) {
+        utility::LogError("Iota(n) requires n >= 0, but n == {}.", n);
+    }
+    SizeVector sv(n);
+    std::iota(sv.begin(), sv.end(), 0);
+    return sv;
 }
 
 }  // namespace shape_util

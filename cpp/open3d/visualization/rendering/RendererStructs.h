@@ -38,6 +38,7 @@ class Geometry3D;
 }
 
 namespace visualization {
+namespace rendering {
 
 struct LightDescription {
     enum eLightType { POINT, SPOT, DIRECTIONAL };
@@ -68,5 +69,6 @@ struct LightDescription {
           cast_shadows(true) {}
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

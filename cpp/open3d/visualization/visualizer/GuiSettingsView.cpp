@@ -54,11 +54,11 @@ std::shared_ptr<gui::Slider> MakeSlider(const gui::Slider::Type type,
     return slider;
 }
 
-GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
-                                 const gui::Theme& theme,
-                                 const std::string& resource_path,
+GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
+                                 const gui::Theme &theme,
+                                 const std::string &resource_path,
                                  std::function<void(const char *)> on_load_ibl)
-: model_(model), on_load_ibl_(on_load_ibl) {
+    : model_(model), on_load_ibl_(on_load_ibl) {
     const auto em = theme.font_size;
     const int lm = std::ceil(0.5 * em);
     const int grid_spacing = std::ceil(0.25 * em);
@@ -75,15 +75,13 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
 
     // Background
     show_skybox_ = std::make_shared<gui::Checkbox>("Show skymap");
-    show_skybox_->SetOnChecked([this](bool checked) {
-        model_.SetShowSkybox(checked);
-    });
+    show_skybox_->SetOnChecked(
+            [this](bool checked) { model_.SetShowSkybox(checked); });
 
     bg_color_ = std::make_shared<gui::ColorEdit>();
     bg_color_->SetOnValueChanged([this](const gui::Color &newColor) {
-        model_.SetBackgroundColor({newColor.GetRed(),
-                                   newColor.GetGreen(),
-                                   newColor.GetBlue()});
+        model_.SetBackgroundColor(
+                {newColor.GetRed(), newColor.GetGreen(), newColor.GetBlue()});
     });
 
     auto bg_layout = std::make_shared<gui::VGrid>(2, grid_spacing);
@@ -96,9 +94,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
 
     // Show axes
     show_axes_ = std::make_shared<gui::Checkbox>("Show axes");
-    show_axes_->SetOnChecked([this](bool is_checked) {
-        model_.SetShowAxes(is_checked);
-    });
+    show_axes_->SetOnChecked(
+            [this](bool is_checked) { model_.SetShowAxes(is_checked); });
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(show_axes_);
 
@@ -110,7 +107,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
     lighting_profile_->AddItem(CUSTOM_LIGHTING);
     lighting_profile_->SetOnValueChanged([this](const char *, int index) {
         if (index < int(GuiSettingsModel::lighting_profiles_.size())) {
-            model_.SetLightingProfile(GuiSettingsModel::lighting_profiles_[index]);
+            model_.SetLightingProfile(
+                    GuiSettingsModel::lighting_profiles_[index]);
         }
     });
 
@@ -124,8 +122,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
     AddFixed(separation_height);
 
     // Advanced lighting
-    advanced_ = std::make_shared<gui::CollapsableVert>("Advanced lighting",
-                                                       0, indent);
+    advanced_ = std::make_shared<gui::CollapsableVert>("Advanced lighting", 0,
+                                                       indent);
     advanced_->SetIsOpen(false);
     AddChild(advanced_);
 
@@ -134,7 +132,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
     auto checkboxes = std::make_shared<gui::Horiz>();
     ibl_enabled_ = std::make_shared<gui::Checkbox>("HDR map");
     ibl_enabled_->SetOnChecked([this](bool checked) {
-        auto lighting = model_.GetLighting(); // copy
+        auto lighting = model_.GetLighting();  // copy
         lighting.ibl_enabled = checked;
         model_.SetCustomLighting(lighting);
     });
@@ -142,7 +140,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
 
     sun_enabled_ = std::make_shared<gui::Checkbox>("Sun");
     sun_enabled_->SetOnChecked([this](bool checked) {
-        auto lighting = model_.GetLighting(); // copy
+        auto lighting = model_.GetLighting();  // copy
         lighting.sun_enabled = checked;
         model_.SetCustomLighting(lighting);
     });
@@ -169,14 +167,13 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
         }
     }
     ibls_->AddItem(GuiSettingsModel::CUSTOM_IBL);
-    ibls_->SetOnValueChanged([this](const char *name, int) {
-        on_load_ibl_(name);
-    });
+    ibls_->SetOnValueChanged(
+            [this](const char *name, int) { on_load_ibl_(name); });
 
     ibl_intensity_ = MakeSlider(gui::Slider::INT, 0.0, 150000.0,
-                            /*lighting_profile.ibl_intensity*/45000);
+                                /*lighting_profile.ibl_intensity*/ 45000);
     ibl_intensity_->SetOnValueChanged([this](double new_value) {
-        auto lighting = model_.GetLighting(); // copy
+        auto lighting = model_.GetLighting();  // copy
         lighting.ibl_intensity = new_value;
         model_.SetCustomLighting(lighting);
     });
@@ -193,24 +190,23 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
 
     // ... directional light (sun)
     sun_intensity_ = MakeSlider(gui::Slider::INT, 0.0, 500000.0,
-                                /*lighting_profile.sun_intensity*/45000);
+                                /*lighting_profile.sun_intensity*/ 45000);
     sun_intensity_->SetOnValueChanged([this](double new_value) {
-        auto lighting = model_.GetLighting(); // copy
+        auto lighting = model_.GetLighting();  // copy
         lighting.sun_intensity = new_value;
         model_.SetCustomLighting(lighting);
     });
     sun_dir_ = std::make_shared<gui::VectorEdit>();
     sun_dir_->SetOnValueChanged([this](const Eigen::Vector3f &dir) {
-        auto lighting = model_.GetLighting(); // copy
+        auto lighting = model_.GetLighting();  // copy
         lighting.sun_dir = dir.normalized();
         model_.SetCustomLighting(lighting);
     });
 
     sun_color_ = std::make_shared<gui::ColorEdit>();
     sun_color_->SetOnValueChanged([this](const gui::Color &new_color) {
-        auto lighting = model_.GetLighting(); // copy
-        lighting.sun_color = {new_color.GetRed(),
-                              new_color.GetGreen(),
+        auto lighting = model_.GetLighting();  // copy
+        lighting.sun_color = {new_color.GetRed(), new_color.GetGreen(),
                               new_color.GetBlue()};
         model_.SetCustomLighting(lighting);
     });
@@ -237,7 +233,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
     material_type_.reset(
             new gui::Combobox({"Lit", "Unlit", "Normal map", "Depth"}));
     material_type_->SetOnValueChanged([this](const char *, int selected_idx) {
-        switch(selected_idx) {
+        switch (selected_idx) {
             default:  // fall through
             case 0:
                 model_.SetMaterialType(GuiSettingsModel::MaterialType::LIT);
@@ -246,7 +242,8 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
                 model_.SetMaterialType(GuiSettingsModel::MaterialType::UNLIT);
                 break;
             case 2:
-                model_.SetMaterialType(GuiSettingsModel::MaterialType::NORMAL_MAP);
+                model_.SetMaterialType(
+                        GuiSettingsModel::MaterialType::NORMAL_MAP);
                 break;
             case 3:
                 model_.SetMaterialType(GuiSettingsModel::MaterialType::DEPTH);
@@ -274,14 +271,11 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel& model,
 
     material_color_ = std::make_shared<gui::ColorEdit>();
     material_color_->SetOnValueChanged([this](const gui::Color &color) {
-        model_.SetCurrentMaterialColor({color.GetRed(),
-                                        color.GetGreen(),
-                                        color.GetBlue()});
+        model_.SetCurrentMaterialColor(
+                {color.GetRed(), color.GetGreen(), color.GetBlue()});
     });
     reset_material_color_ = std::make_shared<SmallButton>("Reset");
-    reset_material_color_->SetOnClicked([this]() {
-        model_.ResetColors();
-    });
+    reset_material_color_->SetOnClicked([this]() { model_.ResetColors(); });
 
     mat_grid->AddChild(std::make_shared<gui::Label>("Color"));
     auto color_layout = std::make_shared<gui::Horiz>();
@@ -308,13 +302,17 @@ void GuiSettingsView::ShowFileMaterialEntry(bool show) {
     if (show) {
         prefab_material_->AddItem(GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
         prefab_material_->ChangeItem(
-                (std::string(GuiSettingsModel::DEFAULT_MATERIAL_NAME) + " [default]").c_str(),
+                (std::string(GuiSettingsModel::DEFAULT_MATERIAL_NAME) +
+                 " [default]")
+                        .c_str(),
                 GuiSettingsModel::DEFAULT_MATERIAL_NAME);
     } else {
         prefab_material_->RemoveItem(GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
         prefab_material_->ChangeItem(
                 GuiSettingsModel::DEFAULT_MATERIAL_NAME,
-                (std::string(GuiSettingsModel::DEFAULT_MATERIAL_NAME) + " [default]").c_str());
+                (std::string(GuiSettingsModel::DEFAULT_MATERIAL_NAME) +
+                 " [default]")
+                        .c_str());
     }
 }
 
@@ -329,7 +327,9 @@ void GuiSettingsView::Update() {
         lighting_profile_->SetSelectedValue(CUSTOM_LIGHTING);
     } else {
         if (!lighting_profile_->SetSelectedValue(lighting.name.c_str())) {
-            utility::LogWarning("Internal Error: lighting profile '{}' is not in combobox", lighting.name.c_str());
+            utility::LogWarning(
+                    "Internal Error: lighting profile '{}' is not in combobox",
+                    lighting.name.c_str());
             lighting_profile_->SetSelectedValue(CUSTOM_LIGHTING);
         }
     }
@@ -338,26 +338,29 @@ void GuiSettingsView::Update() {
     ibl_intensity_->SetValue(lighting.ibl_intensity);
     sun_intensity_->SetValue(lighting.sun_intensity);
     sun_dir_->SetValue(lighting.sun_dir);
-    sun_color_->SetValue({lighting.sun_color.x(),
-                          lighting.sun_color.y(),
+    sun_color_->SetValue({lighting.sun_color.x(), lighting.sun_color.y(),
                           lighting.sun_color.z()});
     auto &materials = model_.GetCurrentMaterials();
     if (!prefab_material_->SetSelectedValue(materials.lit_name.c_str())) {
-        if (materials.lit_name.find(GuiSettingsModel::DEFAULT_MATERIAL_NAME) == 0) {
+        if (materials.lit_name.find(GuiSettingsModel::DEFAULT_MATERIAL_NAME) ==
+            0) {
             // if we didn't find the default material, it must be appended
             // " [default]".
             for (int i = 0; i < prefab_material_->GetNumberOfItems(); ++i) {
-                if (materials.lit_name.find(prefab_material_->GetItem(i)) == 0) {
+                if (materials.lit_name.find(prefab_material_->GetItem(i)) ==
+                    0) {
                     prefab_material_->SetSelectedIndex(i);
                     break;
                 }
             }
         } else {
-            utility::LogWarning("Unknown prefab material '{}'", materials.lit_name);
-            prefab_material_->SetSelectedValue(GuiSettingsModel::DEFAULT_MATERIAL_NAME);
+            utility::LogWarning("Unknown prefab material '{}'",
+                                materials.lit_name);
+            prefab_material_->SetSelectedValue(
+                    GuiSettingsModel::DEFAULT_MATERIAL_NAME);
         }
     }
-    switch(model_.GetMaterialType()) {
+    switch (model_.GetMaterialType()) {
         case GuiSettingsModel::MaterialType::LIT:
             material_type_->SetSelectedIndex(0);
             prefab_material_->SetEnabled(true);
@@ -392,10 +395,10 @@ void GuiSettingsView::Update() {
     reset_material_color_->SetEnabled(
             model_.GetUserHasChangedColor() &&
             (model_.GetMaterialType() == GuiSettingsModel::MaterialType::LIT ||
-             model_.GetMaterialType() == GuiSettingsModel::MaterialType::UNLIT));
+             model_.GetMaterialType() ==
+                     GuiSettingsModel::MaterialType::UNLIT));
     point_size_->SetEnabled(model_.GetDisplayingPointClouds());
 }
 
 }  // namespace visualization
 }  // namespace open3d
-

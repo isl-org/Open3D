@@ -55,8 +55,9 @@ namespace {  // avoid polluting global namespace, since only used here
 namespace defaults_mapping {
 
 using GeometryType = open3d::geometry::Geometry::GeometryType;
-using MaterialHandle = open3d::visualization::MaterialHandle;
-using ResourceManager = open3d::visualization::FilamentResourceManager;
+using MaterialHandle = open3d::visualization::rendering::MaterialHandle;
+using ResourceManager =
+        open3d::visualization::rendering::FilamentResourceManager;
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -70,7 +71,8 @@ MaterialHandle kLineset = ResourceManager::kDefaultUnlit;
 }  // namespace defaults_mapping
 
 namespace converters {
-using EigenMatrix = open3d::visualization::FilamentScene::Transform::MatrixType;
+using EigenMatrix =
+        open3d::visualization::rendering::FilamentScene::Transform::MatrixType;
 using FilamentMatrix = filament::math::mat4f;
 EigenMatrix EigenMatrixFromFilamentMatrix(const filament::math::mat4f& fm) {
     EigenMatrix em;
@@ -96,6 +98,7 @@ FilamentMatrix FilamentMatrixFromEigenMatrix(const EigenMatrix& em) {
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 FilamentScene::FilamentScene(filament::Engine& engine,
                              FilamentResourceManager& resource_mgr)
@@ -699,5 +702,6 @@ void FilamentScene::SceneEntity::ReleaseResources(
     parent.clear();
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

@@ -31,102 +31,84 @@
 namespace open3d {
 namespace visualization {
 
-const std::vector<const GuiSettingsModel::LightingProfile> GuiSettingsModel::lighting_profiles_ = {
-    {.name = "Bright day with sun at +Y [default]",
-     .ibl_intensity = 45000,
-     .sun_intensity = 45000,
-     .sun_dir = {0.577f, -0.577f, -0.577f}},
-    {.name = "Bright day with sun at -Y",
-     .ibl_intensity = 45000,
-     .sun_intensity = 45000,
-     .sun_dir = {0.577f, 0.577f, 0.577f},
-     .sun_color = {1.0f, 1.0f, 1.0f},
-     .ibl_rotation = Scene::Transform(
-             Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
-    {.name = "Bright day with sun at +Z",
-     .ibl_intensity = 45000,
-     .sun_intensity = 45000,
-     .sun_dir = {0.577f, 0.577f, -0.577f}},
-    {.name = "Less bright day with sun at +Y",
-     .ibl_intensity = 35000,
-     .sun_intensity = 50000,
-     .sun_dir = {0.577f, -0.577f, -0.577f}},
-    {.name = "Less bright day with sun at -Y",
-     .ibl_intensity = 35000,
-     .sun_intensity = 50000,
-     .sun_dir = {0.577f, 0.577f, 0.577f},
-     .sun_color = {1.0f, 1.0f, 1.0f},
-     .ibl_rotation = Scene::Transform(
-             Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
-    {.name = "Less bright day with sun at +Z",
-     .ibl_intensity = 35000,
-     .sun_intensity = 50000,
-     .sun_dir = {0.577f, 0.577f, -0.577f}},
-    {.name = POINT_CLOUD_PROFILE_NAME,
-     .ibl_intensity = 60000,
-     .sun_intensity = 50000,
-     .sun_dir = {0.577f, -0.577f, -0.577f},
-     .sun_color = {1.0f, 1.0f, 1.0f},
-     .ibl_rotation = Scene::Transform::Identity(),
-     .ibl_enabled = true,
-     .use_default_ibl = true,
-     .sun_enabled = false}};
+const std::vector<GuiSettingsModel::LightingProfile>
+        GuiSettingsModel::lighting_profiles_ = {
+                {.name = "Bright day with sun at +Y [default]",
+                 .ibl_intensity = 45000,
+                 .sun_intensity = 45000,
+                 .sun_dir = {0.577f, -0.577f, -0.577f}},
+                {.name = "Bright day with sun at -Y",
+                 .ibl_intensity = 45000,
+                 .sun_intensity = 45000,
+                 .sun_dir = {0.577f, 0.577f, 0.577f},
+                 .sun_color = {1.0f, 1.0f, 1.0f},
+                 .ibl_rotation = rendering::Scene::Transform(
+                         Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
+                {.name = "Bright day with sun at +Z",
+                 .ibl_intensity = 45000,
+                 .sun_intensity = 45000,
+                 .sun_dir = {0.577f, 0.577f, -0.577f}},
+                {.name = "Less bright day with sun at +Y",
+                 .ibl_intensity = 35000,
+                 .sun_intensity = 50000,
+                 .sun_dir = {0.577f, -0.577f, -0.577f}},
+                {.name = "Less bright day with sun at -Y",
+                 .ibl_intensity = 35000,
+                 .sun_intensity = 50000,
+                 .sun_dir = {0.577f, 0.577f, 0.577f},
+                 .sun_color = {1.0f, 1.0f, 1.0f},
+                 .ibl_rotation = rendering::Scene::Transform(
+                         Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
+                {.name = "Less bright day with sun at +Z",
+                 .ibl_intensity = 35000,
+                 .sun_intensity = 50000,
+                 .sun_dir = {0.577f, 0.577f, -0.577f}},
+                {.name = POINT_CLOUD_PROFILE_NAME,
+                 .ibl_intensity = 60000,
+                 .sun_intensity = 50000,
+                 .sun_dir = {0.577f, -0.577f, -0.577f},
+                 .sun_color = {1.0f, 1.0f, 1.0f},
+                 .ibl_rotation = rendering::Scene::Transform::Identity(),
+                 .ibl_enabled = true,
+                 .use_default_ibl = true,
+                 .sun_enabled = false}};
 
-const std::map<std::string, const GuiSettingsModel::LitMaterial> GuiSettingsModel::prefab_materials_ = {
-        {DEFAULT_MATERIAL_NAME, {}},
-        {"Metal (rougher)",
-         {{1.0f, 1.0f, 1.0f},
-          1.0f,
-          0.5f,
-          0.9f,
-          0.0f,
-          0.0f,
-          0.0f}},
-        {"Metal (smoother)",
-         {{1.0f, 1.0f, 1.0f},
-          1.0f,
-          0.3f,
-          0.9f,
-          0.0f,
-          0.0f,
-          0.0f}},
-        {"Plastic",
-         {{1.0f, 1.0f, 1.0f},
-          0.0f,
-          0.5f,
-          0.5f,
-          0.5f,
-          0.2f,
-          0.0f}},
-        {"Glazed ceramic",
-         {{1.0f, 1.0f, 1.0f},
-          0.0f,
-          0.5f,
-          0.9f,
-          1.0f,
-          0.1f,
-          0.0f}},
-        {"Clay",
-         {{0.7725f, 0.7725f, 0.7725f},
-          0.0f,
-          1.0f,
-          0.5f,
-          0.1f,
-          0.287f,
-          0.0f}},
+const std::map<std::string, const GuiSettingsModel::LitMaterial>
+        GuiSettingsModel::prefab_materials_ = {
+                {DEFAULT_MATERIAL_NAME, {}},
+                {"Metal (rougher)",
+                 {{1.0f, 1.0f, 1.0f}, 1.0f, 0.5f, 0.9f, 0.0f, 0.0f, 0.0f}},
+                {"Metal (smoother)",
+                 {{1.0f, 1.0f, 1.0f}, 1.0f, 0.3f, 0.9f, 0.0f, 0.0f, 0.0f}},
+                {"Plastic",
+                 {{1.0f, 1.0f, 1.0f}, 0.0f, 0.5f, 0.5f, 0.5f, 0.2f, 0.0f}},
+                {"Glazed ceramic",
+                 {{1.0f, 1.0f, 1.0f}, 0.0f, 0.5f, 0.9f, 1.0f, 0.1f, 0.0f}},
+                {"Clay",
+                 {{0.7725f, 0.7725f, 0.7725f},
+                  0.0f,
+                  1.0f,
+                  0.5f,
+                  0.1f,
+                  0.287f,
+                  0.0f}},
 };
 
-const GuiSettingsModel::LightingProfile& GuiSettingsModel::GetDefaultLightingProfile() {
+const GuiSettingsModel::LightingProfile&
+GuiSettingsModel::GetDefaultLightingProfile() {
     return GuiSettingsModel::lighting_profiles_[0];
 }
 
-const GuiSettingsModel::LightingProfile& GuiSettingsModel::GetDefaultPointCloudLightingProfile() {
-    for (auto &lp : GuiSettingsModel::lighting_profiles_) {
+const GuiSettingsModel::LightingProfile&
+GuiSettingsModel::GetDefaultPointCloudLightingProfile() {
+    for (auto& lp : GuiSettingsModel::lighting_profiles_) {
         if (lp.name == POINT_CLOUD_PROFILE_NAME) {
             return lp;
         }
     }
-    utility::LogWarning("Internal Error: could not find default point cloud lighting profile");
+    utility::LogWarning(
+            "Internal Error: could not find default point cloud lighting "
+            "profile");
     return GuiSettingsModel::GetDefaultLightingProfile();
 }
 
@@ -160,7 +142,9 @@ void GuiSettingsModel::SetShowAxes(bool show) {
     NotifyChanged();
 }
 
-const Eigen::Vector3f& GuiSettingsModel::GetBackgroundColor() const { return bg_color_; }
+const Eigen::Vector3f& GuiSettingsModel::GetBackgroundColor() const {
+    return bg_color_;
+}
 void GuiSettingsModel::SetBackgroundColor(const Eigen::Vector3f& color) {
     bg_color_ = color;
     NotifyChanged();
@@ -189,12 +173,13 @@ void GuiSettingsModel::SetMaterialType(MaterialType type) {
     NotifyChanged(true);
 }
 
-const GuiSettingsModel::Materials& GuiSettingsModel::GetCurrentMaterials() const {
+const GuiSettingsModel::Materials& GuiSettingsModel::GetCurrentMaterials()
+        const {
     return current_materials_;
 }
 
 void GuiSettingsModel::SetLitMaterial(const LitMaterial& material,
-                                   const std::string& name) {
+                                      const std::string& name) {
     auto color = current_materials_.lit.base_color;
     current_materials_.lit = material;
     current_materials_.lit_name = name;
@@ -205,7 +190,7 @@ void GuiSettingsModel::SetLitMaterial(const LitMaterial& material,
 }
 
 void GuiSettingsModel::SetCurrentMaterials(const Materials& materials,
-                                        const std::string& name) {
+                                           const std::string& name) {
     current_materials_ = materials;
     current_materials_.lit_name = name;
     NotifyChanged();
@@ -282,7 +267,9 @@ void GuiSettingsModel::SetPointSize(int size) {
     NotifyChanged();
 }
 
-bool GuiSettingsModel::GetDisplayingPointClouds() const { return displaying_point_clouds_; }
+bool GuiSettingsModel::GetDisplayingPointClouds() const {
+    return displaying_point_clouds_;
+}
 void GuiSettingsModel::SetDisplayingPointClouds(bool displaying) {
     displaying_point_clouds_ = displaying;
     NotifyChanged();
@@ -310,5 +297,5 @@ void GuiSettingsModel::NotifyChanged(bool material_type_changed /*= false*/) {
     }
 }
 
-}  // namespace open3d
 }  // namespace visualization
+}  // namespace open3d

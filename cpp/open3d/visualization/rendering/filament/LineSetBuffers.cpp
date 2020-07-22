@@ -39,6 +39,7 @@ using namespace filament;
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 namespace {
 struct ColoredVertex {
@@ -222,5 +223,6 @@ Box LineSetBuffersBuilder::ComputeAABB() {
     return aabb;
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

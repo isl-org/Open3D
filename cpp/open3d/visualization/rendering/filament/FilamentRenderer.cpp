@@ -43,6 +43,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 FilamentRenderer::FilamentRenderer(filament::Engine& engine,
                                    void* native_drawable,
@@ -269,5 +270,6 @@ void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {
     buffer_renderers_.erase(render);
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
