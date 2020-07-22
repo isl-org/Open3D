@@ -28,29 +28,17 @@
 
 #include "open3d/core/Tensor.h"
 
-// Pytorch reference
-// https://discuss.pytorch.org/t/matrix-multiplication-source-code/71071
-
 namespace open3d {
 namespace core {
 
-void Matmul(const Tensor& A, const Tensor& B, Tensor& C);
+// Solve AX = B with *gesv in MKL (CPU) and MAGMA (CUDA)
+void Inverse(const Tensor& A, Tensor& output);
 
 #ifdef BUILD_CUDA_MODULE
-void MatmulCUDA(Dtype dtype,
-                void* A_data,
-                void* B_data,
-                void* C_data,
-                int m,
-                int k,
-                int n);
+void InverseCUDA(Dtype dtype, void* A_data, void* ipiv_data, int n);
 #endif
-void MatmulCPU(Dtype dtype,
-               void* A_data,
-               void* B_data,
-               void* C_data,
-               int m,
-               int k,
-               int n);
+
+void InverseCPU(Dtype dtype, void* A_data, void* ipiv_data, int n);
+
 }  // namespace core
 }  // namespace open3d

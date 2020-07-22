@@ -24,33 +24,43 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "open3d/core/Tensor.h"
+#include "open3d/core/op/linalg/Inverse.h"
 
-// Pytorch reference
-// https://discuss.pytorch.org/t/matrix-multiplication-source-code/71071
+#include "lapack-netlib/LAPACKE/include/lapacke.h"
 
 namespace open3d {
 namespace core {
 
-void Matmul(const Tensor& A, const Tensor& B, Tensor& C);
+// https://spec.oneapi.com/versions/0.5.0/oneMKL/GUID-655FC62D-9BCD-4582-9D8C-50D05BFAE9E6.html
+void InverseCPU(Dtype dtype, void* A_data, void* ipiv_data, int n) {
+    switch (dtype) {
+        case Dtype::Float32: {
+            LAPACKE_sgetrf(LAPACK_ROW_MAJOR, n, n, static_cast<float*>(A_data),
+                           n, static_cast<int*>(ipiv_data));
+            LAPACKE_sgetri(LAPACK_ROW_MAJOR, n, static_cast<float*>(A_data), n,
+                           static_cast<int*>(ipiv_data));
+            utility::LogInfo("Calling finished");
 
-#ifdef BUILD_CUDA_MODULE
-void MatmulCUDA(Dtype dtype,
-                void* A_data,
-                void* B_data,
-                void* C_data,
-                int m,
-                int k,
-                int n);
-#endif
-void MatmulCPU(Dtype dtype,
-               void* A_data,
-               void* B_data,
-               void* C_data,
-               int m,
-               int k,
-               int n);
+            break;
+        }
+
+        case Dtype::Float64: {
+            LAPACKE_dgetrf(LAPACK_ROW_MAJOR, n, n, static_cast<double*>(A_data),
+                           n, static_cast<int*>(ipiv_data));
+            LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, static_cast<double*>(A_data), n,
+                           static_cast<int*>(ipiv_data));
+            break;
+        }
+
+        default: {  // should never reach here
+            utility::LogError("Unsupported dtype {} in CPU backend.",
+                              DtypeUtil::ToString(dtype));
+        }
+    }
+}
+
 }  // namespace core
 }  // namespace open3d

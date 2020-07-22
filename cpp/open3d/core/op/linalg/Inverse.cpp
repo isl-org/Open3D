@@ -24,33 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "open3d/core/Tensor.h"
-
-// Pytorch reference
-// https://discuss.pytorch.org/t/matrix-multiplication-source-code/71071
+#include "open3d/core/op/linalg/Inverse.h"
+#include <unordered_map>
 
 namespace open3d {
 namespace core {
 
-void Matmul(const Tensor& A, const Tensor& B, Tensor& C);
+void Inverse(const Tensor &A, Tensor &output) {
+    // Check devices
+    Device device = A.GetDevice();
 
+    // Check dtypes
+    Dtype dtype = A.GetDtype();
+    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
+        utility::LogError(
+                "Only tensors with Float32 or Float64 are supported, but "
+                "received {}",
+                DtypeUtil::ToString(dtype));
+    }
+
+    // Check dimensions
+    SizeVector A_shape = A.GetShape();
+    if (A_shape.size() != 2) {
+        utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
+    }
+    if (A_shape[0] != A_shape[1]) {
+        utility::LogError("Tensor A must be square, but got {} x {}",
+                          A_shape[0], A_shape[1]);
+    }
+
+    int n = A_shape[0];
+    output = A.Copy(device);
+    // ipiv stores pivots in LU decomposition and has to be on host
+    Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, Device("CPU:0"));
+
+    void *A_data = output.GetDataPtr();
+    void *ipiv_data = ipiv.GetDataPtr();
+
+    utility::LogInfo("Before calling, n = {}", n);
+    if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-void MatmulCUDA(Dtype dtype,
-                void* A_data,
-                void* B_data,
-                void* C_data,
-                int m,
-                int k,
-                int n);
+        InverseCUDA(dtype, A_data, ipiv_data, n);
+#else
+        utility::LogError("Unimplemented device.");
 #endif
-void MatmulCPU(Dtype dtype,
-               void* A_data,
-               void* B_data,
-               void* C_data,
-               int m,
-               int k,
-               int n);
+    } else {
+        InverseCPU(dtype, A_data, ipiv_data, n);
+    }
+}
 }  // namespace core
 }  // namespace open3d

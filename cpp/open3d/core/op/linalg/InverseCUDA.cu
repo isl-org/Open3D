@@ -24,33 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/core/op/linalg/Solve.h"
 
-#include "open3d/core/Tensor.h"
-
-// Pytorch reference
-// https://discuss.pytorch.org/t/matrix-multiplication-source-code/71071
+// #include <magma_v2.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 namespace open3d {
 namespace core {
 
-void Matmul(const Tensor& A, const Tensor& B, Tensor& C);
+// class MAGMAContext {
+// public:
+//     static std::shared_ptr<MAGMAContext> GetInstance() {
+//         if (instance_ == nullptr) {
+//             instance_ = std::make_shared<MAGMAContext>();
+//         }
+//         return instance_;
+//     };
 
-#ifdef BUILD_CUDA_MODULE
-void MatmulCUDA(Dtype dtype,
-                void* A_data,
-                void* B_data,
-                void* C_data,
-                int m,
-                int k,
-                int n);
-#endif
-void MatmulCPU(Dtype dtype,
-               void* A_data,
-               void* B_data,
-               void* C_data,
-               int m,
-               int k,
-               int n);
+//     MAGMAContext() { magma_init(); }
+//     ~MAGMAContext() { magma_finalize(); }
+
+// private:
+//     static std::shared_ptr<MAGMAContext> instance_;
+// };
+
+// std::shared_ptr<MAGMAContext> MAGMAContext::instance_ =
+//         MAGMAContext::GetInstance();
+
+void InverseCUDA(Dtype dtype, void* A_data, void* ipiv_data, int n) {
+    utility::LogError("Unimplemented Device");
+}
 }  // namespace core
 }  // namespace open3d

@@ -24,33 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/Open3D.h"
 
-#include "open3d/core/Tensor.h"
+#include "open3d/core/op/linalg/Inverse.h"
 
-// Pytorch reference
-// https://discuss.pytorch.org/t/matrix-multiplication-source-code/71071
+using namespace open3d;
+using namespace open3d::core;
 
-namespace open3d {
-namespace core {
+// https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesv_ex.c.htm
+int main() {
+    std::vector<Device> devices{Device("CPU:0"), Device("CUDA:0")};
 
-void Matmul(const Tensor& A, const Tensor& B, Tensor& C);
+    // Equation from https://www.mathworks.com/help/symbolic/linsolve.html
+    std::vector<float> A_vals{0.8824, -0.1176, 0.1961, 0.1765, 0.1765,
+                              0.0392, 0.0588,  0.0588, -0.0980};
+    Tensor A(A_vals, {3, 3}, core::Dtype::Float32, Device("CPU:0"));
 
-#ifdef BUILD_CUDA_MODULE
-void MatmulCUDA(Dtype dtype,
-                void* A_data,
-                void* B_data,
-                void* C_data,
-                int m,
-                int k,
-                int n);
-#endif
-void MatmulCPU(Dtype dtype,
-               void* A_data,
-               void* B_data,
-               void* C_data,
-               int m,
-               int k,
-               int n);
-}  // namespace core
-}  // namespace open3d
+    std::cout << A.ToString() << "\n";
+
+    for (auto device : devices) {
+        Tensor A_device = A.Copy(device);
+        Tensor A_inv;
+        Inverse(A_device, A_inv);
+        std::cout << A_inv.ToString() << "\n";
+    }
+}
