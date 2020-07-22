@@ -39,7 +39,7 @@ if (ENABLE_GUI)
     AddSourceDir("rendering")
 else ()
     list(FILTER VISUALIZATION_ALL_HEADER_FILES EXCLUDE REGEX .*GuiVisualizer.h)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiVisualizer.cpp)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*Gui*.cpp)
 endif()
 
 # create object library
