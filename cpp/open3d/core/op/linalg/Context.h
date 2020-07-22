@@ -24,38 +24,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/op/linalg/Solve.h"
+#pragma once
 
-// #include <magma_v2.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cublas_v2.h>
+#include <cusolverDn.h>
+#include <memory>
 
 namespace open3d {
 namespace core {
+class CuSolverContext {
+public:
+    static std::shared_ptr<CuSolverContext> GetInstance();
+    CuSolverContext();
+    ~CuSolverContext();
 
-// class MAGMAContext {
-// public:
-//     static std::shared_ptr<MAGMAContext> GetInstance() {
-//         if (instance_ == nullptr) {
-//             instance_ = std::make_shared<MAGMAContext>();
-//         }
-//         return instance_;
-//     };
+    cusolverDnHandle_t& GetHandle() { return handle_; }
 
-//     MAGMAContext() { magma_init(); }
-//     ~MAGMAContext() { magma_finalize(); }
+private:
+    cusolverDnHandle_t handle_;
 
-// private:
-//     static std::shared_ptr<MAGMAContext> instance_;
-// };
+    static std::shared_ptr<CuSolverContext> instance_;
+};
 
-// std::shared_ptr<MAGMAContext> MAGMAContext::instance_ =
-//         MAGMAContext::GetInstance();
+class CuBLASContext {
+public:
+    static std::shared_ptr<CuBLASContext> GetInstance();
 
-// https://stackoverflow.com/questions/50892906/what-is-the-most-efficient-way-to-compute-the-inverse-of-a-general-matrix-using
-// https://stackoverflow.com/questions/28794010/solving-dense-linear-systems-ax-b-with-cuda
-void InverseCUDA(Dtype dtype, void* A_data, void* ipiv_data, int n) {
-    utility::LogError("Unimplemented Device");
-}
+    CuBLASContext();
+    ~CuBLASContext();
+
+    cublasHandle_t& GetHandle() { return handle_; }
+
+private:
+    cublasHandle_t handle_;
+
+    static std::shared_ptr<CuBLASContext> instance_;
+};
 }  // namespace core
 }  // namespace open3d

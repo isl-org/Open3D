@@ -24,38 +24,50 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/op/linalg/Solve.h"
-
-// #include <magma_v2.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "open3d/core/op/linalg/Context.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
 
-// class MAGMAContext {
-// public:
-//     static std::shared_ptr<MAGMAContext> GetInstance() {
-//         if (instance_ == nullptr) {
-//             instance_ = std::make_shared<MAGMAContext>();
-//         }
-//         return instance_;
-//     };
+std::shared_ptr<CuSolverContext> CuSolverContext::GetInstance() {
+    if (instance_ == nullptr) {
+        instance_ = std::make_shared<CuSolverContext>();
+    }
+    return instance_;
+};
 
-//     MAGMAContext() { magma_init(); }
-//     ~MAGMAContext() { magma_finalize(); }
-
-// private:
-//     static std::shared_ptr<MAGMAContext> instance_;
-// };
-
-// std::shared_ptr<MAGMAContext> MAGMAContext::instance_ =
-//         MAGMAContext::GetInstance();
-
-// https://stackoverflow.com/questions/50892906/what-is-the-most-efficient-way-to-compute-the-inverse-of-a-general-matrix-using
-// https://stackoverflow.com/questions/28794010/solving-dense-linear-systems-ax-b-with-cuda
-void InverseCUDA(Dtype dtype, void* A_data, void* ipiv_data, int n) {
-    utility::LogError("Unimplemented Device");
+CuSolverContext::CuSolverContext() {
+    if (cusolverDnCreate(&handle_) != CUSOLVER_STATUS_SUCCESS) {
+        utility::LogError("Unable to create cuSolver handle");
+    }
+    utility::LogInfo("Instance created");
 }
+CuSolverContext::~CuSolverContext() {
+    if (cusolverDnDestroy(handle_) != CUSOLVER_STATUS_SUCCESS) {
+        utility::LogError("Unable to destroy cuSolver handle");
+    }
+}
+
+std::shared_ptr<CuSolverContext> CuSolverContext::instance_ =
+        CuSolverContext::GetInstance();
+
+std::shared_ptr<CuBLASContext> CuBLASContext::GetInstance() {
+    if (instance_ == nullptr) {
+        instance_ = std::make_shared<CuBLASContext>();
+    }
+    return instance_;
+};
+
+CuBLASContext::CuBLASContext() {
+    if (cublasCreate(&handle_) != CUBLAS_STATUS_SUCCESS) {
+        utility::LogError("Unable to create cublas handle");
+    }
+}
+CuBLASContext::~CuBLASContext() { cublasDestroy(handle_); }
+
+std::shared_ptr<CuBLASContext> CuBLASContext::instance_ =
+        CuBLASContext::GetInstance();
+
 }  // namespace core
 }  // namespace open3d

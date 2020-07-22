@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <cublas_v2.h>
-
+#include "open3d/core/op/linalg/Context.h"
 #include "open3d/core/op/linalg/Matmul.h"
 #include "open3d/utility/Console.h"
 namespace open3d {
@@ -34,32 +33,6 @@ namespace core {
 // Reference
 // https://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemmbatched
 // https://developer.nvidia.com/sites/default/files/akamai/cuda/files/Misc/mygpu.pdf
-class CuBLASContext {
-public:
-    static std::shared_ptr<CuBLASContext> GetInstance() {
-        if (instance_ == nullptr) {
-            instance_ = std::make_shared<CuBLASContext>();
-        }
-        return instance_;
-    };
-
-    CuBLASContext() {
-        if (cublasCreate(&handle_) != CUBLAS_STATUS_SUCCESS) {
-            utility::LogError("Unable to create cublas handle");
-        }
-    }
-    ~CuBLASContext() { cublasDestroy(handle_); }
-
-    cublasHandle_t& GetHandle() { return handle_; }
-
-private:
-    cublasHandle_t handle_;
-
-    static std::shared_ptr<CuBLASContext> instance_;
-};
-
-std::shared_ptr<CuBLASContext> CuBLASContext::instance_ =
-        CuBLASContext::GetInstance();
 
 void MatmulCUDA(Dtype dtype,
                 void* A_data,
@@ -68,7 +41,6 @@ void MatmulCUDA(Dtype dtype,
                 int m,
                 int k,
                 int n) {
-
     cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
 
     switch (dtype) {

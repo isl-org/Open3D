@@ -73,21 +73,31 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     int64_t m = A_shape[0];
     int64_t k = A_shape[1];
     int64_t n = B_shape.size() == 2 ? B_shape[1] : 1;
-    output = Tensor::Empty({m, n}, dtype, device);
-
-    Tensor A_contiguous = A.Contiguous();
-    Tensor B_contiguous = B.Contiguous();
-    void* A_data = A_contiguous.GetDataPtr();
-    void* B_data = B_contiguous.GetDataPtr();
-    void* C_data = output.GetDataPtr();
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
+        Tensor A_contiguous = A.T().Contiguous();
+        Tensor B_contiguous = B.T().Contiguous();
+        void* A_data = A_contiguous.GetDataPtr();
+        void* B_data = B_contiguous.GetDataPtr();
+
+        output = Tensor::Empty({n, m}, dtype, device);
+        void* C_data = output.GetDataPtr();
+
         MatmulCUDA(dtype, A_data, B_data, C_data, m, k, n);
+
+        output = output.T();
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
+        Tensor A_contiguous = A.Contiguous();
+        Tensor B_contiguous = B.Contiguous();
+        void* A_data = A_contiguous.GetDataPtr();
+        void* B_data = B_contiguous.GetDataPtr();
+
+        output = Tensor::Empty({m, n}, dtype, device);
+        void* C_data = output.GetDataPtr();
         MatmulCPU(dtype, A_data, B_data, C_data, m, k, n);
     }
 };

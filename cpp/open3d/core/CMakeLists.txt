@@ -20,15 +20,16 @@ set (KERNEL_CUDA_SRC
     )
 
 set (LINALG_SRC
-  op/linalg/Matmul.cpp
-  op/linalg/MatmulCPU.cpp
-  op/linalg/Solve.cpp
-  op/linalg/SolveCPU.cpp
-  op/linalg/Inverse.cpp
-  op/linalg/InverseCPU.cpp
-  op/linalg/SVD.cpp
-  op/linalg/SVDCPU.cpp
-  )
+    op/linalg/Context.cpp
+    op/linalg/Matmul.cpp
+    op/linalg/MatmulCPU.cpp
+    op/linalg/Solve.cpp
+    op/linalg/SolveCPU.cpp
+    op/linalg/Inverse.cpp
+    op/linalg/InverseCPU.cpp
+    op/linalg/SVD.cpp
+    op/linalg/SVDCPU.cpp
+    )
 
 set (LINALG_CUDA_SRC
     op/linalg/MatmulCUDA.cu
@@ -83,7 +84,7 @@ endif()
 
 # TODO: link these dynamic libraries in ${CMAKE_PROJECT_NAME}
 add_executable(TestMatmul op/linalg/TestMatmul.cpp)
-target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME} ${CUDA_CUBLAS_LIBRARIES})
+target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
 add_executable(TestSolve op/linalg/TestSolve.cpp)
 target_link_libraries(TestSolve ${CMAKE_PROJECT_NAME} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
 add_executable(TestInverse op/linalg/TestInverse.cpp)

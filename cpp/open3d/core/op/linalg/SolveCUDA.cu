@@ -26,47 +26,14 @@
 
 // https://
 // software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_sgesv_row.c.htm
-
-#include <cuda_runtime.h>
-#include <cusolverDn.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "open3d/core/op/linalg/Context.h"
 #include "open3d/core/op/linalg/Solve.h"
 
 namespace open3d {
 namespace core {
-class CuSolverContext {
-public:
-    static std::shared_ptr<CuSolverContext> GetInstance() {
-        if (instance_ == nullptr) {
-            instance_ = std::make_shared<CuSolverContext>();
-        }
-        return instance_;
-    };
-
-    CuSolverContext() {
-        if (cusolverDnCreate(&handle_) != CUSOLVER_STATUS_SUCCESS) {
-            utility::LogError("Unable to create cuSolver handle");
-        }
-        utility::LogInfo("Instance created");
-    }
-    ~CuSolverContext() {
-        if (cusolverDnDestroy(handle_) != CUSOLVER_STATUS_SUCCESS) {
-            utility::LogError("Unable to destroy cuSolver handle");
-        }
-    }
-
-    cusolverDnHandle_t& GetHandle() { return handle_; }
-
-private:
-    cusolverDnHandle_t handle_;
-
-    static std::shared_ptr<CuSolverContext> instance_;
-};
-
-std::shared_ptr<CuSolverContext> CuSolverContext::instance_ =
-        CuSolverContext::GetInstance();
 
 void SolveCUDA(Dtype dtype,
                void* A_data,
