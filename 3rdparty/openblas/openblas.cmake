@@ -1,7 +1,8 @@
 include(ExternalProject)
 
+set(OPENBLAS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/openblas)
+
 if(WIN32)
-    set(OPENBLAS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/openblas)
     ExternalProject_Add(
         ext_openblas
         PREFIX openblas
@@ -15,6 +16,9 @@ if(WIN32)
     set(OPENBLAS_LIB_DIR "${OPENBLAS_INSTALL_PREFIX}/lib")
     set(OPENBLAS_LIBRARIES openblas)  # Extends to openblas.lib automatically.
 else()
+    set(OPENBLAS_INCLUDE_DIR "${OPENBLAS_INSTALL_PREFIX}/include/") # The "/"" is critical, see import_3rdparty_library.
+    set(OPENBLAS_LIB_DIR "${OPENBLAS_INSTALL_PREFIX}/lib")
+    set(OPENBLAS_LIBRARIES openblas)  # Extends to libopenblas.a automatically.
     ExternalProject_Add(
         ext_openblas
         PREFIX openblas
@@ -22,16 +26,11 @@ else()
         GIT_TAG v0.3.10
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E rename "libopenblas_nehalemp-r0.3.10.a" "libopenblas.a"
-        # OpenBLAS builds in source directory.
+        BUILD_COMMAND $(MAKE) TARGET=NEHALEM NO_SHARED=1 LIBNAME=CUSTOM_LIB_NAME
         BUILD_IN_SOURCE True
-        # Avoids libopenblas.so, only use libopenblas.a.
-        BUILD_COMMAND make TARGET=NEHALEM NO_SHARED=1
+        INSTALL_COMMAND $(MAKE) install PREFIX=${OPENBLAS_INSTALL_PREFIX} NO_SHARED=1 LIBNAME=CUSTOM_LIB_NAME
+        COMMAND ${CMAKE_COMMAND} -E rename ${OPENBLAS_LIB_DIR}/CUSTOM_LIB_NAME ${OPENBLAS_LIB_DIR}/libopenblas.a
     )
-    ExternalProject_Get_property(ext_openblas SOURCE_DIR)
-    set(OPENBLAS_INCLUDE_DIR "${SOURCE_DIR}/") # The "/"" is critical, see import_3rdparty_library.
-    set(OPENBLAS_LIB_DIR "${SOURCE_DIR}")
-    set(OPENBLAS_LIBRARIES openblas)  # Extends to libopenblas.a automatically.
 endif()
 
 message(STATUS "OPENBLAS_INCLUDE_DIR: ${OPENBLAS_INCLUDE_DIR}")
