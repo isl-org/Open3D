@@ -385,7 +385,7 @@ class JupyterDocsBuilder:
 
             if self.clean_notebooks:
                 for nb_out_path in out_dir.glob("*.ipynb"):
-                    if(nb_out_path.name not in nb_ignored):
+                    if (nb_out_path.name not in nb_ignored):
                         print("Delete: {}".format(nb_out_path))
                         nb_out_path.unlink()
 
