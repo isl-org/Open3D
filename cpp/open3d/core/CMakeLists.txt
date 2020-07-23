@@ -90,6 +90,6 @@ target_link_libraries(TestSolve ${CMAKE_PROJECT_NAME} ${CUDA_cusolver_LIBRARY} $
 add_executable(TestInverse op/linalg/TestInverse.cpp)
 target_link_libraries(TestInverse ${CMAKE_PROJECT_NAME})
 add_executable(TestSVD op/linalg/TestSVD.cpp)
-target_link_libraries(TestSVD ${CMAKE_PROJECT_NAME})
+target_link_libraries(TestSVD ${CMAKE_PROJECT_NAME} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
 
 

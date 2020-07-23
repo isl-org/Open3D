@@ -50,12 +50,16 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
     }
 
     int m = A_shape[0], n = A_shape[1];
+    if (m < n) {
+        utility::LogError("Only support m >= n, but got {} and {} matrix", m,
+                          n);
+    }
+
     U = Tensor::Empty({m, m}, dtype, device);
     S = Tensor::Empty({n}, dtype, device);
     VT = Tensor::Empty({n, n}, dtype, device);
     Tensor superb = Tensor::Empty({std::min(m, n) - 1}, dtype, device);
 
-    const void *A_data = A.GetDataPtr();
     void *U_data = U.GetDataPtr();
     void *S_data = S.GetDataPtr();
     void *VT_data = VT.GetDataPtr();
@@ -63,12 +67,19 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
+        Tensor A_T = A.T().Copy(device);
+        void *A_data = A_T.GetDataPtr();
+
         SVDCUDA(dtype, A_data, U_data, S_data, VT_data, superb_data, m, n);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
+        Tensor A_contiguous = A.Contiguous();
+        void *A_data = A_contiguous.GetDataPtr();
         SVDCPU(dtype, A_data, U_data, S_data, VT_data, superb_data, m, n);
+        U = U.T();
+        VT = VT.T();
     }
 }
 }  // namespace core

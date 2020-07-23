@@ -33,6 +33,7 @@ using namespace open3d::core;
 
 int main() {
     std::vector<Device> devices{Device("CPU:0"), Device("CUDA:0")};
+    std::vector<Dtype> dtypes{Dtype::Float32, Dtype::Float64};
 
     std::vector<float> A_vals{
             8.79,  9.93,  9.83, 5.45,  3.16, 6.11, 6.91, 5.04,  -0.27, 7.98,
@@ -42,12 +43,14 @@ int main() {
 
     std::cout << A.ToString() << "\n";
 
-    for (auto device : devices) {
-        Tensor A_device = A.Copy(device);
-        Tensor U, S, VT;
-        SVD(A_device, U, S, VT);
-        std::cout << U.ToString() << "\n";
-        std::cout << S.ToString() << "\n";
-        std::cout << VT.ToString() << "\n";
+    for (auto dtype : dtypes) {
+        for (auto device : devices) {
+            Tensor A_device = A.Copy(device).To(dtype);
+            Tensor U, S, VT;
+            SVD(A_device, U, S, VT);
+            std::cout << U.ToString() << "\n";
+            std::cout << S.ToString() << "\n";
+            std::cout << VT.ToString() << "\n";
+        }
     }
 }
