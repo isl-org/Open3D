@@ -262,7 +262,6 @@ bool SetMeshData(
                          DtypeUtil::ToString(a.GetDtype()));
                 return messages::Array();
         };
-
     };
 
     messages::SetMeshData msg;
@@ -273,11 +272,15 @@ bool SetMeshData(
     const Tensor vertices_ok = PrepareTensor(vertices);
     msg.data.vertices = CreateArray(vertices_ok);
 
+    // store tensors in this vector to make sure the memory blob is alive
+    // for tensors where a deep copy was necessary.
+    std::vector<core::Tensor> tensor_cache;
     for (const auto& item : vertex_attributes) {
-        const Tensor tensor = PrepareTensor(item.second);
+        tensor_cache.push_back(PrepareTensor(item.second));
+        const Tensor& tensor = tensor_cache.back();
         if (tensor.NumDims() >= 1 &&
             tensor.GetShape()[0] == vertices.GetShape()[0]) {
-            msg.data.vertex_attributes[item.first] = CreateArray(item.second);
+            msg.data.vertex_attributes[item.first] = CreateArray(tensor);
         } else {
             LogError("SetMeshData: Attribute {} has incompatible shape {}",
                      item.first, tensor.GetShape().ToString());
@@ -298,15 +301,16 @@ bool SetMeshData(
             LogError("SetMeshData: last dim of faces must be >3 but is {}",
                      faces.GetShape()[1]);
         } else {
-            const Tensor faces_ok = PrepareTensor(faces);
+            tensor_cache.push_back(PrepareTensor(faces));
+            const Tensor& faces_ok = tensor_cache.back();
             msg.data.faces = CreateArray(faces_ok);
 
             for (const auto& item : face_attributes) {
-                const Tensor tensor = PrepareTensor(item.second);
+                tensor_cache.push_back(PrepareTensor(item.second));
+                const Tensor& tensor = tensor_cache.back();
                 if (tensor.NumDims() >= 1 &&
                     tensor.GetShape()[0] == faces.GetShape()[0]) {
-                    msg.data.face_attributes[item.first] =
-                            CreateArray(item.second);
+                    msg.data.face_attributes[item.first] = CreateArray(tensor);
                 } else {
                     LogError(
                             "SetMeshData: Attribute {} has incompatible shape "
@@ -331,15 +335,16 @@ bool SetMeshData(
             LogError("SetMeshData: last dim of lines must be >2 but is {}",
                      lines.GetShape()[1]);
         } else {
-            const Tensor lines_ok = PrepareTensor(lines);
+            tensor_cache.push_back(PrepareTensor(lines));
+            const Tensor& lines_ok = tensor_cache.back();
             msg.data.lines = CreateArray(lines_ok);
 
             for (const auto& item : line_attributes) {
-                const Tensor tensor = PrepareTensor(item.second);
+                tensor_cache.push_back(PrepareTensor(item.second));
+                const Tensor& tensor = tensor_cache.back();
                 if (tensor.NumDims() >= 1 &&
                     tensor.GetShape()[0] == lines.GetShape()[0]) {
-                    msg.data.line_attributes[item.first] =
-                            CreateArray(item.second);
+                    msg.data.line_attributes[item.first] = CreateArray(tensor);
                 } else {
                     LogError(
                             "SetMeshData: Attribute {} has incompatible shape "
@@ -351,9 +356,10 @@ bool SetMeshData(
     }
 
     for (const auto& item : textures) {
-        const Tensor tensor = PrepareTensor(item.second);
+        tensor_cache.push_back(PrepareTensor(item.second));
+        const Tensor& tensor = tensor_cache.back();
         if (tensor.NumElements()) {
-            msg.data.textures[item.first] = CreateArray(item.second);
+            msg.data.textures[item.first] = CreateArray(tensor);
         } else {
             LogError("SetMeshData: Texture {} is empty", item.first);
         }
