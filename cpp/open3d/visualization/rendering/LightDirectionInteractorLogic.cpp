@@ -134,13 +134,14 @@ void LightDirectionInteractorLogic::Rotate(int dx, int dy) {
 }
 
 void LightDirectionInteractorLogic::StartMouseDrag() {
-    light_dir_at_mouse_down_ = scene_->GetLightDirection(dir_light_);
+    //light_dir_at_mouse_down_ = scene_->GetLightDirection(dir_light_);
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
 
     ClearUI();
 
-    Eigen::Vector3f dir = scene_->GetLightDirection(dir_light_);
+    //Eigen::Vector3f dir = scene_->GetLightDirection(dir_light_);
+    Eigen::Vector3f dir;
 
     double size = model_size_;
     if (size <= 0.001) {
@@ -150,19 +151,19 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     auto sphere_tris = geometry::TriangleMesh::CreateSphere(sphere_size, 20);
     auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphere_tris);
     sphere->PaintUniformColor(kSkyColor);
-    auto t0 = Camera::Transform::Identity();
-    ui_objs_.push_back({scene_->AddGeometry(*sphere), t0});
-    scene_->SetEntityTransform(ui_objs_[0].handle, t0);
-    scene_->SetGeometryShadows(ui_objs_[0].handle, false, false);
+    // auto t0 = Camera::Transform::Identity();
+    // ui_objs_.push_back({scene_->AddGeometry(*sphere), t0});
+    // scene_->SetEntityTransform(ui_objs_[0].handle, t0);
+    // scene_->SetGeometryShadows(ui_objs_[0].handle, false, false);
 
     auto sun_radius = 0.05 * size;
     auto sun = geometry::TriangleMesh::CreateSphere(sun_radius, 20);
     sun->PaintUniformColor(kSunColor);
     auto t1 = Camera::Transform::Identity();
     t1.translate(-sphere_size * dir);
-    ui_objs_.push_back({scene_->AddGeometry(*sun), t1});
-    scene_->SetEntityTransform(ui_objs_[1].handle, t1);
-    scene_->SetGeometryShadows(ui_objs_[1].handle, false, false);
+    // ui_objs_.push_back({scene_->AddGeometry(*sun), t1});
+    // scene_->SetEntityTransform(ui_objs_[1].handle, t1);
+    // scene_->SetGeometryShadows(ui_objs_[1].handle, false, false);
 
     const double arrow_radius = 0.075 * sun_radius;
     const double arrow_length = 0.333 * size;
@@ -171,9 +172,9 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     sun_dir->PaintUniformColor(kSunColor);
     auto t2 = Camera::Transform::Identity();
     t2.translate(-sphere_size * dir);
-    ui_objs_.push_back({scene_->AddGeometry(*sun_dir), t2});
-    scene_->SetEntityTransform(ui_objs_[2].handle, t2);
-    scene_->SetGeometryShadows(ui_objs_[2].handle, false, false);
+    // ui_objs_.push_back({scene_->AddGeometry(*sun_dir), t2});
+    // scene_->SetEntityTransform(ui_objs_[2].handle, t2);
+    // scene_->SetGeometryShadows(ui_objs_[2].handle, false, false);
 
     UpdateMouseDragUI();
 }
@@ -183,17 +184,17 @@ void LightDirectionInteractorLogic::UpdateMouseDragUI() {
     for (auto& o : ui_objs_) {
         Camera::Transform t = GetMatrix() * o.transform;
         t.pretranslate(model_center);
-        scene_->SetEntityTransform(o.handle, t);
+        // scene_->SetEntityTransform(o.handle, t);
     }
 }
 
 void LightDirectionInteractorLogic::EndMouseDrag() { ClearUI(); }
 
 void LightDirectionInteractorLogic::ClearUI() {
-    for (auto& o : ui_objs_) {
-        scene_->RemoveGeometry(o.handle);
-    }
-    ui_objs_.clear();
+    // for (auto& o : ui_objs_) {
+    //     scene_->RemoveGeometry(o.handle);
+    // }
+    // ui_objs_.clear();
 }
 
 Eigen::Vector3f LightDirectionInteractorLogic::GetCurrentDirection() const {

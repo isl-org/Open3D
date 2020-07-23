@@ -30,6 +30,7 @@
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
 
@@ -87,9 +88,9 @@ GeometryHandle RecreateAxis(Scene* scene,
                             GeometryHandle old_id,
                             const geometry::AxisAlignedBoundingBox& bounds,
                             bool enabled) {
-    if (old_id) {
-        scene->RemoveGeometry(old_id);
-    }
+    // if (old_id) {
+    //     scene->RemoveGeometry(old_id);
+    // }
 
     // Axes length should be the longer of the bounds extent or 25% of the
     // distance from the origin. The latter is necessary so that the axis is
@@ -101,10 +102,13 @@ GeometryHandle RecreateAxis(Scene* scene,
     }
     axis_length = std::max(axis_length, 0.25 * bounds.GetCenter().norm());
     auto mesh = CreateAxisGeometry(axis_length);
-    auto axis = scene->AddGeometry(*mesh);
-    scene->SetGeometryShadows(axis, false, false);
-    scene->SetEntityEnabled(axis, enabled);
-    return axis;
+    scene->AddGeometry("__axis__", *mesh, Material());
+    
+    // auto axis = scene->AddGeometry(*mesh);
+    // scene->SetGeometryShadows(axis, false, false);
+    // scene->SetEntityEnabled(axis, enabled);
+    // return axis;
+    return {};
 }
 
 }  // namespace
@@ -115,24 +119,24 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
 
     axis_ = RecreateAxis(scene, axis_, bounds_, false);
 
-    LightDescription desc;
-    desc.intensity = 45000;
-    desc.direction = {0.577f, -0.577f, -0.577f};
-    desc.cast_shadows = true;
-    desc.custom_attributes["custom_type"] = "SUN";
-    sun_ = scene->AddLight(desc);
+    // LightDescription desc;
+    // desc.intensity = 45000;
+    // desc.direction = {0.577f, -0.577f, -0.577f};
+    // desc.cast_shadows = true;
+    // desc.custom_attributes["custom_type"] = "SUN";
+    // sun_ = scene->AddLight(desc);
 }
 
 Open3DScene::~Open3DScene() {
     ClearGeometry();
-    auto scene = renderer_.GetScene(scene_);
-    scene->RemoveGeometry(axis_);
-    scene->SetIndirectLight(IndirectLightHandle());
-    scene->SetSkybox(SkyboxHandle());
+    // auto scene = renderer_.GetScene(scene_);
+    // scene->RemoveGeometry(axis_);
+    // scene->SetIndirectLight(IndirectLightHandle());
+    // scene->SetSkybox(SkyboxHandle());
 
-    if (sun_) {
-        scene->RemoveLight(sun_);
-    }
+    // if (sun_) {
+    //     scene->RemoveLight(sun_);
+    // }
 }
 
 ViewHandle Open3DScene::CreateView() {
@@ -156,28 +160,27 @@ View* Open3DScene::GetView(ViewHandle view) const {
 
 void Open3DScene::SetIndirectLight(IndirectLightHandle ibl) {
     ibl_ = ibl;
-    auto scene = renderer_.GetScene(scene_);
-    scene->SetIndirectLight(ibl_);
+    // auto scene = renderer_.GetScene(scene_);
+    // scene->SetIndirectLight(ibl_);
 }
 
-void Open3DScene::SetSkybox(SkyboxHandle skybox) {
-    skybox_ = skybox;
+void Open3DScene::SetSkybox(bool enable) {
     auto scene = renderer_.GetScene(scene_);
-    scene->SetSkybox(skybox_);
+    scene->ShowSkybox(enable);
 }
 
 void Open3DScene::ClearGeometry() {
-    auto scene = renderer_.GetScene(scene_);
-    for (auto hgeom : model_) {
-        scene->RemoveGeometry(hgeom);
-    }
-    for (auto hgeom : fast_model_) {
-        scene->RemoveGeometry(hgeom);
-    }
-    model_.clear();
-    fast_model_.clear();
-    bounds_ = geometry::AxisAlignedBoundingBox();
-    axis_ = RecreateAxis(scene, axis_, bounds_, scene->GetEntityEnabled(axis_));
+    // auto scene = renderer_.GetScene(scene_);
+    // for (auto hgeom : model_) {
+    //     scene->RemoveGeometry(hgeom);
+    // }
+    // for (auto hgeom : fast_model_) {
+    //     scene->RemoveGeometry(hgeom);
+    // }
+    // model_.clear();
+    // fast_model_.clear();
+    // bounds_ = geometry::AxisAlignedBoundingBox();
+    // axis_ = RecreateAxis(scene, axis_, bounds_, scene->GetEntityEnabled(axis_));
 }
 
 GeometryHandle Open3DScene::AddGeometry(
@@ -185,56 +188,62 @@ GeometryHandle Open3DScene::AddGeometry(
         const MaterialInstanceHandle& material_id,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     auto scene = renderer_.GetScene(scene_);
-    auto hgeom = scene->AddGeometry(*geom, material_id);
-    bounds_ += scene->GetEntityBoundingBox(hgeom);
-    model_.push_back(hgeom);
-    scene->SetEntityEnabled(hgeom, (lod_ == LOD::HIGH_DETAIL));
+    Material mat;
+    mat.shader = "defaultLit";
+    mat.base_color = Eigen::Vector4f(0.0f, 1.0f, 1.0f, 1.0f);
+    scene->AddGeometry("test", *geom, mat);
+    
+    // auto hgeom = scene->AddGeometry(*geom, material_id);
+    // bounds_ += scene->GetEntityBoundingBox(hgeom);
+    //model_.push_back(hgeom);
+    // scene->SetEntityEnabled(hgeom, (lod_ == LOD::HIGH_DETAIL));
 
-    if (add_downsampled_copy_for_fast_rendering) {
-        const std::size_t kMinPointsForDecimation = 6000000;
-        auto pcd = std::dynamic_pointer_cast<const geometry::PointCloud>(geom);
-        if (pcd && pcd->points_.size() > kMinPointsForDecimation) {
-            int sample_rate =
-                    pcd->points_.size() / (kMinPointsForDecimation / 2);
-            auto small = pcd->UniformDownSample(sample_rate);
-            auto hsmall = scene->AddGeometry(*small, material_id);
-            fast_model_.push_back(hsmall);
-            scene->SetEntityEnabled(hsmall, (lod_ == LOD::FAST));
-        } else {
-            fast_model_.push_back(hgeom);
-        }
-    } else {
-        fast_model_.push_back(hgeom);
-    }
+    // if (add_downsampled_copy_for_fast_rendering) {
+    //     const std::size_t kMinPointsForDecimation = 6000000;
+    //     auto pcd = std::dynamic_pointer_cast<const geometry::PointCloud>(geom);
+    //     if (pcd && pcd->points_.size() > kMinPointsForDecimation) {
+    //         int sample_rate =
+    //                 pcd->points_.size() / (kMinPointsForDecimation / 2);
+    //         auto small = pcd->UniformDownSample(sample_rate);
+    //         auto hsmall = scene->AddGeometry(*small, material_id);
+    //         fast_model_.push_back(hsmall);
+    //         scene->SetEntityEnabled(hsmall, (lod_ == LOD::FAST));
+    //     } else {
+    //         fast_model_.push_back(hgeom);
+    //     }
+    // } else {
+    //     fast_model_.push_back(hgeom);
+    // }
 
-    // Bounding box may have changed, force recreation of axes
-    axis_ = RecreateAxis(scene, axis_, bounds_, scene->GetEntityEnabled(axis_));
+    // // Bounding box may have changed, force recreation of axes
+    // axis_ = RecreateAxis(scene, axis_, bounds_, scene->GetEntityEnabled(axis_));
 
-    return hgeom;
+    // return hgeom;
+    return {};
 }
 
 void Open3DScene::SetLOD(LOD lod) {
-    if (lod != lod_) {
-        auto scene = renderer_.GetScene(scene_);
-        // Disable all the geometry
-        for (auto hgeom : model_) {
-            scene->SetEntityEnabled(hgeom, false);
-        }
-        for (auto hgeom : fast_model_) {
-            scene->SetEntityEnabled(hgeom, false);
-        }
-        // Enable the appropriate geometry for the LOD
-        lod_ = lod;
-        if (lod_ == LOD::HIGH_DETAIL) {
-            for (auto hgeom : model_) {
-                scene->SetEntityEnabled(hgeom, (lod_ == LOD::HIGH_DETAIL));
-            }
-        } else {
-            for (auto hgeom : fast_model_) {
-                scene->SetEntityEnabled(hgeom, (lod_ == LOD::FAST));
-            }
-        }
-    }
+    // if (lod != lod_) {
+    //     auto scene = renderer_.GetScene(scene_);
+    //     // Disable all the geometry
+    //     for (auto hgeom : model_) {
+    //         scene->SetEntityEnabled(hgeom, false);
+    //     }
+    //     for (auto hgeom : fast_model_) {
+    //         scene->SetEntityEnabled(hgeom, false);
+    //     }
+    //     // Enable the appropriate geometry for the LOD
+    //     lod_ = lod;
+    //     if (lod_ == LOD::HIGH_DETAIL) {
+    //         for (auto hgeom : model_) {
+    //             scene->SetEntityEnabled(hgeom, (lod_ == LOD::HIGH_DETAIL));
+    //         }
+    //     } else {
+    //         for (auto hgeom : fast_model_) {
+    //             scene->SetEntityEnabled(hgeom, (lod_ == LOD::FAST));
+    //         }
+    //     }
+    // }
 }
 
 Open3DScene::LOD Open3DScene::GetLOD() const { return lod_; }

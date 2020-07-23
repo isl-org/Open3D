@@ -467,46 +467,54 @@ struct GuiVisualizer::Impl {
     }
 
     bool SetIBL(rendering::Renderer &renderer, const std::string &path) {
-        rendering::IndirectLightHandle new_ibl;
-        std::string ibl_path;
-        if (!path.empty()) {
-            new_ibl = renderer.AddIndirectLight(
-                    rendering::ResourceLoadRequest(path.c_str()));
-            ibl_path = path;
-        } else {
-            ibl_path =
-                    std::string(
-                            gui::Application::GetInstance().GetResourcePath()) +
-                    "/" + GuiSettingsModel::DEFAULT_IBL + "_ibl.ktx";
-            new_ibl = renderer.AddIndirectLight(
-                    rendering::ResourceLoadRequest(ibl_path.c_str()));
+        auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        //auto intensity = render_scene->GetIndirectLightIntensity();
+        std::string ibl_name(path);
+        if(ibl_name.find("_ibl.ktx") != std::string::npos) {
+            ibl_name = ibl_name.substr(0, ibl_name.size() - 8);
         }
-        if (new_ibl) {
-            auto *render_scene = scene_wgt_->GetScene()->GetScene();
-            settings_.ibl = new_ibl;
-            auto intensity = render_scene->GetIndirectLightIntensity();
-            render_scene->SetIndirectLight(new_ibl);
-            render_scene->SetIndirectLightIntensity(intensity);
+        render_scene->SetIndirectLight(ibl_name);
+        render_scene->SetIndirectLightIntensity(10000.0);
+        // rendering::IndirectLightHandle new_ibl;
+        // std::string ibl_path;
+        // if (!path.empty()) {
+        //     new_ibl = renderer.AddIndirectLight(
+        //             rendering::ResourceLoadRequest(path.c_str()));
+        //     ibl_path = path;
+        // } else {
+        //     ibl_path =
+        //             std::string(
+        //                     gui::Application::GetInstance().GetResourcePath()) +
+        //             "/" + GuiSettingsModel::DEFAULT_IBL + "_ibl.ktx";
+        //     new_ibl = renderer.AddIndirectLight(
+        //             rendering::ResourceLoadRequest(ibl_path.c_str()));
+        // }
+        // if (new_ibl) {
+        //     auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        //     settings_.ibl = new_ibl;
+        //     auto intensity = render_scene->GetIndirectLightIntensity();
+        //     render_scene->SetIndirectLight(new_ibl);
+        //     render_scene->SetIndirectLightIntensity(intensity);
 
-            auto skybox_path = std::string(ibl_path);
-            if (skybox_path.find("_ibl.ktx") != std::string::npos) {
-                skybox_path = skybox_path.substr(0, skybox_path.size() - 8);
-                skybox_path += "_skybox.ktx";
-                settings_.sky = renderer.AddSkybox(
-                        rendering::ResourceLoadRequest(skybox_path.c_str()));
-                if (!settings_.sky) {
-                    settings_.sky = renderer.AddSkybox(
-                            rendering::ResourceLoadRequest(ibl_path.c_str()));
-                }
-                bool is_on = settings_.model_.GetShowSkybox();
-                if (is_on) {
-                    scene_wgt_->GetScene()->SetSkybox(settings_.sky);
-                }
-                scene_wgt_->SetSkyboxHandle(settings_.sky, is_on);
-            }
+        //     auto skybox_path = std::string(ibl_path);
+        //     if (skybox_path.find("_ibl.ktx") != std::string::npos) {
+        //         skybox_path = skybox_path.substr(0, skybox_path.size() - 8);
+        //         skybox_path += "_skybox.ktx";
+        //         settings_.sky = renderer.AddSkybox(
+        //                 rendering::ResourceLoadRequest(skybox_path.c_str()));
+        //         if (!settings_.sky) {
+        //             settings_.sky = renderer.AddSkybox(
+        //                     rendering::ResourceLoadRequest(ibl_path.c_str()));
+        //         }
+        //         bool is_on = settings_.model_.GetShowSkybox();
+        //         if (is_on) {
+        //             scene_wgt_->GetScene()->SetSkybox(settings_.sky);
+        //         }
+        //         scene_wgt_->SetSkyboxHandle(settings_.sky, is_on);
+        //     }
             return true;
-        }
-        return false;
+        // }
+        // return false;
     }
 
     void SetMouseControls(gui::Window &window,
@@ -524,57 +532,60 @@ struct GuiVisualizer::Impl {
     void UpdateFromModel(rendering::Renderer &renderer,
                          bool material_type_changed) {
         scene_wgt_->SetBackgroundColor(settings_.model_.GetBackgroundColor());
-        auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        // auto *render_scene = scene_wgt_->GetScene()->GetScene();
 
         if (settings_.model_.GetShowSkybox()) {
-            scene_wgt_->GetScene()->SetSkybox(settings_.sky);
+            scene_wgt_->GetScene()->SetSkybox(true);
         } else {
-            scene_wgt_->GetScene()->SetSkybox(rendering::SkyboxHandle());
+            scene_wgt_->GetScene()->SetSkybox(false);
         }
         scene_wgt_->SetSkyboxHandle(settings_.sky,
                                     settings_.model_.GetShowSkybox());
 
-        render_scene->SetEntityEnabled(scene_wgt_->GetScene()->GetAxis(),
-                                       settings_.model_.GetShowAxes());
+        // TODO: FIXME!!!
+        // render_scene->ShowGeometry(scene_wgt_->GetScene()->GetAxis(),
+        //                                settings_.model_.GetShowAxes());
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
         auto &current_materials = settings_.model_.GetCurrentMaterials();
         if (settings_.model_.GetCurrentMaterials().lit_name ==
             GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
-            ResetToLoadedMaterials(renderer);
-            for (auto g : scene_wgt_->GetScene()->GetModel()) {
-                auto &mods =
-                        renderer.ModifyMaterial(render_scene->GetMaterial(g))
-                                .SetParameter("pointSize",
-                                              current_materials.point_size);
-                if (settings_.model_.GetUserHasChangedColor()) {
-                    mods = mods.SetColor("baseColor",
-                                         current_materials.lit.base_color);
-                }
-                mods.Finish();
-            }
+            // TODO: FIXME!!!!
+            // ResetToLoadedMaterials(renderer);
+            // for (auto g : scene_wgt_->GetScene()->GetModel()) {
+            //     auto &mods =
+            //             renderer.ModifyMaterial(render_scene->GetMaterial(g))
+            //                     .SetParameter("pointSize",
+            //                                   current_materials.point_size);
+            //     if (settings_.model_.GetUserHasChangedColor()) {
+            //         mods = mods.SetColor("baseColor",
+            //                              current_materials.lit.base_color);
+            //     }
+            //     mods.Finish();
+            // }
         } else {
             UpdateMaterials(renderer, current_materials);
         }
 
+        // TODO: FIXME!!!!!
         if (material_type_changed) {
             auto *view = scene_wgt_->GetRenderView();
             switch (settings_.model_.GetMaterialType()) {
                 case GuiSettingsModel::MaterialType::LIT: {
                     view->SetMode(rendering::View::Mode::Color);
-                    for (const auto &handle :
-                         scene_wgt_->GetScene()->GetModel()) {
-                        render_scene->AssignMaterial(handle, settings_.lit);
-                    }
+                    // for (const auto &handle :
+                    //      scene_wgt_->GetScene()->GetModel()) {
+                    //     render_scene->AssignMaterial(handle, settings_.lit);
+                    // }
                     break;
                 }
                 case GuiSettingsModel::MaterialType::UNLIT: {
                     view->SetMode(rendering::View::Mode::Color);
-                    for (const auto &handle :
-                         scene_wgt_->GetScene()->GetModel()) {
-                        render_scene->AssignMaterial(handle, settings_.unlit);
-                    }
+                    // for (const auto &handle :
+                    //      scene_wgt_->GetScene()->GetModel()) {
+                    //     render_scene->AssignMaterial(handle, settings_.unlit);
+                    // }
                     break;
                 }
                 case GuiSettingsModel::MaterialType::NORMAL_MAP:
@@ -595,30 +606,32 @@ private:
         if (lighting.use_default_ibl) {
             this->SetIBL(renderer, "");
         }
-        if (lighting.ibl_enabled) {
-            render_scene->SetIndirectLight(settings_.ibl);
-        } else {
-            render_scene->SetIndirectLight(rendering::IndirectLightHandle());
-        }
+        // TODO: FIXME!!!!!!
+        // if (lighting.ibl_enabled) {
+        //     render_scene->SetIndirectLight(settings_.ibl);
+        // } else {
+        //     render_scene->SetIndirectLight(rendering::IndirectLightHandle());
+        // }
         render_scene->SetIndirectLightIntensity(lighting.ibl_intensity);
         render_scene->SetIndirectLightRotation(lighting.ibl_rotation);
-        render_scene->SetEntityEnabled(scene->GetSun(), lighting.sun_enabled);
-        render_scene->SetLightIntensity(scene->GetSun(),
-                                        lighting.sun_intensity);
-        render_scene->SetLightDirection(scene->GetSun(), lighting.sun_dir);
-        render_scene->SetLightColor(scene->GetSun(), lighting.sun_color);
+        // render_scene->SetEntityEnabled(scene->GetSun(), lighting.sun_enabled);
+        // render_scene->SetLightIntensity(scene->GetSun(),
+        //                                 lighting.sun_intensity);
+        // render_scene->SetLightDirection(scene->GetSun(), lighting.sun_dir);
+        // render_scene->SetLightColor(scene->GetSun(), lighting.sun_color);
     }
 
     void UpdateMaterials(rendering::Renderer &renderer,
                          const GuiSettingsModel::Materials &materials) {
         UpdateLitMaterial(renderer, settings_.lit, materials.lit,
                           materials.point_size);
-        auto *render_scene = scene_wgt_->GetScene()->GetScene();
-        for (auto geom_mat : settings_.loaded_materials_) {
-            auto hgeom = geom_mat.first;
-            UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
-                              materials.lit, materials.point_size);
-        }
+        // auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        // for (auto geom_mat : settings_.loaded_materials_) {
+        //     // TODO: FIXME!!
+        //     // auto hgeom = geom_mat.first;
+        //     // UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
+        //     //                   materials.lit, materials.point_size);
+        // }
         settings_.unlit =
                 renderer.ModifyMaterial(settings_.unlit)
                         .SetColor("baseColor", materials.unlit.base_color)
@@ -667,14 +680,15 @@ private:
     }
 
     void ResetToLoadedMaterials(rendering::Renderer &renderer) {
-        auto *render_scene = scene_wgt_->GetScene()->GetScene();
-        auto point_size = settings_.model_.GetPointSize();
-        for (auto model_mat : settings_.loaded_materials_) {
-            auto hgeom = model_mat.first;
-            auto &loaded = model_mat.second;
-            UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
-                              loaded, point_size);
-        }
+        // auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        // auto point_size = settings_.model_.GetPointSize();
+        // for (auto model_mat : settings_.loaded_materials_) {
+        //     // TODO: FIXME!!!
+        //     // auto hgeom = model_mat.first;
+        //     // auto &loaded = model_mat.second;
+        //     // UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
+        //     //                   loaded, point_size);
+        // }
     }
 
     void OnNewIBL(Window &window, const char *name) {
@@ -1059,7 +1073,7 @@ void GuiVisualizer::SetGeometry(
 
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         auto handle = scene3d->AddGeometry(g3, selected_material);
-        bounds += scene3d->GetScene()->GetEntityBoundingBox(handle);
+        bounds += scene3d->GetScene()->GetGeometryBoundingBox("test");
         if (material_is_loaded) {
             impl_->settings_.loaded_materials_[handle] = loaded_material;
         }

@@ -50,7 +50,7 @@ public:
     View* GetView(ViewHandle view) const;
 
     void SetIndirectLight(IndirectLightHandle ibl);
-    void SetSkybox(SkyboxHandle skybox);
+    void SetSkybox(bool enable);
 
     void ClearGeometry();
     GeometryHandle AddGeometry(

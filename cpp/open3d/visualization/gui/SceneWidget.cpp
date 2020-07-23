@@ -126,7 +126,7 @@ public:
     }
 
     void SetSkyboxHandle(rendering::SkyboxHandle skybox, bool is_on) {
-        ibl_->SetSkyboxHandle(skybox, is_on);
+        ibl_->ShowSkybox(is_on);
     }
 
     void SetOnChanged(std::function<void(const rendering::Camera::Transform&)>
@@ -672,15 +672,16 @@ void SceneWidget::SetOnCameraChanged(
 
 void SceneWidget::SetOnSunDirectionChanged(
         std::function<void(const Eigen::Vector3f&)> on_dir_changed) {
-    impl_->on_light_dir_changed_ = on_dir_changed;
-    impl_->controls_->SetOnDirectionalLightChanged(
-            [this](const Eigen::Vector3f& dir) {
-                impl_->scene_->GetScene()->SetLightDirection(
-                        impl_->scene_->GetSun(), dir);
-                if (impl_->on_light_dir_changed_) {
-                    impl_->on_light_dir_changed_(dir);
-                }
-            });
+    // NOTE: Figure this out
+    // impl_->on_light_dir_changed_ = on_dir_changed;
+    // impl_->controls_->SetOnDirectionalLightChanged(
+    //         [this](const Eigen::Vector3f& dir) {
+    //             impl_->scene_->GetScene()->SetLightDirection(
+    //                     impl_->scene_->GetSun(), dir);
+    //             if (impl_->on_light_dir_changed_) {
+    //                 impl_->on_light_dir_changed_(dir);
+    //             }
+    //         });
 }
 
 void SceneWidget::SetSkyboxHandle(rendering::SkyboxHandle skybox, bool is_on) {
