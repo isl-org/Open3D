@@ -386,23 +386,28 @@ void pybind_gui_classes(py::module &m) {
             // a py::object and cast it ourselves.
             .def_property("horizontal_padding_em",
                           &Button::GetHorizontalPaddingEm,
-                          [](std::shared_ptr<Button> b, const py::object& em) {
+                          [](std::shared_ptr<Button> b, const py::object &em) {
                               auto vert = b->GetVerticalPaddingEm();
                               try {
                                   b->SetPaddingEm(em.cast<float>(), vert);
-                              } catch (const py::cast_error& e) {
-                                  py::print("open3d.visualization.gui.Button.horizontal_padding_em can only be assigned a numeric type");
+                              } catch (const py::cast_error &e) {
+                                  py::print(
+                                          "open3d.visualization.gui.Button."
+                                          "horizontal_padding_em can only be "
+                                          "assigned a numeric type");
                               }
                           },
                           "Horizontal padding in em units")
-            .def_property("vertical_padding_em",
-                          &Button::GetVerticalPaddingEm,
-                          [](std::shared_ptr<Button> b, const py::object& em) {
+            .def_property("vertical_padding_em", &Button::GetVerticalPaddingEm,
+                          [](std::shared_ptr<Button> b, const py::object &em) {
                               auto horiz = b->GetHorizontalPaddingEm();
                               try {
                                   b->SetPaddingEm(horiz, em.cast<float>());
-                              } catch (const py::cast_error& e) {
-                                  py::print("open3d.visualization.gui.Button.vertical_padding_em can only be assigned a numeric type");
+                              } catch (const py::cast_error &e) {
+                                  py::print(
+                                          "open3d.visualization.gui.Button."
+                                          "vertical_padding_em can only be "
+                                          "assigned a numeric type");
                               }
                           },
                           "Vertical padding in em units")
