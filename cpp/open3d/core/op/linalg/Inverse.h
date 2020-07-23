@@ -35,10 +35,12 @@ namespace core {
 void Inverse(const Tensor& A, Tensor& output);
 
 #ifdef BUILD_CUDA_MODULE
-void InverseCUDA(Dtype dtype, void* A_data, void* ipiv_data, int n);
+void InverseCUDA(
+        Dtype dtype, void* A_data, void* ipiv_data, void* output_data, int n);
 #endif
 
-void InverseCPU(Dtype dtype, void* A_data, void* ipiv_data, int n);
+void InverseCPU(
+        Dtype dtype, void* A_data, void* ipiv_data, void* output_data, int n);
 
 }  // namespace core
 }  // namespace open3d

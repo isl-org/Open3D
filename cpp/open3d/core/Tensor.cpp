@@ -190,6 +190,16 @@ Tensor Tensor::Ones(const SizeVector& shape,
     return Full(shape, 1, dtype, device);
 }
 
+Tensor Tensor::Eye(int64_t n, Dtype dtype, const Device& device) {
+    Tensor eye = Tensor::Zeros({n, n}, dtype, device);
+    Tensor one = Tensor::Ones({}, dtype, device);
+    for (int64_t i = 0; i < n; ++i) {
+        TensorKey idx_i = TensorKey::Index(i);
+        eye.SetItem({idx_i, idx_i}, one);
+    }
+    return eye;
+}
+
 Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());

@@ -54,22 +54,30 @@ void Inverse(const Tensor &A, Tensor &output) {
     }
 
     int n = A_shape[0];
-    output = A.Copy(device);
-    // ipiv stores pivots in LU decomposition and has to be on host
-    Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, Device("CPU:0"));
 
-    void *A_data = output.GetDataPtr();
+    Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, device);
     void *ipiv_data = ipiv.GetDataPtr();
 
     utility::LogInfo("Before calling, n = {}", n);
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        InverseCUDA(dtype, A_data, ipiv_data, n);
+        Tensor A_T = A.T().Copy(device);
+        void *A_data = A_T.GetDataPtr();
+
+        output = Tensor::Eye(n, dtype, device);
+        void *output_data = output.GetDataPtr();
+
+        // cuSolver: modify Eye (B) in place
+        InverseCUDA(dtype, A_data, ipiv_data, output_data, n);
+        output = output.T();
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        InverseCPU(dtype, A_data, ipiv_data, n);
+        // LAPACKE: modify A in-place
+        output = A.Copy(device);
+        void *A_data = output.GetDataPtr();
+        InverseCPU(dtype, A_data, ipiv_data, nullptr, n);
     }
 }
 }  // namespace core

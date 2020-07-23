@@ -33,15 +33,18 @@ using namespace open3d::core;
 
 int main() {
     std::vector<Device> devices{Device("CPU:0"), Device("CUDA:0")};
+    std::vector<Dtype> dtypes{Dtype::Float32, Dtype::Float64};
 
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
-    for (auto device : devices) {
-        Tensor A(vals, {2, 3}, core::Dtype::Float32, device);
-        Tensor B = Tensor(std::vector<float>({1, 0, 0, 0, -1, 1, 0, 0, -1}),
-                          {3, 3}, Dtype::Float32, device);
-        Tensor C;
-        Matmul(A, B, C);
+    for (auto dtype : dtypes) {
+        for (auto device : devices) {
+            Tensor A(vals, {2, 3}, core::Dtype::Float32, device);
+            Tensor B = Tensor(std::vector<float>({1, 0, 0, 0, -1, 1, 0, 0, -1}),
+                              {3, 3}, Dtype::Float32, device);
+            Tensor C;
+            Matmul(A, B, C);
 
-        std::cout << C.ToString() << "\n";
+            std::cout << C.ToString() << "\n";
+        }
     }
 }

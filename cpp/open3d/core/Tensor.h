@@ -176,6 +176,9 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
+    /// Create a identity matrix of size n x n
+    static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
+
     /// Pythonic __getitem__ for tensor.
     ///
     /// Returns a view of the original tensor, if TensorKey is

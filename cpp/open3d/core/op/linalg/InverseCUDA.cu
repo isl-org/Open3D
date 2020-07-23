@@ -24,38 +24,111 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/op/linalg/Solve.h"
-
-// #include <magma_v2.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "open3d/core/op/linalg/Context.h"
+#include "open3d/core/op/linalg/Inverse.h"
 
 namespace open3d {
 namespace core {
 
-// class MAGMAContext {
-// public:
-//     static std::shared_ptr<MAGMAContext> GetInstance() {
-//         if (instance_ == nullptr) {
-//             instance_ = std::make_shared<MAGMAContext>();
-//         }
-//         return instance_;
-//     };
-
-//     MAGMAContext() { magma_init(); }
-//     ~MAGMAContext() { magma_finalize(); }
-
-// private:
-//     static std::shared_ptr<MAGMAContext> instance_;
-// };
-
-// std::shared_ptr<MAGMAContext> MAGMAContext::instance_ =
-//         MAGMAContext::GetInstance();
-
 // https://stackoverflow.com/questions/50892906/what-is-the-most-efficient-way-to-compute-the-inverse-of-a-general-matrix-using
 // https://stackoverflow.com/questions/28794010/solving-dense-linear-systems-ax-b-with-cuda
-void InverseCUDA(Dtype dtype, void* A_data, void* ipiv_data, int n) {
-    utility::LogError("Unimplemented Device");
+void InverseCUDA(
+        Dtype dtype, void* A_data, void* ipiv_data, void* output_data, int n) {
+    cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
+    int* dinfo = static_cast<int*>(
+            MemoryManager::Malloc(sizeof(int), Device("CUDA:0")));
+
+    switch (dtype) {
+        case Dtype::Float32: {
+            int len;
+            if (CUSOLVER_STATUS_SUCCESS !=
+                cusolverDnSgetrf_bufferSize(handle, n, n, NULL, n, &len)) {
+                utility::LogError("Unable to get workspace byte size");
+            }
+
+            void* workspace = MemoryManager::Malloc(len * sizeof(float),
+                                                    Device("CUDA:0"));
+
+            int status =
+                    cusolverDnSgetrf(handle, n, n, static_cast<float*>(A_data),
+                                     n, static_cast<float*>(workspace),
+                                     static_cast<int*>(ipiv_data), dinfo);
+            if (status != CUSOLVER_STATUS_SUCCESS) {
+                int dinfoh;
+                MemoryManager::MemcpyToHost(&dinfoh, dinfo, Device("CUDA:0"),
+                                            sizeof(int));
+                utility::LogError(
+                        "Sgetrf failed with error code = {}, dinfo = {}",
+                        status, dinfoh);
+            }
+
+            status = cusolverDnSgetrs(
+                    handle, CUBLAS_OP_N, n, n, static_cast<float*>(A_data), n,
+                    static_cast<int*>(ipiv_data),
+                    static_cast<float*>(output_data), n, dinfo);
+            if (status != CUSOLVER_STATUS_SUCCESS) {
+                int dinfoh;
+                MemoryManager::MemcpyToHost(&dinfoh, dinfo, Device("CUDA:0"),
+                                            sizeof(int));
+                utility::LogError(
+                        "Sgetrf failed with error code = {}, dinfo = {}",
+                        status, dinfoh);
+            }
+
+            MemoryManager::Free(workspace, Device("CUDA:0"));
+            break;
+        }
+
+        case Dtype::Float64: {
+            int len;
+            if (CUSOLVER_STATUS_SUCCESS !=
+                cusolverDnDgetrf_bufferSize(handle, n, n, NULL, n, &len)) {
+                utility::LogError("Unable to get workspace byte size");
+            }
+
+            void* workspace = MemoryManager::Malloc(len * sizeof(double),
+                                                    Device("CUDA:0"));
+
+            int status =
+                    cusolverDnDgetrf(handle, n, n, static_cast<double*>(A_data),
+                                     n, static_cast<double*>(workspace),
+                                     static_cast<int*>(ipiv_data), dinfo);
+            if (status != CUSOLVER_STATUS_SUCCESS) {
+                int dinfoh;
+                MemoryManager::MemcpyToHost(&dinfoh, dinfo, Device("CUDA:0"),
+                                            sizeof(int));
+                utility::LogError(
+                        "Sgetrf failed with error code = {}, dinfo = {}",
+                        status, dinfoh);
+            }
+
+            status = cusolverDnDgetrs(
+                    handle, CUBLAS_OP_N, n, n, static_cast<double*>(A_data), n,
+                    static_cast<int*>(ipiv_data),
+                    static_cast<double*>(output_data), n, dinfo);
+            if (status != CUSOLVER_STATUS_SUCCESS) {
+                int dinfoh;
+                MemoryManager::MemcpyToHost(&dinfoh, dinfo, Device("CUDA:0"),
+                                            sizeof(int));
+                utility::LogError(
+                        "Sgetrf failed with error code = {}, dinfo = {}",
+                        status, dinfoh);
+            }
+
+            MemoryManager::Free(workspace, Device("CUDA:0"));
+            break;
+        }
+        default: {  // should never reach here
+            utility::LogError("Unsupported dtype {} in CPU backend.",
+                              DtypeUtil::ToString(dtype));
+        }
+    }
+
+    MemoryManager::Free(dinfo, Device("CUDA:0"));
 }
+
 }  // namespace core
 }  // namespace open3d

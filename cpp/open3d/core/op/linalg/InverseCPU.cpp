@@ -35,7 +35,8 @@ namespace open3d {
 namespace core {
 
 // https://spec.oneapi.com/versions/0.5.0/oneMKL/GUID-655FC62D-9BCD-4582-9D8C-50D05BFAE9E6.html
-void InverseCPU(Dtype dtype, void* A_data, void* ipiv_data, int n) {
+void InverseCPU(
+        Dtype dtype, void* A_data, void* ipiv_data, void* output_data, int n) {
     switch (dtype) {
         case Dtype::Float32: {
             LAPACKE_sgetrf(LAPACK_ROW_MAJOR, n, n, static_cast<float*>(A_data),
