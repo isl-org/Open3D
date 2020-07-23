@@ -49,9 +49,11 @@ void BuildSpatialHashTableCUDA(const torch::Tensor& points,
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> BuildSpatialHashTable(
         const torch::Tensor& points,
         double radius,
-        const torch::Tensor& points_row_splits,
+        torch::Tensor points_row_splits,
         double hash_table_size_factor,
         int64_t max_hash_table_size) {
+    // ensure that these tensors are on the cpu
+    points_row_splits = points_row_splits.to(torch::kCPU);
     CHECK_CONTIGUOUS(points);
     CHECK_CONTIGUOUS(points_row_splits);
     CHECK_TYPE(points_row_splits, kInt64);
