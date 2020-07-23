@@ -35,12 +35,12 @@ namespace visualization {
 
 class GuiSettingsModel {
 public:
-    static constexpr char *DEFAULT_IBL = "default";
-    static constexpr char *CUSTOM_IBL = "Custom KTX file...";
-    static constexpr char *DEFAULT_MATERIAL_NAME = "Polished ceramic";
-    static constexpr char *MATERIAL_FROM_FILE_NAME =
+    static constexpr const char* DEFAULT_IBL = "default";
+    static constexpr const char* CUSTOM_IBL = "Custom KTX file...";
+    static constexpr const char* DEFAULT_MATERIAL_NAME = "Polished ceramic";
+    static constexpr const char* MATERIAL_FROM_FILE_NAME =
             "Material from file [default]";
-    static constexpr char *POINT_CLOUD_PROFILE_NAME =
+    static constexpr const char* POINT_CLOUD_PROFILE_NAME =
             "Cloudy day (no direct sun)";
 
     struct LightingProfile {
@@ -49,7 +49,8 @@ public:
         double sun_intensity;
         Eigen::Vector3f sun_dir;
         Eigen::Vector3f sun_color = {1.0f, 1.0f, 1.0f};
-        Scene::Transform ibl_rotation = Scene::Transform::Identity();
+        rendering::Scene::Transform ibl_rotation =
+                rendering::Scene::Transform::Identity();
         bool ibl_enabled = true;
         bool use_default_ibl = false;
         bool sun_enabled = true;
@@ -87,7 +88,7 @@ public:
         std::string lit_name;
     };
 
-    static const std::vector<const LightingProfile> lighting_profiles_;
+    static const std::vector<LightingProfile> lighting_profiles_;
     static const std::map<std::string, const LitMaterial> prefab_materials_;
     static const LightingProfile& GetDefaultLightingProfile();
     static const LightingProfile& GetDefaultPointCloudLightingProfile();
@@ -114,8 +115,7 @@ public:
 
     // TODO: Get/SetMaterial
     const Materials& GetCurrentMaterials() const;
-    void SetLitMaterial(const LitMaterial& material,
-                        const std::string& name);
+    void SetLitMaterial(const LitMaterial& material, const std::string& name);
     void SetCurrentMaterials(const Materials& materials,
                              const std::string& name);
     void SetMaterialsToDefault();

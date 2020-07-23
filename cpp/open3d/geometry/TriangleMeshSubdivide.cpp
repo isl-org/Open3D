@@ -55,7 +55,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
     // Also adds edge - new vertex refrence to new_verts map.
     auto SubdivideEdge =
             [&](std::unordered_map<Eigen::Vector2i, int,
-                                   utility::hash_eigen::hash<Eigen::Vector2i>>&
+                                   utility::hash_eigen<Eigen::Vector2i>>&
                         new_verts,
                 int vidx0, int vidx1) {
                 int min = std::min(vidx0, vidx1);
@@ -83,7 +83,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
             };
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         std::unordered_map<Eigen::Vector2i, int,
-                           utility::hash_eigen::hash<Eigen::Vector2i>>
+                           utility::hash_eigen<Eigen::Vector2i>>
                 new_verts;
         std::vector<Eigen::Vector3i> new_triangles(4 * mesh->triangles_.size());
         for (size_t tidx = 0; tidx < mesh->triangles_.size(); ++tidx) {
@@ -121,10 +121,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
                 "handled in this function");
     }
     typedef std::unordered_map<Eigen::Vector2i, int,
-                               utility::hash_eigen::hash<Eigen::Vector2i>>
+                               utility::hash_eigen<Eigen::Vector2i>>
             EdgeNewVertMap;
     typedef std::unordered_map<Eigen::Vector2i, std::unordered_set<int>,
-                               utility::hash_eigen::hash<Eigen::Vector2i>>
+                               utility::hash_eigen<Eigen::Vector2i>>
             EdgeTrianglesMap;
     typedef std::vector<std::unordered_set<int>> VertexNeighbours;
 

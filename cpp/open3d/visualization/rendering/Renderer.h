@@ -37,6 +37,7 @@ class Image;
 }
 
 namespace visualization {
+namespace rendering {
 
 class RenderToBuffer;
 class Scene;
@@ -107,5 +108,6 @@ public:
             std::function<void(std::shared_ptr<geometry::Image>)> cb);
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

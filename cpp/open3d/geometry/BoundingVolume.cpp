@@ -88,14 +88,14 @@ OrientedBoundingBox& OrientedBoundingBox::Translate(
 OrientedBoundingBox& OrientedBoundingBox::Scale(const double scale,
                                                 const Eigen::Vector3d& center) {
     extent_ *= scale;
-    center_ = center;
+    center_ = scale * (center_ - center) + center;
     return *this;
 }
 
 OrientedBoundingBox& OrientedBoundingBox::Rotate(
         const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
-    R_ = R;
-    center_ = center;
+    R_ = R * R_;
+    center_ = R * (center_ - center) + center;
     return *this;
 }
 

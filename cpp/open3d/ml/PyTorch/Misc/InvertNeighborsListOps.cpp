@@ -1,5 +1,5 @@
 #include <vector>
-#include "../TorchHelper.h"
+#include "open3d/ml/PyTorch/TorchHelper.h"
 #include "torch/script.h"
 
 template <class TIndex, class TAttr>
@@ -30,6 +30,17 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
     CHECK_CONTIGUOUS(inp_neighbors_attributes);
     CHECK_TYPE(inp_neighbors_row_splits, kInt64);
 
+    // check input shapes
+    {
+        using namespace open3d::ml::op_util;
+        Dim num_neighbors("num_neighbors");
+
+        CHECK_SHAPE(inp_neighbors_index, num_neighbors);
+        CHECK_SHAPE_IGNORE_LAST_DIMS(inp_neighbors_attributes,
+                                     num_neighbors || 0);
+        CHECK_SHAPE(inp_neighbors_row_splits, Dim());
+    }
+
     int num_attributes;
     if (inp_neighbors_attributes.size(0) == 0) {
         num_attributes = 0;
@@ -53,8 +64,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
     }
 
     CHECK_SAME_DEVICE_TYPE(inp_neighbors_index, inp_neighbors_row_splits,
-                           inp_neighbors_attributes)
-    if (inp_neighbors_index.type().is_cuda()) {
+                           inp_neighbors_attributes);
+    if (inp_neighbors_index.is_cuda()) {
 #ifdef CUDA_ENABLED
         // pass to cuda function
         CALL(int32_t, int32_t, InvertNeighborsListCUDA)

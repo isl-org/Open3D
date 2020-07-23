@@ -31,6 +31,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 FilamentCamera::FilamentCamera(filament::Engine& engine) : engine_(engine) {
     camera_ = engine_.createCamera();
@@ -177,5 +178,6 @@ FilamentCamera::Transform FilamentCamera::GetProjectionMatrix() const {
     return Transform(matrix);
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

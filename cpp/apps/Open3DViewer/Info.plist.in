@@ -44,7 +44,9 @@
             <key>CFBundleTypeName</key>
             <string>GL Transmission Format</string>
             <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
             <key>LSItemContentTypes</key>
             <array>
                 <string>public.gl-transmission-format</string>
@@ -62,7 +64,9 @@
             <key>CFBundleTypeName</key>
             <string>GL Binary Transmission Format</string>
             <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
             <key>LSItemContentTypes</key>
             <array>
                 <string>public.gl-binary-transmission-format</string>
@@ -79,7 +83,9 @@
             <key>CFBundleTypeName</key>
             <string>Geometry Definition File Format</string>
             <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
             <key>LSItemContentTypes</key>
             <array>
                 <string>public.geometry-definition-format</string>
@@ -96,7 +102,9 @@
             <key>CFBundleTypeName</key>
             <string>Object File Format</string>
             <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
             <key>LSItemContentTypes</key>
             <array>
                 <string>public.object-file-format</string>
@@ -108,13 +116,34 @@
             <key>LSHandlerRank</key>
             <string>Owner</string>
         </dict>
+        <dict> <!-- PCD -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>Point Cloud Library File</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.point-cloud-library-file</string>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
         <dict> <!-- PLY -->
             <key>CFBundleTypeIconFile</key>
             <string>documentIcon</string>
             <key>CFBundleTypeName</key>
             <string>Polygon File Format</string>
             <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
             <key>LSItemContentTypes</key>
             <array>
                 <string>public.polygon-file-format</string>
@@ -131,7 +160,9 @@
             <key>CFBundleTypeName</key>
             <string>3D Points File</string>
             <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
             <key>LSItemContentTypes</key>
             <array>
                 <string>public.3d-points-format</string>
@@ -149,7 +180,9 @@
             <key>CFBundleTypeName</key>
             <string>Standard Tesselated Geometry Format</string>
             <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
             <key>LSItemContentTypes</key>
             <array>
                 <string>public.standard-tesselated-geometry-format</string>
@@ -166,7 +199,9 @@
             <key>CFBundleTypeName</key>
             <string>XYZ File</string>
             <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
             <key>LSItemContentTypes</key>
             <array>
                 <string>public.xyz-points-format</string>
@@ -184,7 +219,9 @@
             <key>CFBundleTypeName</key>
             <string>XYZN File</string>
             <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
             <key>LSItemContentTypes</key>
             <array>
                 <string>public.xyzn-points-format</string>
@@ -202,7 +239,9 @@
             <key>CFBundleTypeName</key>
             <string>XYZ RGB File</string>
             <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
+            <string>Editor</string>
+            <key>LSIsAppleDefaultForType</key>
+            <true/>
             <key>LSItemContentTypes</key>
             <array>
                 <string>public.xyzrgb-points-format</string>
@@ -308,6 +347,29 @@
                 <key>public.mime-type</key>
                 <array>
                     <string>model/off</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- PCD -->
+            <key>UTTypeIdentifier</key>
+            <string>public.point-cloud-library-file</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.3d-content</string>
+                <string>public.content</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>Point Cloud Library File</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>pcd</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>model/pcd</string>
                 </array>
             </dict>
         </dict>

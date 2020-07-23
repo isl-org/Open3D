@@ -45,6 +45,7 @@ class VertexBuffer;
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class FilamentMaterialModifier;
 class FilamentRenderToBuffer;
@@ -90,8 +91,8 @@ public:
     SkyboxHandle AddSkybox(const ResourceLoadRequest& request) override;
     void RemoveSkybox(const SkyboxHandle& id) override;
 
-    std::shared_ptr<visualization::RenderToBuffer> CreateBufferRenderer()
-            override;
+    std::shared_ptr<visualization::rendering::RenderToBuffer>
+    CreateBufferRenderer() override;
 
     // Removes scene from scenes list and draws it last
     // WARNING: will destroy previous gui scene if there was any
@@ -119,5 +120,6 @@ private:
     void OnBufferRenderDestroyed(FilamentRenderToBuffer* render);
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

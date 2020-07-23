@@ -27,7 +27,7 @@
 #include "open3d/ml/ShapeChecking.h"
 #include "tests/UnitTest.h"
 
-using namespace open3d::ml::shape_checking;
+using namespace open3d::ml::op_util;
 
 TEST(ShapeChecking, CheckShapeReturnValues) {
     auto status_ok = CheckShape({10, 20}, 10, 20);

@@ -105,19 +105,54 @@ void *Menu::GetNativePointer() { return nullptr; }
 void Menu::AddItem(const char *name,
                    ItemId itemId /*= NO_ITEM*/,
                    KeyName key /*= KEY_NONE*/) {
-    impl_->id2idx_[itemId] = impl_->items_.size();
-    impl_->items_.push_back({itemId, name, key, nullptr});
+    InsertItem(impl_->items_.size(), name, itemId, key);
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
-    impl_->items_.push_back(
+    InsertMenu(impl_->items_.size(), name, submenu);
+}
+
+void Menu::AddSeparator() { InsertSeparator(impl_->items_.size()); }
+
+void Menu::InsertItem(int index,
+                      const char *name,
+                      ItemId item_id /*= NO_ITEM*/,
+                      KeyName key /*= KEY_NONE*/) {
+    for (auto &kv : impl_->id2idx_) {
+        if (int(kv.second) >= index) {
+            kv.second += 1;
+        }
+    }
+    impl_->id2idx_[item_id] = impl_->items_.size();
+    impl_->items_.insert(impl_->items_.begin() + index,
+                         {item_id, name, key, nullptr});
+}
+
+void Menu::InsertMenu(int index,
+                      const char *name,
+                      std::shared_ptr<Menu> submenu) {
+    for (auto &kv : impl_->id2idx_) {
+        if (int(kv.second) >= index) {
+            kv.second += 1;
+        }
+    }
+    impl_->items_.insert(
+            impl_->items_.begin() + index,
             {NO_ITEM, name, KEY_NONE, submenu, submenu->impl_.get()});
 }
 
-void Menu::AddSeparator() {
-    impl_->items_.push_back(
+void Menu::InsertSeparator(int index) {
+    for (auto &kv : impl_->id2idx_) {
+        if (int(kv.second) >= index) {
+            kv.second += 1;
+        }
+    }
+    impl_->items_.insert(
+            impl_->items_.begin() + index,
             {NO_ITEM, "", KEY_NONE, nullptr, nullptr, false, false, true});
 }
+
+int Menu::GetNumberOfItems() const { return int(impl_->items_.size()); }
 
 bool Menu::IsEnabled(ItemId item_id) const {
     auto *item = impl_->FindMenuItem(item_id);

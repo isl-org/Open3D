@@ -56,6 +56,11 @@ class Visualizer;
 /// \param mesh_show_wireframe visualize mesh wireframe if set to true.
 /// \param mesh_show_back_face visualize also the back face of the mesh
 /// triangles.
+/// \param top The top margin of the visualization window.
+/// \param lookat The lookat vector of the camera.
+/// \param up The up vector of the camera.
+/// \param front The front vector of the camera.
+/// \param zoom The zoom of the camera.
 bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                             &geometry_ptrs,
                     const std::string &window_name = "Open3D",
@@ -65,7 +70,11 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     int top = 50,
                     bool point_show_normal = false,
                     bool mesh_show_wireframe = false,
-                    bool mesh_show_back_face = false);
+                    bool mesh_show_back_face = false,
+                    Eigen::Vector3d *lookat = nullptr,
+                    Eigen::Vector3d *up = nullptr,
+                    Eigen::Vector3d *front = nullptr,
+                    double *zoom = nullptr);
 
 /// \brief Function to draw a list of geometry objects with a GUI that
 /// supports animation.

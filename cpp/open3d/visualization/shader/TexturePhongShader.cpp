@@ -218,10 +218,10 @@ void TexturePhongShader::SetLighting(const ViewControl &view,
                 option.light_ambient_color_.cast<GLfloat>();
         light_ambient_data_(3) = 1.0f;
     } else {
-        light_diffuse_power_data_ = GLHelper::GLVector4f::Zero();
-        light_specular_power_data_ = GLHelper::GLVector4f::Zero();
-        light_specular_shininess_data_ = GLHelper::GLVector4f::Ones();
-        light_ambient_data_ = GLHelper::GLVector4f(1.0f, 1.0f, 1.0f, 1.0f);
+        light_diffuse_power_data_ = gl_util::GLVector4f::Zero();
+        light_specular_power_data_ = gl_util::GLVector4f::Zero();
+        light_specular_shininess_data_ = gl_util::GLVector4f::Ones();
+        light_ambient_data_ = gl_util::GLVector4f(1.0f, 1.0f, 1.0f, 1.0f);
     }
 }
 
@@ -323,17 +323,17 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
         glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffers_[mi]);
 
         GLenum format, type;
-        auto it = GLHelper::texture_format_map_.find(
+        auto it = gl_util::texture_format_map_.find(
                 mesh.textures_[mi].num_of_channels_);
-        if (it == GLHelper::texture_format_map_.end()) {
+        if (it == gl_util::texture_format_map_.end()) {
             utility::LogWarning("Unknown texture format, abort!");
             return false;
         }
         format = it->second;
 
-        it = GLHelper::texture_type_map_.find(
+        it = gl_util::texture_type_map_.find(
                 mesh.textures_[mi].bytes_per_channel_);
-        if (it == GLHelper::texture_type_map_.end()) {
+        if (it == gl_util::texture_type_map_.end()) {
             utility::LogWarning("Unknown texture type, abort!");
             return false;
         }

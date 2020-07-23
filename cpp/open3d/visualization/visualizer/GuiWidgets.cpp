@@ -46,4 +46,3 @@ SmallToggleButton::SmallToggleButton(const char *title) : SmallButton(title) {
 
 }  // namespace visualization
 }  // namespace open3d
-

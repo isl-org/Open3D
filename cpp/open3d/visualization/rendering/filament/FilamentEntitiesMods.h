@@ -39,6 +39,7 @@ class TextureSampler;
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class FilamentMaterialModifier : public MaterialModifier {
 public:
@@ -78,5 +79,6 @@ private:
     std::shared_ptr<filament::MaterialInstance> material_instance_;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

@@ -399,7 +399,7 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
     std::unordered_set<int> indexSet;
     for (int i = 0; i < width * height; ++i) {
         const uint8_t *rgbaPtr = rgba.data() + 4 * i;
-        int index = GLHelper::ColorCodeToPickIndex(Eigen::Vector4i(
+        int index = gl_util::ColorCodeToPickIndex(Eigen::Vector4i(
                 rgbaPtr[0], rgbaPtr[1], rgbaPtr[2], rgbaPtr[3]));
         if (index >= 0) {
             indexSet.insert(index);
@@ -801,12 +801,12 @@ const std::vector<Eigen::Vector3d>
 Eigen::Vector3d VisualizerWithVertexSelection::CalcDragDelta(double winX,
                                                              double winY) {
     auto &view = (ViewControlWithEditing &)(*view_control_ptr_);
-    auto start = GLHelper::Unproject(
+    auto start = gl_util::Unproject(
             Eigen::Vector3d(mouse_down_pos_.x(),
                             view.GetWindowHeight() - mouse_down_pos_.y(),
                             drag_depth_),
             view.GetMVPMatrix(), view.GetWindowWidth(), view.GetWindowHeight());
-    auto end = GLHelper::Unproject(
+    auto end = gl_util::Unproject(
             Eigen::Vector3d(winX, view.GetWindowHeight() - winY, drag_depth_),
             view.GetMVPMatrix(), view.GetWindowWidth(), view.GetWindowHeight());
     return end - start;

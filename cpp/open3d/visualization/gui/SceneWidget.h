@@ -37,10 +37,12 @@ class AxisAlignedBoundingBox;
 }  // namespace geometry
 
 namespace visualization {
+namespace rendering {
 class Camera;
 class CameraManipulator;
 class Open3DScene;
 class View;
+}  // namespace rendering
 }  // namespace visualization
 
 namespace visualization {
@@ -65,7 +67,8 @@ public:
                      const geometry::AxisAlignedBoundingBox& geometry_bounds,
                      const Eigen::Vector3f& center_of_rotation);
     void SetOnCameraChanged(
-            std::function<void(visualization::Camera*)> on_cam_changed);
+            std::function<void(visualization::rendering::Camera*)>
+                    on_cam_changed);
 
     /// Enables changing the directional light with the mouse.
     /// SceneWidget will update the light's direction, so onDirChanged is
@@ -73,12 +76,13 @@ public:
     void SetOnSunDirectionChanged(
             std::function<void(const Eigen::Vector3f&)> on_dir_changed);
     /// Enables showing the skybox while in skybox ROTATE_IBL mode.
-    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool is_on);
+    void SetSkyboxHandle(visualization::rendering::SkyboxHandle skybox,
+                         bool is_on);
 
-    void SetScene(std::shared_ptr<Open3DScene> scene);
-    std::shared_ptr<Open3DScene> GetScene() const;
+    void SetScene(std::shared_ptr<rendering::Open3DScene> scene);
+    std::shared_ptr<rendering::Open3DScene> GetScene() const;
 
-    View* GetRenderView() const;  // is nullptr if no scene
+    rendering::View* GetRenderView() const;  // is nullptr if no scene
 
     enum class Quality { FAST, BEST };
     void SetRenderQuality(Quality level);
@@ -98,7 +102,7 @@ public:
     Widget::DrawResult Tick(const TickEvent& e) override;
 
 private:
-    visualization::Camera* GetCamera() const;
+    visualization::rendering::Camera* GetCamera() const;
 
 private:
     struct Impl;

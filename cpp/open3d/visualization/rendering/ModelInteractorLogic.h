@@ -32,8 +32,8 @@
 #include "open3d/visualization/rendering/RotationInteractorLogic.h"
 
 namespace open3d {
-
 namespace visualization {
+namespace rendering {
 
 class Scene;
 
@@ -41,9 +41,7 @@ class ModelInteractorLogic : public RotationInteractorLogic {
     using Super = RotationInteractorLogic;
 
 public:
-    ModelInteractorLogic(visualization::Scene* scene,
-                         visualization::Camera* camera,
-                         double min_far_plane);
+    ModelInteractorLogic(Scene* scene, Camera* camera, double min_far_plane);
     virtual ~ModelInteractorLogic();
 
     void SetBoundingBox(
@@ -73,5 +71,6 @@ private:
     void UpdateBoundingBox(const Camera::Transform& t);
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

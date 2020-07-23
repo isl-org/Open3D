@@ -32,6 +32,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class Scene;
 class View;
@@ -57,5 +58,6 @@ public:
     virtual void RequestFrame(Scene* scene, BufferReadyCallback cb) = 0;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

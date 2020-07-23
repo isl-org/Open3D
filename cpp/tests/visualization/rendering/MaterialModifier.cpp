@@ -32,7 +32,7 @@ namespace open3d {
 namespace tests {
 
 TEST(MaterialModifier, TextureSamplerParameters) {
-    auto tsp = visualization::TextureSamplerParameters::Simple();
+    auto tsp = visualization::rendering::TextureSamplerParameters::Simple();
     EXPECT_EQ(tsp.GetAnisotropy(), 0);
     tsp.SetAnisotropy(0);
     EXPECT_EQ(tsp.GetAnisotropy(), 0);

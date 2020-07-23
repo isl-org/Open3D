@@ -28,6 +28,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 MatrixInteractorLogic::~MatrixInteractorLogic() {}
 
@@ -101,7 +102,7 @@ void MatrixInteractorLogic::Rotate(int dx, int dy) {
     if (to_cor.dot(forward) < 0) {
         dist = -dist;
     }
-    visualization::Camera::Transform m;
+    Camera::Transform m;
     m.fromPositionOrientationScale(center_of_rotation_,
                                    rot_matrix * matrix.rotation(),
                                    Eigen::Vector3f(1, 1, 1));
@@ -123,12 +124,12 @@ void MatrixInteractorLogic::RotateWorld(int dx,
     float theta = CalcRotateRadians(dx, dy);
 
     axis = matrix.rotation() * axis;  // convert axis to world coords
-    auto rot_matrix = visualization::Camera::Transform::Identity() *
-                      Eigen::AngleAxisf(-theta, axis);
+    auto rot_matrix =
+            Camera::Transform::Identity() * Eigen::AngleAxisf(-theta, axis);
 
     auto pos = matrix * Eigen::Vector3f(0, 0, 0);
     auto dist = (center_of_rotation_ - pos).norm();
-    visualization::Camera::Transform m;
+    Camera::Transform m;
     m.fromPositionOrientationScale(center_of_rotation_,
                                    rot_matrix * matrix.rotation(),
                                    Eigen::Vector3f(1, 1, 1));
@@ -217,5 +218,6 @@ float MatrixInteractorLogic::CalcDollyDist(int dy, DragType drag_type) {
     return dist;
 }
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

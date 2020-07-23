@@ -43,6 +43,7 @@ class Viewport;
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class FilamentCamera;
 class FilamentResourceManager;
@@ -100,5 +101,6 @@ private:
     filament::View* view_ = nullptr;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

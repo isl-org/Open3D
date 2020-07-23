@@ -37,6 +37,7 @@ class Engine;
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 class FilamentCamera : public Camera {
 public:
@@ -90,5 +91,6 @@ private:
     FovType fov_type_;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

@@ -153,7 +153,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
     double half_voxel_length = voxel_length_ * 0.5;
     // Map of "edge_index = (x, y, z, 0) + edge_shift" to "global vertex index"
     std::unordered_map<
-            Eigen::Vector4i, int, utility::hash_eigen::hash<Eigen::Vector4i>,
+            Eigen::Vector4i, int, utility::hash_eigen<Eigen::Vector4i>,
             std::equal_to<Eigen::Vector4i>,
             Eigen::aligned_allocator<std::pair<const Eigen::Vector4i, int>>>
             edgeindex_to_vertexindex;

@@ -54,6 +54,7 @@ class Image;
 }
 
 namespace visualization {
+namespace rendering {
 
 // Centralized storage of allocated resources.
 // Used for convenient access from various components of render.
@@ -144,5 +145,6 @@ private:
     void LoadDefaults();
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

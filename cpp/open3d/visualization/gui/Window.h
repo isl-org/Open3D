@@ -79,7 +79,7 @@ public:
     virtual ~Window();
 
     const Theme& GetTheme() const;
-    visualization::Renderer& GetRenderer() const;
+    visualization::rendering::Renderer& GetRenderer() const;
 
     /// Gets the window's size and position in OS pixels, not actual
     /// device pixels.
@@ -130,6 +130,12 @@ public:
 
     void AddChild(std::shared_ptr<Widget> w);
 
+    /// Sets a callback for menu items. If you inherit from Window you can
+    /// also override OnMenuItemSelected(); however, you should choose one or
+    /// the other, but don't use both.
+    void SetOnMenuItemActivated(Menu::ItemId item_id,
+                                std::function<void()> callback);
+
     /// Shows the dialog. If a dialog is currently being shown it will be
     /// closed.
     void ShowDialog(std::shared_ptr<Dialog> dlg);
@@ -157,6 +163,8 @@ protected:
     // Override to handle drag and drop on the windows.
     virtual void OnDragDropped(const char* path);
 
+    const std::vector<std::shared_ptr<Widget>>& GetChildren() const;
+
 private:
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw();
@@ -172,6 +180,7 @@ private:
 
     static void DrawCallback(GLFWwindow* window);
     static void ResizeCallback(GLFWwindow* window, int os_width, int os_height);
+    static void WindowMovedCallback(GLFWwindow* window, int os_x, int os_y);
     static void RescaleCallback(GLFWwindow* window, float xscale, float yscale);
     static void MouseMoveCallback(GLFWwindow* window, double x, double y);
     static void MouseButtonCallback(GLFWwindow* window,

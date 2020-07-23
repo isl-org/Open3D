@@ -41,6 +41,7 @@
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
 namespace {
 
@@ -299,5 +300,6 @@ void FilamentView::PreRender() {
 
 void FilamentView::PostRender() {}
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

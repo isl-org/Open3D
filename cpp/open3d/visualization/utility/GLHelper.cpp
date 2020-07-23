@@ -31,7 +31,7 @@
 
 namespace open3d {
 namespace visualization {
-namespace GLHelper {
+namespace gl_util {
 
 GLMatrix4f LookAt(const Eigen::Vector3d &eye,
                   const Eigen::Vector3d &lookat,
@@ -123,6 +123,6 @@ int ColorCodeToPickIndex(const Eigen::Vector4i &color) {
     }
 }
 
-}  // namespace GLHelper
+}  // namespace gl_util
 }  // namespace visualization
 }  // namespace open3d

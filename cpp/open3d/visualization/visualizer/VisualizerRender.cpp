@@ -410,7 +410,7 @@ void Visualizer::CaptureDepthPointCloud(
                  GL_DEPTH_COMPONENT, GL_FLOAT, depth_image.data_.data());
 #endif  //__APPLE__
 
-    GLHelper::GLMatrix4f mvp_matrix;
+    gl_util::GLMatrix4f mvp_matrix;
     if (convert_to_world_coordinate) {
         mvp_matrix = view_control_ptr_->GetMVPMatrix();
     } else {
@@ -427,7 +427,7 @@ void Visualizer::CaptureDepthPointCloud(
             if (p_depth[j] == 1.0) {
                 continue;
             }
-            depth_pointcloud.points_.push_back(GLHelper::Unproject(
+            depth_pointcloud.points_.push_back(gl_util::Unproject(
                     Eigen::Vector3d(j + 0.5, i + 0.5, p_depth[j]), mvp_matrix,
                     view_control_ptr_->GetWindowWidth(),
                     view_control_ptr_->GetWindowHeight()));

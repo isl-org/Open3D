@@ -28,8 +28,8 @@
 
 #include "open3d/visualization/gui/Layout.h"
 
-#include <memory>
 #include <functional>
+#include <memory>
 
 namespace open3d {
 
@@ -52,14 +52,14 @@ public:
     GuiSettingsView(GuiSettingsModel& model,
                     const gui::Theme& theme,
                     const std::string& resource_path,
-                    std::function<void(const char *)> on_load_ibl);
+                    std::function<void(const char*)> on_load_ibl);
 
     void ShowFileMaterialEntry(bool show);
     void Update();
 
 private:
-    GuiSettingsModel &model_;
-    std::function<void(const char *)> on_load_ibl_;
+    GuiSettingsModel& model_;
+    std::function<void(const char*)> on_load_ibl_;
 
     std::shared_ptr<gui::Combobox> lighting_profile_;
     std::shared_ptr<gui::Checkbox> show_axes_;

@@ -39,6 +39,7 @@ class AxisAlignedBoundingBox;
 }  // namespace geometry
 
 namespace visualization {
+namespace rendering {
 
 class View;
 
@@ -119,5 +120,6 @@ public:
             const REHandle_abstract& entity_id) = 0;
 };
 
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
