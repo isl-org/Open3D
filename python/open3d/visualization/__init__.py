@@ -1,9 +1,8 @@
-# ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018 www.open3d.org
+# Copyright (c) 2020 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,29 +23,5 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# Misc
-include README.rst
-include LICENSE.txt
-include requirements.txt
-
-# Compiled module
-include open3d/pybind*.pyd
-include open3d/pybind*.so
-include open3d/pybind*.dylib
-include open3d/open3d*.so
-include open3d/open3d*.dylib
-include open3d/*depthengine*
-include open3d/*k4a*
-include open3d/*libstdc*
-
-# JS
-recursive-include open3d/static *.*
-
-# Exclude
-global-exclude *.py[co]
-
-# ml module
-recursive-include open3d/ml *.py
-
-# gui
-include open3d/resources/*
+if "@ENABLE_GUI@" == "ON":
+    from open3d.pybind.visualization import gui

@@ -73,6 +73,13 @@ struct Theme {
 
     Color text_edit_background_color;
 
+    Color list_background_color;
+    Color list_hover_color;
+    Color list_selected_color;
+
+    Color tree_background_color;
+    Color tree_selected_color;
+
     Color tab_inactive_color;
     Color tab_hover_color;
     Color tab_active_color;

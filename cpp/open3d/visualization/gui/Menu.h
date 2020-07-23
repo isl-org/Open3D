@@ -39,6 +39,11 @@ namespace gui {
 struct DrawContext;
 struct Theme;
 
+/// The menu item action is handled by Window, rather than by registering a
+/// a callback function with (non-existent) Menu::SetOnClicked(). This is
+/// because on macOS the menubar is global over all application windows, so any
+/// callback would need to go find the data object corresponding to the active
+/// window.
 class Menu {
     friend class Application;
 

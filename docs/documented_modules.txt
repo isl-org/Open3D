@@ -10,3 +10,4 @@ open3d.pipelines.odometry
 open3d.pipelines.registration
 open3d.utility
 open3d.visualization
+open3d.visualization.gui

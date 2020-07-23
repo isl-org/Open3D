@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018 www.open3d.org
+# Copyright (c) 2020 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,29 +24,42 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# Misc
-include README.rst
-include LICENSE.txt
-include requirements.txt
+import open3d as o3d
+import numpy as np
+import pytest
 
-# Compiled module
-include open3d/pybind*.pyd
-include open3d/pybind*.so
-include open3d/pybind*.dylib
-include open3d/open3d*.so
-include open3d/open3d*.dylib
-include open3d/*depthengine*
-include open3d/*k4a*
-include open3d/*libstdc*
+import open3d as o3d
+import numpy as np
+import pytest
 
-# JS
-recursive-include open3d/static *.*
 
-# Exclude
-global-exclude *.py[co]
+def torch_available():
+    try:
+        import torch
+        import torch.utils.dlpack
+    except ImportError:
+        return False
+    return True
 
-# ml module
-recursive-include open3d/ml *.py
 
-# gui
-include open3d/resources/*
+def list_devices():
+    """
+    If Open3D is built with CUDA support:
+    - If cuda device is available, returns [Device("CPU:0"), Device("CUDA:0")].
+    - If cuda device is not available, returns [Device("CPU:0")].
+
+    If Open3D is built without CUDA support:
+    - returns [Device("CPU:0")].
+    """
+    devices = [o3d.core.Device("CPU:" + str(0))]
+    if torch_available() and o3d._build_config['BUILD_CUDA_MODULE']:
+        import torch
+        import torch.utils.dlpack
+        if (o3d.core.cuda.device_count() != torch.cuda.device_count()):
+            raise RuntimeError(
+                "o3d.core.cuda.device_count() != torch.cuda.device_count(), "
+                "{} != {}".format(o3d.core.cuda.device_count(),
+                                  torch.cuda.device_count()))
+    if o3d.core.cuda.device_count() > 0:
+        devices.append(o3d.core.Device("CUDA:0"))
+    return devices

@@ -12,38 +12,32 @@ default_marks = [
                        reason='ml ops not built'),
 ]
 
-MLModules = namedtuple('MLModules', ['framework', 'ops', 'layers'])
+MLModules = namedtuple('MLModules', ['framework', 'ops'])
 
 # define the list of devices for running the ops and the ml frameworks
 cpu_device = 'CPU:0'
 _device_names = set([cpu_device])
 _ml_modules = {}
+try:
+    tf = importlib.import_module('tensorflow')
+    ml3d_ops = importlib.import_module('open3d.ml.tf.ops')
+    _ml_modules['tf'] = MLModules(tf, ml3d_ops)
+    # check for GPUs and set memory growth to prevent tf from allocating all memory
+    tf_gpu_devices = tf.config.experimental.list_physical_devices('GPU')
+    for dev in tf_gpu_devices:
+        tf.config.experimental.set_memory_growth(dev, True)
+    if tf_gpu_devices:
+        _device_names.add('GPU:0')
+except ImportError:
+    pass
 
-if o3d._build_config['BUILD_TENSORFLOW_OPS']:
-    try:
-        tf = importlib.import_module('tensorflow')
-        ml3d_ops = importlib.import_module('open3d.ml.tf.ops')
-        ml3d_layers = importlib.import_module('open3d.ml.tf.layers')
-        _ml_modules['tf'] = MLModules(tf, ml3d_ops, ml3d_layers)
-        # check for GPUs and set memory growth to prevent tf from allocating all memory
-        tf_gpu_devices = tf.config.experimental.list_physical_devices('GPU')
-        for dev in tf_gpu_devices:
-            tf.config.experimental.set_memory_growth(dev, True)
-        if tf_gpu_devices and o3d._build_config['BUILD_CUDA_MODULE']:
-            _device_names.add('GPU:0')
-    except ImportError:
-        pass
-
-if o3d._build_config['BUILD_PYTORCH_OPS']:
-    try:
-        torch = importlib.import_module('torch')
-        ml3d_ops = importlib.import_module('open3d.ml.torch.nn.functional')
-        ml3d_layers = importlib.import_module('open3d.ml.torch.nn')
-        _ml_modules['torch'] = MLModules(torch, ml3d_ops, ml3d_layers)
-        if torch.cuda.is_available() and o3d._build_config['BUILD_CUDA_MODULE']:
-            _device_names.add('GPU:0')
-    except ImportError:
-        pass
+try:
+    torch = importlib.import_module('torch')
+    ml3d_ops = importlib.import_module('open3d.ml.torch.nn.functional')
+    _ml_modules['torch'] = MLModules(torch, ml3d_ops)
+    if torch.cuda.is_available(): _device_names.add('GPU:0')
+except ImportError:
+    pass
 
 
 def to_numpy(tensor):
