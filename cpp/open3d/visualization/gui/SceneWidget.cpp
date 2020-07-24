@@ -67,7 +67,8 @@ public:
                         rendering::Camera* camera)
         : light_dir_(std::make_unique<rendering::LightDirectionInteractorLogic>(
                   scene->GetScene(), camera)) {
-        light_dir_->SetDirectionalLight(scene->GetSun());
+        // TODO: Fix this
+        // light_dir_->SetDirectionalLight(scene->GetSun());
     }
 
     rendering::MatrixInteractorLogic& GetMatrixInteractor() override {
@@ -125,9 +126,7 @@ public:
         return *ibl_.get();
     }
 
-    void SetSkyboxHandle(rendering::SkyboxHandle skybox, bool is_on) {
-        ibl_->ShowSkybox(is_on);
-    }
+    void ShowSkybox(bool is_on) { ibl_->ShowSkybox(is_on); }
 
     void SetOnChanged(std::function<void(const rendering::Camera::Transform&)>
                               on_changed) {
@@ -425,13 +424,14 @@ public:
         // the calculation is not cumulative if there are multiple copies
         // of the object, merely duplicated.
         if (e.type == MouseEvent::BUTTON_DOWN) {
-            std::vector<rendering::GeometryHandle> geometries =
-                    scene_->GetModel();
-            for (auto& fast :
-                 scene_->GetModel(rendering::Open3DScene::LOD::FAST)) {
-                geometries.push_back(fast);
-            }
-            rotation_->SetModel(scene_->GetAxis(), geometries);
+            // TODO: Make sure this works with new Scene graph
+            // std::vector<rendering::GeometryHandle> geometries =
+            //         scene_->GetModel();
+            // for (auto& fast :
+            //      scene_->GetModel(rendering::Open3DScene::LOD::FAST)) {
+            //     geometries.push_back(fast);
+            // }
+            // rotation_->SetModel(scene_->GetAxis(), geometries);
         }
         Super::Mouse(e);
     }
@@ -518,9 +518,7 @@ public:
         sun_->SetOnDirectionalLightChanged(onChanged);
     }
 
-    void SetSkyboxHandle(rendering::SkyboxHandle skybox, bool isOn) {
-        ibl_->SetSkyboxHandle(skybox, isOn);
-    }
+    void ShowSkybox(bool isOn) { ibl_->ShowSkybox(isOn); }
 
     SceneWidget::Controls GetControls() const {
         if (current_ == fly_.get()) {
@@ -684,8 +682,8 @@ void SceneWidget::SetOnSunDirectionChanged(
     //         });
 }
 
-void SceneWidget::SetSkyboxHandle(rendering::SkyboxHandle skybox, bool is_on) {
-    impl_->controls_->SetSkyboxHandle(skybox, is_on);
+void SceneWidget::ShowSkybox(bool is_on) {
+    impl_->controls_->ShowSkybox(is_on);
 }
 
 void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {

@@ -26,19 +26,18 @@
 
 #pragma once
 
-
-#include <unordered_map>
-#include <vector>
-#include <Eigen/Geometry>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <utils/Entity.h>
+#include <Eigen/Geometry>
+#include <unordered_map>
+#include <vector>
 
 #include "open3d/geometry/BoundingVolume.h"
-#include "open3d/visualization/rendering/Scene.h"
-#include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Camera.h"
+#include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
+#include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 
 /// @cond
@@ -85,27 +84,32 @@ public:
     void RemoveView(const ViewHandle& view_id);
 
     // Camera
-    void AddCamera(const std::string& camera_name, std::shared_ptr<Camera> cam) override;
+    void AddCamera(const std::string& camera_name,
+                   std::shared_ptr<Camera> cam) override;
     void RemoveCamera(const std::string& camera_name) override;
     void SetActiveCamera(const std::string& camera_name) override;
-    
+
     // Scene geometry
     bool AddGeometry(const std::string& object_name,
                      const geometry::Geometry3D& geometry,
-                             const Material& material) override;
-    bool AddGeometry(const std::string& object_name, const Model& model) override;
+                     const Material& material) override;
+    bool AddGeometry(const std::string& object_name,
+                     const Model& model) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
-    void SetGeometryTransform(const std::string& object_name, const Transform& transform) override;
+    void SetGeometryTransform(const std::string& object_name,
+                              const Transform& transform) override;
     Transform GetGeometryTransform(const std::string& object_name) override;
-    geometry::AxisAlignedBoundingBox GetGeometryBoundingBox(const std::string& object_name) override;
+    geometry::AxisAlignedBoundingBox GetGeometryBoundingBox(
+            const std::string& object_name) override;
     void GeometryShadows(const std::string& object_name,
                          bool cast_shadows,
                          bool receive_shadows);
     void OverrideMaterial(const std::string& object_name,
-                                  const Material& material) override;
+                          const Material& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
-    void OverrideMaterialAll(const Material& material, bool shader_only = true) override;
+    void OverrideMaterialAll(const Material& material,
+                             bool shader_only = true) override;
 
     // Lighting Environment
     bool AddPointLight(const std::string& light_name,
@@ -126,20 +130,23 @@ public:
     Light& GetLight(const std::string& light_name) override;
     void RemoveLight(const std::string& light_name) override;
     void UpdateLight(const std::string& light_name,
-                             const Light& light) override;
+                     const Light& light) override;
     void UpdateLightColor(const std::string& light_name,
                           const Eigen::Vector3f& color) override;
     void UpdateLightPosition(const std::string& light_name,
                              const Eigen::Vector3f& position) override;
     void UpdateLightDirection(const std::string& light_name,
                               const Eigen::Vector3f& direction) override;
-    void UpdateLightIntensity(const std::string& light_name, float intensity) override;
-    void UpdateLightFalloff(const std::string& light_name, float falloff) override;
+    void UpdateLightIntensity(const std::string& light_name,
+                              float intensity) override;
+    void UpdateLightFalloff(const std::string& light_name,
+                            float falloff) override;
     void UpdateLightConeAngles(const std::string& light_name,
                                float inner_cone_angle,
                                float outer_cone_angle) override;
-    void EnableLightShadow(const std::string& light_name, bool cast_shadows) override;
-    
+    void EnableLightShadow(const std::string& light_name,
+                           bool cast_shadows) override;
+
     void SetDirectionalLight(const Eigen::Vector3f& direction,
                              const Eigen::Vector3f& color,
                              float intensity) override;
@@ -161,9 +168,10 @@ public:
     filament::Scene* GetNativeScene() const { return scene_; }
 
 private:
+    MaterialInstanceHandle AssignMaterialToFilamentGeometry(
+            filament::RenderableManager::Builder& builder,
+            const Material& material);
 
-    MaterialInstanceHandle AssignMaterialToFilamentGeometry(filament::RenderableManager::Builder& builder, const Material& material);
-    
     filament::Engine& engine_;
     FilamentResourceManager& resource_mgr_;
     filament::Scene* scene_ = nullptr;
@@ -194,15 +202,15 @@ private:
         Material properties;
         MaterialInstanceHandle mat_instance;
     };
-    
+
     struct RenderableGeometry {
         std::string name;
         bool visible = true;
         bool cast_shadows = true;
         bool receive_shadow = true;
-        
+
         GeometryMaterialInstance mat;
-        
+
         // Filament resources
         utils::Entity filament_entity;
         VertexBufferHandle vb;
@@ -210,12 +218,12 @@ private:
         void ReleaseResources(filament::Engine& engine,
                               FilamentResourceManager& manager);
     };
-    
+
     struct LightEntity {
         bool enabled = true;
         utils::Entity filament_entity;
     };
-    
+
     // NOTE: ViewContainer and views_ are temporary
     struct ViewContainer {
         std::unique_ptr<FilamentView> view;
@@ -223,20 +231,26 @@ private:
     };
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
 
-    RenderableGeometry* GetGeometry(const std::string& object_name, bool warn_if_not_found = true);
-    LightEntity* GetLightInternal(const std::string& light_name, bool warn_if_not_found = true);
-    void OverrideMaterialInternal(RenderableGeometry* geom, const Material& material, bool shader_only = false);
+    RenderableGeometry* GetGeometry(const std::string& object_name,
+                                    bool warn_if_not_found = true);
+    LightEntity* GetLightInternal(const std::string& light_name,
+                                  bool warn_if_not_found = true);
+    void OverrideMaterialInternal(RenderableGeometry* geom,
+                                  const Material& material,
+                                  bool shader_only = false);
     void UpdateMaterialProperties(RenderableGeometry& geom);
     void UpdateDefaultLit(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
-    
+
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
-    
+
     std::unordered_map<std::string, RenderableGeometry> geometries_;
     std::unordered_map<std::string, LightEntity> lights_;
     std::string ibl_name_;
+    bool ibl_enabled_ = false;
+    bool skybox_enabled_ = false;
     std::weak_ptr<filament::IndirectLight> indirect_light_;
     std::weak_ptr<filament::Skybox> skybox_;
     LightEntity sun_;

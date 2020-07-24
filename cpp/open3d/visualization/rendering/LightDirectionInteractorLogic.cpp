@@ -134,13 +134,13 @@ void LightDirectionInteractorLogic::Rotate(int dx, int dy) {
 }
 
 void LightDirectionInteractorLogic::StartMouseDrag() {
-    //light_dir_at_mouse_down_ = scene_->GetLightDirection(dir_light_);
+    // light_dir_at_mouse_down_ = scene_->GetLightDirection(dir_light_);
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
 
     ClearUI();
 
-    //Eigen::Vector3f dir = scene_->GetLightDirection(dir_light_);
+    // Eigen::Vector3f dir = scene_->GetLightDirection(dir_light_);
     Eigen::Vector3f dir;
 
     double size = model_size_;

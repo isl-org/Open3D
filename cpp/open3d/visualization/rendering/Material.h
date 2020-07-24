@@ -26,9 +26,9 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <string>
 #include <unordered_map>
-#include <Eigen/Core>
 
 #include "open3d/geometry/Image.h"
 
@@ -37,7 +37,6 @@ namespace visualization {
 namespace rendering {
 
 struct Material {
-
     // PBR Material properties and maps
     Eigen::Vector4f base_color = Eigen::Vector4f(1.f, 1.f, 1.f, 1.f);
     float base_metallic = 0.f;
@@ -63,7 +62,6 @@ struct Material {
 
     std::string shader;
 };
-
 
 }  // namespace rendering
 }  // namespace visualization

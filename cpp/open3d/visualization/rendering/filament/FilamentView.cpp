@@ -293,7 +293,8 @@ void FilamentView::PreRender() {
 
     //             filament::RenderableManager::Instance inst =
     //                     renderable_mgr.getInstance(entity.info.self);
-    //             renderable_mgr.setMaterialInstanceAt(inst, 0, mat_inst.get());
+    //             renderable_mgr.setMaterialInstanceAt(inst, 0,
+    //             mat_inst.get());
     //         }
     //     }
     // }

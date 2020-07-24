@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include <cmath>
 #include <Eigen/Geometry>
+#include <cmath>
 
 namespace open3d {
 namespace visualization {
@@ -43,12 +43,12 @@ struct Light {
     float intensity = 10000.f;
     float falloff = 10.f;
     bool cast_shadows = false;
-    
+
     Eigen::Vector3f direction = Eigen::Vector3f(0.f, 0.f, -1.f);
 
     // Spot lights parameters
-    float light_cone_inner = M_PI/4.f;
-    float light_cone_outer = M_PI/2.f;
+    float light_cone_inner = M_PI / 4.f;
+    float light_cone_outer = M_PI / 2.f;
 };
 
 }  // namespace rendering

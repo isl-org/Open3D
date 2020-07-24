@@ -54,40 +54,43 @@ class Scene {
 public:
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
 
-    Scene(Renderer& renderer)
-        : renderer_(renderer) 
-        {}
+    Scene(Renderer& renderer) : renderer_(renderer) {}
     virtual ~Scene() = default;
 
     // NOTE: Temporarily need to support old View interface for ImGUI
     virtual ViewHandle AddView(std::int32_t x,
-                       std::int32_t y,
-                       std::uint32_t w,
-                       std::uint32_t h) = 0;
+                               std::int32_t y,
+                               std::uint32_t w,
+                               std::uint32_t h) = 0;
 
     virtual View* GetView(const ViewHandle& view_id) const = 0;
     virtual void SetViewActive(const ViewHandle& view_id, bool is_active) = 0;
     virtual void RemoveView(const ViewHandle& view_id) = 0;
 
     // Camera
-    virtual void AddCamera(const std::string& camera_name, std::shared_ptr<Camera> cam) = 0;
+    virtual void AddCamera(const std::string& camera_name,
+                           std::shared_ptr<Camera> cam) = 0;
     virtual void RemoveCamera(const std::string& camera_name) = 0;
     virtual void SetActiveCamera(const std::string& camera_name) = 0;
-    
+
     // Scene geometry
     virtual bool AddGeometry(const std::string& object_name,
-                     const geometry::Geometry3D& geometry,
+                             const geometry::Geometry3D& geometry,
                              const Material& material) = 0;
-    virtual bool AddGeometry(const std::string& object_name, const Model& model) = 0;
+    virtual bool AddGeometry(const std::string& object_name,
+                             const Model& model) = 0;
     virtual void RemoveGeometry(const std::string& object_name) = 0;
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;
     virtual void OverrideMaterial(const std::string& object_name,
                                   const Material& material) = 0;
     virtual void QueryGeometry(std::vector<std::string>& geometry) = 0;
-    virtual void SetGeometryTransform(const std::string& object_name, const Transform& transform) = 0;
+    virtual void SetGeometryTransform(const std::string& object_name,
+                                      const Transform& transform) = 0;
     virtual Transform GetGeometryTransform(const std::string& object_name) = 0;
-    virtual geometry::AxisAlignedBoundingBox GetGeometryBoundingBox(const std::string& object_name) = 0;
-    virtual void OverrideMaterialAll(const Material& material, bool shader_only = true) = 0;
+    virtual geometry::AxisAlignedBoundingBox GetGeometryBoundingBox(
+            const std::string& object_name) = 0;
+    virtual void OverrideMaterialAll(const Material& material,
+                                     bool shader_only = true) = 0;
 
     // Lighting Environment
     virtual bool AddPointLight(const std::string& light_name,
@@ -110,21 +113,24 @@ public:
     virtual void UpdateLight(const std::string& light_name,
                              const Light& light) = 0;
     virtual void UpdateLightColor(const std::string& light_name,
-                          const Eigen::Vector3f& color) = 0;
+                                  const Eigen::Vector3f& color) = 0;
     virtual void UpdateLightPosition(const std::string& light_name,
-                             const Eigen::Vector3f& position) = 0;
+                                     const Eigen::Vector3f& position) = 0;
     virtual void UpdateLightDirection(const std::string& light_name,
-                              const Eigen::Vector3f& direction) = 0;
-    virtual void UpdateLightIntensity(const std::string& light_name, float intensity) = 0;
-    virtual void UpdateLightFalloff(const std::string& light_name, float falloff) = 0;
+                                      const Eigen::Vector3f& direction) = 0;
+    virtual void UpdateLightIntensity(const std::string& light_name,
+                                      float intensity) = 0;
+    virtual void UpdateLightFalloff(const std::string& light_name,
+                                    float falloff) = 0;
     virtual void UpdateLightConeAngles(const std::string& light_name,
-                               float inner_cone_angle,
-                               float outer_cone_angle) = 0;
-    virtual void EnableLightShadow(const std::string& light_name, bool cast_shadows) = 0;
-    
+                                       float inner_cone_angle,
+                                       float outer_cone_angle) = 0;
+    virtual void EnableLightShadow(const std::string& light_name,
+                                   bool cast_shadows) = 0;
+
     virtual void SetDirectionalLight(const Eigen::Vector3f& direction,
-                             const Eigen::Vector3f& color,
-                             float intensity) = 0;
+                                     const Eigen::Vector3f& color,
+                                     float intensity) = 0;
     virtual void EnableDirectionalLight(bool enable) = 0;
     virtual void EnableDirectionalLightShadows(bool enable) = 0;
     virtual Eigen::Vector3f GetDirectionalLightDirection() = 0;
@@ -139,7 +145,6 @@ public:
     virtual void ShowSkybox(bool show) = 0;
 
 protected:
-
     Renderer& renderer_;
 };
 
