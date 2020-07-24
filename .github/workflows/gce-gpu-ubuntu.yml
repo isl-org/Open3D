@@ -15,83 +15,39 @@ env:
   GCE_INSTANCE_ZONE: us-west1-b               # TODO: update to instance zone
 
 jobs:
-  one-time-setup:
-    name: One time setup
+  pull-build-test:
+    name: Pull, build, run unit tests
     runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+      matrix:
+        SHARED: [ON, OFF]
+        BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
+        BUILD_ML_OPS: [ON, OFF]
+        BUILD_CUDA: [ON]
+
+    env:
+      SHARED: ${{ matrix.SHARED }}
+      BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
+      NPROC: 4
 
     steps:
-      # Setup gcloud CLI
       - name: GCloud setup and start VM
         uses: actions/checkout@v2
-      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
-        with:
-          version: 'latest'
-          service_account_key: ${{ secrets.GCE_SA_KEY }}
-          project_id: ${{   secrets.GCE_PROJECT }}
-          export_default_credentials: true
-        run: |-
-          gcloud info
-          gcloud compute instances start "$GCE_INSTANCE" --zone="$GCE_INSTANCE_ZONE"
-
-      - name: Clone source code repository
-        run: |-
-          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
-            "git clone --recursive --depth 1 ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} && \
-            cd Open3D && \
-            git checkout ${GITHUB_SHA}"
-
-      - name: Set up Python version
-        run: |-
-          if [ ${{ matrix.PYTHON_VERSION }} != "3.6" ] ; then
-            echo "Only Python 3.6 supported as of now"
-            exit 1
-          fi
-          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
-              "sudo apt-get update && \
-              sudo apt-get --yes install python3 python3-pip && \
-              echo  'Only for Ubuntu <= 20.04' && set -x && \
-              ln -s /usr/bin/python3.6 \$HOME/.local/bin/python && \
-              ln -s /usr/bin/python3.6-config \$HOME/.local/bin/python-config && \
-              ln -s /usr/bin/pip3 \$HOME/.local/bin/pip"
-
-      - name: Shutdown VM instance
-        run: gcloud compute instances stop ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE"
-
-    pull-build-test:
-      name: Pull, build, run unit tests
-      runs-on: ubuntu-18.04
-      strategy:
-        fail-fast: false
-        matrix:
-          SHARED: [ON, OFF]
-          BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
-          BUILD_ML_OPS: [ON, OFF]
-          BUILD_CUDA: [ON]
-          PYTHON_VERSION: [3.6]
-
-      env:
-        SHARED: ${{ matrix.SHARED }}
-        BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
-        BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
-        BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
-        BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
-        NPROC: 2
-
-      steps:
-        - name: GCloud setup and start VM
-          uses: actions/checkout@v2
-
       # Setup gcloud CLI
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
-          version: 'latest'
+          version: '302.0.0'
           service_account_key: ${{ secrets.GCE_SA_KEY }}
           project_id: ${{   secrets.GCE_PROJECT }}
           export_default_credentials: true
 
       - run: |-
-        gcloud info
-        gcloud compute instances start ${GCE_INSTANCE} --zone=${GCE_INSTANCE_ZONE}
+          gcloud info
+          gcloud compute instances start ${GCE_INSTANCE} --zone=${GCE_INSTANCE_ZONE}
 
       - name: Checkout source code commit
         run: |-
