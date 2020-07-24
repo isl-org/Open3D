@@ -372,6 +372,7 @@ class JupyterDocsBuilder:
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
+        nb_ignored = ['tensor.ipynb']
         example_dirs = ["Basic", "Advanced"]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir).parent / "examples" /
@@ -384,8 +385,9 @@ class JupyterDocsBuilder:
 
             if self.clean_notebooks:
                 for nb_out_path in out_dir.glob("*.ipynb"):
-                    print("Delete: {}".format(nb_out_path))
-                    nb_out_path.unlink()
+                    if (nb_out_path.name not in nb_ignored):
+                        print("Delete: {}".format(nb_out_path))
+                        nb_out_path.unlink()
 
             for nb_in_path in in_dir.glob("*.ipynb"):
                 nb_out_path = out_dir / nb_in_path.name
