@@ -20,7 +20,7 @@ set (KERNEL_CUDA_SRC
     )
 
 set (LINALG_SRC
-    op/linalg/Context.cpp
+    op/linalg/LinalgUtils.cpp
     op/linalg/Matmul.cpp
     op/linalg/MatmulCPU.cpp
     op/linalg/Solve.cpp

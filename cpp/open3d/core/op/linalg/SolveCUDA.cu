@@ -29,76 +29,72 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "open3d/core/op/linalg/Context.h"
+#include "open3d/core/op/linalg/LinalgUtils.h"
 #include "open3d/core/op/linalg/Solve.h"
 
 namespace open3d {
 namespace core {
 
-void SolveCUDA(Dtype dtype,
-               void* A_data,
+void SolveCUDA(void* A_data,
                void* B_data,
                void* ipiv_data,
                void* X_data,
                int n,
-               int m) {
+               int m,
+               Dtype dtype,
+               const Device& device) {
     cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
+    int* dinfo = static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
+
+    size_t byte_size;
     int niters;
-    int* dinfo = static_cast<int*>(
-            MemoryManager::Malloc(sizeof(int), Device("CUDA:0")));
 
     switch (dtype) {
         case Dtype::Float32: {
-            size_t byte_size;
-            if (CUSOLVER_STATUS_SUCCESS !=
-                cusolverDnSSgesv_bufferSize(handle, n, m, NULL, n, NULL, NULL,
-                                            n, NULL, n, NULL, &byte_size)) {
-                utility::LogError("Unable to get workspace byte size");
-            }
+            OPEN3D_CUSOLVER_CHECK(cusolverDnSSgesv_bufferSize(
+                                          handle, n, m, NULL, n, NULL, NULL, n,
+                                          NULL, n, NULL, &byte_size),
+                                  "cusolverDnSSgesv_bufferSize failed");
+            void* workspace = MemoryManager::Malloc(byte_size, device);
 
-            void* workspace =
-                    MemoryManager::Malloc(byte_size, Device("CUDA:0"));
-
-            int status = cusolverDnSSgesv(
-                    handle, n, m, static_cast<float*>(A_data), n,
-                    static_cast<int*>(ipiv_data), static_cast<float*>(B_data),
-                    n, static_cast<float*>(X_data), n, workspace, byte_size,
-                    &niters, dinfo);
-            if (status != CUSOLVER_STATUS_SUCCESS) {
-                utility::LogError("SSgesv failed with error code = {}", status);
-            }
+            OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+                    cusolverDnSSgesv(handle, n, m, static_cast<float*>(A_data),
+                                     n, static_cast<int*>(ipiv_data),
+                                     static_cast<float*>(B_data), n,
+                                     static_cast<float*>(X_data), n, workspace,
+                                     byte_size, &niters, dinfo),
+                    "cusolverDnSSgesv failed with dinfo = ", dinfo, device);
             break;
+
+            MemoryManager::Free(workspace, device);
         }
 
         case Dtype::Float64: {
-            size_t byte_size;
-            if (CUSOLVER_STATUS_SUCCESS !=
-                cusolverDnDDgesv_bufferSize(handle, n, m, NULL, n, NULL, NULL,
-                                            n, NULL, n, NULL, &byte_size)) {
-                utility::LogError("Unable to get workspace byte size");
-            }
+            OPEN3D_CUSOLVER_CHECK(cusolverDnDDgesv_bufferSize(
+                                          handle, n, m, NULL, n, NULL, NULL, n,
+                                          NULL, n, NULL, &byte_size),
+                                  "cusolverDnDDgesv_bufferSize failed");
+            void* workspace = MemoryManager::Malloc(byte_size, device);
 
-            void* workspace =
-                    MemoryManager::Malloc(byte_size, Device("CUDA:0"));
-
-            int status = cusolverDnDDgesv(
-                    handle, n, m, static_cast<double*>(A_data), n,
-                    static_cast<int*>(ipiv_data), static_cast<double*>(B_data),
-                    n, static_cast<double*>(X_data), n, workspace, byte_size,
-                    &niters, dinfo);
-            if (status != CUSOLVER_STATUS_SUCCESS) {
-                utility::LogError("DDgesv failed with error code = {}", status);
-            }
+            OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+                    cusolverDnDDgesv(handle, n, m, static_cast<double*>(A_data),
+                                     n, static_cast<int*>(ipiv_data),
+                                     static_cast<double*>(B_data), n,
+                                     static_cast<double*>(X_data), n, workspace,
+                                     byte_size, &niters, dinfo),
+                    "cusolverDnDDgesv failed with dinfo = ", dinfo, device);
             break;
+
+            MemoryManager::Free(workspace, device);
         }
 
         default: {  // should never reach here
-            utility::LogError("Unsupported dtype {} in CPU backend.",
+            utility::LogError("Unsupported dtype {} in SolveCUDA.",
                               DtypeUtil::ToString(dtype));
         }
     }
 
-    MemoryManager::Free(dinfo, Device("CUDA:0"));
+    MemoryManager::Free(dinfo, device);
 }
 
 }  // namespace core

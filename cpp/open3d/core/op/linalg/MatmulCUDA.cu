@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/op/linalg/Context.h"
+#include "open3d/core/op/linalg/LinalgUtils.h"
 #include "open3d/core/op/linalg/Matmul.h"
 #include "open3d/utility/Console.h"
 namespace open3d {
@@ -34,48 +34,46 @@ namespace core {
 // https://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemmbatched
 // https://developer.nvidia.com/sites/default/files/akamai/cuda/files/Misc/mygpu.pdf
 
-void MatmulCUDA(Dtype dtype,
-                void* A_data,
+void MatmulCUDA(void* A_data,
                 void* B_data,
                 void* C_data,
                 int m,
                 int k,
-                int n) {
+                int n,
+                Dtype dtype) {
     cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
 
     switch (dtype) {
         case Dtype::Float32: {
             float alpha = 1, beta = 0;
-            // clang-format off
-            cublasSgemm(handle,
-                        CUBLAS_OP_N, CUBLAS_OP_N,  // A, B transpose flag
-                        m, n, k,  // dimensions
-                        &alpha,
-                        static_cast<const float*>(A_data), m,
-                        static_cast<const float*>(B_data), k,  // input and their leading dims
-                        &beta,
-                        static_cast<float*>(C_data), m);  // output and its leading dim
-            // clang-format on
+            OPEN3D_CUBLAS_CHECK(
+                    cublasSgemm(handle, CUBLAS_OP_N,
+                                CUBLAS_OP_N,  // A, B transpose flag
+                                m, n, k,      // dimensions
+                                &alpha, static_cast<const float*>(A_data), m,
+                                static_cast<const float*>(B_data),
+                                k,  // input and their leading dims
+                                &beta, static_cast<float*>(C_data), m),
+                    "cublasSgemm failed");
             break;
         }
 
         case Dtype::Float64: {
             double alpha = 1, beta = 0;
-            // clang-format off
-            cublasDgemm(handle,
-                        CUBLAS_OP_N, CUBLAS_OP_N,  // A, B transpose flag
-                        m, n, k,  // dimensions
-                        &alpha,
-                        static_cast<const double*>(A_data), m,
-                        static_cast<const double*>(B_data), k,  // input and their leading dims
-                        &beta,
-                        static_cast<double*>(C_data), m);  // output and its leading dim
-            // clang-format on
+            OPEN3D_CUBLAS_CHECK(
+                    cublasDgemm(handle, CUBLAS_OP_N,
+                                CUBLAS_OP_N,  // A, B transpose flag
+                                m, n, k,      // dimensions
+                                &alpha, static_cast<const double*>(A_data), m,
+                                static_cast<const double*>(B_data),
+                                k,  // input and their leading dims
+                                &beta, static_cast<double*>(C_data), m),
+                    "cublasDgemm failed");
             break;
         }
 
         default: {  // should never reach here
-            utility::LogError("Unsupported dtype {} in CUDA backend.",
+            utility::LogError("Unsupported dtype {} in MatmulCUDA.",
                               DtypeUtil::ToString(dtype));
         }
     }

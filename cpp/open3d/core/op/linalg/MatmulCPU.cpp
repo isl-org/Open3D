@@ -35,13 +35,13 @@ namespace core {
 
 // CPU converges to
 // https://software.intel.com/content/www/us/en/develop/documentation/mkl-developer-reference-c/top/blas-and-sparse-blas-routines/blas-routines/blas-level-3-routines/cblas-gemm.html
-void MatmulCPU(Dtype dtype,
-               void* A_data,
+void MatmulCPU(void* A_data,
                void* B_data,
                void* C_data,
                int m,
                int k,
-               int n) {
+               int n,
+               Dtype dtype) {
     switch (dtype) {
         case Dtype::Float32: {
             float alpha = 1, beta = 0;

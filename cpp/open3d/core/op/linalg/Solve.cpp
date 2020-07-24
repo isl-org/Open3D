@@ -90,7 +90,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
         X = Tensor::Empty(B_copy.GetShape(), B.GetDtype(), device);
         void *X_data = X.GetDataPtr();
 
-        SolveCUDA(dtype, A_data, B_data, ipiv_data, X_data, n, m);
+        SolveCUDA(A_data, B_data, ipiv_data, X_data, n, m, dtype, device);
         X = X.T();
 #else
         utility::LogError("Unimplemented device.");
@@ -103,7 +103,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
         X = B.Copy(device);
         void *B_data = X.GetDataPtr();
 
-        SolveCPU(dtype, A_data, B_data, ipiv_data, nullptr, n, m);
+        SolveCPU(A_data, B_data, ipiv_data, nullptr, n, m, dtype, device);
     }
 }
 }  // namespace core

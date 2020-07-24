@@ -84,7 +84,7 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
         output = Tensor::Empty({n, m}, dtype, device);
         void* C_data = output.GetDataPtr();
 
-        MatmulCUDA(dtype, A_data, B_data, C_data, m, k, n);
+        MatmulCUDA(A_data, B_data, C_data, m, k, n, dtype);
 
         output = output.T();
 #else
@@ -98,7 +98,7 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
 
         output = Tensor::Empty({m, n}, dtype, device);
         void* C_data = output.GetDataPtr();
-        MatmulCPU(dtype, A_data, B_data, C_data, m, k, n);
+        MatmulCPU(A_data, B_data, C_data, m, k, n, dtype);
     }
 };
 

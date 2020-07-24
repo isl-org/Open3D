@@ -70,14 +70,16 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
         Tensor A_T = A.T().Copy(device);
         void *A_data = A_T.GetDataPtr();
 
-        SVDCUDA(dtype, A_data, U_data, S_data, VT_data, superb_data, m, n);
+        SVDCUDA(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,
+                device);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
         Tensor A_contiguous = A.Contiguous();
         void *A_data = A_contiguous.GetDataPtr();
-        SVDCPU(dtype, A_data, U_data, S_data, VT_data, superb_data, m, n);
+        SVDCPU(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,
+               device);
         U = U.T();
         VT = VT.T();
     }

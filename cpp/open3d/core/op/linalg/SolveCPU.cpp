@@ -36,13 +36,14 @@
 namespace open3d {
 namespace core {
 
-void SolveCPU(Dtype dtype,
-              void* A_data,
+void SolveCPU(void* A_data,
               void* B_data,
               void* ipiv_data,
               void* X_data,  // unused place-holder for CPU
               int n,
-              int m) {
+              int m,
+              Dtype dtype,
+              const Device& device) {
     switch (dtype) {
         case Dtype::Float32: {
             // clang-format off

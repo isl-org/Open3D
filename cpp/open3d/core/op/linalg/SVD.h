@@ -35,24 +35,26 @@ namespace core {
 void SVD(const Tensor& A, Tensor& U, Tensor& S, Tensor& VT);
 
 #ifdef BUILD_CUDA_MODULE
-void SVDCUDA(Dtype dtype,
-             const void* A_data,
+void SVDCUDA(const void* A_data,
              void* U_data,
              void* S_data,
              void* VT_data,
              void* superb_data,
              int m,
-             int n);
+             int n,
+             Dtype dtype,
+             const Device& device);
 #endif
 
-void SVDCPU(Dtype dtype,
-            const void* A_data,
+void SVDCPU(const void* A_data,
             void* U_data,
             void* S_data,
             void* VT_data,
             void* superb_data,
             int m,
-            int n);
+            int n,
+            Dtype dtype,
+            const Device& device);
 
 }  // namespace core
 }  // namespace open3d

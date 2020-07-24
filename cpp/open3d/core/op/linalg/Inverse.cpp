@@ -55,29 +55,32 @@ void Inverse(const Tensor &A, Tensor &output) {
 
     int n = A_shape[0];
 
+    /// Pivot to shuffle during matrix factorization
     Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, device);
     void *ipiv_data = ipiv.GetDataPtr();
 
-    utility::LogInfo("Before calling, n = {}", n);
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
+        // cuSolver only supports column major, so transpose is needed
         Tensor A_T = A.T().Copy(device);
         void *A_data = A_T.GetDataPtr();
 
+        // cuSolver does not support getri, so we have to provide an identity
+        // matrix. This matrix is modified in-place as output.
         output = Tensor::Eye(n, dtype, device);
         void *output_data = output.GetDataPtr();
 
-        // cuSolver: modify Eye (B) in place
-        InverseCUDA(dtype, A_data, ipiv_data, output_data, n);
+        InverseCUDA(A_data, ipiv_data, output_data, n, dtype, device);
         output = output.T();
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        // LAPACKE: modify A in-place
+        // LAPACKE supports row major, where A is in-place as output.
         output = A.Copy(device);
         void *A_data = output.GetDataPtr();
-        InverseCPU(dtype, A_data, ipiv_data, nullptr, n);
+
+        InverseCPU(A_data, ipiv_data, nullptr, n, dtype, device);
     }
 }
 }  // namespace core

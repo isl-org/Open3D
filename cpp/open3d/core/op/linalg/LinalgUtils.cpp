@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/op/linalg/Context.h"
+#include "open3d/core/op/linalg/LinalgUtils.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

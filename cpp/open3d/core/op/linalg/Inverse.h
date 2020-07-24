@@ -31,16 +31,24 @@
 namespace open3d {
 namespace core {
 
-// Solve AX = B with *gesv in MKL (CPU) and MAGMA (CUDA)
+/// Compute A^{-1} where A is a N x N square matrix with LU factorization
 void Inverse(const Tensor& A, Tensor& output);
 
 #ifdef BUILD_CUDA_MODULE
-void InverseCUDA(
-        Dtype dtype, void* A_data, void* ipiv_data, void* output_data, int n);
+void InverseCUDA(void* A_data,
+                 void* ipiv_data,
+                 void* output_data,
+                 int n,
+                 Dtype dtype,
+                 const Device& device);
 #endif
 
-void InverseCPU(
-        Dtype dtype, void* A_data, void* ipiv_data, void* output_data, int n);
+void InverseCPU(void* A_data,
+                void* ipiv_data,
+                void* output_data,
+                int n,
+                Dtype dtype,
+                const Device& device);
 
 }  // namespace core
 }  // namespace open3d

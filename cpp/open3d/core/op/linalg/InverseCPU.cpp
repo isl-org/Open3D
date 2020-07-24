@@ -34,17 +34,19 @@
 namespace open3d {
 namespace core {
 
-// https://spec.oneapi.com/versions/0.5.0/oneMKL/GUID-655FC62D-9BCD-4582-9D8C-50D05BFAE9E6.html
-void InverseCPU(
-        Dtype dtype, void* A_data, void* ipiv_data, void* output_data, int n) {
+/// https://www.netlib.org/lapack/explore-html/dd/d9a/group__double_g_ecomputational_ga56d9c860ce4ce42ded7f914fdb0683ff.html#ga56d9c860ce4ce42ded7f914fdb0683ff
+void InverseCPU(void* A_data,
+                void* ipiv_data,
+                void* output_data,
+                int n,
+                Dtype dtype,
+                const Device& device) {
     switch (dtype) {
         case Dtype::Float32: {
             LAPACKE_sgetrf(LAPACK_ROW_MAJOR, n, n, static_cast<float*>(A_data),
                            n, static_cast<int*>(ipiv_data));
             LAPACKE_sgetri(LAPACK_ROW_MAJOR, n, static_cast<float*>(A_data), n,
                            static_cast<int*>(ipiv_data));
-            utility::LogInfo("Calling finished");
-
             break;
         }
 

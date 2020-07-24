@@ -28,10 +28,39 @@
 
 #include <cublas_v2.h>
 #include <cusolverDn.h>
+
+#include <open3d/core/MemoryManager.h>
+#include <open3d/utility/Console.h>
 #include <memory>
+#include <string>
 
 namespace open3d {
 namespace core {
+
+inline void OPEN3D_CUBLAS_CHECK(cublasStatus_t status, const std::string& msg) {
+    if (CUBLAS_STATUS_SUCCESS != status) {
+        utility::LogError("{}", msg);
+    }
+}
+
+inline void OPEN3D_CUSOLVER_CHECK(cusolverStatus_t status,
+                                  const std::string& msg) {
+    if (CUSOLVER_STATUS_SUCCESS != status) {
+        utility::LogError("{}", msg);
+    }
+};
+
+inline void OPEN3D_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
+                                             const std::string& msg,
+                                             int* dinfo,
+                                             const Device& device) {
+    if (status != CUSOLVER_STATUS_SUCCESS) {
+        int hinfo;
+        MemoryManager::MemcpyToHost(&hinfo, dinfo, device, sizeof(int));
+        utility::LogError("{} {}", msg, hinfo);
+    }
+}
+
 class CuSolverContext {
 public:
     static std::shared_ptr<CuSolverContext> GetInstance();
