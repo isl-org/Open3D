@@ -85,6 +85,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
     } else if (metric_str == "Linf") {
         metric = Linf;
     } else {
+        TORCH_CHECK(false, "metric must be one of (L1, L2, Linf) but got " +
+                                   metric_str);
     }
     CHECK_TYPE(points_row_splits, kInt64);
     CHECK_TYPE(queries_row_splits, kInt64);
