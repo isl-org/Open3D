@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "open3d/geometry/KDTreeFlann.h"
+#include "open3d/geometry/Keypoint.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 
@@ -97,16 +98,19 @@ Eigen::Matrix3d ComputeScatterMatrix(const std::vector<Eigen::Vector3d>& points,
 }  // namespace
 
 namespace geometry {
-std::shared_ptr<geometry::PointCloud> PointCloud::ComputeISSKeypoints(
+namespace keypoint {
+std::shared_ptr<PointCloud> ComputeISSKeypoints(
+        const PointCloud& input,
         double salient_radius /* = 0.0 */,
         double non_max_radius /* = 0.0 */,
         double gamma_21 /* = 0.975 */,
         double gamma_32 /* = 0.975 */,
         int min_neighbors /*= 5 */) {
-    KDTreeFlann kdtree(*this);
+    const auto& points = input.points_;
+    KDTreeFlann kdtree(input);
 
     if (salient_radius == 0.0 || non_max_radius == 0.0) {
-        const double resolution = ComputeModelResolution(points_, kdtree);
+        const double resolution = ComputeModelResolution(points, kdtree);
         salient_radius = 6 * resolution;
         non_max_radius = 4 * resolution;
         utility::LogDebug(
@@ -114,14 +118,14 @@ std::shared_ptr<geometry::PointCloud> PointCloud::ComputeISSKeypoints(
                 "non_max_radius = {} from input model",
                 salient_radius, non_max_radius);
     }
-    std::vector<double> third_eigen_values(points_.size());
+    std::vector<double> third_eigen_values(points.size());
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) shared(third_eigen_values)
 #endif
-    for (int i = 0; i < (int)points_.size(); i++) {
+    for (int i = 0; i < (int)points.size(); i++) {
         Eigen::Matrix3d cov = ComputeScatterMatrix(
-                points_, points_[i], salient_radius, min_neighbors, kdtree);
+                points, points[i], salient_radius, min_neighbors, kdtree);
         if (cov.isZero()) {
             continue;
         }
@@ -137,20 +141,20 @@ std::shared_ptr<geometry::PointCloud> PointCloud::ComputeISSKeypoints(
     }
 
     std::vector<Eigen::Vector3d> keypoints;
-    keypoints.reserve(points_.size());
+    keypoints.reserve(points.size());
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) shared(keypoints)
 #endif
-    for (int i = 0; i < (int)points_.size(); i++) {
+    for (int i = 0; i < (int)points.size(); i++) {
         if (third_eigen_values[i] > 0.0) {
             std::vector<int> nn_indices;
             std::vector<double> dist;
-            int nb_neighbors = kdtree.SearchRadius(points_[i], non_max_radius,
+            int nb_neighbors = kdtree.SearchRadius(points[i], non_max_radius,
                                                    nn_indices, dist);
 
             if (nb_neighbors >= min_neighbors &&
                 IsLocalMaxima(i, nn_indices, third_eigen_values)) {
-                keypoints.emplace_back(points_[i]);
+                keypoints.emplace_back(points[i]);
             }
         }
     }
@@ -161,5 +165,6 @@ std::shared_ptr<geometry::PointCloud> PointCloud::ComputeISSKeypoints(
     return std::make_shared<geometry::PointCloud>(keypoints);
 }
 
+}  // namespace keypoint
 }  // namespace geometry
 }  // namespace open3d

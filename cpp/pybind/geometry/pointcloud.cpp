@@ -207,15 +207,6 @@ void pybind_pointcloud(py::module &m) {
                         "image"_a, "intrinsic"_a,
                         "extrinsic"_a = Eigen::Matrix4d::Identity(),
                         "project_valid_depth_only"_a = true)
-            .def("compute_iss_keypoints",
-                 &geometry::PointCloud::ComputeISSKeypoints,
-                 "Function that computes the ISS Keypoints from an input point "
-                 "cloud. This implements the keypoint detection modules "
-                 "proposed in Yu Zhong, 'Intrinsic Shape Signatures: A Shape "
-                 "Descriptor for 3D Object Recognition', 2009.",
-                 "salient_radius"_a = 0.0, "non_max_radius"_a = 0.0,
-                 "gamma_21"_a = 0.975, "gamma_32"_a = 0.975,
-                 "min_neighbors"_a = 5)
             .def_readwrite("points", &geometry::PointCloud::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
@@ -340,21 +331,6 @@ void pybind_pointcloud(py::module &m) {
             {{"image", "The input image."},
              {"intrinsic", "Intrinsic parameters of the camera."},
              {"extrnsic", "Extrinsic parameters of the camera."}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "compute_iss_keypoints",
-            {{"salient_radius",
-              "The radius of the spherical neighborhood used to detect "
-              "keypoints."},
-             {"non_max_radius", "The non maxima supression radius"},
-             {"gamma_21",
-              "The upper bound on the ratio between the second and the first "
-              "eigenvalue returned by the EVD"},
-             {"gamma_32",
-              "The upper bound on the ratio between the third and the second "
-              "eigenvalue returned by the EVD"},
-             {"min_neighbors",
-              "Minimum number of neighbors that has to be found to consider a "
-              "keypoint"}});
 }
 
 void pybind_pointcloud_methods(py::module &m) {}
