@@ -46,10 +46,9 @@ struct CheckableTextTreeCell::Impl {
     std::shared_ptr<Label> label_;
 };
 
-CheckableTextTreeCell::CheckableTextTreeCell(const char *text,
-                                             bool is_checked,
-                                             std::function<void(bool)> on_toggled)
-: impl_(new CheckableTextTreeCell::Impl()){
+CheckableTextTreeCell::CheckableTextTreeCell(
+        const char *text, bool is_checked, std::function<void(bool)> on_toggled)
+    : impl_(new CheckableTextTreeCell::Impl()) {
     // We don't want any text in the checkbox, but passing "" seems to make it
     // not toggle, so we need to pass in something. This way it will just be
     // extra spacing.
@@ -63,21 +62,21 @@ CheckableTextTreeCell::CheckableTextTreeCell(const char *text,
 
 CheckableTextTreeCell::~CheckableTextTreeCell() {}
 
-Size CheckableTextTreeCell::CalcPreferredSize(const Theme& theme) const {
+Size CheckableTextTreeCell::CalcPreferredSize(const Theme &theme) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);
     auto label_pref = impl_->label_->CalcPreferredSize(theme);
     return Size(check_pref.width + label_pref.width,
                 std::max(check_pref.height, label_pref.height));
 }
 
-void CheckableTextTreeCell::Layout(const Theme& theme) {
+void CheckableTextTreeCell::Layout(const Theme &theme) {
     auto &frame = GetFrame();
     auto check_width = impl_->checkbox_->CalcPreferredSize(theme).width;
-    impl_->checkbox_->SetFrame(Rect(frame.x, frame.y,
-                                    check_width, frame.height));
+    impl_->checkbox_->SetFrame(
+            Rect(frame.x, frame.y, check_width, frame.height));
     auto x = impl_->checkbox_->GetFrame().GetRight();
-    impl_->label_->SetFrame(Rect(x, frame.y,
-                                 frame.GetRight() - x, frame.height));
+    impl_->label_->SetFrame(
+            Rect(x, frame.y, frame.GetRight() - x, frame.height));
 }
 
 // ----------------------------------------------------------------------------
@@ -90,10 +89,10 @@ struct LUTTreeCell::Impl {
 
 LUTTreeCell::LUTTreeCell(const char *text,
                          bool is_checked,
-                         const Color& color,
+                         const Color &color,
                          std::function<void(bool)> on_enabled,
-                         std::function<void(const Color&)> on_color_changed)
-: impl_(new LUTTreeCell::Impl()){
+                         std::function<void(const Color &)> on_color_changed)
+    : impl_(new LUTTreeCell::Impl()) {
     // We don't want any text in the checkbox, but passing "" seems to make it
     // not toggle, so we need to pass in something. This way it will just be
     // extra spacing.
@@ -111,7 +110,7 @@ LUTTreeCell::LUTTreeCell(const char *text,
 
 LUTTreeCell::~LUTTreeCell() {}
 
-Size LUTTreeCell::CalcPreferredSize(const Theme& theme) const {
+Size LUTTreeCell::CalcPreferredSize(const Theme &theme) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);
     auto label_pref = impl_->label_->CalcPreferredSize(theme);
     auto color_pref = impl_->color_->CalcPreferredSize(theme);
@@ -120,23 +119,24 @@ Size LUTTreeCell::CalcPreferredSize(const Theme& theme) const {
                          std::max(label_pref.height, color_pref.height)));
 }
 
-void LUTTreeCell::Layout(const Theme& theme) {
+void LUTTreeCell::Layout(const Theme &theme) {
     auto em = theme.font_size;
     auto &frame = GetFrame();
     auto check_width = impl_->checkbox_->CalcPreferredSize(theme).width;
-    auto color_width = int(std::ceil(impl_->color_width_percent * float(frame.width)));
+    auto color_width =
+            int(std::ceil(impl_->color_width_percent * float(frame.width)));
     auto min_color_width = 8 * theme.font_size;
     color_width = std::max(min_color_width, color_width);
     if (frame.width - (color_width + check_width) < 8 * em) {
         color_width = frame.width - check_width - 8 * em;
     }
-    impl_->checkbox_->SetFrame(Rect(frame.x, frame.y,
-                                    check_width, frame.height));
+    impl_->checkbox_->SetFrame(
+            Rect(frame.x, frame.y, check_width, frame.height));
     impl_->color_->SetFrame(Rect(frame.GetRight() - color_width, frame.y,
                                  color_width, frame.height));
     auto x = impl_->checkbox_->GetFrame().GetRight();
-    impl_->label_->SetFrame(Rect(x, frame.y,
-                                 impl_->color_->GetFrame().x - x, frame.height));
+    impl_->label_->SetFrame(
+            Rect(x, frame.y, impl_->color_->GetFrame().x - x, frame.height));
 }
 
 // ----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ struct TreeView::Impl {
     };
     int id_;
     Item root_;
-    std::unordered_map<TreeView::ItemId, Item*> id2item_;
+    std::unordered_map<TreeView::ItemId, Item *> id2item_;
     TreeView::ItemId selected_id_ = -1;
     bool can_select_parents_ = false;
     std::function<void(TreeView::ItemId)> on_selection_changed_;
@@ -177,7 +177,8 @@ TreeView::~TreeView() {}
 
 TreeView::ItemId TreeView::GetRootItem() const { return impl_->root_.id; }
 
-TreeView::ItemId TreeView::AddItem(ItemId parent_id, std::shared_ptr<Widget> w) {
+TreeView::ItemId TreeView::AddItem(ItemId parent_id,
+                                   std::shared_ptr<Widget> w) {
     Impl::Item item;
     item.id = Impl::g_next_id++;
     // ImGUI uses the text to identify the item, create a ID string
@@ -293,7 +294,7 @@ Size TreeView::CalcPreferredSize(const Theme &theme) const {
     return Size(Widget::DIM_GROW, Widget::DIM_GROW);
 }
 
-void TreeView::Layout(const Theme& theme) {
+void TreeView::Layout(const Theme &theme) {
     // Nothing to do here. We don't know the x position because of the
     // indentations, which also means we don't know the size. So we need
     // to defer layout to Draw().
@@ -356,15 +357,15 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         }
         bool is_selectable =
                 (item.children.empty() || impl_->can_select_parents_);
-        auto DrawThis = [this, &tree_frame=frame, &context, &new_selection](TreeView::Impl::Item& item, int height, bool is_selectable) {
+        auto DrawThis = [ this, &tree_frame = frame, &context, &new_selection ](
+                TreeView::Impl::Item & item, int height, bool is_selectable) {
             ImGui::SameLine(0, 0);
             auto x = ImGui::GetCursorScreenPos().x;
             auto y = ImGui::GetCursorScreenPos().y;
             auto scroll_width = ImGui::GetStyle().ScrollbarSize;
             auto indent = ImGui::GetCursorScreenPos().x - tree_frame.x;
-            item.cell->SetFrame(Rect(x, y,
-                                     tree_frame.width - indent - scroll_width,
-                                     height));
+            item.cell->SetFrame(Rect(
+                    x, y, tree_frame.width - indent - scroll_width, height));
             // Now that we know the frame we can finally layout. It would be
             // nice to not relayout until something changed, which would
             // usually work, unless the cell changes shape in response to

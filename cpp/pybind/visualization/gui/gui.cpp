@@ -764,18 +764,26 @@ void pybind_gui_classes(py::module &m) {
                  "changes the selection.");
 
     // ---- TreeView cells ----
-    py::class_<CheckableTextTreeCell, std::shared_ptr<CheckableTextTreeCell>, Widget> checkable_cell(m, "CheckableTextTreeCell", "TreeView cell with a checkbox and text");
+    py::class_<CheckableTextTreeCell, std::shared_ptr<CheckableTextTreeCell>,
+               Widget>
+            checkable_cell(m, "CheckableTextTreeCell",
+                           "TreeView cell with a checkbox and text");
     checkable_cell.def(py::init<>([](const char *text, bool checked,
                                      std::function<void(bool)> on_toggled) {
-        return std::make_shared<CheckableTextTreeCell>(text, checked, on_toggled);
+        return std::make_shared<CheckableTextTreeCell>(text, checked,
+                                                       on_toggled);
     }));
 
-    py::class_<LUTTreeCell, std::shared_ptr<LUTTreeCell>, Widget> lut_cell(m, "LUTTreeCell", "TreeView cell with checkbox, text, and color edit");
-    lut_cell.def(py::init<>([](const char *text, bool checked, const Color& color,
-                               std::function<void(bool)> on_enabled,
-                               std::function<void(const Color&)> on_color){
-        return std::make_shared<LUTTreeCell>(text, checked, color, on_enabled, on_color);
-    }));
+    py::class_<LUTTreeCell, std::shared_ptr<LUTTreeCell>, Widget> lut_cell(
+            m, "LUTTreeCell",
+            "TreeView cell with checkbox, text, and color edit");
+    lut_cell.def(
+            py::init<>([](const char *text, bool checked, const Color &color,
+                          std::function<void(bool)> on_enabled,
+                          std::function<void(const Color &)> on_color) {
+                return std::make_shared<LUTTreeCell>(text, checked, color,
+                                                     on_enabled, on_color);
+            }));
 
     // ---- VectorEdit ----
     py::class_<VectorEdit, std::shared_ptr<VectorEdit>, Widget> vectoredit(

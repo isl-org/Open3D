@@ -41,7 +41,7 @@ namespace gui {
 /// (if any, and if CanSelectItemsWithChildren is false).
 class CheckableTextTreeCell : public Widget {
 public:
-    CheckableTextTreeCell(const char *text,
+    CheckableTextTreeCell(const char* text,
                           bool is_checked,
                           std::function<void(bool)> on_toggled);
     ~CheckableTextTreeCell();
@@ -56,7 +56,7 @@ private:
 
 class LUTTreeCell : public Widget {
 public:
-    LUTTreeCell(const char *text,
+    LUTTreeCell(const char* text,
                 bool is_checked,
                 const Color& color,
                 std::function<void(bool)> on_enabled,
@@ -86,7 +86,7 @@ public:
     /// Adds an item to the tree.
     ItemId AddItem(ItemId parent_id, std::shared_ptr<Widget> item);
     /// Adds a text item to the tree
-    ItemId AddTextItem(ItemId parent_id, const char *text);
+    ItemId AddTextItem(ItemId parent_id, const char* text);
     /// Removes an item an all its children (if any) from the tree
     void RemoveItem(ItemId item_id);
     /// Clears all the items
