@@ -307,8 +307,8 @@ class ExampleWindow:
     def _on_list(self, new_val, is_dbl_click):
         print(new_val)
 
-    def _on_tree(self, new_text, new_item):
-        print(new_text)
+    def _on_tree(self, new_item_id):
+        print(new_item_id)
 
     def _on_slider(self, new_val):
         self._progress.value = new_val / 20.0
