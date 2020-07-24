@@ -86,6 +86,7 @@ Eigen::Matrix3d ComputeScatterMatrix(const std::vector<Eigen::Vector3d>& points,
     for (const auto& n_idx : indices) {
         up += points[n_idx];
     }
+    // up /= indices.size() is a constant factor, doesn't affect the results
 
     // Compute the scatter matrix
     Eigen::Matrix3d cov = Eigen::Matrix3d::Zero();
