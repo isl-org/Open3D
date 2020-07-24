@@ -55,10 +55,12 @@ cmake --version
 date
 if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     CUDA_TOOLKIT_DIR=~/cuda
-    reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
-    reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
     export PATH="$CUDA_TOOLKIT_DIR/bin:$PATH"
     export LD_LIBRARY_PATH="$CUDA_TOOLKIT_DIR/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64"
+    if ! which nvcc >/dev/null ; then
+        reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
+        reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
+    fi
     nvcc --version
 fi
 
@@ -87,7 +89,7 @@ fi
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" -o "$BUILD_PYTORCH_OPS" == "ON" ]; then
     reportRun pip install -U yapf==0.28.0
 fi
-mkdir build
+mkdir -p build
 cd build
 
 runBenchmarks=true
@@ -116,8 +118,8 @@ reportRun python -c "import open3d; print(open3d)"
 reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
 echo
 
-# skip unit tests if built with CUDA
-if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
+# skip unit tests if built with CUDA, unless system contains Nvidia GPUs
+if [ "$BUILD_CUDA_MODULE" == "OFF" ] || nvidia-smi -L | grep -q GPU ; then
     echo "running Open3D unit tests..."
     unitTestFlags=
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"

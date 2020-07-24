@@ -1,0 +1,144 @@
+---
+name: Google cloud Ubuntu GPU CI
+
+on:
+  push:
+    branches:
+      - master
+      - ssheorey-gpu-ci
+  pull_request:
+    types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
+
+env:
+  PROJECT_ID: ${{ secrets.GCE_PROJECT }}
+  GCE_INSTANCE: ssheorey-gpu-instance-1       # TODO: update to instance name
+  GCE_INSTANCE_ZONE: us-west1-b               # TODO: update to instance zone
+
+jobs:
+  one-time-setup:
+    name: One time setup
+    runs-on: ubuntu-18.04
+
+    steps:
+      # Setup gcloud CLI
+      - name: GCloud setup and start VM
+        uses: actions/checkout@v2
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: 'latest'
+          service_account_key: ${{ secrets.GCE_SA_KEY }}
+          project_id: ${{   secrets.GCE_PROJECT }}
+          export_default_credentials: true
+        run: |-
+          gcloud info
+          gcloud compute instances start "$GCE_INSTANCE" --zone="$GCE_INSTANCE_ZONE"
+
+      - name: Clone source code repository
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+            "git clone --recursive --depth 1 ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} && \
+            cd Open3D && \
+            git checkout ${GITHUB_SHA}"
+
+      - name: Set up Python version
+        run: |-
+          if [ ${{ matrix.PYTHON_VERSION }} != "3.6" ] ; then
+            echo "Only Python 3.6 supported as of now"
+            exit 1
+          fi
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+              "sudo apt-get update && \
+              sudo apt-get --yes install python3 python3-pip && \
+              echo  'Only for Ubuntu <= 20.04' && set -x && \
+              ln -s /usr/bin/python3.6 \$HOME/.local/bin/python && \
+              ln -s /usr/bin/python3.6-config \$HOME/.local/bin/python-config && \
+              ln -s /usr/bin/pip3 \$HOME/.local/bin/pip"
+
+      - name: Shutdown VM instance
+        run: gcloud compute instances stop ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE"
+
+    pull-build-test:
+      name: Pull, build, run unit tests
+      runs-on: ubuntu-18.04
+      strategy:
+        fail-fast: false
+        matrix:
+          SHARED: [ON, OFF]
+          BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
+          BUILD_ML_OPS: [ON, OFF]
+          BUILD_CUDA: [ON]
+          PYTHON_VERSION: [3.6]
+
+      env:
+        SHARED: ${{ matrix.SHARED }}
+        BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
+        BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
+        BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
+        BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
+        NPROC: 2
+
+      steps:
+        - name: GCloud setup and start VM
+          uses: actions/checkout@v2
+
+      # Setup gcloud CLI
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: 'latest'
+          service_account_key: ${{ secrets.GCE_SA_KEY }}
+          project_id: ${{   secrets.GCE_PROJECT }}
+          export_default_credentials: true
+
+      - run: |-
+        gcloud info
+        gcloud compute instances start ${GCE_INSTANCE} --zone=${GCE_INSTANCE_ZONE}
+
+      - name: Checkout source code commit
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+          "cd Open3D && \
+           git fetch ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} ${GITHUB_REF} && \
+           git checkout ${GITHUB_SHA}"
+
+           # Pre-installed 18.04 packages: https://git.io/JfHmW
+      - name: Install dependencies
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+          "echo 'Installing backported cmake from https://apt.kitware.com/ and NVIDIA drivers' && \
+           wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
+           | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
+           sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main' && \
+           sudo apt-get --yes install cmake ccache nvidia-driver-440 && \
+           Open3D/util/scripts/install-deps-ubuntu.sh assume-yes"
+           #ccache -M 2G"  # GitHub's total cache limit is 5GB for all OSes.
+
+      - name: Config, build and run unit tests
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+          "export PATH=/usr/lib/ccache:\$HOME/.local/bin:\$PATH: \
+           SHARED=$SHARED \
+           NPROC=$NPROC \
+           BUILD_DEPENDENCY_FROM_SOURCE=$BUILD_DEPENDENCY_FROM_SOURCE \
+           BUILD_CUDA_MODULE=$BUILD_CUDA_MODULE \
+           BUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS \
+           BUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS \
+           LOW_MEM_USAGE=$LOW_MEM_USAGE && \
+           ccache -s && \
+           cd Open3D && ./util/scripts/run-ci.sh && \
+           ccache -s"
+
+      - name: Clean build and test files
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+          "rm -r Open3D/build"
+
+      - name: Cleanup - remove all data
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+          "rm -r Open3D"
+
+      - name: Shutdown VM instance
+        run: |-
+          gcloud compute instances stop ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE"
+
+...
