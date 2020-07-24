@@ -153,7 +153,7 @@ void Open3DScene::ShowAxes(bool enable) {
 
 void Open3DScene::ClearGeometry() {
     auto scene = renderer_.GetScene(scene_);
-    if(model_name_ == fast_model_name_) {
+    if (model_name_ == fast_model_name_) {
         fast_model_name_.clear();
     }
 
@@ -201,10 +201,22 @@ void Open3DScene::AddGeometry(
     RecreateAxis(scene, bounds_, false);
 }
 
+void Open3DScene::UpdateMaterial(const Material& mat) {
+    if (model_name_.empty()) {
+        return;
+    }
+
+    auto scene = renderer_.GetScene(scene_);
+    scene->OverrideMaterial(model_name_, mat);
+    if (model_name_ != fast_model_name_) {
+        scene->OverrideMaterial(fast_model_name_, mat);
+    }
+}
+
 void Open3DScene::SetLOD(LOD lod) {
     if (lod != lod_) {
         lod_ = lod;
-        if(model_name_.empty()) {
+        if (model_name_.empty()) {
             return;
         }
 

@@ -57,6 +57,7 @@ public:
     void AddGeometry(std::shared_ptr<const geometry::Geometry3D> geom,
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
+    void UpdateMaterial(const Material& mat);
 
     enum class LOD {
         HIGH_DETAIL,  // used when rendering time is not as important

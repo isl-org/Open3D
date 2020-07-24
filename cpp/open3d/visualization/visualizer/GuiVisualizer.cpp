@@ -364,8 +364,10 @@ struct GuiVisualizer::Impl {
         TextureMaps maps;
 
         // geometry -> material  (entry exists if mesh HasMaterials())
-        std::map<rendering::GeometryHandle, GuiSettingsModel::LitMaterial>
-                loaded_materials_;
+        bool have_loaded_material_;
+        rendering::Material loaded_material_;
+        rendering::Material lit_material_;
+        rendering::Material unlit_material_;
 
         GuiSettingsModel model_;
         std::shared_ptr<gui::Vert> wgt_base;
@@ -382,22 +384,26 @@ struct GuiVisualizer::Impl {
 
     void InitializeMaterials(rendering::Renderer &renderer,
                              const std::string &resource_path) {
-        auto lit_path = resource_path + "/defaultLit.filamat";
-        settings_.lit_template = renderer.AddMaterial(
-                visualization::rendering::ResourceLoadRequest(lit_path.data()));
+        // NOTE: No longer necessary
+        // auto lit_path = resource_path + "/defaultLit.filamat";
+        // settings_.lit_template = renderer.AddMaterial(
+        //         visualization::rendering::ResourceLoadRequest(lit_path.data()));
 
-        auto unlit_path = resource_path + "/defaultUnlit.filamat";
-        settings_.unlit_template = renderer.AddMaterial(
-                visualization::rendering::ResourceLoadRequest(
-                        unlit_path.data()));
+        // auto unlit_path = resource_path + "/defaultUnlit.filamat";
+        // settings_.unlit_template = renderer.AddMaterial(
+        //         visualization::rendering::ResourceLoadRequest(
+        //                 unlit_path.data()));
 
-        Eigen::Vector3f grey = {0.5f, 0.5f, 0.5f};
-        settings_.lit = renderer.ModifyMaterial(settings_.lit_template)
-                                .SetColor("baseColor", grey)
-                                .Finish();
-        settings_.unlit = renderer.ModifyMaterial(settings_.unlit_template)
-                                  .SetColor("baseColor", grey)
-                                  .Finish();
+        // Eigen::Vector3f grey = {0.5f, 0.5f, 0.5f};
+        // settings_.lit = renderer.ModifyMaterial(settings_.lit_template)
+        //                         .SetColor("baseColor", grey)
+        //                         .Finish();
+        // settings_.unlit = renderer.ModifyMaterial(settings_.unlit_template)
+        //                           .SetColor("baseColor", grey)
+        //                           .Finish();
+
+        settings_.lit_material_.shader = "defaultLit";
+        settings_.unlit_material_.shader = "defaultUnlit";
 
         auto &defaults = settings_.model_.GetCurrentMaterials();
 
@@ -424,7 +430,6 @@ struct GuiVisualizer::Impl {
     }
 
     void SetMaterialsToDefault() {
-        settings_.loaded_materials_.clear();
         settings_.view_->ShowFileMaterialEntry(false);
 
         settings_.maps.albedo_map =
@@ -508,50 +513,47 @@ struct GuiVisualizer::Impl {
         }
         scene_wgt_->ShowSkybox(settings_.model_.GetShowSkybox());
 
-        // auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        //        auto *render_scene = scene_wgt_->GetScene()->GetScene();
         scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
         auto &current_materials = settings_.model_.GetCurrentMaterials();
-        if (settings_.model_.GetCurrentMaterials().lit_name ==
+        if (current_materials.lit_name ==
             GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+            std::cout << "\tMaterial from file" << std::endl;
             // TODO: FIXME!!!!
             // ResetToLoadedMaterials(renderer);
-            // for (auto g : scene_wgt_->GetScene()->GetModel()) {
-            //     auto &mods =
-            //             renderer.ModifyMaterial(render_scene->GetMaterial(g))
-            //                     .SetParameter("pointSize",
-            //                                   current_materials.point_size);
-            //     if (settings_.model_.GetUserHasChangedColor()) {
-            //         mods = mods.SetColor("baseColor",
-            //                              current_materials.lit.base_color);
-            //     }
-            //     mods.Finish();
+            // if(settings_.model_.GetUserHasChangedColor()) {
+            //     settings_.loaded_material_.base_color =
+            //     current_materials.lit.base_color;
             // }
+            scene_wgt_->GetScene()->UpdateMaterial(settings_.loaded_material_);
         } else {
             UpdateMaterials(renderer, current_materials);
+            switch (settings_.model_.GetMaterialType()) {
+                case GuiSettingsModel::MaterialType::LIT:
+                    scene_wgt_->GetScene()->UpdateMaterial(
+                            settings_.lit_material_);
+                    break;
+                case GuiSettingsModel::MaterialType::UNLIT:
+                    scene_wgt_->GetScene()->UpdateMaterial(
+                            settings_.unlit_material_);
+                    break;
+                default:
+                    break;
+            }
         }
 
-        // TODO: FIXME!!!!!
         if (material_type_changed) {
             auto *view = scene_wgt_->GetRenderView();
             switch (settings_.model_.GetMaterialType()) {
                 case GuiSettingsModel::MaterialType::LIT: {
                     view->SetMode(rendering::View::Mode::Color);
-                    // for (const auto &handle :
-                    //      scene_wgt_->GetScene()->GetModel()) {
-                    //     render_scene->AssignMaterial(handle, settings_.lit);
-                    // }
                     break;
                 }
                 case GuiSettingsModel::MaterialType::UNLIT: {
                     view->SetMode(rendering::View::Mode::Color);
-                    // for (const auto &handle :
-                    //      scene_wgt_->GetScene()->GetModel()) {
-                    //     render_scene->AssignMaterial(handle,
-                    //     settings_.unlit);
-                    // }
                     break;
                 }
                 case GuiSettingsModel::MaterialType::NORMAL_MAP:
@@ -583,63 +585,48 @@ private:
 
     void UpdateMaterials(rendering::Renderer &renderer,
                          const GuiSettingsModel::Materials &materials) {
-        UpdateLitMaterial(renderer, settings_.lit, materials.lit,
-                          materials.point_size);
-        // auto *render_scene = scene_wgt_->GetScene()->GetScene();
-        // for (auto geom_mat : settings_.loaded_materials_) {
-        //     // TODO: FIXME!!
-        //     // auto hgeom = geom_mat.first;
-        //     // UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
-        //     //                   materials.lit, materials.point_size);
-        // }
-        settings_.unlit =
-                renderer.ModifyMaterial(settings_.unlit)
-                        .SetColor("baseColor", materials.unlit.base_color)
-                        .SetParameter("pointSize", materials.point_size)
-                        .SetTexture(
-                                "albedo", settings_.maps.albedo_map,
-                                rendering::TextureSamplerParameters::Pretty())
-                        .Finish();
-    }
+        auto &lit = settings_.lit_material_;
+        auto &unlit = settings_.unlit_material_;
 
-    void UpdateLitMaterial(rendering::Renderer &renderer,
-                           rendering::MaterialInstanceHandle mat_instance,
-                           const GuiSettingsModel::LitMaterial &material,
-                           float point_size) {
-        renderer.ModifyMaterial(mat_instance)
-                .SetColor("baseColor", material.base_color)
-                .SetParameter("baseRoughness", material.roughness)
-                .SetParameter("baseMetallic", material.metallic)
-                .SetParameter("reflectance", material.reflectance)
-                .SetParameter("clearCoat", material.clear_coat)
-                .SetParameter("clearCoatRoughness",
-                              material.clear_coat_roughness)
-                .SetParameter("anisotropy", material.anisotropy)
-                .SetParameter("pointSize", point_size)
-                .SetTexture("albedo", settings_.maps.albedo_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("normalMap", settings_.maps.normal_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("ambientOcclusionMap",
-                            settings_.maps.ambient_occlusion_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("roughnessMap", settings_.maps.roughness_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("metallicMap", settings_.maps.metallic_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("reflectanceMap", settings_.maps.reflectance_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("clearCoatMap", settings_.maps.clear_coat_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("clearCoatRoughnessMap",
-                            settings_.maps.clear_coat_roughness_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("anisotropyMap", settings_.maps.anisotropy_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .Finish();
+        // Update lit from GUI
+        lit.base_color.x() = materials.lit.base_color.x();
+        lit.base_color.y() = materials.lit.base_color.y();
+        lit.base_color.z() = materials.lit.base_color.z();
+        lit.base_metallic = materials.lit.metallic;
+        lit.base_roughness = materials.lit.roughness;
+        lit.base_reflectance = materials.lit.reflectance;
+        lit.base_clearcoat = materials.lit.clear_coat;
+        lit.base_clearcoat_roughness = materials.lit.clear_coat_roughness;
+        lit.base_anisotropy = materials.lit.anisotropy;
+
+        // Update unlit from GUI
+        unlit.base_color.x() = materials.unlit.base_color.x();
+        unlit.base_color.y() = materials.unlit.base_color.y();
+        unlit.base_color.z() = materials.unlit.base_color.z();
+
+        // NOTE: No longer needed - Scene updates material properties
+        // UpdateLitMaterial(renderer, settings_.lit, materials.lit,
+        //                   materials.point_size);
+        // // auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        // // for (auto geom_mat : settings_.loaded_materials_) {
+        // //     // TODO: FIXME!!
+        // //     // auto hgeom = geom_mat.first;
+        // //     // UpdateLitMaterial(renderer,
+        // render_scene->GetMaterial(hgeom),
+        // //     //                   materials.lit, materials.point_size);
+        // // }
+        // settings_.unlit =
+        //         renderer.ModifyMaterial(settings_.unlit)
+        //                 .SetColor("baseColor", materials.unlit.base_color)
+        //                 .SetParameter("pointSize", materials.point_size)
+        //                 .SetTexture(
+        //                         "albedo", settings_.maps.albedo_map,
+        //                         rendering::TextureSamplerParameters::Pretty())
+        //                 .Finish();
     }
 
     void ResetToLoadedMaterials(rendering::Renderer &renderer) {
+        // NOTE: No longer needed - Scene updates material properties
         // auto *render_scene = scene_wgt_->GetScene()->GetScene();
         // auto point_size = settings_.model_.GetPointSize();
         // for (auto model_mat : settings_.loaded_materials_) {
@@ -908,7 +895,7 @@ void GuiVisualizer::SetGeometry(
     for (size_t i = 0; i < geometries.size(); ++i) {
         std::shared_ptr<const geometry::Geometry> g = geometries[i];
         rendering::Material loaded_material;
-        // bool material_is_loaded = false;
+        bool material_is_loaded = false;
         // GuiSettingsModel::LitMaterial loaded_material;
 
         // If a point cloud or mesh has no vertex colors or a single uniform
@@ -986,9 +973,7 @@ void GuiVisualizer::SetGeometry(
                                         mesh_material.clearCoatRoughness) &&
                                 !is_map_valid(mesh_material.anisotropy);
                     }
-                    // impl_->SetLoadedMaterial(GetRenderer(), material, maps);
-                    // material_is_loaded = true;
-                    // loaded_material = material;
+                    material_is_loaded = true;
                 }
 
                 if ((mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) ||
@@ -1008,9 +993,14 @@ void GuiVisualizer::SetGeometry(
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         scene3d->AddGeometry(g3, loaded_material);
         bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
-        // if (material_is_loaded) {
-        //     impl_->settings_.loaded_materials_[handle] = loaded_material;
-        // }
+        if (material_is_loaded) {
+            impl_->settings_.have_loaded_material_ = true;
+            impl_->settings_.loaded_material_ = loaded_material;
+            impl_->settings_.lit_material_ = loaded_material;
+            impl_->settings_.lit_material_.shader = "defaultLit";
+            impl_->settings_.unlit_material_ = loaded_material;
+            impl_->settings_.unlit_material_.shader = "defaultUnlit";
+        }
     }
 
     if (!geometries.empty()) {
@@ -1039,15 +1029,13 @@ void GuiVisualizer::SetGeometry(
     }
 
     impl_->settings_.model_.UnsetCustomDefaultColor();
-    if (!impl_->settings_.loaded_materials_.empty()) {
-        if (impl_->settings_.loaded_materials_.size() == 1) {
-            auto color = impl_->settings_.loaded_materials_.begin()
-                                 ->second.base_color;
-            impl_->settings_.model_.SetCustomDefaultColor(color);
-        }
+    if (impl_->settings_.have_loaded_material_) {
+        Eigen::Vector3f color(
+                impl_->settings_.loaded_material_.base_color.data());
+        impl_->settings_.model_.SetCustomDefaultColor(color);
         impl_->settings_.view_->ShowFileMaterialEntry(true);
     } else {
-        impl_->settings_.view_->ShowFileMaterialEntry(true);
+        impl_->settings_.view_->ShowFileMaterialEntry(false);
     }
     impl_->settings_.view_->Update();  // make sure prefab material is correct
 
