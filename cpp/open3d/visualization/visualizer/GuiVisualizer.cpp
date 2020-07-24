@@ -53,8 +53,10 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Camera.h"
+#include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
+#include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/RendererStructs.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -357,15 +359,15 @@ struct GuiVisualizer::Impl {
         rendering::MaterialHandle lit_template;
         rendering::MaterialHandle unlit_template;
 
-        rendering::IndirectLightHandle ibl;
-        rendering::SkyboxHandle sky;
         rendering::MaterialInstanceHandle lit;
         rendering::MaterialInstanceHandle unlit;
         TextureMaps maps;
 
         // geometry -> material  (entry exists if mesh HasMaterials())
-        std::map<rendering::GeometryHandle, GuiSettingsModel::LitMaterial>
-                loaded_materials_;
+        bool have_loaded_material_;
+        rendering::Material loaded_material_;
+        rendering::Material lit_material_;
+        rendering::Material unlit_material_;
 
         GuiSettingsModel model_;
         std::shared_ptr<gui::Vert> wgt_base;
@@ -382,22 +384,26 @@ struct GuiVisualizer::Impl {
 
     void InitializeMaterials(rendering::Renderer &renderer,
                              const std::string &resource_path) {
-        auto lit_path = resource_path + "/defaultLit.filamat";
-        settings_.lit_template = renderer.AddMaterial(
-                visualization::rendering::ResourceLoadRequest(lit_path.data()));
+        // NOTE: No longer necessary
+        // auto lit_path = resource_path + "/defaultLit.filamat";
+        // settings_.lit_template = renderer.AddMaterial(
+        //         visualization::rendering::ResourceLoadRequest(lit_path.data()));
 
-        auto unlit_path = resource_path + "/defaultUnlit.filamat";
-        settings_.unlit_template = renderer.AddMaterial(
-                visualization::rendering::ResourceLoadRequest(
-                        unlit_path.data()));
+        // auto unlit_path = resource_path + "/defaultUnlit.filamat";
+        // settings_.unlit_template = renderer.AddMaterial(
+        //         visualization::rendering::ResourceLoadRequest(
+        //                 unlit_path.data()));
 
-        Eigen::Vector3f grey = {0.5f, 0.5f, 0.5f};
-        settings_.lit = renderer.ModifyMaterial(settings_.lit_template)
-                                .SetColor("baseColor", grey)
-                                .Finish();
-        settings_.unlit = renderer.ModifyMaterial(settings_.unlit_template)
-                                  .SetColor("baseColor", grey)
-                                  .Finish();
+        // Eigen::Vector3f grey = {0.5f, 0.5f, 0.5f};
+        // settings_.lit = renderer.ModifyMaterial(settings_.lit_template)
+        //                         .SetColor("baseColor", grey)
+        //                         .Finish();
+        // settings_.unlit = renderer.ModifyMaterial(settings_.unlit_template)
+        //                           .SetColor("baseColor", grey)
+        //                           .Finish();
+
+        settings_.lit_material_.shader = "defaultLit";
+        settings_.unlit_material_.shader = "defaultUnlit";
 
         auto &defaults = settings_.model_.GetCurrentMaterials();
 
@@ -424,7 +430,6 @@ struct GuiVisualizer::Impl {
     }
 
     void SetMaterialsToDefault() {
-        settings_.loaded_materials_.clear();
         settings_.view_->ShowFileMaterialEntry(false);
 
         settings_.maps.albedo_map =
@@ -467,46 +472,22 @@ struct GuiVisualizer::Impl {
     }
 
     bool SetIBL(rendering::Renderer &renderer, const std::string &path) {
-        rendering::IndirectLightHandle new_ibl;
-        std::string ibl_path;
-        if (!path.empty()) {
-            new_ibl = renderer.AddIndirectLight(
-                    rendering::ResourceLoadRequest(path.c_str()));
-            ibl_path = path;
-        } else {
-            ibl_path =
+        auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        std::string ibl_name(path);
+        if (ibl_name.empty()) {
+            ibl_name =
                     std::string(
                             gui::Application::GetInstance().GetResourcePath()) +
-                    "/" + GuiSettingsModel::DEFAULT_IBL + "_ibl.ktx";
-            new_ibl = renderer.AddIndirectLight(
-                    rendering::ResourceLoadRequest(ibl_path.c_str()));
+                    "/" + GuiSettingsModel::DEFAULT_IBL;
         }
-        if (new_ibl) {
-            auto *render_scene = scene_wgt_->GetScene()->GetScene();
-            settings_.ibl = new_ibl;
-            auto intensity = render_scene->GetIndirectLightIntensity();
-            render_scene->SetIndirectLight(new_ibl);
-            render_scene->SetIndirectLightIntensity(intensity);
+        if (ibl_name.find("_ibl.ktx") != std::string::npos) {
+            ibl_name = ibl_name.substr(0, ibl_name.size() - 8);
+        }
+        render_scene->SetIndirectLight(ibl_name);
+        float intensity = render_scene->GetIndirectLightIntensity();
+        render_scene->SetIndirectLightIntensity(intensity);
 
-            auto skybox_path = std::string(ibl_path);
-            if (skybox_path.find("_ibl.ktx") != std::string::npos) {
-                skybox_path = skybox_path.substr(0, skybox_path.size() - 8);
-                skybox_path += "_skybox.ktx";
-                settings_.sky = renderer.AddSkybox(
-                        rendering::ResourceLoadRequest(skybox_path.c_str()));
-                if (!settings_.sky) {
-                    settings_.sky = renderer.AddSkybox(
-                            rendering::ResourceLoadRequest(ibl_path.c_str()));
-                }
-                bool is_on = settings_.model_.GetShowSkybox();
-                if (is_on) {
-                    scene_wgt_->GetScene()->SetSkybox(settings_.sky);
-                }
-                scene_wgt_->SetSkyboxHandle(settings_.sky, is_on);
-            }
-            return true;
-        }
-        return false;
+        return true;
     }
 
     void SetMouseControls(gui::Window &window,
@@ -524,38 +505,44 @@ struct GuiVisualizer::Impl {
     void UpdateFromModel(rendering::Renderer &renderer,
                          bool material_type_changed) {
         scene_wgt_->SetBackgroundColor(settings_.model_.GetBackgroundColor());
-        auto *render_scene = scene_wgt_->GetScene()->GetScene();
 
         if (settings_.model_.GetShowSkybox()) {
-            scene_wgt_->GetScene()->SetSkybox(settings_.sky);
+            scene_wgt_->GetScene()->SetSkybox(true);
         } else {
-            scene_wgt_->GetScene()->SetSkybox(rendering::SkyboxHandle());
+            scene_wgt_->GetScene()->SetSkybox(false);
         }
-        scene_wgt_->SetSkyboxHandle(settings_.sky,
-                                    settings_.model_.GetShowSkybox());
+        scene_wgt_->ShowSkybox(settings_.model_.GetShowSkybox());
 
-        render_scene->SetEntityEnabled(scene_wgt_->GetScene()->GetAxis(),
-                                       settings_.model_.GetShowAxes());
+        //        auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
         auto &current_materials = settings_.model_.GetCurrentMaterials();
-        if (settings_.model_.GetCurrentMaterials().lit_name ==
+        if (current_materials.lit_name ==
             GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
-            ResetToLoadedMaterials(renderer);
-            for (auto g : scene_wgt_->GetScene()->GetModel()) {
-                auto &mods =
-                        renderer.ModifyMaterial(render_scene->GetMaterial(g))
-                                .SetParameter("pointSize",
-                                              current_materials.point_size);
-                if (settings_.model_.GetUserHasChangedColor()) {
-                    mods = mods.SetColor("baseColor",
-                                         current_materials.lit.base_color);
-                }
-                mods.Finish();
-            }
+            std::cout << "\tMaterial from file" << std::endl;
+            // TODO: FIXME!!!!
+            // ResetToLoadedMaterials(renderer);
+            // if(settings_.model_.GetUserHasChangedColor()) {
+            //     settings_.loaded_material_.base_color =
+            //     current_materials.lit.base_color;
+            // }
+            scene_wgt_->GetScene()->UpdateMaterial(settings_.loaded_material_);
         } else {
             UpdateMaterials(renderer, current_materials);
+            switch (settings_.model_.GetMaterialType()) {
+                case GuiSettingsModel::MaterialType::LIT:
+                    scene_wgt_->GetScene()->UpdateMaterial(
+                            settings_.lit_material_);
+                    break;
+                case GuiSettingsModel::MaterialType::UNLIT:
+                    scene_wgt_->GetScene()->UpdateMaterial(
+                            settings_.unlit_material_);
+                    break;
+                default:
+                    break;
+            }
         }
 
         if (material_type_changed) {
@@ -563,18 +550,10 @@ struct GuiVisualizer::Impl {
             switch (settings_.model_.GetMaterialType()) {
                 case GuiSettingsModel::MaterialType::LIT: {
                     view->SetMode(rendering::View::Mode::Color);
-                    for (const auto &handle :
-                         scene_wgt_->GetScene()->GetModel()) {
-                        render_scene->AssignMaterial(handle, settings_.lit);
-                    }
                     break;
                 }
                 case GuiSettingsModel::MaterialType::UNLIT: {
                     view->SetMode(rendering::View::Mode::Color);
-                    for (const auto &handle :
-                         scene_wgt_->GetScene()->GetModel()) {
-                        render_scene->AssignMaterial(handle, settings_.unlit);
-                    }
                     break;
                 }
                 case GuiSettingsModel::MaterialType::NORMAL_MAP:
@@ -595,86 +574,68 @@ private:
         if (lighting.use_default_ibl) {
             this->SetIBL(renderer, "");
         }
-        if (lighting.ibl_enabled) {
-            render_scene->SetIndirectLight(settings_.ibl);
-        } else {
-            render_scene->SetIndirectLight(rendering::IndirectLightHandle());
-        }
+
+        render_scene->EnableIndirectLight(lighting.ibl_enabled);
         render_scene->SetIndirectLightIntensity(lighting.ibl_intensity);
         render_scene->SetIndirectLightRotation(lighting.ibl_rotation);
-        render_scene->SetEntityEnabled(scene->GetSun(), lighting.sun_enabled);
-        render_scene->SetLightIntensity(scene->GetSun(),
-                                        lighting.sun_intensity);
-        render_scene->SetLightDirection(scene->GetSun(), lighting.sun_dir);
-        render_scene->SetLightColor(scene->GetSun(), lighting.sun_color);
+        render_scene->SetDirectionalLight(lighting.sun_dir, lighting.sun_color,
+                                          lighting.sun_intensity);
+        render_scene->EnableDirectionalLight(lighting.sun_enabled);
     }
 
     void UpdateMaterials(rendering::Renderer &renderer,
                          const GuiSettingsModel::Materials &materials) {
-        UpdateLitMaterial(renderer, settings_.lit, materials.lit,
-                          materials.point_size);
-        auto *render_scene = scene_wgt_->GetScene()->GetScene();
-        for (auto geom_mat : settings_.loaded_materials_) {
-            auto hgeom = geom_mat.first;
-            UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
-                              materials.lit, materials.point_size);
-        }
-        settings_.unlit =
-                renderer.ModifyMaterial(settings_.unlit)
-                        .SetColor("baseColor", materials.unlit.base_color)
-                        .SetParameter("pointSize", materials.point_size)
-                        .SetTexture(
-                                "albedo", settings_.maps.albedo_map,
-                                rendering::TextureSamplerParameters::Pretty())
-                        .Finish();
-    }
+        auto &lit = settings_.lit_material_;
+        auto &unlit = settings_.unlit_material_;
 
-    void UpdateLitMaterial(rendering::Renderer &renderer,
-                           rendering::MaterialInstanceHandle mat_instance,
-                           const GuiSettingsModel::LitMaterial &material,
-                           float point_size) {
-        renderer.ModifyMaterial(mat_instance)
-                .SetColor("baseColor", material.base_color)
-                .SetParameter("baseRoughness", material.roughness)
-                .SetParameter("baseMetallic", material.metallic)
-                .SetParameter("reflectance", material.reflectance)
-                .SetParameter("clearCoat", material.clear_coat)
-                .SetParameter("clearCoatRoughness",
-                              material.clear_coat_roughness)
-                .SetParameter("anisotropy", material.anisotropy)
-                .SetParameter("pointSize", point_size)
-                .SetTexture("albedo", settings_.maps.albedo_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("normalMap", settings_.maps.normal_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("ambientOcclusionMap",
-                            settings_.maps.ambient_occlusion_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("roughnessMap", settings_.maps.roughness_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("metallicMap", settings_.maps.metallic_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("reflectanceMap", settings_.maps.reflectance_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("clearCoatMap", settings_.maps.clear_coat_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("clearCoatRoughnessMap",
-                            settings_.maps.clear_coat_roughness_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .SetTexture("anisotropyMap", settings_.maps.anisotropy_map,
-                            rendering::TextureSamplerParameters::Pretty())
-                .Finish();
+        // Update lit from GUI
+        lit.base_color.x() = materials.lit.base_color.x();
+        lit.base_color.y() = materials.lit.base_color.y();
+        lit.base_color.z() = materials.lit.base_color.z();
+        lit.base_metallic = materials.lit.metallic;
+        lit.base_roughness = materials.lit.roughness;
+        lit.base_reflectance = materials.lit.reflectance;
+        lit.base_clearcoat = materials.lit.clear_coat;
+        lit.base_clearcoat_roughness = materials.lit.clear_coat_roughness;
+        lit.base_anisotropy = materials.lit.anisotropy;
+
+        // Update unlit from GUI
+        unlit.base_color.x() = materials.unlit.base_color.x();
+        unlit.base_color.y() = materials.unlit.base_color.y();
+        unlit.base_color.z() = materials.unlit.base_color.z();
+
+        // NOTE: No longer needed - Scene updates material properties
+        // UpdateLitMaterial(renderer, settings_.lit, materials.lit,
+        //                   materials.point_size);
+        // // auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        // // for (auto geom_mat : settings_.loaded_materials_) {
+        // //     // TODO: FIXME!!
+        // //     // auto hgeom = geom_mat.first;
+        // //     // UpdateLitMaterial(renderer,
+        // render_scene->GetMaterial(hgeom),
+        // //     //                   materials.lit, materials.point_size);
+        // // }
+        // settings_.unlit =
+        //         renderer.ModifyMaterial(settings_.unlit)
+        //                 .SetColor("baseColor", materials.unlit.base_color)
+        //                 .SetParameter("pointSize", materials.point_size)
+        //                 .SetTexture(
+        //                         "albedo", settings_.maps.albedo_map,
+        //                         rendering::TextureSamplerParameters::Pretty())
+        //                 .Finish();
     }
 
     void ResetToLoadedMaterials(rendering::Renderer &renderer) {
-        auto *render_scene = scene_wgt_->GetScene()->GetScene();
-        auto point_size = settings_.model_.GetPointSize();
-        for (auto model_mat : settings_.loaded_materials_) {
-            auto hgeom = model_mat.first;
-            auto &loaded = model_mat.second;
-            UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
-                              loaded, point_size);
-        }
+        // NOTE: No longer needed - Scene updates material properties
+        // auto *render_scene = scene_wgt_->GetScene()->GetScene();
+        // auto point_size = settings_.model_.GetPointSize();
+        // for (auto model_mat : settings_.loaded_materials_) {
+        //     // TODO: FIXME!!!
+        //     // auto hgeom = model_mat.first;
+        //     // auto &loaded = model_mat.second;
+        //     // UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
+        //     //                   loaded, point_size);
+        // }
     }
 
     void OnNewIBL(Window &window, const char *name) {
@@ -785,17 +746,10 @@ void GuiVisualizer::Init() {
     // Create light
     auto &settings = impl_->settings_;
     std::string resource_path = app.GetResourcePath();
-    auto ibl_path = resource_path + "/default_ibl.ktx";
-    settings.ibl = GetRenderer().AddIndirectLight(
-            rendering::ResourceLoadRequest(ibl_path.data()));
-    impl_->scene_wgt_->GetScene()->SetIndirectLight(settings.ibl);
-
-    auto sky_path =
-            resource_path + "/" + GuiSettingsModel::DEFAULT_IBL + "_skybox.ktx";
-    settings.sky = GetRenderer().AddSkybox(
-            rendering::ResourceLoadRequest(sky_path.data()));
-    impl_->scene_wgt_->SetSkyboxHandle(settings.sky,
-                                       settings.model_.GetShowSkybox());
+    auto ibl_path = resource_path + "/default";
+    auto *render_scene = impl_->scene_wgt_->GetScene()->GetScene();
+    render_scene->SetIndirectLight(ibl_path);
+    impl_->scene_wgt_->ShowSkybox(settings.model_.GetShowSkybox());
 
     // Create materials
     impl_->InitializeMaterials(GetRenderer(), resource_path);
@@ -940,9 +894,9 @@ void GuiVisualizer::SetGeometry(
     std::size_t num_unlit = 0;
     for (size_t i = 0; i < geometries.size(); ++i) {
         std::shared_ptr<const geometry::Geometry> g = geometries[i];
-        rendering::MaterialInstanceHandle selected_material;
+        rendering::Material loaded_material;
         bool material_is_loaded = false;
-        GuiSettingsModel::LitMaterial loaded_material;
+        // GuiSettingsModel::LitMaterial loaded_material;
 
         // If a point cloud or mesh has no vertex colors or a single uniform
         // color (usually white), then we want to display it normally, that is,
@@ -955,14 +909,13 @@ void GuiVisualizer::SetGeometry(
                         std::static_pointer_cast<const geometry::PointCloud>(g);
 
                 if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
-                    selected_material = impl_->settings_.unlit;
-                    num_unlit += 1;
+                    loaded_material.shader = "defaultUnlit";
                 } else {
-                    selected_material = impl_->settings_.lit;
+                    loaded_material.shader = "defaultLit";
                 }
             } break;
             case geometry::Geometry::GeometryType::LineSet: {
-                selected_material = impl_->settings_.unlit;
+                loaded_material.shader = "defaultUnlit";
                 num_unlit += 1;
             } break;
             case geometry::Geometry::GeometryType::TriangleMesh: {
@@ -971,84 +924,64 @@ void GuiVisualizer::SetGeometry(
                                 g);
 
                 bool albedo_only = true;
+                auto is_map_valid =
+                        [](std::shared_ptr<geometry::Image> map) -> bool {
+                    return map && map->HasData();
+                };
+
                 if (mesh->HasMaterials()) {
                     auto mesh_material = mesh->materials_.begin()->second;
-                    GuiSettingsModel::LitMaterial material;
-                    Impl::TextureMaps maps;
-                    material.base_color.x() = mesh_material.baseColor.r();
-                    material.base_color.y() = mesh_material.baseColor.g();
-                    material.base_color.z() = mesh_material.baseColor.b();
-                    material.roughness = mesh_material.baseRoughness;
-                    material.reflectance = mesh_material.baseReflectance;
-                    material.clear_coat = mesh_material.baseClearCoat;
-                    material.clear_coat_roughness =
+                    loaded_material.base_color.x() =
+                            mesh_material.baseColor.r();
+                    loaded_material.base_color.y() =
+                            mesh_material.baseColor.g();
+                    loaded_material.base_color.z() =
+                            mesh_material.baseColor.b();
+                    loaded_material.base_roughness =
+                            mesh_material.baseRoughness;
+                    loaded_material.base_reflectance =
+                            mesh_material.baseReflectance;
+                    loaded_material.base_clearcoat =
+                            mesh_material.baseClearCoat;
+                    loaded_material.base_clearcoat_roughness =
                             mesh_material.baseClearCoatRoughness;
-                    material.anisotropy = mesh_material.baseAnisotropy;
-
-                    auto is_map_valid =
-                            [](std::shared_ptr<geometry::Image> map) -> bool {
-                        return map && map->HasData();
-                    };
-
-                    if (is_map_valid(mesh_material.albedo)) {
-                        maps.albedo_map =
-                                GetRenderer().AddTexture(mesh_material.albedo);
-                    }
-                    if (is_map_valid(mesh_material.normalMap)) {
-                        maps.normal_map = GetRenderer().AddTexture(
-                                mesh_material.normalMap);
-                        albedo_only = false;
-                    }
-                    if (is_map_valid(mesh_material.ambientOcclusion)) {
-                        maps.ambient_occlusion_map = GetRenderer().AddTexture(
-                                mesh_material.ambientOcclusion);
-                        albedo_only = false;
-                    }
-                    if (is_map_valid(mesh_material.roughness)) {
-                        maps.roughness_map = GetRenderer().AddTexture(
-                                mesh_material.roughness);
-                        albedo_only = false;
-                    }
+                    loaded_material.base_anisotropy =
+                            mesh_material.baseAnisotropy;
+                    loaded_material.albedo_img = mesh_material.albedo;
+                    loaded_material.normal_img = mesh_material.normalMap;
+                    loaded_material.ao_img = mesh_material.ambientOcclusion;
+                    loaded_material.metallic_img = mesh_material.metallic;
+                    loaded_material.roughness_img = mesh_material.roughness;
+                    loaded_material.reflectance_img = mesh_material.reflectance;
+                    loaded_material.clearcoat_img = mesh_material.clearCoat;
+                    loaded_material.clearcoat_roughness_img =
+                            mesh_material.clearCoatRoughness;
+                    loaded_material.anisotropy_img = mesh_material.anisotropy;
+                    loaded_material.shader = "defaultLit";
                     if (is_map_valid(mesh_material.metallic)) {
-                        material.metallic = 1.f;
-                        maps.metallic_map = GetRenderer().AddTexture(
-                                mesh_material.metallic);
-                        albedo_only = false;
-                    } else {
-                        material.metallic = 0.f;
-                    }
-                    if (is_map_valid(mesh_material.reflectance)) {
-                        maps.reflectance_map = GetRenderer().AddTexture(
-                                mesh_material.reflectance);
+                        loaded_material.base_metallic = 1.f;
                         albedo_only = false;
                     }
-                    if (is_map_valid(mesh_material.clearCoat)) {
-                        maps.clear_coat_map = GetRenderer().AddTexture(
-                                mesh_material.clearCoat);
-                        albedo_only = false;
+                    if (albedo_only) {
+                        albedo_only =
+                                !is_map_valid(mesh_material.normalMap) &&
+                                !is_map_valid(mesh_material.ambientOcclusion) &&
+                                !is_map_valid(mesh_material.roughness) &&
+                                !is_map_valid(mesh_material.reflectance) &&
+                                !is_map_valid(mesh_material.clearCoat) &&
+                                !is_map_valid(
+                                        mesh_material.clearCoatRoughness) &&
+                                !is_map_valid(mesh_material.anisotropy);
                     }
-                    if (is_map_valid(mesh_material.clearCoatRoughness)) {
-                        maps.clear_coat_roughness_map =
-                                GetRenderer().AddTexture(
-                                        mesh_material.clearCoatRoughness);
-                        albedo_only = false;
-                    }
-                    if (is_map_valid(mesh_material.anisotropy)) {
-                        maps.anisotropy_map = GetRenderer().AddTexture(
-                                mesh_material.anisotropy);
-                        albedo_only = false;
-                    }
-                    impl_->SetLoadedMaterial(GetRenderer(), material, maps);
                     material_is_loaded = true;
-                    loaded_material = material;
                 }
 
                 if ((mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) ||
                     (mesh->HasMaterials() && albedo_only)) {
-                    selected_material = impl_->settings_.unlit;
+                    loaded_material.shader = "defaultUnlit";
                     num_unlit += 1;
                 } else {
-                    selected_material = impl_->settings_.lit;
+                    loaded_material.shader = "defaultLit";
                 }
             } break;
             default:
@@ -1058,10 +991,15 @@ void GuiVisualizer::SetGeometry(
         }
 
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
-        auto handle = scene3d->AddGeometry(g3, selected_material);
-        bounds += scene3d->GetScene()->GetEntityBoundingBox(handle);
+        scene3d->AddGeometry(g3, loaded_material);
+        bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
         if (material_is_loaded) {
-            impl_->settings_.loaded_materials_[handle] = loaded_material;
+            impl_->settings_.have_loaded_material_ = true;
+            impl_->settings_.loaded_material_ = loaded_material;
+            impl_->settings_.lit_material_ = loaded_material;
+            impl_->settings_.lit_material_.shader = "defaultLit";
+            impl_->settings_.unlit_material_ = loaded_material;
+            impl_->settings_.unlit_material_.shader = "defaultUnlit";
         }
     }
 
@@ -1091,15 +1029,13 @@ void GuiVisualizer::SetGeometry(
     }
 
     impl_->settings_.model_.UnsetCustomDefaultColor();
-    if (!impl_->settings_.loaded_materials_.empty()) {
-        if (impl_->settings_.loaded_materials_.size() == 1) {
-            auto color = impl_->settings_.loaded_materials_.begin()
-                                 ->second.base_color;
-            impl_->settings_.model_.SetCustomDefaultColor(color);
-        }
+    if (impl_->settings_.have_loaded_material_) {
+        Eigen::Vector3f color(
+                impl_->settings_.loaded_material_.base_color.data());
+        impl_->settings_.model_.SetCustomDefaultColor(color);
         impl_->settings_.view_->ShowFileMaterialEntry(true);
     } else {
-        impl_->settings_.view_->ShowFileMaterialEntry(true);
+        impl_->settings_.view_->ShowFileMaterialEntry(false);
     }
     impl_->settings_.view_->Update();  // make sure prefab material is correct
 

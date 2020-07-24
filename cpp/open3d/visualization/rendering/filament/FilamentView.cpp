@@ -213,7 +213,7 @@ void FilamentView::SetScene(FilamentScene& scene) {
 }
 
 void FilamentView::PreRender() {
-    auto& renderable_mgr = engine_.getRenderableManager();
+    // auto& renderable_mgr = engine_.getRenderableManager();
 
     MaterialInstanceHandle material_handle;
     std::shared_ptr<filament::MaterialInstance> selected_material;
@@ -263,39 +263,41 @@ void FilamentView::PreRender() {
         }
     }
 
-    if (scene_) {
-        for (const auto& pair : scene_->entities_) {
-            const auto& entity = pair.second;
-            if (entity.info.type == EntityType::Geometry) {
-                std::shared_ptr<filament::MaterialInstance> mat_inst;
-                if (selected_material) {
-                    mat_inst = selected_material;
+    // TODO: is any of this necessary?
+    // if (scene_) {
+    //     for (const auto& pair : scene_->entities_) {
+    //         const auto& entity = pair.second;
+    //         if (entity.info.type == EntityType::Geometry) {
+    //             std::shared_ptr<filament::MaterialInstance> mat_inst;
+    //             if (selected_material) {
+    //                 mat_inst = selected_material;
 
-                    if (mode_ >= Mode::ColorMapX) {
-                        auto bbox = scene_->GetEntityBoundingBox(pair.first);
-                        Eigen::Vector3f bbox_min =
-                                bbox.GetMinBound().cast<float>();
-                        Eigen::Vector3f bbox_max =
-                                bbox.GetMaxBound().cast<float>();
+    //                 if (mode_ >= Mode::ColorMapX) {
+    //                     auto bbox = scene_->GetEntityBoundingBox(pair.first);
+    //                     Eigen::Vector3f bbox_min =
+    //                             bbox.GetMinBound().cast<float>();
+    //                     Eigen::Vector3f bbox_max =
+    //                             bbox.GetMaxBound().cast<float>();
 
-                        FilamentMaterialModifier(selected_material,
-                                                 material_handle)
-                                .SetParameter("bboxMin", bbox_min)
-                                .SetParameter("bboxMax", bbox_max)
-                                .Finish();
-                    }
-                } else {
-                    mat_inst =
-                            resource_mgr_.GetMaterialInstance(entity.material)
-                                    .lock();
-                }
+    //                     FilamentMaterialModifier(selected_material,
+    //                                              material_handle)
+    //                             .SetParameter("bboxMin", bbox_min)
+    //                             .SetParameter("bboxMax", bbox_max)
+    //                             .Finish();
+    //                 }
+    //             } else {
+    //                 mat_inst =
+    //                         resource_mgr_.GetMaterialInstance(entity.material)
+    //                                 .lock();
+    //             }
 
-                filament::RenderableManager::Instance inst =
-                        renderable_mgr.getInstance(entity.info.self);
-                renderable_mgr.setMaterialInstanceAt(inst, 0, mat_inst.get());
-            }
-        }
-    }
+    //             filament::RenderableManager::Instance inst =
+    //                     renderable_mgr.getInstance(entity.info.self);
+    //             renderable_mgr.setMaterialInstanceAt(inst, 0,
+    //             mat_inst.get());
+    //         }
+    //     }
+    // }
 }
 
 void FilamentView::PostRender() {}
