@@ -380,6 +380,38 @@ void pybind_gui_classes(py::module &m) {
             .def_property(
                     "is_on", &Button::GetIsOn, &Button::SetOn,
                     "True if the button is toggleable and in the on state")
+            // It is not possible to overload properties. But we want users
+            // to be able to say "o.padding = 1.4" or "o.padding = 1",
+            // and float and int are different types. Fortunately, we want
+            // a float, which is easily castable from int. So we can pass
+            // a py::object and cast it ourselves.
+            .def_property("horizontal_padding_em",
+                          &Button::GetHorizontalPaddingEm,
+                          [](std::shared_ptr<Button> b, const py::object &em) {
+                              auto vert = b->GetVerticalPaddingEm();
+                              try {
+                                  b->SetPaddingEm(em.cast<float>(), vert);
+                              } catch (const py::cast_error &e) {
+                                  py::print(
+                                          "open3d.visualization.gui.Button."
+                                          "horizontal_padding_em can only be "
+                                          "assigned a numeric type");
+                              }
+                          },
+                          "Horizontal padding in em units")
+            .def_property("vertical_padding_em", &Button::GetVerticalPaddingEm,
+                          [](std::shared_ptr<Button> b, const py::object &em) {
+                              auto horiz = b->GetHorizontalPaddingEm();
+                              try {
+                                  b->SetPaddingEm(horiz, em.cast<float>());
+                              } catch (const py::cast_error &e) {
+                                  py::print(
+                                          "open3d.visualization.gui.Button."
+                                          "vertical_padding_em can only be "
+                                          "assigned a numeric type");
+                              }
+                          },
+                          "Vertical padding in em units")
             .def("set_on_clicked", &Button::SetOnClicked,
                  "Calls passed function when button is pressed");
 
@@ -795,6 +827,11 @@ void pybind_gui_classes(py::module &m) {
             //        .def(py::init([]() { return new Layout1D(Layout1D::VERT,
             //        0, Margins(), {}); }))
             .def("add_fixed", &Layout1D::AddFixed,
+                 "Adds a fixed amount of empty space to the layout")
+            .def("add_fixed",
+                 [](std::shared_ptr<Layout1D> layout, float px) {
+                     layout->AddFixed(int(std::round(px)));
+                 },
                  "Adds a fixed amount of empty space to the layout")
             .def("add_stretch", &Layout1D::AddStretch,
                  "Adds empty space to the layout that will take up as much "

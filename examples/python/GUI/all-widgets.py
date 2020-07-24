@@ -50,8 +50,8 @@ class ExampleWindow:
             menubar.add_menu("Test", test_menu)
             gui.Application.instance.menubar = menubar
 
-        # Each window needs to know what to do with the menu items, so we need to
-        # tell the window how to handle menu items.
+        # Each window needs to know what to do with the menu items, so we need
+        # to tell the window how to handle menu items.
         w.set_on_menu_item_activated(ExampleWindow.MENU_CHECKABLE,
                                      self._on_menu_checkable)
         w.set_on_menu_item_activated(ExampleWindow.MENU_QUIT,
@@ -62,6 +62,8 @@ class ExampleWindow:
         # the file dialog.
         self._fileedit = gui.TextEdit()
         filedlgbutton = gui.Button("...")
+        filedlgbutton.horizontal_padding_em = 0.5
+        filedlgbutton.vertical_padding_em = 0
         filedlgbutton.set_on_clicked(self._on_filedlg_button)
 
         # (Create the horizontal widget for the row. This will make sure the
@@ -69,6 +71,7 @@ class ExampleWindow:
         fileedit_layout = gui.Horiz()
         fileedit_layout.add_child(gui.Label("Model file"))
         fileedit_layout.add_child(self._fileedit)
+        fileedit_layout.add_fixed(0.25 * em)
         fileedit_layout.add_child(filedlgbutton)
         # add to the top-level (vertical) layout
         layout.add_child(fileedit_layout)
