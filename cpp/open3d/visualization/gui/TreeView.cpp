@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/TreeView.h"
 
 #include <imgui.h>
+#include <cmath>
 #include <list>
 #include <sstream>
 #include <unordered_map>
@@ -382,7 +383,7 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             }
         };
 
-        if (ImGui::TreeNodeEx(item.id_string.c_str(), flags, "")) {
+        if (ImGui::TreeNodeEx(item.id_string.c_str(), flags, "%s", "")) {
             DrawThis(item, height, is_selectable);
 
             for (auto &child : item.children) {
