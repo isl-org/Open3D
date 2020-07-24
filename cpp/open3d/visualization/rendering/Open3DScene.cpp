@@ -153,6 +153,10 @@ void Open3DScene::ShowAxes(bool enable) {
 
 void Open3DScene::ClearGeometry() {
     auto scene = renderer_.GetScene(scene_);
+    if(model_name_ == fast_model_name_) {
+        fast_model_name_.clear();
+    }
+
     if (!model_name_.empty()) {
         scene->RemoveGeometry(model_name_);
     }
@@ -200,6 +204,10 @@ void Open3DScene::AddGeometry(
 void Open3DScene::SetLOD(LOD lod) {
     if (lod != lod_) {
         lod_ = lod;
+        if(model_name_.empty()) {
+            return;
+        }
+
         auto scene = renderer_.GetScene(scene_);
         scene->ShowGeometry(model_name_, false);
         scene->ShowGeometry(fast_model_name_, false);
