@@ -299,12 +299,11 @@ class ContinuousConv(tf.keras.layers.Layer):
 
         out_features = ops.continuous_conv(**self._conv_values)
 
-        self._conv_values['out_features'] = out_features
-
         self._conv_output = out_features
 
         if self.use_dense_layer_for_center:
-            out_features = out_features + self.dense(inp_features)
+            self._dense_output = self.dense(inp_features)
+            out_features = out_features + self._dense_output
 
         if self.use_bias:
             out_features += self.bias
@@ -482,8 +481,6 @@ class SparseConv(tf.keras.layers.Layer):
         }
 
         out_features = ops.continuous_conv(**self._conv_values)
-
-        self._conv_values['out_features'] = out_features
 
         self._conv_output = out_features
 
@@ -674,8 +671,6 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         }
 
         out_features = ops.continuous_conv_transpose(**self._conv_values)
-
-        self._conv_values['out_features'] = out_features
 
         self._conv_output = out_features
 
