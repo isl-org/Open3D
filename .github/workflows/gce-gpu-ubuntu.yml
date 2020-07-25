@@ -2,12 +2,18 @@
 name: Google cloud Ubuntu GPU CI
 
 on:
-  push:
+  workflow_dispatch:
+    inputs:
+      gce_sa_key:
+        description: GCE SA key
     branches:
-      - master
       - ssheorey-gpu-ci
-  pull_request:
-    types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
+#  push:
+#    branches:
+#      - master
+#      - ssheorey-gpu-ci
+#  pull_request:
+#    types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
 
 env:
   PROJECT_ID: ${{ secrets.GCE_PROJECT }}
@@ -41,7 +47,7 @@ jobs:
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           version: '302.0.0'
-          service_account_key: ${{ secrets.GCE_SA_KEY }}
+          service_account_key: ${{ github.event.inputs.gce_sa_key }}
           project_id: ${{   secrets.GCE_PROJECT }}
           export_default_credentials: true
 

@@ -58,6 +58,13 @@ Reference: Steps 2.3-2.5 from `.travis/readme.md`
 - Add key text to the [GitHub repository secrets](https://github.com/intel-isl/Open3D/settings/secrets) with name `GCE_SA_KEY`
 - Also add secret `GCE_PROJECT: open3d-dev`
 
+
+## Start VM instance
+```bash
+gcloud compute instances start ${GCE_INSTANCE} --zone=${GCE_INSTANCE_ZONE}
+```
+This may fail if res Google cloud does not have sufficient resources in the specific region. Try again in a few minutes.
+
 ## Clone source code repository
 
 ```bash
