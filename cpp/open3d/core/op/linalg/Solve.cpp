@@ -59,24 +59,17 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     if (A_shape.size() != 2) {
         utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
     }
-    if (A_shape[0] != A_shape[1]) {
-        utility::LogError("Tensor A must be square, but got {} x {}",
-                          A_shape[0], A_shape[1]);
-    }
     if (B_shape.size() != 1 && B_shape.size() != 2) {
         utility::LogError(
                 "Tensor B must be 1D (vector) or 2D (matrix), but got {}D",
                 B_shape.size());
     }
-    if (A_shape[1] != B_shape[0]) {
-        utility::LogError("Tensor A columns {} mismatch with Tensor B rows {}",
-                          A_shape[1], B_shape[0]);
+    int m = A_shape[0], n = A_shape[1],
+        k = B_shape.size() == 2 ? B_shape[1] : 1;
+    if (m < n) {
+        utility::LogError("Tensor A shape must satisfy rows ({}) > cols({})", m,
+                          n);
     }
-
-    int n = A_shape[0], m = B_shape.size() == 2 ? B_shape[1] : 1;
-
-    Tensor ipiv = Tensor::Empty({n}, Dtype::Int32, device);
-    void *ipiv_data = ipiv.GetDataPtr();
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
@@ -87,23 +80,23 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
         Tensor B_copy = B.T().Copy(device);
         void *B_data = B_copy.GetDataPtr();
 
-        X = Tensor::Empty(B_copy.GetShape(), B.GetDtype(), device);
-        void *X_data = X.GetDataPtr();
-
-        SolveCUDA(A_data, B_data, ipiv_data, X_data, n, m, dtype, device);
-        X = X.T();
+        SolveCUDA(A_data, B_data, m, n, k, dtype, device);
+        std::cout << A_copy.T().ToString() << "\n";
+        X = B_copy.T().Slice(0, 0, n);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
+        // LAPACKE changes solves X by modifying B in-place
         Tensor A_copy = A.Copy(device);
         void *A_data = A_copy.GetDataPtr();
 
-        // LAPACKE changes solves X by modifying B in-place
-        X = B.Copy(device);
-        void *B_data = X.GetDataPtr();
+        Tensor B_copy = B.Copy(device);
+        void *B_data = B_copy.GetDataPtr();
 
-        SolveCPU(A_data, B_data, ipiv_data, nullptr, n, m, dtype, device);
+        SolveCPU(A_data, B_data, m, n, k, dtype, device);
+        std::cout << A_copy.ToString() << "\n";
+        X = B_copy.Slice(0, 0, n);
     }
 }
 }  // namespace core

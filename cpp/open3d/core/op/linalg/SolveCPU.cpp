@@ -38,35 +38,25 @@ namespace core {
 
 void SolveCPU(void* A_data,
               void* B_data,
-              void* ipiv_data,
-              void* X_data,  // unused place-holder for CPU
-              int n,
               int m,
+              int n,
+              int k,
               Dtype dtype,
               const Device& device) {
     switch (dtype) {
         case Dtype::Float32: {
-            // clang-format off
-          LAPACKE_sgesv(LAPACK_ROW_MAJOR, n, m,
-                        static_cast<float*>(A_data),
-                        n,
-                        static_cast<int*>(ipiv_data),
-                        static_cast<float*>(B_data),
-                        m);
-            // clang-format on
+            LAPACKE_sgels(LAPACK_ROW_MAJOR, 'N', m, n, k,
+                          static_cast<float*>(A_data), n,
+                          static_cast<float*>(B_data), k);
+
             break;
         }
 
         case Dtype::Float64: {
-            // clang-format off
-          LAPACKE_dgesv(LAPACK_ROW_MAJOR, n, m,
-                        static_cast<double*>(A_data),
-                        n,
-                        static_cast<int*>(ipiv_data),
-                        static_cast<double*>(B_data),
-                        m);
+            LAPACKE_dgels(LAPACK_ROW_MAJOR, 'N', m, n, k,
+                          static_cast<double*>(A_data), n,
+                          static_cast<double*>(B_data), k);
             break;
-            // clang-format on
         }
 
         default: {  // should never reach here

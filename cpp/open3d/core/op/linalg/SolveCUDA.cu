@@ -35,57 +35,122 @@
 namespace open3d {
 namespace core {
 
+// cusolverDn<t1><t2>gels() is not supported until CUDA 11.0.
+// We have to implement for earlier versions via
+// Step 1: A = Q*R by geqrf.
+// Step 2: B : = Q ^ T* B by ormqr.
+// Step 3: solve R* X = B by trsm.
+// Ref: https://docs.nvidia.com/cuda/cusolver/index.html#ormqr-example1
 void SolveCUDA(void* A_data,
                void* B_data,
-               void* ipiv_data,
-               void* X_data,
-               int n,
                int m,
+               int n,
+               int k,
                Dtype dtype,
                const Device& device) {
-    cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
+    cusolverDnHandle_t cusolver_handle =
+            CuSolverContext::GetInstance()->GetHandle();
+    cublasHandle_t cublas_handle = CuBLASContext::GetInstance()->GetHandle();
     int* dinfo = static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
 
-    size_t byte_size;
-    int niters;
-
+    int len_geqrf, len_ormqr, len;
     switch (dtype) {
         case Dtype::Float32: {
-            OPEN3D_CUSOLVER_CHECK(cusolverDnSSgesv_bufferSize(
-                                          handle, n, m, NULL, n, NULL, NULL, n,
-                                          NULL, n, NULL, &byte_size),
-                                  "cusolverDnSSgesv_bufferSize failed");
-            void* workspace = MemoryManager::Malloc(byte_size, device);
+            OPEN3D_CUSOLVER_CHECK(
+                    cusolverDnSgeqrf_bufferSize(cusolver_handle, m, n, NULL, m,
+                                                &len_geqrf),
+                    "cusolverDnSgeqrf_bufferSize failed");
+            OPEN3D_CUSOLVER_CHECK(
+                    cusolverDnSormqr_bufferSize(
+                            cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m,
+                            k, m, NULL, m, NULL, NULL, m, &len_ormqr),
+                    "cusolverDnSgeqrf_bufferSize failed");
+            len = std::max(len_geqrf, len_ormqr);
 
+            void* workspace =
+                    MemoryManager::Malloc(len * sizeof(float), device);
+            void* tau = MemoryManager::Malloc(n * sizeof(float), device);
+
+            // Step 1: A = QR
             OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
-                    cusolverDnSSgesv(handle, n, m, static_cast<float*>(A_data),
-                                     n, static_cast<int*>(ipiv_data),
-                                     static_cast<float*>(B_data), n,
-                                     static_cast<float*>(X_data), n, workspace,
-                                     byte_size, &niters, dinfo),
-                    "cusolverDnSSgesv failed with dinfo = ", dinfo, device);
-            break;
+                    cusolverDnSgeqrf(
+                            cusolver_handle, m, n, static_cast<float*>(A_data),
+                            m, static_cast<float*>(tau),
+                            static_cast<float*>(workspace), len, dinfo),
+                    "cusolverDnSgeqrf failed with dinfo = ", dinfo, device);
+
+            // Step 2: B' = Q^T*B
+            OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+                    cusolverDnSormqr(
+                            cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m,
+                            k, m, static_cast<float*>(A_data), m,
+                            static_cast<float*>(tau),
+                            static_cast<float*>(B_data), m,
+                            static_cast<float*>(workspace), len, dinfo),
+                    "cusolverDnSgeqrf_bufferSize failed with dinfo = ", dinfo,
+                    device);
+
+            // Step 3: Solve Rx = B'
+            float alpha = 1.0f;
+            OPEN3D_CUBLAS_CHECK(cublasStrsm(cublas_handle, CUBLAS_SIDE_LEFT,
+                                            CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N,
+                                            CUBLAS_DIAG_NON_UNIT, m, k, &alpha,
+                                            static_cast<float*>(A_data), m,
+                                            static_cast<float*>(B_data), m),
+                                "cublasStrsm failed");
 
             MemoryManager::Free(workspace, device);
+            MemoryManager::Free(tau, device);
+            break;
         }
 
         case Dtype::Float64: {
-            OPEN3D_CUSOLVER_CHECK(cusolverDnDDgesv_bufferSize(
-                                          handle, n, m, NULL, n, NULL, NULL, n,
-                                          NULL, n, NULL, &byte_size),
-                                  "cusolverDnDDgesv_bufferSize failed");
-            void* workspace = MemoryManager::Malloc(byte_size, device);
+            OPEN3D_CUSOLVER_CHECK(
+                    cusolverDnDgeqrf_bufferSize(cusolver_handle, m, n, NULL, m,
+                                                &len_geqrf),
+                    "cusolverDnDgeqrf_bufferSize failed");
+            OPEN3D_CUSOLVER_CHECK(
+                    cusolverDnDormqr_bufferSize(
+                            cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m,
+                            k, m, NULL, m, NULL, NULL, m, &len_ormqr),
+                    "cusolverDnDgeqrf_bufferSize failed");
+            len = std::max(len_geqrf, len_ormqr);
 
+            void* workspace =
+                    MemoryManager::Malloc(len * sizeof(double), device);
+            void* tau = MemoryManager::Malloc(n * sizeof(double), device);
+
+            // Step 1: A = QR
             OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
-                    cusolverDnDDgesv(handle, n, m, static_cast<double*>(A_data),
-                                     n, static_cast<int*>(ipiv_data),
-                                     static_cast<double*>(B_data), n,
-                                     static_cast<double*>(X_data), n, workspace,
-                                     byte_size, &niters, dinfo),
-                    "cusolverDnDDgesv failed with dinfo = ", dinfo, device);
-            break;
+                    cusolverDnDgeqrf(
+                            cusolver_handle, m, n, static_cast<double*>(A_data),
+                            m, static_cast<double*>(tau),
+                            static_cast<double*>(workspace), len, dinfo),
+                    "cusolverDnDgeqrf failed with dinfo = ", dinfo, device);
+
+            // Step 2: B' = Q^T*B
+            OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+                    cusolverDnDormqr(
+                            cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m,
+                            k, m, static_cast<double*>(A_data), m,
+                            static_cast<double*>(tau),
+                            static_cast<double*>(B_data), m,
+                            static_cast<double*>(workspace), len, dinfo),
+                    "cusolverDnDgeqrf_bufferSize failed with dinfo = ", dinfo,
+                    device);
+
+            // Step 3 : Solve Rx = B'
+            double alpha = 1.0;
+            OPEN3D_CUBLAS_CHECK(cublasDtrsm(cublas_handle, CUBLAS_SIDE_LEFT,
+                                            CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N,
+                                            CUBLAS_DIAG_NON_UNIT, m, k, &alpha,
+                                            static_cast<double*>(A_data), m,
+                                            static_cast<double*>(B_data), m),
+                                "cublasDtrsm failed");
 
             MemoryManager::Free(workspace, device);
+            MemoryManager::Free(tau, device);
+            break;
         }
 
         default: {  // should never reach here
