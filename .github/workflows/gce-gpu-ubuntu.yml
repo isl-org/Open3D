@@ -1,0 +1,106 @@
+---
+name: Google cloud Ubuntu GPU CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      gce_sa_key:
+        description: GCE SA key
+    branches:
+      - ssheorey-gpu-ci
+#  push:
+#    branches:
+#      - master
+#      - ssheorey-gpu-ci
+#  pull_request:
+#    types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
+
+env:
+  PROJECT_ID: ${{ secrets.GCE_PROJECT }}
+  GCE_INSTANCE: ssheorey-gpu-instance-1       # TODO: update to instance name
+  GCE_INSTANCE_ZONE: us-west1-b               # TODO: update to instance zone
+
+jobs:
+  pull-build-test:
+    name: Pull, build, run unit tests
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+      matrix:
+        SHARED: [ON, OFF]
+        BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
+        BUILD_ML_OPS: [ON, OFF]
+        BUILD_CUDA: [ON]
+
+    env:
+      SHARED: ${{ matrix.SHARED }}
+      BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
+      NPROC: 4
+
+    steps:
+      - name: GCloud setup and start VM
+        uses: actions/checkout@v2
+      # Setup gcloud CLI
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '302.0.0'
+          service_account_key: ${{ github.event.inputs.gce_sa_key }}
+          project_id: ${{   secrets.GCE_PROJECT }}
+          export_default_credentials: true
+
+      - run: |-
+          gcloud info
+          gcloud compute instances start ${GCE_INSTANCE} --zone=${GCE_INSTANCE_ZONE}
+
+      - name: Checkout source code commit
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+          "cd Open3D && \
+           git fetch ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} ${GITHUB_REF} && \
+           git checkout ${GITHUB_SHA}"
+
+           # Pre-installed 18.04 packages: https://git.io/JfHmW
+      - name: Install dependencies
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+          "echo 'Installing backported cmake from https://apt.kitware.com/ and NVIDIA drivers' && \
+           wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
+           | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
+           sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main' && \
+           sudo apt-get --yes install cmake ccache nvidia-driver-440 && \
+           Open3D/util/scripts/install-deps-ubuntu.sh assume-yes"
+           #ccache -M 2G"  # GitHub's total cache limit is 5GB for all OSes.
+
+      - name: Config, build and run unit tests
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+          "export PATH=/usr/lib/ccache:\$HOME/.local/bin:\$PATH: \
+           SHARED=$SHARED \
+           NPROC=$NPROC \
+           BUILD_DEPENDENCY_FROM_SOURCE=$BUILD_DEPENDENCY_FROM_SOURCE \
+           BUILD_CUDA_MODULE=$BUILD_CUDA_MODULE \
+           BUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS \
+           BUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS \
+           LOW_MEM_USAGE=$LOW_MEM_USAGE && \
+           ccache -s && \
+           cd Open3D && ./util/scripts/run-ci.sh && \
+           ccache -s"
+
+      - name: Clean build and test files
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+          "rm -r Open3D/build"
+
+      - name: Cleanup - remove all data
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
+          "rm -r Open3D"
+
+      - name: Shutdown VM instance
+        run: |-
+          gcloud compute instances stop ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE"
+
+...
