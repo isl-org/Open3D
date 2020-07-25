@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/op/linalg/LinalgUtils.h"
 #include "open3d/core/op/linalg/Solve.h"
 
@@ -63,7 +64,7 @@ void SolveCUDA(void* A_data,
             OPEN3D_CUSOLVER_CHECK(
                     cusolverDnSormqr_bufferSize(
                             cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m,
-                            k, m, NULL, m, NULL, NULL, m, &len_ormqr),
+                            k, n, NULL, m, NULL, NULL, m, &len_ormqr),
                     "cusolverDnSgeqrf_bufferSize failed");
             len = std::max(len_geqrf, len_ormqr);
 
@@ -83,7 +84,7 @@ void SolveCUDA(void* A_data,
             OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
                     cusolverDnSormqr(
                             cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m,
-                            k, m, static_cast<float*>(A_data), m,
+                            k, n, static_cast<float*>(A_data), m,
                             static_cast<float*>(tau),
                             static_cast<float*>(B_data), m,
                             static_cast<float*>(workspace), len, dinfo),
@@ -94,7 +95,7 @@ void SolveCUDA(void* A_data,
             float alpha = 1.0f;
             OPEN3D_CUBLAS_CHECK(cublasStrsm(cublas_handle, CUBLAS_SIDE_LEFT,
                                             CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N,
-                                            CUBLAS_DIAG_NON_UNIT, m, k, &alpha,
+                                            CUBLAS_DIAG_NON_UNIT, n, k, &alpha,
                                             static_cast<float*>(A_data), m,
                                             static_cast<float*>(B_data), m),
                                 "cublasStrsm failed");
@@ -112,28 +113,31 @@ void SolveCUDA(void* A_data,
             OPEN3D_CUSOLVER_CHECK(
                     cusolverDnDormqr_bufferSize(
                             cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m,
-                            k, m, NULL, m, NULL, NULL, m, &len_ormqr),
+                            k, n, NULL, m, NULL, NULL, m, &len_ormqr),
                     "cusolverDnDgeqrf_bufferSize failed");
             len = std::max(len_geqrf, len_ormqr);
 
             void* workspace =
                     MemoryManager::Malloc(len * sizeof(double), device);
-            void* tau = MemoryManager::Malloc(n * sizeof(double), device);
+
+            Tensor tau = Tensor({n}, Dtype::Float64, device);
+            void* tau_data = tau.GetDataPtr();
 
             // Step 1: A = QR
             OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
                     cusolverDnDgeqrf(
                             cusolver_handle, m, n, static_cast<double*>(A_data),
-                            m, static_cast<double*>(tau),
+                            m, static_cast<double*>(tau_data),
                             static_cast<double*>(workspace), len, dinfo),
                     "cusolverDnDgeqrf failed with dinfo = ", dinfo, device);
+            std::cout << "Tau = " << tau.ToString() << "\n";
 
             // Step 2: B' = Q^T*B
             OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
                     cusolverDnDormqr(
                             cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m,
-                            k, m, static_cast<double*>(A_data), m,
-                            static_cast<double*>(tau),
+                            k, n, static_cast<double*>(A_data), m,
+                            static_cast<double*>(tau_data),
                             static_cast<double*>(B_data), m,
                             static_cast<double*>(workspace), len, dinfo),
                     "cusolverDnDgeqrf_bufferSize failed with dinfo = ", dinfo,
@@ -143,13 +147,12 @@ void SolveCUDA(void* A_data,
             double alpha = 1.0;
             OPEN3D_CUBLAS_CHECK(cublasDtrsm(cublas_handle, CUBLAS_SIDE_LEFT,
                                             CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N,
-                                            CUBLAS_DIAG_NON_UNIT, m, k, &alpha,
+                                            CUBLAS_DIAG_NON_UNIT, n, k, &alpha,
                                             static_cast<double*>(A_data), m,
                                             static_cast<double*>(B_data), m),
                                 "cublasDtrsm failed");
 
             MemoryManager::Free(workspace, device);
-            MemoryManager::Free(tau, device);
             break;
         }
 

@@ -81,7 +81,6 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
         void *B_data = B_copy.GetDataPtr();
 
         SolveCUDA(A_data, B_data, m, n, k, dtype, device);
-        std::cout << A_copy.T().ToString() << "\n";
         X = B_copy.T().Slice(0, 0, n);
 #else
         utility::LogError("Unimplemented device.");
@@ -95,7 +94,6 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
         void *B_data = B_copy.GetDataPtr();
 
         SolveCPU(A_data, B_data, m, n, k, dtype, device);
-        std::cout << A_copy.ToString() << "\n";
         X = B_copy.Slice(0, 0, n);
     }
 }
