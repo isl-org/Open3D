@@ -8,12 +8,12 @@ on:
         description: GCE SA key
     branches:
       - ssheorey-gpu-ci
-#  push:
-#    branches:
-#      - master
-#      - ssheorey-gpu-ci
-#  pull_request:
-#    types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
+  push:
+    branches:
+      - master
+      - ssheorey-gpu-ci
+  pull_request:
+    types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
 
 env:
   PROJECT_ID: ${{ secrets.GCE_PROJECT }}
