@@ -88,6 +88,15 @@ public:
                      float radius,
                      std::vector<long> &indices,
                      std::vector<float> &distance2) const;
+    
+    std::pair<core::Tensor, core::Tensor> 
+    SearchKNN_Tensor(const core::Tensor &query,
+                     int knn) const;
+
+    std::pair<core::Tensor, core::Tensor> 
+    SearchHybrid_Tensor(const core::Tensor &query,
+                        float radius,
+                        int max_knn) const;
 
 private:
     /// \brief Sets the Faiss Index data from the data provided by the other methods.
@@ -100,6 +109,7 @@ protected:
     std::vector<float> data_;
     std::unique_ptr<faiss::Index> index;
     std::unique_ptr<faiss::gpu::StandardGpuResources> res;
+    bool support_on_gpu_ = false;
     size_t dimension_ = 0;
     size_t dataset_size_ = 0;
 };
