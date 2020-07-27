@@ -6,11 +6,11 @@ on:
       gce_sa_key:
         description: GCE SA key
     branches:
-      - ssheorey-gpu-ci
+      - ssheorey/gce-gpu-ci
   push:
     branches:
       - master
-      - ssheorey-gpu-ci
+      - ssheorey/gce-gpu-ci
   pull_request:
     types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
 
