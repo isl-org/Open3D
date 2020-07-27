@@ -1,4 +1,3 @@
----
 name: Google cloud Ubuntu GPU CI
 
 on:
@@ -94,13 +93,6 @@ jobs:
           gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
           "rm -r Open3D/build"
 
-      - name: Cleanup - remove all data
-        run: |-
-          gcloud compute ssh ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE" -- -C \
-          "rm -r Open3D"
-
       - name: Shutdown VM instance
         run: |-
           gcloud compute instances stop ${GCE_INSTANCE} --zone "$GCE_INSTANCE_ZONE"
-
-...
