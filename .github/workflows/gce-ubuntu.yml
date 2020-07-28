@@ -51,7 +51,7 @@ jobs:
         with:
           version: '302.0.0'    # Fixed to avoid dependency on API changes
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{   secrets.GCE_PROJECT }}
+          project_id: ${{ secrets.GCE_PROJECT }}
           export_default_credentials: true
 
       - name: Create VM
@@ -99,8 +99,9 @@ jobs:
            sudo apt-get --yes install cmake nvidia-driver-${NVIDIA_DRIVER_VERSION} && \
            Open3D/util/scripts/install-deps-ubuntu.sh assume-yes"
            # reboot to load NVIDIA drivers
-           gcloud compute instances stop ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE}
-           gcloud compute instances start ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE}
+           gcloud compute ssh ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE} -- -C \
+           "sudo reboot" || true
+           sleep 5
 
       - name: Config, build and run unit tests
         run: |-
