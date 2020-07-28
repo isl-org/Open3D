@@ -15,9 +15,9 @@ on:
 env:
   NPROC: 8                      # {2,4,8,16,32,64,96}
   GCE_PROJECT: ${{ secrets.GCE_PROJECT }}
-  GCE_INSTANCE: ${{ join(['ci-gpu-instance', env.GITHUB_SHA], '-') }}
+  GCE_INSTANCE: ${{ format('ci-gpu-instance-{0}', env.GITHUB_SHA) }}
   GCE_INSTANCE_ZONE: us-west1-b
-  GCE_INSTANCE_TYPE: ${{ join(['n1-standard', env.NPROC], '-') }}
+  GCE_INSTANCE_TYPE: ${{ format('n1-standard-{0}', env.NPROC) }}
   GCE_IMAGE_FAMILY: ubuntu-1804-lts
   GCE_GPU: count=1,type=nvidia-tesla-t4
   GCE_BOOT_DISK_TYPE: pd-ssd
