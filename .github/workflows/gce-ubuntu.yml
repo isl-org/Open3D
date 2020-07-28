@@ -97,9 +97,10 @@ jobs:
            | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
            sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main' && \
            sudo apt-get --yes install cmake nvidia-driver-${NVIDIA_DRIVER_VERSION} && \
-           Open3D/util/scripts/install-deps-ubuntu.sh assume-yes && \
-           sudo reboot"
-           sleep 5
+           Open3D/util/scripts/install-deps-ubuntu.sh assume-yes"
+           # reboot to load NVIDIA drivers
+           gcloud compute instances stop ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE}
+           gcloud compute instances start ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE}
 
       - name: Config, build and run unit tests
         run: |-
@@ -115,6 +116,6 @@ jobs:
            cd Open3D && ./util/scripts/run-ci.sh"
 
       - name: Delete VM instance
+        if: ${{ always() }}
         run: |-
-          #gcloud compute instances stop ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE}
-          #gcloud compute instances delete ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE}
+          gcloud compute instances delete ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE}
