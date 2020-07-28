@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         SHARED: [ON, OFF]
         BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
@@ -78,7 +79,8 @@ jobs:
             sleep 5
             (( TRIES=TRIES+1 ))
           done
-          exit TRIES<5
+          echo "::set-env name=GCE_INSTANCE::$GCE_INSTANCE"
+          exit $(( TRIES<5 ))
 
       - name: Clone source code repository
         run: |-
