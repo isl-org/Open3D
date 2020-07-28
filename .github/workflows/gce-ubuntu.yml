@@ -80,7 +80,7 @@ jobs:
             (( TRIES=TRIES+1 ))
           done
           echo "::set-env name=GCE_INSTANCE::$GCE_INSTANCE"
-          exit $(( TRIES<5 ))
+          exit $(( TRIES>=5 ))  # 0 => success
 
       - name: Clone source code repository
         run: |-
