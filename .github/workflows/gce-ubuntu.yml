@@ -15,7 +15,7 @@ on:
 env:
   NPROC: 8                      # {2,4,8,16,32,64,96}
   GCE_PROJECT: ${{ secrets.GCE_PROJECT }}
-  GCE_INSTANCE: ${{ format('ci-gpu-instance-{0}', github.sha) }}
+  GCE_INSTANCE_BASENAME: ci-gpu-vm
   GCE_INSTANCE_BASE_TYPE: n1-standard
   GCE_INSTANCE_ZONE: us-west1-b
   GCE_IMAGE_FAMILY: ubuntu-1804-lts
@@ -57,7 +57,8 @@ jobs:
         run: |-
           gcloud info
           export GCE_INSTANCE_TYPE=${GCE_INSTANCE_BASE_TYPE}-$NPROC
-          export GCE_INSTANCE=${GCE_INSTANCE}-sh${SHARED,,}\
+          export GCE_INSTANCE=${GCE_INSTANCE_BASENAME}-${GITHUB_SHA::8}\
+          -sh${SHARED,,}\
           -dep${BUILD_DEPENDENCY_FROM_SOURCE,,}\
           -mlops${BUILD_TENSORFLOW_OPS,,}
           TRIES=0   # Try creating a VM instance 5 times
