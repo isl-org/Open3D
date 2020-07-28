@@ -16,8 +16,8 @@ env:
   NPROC: 8                      # {2,4,8,16,32,64,96}
   GCE_PROJECT: ${{ secrets.GCE_PROJECT }}
   GCE_INSTANCE: ${{ format('ci-gpu-instance-{0}', github.sha) }}
+  GCE_INSTANCE_BASE_TYPE: n1-standard
   GCE_INSTANCE_ZONE: us-west1-b
-  GCE_INSTANCE_TYPE: ${{ format('n1-standard-{0}', NPROC) }}
   GCE_IMAGE_FAMILY: ubuntu-1804-lts
   GCE_GPU: count=1,type=nvidia-tesla-t4
   GCE_BOOT_DISK_TYPE: pd-ssd
@@ -55,6 +55,7 @@ jobs:
 
       - run: |-
           gcloud info
+          GCE_INSTANCE_TYPE=${GCE_INSTANCE_BASE_TYPE}-$NPROC
           TRIES=0   # Try creating a VM instance 5 times
           while (( TRIES<5 )) && ! \
           gcloud compute instances create $GCE_INSTANCE \
