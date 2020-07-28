@@ -57,9 +57,9 @@ jobs:
         run: |-
           gcloud info
           export GCE_INSTANCE_TYPE=${GCE_INSTANCE_BASE_TYPE}-$NPROC
-          export GCE_INSTANCE=${GCE_INSTANCE}_SH${SHARED}\
-          _DEP${BUILD_DEPENDENCY_FROM_SOURCE}\
-          _MLOPS${BUILD_TENSORFLOW_OPS}
+          export GCE_INSTANCE=${GCE_INSTANCE}-sh${SHARED,,}\
+          -dep${BUILD_DEPENDENCY_FROM_SOURCE,,}\
+          -mlops${BUILD_TENSORFLOW_OPS,,}
           TRIES=0   # Try creating a VM instance 5 times
           while (( TRIES<5 )) && ! \
           gcloud compute instances create $GCE_INSTANCE \
