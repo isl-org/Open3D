@@ -43,7 +43,7 @@ jobs:
       BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
 
     steps:
-      - name: GCloud setup and create VM
+      - name: GCloud setup
         uses: actions/checkout@v2
       # Setup gcloud CLI
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
@@ -53,13 +53,17 @@ jobs:
           project_id: ${{   secrets.GCE_PROJECT }}
           export_default_credentials: true
 
-      - run: |-
+      - name: Create VM
+        run: |-
           gcloud info
-          GCE_INSTANCE_TYPE=${GCE_INSTANCE_BASE_TYPE}-$NPROC
+          export GCE_INSTANCE_TYPE=${GCE_INSTANCE_BASE_TYPE}-$NPROC
+          export GCE_INSTANCE=${GCE_INSTANCE}_SH${SHARED}\
+          _DEP${BUILD_DEPENDENCY_FROM_SOURCE}\
+          _MLOPS${BUILD_TENSORFLOW_OPS}
           TRIES=0   # Try creating a VM instance 5 times
           while (( TRIES<5 )) && ! \
           gcloud compute instances create $GCE_INSTANCE \
-            --zone=${GCE_INSTANCE_ZONE}
+            --zone=${GCE_INSTANCE_ZONE} \
             --image-project=ubuntu-os-cloud \
             --image-family=$GCE_IMAGE_FAMILY \
             --maintenance-policy=TERMINATE \
