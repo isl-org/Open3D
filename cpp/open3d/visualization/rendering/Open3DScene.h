@@ -39,6 +39,7 @@ namespace visualization {
 namespace rendering {
 
 class Camera;
+class Material;
 
 class Open3DScene {
 public:
@@ -49,14 +50,14 @@ public:
     void DestroyView(ViewHandle view);
     View* GetView(ViewHandle view) const;
 
-    void SetIndirectLight(IndirectLightHandle ibl);
-    void SetSkybox(SkyboxHandle skybox);
+    void SetSkybox(bool enable);
+    void ShowAxes(bool enable);
 
     void ClearGeometry();
-    GeometryHandle AddGeometry(
-            std::shared_ptr<const geometry::Geometry3D> geom,
-            const MaterialInstanceHandle& material_id,
-            bool add_downsampled_copy_for_fast_rendering = true);
+    void AddGeometry(std::shared_ptr<const geometry::Geometry3D> geom,
+                     const Material& mat,
+                     bool add_downsampled_copy_for_fast_rendering = true);
+    void UpdateMaterial(const Material& mat);
 
     enum class LOD {
         HIGH_DETAIL,  // used when rendering time is not as important
@@ -67,25 +68,16 @@ public:
 
     Scene* GetScene() const;
     Camera* GetCamera() const;
-    const std::vector<GeometryHandle>& GetModel(
-            LOD lod = LOD::HIGH_DETAIL) const;
-    GeometryHandle GetAxis() const;
-    SkyboxHandle GetSkybox() const;
-    IndirectLightHandle GetIndirectLight() const;
-    LightHandle GetSun() const;
 
 private:
     Renderer& renderer_;
     SceneHandle scene_;
     ViewHandle view_;
-    mutable GeometryHandle axis_;
-    IndirectLightHandle ibl_;
-    SkyboxHandle skybox_;
-    LightHandle sun_;
 
     LOD lod_ = LOD::HIGH_DETAIL;
-    std::vector<GeometryHandle> model_;
-    std::vector<GeometryHandle> fast_model_;
+    std::string model_name_;
+    std::string fast_model_name_;
+    std::string axis_name_;
     geometry::AxisAlignedBoundingBox bounds_;
 };
 
