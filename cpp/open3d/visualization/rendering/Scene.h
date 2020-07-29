@@ -133,6 +133,8 @@ public:
                                      float intensity) = 0;
     virtual void EnableDirectionalLight(bool enable) = 0;
     virtual void EnableDirectionalLightShadows(bool enable) = 0;
+    virtual void SetDirectionalLightDirection(
+            const Eigen::Vector3f& direction) = 0;
     virtual Eigen::Vector3f GetDirectionalLightDirection() = 0;
 
     virtual bool SetIndirectLight(const std::string& ibl_name) = 0;

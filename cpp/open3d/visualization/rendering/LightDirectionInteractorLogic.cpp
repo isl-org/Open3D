@@ -122,6 +122,7 @@ LightDirectionInteractorLogic::LightDirectionInteractorLogic(Scene* scene,
                                                              Camera* camera)
     : scene_(scene), camera_(camera) {}
 
+// NOTE: No longer necessary
 void LightDirectionInteractorLogic::SetDirectionalLight(LightHandle dir_light) {
     dir_light_ = dir_light;
 }
@@ -134,14 +135,13 @@ void LightDirectionInteractorLogic::Rotate(int dx, int dy) {
 }
 
 void LightDirectionInteractorLogic::StartMouseDrag() {
-    // light_dir_at_mouse_down_ = scene_->GetLightDirection(dir_light_);
+    light_dir_at_mouse_down_ = scene_->GetDirectionalLightDirection();
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
 
     ClearUI();
 
-    // Eigen::Vector3f dir = scene_->GetLightDirection(dir_light_);
-    Eigen::Vector3f dir;
+    Eigen::Vector3f dir = scene_->GetDirectionalLightDirection();
 
     double size = model_size_;
     if (size <= 0.001) {
