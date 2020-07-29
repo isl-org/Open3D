@@ -101,7 +101,15 @@ jobs:
            # reboot to load NVIDIA drivers
            gcloud compute ssh ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE} -- -C \
            "sudo reboot" || true
-           sleep 5
+           sleep 10
+           TRIES=0
+           while (( TRIES<5 )) && ! \
+           gcloud compute ssh ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE} -- -C exit
+           do
+             sleep 5
+             (( TRIES=TRIES+1 ))
+           done
+           exit $(( TRIES>=5 ))  # 0 => success
 
       - name: Config, build and run unit tests
         run: |-
