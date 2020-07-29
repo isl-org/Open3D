@@ -10,6 +10,7 @@ import sys
 
 isMacOS = (platform.system() == "Darwin")
 
+
 class Settings:
     UNLIT = "defaultUnlit"
     LIT = "defaultLit"
@@ -19,107 +20,115 @@ class Settings:
     DEFAULT_PROFILE_NAME = "Bright day with sun at +Y [default]"
     POINT_CLOUD_PROFILE_NAME = "Cloudy day (no direct sun)"
     CUSTOM_PROFILE_NAME = "Custom"
-    LIGHTING_PROFILES = { DEFAULT_PROFILE_NAME: {
-                              "ibl_intensity": 45000,
-                              "ibl_intensity": 45000,
-                              "sun_dir": [0.577, -0.577, -0.577],
-#                              "ibl_rotation": 
-                              "use_ibl": True,
-                              "use_sun": True,
-                          },
-                          "Bright day with sun at -Y": {
-                              "ibl_intensity": 45000,
-                              "ibl_intensity": 45000,
-                              "sun_dir": [0.577, 0.577, 0.577],
-#                              "ibl_rotation": 
-                              "use_ibl": True,
-                              "use_sun": True,
-                          },
-                          "Bright day with sun at +Z": {
-                              "ibl_intensity": 45000,
-                              "ibl_intensity": 45000,
-                              "sun_dir": [0.577, 0.577, -0.577],
-#                              "ibl_rotation": 
-                              "use_ibl": True,
-                              "use_sun": True,
-                          },
-                          "Less Bright day with sun at +Y": {
-                              "ibl_intensity": 35000,
-                              "ibl_intensity": 50000,
-                              "sun_dir": [0.577, -0.577, -0.577],
-#                              "ibl_rotation": 
-                              "use_ibl": True,
-                              "use_sun": True,
-                          },
-                          "Less Bright day with sun at -Y": {
-                              "ibl_intensity": 35000,
-                              "ibl_intensity": 50000,
-                              "sun_dir": [0.577, 0.577, 0.577],
-#                              "ibl_rotation": 
-                              "use_ibl": True,
-                              "use_sun": True,
-                          },
-                          "Less Bright day with sun at +Z": {
-                              "ibl_intensity": 35000,
-                              "ibl_intensity": 50000,
-                              "sun_dir": [0.577, 0.577, -0.577],
-#                              "ibl_rotation": 
-                              "use_ibl": True,
-                              "use_sun": True,
-                          },
-                          POINT_CLOUD_PROFILE_NAME: {
-                              "ibl_intensity": 60000,
-                              "ibl_intensity": 50000,
-                              "use_ibl": True,
-                              "use_sun": False,
-#                              "ibl_rotation": 
-                          },
-                        }
+    LIGHTING_PROFILES = {
+        DEFAULT_PROFILE_NAME: {
+            "ibl_intensity": 45000,
+            "ibl_intensity": 45000,
+            "sun_dir": [0.577, -0.577, -0.577],
+            # "ibl_rotation":
+            "use_ibl": True,
+            "use_sun": True,
+        },
+        "Bright day with sun at -Y": {
+            "ibl_intensity": 45000,
+            "ibl_intensity": 45000,
+            "sun_dir": [0.577, 0.577, 0.577],
+            # "ibl_rotation":
+            "use_ibl": True,
+            "use_sun": True,
+        },
+        "Bright day with sun at +Z": {
+            "ibl_intensity": 45000,
+            "ibl_intensity": 45000,
+            "sun_dir": [0.577, 0.577, -0.577],
+            # "ibl_rotation":
+            "use_ibl": True,
+            "use_sun": True,
+        },
+        "Less Bright day with sun at +Y": {
+            "ibl_intensity": 35000,
+            "ibl_intensity": 50000,
+            "sun_dir": [0.577, -0.577, -0.577],
+            # "ibl_rotation":
+            "use_ibl": True,
+            "use_sun": True,
+        },
+        "Less Bright day with sun at -Y": {
+            "ibl_intensity": 35000,
+            "ibl_intensity": 50000,
+            "sun_dir": [0.577, 0.577, 0.577],
+            # "ibl_rotation":
+            "use_ibl": True,
+            "use_sun": True,
+        },
+        "Less Bright day with sun at +Z": {
+            "ibl_intensity": 35000,
+            "ibl_intensity": 50000,
+            "sun_dir": [0.577, 0.577, -0.577],
+            # "ibl_rotation":
+            "use_ibl": True,
+            "use_sun": True,
+        },
+        POINT_CLOUD_PROFILE_NAME: {
+            "ibl_intensity": 60000,
+            "ibl_intensity": 50000,
+            "use_ibl": True,
+            "use_sun": False,
+            # "ibl_rotation":
+        },
+    }
 
     DEFAULT_MATERIAL_NAME = "Polished ceramic [default]"
-    PREFAB = { DEFAULT_MATERIAL_NAME: {
-                 "metallic": 0.0,
-                 "roughness": 0.7,
-                 "reflectance": 0.5,
-                 "clearcoat": 0.2,
-                 "clearcoat_roughness": 0.2,
-                 "anisotropy": 0.0 },
-               "Metal (rougher)": {
-                 "metallic": 1.0,
-                 "roughness": 0.5,
-                 "reflectance": 0.9,
-                 "clearcoat": 0.0,
-                 "clearcoat_roughness": 0.0,
-                 "anisotropy": 0.0 },
-               "Metal (smoother)": {
-                 "metallic": 1.0,
-                 "roughness": 0.3,
-                 "reflectance": 0.9,
-                 "clearcoat": 0.0,
-                 "clearcoat_roughness": 0.0,
-                 "anisotropy": 0.0 },
-               "Plastic": {
-                 "metallic": 0.0,
-                 "roughness": 0.5,
-                 "reflectance": 0.5,
-                 "clearcoat": 0.5,
-                 "clearcoat_roughness": 0.2,
-                 "anisotropy": 0.0 },
-               "Glazed ceramic": {
-                 "metallic": 0.0,
-                 "roughness": 0.5,
-                 "reflectance": 0.9,
-                 "clearcoat": 1.0,
-                 "clearcoat_roughness": 0.1,
-                 "anisotropy": 0.0 },
-               "Clay": {
-                 "metallic": 0.0,
-                 "roughness": 1.0,
-                 "reflectance": 0.5,
-                 "clearcoat": 0.1,
-                 "clearcoat_roughness": 0.287,
-                 "anisotropy": 0.0 },
-               }
+    PREFAB = {
+        DEFAULT_MATERIAL_NAME: {
+            "metallic": 0.0,
+            "roughness": 0.7,
+            "reflectance": 0.5,
+            "clearcoat": 0.2,
+            "clearcoat_roughness": 0.2,
+            "anisotropy": 0.0
+        },
+        "Metal (rougher)": {
+            "metallic": 1.0,
+            "roughness": 0.5,
+            "reflectance": 0.9,
+            "clearcoat": 0.0,
+            "clearcoat_roughness": 0.0,
+            "anisotropy": 0.0
+        },
+        "Metal (smoother)": {
+            "metallic": 1.0,
+            "roughness": 0.3,
+            "reflectance": 0.9,
+            "clearcoat": 0.0,
+            "clearcoat_roughness": 0.0,
+            "anisotropy": 0.0
+        },
+        "Plastic": {
+            "metallic": 0.0,
+            "roughness": 0.5,
+            "reflectance": 0.5,
+            "clearcoat": 0.5,
+            "clearcoat_roughness": 0.2,
+            "anisotropy": 0.0
+        },
+        "Glazed ceramic": {
+            "metallic": 0.0,
+            "roughness": 0.5,
+            "reflectance": 0.9,
+            "clearcoat": 1.0,
+            "clearcoat_roughness": 0.1,
+            "anisotropy": 0.0
+        },
+        "Clay": {
+            "metallic": 0.0,
+            "roughness": 1.0,
+            "reflectance": 0.5,
+            "clearcoat": 0.1,
+            "clearcoat_roughness": 0.287,
+            "anisotropy": 0.0
+        },
+    }
 
     def __init__(self):
         self.mouse_model = gui.SceneWidget.Controls.ROTATE_CAMERA
@@ -128,17 +137,19 @@ class Settings:
         self.show_axes = False
         self.use_ibl = True
         self.use_sun = True
-        self.new_ibl_name = None   # clear to None after loading
+        self.new_ibl_name = None  # clear to None after loading
         self.ibl_intensity = 45000
         self.sun_intensity = 45000
         self.sun_dir = [0.577, -0.577, -0.577]
         self.sun_color = gui.Color(1, 1, 1)
 
         self.apply_material = True  # clear to False after processing
-        self._materials = { Settings.LIT : rendering.Material(),
-                            Settings.UNLIT : rendering.Material(),
-                            Settings.NORMALS : rendering.Material(),
-                            Settings.DEPTH : rendering.Material() }
+        self._materials = {
+            Settings.LIT: rendering.Material(),
+            Settings.UNLIT: rendering.Material(),
+            Settings.NORMALS: rendering.Material(),
+            Settings.DEPTH: rendering.Material()
+        }
         self._materials[Settings.LIT].base_color = [0.9, 0.9, 0.9, 1.0]
         self._materials[Settings.LIT].shader = Settings.LIT
         self._materials[Settings.UNLIT].base_color = [0.9, 0.9, 0.9, 1.0]
@@ -158,15 +169,16 @@ class Settings:
         self.apply_material = True
 
     def apply_material_prefab(self, name):
-        assert(self.material.shader == Settings.LIT)
+        assert (self.material.shader == Settings.LIT)
         prefab = Settings.PREFAB[name]
-        for key,val in prefab.items():
+        for key, val in prefab.items():
             setattr(self.material, "base_" + key, val)
 
     def apply_lighting_profile(self, name):
         profile = Settings.LIGHTING_PROFILES[name]
-        for key,val in profile.items():
+        for key, val in profile.items():
             setattr(self, key, val)
+
 
 class AppWindow:
     MENU_OPEN = 1
@@ -178,8 +190,9 @@ class AppWindow:
     DEFAULT_IBL = "default"
 
     MATERIAL_NAMES = ["Lit", "Unlit", "Normals", "Depth"]
-    MATERIAL_SHADERS = [Settings.LIT, Settings.UNLIT, Settings.NORMALS,
-                        Settings.DEPTH]
+    MATERIAL_SHADERS = [
+        Settings.LIT, Settings.UNLIT, Settings.NORMALS, Settings.DEPTH
+    ]
 
     def __init__(self, width, height):
         self.settings = Settings()
@@ -294,8 +307,9 @@ class AppWindow:
         advanced.add_child(h)
 
         self._ibl_map = gui.Combobox()
-        for ibl in glob.glob(gui.Application.instance.resource_path + "/*_ibl.ktx"):
-            
+        for ibl in glob.glob(gui.Application.instance.resource_path +
+                             "/*_ibl.ktx"):
+
             self._ibl_map.add_item(os.path.basename(ibl[:-8]))
         self._ibl_map.selected_text = AppWindow.DEFAULT_IBL
         self._ibl_map.set_on_selection_changed(self._on_new_ibl)
@@ -435,18 +449,20 @@ class AppWindow:
         self._scene.scene.show_skybox(self.settings.show_skybox)
         self._scene.scene.show_axes(self.settings.show_axes)
         if self.settings.new_ibl_name is not None:
-            self._scene.scene.scene.set_indirect_light(self.settings.new_ibl_name)
+            self._scene.scene.scene.set_indirect_light(
+                self.settings.new_ibl_name)
             # Clear new_ibl_name, so we don't keep reloading this image every
             # time the settings are applied.
             self.settings.new_ibl_name = None
         self._scene.scene.scene.enable_indirect_light(self.settings.use_ibl)
-        self._scene.scene.scene.set_indirect_light_intensity(self.settings.ibl_intensity)
-        sun_color = [self.settings.sun_color.red,
-                     self.settings.sun_color.green,
-                     self.settings.sun_color.blue]
-        self._scene.scene.scene.set_directional_light(self.settings.sun_dir,
-                                                  sun_color,
-                                                  self.settings.sun_intensity)
+        self._scene.scene.scene.set_indirect_light_intensity(
+            self.settings.ibl_intensity)
+        sun_color = [
+            self.settings.sun_color.red, self.settings.sun_color.green,
+            self.settings.sun_color.blue
+        ]
+        self._scene.scene.scene.set_directional_light(
+            self.settings.sun_dir, sun_color, self.settings.sun_intensity)
         self._scene.scene.scene.enable_directional_light(self.settings.use_sun)
 
         if self.settings.apply_material:
@@ -462,7 +478,8 @@ class AppWindow:
         self._sun_intensity.int_value = self.settings.sun_intensity
         self._sun_dir.vector_value = self.settings.sun_dir
         self._sun_color.color_value = self.settings.sun_color
-        self._material_prefab.enabled = (self.settings.material.shader == Settings.LIT)
+        self._material_prefab.enabled = (
+            self.settings.material.shader == Settings.LIT)
         c = gui.Color(self.settings.material.base_color[0],
                       self.settings.material.base_color[1],
                       self.settings.material.base_color[2],
@@ -558,7 +575,9 @@ class AppWindow:
         self._apply_settings()
 
     def _on_material_color(self, color):
-        self.settings.material.base_color = [color.red, color.green, color.blue, color.alpha]
+        self.settings.material.base_color = [
+            color.red, color.green, color.blue, color.alpha
+        ]
         self.settings.apply_material = True
         self._apply_settings()
 
@@ -569,12 +588,14 @@ class AppWindow:
     def _on_menu_open(self):
         dlg = gui.FileDialog(gui.FileDialog.OPEN, "Choose file to load",
                              self.window.theme)
-        dlg.add_filter(".ply .stl .obj .off .gltf .glb",
-                      "Triangle mesh files (.ply, .stl, .obj, .off, "
-                      ".gltf, .glb)")
-        dlg.add_filter(".xyz .xyzn .xyzrgb .ply .pcd .pts",
-                      "Point cloud files (.xyz, .xyzn, .xyzrgb, .ply, "
-                      ".pcd, .pts)")
+        dlg.add_filter(
+            ".ply .stl .obj .off .gltf .glb",
+            "Triangle mesh files (.ply, .stl, .obj, .off, "
+            ".gltf, .glb)")
+        dlg.add_filter(
+            ".xyz .xyzn .xyzrgb .ply .pcd .pts",
+            "Point cloud files (.xyz, .xyzn, .xyzrgb, .ply, "
+            ".pcd, .pts)")
         dlg.add_filter(".ply", "Polygon files (.ply)")
         dlg.add_filter(".stl", "Stereolithography files (.stl)")
         dlg.add_filter(".obj", "Wavefront OBJ files (.obj)")
@@ -645,20 +666,21 @@ class AppWindow:
         self._scene.scene.clear_geometry()
 
         geometry = None
-        geometry_type = o3d.io.read_file_geometry_type(path);
+        geometry_type = o3d.io.read_file_geometry_type(path)
 
         mesh = None
         if geometry_type & o3d.io.CONTAINS_TRIANGLES:
-            mesh = o3d.io.read_triangle_mesh(path);
+            mesh = o3d.io.read_triangle_mesh(path)
         if mesh is not None:
             if len(mesh.triangles) == 0:
-                print("[WARNING] Contains 0 triangles, will read as point cloud");
+                print(
+                    "[WARNING] Contains 0 triangles, will read as point cloud")
                 mesh = None
             else:
                 mesh.compute_vertex_normals()
                 if len(mesh.vertex_colors) == 0:
                     mesh.paint_uniform_color([1, 1, 1])
-                geometry = mesh;
+                geometry = mesh
             # Make sure the mesh has texture coordinates
             if not mesh.has_triangle_uvs():
                 uv = np.array([[0.0, 0.0]] * (3 * len(mesh.triangles)))
@@ -689,6 +711,7 @@ class AppWindow:
             bounds = geometry.get_axis_aligned_bounding_box()
             self._scene.setup_camera(60, bounds, bounds.get_center())
 
+
 def main():
     # We need to initalize the application, which finds the necessary shaders
     # for rendering and prepares the cross-platform window abstraction.
@@ -704,7 +727,8 @@ def main():
         if os.path.exists(path):
             w.load(path)
         else:
-            w.window.show_message_box("Error", "Could not open file '" + path + "'")
+            w.window.show_message_box("Error",
+                                      "Could not open file '" + path + "'")
 
     # Run the event loop. This will not return until the last window is closed.
     gui.Application.instance.run()

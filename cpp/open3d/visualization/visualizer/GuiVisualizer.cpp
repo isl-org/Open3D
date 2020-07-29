@@ -779,7 +779,8 @@ void GuiVisualizer::Init() {
     settings.wgt_mouse_arcball = std::make_shared<SmallToggleButton>("Arcball");
     impl_->settings_.wgt_mouse_arcball->SetOn(true);
     settings.wgt_mouse_arcball->SetOnClicked([this]() {
-        impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_CAMERA);
+        impl_->SetMouseControls(*this,
+                                gui::SceneWidget::Controls::ROTATE_CAMERA);
     });
     settings.wgt_mouse_fly = std::make_shared<SmallToggleButton>("Fly");
     settings.wgt_mouse_fly->SetOnClicked([this]() {

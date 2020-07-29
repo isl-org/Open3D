@@ -242,8 +242,9 @@ void pybind_gui_classes(py::module &m) {
             .def("show_message_box", &PyWindow::ShowMessageBox,
                  "Displays a simple dialog with a title and message and okay "
                  "button")
-            .def_property_readonly("renderer", &PyWindow::GetRenderer,
-                          "Gets the rendering.Renderer object for the Window");
+            .def_property_readonly(
+                    "renderer", &PyWindow::GetRenderer,
+                    "Gets the rendering.Renderer object for the Window");
 
     // ---- Menu ----
     py::class_<Menu, std::shared_ptr<Menu>> menu(
@@ -326,29 +327,29 @@ void pybind_gui_classes(py::module &m) {
     // ---- Rect ----
     py::class_<Rect> rect(m, "Rect", "Represents a widget frame");
     rect.def(py::init<>())
-        .def(py::init<int, int, int, int>())
-        .def(py::init([](float x, float y, float w, float h) {
+            .def(py::init<int, int, int, int>())
+            .def(py::init([](float x, float y, float w, float h) {
                 return Rect(int(std::round(x)), int(std::round(y)),
                             int(std::round(w)), int(std::round(h)));
-                      }))
-        .def_readwrite("x", &Rect::x)
-        .def_readwrite("y", &Rect::y)
-        .def_readwrite("width", &Rect::width)
-        .def_readwrite("height", &Rect::height)
-        .def("get_left", &Rect::GetLeft)
-        .def("get_right", &Rect::GetRight)
-        .def("get_top", &Rect::GetTop)
-        .def("get_bottom", &Rect::GetBottom);
+            }))
+            .def_readwrite("x", &Rect::x)
+            .def_readwrite("y", &Rect::y)
+            .def_readwrite("width", &Rect::width)
+            .def_readwrite("height", &Rect::height)
+            .def("get_left", &Rect::GetLeft)
+            .def("get_right", &Rect::GetRight)
+            .def("get_top", &Rect::GetTop)
+            .def("get_bottom", &Rect::GetBottom);
 
     // ---- Size ----
     py::class_<Size> size(m, "Size", "Size object");
     size.def(py::init<>())
-        .def(py::init<int, int>())
-        .def(py::init([](float w, float h) { return Size(int(std::round(w)),
-                                                         int(std::round(h))); }))
-        .def_readwrite("width", &Size::width)
-        .def_readwrite("height", &Size::height)
-        ;
+            .def(py::init<int, int>())
+            .def(py::init([](float w, float h) {
+                return Size(int(std::round(w)), int(std::round(h)));
+            }))
+            .def_readwrite("width", &Size::width)
+            .def_readwrite("height", &Size::height);
 
     // ---- Widget ----
     py::class_<Widget, std::shared_ptr<Widget>> widget(m, "Widget",
@@ -378,7 +379,6 @@ void pybind_gui_classes(py::module &m) {
                  "during drawing. Calling it at other times will not work, as "
                  "it requires some internal setup in order to function "
                  "properly");
-
 
     // ---- Button ----
     py::class_<Button, std::shared_ptr<Button>, Widget> button(m, "Button",
@@ -631,16 +631,17 @@ void pybind_gui_classes(py::module &m) {
     scene.def(py::init<>(),
               "Creates an empty SceneWidget. Assign a Scene with the 'scene' "
               "property")
-         .def_property("scene", &SceneWidget::GetScene, &SceneWidget::SetScene,
-                       "The rendering.Open3DScene that the SceneWidget renders")
-         .def("set_background_color", &SceneWidget::SetBackgroundColor,
-              "Sets the background color of the widget")
-        .def("set_view_controls", &SceneWidget::SetViewControls,
-             "Sets mouse interaction, e.g. ROTATE_OBJ")
-        .def("setup_camera", &SceneWidget::SetupCamera,
-             "Configure the camera: setup_camera(field_of_view, model_bounds, "
-             "center_of_rotation)")
-        ;
+            .def_property(
+                    "scene", &SceneWidget::GetScene, &SceneWidget::SetScene,
+                    "The rendering.Open3DScene that the SceneWidget renders")
+            .def("set_background_color", &SceneWidget::SetBackgroundColor,
+                 "Sets the background color of the widget")
+            .def("set_view_controls", &SceneWidget::SetViewControls,
+                 "Sets mouse interaction, e.g. ROTATE_OBJ")
+            .def("setup_camera", &SceneWidget::SetupCamera,
+                 "Configure the camera: setup_camera(field_of_view, "
+                 "model_bounds, "
+                 "center_of_rotation)");
 
     // ---- Slider ----
     py::class_<Slider, std::shared_ptr<Slider>, Widget> slider(
@@ -896,9 +897,9 @@ void pybind_gui_classes(py::module &m) {
                 "spacing"_a = 0, "margins"_a = Margins(),
                 "Creates a layout that arranges widgets vertically, left to "
                 "right, making their height equal to the layout's height "
-                 "(which will generally be the largest height of the items). "
-                 "First argument is the spacing between widgets, the second "
-                 "is the margins. Both default to 0.")
+                "(which will generally be the largest height of the items). "
+                "First argument is the spacing between widgets, the second "
+                "is the margins. Both default to 0.")
             .def(py::init([](float spacing, const Margins &margins) {
                      return new Horiz(int(std::round(spacing)), margins);
                  }),
