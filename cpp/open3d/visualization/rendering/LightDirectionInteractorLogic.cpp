@@ -123,11 +123,6 @@ LightDirectionInteractorLogic::LightDirectionInteractorLogic(Scene* scene,
                                                              Camera* camera)
     : scene_(scene), camera_(camera) {}
 
-// NOTE: No longer necessary
-void LightDirectionInteractorLogic::SetDirectionalLight(LightHandle dir_light) {
-    dir_light_ = dir_light;
-}
-
 void LightDirectionInteractorLogic::Rotate(int dx, int dy) {
     Eigen::Vector3f up = camera_->GetUpVector();
     Eigen::Vector3f right = -camera_->GetLeftVector();

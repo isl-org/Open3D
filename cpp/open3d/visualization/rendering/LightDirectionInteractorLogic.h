@@ -42,8 +42,6 @@ class LightDirectionInteractorLogic : public MatrixInteractorLogic {
 public:
     LightDirectionInteractorLogic(Scene* scene, Camera* camera);
 
-    void SetDirectionalLight(LightHandle dir_light);
-
     void Rotate(int dx, int dy) override;
 
     void StartMouseDrag();
