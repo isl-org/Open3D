@@ -104,7 +104,7 @@ public:
             const std::string& object_name) override;
     void GeometryShadows(const std::string& object_name,
                          bool cast_shadows,
-                         bool receive_shadows);
+                         bool receive_shadows) override;
     void OverrideMaterial(const std::string& object_name,
                           const Material& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;

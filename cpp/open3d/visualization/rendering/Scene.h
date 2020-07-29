@@ -83,6 +83,9 @@ public:
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;
     virtual void OverrideMaterial(const std::string& object_name,
                                   const Material& material) = 0;
+    virtual void GeometryShadows(const std::string& object_name,
+                                 bool cast_shadows,
+                                 bool receive_shadows) = 0;
     virtual void QueryGeometry(std::vector<std::string>& geometry) = 0;
     virtual void SetGeometryTransform(const std::string& object_name,
                                       const Transform& transform) = 0;

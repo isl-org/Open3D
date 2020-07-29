@@ -29,6 +29,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/rendering/Camera.h"
+#include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Scene.h"
 
 namespace open3d {
@@ -151,19 +152,23 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     auto sphere_tris = geometry::TriangleMesh::CreateSphere(sphere_size, 20);
     auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphere_tris);
     sphere->PaintUniformColor(kSkyColor);
-    // auto t0 = Camera::Transform::Identity();
-    // ui_objs_.push_back({scene_->AddGeometry(*sphere), t0});
-    // scene_->SetEntityTransform(ui_objs_[0].handle, t0);
-    // scene_->SetGeometryShadows(ui_objs_[0].handle, false, false);
+    auto t0 = Camera::Transform::Identity();
+    Material mat;
+    mat.shader = "defaultLit";
+    scene_->AddGeometry("__suncagesphere__", *sphere, mat);
+    scene_->SetGeometryTransform("__suncagesphere__", t0);
+    scene_->GeometryShadows("__suncagesphere__", false, false);
+    ui_objs_.push_back({"__suncagesphere__", t0});
 
     auto sun_radius = 0.05 * size;
     auto sun = geometry::TriangleMesh::CreateSphere(sun_radius, 20);
     sun->PaintUniformColor(kSunColor);
     auto t1 = Camera::Transform::Identity();
     t1.translate(-sphere_size * dir);
-    // ui_objs_.push_back({scene_->AddGeometry(*sun), t1});
-    // scene_->SetEntityTransform(ui_objs_[1].handle, t1);
-    // scene_->SetGeometryShadows(ui_objs_[1].handle, false, false);
+    scene_->AddGeometry("__sunsphere__", *sun, mat);
+    scene_->SetGeometryTransform("__sunsphere__", t1);
+    scene_->GeometryShadows("__sunsphere__", false, false);
+    ui_objs_.push_back({"__sunsphere__", t1});
 
     const double arrow_radius = 0.075 * sun_radius;
     const double arrow_length = 0.333 * size;
@@ -172,9 +177,10 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     sun_dir->PaintUniformColor(kSunColor);
     auto t2 = Camera::Transform::Identity();
     t2.translate(-sphere_size * dir);
-    // ui_objs_.push_back({scene_->AddGeometry(*sun_dir), t2});
-    // scene_->SetEntityTransform(ui_objs_[2].handle, t2);
-    // scene_->SetGeometryShadows(ui_objs_[2].handle, false, false);
+    scene_->AddGeometry("__sunarrow__", *sun_dir, mat);
+    scene_->SetGeometryTransform("__sunarrow__", t2);
+    scene_->GeometryShadows("__sunarrow__", false, false);
+    ui_objs_.push_back({"__sunarrow__", t2});
 
     UpdateMouseDragUI();
 }
@@ -184,17 +190,17 @@ void LightDirectionInteractorLogic::UpdateMouseDragUI() {
     for (auto& o : ui_objs_) {
         Camera::Transform t = GetMatrix() * o.transform;
         t.pretranslate(model_center);
-        // scene_->SetEntityTransform(o.handle, t);
+        scene_->SetGeometryTransform(o.name, t);
     }
 }
 
 void LightDirectionInteractorLogic::EndMouseDrag() { ClearUI(); }
 
 void LightDirectionInteractorLogic::ClearUI() {
-    // for (auto& o : ui_objs_) {
-    //     scene_->RemoveGeometry(o.handle);
-    // }
-    // ui_objs_.clear();
+    for (auto& o : ui_objs_) {
+        scene_->RemoveGeometry(o.name);
+    }
+    ui_objs_.clear();
 }
 
 Eigen::Vector3f LightDirectionInteractorLogic::GetCurrentDirection() const {

@@ -59,7 +59,7 @@ private:
     Eigen::Vector3f light_dir_at_mouse_down_;
 
     struct UIObj {
-        GeometryHandle handle;
+        std::string name;
         Camera::Transform transform;
     };
     std::vector<UIObj> ui_objs_;
