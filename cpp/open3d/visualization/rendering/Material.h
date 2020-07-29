@@ -46,6 +46,8 @@ struct Material {
     float base_clearcoat_roughness = 0.f;
     float base_anisotropy = 0.f;
 
+    float point_size = 3.f;
+
     std::shared_ptr<open3d::geometry::Image> albedo_img;
     std::shared_ptr<open3d::geometry::Image> normal_img;
     std::shared_ptr<open3d::geometry::Image> ao_img;
