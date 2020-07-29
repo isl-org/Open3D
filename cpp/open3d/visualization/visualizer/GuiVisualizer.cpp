@@ -927,6 +927,7 @@ void GuiVisualizer::SetGeometry(
 
                 if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
                     loaded_material.shader = "defaultUnlit";
+                    num_unlit += 1;
                 } else {
                     loaded_material.shader = "defaultLit";
                 }
