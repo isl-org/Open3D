@@ -495,7 +495,7 @@ struct GuiVisualizer::Impl {
         using Controls = gui::SceneWidget::Controls;
         scene_wgt_->SetViewControls(mode);
         window.SetFocusWidget(scene_wgt_.get());
-        settings_.wgt_mouse_arcball->SetOn(mode == Controls::ROTATE_OBJ);
+        settings_.wgt_mouse_arcball->SetOn(mode == Controls::ROTATE_CAMERA);
         settings_.wgt_mouse_fly->SetOn(mode == Controls::FLY);
         settings_.wgt_mouse_model->SetOn(mode == Controls::ROTATE_MODEL);
         settings_.wgt_mouse_sun->SetOn(mode == Controls::ROTATE_SUN);
@@ -507,9 +507,9 @@ struct GuiVisualizer::Impl {
         scene_wgt_->SetBackgroundColor(settings_.model_.GetBackgroundColor());
 
         if (settings_.model_.GetShowSkybox()) {
-            scene_wgt_->GetScene()->SetSkybox(true);
+            scene_wgt_->GetScene()->ShowSkybox(true);
         } else {
-            scene_wgt_->GetScene()->SetSkybox(false);
+            scene_wgt_->GetScene()->ShowSkybox(false);
         }
         scene_wgt_->ShowSkybox(settings_.model_.GetShowSkybox());
 
@@ -779,7 +779,7 @@ void GuiVisualizer::Init() {
     settings.wgt_mouse_arcball = std::make_shared<SmallToggleButton>("Arcball");
     impl_->settings_.wgt_mouse_arcball->SetOn(true);
     settings.wgt_mouse_arcball->SetOnClicked([this]() {
-        impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_OBJ);
+        impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_CAMERA);
     });
     settings.wgt_mouse_fly = std::make_shared<SmallToggleButton>("Fly");
     settings.wgt_mouse_fly->SetOnClicked([this]() {
