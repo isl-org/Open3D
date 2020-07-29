@@ -1050,7 +1050,8 @@ void GuiVisualizer::SetGeometry(
         Eigen::Vector3f color(
                 impl_->settings_.loaded_material_.base_color.data());
         impl_->settings_.model_.SetCustomDefaultColor(color);
-        impl_->settings_.model_.SetCurrentMaterials(GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
+        impl_->settings_.model_.SetCurrentMaterials(
+                GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
         impl_->settings_.view_->ShowFileMaterialEntry(true);
     } else {
         impl_->settings_.view_->ShowFileMaterialEntry(false);
