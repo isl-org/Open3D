@@ -522,8 +522,7 @@ struct GuiVisualizer::Impl {
         auto &current_materials = settings_.model_.GetCurrentMaterials();
         if (current_materials.lit_name ==
             GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
-            std::cout << "\tMaterial from file" << std::endl;
-            // TODO: FIXME!!!!
+            // TODO: Is any of the following old code still necessary?
             // ResetToLoadedMaterials(renderer);
             // if(settings_.model_.GetUserHasChangedColor()) {
             //     settings_.loaded_material_.base_color =
@@ -1051,6 +1050,7 @@ void GuiVisualizer::SetGeometry(
         Eigen::Vector3f color(
                 impl_->settings_.loaded_material_.base_color.data());
         impl_->settings_.model_.SetCustomDefaultColor(color);
+        impl_->settings_.model_.SetCurrentMaterials(GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
         impl_->settings_.view_->ShowFileMaterialEntry(true);
     } else {
         impl_->settings_.view_->ShowFileMaterialEntry(false);
