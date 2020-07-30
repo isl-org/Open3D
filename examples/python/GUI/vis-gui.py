@@ -177,7 +177,6 @@ class Settings:
         for key, val in profile.items():
             setattr(self, key, val)
 
-
 class AppWindow:
     MENU_OPEN = 1
     MENU_EXPORT = 2

@@ -1178,5 +1178,13 @@ bool Tensor::IsSame(const Tensor& other) const {
            dtype_ == other.dtype_;
 }
 
+void Tensor::AssertShape(const SizeVector& expected_shape) const {
+    if (shape_ != expected_shape) {
+        utility::LogError(
+                "Tensor shape {} does not match expected shape {}: {}", shape_,
+                expected_shape);
+    }
+}
+
 }  // namespace core
 }  // namespace open3d

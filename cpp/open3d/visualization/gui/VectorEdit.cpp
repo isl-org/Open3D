@@ -77,8 +77,7 @@ Size VectorEdit::CalcPreferredSize(const Theme& theme) const {
 
 Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text editing

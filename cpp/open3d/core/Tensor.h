@@ -83,6 +83,22 @@ public:
                 init_vals.size() * DtypeUtil::ByteSize(dtype));
     }
 
+    /// Constructor from raw host buffer. The memory will be copied.
+    template <typename T>
+    Tensor(const T* init_vals,
+           const SizeVector& shape,
+           Dtype dtype,
+           const Device& device = Device("CPU:0"))
+        : Tensor(shape, dtype, device) {
+        // Check data types
+        AssertTemplateDtype<T>();
+
+        // Copy data to blob
+        MemoryManager::MemcpyFromHost(
+                blob_->GetDataPtr(), GetDevice(), init_vals,
+                shape_.NumElements() * DtypeUtil::ByteSize(dtype));
+    }
+
     /// The fully specified constructor
     Tensor(const SizeVector& shape,
            const SizeVector& strides,
@@ -337,7 +353,7 @@ public:
     /// Convert to rvalue such that the Tensor can be assigned.
     /// E.g. in numpy
     /// tensor_a = tensor_b     # tensor_a is lvalue, tensor_a variable will
-    ///                         # now referecne tensor_b, that is, tensor_a
+    ///                         # now reference tensor_b, that is, tensor_a
     ///                         # and tensor_b share exactly the same memory.
     /// tensor_a[:] = tensor_b  # tensor_a[:] is rvalue, tensor_b's values are
     ///                         # assigned to tensor_a's memory.
@@ -910,6 +926,9 @@ public:
 
     /// Convert DLManagedTensor to Tensor.
     static Tensor FromDLPack(const DLManagedTensor* dlmt);
+
+    /// Assert that the Tensor has the specified shape.
+    void AssertShape(const SizeVector& expected_shape) const;
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
