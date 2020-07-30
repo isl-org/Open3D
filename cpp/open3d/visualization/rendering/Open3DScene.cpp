@@ -141,7 +141,7 @@ View* Open3DScene::GetView(ViewHandle view) const {
     return scene->GetView(view);
 }
 
-void Open3DScene::SetSkybox(bool enable) {
+void Open3DScene::ShowSkybox(bool enable) {
     auto scene = renderer_.GetScene(scene_);
     scene->ShowSkybox(enable);
 }

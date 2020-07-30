@@ -30,6 +30,7 @@
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/camera/PinholeCameraTrajectory.h"
 #include "open3d/io/FeatureIO.h"
+#include "open3d/io/FileFormatIO.h"
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/LineSetIO.h"
@@ -94,6 +95,25 @@ static const std::unordered_map<std::string, std::string>
 };
 
 void pybind_class_io(py::module &m_io) {
+    py::enum_<io::FileGeometry> geom_type(m_io, "FileGeometry",
+                                          py::arithmetic());
+    // Trick to write docs without listing the members in the enum class again.
+    geom_type.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Geometry types";
+            }),
+            py::none(), py::none(), "");
+    geom_type.value("CONTENTS_UKNWOWN", io::FileGeometry::CONTENTS_UNKNOWN)
+            .value("CONTAINS_POINTS", io::FileGeometry::CONTAINS_POINTS)
+            .value("CONTAINS_LINES", io::FileGeometry::CONTAINS_LINES)
+            .value("CONTAINS_TRIANGLES", io::FileGeometry::CONTAINS_TRIANGLES)
+            .export_values();
+    m_io.def(
+            "read_file_geometry_type", &io::ReadFileGeometryType,
+            "Returns the type of geometry of the file. This is a faster way of "
+            "determining the file type than attempting to read the file as a "
+            "point cloud, mesh, or line set in turn.");
+
     // open3d::geometry::Image
     m_io.def("read_image",
              [](const std::string &filename) {

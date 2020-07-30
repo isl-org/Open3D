@@ -527,13 +527,13 @@ public:
         } else if (current_ == model_.get()) {
             return SceneWidget::Controls::ROTATE_MODEL;
         } else {
-            return SceneWidget::Controls::ROTATE_OBJ;
+            return SceneWidget::Controls::ROTATE_CAMERA;
         }
     }
 
     void SetControls(SceneWidget::Controls mode) {
         switch (mode) {
-            case SceneWidget::Controls::ROTATE_OBJ:
+            case SceneWidget::Controls::ROTATE_CAMERA:
                 current_ = rotate_.get();
                 break;
             case SceneWidget::Controls::FLY:
@@ -708,7 +708,7 @@ rendering::View* SceneWidget::GetRenderView() const {
 }
 
 void SceneWidget::SetViewControls(Controls mode) {
-    if (mode == Controls::ROTATE_OBJ &&
+    if (mode == Controls::ROTATE_CAMERA &&
         impl_->controls_->GetControls() == Controls::FLY) {
         impl_->controls_->SetControls(mode);
         // If we're going from fly to standard rotate obj, we need to

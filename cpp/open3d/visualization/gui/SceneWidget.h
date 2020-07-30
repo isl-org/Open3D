@@ -60,7 +60,7 @@ public:
     void SetFrame(const Rect& f) override;
     void SetBackgroundColor(const Color& color);
 
-    enum Controls { ROTATE_OBJ, FLY, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL };
+    enum Controls { ROTATE_CAMERA, FLY, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL };
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,
