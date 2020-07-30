@@ -68,43 +68,5 @@ CuBLASContext::~CuBLASContext() { cublasDestroy(handle_); }
 std::shared_ptr<CuBLASContext> CuBLASContext::instance_ =
         CuBLASContext::GetInstance();
 
-// template <>
-// void gemm_cpu<float>(CBLAS_LAYOUT layout,
-//                      CBLAS_TRANSPOSE trans_A,
-//                      CBLAS_TRANSPOSE trans_B,
-//                      int m,
-//                      int n,
-//                      int k,
-//                      float alpha,
-//                      const float* A_data,
-//                      int lda,
-//                      const float* B_data,
-//                      int ldb,
-//                      float beta,
-//                      float* C_data,
-//                      int ldc) {
-//     cblas_sgemm(layout, trans_A, trans_B, m, n, k, alpha, A_data, lda,
-//     B_data,
-//                 ldb, beta, C_data, ldc);
-// }
-// template <>
-// void gemm_cpu<double>(CBLAS_LAYOUT layout,
-//                       CBLAS_TRANSPOSE trans_A,
-//                       CBLAS_TRANSPOSE trans_B,
-//                       int m,
-//                       int n,
-//                       int k,
-//                       double alpha,
-//                       const double* A_data,
-//                       int lda,
-//                       const double* B_data,
-//                       int ldb,
-//                       double beta,
-//                       double* C_data,
-//                       int ldc) {
-//     cblas_dgemm(layout, trans_A, trans_B, m, n, k, alpha, A_data, lda,
-//     B_data,
-//                 ldb, beta, C_data, ldc);
-// }
 }  // namespace core
 }  // namespace open3d
