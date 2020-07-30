@@ -39,7 +39,7 @@ namespace open3d {
 
 void pybind_keypoint_methods(py::module &m) {
     m.def("compute_iss_keypoints", &geometry::keypoint::ComputeISSKeypoints,
-          "Function that computes the ISS Keypoints from an input point "
+          "Function that computes the ISS keypoints from an input point "
           "cloud. This implements the keypoint detection modules "
           "proposed in Yu Zhong, 'Intrinsic Shape Signatures: A Shape "
           "Descriptor for 3D Object Recognition', 2009.",
