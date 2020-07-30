@@ -162,8 +162,6 @@ class Settings:
         # to another one, then come back, the old setting will still be there.
         self.material = self._materials[Settings.LIT]
 
-        self.point_size = 3
-
     def set_material(self, name):
         self.material = self._materials[name]
         self.apply_material = True
@@ -404,7 +402,6 @@ class AppWindow:
             file_menu = gui.Menu()
             file_menu.add_item("Open...", AppWindow.MENU_OPEN)
             file_menu.add_item("Export Current Image...", AppWindow.MENU_EXPORT)
-            file_menu.set_enabled(AppWindow.MENU_EXPORT, False)
             if not isMacOS:
                 file_menu.add_separator()
                 file_menu.add_item("Quit", AppWindow.MENU_QUIT)
@@ -436,6 +433,7 @@ class AppWindow:
         # window, so that the window can call the appropriate function when the
         # menu item is activated.
         w.set_on_menu_item_activated(AppWindow.MENU_OPEN, self._on_menu_open)
+        w.set_on_menu_item_activated(AppWindow.MENU_EXPORT, self._on_menu_export)
         w.set_on_menu_item_activated(AppWindow.MENU_QUIT, self._on_menu_quit)
         w.set_on_menu_item_activated(AppWindow.MENU_SHOW_SETTINGS,
                                      self._on_menu_toggle_settings_panel)
@@ -485,7 +483,7 @@ class AppWindow:
                       self.settings.material.base_color[2],
                       self.settings.material.base_color[3])
         self._material_color.color_value = c
-        self._point_size.int_value = self.settings.point_size
+        self._point_size.double_value = self.settings.material.point_size
 
     def _on_layout(self, theme):
         # The on_layout callback should set the frame (position + size) of every
@@ -582,7 +580,8 @@ class AppWindow:
         self._apply_settings()
 
     def _on_point_size(self, size):
-        self.settings.point_size = int(size)
+        self.settings.material.point_size = int(size)
+        self.settings.apply_material = True
         self._apply_settings()
 
     def _on_menu_open(self):
@@ -612,15 +611,28 @@ class AppWindow:
 
         # A file dialog MUST define on_cancel and on_done functions
         dlg.set_on_cancel(self._on_file_dialog_cancel)
-        dlg.set_on_done(self._on_file_dialog_done)
+        dlg.set_on_done(self._on_load_dialog_done)
         self.window.show_dialog(dlg)
 
     def _on_file_dialog_cancel(self):
         self.window.close_dialog()
 
-    def _on_file_dialog_done(self, filename):
+    def _on_load_dialog_done(self, filename):
         self.window.close_dialog()
         self.load(filename)
+
+    def _on_menu_export(self):
+        dlg = gui.FileDialog(gui.FileDialog.SAVE, "Choose file to save",
+                             self.window.theme)
+        dlg.add_filter(".png", "PNG files (.png)")
+        dlg.set_on_cancel(self._on_file_dialog_cancel)
+        dlg.set_on_done(self._on_export_dialog_done)
+        self.window.show_dialog(dlg)
+
+    def _on_export_dialog_done(self, filename):
+        self.window.close_dialog()
+        frame = self._scene.frame
+        self.export_image(filename, frame.width, frame.height)
 
     def _on_menu_quit(self):
         gui.Application.instance.quit()
@@ -711,6 +723,10 @@ class AppWindow:
             bounds = geometry.get_axis_aligned_bounding_box()
             self._scene.setup_camera(60, bounds, bounds.get_center())
 
+    def export_image(self, path, width, height):
+        def _on_image(image):
+            o3d.io.write_image(path, image, 100)
+        self._scene.scene.scene.render_to_image(width, height, _on_image)
 
 def main():
     # We need to initalize the application, which finds the necessary shaders

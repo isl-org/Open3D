@@ -101,6 +101,7 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("base_clearcoat_roughness",
                            &Material::base_clearcoat_roughness)
             .def_readwrite("base_anisotropy", &Material::base_anisotropy)
+            .def_readwrite("point_size", &Material::point_size)
             .def_readwrite("albedo_img", &Material::albedo_img)
             .def_readwrite("normal_img", &Material::normal_img)
             .def_readwrite("ao_img", &Material::ao_img)
@@ -139,16 +140,19 @@ void pybind_rendering_classes(py::module &m) {
                  "Enables or disables indirect lighting")
             .def("set_indirect_light", &Scene::SetIndirectLight,
                  "Loads the indirect light. The name parameter is the name of "
-                 "the "
-                 "file to load")
+                 "the file to load")
             .def("set_indirect_light_intensity",
                  &Scene::SetIndirectLightIntensity,
                  "Sets the brightness of the indirect light")
             .def("enable_directional_light", &Scene::EnableDirectionalLight)
             .def("set_directional_light", &Scene::SetDirectionalLight,
                  "Sets the parameters of the directional light: direction, "
-                 "color, "
-                 "intensity");
+                 "color, intensity")
+            .def("render_to_image", &Scene::RenderToImage,
+                 "Renders the scene; image will be provided via a callback "
+                 "function. The callback is necessary because rendering is done "
+                 "on a different thread. The image remains valid after the "
+                 "callback, assuming it was assigned somewhere.");
 
     // ---- Open3DScene ----
     py::class_<Open3DScene, std::shared_ptr<Open3DScene>> o3dscene(
