@@ -121,6 +121,8 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
     auto result = Widget::DrawResult::NONE;
 
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+
     bool was_on = impl_->is_on_;
     if (was_on) {
         ImGui::PushStyleColor(ImGuiCol_Text,
@@ -140,14 +142,10 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
         auto params = impl_->image_->CalcDrawParams(context.renderer, frame);
         ImTextureID image_id =
                 reinterpret_cast<ImTextureID>(params.texture.GetId());
-        ImGui::SetCursorPos(ImVec2(params.pos_x - context.uiOffsetX,
-                                   params.pos_y - context.uiOffsetY));
         pressed = ImGui::ImageButton(
                 image_id, ImVec2(params.width, params.height),
                 ImVec2(params.u0, params.v0), ImVec2(params.u1, params.v1));
     } else {
-        ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
-                                   frame.y - context.uiOffsetY));
         pressed = ImGui::Button(impl_->title_.c_str(),
                                 ImVec2(GetFrame().width, GetFrame().height));
     }

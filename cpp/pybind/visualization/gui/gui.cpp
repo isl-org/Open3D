@@ -741,13 +741,12 @@ void pybind_gui_classes(py::module &m) {
                  "are "
                  "the top-level items")
             .def("add_item", &TreeView::AddItem,
+                 "Adds a child item to the parent. add_item(parent, widget)")
+            .def("add_text_item", &TreeView::AddTextItem,
                  "Adds a child item to the parent. add_item(parent, text)")
             .def("remove_item", &TreeView::RemoveItem,
                  "Removes an item and all its children (if any)")
-            .def("get_item_text", &TreeView::GetItemText,
-                 "Returns the text of the item")
-            .def("set_item_text", &TreeView::SetItemText,
-                 "Sets the text of an item")
+            .def("clear", &TreeView::Clear, "Removes all items")
             .def_property(
                     "can_select_items_with_children",
                     &TreeView::GetCanSelectItemsWithChildren,
@@ -761,9 +760,30 @@ void pybind_gui_classes(py::module &m) {
                           &TreeView::SetSelectedItemId,
                           "The currently selected item")
             .def("set_on_selection_changed", &TreeView::SetOnSelectionChanged,
-                 "Sets f(new_item_text, new_item_id) which is called when the "
-                 "user "
+                 "Sets f(new_item_id) which is called when the user "
                  "changes the selection.");
+
+    // ---- TreeView cells ----
+    py::class_<CheckableTextTreeCell, std::shared_ptr<CheckableTextTreeCell>,
+               Widget>
+            checkable_cell(m, "CheckableTextTreeCell",
+                           "TreeView cell with a checkbox and text");
+    checkable_cell.def(py::init<>([](const char *text, bool checked,
+                                     std::function<void(bool)> on_toggled) {
+        return std::make_shared<CheckableTextTreeCell>(text, checked,
+                                                       on_toggled);
+    }));
+
+    py::class_<LUTTreeCell, std::shared_ptr<LUTTreeCell>, Widget> lut_cell(
+            m, "LUTTreeCell",
+            "TreeView cell with checkbox, text, and color edit");
+    lut_cell.def(
+            py::init<>([](const char *text, bool checked, const Color &color,
+                          std::function<void(bool)> on_enabled,
+                          std::function<void(const Color &)> on_color) {
+                return std::make_shared<LUTTreeCell>(text, checked, color,
+                                                     on_enabled, on_color);
+            }));
 
     // ---- VectorEdit ----
     py::class_<VectorEdit, std::shared_ptr<VectorEdit>, Widget> vectoredit(
