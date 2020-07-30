@@ -66,10 +66,7 @@ public:
     RotateSunInteractor(rendering::Open3DScene* scene,
                         rendering::Camera* camera)
         : light_dir_(std::make_unique<rendering::LightDirectionInteractorLogic>(
-                  scene->GetScene(), camera)) {
-        // TODO: Fix this
-        // light_dir_->SetDirectionalLight(scene->GetSun());
-    }
+                  scene->GetScene(), camera)) {}
 
     rendering::MatrixInteractorLogic& GetMatrixInteractor() override {
         return *light_dir_.get();
@@ -670,16 +667,14 @@ void SceneWidget::SetOnCameraChanged(
 
 void SceneWidget::SetOnSunDirectionChanged(
         std::function<void(const Eigen::Vector3f&)> on_dir_changed) {
-    // NOTE: Figure this out
-    // impl_->on_light_dir_changed_ = on_dir_changed;
-    // impl_->controls_->SetOnDirectionalLightChanged(
-    //         [this](const Eigen::Vector3f& dir) {
-    //             impl_->scene_->GetScene()->SetLightDirection(
-    //                     impl_->scene_->GetSun(), dir);
-    //             if (impl_->on_light_dir_changed_) {
-    //                 impl_->on_light_dir_changed_(dir);
-    //             }
-    //         });
+    impl_->on_light_dir_changed_ = on_dir_changed;
+    impl_->controls_->SetOnDirectionalLightChanged(
+            [this](const Eigen::Vector3f& dir) {
+                impl_->scene_->GetScene()->SetDirectionalLightDirection(dir);
+                if (impl_->on_light_dir_changed_) {
+                    impl_->on_light_dir_changed_(dir);
+                }
+            });
 }
 
 void SceneWidget::ShowSkybox(bool is_on) {

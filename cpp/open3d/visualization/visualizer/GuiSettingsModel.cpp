@@ -196,6 +196,11 @@ void GuiSettingsModel::SetCurrentMaterials(const Materials& materials,
     NotifyChanged();
 }
 
+void GuiSettingsModel::SetCurrentMaterials(const std::string& name) {
+    current_materials_.lit_name = name;
+    NotifyChanged();
+}
+
 void GuiSettingsModel::SetMaterialsToDefault() {
     auto unlit_color = current_materials_.unlit.base_color;
     auto lit_color = current_materials_.lit.base_color;

@@ -56,15 +56,8 @@ public:
 private:
     Scene* scene_;
     Camera* camera_;
-    bool skybox_is_normally_on_;
+    bool skybox_is_normally_on_ = false;
     Camera::Transform ibl_rotation_at_mouse_down_;
-
-    // NOTE: This UI functionality appears to be completely unused
-    struct UIObj {
-        GeometryHandle handle;
-        Camera::Transform transform;
-    };
-    std::vector<UIObj> ui_objs_;
 
     void ClearUI();
 };

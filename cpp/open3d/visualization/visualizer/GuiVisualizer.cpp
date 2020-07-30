@@ -368,6 +368,7 @@ struct GuiVisualizer::Impl {
         rendering::Material loaded_material_;
         rendering::Material lit_material_;
         rendering::Material unlit_material_;
+        rendering::Material normal_depth_material_;
 
         GuiSettingsModel model_;
         std::shared_ptr<gui::Vert> wgt_base;
@@ -521,8 +522,7 @@ struct GuiVisualizer::Impl {
         auto &current_materials = settings_.model_.GetCurrentMaterials();
         if (current_materials.lit_name ==
             GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
-            std::cout << "\tMaterial from file" << std::endl;
-            // TODO: FIXME!!!!
+            // TODO: Is any of the following old code still necessary?
             // ResetToLoadedMaterials(renderer);
             // if(settings_.model_.GetUserHasChangedColor()) {
             //     settings_.loaded_material_.base_color =
@@ -540,6 +540,17 @@ struct GuiVisualizer::Impl {
                     scene_wgt_->GetScene()->UpdateMaterial(
                             settings_.unlit_material_);
                     break;
+                case GuiSettingsModel::MaterialType::NORMAL_MAP: {
+                    settings_.normal_depth_material_.shader = "normals";
+                    scene_wgt_->GetScene()->UpdateMaterial(
+                            settings_.normal_depth_material_);
+                } break;
+                case GuiSettingsModel::MaterialType::DEPTH: {
+                    settings_.normal_depth_material_.shader = "depth";
+                    scene_wgt_->GetScene()->UpdateMaterial(
+                            settings_.normal_depth_material_);
+                } break;
+
                 default:
                     break;
             }
@@ -587,11 +598,13 @@ private:
                          const GuiSettingsModel::Materials &materials) {
         auto &lit = settings_.lit_material_;
         auto &unlit = settings_.unlit_material_;
+        auto &normal_depth = settings_.normal_depth_material_;
 
         // Update lit from GUI
         lit.base_color.x() = materials.lit.base_color.x();
         lit.base_color.y() = materials.lit.base_color.y();
         lit.base_color.z() = materials.lit.base_color.z();
+        lit.point_size = materials.point_size;
         lit.base_metallic = materials.lit.metallic;
         lit.base_roughness = materials.lit.roughness;
         lit.base_reflectance = materials.lit.reflectance;
@@ -603,7 +616,10 @@ private:
         unlit.base_color.x() = materials.unlit.base_color.x();
         unlit.base_color.y() = materials.unlit.base_color.y();
         unlit.base_color.z() = materials.unlit.base_color.z();
+        unlit.point_size = materials.point_size;
 
+        // Update normal/depth from GUI
+        normal_depth.point_size = materials.point_size;
         // NOTE: No longer needed - Scene updates material properties
         // UpdateLitMaterial(renderer, settings_.lit, materials.lit,
         //                   materials.point_size);
@@ -910,6 +926,7 @@ void GuiVisualizer::SetGeometry(
 
                 if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
                     loaded_material.shader = "defaultUnlit";
+                    num_unlit += 1;
                 } else {
                     loaded_material.shader = "defaultLit";
                 }
@@ -1033,6 +1050,8 @@ void GuiVisualizer::SetGeometry(
         Eigen::Vector3f color(
                 impl_->settings_.loaded_material_.base_color.data());
         impl_->settings_.model_.SetCustomDefaultColor(color);
+        impl_->settings_.model_.SetCurrentMaterials(
+                GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
         impl_->settings_.view_->ShowFileMaterialEntry(true);
     } else {
         impl_->settings_.view_->ShowFileMaterialEntry(false);
@@ -1190,9 +1209,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
 void GuiVisualizer::ExportCurrentImage(int width,
                                        int height,
                                        const std::string &path) {
-    GetRenderer().RenderToImage(
-            width, height, impl_->scene_wgt_->GetRenderView(),
-            impl_->scene_wgt_->GetScene()->GetScene(),
+    impl_->scene_wgt_->GetScene()->GetScene()->RenderToImage(
+            width, height,
             [this, path](std::shared_ptr<geometry::Image> image) mutable {
                 if (!io::WriteImage(path, *image)) {
                     this->ShowMessageBox(

@@ -104,7 +104,7 @@ public:
             const std::string& object_name) override;
     void GeometryShadows(const std::string& object_name,
                          bool cast_shadows,
-                         bool receive_shadows);
+                         bool receive_shadows) override;
     void OverrideMaterial(const std::string& object_name,
                           const Material& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
@@ -152,6 +152,8 @@ public:
                              float intensity) override;
     void EnableDirectionalLight(bool enable) override;
     void EnableDirectionalLightShadows(bool enable) override;
+    void SetDirectionalLightDirection(
+            const Eigen::Vector3f& direction) override;
     Eigen::Vector3f GetDirectionalLightDirection() override;
 
     bool SetIndirectLight(const std::string& ibl_name) override;
@@ -162,6 +164,11 @@ public:
     void SetIndirectLightRotation(const Transform& rotation) override;
     Transform GetIndirectLightRotation() override;
     void ShowSkybox(bool show) override;
+
+    void RenderToImage(int width,
+                       int height,
+                       std::function<void(std::shared_ptr<geometry::Image>)>
+                               callback) override;
 
     void Draw(filament::Renderer& renderer);
     // NOTE: Can GetNativeScene be removed?
@@ -241,7 +248,8 @@ private:
     void UpdateMaterialProperties(RenderableGeometry& geom);
     void UpdateDefaultLit(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
-
+    void UpdateNormalShader(GeometryMaterialInstance& geom_mi);
+    void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();

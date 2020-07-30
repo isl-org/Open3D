@@ -26,6 +26,7 @@
 
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 
+#include <backend/PixelBufferDescriptor.h>
 #include <filament/Engine.h>
 #include <filament/IndirectLight.h>
 #include <filament/LightManager.h>
@@ -33,6 +34,7 @@
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
 #include <filament/Skybox.h>
+#include <filament/SwapChain.h>
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/View.h>
@@ -48,6 +50,7 @@
 #include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 
@@ -63,7 +66,9 @@ using ResourceManager =
 
 std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultLit", ResourceManager::kDefaultLit},
-        {"defaultUnlit", ResourceManager::kDefaultUnlit}};
+        {"defaultUnlit", ResourceManager::kDefaultUnlit},
+        {"normals", ResourceManager::kDefaultNormalShader},
+        {"depth", ResourceManager::kDefaultDepthShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -357,6 +362,7 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
 
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", material.base_color)
+            .SetParameter("pointSize", material.point_size)
             .SetParameter("baseRoughness", material.base_roughness)
             .SetParameter("baseMetallic", material.base_metallic)
             .SetParameter("reflectance", material.base_reflectance)
@@ -364,7 +370,6 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
             .SetParameter("clearCoatRoughness",
                           material.base_clearcoat_roughness)
             .SetParameter("anisotropy", material.base_anisotropy)
-            .SetParameter("pointSize", 3.f)
             .SetTexture("albedo", maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
             .SetTexture("normalMap", maps.normal_map,
@@ -389,9 +394,26 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
 void FilamentScene::UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color)
-            .SetParameter("pointSize", 3.0f)
+            .SetParameter("pointSize", geom_mi.properties.point_size)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
+            .Finish();
+}
+
+void FilamentScene::UpdateNormalShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("pointSize", geom_mi.properties.point_size)
+            .Finish();
+}
+
+void FilamentScene::UpdateDepthShader(GeometryMaterialInstance& geom_mi) {
+    auto* camera = views_.begin()->second.view->GetCamera();
+    const float f = camera->GetFar();
+    const float n = camera->GetNear();
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("pointSize", geom_mi.properties.point_size)
+            .SetParameter("cameraNear", n)
+            .SetParameter("cameraFar", f)
             .Finish();
 }
 
@@ -436,8 +458,12 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     // TODO: Use a functional interface to get appropriate update methods
     if (props.shader == "defaultLit") {
         UpdateDefaultLit(geom.mat);
-    } else {
+    } else if (props.shader == "defaultUnlit") {
         UpdateDefaultUnlit(geom.mat);
+    } else if (props.shader == "normals") {
+        UpdateNormalShader(geom.mat);
+    } else if (props.shader == "depth") {
+        UpdateDepthShader(geom.mat);
     }
 }
 
@@ -466,8 +492,12 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
     if (shader_only) {
         if (material.shader == "defaultLit") {
             UpdateDefaultLit(geom->mat);
-        } else {
+        } else if (material.shader == "defaultUnlit") {
             UpdateDefaultUnlit(geom->mat);
+        } else if (material.shader == "normals") {
+            UpdateNormalShader(geom->mat);
+        } else {
+            UpdateDepthShader(geom->mat);
         }
     } else {
         UpdateMaterialProperties(*geom);
@@ -674,6 +704,7 @@ void FilamentScene::CreateSunDirectionalLight() {
 
     if (result == filament::LightManager::Builder::Success) {
         sun_.filament_entity = light;
+        scene_->addEntity(sun_.filament_entity);
     } else {
         utility::LogWarning(
                 "Failed to build Filament light resources for sun light");
@@ -704,6 +735,14 @@ void FilamentScene::EnableDirectionalLight(bool enable) {
 
 void FilamentScene::EnableDirectionalLightShadows(bool enable) {
     // TODO: Research. Not previously implemented
+}
+
+void FilamentScene::SetDirectionalLightDirection(
+        const Eigen::Vector3f& direction) {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    light_mgr.setDirection(inst, {direction.x(), direction.y(), direction.z()});
 }
 
 Eigen::Vector3f FilamentScene::GetDirectionalLightDirection() {
@@ -799,6 +838,32 @@ void FilamentScene::ShowSkybox(bool show) {
         }
         skybox_enabled_ = show;
     }
+}
+
+struct RenderRequest {
+    bool frame_done = false;
+    std::shared_ptr<geometry::Image> image;
+};
+
+void ReadPixelsCallback(void* buffer, size_t buffer_size, void* user) {
+    auto rr = static_cast<RenderRequest*>(user);
+    rr->frame_done = true;
+
+    if (buffer_size > 0) {
+        rr->image->data_ = std::vector<uint8_t>((uint8_t*)buffer,
+                                                (uint8_t*)buffer + buffer_size);
+    } else {
+        utility::LogWarning(
+                "0 buffer size encountered while rendering to image");
+    }
+}
+
+void FilamentScene::RenderToImage(
+        int width,
+        int height,
+        std::function<void(std::shared_ptr<geometry::Image>)> callback) {
+    auto view = views_.begin()->second.view.get();
+    renderer_.RenderToImage(width, height, view, this, callback);
 }
 
 FilamentScene::RenderableGeometry* FilamentScene::GetGeometry(
