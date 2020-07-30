@@ -37,6 +37,7 @@ namespace open3d {
 namespace geometry {
 class Geometry3D;
 class AxisAlignedBoundingBox;
+class Image;
 }  // namespace geometry
 
 namespace visualization {
@@ -83,6 +84,9 @@ public:
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;
     virtual void OverrideMaterial(const std::string& object_name,
                                   const Material& material) = 0;
+    virtual void GeometryShadows(const std::string& object_name,
+                                 bool cast_shadows,
+                                 bool receive_shadows) = 0;
     virtual void QueryGeometry(std::vector<std::string>& geometry) = 0;
     virtual void SetGeometryTransform(const std::string& object_name,
                                       const Transform& transform) = 0;
@@ -133,6 +137,8 @@ public:
                                      float intensity) = 0;
     virtual void EnableDirectionalLight(bool enable) = 0;
     virtual void EnableDirectionalLightShadows(bool enable) = 0;
+    virtual void SetDirectionalLightDirection(
+            const Eigen::Vector3f& direction) = 0;
     virtual Eigen::Vector3f GetDirectionalLightDirection() = 0;
 
     virtual bool SetIndirectLight(const std::string& ibl_name) = 0;
@@ -143,6 +149,11 @@ public:
     virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
     virtual Transform GetIndirectLightRotation() = 0;
     virtual void ShowSkybox(bool show) = 0;
+
+    virtual void RenderToImage(
+            int width,
+            int height,
+            std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
 
 protected:
     Renderer& renderer_;

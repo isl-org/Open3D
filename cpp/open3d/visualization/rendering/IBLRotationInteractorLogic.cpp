@@ -71,26 +71,16 @@ void IBLRotationInteractorLogic::StartMouseDrag() {
     UpdateMouseDragUI();
 }
 
-void IBLRotationInteractorLogic::UpdateMouseDragUI() {
-    // Camera::Transform current = GetCurrentRotation();
-    // for (auto& o : ui_objs_) {
-    //     //scene_->SetEntityTransform(o.handle, current);
-    // }
-}
+void IBLRotationInteractorLogic::UpdateMouseDragUI() {}
 
 void IBLRotationInteractorLogic::EndMouseDrag() {
     ClearUI();
-    // if (!skybox_is_normally_on_) {
-    //     scene_->SetSkybox(SkyboxHandle());
-    // }
+    if (!skybox_is_normally_on_) {
+        scene_->ShowSkybox(false);
+    }
 }
 
-void IBLRotationInteractorLogic::ClearUI() {
-    // for (auto& o : ui_objs_) {
-    //     scene_->RemoveGeometry(o.handle);
-    // }
-    ui_objs_.clear();
-}
+void IBLRotationInteractorLogic::ClearUI() {}
 
 Camera::Transform IBLRotationInteractorLogic::GetCurrentRotation() const {
     return GetMatrix() * ibl_rotation_at_mouse_down_;

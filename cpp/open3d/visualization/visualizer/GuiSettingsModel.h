@@ -118,6 +118,7 @@ public:
     void SetLitMaterial(const LitMaterial& material, const std::string& name);
     void SetCurrentMaterials(const Materials& materials,
                              const std::string& name);
+    void SetCurrentMaterials(const std::string& name);
     void SetMaterialsToDefault();
 
     const Eigen::Vector3f& GetCurrentMaterialColor() const;
