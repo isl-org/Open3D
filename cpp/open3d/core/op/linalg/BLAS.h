@@ -24,32 +24,45 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/op/linalg/LinalgUtils.h"
-#include "open3d/core/op/linalg/Matmul.h"
+#pragma once
 
-#include "open3d/core/op/linalg/BLAS.h"
-// Put cblas.h here, otherwise there will be a macro hell
-// https://stackoverflow.com/questions/3128497/compiler-error-coming-out-of-yaml-cpp
+#include <cblas.h>
+#include <cublas_v2.h>
 
 namespace open3d {
 namespace core {
-// CPU converges to
-// https://software.intel.com/content/www/us/en/develop/documentation/mkl-developer-reference-c/top/blas-and-sparse-blas-routines/blas-routines/blas-level-3-routines/cblas-gemm.html
-void MatmulCPU(void* A_data,
-               void* B_data,
-               void* C_data,
-               int m,
-               int k,
-               int n,
-               Dtype dtype) {
-    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        scalar_t alpha = 1, beta = 0;
-        gemm_cpu<scalar_t>(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k,
-                           alpha, static_cast<const scalar_t*>(A_data), k,
-                           static_cast<const scalar_t*>(B_data), n, beta,
-                           static_cast<scalar_t*>(C_data), n);
-    });
-}
+
+template <typename scalar_t>
+void gemm_cpu(CBLAS_LAYOUT layout,
+              CBLAS_TRANSPOSE trans_A,
+              CBLAS_TRANSPOSE trans_B,
+              int m,
+              int n,
+              int k,
+              scalar_t alpha,
+              const scalar_t *A_data,
+              int lda,
+              const scalar_t *B_data,
+              int ldb,
+              scalar_t beta,
+              scalar_t *C_data,
+              int ldc);
+
+template <typename scalar_t>
+cublasStatus_t gemm_cuda(cublasHandle_t handle,
+                         cublasOperation_t transa,
+                         cublasOperation_t transb,
+                         int m,
+                         int n,
+                         int k,
+                         const scalar_t *alpha,
+                         const scalar_t *A_data,
+                         int lda,
+                         const scalar_t *B_data,
+                         int ldb,
+                         const scalar_t *beta,
+                         scalar_t *C_data,
+                         int ldc);
 
 }  // namespace core
 }  // namespace open3d

@@ -28,8 +28,8 @@
 #include <stdlib.h>
 
 #include "open3d/core/op/linalg/Inverse.h"
-
-#include "lapack-netlib/LAPACKE/include/lapacke.h"
+#include "open3d/core/op/linalg/LAPACK.h"
+#include "open3d/core/op/linalg/LinalgUtils.h"
 
 namespace open3d {
 namespace core {
@@ -41,28 +41,13 @@ void InverseCPU(void* A_data,
                 int n,
                 Dtype dtype,
                 const Device& device) {
-    switch (dtype) {
-        case Dtype::Float32: {
-            LAPACKE_sgetrf(LAPACK_ROW_MAJOR, n, n, static_cast<float*>(A_data),
-                           n, static_cast<int*>(ipiv_data));
-            LAPACKE_sgetri(LAPACK_ROW_MAJOR, n, static_cast<float*>(A_data), n,
-                           static_cast<int*>(ipiv_data));
-            break;
-        }
-
-        case Dtype::Float64: {
-            LAPACKE_dgetrf(LAPACK_ROW_MAJOR, n, n, static_cast<double*>(A_data),
-                           n, static_cast<int*>(ipiv_data));
-            LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, static_cast<double*>(A_data), n,
-                           static_cast<int*>(ipiv_data));
-            break;
-        }
-
-        default: {  // should never reach here
-            utility::LogError("Unsupported dtype {} in CPU backend.",
-                              DtypeUtil::ToString(dtype));
-        }
-    }
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        getrf_cpu<scalar_t>(LAPACK_ROW_MAJOR, n, n,
+                            static_cast<scalar_t*>(A_data), n,
+                            static_cast<int*>(ipiv_data));
+        getri_cpu<scalar_t>(LAPACK_ROW_MAJOR, n, static_cast<scalar_t*>(A_data),
+                            n, static_cast<int*>(ipiv_data));
+    });
 }
 
 }  // namespace core

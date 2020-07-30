@@ -27,9 +27,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "open3d/core/op/linalg/LinalgUtils.h"
 #include "open3d/core/op/linalg/SVD.h"
 
-#include "lapack-netlib/LAPACKE/include/lapacke.h"
+#include "open3d/core/op/linalg/LAPACK.h"
 // https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_dgesvd_row.c.htm
 namespace open3d {
 namespace core {
@@ -43,32 +44,14 @@ void SVDCPU(const void* A_data,
             int n,
             Dtype dtype,
             const Device& device) {
-    switch (dtype) {
-        case Dtype::Float32: {
-            LAPACKE_sgesvd(
-                    LAPACK_ROW_MAJOR, 'A', 'A', m, n,
-                    const_cast<float*>(static_cast<const float*>(A_data)), n,
-                    static_cast<float*>(S_data), static_cast<float*>(U_data), m,
-                    static_cast<float*>(VT_data), n,
-                    static_cast<float*>(superb_data));
-            break;
-        }
-
-        case Dtype::Float64: {
-            LAPACKE_dgesvd(
-                    LAPACK_ROW_MAJOR, 'A', 'A', m, n,
-                    const_cast<double*>(static_cast<const double*>(A_data)), n,
-                    static_cast<double*>(S_data), static_cast<double*>(U_data),
-                    m, static_cast<double*>(VT_data), n,
-                    static_cast<double*>(superb_data));
-            break;
-        }
-
-        default: {  // should never reach here
-            utility::LogError("Unsupported dtype {} in CPU backend.",
-                              DtypeUtil::ToString(dtype));
-        }
-    }
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        gesvd_cpu<scalar_t>(
+                LAPACK_ROW_MAJOR, 'A', 'A', m, n,
+                const_cast<scalar_t*>(static_cast<const scalar_t*>(A_data)), n,
+                static_cast<scalar_t*>(S_data), static_cast<scalar_t*>(U_data),
+                m, static_cast<scalar_t*>(VT_data), n,
+                static_cast<scalar_t*>(superb_data));
+    });
 }
 
 }  // namespace core

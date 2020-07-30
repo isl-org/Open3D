@@ -27,6 +27,8 @@
 #include "open3d/core/op/linalg/LinalgUtils.h"
 #include "open3d/core/op/linalg/Matmul.h"
 #include "open3d/utility/Console.h"
+
+#include "open3d/core/op/linalg/BLAS.h"
 namespace open3d {
 namespace core {
 
@@ -42,41 +44,16 @@ void MatmulCUDA(void* A_data,
                 int n,
                 Dtype dtype) {
     cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
-
-    switch (dtype) {
-        case Dtype::Float32: {
-            float alpha = 1, beta = 0;
-            OPEN3D_CUBLAS_CHECK(
-                    cublasSgemm(handle, CUBLAS_OP_N,
-                                CUBLAS_OP_N,  // A, B transpose flag
-                                m, n, k,      // dimensions
-                                &alpha, static_cast<const float*>(A_data), m,
-                                static_cast<const float*>(B_data),
-                                k,  // input and their leading dims
-                                &beta, static_cast<float*>(C_data), m),
-                    "cublasSgemm failed");
-            break;
-        }
-
-        case Dtype::Float64: {
-            double alpha = 1, beta = 0;
-            OPEN3D_CUBLAS_CHECK(
-                    cublasDgemm(handle, CUBLAS_OP_N,
-                                CUBLAS_OP_N,  // A, B transpose flag
-                                m, n, k,      // dimensions
-                                &alpha, static_cast<const double*>(A_data), m,
-                                static_cast<const double*>(B_data),
-                                k,  // input and their leading dims
-                                &beta, static_cast<double*>(C_data), m),
-                    "cublasDgemm failed");
-            break;
-        }
-
-        default: {  // should never reach here
-            utility::LogError("Unsupported dtype {} in MatmulCUDA.",
-                              DtypeUtil::ToString(dtype));
-        }
-    }
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t alpha = 1, beta = 0;
+        OPEN3D_CUBLAS_CHECK(
+                gemm_cuda<scalar_t>(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k,
+                                    &alpha,
+                                    static_cast<const scalar_t*>(A_data), m,
+                                    static_cast<const scalar_t*>(B_data), k,
+                                    &beta, static_cast<scalar_t*>(C_data), m),
+                "cuda gemm failed");
+    });
 }
 
 }  // namespace core

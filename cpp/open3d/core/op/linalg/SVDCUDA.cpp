@@ -24,31 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_sgesv_row.c.htm
+// https://
+// software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_sgesv_row.c.htm
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "open3d/core/op/linalg/LinalgUtils.h"
-#include "open3d/core/op/linalg/Solve.h"
+#include "open3d/core/op/linalg/SVD.h"
 
 #include "open3d/core/op/linalg/LAPACK.h"
-
 namespace open3d {
 namespace core {
 
-void SolveCPU(void* A_data,
-              void* B_data,
-              int m,
-              int n,
-              int k,
-              Dtype dtype,
-              const Device& device) {
+void SVDCUDA(const void* A_data,
+             void* U_data,
+             void* S_data,
+             void* VT_data,
+             void* superb_data,
+             int m,
+             int n,
+             Dtype dtype,
+             const Device& device) {
+    cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
+
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        gels_cpu<scalar_t>(LAPACK_ROW_MAJOR, 'N', m, n, k,
-                           static_cast<scalar_t*>(A_data), n,
-                           static_cast<scalar_t*>(B_data), k);
+        int len;
+        int* dinfo =
+                static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
+        OPEN3D_CUSOLVER_CHECK(
+                gesvd_cuda_buffersize<scalar_t>(handle, m, n, &len),
+                "gesvd_bufferSize failed");
+
+        void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
+
+        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+                gesvd_cuda<scalar_t>(
+                        handle, 'A', 'A', m, n,
+                        const_cast<scalar_t*>(
+                                static_cast<const scalar_t*>(A_data)),
+                        m, static_cast<scalar_t*>(S_data),
+                        static_cast<scalar_t*>(U_data), m,
+                        static_cast<scalar_t*>(VT_data), n,
+                        static_cast<scalar_t*>(workspace), len,
+                        static_cast<scalar_t*>(superb_data), dinfo),
+                "cusolverDnSgesvd failed with dinfo = ", dinfo, device);
+
+        MemoryManager::Free(workspace, device);
     });
 }
-
 }  // namespace core
 }  // namespace open3d

@@ -24,29 +24,54 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_sgesv_row.c.htm
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "open3d/core/op/linalg/Inverse.h"
 #include "open3d/core/op/linalg/LinalgUtils.h"
-#include "open3d/core/op/linalg/Solve.h"
 
 #include "open3d/core/op/linalg/LAPACK.h"
 
 namespace open3d {
 namespace core {
 
-void SolveCPU(void* A_data,
-              void* B_data,
-              int m,
-              int n,
-              int k,
-              Dtype dtype,
-              const Device& device) {
+void InverseCUDA(void* A_data,
+                 void* ipiv_data,
+                 void* output_data,
+                 int n,
+                 Dtype dtype,
+                 const Device& device) {
+    cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
+
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        gels_cpu<scalar_t>(LAPACK_ROW_MAJOR, 'N', m, n, k,
-                           static_cast<scalar_t*>(A_data), n,
-                           static_cast<scalar_t*>(B_data), k);
+        int len;
+        int* dinfo =
+                static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
+
+        OPEN3D_CUSOLVER_CHECK(
+                getrf_cuda_buffersize<scalar_t>(handle, n, n, n, &len),
+                "[InverseCUDA] cusolverDnSgetrf_bufferSize failed");
+        void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
+
+        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+                getrf_cuda<scalar_t>(handle, n, n,
+                                     static_cast<scalar_t*>(A_data), n,
+                                     static_cast<scalar_t*>(workspace),
+                                     static_cast<int*>(ipiv_data), dinfo),
+                "[InverseCUDA] cusolverDnSgetrf failed with dinfo = ", dinfo,
+                device);
+
+        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+                getrs_cuda<scalar_t>(handle, CUBLAS_OP_N, n, n,
+                                     static_cast<scalar_t*>(A_data), n,
+                                     static_cast<int*>(ipiv_data),
+                                     static_cast<scalar_t*>(output_data), n,
+                                     dinfo),
+                "[InverseCUDA] cusolverDnSgetrs failed with dinfo = ", dinfo,
+                device);
+
+        MemoryManager::Free(workspace, device);
+        MemoryManager::Free(dinfo, device);
     });
 }
 

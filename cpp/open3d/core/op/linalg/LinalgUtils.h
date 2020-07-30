@@ -28,11 +28,14 @@
 
 #include <cublas_v2.h>
 #include <cusolverDn.h>
-
+#include <open3d/core/Dtype.h>
 #include <open3d/core/MemoryManager.h>
 #include <open3d/utility/Console.h>
+
 #include <memory>
 #include <string>
+
+//#include "cblas.h"
 
 namespace open3d {
 namespace core {
@@ -89,5 +92,22 @@ private:
 
     static std::shared_ptr<CuBLASContext> instance_;
 };
+
+#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)        \
+    [&] {                                                    \
+        switch (DTYPE) {                                     \
+            case open3d::core::Dtype::Float32: {             \
+                using scalar_t = float;                      \
+                return __VA_ARGS__();                        \
+            }                                                \
+            case open3d::core::Dtype::Float64: {             \
+                using scalar_t = double;                     \
+                return __VA_ARGS__();                        \
+            }                                                \
+            default:                                         \
+                utility::LogError("Unsupported data type."); \
+        }                                                    \
+    }()
+
 }  // namespace core
 }  // namespace open3d

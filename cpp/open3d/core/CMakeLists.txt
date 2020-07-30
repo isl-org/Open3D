@@ -19,8 +19,10 @@ set (KERNEL_CUDA_SRC
     op/kernel/ReductionCUDA.cu
     )
 
-set (LINALG_SRC
+  set (LINALG_SRC
+    op/linalg/BLAS.cpp
     op/linalg/LinalgUtils.cpp
+    op/linalg/LAPACK.cpp
     op/linalg/Matmul.cpp
     op/linalg/MatmulCPU.cpp
     op/linalg/Solve.cpp
@@ -32,10 +34,10 @@ set (LINALG_SRC
     )
 
 set (LINALG_CUDA_SRC
-    op/linalg/MatmulCUDA.cu
-    op/linalg/SolveCUDA.cu
-    op/linalg/InverseCUDA.cu
-    op/linalg/SVDCUDA.cu
+    op/linalg/MatmulCUDA.cpp
+    op/linalg/SolveCUDA.cpp
+    op/linalg/InverseCUDA.cpp
+    op/linalg/SVDCUDA.cpp
     )
 
 set (CORE_SRC
