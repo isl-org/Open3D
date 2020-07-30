@@ -165,6 +165,11 @@ public:
     Transform GetIndirectLightRotation() override;
     void ShowSkybox(bool show) override;
 
+    void RenderToImage(int width,
+                       int height,
+                       std::function<void(std::shared_ptr<geometry::Image>)>
+                               callback) override;
+
     void Draw(filament::Renderer& renderer);
     // NOTE: Can GetNativeScene be removed?
     filament::Scene* GetNativeScene() const { return scene_; }

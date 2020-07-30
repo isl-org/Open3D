@@ -37,6 +37,7 @@ namespace open3d {
 namespace geometry {
 class Geometry3D;
 class AxisAlignedBoundingBox;
+class Image;
 }  // namespace geometry
 
 namespace visualization {
@@ -148,6 +149,11 @@ public:
     virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
     virtual Transform GetIndirectLightRotation() = 0;
     virtual void ShowSkybox(bool show) = 0;
+
+    virtual void RenderToImage(
+            int width,
+            int height,
+            std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
 
 protected:
     Renderer& renderer_;

@@ -1209,9 +1209,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
 void GuiVisualizer::ExportCurrentImage(int width,
                                        int height,
                                        const std::string &path) {
-    GetRenderer().RenderToImage(
-            width, height, impl_->scene_wgt_->GetRenderView(),
-            impl_->scene_wgt_->GetScene()->GetScene(),
+    impl_->scene_wgt_->GetScene()->GetScene()->RenderToImage(
+            width, height,
             [this, path](std::shared_ptr<geometry::Image> image) mutable {
                 if (!io::WriteImage(path, *image)) {
                     this->ShowMessageBox(

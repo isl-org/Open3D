@@ -26,6 +26,7 @@
 
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 
+#include <backend/PixelBufferDescriptor.h>
 #include <filament/Engine.h>
 #include <filament/IndirectLight.h>
 #include <filament/LightManager.h>
@@ -33,6 +34,7 @@
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
 #include <filament/Skybox.h>
+#include <filament/SwapChain.h>
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/View.h>
@@ -48,6 +50,7 @@
 #include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 
@@ -835,6 +838,32 @@ void FilamentScene::ShowSkybox(bool show) {
         }
         skybox_enabled_ = show;
     }
+}
+
+struct RenderRequest {
+    bool frame_done = false;
+    std::shared_ptr<geometry::Image> image;
+};
+
+void ReadPixelsCallback(void* buffer, size_t buffer_size, void* user) {
+    auto rr = static_cast<RenderRequest*>(user);
+    rr->frame_done = true;
+
+    if (buffer_size > 0) {
+        rr->image->data_ = std::vector<uint8_t>((uint8_t*)buffer,
+                                                (uint8_t*)buffer + buffer_size);
+    } else {
+        utility::LogWarning(
+                "0 buffer size encountered while rendering to image");
+    }
+}
+
+void FilamentScene::RenderToImage(
+        int width,
+        int height,
+        std::function<void(std::shared_ptr<geometry::Image>)> callback) {
+    auto view = views_.begin()->second.view.get();
+    renderer_.RenderToImage(width, height, view, this, callback);
 }
 
 FilamentScene::RenderableGeometry* FilamentScene::GetGeometry(
