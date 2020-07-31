@@ -255,6 +255,19 @@ endfunction()
 find_package(Threads REQUIRED)
 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Threads")
 
+# Assimp
+# NOTE: must be configured only because of link dependencies
+message(STATUS "Building library 3rdparty_assimp from source")
+option(ASSIMP_NO_EXPORT "" ON)
+option(ASSIMP_BUILD_ASSIMP_TOOLS "" OFF)
+option(ASSIMP_BUILD_TESTS "" OFF)
+add_subdirectory(${Open3D_3RDPARTY_DIR}/assimp)
+import_3rdparty_library(3rdparty_assimp INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/assimp/include/ ${Assimp_BINARY_DIR}/include/ LIBRARIES assimp IrrXML)
+add_dependencies(3rdparty_assimp assimp)
+set(ASSIMP_TARGET "3rdparty_assimp")
+list(APPEND Open3D_3RDPARTY_HEADER_TARGETS "${ASSIMP_TARGET}")
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ASSIMP_TARGET}")
+
 # OpenMP
 if(WITH_OPENMP)
     find_package(OpenMP)
@@ -858,3 +871,4 @@ if(ENABLE_GUI)
     set(FILAMENT_TARGET "3rdparty_filament")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
 endif()
+
