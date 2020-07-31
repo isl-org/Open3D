@@ -39,7 +39,7 @@ namespace visualization {
 namespace rendering {
 
 class Camera;
-class Material;
+struct Material;
 
 class Open3DScene {
 public:
