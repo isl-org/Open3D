@@ -385,24 +385,6 @@ struct GuiVisualizer::Impl {
 
     void InitializeMaterials(rendering::Renderer &renderer,
                              const std::string &resource_path) {
-        // NOTE: No longer necessary
-        // auto lit_path = resource_path + "/defaultLit.filamat";
-        // settings_.lit_template = renderer.AddMaterial(
-        //         visualization::rendering::ResourceLoadRequest(lit_path.data()));
-
-        // auto unlit_path = resource_path + "/defaultUnlit.filamat";
-        // settings_.unlit_template = renderer.AddMaterial(
-        //         visualization::rendering::ResourceLoadRequest(
-        //                 unlit_path.data()));
-
-        // Eigen::Vector3f grey = {0.5f, 0.5f, 0.5f};
-        // settings_.lit = renderer.ModifyMaterial(settings_.lit_template)
-        //                         .SetColor("baseColor", grey)
-        //                         .Finish();
-        // settings_.unlit = renderer.ModifyMaterial(settings_.unlit_template)
-        //                           .SetColor("baseColor", grey)
-        //                           .Finish();
-
         settings_.lit_material_.shader = "defaultLit";
         settings_.unlit_material_.shader = "defaultUnlit";
 
@@ -514,7 +496,6 @@ struct GuiVisualizer::Impl {
         }
         scene_wgt_->ShowSkybox(settings_.model_.GetShowSkybox());
 
-        //        auto *render_scene = scene_wgt_->GetScene()->GetScene();
         scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
@@ -522,12 +503,6 @@ struct GuiVisualizer::Impl {
         auto &current_materials = settings_.model_.GetCurrentMaterials();
         if (current_materials.lit_name ==
             GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
-            // TODO: Is any of the following old code still necessary?
-            // ResetToLoadedMaterials(renderer);
-            // if(settings_.model_.GetUserHasChangedColor()) {
-            //     settings_.loaded_material_.base_color =
-            //     current_materials.lit.base_color;
-            // }
             scene_wgt_->GetScene()->UpdateMaterial(settings_.loaded_material_);
         } else {
             UpdateMaterials(renderer, current_materials);
@@ -620,38 +595,6 @@ private:
 
         // Update normal/depth from GUI
         normal_depth.point_size = materials.point_size;
-        // NOTE: No longer needed - Scene updates material properties
-        // UpdateLitMaterial(renderer, settings_.lit, materials.lit,
-        //                   materials.point_size);
-        // // auto *render_scene = scene_wgt_->GetScene()->GetScene();
-        // // for (auto geom_mat : settings_.loaded_materials_) {
-        // //     // TODO: FIXME!!
-        // //     // auto hgeom = geom_mat.first;
-        // //     // UpdateLitMaterial(renderer,
-        // render_scene->GetMaterial(hgeom),
-        // //     //                   materials.lit, materials.point_size);
-        // // }
-        // settings_.unlit =
-        //         renderer.ModifyMaterial(settings_.unlit)
-        //                 .SetColor("baseColor", materials.unlit.base_color)
-        //                 .SetParameter("pointSize", materials.point_size)
-        //                 .SetTexture(
-        //                         "albedo", settings_.maps.albedo_map,
-        //                         rendering::TextureSamplerParameters::Pretty())
-        //                 .Finish();
-    }
-
-    void ResetToLoadedMaterials(rendering::Renderer &renderer) {
-        // NOTE: No longer needed - Scene updates material properties
-        // auto *render_scene = scene_wgt_->GetScene()->GetScene();
-        // auto point_size = settings_.model_.GetPointSize();
-        // for (auto model_mat : settings_.loaded_materials_) {
-        //     // TODO: FIXME!!!
-        //     // auto hgeom = model_mat.first;
-        //     // auto &loaded = model_mat.second;
-        //     // UpdateLitMaterial(renderer, render_scene->GetMaterial(hgeom),
-        //     //                   loaded, point_size);
-        // }
     }
 
     void OnNewIBL(Window &window, const char *name) {
