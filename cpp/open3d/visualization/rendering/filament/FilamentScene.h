@@ -77,11 +77,11 @@ public:
     ViewHandle AddView(std::int32_t x,
                        std::int32_t y,
                        std::uint32_t w,
-                       std::uint32_t h);
+                       std::uint32_t h) override;
 
-    View* GetView(const ViewHandle& view_id) const;
-    void SetViewActive(const ViewHandle& view_id, bool is_active);
-    void RemoveView(const ViewHandle& view_id);
+    View* GetView(const ViewHandle& view_id) const override;
+    void SetViewActive(const ViewHandle& view_id, bool is_active) override;
+    void RemoveView(const ViewHandle& view_id) override;
 
     // Camera
     void AddCamera(const std::string& camera_name,
