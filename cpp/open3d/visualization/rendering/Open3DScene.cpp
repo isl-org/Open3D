@@ -104,6 +104,9 @@ void RecreateAxis(Scene* scene,
     axis_length = std::max(axis_length, 0.25 * bounds.GetCenter().norm());
     auto mesh = CreateAxisGeometry(axis_length);
     scene->AddGeometry(kAxisObjectName, *mesh, Material());
+    // It looks awkward to have the axis cast a a shadow, and even stranger
+    // to receive a shadow.
+    scene->GeometryShadows(kAxisObjectName, false, false);
     scene->ShowGeometry(kAxisObjectName, enabled);
 }
 
