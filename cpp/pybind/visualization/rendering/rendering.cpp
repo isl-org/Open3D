@@ -150,7 +150,8 @@ void pybind_rendering_classes(py::module &m) {
                  "color, intensity")
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene; image will be provided via a callback "
-                 "function. The callback is necessary because rendering is done "
+                 "function. The callback is necessary because rendering is "
+                 "done "
                  "on a different thread. The image remains valid after the "
                  "callback, assuming it was assigned somewhere.");
 

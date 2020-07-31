@@ -177,6 +177,7 @@ class Settings:
         for key, val in profile.items():
             setattr(self, key, val)
 
+
 class AppWindow:
     MENU_OPEN = 1
     MENU_EXPORT = 2
@@ -432,7 +433,8 @@ class AppWindow:
         # window, so that the window can call the appropriate function when the
         # menu item is activated.
         w.set_on_menu_item_activated(AppWindow.MENU_OPEN, self._on_menu_open)
-        w.set_on_menu_item_activated(AppWindow.MENU_EXPORT, self._on_menu_export)
+        w.set_on_menu_item_activated(AppWindow.MENU_EXPORT,
+                                     self._on_menu_export)
         w.set_on_menu_item_activated(AppWindow.MENU_QUIT, self._on_menu_quit)
         w.set_on_menu_item_activated(AppWindow.MENU_SHOW_SETTINGS,
                                      self._on_menu_toggle_settings_panel)
@@ -723,9 +725,12 @@ class AppWindow:
             self._scene.setup_camera(60, bounds, bounds.get_center())
 
     def export_image(self, path, width, height):
+
         def _on_image(image):
             o3d.io.write_image(path, image, 100)
+
         self._scene.scene.scene.render_to_image(width, height, _on_image)
+
 
 def main():
     # We need to initalize the application, which finds the necessary shaders

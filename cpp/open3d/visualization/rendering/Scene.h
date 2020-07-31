@@ -46,7 +46,7 @@ namespace rendering {
 class Renderer;
 class View;
 class Model;
-class Material;
+struct Material;
 class Light;
 
 // Contains renderable objects like geometry and lights
