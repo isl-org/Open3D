@@ -40,3 +40,9 @@ jobs:
         cd build
         cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
         cmake --build . --config ${{ matrix.config }} && .\${{ matrix.config }}\TestVisualizer.exe
+    - name: Python package
+      run: |
+        cmake --build . --config ${{ matrix.config }} --target install-pip-package
+        python -c "import open3d; print(open3d)"
+        python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+      if: matrix.shared == OFF # If shred == ON, Open3D.dll needs to be copied.
