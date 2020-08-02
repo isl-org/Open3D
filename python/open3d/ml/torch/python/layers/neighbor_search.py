@@ -1,6 +1,8 @@
 from open3d.ml.torch.nn import functional as ops
 import torch
 
+__all__ = ['FixedRadiusSearch', 'RadiusSearch', 'KNNSearch']
+
 
 class FixedRadiusSearch(torch.nn.Module):
     """Fixed radius search for 3D point clouds.
@@ -109,4 +111,181 @@ class FixedRadiusSearch(torch.nn.Module):
             hash_table_splits=table.hash_table_splits,
             hash_table_index=table.hash_table_index,
             hash_table_cell_splits=table.hash_table_cell_splits)
+        return result
+
+
+class RadiusSearch(torch.nn.Module):
+    """Radius search for 3D point clouds.
+
+    This layer computes the neighbors for each query point with each query
+    having an individual radius.
+
+    Arguments:
+
+    metric:
+      Either L1, L2 or Linf. Default is L2.
+
+    ignore_query_point:
+      If True the points that coincide with the center of the search window will be
+      ignored. This excludes the query point if 'queries' and 'points' are the same
+      point cloud.
+
+    return_distances:
+      If True the distances for each neighbor will be returned.
+      If False a zero length Tensor will be returned instead.
+
+    normalize_distances:
+      If True the returned distances will be normalized with the radii.
+    """
+
+    def __init__(self,
+                 metric='L2',
+                 ignore_query_point=False,
+                 return_distances=False,
+                 normalize_distances=False,
+                 **kwargs):
+        self.metric = metric
+        self.ignore_query_point = ignore_query_point
+        self.return_distances = return_distances
+        self.normalize_distances = normalize_distances
+        super().__init__()
+
+    def forward(self,
+                points,
+                queries,
+                radii,
+                points_row_splits=None,
+                queries_row_splits=None):
+        """This function computes the neighbors within a radius for each query point.
+
+        Arguments:
+
+          points: The 3D positions of the input points.
+
+          queries: The 3D positions of the query points.
+
+          radii: A radius for each query point.
+
+          points_row_splits:
+            Optional 1D vector with the row splits information if points is batched.
+            This vector is [0, num_points] if there is only 1 batch item.
+
+          queries_row_splits:
+            Optional 1D vector with the row splits information if queries is batched.
+            This vector is [0, num_queries] if there is only 1 batch item.
+
+        Returns: 3 Tensors in the following order
+          neighbors_index
+            The compact list of indices of the neighbors. The corresponding query point
+            can be inferred from the 'neighbor_count_row_splits' vector.
+
+          neighbors_row_splits
+            The exclusive prefix sum of the neighbor count for the query points including
+            the total neighbor count as the last element. The size of this array is the
+            number of queries + 1.
+
+          neighbors_distance
+            Stores the distance to each neighbor if 'return_distances' is True.
+            Note that the distances are squared if metric is L2.
+            This is a zero length Tensor if 'return_distances' is False.
+        """
+        if points_row_splits is None:
+            points_row_splits = torch.LongTensor([0, points.shape[0]])
+        if queries_row_splits is None:
+            queries_row_splits = torch.LongTensor([0, queries.shape[0]])
+
+        result = ops.radius_search(ignore_query_point=self.ignore_query_point,
+                                   return_distances=self.return_distances,
+                                   normalize_distances=self.normalize_distances,
+                                   metric=self.metric,
+                                   points=points,
+                                   queries=queries,
+                                   radii=radii,
+                                   points_row_splits=points_row_splits,
+                                   queries_row_splits=queries_row_splits)
+        return result
+
+
+class KNNSearch(torch.nn.Module):
+    """KNN search for 3D point clouds.
+
+    This layer computes the k nearest neighbors for each query point.
+
+    Arguments:
+
+    metric:
+      Either L1, L2 or Linf. Default is L2.
+
+    ignore_query_point:
+      If True the points that coincide with the center of the search window will be
+      ignored. This excludes the query point if 'queries' and 'points' are the same
+      point cloud.
+
+    return_distances:
+      If True the distances for each neighbor will be returned.
+      If False a zero length Tensor will be returned instead.
+    """
+
+    def __init__(self,
+                 metric='L2',
+                 ignore_query_point=False,
+                 return_distances=False,
+                 **kwargs):
+        self.metric = metric
+        self.ignore_query_point = ignore_query_point
+        self.return_distances = return_distances
+        super().__init__()
+
+    def forward(self,
+                points,
+                queries,
+                k,
+                points_row_splits=None,
+                queries_row_splits=None):
+        """This function computes the k nearest neighbors for each query point.
+
+        Arguments:
+
+          points: The 3D positions of the input points.
+
+          queries: The 3D positions of the query points.
+
+          k: The number of nearest neighbors to search.
+
+          points_row_splits:
+            Optional 1D vector with the row splits information if points is batched.
+            This vector is [0, num_points] if there is only 1 batch item.
+
+          queries_row_splits:
+            Optional 1D vector with the row splits information if queries is batched.
+            This vector is [0, num_queries] if there is only 1 batch item.
+
+        Returns: 3 Tensors in the following order
+          neighbors_index
+            The compact list of indices of the neighbors. The corresponding query point
+            can be inferred from the 'neighbor_count_row_splits' vector.
+
+          neighbors_row_splits
+            The exclusive prefix sum of the neighbor count for the query points including
+            the total neighbor count as the last element. The size of this array is the
+            number of queries + 1.
+
+          neighbors_distance
+            Stores the distance to each neighbor if 'return_distances' is True.
+            Note that the distances are squared if metric is L2.
+            This is a zero length Tensor if 'return_distances' is False.
+        """
+        if points_row_splits is None:
+            points_row_splits = torch.LongTensor([0, points.shape[0]])
+        if queries_row_splits is None:
+            queries_row_splits = torch.LongTensor([0, queries.shape[0]])
+
+        result = ops.knn_search(ignore_query_point=self.ignore_query_point,
+                                return_distances=self.return_distances,
+                                metric=self.metric,
+                                points=points,
+                                queries=queries,
+                                k=k,
+                                points_row_splits=points_row_splits,
+                                queries_row_splits=queries_row_splits)
         return result
