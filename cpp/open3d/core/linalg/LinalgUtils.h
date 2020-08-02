@@ -26,8 +26,6 @@
 
 #pragma once
 
-#include <cublas_v2.h>
-#include <cusolverDn.h>
 #include <open3d/core/Dtype.h>
 #include <open3d/core/MemoryManager.h>
 #include <open3d/utility/Console.h>
@@ -35,11 +33,31 @@
 #include <memory>
 #include <string>
 
-//#include "cblas.h"
+#ifdef BUILD_CUDA_MODULE
+#include <cublas_v2.h>
+#include <cusolverDn.h>
+#endif
 
 namespace open3d {
 namespace core {
 
+#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)        \
+    [&] {                                                    \
+        switch (DTYPE) {                                     \
+            case open3d::core::Dtype::Float32: {             \
+                using scalar_t = float;                      \
+                return __VA_ARGS__();                        \
+            }                                                \
+            case open3d::core::Dtype::Float64: {             \
+                using scalar_t = double;                     \
+                return __VA_ARGS__();                        \
+            }                                                \
+            default:                                         \
+                utility::LogError("Unsupported data type."); \
+        }                                                    \
+    }()
+
+#ifdef BUILD_CUDA_MODULE
 inline void OPEN3D_CUBLAS_CHECK(cublasStatus_t status, const std::string& msg) {
     if (CUBLAS_STATUS_SUCCESS != status) {
         utility::LogError("{}", msg);
@@ -51,7 +69,7 @@ inline void OPEN3D_CUSOLVER_CHECK(cusolverStatus_t status,
     if (CUSOLVER_STATUS_SUCCESS != status) {
         utility::LogError("{}", msg);
     }
-};
+}
 
 inline void OPEN3D_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
                                              const std::string& msg,
@@ -92,22 +110,6 @@ private:
 
     static std::shared_ptr<CuBLASContext> instance_;
 };
-
-#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)        \
-    [&] {                                                    \
-        switch (DTYPE) {                                     \
-            case open3d::core::Dtype::Float32: {             \
-                using scalar_t = float;                      \
-                return __VA_ARGS__();                        \
-            }                                                \
-            case open3d::core::Dtype::Float64: {             \
-                using scalar_t = double;                     \
-                return __VA_ARGS__();                        \
-            }                                                \
-            default:                                         \
-                utility::LogError("Unsupported data type."); \
-        }                                                    \
-    }()
-
+#endif
 }  // namespace core
 }  // namespace open3d

@@ -27,7 +27,10 @@
 #pragma once
 
 #include <cblas.h>
+
+#ifdef BUILD_CUDA_MODULE
 #include <cublas_v2.h>
+#endif
 
 namespace open3d {
 namespace core {
@@ -48,6 +51,7 @@ void gemm_cpu(CBLAS_LAYOUT layout,
               scalar_t *C_data,
               int ldc);
 
+#ifdef BUILD_CUDA_MODULE
 template <typename scalar_t>
 cublasStatus_t gemm_cuda(cublasHandle_t handle,
                          cublasOperation_t transa,
@@ -63,6 +67,6 @@ cublasStatus_t gemm_cuda(cublasHandle_t handle,
                          const scalar_t *beta,
                          scalar_t *C_data,
                          int ldc);
-
+#endif
 }  // namespace core
 }  // namespace open3d

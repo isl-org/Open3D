@@ -67,6 +67,7 @@ void gemm_cpu<double>(CBLAS_LAYOUT layout,
                 ldb, beta, C_data, ldc);
 }
 
+#ifdef BUILD_CUDA_MODULE
 template <>
 cublasStatus_t gemm_cuda<float>(cublasHandle_t handle,
                                 cublasOperation_t transa,
@@ -114,6 +115,7 @@ cublasStatus_t gemm_cuda<double>(cublasHandle_t handle,
                        ldb,  // input and their leading dims
                        beta, static_cast<double*>(C_data), ldc);
 }
+#endif
 
 }  // namespace core
 }  // namespace open3d

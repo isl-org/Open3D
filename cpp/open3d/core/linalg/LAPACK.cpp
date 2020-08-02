@@ -113,6 +113,7 @@ void gels_cpu<double>(int matrix_layout,
     LAPACKE_dgels(matrix_layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
 }
 
+#ifdef BUILD_CUDA_MODULE
 template <>
 cusolverStatus_t getrf_cuda_buffersize<float>(
         cusolverDnHandle_t handle, int m, int n, int lda, int* len) {
@@ -375,6 +376,6 @@ cublasStatus_t trsm_cuda<double>(cublasHandle_t handle,
     return cublasDtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B,
                        ldb);
 }
-
+#endif
 }  // namespace core
 }  // namespace open3d

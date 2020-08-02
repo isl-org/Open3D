@@ -25,11 +25,14 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include "lapack-netlib/LAPACKE/include/lapacke.h"
+
+#ifdef BUILD_CUDA_MODULE
 #include <cublas_v2.h>
 #include <cusolverDn.h>
 #include <cusolver_common.h>
-
-#include "lapack-netlib/LAPACKE/include/lapacke.h"
+#endif
 
 namespace open3d {
 namespace core {
@@ -66,6 +69,7 @@ void gesvd_cpu(int matrix_layout,
                int ldvt,
                scalar_t* superb);
 
+#ifdef BUILD_CUDA_MODULE
 template <typename scalar_t>
 cusolverStatus_t getrf_cuda_buffersize(
         cusolverDnHandle_t handle, int m, int n, int lda, int* len);
@@ -173,6 +177,6 @@ cublasStatus_t trsm_cuda(cublasHandle_t handle,
                          int lda,
                          scalar_t* B,
                          int ldb);
-
+#endif
 }  // namespace core
 }  // namespace open3d
