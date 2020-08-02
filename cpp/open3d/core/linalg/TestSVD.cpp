@@ -24,52 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Kernel.h"
+#include "open3d/Open3D.h"
 
-#include <benchmark/benchmark.h>
+#include "open3d/core/linalg/SVD.h"
 
-namespace open3d {
-namespace core {
+using namespace open3d;
+using namespace open3d::core;
 
-static void ReductionCPU(benchmark::State& state) {
-    Device device("CPU:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
+int main() {
+    std::vector<Device> devices{Device("CPU:0"), Device("CUDA:0")};
+    std::vector<Dtype> dtypes{Dtype::Float32, Dtype::Float64};
+
+    std::vector<float> A_vals{
+            8.79,  9.93,  9.83, 5.45,  3.16, 6.11, 6.91, 5.04,  -0.27, 7.98,
+            -9.15, -7.93, 4.86, 4.85,  3.01, 9.57, 1.64, 8.83,  0.74,  5.80,
+            -3.49, 4.02,  9.80, 10.00, 4.27, 9.84, 0.15, -8.99, -6.02, -5.31};
+    Tensor A(A_vals, {6, 5}, core::Dtype::Float32, Device("CPU:0"));
+
+    std::cout << A.ToString() << "\n";
+
+    for (auto dtype : dtypes) {
+        for (auto device : devices) {
+            Tensor A_device = A.Copy(device).To(dtype);
+            Tensor U, S, VT;
+            SVD(A_device, U, S, VT);
+            std::cout << U.ToString() << "\n";
+            std::cout << S.ToString() << "\n";
+            std::cout << VT.ToString() << "\n";
+        }
     }
 }
-
-// Fixture does play very well with static initialization in Open3D. Use the
-// simple BENCHMARK here.
-// https://github.com/google/benchmark/issues/498
-BENCHMARK(ReductionCPU)->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-
-static void ReductionCUDA(benchmark::State& state) {
-    Device device("CUDA:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
-}
-
-BENCHMARK(ReductionCUDA)->Unit(benchmark::kMillisecond);
-
-#endif
-
-}  // namespace core
-}  // namespace open3d

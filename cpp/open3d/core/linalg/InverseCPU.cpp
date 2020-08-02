@@ -24,52 +24,31 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Kernel.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <benchmark/benchmark.h>
+#include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LAPACK.h"
+#include "open3d/core/linalg/LinalgUtils.h"
 
 namespace open3d {
 namespace core {
 
-static void ReductionCPU(benchmark::State& state) {
-    Device device("CPU:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
+/// https://www.netlib.org/lapack/explore-html/dd/d9a/group__double_g_ecomputational_ga56d9c860ce4ce42ded7f914fdb0683ff.html#ga56d9c860ce4ce42ded7f914fdb0683ff
+void InverseCPU(void* A_data,
+                void* ipiv_data,
+                void* output_data,
+                int n,
+                Dtype dtype,
+                const Device& device) {
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        getrf_cpu<scalar_t>(LAPACK_ROW_MAJOR, n, n,
+                            static_cast<scalar_t*>(A_data), n,
+                            static_cast<int*>(ipiv_data));
+        getri_cpu<scalar_t>(LAPACK_ROW_MAJOR, n, static_cast<scalar_t*>(A_data),
+                            n, static_cast<int*>(ipiv_data));
+    });
 }
-
-// Fixture does play very well with static initialization in Open3D. Use the
-// simple BENCHMARK here.
-// https://github.com/google/benchmark/issues/498
-BENCHMARK(ReductionCPU)->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-
-static void ReductionCUDA(benchmark::State& state) {
-    Device device("CUDA:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
-}
-
-BENCHMARK(ReductionCUDA)->Unit(benchmark::kMillisecond);
-
-#endif
 
 }  // namespace core
 }  // namespace open3d

@@ -24,52 +24,31 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Kernel.h"
+// https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_sgesv_row.c.htm
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <benchmark/benchmark.h>
+#include "open3d/core/linalg/LinalgUtils.h"
+#include "open3d/core/linalg/Solve.h"
+
+#include "open3d/core/linalg/LAPACK.h"
 
 namespace open3d {
 namespace core {
 
-static void ReductionCPU(benchmark::State& state) {
-    Device device("CPU:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
+void SolveCPU(void* A_data,
+              void* B_data,
+              int m,
+              int n,
+              int k,
+              Dtype dtype,
+              const Device& device) {
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        gels_cpu<scalar_t>(LAPACK_ROW_MAJOR, 'N', m, n, k,
+                           static_cast<scalar_t*>(A_data), n,
+                           static_cast<scalar_t*>(B_data), k);
+    });
 }
-
-// Fixture does play very well with static initialization in Open3D. Use the
-// simple BENCHMARK here.
-// https://github.com/google/benchmark/issues/498
-BENCHMARK(ReductionCPU)->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-
-static void ReductionCUDA(benchmark::State& state) {
-    Device device("CUDA:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
-}
-
-BENCHMARK(ReductionCUDA)->Unit(benchmark::kMillisecond);
-
-#endif
 
 }  // namespace core
 }  // namespace open3d

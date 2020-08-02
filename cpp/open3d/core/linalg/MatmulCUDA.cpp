@@ -24,52 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/LinalgUtils.h"
+#include "open3d/core/linalg/Matmul.h"
+#include "open3d/utility/Console.h"
 
-#include <benchmark/benchmark.h>
-
+#include "open3d/core/linalg/BLAS.h"
 namespace open3d {
 namespace core {
 
-static void ReductionCPU(benchmark::State& state) {
-    Device device("CPU:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
+// Reference
+// https://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemmbatched
+// https://developer.nvidia.com/sites/default/files/akamai/cuda/files/Misc/mygpu.pdf
+
+void MatmulCUDA(void* A_data,
+                void* B_data,
+                void* C_data,
+                int m,
+                int k,
+                int n,
+                Dtype dtype) {
+    cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t alpha = 1, beta = 0;
+        OPEN3D_CUBLAS_CHECK(
+                gemm_cuda<scalar_t>(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k,
+                                    &alpha,
+                                    static_cast<const scalar_t*>(A_data), m,
+                                    static_cast<const scalar_t*>(B_data), k,
+                                    &beta, static_cast<scalar_t*>(C_data), m),
+                "cuda gemm failed");
+    });
 }
-
-// Fixture does play very well with static initialization in Open3D. Use the
-// simple BENCHMARK here.
-// https://github.com/google/benchmark/issues/498
-BENCHMARK(ReductionCPU)->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-
-static void ReductionCUDA(benchmark::State& state) {
-    Device device("CUDA:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
-}
-
-BENCHMARK(ReductionCUDA)->Unit(benchmark::kMillisecond);
-
-#endif
 
 }  // namespace core
 }  // namespace open3d

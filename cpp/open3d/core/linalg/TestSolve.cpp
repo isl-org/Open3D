@@ -24,52 +24,43 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Kernel.h"
+#include "open3d/Open3D.h"
 
-#include <benchmark/benchmark.h>
+#include "open3d/core/linalg/Solve.h"
 
-namespace open3d {
-namespace core {
+using namespace open3d;
+using namespace open3d::core;
 
-static void ReductionCPU(benchmark::State& state) {
-    Device device("CPU:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
+// https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_sgels_row.c.htm
+int main() {
+    std::vector<Device> devices{Device("CPU:0"), Device("CUDA:0")};
+    std::vector<Dtype> dtypes{Dtype::Float32, Dtype::Float64};
+
+    std::vector<float> A_vals{1.44,  -7.84, -4.39, 4.53,  -9.96, -0.28,
+                              -3.24, 3.83,  -7.55, 3.24,  6.27,  -6.64,
+                              8.34,  8.09,  5.28,  2.06,  7.08,  2.52,
+                              0.74,  -2.47, -5.45, -5.70, -1.19, 4.70};
+    std::vector<float> B_vals{8.58,  9.35,  8.26, -4.43, 8.48, -0.70,
+                              -5.28, -0.26, 5.72, -7.36, 8.93, -2.52};
+    // Solution:
+    // -0.45 0.25
+    // -0.85 -0.90
+    // 0.71 0.63
+    // 0.13 0.14
+
+    Tensor A(A_vals, {6, 4}, core::Dtype::Float32, Device("CPU:0"));
+    Tensor B(B_vals, {6, 2}, core::Dtype::Float32, Device("CPU:0"));
+
+    std::cout << A.ToString() << "\n";
+    std::cout << B.ToString() << "\n";
+
+    for (auto dtype : dtypes) {
+        for (auto device : devices) {
+            Tensor A_device = A.Copy(device).To(dtype);
+            Tensor B_device = B.Copy(device).To(dtype);
+            Tensor X;
+            Solve(A_device, B_device, X);
+            std::cout << X.ToString() << "\n";
+        }
     }
 }
-
-// Fixture does play very well with static initialization in Open3D. Use the
-// simple BENCHMARK here.
-// https://github.com/google/benchmark/issues/498
-BENCHMARK(ReductionCPU)->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-
-static void ReductionCUDA(benchmark::State& state) {
-    Device device("CUDA:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
-}
-
-BENCHMARK(ReductionCUDA)->Unit(benchmark::kMillisecond);
-
-#endif
-
-}  // namespace core
-}  // namespace open3d

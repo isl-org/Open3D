@@ -24,52 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Kernel.h"
-
-#include <benchmark/benchmark.h>
+#include "open3d/core/linalg/LinalgUtils.h"
 
 namespace open3d {
 namespace core {
 
-static void ReductionCPU(benchmark::State& state) {
-    Device device("CPU:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
+std::shared_ptr<CuSolverContext> CuSolverContext::GetInstance() {
+    if (instance_ == nullptr) {
+        instance_ = std::make_shared<CuSolverContext>();
+    }
+    return instance_;
+};
+
+CuSolverContext::CuSolverContext() {
+    if (cusolverDnCreate(&handle_) != CUSOLVER_STATUS_SUCCESS) {
+        utility::LogError("Unable to create cuSolver handle");
+    }
+    utility::LogInfo("Instance created");
+}
+CuSolverContext::~CuSolverContext() {
+    if (cusolverDnDestroy(handle_) != CUSOLVER_STATUS_SUCCESS) {
+        utility::LogError("Unable to destroy cuSolver handle");
     }
 }
 
-// Fixture does play very well with static initialization in Open3D. Use the
-// simple BENCHMARK here.
-// https://github.com/google/benchmark/issues/498
-BENCHMARK(ReductionCPU)->Unit(benchmark::kMillisecond);
+std::shared_ptr<CuSolverContext> CuSolverContext::instance_ =
+        CuSolverContext::GetInstance();
 
-#ifdef BUILD_CUDA_MODULE
+std::shared_ptr<CuBLASContext> CuBLASContext::GetInstance() {
+    if (instance_ == nullptr) {
+        instance_ = std::make_shared<CuBLASContext>();
+    }
+    return instance_;
+};
 
-static void ReductionCUDA(benchmark::State& state) {
-    Device device("CUDA:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
+CuBLASContext::CuBLASContext() {
+    if (cublasCreate(&handle_) != CUBLAS_STATUS_SUCCESS) {
+        utility::LogError("Unable to create cublas handle");
     }
 }
+CuBLASContext::~CuBLASContext() { cublasDestroy(handle_); }
 
-BENCHMARK(ReductionCUDA)->Unit(benchmark::kMillisecond);
-
-#endif
+std::shared_ptr<CuBLASContext> CuBLASContext::instance_ =
+        CuBLASContext::GetInstance();
 
 }  // namespace core
 }  // namespace open3d

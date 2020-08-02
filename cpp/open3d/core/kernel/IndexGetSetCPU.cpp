@@ -24,52 +24,51 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/kernel/IndexGetSet.h"
 
-#include <benchmark/benchmark.h>
+#include "open3d/core/AdvancedIndexing.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/core/kernel/CPULauncher.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
+namespace kernel {
 
-static void ReductionCPU(benchmark::State& state) {
-    Device device("CPU:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
+template <typename scalar_t>
+static void CPUCopyElementKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
 }
 
-// Fixture does play very well with static initialization in Open3D. Use the
-// simple BENCHMARK here.
-// https://github.com/google/benchmark/issues/498
-BENCHMARK(ReductionCPU)->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-
-static void ReductionCUDA(benchmark::State& state) {
-    Device device("CUDA:0");
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
-    Tensor warm_up = src.Sum({1});
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-    }
+void IndexGetCPU(const Tensor& src,
+                 Tensor& dst,
+                 const std::vector<Tensor>& index_tensors,
+                 const SizeVector& indexed_shape,
+                 const SizeVector& indexed_strides) {
+    Dtype dtype = src.GetDtype();
+    AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
+                       AdvancedIndexer::AdvancedIndexerMode::GET);
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        CPULauncher::LaunchAdvancedIndexerKernel(
+                ai, CPUCopyElementKernel<scalar_t>);
+    });
 }
 
-BENCHMARK(ReductionCUDA)->Unit(benchmark::kMillisecond);
+void IndexSetCPU(const Tensor& src,
+                 Tensor& dst,
+                 const std::vector<Tensor>& index_tensors,
+                 const SizeVector& indexed_shape,
+                 const SizeVector& indexed_strides) {
+    Dtype dtype = src.GetDtype();
+    AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
+                       AdvancedIndexer::AdvancedIndexerMode::SET);
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        CPULauncher::LaunchAdvancedIndexerKernel(
+                ai, CPUCopyElementKernel<scalar_t>);
+    });
+}
 
-#endif
-
+}  // namespace kernel
 }  // namespace core
 }  // namespace open3d

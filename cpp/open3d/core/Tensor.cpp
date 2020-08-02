@@ -36,7 +36,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
-#include "open3d/core/op/kernel/Kernel.h"
+#include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

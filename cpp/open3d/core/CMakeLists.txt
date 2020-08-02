@@ -1,43 +1,43 @@
 set (KERNEL_SRC
-    op/kernel/IndexGetSet.cpp
-    op/kernel/IndexGetSetCPU.cpp
-    op/kernel/NonZero.cpp
-    op/kernel/NonZeroCPU.cpp
-    op/kernel/UnaryEW.cpp
-    op/kernel/UnaryEWCPU.cpp
-    op/kernel/BinaryEW.cpp
-    op/kernel/BinaryEWCPU.cpp
-    op/kernel/Reduction.cpp
-    op/kernel/ReductionCPU.cpp
-)
+    kernel/IndexGetSet.cpp
+    kernel/IndexGetSetCPU.cpp
+    kernel/NonZero.cpp
+    kernel/NonZeroCPU.cpp
+    kernel/UnaryEW.cpp
+    kernel/UnaryEWCPU.cpp
+    kernel/BinaryEW.cpp
+    kernel/BinaryEWCPU.cpp
+    kernel/Reduction.cpp
+    kernel/ReductionCPU.cpp
+    )
 
 set (KERNEL_CUDA_SRC
-    op/kernel/IndexGetSetCUDA.cu
-    op/kernel/NonZeroCUDA.cu
-    op/kernel/UnaryEWCUDA.cu
-    op/kernel/BinaryEWCUDA.cu
-    op/kernel/ReductionCUDA.cu
+    kernel/IndexGetSetCUDA.cu
+    kernel/NonZeroCUDA.cu
+    kernel/UnaryEWCUDA.cu
+    kernel/BinaryEWCUDA.cu
+    kernel/ReductionCUDA.cu
     )
 
   set (LINALG_SRC
-    op/linalg/BLAS.cpp
-    op/linalg/LinalgUtils.cpp
-    op/linalg/LAPACK.cpp
-    op/linalg/Matmul.cpp
-    op/linalg/MatmulCPU.cpp
-    op/linalg/Solve.cpp
-    op/linalg/SolveCPU.cpp
-    op/linalg/Inverse.cpp
-    op/linalg/InverseCPU.cpp
-    op/linalg/SVD.cpp
-    op/linalg/SVDCPU.cpp
+    linalg/BLAS.cpp
+    linalg/LinalgUtils.cpp
+    linalg/LAPACK.cpp
+    linalg/Matmul.cpp
+    linalg/MatmulCPU.cpp
+    linalg/Solve.cpp
+    linalg/SolveCPU.cpp
+    linalg/Inverse.cpp
+    linalg/InverseCPU.cpp
+    linalg/SVD.cpp
+    linalg/SVDCPU.cpp
     )
 
 set (LINALG_CUDA_SRC
-    op/linalg/MatmulCUDA.cpp
-    op/linalg/SolveCUDA.cpp
-    op/linalg/InverseCUDA.cpp
-    op/linalg/SVDCUDA.cpp
+    linalg/MatmulCUDA.cpp
+    linalg/SolveCUDA.cpp
+    linalg/InverseCUDA.cpp
+    linalg/SVDCUDA.cpp
     )
 
 set (CORE_SRC
@@ -51,11 +51,11 @@ set (CORE_SRC
     Tensor.cpp
     TensorKey.cpp
     TensorList.cpp
-)
+    )
 
 set (CORE_CUDA_SRC
     MemoryManagerCUDA.cu
-)
+    )
 
 if (BUILD_CUDA_MODULE)
     set (ALL_CORE_SRC
@@ -85,13 +85,13 @@ if (BUILD_CUDA_MODULE)
 endif()
 
 # TODO: link these dynamic libraries in ${CMAKE_PROJECT_NAME}
-add_executable(TestMatmul op/linalg/TestMatmul.cpp)
+add_executable(TestMatmul linalg/TestMatmul.cpp)
 target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
-add_executable(TestSolve op/linalg/TestSolve.cpp)
+add_executable(TestSolve linalg/TestSolve.cpp)
 target_link_libraries(TestSolve ${CMAKE_PROJECT_NAME} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
-add_executable(TestInverse op/linalg/TestInverse.cpp)
+add_executable(TestInverse linalg/TestInverse.cpp)
 target_link_libraries(TestInverse ${CMAKE_PROJECT_NAME} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
-add_executable(TestSVD op/linalg/TestSVD.cpp)
+add_executable(TestSVD linalg/TestSVD.cpp)
 target_link_libraries(TestSVD ${CMAKE_PROJECT_NAME} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
 
 
