@@ -55,11 +55,13 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
                           n);
     }
 
+    Tensor A_T = A.T().Contiguous();
     U = Tensor::Empty({m, m}, dtype, device);
     S = Tensor::Empty({n}, dtype, device);
     VT = Tensor::Empty({n, n}, dtype, device);
     Tensor superb = Tensor::Empty({std::min(m, n) - 1}, dtype, device);
 
+    void *A_data = A_T.GetDataPtr();
     void *U_data = U.GetDataPtr();
     void *S_data = S.GetDataPtr();
     void *VT_data = VT.GetDataPtr();
@@ -67,22 +69,17 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        Tensor A_T = A.T().Copy(device);
-        void *A_data = A_T.GetDataPtr();
-
         SVDCUDA(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,
                 device);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        Tensor A_contiguous = A.Contiguous();
-        void *A_data = A_contiguous.GetDataPtr();
         SVDCPU(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,
                device);
-        U = U.T();
-        VT = VT.T();
     }
+    U = U.T();
+    VT = VT.T();
 }
 }  // namespace core
 }  // namespace open3d

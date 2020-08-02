@@ -44,10 +44,10 @@ void MatmulCPU(void* A_data,
                Dtype dtype) {
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t alpha = 1, beta = 0;
-        gemm_cpu<scalar_t>(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k,
-                           alpha, static_cast<const scalar_t*>(A_data), k,
-                           static_cast<const scalar_t*>(B_data), n, beta,
-                           static_cast<scalar_t*>(C_data), n);
+        gemm_cpu<scalar_t>(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k,
+                           alpha, static_cast<const scalar_t*>(A_data), m,
+                           static_cast<const scalar_t*>(B_data), k, beta,
+                           static_cast<scalar_t*>(C_data), m);
     });
 }
 

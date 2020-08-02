@@ -71,31 +71,25 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
                           n);
     }
 
+    Tensor A_copy = A.T().Contiguous();
+    Tensor B_copy = B.T().Contiguous();
+
+    void *A_data = A_copy.GetDataPtr();
+    void *B_data = B_copy.GetDataPtr();
+
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         // cuSolver uses column-wise storage
-        Tensor A_copy = A.T().Copy(device);
-        void *A_data = A_copy.GetDataPtr();
-
-        Tensor B_copy = B.T().Copy(device);
-        void *B_data = B_copy.GetDataPtr();
 
         SolveCUDA(A_data, B_data, m, n, k, dtype, device);
-        X = B_copy.T().Slice(0, 0, n);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        // LAPACKE changes solves X by modifying B in-place
-        Tensor A_copy = A.Copy(device);
-        void *A_data = A_copy.GetDataPtr();
-
-        Tensor B_copy = B.Copy(device);
-        void *B_data = B_copy.GetDataPtr();
-
         SolveCPU(A_data, B_data, m, n, k, dtype, device);
-        X = B_copy.Slice(0, 0, n);
     }
+
+    X = B_copy.T().Slice(0, 0, n);
 }
 }  // namespace core
 }  // namespace open3d

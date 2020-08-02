@@ -39,17 +39,17 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     }
 
     // Check dtypes
-    Dtype dtype = A.GetDtype();
+    Dtype dtype = A.GetDtype(), dtype_original = dtype;
     if (dtype != B.GetDtype()) {
         utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch",
                           DtypeUtil::ToString(A.GetDtype()),
                           DtypeUtil::ToString(B.GetDtype()));
     }
+
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-        utility::LogError(
-                "Only tensors with Float32 or Float64 are supported, but "
-                "received {}",
-                DtypeUtil::ToString(dtype));
+        utility::LogDebug("Converting to Float32 dtype to from {}",
+                          DtypeUtil::ToString(dtype));
+        dtype = Dtype::Float32;
     }
 
     // Check shapes
@@ -74,32 +74,25 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     int64_t k = A_shape[1];
     int64_t n = B_shape.size() == 2 ? B_shape[1] : 1;
 
+    Tensor A_T = A.T().Contiguous();
+    Tensor B_T = B.T().Contiguous();
+    void* A_data = A_T.GetDataPtr();
+    void* B_data = B_T.GetDataPtr();
+
+    output = Tensor::Empty({n, m}, dtype, device);
+    void* C_data = output.GetDataPtr();
+
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        Tensor A_contiguous = A.T().Contiguous();
-        Tensor B_contiguous = B.T().Contiguous();
-        void* A_data = A_contiguous.GetDataPtr();
-        void* B_data = B_contiguous.GetDataPtr();
-
-        output = Tensor::Empty({n, m}, dtype, device);
-        void* C_data = output.GetDataPtr();
-
         MatmulCUDA(A_data, B_data, C_data, m, k, n, dtype);
-
-        output = output.T();
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        Tensor A_contiguous = A.Contiguous();
-        Tensor B_contiguous = B.Contiguous();
-        void* A_data = A_contiguous.GetDataPtr();
-        void* B_data = B_contiguous.GetDataPtr();
-
-        output = Tensor::Empty({m, n}, dtype, device);
-        void* C_data = output.GetDataPtr();
         MatmulCPU(A_data, B_data, C_data, m, k, n, dtype);
     }
+
+    output = output.T().To(dtype_original);
 };
 
 }  // namespace core
