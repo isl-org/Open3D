@@ -45,8 +45,9 @@ static const std::unordered_map<
                 {"stl", ReadTriangleMeshFromSTL},
                 {"obj", ReadTriangleMeshFromOBJ},
                 {"off", ReadTriangleMeshFromOFF},
-                {"gltf", ReadTriangleMeshFromGLTF},
-                {"glb", ReadTriangleMeshFromGLTF},
+                {"gltf", ReadTriangleMeshFromASSIMP},
+                {"glb", ReadTriangleMeshFromASSIMP},
+                {"fbx", ReadTriangleMeshFromASSIMP},
         };
 
 static const std::unordered_map<
