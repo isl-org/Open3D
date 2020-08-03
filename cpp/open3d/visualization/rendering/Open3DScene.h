@@ -77,7 +77,6 @@ private:
     LOD lod_ = LOD::HIGH_DETAIL;
     std::string model_name_;
     std::string fast_model_name_;
-    std::string axis_name_;
     geometry::AxisAlignedBoundingBox bounds_;
 };
 
