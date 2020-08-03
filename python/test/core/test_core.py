@@ -1079,7 +1079,8 @@ def test_item(device):
     assert o3_t[0, 0].item() == 1
     assert isinstance(o3_t[0, 0].item(), int)
 
-    o3_t = o3d.core.Tensor.ones(
-        (2, 3), dtype=o3d.core.Dtype.Bool, device=device)
+    o3_t = o3d.core.Tensor.ones((2, 3),
+                                dtype=o3d.core.Dtype.Bool,
+                                device=device)
     assert o3_t[0, 0].item() == True
     assert isinstance(o3_t[0, 0].item(), bool)
