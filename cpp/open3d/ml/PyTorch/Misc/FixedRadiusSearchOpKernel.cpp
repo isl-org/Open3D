@@ -47,9 +47,8 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
                           torch::Tensor& neighbors_index,
                           torch::Tensor& neighbors_row_splits,
                           torch::Tensor& neighbors_distance) {
-    NeighborSearchAllocator<T> output_allocator(
-            neighbors_index, neighbors_distance, points.device().type(),
-            points.device().index());
+    NeighborSearchAllocator<T> output_allocator(points.device().type(),
+                                                points.device().index());
 
     FixedRadiusSearchCPU(
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
@@ -62,6 +61,9 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
             (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
             (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric,
             ignore_query_point, return_distances, output_allocator);
+
+    neighbors_index = output_allocator.NeighborsIndex();
+    neighbors_distance = output_allocator.NeighborsDistance();
 }
 
 #define INSTANTIATE(T)                                                        \

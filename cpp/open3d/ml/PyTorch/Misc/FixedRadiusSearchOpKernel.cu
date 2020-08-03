@@ -55,8 +55,7 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     auto device = points.device().type();
     auto device_idx = points.device().index();
 
-    NeighborSearchAllocator<T> output_allocator(
-            neighbors_index, neighbors_distance, device, device_idx);
+    NeighborSearchAllocator<T> output_allocator(device, device_idx);
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
 
@@ -92,6 +91,9 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
             (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
             (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric,
             ignore_query_point, return_distances, output_allocator);
+
+    neighbors_index = output_allocator.NeighborsIndex();
+    neighbors_distance = output_allocator.NeighborsDistance();
 }
 
 #define INSTANTIATE(T)                                                        \

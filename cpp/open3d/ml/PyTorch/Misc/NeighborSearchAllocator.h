@@ -34,14 +34,8 @@
 template <class T>
 class NeighborSearchAllocator {
 public:
-    NeighborSearchAllocator(torch::Tensor& neighbors_index,
-                            torch::Tensor& neighbors_distance,
-                            torch::DeviceType device_type,
-                            int device_idx)
-        : neighbors_index(neighbors_index),
-          neighbors_distance(neighbors_distance),
-          device_type(device_type),
-          device_idx(device_idx) {}
+    NeighborSearchAllocator(torch::DeviceType device_type, int device_idx)
+        : device_type(device_type), device_idx(device_idx) {}
 
     void AllocIndices(int32_t** ptr, size_t num) {
         neighbors_index = torch::empty(
@@ -57,28 +51,20 @@ public:
         *ptr = neighbors_distance.data_ptr<T>();
     }
 
+    const int32_t* IndicesPtr() const {
+        return neighbors_index.data_ptr<int32_t>();
+    }
+
+    const T* DistancesPtr() const { return neighbors_distance.data_ptr<T>(); }
+
+    const torch::Tensor& NeighborsIndex() const { return neighbors_index; }
+    const torch::Tensor& NeighborsDistance() const {
+        return neighbors_distance;
+    }
+
 private:
-    torch::Tensor& neighbors_index;
-    torch::Tensor& neighbors_distance;
+    torch::Tensor neighbors_index;
+    torch::Tensor neighbors_distance;
     torch::DeviceType device_type;
     int device_idx;
-};
-
-template <class T>
-class NeighborSearchTempAllocator {
-public:
-    NeighborSearchTempAllocator() {}
-
-    void AllocIndices(int32_t** ptr, size_t num) {
-        index.resize(num);
-        *ptr = index.data();
-    }
-
-    void AllocDistances(T** ptr, size_t num) {
-        distance.resize(num);
-        *ptr = distance.data();
-    }
-
-    std::vector<int32_t> index;
-    std::vector<T> distance;
 };
