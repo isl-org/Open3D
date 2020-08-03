@@ -256,7 +256,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 void FilamentScene::RemoveGeometry(const std::string& object_name) {
-    auto geom = GetGeometry(object_name);
+    auto geom = GetGeometry(object_name, false);
     if (geom) {
         scene_->remove(geom->filament_entity);
         geom->ReleaseResources(engine_, resource_mgr_);
