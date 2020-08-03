@@ -31,7 +31,6 @@
 #ifdef BUILD_CUDA_MODULE
 #include <cublas_v2.h>
 #include <cusolverDn.h>
-#include <cusolver_common.h>
 #endif
 
 namespace open3d {
@@ -169,22 +168,6 @@ cusolverStatus_t ormqr_cuda(cusolverDnHandle_t handle,
                             scalar_t* workspace,
                             int len,
                             int* dinfo);
-
-// TODO: separate trsm. Currently cblas and lapacke have conflicts and cannot be
-// included together
-template <typename scalar_t>
-cublasStatus_t trsm_cuda(cublasHandle_t handle,
-                         cublasSideMode_t side,
-                         cublasFillMode_t uplo,
-                         cublasOperation_t trans,
-                         cublasDiagType_t diag,
-                         int m,
-                         int n,
-                         const scalar_t* alpha,
-                         const scalar_t* A,
-                         int lda,
-                         scalar_t* B,
-                         int ldb);
 #endif
 }  // namespace core
 }  // namespace open3d

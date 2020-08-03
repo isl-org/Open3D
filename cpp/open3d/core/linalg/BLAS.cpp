@@ -33,17 +33,17 @@ template <>
 void gemm_cpu<float>(CBLAS_LAYOUT layout,
                      CBLAS_TRANSPOSE trans_A,
                      CBLAS_TRANSPOSE trans_B,
-                     int m,
-                     int n,
-                     int k,
+                     MKL_INT m,
+                     MKL_INT n,
+                     MKL_INT k,
                      float alpha,
                      const float* A_data,
-                     int lda,
+                     MKL_INT lda,
                      const float* B_data,
-                     int ldb,
+                     MKL_INT ldb,
                      float beta,
                      float* C_data,
-                     int ldc) {
+                     MKL_INT ldc) {
     cblas_sgemm(layout, trans_A, trans_B, m, n, k, alpha, A_data, lda, B_data,
                 ldb, beta, C_data, ldc);
 }
@@ -52,17 +52,17 @@ template <>
 void gemm_cpu<double>(CBLAS_LAYOUT layout,
                       CBLAS_TRANSPOSE trans_A,
                       CBLAS_TRANSPOSE trans_B,
-                      int m,
-                      int n,
-                      int k,
+                      MKL_INT m,
+                      MKL_INT n,
+                      MKL_INT k,
                       double alpha,
                       const double* A_data,
-                      int lda,
+                      MKL_INT lda,
                       const double* B_data,
-                      int ldb,
+                      MKL_INT ldb,
                       double beta,
                       double* C_data,
-                      int ldc) {
+                      MKL_INT ldc) {
     cblas_dgemm(layout, trans_A, trans_B, m, n, k, alpha, A_data, lda, B_data,
                 ldb, beta, C_data, ldc);
 }
@@ -114,6 +114,40 @@ cublasStatus_t gemm_cuda<double>(cublasHandle_t handle,
                        static_cast<const double*>(B_data),
                        ldb,  // input and their leading dims
                        beta, static_cast<double*>(C_data), ldc);
+}
+
+template <>
+cublasStatus_t trsm_cuda<float>(cublasHandle_t handle,
+                                cublasSideMode_t side,
+                                cublasFillMode_t uplo,
+                                cublasOperation_t trans,
+                                cublasDiagType_t diag,
+                                int m,
+                                int n,
+                                const float* alpha,
+                                const float* A,
+                                int lda,
+                                float* B,
+                                int ldb) {
+    return cublasStrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B,
+                       ldb);
+}
+
+template <>
+cublasStatus_t trsm_cuda<double>(cublasHandle_t handle,
+                                 cublasSideMode_t side,
+                                 cublasFillMode_t uplo,
+                                 cublasOperation_t trans,
+                                 cublasDiagType_t diag,
+                                 int m,
+                                 int n,
+                                 const double* alpha,
+                                 const double* A,
+                                 int lda,
+                                 double* B,
+                                 int ldb) {
+    return cublasDtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B,
+                       ldb);
 }
 #endif
 

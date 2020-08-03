@@ -153,7 +153,6 @@ void _KnnSearchCPU(int64_t* query_neighbors_row_splits,
     // fill output index and distance arrays
     tbb::parallel_for(tbb::blocked_range<size_t>(0, pairs.size()),
                       [&](const tbb::blocked_range<size_t>& r) {
-
                           for (size_t i = r.begin(); i != r.end(); ++i) {
                               Pair pair = pairs[i];
 

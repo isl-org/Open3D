@@ -42,17 +42,17 @@ template <typename scalar_t>
 void gemm_cpu(CBLAS_LAYOUT layout,
               CBLAS_TRANSPOSE trans_A,
               CBLAS_TRANSPOSE trans_B,
-              int m,
-              int n,
-              int k,
+              MKL_INT m,
+              MKL_INT n,
+              MKL_INT k,
               scalar_t alpha,
               const scalar_t *A_data,
-              int lda,
+              MKL_INT lda,
               const scalar_t *B_data,
-              int ldb,
+              MKL_INT ldb,
               scalar_t beta,
               scalar_t *C_data,
-              int ldc);
+              MKL_INT ldc);
 
 #ifdef BUILD_CUDA_MODULE
 template <typename scalar_t>
@@ -70,6 +70,20 @@ cublasStatus_t gemm_cuda(cublasHandle_t handle,
                          const scalar_t *beta,
                          scalar_t *C_data,
                          int ldc);
+
+template <typename scalar_t>
+cublasStatus_t trsm_cuda(cublasHandle_t handle,
+                         cublasSideMode_t side,
+                         cublasFillMode_t uplo,
+                         cublasOperation_t trans,
+                         cublasDiagType_t diag,
+                         int m,
+                         int n,
+                         const scalar_t *alpha,
+                         const scalar_t *A,
+                         int lda,
+                         scalar_t *B,
+                         int ldb);
 #endif
 }  // namespace core
 }  // namespace open3d

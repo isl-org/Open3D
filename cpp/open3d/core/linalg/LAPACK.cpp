@@ -63,7 +63,7 @@ void getri_cpu<double>(int layout,
 }
 
 template <>
-void gesvd_cpu<float>(int matrix_layout,
+void gesvd_cpu<float>(int layout,
                       char jobu,
                       char jobvt,
                       MKL_INT m,
@@ -76,12 +76,12 @@ void gesvd_cpu<float>(int matrix_layout,
                       float* VT_data,
                       MKL_INT ldvt,
                       float* superb) {
-    LAPACKE_sgesvd(matrix_layout, jobu, jobvt, m, n, A_data, lda, S_data,
-                   U_data, ldu, VT_data, ldvt, superb);
+    LAPACKE_sgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data, U_data, ldu,
+                   VT_data, ldvt, superb);
 }
 
 template <>
-void gesvd_cpu<double>(int matrix_layout,
+void gesvd_cpu<double>(int layout,
                        char jobu,
                        char jobvt,
                        MKL_INT m,
@@ -94,12 +94,12 @@ void gesvd_cpu<double>(int matrix_layout,
                        double* VT_data,
                        MKL_INT ldvt,
                        double* superb) {
-    LAPACKE_dgesvd(matrix_layout, jobu, jobvt, m, n, A_data, lda, S_data,
-                   U_data, ldu, VT_data, ldvt, superb);
+    LAPACKE_dgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data, U_data, ldu,
+                   VT_data, ldvt, superb);
 }
 
 template <>
-void gels_cpu<float>(int matrix_layout,
+void gels_cpu<float>(int layout,
                      char trans,
                      MKL_INT m,
                      MKL_INT n,
@@ -108,11 +108,11 @@ void gels_cpu<float>(int matrix_layout,
                      MKL_INT lda,
                      float* B_data,
                      MKL_INT ldb) {
-    LAPACKE_sgels(matrix_layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
+    LAPACKE_sgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
 }
 
 template <>
-void gels_cpu<double>(int matrix_layout,
+void gels_cpu<double>(int layout,
                       char trans,
                       MKL_INT m,
                       MKL_INT n,
@@ -121,7 +121,7 @@ void gels_cpu<double>(int matrix_layout,
                       MKL_INT lda,
                       double* B_data,
                       MKL_INT ldb) {
-    LAPACKE_dgels(matrix_layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
+    LAPACKE_dgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
 }
 
 #ifdef BUILD_CUDA_MODULE
@@ -354,39 +354,7 @@ cusolverStatus_t ormqr_cuda<double>(cusolverDnHandle_t handle,
     return cusolverDnDormqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc,
                             workspace, len, dinfo);
 }
-template <>
-cublasStatus_t trsm_cuda<float>(cublasHandle_t handle,
-                                cublasSideMode_t side,
-                                cublasFillMode_t uplo,
-                                cublasOperation_t trans,
-                                cublasDiagType_t diag,
-                                int m,
-                                int n,
-                                const float* alpha,
-                                const float* A,
-                                int lda,
-                                float* B,
-                                int ldb) {
-    return cublasStrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B,
-                       ldb);
-}
 
-template <>
-cublasStatus_t trsm_cuda<double>(cublasHandle_t handle,
-                                 cublasSideMode_t side,
-                                 cublasFillMode_t uplo,
-                                 cublasOperation_t trans,
-                                 cublasDiagType_t diag,
-                                 int m,
-                                 int n,
-                                 const double* alpha,
-                                 const double* A,
-                                 int lda,
-                                 double* B,
-                                 int ldb) {
-    return cublasDtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B,
-                       ldb);
-}
 #endif
 }  // namespace core
 }  // namespace open3d

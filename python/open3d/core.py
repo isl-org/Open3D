@@ -530,7 +530,6 @@ class Tensor(o3d.pybind.core.Tensor):
         """
         return super(Tensor, self).T()
 
-
     @cast_to_py_tensor
     def nonzero(self, as_tuple=False):
         if as_tuple:
