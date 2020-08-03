@@ -48,8 +48,7 @@ HOST_DEVICE inline size_t SpatialHash(int x, int y, int z) {
     return x * 73856096 ^ y * 193649663 ^ z * 83492791;
 }
 
-HOST_DEVICE inline size_t SpatialHash(
-        const open3d::utility::MiniVec<int, 3>& xyz) {
+HOST_DEVICE inline size_t SpatialHash(const utility::MiniVec<int, 3>& xyz) {
     return SpatialHash(xyz[0], xyz[1], xyz[2]);
 }
 
@@ -59,11 +58,11 @@ HOST_DEVICE inline size_t SpatialHash(
 /// \param inv_voxel_size    The reciprocal of the voxel size
 ///
 template <class TVecf>
-HOST_DEVICE inline open3d::utility::MiniVec<int, 3> ComputeVoxelIndex(
+HOST_DEVICE inline utility::MiniVec<int, 3> ComputeVoxelIndex(
         const TVecf& pos, const typename TVecf::Scalar_t& inv_voxel_size) {
     TVecf ref_coord = pos * inv_voxel_size;
 
-    open3d::utility::MiniVec<int, 3> voxel_index;
+    utility::MiniVec<int, 3> voxel_index;
     voxel_index = floor(ref_coord).template cast<int>();
     return voxel_index;
 }
