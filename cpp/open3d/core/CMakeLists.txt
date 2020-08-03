@@ -9,6 +9,7 @@ set (KERNEL_SRC
     kernel/BinaryEWCPU.cpp
     kernel/Reduction.cpp
     kernel/ReductionCPU.cpp
+    kernel/Kernel.cpp
 )
 
 set (KERNEL_CUDA_SRC
