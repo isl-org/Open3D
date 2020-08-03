@@ -681,3 +681,24 @@ class Tensor(o3d.pybind.core.Tensor):
 
     def __ge__(self, value):
         return self.ge(value)
+
+    @cast_to_py_tensor
+    def item(self):
+        """
+        Returns scalar value of a scalar Tensor, the Tensor mush have empty
+        shape ().
+        """
+        if self.dtype == Dtype.Float32:
+            return super(Tensor, self)._item_float()
+        elif self.dtype == Dtype.Float64:
+            return super(Tensor, self)._item_double()
+        elif self.dtype == Dtype.Int32:
+            return super(Tensor, self)._item_int32_t()
+        elif self.dtype == Dtype.Int64:
+            return super(Tensor, self)._item_int64_t()
+        elif self.dtype == Dtype.UInt8:
+            return super(Tensor, self)._item_uint8_t()
+        elif self.dtype == Dtype.Bool:
+            return super(Tensor, self)._item_bool()
+        else:
+            raise TypeError("Unspported type when calling item()")
