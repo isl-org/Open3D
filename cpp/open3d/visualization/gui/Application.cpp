@@ -197,7 +197,12 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.combobox_hover_color = Color(0.5, 0.5, 0.5);
     impl_->theme_.combobox_arrow_background_color = highlight_color;
     impl_->theme_.slider_grab_color = Color(0.666, 0.666, 0.666);
-    impl_->theme_.text_edit_background_color = Color(0.25, 0.25, 0.25);
+    impl_->theme_.text_edit_background_color = Color(0.1, 0.1, 0.1);
+    impl_->theme_.list_background_color = Color(0.1, 0.1, 0.1);
+    impl_->theme_.list_hover_color = Color(0.6, 0.6, 0.6);
+    impl_->theme_.list_selected_color = Color(0.5, 0.5, 0.5);
+    impl_->theme_.tree_background_color = impl_->theme_.list_background_color;
+    impl_->theme_.tree_selected_color = impl_->theme_.list_selected_color;
     impl_->theme_.tab_inactive_color = impl_->theme_.button_color;
     impl_->theme_.tab_hover_color = impl_->theme_.button_hover_color;
     impl_->theme_.tab_active_color = impl_->theme_.button_active_color;

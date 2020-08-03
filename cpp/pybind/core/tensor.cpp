@@ -40,6 +40,20 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorKey.h"
 
+#define CONST_ARG const
+#define NON_CONST_ARG
+#define BIND_BINARY_OP_ALL_DTYPES(py_name, cpp_name, self_const)              \
+    tensor.def(#py_name,                                                      \
+               [](self_const core::Tensor& self, const core::Tensor& other) { \
+                   return self.cpp_name(other);                               \
+               });                                                            \
+    tensor.def(#py_name, &core::Tensor::cpp_name<float>);                     \
+    tensor.def(#py_name, &core::Tensor::cpp_name<double>);                    \
+    tensor.def(#py_name, &core::Tensor::cpp_name<int32_t>);                   \
+    tensor.def(#py_name, &core::Tensor::cpp_name<int64_t>);                   \
+    tensor.def(#py_name, &core::Tensor::cpp_name<uint8_t>);                   \
+    tensor.def(#py_name, &core::Tensor::cpp_name<bool>);
+
 namespace open3d {
 
 template <typename T>
@@ -262,101 +276,34 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("to", &core::Tensor::To);
 
     // Binary element-wise ops
-    tensor.def("add", [](const core::Tensor& self, const core::Tensor& other) {
-        return self.Add(other);
-    });
-    tensor.def("add", &core::Tensor::Add<float>);
-    tensor.def("add", &core::Tensor::Add<double>);
-    tensor.def("add", &core::Tensor::Add<int32_t>);
-    tensor.def("add", &core::Tensor::Add<int64_t>);
-    tensor.def("add", &core::Tensor::Add<uint8_t>);
-    tensor.def("add", &core::Tensor::Add<bool>);
-    tensor.def("add_", [](core::Tensor& self, const core::Tensor& other) {
-        return self.Add_(other);
-    });
-    tensor.def("add_", &core::Tensor::Add_<float>);
-    tensor.def("add_", &core::Tensor::Add_<double>);
-    tensor.def("add_", &core::Tensor::Add_<int32_t>);
-    tensor.def("add_", &core::Tensor::Add_<int64_t>);
-    tensor.def("add_", &core::Tensor::Add_<uint8_t>);
-    tensor.def("add_", &core::Tensor::Add_<bool>);
-
-    tensor.def("sub", [](const core::Tensor& self, const core::Tensor& other) {
-        return self.Sub(other);
-    });
-    tensor.def("sub", &core::Tensor::Sub<float>);
-    tensor.def("sub", &core::Tensor::Sub<double>);
-    tensor.def("sub", &core::Tensor::Sub<int32_t>);
-    tensor.def("sub", &core::Tensor::Sub<int64_t>);
-    tensor.def("sub", &core::Tensor::Sub<uint8_t>);
-    tensor.def("sub", &core::Tensor::Sub<bool>);
-    tensor.def("sub_", [](core::Tensor& self, const core::Tensor& other) {
-        return self.Sub_(other);
-    });
-    tensor.def("sub_", &core::Tensor::Sub_<float>);
-    tensor.def("sub_", &core::Tensor::Sub_<double>);
-    tensor.def("sub_", &core::Tensor::Sub_<int32_t>);
-    tensor.def("sub_", &core::Tensor::Sub_<int64_t>);
-    tensor.def("sub_", &core::Tensor::Sub_<uint8_t>);
-    tensor.def("sub_", &core::Tensor::Sub_<bool>);
-
-    tensor.def("mul", [](const core::Tensor& self, const core::Tensor& other) {
-        return self.Mul(other);
-    });
-    tensor.def("mul", &core::Tensor::Mul<float>);
-    tensor.def("mul", &core::Tensor::Mul<double>);
-    tensor.def("mul", &core::Tensor::Mul<int32_t>);
-    tensor.def("mul", &core::Tensor::Mul<int64_t>);
-    tensor.def("mul", &core::Tensor::Mul<uint8_t>);
-    tensor.def("mul", &core::Tensor::Mul<bool>);
-    tensor.def("mul_", [](core::Tensor& self, const core::Tensor& other) {
-        return self.Mul_(other);
-    });
-    tensor.def("mul_", &core::Tensor::Mul_<float>);
-    tensor.def("mul_", &core::Tensor::Mul_<double>);
-    tensor.def("mul_", &core::Tensor::Mul_<int32_t>);
-    tensor.def("mul_", &core::Tensor::Mul_<int64_t>);
-    tensor.def("mul_", &core::Tensor::Mul_<uint8_t>);
-    tensor.def("mul_", &core::Tensor::Mul_<bool>);
-
-    tensor.def("div", [](const core::Tensor& self, const core::Tensor& other) {
-        return self.Div(other);
-    });
-    tensor.def("div", &core::Tensor::Div<float>);
-    tensor.def("div", &core::Tensor::Div<double>);
-    tensor.def("div", &core::Tensor::Div<int32_t>);
-    tensor.def("div", &core::Tensor::Div<int64_t>);
-    tensor.def("div", &core::Tensor::Div<uint8_t>);
-    tensor.def("div", &core::Tensor::Div<bool>);
-    tensor.def("div_", [](core::Tensor& self, const core::Tensor& other) {
-        return self.Div_(other);
-    });
-    tensor.def("div_", &core::Tensor::Div_<float>);
-    tensor.def("div_", &core::Tensor::Div_<double>);
-    tensor.def("div_", &core::Tensor::Div_<int32_t>);
-    tensor.def("div_", &core::Tensor::Div_<int64_t>);
-    tensor.def("div_", &core::Tensor::Div_<uint8_t>);
-    tensor.def("div_", &core::Tensor::Div_<bool>);
+    BIND_BINARY_OP_ALL_DTYPES(add, Add, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(add_, Add_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(sub, Sub, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(sub_, Sub_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(mul, Mul, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(mul_, Mul_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(div, Div, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(div_, Div_, NON_CONST_ARG);
 
     // Binary boolean element-wise ops
-    tensor.def("logical_and", &core::Tensor::LogicalAnd);
-    tensor.def("logical_and_", &core::Tensor::LogicalAnd_);
-    tensor.def("logical_or", &core::Tensor::LogicalOr);
-    tensor.def("logical_or_", &core::Tensor::LogicalOr_);
-    tensor.def("logical_xor", &core::Tensor::LogicalXor);
-    tensor.def("logical_xor_", &core::Tensor::LogicalXor_);
-    tensor.def("gt", &core::Tensor::Gt);
-    tensor.def("gt_", &core::Tensor::Gt_);
-    tensor.def("lt", &core::Tensor::Lt);
-    tensor.def("lt_", &core::Tensor::Lt_);
-    tensor.def("ge", &core::Tensor::Ge);
-    tensor.def("ge_", &core::Tensor::Ge_);
-    tensor.def("le", &core::Tensor::Le);
-    tensor.def("le_", &core::Tensor::Le_);
-    tensor.def("eq", &core::Tensor::Eq);
-    tensor.def("eq_", &core::Tensor::Eq_);
-    tensor.def("ne", &core::Tensor::Ne);
-    tensor.def("ne_", &core::Tensor::Ne_);
+    BIND_BINARY_OP_ALL_DTYPES(logical_and, LogicalAnd, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(logical_and_, LogicalAnd_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(logical_or, LogicalOr, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(logical_or_, LogicalOr_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(logical_xor, LogicalXor, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(logical_xor_, LogicalXor_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(gt, Gt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(gt_, Gt_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(lt, Lt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(lt_, Lt_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(ge, Ge, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(ge_, Ge_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(le, Le, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(le_, Le_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(eq, Eq, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(eq_, Eq_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(ne, Ne, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES(ne_, Ne_, NON_CONST_ARG);
 
     // Getters and setters as peoperty
     tensor.def_property_readonly("shape", [](const core::Tensor& tensor) {
@@ -414,6 +361,20 @@ void pybind_core_tensor(py::module& m) {
                [](const core::Tensor& tensor) { return tensor.ToString(); });
     tensor.def("__str__",
                [](const core::Tensor& tensor) { return tensor.ToString(); });
+
+    // Get item from Tensor of one element
+    tensor.def("_item_float",
+               [](const core::Tensor& t) { return t.Item<float>(); });
+    tensor.def("_item_double",
+               [](const core::Tensor& t) { return t.Item<double>(); });
+    tensor.def("_item_int32_t",
+               [](const core::Tensor& t) { return t.Item<int32_t>(); });
+    tensor.def("_item_int64_t",
+               [](const core::Tensor& t) { return t.Item<int64_t>(); });
+    tensor.def("_item_uint8_t",
+               [](const core::Tensor& t) { return t.Item<uint8_t>(); });
+    tensor.def("_item_bool",
+               [](const core::Tensor& t) { return t.Item<bool>(); });
 }
 
 }  // namespace open3d

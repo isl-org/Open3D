@@ -102,7 +102,7 @@ class Tensor(o3d.pybind.core.Tensor):
     """
 
     def __init__(self, data, dtype=None, device=None):
-        if isinstance(data, tuple) or isinstance(data, list):
+        if isinstance(data, (tuple, list, int, float)):
             data = np.array(data)
         if not isinstance(data, np.ndarray):
             raise ValueError("data must be a list, tuple, or Numpy array.")
@@ -126,6 +126,8 @@ class Tensor(o3d.pybind.core.Tensor):
 
     @cast_to_py_tensor
     def __setitem__(self, key, value):
+        if not isinstance(value, Tensor):
+            value = Tensor(value, self.dtype, self.device)
         if isinstance(key, tuple):
             o3d_tensor_keys = [_to_o3d_tensor_key(k) for k in key]
             super(Tensor, self)._setitem_vector(o3d_tensor_keys, value)
@@ -679,3 +681,24 @@ class Tensor(o3d.pybind.core.Tensor):
 
     def __ge__(self, value):
         return self.ge(value)
+
+    @cast_to_py_tensor
+    def item(self):
+        """
+        Returns scalar value of a scalar Tensor, the Tensor mush have empty
+        shape ().
+        """
+        if self.dtype == Dtype.Float32:
+            return super(Tensor, self)._item_float()
+        elif self.dtype == Dtype.Float64:
+            return super(Tensor, self)._item_double()
+        elif self.dtype == Dtype.Int32:
+            return super(Tensor, self)._item_int32_t()
+        elif self.dtype == Dtype.Int64:
+            return super(Tensor, self)._item_int64_t()
+        elif self.dtype == Dtype.UInt8:
+            return super(Tensor, self)._item_uint8_t()
+        elif self.dtype == Dtype.Bool:
+            return super(Tensor, self)._item_bool()
+        else:
+            raise TypeError("Unspported type when calling item()")

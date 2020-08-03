@@ -370,12 +370,8 @@ class SmallButton : public gui::Button {
     using Super = Button;
 
 public:
-    explicit SmallButton(const char *title) : Button(title) {}
-
-    gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
-        auto em = theme.font_size;
-        auto size = Super::CalcPreferredSize(theme);
-        return gui::Size(size.width - em, 1.2 * em);
+    explicit SmallButton(const char *title) : Button(title) {
+        SetPaddingEm(0.5f, 0.0f);
     }
 };
 
@@ -1826,7 +1822,7 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
             impl_->settings_.wgt_base->CalcPreferredSize(theme);
     gui::Rect lightSettingsRect(r.width - LIGHT_SETTINGS_WIDTH, r.y,
                                 LIGHT_SETTINGS_WIDTH,
-                                light_settings_size.height);
+                                std::min(r.height, light_settings_size.height));
     impl_->settings_.wgt_base->SetFrame(lightSettingsRect);
 
     Super::Layout(theme);

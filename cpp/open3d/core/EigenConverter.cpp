@@ -24,51 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/ProgressBar.h"
-
-#include <imgui.h>
-#include <cmath>
-
-#include "open3d/visualization/gui/Theme.h"
-#include "open3d/visualization/gui/Util.h"
+#include "open3d/core/EigenConverter.h"
 
 namespace open3d {
-namespace visualization {
-namespace gui {
+namespace core {
+namespace eigen_converter {
 
-struct ProgressBar::Impl {
-    float value_ = 0.0f;
-};
-
-ProgressBar::ProgressBar() : impl_(new ProgressBar::Impl()) {}
-
-ProgressBar::~ProgressBar() {}
-
-/// ProgressBar values ranges from 0.0 (incomplete) to 1.0 (complete)
-void ProgressBar::SetValue(float value) { impl_->value_ = value; }
-
-float ProgressBar::GetValue() const { return impl_->value_; }
-
-Size ProgressBar::CalcPreferredSize(const Theme& theme) const {
-    return Size(Widget::DIM_GROW, 0.25 * theme.font_size);
+Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor) {
+    // TODO: Tensor::To(dtype, device).
+    if (tensor.GetShape() != SizeVector{3}) {
+        utility::LogError("Tensor shape must be {3}, but got {}.",
+                          tensor.GetShape().ToString());
+    }
+    core::Tensor dtensor =
+            tensor.To(core::Dtype::Float64).Copy(core::Device("CPU:0"));
+    return Eigen::Vector3d(dtensor[0].Item<double>(), dtensor[1].Item<double>(),
+                           dtensor[2].Item<double>());
 }
 
-Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {
-    auto& frame = GetFrame();
-    auto fg = context.theme.border_color;
-    auto color = colorToImguiRGBA(fg);
-    float rounding = frame.height / 2.0f;
-    ImGui::GetWindowDrawList()->AddRect(
-            ImVec2(frame.x, frame.y),
-            ImVec2(frame.GetRight(), frame.GetBottom()), color, rounding);
-    float x = float(frame.x) + float(frame.width) * impl_->value_;
-    x = std::max(x, float(frame.x + rounding));
-    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(frame.x, frame.y),
-                                              ImVec2(x, frame.GetBottom()),
-                                              color, frame.height / 2.0f);
-    return DrawResult::NONE;
+core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
+                                   core::Dtype dtype,
+                                   const core::Device &device) {
+    // The memory will be copied.
+    return core::Tensor(value.data(), {3}, core::Dtype::Float64, device)
+            .To(dtype);
 }
 
-}  // namespace gui
-}  // namespace visualization
+}  // namespace eigen_converter
+}  // namespace core
 }  // namespace open3d

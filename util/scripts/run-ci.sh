@@ -129,9 +129,11 @@ echo
 
 echo "build & install Open3D..."
 date
-reportRun make -j"$NPROC" || make VERBOSE=1
+reportRun make VERBOSE=1 -j"$NPROC"
 reportRun make install -j"$NPROC"
-reportRun make install-pip-package -j"$NPROC" || make VERBOSE=1 install-pip-package
+reportRun make VERBOSE=1 install-pip-package -j"$NPROC"
+reportRun python -c "import open3d; print(open3d)"
+reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
 echo
 
 # skip unit tests if built with CUDA

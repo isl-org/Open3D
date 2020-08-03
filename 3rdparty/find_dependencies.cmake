@@ -252,6 +252,8 @@ function(import_3rdparty_library name)
 endfunction()
 
 # Threads
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
 find_package(Threads REQUIRED)
 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Threads")
 
@@ -884,3 +886,26 @@ if(BUILD_RPC_INTERFACE)
     target_include_directories(Boost_headers SYSTEM INTERFACE $<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>)
     list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Boost")
 endif()
+
+# MKL
+# We link MKL statically. For MKL link flags, refer to:
+# https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
+message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
+include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
+import_3rdparty_library(3rdparty_mkl
+    INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
+    LIB_DIR      ${STATIC_MKL_LIB_DIR}
+    LIBRARIES    ${STATIC_MKL_LIBRARIES}
+)
+set(MKL_TARGET "3rdparty_mkl")
+add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
+message(STATUS "STATIC_MKL_INCLUDE_DIR: ${STATIC_MKL_INCLUDE_DIR}")
+message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
+message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
+if(UNIX)
+    target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
+    target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+elseif(MSVC)
+    target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")

@@ -18,5 +18,6 @@ interface of Open3D.
     kdtree
     icp_registration
     working_with_numpy
+    tensor
     jupyter
     azure_kinect

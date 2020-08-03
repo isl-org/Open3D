@@ -271,6 +271,7 @@ Window::Window(const std::string& title,
     style.WindowBorderSize = 0;
     style.FrameBorderSize = theme.border_width;
     style.FrameRounding = theme.border_radius;
+    style.ChildRounding = theme.border_radius;
     style.Colors[ImGuiCol_WindowBg] = colorToImgui(theme.background_color);
     style.Colors[ImGuiCol_Text] = colorToImgui(theme.text_color);
     style.Colors[ImGuiCol_Border] = colorToImgui(theme.border_color);
@@ -407,6 +408,14 @@ void Window::SetTitle(const char* title) {
 //       after MakeDrawContextCurrent() has been called), otherwise
 //       ImGUI won't be able to access the font.
 Size Window::CalcPreferredSize() {
+    // If we don't have any children--unlikely, but might happen when you're
+    // experimenting and just create an empty window to see if you understand
+    // how to config the library--return a non-zero size, since a size of (0, 0)
+    // will end up with a crash.
+    if (impl_->children_.empty()) {
+        return Size(640 * impl_->imgui_.scaling, 480 * impl_->imgui_.scaling);
+    }
+
     Rect bbox(0, 0, 0, 0);
     for (auto& child : impl_->children_) {
         auto pref = child->CalcPreferredSize(GetTheme());

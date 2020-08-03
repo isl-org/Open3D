@@ -24,51 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/ProgressBar.h"
+#include "pybind/core/core.h"
+#include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 
-#include <imgui.h>
-#include <cmath>
-
-#include "open3d/visualization/gui/Theme.h"
-#include "open3d/visualization/gui/Util.h"
+#include "open3d/core/kernel/Kernel.h"
 
 namespace open3d {
-namespace visualization {
-namespace gui {
 
-struct ProgressBar::Impl {
-    float value_ = 0.0f;
-};
-
-ProgressBar::ProgressBar() : impl_(new ProgressBar::Impl()) {}
-
-ProgressBar::~ProgressBar() {}
-
-/// ProgressBar values ranges from 0.0 (incomplete) to 1.0 (complete)
-void ProgressBar::SetValue(float value) { impl_->value_ = value; }
-
-float ProgressBar::GetValue() const { return impl_->value_; }
-
-Size ProgressBar::CalcPreferredSize(const Theme& theme) const {
-    return Size(Widget::DIM_GROW, 0.25 * theme.font_size);
+void pybind_core_kernel(py::module &m) {
+    py::module m_kernel = m.def_submodule("kernel");
+    m_kernel.def("test_mkl_integration", &core::kernel::TestMKLIntegration);
 }
 
-Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {
-    auto& frame = GetFrame();
-    auto fg = context.theme.border_color;
-    auto color = colorToImguiRGBA(fg);
-    float rounding = frame.height / 2.0f;
-    ImGui::GetWindowDrawList()->AddRect(
-            ImVec2(frame.x, frame.y),
-            ImVec2(frame.GetRight(), frame.GetBottom()), color, rounding);
-    float x = float(frame.x) + float(frame.width) * impl_->value_;
-    x = std::max(x, float(frame.x + rounding));
-    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(frame.x, frame.y),
-                                              ImVec2(x, frame.GetBottom()),
-                                              color, frame.height / 2.0f);
-    return DrawResult::NONE;
-}
-
-}  // namespace gui
-}  // namespace visualization
 }  // namespace open3d
