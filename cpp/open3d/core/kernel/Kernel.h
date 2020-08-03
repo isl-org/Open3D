@@ -31,3 +31,13 @@
 #include "open3d/core/kernel/NonZero.h"
 #include "open3d/core/kernel/Reduction.h"
 #include "open3d/core/kernel/UnaryEW.h"
+
+namespace open3d {
+namespace core {
+namespace kernel {
+
+void TestMKLIntegration();
+
+}  // namespace kernel
+}  // namespace core
+}  // namespace open3d
