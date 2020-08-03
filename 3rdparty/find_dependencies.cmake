@@ -862,6 +862,7 @@ endif()
 if(BUILD_RPC_INTERFACE)
     include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
     import_3rdparty_library(3rdparty_zeromq 
+        PUBLIC
         INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS} 
         LIB_DIR ${ZEROMQ_LIB_DIR}
         LIBRARIES ${ZEROMQ_LIBRARIES}
@@ -872,6 +873,7 @@ if(BUILD_RPC_INTERFACE)
 
     include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
     import_3rdparty_library(3rdparty_msgpack 
+        PUBLIC
         INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
         )
     set(MSGPACK_TARGET "3rdparty_msgpack")
