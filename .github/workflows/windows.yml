@@ -42,6 +42,7 @@ jobs:
         cmake --build . --config ${{ matrix.config }} && .\${{ matrix.config }}\TestVisualizer.exe
     - name: Install Python package
       run: |
+        cd build
         cmake --build . --config ${{ matrix.config }} --target install-pip-package
     - name: Import python package
       # If shared == ON, Open3D.dll needs to be copied, which is not recommended for python.
