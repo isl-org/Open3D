@@ -48,19 +48,19 @@ struct Material {
 
     float point_size = 3.f;
 
-    std::shared_ptr<open3d::geometry::Image> albedo_img;
-    std::shared_ptr<open3d::geometry::Image> normal_img;
-    std::shared_ptr<open3d::geometry::Image> ao_img;
-    std::shared_ptr<open3d::geometry::Image> metallic_img;
-    std::shared_ptr<open3d::geometry::Image> roughness_img;
-    std::shared_ptr<open3d::geometry::Image> reflectance_img;
-    std::shared_ptr<open3d::geometry::Image> clearcoat_img;
-    std::shared_ptr<open3d::geometry::Image> clearcoat_roughness_img;
-    std::shared_ptr<open3d::geometry::Image> anisotropy_img;
+    std::shared_ptr<geometry::Image> albedo_img;
+    std::shared_ptr<geometry::Image> normal_img;
+    std::shared_ptr<geometry::Image> ao_img;
+    std::shared_ptr<geometry::Image> metallic_img;
+    std::shared_ptr<geometry::Image> roughness_img;
+    std::shared_ptr<geometry::Image> reflectance_img;
+    std::shared_ptr<geometry::Image> clearcoat_img;
+    std::shared_ptr<geometry::Image> clearcoat_roughness_img;
+    std::shared_ptr<geometry::Image> anisotropy_img;
 
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
-    std::unordered_map<std::string, open3d::geometry::Image> generic_imgs;
+    std::unordered_map<std::string, geometry::Image> generic_imgs;
 
     std::string shader;
 };

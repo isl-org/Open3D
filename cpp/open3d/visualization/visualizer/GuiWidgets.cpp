@@ -39,7 +39,6 @@ gui::Size SmallButton::CalcPreferredSize(const gui::Theme &theme) const {
     return gui::Size(size.width - em, 1.2 * em);
 }
 
-//----
 SmallToggleButton::SmallToggleButton(const char *title) : SmallButton(title) {
     SetToggleable(true);
 }

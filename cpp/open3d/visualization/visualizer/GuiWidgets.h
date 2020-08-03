@@ -40,7 +40,6 @@ public:
     gui::Size CalcPreferredSize(const gui::Theme &theme) const override;
 };
 
-//----
 class SmallToggleButton : public SmallButton {
     using Super = SmallButton;
 

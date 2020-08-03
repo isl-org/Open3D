@@ -131,11 +131,6 @@ void pybind_rendering_classes(py::module &m) {
                                   const Material &)) &
                          Scene::AddGeometry,
                  "Adds a Geometry with a material to the scene")
-            //        .def("add_geometry",
-            //             (bool (Scene::AddGeometry*)(const std::string&, const
-            //             geometry::Geometry3D&, const
-            //             Model&))&Scene::AddGeometry, "Adds a Geometry with a
-            //             model to the scene")
             .def("enable_indirect_light", &Scene::EnableIndirectLight,
                  "Enables or disables indirect lighting")
             .def("set_indirect_light", &Scene::SetIndirectLight,
