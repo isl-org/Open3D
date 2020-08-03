@@ -54,11 +54,11 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/gui/Window.h"
-
-// These are temporary until visualization::rendering gets bindings
+#include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
 
 using namespace open3d::visualization::gui;
+using namespace open3d::visualization::rendering;
 
 namespace open3d {
 
@@ -130,8 +130,11 @@ void pybind_gui_classes(py::module &m) {
                  "Adds the window to the application")
             .def("remove_window", &Application::AddWindow,
                  "Removes the window from the application, closing it. If "
-                 "there are no open windows left the event loop will exit.");
-    ;
+                 "there are no open windows left the event loop will exit.")
+            .def_property_readonly("resource_path",
+                                   &Application::GetResourcePath,
+                                   "Returns a string with the path to the "
+                                   "resources directory");
 
     // ---- Window ----
     class PyWindow : public Window {
@@ -238,7 +241,10 @@ void pybind_gui_classes(py::module &m) {
                  "Closes the current dialog")
             .def("show_message_box", &PyWindow::ShowMessageBox,
                  "Displays a simple dialog with a title and message and okay "
-                 "button");
+                 "button")
+            .def_property_readonly(
+                    "renderer", &PyWindow::GetRenderer,
+                    "Gets the rendering.Renderer object for the Window");
 
     // ---- Menu ----
     py::class_<Menu, std::shared_ptr<Menu>> menu(
@@ -319,15 +325,12 @@ void pybind_gui_classes(py::module &m) {
                           "(read-only)");
 
     // ---- Rect ----
-    py::class_<Rect, std::shared_ptr<Rect>> rect(m, "Rect",
-                                                 "Represents a widget frame");
+    py::class_<Rect> rect(m, "Rect", "Represents a widget frame");
     rect.def(py::init<>())
-            .def(py::init([](int x, int y, int w, int h) {
-                return new Rect(x, y, w, h);
-            }))
+            .def(py::init<int, int, int, int>())
             .def(py::init([](float x, float y, float w, float h) {
-                return new Rect(int(std::round(x)), int(std::round(y)),
-                                int(std::round(w)), int(std::round(h)));
+                return Rect(int(std::round(x)), int(std::round(y)),
+                            int(std::round(w)), int(std::round(h)));
             }))
             .def_readwrite("x", &Rect::x)
             .def_readwrite("y", &Rect::y)
@@ -337,6 +340,16 @@ void pybind_gui_classes(py::module &m) {
             .def("get_right", &Rect::GetRight)
             .def("get_top", &Rect::GetTop)
             .def("get_bottom", &Rect::GetBottom);
+
+    // ---- Size ----
+    py::class_<Size> size(m, "Size", "Size object");
+    size.def(py::init<>())
+            .def(py::init<int, int>())
+            .def(py::init([](float w, float h) {
+                return Size(int(std::round(w)), int(std::round(h)));
+            }))
+            .def_readwrite("width", &Size::width)
+            .def_readwrite("height", &Size::height);
 
     // ---- Widget ----
     py::class_<Widget, std::shared_ptr<Widget>> widget(m, "Widget",
@@ -359,7 +372,13 @@ void pybind_gui_classes(py::module &m) {
             .def_property("visible", &Widget::IsVisible, &Widget::SetVisible,
                           "True if widget is visible, False otherwise")
             .def_property("enabled", &Widget::IsEnabled, &Widget::SetEnabled,
-                          "True if widget is enabled, False if disabled");
+                          "True if widget is enabled, False if disabled")
+            .def("calc_preferred_size", &Widget::CalcPreferredSize,
+                 "Returns the preferred size of the widget. This is intended "
+                 "to be called only during layout, although it will also work "
+                 "during drawing. Calling it at other times will not work, as "
+                 "it requires some internal setup in order to function "
+                 "properly");
 
     // ---- Button ----
     py::class_<Button, std::shared_ptr<Button>, Widget> button(m, "Button",
@@ -626,18 +645,35 @@ void pybind_gui_classes(py::module &m) {
     // ---- SceneWidget ----
     py::class_<SceneWidget, std::shared_ptr<SceneWidget>, Widget> scene(
             m, "SceneWidget", "Displays 3D content");
-    scene.def(py::init<>([](std::shared_ptr<PyWindow> w) {
-             auto scene_id = w->GetRenderer().CreateScene();
-             // Memory leak is intentional: this is a placeholder until
-             // rendering refactor has been completed. To minimize changes,
-             // just leak this scene; after the refactor this will be done
-             // properly.
-             auto *scene =
-                     new SceneWidget(*w->GetRenderer().GetScene(scene_id));
-             return std::shared_ptr<SceneWidget>(scene);
-         }))
+    py::enum_<SceneWidget::Controls> scene_ctrl(scene, "Controls",
+                                                py::arithmetic());
+    // Trick to write docs without listing the members in the enum class again.
+    scene_ctrl.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Enum class describing mouse interaction.";
+            }),
+            py::none(), py::none(), "");
+    scene_ctrl.value("ROTATE_CAMERA", SceneWidget::Controls::ROTATE_CAMERA)
+            .value("FLY", SceneWidget::Controls::FLY)
+            .value("ROTATE_SUN", SceneWidget::Controls::ROTATE_SUN)
+            .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)
+            .value("ROTATE_MODEL", SceneWidget::Controls::ROTATE_MODEL)
+            .export_values();
+
+    scene.def(py::init<>(),
+              "Creates an empty SceneWidget. Assign a Scene with the 'scene' "
+              "property")
+            .def_property(
+                    "scene", &SceneWidget::GetScene, &SceneWidget::SetScene,
+                    "The rendering.Open3DScene that the SceneWidget renders")
             .def("set_background_color", &SceneWidget::SetBackgroundColor,
-                 "Sets the background color of the widget");
+                 "Sets the background color of the widget")
+            .def("set_view_controls", &SceneWidget::SetViewControls,
+                 "Sets mouse interaction, e.g. ROTATE_OBJ")
+            .def("setup_camera", &SceneWidget::SetupCamera,
+                 "Configure the camera: setup_camera(field_of_view, "
+                 "model_bounds, "
+                 "center_of_rotation)");
 
     // ---- Slider ----
     py::class_<Slider, std::shared_ptr<Slider>, Widget> slider(
@@ -874,9 +910,8 @@ void pybind_gui_classes(py::module &m) {
                  "spacing"_a = 0.0f, "margins"_a = Margins(),
                  "Creates a layout that arranges widgets vertically, top to "
                  "bottom, making their width equal to the layout's width. "
-                 "First "
-                 "argument is the spacing between widgets, the second is the "
-                 "margins. Both default to 0.");
+                 "First argument is the spacing between widgets, the second "
+                 "is the margins. Both default to 0.");
 
     // ---- CollapsableVert ----
     py::class_<CollapsableVert, std::shared_ptr<CollapsableVert>, Vert>
@@ -891,10 +926,9 @@ void pybind_gui_classes(py::module &m) {
                  "text"_a, "spacing"_a = 0, "margins"_a = Margins(),
                  "Creates a layout that arranges widgets vertically, top to "
                  "bottom, making their width equal to the layout's width. "
-                 "First "
-                 "argument is the heading text, the second is the spacing "
-                 "between widgets, and the third is the margins. Both the "
-                 "spacing and the margins default to 0.")
+                 "First argument is the heading text, the second is the "
+                 "spacing between widgets, and the third is the margins. "
+                 "Both the spacing and the margins default to 0.")
             .def(py::init([](const char *text, float spacing,
                              const Margins &margins) {
                      return new CollapsableVert(text, int(std::round(spacing)),
@@ -903,15 +937,13 @@ void pybind_gui_classes(py::module &m) {
                  "text"_a, "spacing"_a = 0.0f, "margins"_a = Margins(),
                  "Creates a layout that arranges widgets vertically, top to "
                  "bottom, making their width equal to the layout's width. "
-                 "First "
-                 "argument is the heading text, the second is the spacing "
-                 "between widgets, and the third is the margins. Both the "
-                 "spacing and the margins default to 0.")
+                 "First argument is the heading text, the second is the "
+                 "spacing between widgets, and the third is the margins. "
+                 "Both the spacing and the margins default to 0.")
             .def("set_is_open", &CollapsableVert::SetIsOpen,
                  "Sets to collapsed (False) or open (True). Requires a call to "
                  "Window.SetNeedsLayout() afterwards, unless calling before "
-                 "window "
-                 "is visible");
+                 "window is visible");
 
     // ---- Horiz ----
     py::class_<Horiz, std::shared_ptr<Horiz>, Layout1D> hlayout(
@@ -922,20 +954,18 @@ void pybind_gui_classes(py::module &m) {
                 "spacing"_a = 0, "margins"_a = Margins(),
                 "Creates a layout that arranges widgets vertically, left to "
                 "right, making their height equal to the layout's height "
-                "(which "
-                "will generally be the largest height of the items). First "
-                "argument is the spacing between widgets, the second is the "
-                "margins. Both default to 0.")
+                "(which will generally be the largest height of the items). "
+                "First argument is the spacing between widgets, the second "
+                "is the margins. Both default to 0.")
             .def(py::init([](float spacing, const Margins &margins) {
                      return new Horiz(int(std::round(spacing)), margins);
                  }),
                  "spacing"_a = 0.0f, "margins"_a = Margins(),
                  "Creates a layout that arranges widgets vertically, left to "
                  "right, making their height equal to the layout's height "
-                 "(which "
-                 "will generally be the largest height of the items). First "
-                 "argument is the spacing between widgets, the second is the "
-                 "margins. Both default to 0.");
+                 "(which will generally be the largest height of the items). "
+                 "First argument is the spacing between widgets, the second "
+                 "is the margins. Both default to 0.");
 
     // ---- VGrid ----
     py::class_<VGrid, std::shared_ptr<VGrid>, Widget> vgrid(m, "VGrid",

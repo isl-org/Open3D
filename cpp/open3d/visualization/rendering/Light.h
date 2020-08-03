@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,40 +26,29 @@
 
 #pragma once
 
-#include "open3d/visualization/rendering/MatrixInteractorLogic.h"
-
-#include "open3d/visualization/rendering/RendererHandle.h"
+#include <Eigen/Geometry>
+#include <cmath>
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class Scene;
+struct Light {
+    enum eLightType { POINT, SPOT, DIRECTIONAL };
 
-class IBLRotationInteractorLogic : public MatrixInteractorLogic {
-    using Super = MatrixInteractorLogic;
+    // common light parameters
+    Eigen::Vector3f color = Eigen::Vector3f(1.f, 1.f, 1.f);
+    Eigen::Vector3f position = Eigen::Vector3f(0.f, 0.f, 0.f);
+    eLightType type = POINT;
+    float intensity = 10000.f;
+    float falloff = 10.f;
+    bool cast_shadows = false;
 
-public:
-    IBLRotationInteractorLogic(Scene* scene, Camera* camera);
+    Eigen::Vector3f direction = Eigen::Vector3f(0.f, 0.f, -1.f);
 
-    void Rotate(int dx, int dy) override;
-    void RotateZ(int dx, int dy) override;
-
-    void ShowSkybox(bool is_on);
-
-    void StartMouseDrag();
-    void UpdateMouseDragUI();
-    void EndMouseDrag();
-
-    Camera::Transform GetCurrentRotation() const;
-
-private:
-    Scene* scene_;
-    Camera* camera_;
-    bool skybox_is_normally_on_ = false;
-    Camera::Transform ibl_rotation_at_mouse_down_;
-
-    void ClearUI();
+    // Spot lights parameters
+    float light_cone_inner = M_PI / 4.f;
+    float light_cone_outer = M_PI / 2.f;
 };
 
 }  // namespace rendering

@@ -26,42 +26,26 @@
 
 #pragma once
 
-#include "open3d/visualization/rendering/MatrixInteractorLogic.h"
-
-#include "open3d/visualization/rendering/RendererHandle.h"
+#include "open3d/visualization/gui/Button.h"
 
 namespace open3d {
 namespace visualization {
-namespace rendering {
 
-class Scene;
-
-class IBLRotationInteractorLogic : public MatrixInteractorLogic {
-    using Super = MatrixInteractorLogic;
+class SmallButton : public gui::Button {
+    using Super = Button;
 
 public:
-    IBLRotationInteractorLogic(Scene* scene, Camera* camera);
+    explicit SmallButton(const char *title);
 
-    void Rotate(int dx, int dy) override;
-    void RotateZ(int dx, int dy) override;
-
-    void ShowSkybox(bool is_on);
-
-    void StartMouseDrag();
-    void UpdateMouseDragUI();
-    void EndMouseDrag();
-
-    Camera::Transform GetCurrentRotation() const;
-
-private:
-    Scene* scene_;
-    Camera* camera_;
-    bool skybox_is_normally_on_ = false;
-    Camera::Transform ibl_rotation_at_mouse_down_;
-
-    void ClearUI();
+    gui::Size CalcPreferredSize(const gui::Theme &theme) const override;
 };
 
-}  // namespace rendering
+class SmallToggleButton : public SmallButton {
+    using Super = SmallButton;
+
+public:
+    explicit SmallToggleButton(const char *title);
+};
+
 }  // namespace visualization
 }  // namespace open3d

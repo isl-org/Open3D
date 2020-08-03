@@ -26,42 +26,61 @@
 
 #pragma once
 
-#include "open3d/visualization/rendering/MatrixInteractorLogic.h"
+#include "open3d/visualization/gui/Layout.h"
 
-#include "open3d/visualization/rendering/RendererHandle.h"
+#include <functional>
+#include <memory>
 
 namespace open3d {
+
 namespace visualization {
-namespace rendering {
 
-class Scene;
+namespace gui {
+class Button;
+class Checkbox;
+class Combobox;
+class ColorEdit;
+class CollapsableVert;
+class Slider;
+class VectorEdit;
+}  // namespace gui
 
-class IBLRotationInteractorLogic : public MatrixInteractorLogic {
-    using Super = MatrixInteractorLogic;
+class GuiSettingsModel;
 
+class GuiSettingsView : public gui::Vert {
 public:
-    IBLRotationInteractorLogic(Scene* scene, Camera* camera);
+    GuiSettingsView(GuiSettingsModel& model,
+                    const gui::Theme& theme,
+                    const std::string& resource_path,
+                    std::function<void(const char*)> on_load_ibl);
 
-    void Rotate(int dx, int dy) override;
-    void RotateZ(int dx, int dy) override;
-
-    void ShowSkybox(bool is_on);
-
-    void StartMouseDrag();
-    void UpdateMouseDragUI();
-    void EndMouseDrag();
-
-    Camera::Transform GetCurrentRotation() const;
+    void ShowFileMaterialEntry(bool show);
+    void Update();
 
 private:
-    Scene* scene_;
-    Camera* camera_;
-    bool skybox_is_normally_on_ = false;
-    Camera::Transform ibl_rotation_at_mouse_down_;
+    GuiSettingsModel& model_;
+    std::function<void(const char*)> on_load_ibl_;
 
-    void ClearUI();
+    std::shared_ptr<gui::Combobox> lighting_profile_;
+    std::shared_ptr<gui::Checkbox> show_axes_;
+    std::shared_ptr<gui::ColorEdit> bg_color_;
+    std::shared_ptr<gui::Checkbox> show_skybox_;
+
+    std::shared_ptr<gui::CollapsableVert> advanced_;
+    std::shared_ptr<gui::Checkbox> ibl_enabled_;
+    std::shared_ptr<gui::Checkbox> sun_enabled_;
+    std::shared_ptr<gui::Combobox> ibls_;
+    std::shared_ptr<gui::Slider> ibl_intensity_;
+    std::shared_ptr<gui::Slider> sun_intensity_;
+    std::shared_ptr<gui::VectorEdit> sun_dir_;
+    std::shared_ptr<gui::ColorEdit> sun_color_;
+
+    std::shared_ptr<gui::Combobox> material_type_;
+    std::shared_ptr<gui::Combobox> prefab_material_;
+    std::shared_ptr<gui::ColorEdit> material_color_;
+    std::shared_ptr<gui::Button> reset_material_color_;
+    std::shared_ptr<gui::Slider> point_size_;
 };
 
-}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

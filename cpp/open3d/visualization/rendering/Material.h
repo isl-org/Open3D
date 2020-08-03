@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,40 +26,43 @@
 
 #pragma once
 
-#include "open3d/visualization/rendering/MatrixInteractorLogic.h"
+#include <Eigen/Core>
+#include <string>
+#include <unordered_map>
 
-#include "open3d/visualization/rendering/RendererHandle.h"
+#include "open3d/geometry/Image.h"
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class Scene;
+struct Material {
+    // PBR Material properties and maps
+    Eigen::Vector4f base_color = Eigen::Vector4f(1.f, 1.f, 1.f, 1.f);
+    float base_metallic = 0.f;
+    float base_roughness = 1.f;
+    float base_reflectance = 0.5f;
+    float base_clearcoat = 0.f;
+    float base_clearcoat_roughness = 0.f;
+    float base_anisotropy = 0.f;
 
-class IBLRotationInteractorLogic : public MatrixInteractorLogic {
-    using Super = MatrixInteractorLogic;
+    float point_size = 3.f;
 
-public:
-    IBLRotationInteractorLogic(Scene* scene, Camera* camera);
+    std::shared_ptr<geometry::Image> albedo_img;
+    std::shared_ptr<geometry::Image> normal_img;
+    std::shared_ptr<geometry::Image> ao_img;
+    std::shared_ptr<geometry::Image> metallic_img;
+    std::shared_ptr<geometry::Image> roughness_img;
+    std::shared_ptr<geometry::Image> reflectance_img;
+    std::shared_ptr<geometry::Image> clearcoat_img;
+    std::shared_ptr<geometry::Image> clearcoat_roughness_img;
+    std::shared_ptr<geometry::Image> anisotropy_img;
 
-    void Rotate(int dx, int dy) override;
-    void RotateZ(int dx, int dy) override;
+    // Generic material properties
+    std::unordered_map<std::string, Eigen::Vector4f> generic_params;
+    std::unordered_map<std::string, geometry::Image> generic_imgs;
 
-    void ShowSkybox(bool is_on);
-
-    void StartMouseDrag();
-    void UpdateMouseDragUI();
-    void EndMouseDrag();
-
-    Camera::Transform GetCurrentRotation() const;
-
-private:
-    Scene* scene_;
-    Camera* camera_;
-    bool skybox_is_normally_on_ = false;
-    Camera::Transform ibl_rotation_at_mouse_down_;
-
-    void ClearUI();
+    std::string shader;
 };
 
 }  // namespace rendering

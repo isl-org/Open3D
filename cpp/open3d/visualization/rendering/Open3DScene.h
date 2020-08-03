@@ -26,40 +26,58 @@
 
 #pragma once
 
-#include "open3d/visualization/rendering/MatrixInteractorLogic.h"
-
-#include "open3d/visualization/rendering/RendererHandle.h"
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/visualization/rendering/Renderer.h"
 
 namespace open3d {
+
+namespace geometry {
+class Geometry3D;
+}  // namespace geometry
+
 namespace visualization {
 namespace rendering {
 
-class Scene;
+class Camera;
+struct Material;
 
-class IBLRotationInteractorLogic : public MatrixInteractorLogic {
-    using Super = MatrixInteractorLogic;
-
+class Open3DScene {
 public:
-    IBLRotationInteractorLogic(Scene* scene, Camera* camera);
+    Open3DScene(Renderer& renderer);
+    ~Open3DScene();
 
-    void Rotate(int dx, int dy) override;
-    void RotateZ(int dx, int dy) override;
+    ViewHandle CreateView();
+    void DestroyView(ViewHandle view);
+    View* GetView(ViewHandle view) const;
 
-    void ShowSkybox(bool is_on);
+    void ShowSkybox(bool enable);
+    void ShowAxes(bool enable);
 
-    void StartMouseDrag();
-    void UpdateMouseDragUI();
-    void EndMouseDrag();
+    void ClearGeometry();
+    void AddGeometry(std::shared_ptr<const geometry::Geometry3D> geom,
+                     const Material& mat,
+                     bool add_downsampled_copy_for_fast_rendering = true);
+    void UpdateMaterial(const Material& mat);
 
-    Camera::Transform GetCurrentRotation() const;
+    enum class LOD {
+        HIGH_DETAIL,  // used when rendering time is not as important
+        FAST,         // used when rendering time is important, like rotating
+    };
+    void SetLOD(LOD lod);
+    LOD GetLOD() const;
+
+    Scene* GetScene() const;
+    Camera* GetCamera() const;
 
 private:
-    Scene* scene_;
-    Camera* camera_;
-    bool skybox_is_normally_on_ = false;
-    Camera::Transform ibl_rotation_at_mouse_down_;
+    Renderer& renderer_;
+    SceneHandle scene_;
+    ViewHandle view_;
 
-    void ClearUI();
+    LOD lod_ = LOD::HIGH_DETAIL;
+    std::string model_name_;
+    std::string fast_model_name_;
+    geometry::AxisAlignedBoundingBox bounds_;
 };
 
 }  // namespace rendering

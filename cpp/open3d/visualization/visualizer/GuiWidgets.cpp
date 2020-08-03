@@ -24,44 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/visualization/visualizer/GuiWidgets.h"
 
-#include "open3d/visualization/rendering/MatrixInteractorLogic.h"
-
-#include "open3d/visualization/rendering/RendererHandle.h"
+#include "open3d/visualization/gui/Theme.h"
 
 namespace open3d {
 namespace visualization {
-namespace rendering {
 
-class Scene;
+SmallButton::SmallButton(const char *title) : gui::Button(title) {}
 
-class IBLRotationInteractorLogic : public MatrixInteractorLogic {
-    using Super = MatrixInteractorLogic;
+gui::Size SmallButton::CalcPreferredSize(const gui::Theme &theme) const {
+    auto em = theme.font_size;
+    auto size = Super::CalcPreferredSize(theme);
+    return gui::Size(size.width - em, 1.2 * em);
+}
 
-public:
-    IBLRotationInteractorLogic(Scene* scene, Camera* camera);
+SmallToggleButton::SmallToggleButton(const char *title) : SmallButton(title) {
+    SetToggleable(true);
+}
 
-    void Rotate(int dx, int dy) override;
-    void RotateZ(int dx, int dy) override;
-
-    void ShowSkybox(bool is_on);
-
-    void StartMouseDrag();
-    void UpdateMouseDragUI();
-    void EndMouseDrag();
-
-    Camera::Transform GetCurrentRotation() const;
-
-private:
-    Scene* scene_;
-    Camera* camera_;
-    bool skybox_is_normally_on_ = false;
-    Camera::Transform ibl_rotation_at_mouse_down_;
-
-    void ClearUI();
-};
-
-}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
