@@ -498,7 +498,7 @@ float Window::GetScaling() const {
 // returns the scale factor needed so that your fonts and icons and sizes
 // are correct. This is not the same thing as Apple does.
 #if __APPLE__
-    return GetGLFWScaling();
+    return GetScalingGLFW(impl_->window_);
 #else
     return 1.0f;
 #endif  // __APPLE__
