@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "lapack-netlib/LAPACKE/include/lapacke.h"
+#include <mkl.h>
 
 #ifdef BUILD_CUDA_MODULE
 #include <cublas_v2.h>
@@ -37,36 +37,44 @@
 namespace open3d {
 namespace core {
 template <typename scalar_t>
-void getrf_cpu(
-        int layout, int m, int n, scalar_t* A_data, int lda, int* ipiv_data);
+void getrf_cpu(int layout,
+               MKL_INT m,
+               MKL_INT n,
+               scalar_t* A_data,
+               MKL_INT lda,
+               MKL_INT* ipiv_data);
 
 template <typename scalar_t>
-void getri_cpu(int layout, int n, scalar_t* A_data, int lda, int* ipiv_data);
+void getri_cpu(int layout,
+               MKL_INT n,
+               scalar_t* A_data,
+               MKL_INT lda,
+               MKL_INT* ipiv_data);
 
 template <typename scalar_t>
 void gels_cpu(int matrix_layout,
               char trans,
-              int m,
-              int n,
-              int nrhs,
+              MKL_INT m,
+              MKL_INT n,
+              MKL_INT nrhs,
               scalar_t* A_data,
-              int lda,
+              MKL_INT lda,
               scalar_t* B_data,
-              int ldb);
+              MKL_INT ldb);
 
 template <typename scalar_t>
 void gesvd_cpu(int matrix_layout,
                char jobu,
                char jobvt,
-               int m,
-               int n,
+               MKL_INT m,
+               MKL_INT n,
                scalar_t* A_data,
-               int lda,
+               MKL_INT lda,
                scalar_t* S_data,
                scalar_t* U_data,
-               int ldu,
+               MKL_INT ldu,
                scalar_t* VT_data,
-               int ldvt,
+               MKL_INT ldvt,
                scalar_t* superb);
 
 #ifdef BUILD_CUDA_MODULE

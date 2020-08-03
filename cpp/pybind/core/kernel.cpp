@@ -24,31 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_sgesv_row.c.htm
-#include <stdio.h>
-#include <stdlib.h>
+#include "pybind/core/core.h"
+#include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 
-#include "open3d/core/linalg/LinalgUtils.h"
-#include "open3d/core/linalg/Solve.h"
-
-#include "open3d/core/linalg/LAPACK.h"
+#include "open3d/core/kernel/Kernel.h"
 
 namespace open3d {
-namespace core {
 
-void SolveCPU(void* A_data,
-              void* B_data,
-              int64_t m,
-              int64_t n,
-              int64_t k,
-              Dtype dtype,
-              const Device& device) {
-    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        gels_cpu<scalar_t>(LAPACK_COL_MAJOR, 'N', m, n, k,
-                           static_cast<scalar_t*>(A_data), m,
-                           static_cast<scalar_t*>(B_data), std::max(m, n));
-    });
+void pybind_core_kernel(py::module &m) {
+    py::module m_kernel = m.def_submodule("kernel");
+    m_kernel.def("test_mkl_integration", &core::kernel::TestMKLIntegration);
 }
 
-}  // namespace core
 }  // namespace open3d

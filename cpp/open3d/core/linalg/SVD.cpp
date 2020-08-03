@@ -49,7 +49,7 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
         utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
     }
 
-    int m = A_shape[0], n = A_shape[1];
+    int64_t m = A_shape[0], n = A_shape[1];
     if (m < n) {
         utility::LogError("Only support m >= n, but got {} and {} matrix", m,
                           n);

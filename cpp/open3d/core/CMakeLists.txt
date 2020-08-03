@@ -9,6 +9,7 @@ set (KERNEL_SRC
     kernel/BinaryEWCPU.cpp
     kernel/Reduction.cpp
     kernel/ReductionCPU.cpp
+    kernel/Kernel.cpp
     )
 
 set (KERNEL_CUDA_SRC
@@ -44,6 +45,7 @@ set (CORE_SRC
     AdvancedIndexing.cpp
     ShapeUtil.cpp
     CUDAUtils.cpp
+    EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
@@ -85,13 +87,13 @@ if (BUILD_CUDA_MODULE)
 endif()
 
 # TODO: link these dynamic libraries in ${CMAKE_PROJECT_NAME}
-add_executable(TestMatmul linalg/TestMatmul.cpp)
-target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME})
-add_executable(TestSolve linalg/TestSolve.cpp)
-target_link_libraries(TestSolve ${CMAKE_PROJECT_NAME})
-add_executable(TestInverse linalg/TestInverse.cpp)
-target_link_libraries(TestInverse ${CMAKE_PROJECT_NAME})
-add_executable(TestSVD linalg/TestSVD.cpp)
-target_link_libraries(TestSVD ${CMAKE_PROJECT_NAME})
+# add_executable(TestMatmul linalg/TestMatmul.cpp)
+# target_link_libraries(TestMatmul ${CMAKE_PROJECT_NAME})
+# add_executable(TestSolve linalg/TestSolve.cpp)
+# target_link_libraries(TestSolve ${CMAKE_PROJECT_NAME})
+# add_executable(TestInverse linalg/TestInverse.cpp)
+# target_link_libraries(TestInverse ${CMAKE_PROJECT_NAME})
+# add_executable(TestSVD linalg/TestSVD.cpp)
+# target_link_libraries(TestSVD ${CMAKE_PROJECT_NAME})
 
 

@@ -46,9 +46,9 @@ namespace core {
 // Ref: https://docs.nvidia.com/cuda/cusolver/index.html#ormqr-example1
 void SolveCUDA(void* A_data,
                void* B_data,
-               int m,
-               int n,
-               int k,
+               int64_t m,
+               int64_t n,
+               int64_t k,
                Dtype dtype,
                const Device& device) {
     cusolverDnHandle_t cusolver_handle =

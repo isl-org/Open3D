@@ -40,8 +40,8 @@ void SVDCUDA(const void* A_data,
              void* S_data,
              void* VT_data,
              void* superb_data,
-             int m,
-             int n,
+             int64_t m,
+             int64_t n,
              Dtype dtype,
              const Device& device);
 #endif
@@ -51,8 +51,8 @@ void SVDCPU(const void* A_data,
             void* S_data,
             void* VT_data,
             void* superb_data,
-            int m,
-            int n,
+            int64_t m,
+            int64_t n,
             Dtype dtype,
             const Device& device);
 

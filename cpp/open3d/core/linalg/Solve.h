@@ -42,18 +42,18 @@ void Solve(const Tensor& A, const Tensor& B, Tensor& X);
 #ifdef BUILD_CUDA_MODULE
 void SolveCUDA(void* A_data,
                void* B_data,
-               int m,
-               int n,
-               int k,
+               int64_t m,
+               int64_t n,
+               int64_t k,
                Dtype dtype,
                const Device& device);
 #endif
 
 void SolveCPU(void* A_data,
               void* B_data,
-              int m,
-              int n,
-              int k,
+              int64_t m,
+              int64_t n,
+              int64_t k,
               Dtype dtype,
               const Device& device);
 

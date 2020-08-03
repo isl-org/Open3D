@@ -38,7 +38,7 @@ void Inverse(const Tensor& A, Tensor& output);
 void InverseCUDA(void* A_data,
                  void* ipiv_data,
                  void* output_data,
-                 int n,
+                 int64_t n,
                  Dtype dtype,
                  const Device& device);
 #endif
@@ -46,7 +46,7 @@ void InverseCUDA(void* A_data,
 void InverseCPU(void* A_data,
                 void* ipiv_data,
                 void* output_data,
-                int n,
+                int64_t n,
                 Dtype dtype,
                 const Device& device);
 

@@ -24,31 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_sgesv_row.c.htm
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "open3d/core/linalg/LinalgUtils.h"
-#include "open3d/core/linalg/Solve.h"
-
-#include "open3d/core/linalg/LAPACK.h"
+#include "open3d/core/EigenConverter.h"
 
 namespace open3d {
 namespace core {
+namespace eigen_converter {
 
-void SolveCPU(void* A_data,
-              void* B_data,
-              int64_t m,
-              int64_t n,
-              int64_t k,
-              Dtype dtype,
-              const Device& device) {
-    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        gels_cpu<scalar_t>(LAPACK_COL_MAJOR, 'N', m, n, k,
-                           static_cast<scalar_t*>(A_data), m,
-                           static_cast<scalar_t*>(B_data), std::max(m, n));
-    });
+Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor) {
+    // TODO: Tensor::To(dtype, device).
+    if (tensor.GetShape() != SizeVector{3}) {
+        utility::LogError("Tensor shape must be {3}, but got {}.",
+                          tensor.GetShape().ToString());
+    }
+    core::Tensor dtensor =
+            tensor.To(core::Dtype::Float64).Copy(core::Device("CPU:0"));
+    return Eigen::Vector3d(dtensor[0].Item<double>(), dtensor[1].Item<double>(),
+                           dtensor[2].Item<double>());
 }
 
+core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
+                                   core::Dtype dtype,
+                                   const core::Device &device) {
+    // The memory will be copied.
+    return core::Tensor(value.data(), {3}, core::Dtype::Float64, device)
+            .To(dtype);
+}
+
+}  // namespace eigen_converter
 }  // namespace core
 }  // namespace open3d

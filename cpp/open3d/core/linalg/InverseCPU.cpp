@@ -38,15 +38,15 @@ namespace core {
 void InverseCPU(void* A_data,
                 void* ipiv_data,
                 void* output_data,
-                int n,
+                int64_t n,
                 Dtype dtype,
                 const Device& device) {
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         getrf_cpu<scalar_t>(LAPACK_COL_MAJOR, n, n,
                             static_cast<scalar_t*>(A_data), n,
-                            static_cast<int*>(ipiv_data));
+                            static_cast<MKL_INT*>(ipiv_data));
         getri_cpu<scalar_t>(LAPACK_COL_MAJOR, n, static_cast<scalar_t*>(A_data),
-                            n, static_cast<int*>(ipiv_data));
+                            n, static_cast<MKL_INT*>(ipiv_data));
     });
 }
 

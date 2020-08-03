@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <bits/stdint-intn.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -38,7 +39,7 @@ namespace core {
 void InverseCUDA(void* A_data,
                  void* ipiv_data,
                  void* output_data,
-                 int n,
+                 int64_t n,
                  Dtype dtype,
                  const Device& device) {
     cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();

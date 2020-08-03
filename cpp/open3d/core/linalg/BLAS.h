@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <cblas.h>
+#include <mkl.h>
 
 #ifdef BUILD_CUDA_MODULE
 #include <cublas_v2.h>
@@ -34,6 +34,9 @@
 
 namespace open3d {
 namespace core {
+
+static_assert(sizeof(MKL_INT) == 8,
+              "Unsupported platform: long long int must be 8 bytes");
 
 template <typename scalar_t>
 void gemm_cpu(CBLAS_LAYOUT layout,

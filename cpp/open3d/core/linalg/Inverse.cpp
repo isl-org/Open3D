@@ -53,13 +53,14 @@ void Inverse(const Tensor &A, Tensor &output) {
                           A_shape[0], A_shape[1]);
     }
 
-    int n = A_shape[0];
+    int64_t n = A_shape[0];
 
     Tensor A_T = A.T().Contiguous();
     void *A_data = A_T.GetDataPtr();
 
     /// Pivot to shuffle during matrix factorization
-    Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, device);
+    Tensor ipiv = Tensor::Zeros({n}, Dtype::Int64, device);
+
     void *ipiv_data = ipiv.GetDataPtr();
 
     if (device.GetType() == Device::DeviceType::CUDA) {
