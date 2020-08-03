@@ -868,14 +868,14 @@ if(BUILD_RPC_INTERFACE)
     )
     set(ZEROMQ_TARGET "3rdparty_zeromq")
     add_dependencies( ${ZEROMQ_TARGET} ext_zeromq )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZEROMQ_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${ZEROMQ_TARGET}")
 
     include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
     import_3rdparty_library(3rdparty_msgpack 
         INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
         )
     set(MSGPACK_TARGET "3rdparty_msgpack")
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MSGPACK_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${MSGPACK_TARGET}")
 
     find_package(Boost REQUIRED)
     add_library(Boost_headers INTERFACE)
