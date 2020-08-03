@@ -24,22 +24,51 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
+#include "pybind/core/core.h"
+#include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
+#include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/Matmul.h"
+#include "open3d/core/linalg/SVD.h"
+#include "open3d/core/linalg/Solve.h"
+
 namespace open3d {
+void pybind_core_linalg(py::module &m) {
+    m.def("_matmul",
+          [](const core::Tensor &A, const core::Tensor &B) {
+              core::Tensor output;
+              core::Matmul(A, B, output);
+              return output;
+          },
+          "Function to perform matrix multiplication of two 2D tensors with "
+          "compatible shapes",
+          "A"_a, "B"_a);
 
-void pybind_core(py::module& m);
+    m.def("_inv",
+          [](const core::Tensor &A) {
+              core::Tensor output;
+              core::Inverse(A, output);
+              return output;
+          },
+          "Function to inverse a square 2D tensor", "A"_a);
 
-void pybind_cuda_utils(py::module& m);
-void pybind_core_blob(py::module& m);
-void pybind_core_dtype(py::module& m);
-void pybind_core_device(py::module& m);
-void pybind_core_size_vector(py::module& m);
-void pybind_core_tensor_key(py::module& m);
-void pybind_core_tensor(py::module& m);
-void pybind_core_tensorlist(py::module& m);
-void pybind_core_linalg(py::module& m);
+    m.def("_solve",
+          [](const core::Tensor &A, const core::Tensor &B) {
+              core::Tensor output;
+              core::Solve(A, B, output);
+              return output;
+          },
+          "Function to solve X for a linear system AX = B where A is a full "
+          "rank matrix",
+          "A"_a, "B"_a);
 
+    m.def("_svd",
+          [](const core::Tensor &A) {
+              core::Tensor U, S, VT;
+              core::SVD(A, U, S, VT);
+              return py::make_tuple(U, S, VT);
+          },
+          "Function to decompose A with A = U S VT", "A"_a);
+}
 }  // namespace open3d

@@ -7,6 +7,7 @@ from open3d.pybind.core import DtypeUtil
 from open3d.pybind.core import cuda
 from open3d.pybind.core import NoneType
 from open3d.pybind.core import TensorList
+from open3d.pybind.core import _matmul, _solve, _inv, _svd
 
 none = NoneType()
 
@@ -498,6 +499,34 @@ class Tensor(o3d.pybind.core.Tensor):
         else:
             return super(Tensor, self)._non_zero()
 
+    @cast_to_py_tensor
+    def matmul(self, value):
+        """
+        Linear algebra module's matmul operation
+        """
+        return _matmul(self, value)
+
+    @cast_to_py_tensor
+    def solve(self, value):
+        """
+        Linear algebra module's linear least squares (AX = B) solution
+        """
+        return _solve(self, value)
+
+    @cast_to_py_tensor
+    def inv(self):
+        """
+        Linear algebra module's inverse operation
+        """
+        return _inv(self)
+
+    @cast_to_py_tensor
+    def svd(self):
+        """
+        Linear algebra module's SVD decomposition
+        """
+        return _svd(self)
+
     def __add__(self, value):
         return self.add(value)
 
@@ -521,6 +550,9 @@ class Tensor(o3d.pybind.core.Tensor):
 
     def __rmul__(self, value):
         return self.mul(value)
+
+    def __matmul__(self, value):
+        return self.matmul(value)
 
     def __imul__(self, value):
         return self.mul_(value)

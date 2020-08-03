@@ -872,5 +872,9 @@ import_3rdparty_library(3rdparty_openblas
 set(OPENBLAS_TARGET "3rdparty_openblas")
 add_dependencies(3rdparty_openblas ext_openblas)
 # https://github.com/xianyi/OpenBLAS/issues/460
-target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads -lgfortran)
+if (BUILD_CUDA_MODULE)
+  target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads -lgfortran ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
+else()
+  target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads -lgfortran)
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
