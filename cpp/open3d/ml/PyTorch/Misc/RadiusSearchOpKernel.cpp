@@ -25,66 +25,12 @@
 // ----------------------------------------------------------------------------
 //
 
+#include "open3d/ml/PyTorch/Misc/NeighborSearchAllocator.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/RadiusSearch.h"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;
-
-namespace {
-template <class T>
-class OutputAllocator {
-public:
-    OutputAllocator(torch::Tensor& neighbors_index,
-                    torch::Tensor& neighbors_distance,
-                    torch::DeviceType device_type,
-                    int device_idx)
-        : neighbors_index(neighbors_index),
-          neighbors_distance(neighbors_distance),
-          device_type(device_type),
-          device_idx(device_idx) {}
-
-    void AllocIndices(int32_t** ptr, size_t num) {
-        neighbors_index = torch::empty(
-                {int64_t(num)}, torch::dtype(ToTorchDtype<int32_t>())
-                                        .device(device_type, device_idx));
-        *ptr = neighbors_index.data_ptr<int32_t>();
-    }
-
-    void AllocDistances(T** ptr, size_t num) {
-        neighbors_distance = torch::empty(
-                {int64_t(num)}, torch::dtype(ToTorchDtype<T>())
-                                        .device(device_type, device_idx));
-        *ptr = neighbors_distance.data_ptr<T>();
-    }
-
-private:
-    torch::Tensor& neighbors_index;
-    torch::Tensor& neighbors_distance;
-    torch::DeviceType device_type;
-    int device_idx;
-};
-
-template <class T>
-class OutputAllocatorTmp {
-public:
-    OutputAllocatorTmp() {}
-
-    void AllocIndices(int32_t** ptr, size_t num) {
-        index.resize(num);
-        *ptr = index.data();
-    }
-
-    void AllocDistances(T** ptr, size_t num) {
-        distance.resize(num);
-        *ptr = distance.data();
-    }
-
-    std::vector<int32_t> index;
-    std::vector<T> distance;
-};
-
-}  // namespace
 
 template <class T>
 void RadiusSearchCPU(const torch::Tensor& points,
@@ -100,9 +46,9 @@ void RadiusSearchCPU(const torch::Tensor& points,
                      torch::Tensor& neighbors_row_splits,
                      torch::Tensor& neighbors_distance) {
     const int batch_size = points_row_splits.size(0) - 1;
-    OutputAllocator<T> output_allocator(neighbors_index, neighbors_distance,
-                                        points.device().type(),
-                                        points.device().index());
+    NeighborSearchAllocator<T> output_allocator(
+            neighbors_index, neighbors_distance, points.device().type(),
+            points.device().index());
     if (batch_size == 1) {
         RadiusSearchCPU((int64_t*)neighbors_row_splits.data_ptr<int64_t>(),
                         points.size(0), points.data_ptr<T>(), queries.size(0),
@@ -111,7 +57,8 @@ void RadiusSearchCPU(const torch::Tensor& points,
                         normalize_distances, output_allocator);
     } else {
         // run radius search for each batch item
-        std::vector<OutputAllocatorTmp<T>> tmp_output_allocators(batch_size);
+        std::vector<NeighborSearchTempAllocator<T>> tmp_output_allocators(
+                batch_size);
         int64_t last_neighbors_count = 0;
         for (int i = 0; i < batch_size; ++i) {
             const T* const points_i =

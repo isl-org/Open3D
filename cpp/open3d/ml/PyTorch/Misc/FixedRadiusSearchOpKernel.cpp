@@ -25,46 +25,12 @@
 // ----------------------------------------------------------------------------
 //
 
+#include "open3d/ml/PyTorch/Misc/NeighborSearchAllocator.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/FixedRadiusSearch.h"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;
-
-namespace {
-template <class T>
-class OutputAllocator {
-public:
-    OutputAllocator(torch::Tensor& neighbors_index,
-                    torch::Tensor& neighbors_distance,
-                    torch::DeviceType device_type,
-                    int device_idx)
-        : neighbors_index(neighbors_index),
-          neighbors_distance(neighbors_distance),
-          device_type(device_type),
-          device_idx(device_idx) {}
-
-    void AllocIndices(int32_t** ptr, size_t num) {
-        neighbors_index = torch::empty(
-                {int64_t(num)}, torch::dtype(ToTorchDtype<int32_t>())
-                                        .device(device_type, device_idx));
-        *ptr = neighbors_index.data_ptr<int32_t>();
-    }
-
-    void AllocDistances(T** ptr, size_t num) {
-        neighbors_distance = torch::empty(
-                {int64_t(num)}, torch::dtype(ToTorchDtype<T>())
-                                        .device(device_type, device_idx));
-        *ptr = neighbors_distance.data_ptr<T>();
-    }
-
-private:
-    torch::Tensor& neighbors_index;
-    torch::Tensor& neighbors_distance;
-    torch::DeviceType device_type;
-    int device_idx;
-};
-}  // namespace
 
 template <class T>
 void FixedRadiusSearchCPU(const torch::Tensor& points,
@@ -81,9 +47,9 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
                           torch::Tensor& neighbors_index,
                           torch::Tensor& neighbors_row_splits,
                           torch::Tensor& neighbors_distance) {
-    OutputAllocator<T> output_allocator(neighbors_index, neighbors_distance,
-                                        points.device().type(),
-                                        points.device().index());
+    NeighborSearchAllocator<T> output_allocator(
+            neighbors_index, neighbors_distance, points.device().type(),
+            points.device().index());
 
     FixedRadiusSearchCPU(
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),

@@ -26,46 +26,12 @@
 //
 
 #include <ATen/cuda/CUDAContext.h>
+#include "open3d/ml/PyTorch/Misc/NeighborSearchAllocator.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;
-
-namespace {
-template <class T>
-class OutputAllocator {
-public:
-    OutputAllocator(torch::Tensor& neighbors_index,
-                    torch::Tensor& neighbors_distance,
-                    torch::DeviceType device_type,
-                    int device_idx)
-        : neighbors_index(neighbors_index),
-          neighbors_distance(neighbors_distance),
-          device_type(device_type),
-          device_idx(device_idx) {}
-
-    void AllocIndices(int32_t** ptr, size_t num) {
-        neighbors_index = torch::empty(
-                {int64_t(num)}, torch::dtype(ToTorchDtype<int32_t>())
-                                        .device(device_type, device_idx));
-        *ptr = neighbors_index.data_ptr<int32_t>();
-    }
-
-    void AllocDistances(T** ptr, size_t num) {
-        neighbors_distance = torch::empty(
-                {int64_t(num)}, torch::dtype(ToTorchDtype<T>())
-                                        .device(device_type, device_idx));
-        *ptr = neighbors_distance.data_ptr<T>();
-    }
-
-private:
-    torch::Tensor& neighbors_index;
-    torch::Tensor& neighbors_distance;
-    torch::DeviceType device_type;
-    int device_idx;
-};
-}  // namespace
 
 template <class T>
 void FixedRadiusSearchCUDA(const torch::Tensor& points,
@@ -89,8 +55,8 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     auto device = points.device().type();
     auto device_idx = points.device().index();
 
-    OutputAllocator<T> output_allocator(neighbors_index, neighbors_distance,
-                                        device, device_idx);
+    NeighborSearchAllocator<T> output_allocator(
+            neighbors_index, neighbors_distance, device, device_idx);
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
 
