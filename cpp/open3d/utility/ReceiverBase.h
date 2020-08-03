@@ -125,13 +125,13 @@ public:
 private:
     void Mainloop();
 
-    const std::string bind_address;
-    const int timeout;
-    zmq::socket_t socket;
-    std::thread thread;
-    std::mutex mutex;
-    bool keep_running;
-    std::atomic<bool> loop_running;
+    const std::string address_;
+    const int timeout_;
+    zmq::socket_t socket_;
+    std::thread thread_;
+    std::mutex mutex_;
+    bool keep_running_;
+    std::atomic<bool> loop_running_;
 };
 
 }  // namespace utility

@@ -34,8 +34,8 @@ std::shared_ptr<zmq::message_t> CreateStatusMessage(
     open3d::utility::messages::Reply reply{status.MsgId()};
     msgpack::pack(sbuf, reply);
     msgpack::pack(sbuf, status);
-    std::shared_ptr<zmq::message_t> msg = std::shared_ptr<zmq::message_t>(
-            new zmq::message_t(sbuf.data(), sbuf.size()));
+    std::shared_ptr<zmq::message_t> msg =
+            std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
 
     return msg;
 }
@@ -44,21 +44,21 @@ std::shared_ptr<zmq::message_t> CreateStatusMessage(
 namespace open3d {
 namespace utility {
 
-ReceiverBase::ReceiverBase(const std::string& bind_address, int timeout)
-    : bind_address(bind_address),
-      timeout(timeout),
-      keep_running(false),
-      loop_running(false) {}
+ReceiverBase::ReceiverBase(const std::string& address, int timeout)
+    : address_(address),
+      timeout_(timeout),
+      keep_running_(false),
+      loop_running_(false) {}
 
 ReceiverBase::~ReceiverBase() { Stop(); }
 
 void ReceiverBase::Start() {
-    const std::lock_guard<std::mutex> lock(mutex);
-    if (!keep_running) {
-        keep_running = true;
-        thread = std::thread(&ReceiverBase::Mainloop, this);
+    const std::lock_guard<std::mutex> lock(mutex_);
+    if (!keep_running_) {
+        keep_running_ = true;
+        thread_ = std::thread(&ReceiverBase::Mainloop, this);
         // wait for the loop to start running
-        while (!loop_running.load()) {
+        while (!loop_running_.load()) {
             std::this_thread::yield();
         };
 
@@ -71,14 +71,14 @@ void ReceiverBase::Start() {
 void ReceiverBase::Stop() {
     bool keep_running_old;
     {
-        const std::lock_guard<std::mutex> lock(mutex);
-        keep_running_old = keep_running;
+        const std::lock_guard<std::mutex> lock(mutex_);
+        keep_running_old = keep_running_;
         if (keep_running_old) {
-            keep_running = false;
+            keep_running_ = false;
         }
     }
     if (keep_running_old) {
-        thread.join();
+        thread_.join();
         LogDebug("ReceiverBase: stopped");
     } else {
         LogDebug("ReceiverBase: already stopped");
@@ -86,11 +86,11 @@ void ReceiverBase::Stop() {
 }
 
 void ReceiverBase::Mainloop() {
-    socket = zmq::socket_t(GetZMQContext(), ZMQ_REP);
+    socket_ = zmq::socket_t(GetZMQContext(), ZMQ_REP);
 
-    socket.setsockopt(ZMQ_LINGER, 1000);
-    socket.setsockopt(ZMQ_RCVTIMEO, 1000);
-    socket.setsockopt(ZMQ_SNDTIMEO, timeout);
+    socket_.setsockopt(ZMQ_LINGER, 1000);
+    socket_.setsockopt(ZMQ_RCVTIMEO, 1000);
+    socket_.setsockopt(ZMQ_SNDTIMEO, timeout_);
 
     auto limits = msgpack::unpack_limit(0xffffffff,  // array
                                         0xffffffff,  // map
@@ -100,21 +100,21 @@ void ReceiverBase::Mainloop() {
                                         100          // depth
     );
     try {
-        socket.bind(bind_address.c_str());
+        socket_.bind(address_.c_str());
     } catch (const zmq::error_t& err) {
         LogError("ReceiverBase::Mainloop: Failed to bind address, {}",
                  err.what());
     }
 
-    loop_running.store(true);
+    loop_running_.store(true);
     while (true) {
         {
-            const std::lock_guard<std::mutex> lock(mutex);
-            if (!keep_running) break;
+            const std::lock_guard<std::mutex> lock(mutex_);
+            if (!keep_running_) break;
         }
         try {
             zmq::message_t message;
-            if (!socket.recv(message)) {
+            if (!socket_.recv(message)) {
                 continue;
             }
 
@@ -168,7 +168,7 @@ void ReceiverBase::Mainloop() {
                 }
             }
             if (replies.size() == 1) {
-                socket.send(*replies[0]);
+                socket_.send(*replies[0]);
             } else {
                 size_t size = 0;
                 for (auto r : replies) {
@@ -180,15 +180,15 @@ void ReceiverBase::Mainloop() {
                     memcpy((char*)reply.data() + offset, r->data(), r->size());
                     offset += r->size();
                 }
-                socket.send(reply);
+                socket_.send(reply);
             }
         } catch (const zmq::error_t& err) {
             LogInfo("ReceiverBase::Mainloop: {}", err.what());
         }
     }
-    socket.close();
-    loop_running.store(false);
-}  // namespace utility
+    socket_.close();
+    loop_running_.store(false);
+}
 
 }  // namespace utility
 }  // namespace open3d

@@ -26,6 +26,7 @@
 
 #include "open3d/utility/RemoteFunctions.h"
 #include <Eigen/Geometry>
+#include "open3d/core/Dispatch.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -75,11 +76,11 @@ bool ReplyIsOKStatus(const zmq::message_t& msg, size_t& offset) {
     return false;
 }
 
-bool SetPointCloud(const open3d::geometry::PointCloud& pcd,
+bool SetPointCloud(const geometry::PointCloud& pcd,
                    const std::string& path,
                    int time,
                    const std::string& layer,
-                   std::shared_ptr<Connection> connection) {
+                   const std::shared_ptr<Connection>& connection) {
     // TODO use SetMeshData here after switching to the new PointCloud class.
     if (!pcd.HasPoints()) {
         LogInfo("SetMeshData: point cloud is empty");
@@ -108,19 +109,16 @@ bool SetPointCloud(const open3d::geometry::PointCloud& pcd,
     msgpack::pack(sbuf, request);
     msgpack::pack(sbuf, msg);
 
-    if (!connection) {
-        connection = std::make_shared<Connection>();
-    }
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }
 
-bool SetTriangleMesh(const open3d::geometry::TriangleMesh& mesh,
+bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
                      const std::string& path,
                      int time,
                      const std::string& layer,
-                     std::shared_ptr<Connection> connection) {
+                     const std::shared_ptr<Connection>& connection) {
     // TODO use SetMeshData here after switching to the new TriangleMesh class.
     if (!mesh.HasTriangles()) {
         LogInfo("SetMeshData: triangle mesh is empty");
@@ -186,28 +184,22 @@ bool SetTriangleMesh(const open3d::geometry::TriangleMesh& mesh,
     msgpack::pack(sbuf, request);
     msgpack::pack(sbuf, msg);
 
-    if (!connection) {
-        connection = std::make_shared<Connection>();
-    }
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }
 
-bool SetMeshData(
-        const open3d::core::Tensor& vertices,
-        const std::string& path,
-        int time,
-        const std::string& layer,
-        const std::map<std::string, open3d::core::Tensor>& vertex_attributes,
-        const open3d::core::Tensor& faces,
-        const std::map<std::string, open3d::core::Tensor>& face_attributes,
-        const open3d::core::Tensor& lines,
-        const std::map<std::string, open3d::core::Tensor>& line_attributes,
-        const std::map<std::string, open3d::core::Tensor>& textures,
-        std::shared_ptr<Connection> connection) {
-    using namespace open3d::core;
-
+bool SetMeshData(const core::Tensor& vertices,
+                 const std::string& path,
+                 int time,
+                 const std::string& layer,
+                 const std::map<std::string, core::Tensor>& vertex_attributes,
+                 const core::Tensor& faces,
+                 const std::map<std::string, core::Tensor>& face_attributes,
+                 const core::Tensor& lines,
+                 const std::map<std::string, core::Tensor>& line_attributes,
+                 const std::map<std::string, core::Tensor>& textures,
+                 const std::shared_ptr<Connection>& connection) {
     if (vertices.NumElements() == 0) {
         LogInfo("SetMeshData: vertices Tensor is empty");
         return false;
@@ -217,51 +209,27 @@ bool SetMeshData(
                 vertices.NumDims());
         return false;
     }
-    if (vertices.GetDtype() != Dtype::Float32 &&
-        vertices.GetDtype() != Dtype::Float64) {
+    if (vertices.GetDtype() != core::Dtype::Float32 &&
+        vertices.GetDtype() != core::Dtype::Float64) {
         LogError(
                 "SetMeshData: vertices must have dtype Float32 or Float64 but "
                 "is {}",
-                DtypeUtil::ToString(vertices.GetDtype()));
+                core::DtypeUtil::ToString(vertices.GetDtype()));
     }
 
-    auto PrepareTensor = [](const Tensor& a) {
-        if (a.GetDevice().GetType() != Device::DeviceType::CPU) {
-            Device cpu_device;
-            return a.Copy(cpu_device);
-        } else if (!a.IsContiguous()) {
-            return a.Contiguous();
+    auto PrepareTensor = [](const core::Tensor& a) {
+        if (a.GetDevice().GetType() != core::Device::DeviceType::CPU) {
+            return a.Copy(core::Device("CPU:0"));
         }
-        return a;
+        return a.Contiguous();
     };
 
-    auto CreateArray = [](const Tensor& a) {
-        switch (a.GetDtype()) {
-            case Dtype::Float32:
-                return messages::Array::FromPtr(
-                        (float*)a.GetDataPtr(),
-                        static_cast<std::vector<int64_t>>(a.GetShape()));
-            case Dtype::Float64:
-                return messages::Array::FromPtr(
-                        (double*)a.GetDataPtr(),
-                        static_cast<std::vector<int64_t>>(a.GetShape()));
-            case Dtype::Int32:
-                return messages::Array::FromPtr(
-                        (int32_t*)a.GetDataPtr(),
-                        static_cast<std::vector<int64_t>>(a.GetShape()));
-            case Dtype::Int64:
-                return messages::Array::FromPtr(
-                        (int64_t*)a.GetDataPtr(),
-                        static_cast<std::vector<int64_t>>(a.GetShape()));
-            case Dtype::UInt8:
-                return messages::Array::FromPtr(
-                        (uint8_t*)a.GetDataPtr(),
-                        static_cast<std::vector<int64_t>>(a.GetShape()));
-            default:
-                LogError("Unsupported dtype {}",
-                         DtypeUtil::ToString(a.GetDtype()));
-                return messages::Array();
-        };
+    auto CreateArray = [](const core::Tensor& a) {
+        return DISPATCH_DTYPE_TO_TEMPLATE(a.GetDtype(), [&]() {
+            return messages::Array::FromPtr(
+                    (scalar_t*)a.GetDataPtr(),
+                    static_cast<std::vector<int64_t>>(a.GetShape()));
+        });
     };
 
     messages::SetMeshData msg;
@@ -269,7 +237,7 @@ bool SetMeshData(
     msg.time = time;
     msg.layer = layer;
 
-    const Tensor vertices_ok = PrepareTensor(vertices);
+    const core::Tensor vertices_ok = PrepareTensor(vertices);
     msg.data.vertices = CreateArray(vertices_ok);
 
     // store tensors in this vector to make sure the memory blob is alive
@@ -277,7 +245,7 @@ bool SetMeshData(
     std::vector<core::Tensor> tensor_cache;
     for (const auto& item : vertex_attributes) {
         tensor_cache.push_back(PrepareTensor(item.second));
-        const Tensor& tensor = tensor_cache.back();
+        const core::Tensor& tensor = tensor_cache.back();
         if (tensor.NumDims() >= 1 &&
             tensor.GetShape()[0] == vertices.GetShape()[0]) {
             msg.data.vertex_attributes[item.first] = CreateArray(tensor);
@@ -288,12 +256,12 @@ bool SetMeshData(
     }
 
     if (faces.NumElements()) {
-        if (faces.GetDtype() != Dtype::Int32 &&
-            faces.GetDtype() != Dtype::Int64) {
+        if (faces.GetDtype() != core::Dtype::Int32 &&
+            faces.GetDtype() != core::Dtype::Int64) {
             LogError(
                     "SetMeshData: faces must have dtype Int32 or Int64 but "
                     "is {}",
-                    DtypeUtil::ToString(vertices.GetDtype()));
+                    core::DtypeUtil::ToString(vertices.GetDtype()));
         } else if (faces.NumDims() != 2) {
             LogError("SetMeshData: faces must have rank 2 but is {}",
                      faces.NumDims());
@@ -302,12 +270,12 @@ bool SetMeshData(
                      faces.GetShape()[1]);
         } else {
             tensor_cache.push_back(PrepareTensor(faces));
-            const Tensor& faces_ok = tensor_cache.back();
+            const core::Tensor& faces_ok = tensor_cache.back();
             msg.data.faces = CreateArray(faces_ok);
 
             for (const auto& item : face_attributes) {
                 tensor_cache.push_back(PrepareTensor(item.second));
-                const Tensor& tensor = tensor_cache.back();
+                const core::Tensor& tensor = tensor_cache.back();
                 if (tensor.NumDims() >= 1 &&
                     tensor.GetShape()[0] == faces.GetShape()[0]) {
                     msg.data.face_attributes[item.first] = CreateArray(tensor);
@@ -322,12 +290,12 @@ bool SetMeshData(
     }
 
     if (lines.NumElements()) {
-        if (lines.GetDtype() != Dtype::Int32 &&
-            lines.GetDtype() != Dtype::Int64) {
+        if (lines.GetDtype() != core::Dtype::Int32 &&
+            lines.GetDtype() != core::Dtype::Int64) {
             LogError(
                     "SetMeshData: lines must have dtype Int32 or Int64 but "
                     "is {}",
-                    DtypeUtil::ToString(vertices.GetDtype()));
+                    core::DtypeUtil::ToString(vertices.GetDtype()));
         } else if (lines.NumDims() != 2) {
             LogError("SetMeshData: lines must have rank 2 but is {}",
                      lines.NumDims());
@@ -336,12 +304,12 @@ bool SetMeshData(
                      lines.GetShape()[1]);
         } else {
             tensor_cache.push_back(PrepareTensor(lines));
-            const Tensor& lines_ok = tensor_cache.back();
+            const core::Tensor& lines_ok = tensor_cache.back();
             msg.data.lines = CreateArray(lines_ok);
 
             for (const auto& item : line_attributes) {
                 tensor_cache.push_back(PrepareTensor(item.second));
-                const Tensor& tensor = tensor_cache.back();
+                const core::Tensor& tensor = tensor_cache.back();
                 if (tensor.NumDims() >= 1 &&
                     tensor.GetShape()[0] == lines.GetShape()[0]) {
                     msg.data.line_attributes[item.first] = CreateArray(tensor);
@@ -357,7 +325,7 @@ bool SetMeshData(
 
     for (const auto& item : textures) {
         tensor_cache.push_back(PrepareTensor(item.second));
-        const Tensor& tensor = tensor_cache.back();
+        const core::Tensor& tensor = tensor_cache.back();
         if (tensor.NumElements()) {
             msg.data.textures[item.first] = CreateArray(tensor);
         } else {
@@ -370,19 +338,16 @@ bool SetMeshData(
     msgpack::pack(sbuf, request);
     msgpack::pack(sbuf, msg);
 
-    if (!connection) {
-        connection = std::make_shared<Connection>();
-    }
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }
 
-bool SetLegacyCamera(const open3d::camera::PinholeCameraParameters& camera,
+bool SetLegacyCamera(const camera::PinholeCameraParameters& camera,
                      const std::string& path,
                      int time,
                      const std::string& layer,
-                     std::shared_ptr<Connection> connection) {
+                     const std::shared_ptr<Connection>& connection) {
     messages::SetCameraData msg;
     msg.path = path;
     msg.time = time;
@@ -427,15 +392,12 @@ bool SetLegacyCamera(const open3d::camera::PinholeCameraParameters& camera,
     msgpack::pack(sbuf, request);
     msgpack::pack(sbuf, msg);
 
-    if (!connection) {
-        connection = std::make_shared<Connection>();
-    }
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }
 
-bool SetTime(int time, std::shared_ptr<Connection> connection) {
+bool SetTime(int time, const std::shared_ptr<Connection>& connection) {
     messages::SetTime msg;
     msg.time = time;
 
@@ -444,16 +406,13 @@ bool SetTime(int time, std::shared_ptr<Connection> connection) {
     msgpack::pack(sbuf, request);
     msgpack::pack(sbuf, msg);
 
-    if (!connection) {
-        connection = std::make_shared<Connection>();
-    }
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }
 
 bool SetActiveCamera(const std::string& path,
-                     std::shared_ptr<Connection> connection) {
+                     const std::shared_ptr<Connection>& connection) {
     messages::SetActiveCamera msg;
     msg.path = path;
 
@@ -462,9 +421,6 @@ bool SetActiveCamera(const std::string& path,
     msgpack::pack(sbuf, request);
     msgpack::pack(sbuf, msg);
 
-    if (!connection) {
-        connection = std::make_shared<Connection>();
-    }
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);

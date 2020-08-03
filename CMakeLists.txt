@@ -105,7 +105,7 @@ if(ENABLE_GUI AND WIN32)
     set(ENABLE_GUI OFF)
 endif()
 if(BUILD_RPC_INTERFACE AND WIN32)
-    message(STATUS "The RPC interface is currently unsupported on Windows")
+    message(STATUS "The RPC interface is currently unsupported on Windows.")
     set(BUILD_RPC_INTERFACE OFF)
 endif()
 

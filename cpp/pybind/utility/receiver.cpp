@@ -25,85 +25,30 @@
 // ----------------------------------------------------------------------------
 #ifdef BUILD_RPC_INTERFACE
 
-#include "open3d/utility/ReceiverBase.h"
+#include "open3d/utility/DummyReceiver.h"
 
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
 namespace messages = open3d::utility::messages;
 
-namespace {
-class DummyReceiver : public open3d::utility::ReceiverBase {
-public:
-    DummyReceiver(const std::string& address, int timeout)
-        : ReceiverBase(address, timeout) {}
-
-    std::shared_ptr<zmq::message_t> CreateStatusOKMsg() {
-        auto OK = messages::Status::OK();
-        msgpack::sbuffer sbuf;
-        messages::Reply reply{OK.MsgId()};
-        msgpack::pack(sbuf, reply);
-        msgpack::pack(sbuf, OK);
-        return std::shared_ptr<zmq::message_t>(
-                new zmq::message_t(sbuf.data(), sbuf.size()));
-    }
-
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetMeshData& msg,
-            const msgpack::object& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::GetMeshData& msg,
-            const msgpack::object& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetCameraData& msg,
-            const msgpack::object& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetProperties& msg,
-            const msgpack::object& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetActiveCamera& msg,
-            const msgpack::object& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(const messages::Request& req,
-                                                   const messages::SetTime& msg,
-                                                   const msgpack::object& obj) {
-        return CreateStatusOKMsg();
-    }
-};
-
-}  // namespace
-
 namespace open3d {
 
 void pybind_receiver(py::module& m) {
-    py::class_<DummyReceiver, std::shared_ptr<DummyReceiver>>(
+    py::class_<utility::DummyReceiver, std::shared_ptr<utility::DummyReceiver>>(
             m, "_DummyReceiver",
             "Dummy receiver for the server side receiving requests from a "
             "client.")
             .def(py::init([](std::string address, int timeout) {
-                     return std::shared_ptr<DummyReceiver>(
-                             new DummyReceiver(address, timeout));
+                     return std::shared_ptr<utility::DummyReceiver>(
+                             new utility::DummyReceiver(address, timeout));
                  }),
                  "Creates the receiver object which can be used for testing "
                  "connections.",
                  "address"_a = "tcp://127.0.0.1:51454", "timeout"_a = 10000)
-            .def("start", &DummyReceiver::Start,
+            .def("start", &utility::DummyReceiver::Start,
                  "Starts the receiver mainloop in a new thread.")
-            .def("stop", &DummyReceiver::Stop,
+            .def("stop", &utility::DummyReceiver::Stop,
                  "Stops the receiver mainloop and joins the thread. This "
                  "function blocks until the mainloop is done with processing "
                  "messages that have already been received.");

@@ -42,35 +42,27 @@ namespace open3d {
 namespace utility {
 
 Connection::Connection()
-    : socket(new zmq::socket_t(GetZMQContext(), ZMQ_REQ)),
-      address(defaults.address),
-      connect_timeout(defaults.connect_timeout),
-      timeout(defaults.timeout) {
-    init();
+    : Connection(defaults.address, defaults.connect_timeout, defaults.timeout) {
 }
 
 Connection::Connection(const std::string& address,
                        int connect_timeout,
                        int timeout)
-    : socket(new zmq::socket_t(GetZMQContext(), ZMQ_REQ)),
-      address(address),
-      connect_timeout(connect_timeout),
-      timeout(timeout) {
-    init();
+    : socket_(new zmq::socket_t(GetZMQContext(), ZMQ_REQ)),
+      address_(address),
+      connect_timeout_(connect_timeout),
+      timeout_(timeout) {
+    socket_->setsockopt(ZMQ_LINGER, timeout);
+    socket_->setsockopt(ZMQ_CONNECT_TIMEOUT, connect_timeout);
+    socket_->setsockopt(ZMQ_RCVTIMEO, timeout);
+    socket_->setsockopt(ZMQ_SNDTIMEO, timeout);
+    socket_->connect(address.c_str());
 }
 
-Connection::~Connection() { socket->close(); }
-
-void Connection::init() {
-    socket->setsockopt(ZMQ_LINGER, timeout);
-    socket->setsockopt(ZMQ_CONNECT_TIMEOUT, connect_timeout);
-    socket->setsockopt(ZMQ_RCVTIMEO, timeout);
-    socket->setsockopt(ZMQ_SNDTIMEO, timeout);
-    socket->connect(address.c_str());
-}
+Connection::~Connection() { socket_->close(); }
 
 std::shared_ptr<zmq::message_t> Connection::Send(zmq::message_t& send_msg) {
-    if (!socket->send(send_msg)) {
+    if (!socket_->send(send_msg)) {
         zmq::error_t err;
         if (err.num()) {
             LogInfo("Connection::send() send failed with: {}", err.what());
@@ -78,7 +70,7 @@ std::shared_ptr<zmq::message_t> Connection::Send(zmq::message_t& send_msg) {
     }
 
     std::shared_ptr<zmq::message_t> msg(new zmq::message_t());
-    if (socket->recv(*msg)) {
+    if (socket_->recv(*msg)) {
         LogDebug("Connection::send() received answer with {} bytes",
                  msg->size());
     } else {

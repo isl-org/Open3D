@@ -25,13 +25,7 @@ class ExternalVisualizer:
         self.address = address
         self.timeout = timeout
 
-    def set(self,
-            obj=None,
-            path='',
-            time=0,
-            layer='',
-            objs=None,
-            connection=None):
+    def set(self, obj=None, path='', time=0, layer='', connection=None):
         """Send Open3D objects for visualization to the visualizer.
 
         Example:
@@ -43,9 +37,8 @@ class ExternalVisualizer:
             Note that depending on the visualizer some arguments like time or
             layer may not be supported and will be ignored.
 
-            To pass multiple objects use the ``objs`` keyword argument to pass
-            a list::
-                ev.set(objs=[point_cloud, mesh, camera])
+            To set multiple objects use a list to pass multiple objects::
+                ev.set([point_cloud, mesh, camera])
             Each entry in the list can be a tuple specifying all or some of the
             location parameters::
                 ev.set(objs=[(point_cloud,'group/mypoints', 1, 'layer1'),
@@ -54,16 +47,14 @@ class ExternalVisualizer:
                             ]
 
         Args:
-            obj: A geometry or camera object.
+            obj: A geometry or camera object or a list of objects. See the 
+            example seection for usage instructions.
 
             path: A path describing a location in the scene tree.
 
             time: An integer time value associated with the object.
 
             layer: The layer associated with the object.
-
-            objs: List of objects or tuples to pass multiple objects. See the
-                example section for usage instructions.
 
             connection: A connection object to use for sending data. This
                 parameter can be used to override the default object.
@@ -72,45 +63,43 @@ class ExternalVisualizer:
             connection = o3d.utility.Connection(address=self.address,
                                                 timeout=self.timeout)
         result = []
-        if not obj is None:
-            if isinstance(obj, o3d.geometry.PointCloud):
-                status = o3d.utility.set_point_cloud(obj,
-                                                     path=path,
-                                                     time=time,
-                                                     layer=layer,
-                                                     connection=connection)
-                result.append(status)
-            elif isinstance(obj, o3d.geometry.TriangleMesh):
-                status = o3d.utility.set_triangle_mesh(obj,
-                                                       path=path,
-                                                       time=time,
-                                                       layer=layer,
-                                                       connection=connection)
-                result.append(status)
-            elif isinstance(obj, o3d.camera.PinholeCameraParameters):
-                status = o3d.utility.set_legacy_camera(obj,
-                                                       path=path,
-                                                       time=time,
-                                                       layer=layer,
-                                                       connection=connection)
-                result.append(status)
-            else:
-                raise Exception("Unsupported object type '{}'".format(
-                    str(type(obj))))
-
-        if isinstance(objs, (tuple, list)):
+        if isinstance(obj, (tuple, list)):
             # item can be just an object or a tuple with path, time, layer, e.g.,
-            #   set(objs=[point_cloud, mesh, camera])
-            #   set(objs=[(point_cloud,'group/mypoints', 1, 'layer1'),
-            #             (mesh, 'group/mymesh'),
-            #             camera
+            #   set(obj=[point_cloud, mesh, camera])
+            #   set(obj=[(point_cloud,'group/mypoints', 1, 'layer1'),
+            #            (mesh, 'group/mymesh'),
+            #            camera
             #             ]
-            for item in objs:
+            for item in obj:
                 if isinstance(item, (tuple, list)):
                     if len(item) in range(1, 5):
                         result.append(self.set(*item, connection=connection))
                 else:
                     result.append(self.set(item, connection=connection))
+        elif isinstance(obj, o3d.geometry.PointCloud):
+            status = o3d.utility.set_point_cloud(obj,
+                                                 path=path,
+                                                 time=time,
+                                                 layer=layer,
+                                                 connection=connection)
+            result.append(status)
+        elif isinstance(obj, o3d.geometry.TriangleMesh):
+            status = o3d.utility.set_triangle_mesh(obj,
+                                                   path=path,
+                                                   time=time,
+                                                   layer=layer,
+                                                   connection=connection)
+            result.append(status)
+        elif isinstance(obj, o3d.camera.PinholeCameraParameters):
+            status = o3d.utility.set_legacy_camera(obj,
+                                                   path=path,
+                                                   time=time,
+                                                   layer=layer,
+                                                   connection=connection)
+            result.append(status)
+        else:
+            raise Exception("Unsupported object type '{}'".format(str(
+                type(obj))))
 
         return all(result)
 

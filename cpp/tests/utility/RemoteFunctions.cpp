@@ -26,7 +26,7 @@
 
 #ifdef BUILD_RPC_INTERFACE
 #include "open3d/utility/RemoteFunctions.h"
-#include "open3d/utility/ReceiverBase.h"
+#include "open3d/utility/DummyReceiver.h"
 #include "tests/UnitTest.h"
 
 using namespace open3d::utility;
@@ -40,61 +40,10 @@ const std::string connection_address = "tcp://127.0.0.1:51454";
 const std::string connection_address = "ipc:///tmp/open3d_ipc";
 #endif
 
-class Receiver : public ReceiverBase {
-public:
-    Receiver() : ReceiverBase(connection_address, 500) {}
-
-    std::shared_ptr<zmq::message_t> CreateStatusOKMsg() {
-        auto OK = messages::Status::OK();
-        msgpack::sbuffer sbuf;
-        messages::Reply reply{OK.MsgId()};
-        msgpack::pack(sbuf, reply);
-        msgpack::pack(sbuf, OK);
-        return std::shared_ptr<zmq::message_t>(
-                new zmq::message_t(sbuf.data(), sbuf.size()));
-    }
-
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetMeshData& msg,
-            const msgpack::object& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::GetMeshData& msg,
-            const msgpack::object& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetCameraData& msg,
-            const msgpack::object& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetProperties& msg,
-            const msgpack::object& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetActiveCamera& msg,
-            const msgpack::object& obj) override {
-        return CreateStatusOKMsg();
-    }
-    std::shared_ptr<zmq::message_t> ProcessMessage(const messages::Request& req,
-                                                   const messages::SetTime& msg,
-                                                   const msgpack::object& obj) {
-        return CreateStatusOKMsg();
-    }
-};
-
 template <class TMsg>
 void TestSendReceiveUnpackMessages() {
     // start receiver
-    Receiver receiver;
+    DummyReceiver receiver(connection_address, 500);
     receiver.Start();
 
     // create message to send
@@ -125,7 +74,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
     // chain multiple messages
     {
         // start receiver
-        Receiver receiver;
+        DummyReceiver receiver(connection_address, 500);
         receiver.Start();
 
         // create message to send
@@ -169,7 +118,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
 
 TEST(RemoteFunctions, SendGarbage) {
     // start receiver
-    Receiver receiver;
+    DummyReceiver receiver(connection_address, 500);
     receiver.Start();
 
     // send invalid msg id

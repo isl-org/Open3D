@@ -92,26 +92,26 @@ inline std::string TypeStr<uint64_t>() {
 
 #undef ENDIANNESS_STR
 
-// Array structure inspired by msgpack_numpy but not directly compatible
-// because they use bin-type for the map keys and we must use string.
-// This structure does not have ownership of the data.
-//
-// The following code can be used in python to create a compatible dict
-//
-//   def numpy_to_Array(arr):
-//       if isinstance(arr, np.ndarray):
-//           return {'type': arr.dtype.str,
-//                   'shape': arr.shape,
-//                   'data': arr.tobytes()}
-//       raise Exception('object is not a numpy array')
-//
-//
-// This codes converts the dict back to numpy.ndarray
-//
-//   def Array_to_numpy(dic):
-//       return np.frombuffer(dic['data'],
-//       dtype=np.dtype(dic['type'])).reshape(dic['shape'])
-//
+/// Array structure inspired by msgpack_numpy but not directly compatible
+/// because they use bin-type for the map keys and we must use string.
+/// This structure does not have ownership of the data.
+///
+/// The following code can be used in python to create a compatible dict
+///
+///   def numpy_to_Array(arr):
+///       if isinstance(arr, np.ndarray):
+///           return {'type': arr.dtype.str,
+///                   'shape': arr.shape,
+///                   'data': arr.tobytes()}
+///       raise Exception('object is not a numpy array')
+///
+///
+/// This codes converts the dict back to numpy.ndarray
+///
+///   def Array_to_numpy(dic):
+///       return np.frombuffer(dic['data'],
+///       dtype=np.dtype(dic['type'])).reshape(dic['shape'])
+///
 struct Array {
     static std::string MsgId() { return "array"; }
 
@@ -136,6 +136,7 @@ struct Array {
         return (T*)data.ptr;
     }
 
+    // macro for creating the serialization/deserialization code
     MSGPACK_DEFINE_MAP(type, shape, data);
 };
 

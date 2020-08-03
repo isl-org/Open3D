@@ -2,8 +2,8 @@ include(FetchContent)
 
 FetchContent_Declare(
     ext_msgpack-c
-    GIT_REPOSITORY "https://github.com/msgpack/msgpack-c.git"
-    GIT_TAG da2fc25f875a0394e2eaa4ddfa0fc9221b6b4c52
+    URL https://github.com/msgpack/msgpack-c/releases/download/cpp-3.3.0/msgpack-3.3.0.tar.gz
+    URL_HASH MD5=e676575d52caae974e579c3d5f0ba6a2
     )
 FetchContent_GetProperties(msgpack-c)
 if(NOT ext_msgpack-c_POPULATED)

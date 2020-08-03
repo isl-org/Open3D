@@ -74,12 +74,12 @@ bool ReplyIsOKStatus(const zmq::message_t& msg, size_t& offset);
 ///
 /// \param connection  The connection object used for sending the data.
 ///
-bool SetPointCloud(
-        const open3d::geometry::PointCloud& pcd,
-        const std::string& path = std::string(),
-        int time = 0,
-        const std::string& layer = std::string(),
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetPointCloud(const geometry::PointCloud& pcd,
+                   const std::string& path = "",
+                   int time = 0,
+                   const std::string& layer = "",
+                   const std::shared_ptr<Connection>& connection =
+                           std::make_shared<Connection>());
 
 /// Function for sending a TriangleMesh.
 /// \param pcd         The TriangleMesh object.
@@ -93,12 +93,12 @@ bool SetPointCloud(
 ///
 /// \param connection  The connection object used for sending the data.
 ///
-bool SetTriangleMesh(
-        const open3d::geometry::TriangleMesh& mesh,
-        const std::string& path = std::string(),
-        int time = 0,
-        const std::string& layer = std::string(),
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
+                     const std::string& path = "",
+                     int time = 0,
+                     const std::string& layer = "",
+                     const std::shared_ptr<Connection>& connection =
+                             std::make_shared<Connection>());
 
 /// Function for sending general mesh data.
 /// \param vertices    Tensor with vertices of shape [N,3]
@@ -135,24 +135,24 @@ bool SetTriangleMesh(
 ///
 /// \param connection  The connection object used for sending the data.
 ///
-bool SetMeshData(
-        const open3d::core::Tensor& vertices,
-        const std::string& path = "",
-        int time = 0,
-        const std::string& layer = "",
-        const std::map<std::string, open3d::core::Tensor>& vertex_attributes =
-                std::map<std::string, open3d::core::Tensor>(),
-        const open3d::core::Tensor& faces =
-                open3d::core::Tensor({0}, open3d::core::Dtype::Int32),
-        const std::map<std::string, open3d::core::Tensor>& face_attributes =
-                std::map<std::string, open3d::core::Tensor>(),
-        const open3d::core::Tensor& lines =
-                open3d::core::Tensor({0}, open3d::core::Dtype::Int32),
-        const std::map<std::string, open3d::core::Tensor>& line_attributes =
-                std::map<std::string, open3d::core::Tensor>(),
-        const std::map<std::string, open3d::core::Tensor>& textures =
-                std::map<std::string, open3d::core::Tensor>(),
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetMeshData(const core::Tensor& vertices,
+                 const std::string& path = "",
+                 int time = 0,
+                 const std::string& layer = "",
+                 const std::map<std::string, core::Tensor>& vertex_attributes =
+                         std::map<std::string, core::Tensor>(),
+                 const core::Tensor& faces = core::Tensor({0},
+                                                          core::Dtype::Int32),
+                 const std::map<std::string, core::Tensor>& face_attributes =
+                         std::map<std::string, core::Tensor>(),
+                 const core::Tensor& lines = core::Tensor({0},
+                                                          core::Dtype::Int32),
+                 const std::map<std::string, core::Tensor>& line_attributes =
+                         std::map<std::string, core::Tensor>(),
+                 const std::map<std::string, core::Tensor>& textures =
+                         std::map<std::string, core::Tensor>(),
+                 const std::shared_ptr<Connection>& connection =
+                         std::make_shared<Connection>());
 
 /// Function for sending Camera data.
 /// \param camera      The PinholeCameraParameters object.
@@ -166,21 +166,21 @@ bool SetMeshData(
 ///
 /// \param connection  The connection object used for sending the data.
 ///
-bool SetLegacyCamera(
-        const open3d::camera::PinholeCameraParameters& camera,
-        const std::string& path = std::string(),
-        int time = 0,
-        const std::string& layer = std::string(),
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetLegacyCamera(const camera::PinholeCameraParameters& camera,
+                     const std::string& path = "",
+                     int time = 0,
+                     const std::string& layer = "",
+                     const std::shared_ptr<Connection>& connection =
+                             std::make_shared<Connection>());
 
 /// Sets the time in the external visualizer.
 /// \param time        The time value
 ///
 /// \param connection  The connection object used for sending the data.
 ///
-bool SetTime(
-        int time,
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetTime(int time,
+             const std::shared_ptr<Connection>& connection =
+                     std::make_shared<Connection>());
 
 /// Sets the object with the specified path as the active camera.
 /// \param path        Path descriptor defining a location in the scene tree.
@@ -188,9 +188,9 @@ bool SetTime(
 ///
 /// \param connection  The connection object used for sending the data.
 ///
-bool SetActiveCamera(
-        const std::string& path,
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetActiveCamera(const std::string& path,
+                     const std::shared_ptr<Connection>& connection =
+                             std::make_shared<Connection>());
 
 }  // namespace utility
 }  // namespace open3d

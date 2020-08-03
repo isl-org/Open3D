@@ -42,7 +42,7 @@ public:
     /// \param connect_timeout  The timeout for the connect operation of the
     /// socket.
     ///
-    /// \param timeout          The timeout for sending data
+    /// \param timeout          The timeout for sending data.
     ///
     Connection(const std::string& address, int connect_timeout, int timeout);
     ~Connection();
@@ -51,12 +51,10 @@ public:
     std::shared_ptr<zmq::message_t> Send(zmq::message_t& send_msg);
 
 private:
-    void init();
-
-    std::unique_ptr<zmq::socket_t> socket;
-    const std::string address;
-    const int connect_timeout;
-    const int timeout;
+    std::unique_ptr<zmq::socket_t> socket_;
+    const std::string address_;
+    const int connect_timeout_;
+    const int timeout_;
 };
 }  // namespace utility
 }  // namespace open3d
