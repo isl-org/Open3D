@@ -9,6 +9,7 @@ set (KERNEL_SRC
     kernel/BinaryEWCPU.cpp
     kernel/Reduction.cpp
     kernel/ReductionCPU.cpp
+    kernel/Kernel.cpp
 )
 
 set (KERNEL_CUDA_SRC
@@ -23,6 +24,7 @@ set (CORE_SRC
     AdvancedIndexing.cpp
     ShapeUtil.cpp
     CUDAUtils.cpp
+    EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp

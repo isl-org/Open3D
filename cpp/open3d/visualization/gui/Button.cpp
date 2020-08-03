@@ -40,6 +40,8 @@ namespace gui {
 struct Button::Impl {
     std::string title_;
     std::shared_ptr<UIImage> image_;
+    float padding_horizontal_em_ = 0.5f;
+    float padding_vertical_em_ = 0.5f;
     bool is_toggleable_ = false;
     bool is_on_ = false;
     std::function<void()> on_clicked_;
@@ -54,6 +56,19 @@ Button::Button(std::shared_ptr<UIImage> image) : impl_(new Button::Impl()) {
 }
 
 Button::~Button() {}
+
+float Button::GetHorizontalPaddingEm() const {
+    return impl_->padding_horizontal_em_;
+}
+
+float Button::GetVerticalPaddingEm() const {
+    return impl_->padding_vertical_em_;
+}
+
+void Button::SetPaddingEm(float horiz_ems, float vert_ems) {
+    impl_->padding_horizontal_em_ = horiz_ems;
+    impl_->padding_vertical_em_ = vert_ems;
+}
 
 bool Button::GetIsToggleable() const { return impl_->is_toggleable_; }
 
@@ -72,21 +87,41 @@ void Button::SetOnClicked(std::function<void()> on_clicked) {
 }
 
 Size Button::CalcPreferredSize(const Theme& theme) const {
+    auto em = float(theme.font_size);
+    auto padding_horiz = std::ceil(impl_->padding_horizontal_em_ * em);
+    auto padding_vert = std::ceil(impl_->padding_vertical_em_ * em);
     if (impl_->image_) {
         auto size = impl_->image_->CalcPreferredSize(theme);
-        return Size(size.width, size.height);
+        return Size(size.width + std::ceil(2.0f * padding_horiz),
+                    size.height + std::ceil(2.0f * padding_vert));
     } else {
         auto font = ImGui::GetFont();
-        auto em = std::ceil(ImGui::GetTextLineHeight());
+        auto imguiVertPadding = ImGui::GetTextLineHeightWithSpacing() -
+                                ImGui::GetTextLineHeight();
         auto size = font->CalcTextSizeA(theme.font_size, 10000, 10000,
                                         impl_->title_.c_str());
-        return Size(std::ceil(size.x) + 2.0 * em, 2 * em);
+        // When ImGUI draws text, it draws text in a box of height
+        // font_size + spacing. The padding on the bottom is essentially the
+        // descender height, and the box height ends up giving a visual padding
+        // of descender_height on the top and bottom. So while we only need to
+        // 1 * imguiVertPadding on the bottom, we need to add 2x on the sides.
+        // Note that padding of 0 doesn't actually produce a padding of zero,
+        // because that would look horrible. (And also because if we do that,
+        // ImGUI will position the text so that the descender is cut off,
+        // because it is assuming that it gets a little extra on the bottom.
+        // This looks really bad...)
+        return Size(std::ceil(size.x + 2.0f + imguiVertPadding +
+                              2.0f * padding_horiz),
+                    std::ceil(ImGui::GetTextLineHeight() + imguiVertPadding +
+                              2.0f * padding_vert));
     }
 }
 
 Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
     auto result = Widget::DrawResult::NONE;
+
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
 
     bool was_on = impl_->is_on_;
     if (was_on) {
@@ -107,14 +142,10 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
         auto params = impl_->image_->CalcDrawParams(context.renderer, frame);
         ImTextureID image_id =
                 reinterpret_cast<ImTextureID>(params.texture.GetId());
-        ImGui::SetCursorPos(ImVec2(params.pos_x - context.uiOffsetX,
-                                   params.pos_y - context.uiOffsetY));
         pressed = ImGui::ImageButton(
                 image_id, ImVec2(params.width, params.height),
                 ImVec2(params.u0, params.v0), ImVec2(params.u1, params.v1));
     } else {
-        ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
-                                   frame.y - context.uiOffsetY));
         pressed = ImGui::Button(impl_->title_.c_str(),
                                 ImVec2(GetFrame().width, GetFrame().height));
     }

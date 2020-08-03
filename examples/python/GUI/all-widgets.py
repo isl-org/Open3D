@@ -50,8 +50,8 @@ class ExampleWindow:
             menubar.add_menu("Test", test_menu)
             gui.Application.instance.menubar = menubar
 
-        # Each window needs to know what to do with the menu items, so we need to
-        # tell the window how to handle menu items.
+        # Each window needs to know what to do with the menu items, so we need
+        # to tell the window how to handle menu items.
         w.set_on_menu_item_activated(ExampleWindow.MENU_CHECKABLE,
                                      self._on_menu_checkable)
         w.set_on_menu_item_activated(ExampleWindow.MENU_QUIT,
@@ -62,6 +62,8 @@ class ExampleWindow:
         # the file dialog.
         self._fileedit = gui.TextEdit()
         filedlgbutton = gui.Button("...")
+        filedlgbutton.horizontal_padding_em = 0.5
+        filedlgbutton.vertical_padding_em = 0
         filedlgbutton.set_on_clicked(self._on_filedlg_button)
 
         # (Create the horizontal widget for the row. This will make sure the
@@ -69,6 +71,7 @@ class ExampleWindow:
         fileedit_layout = gui.Horiz()
         fileedit_layout.add_child(gui.Label("Model file"))
         fileedit_layout.add_child(self._fileedit)
+        fileedit_layout.add_fixed(0.25 * em)
         fileedit_layout.add_child(filedlgbutton)
         # add to the top-level (vertical) layout
         layout.add_child(fileedit_layout)
@@ -122,13 +125,13 @@ class ExampleWindow:
 
         # Add a tree view
         tree = gui.TreeView()
-        tree.add_item(tree.get_root_item(), "Camera")
-        geo_id = tree.add_item(tree.get_root_item(), "Geometries")
-        mesh_id = tree.add_item(geo_id, "Mesh")
-        tree.add_item(mesh_id, "Triangles")
-        tree.add_item(mesh_id, "Albedo texture")
-        tree.add_item(mesh_id, "Normal map")
-        points_id = tree.add_item(geo_id, "Points")
+        tree.add_text_item(tree.get_root_item(), "Camera")
+        geo_id = tree.add_text_item(tree.get_root_item(), "Geometries")
+        mesh_id = tree.add_text_item(geo_id, "Mesh")
+        tree.add_text_item(mesh_id, "Triangles")
+        tree.add_text_item(mesh_id, "Albedo texture")
+        tree.add_text_item(mesh_id, "Normal map")
+        points_id = tree.add_text_item(geo_id, "Points")
         tree.can_select_items_with_children = True
         tree.set_on_selection_changed(self._on_tree)
         # does not call on_selection_changed: user did not change selection
@@ -304,8 +307,8 @@ class ExampleWindow:
     def _on_list(self, new_val, is_dbl_click):
         print(new_val)
 
-    def _on_tree(self, new_text, new_item):
-        print(new_text)
+    def _on_tree(self, new_item_id):
+        print(new_item_id)
 
     def _on_slider(self, new_val):
         self._progress.value = new_val / 20.0

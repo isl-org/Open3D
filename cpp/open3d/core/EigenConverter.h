@@ -24,22 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
-#include "pybind/open3d_pybind.h"
+#pragma once
+
+#include <Eigen/Core>
+
+#include "open3d/core/Device.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace core {
+namespace eigen_converter {
 
-void pybind_core(py::module &m) {
-    py::module m_core = m.def_submodule("core");
-    pybind_cuda_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor_key(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensorlist(m_core);
-    pybind_core_kernel(m_core);
-}
+Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
 
+core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
+                                   core::Dtype dtype,
+                                   const core::Device &device);
+
+}  // namespace eigen_converter
+}  // namespace core
 }  // namespace open3d

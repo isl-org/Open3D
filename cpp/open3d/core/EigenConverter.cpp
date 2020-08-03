@@ -24,22 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/EigenConverter.h"
 
 namespace open3d {
+namespace core {
+namespace eigen_converter {
 
-void pybind_core(py::module &m) {
-    py::module m_core = m.def_submodule("core");
-    pybind_cuda_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor_key(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensorlist(m_core);
-    pybind_core_kernel(m_core);
+Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor) {
+    // TODO: Tensor::To(dtype, device).
+    if (tensor.GetShape() != SizeVector{3}) {
+        utility::LogError("Tensor shape must be {3}, but got {}.",
+                          tensor.GetShape().ToString());
+    }
+    core::Tensor dtensor =
+            tensor.To(core::Dtype::Float64).Copy(core::Device("CPU:0"));
+    return Eigen::Vector3d(dtensor[0].Item<double>(), dtensor[1].Item<double>(),
+                           dtensor[2].Item<double>());
 }
 
+core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
+                                   core::Dtype dtype,
+                                   const core::Device &device) {
+    // The memory will be copied.
+    return core::Tensor(value.data(), {3}, core::Dtype::Float64, device)
+            .To(dtype);
+}
+
+}  // namespace eigen_converter
+}  // namespace core
 }  // namespace open3d

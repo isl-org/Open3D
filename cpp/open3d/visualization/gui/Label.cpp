@@ -115,8 +115,7 @@ Size Label::CalcPreferredSize(const Theme& theme) const {
 
 Widget::DrawResult Label::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
     ImGui::PushItemWidth(frame.width);
     bool is_default_color = (impl_->color_ == DEFAULT_COLOR);
     if (!is_default_color) {

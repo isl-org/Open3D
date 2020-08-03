@@ -101,8 +101,7 @@ Size Slider::CalcPreferredSize(const Theme& theme) const {
 
 Widget::DrawResult Slider::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
 
     float new_value = impl_->value_;
     DrawImGuiPushEnabledState();
