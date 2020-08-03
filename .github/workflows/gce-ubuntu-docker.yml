@@ -1,0 +1,139 @@
+# Adapted from: https://acaird.github.io/computers/2020/02/11/github-google-container-cloud-run
+name: Google Cloud Ubuntu GPU CI (docker)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - ssheorey/gce-gpu-ci-docker
+  pull_request:
+    types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
+
+env:
+  GCE_PROJECT: ${{ secrets.GCE_PROJECT }}
+  GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
+
+jobs:
+  build-push-docker-image:
+    name: Build and push docker image
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: GCloud setup
+        uses: actions/checkout@v2       # Checkout code
+
+      # Setup gcloud CLI
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '302.0.0'    # Fixed to avoid dependency on API changes
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+        run: |
+          # Set up docker to authenticate via gcloud command-line tool.
+          gcloud auth configure-docker
+          gcloud info
+
+      # Build the Docker image
+      - name: Build
+        run: |
+          docker build -t "$REGISTRY_HOSTNAME"/"$IMAGE":"$GITHUB_SHA" \
+            --build-arg GITHUB_SHA="$GITHUB_SHA" \
+            --build-arg GITHUB_REF="$GITHUB_REF" .
+
+      # Push the Docker image to Google Container Registry
+      - name: Publish
+        run: |
+          docker push "$REGISTRY_HOSTNAME/$GCE_PROJECT/$IMAGE":"$GITHUB_SHA"
+
+      - name: Create VM
+        run: |-
+          GCE_INSTANCE_TYPE=${GCE_INSTANCE_BASE_TYPE}-$NPROC
+          GCE_INSTANCE=${GCE_INSTANCE_BASENAME}-${GITHUB_SHA::8}
+          TRIES=0       # Try creating a VM instance 5 times
+          while (( TRIES<5 )) && ! \
+          # Create VM and deploy container, but only run no-op for now
+          gcloud compute instances create-with-container $GCE_INSTANCE \
+            --zone=${GCE_INSTANCE_ZONE} \
+            --accelerator=$GCE_GPU \
+            --maintenance-policy=TERMINATE
+            --machine-type=$GCE_INSTANCE_TYPE \
+            --boot-disk-size=$GCE_BOOT_DISK_SIZE \
+            --boot-disk-type=$GCE_BOOT_DISK_TYPE \
+            --metadata=startup-script="/bin/bash -c cos-extensions install gpu" \
+            --service-account=$GCE_GPU_CI_SA \
+            --container-image="$REGISTRY_HOSTNAME/$GCE_PROJECT/$IMAGE:$GITHUB_SHA" \
+            --container-command=true \
+            --container-restart-policy=never
+          do
+            sleep 5
+            (( TRIES=TRIES+1 ))
+          done
+          exit $(( TRIES>=5 ))  # 0 => success
+
+
+  build-install-test:
+    name: Build, install and run unit tests
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+      max-parallel: 1     # Limit parallel docker container runs to # GPUs in VM
+      matrix:
+        SHARED: [OFF]
+        BUILD_DEPENDENCY_FROM_SOURCE: [ON]
+        BUILD_ML_OPS: [ON, OFF]
+        BUILD_CUDA: [ON]
+
+    env:
+      SHARED: ${{ matrix.SHARED }}
+      BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
+
+    steps:
+      - name: GCloud setup
+        uses: actions/checkout@v2       # Checkout code
+
+      # Setup gcloud CLI
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '302.0.0'    # Fixed to avoid dependency on API changes
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+          export_default_credentials: true
+        run: |
+          gcloud info
+
+      - name: Config, build and run unit tests
+        run: |-
+          gcloud compute ssh ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE} -- -C \
+          "docker run --rm --gpus all \
+           --env SHARED=$SHARED \
+           --env NPROC=$NPROC \
+           --env BUILD_DEPENDENCY_FROM_SOURCE=$BUILD_DEPENDENCY_FROM_SOURCE \
+           --env BUILD_CUDA_MODULE=$BUILD_CUDA_MODULE \
+           --env BUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS \
+           --env BUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS \
+           --env LOW_MEM_USAGE=$LOW_MEM_USAGE \
+           $REGISTRY_HOSTNAME/$GCE_PROJECT/$IMAGE:$GITHUB_SHA"
+
+  cleanup:
+    name: Cleanup container images and delete VM
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: GCloud setup
+        uses: actions/checkout@v2       # Checkout code
+
+      # Setup gcloud CLI
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '302.0.0'    # Fixed to avoid dependency on API changes
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+        run: |
+          gcloud auth configure-docker
+          gcloud info
+          gcloud compute instances delete ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE}
+          gcloud container images delete "$REGISTRY_HOSTNAME/$GCE_PROJECT/$IMAGE:$GITHUB_SHA"

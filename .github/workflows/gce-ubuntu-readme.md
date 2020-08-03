@@ -24,28 +24,36 @@ A separate VM instance is created for each commit and build option. The VM insta
 
 ## Create service account and key
 
-Reference: Adapted from steps 2.3-2.5 from `.travis/readme.md`
+Reference: Adapted from `.travis/readme.md`
+
+1. Setup `gcloud`
+
+   - Install `gcloud` CLI
+   - `gcloud init` and login with admin's google account on the web
 
 3. Create service account
    ```bash
    gcloud iam service-accounts create open3d-ci-sa \
        --description="Service account for Open3D CI" \
-       --display-name="open3d-ci-sa"
+       --display-name="open3d-ci-sa"    \
+       --project open3d-dev
    ```
 
 4. Grant `Compute Instance Admin (beta)` to the service account
    ```bash
    gcloud projects add-iam-policy-binding open3d-dev \
-   --member=serviceAccount:open3d-ci-sa-gpu@open3d-dev.iam.gserviceaccount.com \
-   --role=roles/compute.instanceAdmin
+       --member=serviceAccount:open3d-ci-sa-gpu@open3d-dev.iam.gserviceaccount.com \
+       --role=roles/compute.instanceAdmin \
+       --project open3d-dev
    ```
 
 5. Create key for service account
    ```bash
    gcloud iam service-accounts keys create ~/open3d-ci-sa-key.json \
-     --iam-account open3d-ci-sa@open3d-dev.iam.gserviceaccount.com
+       --iam-account open3d-ci-sa@open3d-dev.iam.gserviceaccount.com \
+       --project open3d-dev
    ```
    Now `~/open3d-ci-sa-key.json` should have been created.
 
-- Encode the private key json file with `base64 - < ~/open3d-ci-sa-key.json`. and add the output text to the [GitHub repository secrets](https://github.com/intel-isl/Open3D/settings/secrets) with name `GCE_SA_KEY_GPU_CI`
+- Encode the private key json file with `base64 - < ~/open3d-ci-sa-key.json` and add the output text to the [GitHub repository secrets](https://github.com/intel-isl/Open3D/settings/secrets) with name `GCE_SA_KEY_GPU_CI`
 - Also add secret `GCE_PROJECT: open3d-dev`
