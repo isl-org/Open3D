@@ -74,6 +74,18 @@ void UpdateImGuiForScaling(float new_scaling) {
     style.FrameRounding *= new_scaling;
 }
 
+float GetScalingGLFW(GLFWwindow* w) {
+// Ubuntu 18.04 uses GLFW 3.1, which doesn't have this function
+#if (GLFW_VERSION_MAJOR > 3 || \
+     (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3))
+    float xscale, yscale;
+    glfwGetWindowContentScale(w, &xscale, &yscale);
+    return std::min(xscale, yscale);
+#else
+    return 1.0f;
+#endif  // GLFW version >= 3.3
+}
+
 int MouseButtonFromGLFW(int button) {
     switch (button) {
         case GLFW_MOUSE_BUTTON_LEFT:
@@ -248,12 +260,11 @@ Window::Window(const std::string& title,
     // is the scaling factor. On Linux, there is no scaling of pixels (just
     // like in Open3D's GUI library), and glfwGetWindowContentScale() returns
     // the appropriate scale factor for text and icons and such.
-    float xscale, yscale;
-    glfwGetWindowContentScale(impl_->window_, &xscale, &yscale);
+    float scaling = GetScalingGLFW(impl_->window_);
     impl_->theme_ = Application::GetInstance().GetTheme();
-    impl_->theme_.font_size *= yscale;
-    impl_->theme_.default_margin *= yscale;
-    impl_->theme_.default_layout_spacing *= yscale;
+    impl_->theme_.font_size *= scaling;
+    impl_->theme_.default_margin *= scaling;
+    impl_->theme_.default_layout_spacing *= scaling;
 
     auto& engine = visualization::rendering::EngineInstance::GetInstance();
     auto& resource_manager =
@@ -486,14 +497,11 @@ float Window::GetScaling() const {
 // On X Windows a pixel is a device pixel, so glfwGetWindowContentScale()
 // returns the scale factor needed so that your fonts and icons and sizes
 // are correct. This is not the same thing as Apple does.
-#if __APPLE__ && (GLFW_VERSION_MAJOR > 3 || \
-                  (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3))
-    float xscale, yscale;
-    glfwGetWindowContentScale(impl_->window_, &xscale, &yscale);
-    return std::min(xscale, yscale);
+#if __APPLE__
+    return GetGLFWScaling();
 #else
     return 1.0f;
-#endif  // __APPLE__ && GLFW version >= 3.3
+#endif  // __APPLE__
 }
 
 Point Window::GlobalToWindowCoord(int global_x, int global_y) {
