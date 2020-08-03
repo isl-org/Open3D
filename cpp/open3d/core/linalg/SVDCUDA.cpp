@@ -53,7 +53,7 @@ void SVDCUDA(const void* A_data,
                 static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
         OPEN3D_CUSOLVER_CHECK(
                 gesvd_cuda_buffersize<scalar_t>(handle, m, n, &len),
-                "gesvd_bufferSize failed");
+                "gesvd_buffersize failed in SVDCUDA");
 
         void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
 
@@ -67,7 +67,7 @@ void SVDCUDA(const void* A_data,
                         static_cast<scalar_t*>(VT_data), n,
                         static_cast<scalar_t*>(workspace), len,
                         static_cast<scalar_t*>(superb_data), dinfo),
-                "cusolverDnSgesvd failed with dinfo = ", dinfo, device);
+                "gesvd failed in SVDCUDA", dinfo, device);
 
         MemoryManager::Free(workspace, device);
     });

@@ -30,98 +30,98 @@ namespace open3d {
 namespace core {
 
 template <>
-void getrf_cpu<float>(int layout,
-                      MKL_INT m,
-                      MKL_INT n,
-                      float* A_data,
-                      MKL_INT lda,
-                      MKL_INT* ipiv_data) {
-    LAPACKE_sgetrf(layout, m, n, A_data, lda, ipiv_data);
+MKL_INT getrf_cpu<float>(int layout,
+                         MKL_INT m,
+                         MKL_INT n,
+                         float* A_data,
+                         MKL_INT lda,
+                         MKL_INT* ipiv_data) {
+    return LAPACKE_sgetrf(layout, m, n, A_data, lda, ipiv_data);
 }
 template <>
-void getrf_cpu<double>(int layout,
-                       MKL_INT m,
-                       MKL_INT n,
-                       double* A_data,
-                       MKL_INT lda,
-                       MKL_INT* ipiv_data) {
-    LAPACKE_dgetrf(layout, m, n, A_data, lda, ipiv_data);
+MKL_INT getrf_cpu<double>(int layout,
+                          MKL_INT m,
+                          MKL_INT n,
+                          double* A_data,
+                          MKL_INT lda,
+                          MKL_INT* ipiv_data) {
+    return LAPACKE_dgetrf(layout, m, n, A_data, lda, ipiv_data);
 }
 
 template <>
-void getri_cpu<float>(
+MKL_INT getri_cpu<float>(
         int layout, MKL_INT n, float* A_data, MKL_INT lda, MKL_INT* ipiv_data) {
-    LAPACKE_sgetri(layout, n, A_data, lda, ipiv_data);
+    return LAPACKE_sgetri(layout, n, A_data, lda, ipiv_data);
 }
 template <>
-void getri_cpu<double>(int layout,
-                       MKL_INT n,
-                       double* A_data,
-                       MKL_INT lda,
-                       MKL_INT* ipiv_data) {
-    LAPACKE_dgetri(layout, n, A_data, lda, ipiv_data);
-}
-
-template <>
-void gesvd_cpu<float>(int layout,
-                      char jobu,
-                      char jobvt,
-                      MKL_INT m,
-                      MKL_INT n,
-                      float* A_data,
-                      MKL_INT lda,
-                      float* S_data,
-                      float* U_data,
-                      MKL_INT ldu,
-                      float* VT_data,
-                      MKL_INT ldvt,
-                      float* superb) {
-    LAPACKE_sgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data, U_data, ldu,
-                   VT_data, ldvt, superb);
+MKL_INT getri_cpu<double>(int layout,
+                          MKL_INT n,
+                          double* A_data,
+                          MKL_INT lda,
+                          MKL_INT* ipiv_data) {
+    return LAPACKE_dgetri(layout, n, A_data, lda, ipiv_data);
 }
 
 template <>
-void gesvd_cpu<double>(int layout,
-                       char jobu,
-                       char jobvt,
-                       MKL_INT m,
-                       MKL_INT n,
-                       double* A_data,
-                       MKL_INT lda,
-                       double* S_data,
-                       double* U_data,
-                       MKL_INT ldu,
-                       double* VT_data,
-                       MKL_INT ldvt,
-                       double* superb) {
-    LAPACKE_dgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data, U_data, ldu,
-                   VT_data, ldvt, superb);
+MKL_INT gesvd_cpu<float>(int layout,
+                         char jobu,
+                         char jobvt,
+                         MKL_INT m,
+                         MKL_INT n,
+                         float* A_data,
+                         MKL_INT lda,
+                         float* S_data,
+                         float* U_data,
+                         MKL_INT ldu,
+                         float* VT_data,
+                         MKL_INT ldvt,
+                         float* superb) {
+    return LAPACKE_sgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data,
+                          U_data, ldu, VT_data, ldvt, superb);
 }
 
 template <>
-void gels_cpu<float>(int layout,
-                     char trans,
-                     MKL_INT m,
-                     MKL_INT n,
-                     MKL_INT nrhs,
-                     float* A_data,
-                     MKL_INT lda,
-                     float* B_data,
-                     MKL_INT ldb) {
-    LAPACKE_sgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
+MKL_INT gesvd_cpu<double>(int layout,
+                          char jobu,
+                          char jobvt,
+                          MKL_INT m,
+                          MKL_INT n,
+                          double* A_data,
+                          MKL_INT lda,
+                          double* S_data,
+                          double* U_data,
+                          MKL_INT ldu,
+                          double* VT_data,
+                          MKL_INT ldvt,
+                          double* superb) {
+    return LAPACKE_dgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data,
+                          U_data, ldu, VT_data, ldvt, superb);
 }
 
 template <>
-void gels_cpu<double>(int layout,
-                      char trans,
-                      MKL_INT m,
-                      MKL_INT n,
-                      MKL_INT nrhs,
-                      double* A_data,
-                      MKL_INT lda,
-                      double* B_data,
-                      MKL_INT ldb) {
-    LAPACKE_dgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
+MKL_INT gels_cpu<float>(int layout,
+                        char trans,
+                        MKL_INT m,
+                        MKL_INT n,
+                        MKL_INT nrhs,
+                        float* A_data,
+                        MKL_INT lda,
+                        float* B_data,
+                        MKL_INT ldb) {
+    return LAPACKE_sgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
+}
+
+template <>
+MKL_INT gels_cpu<double>(int layout,
+                         char trans,
+                         MKL_INT m,
+                         MKL_INT n,
+                         MKL_INT nrhs,
+                         double* A_data,
+                         MKL_INT lda,
+                         double* B_data,
+                         MKL_INT ldb) {
+    return LAPACKE_dgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
 }
 
 #ifdef BUILD_CUDA_MODULE

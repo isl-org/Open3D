@@ -45,12 +45,16 @@ void SVDCPU(const void* A_data,
             Dtype dtype,
             const Device& device) {
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        gesvd_cpu<scalar_t>(
-                LAPACK_COL_MAJOR, 'A', 'A', m, n,
-                const_cast<scalar_t*>(static_cast<const scalar_t*>(A_data)), m,
-                static_cast<scalar_t*>(S_data), static_cast<scalar_t*>(U_data),
-                m, static_cast<scalar_t*>(VT_data), n,
-                static_cast<scalar_t*>(superb_data));
+        OPEN3D_LAPACK_CHECK(
+                gesvd_cpu<scalar_t>(
+                        LAPACK_COL_MAJOR, 'A', 'A', m, n,
+                        const_cast<scalar_t*>(
+                                static_cast<const scalar_t*>(A_data)),
+                        m, static_cast<scalar_t*>(S_data),
+                        static_cast<scalar_t*>(U_data), m,
+                        static_cast<scalar_t*>(VT_data), n,
+                        static_cast<scalar_t*>(superb_data)),
+                "gesvd failed in SVDCPU");
     });
 }
 

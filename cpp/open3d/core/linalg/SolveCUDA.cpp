@@ -63,11 +63,11 @@ void SolveCUDA(void* A_data,
 
         OPEN3D_CUSOLVER_CHECK(geqrf_cuda_buffersize<scalar_t>(
                                       cusolver_handle, m, n, m, &len_geqrf),
-                              "cusolverDnSgeqrf_bufferSize failed");
+                              "geqrf_buffersize failed in SolveCUDA");
         OPEN3D_CUSOLVER_CHECK(ormqr_cuda_buffersize<scalar_t>(
                                       cusolver_handle, CUBLAS_SIDE_LEFT,
                                       CUBLAS_OP_T, m, k, n, m, m, &len_ormqr),
-                              "cusolverDnSgeqrf_bufferSize failed");
+                              "ormqr_buffersize failed in SolveCUDA");
         len = std::max(len_geqrf, len_ormqr);
 
         void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
@@ -79,7 +79,7 @@ void SolveCUDA(void* A_data,
                         cusolver_handle, m, n, static_cast<scalar_t*>(A_data),
                         m, static_cast<scalar_t*>(tau),
                         static_cast<scalar_t*>(workspace), len, dinfo),
-                "cusolverDnSgeqrf failed with dinfo = ", dinfo, device);
+                "geqrf failed in SolveCUDA", dinfo, device);
 
         // Step 2: B' = Q^T*B
         OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
@@ -89,8 +89,7 @@ void SolveCUDA(void* A_data,
                         static_cast<scalar_t*>(tau),
                         static_cast<scalar_t*>(B_data), m,
                         static_cast<scalar_t*>(workspace), len, dinfo),
-                "cusolverDnSgeqrf_bufferSize failed with dinfo = ", dinfo,
-                device);
+                "ormqr failed in SolveCUDA", dinfo, device);
 
         // Step 3: Solve Rx = B'
         scalar_t alpha = 1.0f;
@@ -100,7 +99,7 @@ void SolveCUDA(void* A_data,
                                     CUBLAS_DIAG_NON_UNIT, n, k, &alpha,
                                     static_cast<scalar_t*>(A_data), m,
                                     static_cast<scalar_t*>(B_data), m),
-                "cublasStrsm failed");
+                "trsm failed in SolveCUDA");
 
         MemoryManager::Free(workspace, device);
         MemoryManager::Free(tau, device);

@@ -37,8 +37,9 @@ int main() {
     std::vector<Dtype> dtypes{Dtype::Float32, Dtype::Float64};
 
     // Equation from https://www.mathworks.com/help/symbolic/linsolve.html
-    std::vector<float> A_vals{0.8824, -0.1176, 0.1961, 0.1765, 0.1765,
-                              0.0392, 0.0588,  0.0588, -0.0980};
+    // std::vector<float> A_vals{0.8824, -0.1176, 0.1961, 0.1765, 0.1765,
+    //                           0.0392, 0.0588,  0.0588, -0.0980};
+    std::vector<float> A_vals{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     Tensor A(A_vals, {3, 3}, core::Dtype::Float32, Device("CPU:0"));
 
     std::cout << A.ToString() << "\n";

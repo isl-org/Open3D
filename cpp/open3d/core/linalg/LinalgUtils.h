@@ -33,6 +33,8 @@
 #include <memory>
 #include <string>
 
+#include <mkl.h>
+
 #ifdef BUILD_CUDA_MODULE
 #include <cublas_v2.h>
 #include <cusolverDn.h>
@@ -57,6 +59,14 @@ namespace core {
         }                                                    \
     }()
 
+inline void OPEN3D_LAPACK_CHECK(MKL_INT info, const std::string& msg) {
+    if (info < 0) {
+        utility::LogError("{}: {}-th parameter is invalid.", msg, -info);
+    } else if (info > 0) {
+        utility::LogError("{}: singular condition detected.", msg);
+    }
+}
+
 #ifdef BUILD_CUDA_MODULE
 inline void OPEN3D_CUBLAS_CHECK(cublasStatus_t status, const std::string& msg) {
     if (CUBLAS_STATUS_SUCCESS != status) {
@@ -75,10 +85,16 @@ inline void OPEN3D_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
                                              const std::string& msg,
                                              int* dinfo,
                                              const Device& device) {
-    if (status != CUSOLVER_STATUS_SUCCESS) {
-        int hinfo;
-        MemoryManager::MemcpyToHost(&hinfo, dinfo, device, sizeof(int));
-        utility::LogError("{} {}", msg, hinfo);
+    int hinfo;
+    MemoryManager::MemcpyToHost(&hinfo, dinfo, device, sizeof(int));
+    if (status != CUSOLVER_STATUS_SUCCESS || hinfo != 0) {
+        if (hinfo < 0) {
+            utility::LogError("{}: {}-th parameter is invalid.", msg, -hinfo);
+        } else if (hinfo > 0) {
+            utility::LogError("{}: singular condition detected.", msg);
+        } else {
+            utility::LogError("{}: status error code = {}.", msg, status);
+        }
     }
 }
 

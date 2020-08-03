@@ -74,8 +74,8 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     int64_t k = A_shape[1];
     int64_t n = B_shape.size() == 2 ? B_shape[1] : 1;
 
-    Tensor A_T = A.T().Contiguous();
-    Tensor B_T = B.T().Contiguous();
+    Tensor A_T = A.T().Contiguous().To(dtype);
+    Tensor B_T = B.T().Contiguous().To(dtype);
     void* A_data = A_T.GetDataPtr();
     void* B_data = B_T.GetDataPtr();
 

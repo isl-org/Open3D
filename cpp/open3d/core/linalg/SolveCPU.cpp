@@ -44,9 +44,12 @@ void SolveCPU(void* A_data,
               Dtype dtype,
               const Device& device) {
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        gels_cpu<scalar_t>(LAPACK_COL_MAJOR, 'N', m, n, k,
-                           static_cast<scalar_t*>(A_data), m,
-                           static_cast<scalar_t*>(B_data), std::max(m, n));
+        OPEN3D_LAPACK_CHECK(
+                gels_cpu<scalar_t>(LAPACK_COL_MAJOR, 'N', m, n, k,
+                                   static_cast<scalar_t*>(A_data), m,
+                                   static_cast<scalar_t*>(B_data),
+                                   std::max(m, n)),
+                "gels failed in SolveCPU");
     });
 }
 

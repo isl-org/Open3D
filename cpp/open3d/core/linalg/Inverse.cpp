@@ -55,9 +55,6 @@ void Inverse(const Tensor &A, Tensor &output) {
 
     int64_t n = A_shape[0];
 
-    Tensor A_T = A.T().Contiguous();
-    void *A_data = A_T.GetDataPtr();
-
     /// Pivot to shuffle during matrix factorization
     Tensor ipiv = Tensor::Zeros({n}, Dtype::Int64, device);
 
@@ -67,6 +64,9 @@ void Inverse(const Tensor &A, Tensor &output) {
 #ifdef BUILD_CUDA_MODULE
         // cuSolver does not support getri, so we have to provide an identity
         // matrix. This matrix is modified in-place as output.
+        Tensor A_T = A.T().Contiguous();
+        void *A_data = A_T.GetDataPtr();
+
         output = Tensor::Eye(n, dtype, device);
         void *output_data = output.GetDataPtr();
 
@@ -77,6 +77,9 @@ void Inverse(const Tensor &A, Tensor &output) {
 #endif
     } else {
         // LAPACKE supports getri, A is in-place modified as output.
+        Tensor A_T = A.T().Copy(device);
+        void *A_data = A_T.GetDataPtr();
+
         InverseCPU(A_data, ipiv_data, nullptr, n, dtype, device);
         output = A_T.T();
     }

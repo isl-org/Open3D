@@ -51,7 +51,7 @@ void InverseCUDA(void* A_data,
 
         OPEN3D_CUSOLVER_CHECK(
                 getrf_cuda_buffersize<scalar_t>(handle, n, n, n, &len),
-                "[InverseCUDA] cusolverDnSgetrf_bufferSize failed");
+                "getrf_buffersize failed in InverseCUDA");
         void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
 
         OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
@@ -59,8 +59,7 @@ void InverseCUDA(void* A_data,
                                      static_cast<scalar_t*>(A_data), n,
                                      static_cast<scalar_t*>(workspace),
                                      static_cast<int*>(ipiv_data), dinfo),
-                "[InverseCUDA] cusolverDnSgetrf failed with dinfo = ", dinfo,
-                device);
+                "getrf failed in InverseCUDA", dinfo, device);
 
         OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
                 getrs_cuda<scalar_t>(handle, CUBLAS_OP_N, n, n,
@@ -68,8 +67,7 @@ void InverseCUDA(void* A_data,
                                      static_cast<int*>(ipiv_data),
                                      static_cast<scalar_t*>(output_data), n,
                                      dinfo),
-                "[InverseCUDA] cusolverDnSgetrs failed with dinfo = ", dinfo,
-                device);
+                "getrs failed in InverseCUDA", dinfo, device);
 
         MemoryManager::Free(workspace, device);
         MemoryManager::Free(dinfo, device);
