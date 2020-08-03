@@ -200,6 +200,23 @@ Tensor Tensor::Eye(int64_t n, Dtype dtype, const Device& device) {
     return eye;
 }
 
+Tensor Tensor::Diag(const Tensor& other) {
+    const SizeVector& shape = other.GetShape();
+    if (shape.size() != 1) {
+        utility::LogError("Internal error: input tensor must be 1D");
+    }
+    int64_t n = shape[0];
+    Dtype dtype = other.GetDtype();
+    Device device = other.GetDevice();
+
+    Tensor diag = Tensor::Zeros({n, n}, dtype, device);
+    for (int64_t i = 0; i < n; ++i) {
+        TensorKey idx_i = TensorKey::Index(i);
+        diag.SetItem({idx_i, idx_i}, other.GetItem(idx_i));
+    }
+    return diag;
+}
+
 Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());

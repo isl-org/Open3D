@@ -199,6 +199,30 @@ class Tensor(o3d.pybind.core.Tensor):
             shape = SizeVector(shape)
         return super(Tensor, Tensor).ones(shape, dtype, device)
 
+    @staticmethod
+    @cast_to_py_tensor
+    def eye(n, dtype=Dtype.Float64, device=Device("CPU:0")):
+        """
+        Create an identity square matrix.
+
+        Args:
+            n (int): size of square matrix
+            dtype (Dtype): Data type of the tensor.
+            device (Device): Device where the tensor is created.
+        """
+        return super(Tensor, Tensor).eye(n, dtype, device)
+
+    @staticmethod
+    @cast_to_py_tensor
+    def diag(value):
+        """
+        Create an diagonal square matrix.
+
+        Args:
+            value (Tensor): array of numbers on the diagonal
+        """
+        return super(Tensor, Tensor).diag(value)
+
     @cast_to_py_tensor
     def cuda(self, device_id=0):
         """
@@ -491,6 +515,21 @@ class Tensor(o3d.pybind.core.Tensor):
                   dtype.
         """
         return super(Tensor, self).to(dtype, copy)
+
+    @cast_to_py_tensor
+    def contiguous(self):
+        """
+        Returns a contiguous tensor with copy if required
+        """
+        return super(Tensor, self).contiguous()
+
+    @cast_to_py_tensor
+    def transpose(self):
+        """
+        Returns transpose of an 2D tensor
+        """
+        return super(Tensor, self).T()
+
 
     @cast_to_py_tensor
     def nonzero(self, as_tuple=False):

@@ -179,6 +179,8 @@ public:
     /// Create a identity matrix of size n x n
     static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
 
+    static Tensor Diag(const Tensor& other);
+
     /// Pythonic __getitem__ for tensor.
     ///
     /// Returns a view of the original tensor, if TensorKey is
