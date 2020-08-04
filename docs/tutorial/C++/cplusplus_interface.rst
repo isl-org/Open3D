@@ -78,13 +78,13 @@ Alternatively, this can be done by calling CMake from the console:
     mkdir build
     cd build
     cmake -G "Visual Studio 16 2019 Win64" -DCMAKE_INSTALL_PREFIX=C:\open3d_install ..
-    cmake --build . --config Release --target install
+    cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config Release --target install
 
     cd ..\docs\_static\C++\
     mkdir build
     cd build
     cmake -G "Visual Studio 16 2019 Win64" -DCMAKE_PREFIX_PATH=C:\open3d_install ..
-    cmake --build . --config Release
+    cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config Release
     Release\TestVisualizer.exe
 
 Highlights

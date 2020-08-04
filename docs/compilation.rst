@@ -381,7 +381,7 @@ Alternatively, we can also build directly from the CMD terminal. Run
 
 .. code-block:: bat
 
-    cmake --build . --config Release --target ALL_BUILD
+    cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config Release --target ALL_BUILD
 
 5. Install
 ``````````
@@ -391,7 +391,7 @@ corresponding targets with Visual Studio or from the terminal. E.g.
 
 .. code-block:: bat
 
-    cmake --build . --config Release --target the-target-name
+    cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config Release --target the-target-name
 
 Here's a list of installation related targets. Please refer to
 :ref:`compilation_ubuntu_install` for more detailed documentation.
