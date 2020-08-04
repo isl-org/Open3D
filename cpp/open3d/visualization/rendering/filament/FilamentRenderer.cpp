@@ -83,6 +83,17 @@ void FilamentRenderer::DestroyScene(const SceneHandle& id) {
     scenes_.erase(id);
 }
 
+void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
+    filament::Renderer::ClearOptions co;
+    co.clearColor.r = color.x();
+    co.clearColor.g = color.y();
+    co.clearColor.b = color.z();
+    co.clearColor.a = color.w();
+    co.clear = true;
+    co.discard = true;
+    renderer_->setClearOptions(co);
+}
+
 void FilamentRenderer::UpdateSwapChain() {
     void* native_win = swap_chain_->getNativeWindow();
     engine_.destroy(swap_chain_);

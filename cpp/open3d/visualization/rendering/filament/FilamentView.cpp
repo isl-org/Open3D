@@ -52,27 +52,6 @@ const filament::LinearColorA kDepthClearColor = {0.f, 0.f, 0.f, 0.f};
 const filament::LinearColorA kNormalsClearColor = {0.5f, 0.5f, 0.5f, 1.f};
 #endif
 
-filament::View::TargetBufferFlags FlagsFromTargetBuffers(
-        const View::TargetBuffers& buffers) {
-    using namespace std;
-
-    auto raw_buffers = static_cast<uint8_t>(buffers);
-    uint8_t raw_filament_buffers = 0;
-    if (raw_buffers | (uint8_t)View::TargetBuffers::Color) {
-        raw_filament_buffers |=
-                (uint8_t)filament::View::TargetBufferFlags::COLOR;
-    }
-    if (raw_buffers | (uint8_t)View::TargetBuffers::Depth) {
-        raw_filament_buffers |=
-                (uint8_t)filament::View::TargetBufferFlags::DEPTH;
-    }
-    if (raw_buffers | (uint8_t)View::TargetBuffers::Stencil) {
-        raw_filament_buffers |=
-                (uint8_t)filament::View::TargetBufferFlags::STENCIL;
-    }
-
-    return static_cast<filament::View::TargetBufferFlags>(raw_filament_buffers);
-}
 }  // namespace
 
 FilamentView::FilamentView(filament::Engine& engine,
@@ -146,7 +125,7 @@ void FilamentView::SetMode(Mode mode) {
 
 void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers) {
     discard_buffers_ = buffers;
-    view_->setRenderTarget(nullptr, FlagsFromTargetBuffers(buffers));
+    view_->setRenderTarget(nullptr);
 }
 
 void FilamentView::SetSampleCount(int n) { view_->setSampleCount(n); }
@@ -163,13 +142,14 @@ void FilamentView::SetViewport(std::int32_t x,
 void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
     clear_color_ = color;
 
-#if AUTO_CLEAR_COLOR
+/*#if AUTO_CLEAR_COLOR
     if (mode_ == Mode::Color || mode_ >= Mode::ColorMapX) {
         view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
     }
 #else
     view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
 #endif
+ */
 }
 
 void FilamentView::SetSSAOEnabled(const bool enabled) {
@@ -182,8 +162,7 @@ Camera* FilamentView::GetCamera() const { return camera_.get(); }
 
 void FilamentView::CopySettingsFrom(const FilamentView& other) {
     SetMode(other.mode_);
-    view_->setRenderTarget(nullptr,
-                           FlagsFromTargetBuffers(other.discard_buffers_));
+    view_->setRenderTarget(nullptr);
 
     auto vp = other.view_->getViewport();
     SetViewport(0, 0, vp.width, vp.height);
