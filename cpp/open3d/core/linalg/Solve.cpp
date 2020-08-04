@@ -71,6 +71,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
                           n);
     }
 
+    // A and B are modified in-place
     Tensor A_copy = A.T().Copy(device);
     Tensor B_copy = B.T().Copy(device);
 
@@ -79,7 +80,6 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        // cuSolver uses column-wise storage
         SolveCUDA(A_data, B_data, m, n, k, dtype, device);
 #else
         utility::LogError("Unimplemented device.");
