@@ -26,26 +26,45 @@
 //
 
 #include "open3d/ml/PyTorch/TorchHelper.h"
-#include "open3d/ml/impl/misc/ReduceSubarraysSum.h"
 #include "torch/script.h"
 
+// These classes implement functors that can be passed to the neighbor search
+// functions.
+
 template <class T>
-torch::Tensor ReduceSubarraysSumCPU(const torch::Tensor& values,
-                                    const torch::Tensor& row_splits) {
-    torch::Tensor sums = torch::empty({row_splits.size(0) - 1},
-                                      torch::dtype(ToTorchDtype<T>()));
+class NeighborSearchAllocator {
+public:
+    NeighborSearchAllocator(torch::DeviceType device_type, int device_idx)
+        : device_type(device_type), device_idx(device_idx) {}
 
-    open3d::ml::impl::ReduceSubarraysSumCPU(
-            values.data_ptr<T>(), values.size(0),
-            row_splits.data_ptr<int64_t>(), row_splits.size(0) - 1,
-            sums.data_ptr<T>());
-    return sums;
-}
-#define INSTANTIATE(T)                                                    \
-    template torch::Tensor ReduceSubarraysSumCPU<T>(const torch::Tensor&, \
-                                                    const torch::Tensor&);
+    void AllocIndices(int32_t** ptr, size_t num) {
+        neighbors_index = torch::empty(
+                {int64_t(num)}, torch::dtype(ToTorchDtype<int32_t>())
+                                        .device(device_type, device_idx));
+        *ptr = neighbors_index.data_ptr<int32_t>();
+    }
 
-INSTANTIATE(int32_t)
-INSTANTIATE(int64_t)
-INSTANTIATE(float)
-INSTANTIATE(double)
+    void AllocDistances(T** ptr, size_t num) {
+        neighbors_distance = torch::empty(
+                {int64_t(num)}, torch::dtype(ToTorchDtype<T>())
+                                        .device(device_type, device_idx));
+        *ptr = neighbors_distance.data_ptr<T>();
+    }
+
+    const int32_t* IndicesPtr() const {
+        return neighbors_index.data_ptr<int32_t>();
+    }
+
+    const T* DistancesPtr() const { return neighbors_distance.data_ptr<T>(); }
+
+    const torch::Tensor& NeighborsIndex() const { return neighbors_index; }
+    const torch::Tensor& NeighborsDistance() const {
+        return neighbors_distance;
+    }
+
+private:
+    torch::Tensor neighbors_index;
+    torch::Tensor neighbors_distance;
+    torch::DeviceType device_type;
+    int device_idx;
+};

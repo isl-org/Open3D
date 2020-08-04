@@ -26,26 +26,27 @@
 //
 
 #include "open3d/ml/PyTorch/TorchHelper.h"
-#include "open3d/ml/impl/misc/ReduceSubarraysSum.h"
+#include "open3d/ml/impl/misc/FixedRadiusSearch.h"
 #include "torch/script.h"
 
 template <class T>
-torch::Tensor ReduceSubarraysSumCPU(const torch::Tensor& values,
-                                    const torch::Tensor& row_splits) {
-    torch::Tensor sums = torch::empty({row_splits.size(0) - 1},
-                                      torch::dtype(ToTorchDtype<T>()));
-
-    open3d::ml::impl::ReduceSubarraysSumCPU(
-            values.data_ptr<T>(), values.size(0),
-            row_splits.data_ptr<int64_t>(), row_splits.size(0) - 1,
-            sums.data_ptr<T>());
-    return sums;
+void BuildSpatialHashTableCPU(const torch::Tensor& points,
+                              double radius,
+                              const torch::Tensor& points_row_splits,
+                              const std::vector<uint32_t>& hash_table_splits,
+                              torch::Tensor& hash_table_index,
+                              torch::Tensor& hash_table_cell_splits) {
+    open3d::ml::impl::BuildSpatialHashTableCPU(
+            points.size(0), points.data_ptr<T>(), T(radius),
+            points_row_splits.size(0), points_row_splits.data_ptr<int64_t>(),
+            hash_table_splits.data(), hash_table_cell_splits.size(0),
+            (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
+            (uint32_t*)hash_table_index.data_ptr<int32_t>());
 }
-#define INSTANTIATE(T)                                                    \
-    template torch::Tensor ReduceSubarraysSumCPU<T>(const torch::Tensor&, \
-                                                    const torch::Tensor&);
+#define INSTANTIATE(T)                                          \
+    template void BuildSpatialHashTableCPU<T>(                  \
+            const torch::Tensor&, double, const torch::Tensor&, \
+            const std::vector<uint32_t>&, torch::Tensor&, torch::Tensor&);
 
-INSTANTIATE(int32_t)
-INSTANTIATE(int64_t)
 INSTANTIATE(float)
 INSTANTIATE(double)

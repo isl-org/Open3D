@@ -1,10 +1,10 @@
-from open3d.ml.tf import ops
-import tensorflow as tf
+from open3d.ml.torch.nn import functional as ops
+import torch
 
 __all__ = ['FixedRadiusSearch', 'RadiusSearch', 'KNNSearch']
 
 
-class FixedRadiusSearch(tf.keras.layers.Layer):
+class FixedRadiusSearch(torch.nn.Module):
     """Fixed radius search for 3D point clouds.
 
     This layer computes the neighbors for a fixed radius on a point cloud.
@@ -30,23 +30,20 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
                  return_distances=False,
                  max_hash_table_size=32 * 2**20,
                  **kwargs):
+        super().__init__()
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         self.max_hash_table_size = max_hash_table_size
-        super().__init__(autocast=False, **kwargs)
 
-    def build(self, inp_shape):
-        super().build(inp_shape)
-
-    def call(self,
-             points,
-             queries,
-             radius,
-             points_row_splits=None,
-             queries_row_splits=None,
-             hash_table_size_factor=1 / 64,
-             hash_table=None):
+    def forward(self,
+                points,
+                queries,
+                radius,
+                points_row_splits=None,
+                queries_row_splits=None,
+                hash_table_size_factor=1 / 64,
+                hash_table=None):
         """This function computes the neighbors within a fixed radius for each query point.
 
         Arguments:
@@ -88,11 +85,10 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             This is a zero length Tensor if 'return_distances' is False.
         """
         if points_row_splits is None:
-            points_row_splits = tf.cast(tf.stack([0, tf.shape(points)[0]]),
-                                        dtype=tf.int64)
+            points_row_splits = torch.LongTensor([0, points.shape[0]])
         if queries_row_splits is None:
-            queries_row_splits = tf.cast(tf.stack([0, tf.shape(queries)[0]]),
-                                         dtype=tf.int64)
+            queries_row_splits = torch.LongTensor([0, queries.shape[0]])
+
         if hash_table is None:
             table = ops.build_spatial_hash_table(
                 max_hash_table_size=self.max_hash_table_size,
@@ -102,6 +98,7 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
                 hash_table_size_factor=hash_table_size_factor)
         else:
             table = hash_table
+
         result = ops.fixed_radius_search(
             ignore_query_point=self.ignore_query_point,
             return_distances=self.return_distances,
@@ -117,7 +114,7 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
         return result
 
 
-class RadiusSearch(tf.keras.layers.Layer):
+class RadiusSearch(torch.nn.Module):
     """Radius search for 3D point clouds.
 
     This layer computes the neighbors for each query point with each query
@@ -151,17 +148,14 @@ class RadiusSearch(tf.keras.layers.Layer):
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         self.normalize_distances = normalize_distances
-        super().__init__(autocast=False, **kwargs)
+        super().__init__()
 
-    def build(self, inp_shape):
-        super().build(inp_shape)
-
-    def call(self,
-             points,
-             queries,
-             radii,
-             points_row_splits=None,
-             queries_row_splits=None):
+    def forward(self,
+                points,
+                queries,
+                radii,
+                points_row_splits=None,
+                queries_row_splits=None):
         """This function computes the neighbors within a radius for each query point.
 
         Arguments:
@@ -196,11 +190,9 @@ class RadiusSearch(tf.keras.layers.Layer):
             This is a zero length Tensor if 'return_distances' is False.
         """
         if points_row_splits is None:
-            points_row_splits = tf.cast(tf.stack([0, tf.shape(points)[0]]),
-                                        dtype=tf.int64)
+            points_row_splits = torch.LongTensor([0, points.shape[0]])
         if queries_row_splits is None:
-            queries_row_splits = tf.cast(tf.stack([0, tf.shape(queries)[0]]),
-                                         dtype=tf.int64)
+            queries_row_splits = torch.LongTensor([0, queries.shape[0]])
 
         result = ops.radius_search(ignore_query_point=self.ignore_query_point,
                                    return_distances=self.return_distances,
@@ -214,7 +206,7 @@ class RadiusSearch(tf.keras.layers.Layer):
         return result
 
 
-class KNNSearch(tf.keras.layers.Layer):
+class KNNSearch(torch.nn.Module):
     """KNN search for 3D point clouds.
 
     This layer computes the k nearest neighbors for each query point.
@@ -242,17 +234,14 @@ class KNNSearch(tf.keras.layers.Layer):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
-        super().__init__(autocast=False, **kwargs)
+        super().__init__()
 
-    def build(self, inp_shape):
-        super().build(inp_shape)
-
-    def call(self,
-             points,
-             queries,
-             k,
-             points_row_splits=None,
-             queries_row_splits=None):
+    def forward(self,
+                points,
+                queries,
+                k,
+                points_row_splits=None,
+                queries_row_splits=None):
         """This function computes the k nearest neighbors for each query point.
 
         Arguments:
@@ -287,11 +276,9 @@ class KNNSearch(tf.keras.layers.Layer):
             This is a zero length Tensor if 'return_distances' is False.
         """
         if points_row_splits is None:
-            points_row_splits = tf.cast(tf.stack([0, tf.shape(points)[0]]),
-                                        dtype=tf.int64)
+            points_row_splits = torch.LongTensor([0, points.shape[0]])
         if queries_row_splits is None:
-            queries_row_splits = tf.cast(tf.stack([0, tf.shape(queries)[0]]),
-                                         dtype=tf.int64)
+            queries_row_splits = torch.LongTensor([0, queries.shape[0]])
 
         result = ops.knn_search(ignore_query_point=self.ignore_query_point,
                                 return_distances=self.return_distances,
