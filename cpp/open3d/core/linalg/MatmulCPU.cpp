@@ -34,9 +34,9 @@ namespace core {
 void MatmulCPU(void* A_data,
                void* B_data,
                void* C_data,
-               int m,
-               int k,
-               int n,
+               int64_t m,
+               int64_t k,
+               int64_t n,
                Dtype dtype) {
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t alpha = 1, beta = 0;

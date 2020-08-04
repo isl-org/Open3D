@@ -37,17 +37,17 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& C);
 void MatmulCUDA(void* A_data,
                 void* B_data,
                 void* C_data,
-                int m,
-                int k,
-                int n,
+                int64_t m,
+                int64_t k,
+                int64_t n,
                 Dtype dtype);
 #endif
 void MatmulCPU(void* A_data,
                void* B_data,
                void* C_data,
-               int m,
-               int k,
-               int n,
+               int64_t m,
+               int64_t k,
+               int64_t n,
                Dtype dtype);
 }  // namespace core
 }  // namespace open3d

@@ -192,28 +192,19 @@ Tensor Tensor::Ones(const SizeVector& shape,
 
 Tensor Tensor::Eye(int64_t n, Dtype dtype, const Device& device) {
     Tensor eye = Tensor::Zeros({n, n}, dtype, device);
-    Tensor one = Tensor::Ones({}, dtype, device);
-    for (int64_t i = 0; i < n; ++i) {
-        TensorKey idx_i = TensorKey::Index(i);
-        eye.SetItem({idx_i, idx_i}, one);
-    }
+    eye.AsStrided({n}, {eye.strides_[0] + eye.strides_[1]}).Fill(1);
     return eye;
 }
 
 Tensor Tensor::Diag(const Tensor& other) {
     const SizeVector& shape = other.GetShape();
     if (shape.size() != 1) {
-        utility::LogError("Internal error: input tensor must be 1D");
+        utility::LogError("Input tensor must be 1D, but got shape {}.",
+                          other.shape_.ToString());
     }
     int64_t n = shape[0];
-    Dtype dtype = other.GetDtype();
-    Device device = other.GetDevice();
-
-    Tensor diag = Tensor::Zeros({n, n}, dtype, device);
-    for (int64_t i = 0; i < n; ++i) {
-        TensorKey idx_i = TensorKey::Index(i);
-        diag.SetItem({idx_i, idx_i}, other.GetItem(idx_i));
-    }
+    Tensor diag = Tensor::Zeros({n, n}, other.GetDtype(), other.GetDevice());
+    diag.AsStrided({n}, {diag.strides_[0] + diag.strides_[1]}) = other;
     return diag;
 }
 

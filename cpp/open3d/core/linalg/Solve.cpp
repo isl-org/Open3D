@@ -64,8 +64,9 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
                 "Tensor B must be 1D (vector) or 2D (matrix), but got {}D",
                 B_shape.size());
     }
-    int m = A_shape[0], n = A_shape[1],
-        k = B_shape.size() == 2 ? B_shape[1] : 1;
+    int64_t m = A_shape[0];
+    int64_t n = A_shape[1];
+    int64_t k = B_shape.size() == 2 ? B_shape[1] : 1;
     if (m < n) {
         utility::LogError("Tensor A shape must satisfy rows ({}) > cols({})", m,
                           n);

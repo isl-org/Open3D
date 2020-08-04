@@ -123,12 +123,14 @@ date
 reportRun make VERBOSE=1 -j"$NPROC"
 reportRun make install -j"$NPROC"
 reportRun make VERBOSE=1 install-pip-package -j"$NPROC"
-reportRun python -c "import open3d; print(open3d)"
-reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
 echo
 
 # skip unit tests if built with CUDA
 if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
+    echo "try importing Open3D python package"
+    reportRun python -c "import open3d; print(open3d)"
+    reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+
     echo "running Open3D unit tests..."
     unitTestFlags=
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"

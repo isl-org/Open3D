@@ -555,7 +555,7 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                           const bool ignore_query_point,
                           const bool return_distances,
                           OUTPUT_ALLOCATOR& output_allocator) {
-    // Dispatch all template parameter combinations
+// Dispatch all template parameter combinations
 
 #define FN_PARAMETERS                                                       \
     query_neighbors_row_splits, num_points, points, num_queries, queries,   \

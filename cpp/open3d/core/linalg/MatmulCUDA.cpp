@@ -35,9 +35,9 @@ namespace core {
 void MatmulCUDA(void* A_data,
                 void* B_data,
                 void* C_data,
-                int m,
-                int k,
-                int n,
+                int64_t m,
+                int64_t k,
+                int64_t n,
                 Dtype dtype) {
     cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
