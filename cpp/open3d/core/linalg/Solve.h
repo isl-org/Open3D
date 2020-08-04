@@ -28,11 +28,6 @@
 
 #include "open3d/core/Tensor.h"
 
-// MKL
-// https://github.com/pytorch/pytorch/blob/afb2d27b24b515f380e889028fe53998d29d4e38/aten/src/ATen/native/BatchLinearAlgebra.cpp
-// MAGMA
-// https://github.com/pytorch/pytorch/blob/e98ad6c05b21f9ee04447de69e809af42f4e114a/aten/src/ATen/native/cuda/BatchLinearAlgebra.cu
-
 namespace open3d {
 namespace core {
 

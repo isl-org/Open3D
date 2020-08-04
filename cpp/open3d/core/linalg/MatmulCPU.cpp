@@ -28,13 +28,9 @@
 #include "open3d/core/linalg/Matmul.h"
 
 #include "open3d/core/linalg/BLAS.h"
-// Put cblas.h here, otherwise there will be a macro hell
-// https://stackoverflow.com/questions/3128497/compiler-error-coming-out-of-yaml-cpp
 
 namespace open3d {
 namespace core {
-// CPU converges to
-// https://software.intel.com/content/www/us/en/develop/documentation/mkl-developer-reference-c/top/blas-and-sparse-blas-routines/blas-routines/blas-level-3-routines/cblas-gemm.html
 void MatmulCPU(void* A_data,
                void* B_data,
                void* C_data,

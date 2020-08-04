@@ -24,33 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/Open3D.h"
-
+#include "open3d/core/linalg/BLAS.h"
+#include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LAPACK.h"
+#include "open3d/core/linalg/LinalgUtils.h"
+#include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
-
-using namespace open3d;
-using namespace open3d::core;
-
-int main() {
-    std::vector<Device> devices{Device("CPU:0"), Device("CUDA:0")};
-    std::vector<Dtype> dtypes{Dtype::Float32, Dtype::Float64};
-
-    std::vector<float> A_vals{
-            8.79,  9.93,  9.83, 5.45,  3.16, 6.11, 6.91, 5.04,  -0.27, 7.98,
-            -9.15, -7.93, 4.86, 4.85,  3.01, 9.57, 1.64, 8.83,  0.74,  5.80,
-            -3.49, 4.02,  9.80, 10.00, 4.27, 9.84, 0.15, -8.99, -6.02, -5.31};
-    Tensor A(A_vals, {6, 5}, core::Dtype::Float32, Device("CPU:0"));
-
-    std::cout << A.ToString() << "\n";
-
-    for (auto dtype : dtypes) {
-        for (auto device : devices) {
-            Tensor A_device = A.Copy(device).To(dtype);
-            Tensor U, S, VT;
-            SVD(A_device, U, S, VT);
-            std::cout << U.ToString() << "\n";
-            std::cout << S.ToString() << "\n";
-            std::cout << VT.ToString() << "\n";
-        }
-    }
-}
+#include "open3d/core/linalg/Solve.h"

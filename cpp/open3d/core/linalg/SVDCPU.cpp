@@ -31,7 +31,7 @@
 #include "open3d/core/linalg/SVD.h"
 
 #include "open3d/core/linalg/LAPACK.h"
-// https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/lapacke_dgesvd_row.c.htm
+
 namespace open3d {
 namespace core {
 

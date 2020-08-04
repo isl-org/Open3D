@@ -32,10 +32,6 @@
 namespace open3d {
 namespace core {
 
-// Reference
-// https://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemmbatched
-// https://developer.nvidia.com/sites/default/files/akamai/cuda/files/Misc/mygpu.pdf
-
 void MatmulCUDA(void* A_data,
                 void* B_data,
                 void* C_data,

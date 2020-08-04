@@ -32,7 +32,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/op/kernel/Kernel.h"
+#include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/Helper.h"
 
 #include "tests/UnitTest.h"

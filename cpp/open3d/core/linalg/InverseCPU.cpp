@@ -34,7 +34,6 @@
 namespace open3d {
 namespace core {
 
-/// https://www.netlib.org/lapack/explore-html/dd/d9a/group__double_g_ecomputational_ga56d9c860ce4ce42ded7f914fdb0683ff.html#ga56d9c860ce4ce42ded7f914fdb0683ff
 void InverseCPU(void* A_data,
                 void* ipiv_data,
                 void* output_data,

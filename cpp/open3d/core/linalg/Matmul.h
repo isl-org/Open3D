@@ -28,9 +28,6 @@
 
 #include "open3d/core/Tensor.h"
 
-// Pytorch reference
-// https://discuss.pytorch.org/t/matrix-multiplication-source-code/71071
-
 namespace open3d {
 namespace core {
 
