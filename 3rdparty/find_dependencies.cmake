@@ -879,13 +879,13 @@ message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
 if(UNIX)
     target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
     target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+    # cuSOLVER and cuBLAS
+    if(BUILD_CUDA_MODULE)
+        target_link_libraries(3rdparty_mkl INTERFACE
+                              ${CUDA_cusolver_LIBRARY}
+                              ${CUDA_CUBLAS_LIBRARIES})
+    endif()
 elseif(MSVC)
     target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
-
-# cuSOLVER and cuBLAS
-if(BUILD_CUDA_MODULE)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${CUDA_cusolver_LIBRARY})
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${CUDA_CUBLAS_LIBRARIES})
-endif()
