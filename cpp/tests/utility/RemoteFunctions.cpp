@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifdef BUILD_RPC_INTERFACE
 #include "open3d/utility/RemoteFunctions.h"
 #include "open3d/utility/DummyReceiver.h"
 #include "tests/UnitTest.h"
@@ -189,4 +188,3 @@ TEST(RemoteFunctions, SendGarbage) {
 
 }  // namespace tests
 }  // namespace open3d
-#endif  // BUILD_RPC_INTERFACE

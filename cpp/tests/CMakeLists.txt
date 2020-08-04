@@ -25,6 +25,10 @@ if (NOT ENABLE_GUI)
     list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/visualization/rendering/.*cpp)
 endif()
 
+if (NOT BUILD_RPC_INTERFACE)
+        list(REMOVE_ITEM UNIT_TEST_SOURCE_FILES utility/RemoteFunctions.cpp)
+endif()
+
 add_executable(tests ${UNIT_TEST_SOURCE_FILES})
 add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
 

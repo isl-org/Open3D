@@ -44,6 +44,14 @@ if (NOT BUILD_AZURE_KINECT)
         "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
 endif()
 
+if (NOT BUILD_RPC_INTERFACE)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/utility/connection.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utility/receiver.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utility/remote_functions.cpp"
+        )
+endif()
+
 # NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
 if ( CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0.0" )
     pybind11_add_module(${PACKAGE_NAME} NO_EXTRAS

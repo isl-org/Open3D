@@ -23,7 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-#ifdef BUILD_RPC_INTERFACE
 
 #include "open3d/utility/Connection.h"
 
@@ -46,4 +45,3 @@ void pybind_connection(py::module& m) {
                  "connect_timeout"_a = 5000, "timeout"_a = 10000);
 }
 }  // namespace open3d
-#endif

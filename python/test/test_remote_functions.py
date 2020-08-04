@@ -61,11 +61,11 @@ def test_external_visualizer():
     assert ev.set(camera, path='bla/camera', time=42)
 
     # send multiple objects
-    assert ev.set(objs=[pcd, mesh, camera])
+    assert ev.set(obj=[pcd, mesh, camera])
 
     # send multiple objects with args
-    assert ev.set(objs=[(pcd, 'pcd', 1), (mesh, 'mesh', 2), (camera, 'camera',
-                                                             3)])
+    assert ev.set(obj=[(pcd, 'pcd', 1), (mesh, 'mesh', 2), (camera, 'camera',
+                                                            3)])
 
     # test other commands
     ev.set_time(10)

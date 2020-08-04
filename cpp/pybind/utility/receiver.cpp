@@ -23,7 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-#ifdef BUILD_RPC_INTERFACE
 
 #include "open3d/utility/DummyReceiver.h"
 
@@ -54,4 +53,3 @@ void pybind_receiver(py::module& m) {
                  "messages that have already been received.");
 }
 }  // namespace open3d
-#endif

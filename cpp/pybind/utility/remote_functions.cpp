@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifdef BUILD_RPC_INTERFACE
 #include "open3d/utility/RemoteFunctions.h"
 
 #include "pybind/docstring.h"
@@ -35,7 +34,7 @@ namespace open3d {
 void pybind_remote_functions(py::module& m) {
     m.def("set_point_cloud", &utility::SetPointCloud, "pcd"_a, "path"_a = "",
           "time"_a = 0, "layer"_a = "",
-          "connection"_a = std::make_shared<utility::Connection>(),
+          "connection"_a = std::shared_ptr<utility::Connection>(),
           "Sends a point cloud message to a viewer.");
     docstring::FunctionDocInject(
             m, "set_point_cloud",
@@ -51,7 +50,7 @@ void pybind_remote_functions(py::module& m) {
 
     m.def("set_triangle_mesh", &utility::SetTriangleMesh, "mesh"_a,
           "path"_a = "", "time"_a = 0, "layer"_a = "",
-          "connection"_a = std::make_shared<utility::Connection>(),
+          "connection"_a = std::shared_ptr<utility::Connection>(),
           "Sends a point cloud message to a viewer.");
     docstring::FunctionDocInject(
             m, "set_triangle_mesh",
@@ -73,7 +72,7 @@ void pybind_remote_functions(py::module& m) {
           "lines"_a = core::Tensor({0}, core::Dtype::Int32),
           "line_attributes"_a = std::map<std::string, core::Tensor>(),
           "textures"_a = std::map<std::string, core::Tensor>(),
-          "connection"_a = std::make_shared<utility::Connection>(),
+          "connection"_a = std::shared_ptr<utility::Connection>(),
           "Sends a set_mesh_data message.");
     docstring::FunctionDocInject(
             m, "set_mesh_data",
@@ -98,7 +97,7 @@ void pybind_remote_functions(py::module& m) {
 
     m.def("set_legacy_camera", &utility::SetLegacyCamera, "camera"_a,
           "path"_a = "", "time"_a = 0, "layer"_a = "",
-          "connection"_a = std::make_shared<utility::Connection>(),
+          "connection"_a = std::shared_ptr<utility::Connection>(),
           "Sends a PinholeCameraParameters object.");
     docstring::FunctionDocInject(
             m, "set_legacy_camera",
@@ -112,7 +111,7 @@ void pybind_remote_functions(py::module& m) {
             });
 
     m.def("set_time", &utility::SetTime, "time"_a,
-          "connection"_a = std::make_shared<utility::Connection>(),
+          "connection"_a = std::shared_ptr<utility::Connection>(),
           "Sets the time in the external visualizer.");
     docstring::FunctionDocInject(
             m, "set_time",
@@ -124,7 +123,7 @@ void pybind_remote_functions(py::module& m) {
             });
 
     m.def("set_active_camera", &utility::SetActiveCamera, "path"_a,
-          "connection"_a = std::make_shared<utility::Connection>(),
+          "connection"_a = std::shared_ptr<utility::Connection>(),
           "Sets the object with the specified path as the active camera.");
     docstring::FunctionDocInject(
             m, "set_active_camera",
@@ -136,4 +135,3 @@ void pybind_remote_functions(py::module& m) {
             });
 }
 }  // namespace open3d
-#endif

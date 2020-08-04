@@ -80,7 +80,7 @@ bool SetPointCloud(const geometry::PointCloud& pcd,
                    const std::string& path,
                    int time,
                    const std::string& layer,
-                   const std::shared_ptr<Connection>& connection) {
+                   std::shared_ptr<Connection> connection) {
     // TODO use SetMeshData here after switching to the new PointCloud class.
     if (!pcd.HasPoints()) {
         LogInfo("SetMeshData: point cloud is empty");
@@ -118,7 +118,7 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
                      const std::string& path,
                      int time,
                      const std::string& layer,
-                     const std::shared_ptr<Connection>& connection) {
+                     std::shared_ptr<Connection> connection) {
     // TODO use SetMeshData here after switching to the new TriangleMesh class.
     if (!mesh.HasTriangles()) {
         LogInfo("SetMeshData: triangle mesh is empty");
@@ -199,7 +199,7 @@ bool SetMeshData(const core::Tensor& vertices,
                  const core::Tensor& lines,
                  const std::map<std::string, core::Tensor>& line_attributes,
                  const std::map<std::string, core::Tensor>& textures,
-                 const std::shared_ptr<Connection>& connection) {
+                 std::shared_ptr<Connection> connection) {
     if (vertices.NumElements() == 0) {
         LogInfo("SetMeshData: vertices Tensor is empty");
         return false;
@@ -347,7 +347,7 @@ bool SetLegacyCamera(const camera::PinholeCameraParameters& camera,
                      const std::string& path,
                      int time,
                      const std::string& layer,
-                     const std::shared_ptr<Connection>& connection) {
+                     std::shared_ptr<Connection> connection) {
     messages::SetCameraData msg;
     msg.path = path;
     msg.time = time;
@@ -397,7 +397,7 @@ bool SetLegacyCamera(const camera::PinholeCameraParameters& camera,
     return ReplyIsOKStatus(*reply);
 }
 
-bool SetTime(int time, const std::shared_ptr<Connection>& connection) {
+bool SetTime(int time, std::shared_ptr<Connection> connection) {
     messages::SetTime msg;
     msg.time = time;
 
@@ -412,7 +412,7 @@ bool SetTime(int time, const std::shared_ptr<Connection>& connection) {
 }
 
 bool SetActiveCamera(const std::string& path,
-                     const std::shared_ptr<Connection>& connection) {
+                     std::shared_ptr<Connection> connection) {
     messages::SetActiveCamera msg;
     msg.path = path;
 
