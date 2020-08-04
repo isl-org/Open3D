@@ -17,8 +17,6 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
-message("INSTALL_DIR of myExtProj = ${INSTALL_DIR}")
-
 set(ASSIMP_INCLUDE_DIR ${INSTALL_DIR}/include/)
 set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
 set(ASSIMP_LIBRARIES assimp IrrXML)
