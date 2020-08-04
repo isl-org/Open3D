@@ -39,18 +39,18 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
 
 @dtypes
+@mltest.parametrize.ml
 @pytest.mark.parametrize('num_points_queries', [(10, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('metric', ['L1', 'L2'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
 @pytest.mark.parametrize('normalize_distances', [False, True])
-def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
-                       return_distances, normalize_distances):
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
-
+def test_radius_search(dtype, ml, num_points_queries, metric,
+                       ignore_query_point, return_distances,
+                       normalize_distances):
     rng = np.random.RandomState(123)
+    device = mltest.cpu_device
 
     num_points, num_queries = num_points_queries
 
@@ -69,23 +69,25 @@ def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
         tree.query_ball_point(q, r, p=p_norm) for q, r in zip(queries, radii)
     ]
 
-    layer = ml3d.layers.RadiusSearch(metric=metric,
-                                     ignore_query_point=ignore_query_point,
-                                     return_distances=return_distances,
-                                     normalize_distances=normalize_distances)
-    ans = layer(points, queries, radii)
-
-    # convert to numpy for convenience
-    ans_neighbors_index = ans.neighbors_index.numpy()
-    ans_neighbors_row_splits = ans.neighbors_row_splits.numpy()
-    if return_distances:
-        ans_neighbors_distance = ans.neighbors_distance.numpy()
+    layer = ml.layers.RadiusSearch(metric=metric,
+                                   ignore_query_point=ignore_query_point,
+                                   return_distances=return_distances,
+                                   normalize_distances=normalize_distances)
+    ans = mltest.run_op(
+        ml,
+        device,
+        layer,
+        True,
+        points,
+        queries=queries,
+        radii=radii,
+    )
 
     for i, q in enumerate(queries):
         # check neighbors
-        start = ans_neighbors_row_splits[i]
-        end = ans_neighbors_row_splits[i + 1]
-        q_neighbors_index = ans_neighbors_index[start:end]
+        start = ans.neighbors_row_splits[i]
+        end = ans.neighbors_row_splits[i + 1]
+        q_neighbors_index = ans.neighbors_index[start:end]
 
         gt_set = set(gt_neighbors_index[i])
         if ignore_query_point:
@@ -94,7 +96,7 @@ def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
 
         # check distances
         if return_distances:
-            q_neighbors_dist = ans_neighbors_distance[start:end]
+            q_neighbors_dist = ans.neighbors_distance[start:end]
             for j, dist in zip(q_neighbors_index, q_neighbors_dist):
                 if metric == 'L2':
                     gt_dist = np.sum((q - points[j])**2)
@@ -108,11 +110,11 @@ def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
 
 
-def test_radius_search_empty_point_sets():
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+@mltest.parametrize.ml
+def test_radius_search_empty_point_sets(ml):
     rng = np.random.RandomState(123)
 
+    device = mltest.cpu_device
     dtype = np.float32
 
     # no query points
@@ -120,36 +122,48 @@ def test_radius_search_empty_point_sets():
     queries = rng.random(size=(0, 3)).astype(dtype)
     radii = rng.uniform(0.1, 0.3, size=(0,)).astype(dtype)
 
-    layer = ml3d.layers.RadiusSearch(return_distances=True)
-    ans = layer(points, queries, radii)
+    layer = ml.layers.RadiusSearch(return_distances=True)
+    ans = mltest.run_op(
+        ml,
+        device,
+        layer,
+        True,
+        points,
+        queries=queries,
+        radii=radii,
+    )
 
-    assert ans.neighbors_index.shape.as_list() == [0]
-    assert ans.neighbors_row_splits.shape.as_list() == [1]
-    assert ans.neighbors_distance.shape.as_list() == [0]
+    assert ans.neighbors_index.shape == (0,)
+    assert ans.neighbors_row_splits.shape == (1,)
+    assert ans.neighbors_distance.shape == (0,)
 
     # no input points
     points = rng.random(size=(0, 3)).astype(dtype)
     queries = rng.random(size=(100, 3)).astype(dtype)
     radii = rng.uniform(0.1, 0.3, size=(100,)).astype(dtype)
 
-    ans = layer(
+    ans = mltest.run_op(
+        ml,
+        device,
+        layer,
+        True,
         points,
-        queries,
-        radii,
+        queries=queries,
+        radii=radii,
     )
 
-    assert ans.neighbors_index.shape.as_list() == [0]
-    assert ans.neighbors_row_splits.shape.as_list() == [101]
+    assert ans.neighbors_index.shape == (0,)
+    assert ans.neighbors_row_splits.shape == (101,)
     np.testing.assert_array_equal(np.zeros_like(ans.neighbors_row_splits),
                                   ans.neighbors_row_splits)
-    assert ans.neighbors_distance.shape.as_list() == [0]
+    assert ans.neighbors_distance.shape == (0,)
 
 
+@mltest.parametrize.ml
 @pytest.mark.parametrize('batch_size', [2, 3, 8])
-def test_radius_search_batches(batch_size):
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+def test_radius_search_batches(ml, batch_size):
 
+    device = mltest.cpu_device
     dtype = np.float32
     metric = 'L2'
     p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
@@ -190,29 +204,25 @@ def test_radius_search_batches(batch_size):
             for q, r in zip(queries_i, radii_i)
         ])
 
-    layer = ml3d.layers.RadiusSearch(metric=metric,
-                                     ignore_query_point=ignore_query_point,
-                                     normalize_distances=normalize_distances,
-                                     return_distances=return_distances)
-    ans = layer(
-        points,
-        queries,
-        radii,
-        points_row_splits=points_row_splits,
-        queries_row_splits=queries_row_splits,
-    )
-
-    # convert to numpy for convenience
-    ans_neighbors_index = ans.neighbors_index.numpy()
-    ans_neighbors_row_splits = ans.neighbors_row_splits.numpy()
-    if return_distances:
-        ans_neighbors_distance = ans.neighbors_distance.numpy()
+    layer = ml.layers.RadiusSearch(metric=metric,
+                                   ignore_query_point=ignore_query_point,
+                                   normalize_distances=normalize_distances,
+                                   return_distances=return_distances)
+    ans = mltest.run_op(ml,
+                        device,
+                        layer,
+                        True,
+                        points,
+                        queries=queries,
+                        radii=radii,
+                        points_row_splits=points_row_splits,
+                        queries_row_splits=queries_row_splits)
 
     for i, q in enumerate(queries):
         # check neighbors
-        start = ans_neighbors_row_splits[i]
-        end = ans_neighbors_row_splits[i + 1]
-        q_neighbors_index = ans_neighbors_index[start:end]
+        start = ans.neighbors_row_splits[i]
+        end = ans.neighbors_row_splits[i + 1]
+        q_neighbors_index = ans.neighbors_index[start:end]
 
         gt_set = set(gt_neighbors_index[i])
         if ignore_query_point:
@@ -221,7 +231,7 @@ def test_radius_search_batches(batch_size):
 
         # check distances
         if return_distances:
-            q_neighbors_dist = ans_neighbors_distance[start:end]
+            q_neighbors_dist = ans.neighbors_distance[start:end]
             for j, dist in zip(q_neighbors_index, q_neighbors_dist):
                 if metric == 'L2':
                     gt_dist = np.sum((q - points[j])**2)

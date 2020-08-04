@@ -361,6 +361,20 @@ void pybind_core_tensor(py::module& m) {
                [](const core::Tensor& tensor) { return tensor.ToString(); });
     tensor.def("__str__",
                [](const core::Tensor& tensor) { return tensor.ToString(); });
+
+    // Get item from Tensor of one element
+    tensor.def("_item_float",
+               [](const core::Tensor& t) { return t.Item<float>(); });
+    tensor.def("_item_double",
+               [](const core::Tensor& t) { return t.Item<double>(); });
+    tensor.def("_item_int32_t",
+               [](const core::Tensor& t) { return t.Item<int32_t>(); });
+    tensor.def("_item_int64_t",
+               [](const core::Tensor& t) { return t.Item<int64_t>(); });
+    tensor.def("_item_uint8_t",
+               [](const core::Tensor& t) { return t.Item<uint8_t>(); });
+    tensor.def("_item_bool",
+               [](const core::Tensor& t) { return t.Item<bool>(); });
 }
 
 }  // namespace open3d

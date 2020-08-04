@@ -84,7 +84,8 @@ void BuildSpatialHashTableCPU(const size_t num_points,
                               TIndex* hash_table_cell_splits,
                               TIndex* hash_table_index) {
     using namespace open3d::utility;
-    typedef Eigen::Array<TReal, 3, 1> Vec3_t;
+    typedef MiniVec<TReal, 3> Vec3_t;
+    // typedef Eigen::Array<TReal, 3, 1> Vec3_t;
 
     const int batch_size = points_row_splits_size - 1;
     const TReal voxel_size = 2 * radius;
@@ -103,14 +104,12 @@ void BuildSpatialHashTableCPU(const size_t num_points,
                                             points_row_splits[i + 1]),
                 [&](const tbb::blocked_range<int64_t>& r) {
                     for (int64_t i = r.begin(); i != r.end(); ++i) {
-                        Eigen::Map<const Vec3_t> pos(points + 3 * i);
+                        Vec3_t pos(points + 3 * i);
 
-                        Eigen::Vector3i voxel_index =
+                        auto voxel_index =
                                 ComputeVoxelIndex(pos, inv_voxel_size);
                         size_t hash =
-                                SpatialHash(voxel_index.x(), voxel_index.y(),
-                                            voxel_index.z()) %
-                                hash_table_size;
+                                SpatialHash(voxel_index) % hash_table_size;
 
                         // note the +1 because we want the first element to be 0
                         core::AtomicFetchAddRelaxed(
@@ -136,14 +135,12 @@ void BuildSpatialHashTableCPU(const size_t num_points,
                                            points_row_splits[i + 1]),
                 [&](const tbb::blocked_range<size_t>& r) {
                     for (size_t i = r.begin(); i != r.end(); ++i) {
-                        Eigen::Map<const Vec3_t> pos(points + 3 * i);
+                        Vec3_t pos(points + 3 * i);
 
-                        Eigen::Vector3i voxel_index =
+                        auto voxel_index =
                                 ComputeVoxelIndex(pos, inv_voxel_size);
                         size_t hash =
-                                SpatialHash(voxel_index.x(), voxel_index.y(),
-                                            voxel_index.z()) %
-                                hash_table_size;
+                                SpatialHash(voxel_index) % hash_table_size;
 
                         hash_table_index
                                 [hash_table_cell_splits[hash + first_cell_idx] +
@@ -216,7 +213,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 
     // number of elements for vectorization
     const int VECSIZE = 8;
-    typedef Eigen::Array<T, 3, 1> Vec3_t;
+    typedef MiniVec<T, 3> Vec3_t;
     typedef Eigen::Array<T, VECSIZE, 1> Vec_t;
     typedef Eigen::Array<int32_t, VECSIZE, 1> Veci_t;
 
@@ -261,11 +258,11 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                     for (size_t i = r.begin(); i != r.end(); ++i) {
                         size_t neighbors_count = 0;
 
-                        Eigen::Map<const Vec3_t> pos(queries + i * 3);
+                        Vec3_t pos(queries + i * 3);
 
                         std::set<size_t> bins_to_visit;
 
-                        Eigen::Vector3i voxel_index =
+                        auto voxel_index =
                                 ComputeVoxelIndex(pos, inv_voxel_size);
                         size_t hash =
                                 SpatialHash(voxel_index) % hash_table_size;
@@ -276,8 +273,9 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                             for (int dy = -1; dy <= 1; dy += 2)
                                 for (int dx = -1; dx <= 1; dx += 2) {
                                     Vec3_t p =
-                                            pos + radius * Vec3_t(dx, dy, dz);
-                                    voxel_index << ComputeVoxelIndex(
+                                            pos + radius * Vec3_t(T(dx), T(dy),
+                                                                  T(dz));
+                                    voxel_index = ComputeVoxelIndex(
                                             p, inv_voxel_size);
                                     hash = SpatialHash(voxel_index) %
                                            hash_table_size;
@@ -294,9 +292,9 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                             for (size_t j = begin_idx; j < end_idx; ++j) {
                                 uint32_t idx = hash_table_index[j];
                                 if (IGNORE_QUERY_POINT) {
-                                    if (points[idx * 3 + 0] == pos.x() &&
-                                        points[idx * 3 + 1] == pos.y() &&
-                                        points[idx * 3 + 2] == pos.z())
+                                    if (points[idx * 3 + 0] == pos[0] &&
+                                        points[idx * 3 + 1] == pos[1] &&
+                                        points[idx * 3 + 2] == pos[2])
                                         continue;
                                 }
                                 xyz(vec_i, 0) = points[idx * 3 + 0];
@@ -304,8 +302,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                                 xyz(vec_i, 2) = points[idx * 3 + 2];
                                 ++vec_i;
                                 if (VECSIZE == vec_i) {
+                                    Eigen::Array<T, 3, 1> pos_arr(
+                                            pos[0], pos[1], pos[2]);
                                     Vec_t dist =
-                                            NeighborsDist<METRIC>(pos, xyz);
+                                            NeighborsDist<METRIC>(pos_arr, xyz);
                                     Eigen::Array<bool, VECSIZE, 1> test_result =
                                             dist <= threshold;
                                     neighbors_count += test_result.count();
@@ -315,8 +315,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                         }
                         // process the tail
                         if (vec_i) {
+                            Eigen::Array<T, 3, 1> pos_arr(pos[0], pos[1],
+                                                          pos[2]);
                             Eigen::Array<T, VECSIZE, 1> dist =
-                                    NeighborsDist<METRIC>(pos, xyz);
+                                    NeighborsDist<METRIC>(pos_arr, xyz);
                             Eigen::Array<bool, VECSIZE, 1> test_result =
                                     dist <= threshold;
                             for (int k = 0; k < vec_i; ++k) {
@@ -371,7 +373,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 
                         std::set<size_t> bins_to_visit;
 
-                        Eigen::Vector3i voxel_index =
+                        auto voxel_index =
                                 ComputeVoxelIndex(pos, inv_voxel_size);
                         size_t hash =
                                 SpatialHash(voxel_index) % hash_table_size;
@@ -382,8 +384,9 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                             for (int dy = -1; dy <= 1; dy += 2)
                                 for (int dx = -1; dx <= 1; dx += 2) {
                                     Vec3_t p =
-                                            pos + radius * Vec3_t(dx, dy, dz);
-                                    voxel_index << ComputeVoxelIndex(
+                                            pos + radius * Vec3_t(T(dx), T(dy),
+                                                                  T(dz));
+                                    voxel_index = ComputeVoxelIndex(
                                             p, inv_voxel_size);
                                     hash = SpatialHash(voxel_index) %
                                            hash_table_size;
@@ -401,9 +404,9 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                             for (size_t j = begin_idx; j < end_idx; ++j) {
                                 uint32_t idx = hash_table_index[j];
                                 if (IGNORE_QUERY_POINT) {
-                                    if (points[idx * 3 + 0] == pos.x() &&
-                                        points[idx * 3 + 1] == pos.y() &&
-                                        points[idx * 3 + 2] == pos.z())
+                                    if (points[idx * 3 + 0] == pos[0] &&
+                                        points[idx * 3 + 1] == pos[1] &&
+                                        points[idx * 3 + 2] == pos[2])
                                         continue;
                                 }
                                 xyz(vec_i, 0) = points[idx * 3 + 0];
@@ -412,8 +415,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                                 idx_vec(vec_i) = idx;
                                 ++vec_i;
                                 if (VECSIZE == vec_i) {
+                                    Eigen::Array<T, 3, 1> pos_arr(
+                                            pos[0], pos[1], pos[2]);
                                     Eigen::Array<T, VECSIZE, 1> dist =
-                                            NeighborsDist<METRIC>(pos, xyz);
+                                            NeighborsDist<METRIC>(pos_arr, xyz);
                                     Eigen::Array<bool, VECSIZE, 1> test_result =
                                             dist <= threshold;
                                     for (int k = 0; k < vec_i; ++k) {
@@ -435,8 +440,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                         }
                         // process the tail
                         if (vec_i) {
+                            Eigen::Array<T, 3, 1> pos_arr(pos[0], pos[1],
+                                                          pos[2]);
                             Eigen::Array<T, VECSIZE, 1> dist =
-                                    NeighborsDist<METRIC>(pos, xyz);
+                                    NeighborsDist<METRIC>(pos_arr, xyz);
                             Eigen::Array<bool, VECSIZE, 1> test_result =
                                     dist <= threshold;
                             for (int k = 0; k < vec_i; ++k) {

@@ -252,20 +252,22 @@ function(import_3rdparty_library name)
 endfunction()
 
 # Threads
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
 find_package(Threads REQUIRED)
 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Threads")
 
 # Assimp
 # NOTE: must be configured only because of link dependencies
-message(STATUS "Building library 3rdparty_assimp from source")
-option(ASSIMP_NO_EXPORT "" ON)
-option(ASSIMP_BUILD_ASSIMP_TOOLS "" OFF)
-option(ASSIMP_BUILD_TESTS "" OFF)
-add_subdirectory(${Open3D_3RDPARTY_DIR}/assimp)
-import_3rdparty_library(3rdparty_assimp INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/assimp/include/ ${Assimp_BINARY_DIR}/include/ LIBRARIES assimp IrrXML)
-add_dependencies(3rdparty_assimp assimp)
+message(STATUS "Building library Assimp from source")
+include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
+import_3rdparty_library(3rdparty_assimp
+    INCLUDE_DIRS ${ASSIMP_INCLUDE_DIR}
+    LIB_DIR      ${ASSIMP_LIB_DIR}
+    LIBRARIES    ${ASSIMP_LIBRARIES}
+)
 set(ASSIMP_TARGET "3rdparty_assimp")
-list(APPEND Open3D_3RDPARTY_HEADER_TARGETS "${ASSIMP_TARGET}")
+add_dependencies(3rdparty_assimp ext_assimp)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ASSIMP_TARGET}")
 
 # OpenMP
@@ -872,3 +874,25 @@ if(ENABLE_GUI)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
 endif()
 
+# MKL
+# We link MKL statically. For MKL link flags, refer to:
+# https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
+message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
+include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
+import_3rdparty_library(3rdparty_mkl
+    INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
+    LIB_DIR      ${STATIC_MKL_LIB_DIR}
+    LIBRARIES    ${STATIC_MKL_LIBRARIES}
+)
+set(MKL_TARGET "3rdparty_mkl")
+add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
+message(STATUS "STATIC_MKL_INCLUDE_DIR: ${STATIC_MKL_INCLUDE_DIR}")
+message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
+message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
+if(UNIX)
+    target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
+    target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+elseif(MSVC)
+    target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")

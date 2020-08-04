@@ -249,14 +249,9 @@ class ContinuousConv(tf.keras.layers.Layer):
 
             elif extents.shape.rank == 1:
                 radii = 0.5 * extents
-                self.nns = ops.radius_search(
-                    ignore_query_point=self.radius_search_ignore_query_points,
-                    return_distances=return_distances,
-                    normalize_distances=return_distances,
-                    metric=self.radius_search_metric,
-                    points=inp_positions,
-                    queries=out_positions,
-                    radii=radii)
+                self.nns = self.radius_search(inp_positions,
+                                              queries=out_positions,
+                                              radii=radii)
 
             else:
                 raise Exception("extents rank must be 0 or 1")
@@ -299,12 +294,11 @@ class ContinuousConv(tf.keras.layers.Layer):
 
         out_features = ops.continuous_conv(**self._conv_values)
 
-        self._conv_values['out_features'] = out_features
-
         self._conv_output = out_features
 
         if self.use_dense_layer_for_center:
-            out_features = out_features + self.dense(inp_features)
+            self._dense_output = self.dense(inp_features)
+            out_features = out_features + self._dense_output
 
         if self.use_bias:
             out_features += self.bias
@@ -482,8 +476,6 @@ class SparseConv(tf.keras.layers.Layer):
         }
 
         out_features = ops.continuous_conv(**self._conv_values)
-
-        self._conv_values['out_features'] = out_features
 
         self._conv_output = out_features
 
@@ -674,8 +666,6 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         }
 
         out_features = ops.continuous_conv_transpose(**self._conv_values)
-
-        self._conv_values['out_features'] = out_features
 
         self._conv_output = out_features
 

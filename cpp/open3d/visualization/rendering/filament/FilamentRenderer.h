@@ -99,6 +99,8 @@ public:
     void ConvertToGuiScene(const SceneHandle& id);
     FilamentScene* GetGuiScene() const { return gui_scene_.get(); }
 
+    filament::Renderer* GetNative() { return renderer_; }
+
 private:
     friend class FilamentRenderToBuffer;
 
