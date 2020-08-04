@@ -110,6 +110,10 @@ void Combobox::RemoveItem(int index) {
     }
 }
 
+int Combobox::GetNumberOfItems() const {
+    return static_cast<int>(impl_->items_.size());
+}
+
 const char* Combobox::GetItem(int index) const {
     return impl_->items_[index].c_str();
 }
@@ -131,14 +135,15 @@ void Combobox::SetSelectedIndex(int index) {
     }
 }
 
-void Combobox::SetSelectedValue(const char* value) {
+bool Combobox::SetSelectedValue(const char* value) {
     std::string svalue = value;
     for (size_t i = 0; i < impl_->items_.size(); ++i) {
         if (impl_->items_[i] == svalue) {
             SetSelectedIndex(i);
-            return;
+            return true;
         }
     }
+    return false;
 }
 
 void Combobox::SetOnValueChanged(
