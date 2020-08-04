@@ -65,15 +65,15 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
 
     // NOTE: Developer debug printout below. Commented out for now and will
     // eventually be removed entirely
-    utility::LogWarning("Loaded {}\n\tN MESHES: {}\n\tN MATERIALS: {}",
-    filename, scene->mNumMeshes, scene->mNumMaterials);
-    const auto* mesh1 = scene->mMeshes[0];
-    utility::LogWarning(
-            "MESH: {}\n\tHas Positions: {}\n\tHas Normals: {}\n\tHasFaces: "
-            "{}\n\tVertexColors: {}\n\tUV Channels: {}",
-            mesh1->mName.C_Str(), mesh1->HasPositions(), mesh1->HasNormals(),
-            mesh1->HasFaces(), mesh1->GetNumColorChannels(),
-            mesh1->GetNumUVChannels());
+    // utility::LogWarning("Loaded {}\n\tN MESHES: {}\n\tN MATERIALS: {}",
+    // filename, scene->mNumMeshes, scene->mNumMaterials);
+    // const auto* mesh1 = scene->mMeshes[0];
+    // utility::LogWarning(
+    //         "MESH: {}\n\tHas Positions: {}\n\tHas Normals: {}\n\tHasFaces: "
+    //         "{}\n\tVertexColors: {}\n\tUV Channels: {}",
+    //         mesh1->mName.C_Str(), mesh1->HasPositions(), mesh1->HasNormals(),
+    //         mesh1->HasFaces(), mesh1->GetNumColorChannels(),
+    //         mesh1->GetNumUVChannels());
 
     mesh.Clear();
 
@@ -141,16 +141,16 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
     auto* mat = scene->mMaterials[0];
 
     // NOTE: Developer debug printouts below. To be removed soon.
-    utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n", mat->GetName().C_Str(),
-                        mat->mNumProperties);
-    for (size_t i = 0; i < mat->mNumProperties; ++i) {
-        auto* prop = mat->mProperties[i];
-        utility::LogWarning("\tPROPNAME: {}", prop->mKey.C_Str());
-        if(prop->mType == aiPTI_String) {
-            std::string val(prop->mData+4);
-            utility::LogWarning("\tVAL: {}", val);
-        }
-    }
+    // utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n", mat->GetName().C_Str(),
+    //                     mat->mNumProperties);
+    // for (size_t i = 0; i < mat->mNumProperties; ++i) {
+    //     auto* prop = mat->mProperties[i];
+    //     utility::LogWarning("\tPROPNAME: {}", prop->mKey.C_Str());
+    //     if(prop->mType == aiPTI_String) {
+    //         std::string val(prop->mData+4);
+    //         utility::LogWarning("\tVAL: {}", val);
+    //     }
+    // }
 
     if (scene->mNumMaterials > 1) {
         utility::LogWarning(
@@ -195,8 +195,8 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
             } else if (p_unix != std::string::npos) {
                 strpath = strpath.substr(p_unix + 1);
             }
-            utility::LogWarning("TEXTURE PATH CLEAN: {} for texture type {}",
-                                base_path + strpath, type);
+            // utility::LogWarning("TEXTURE PATH CLEAN: {} for texture type {}",
+            //                     base_path + strpath, type);
             auto image = io::CreateImageFromFile(base_path + strpath);
             if (image->HasData()) {
                 img = image;
