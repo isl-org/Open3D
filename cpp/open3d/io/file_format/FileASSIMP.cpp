@@ -85,9 +85,10 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
         // copy face indices data
         for (size_t fidx = 0; fidx < assimp_mesh->mNumFaces; ++fidx) {
             auto& face = assimp_mesh->mFaces[fidx];
-            Eigen::Vector3i facet(face.mIndices[0] + current_vidx,
-                                  face.mIndices[1] + current_vidx,
-                                  face.mIndices[2] + current_vidx);
+            Eigen::Vector3i facet(
+                    face.mIndices[0] + static_cast<int>(current_vidx),
+                    face.mIndices[1] + static_cast<int>(current_vidx),
+                    face.mIndices[2] + static_cast<int>(current_vidx));
             mesh.triangles_.push_back(facet);
         }
 
