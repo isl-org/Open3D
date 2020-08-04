@@ -56,8 +56,7 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
                                 geometry::TriangleMesh& mesh,
                                 bool print_progress) {
     Assimp::Importer importer;
-    const auto* scene = importer.ReadFile(
-            filename.c_str(), kPostProcessFlags);
+    const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;
@@ -85,7 +84,8 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
         if (assimp_mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
             utility::LogInfo(
                     "Skipping non-triangle primitive geometry of type: "
-                    "{}", assimp_mesh->mPrimitiveTypes);
+                    "{}",
+                    assimp_mesh->mPrimitiveTypes);
             continue;
         }
 
@@ -142,7 +142,8 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
     auto* mat = scene->mMaterials[0];
 
     // NOTE: Developer debug printouts below. To be removed soon.
-    // utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n", mat->GetName().C_Str(),
+    // utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n",
+    // mat->GetName().C_Str(),
     //                     mat->mNumProperties);
     // for (size_t i = 0; i < mat->mNumProperties; ++i) {
     //     auto* prop = mat->mProperties[i];
