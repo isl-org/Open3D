@@ -861,7 +861,7 @@ if(ENABLE_GUI)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
 endif()
 
-# MKL
+# MKL, cuSOLVER, cuBLAS
 # We link MKL statically. For MKL link flags, refer to:
 # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
 message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")

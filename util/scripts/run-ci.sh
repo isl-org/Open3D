@@ -159,7 +159,9 @@ mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
 make
+if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
 ./TestVisualizer
+fi
 echo
 
 echo "test uninstalling Open3D..."
