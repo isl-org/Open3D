@@ -45,13 +45,19 @@ FileGeometry ReadFileGeometryTypeFBX(const std::string& path) {
     return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
 }
 
+const unsigned int kPostProcessFlags =
+        aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices |
+        aiProcess_ImproveCacheLocality | aiProcess_RemoveRedundantMaterials |
+        aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_SortByPType |
+        aiProcess_FindDegenerates | aiProcess_OptimizeMeshes |
+        aiProcess_OptimizeGraph | aiProcess_PreTransformVertices;
+
 bool ReadTriangleMeshFromASSIMP(const std::string& filename,
                                 geometry::TriangleMesh& mesh,
                                 bool print_progress) {
     Assimp::Importer importer;
     const auto* scene = importer.ReadFile(
-            filename.c_str(), aiProcessPreset_TargetRealtime_MaxQuality |
-                                      aiProcess_OptimizeGraph);
+            filename.c_str(), kPostProcessFlags);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;
@@ -59,15 +65,15 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
 
     // NOTE: Developer debug printout below. Commented out for now and will
     // eventually be removed entirely
-    // utility::LogWarning("Loaded {}\n\tN MESHES: {}\n\tN MATERIALS: {}",
-    // filename, scene->mNumMeshes, scene->mNumMaterials);
-    // const auto* mesh1 = scene->mMeshes[0];
-    // utility::LogWarning(
-    //         "MESH: {}\n\tHas Positions: {}\n\tHas Normals: {}\n\tHasFaces: "
-    //         "{}\n\tVertexColors: {}\n\tUV Channels: {}",
-    //         mesh1->mName.C_Str(), mesh1->HasPositions(), mesh1->HasNormals(),
-    //         mesh1->HasFaces(), mesh1->GetNumColorChannels(),
-    //         mesh1->GetNumUVChannels());
+    utility::LogWarning("Loaded {}\n\tN MESHES: {}\n\tN MATERIALS: {}",
+    filename, scene->mNumMeshes, scene->mNumMaterials);
+    const auto* mesh1 = scene->mMeshes[0];
+    utility::LogWarning(
+            "MESH: {}\n\tHas Positions: {}\n\tHas Normals: {}\n\tHasFaces: "
+            "{}\n\tVertexColors: {}\n\tUV Channels: {}",
+            mesh1->mName.C_Str(), mesh1->HasPositions(), mesh1->HasNormals(),
+            mesh1->HasFaces(), mesh1->GetNumColorChannels(),
+            mesh1->GetNumUVChannels());
 
     mesh.Clear();
 
@@ -75,6 +81,14 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
     // Merge individual meshes in aiScene into a single TriangleMesh
     for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
         const auto* assimp_mesh = scene->mMeshes[midx];
+        // Only process triangle meshes
+        if (assimp_mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
+            utility::LogInfo(
+                    "Skipping non-triangle primitive geometry of type: "
+                    "{}", assimp_mesh->mPrimitiveTypes);
+            continue;
+        }
+
         // copy vertex data
         for (size_t vidx = 0; vidx < assimp_mesh->mNumVertices; ++vidx) {
             auto& vertex = assimp_mesh->mVertices[vidx];
@@ -127,12 +141,16 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
     auto* mat = scene->mMaterials[0];
 
     // NOTE: Developer debug printouts below. To be removed soon.
-    // utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n",
-    // mat->GetName().C_Str(), mat->mNumProperties); for(size_t i = 0; i <
-    // mat->mNumProperties; ++i) {
-    //     auto* prop = mat->mProperties[i];
-    //     utility::LogWarning("\tPROPNAME: {}\n", prop->mKey.C_Str());
-    // }
+    utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n", mat->GetName().C_Str(),
+                        mat->mNumProperties);
+    for (size_t i = 0; i < mat->mNumProperties; ++i) {
+        auto* prop = mat->mProperties[i];
+        utility::LogWarning("\tPROPNAME: {}", prop->mKey.C_Str());
+        if(prop->mType == aiPTI_String) {
+            std::string val(prop->mData+4);
+            utility::LogWarning("\tVAL: {}", val);
+        }
+    }
 
     if (scene->mNumMaterials > 1) {
         utility::LogWarning(
@@ -198,16 +216,15 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
         texture_loader(aiTextureType_LIGHTMAP, mesh_material.ambientOcclusion);
     }
     texture_loader(aiTextureType_METALNESS, mesh_material.metallic);
-    texture_loader(aiTextureType_DIFFUSE_ROUGHNESS, mesh_material.roughness);
+    if (mat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
+        texture_loader(aiTextureType_DIFFUSE_ROUGHNESS,
+                       mesh_material.roughness);
+    } else if (mat->GetTextureCount(aiTextureType_SHININESS) > 0) {
+        // NOTE: In some FBX files assimp puts the roughness texture in
+        // shininess slot
+        texture_loader(aiTextureType_SHININESS, mesh_material.roughness);
+    }
     texture_loader(aiTextureType_UNKNOWN, mesh_material.roughness);
-    // if(mat->GetTextureCount(aiTextureType_UNKNOWN) > 0 ) {
-    //     for(size_t i = 0; i < mat->GetTextureCount(aiTextureType_UNKNOWN);
-    //     ++i) {
-    //         aiString path;
-    //         mat->GetTexture(aiTextureType_UNKNOWN, i, &path);
-    //         utility::LogWarning("Unknown texture type: {}", path.C_Str());
-    //     }
-    // }
 
     // NOTE: ASSIMP doesn't appear to provide texture params for the following
     // std::shared_ptr<Image> reflectance;
