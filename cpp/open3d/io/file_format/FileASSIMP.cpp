@@ -142,17 +142,17 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
     auto* mat = scene->mMaterials[0];
 
     // NOTE: Developer debug printouts below. To be removed soon.
-    // utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n",
-    // mat->GetName().C_Str(),
-    //                     mat->mNumProperties);
-    // for (size_t i = 0; i < mat->mNumProperties; ++i) {
-    //     auto* prop = mat->mProperties[i];
-    //     utility::LogWarning("\tPROPNAME: {}", prop->mKey.C_Str());
-    //     if(prop->mType == aiPTI_String) {
-    //         std::string val(prop->mData+4);
-    //         utility::LogWarning("\tVAL: {}", val);
-    //     }
-    // }
+    utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n",
+    mat->GetName().C_Str(),
+                        mat->mNumProperties);
+    for (size_t i = 0; i < mat->mNumProperties; ++i) {
+        auto* prop = mat->mProperties[i];
+        utility::LogWarning("\tPROPNAME: {}", prop->mKey.C_Str());
+        if(prop->mType == aiPTI_String) {
+            std::string val(prop->mData+4);
+            utility::LogWarning("\tVAL: {}", val);
+        }
+    }
 
     if (scene->mNumMaterials > 1) {
         utility::LogWarning(
@@ -170,15 +170,27 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
     // Retrieve base material properties
     aiColor3D color(1.f, 1.f, 1.f);
 
+#define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness",0,0
+#define AI_MATKEY_CLEARCOAT_ROUGHNESS "$mat.clearcoatroughness",0,0
+#define AI_MATKEY_SHEEN "$mat.sheen",0,0
+#define AI_MATKEY_ANISOTROPY "$mat.anisotropy",0,0
+
     mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
     mesh_material.baseColor =
             MaterialParameter::CreateRGB(color.r, color.g, color.b);
-    mat->Get(AI_MATKEY_REFLECTIVITY, mesh_material.baseReflectance);
     mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
              mesh_material.baseMetallic);
     mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
              mesh_material.baseRoughness);
+    // NOTE: We prefer sheen to reflectivity so the following code works since
+    // if sheen is not present it won't modify baseReflectance
+    mat->Get(AI_MATKEY_REFLECTIVITY, mesh_material.baseReflectance);
+    mat->Get(AI_MATKEY_SHEEN, mesh_material.baseReflectance);
 
+    mat->Get(AI_MATKEY_CLEARCOAT_THICKNESS, mesh_material.baseClearCoat);
+    mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS, mesh_material.baseClearCoatRoughness);
+    mat->Get(AI_MATKEY_ANISOTROPY, mesh_material.baseAnisotropy);
+    
     // Retrieve textures
     std::string base_path =
             utility::filesystem::GetFileParentDirectory(filename);
@@ -213,9 +225,7 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
         texture_loader(aiTextureType_AMBIENT_OCCLUSION,
                        mesh_material.ambientOcclusion);
     } else {
-        // NOTE: According to ASSIMP's material.h the LIGHTMAP texture type can
-        // be used type name(args) const;or ambient occlusion textures
-        texture_loader(aiTextureType_LIGHTMAP, mesh_material.ambientOcclusion);
+        texture_loader(aiTextureType_AMBIENT, mesh_material.ambientOcclusion);
     }
     texture_loader(aiTextureType_METALNESS, mesh_material.metallic);
     if (mat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
@@ -226,10 +236,13 @@ bool ReadTriangleMeshFromASSIMP(const std::string& filename,
         // shininess slot
         texture_loader(aiTextureType_SHININESS, mesh_material.roughness);
     }
+    // NOTE: Currently used for GLTF Roughness/Metal texture.
     texture_loader(aiTextureType_UNKNOWN, mesh_material.roughness);
+    // NOTE: the following may be non-standard. We are using REFLECTION texture
+    // type to store OBJ map_Ps 'sheen' PBR map
+    texture_loader(aiTextureType_REFLECTION, mesh_material.reflectance);
 
     // NOTE: ASSIMP doesn't appear to provide texture params for the following
-    // std::shared_ptr<Image> reflectance;
     // std::shared_ptr<Image> clearCoat;
     // std::shared_ptr<Image> clearCoatRoughness;
     // std::shared_ptr<Image> anisotropy;
