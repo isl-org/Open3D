@@ -209,6 +209,7 @@ void ObjFileMtlImporter::load()
                     createMaterial();
                     break;
                 case 'o':
+                    --m_DataIt;
                     getTexture();
                     break;
                 }
