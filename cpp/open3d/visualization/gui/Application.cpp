@@ -128,12 +128,16 @@ struct Application::Impl {
     std::vector<Posted> posted_;
     // ----
 
-    void InitGFLW() {
+    void InitGLFW() {
         if (this->is_GLFW_initalized_) {
             return;
         }
 
 #if __APPLE__
+        // If we are running from Python we might not be running from a bundle
+        // and would therefore not be a Proper app yet.
+        MacTransformIntoApp();
+
         glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
 #endif
         glfwInit();
@@ -213,7 +217,7 @@ Application::Application() : impl_(new Application::Impl()) {
             filament::backend::Backend::OPENGL);
 
     // Init GLFW here so that we can create windows before running
-    impl_->InitGFLW();
+    impl_->InitGLFW();
 }
 
 Application::~Application() {}
@@ -358,7 +362,7 @@ bool Application::RunOneTick() {
 
         // We already called this in the constructor, but it is possible
         // (but unlikely) that the run loop finished and is starting again.
-        impl_->InitGFLW();
+        impl_->InitGLFW();
 
         impl_->is_running_ = true;
     }
