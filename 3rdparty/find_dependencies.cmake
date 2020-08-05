@@ -446,11 +446,7 @@ endif()
 message(STATUS "faiss root ${FAISS_ROOT}")
 if (BUILD_FAISS)
     find_package(BLAS REQUIRED)
-    import_3rdparty_library(3rdparty_faiss
-        INCLUDE_DIR ${FAISS_ROOT}/include/
-        LIBRARIES ${FAISS_LIBRARIES}
-        LIB_DIR ${FAISS_ROOT}/lib
-    )
+    import_3rdparty_library(3rdparty_faiss INCLUDE_DIR ${FAISS_ROOT}/include/ LIBRARIES ${FAISS_LIBRARIES} LIB_DIR ${FAISS_ROOT}/lib)
     target_link_libraries(3rdparty_faiss INTERFACE ${BLAS_LIBRARIES})
     if (BUILD_CUDA_MODULE)
         target_link_libraries(3rdparty_faiss INTERFACE -lcublas)
