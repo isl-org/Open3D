@@ -93,7 +93,9 @@ private:
 protected:
     std::vector<float> data_;
     std::unique_ptr<faiss::Index> index;
+#ifdef BUILD_CUDA_MODULE
     std::unique_ptr<faiss::gpu::StandardGpuResources> res;
+#endif
     size_t dimension_ = 0;
     size_t dataset_size_ = 0;
 };

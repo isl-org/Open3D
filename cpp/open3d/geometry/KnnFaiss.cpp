@@ -31,8 +31,12 @@
 #include "open3d/geometry/KnnFaiss.h"
 
 #include <faiss/IndexFlat.h>
+
+#ifdef BUILD_CUDA_MODULE
 #include <faiss/gpu/GpuIndexFlat.h>
 #include <faiss/gpu/StandardGpuResources.h>
+#endif
+
 #include <faiss/impl/AuxIndexStructures.h>
 
 #include "open3d/core/Device.h"
@@ -78,11 +82,20 @@ bool KnnFaiss::SetTensorData(const core::Tensor &tensor) {
     data_.resize(dataset_size_ * dimension_);
     if (tensor.GetBlob()->GetDevice().GetType() ==
         core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
         res.reset(new faiss::gpu::StandardGpuResources());
         faiss::gpu::GpuIndexFlatConfig config;
         config.device = tensor.GetBlob()->GetDevice().GetID();
         index.reset(new faiss::gpu::GpuIndexFlat(
                 res.get(), dimension_, faiss::MetricType::METRIC_L2, config));
+#else
+        utility::LogWarning(
+                "[KnnFaiss::SetTensorData] GPU Tensor is not supported when "
+                "BUILD_CUDA_MODULE is OFF. Please recompile Open3D with "
+                "BUILD_CUDA_MODULE=ON");
+        return false;
+#endif
+
     } else {
         index.reset(new faiss::IndexFlatL2(dimension_));
     }
