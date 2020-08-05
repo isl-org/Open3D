@@ -1,5 +1,8 @@
 include(ExternalProject)
 
+set(ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileData.h")
+list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileMtlImporter.cpp")
+
 ExternalProject_Add(
     ext_assimp
     PREFIX assimp
@@ -17,6 +20,12 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
+ExternalProject_Get_Property(ext_assimp SOURCE_DIR)
+ExternalProject_Add_Step(ext_assimp patch-copy
+  COMMAND ${CMAKE_COMMAND} -E copy ${ASSIMP_PATCH_FILES} ${SOURCE_DIR}/code/Obj
+  COMMAND ${CMAKE_COMMAND} -E echo "Copying patch files for Obj loader into assimp source"
+  DEPENDEES download
+  DEPENDERS update)
 set(ASSIMP_INCLUDE_DIR ${INSTALL_DIR}/include/)
 set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
 set(ASSIMP_LIBRARIES assimp IrrXML)
