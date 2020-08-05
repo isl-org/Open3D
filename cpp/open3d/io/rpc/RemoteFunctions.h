@@ -30,13 +30,14 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Connection.h"
-#include "open3d/utility/Messages.h"
+#include "open3d/io/rpc/Connection.h"
+#include "open3d/io/rpc/Messages.h"
 
 #include <map>
 
 namespace open3d {
-namespace utility {
+namespace io {
+namespace rpc {
 
 /// Helper function for unpacking the Status message from a reply.
 /// \param msg     The message that contains the Reply and the Status messages.
@@ -196,5 +197,6 @@ bool SetActiveCamera(
         const std::string& path,
         std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
 
-}  // namespace utility
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

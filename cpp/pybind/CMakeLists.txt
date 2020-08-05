@@ -46,9 +46,7 @@ endif()
 
 if (NOT BUILD_RPC_INTERFACE)
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/utility/connection.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/utility/receiver.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/utility/remote_functions.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/io/rpc.cpp"
         )
 endif()
 

@@ -34,10 +34,6 @@ void pybind_utility(py::module &m) {
     py::module m_submodule = m.def_submodule("utility");
     pybind_console(m_submodule);
     pybind_eigen(m_submodule);
-#ifdef BUILD_RPC_INTERFACE
-    pybind_connection(m_submodule);
-    pybind_receiver(m_submodule);
-#endif
 }
 
 }  // namespace open3d

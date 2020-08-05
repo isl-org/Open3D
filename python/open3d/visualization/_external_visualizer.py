@@ -63,8 +63,8 @@ class ExternalVisualizer:
                 parameter can be used to override the default object.
         """
         if connection is None:
-            connection = o3d.utility.Connection(address=self.address,
-                                                timeout=self.timeout)
+            connection = o3d.io.rpc.Connection(address=self.address,
+                                               timeout=self.timeout)
         result = []
         if isinstance(obj, (tuple, list)):
             # item can be just an object or a tuple with path, time, layer, e.g.,
@@ -80,25 +80,25 @@ class ExternalVisualizer:
                 else:
                     result.append(self.set(item, connection=connection))
         elif isinstance(obj, o3d.geometry.PointCloud):
-            status = o3d.utility.set_point_cloud(obj,
-                                                 path=path,
-                                                 time=time,
-                                                 layer=layer,
-                                                 connection=connection)
+            status = o3d.io.rpc.set_point_cloud(obj,
+                                                path=path,
+                                                time=time,
+                                                layer=layer,
+                                                connection=connection)
             result.append(status)
         elif isinstance(obj, o3d.geometry.TriangleMesh):
-            status = o3d.utility.set_triangle_mesh(obj,
-                                                   path=path,
-                                                   time=time,
-                                                   layer=layer,
-                                                   connection=connection)
+            status = o3d.io.rpc.set_triangle_mesh(obj,
+                                                  path=path,
+                                                  time=time,
+                                                  layer=layer,
+                                                  connection=connection)
             result.append(status)
         elif isinstance(obj, o3d.camera.PinholeCameraParameters):
-            status = o3d.utility.set_legacy_camera(obj,
-                                                   path=path,
-                                                   time=time,
-                                                   layer=layer,
-                                                   connection=connection)
+            status = o3d.io.rpc.set_legacy_camera(obj,
+                                                  path=path,
+                                                  time=time,
+                                                  layer=layer,
+                                                  connection=connection)
             result.append(status)
         else:
             raise Exception("Unsupported object type '{}'".format(str(
@@ -112,9 +112,9 @@ class ExternalVisualizer:
         Args:
             time: The time value
         """
-        connection = o3d.utility.Connection(address=self.address,
-                                            timeout=self.timeout)
-        return o3d.utility.set_time(time, connection)
+        connection = o3d.io.rpc.Connection(address=self.address,
+                                           timeout=self.timeout)
+        return o3d.io.rpc.set_time(time, connection)
 
     def set_active_camera(self, path):
         """Sets the time in the external visualizer
@@ -122,9 +122,9 @@ class ExternalVisualizer:
         Args:
             path: A path describing a location in the scene tree.
         """
-        connection = o3d.utility.Connection(address=self.address,
-                                            timeout=self.timeout)
-        return o3d.utility.set_active_camera(path, connection)
+        connection = o3d.io.rpc.Connection(address=self.address,
+                                           timeout=self.timeout)
+        return o3d.io.rpc.set_active_camera(path, connection)
 
 
 # convenience default external visualizer

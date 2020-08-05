@@ -24,13 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/RemoteFunctions.h"
+#include "open3d/io/rpc/RemoteFunctions.h"
 #include <Eigen/Geometry>
 #include "open3d/core/Dispatch.h"
 #include "open3d/utility/Console.h"
 
+using namespace open3d::utility;
+
 namespace open3d {
-namespace utility {
+namespace io {
+namespace rpc {
 
 messages::Status UnpackStatusFromReply(const zmq::message_t& msg,
                                        size_t& offset,
@@ -426,5 +429,6 @@ bool SetActiveCamera(const std::string& path,
     return ReplyIsOKStatus(*reply);
 }
 
-}  // namespace utility
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

@@ -42,7 +42,7 @@ def test_external_visualizer():
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
 
     # create dummy receiver which will receive all data
-    receiver = o3d.utility._DummyReceiver(address=address)
+    receiver = o3d.io.rpc._DummyReceiver(address=address)
     receiver.start()
 
     # create ev with the same address

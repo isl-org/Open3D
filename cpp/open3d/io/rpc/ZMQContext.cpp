@@ -24,14 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-#include <zmq.hpp>
+#include "open3d/io/rpc/ZMQContext.h"
 
 namespace open3d {
-namespace utility {
+namespace io {
+namespace rpc {
 
-/// Returns the zeromq context for this process.
-zmq::context_t& GetZMQContext();
+zmq::context_t& GetZMQContext() {
+    static zmq::context_t context;
+    return context;
+}
 
-}  // namespace utility
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

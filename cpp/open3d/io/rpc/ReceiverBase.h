@@ -30,11 +30,12 @@
 #include <mutex>
 #include <thread>
 #include <zmq.hpp>
+#include "open3d/io/rpc/Messages.h"
 #include "open3d/utility/Console.h"
-#include "open3d/utility/Messages.h"
 
 namespace open3d {
-namespace utility {
+namespace io {
+namespace rpc {
 
 /// Base class for the server side receiving requests from a client.
 /// Subclass from this and implement the overloaded ProcessMessage functions as
@@ -63,7 +64,8 @@ public:
             const messages::Request& req,
             const messages::SetMeshData& msg,
             const msgpack::object& obj) {
-        LogInfo("ReceiverBase::ProcessMessage: messages with id {} will be "
+        utility::LogInfo(
+                "ReceiverBase::ProcessMessage: messages with id {} will be "
                 "ignored",
                 msg.MsgId());
         return std::shared_ptr<zmq::message_t>();
@@ -72,7 +74,8 @@ public:
             const messages::Request& req,
             const messages::GetMeshData& msg,
             const msgpack::object& obj) {
-        LogInfo("ReceiverBase::ProcessMessage: messages with id {} will be "
+        utility::LogInfo(
+                "ReceiverBase::ProcessMessage: messages with id {} will be "
                 "ignored",
                 msg.MsgId());
         return std::shared_ptr<zmq::message_t>();
@@ -81,7 +84,8 @@ public:
             const messages::Request& req,
             const messages::SetCameraData& msg,
             const msgpack::object& obj) {
-        LogInfo("ReceiverBase::ProcessMessage: messages with id {} will be "
+        utility::LogInfo(
+                "ReceiverBase::ProcessMessage: messages with id {} will be "
                 "ignored",
                 msg.MsgId());
         return std::shared_ptr<zmq::message_t>();
@@ -90,7 +94,8 @@ public:
             const messages::Request& req,
             const messages::SetProperties& msg,
             const msgpack::object& obj) {
-        LogInfo("ReceiverBase::ProcessMessage: messages with id {} will be "
+        utility::LogInfo(
+                "ReceiverBase::ProcessMessage: messages with id {} will be "
                 "ignored",
                 msg.MsgId());
         return std::shared_ptr<zmq::message_t>();
@@ -99,7 +104,8 @@ public:
             const messages::Request& req,
             const messages::SetActiveCamera& msg,
             const msgpack::object& obj) {
-        LogInfo("ReceiverBase::ProcessMessage: messages with id {} will be "
+        utility::LogInfo(
+                "ReceiverBase::ProcessMessage: messages with id {} will be "
                 "ignored",
                 msg.MsgId());
         return std::shared_ptr<zmq::message_t>();
@@ -108,7 +114,8 @@ public:
             const messages::Request& req,
             const messages::SetTime& msg,
             const msgpack::object& obj) {
-        LogInfo("ReceiverBase::ProcessMessage: messages with id {} will be "
+        utility::LogInfo(
+                "ReceiverBase::ProcessMessage: messages with id {} will be "
                 "ignored",
                 msg.MsgId());
         return std::shared_ptr<zmq::message_t>();
@@ -134,5 +141,6 @@ private:
     std::atomic<bool> loop_running_;
 };
 
-}  // namespace utility
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

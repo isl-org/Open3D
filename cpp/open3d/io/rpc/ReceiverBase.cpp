@@ -24,14 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/ReceiverBase.h"
-#include "open3d/utility/ZMQContext.h"
+#include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/io/rpc/ZMQContext.h"
+
+using namespace open3d::utility;
 
 namespace {
 std::shared_ptr<zmq::message_t> CreateStatusMessage(
-        const open3d::utility::messages::Status& status) {
+        const open3d::io::rpc::messages::Status& status) {
     msgpack::sbuffer sbuf;
-    open3d::utility::messages::Reply reply{status.MsgId()};
+    open3d::io::rpc::messages::Reply reply{status.MsgId()};
     msgpack::pack(sbuf, reply);
     msgpack::pack(sbuf, status);
     std::shared_ptr<zmq::message_t> msg =
@@ -42,7 +44,8 @@ std::shared_ptr<zmq::message_t> CreateStatusMessage(
 }  // namespace
 
 namespace open3d {
-namespace utility {
+namespace io {
+namespace rpc {
 
 ReceiverBase::ReceiverBase(const std::string& address, int timeout)
     : address_(address),
@@ -190,5 +193,6 @@ void ReceiverBase::Mainloop() {
     loop_running_.store(false);
 }
 
-}  // namespace utility
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

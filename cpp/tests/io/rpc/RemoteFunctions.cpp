@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/RemoteFunctions.h"
-#include "open3d/utility/DummyReceiver.h"
+#include "open3d/io/rpc/RemoteFunctions.h"
+#include "open3d/io/rpc/DummyReceiver.h"
 #include "tests/UnitTest.h"
 
-using namespace open3d::utility;
+using namespace open3d::io::rpc;
 
 namespace open3d {
 namespace tests {

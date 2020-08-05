@@ -24,32 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/DummyReceiver.h"
-
-#include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
-
-namespace messages = open3d::utility::messages;
+#pragma once
+#include <zmq.hpp>
 
 namespace open3d {
+namespace io {
+namespace rpc {
 
-void pybind_receiver(py::module& m) {
-    py::class_<utility::DummyReceiver, std::shared_ptr<utility::DummyReceiver>>(
-            m, "_DummyReceiver",
-            "Dummy receiver for the server side receiving requests from a "
-            "client.")
-            .def(py::init([](std::string address, int timeout) {
-                     return std::shared_ptr<utility::DummyReceiver>(
-                             new utility::DummyReceiver(address, timeout));
-                 }),
-                 "Creates the receiver object which can be used for testing "
-                 "connections.",
-                 "address"_a = "tcp://127.0.0.1:51454", "timeout"_a = 10000)
-            .def("start", &utility::DummyReceiver::Start,
-                 "Starts the receiver mainloop in a new thread.")
-            .def("stop", &utility::DummyReceiver::Stop,
-                 "Stops the receiver mainloop and joins the thread. This "
-                 "function blocks until the mainloop is done with processing "
-                 "messages that have already been received.");
-}
+/// Returns the zeromq context for this process.
+zmq::context_t& GetZMQContext();
+
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

@@ -24,24 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Connection.h"
+#pragma once
 
-#include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
+#include <memory>
+#include <zmq.hpp>
 
 namespace open3d {
+namespace io {
+namespace rpc {
 
-void pybind_connection(py::module& m) {
-    py::class_<utility::Connection, std::shared_ptr<utility::Connection>>(
-            m, "Connection")
-            .def(py::init([](std::string address, int connect_timeout,
-                             int timeout) {
-                     return std::shared_ptr<utility::Connection>(
-                             new utility::Connection(address, connect_timeout,
-                                                     timeout));
-                 }),
-                 "Creates a connection object",
-                 "address"_a = "tcp://127.0.0.1:51454",
-                 "connect_timeout"_a = 5000, "timeout"_a = 10000);
-}
+class Connection {
+public:
+    Connection();
+
+    /// Creates a Connection object used for sending data.
+    /// \param address          The address of the receiving end.
+    ///
+    /// \param connect_timeout  The timeout for the connect operation of the
+    /// socket.
+    ///
+    /// \param timeout          The timeout for sending data.
+    ///
+    Connection(const std::string& address, int connect_timeout, int timeout);
+    ~Connection();
+
+    /// Function for sending data wrapped in a zmq message object.
+    std::shared_ptr<zmq::message_t> Send(zmq::message_t& send_msg);
+
+private:
+    std::unique_ptr<zmq::socket_t> socket_;
+    const std::string address_;
+    const int connect_timeout_;
+    const int timeout_;
+};
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

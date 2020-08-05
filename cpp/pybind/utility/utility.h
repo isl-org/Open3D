@@ -34,9 +34,5 @@ void pybind_utility(py::module &m);
 
 void pybind_console(py::module &m);
 void pybind_eigen(py::module &m);
-void pybind_connection(py::module &m);
-// requires core and geometry
-void pybind_remote_functions(py::module &m);
-void pybind_receiver(py::module &m);
 
 }  // namespace open3d

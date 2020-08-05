@@ -26,14 +26,15 @@
 
 #pragma once
 
-#include "open3d/utility/ReceiverBase.h"
+#include "open3d/io/rpc/ReceiverBase.h"
 
 namespace open3d {
-namespace utility {
+namespace io {
+namespace rpc {
 
 /// Receiver implementation which always returns a successful status.
 /// This class is meant for testing puproses.
-class DummyReceiver : public open3d::utility::ReceiverBase {
+class DummyReceiver : public ReceiverBase {
 public:
     DummyReceiver(const std::string& address, int timeout)
         : ReceiverBase(address, timeout) {}
@@ -86,5 +87,6 @@ public:
     }
 };
 
-}  // namespace utility
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

@@ -26,7 +26,7 @@ if (NOT ENABLE_GUI)
 endif()
 
 if (NOT BUILD_RPC_INTERFACE)
-    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/utility/RemoteFunctions.cpp)
+    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/io/rpc/RemoteFunctions.cpp)
 endif()
 
 add_executable(tests ${UNIT_TEST_SOURCE_FILES})

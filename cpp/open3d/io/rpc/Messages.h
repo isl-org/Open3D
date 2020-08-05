@@ -40,7 +40,8 @@
 #endif
 
 namespace open3d {
-namespace utility {
+namespace io {
+namespace rpc {
 namespace messages {
 
 /// Template function for converting types to their string representation.
@@ -338,5 +339,6 @@ struct Status {
 };
 
 }  // namespace messages
-}  // namespace utility
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

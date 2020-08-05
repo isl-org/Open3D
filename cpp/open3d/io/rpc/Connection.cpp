@@ -24,9 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Connection.h"
+#include "open3d/io/rpc/Connection.h"
+#include "open3d/io/rpc/ZMQContext.h"
 #include "open3d/utility/Console.h"
-#include "open3d/utility/ZMQContext.h"
+
+using namespace open3d::utility;
 
 namespace {
 
@@ -39,7 +41,8 @@ struct ConnectionDefaults {
 }  // namespace
 
 namespace open3d {
-namespace utility {
+namespace io {
+namespace rpc {
 
 Connection::Connection()
     : Connection(defaults.address, defaults.connect_timeout, defaults.timeout) {
@@ -82,5 +85,6 @@ std::shared_ptr<zmq::message_t> Connection::Send(zmq::message_t& send_msg) {
     return msg;
 }
 
-}  // namespace utility
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d
