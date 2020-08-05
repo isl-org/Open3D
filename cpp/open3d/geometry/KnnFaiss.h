@@ -92,6 +92,13 @@ public:
     std::pair<core::Tensor, core::Tensor> 
     SearchKNN_Tensor(const core::Tensor &query,
                      int knn) const;
+    
+    int
+    SearchRadius_Tensor(const core::Tensor &query, 
+                        float radius,
+                        core::Tensor &indices,
+                        core::Tensor &distance2,
+                        core::Tensor &lims) const;
 
     std::pair<core::Tensor, core::Tensor> 
     SearchHybrid_Tensor(const core::Tensor &query,
@@ -109,7 +116,7 @@ protected:
     std::vector<float> data_;
     std::unique_ptr<faiss::Index> index;
     std::unique_ptr<faiss::gpu::StandardGpuResources> res;
-    bool support_on_gpu_ = false;
+    bool support_on_gpu_ = true;
     size_t dimension_ = 0;
     size_t dataset_size_ = 0;
 };

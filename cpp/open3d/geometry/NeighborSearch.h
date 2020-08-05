@@ -26,17 +26,20 @@ public:
     //     For invalid entry, indices = -1, distance2 = 0.
 
     std::pair<core::Tensor, core::Tensor> 
-    KNNSearch(const core::Tensor& query_tensor, 
-              int knn);
+    SearchKNN(const core::Tensor& query_tensor, 
+              int knn) const;
     
-    /*std::pair<core::Tensorview, core::Tensorview> 
-    RadiusSearch(const core::Tensor& query_tensor,
-                 core::Tensor radius);*/
+    int
+    SearchRadius(const core::Tensor &query_tensor, 
+                        float radius,
+                        core::Tensor &indices,
+                        core::Tensor &distance2,
+                        core::Tensor &lims) const;
                                   
     std::pair<core::Tensor, core::Tensor> 
-    HybridSearch(const core::Tensor& query_tensor,
+    SearchHybrid(const core::Tensor& query_tensor,
                  float radius,
-                 int max_knn);
+                 int max_knn) const;
                                     
 protected:
     std::unique_ptr<geometry::KnnFaiss> search_object_;

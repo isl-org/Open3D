@@ -121,12 +121,10 @@ bool KnnFaiss::SetTensorData2(const core::Tensor &tensor, const char *descriptio
     else {
         index.reset(tmp_index);
     }
-    if(!index->is_trained){
-        core::Tensor xt = tensor.Slice(dimension_, 0, train_size, 1);
-        float *_train_ptr = static_cast<float *>(tensor.GetBlob()->GetDataPtr());
-        index->train(train_size, _train_ptr);
-    }
     float *_data_ptr = static_cast<float *>(tensor.GetBlob()->GetDataPtr());
+    if(!index->is_trained){
+        index->train(train_size, _data_ptr);
+    }
     index->add(dataset_size_, _data_ptr);
     return true;
 }
@@ -219,8 +217,8 @@ KnnFaiss::SearchKNN_Tensor(const core::Tensor &query,
     if(!support_on_gpu_ &&
         query.GetBlob()->GetDevice().GetType() ==
         core::Device::DeviceType::CUDA){
-        utility::LogWarning("[KnnFaiss::SearchKNN_Tensor] Current Faiss Index is not supported on gpu. Query is moved to CPU memory.");
-        core::Tensor query = query.Copy(core::Device("CPU:0"));
+        utility::LogWarning("[KnnFaiss::SearchKNN_Tensor] Current Faiss Index is not supported on gpu. So, Query is moved to CPU memory.");
+        query = query.Copy(core::Device("CPU:0"));
     }
     
     float *_data_ptr = static_cast<float *>(query.GetBlob()->GetDataPtr());
@@ -232,7 +230,7 @@ KnnFaiss::SearchKNN_Tensor(const core::Tensor &query,
     index->search(query_size, _data_ptr, knn, distance2.data(),
                   indices.data());
     
-    core::Tensor result_indices_(indices, {(long int)query_size, knn}, core::Dtype::Int32, query.GetBlob()->GetDevice());
+    core::Tensor result_indices_(indices, {(long int)query_size, knn}, core::Dtype::Int64, query.GetBlob()->GetDevice());
     core::Tensor result_distance2_(distance2, {(long int)query_size, knn}, core::Dtype::Float32, query.GetBlob()->GetDevice());
     std::pair<core::Tensor, core::Tensor> result_pair_(result_indices_, result_distance2_);
     return result_pair_;
@@ -279,6 +277,55 @@ int KnnFaiss::SearchRadius(const T &query,
     return result.lims[1];  // for just one query point, lims[1] == # of results
 }
 
+int
+KnnFaiss::SearchRadius_Tensor(const core::Tensor &query, 
+                              float radius,
+                              core::Tensor &indices,
+                              core::Tensor &distance2,
+                              core::Tensor &lims) const {
+    core::SizeVector size = query.GetShape();
+    size_t query_dim = size[1];
+    size_t query_size = size[0];
+
+    if (dataset_size_ <= 0 || query_dim != dimension_ || radius < 0) {
+        std::pair<core::Tensor, core::Tensor> error_pair;
+        return -1;
+    }
+
+    if (query.GetDtype() != core::Dtype::Float32){
+        utility::LogWarning("[KnnFaiss::SearchKNN_Tensor] Unsupported data type of Tensor.");
+        std::pair<core::Tensor, core::Tensor> error_pair;
+        return -1;
+    }
+    
+    if(!support_on_gpu_ &&
+        query.GetBlob()->GetDevice().GetType() ==
+        core::Device::DeviceType::CUDA){
+        utility::LogWarning("[KnnFaiss::SearchKNN_Tensor] Current Faiss Index is not supported on gpu. So, query is moved to CPU memory.");
+        query = query.Copy(core::Device("CPU:0"));
+    }
+    
+    float *_data_ptr = static_cast<float *>(query.GetBlob()->GetDataPtr());
+
+    faiss::RangeSearchResult result(query_size);
+    result.do_allocation();
+    index->range_search(
+            query_size, _data_ptr, std::pow(radius, 2),
+            &result);
+    
+    int total_result = result.lims[query_size];
+
+    std::vector<int> vec_indices_(result.labels, result.labels + total_result);
+    std::vector<float> vec_distance2_(result.distances, result.distances + total_result);
+    std::vector<int> vec_lims_(result.lims, result.lims + query_size + 1);
+
+    indices = core::Tensor(vec_indices_, {1, total_result}, core::Dtype::Int32, query.GetBlob()->GetDevice());
+    distance2 = core::Tensor(vec_distance2_, {1, total_result}, core::Dtype::Float32, query.GetBlob()->GetDevice());
+    lims = core::Tensor(vec_lims_, {1, (long int)query_size + 1}, core::Dtype::Int32, query.GetBlob()->GetDevice());
+    
+    return total_result; //return total size of result
+}
+
 std::pair<core::Tensor, core::Tensor> 
 KnnFaiss::SearchHybrid_Tensor(const core::Tensor &query,
                               float radius,
@@ -301,8 +348,8 @@ KnnFaiss::SearchHybrid_Tensor(const core::Tensor &query,
     if(!support_on_gpu_ &&
         query.GetBlob()->GetDevice().GetType() ==
         core::Device::DeviceType::CUDA){
-        utility::LogWarning("[KnnFaiss::SearchHybrid_Tensor] Current Faiss Index is not supported on gpu. Query is moved to CPU memory.");
-        core::Tensor query = query.Copy(core::Device("CPU:0"));
+        utility::LogWarning("[KnnFaiss::SearchHybrid_Tensor] Current Faiss Index is not supported on gpu. So, Query is moved to CPU memory.");
+        query = query.Copy(core::Device("CPU:0"));
     }
     
     float *_data_ptr = static_cast<float *>(query.GetBlob()->GetDataPtr());
@@ -316,13 +363,13 @@ KnnFaiss::SearchHybrid_Tensor(const core::Tensor &query,
     
     unsigned int upper_ = max_knn * query_size;
     for (unsigned int i = 0; i < upper_; i++){
-        if (distance2[i] < radius) {
+        if (distance2[i] > radius) {
             distance2[i] = 0;
             indices[i] = -1;
         }
     }
 
-    core::Tensor result_indices_(indices, {(long int)query_size, max_knn}, core::Dtype::Int32, query.GetBlob()->GetDevice());
+    core::Tensor result_indices_(indices, {(long int)query_size, max_knn}, core::Dtype::Int64, query.GetBlob()->GetDevice());
     core::Tensor result_distance2_(distance2, {(long int)query_size, max_knn}, core::Dtype::Float32, query.GetBlob()->GetDevice());
     std::pair<core::Tensor, core::Tensor> result_pair_(result_indices_, result_distance2_);
     return result_pair_;
