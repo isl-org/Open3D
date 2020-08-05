@@ -447,7 +447,7 @@ message(STATUS "faiss root ${FAISS_ROOT}")
 if (BUILD_FAISS)
     find_package(BLAS REQUIRED)
     import_3rdparty_library(3rdparty_faiss 
-        INCLUDE_DIRS${FAISS_ROOT}/include/
+        INCLUDE_DIRS ${FAISS_ROOT}/include/
         LIBRARIES ${FAISS_LIBRARIES}
         LIB_DIR ${FAISS_ROOT}/lib
     )
