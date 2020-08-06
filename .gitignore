@@ -24,6 +24,9 @@ doxygen/
 docs/python_api/
 node_modules/
 
+# Editor files
+*.*~
+
 # Local configs
 _vimrc_local.vim
 .vs/

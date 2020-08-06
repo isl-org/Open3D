@@ -45,8 +45,7 @@ public:
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
 
-    void SetSkyboxHandle(visualization::rendering::SkyboxHandle skybox,
-                         bool is_on);
+    void ShowSkybox(bool is_on);
 
     void StartMouseDrag();
     void UpdateMouseDragUI();
@@ -57,15 +56,8 @@ public:
 private:
     Scene* scene_;
     Camera* camera_;
-    visualization::rendering::SkyboxHandle skybox_;
-    bool skybox_is_normally_on_;
+    bool skybox_is_normally_on_ = false;
     Camera::Transform ibl_rotation_at_mouse_down_;
-
-    struct UIObj {
-        GeometryHandle handle;
-        Camera::Transform transform;
-    };
-    std::vector<UIObj> ui_objs_;
 
     void ClearUI();
 };

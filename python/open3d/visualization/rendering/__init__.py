@@ -1,9 +1,8 @@
-# ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2019 www.open3d.org
+# Copyright (c) 2020 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,34 +23,9 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-import open3d as o3d
-import numpy as np
-import pytest
-import os
-
-# skip all tests if the tf ops were not built and disable warnings caused by
-# tensorflow
-pytestmark = [
-    pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
-                       reason='tf ops not built'),
-    pytest.mark.filterwarnings(
-        'ignore::DeprecationWarning:.*(tensorflow|protobuf).*'),
-]
-
-
-def test_load_tf_op_library():
-    import open3d.ml.tf as ml3d
-    assert hasattr(ml3d.python.ops.lib._lib, 'open3d_reduce_subarrays_sum')
-
-
-def test_execute_tf_op():
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
-
-    values = np.arange(0, 10)
-    row_splits = np.array([0, 3, 4, 4, 10])
-
-    with tf.device('CPU:0'):
-        ans = ml3d.ops.reduce_subarrays_sum(values, row_splits)
-    # test was a success if we reach this line but check correctness anyway
-    assert np.all(ans.numpy() == [3, 3, 0, 39])
+if "@ENABLE_GUI@" == "ON":
+    from open3d.pybind.visualization.rendering import *
+else:
+    print(
+        "Open3D was not compiled with ENABLE_GUI, but script is importing open3d.visualization.rendering"
+    )

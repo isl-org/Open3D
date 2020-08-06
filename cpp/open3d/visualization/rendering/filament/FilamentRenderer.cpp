@@ -64,7 +64,8 @@ FilamentRenderer::~FilamentRenderer() {
 
 SceneHandle FilamentRenderer::CreateScene() {
     auto handle = SceneHandle::Next();
-    scenes_[handle] = std::make_unique<FilamentScene>(engine_, resource_mgr_);
+    scenes_[handle] =
+            std::make_unique<FilamentScene>(engine_, resource_mgr_, *this);
 
     return handle;
 }

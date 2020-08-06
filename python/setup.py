@@ -107,6 +107,7 @@ setup(
     packages=[
         'open3d',
         'open3d.visualization',
+        'open3d.visualization.rendering',
         'open3d.visualization.gui',
     ],
     url="@PROJECT_HOME@",
