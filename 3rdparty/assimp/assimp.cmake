@@ -32,6 +32,6 @@ set(ASSIMP_INCLUDE_DIR ${INSTALL_DIR}/include/)
 set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
 if (UNIX OR APPLE)
   set(ASSIMP_LIBRARIES assimp IrrXML)
-else ()
+else()
   set(ASSIMP_LIBRARIES assimp-vc142-mt IrrXML zlibstatic)
-  
+endif()
