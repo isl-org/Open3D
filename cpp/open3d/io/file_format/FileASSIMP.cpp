@@ -205,9 +205,9 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
             std::string strpath(path.C_Str());
             auto p_win = strpath.rfind("\\");
             auto p_unix = strpath.rfind("/");
-            if (p_win != std::string::npos) {
+            if (p_unix != std::string::npos) {
                 strpath = strpath.substr(p_win + 1);
-            } else if (p_unix != std::string::npos) {
+            } else if (p_win != std::string::npos) {
                 strpath = strpath.substr(p_unix + 1);
             }
             // utility::LogWarning("TEXTURE PATH CLEAN: {} for texture type {}",
