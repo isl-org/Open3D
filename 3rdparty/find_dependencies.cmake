@@ -258,7 +258,6 @@ find_package(Threads REQUIRED)
 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Threads")
 
 # Assimp
-# NOTE: must be configured only because of link dependencies
 message(STATUS "Building library Assimp from source")
 include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
 import_3rdparty_library(3rdparty_assimp
