@@ -100,7 +100,7 @@ bool WriteTriangleMeshToOBJ(const std::string &filename,
                             bool write_triangle_uvs,
                             bool print_progress);
 
-bool ReadTriangleMeshFromASSIMP(const std::string &filename,
+bool ReadTriangleMeshUsingASSIMP(const std::string &filename,
                                 geometry::TriangleMesh &mesh,
                                 bool print_progress);
 

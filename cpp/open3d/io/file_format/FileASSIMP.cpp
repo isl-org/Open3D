@@ -52,7 +52,7 @@ const unsigned int kPostProcessFlags =
         aiProcess_FindDegenerates | aiProcess_OptimizeMeshes |
         aiProcess_OptimizeGraph | aiProcess_PreTransformVertices;
 
-bool ReadTriangleMeshFromASSIMP(const std::string& filename,
+bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
                                 geometry::TriangleMesh& mesh,
                                 bool print_progress) {
     Assimp::Importer importer;

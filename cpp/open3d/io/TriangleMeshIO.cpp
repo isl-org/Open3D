@@ -43,11 +43,11 @@ static const std::unordered_map<
         file_extension_to_trianglemesh_read_function{
                 {"ply", ReadTriangleMeshFromPLY},
                 {"stl", ReadTriangleMeshFromSTL},
-                {"obj", ReadTriangleMeshFromASSIMP},
+                {"obj", ReadTriangleMeshUsingASSIMP},
                 {"off", ReadTriangleMeshFromOFF},
-                {"gltf", ReadTriangleMeshFromASSIMP},
-                {"glb", ReadTriangleMeshFromASSIMP},
-                {"fbx", ReadTriangleMeshFromASSIMP},
+                {"gltf", ReadTriangleMeshUsingASSIMP},
+                {"glb", ReadTriangleMeshUsingASSIMP},
+                {"fbx", ReadTriangleMeshUsingASSIMP},
         };
 
 static const std::unordered_map<
