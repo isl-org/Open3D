@@ -11,7 +11,7 @@ ExternalProject_Add(
     GIT_TAG v5.0.1 # Jan 2020
     UPDATE_COMMAND ""
     CMAKE_ARGS
-        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
@@ -33,5 +33,9 @@ set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
 if (UNIX OR APPLE)
   set(ASSIMP_LIBRARIES assimp IrrXML)
 else()
-  set(ASSIMP_LIBRARIES assimp-vc142-mt IrrXML zlibstatic)
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(ASSIMP_LIBRARIES assimp-vc142-mtd IrrXMLd zlibstaticd)
+  else()
+    set(ASSIMP_LIBRARIES assimp-vc142-mt IrrXML zlibstatic)
+  endif()
 endif()
