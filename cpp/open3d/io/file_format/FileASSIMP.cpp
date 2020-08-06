@@ -221,7 +221,9 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
 
     texture_loader(aiTextureType_DIFFUSE, mesh_material.albedo);
     texture_loader(aiTextureType_NORMALS, mesh_material.normalMap);
-    // Prefer ASSIMP's PBR version of ambient occlusion if available
+    // Assimp may place ambient occlusion texture in AMBIENT_OCCLUSION if format
+    // has AO support. Prefer that texture if it is preset. Otherwise, try
+    // AMBIENT where OBJ and FBX typically put AO textures.
     if (mat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0) {
         texture_loader(aiTextureType_AMBIENT_OCCLUSION,
                        mesh_material.ambientOcclusion);
