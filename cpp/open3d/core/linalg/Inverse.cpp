@@ -39,23 +39,23 @@ void Inverse(const Tensor &A, Tensor &output) {
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
-                "received {}",
+                "received {}.",
                 DtypeUtil::ToString(dtype));
     }
 
     // Check dimensions
     SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
-        utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
+        utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
     }
     if (A_shape[0] != A_shape[1]) {
-        utility::LogError("Tensor A must be square, but got {} x {}",
+        utility::LogError("Tensor A must be square, but got {} x {}.",
                           A_shape[0], A_shape[1]);
     }
 
     int64_t n = A_shape[0];
 
-    /// Pivot to shuffle during matrix factorization
+    // Pivot to shuffle during matrix factorization.
     Tensor ipiv = Tensor::Zeros({n}, Dtype::Int64, device);
 
     void *ipiv_data = ipiv.GetDataPtr();

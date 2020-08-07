@@ -31,8 +31,15 @@
 namespace open3d {
 namespace core {
 
-/// Compute A^{-1} where A is a N x N square matrix with LU factorization
+/// Computes A^{-1} with LU factorization, where A is a N x N square matrix.
 void Inverse(const Tensor& A, Tensor& output);
+
+void InverseCPU(void* A_data,
+                void* ipiv_data,
+                void* output_data,
+                int64_t n,
+                Dtype dtype,
+                const Device& device);
 
 #ifdef BUILD_CUDA_MODULE
 void InverseCUDA(void* A_data,
@@ -42,13 +49,6 @@ void InverseCUDA(void* A_data,
                  Dtype dtype,
                  const Device& device);
 #endif
-
-void InverseCPU(void* A_data,
-                void* ipiv_data,
-                void* output_data,
-                int64_t n,
-                Dtype dtype,
-                const Device& device);
 
 }  // namespace core
 }  // namespace open3d

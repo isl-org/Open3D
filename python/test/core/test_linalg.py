@@ -29,11 +29,6 @@ import numpy as np
 import pytest
 import core_test_utils
 
-if core_test_utils.torch_available():
-    import torch
-    import torch.utils.dlpack
-
-
 @pytest.mark.parametrize("device", core_test_utils.list_devices())
 @pytest.mark.parametrize("dtype", [
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
@@ -95,13 +90,13 @@ def test_svd(device, dtype):
     assert vt.shape == o3d.core.SizeVector([2, 2])
 
     # u and vt are orthogonal matrices
-    uut = u @ u.transpose()
+    uut = u @ u.T()
     eye_uut = o3d.core.Tensor.eye(4, dtype=dtype)
     np.testing.assert_allclose(uut.cpu().numpy(),
                                eye_uut.cpu().numpy(),
                                atol=1e-6)
 
-    vvt = vt.transpose() @ vt
+    vvt = vt.T() @ vt
     eye_vvt = o3d.core.Tensor.eye(2, dtype=dtype)
     np.testing.assert_allclose(vvt.cpu().numpy(),
                                eye_vvt.cpu().numpy(),

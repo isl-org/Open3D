@@ -102,7 +102,18 @@ def _to_o3d_tensor_key(key):
 @cast_to_py_tensor
 def matmul(lhs, rhs):
     """
-    Linear algebra module's matmul operation
+    Matrix multiplication between Tensor \param lhs and Tensor \param rhs
+
+    Args:
+      lhs: Tensor of shape (m, k)
+      rhs: Tensor of shape (k, n)
+
+    Returns:
+      Tensor of shape (m, n)
+
+    - Both tensors should share the same device and dtype.
+    - Int32, Int64, Float32, Float64 are supported,
+      but results of big integers' matmul are not guaranteed, overflow can happen.
     """
     return pybind_matmul(lhs, rhs)
 
@@ -110,7 +121,18 @@ def matmul(lhs, rhs):
 @cast_to_py_tensor
 def solve(lhs, rhs):
     """
-    Linear algebra module's linear least squares (AX = B) solution
+    Returns X by solving linear system AX = B with QR decomposition,
+    where A is Tensor \param lhs and B is Tensor \param rhs.
+
+    Args:
+      lhs: Tensor of shape (m, n), m >= n and is a full rank matrix.
+      rhs: Tensor of shape (m, k)
+
+    Returns:
+      Tensor of shape (n, k)
+
+    - Both tensors should share the same device and dtype.
+    - Float32 and Float64 are supported.
     """
     return pybind_solve(lhs, rhs)
 
@@ -118,7 +140,15 @@ def solve(lhs, rhs):
 @cast_to_py_tensor
 def inv(val):
     """
-    Linear algebra module's inverse operation
+    Returns matrix's inversion with LU decomposition.
+
+    Args:
+      val: Tensor of shape (m, m) and is an invertable matrix
+
+    Returns:
+      Tensor of shape (m, m)
+
+    - Float32 and Float64 are supported.
     """
     return pybind_inv(val)
 
@@ -126,7 +156,17 @@ def inv(val):
 @cast_to_py_tensor
 def svd(val):
     """
-    Linear algebra module's SVD decomposition
+    Returns matrix's SVD decomposition: U S VT = A, where A is Tensor \param val.
+
+    Args:
+      val: Tensor of shape (m, n).
+
+    Returns: a tuple of tensors:
+      U: Tensor of shape (m, n)
+      S: Tensor of shape (min(m, n))
+      VT: Tensor of shape (n, n)
+
+    - Float32 and Float64 are supported.
     """
     return pybind_svd(val)
 
@@ -554,14 +594,17 @@ class Tensor(o3d.pybind.core.Tensor):
     @cast_to_py_tensor
     def contiguous(self):
         """
-        Returns a contiguous tensor with copy if required
+        Returns a contiguous Tensor containing the same data in the same device.
+        If self tensor is already contiguous, the same underlying memory will be
+        used.
         """
         return super(Tensor, self).contiguous()
 
     @cast_to_py_tensor
-    def transpose(self):
+    def T(self):
         """
-        Returns transpose of an 2D tensor
+        Expects input to be <= 2-D Tensor by swapping dimension 0 and 1.
+        0-D and 1-D Tensor remains the same.
         """
         return super(Tensor, self).T()
 
@@ -575,28 +618,68 @@ class Tensor(o3d.pybind.core.Tensor):
     @cast_to_py_tensor
     def matmul(self, value):
         """
-        Returns result of matrix multiplication
+        Matrix multiplication between Tensor \param self and Tensor \param value
+
+        Args:
+          self: Tensor of shape (m, k)
+          value: Tensor of shape (k, n)
+
+        Returns:
+          Tensor of shape (m, n)
+
+        - Both tensors should share the same device and dtype.
+        - Int32, Int64, Float32, Float64 are supported,
+          but results of big integers' matmul are not guaranteed, overflow can happen.
         """
         return super(Tensor, self).matmul(value)
 
     @cast_to_py_tensor
     def solve(self, value):
         """
-        Returns X by solving linear system AX = B where A = self and B = value
+        Returns X by solving linear system AX = B with QR decomposition,
+        where A is Tensor \param self and B is Tensor \param value.
+
+        Args:
+          self: Tensor of shape (m, n), m >= n and is a full rank matrix.
+          value: Tensor of shape (m, k)
+
+        Returns:
+          Tensor of shape (n, k)
+
+        - Both tensors should share the same device and dtype.
+        - Float32 and Float64 are supported.
         """
         return super(Tensor, self).solve(value)
 
     @cast_to_py_tensor
     def inv(self):
         """
-        Returns inversion of the matrix
+        Returns matrix's inversion with LU decomposition.
+
+        Args:
+          self: Tensor of shape (m, m) and is an invertable matrix
+
+        Returns:
+          Tensor of shape (m, m)
+
+        - Float32 and Float64 are supported.
         """
         return super(Tensor, self).inv()
 
     @cast_to_py_tensor
     def svd(self):
         """
-        Returns SVD decomposition of the matrix with A = U S VT
+        Returns matrix's SVD decomposition: U S VT = A, where A is Tensor \param self.
+
+        Args:
+          self: Tensor of shape (m, n).
+
+        Returns: a tuple of tensors:
+          U: Tensor of shape (m, n)
+          S: Tensor of shape (min(m, n))
+          VT: Tensor of shape (n, n)
+
+        - Float32 and Float64 are supported.
         """
         return super(Tensor, self).svd()
 

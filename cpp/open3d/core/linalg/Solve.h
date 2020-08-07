@@ -31,7 +31,7 @@
 namespace open3d {
 namespace core {
 
-// Solve AX = B with *gesv in MKL (CPU) and MAGMA (CUDA)
+/// Solve AX = B with QR decomposition. A is a full-rank m x n matrix (m >= n).
 void Solve(const Tensor& A, const Tensor& B, Tensor& X);
 
 #ifdef BUILD_CUDA_MODULE

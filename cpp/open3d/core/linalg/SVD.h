@@ -31,7 +31,8 @@
 namespace open3d {
 namespace core {
 
-// m x n = U (m x m) S (m x n) VT (n x n)
+/// Computes SVD decomposition A = U S VT, where A is an m x n, U is an m x m, S
+/// is a min(m, n), VT is an n x n tensor.
 void SVD(const Tensor& A, Tensor& U, Tensor& S, Tensor& VT);
 
 #ifdef BUILD_CUDA_MODULE

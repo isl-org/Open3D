@@ -31,6 +31,7 @@
 namespace open3d {
 namespace core {
 
+/// Computes matrix multiplication C = AB.
 void Matmul(const Tensor& A, const Tensor& B, Tensor& C);
 
 #ifdef BUILD_CUDA_MODULE
