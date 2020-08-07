@@ -11,7 +11,7 @@ option(BUILD_SHARED_LIBS               "Build shared libraries"                 
 option(WITH_OPENMP                     "Use OpenMP multi-threading"               ON )
 option(ENABLE_HEADLESS_RENDERING       "Use OSMesa for headless rendering"        OFF)
 option(BUILD_CPP_EXAMPLES              "Build the Open3D example programs"        ON )
-option(BUILD_UNIT_TESTS                "Build the Open3D unit tests"              ON )
+option(BUILD_UNIT_TESTS                "Build the Open3D unit tests"              OFF)
 option(BUILD_BENCHMARKS                "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE             "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE               "Build the CUDA module"                    OFF)
