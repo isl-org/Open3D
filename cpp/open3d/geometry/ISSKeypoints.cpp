@@ -119,8 +119,8 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
                 "non_max_radius = {} from input model",
                 salient_radius, non_max_radius);
     }
-    std::vector<double> third_eigen_values(points.size());
 
+    std::vector<double> third_eigen_values(points.size());
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) shared(third_eigen_values)
 #endif
@@ -141,10 +141,10 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
         }
     }
 
-    std::vector<Eigen::Vector3d> keypoints;
-    keypoints.reserve(points.size());
+    std::vector<size_t> kp_indices;
+    kp_indices.reserve(points.size());
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) shared(keypoints)
+#pragma omp parallel for schedule(static) shared(kp_indices)
 #endif
     for (int i = 0; i < (int)points.size(); i++) {
         if (third_eigen_values[i] > 0.0) {
@@ -155,15 +155,14 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
 
             if (nb_neighbors >= min_neighbors &&
                 IsLocalMaxima(i, nn_indices, third_eigen_values)) {
-                keypoints.emplace_back(points[i]);
+                kp_indices.emplace_back(i);
             }
         }
     }
 
-    utility::LogDebug(
-            "[ComputeISSKeypoints] Extracted {} Keypooints from input model",
-            keypoints.size());
-    return std::make_shared<geometry::PointCloud>(keypoints);
+    utility::LogDebug("[ComputeISSKeypoints] Extracted {} keypoints",
+                      kp_indices.size());
+    return input.SelectByIndex(kp_indices);
 }
 
 }  // namespace keypoint
