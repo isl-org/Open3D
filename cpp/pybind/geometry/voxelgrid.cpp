@@ -126,8 +126,8 @@ void pybind_voxelgrid(py::module &m) {
                         "Creates a voxel grid where every voxel is set (hence "
                         "dense). This is a useful starting point for voxel "
                         "carving",
-                        "origin"_a, "voxel_size"_a, "width"_a, "height"_a,
-                        "depth"_a)
+                        "origin"_a, "color"_a, "voxel_size"_a, "width"_a,
+                        "height"_a, "depth"_a)
             .def_static("create_from_point_cloud",
                         &geometry::VoxelGrid::CreateFromPointCloud,
                         "Creates a VoxelGrid from a given PointCloud. The "
@@ -197,6 +197,7 @@ void pybind_voxelgrid(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_dense",
             {{"origin", "Coordinate center of the VoxelGrid"},
+             {"color", "Voxel color for all voxels if the VoxelGrid."},
              {"voxel_size", "Voxel size of of the VoxelGrid construction."},
              {"width", "Spatial width extend of the VoxelGrid."},
              {"height", "Spatial height extend of the VoxelGrid."},
