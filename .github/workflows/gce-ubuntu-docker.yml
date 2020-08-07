@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: GCloud setup
         uses: actions/checkout@v2       # Checkout code
+        with:
+          submodules: 'recursive'
 
       # Setup gcloud CLI
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
@@ -29,7 +31,7 @@ jobs:
           version: '302.0.0'    # Fixed to avoid dependency on API changes
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_PROJECT }}
-        run: |
+      - run: |
           ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh gcloud-setup
 
       # Build the Docker image
@@ -58,6 +60,8 @@ jobs:
     steps:
       - name: GCloud setup
         uses: actions/checkout@v2       # Checkout code
+        with:
+          submodules: 'recursive'
 
         # Setup gcloud CLI
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
@@ -66,7 +70,7 @@ jobs:
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_PROJECT }}
           export_default_credentials: true
-        run: |
+      - run: |
           ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh gcloud-setup
 
       - name: Create VM
@@ -88,6 +92,8 @@ jobs:
     steps:
       - name: GCloud setup
         uses: actions/checkout@v2       # Checkout code
+        with:
+          submodules: 'recursive'
 
       # Setup gcloud CLI
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
@@ -95,7 +101,7 @@ jobs:
           version: '302.0.0'    # Fixed to avoid dependency on API changes
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_PROJECT }}
-        run: |
+      - run: |
           ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh gcloud-setup
 
       - name: Delete container image
