@@ -41,6 +41,7 @@ jobs:
 
       # Push the Docker image to Google Container Registry
       - name: Publish
+        id: docker-push
         run: |
           ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh docker-push
 
@@ -48,6 +49,7 @@ jobs:
   build-install-test:
     name: Build, install and run unit tests
     runs-on: ubuntu-18.04
+    needs: [build-push-docker-image]
     strategy:
       fail-fast: false
       max-parallel: 1     # Limit parallel runs to max GPU quota (4)
@@ -82,12 +84,15 @@ jobs:
           ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh run-ci
 
       - name: Delete VM
+        if: always()
         run: |
           ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh delete-vm
 
   cleanup:
     name: Cleanup container images and delete VM
     runs-on: ubuntu-18.04
+    needs: [build-install-test]
+    if: always()
 
     steps:
       - name: GCloud setup
