@@ -69,3 +69,9 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
             "dest": "open3d",
             "require": "open3d/extension",
         }]
+
+
+# OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
+# If set this will override the integrated Open3D-ML.
+if 'OPEN3D_ML_ROOT' in os.environ:
+    sys.path.append(os.environ['OPEN3D_ML_ROOT'])

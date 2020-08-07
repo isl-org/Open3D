@@ -25,3 +25,22 @@ except Exception as ex:
     raise ex
 
 from . import nn
+
+if 'OPEN3D_ML_ROOT' in _os.environ:
+    from ml3d.torch import configs
+    from ml3d import datasets  # this is for convenience to have everything on the same level
+    from ml3d.torch import datasets as dataloaders  # will be renamed to dataloaders
+    from ml3d.torch import models
+    from ml3d.torch import modules
+    from ml3d.torch import pipelines
+    from ml3d.torch import utils
+else:
+    # import from the bundled ml3d module
+    # TODO
+    # from open3d._ml3d.torch import configs
+    # from open3d._ml3d import datasets  # this is for convenience to have everything on the same level
+    # from open3d._ml3d.torch import datasets as dataloaders  # will be renamed to dataloaders
+    # from open3d._ml3d.torch import models
+    # from open3d._ml3d.torch import modules
+    # from open3d._ml3d.torch import pipelines
+    # from open3d._ml3d.torch import utils
