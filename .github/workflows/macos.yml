@@ -17,7 +17,6 @@ jobs:
     env:
       SHARED: OFF
       NPROC: 2
-      BUILD_DEPENDENCY_FROM_SOURCE: OFF
       BUILD_CUDA_MODULE: OFF
       BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
       BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}

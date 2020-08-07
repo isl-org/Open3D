@@ -6,45 +6,46 @@ cmake_minimum_required(VERSION 3.12.0)
 
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 
-# Config options
-option(BUILD_SHARED_LIBS         "Build shared libraries"                   OFF)
-option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
-option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
-option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
-option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
-option(BUILD_GOOGLETEST          "Build googletest framework from source"   ON)
-option(BUILD_BENCHMARKS          "Build the micro benchmarks"               OFF)
-option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
-option(BUILD_FILAMENT            "Build filament from source"               OFF)
-option(BUILD_FLANN               "Use the flann that comes with Open3D"     ON)
-option(BUILD_FMT                 "Build fmtlib from source"                 ON)
-option(BUILD_GLEW                "Build glew from source"                   OFF)
-option(BUILD_GLFW                "Build glfw from source"                   OFF)
-option(BUILD_IMGUI               "Build Dear ImGui from source"             ON)
-option(BUILD_LIBLZF              "Build liblzf from source"                 ON)
-option(BUILD_PNG                 "Build png from source"                    OFF)
-option(BUILD_ZLIB                "Build zlib from source"                   OFF)
-option(BUILD_JPEG                "Build jpeg-turbo from source"             OFF)
-option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
-option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
-option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
-option(BUILD_AZURE_KINECT        "Build support for Azure Kinect sensor"    OFF)
-option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
-option(BUILD_TINYGLTF            "Build TinyGLTF from source"               ON)
-option(BUILD_TINYOBJLOADER       "Build tinyobjloader from source"          ON)
-option(BUILD_QHULL               "Build qhull from source"                  ON)
-option(BUILD_CUDA_MODULE         "Build the CUDA module"                    OFF)
-option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
-option(BUILD_PYTORCH_OPS         "Build ops for Pytorch"                    OFF)
-option(ENABLE_GUI                "Builds new GUI"                           ON)
-option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
-option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
-option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
-option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
-option(PREFER_OSX_HOMEBREW       "Prefer Homebrew libs over frameworks"     ON)
+# Open3D build options
+option(BUILD_SHARED_LIBS               "Build shared libraries"                   OFF)
+option(WITH_OPENMP                     "Use OpenMP multi-threading"               ON )
+option(ENABLE_HEADLESS_RENDERING       "Use OSMesa for headless rendering"        OFF)
+option(BUILD_CPP_EXAMPLES              "Build the Open3D example programs"        ON )
+option(BUILD_UNIT_TESTS                "Build the Open3D unit tests"              ON )
+option(BUILD_BENCHMARKS                "Build the micro benchmarks"               OFF)
+option(BUILD_PYTHON_MODULE             "Build the python module"                  ON )
+option(BUILD_CUDA_MODULE               "Build the CUDA module"                    OFF)
+option(ENABLE_GUI                      "Builds new GUI"                           ON )
+option(ENABLE_JUPYTER                  "Enable Jupyter support for Open3D"        OFF)
+option(USE_VULKAN                      "Enables Vulkan support for renderer"      OFF)
+option(STATIC_WINDOWS_RUNTIME          "Use static (MT/MTd) Windows runtime"      ON )
+option(GLIBCXX_USE_CXX11_ABI           "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
+# 3rd-party build options
+option(USE_PREINSTALLED_EIGEN3         "Use pre-installed eigen3"                 OFF)
+option(USE_PREINSTALLED_FLANN          "Use pre-installed flann"                  OFF)
+option(USE_PREINSTALLED_FMT            "Use pre-installed fmt"                    OFF)
+option(USE_PREINSTALLED_GLEW           "Use pre-installed glew"                   OFF)
+option(USE_PREINSTALLED_GLFW           "Use pre-installed glfw"                   OFF)
+option(USE_PREINSTALLED_GOOGLETEST     "Use pre-installed googletest"             OFF)
+option(USE_PREINSTALLED_IMGUI          "Use pre-installed imgui"                  OFF)
+option(USE_PREINSTALLED_JPEG           "Use pre-installed jpeg"                   OFF)
+option(USE_PREINSTALLED_LIBLZF         "Use pre-installed liblzf"                 OFF)
+option(USE_PREINSTALLED_PNG            "Use pre-installed png"                    OFF)
+option(USE_PREINSTALLED_PYBIND11       "Use pre-installed pybind11"               OFF)
+option(USE_PREINSTALLED_QHULL          "Use pre-installed qhull"                  OFF)
+option(USE_PREINSTALLED_TINYGLTF       "Use pre-installed tinygltf"               OFF)
+option(USE_PREINSTALLED_TINYOBJLOADER  "Use pre-installed tinyobjloader"          OFF)
+option(BUILD_FILAMENT_FROM_SOURCE      "Build filament from source"               OFF)
+option(PREFER_OSX_HOMEBREW             "Prefer Homebrew libs over frameworks"     ON )
+# Sensor options
+option(BUILD_LIBREALSENSE              "Build support for Intel RealSense camera" OFF)
+option(BUILD_AZURE_KINECT              "Build support for Azure Kinect sensor"    OFF)
+# ML library options
+option(BUILD_TENSORFLOW_OPS            "Build ops for Tensorflow"                 OFF)
+option(BUILD_PYTORCH_OPS               "Build ops for Pytorch"                    OFF)
 
-set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT=OFF)")
-set(FILAMENT_SOURCE_ROOT "" CACHE PATH "Path to Filament library sources (used if BUILD_FILAMENT=ON)")
+set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
+set(FILAMENT_SOURCE_ROOT "" CACHE PATH "Path to Filament library sources (used if BUILD_FILAMENT_FROM_SOURCE=ON)")
 
 if (PREFER_OSX_HOMEBREW)
     set(CMAKE_FIND_FRAMEWORK LAST)
@@ -67,7 +68,7 @@ endif()
 if (POLICY CMP0072)
     cmake_policy(SET CMP0072 NEW)
     set(CMP0072_VALUE NEW)
-    if (BUILD_GLFW)
+    if (NOT USE_PREINSTALLED_GLFW)
         cmake_policy(SET CMP0072 OLD)
         set(CMP0072_VALUE OLD)
     endif()
@@ -94,10 +95,10 @@ if(ENABLE_HEADLESS_RENDERING AND ENABLE_GUI)
     message(STATUS "Headless rendering disables the Open3D GUI")
     set(ENABLE_GUI OFF)
 endif()
-if(ENABLE_HEADLESS_RENDERING AND (NOT BUILD_GLEW OR NOT BUILD_GLFW))
+if(ENABLE_HEADLESS_RENDERING AND (USE_PREINSTALLED_GLEW OR USE_PREINSTALLED_GLFW))
     message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
-    set(BUILD_GLEW ON)
-    set(BUILD_GLFW ON)
+    set(USE_PREINSTALLED_GLEW OFF)
+    set(USE_PREINSTALLED_GLFW OFF)
 endif()
 if(ENABLE_GUI AND WIN32)
     message(STATUS "New GUI is currently unsupported on Windows")
@@ -285,7 +286,14 @@ function(open3d_set_global_properties target)
         set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
     # Tell CMake we want a compiler that supports C++14 features
-    target_compile_features(${target} PUBLIC cxx_variadic_templates cxx_constexpr cxx_override cxx_static_assert cxx_trailing_return_types cxx_return_type_deduction)
+    target_compile_features(${target} PUBLIC
+        cxx_variadic_templates
+        cxx_constexpr
+        cxx_override
+        cxx_static_assert
+        cxx_trailing_return_types
+        cxx_return_type_deduction
+    )
     target_include_directories(${target} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp>
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
@@ -426,9 +434,30 @@ endif()
 open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
 message(STATUS "========================================================================")
 message(STATUS "Third-Party Dependencies:")
-foreach(dep IN ITEMS EIGEN3 FILAMENT FLANN FMT GLEW GLFW GOOGLETEST IMGUI JPEG JSONCPP LIBLZF OPENGL PNG PYBIND11 QHULL LIBREALSENSE TINYFILEDIALOGS TINYGLTF TINYOBJLOADER)
+set(deps
+    EIGEN3
+    FILAMENT
+    FLANN
+    FMT
+    GLEW
+    GLFW
+    GOOGLETEST
+    IMGUI
+    JPEG
+    JSONCPP
+    LIBLZF
+    OPENGL
+    PNG
+    PYBIND11
+    QHULL
+    LIBREALSENSE
+    TINYFILEDIALOGS
+    TINYGLTF
+    TINYOBJLOADER
+)
+foreach(dep IN ITEMS ${deps})
     if(${dep}_TARGET)
-        if(BUILD_${dep})
+        if(NOT USE_PREINSTALLED_${dep})
             set(usage "yes (build from source)")
         else()
             set(usage "yes")

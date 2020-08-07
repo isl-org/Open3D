@@ -3,7 +3,6 @@
 # The following environment variables are required:
 # - SHARED
 # - NPROC
-# - BUILD_DEPENDENCY_FROM_SOURCE
 # - BUILD_CUDA_MODULE
 # - BUILD_TENSORFLOW_OPS
 # - BUILD_PYTORCH_OPS
@@ -102,16 +101,6 @@ cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
         -DBUILD_BENCHMARKS=ON \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
         -DPYTHON_EXECUTABLE=$(which python)"
-
-if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "ON" ]; then
-    cmakeOptions="$cmakeOptions \
-        -DBUILD_EIGEN3=ON \
-        -DBUILD_FLANN=ON \
-        -DBUILD_GLEW=ON \
-        -DBUILD_GLFW=ON \
-        -DBUILD_JPEG=ON \
-        -DBUILD_PNG=ON"
-fi
 
 echo
 echo "Running cmake" $cmakeOptions ..

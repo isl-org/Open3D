@@ -2,7 +2,6 @@ language: cpp
 env:
   global:
     - SHARED=OFF
-    - BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - BUILD_TENSORFLOW_OPS=ON
     - BUILD_CUDA_MODULE=OFF
     - NPROC=2
@@ -55,7 +54,6 @@ matrix:
             - texlive-latex-extra
             - ghostscript
             - pandoc
-            - libosmesa6-dev
       install:
         # Install ubuntu dependencies
         - ./util/scripts/install-deps-ubuntu.sh assume-yes
@@ -83,10 +81,8 @@ matrix:
         - |
           cmake \
                 -DENABLE_HEADLESS_RENDERING=ON \
-                -DENABLE_JUPYTER=ON \
                 -DENABLE_GUI=OFF \
-                -DBUILD_GLEW=ON \
-                -DBUILD_GLFW=ON \
+                -DENABLE_JUPYTER=ON \
                 -DWITH_OPENMP=ON \
                 -DBUILD_AZURE_KINECT=ON \
                 ..
