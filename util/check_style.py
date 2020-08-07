@@ -22,10 +22,10 @@ try:
     import yapf
 except:
     raise ImportError(
-        "yapf not found. Install with `pip install yapf==0.28.0`.")
-if yapf.__version__ != "0.28.0":
+        "yapf not found. Install with `pip install yapf==0.30.0`.")
+if yapf.__version__ != "0.30.0":
     raise RuntimeError(
-        "yapf 0.28.0 required. Install with `pip install yapf==0.28.0`.")
+        "yapf 0.30.0 required. Install with `pip install yapf==0.30.0`.")
 print("Using yapf version {}".format(yapf.__version__))
 
 # Check and import nbformat
