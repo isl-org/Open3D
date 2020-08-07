@@ -382,10 +382,10 @@ def test_getitem(device):
     np.testing.assert_equal(o3_t[0, :, :-2].cpu().numpy(), np_t[0, :, :-2])
     np.testing.assert_equal(o3_t[0, 1:3, 2].cpu().numpy(), np_t[0, 1:3, 2])
     np.testing.assert_equal(o3_t[0, 1:-1, 2].cpu().numpy(), np_t[0, 1:-1, 2])
-    np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].cpu().numpy(),
-                            np_t[0, 1:3, 0:4:2])
-    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].cpu().numpy(),
-                            np_t[0, 1:3, 0:-1:2])
+    np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].cpu().numpy(), np_t[0, 1:3,
+                                                                    0:4:2])
+    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].cpu().numpy(), np_t[0, 1:3,
+                                                                     0:-1:2])
     np.testing.assert_equal(o3_t[0, 1, :].cpu().numpy(), np_t[0, 1, :])
 
     # Slice the slice
