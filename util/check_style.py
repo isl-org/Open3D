@@ -82,10 +82,13 @@ def _glob_files(directories, extensions):
 
 
 def _find_clang_format():
-    # Find clang-format
-    # > not found: throw exception
-    # > version mismatch: print warning
-    clang_format_bin = shutil.which("clang-format-5.0")
+    """
+    Find clang-format:
+      - not found: throw exception
+      - version mismatch: print warning
+    """
+    preferred_clang_format_name = "clang-format-10"
+    clang_format_bin = shutil.which(preferred_clang_format_name)
     if clang_format_bin is None:
         clang_format_bin = shutil.which("clang-format")
     if clang_format_bin is None:
@@ -103,14 +106,14 @@ def _find_clang_format():
             major = int(version_str_token[0])
             minor = int(version_str_token[1])
             if major != 5 or minor != 0:
-                print("Warning: clang-format 5.0 required, but got {}.".format(
-                    version_str))
+                print("Warning: {} required, but got {}.".format(
+                    preferred_clang_format_name, version_str))
         else:
             raise
     except:
-        print("Warning: failed to parse clang-format version {}".format(
-            version_str))
-        print("Please ensure clang-format 5.0 is used.")
+        print("Warning: failed to parse clang-format version {}, "
+              "please ensure {} is used.".format(version_str,
+                                                 preferred_clang_format_name))
     print("Using clang-format version {}.".format(version_str))
 
     return clang_format_bin
