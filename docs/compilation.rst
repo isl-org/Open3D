@@ -446,7 +446,7 @@ library from source code.
     with 3rd-party libraries that comes with Open3D's build system for maximum
     compatibility. On Ubuntu and macOS, it is also possible to force Open3D to
     use pre-installed 3rd-party libraries by setting
-    ``-DUSE_PREINSTALLED_XXX=ON``, e.g. ``-DUSE_PREINSTALLED_EIGEN3=ON``.
+    ``-DUSE_SYSTEM_XXX=ON``, e.g. ``-DUSE_SYSTEM_EIGEN3=ON``.
 
 OpenMP
 ``````
