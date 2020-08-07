@@ -29,7 +29,11 @@ GCE_INSTANCE_BASE_TYPE=n1-standard      # GCE only allows n1-standard machines w
 GCE_INSTANCE_TYPE=${GCE_INSTANCE_BASE_TYPE}-$NPROC
 GCE_INSTANCE_BASENAME=ci-gpu-vm
 GCE_INSTANCE=${GCE_INSTANCE_BASENAME}-${GITHUB_SHA::8}-${CI_CONFIG_ID}
-GCE_INSTANCE_ZONE=us-west1-b
+GCE_INSTANCE_ZONE=( us-west1-a us-central1-a us-east1-b us-east4-a \
+    us-west1-b us-central1-b us-east1-c us-east4-b \
+    us-west1-c us-central1-c us-east1-d us-east4-c \
+    us-central1-f )
+export GCE_ZID=${GCE_ZID:=0}    # Persist between calls of this script
 GCE_GPU="count=1,type=nvidia-tesla-t4"
 GCE_BOOT_DISK_TYPE=pd-ssd
 GCE_BOOT_DISK_SIZE=32GB
@@ -71,7 +75,7 @@ case "$1" in
 
     create-base-vm-image )
         gcloud compute instances create $VM_IMAGE \
-        --zone=${GCE_INSTANCE_ZONE} \
+        --zone=${GCE_INSTANCE_ZONE[$GCE_ZID]} \
         --service-account="$GCE_GPU_CI_SA" \
         --accelerator="$GCE_GPU" \
         --maintenance-policy=TERMINATE \
@@ -94,20 +98,20 @@ case "$1" in
         sleep 300
         TRIES=0
         until (( TRIES>=5 )) || gcloud compute images create ${VM_IMAGE} --source-disk=$VM_IMAGE \
-            --source-disk-zone=${GCE_INSTANCE_ZONE} \
+            --source-disk-zone=${GCE_INSTANCE_ZONE[$GCE_ZID]} \
             --family=ubuntu-os-docker-gpu-1804-lts \
             --storage-location=us ; do
             sleep 60
             (( TRIES=TRIES+1 ))
         done
-        gcloud compute instances delete $VM_IMAGE --zone=${GCE_INSTANCE_ZONE}
+        gcloud compute instances delete $VM_IMAGE --zone=${GCE_INSTANCE_ZONE[$GCE_ZID]}
         ;;
 
     create-vm )
-        TRIES=0       # Try creating a VM instance 5 times
-        until (( TRIES>=5 )) || \
+        # Try creating a VM instance in each zone
+        until (( GCE_ZID>=${#GCE_INSTANCE_ZONE[@]} )) || \
             gcloud compute instances create $GCE_INSTANCE \
-            --zone=${GCE_INSTANCE_ZONE} \
+            --zone=${GCE_INSTANCE_ZONE[$GCE_ZID]} \
             --accelerator="$GCE_GPU" \
             --maintenance-policy=TERMINATE \
             --machine-type=$GCE_INSTANCE_TYPE \
@@ -116,15 +120,14 @@ case "$1" in
             --image-family=ubuntu-os-docker-gpu-1804-lts \
             --service-account="$GCE_GPU_CI_SA"
             do
-                sleep 5
-                (( TRIES=TRIES+1 ))
+                (( GCE_ZID=GCE_ZID+1 ))
             done
-            sleep 60              # wait for instance startup
-            exit $(( TRIES>=5 ))  # 0 => success
+            sleep 30              # wait for instance ssh service startup
+            exit $(( GCE_ZID>=${#GCE_INSTANCE_ZONE[@]} ))  # 0 => success
             ;;
 
     run-ci )
-        gcloud compute ssh ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE} --command \
+        gcloud compute ssh ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE[$GCE_ZID]} --command \
             "sudo docker run --rm --gpus all \
             --env NPROC=$NPROC \
             --env SHARED=${SHARED[$CI_CONFIG_ID]} \
@@ -141,11 +144,11 @@ case "$1" in
         ;;
 
     delete-vm )
-        gcloud compute instances delete ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE}
+        gcloud compute instances delete ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE[$GCE_ZID]}
         ;;
 
     ssh-vm )
-        gcloud compute ssh ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE}
+        gcloud compute ssh ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE[$GCE_ZID]}
         ;;
 
     *)

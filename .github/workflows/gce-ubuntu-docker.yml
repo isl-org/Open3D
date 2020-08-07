@@ -52,7 +52,7 @@ jobs:
     needs: [build-push-docker-image]
     strategy:
       fail-fast: false
-      max-parallel: 1     # Limit parallel runs to max GPU quota (4)
+      max-parallel: 4     # Limit parallel runs to max GPU quota (4)
       matrix:
         CI_CONFIG_ID: [2, 3, 4]   # These configurations need GPU
 
