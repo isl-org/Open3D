@@ -23,9 +23,9 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-if "@ENABLE_GUI@" == "ON":
+if "@BUILD_GUI@" == "ON":
     from open3d.pybind.visualization.rendering import *
 else:
     print(
-        "Open3D was not compiled with ENABLE_GUI, but script is importing open3d.visualization.rendering"
+        "Open3D was not compiled with BUILD_GUI, but script is importing open3d.visualization.rendering"
     )

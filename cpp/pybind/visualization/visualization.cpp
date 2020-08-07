@@ -42,7 +42,7 @@ void pybind_visualization(py::module &m) {
     pybind_visualizer_method(m_visualization);
     pybind_visualization_utility_methods(m_visualization);
 
-#ifdef ENABLE_GUI
+#ifdef BUILD_GUI
     pybind_rendering(m_visualization);
     pybind_gui(m_visualization);
 #endif

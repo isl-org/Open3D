@@ -4,9 +4,7 @@ set -e
 which -s brew
 if [[ $? != 0 ]]; then
     echo "Please install Homebrew, follow the instructions on:"
-    echo ""
     echo "        http://brew.sh/"
-    echo ""
     echo "After installation, run this script again."
     exit
 else
@@ -15,12 +13,11 @@ else
     if [ "$1" == "skip-upgrade" ]; then
         echo "brew update skipped."
     else
-        # `brew update` upgrades brew itself.
-        brew update
+        brew update  # `brew update` upgrades brew itself.
     fi
 fi
 
-for pkg in libusb glew glfw3 libjpeg libpng pkg-config eigen tbb; do
+for pkg in libusb pkg-config tbb; do
     if brew list -1 | grep -q "^${pkg}\$"; then
         if [ "$1" == "skip-upgrade" ]; then
             echo "Package '$pkg' has already been installed."
