@@ -29,6 +29,7 @@ import numpy as np
 import pytest
 import core_test_utils
 
+
 @pytest.mark.parametrize("device", core_test_utils.list_devices())
 @pytest.mark.parametrize("dtype", [
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
@@ -36,8 +37,8 @@ import core_test_utils
 ])
 def test_matmul(device, dtype):
     # Shape takes tuple, list or o3d.core.SizeVector
-    a = o3d.core.Tensor([[1, 2, 3], [4, 5, 6]], dtype=dtype, device=device)
-    b = o3d.core.Tensor([[7, 8, 9, 10], [11, 12, 13, 14], [15, 16, 17, 18]],
+    a = o3d.core.Tensor([[1, 2.5, 3], [4, 5, 6.2]], dtype=dtype, device=device)
+    b = o3d.core.Tensor([[7.5, 8, 9, 10], [11, 12, 13, 14], [15, 16, 17.8, 18]],
                         dtype=dtype,
                         device=device)
     c = o3d.core.matmul(a, b)
@@ -55,35 +56,102 @@ def test_matmul(device, dtype):
     c_numpy = a.cpu().numpy() @ b.cpu().numpy()
     np.testing.assert_allclose(c.cpu().numpy(), c_numpy, 1e-6)
 
+    # Incompatible shape test
+    with pytest.raises(RuntimeError) as excinfo:
+        a = o3d.core.Tensor.zeros((3, 4, 5), dtype=dtype)
+        b = o3d.core.Tensor.zeros((4, 5), dtype=dtype)
+        c = a @ b
+    assert 'Tensor A must be 2D' in str(excinfo.value)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        a = o3d.core.Tensor.zeros((3, 4), dtype=dtype)
+        b = o3d.core.Tensor.zeros((4, 5, 6), dtype=dtype)
+        c = a @ b
+    assert 'Tensor B must be 1D (vector) or 2D (matrix)' in str(excinfo.value)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        a = o3d.core.Tensor.zeros((3, 4), dtype=dtype)
+        b = o3d.core.Tensor.zeros((3, 7), dtype=dtype)
+        c = a @ b
+    assert 'mismatch with' in str(excinfo.value)
+
+    for shapes in [((0, 0), (0, 0)), ((2, 0), (0, 3)), ((0, 2), (2, 0)),
+                   ((2, 0), (0, 0))]:
+        with pytest.raises(RuntimeError) as excinfo:
+            a_shape, b_shape = shapes
+            a = o3d.core.Tensor.zeros(a_shape, dtype=dtype, device=device)
+            b = o3d.core.Tensor.zeros(b_shape, dtype=dtype, device=device)
+            c = a @ b
+        assert 'dimensions with zero' in str(excinfo.value)
+
 
 @pytest.mark.parametrize("device", core_test_utils.list_devices())
-@pytest.mark.parametrize("dtype",
-                         [o3d.core.Dtype.Float32, o3d.core.Dtype.Float64])
+@pytest.mark.parametrize("dtype", [
+    o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
+    o3d.core.Dtype.Float64
+])
 def test_inverse(device, dtype):
     a = o3d.core.Tensor([[7, 2, 1], [0, 3, -1], [-3, 4, 2]],
                         dtype=dtype,
                         device=device)
+
+    if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
+        with pytest.raises(RuntimeError) as excinfo:
+            o3d.core.inv(a)
+        assert 'Only tensors with Float32 or Float64 are supported' in str(
+            excinfo.value)
+        return
+
     a_inv = o3d.core.inv(a)
     a_inv_numpy = np.linalg.inv(a.cpu().numpy())
     np.testing.assert_allclose(a_inv.cpu().numpy(), a_inv_numpy, 1e-6)
 
+    # Non-2D
+    for shape in [(), [1], (3, 4, 5)]:
+        with pytest.raises(RuntimeError) as excinfo:
+            a = o3d.core.Tensor.zeros(shape, dtype=dtype, device=device)
+            a.inv()
+        assert 'must be 2D' in str(excinfo.value)
+
+    # Non-square
+    with pytest.raises(RuntimeError) as excinfo:
+        a = o3d.core.Tensor.zeros((2, 3), dtype=dtype, device=device)
+        a.inv()
+    assert 'must be square' in str(excinfo.value)
+
+    a = o3d.core.Tensor([[1]], dtype=dtype, device=device)
+    np.testing.assert_allclose(a.cpu().numpy(), a.inv().cpu().numpy(), 1e-6)
+
     # Singular condition
-    a = o3d.core.Tensor([[0, 0], [0, 1]], dtype=dtype, device=device)
-    try:
-        a_inv = a.inv()
-    except RuntimeError:
-        pass
-    else:  # should never reach here
-        assert False
+    for a in [
+            o3d.core.Tensor([[0, 0], [0, 1]], dtype=dtype, device=device),
+            o3d.core.Tensor([[0]], dtype=dtype, device=device)
+    ]:
+        with pytest.raises(RuntimeError) as excinfo:
+            a_inv = a.inv()
+        assert 'singular condition' in str(excinfo.value)
+
+        with pytest.raises(np.linalg.LinAlgError) as excinfo:
+            a_inv = np.linalg.inv(a.cpu().numpy())
+        assert 'Singular matrix' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("device", core_test_utils.list_devices())
-@pytest.mark.parametrize("dtype",
-                         [o3d.core.Dtype.Float32, o3d.core.Dtype.Float64])
+@pytest.mark.parametrize("dtype", [
+    o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
+    o3d.core.Dtype.Float64
+])
 def test_svd(device, dtype):
     a = o3d.core.Tensor([[2, 4], [1, 3], [0, 0], [0, 0]],
                         dtype=dtype,
                         device=device)
+    if dtype in [o3d.core.Dtype.Int32, o3d.core.Dtype.Int64]:
+        with pytest.raises(RuntimeError) as excinfo:
+            o3d.core.svd(a)
+        assert 'Only tensors with Float32 or Float64 are supported' in str(
+            excinfo.value)
+        return
+
     u, s, vt = o3d.core.svd(a)
     assert u.shape == o3d.core.SizeVector([4, 4])
     assert s.shape == o3d.core.SizeVector([2])
@@ -117,6 +185,22 @@ def test_svd(device, dtype):
 
     np.testing.assert_allclose(s, s_numpy, 1e-6)
 
+    for shapes in [(0, 0), (0, 2)]:
+        with pytest.raises(RuntimeError) as excinfo:
+            a = o3d.core.Tensor.zeros(shapes, dtype=dtype, device=device)
+            a.svd()
+        assert 'dimensions with zero' in str(excinfo.value)
+    for shapes in [(), [1], (1, 2, 4)]:
+        with pytest.raises(RuntimeError) as excinfo:
+            a = o3d.core.Tensor.zeros(shapes, dtype=dtype, device=device)
+            a.svd()
+        assert 'must be 2D' in str(excinfo.value)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        a = o3d.core.Tensor(shapes, dtype=dtype, device=device)
+        a.svd()
+    assert 'must be 2D' in str(excinfo.value)
+
 
 @pytest.mark.parametrize("device", core_test_utils.list_devices())
 @pytest.mark.parametrize("dtype",
@@ -146,3 +230,20 @@ def test_solve(device, dtype):
                                        b.cpu().numpy(),
                                        rcond=None)
     np.testing.assert_allclose(x.cpu().numpy(), x_numpy, atol=1e-6)
+
+    for shapes in [((0, 0), (0, 0)), ((2, 0), (0, 3)), ((0, 2), (2, 0)),
+                   ((2, 0), (0, 0))]:
+        with pytest.raises(RuntimeError) as excinfo:
+            a_shape, b_shape = shapes
+            a = o3d.core.Tensor.zeros(a_shape, dtype=dtype, device=device)
+            b = o3d.core.Tensor.zeros(b_shape, dtype=dtype, device=device)
+            c = a.solve(b)
+        assert 'dimensions with zero' in str(excinfo.value)
+
+    for shapes in [((2, 3), (2, 2))]:
+        with pytest.raises(RuntimeError) as excinfo:
+            a_shape, b_shape = shapes
+            a = o3d.core.Tensor.zeros(a_shape, dtype=dtype, device=device)
+            b = o3d.core.Tensor.zeros(b_shape, dtype=dtype, device=device)
+            c = a.solve(b)
+        assert f'must satisfy rows({a_shape[0]}) > cols({a_shape[1]})' in str(excinfo.value)

@@ -54,6 +54,10 @@ void Inverse(const Tensor &A, Tensor &output) {
     }
 
     int64_t n = A_shape[0];
+    if (n == 0) {
+        utility::LogError(
+                "Tensor shapes should not contain dimensions with zero.");
+    }
 
     // Pivot to shuffle during matrix factorization.
     Tensor ipiv = Tensor::Zeros({n}, Dtype::Int64, device);

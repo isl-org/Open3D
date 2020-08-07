@@ -74,6 +74,11 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     int64_t k = A_shape[1];
     int64_t n = B_shape.size() == 2 ? B_shape[1] : 1;
 
+    if (m == 0 || k == 0 || n == 0) {
+        utility::LogError(
+                "Tensor shapes should not contain dimensions with zero.");
+    }
+
     Tensor A_T = A.T().Contiguous().To(dtype);
     Tensor B_T = B.T().Contiguous().To(dtype);
     void* A_data = A_T.GetDataPtr();

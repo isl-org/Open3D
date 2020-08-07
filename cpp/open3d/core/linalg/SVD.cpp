@@ -50,6 +50,10 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
     }
 
     int64_t m = A_shape[0], n = A_shape[1];
+    if (m == 0 || n == 0) {
+        utility::LogError(
+                "Tensor shapes should not contain dimensions with zero.");
+    }
     if (m < n) {
         utility::LogError("Only support m >= n, but got {} and {} matrix", m,
                           n);
