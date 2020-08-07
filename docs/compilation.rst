@@ -58,7 +58,7 @@ compilation time. Otherwise, the dependencies can also be build from source, see
 
 .. code-block:: bash
 
-    util/scripts/install-deps-ubuntu.sh
+    util/install_deps_ubuntu.sh
 
 .. _compilation_ubuntu_python_binding:
 
@@ -291,7 +291,7 @@ The MacOS compilation steps are mostly identical with :ref:`compilation_ubuntu`.
 1. Install dependencies (optional)
 ``````````````````````````````````
 
-Run ``util/scripts/install-deps-osx.sh``. We use `homebrew <https://brew.sh/>`_
+Run ``util/install_deps_macos.sh``. We use `homebrew <https://brew.sh/>`_
 to manage dependencies. Follow the instructions from the script.
 
 2. Setup Python binding environments
@@ -443,8 +443,8 @@ library from source code.
 
 .. tip:: On Ubuntu and MacOS it is recommended to link Open3D to system installed
     libraries. The dependencies can be installed via scripts
-    ``util/scripts/install-deps-ubuntu.sh`` and
-    ``util/scripts/install-deps-osx.sh``. On Windows, it is recommended to
+    ``util/install_deps_ubuntu.sh`` and
+    ``util/install_deps_macos.sh``. On Windows, it is recommended to
     compile everything from source since Windows lacks a package management
     software.
 

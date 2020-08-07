@@ -68,7 +68,7 @@ def _glob_files(directories, extensions):
         List of file paths.
     """
     pwd = Path(os.path.dirname(os.path.abspath(__file__)))
-    open3d_root_dir = pwd.parent.parent
+    open3d_root_dir = pwd.parent
 
     file_paths = []
     for directory in directories:
@@ -346,7 +346,7 @@ if __name__ == "__main__":
     # Check formatting libs
     clang_format_bin = _find_clang_format()
     pwd = Path(os.path.dirname(os.path.abspath(__file__)))
-    python_style_config = str(pwd.parent.parent / ".style.yapf")
+    python_style_config = str(pwd.parent / ".style.yapf")
 
     # Check or apply style
     cpp_formatter = CppFormatter(_glob_files(CPP_FORMAT_DIRS,
