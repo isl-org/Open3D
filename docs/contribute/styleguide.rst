@@ -90,7 +90,7 @@ to ``PATH``.
 Windows
 ~~~~~~~~~~~
 
-Download clang-10 Windows package from `LLVM Download Page`_. During
+Download LLVM version 10 Windows package from `LLVM Download Page`_. During
 installation, select the option which allows adding clang toolchains to
 ``PATH``. After installation, open a CMD terminal and try
 
