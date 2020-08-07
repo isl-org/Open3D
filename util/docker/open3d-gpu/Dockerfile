@@ -13,8 +13,8 @@ COPY ./util/docker/open3d-gpu/scripts/env-setup.sh /root/Open3D/util/docker/open
 RUN /root/Open3D/util/docker/open3d-gpu/scripts/env-setup.sh
 
 # Install dependencies with apt-get
-COPY ./util/install-deps-ubuntu.sh /root/Open3D/util/install-deps-ubuntu.sh
-RUN /root/Open3D/util/install-deps-ubuntu.sh assume-yes
+COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/install_deps_ubuntu.sh
+RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes
 
 COPY . /root/Open3D
 WORKDIR /root/Open3D

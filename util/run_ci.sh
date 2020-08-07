@@ -57,7 +57,7 @@ if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     CUDA_TOOLKIT_DIR=~/cuda
     export PATH="$CUDA_TOOLKIT_DIR/bin:$PATH"
     export LD_LIBRARY_PATH="$CUDA_TOOLKIT_DIR/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64"
-    if ! which nvcc >/dev/null ; then
+    if ! which nvcc >/dev/null ; then       # If CUDA is not already installed
         reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
         reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
     fi
