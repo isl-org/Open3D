@@ -7,7 +7,7 @@ if [ "$1" == "assume-yes" ]; then
     # Open3D deps
     sudo apt-get --yes install xorg-dev
     sudo apt-get --yes install libglu1-mesa-dev
-    sudo apt-get --yes instlal python3-dev
+    sudo apt-get --yes install python3-dev
     # Filament build-from-source dpes
     sudo apt-get --yes install libsdl2-dev
     sudo apt-get --yes install libc++-7-dev
@@ -22,7 +22,7 @@ else
     # Open3D deps
     sudo apt-get install xorg-dev
     sudo apt-get install libglu1-mesa-dev
-    sudo apt-get instlal python3-dev
+    sudo apt-get install python3-dev
     # Filament build-from-source dpes
     sudo apt-get install libsdl2-dev
     sudo apt-get install libc++-7-dev
