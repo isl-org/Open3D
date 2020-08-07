@@ -5,15 +5,15 @@ endif()
 # Detect whether `npm` is installed. Jupyter support will only be enabled if
 # `npm` is found.
 find_program(NPM "npm")
-if (ENABLE_JUPYTER)
+if (BUILD_JUPYTER_EXTENSION)
     if (NOT NPM)
         message(WARNING "Cannot find npm. Jupyter support will be disabled.")
-        set(ENABLE_JUPYTER OFF)
+        set(BUILD_JUPYTER_EXTENSION OFF)
     else()
         message(STATUS "npm found at: ${NPM}. Jupyter support will be enabled.")
     endif()
 endif()
-message(STATUS "ENABLE_JUPYTER is set to ${ENABLE_JUPYTER}")
+message(STATUS "BUILD_JUPYTER_EXTENSION is set to ${BUILD_JUPYTER_EXTENSION}")
 
 # We need to get python version to configure some meta files
 execute_process(
@@ -152,7 +152,7 @@ add_custom_target(python-package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
-            -DENABLE_JUPYTER=${ENABLE_JUPYTER}
+            -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
             -DBUILD_GUI=${BUILD_GUI}

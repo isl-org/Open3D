@@ -82,7 +82,7 @@ matrix:
           cmake \
                 -DENABLE_HEADLESS_RENDERING=ON \
                 -DBUILD_GUI=OFF \
-                -DENABLE_JUPYTER=ON \
+                -DBUILD_JUPYTER_EXTENSION=ON \
                 -DWITH_OPENMP=ON \
                 -DBUILD_AZURE_KINECT=ON \
                 ..
