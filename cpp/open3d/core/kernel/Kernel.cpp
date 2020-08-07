@@ -24,11 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/kernel/Kernel.h"
+
 #include <mkl.h>
+
 #include <cmath>
 #include <vector>
 
-#include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

@@ -26,9 +26,9 @@
 
 #include "FileFormatIO.h"
 
-#include "open3d/utility/FileSystem.h"
-
 #include <map>
+
+#include "open3d/utility/FileSystem.h"
 
 namespace open3d {
 namespace io {

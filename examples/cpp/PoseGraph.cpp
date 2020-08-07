@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/pipelines/registration/PoseGraph.h"
+
 #include <cstdio>
 
 #include "open3d/Open3D.h"
 #include "open3d/pipelines/registration/GlobalOptimization.h"
-#include "open3d/pipelines/registration/PoseGraph.h"
 
 using namespace open3d;
 

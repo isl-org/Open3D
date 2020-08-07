@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "ContinuousConvTransposeOpKernel.h"
+
 #include "open3d/ml/impl/continuous_conv/ContinuousConvTranspose.h"
 
 using namespace open3d;

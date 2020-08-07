@@ -28,6 +28,7 @@
 
 #include <GL/glew.h>
 #include <json/json.h>
+
 #include <algorithm>
 
 #include "open3d/utility/Console.h"

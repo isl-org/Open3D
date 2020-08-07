@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/utility/Eigen.h"
+
 #include "tests/UnitTest.h"
 
 namespace open3d {

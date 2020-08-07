@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/Image.h"
+
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "tests/UnitTest.h"
 

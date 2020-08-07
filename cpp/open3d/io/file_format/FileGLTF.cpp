@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <tiny_gltf.h>
+
 #include <numeric>
 #include <vector>
 
@@ -31,8 +33,6 @@
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
-
-#include <tiny_gltf.h>
 
 namespace open3d {
 namespace io {

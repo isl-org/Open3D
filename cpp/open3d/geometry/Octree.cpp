@@ -25,13 +25,14 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/Octree.h"
-#include "open3d/geometry/BoundingVolume.h"
 
 #include <json/json.h>
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <unordered_map>
 
+#include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/utility/Console.h"

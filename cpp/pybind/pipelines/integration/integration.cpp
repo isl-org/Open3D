@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "pybind/pipelines/integration/integration.h"
+
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/pipelines/integration/ScalableTSDFVolume.h"
 #include "open3d/pipelines/integration/TSDFVolume.h"
 #include "open3d/pipelines/integration/UniformTSDFVolume.h"
-
 #include "pybind/docstring.h"
-#include "pybind/pipelines/integration/integration.h"
 
 namespace open3d {
 

@@ -33,7 +33,6 @@
 
 #include "open3d/geometry/Geometry3D.h"
 #include "open3d/utility/Console.h"
-
 #include "open3d/utility/Helper.h"
 
 namespace open3d {

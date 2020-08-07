@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/visualizer/ViewControl.h"
-#include "open3d/io/IJsonConvertibleIO.h"
 
+#include "open3d/io/IJsonConvertibleIO.h"
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"
 #include "pybind/visualization/visualization_trampoline.h"
@@ -58,14 +58,15 @@ void pybind_viewcontrol(py::module &m) {
                  [](const visualization::ViewControl &vc) {
                      return std::string("ViewControl");
                  })
-            .def("convert_to_pinhole_camera_parameters",
-                 [](visualization::ViewControl &vc) {
-                     camera::PinholeCameraParameters parameter;
-                     vc.ConvertToPinholeCameraParameters(parameter);
-                     return parameter;
-                 },
-                 "Function to convert visualization::ViewControl to "
-                 "camera::PinholeCameraParameters")
+            .def(
+                    "convert_to_pinhole_camera_parameters",
+                    [](visualization::ViewControl &vc) {
+                        camera::PinholeCameraParameters parameter;
+                        vc.ConvertToPinholeCameraParameters(parameter);
+                        return parameter;
+                    },
+                    "Function to convert visualization::ViewControl to "
+                    "camera::PinholeCameraParameters")
             .def("convert_from_pinhole_camera_parameters",
                  &visualization::ViewControl::
                          ConvertFromPinholeCameraParameters,

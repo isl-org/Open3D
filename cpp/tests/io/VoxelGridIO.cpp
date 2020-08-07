@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/io/VoxelGridIO.h"
+
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"

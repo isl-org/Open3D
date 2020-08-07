@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/registration/Feature.h"
-#include "open3d/geometry/PointCloud.h"
 
+#include "open3d/geometry/PointCloud.h"
 #include "pybind/docstring.h"
 #include "pybind/pipelines/registration/registration.h"
 

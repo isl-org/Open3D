@@ -29,6 +29,7 @@
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <utils/Entity.h>
+
 #include <Eigen/Geometry>
 #include <unordered_map>
 #include <vector>
