@@ -53,8 +53,8 @@ const unsigned int kPostProcessFlags =
         aiProcess_OptimizeGraph | aiProcess_PreTransformVertices;
 
 bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
-                                geometry::TriangleMesh& mesh,
-                                bool print_progress) {
+                                 geometry::TriangleMesh& mesh,
+                                 bool print_progress) {
     Assimp::Importer importer;
     const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
     if (!scene) {
@@ -221,7 +221,7 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
 
     texture_loader(aiTextureType_DIFFUSE, mesh_material.albedo);
     texture_loader(aiTextureType_NORMALS, mesh_material.normalMap);
-    // Assimp may place ambient occlusion texture in AMBIENT_OCCLUSION if 
+    // Assimp may place ambient occlusion texture in AMBIENT_OCCLUSION if
     // format has AO support. Prefer that texture if it is preset. Otherwise,
     // try AMBIENT where OBJ and FBX typically put AO textures.
     if (mat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0) {
