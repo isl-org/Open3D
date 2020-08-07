@@ -68,7 +68,7 @@ def _glob_files(directories, extensions):
         List of file paths.
     """
     pwd = Path(os.path.dirname(os.path.abspath(__file__)))
-    open3d_root_dir = pwd.parent.parent
+    open3d_root_dir = pwd.parent
 
     file_paths = []
     for directory in directories:
