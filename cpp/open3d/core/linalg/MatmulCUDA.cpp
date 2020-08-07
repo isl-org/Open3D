@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/linalg/BLAS.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/utility/Console.h"
 
-#include "open3d/core/linalg/BLAS.h"
 namespace open3d {
 namespace core {
 

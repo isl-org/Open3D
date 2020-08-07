@@ -40,7 +40,6 @@ CuSolverContext::CuSolverContext() {
     if (cusolverDnCreate(&handle_) != CUSOLVER_STATUS_SUCCESS) {
         utility::LogError("Unable to create cuSolver handle");
     }
-    utility::LogInfo("Instance created");
 }
 CuSolverContext::~CuSolverContext() {
     if (cusolverDnDestroy(handle_) != CUSOLVER_STATUS_SUCCESS) {

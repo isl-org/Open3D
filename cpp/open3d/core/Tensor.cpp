@@ -37,6 +37,10 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/Matmul.h"
+#include "open3d/core/linalg/SVD.h"
+#include "open3d/core/linalg/Solve.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -196,15 +200,15 @@ Tensor Tensor::Eye(int64_t n, Dtype dtype, const Device& device) {
     return eye;
 }
 
-Tensor Tensor::Diag(const Tensor& other) {
-    const SizeVector& shape = other.GetShape();
+Tensor Tensor::Diag(const Tensor& input) {
+    const SizeVector& shape = input.GetShape();
     if (shape.size() != 1) {
         utility::LogError("Input tensor must be 1D, but got shape {}.",
-                          other.shape_.ToString());
+                          input.shape_.ToString());
     }
     int64_t n = shape[0];
-    Tensor diag = Tensor::Zeros({n, n}, other.GetDtype(), other.GetDevice());
-    diag.AsStrided({n}, {diag.strides_[0] + diag.strides_[1]}) = other;
+    Tensor diag = Tensor::Zeros({n, n}, input.GetDtype(), input.GetDevice());
+    diag.AsStrided({n}, {diag.strides_[0] + diag.strides_[1]}) = input;
     return diag;
 }
 
@@ -1202,6 +1206,30 @@ void Tensor::AssertShape(const SizeVector& expected_shape) const {
                 "Tensor shape {} does not match expected shape {}: {}", shape_,
                 expected_shape);
     }
+}
+
+Tensor Tensor::Matmul(const Tensor& rhs) const {
+    Tensor output;
+    core::Matmul(*this, rhs, output);
+    return output;
+}
+
+Tensor Tensor::Solve(const Tensor& rhs) const {
+    Tensor output;
+    core::Solve(*this, rhs, output);
+    return output;
+};
+
+Tensor Tensor::Inv() const {
+    Tensor output;
+    core::Inverse(*this, output);
+    return output;
+}
+
+std::tuple<Tensor, Tensor, Tensor> Tensor::SVD() const {
+    Tensor U, S, VT;
+    core::SVD(*this, U, S, VT);
+    return std::tie(U, S, VT);
 }
 
 }  // namespace core

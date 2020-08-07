@@ -45,7 +45,16 @@ def test_matmul(device, dtype):
     b = o3d.core.Tensor([[7, 8, 9, 10], [11, 12, 13, 14], [15, 16, 17, 18]],
                         dtype=dtype,
                         device=device)
-    c = a @ b
+    c = o3d.core.matmul(a, b)
+    assert c.shape == o3d.core.SizeVector([2, 4])
+
+    c_numpy = a.cpu().numpy() @ b.cpu().numpy()
+    np.testing.assert_allclose(c.cpu().numpy(), c_numpy, 1e-6)
+
+    # Non-contiguous test
+    a = a[:, 1:]
+    b = b[[0, 2], :]
+    c = a.matmul(b)
     assert c.shape == o3d.core.SizeVector([2, 4])
 
     c_numpy = a.cpu().numpy() @ b.cpu().numpy()
@@ -59,7 +68,7 @@ def test_inverse(device, dtype):
     a = o3d.core.Tensor([[7, 2, 1], [0, 3, -1], [-3, 4, 2]],
                         dtype=dtype,
                         device=device)
-    a_inv = a.inv()
+    a_inv = o3d.core.inv(a)
     a_inv_numpy = np.linalg.inv(a.cpu().numpy())
     np.testing.assert_allclose(a_inv.cpu().numpy(), a_inv_numpy, 1e-6)
 
@@ -80,7 +89,7 @@ def test_svd(device, dtype):
     a = o3d.core.Tensor([[2, 4], [1, 3], [0, 0], [0, 0]],
                         dtype=dtype,
                         device=device)
-    u, s, vt = a.svd()
+    u, s, vt = o3d.core.svd(a)
     assert u.shape == o3d.core.SizeVector([4, 4])
     assert s.shape == o3d.core.SizeVector([2])
     assert vt.shape == o3d.core.SizeVector([2, 2])
@@ -121,7 +130,7 @@ def test_solve(device, dtype):
     # Test square
     a = o3d.core.Tensor([[3, 1], [1, 2]], dtype=dtype, device=device)
     b = o3d.core.Tensor([9, 8], dtype=dtype, device=device)
-    x = a.solve(b)
+    x = o3d.core.solve(a, b)
 
     x_numpy = np.linalg.solve(a.cpu().numpy(), b.cpu().numpy())
     np.testing.assert_allclose(x.cpu().numpy(), x_numpy, atol=1e-6)

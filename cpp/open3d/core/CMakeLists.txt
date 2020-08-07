@@ -21,8 +21,6 @@ set(KERNEL_CUDA_SRC
 )
 
 set(LINALG_SRC
-    linalg/BLAS.cpp
-    linalg/LAPACK.cpp
     linalg/Matmul.cpp
     linalg/MatmulCPU.cpp
     linalg/Solve.cpp

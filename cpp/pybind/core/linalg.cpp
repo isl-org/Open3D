@@ -35,40 +35,40 @@
 
 namespace open3d {
 void pybind_core_linalg(py::module &m) {
-    m.def("_matmul",
+    m.def("matmul",
           [](const core::Tensor &A, const core::Tensor &B) {
               core::Tensor output;
               core::Matmul(A, B, output);
               return output;
           },
           "Function to perform matrix multiplication of two 2D tensors with "
-          "compatible shapes",
+          "compatible shapes.",
           "A"_a, "B"_a);
 
-    m.def("_inv",
+    m.def("inv",
           [](const core::Tensor &A) {
               core::Tensor output;
               core::Inverse(A, output);
               return output;
           },
-          "Function to inverse a square 2D tensor", "A"_a);
+          "Function to inverse a square 2D tensor.", "A"_a);
 
-    m.def("_solve",
+    m.def("solve",
           [](const core::Tensor &A, const core::Tensor &B) {
               core::Tensor output;
               core::Solve(A, B, output);
               return output;
           },
           "Function to solve X for a linear system AX = B where A is a full "
-          "rank matrix",
+          "rank matrix.",
           "A"_a, "B"_a);
 
-    m.def("_svd",
+    m.def("svd",
           [](const core::Tensor &A) {
               core::Tensor U, S, VT;
               core::SVD(A, U, S, VT);
               return py::make_tuple(U, S, VT);
           },
-          "Function to decompose A with A = U S VT", "A"_a);
+          "Function to decompose A with A = U S VT.", "A"_a);
 }
 }  // namespace open3d

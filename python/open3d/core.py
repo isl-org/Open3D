@@ -7,7 +7,10 @@ from open3d.pybind.core import DtypeUtil
 from open3d.pybind.core import cuda
 from open3d.pybind.core import NoneType
 from open3d.pybind.core import TensorList
-from open3d.pybind.core import _matmul, _solve, _inv, _svd
+from open3d.pybind.core import matmul as pybind_matmul
+from open3d.pybind.core import solve as pybind_solve
+from open3d.pybind.core import inv as pybind_inv
+from open3d.pybind.core import svd as pybind_svd
 
 none = NoneType()
 
@@ -94,6 +97,38 @@ def _to_o3d_tensor_key(key):
         return o3d.pybind.core.TensorKey.index_tensor(key)
     else:
         raise TypeError("Invalid key type {}.".format(type(key)))
+
+
+@cast_to_py_tensor
+def matmul(lhs, rhs):
+    """
+    Linear algebra module's matmul operation
+    """
+    return pybind_matmul(lhs, rhs)
+
+
+@cast_to_py_tensor
+def solve(lhs, rhs):
+    """
+    Linear algebra module's linear least squares (AX = B) solution
+    """
+    return pybind_solve(lhs, rhs)
+
+
+@cast_to_py_tensor
+def inv(val):
+    """
+    Linear algebra module's inverse operation
+    """
+    return pybind_inv(val)
+
+
+@cast_to_py_tensor
+def svd(val):
+    """
+    Linear algebra module's SVD decomposition
+    """
+    return pybind_svd(val)
 
 
 class Tensor(o3d.pybind.core.Tensor):
@@ -540,30 +575,30 @@ class Tensor(o3d.pybind.core.Tensor):
     @cast_to_py_tensor
     def matmul(self, value):
         """
-        Linear algebra module's matmul operation
+        Returns result of matrix multiplication
         """
-        return _matmul(self, value)
+        return super(Tensor, self).matmul(value)
 
     @cast_to_py_tensor
     def solve(self, value):
         """
-        Linear algebra module's linear least squares (AX = B) solution
+        Returns X by solving linear system AX = B where A = self and B = value
         """
-        return _solve(self, value)
+        return super(Tensor, self).solve(value)
 
     @cast_to_py_tensor
     def inv(self):
         """
-        Linear algebra module's inverse operation
+        Returns inversion of the matrix
         """
-        return _inv(self)
+        return super(Tensor, self).inv()
 
     @cast_to_py_tensor
     def svd(self):
         """
-        Linear algebra module's SVD decomposition
+        Returns SVD decomposition of the matrix with A = U S VT
         """
-        return _svd(self)
+        return super(Tensor, self).svd()
 
     def __add__(self, value):
         return self.add(value)

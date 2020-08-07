@@ -253,6 +253,12 @@ void pybind_core_tensor(py::module& m) {
         return t;
     });
 
+    /// Linalg operations
+    tensor.def("matmul", &core::Tensor::Matmul);
+    tensor.def("solve", &core::Tensor::Solve);
+    tensor.def("inv", &core::Tensor::Inv);
+    tensor.def("svd", &core::Tensor::SVD);
+
     tensor.def("_getitem",
                [](const core::Tensor& tensor, const core::TensorKey& tk) {
                    return tensor.GetItem(tk);
