@@ -64,21 +64,26 @@ macOS
 ~~~~~~~~~
 
 .. code:: bash
-
-   curl https://raw.githubusercontent.com/intel-isl/Open3D-3rdparty/master/clang-format/clang-format%405.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@5.rb
-   brew install clang-format@5
+   # Install from official brew formula.
+   brew install clang-format
    clang-format --version
 
-   # (Optional) If another clang-format version was previously installed, we can keep
-   # both versions and switch the default to version 5
-   brew unlink clang-format
-   brew link clang-format@5
+   # (Optional) If you previously have a tagged version (e.g. clang-format@5)
+   # of clang-format installed, unlink the tagged version and link the new version.
+   brew unlink clang-format@5
+   brew link clang-format
+   clang-format --version
 
-   # (Optional) If you'd like to uninstall
-   brew uninstall clang-format@5
+   # (Optional) In case brew updates to a newer clang-format version, we also
+   # provide a tagged clang-format@10 backup formula.
+   curl https://raw.githubusercontent.com/intel-isl/Open3D/master/3rdparty/clang-format/clang-format%4010.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@10.rb
+   brew install clang-format@10
+   clang-format --version
 
-Alternatively, download the clang-10 macOS package from `LLVM Download Page`_,
-unzip and add the directory containing ``clang-format`` to ``PATH``.
+
+Alternatively, you may also download the clang-10 macOS package from
+`LLVM Download Page`_, unzip and add the directory containing ``clang-format``
+to ``PATH``.
 
 .. _13-windows:
 
