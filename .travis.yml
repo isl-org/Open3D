@@ -29,7 +29,7 @@ matrix:
             - clang-7
             - clang-format-5.0
       install:
-        - ./util/scripts/install-deps-ubuntu.sh assume-yes
+        - ./util/install_deps_ubuntu.sh assume-yes
       script:
         - mkdir build
         - cd build
@@ -56,7 +56,7 @@ matrix:
             - pandoc
       install:
         # Install ubuntu dependencies
-        - ./util/scripts/install-deps-ubuntu.sh assume-yes
+        - ./util/install_deps_ubuntu.sh assume-yes
         # Install Kinect k4a package
         - curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
         - sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
@@ -91,13 +91,5 @@ matrix:
         - bin/GLInfo
         - python -c "from open3d import *; import open3d; print(open3d)"
         - cd .. # Back to Open3D/
-        - ./util/scripts/make-documentation.sh
+        - ./util/make_documentation.sh
         - ./.travis/deploy_docs.sh
-
-    # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
-    #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
-    #   install: sudo apt-get update && sudo apt-get install -y realpath
-
-    # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=SHARED
-    #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
-    #   install: sudo apt-get update && sudo apt-get install -y realpath
