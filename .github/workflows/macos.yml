@@ -46,12 +46,12 @@ jobs:
         python-version: 3.6
     - name: Install dependencies
       run: |
-        ./util/scripts/install-deps-osx.sh skip-upgrade
+        ./util/install_deps_macos.sh skip-upgrade
         brew install ccache
         ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
     - name: Config and build
       run: |
         PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
         ccache -s
-        ./util/scripts/run-ci.sh
+        ./util/run_ci.sh
         ccache -s

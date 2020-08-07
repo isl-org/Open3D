@@ -362,14 +362,14 @@ export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
 # `make check-style` checks style for c++/cuda/python/ipynb files
 add_custom_target(check-style
     COMMAND ${PYTHON_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_style.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py
     COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
 )
 
 # `make apply-style` applies style for c++/cuda/python/ipynb files
 add_custom_target(apply-style
     COMMAND ${PYTHON_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_style.py --do_apply_style
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --do_apply_style
     COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
 )
 
@@ -379,7 +379,7 @@ add_custom_target(check-cpp-style
     COMMAND ${CMAKE_COMMAND}
     -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     -DDO_APPLY_STYLE=OFF
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_cpp_style.cmake
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
 )
 
 # `make apply-cpp-style` applies style for c++/cuda files.
@@ -388,7 +388,7 @@ add_custom_target(apply-cpp-style
     COMMAND ${CMAKE_COMMAND}
     -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     -DDO_APPLY_STYLE=ON
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_cpp_style.cmake
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
 )
 
 function(open3d_aligned_print first second)

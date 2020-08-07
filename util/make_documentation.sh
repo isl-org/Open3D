@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # Documentation build scripts for CI
 #
-# To build documentation locally, ignore the xvfb-run and arguments.
-#
 # Prerequisites:
 # pip install sphinx sphinx-autobuild
 # sudo apt-get -y install doxygen
