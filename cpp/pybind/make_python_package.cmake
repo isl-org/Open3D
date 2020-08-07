@@ -92,8 +92,8 @@ if (ENABLE_JUPYTER)
         DESTINATION ${PYTHON_PACKAGE_SRC_DIR}/js)
 endif()
 
-if (ENABLE_GUI)
+if (BUILD_GUI)
     file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
     file(COPY ${GUI_RESOURCE_DIR}
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
-endif()    
+endif()

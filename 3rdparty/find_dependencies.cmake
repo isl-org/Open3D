@@ -766,7 +766,7 @@ else()
 endif()
 
 # imgui
-if(ENABLE_GUI)
+if(BUILD_GUI)
     if(USE_SYSTEM_IMGUI)
         find_package(ImGui)
         if(TARGET ImGui::ImGui)
@@ -794,7 +794,7 @@ if(ENABLE_GUI)
 endif()
 
 # Filament
-if(ENABLE_GUI)
+if(BUILD_GUI)
     if(BUILD_FILAMENT_FROM_SOURCE)
         message(STATUS "Building third-party library Filament from source")
         if(MSVC OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7))

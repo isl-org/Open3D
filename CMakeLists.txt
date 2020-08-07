@@ -15,7 +15,7 @@ option(BUILD_UNIT_TESTS           "Build the Open3D unit tests"              OFF
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
-option(ENABLE_GUI                 "Builds new GUI"                           ON )
+option(BUILD_GUI                 "Builds new GUI"                           ON )
 option(ENABLE_JUPYTER             "Enable Jupyter support for Open3D"        OFF)
 option(USE_VULKAN                 "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON )
@@ -91,18 +91,18 @@ if (APPLE AND ENABLE_HEADLESS_RENDERING)
     message(STATUS "Headless rendering is not supported on Mac OS")
     set(ENABLE_HEADLESS_RENDERING OFF)
 endif()
-if(ENABLE_HEADLESS_RENDERING AND ENABLE_GUI)
+if(ENABLE_HEADLESS_RENDERING AND BUILD_GUI)
     message(STATUS "Headless rendering disables the Open3D GUI")
-    set(ENABLE_GUI OFF)
+    set(BUILD_GUI OFF)
 endif()
 if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
     message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
     set(USE_SYSTEM_GLEW OFF)
     set(USE_SYSTEM_GLFW OFF)
 endif()
-if(ENABLE_GUI AND WIN32)
+if(BUILD_GUI AND WIN32)
     message(STATUS "New GUI is currently unsupported on Windows")
-    set(ENABLE_GUI OFF)
+    set(BUILD_GUI OFF)
 endif()
 
 # Parse Open3D version number
@@ -214,7 +214,7 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 # OS specific settings
-if(ENABLE_GUI AND WIN32)
+if(BUILD_GUI AND WIN32)
     # Filament links normally only against static runtime
     set(STATIC_WINDOWS_RUNTIME ON)
     if(NOT COMMAND target_link_options)  # CMake 3.13+ required
@@ -326,7 +326,7 @@ function(open3d_set_global_properties target)
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
             target_compile_options(${target} PRIVATE /MP)
             if(COMMAND target_link_options)
-                if(ENABLE_GUI)
+                if(BUILD_GUI)
                     # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
                     # Filament needs to link through bluegl.lib.
                     # See https://github.com/google/filament/issues/652
@@ -415,7 +415,7 @@ open3d_aligned_print("OpenMP" "${WITH_OPENMP}")
 open3d_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
 open3d_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
 open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
-open3d_aligned_print("Build GUI" "${ENABLE_GUI}")
+open3d_aligned_print("Build GUI" "${BUILD_GUI}")
 open3d_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
 open3d_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
 open3d_aligned_print("Build Examples" "${BUILD_CPP_EXAMPLES}")
