@@ -10,7 +10,7 @@
 * Added option BUILD_BENCHMARKS for building microbenchmarks
 * Extend Python API of UniformTSDFVolume to allow setting the origin
 * Corrected documentation of PointCloud.h
--   Added ISS Keypoint Detector
+*   Added ISS Keypoint Detector
 ## 0.9.0
 
 * Version bump to 0.9.0
