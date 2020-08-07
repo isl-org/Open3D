@@ -36,14 +36,14 @@ CMake target before submitting a pull request, or use your editor's
 
 Different ``clang-format`` versions may produce slightly different
 formatting results. For standardization, ``clang-format`` version
-``5.0`` shall be used.
+``10`` shall be used.
 
 .. _1-installing-clang-format-50:
 
 Install clang-format
 --------------------
 
-By default, the make system tries to detect either ``clang-format-5.0``
+By default, the make system tries to detect either ``clang-format-10``
 or ``clang-format`` from PATH.
 
 .. _11-ubuntu:
@@ -53,15 +53,10 @@ Ubuntu
 
 .. code:: bash
 
-   # Ubuntu 16.04
-   sudo apt update
-   sudo apt install clang-format-5.0
-   clang-format-5.0 --version
-
    # Ubuntu 18.04
    sudo apt update
-   sudo apt install clang-format-5.0
-   clang-format-5.0 --version
+   sudo apt install clang-format-10
+   clang-format-10 --version
 
 .. _12-macos:
 
@@ -82,7 +77,7 @@ macOS
    # (Optional) If you'd like to uninstall
    brew uninstall clang-format@5
 
-Alternatively, download the clang-5.0 macOS package from `LLVM Download Page`_,
+Alternatively, download the clang-10 macOS package from `LLVM Download Page`_,
 unzip and add the directory containing ``clang-format`` to ``PATH``.
 
 .. _13-windows:
@@ -90,7 +85,7 @@ unzip and add the directory containing ``clang-format`` to ``PATH``.
 Windows
 ~~~~~~~~~~~
 
-Download clang-5.0 Windows package from `LLVM Download Page`_. During
+Download clang-10 Windows package from `LLVM Download Page`_. During
 installation, select the option which allows adding clang toolchains to
 ``PATH``. After installation, open a CMD terminal and try
 
@@ -104,17 +99,15 @@ installation, select the option which allows adding clang toolchains to
 Checking clang-format version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After installation, check ``clang-format``'s version with
+After installation, check ``clang-format``'s version with:
 
 .. code:: bash
 
    # In most cases
    clang-format --version
 
-   # Or, when installed as clang-format-5.0, e.g. on Ubuntu
-   clang-format-5.0 --version
-
-and make sure that version ``5.0`` is installed.
+   # Or, when installed as clang-format-10, e.g. on Ubuntu
+   clang-format-10 --version
 
 
 .. _2-install-yapf:
