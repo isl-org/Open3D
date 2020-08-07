@@ -29,12 +29,12 @@ public:
     SearchKNN(const core::Tensor& query_tensor, 
               int knn) const;
     
-    int
+    /*int
     SearchRadius(const core::Tensor &query_tensor, 
                         float radius,
                         core::Tensor &indices,
                         core::Tensor &distance2,
-                        core::Tensor &lims) const;
+                        core::Tensor &lims) const;*/
                                   
     std::pair<core::Tensor, core::Tensor> 
     SearchHybrid(const core::Tensor& query_tensor,

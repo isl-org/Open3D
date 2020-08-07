@@ -52,14 +52,14 @@ NeighborSearch::SearchKNN(const core::Tensor& query_tensor,
     return search_object_->SearchKNN_Tensor(query_tensor, knn);
 }
 
-int
+/*int
 NeighborSearch::SearchRadius(const core::Tensor &query_tensor, 
                     float radius,
                     core::Tensor &indices,
                     core::Tensor &distance2,
                     core::Tensor &lims) const{
     return search_object_->SearchRadius_Tensor(query_tensor, radius, indices, distance2, lims);
-}
+}*/
 
 std::pair<core::Tensor, core::Tensor> 
 NeighborSearch::SearchHybrid(const core::Tensor& query_tensor, 
