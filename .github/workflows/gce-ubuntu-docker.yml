@@ -63,7 +63,7 @@ jobs:
       - name: GCloud setup
         uses: actions/checkout@v2       # Checkout code
         with:
-          submodules: 'recursive'
+          submodules: 'false'
 
         # Setup gcloud CLI
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
@@ -98,7 +98,7 @@ jobs:
       - name: GCloud setup
         uses: actions/checkout@v2       # Checkout code
         with:
-          submodules: 'recursive'
+          submodules: 'false'
 
       # Setup gcloud CLI
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
