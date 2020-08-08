@@ -100,10 +100,6 @@ if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
     set(USE_SYSTEM_GLEW OFF)
     set(USE_SYSTEM_GLFW OFF)
 endif()
-if(BUILD_GUI AND WIN32)
-    message(STATUS "New GUI is currently unsupported on Windows")
-    set(BUILD_GUI OFF)
-endif()
 
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
@@ -215,8 +211,6 @@ endif ()
 
 # OS specific settings
 if(BUILD_GUI AND WIN32)
-    # Filament links normally only against static runtime
-    set(STATIC_WINDOWS_RUNTIME ON)
     if(NOT COMMAND target_link_options)  # CMake 3.13+ required
         # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
         # Filament needs to link through bluegl.lib.
