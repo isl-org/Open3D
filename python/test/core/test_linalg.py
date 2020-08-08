@@ -257,7 +257,7 @@ def test_lstsq(device, dtype):
             a_shape, b_shape = shapes
             a = o3d.core.Tensor.zeros(a_shape, dtype=dtype, device=device)
             b = o3d.core.Tensor.zeros(b_shape, dtype=dtype, device=device)
-            c = a.lstsq(b)
+            a.lstsq(b)
         assert 'dimensions with zero' in str(excinfo.value)
 
     for shapes in [((2, 3), (2, 2))]:
@@ -265,6 +265,6 @@ def test_lstsq(device, dtype):
             a_shape, b_shape = shapes
             a = o3d.core.Tensor.zeros(a_shape, dtype=dtype, device=device)
             b = o3d.core.Tensor.zeros(b_shape, dtype=dtype, device=device)
-            c = a.lstsq(b)
+            a.lstsq(b)
         assert f'must satisfy rows({a_shape[0]}) > cols({a_shape[1]})' in str(
             excinfo.value)
