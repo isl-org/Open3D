@@ -24,33 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
+#pragma once
 
-#include "open3d/core/linalg/LinalgUtils.h"
-#include "open3d/core/linalg/Solve.h"
-
-#include "open3d/core/linalg/LAPACK.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace core {
 
-void SolveCPU(void* A_data,
-              void* B_data,
-              void* ipiv_data,
-              int64_t n,
-              int64_t k,
-              Dtype dtype,
-              const Device& device) {
-    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        OPEN3D_LAPACK_CHECK(
-                gesv_cpu<scalar_t>(LAPACK_COL_MAJOR, n, k,
-                                   static_cast<scalar_t*>(A_data), n,
-                                   static_cast<MKL_INT*>(ipiv_data),
-                                   static_cast<scalar_t*>(B_data), n),
-                "gels failed in SolveCPU");
-    });
-}
+/// Solve AX = B with QR decomposition. A is a full-rank m x n matrix (m >= n).
+void LeastSquares(const Tensor& A, const Tensor& B, Tensor& X);
+
+#ifdef BUILD_CUDA_MODULE
+void LeastSquaresCUDA(void* A_data,
+                      void* B_data,
+                      int64_t m,
+                      int64_t n,
+                      int64_t k,
+                      Dtype dtype,
+                      const Device& device);
+#endif
+
+void LeastSquaresCPU(void* A_data,
+                     void* B_data,
+                     int64_t m,
+                     int64_t n,
+                     int64_t k,
+                     Dtype dtype,
+                     const Device& device);
 
 }  // namespace core
 }  // namespace open3d

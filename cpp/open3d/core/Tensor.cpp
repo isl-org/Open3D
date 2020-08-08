@@ -38,6 +38,7 @@
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LeastSquares.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
@@ -1217,6 +1218,12 @@ Tensor Tensor::Matmul(const Tensor& rhs) const {
 Tensor Tensor::Solve(const Tensor& rhs) const {
     Tensor output;
     core::Solve(*this, rhs, output);
+    return output;
+};
+
+Tensor Tensor::LeastSquares(const Tensor& rhs) const {
+    Tensor output;
+    core::LeastSquares(*this, rhs, output);
     return output;
 };
 

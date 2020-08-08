@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <cusolver_common.h>
 #include <mkl.h>
 
 #ifdef BUILD_CUDA_MODULE
@@ -54,6 +55,19 @@ inline MKL_INT getri_cpu(int layout,
                          scalar_t* A_data,
                          MKL_INT lda,
                          MKL_INT* ipiv_data) {
+    utility::LogError("Unsupported data type.");
+    return -1;
+}
+
+template <typename scalar_t>
+inline MKL_INT gesv_cpu(int layout,
+                        MKL_INT n,
+                        MKL_INT m,
+                        scalar_t* A_data,
+                        MKL_INT lda,
+                        MKL_INT* ipiv_data,
+                        scalar_t* B_data,
+                        MKL_INT ldb) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
@@ -125,6 +139,56 @@ inline MKL_INT getri_cpu<double>(int layout,
 }
 
 template <>
+inline MKL_INT gesv_cpu<float>(int layout,
+                               MKL_INT n,
+                               MKL_INT m,
+                               float* A_data,
+                               MKL_INT lda,
+                               MKL_INT* ipiv_data,
+                               float* B_data,
+                               MKL_INT ldb) {
+    return LAPACKE_sgesv(layout, n, m, A_data, lda, ipiv_data, B_data, ldb);
+}
+
+template <>
+inline MKL_INT gesv_cpu<double>(int layout,
+                                MKL_INT n,
+                                MKL_INT m,
+                                double* A_data,
+                                MKL_INT lda,
+                                MKL_INT* ipiv_data,
+                                double* B_data,
+                                MKL_INT ldb) {
+    return LAPACKE_dgesv(layout, n, m, A_data, lda, ipiv_data, B_data, ldb);
+}
+
+template <>
+inline MKL_INT gels_cpu<float>(int layout,
+                               char trans,
+                               MKL_INT m,
+                               MKL_INT n,
+                               MKL_INT nrhs,
+                               float* A_data,
+                               MKL_INT lda,
+                               float* B_data,
+                               MKL_INT ldb) {
+    return LAPACKE_sgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
+}
+
+template <>
+inline MKL_INT gels_cpu<double>(int layout,
+                                char trans,
+                                MKL_INT m,
+                                MKL_INT n,
+                                MKL_INT nrhs,
+                                double* A_data,
+                                MKL_INT lda,
+                                double* B_data,
+                                MKL_INT ldb) {
+    return LAPACKE_dgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
+}
+
+template <>
 inline MKL_INT gesvd_cpu<float>(int layout,
                                 char jobu,
                                 char jobvt,
@@ -158,32 +222,6 @@ inline MKL_INT gesvd_cpu<double>(int layout,
                                  double* superb) {
     return LAPACKE_dgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data,
                           U_data, ldu, VT_data, ldvt, superb);
-}
-
-template <>
-inline MKL_INT gels_cpu<float>(int layout,
-                               char trans,
-                               MKL_INT m,
-                               MKL_INT n,
-                               MKL_INT nrhs,
-                               float* A_data,
-                               MKL_INT lda,
-                               float* B_data,
-                               MKL_INT ldb) {
-    return LAPACKE_sgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
-}
-
-template <>
-inline MKL_INT gels_cpu<double>(int layout,
-                                char trans,
-                                MKL_INT m,
-                                MKL_INT n,
-                                MKL_INT nrhs,
-                                double* A_data,
-                                MKL_INT lda,
-                                double* B_data,
-                                MKL_INT ldb) {
-    return LAPACKE_dgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
 }
 
 #ifdef BUILD_CUDA_MODULE
@@ -223,31 +261,32 @@ inline cusolverStatus_t getrs_cuda(cusolverDnHandle_t handle,
 }
 
 template <typename scalar_t>
-inline cusolverStatus_t gesvd_cuda_buffersize(cusolverDnHandle_t handle,
-                                              int m,
-                                              int n,
-                                              int* len) {
+inline cusolverStatus_t gesv_cuda_buffersize(cusolverDnHandle_t handle,
+                                             int n,
+                                             int nrhs,
+                                             int ldda,
+                                             int lddb,
+                                             int lddx,
+                                             size_t* lwork_bytes) {
     utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
 
 template <typename scalar_t>
-inline cusolverStatus_t gesvd_cuda(cusolverDnHandle_t handle,
-                                   char jobu,
-                                   char jobvt,
-                                   int m,
-                                   int n,
-                                   scalar_t* A,
-                                   int lda,
-                                   scalar_t* S,
-                                   scalar_t* U,
-                                   int ldu,
-                                   scalar_t* VT,
-                                   int ldvt,
-                                   scalar_t* workspace,
-                                   int len,
-                                   scalar_t* rwork,
-                                   int* dinfo) {
+inline cusolverStatus_t gesv_cuda(cusolverDnHandle_t handle,
+                                  int n,
+                                  int nrhs,
+                                  scalar_t* dA,
+                                  int ldda,
+                                  int* dipiv,
+                                  scalar_t* dB,
+                                  int lddb,
+                                  scalar_t* dX,
+                                  int lddx,
+                                  void* workspace,
+                                  size_t lwork_bytes,
+                                  int* niter,
+                                  int* dinfo) {
     utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
@@ -301,6 +340,36 @@ inline cusolverStatus_t ormqr_cuda(cusolverDnHandle_t handle,
                                    int ldc,
                                    scalar_t* workspace,
                                    int len,
+                                   int* dinfo) {
+    utility::LogError("Unsupported data type.");
+    return CUSOLVER_STATUS_INTERNAL_ERROR;
+}
+
+template <typename scalar_t>
+inline cusolverStatus_t gesvd_cuda_buffersize(cusolverDnHandle_t handle,
+                                              int m,
+                                              int n,
+                                              int* len) {
+    utility::LogError("Unsupported data type.");
+    return CUSOLVER_STATUS_INTERNAL_ERROR;
+}
+
+template <typename scalar_t>
+inline cusolverStatus_t gesvd_cuda(cusolverDnHandle_t handle,
+                                   char jobu,
+                                   char jobvt,
+                                   int m,
+                                   int n,
+                                   scalar_t* A,
+                                   int lda,
+                                   scalar_t* S,
+                                   scalar_t* U,
+                                   int ldu,
+                                   scalar_t* VT,
+                                   int ldvt,
+                                   scalar_t* workspace,
+                                   int len,
+                                   scalar_t* rwork,
                                    int* dinfo) {
     utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
@@ -375,61 +444,65 @@ inline cusolverStatus_t getrs_cuda<double>(cusolverDnHandle_t handle,
 }
 
 template <>
-inline cusolverStatus_t gesvd_cuda_buffersize<float>(cusolverDnHandle_t handle,
-                                                     int m,
+inline cusolverStatus_t gesv_cuda_buffersize<float>(cusolverDnHandle_t handle,
+                                                    int n,
+                                                    int nrhs,
+                                                    int ldda,
+                                                    int lddb,
+                                                    int lddx,
+                                                    size_t* lwork_bytes) {
+    return cusolverDnSSgesv_bufferSize(handle, n, nrhs, NULL, ldda, NULL, NULL,
+                                       lddb, NULL, lddx, NULL, lwork_bytes);
+}
+
+template <>
+inline cusolverStatus_t gesv_cuda_buffersize<double>(cusolverDnHandle_t handle,
                                                      int n,
-                                                     int* len) {
-    return cusolverDnSgesvd_bufferSize(handle, m, n, len);
+                                                     int nrhs,
+                                                     int ldda,
+                                                     int lddb,
+                                                     int lddx,
+                                                     size_t* lwork_bytes) {
+    return cusolverDnDDgesv_bufferSize(handle, n, nrhs, NULL, ldda, NULL, NULL,
+                                       lddb, NULL, lddx, NULL, lwork_bytes);
 }
 
 template <>
-inline cusolverStatus_t gesvd_cuda_buffersize<double>(cusolverDnHandle_t handle,
-                                                      int m,
-                                                      int n,
-                                                      int* len) {
-    return cusolverDnDgesvd_bufferSize(handle, m, n, len);
+inline cusolverStatus_t gesv_cuda<float>(cusolverDnHandle_t handle,
+                                         int n,
+                                         int nrhs,
+                                         float* dA,
+                                         int ldda,
+                                         int* dipiv,
+                                         float* dB,
+                                         int lddb,
+                                         float* dX,
+                                         int lddx,
+                                         void* workspace,
+                                         size_t lwork_bytes,
+                                         int* niter,
+                                         int* dinfo) {
+    return cusolverDnSSgesv(handle, n, nrhs, dA, ldda, dipiv, dB, lddb, dX,
+                            lddx, workspace, lwork_bytes, niter, dinfo);
 }
 
 template <>
-inline cusolverStatus_t gesvd_cuda<float>(cusolverDnHandle_t handle,
-                                          char jobu,
-                                          char jobvt,
-                                          int m,
+inline cusolverStatus_t gesv_cuda<double>(cusolverDnHandle_t handle,
                                           int n,
-                                          float* A,
-                                          int lda,
-                                          float* S,
-                                          float* U,
-                                          int ldu,
-                                          float* VT,
-                                          int ldvt,
-                                          float* workspace,
-                                          int len,
-                                          float* rwork,
+                                          int nrhs,
+                                          double* dA,
+                                          int ldda,
+                                          int* dipiv,
+                                          double* dB,
+                                          int lddb,
+                                          double* dX,
+                                          int lddx,
+                                          void* workspace,
+                                          size_t lwork_bytes,
+                                          int* niter,
                                           int* dinfo) {
-    return cusolverDnSgesvd(handle, jobu, jobvt, m, n, A, lda, S, U, ldu, VT,
-                            ldvt, workspace, len, rwork, dinfo);
-}
-
-template <>
-inline cusolverStatus_t gesvd_cuda<double>(cusolverDnHandle_t handle,
-                                           char jobu,
-                                           char jobvt,
-                                           int m,
-                                           int n,
-                                           double* A,
-                                           int lda,
-                                           double* S,
-                                           double* U,
-                                           int ldu,
-                                           double* VT,
-                                           int ldvt,
-                                           double* workspace,
-                                           int len,
-                                           double* rwork,
-                                           int* dinfo) {
-    return cusolverDnDgesvd(handle, jobu, jobvt, m, n, A, lda, S, U, ldu, VT,
-                            ldvt, workspace, len, rwork, dinfo);
+    return cusolverDnDDgesv(handle, n, nrhs, dA, ldda, dipiv, dB, lddb, dX,
+                            lddx, workspace, lwork_bytes, niter, dinfo);
 }
 
 template <>
@@ -534,6 +607,64 @@ inline cusolverStatus_t ormqr_cuda<double>(cusolverDnHandle_t handle,
                                            int* dinfo) {
     return cusolverDnDormqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc,
                             workspace, len, dinfo);
+}
+
+template <>
+inline cusolverStatus_t gesvd_cuda_buffersize<float>(cusolverDnHandle_t handle,
+                                                     int m,
+                                                     int n,
+                                                     int* len) {
+    return cusolverDnSgesvd_bufferSize(handle, m, n, len);
+}
+
+template <>
+inline cusolverStatus_t gesvd_cuda_buffersize<double>(cusolverDnHandle_t handle,
+                                                      int m,
+                                                      int n,
+                                                      int* len) {
+    return cusolverDnDgesvd_bufferSize(handle, m, n, len);
+}
+
+template <>
+inline cusolverStatus_t gesvd_cuda<float>(cusolverDnHandle_t handle,
+                                          char jobu,
+                                          char jobvt,
+                                          int m,
+                                          int n,
+                                          float* A,
+                                          int lda,
+                                          float* S,
+                                          float* U,
+                                          int ldu,
+                                          float* VT,
+                                          int ldvt,
+                                          float* workspace,
+                                          int len,
+                                          float* rwork,
+                                          int* dinfo) {
+    return cusolverDnSgesvd(handle, jobu, jobvt, m, n, A, lda, S, U, ldu, VT,
+                            ldvt, workspace, len, rwork, dinfo);
+}
+
+template <>
+inline cusolverStatus_t gesvd_cuda<double>(cusolverDnHandle_t handle,
+                                           char jobu,
+                                           char jobvt,
+                                           int m,
+                                           int n,
+                                           double* A,
+                                           int lda,
+                                           double* S,
+                                           double* U,
+                                           int ldu,
+                                           double* VT,
+                                           int ldvt,
+                                           double* workspace,
+                                           int len,
+                                           double* rwork,
+                                           int* dinfo) {
+    return cusolverDnDgesvd(handle, jobu, jobvt, m, n, A, lda, S, U, ldu, VT,
+                            ldvt, workspace, len, rwork, dinfo);
 }
 
 #endif

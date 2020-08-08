@@ -27,28 +27,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "open3d/core/linalg/LeastSquares.h"
 #include "open3d/core/linalg/LinalgUtils.h"
-#include "open3d/core/linalg/Solve.h"
 
 #include "open3d/core/linalg/LAPACK.h"
 
 namespace open3d {
 namespace core {
 
-void SolveCPU(void* A_data,
-              void* B_data,
-              void* ipiv_data,
-              int64_t n,
-              int64_t k,
-              Dtype dtype,
-              const Device& device) {
+void LeastSquaresCPU(void* A_data,
+                     void* B_data,
+                     int64_t m,
+                     int64_t n,
+                     int64_t k,
+                     Dtype dtype,
+                     const Device& device) {
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         OPEN3D_LAPACK_CHECK(
-                gesv_cpu<scalar_t>(LAPACK_COL_MAJOR, n, k,
-                                   static_cast<scalar_t*>(A_data), n,
-                                   static_cast<MKL_INT*>(ipiv_data),
-                                   static_cast<scalar_t*>(B_data), n),
-                "gels failed in SolveCPU");
+                gels_cpu<scalar_t>(LAPACK_COL_MAJOR, 'N', m, n, k,
+                                   static_cast<scalar_t*>(A_data), m,
+                                   static_cast<scalar_t*>(B_data),
+                                   std::max(m, n)),
+                "gels failed in LeastSquaresCPU");
     });
 }
 

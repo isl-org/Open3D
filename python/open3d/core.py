@@ -8,6 +8,7 @@ from open3d.pybind.core import cuda
 from open3d.pybind.core import NoneType
 from open3d.pybind.core import TensorList
 from open3d.pybind.core import matmul as pybind_matmul
+from open3d.pybind.core import lstsq as pybind_lstsq
 from open3d.pybind.core import solve as pybind_solve
 from open3d.pybind.core import inv as pybind_inv
 from open3d.pybind.core import svd as pybind_svd
@@ -121,6 +122,25 @@ def matmul(lhs, rhs):
 @cast_to_py_tensor
 def solve(lhs, rhs):
     """
+    Returns X by solving linear system AX = B with LU decomposition,
+    where A is Tensor \param lhs and B is Tensor \param rhs.
+
+    Args:
+      lhs: Tensor of shape (n, n)
+      rhs: Tensor of shape (n, k)
+
+    Returns:
+      Tensor of shape (n, k)
+
+    - Both tensors should share the same device and dtype.
+    - Float32 and Float64 are supported.
+    """
+    return pybind_solve(lhs, rhs)
+
+
+@cast_to_py_tensor
+def lstsq(lhs, rhs):
+    """
     Returns X by solving linear system AX = B with QR decomposition,
     where A is Tensor \param lhs and B is Tensor \param rhs.
 
@@ -134,7 +154,7 @@ def solve(lhs, rhs):
     - Both tensors should share the same device and dtype.
     - Float32 and Float64 are supported.
     """
-    return pybind_solve(lhs, rhs)
+    return pybind_lstsq(lhs, rhs)
 
 
 @cast_to_py_tensor
@@ -636,8 +656,27 @@ class Tensor(o3d.pybind.core.Tensor):
     @cast_to_py_tensor
     def solve(self, value):
         """
+        Returns X by solving linear system AX = B with LU decomposition,
+        where A is Tensor \param self and B is Tensor \param value.
+
+        Args:
+          self: Tensor of shape (n, n)
+          value: Tensor of shape (n, k)
+
+        Returns:
+          Tensor of shape (n, k)
+
+        - Both tensors should share the same device and dtype.
+        - Float32 and Float64 are supported.
+        """
+        return super(Tensor, self).solve(value)
+
+    @cast_to_py_tensor
+    def lstsq(self, value):
+        """
         Returns X by solving linear system AX = B with QR decomposition,
         where A is Tensor \param self and B is Tensor \param value.
+        Use it only when A is non-square.
 
         Args:
           self: Tensor of shape (m, n), m >= n and is a full rank matrix.
@@ -648,8 +687,9 @@ class Tensor(o3d.pybind.core.Tensor):
 
         - Both tensors should share the same device and dtype.
         - Float32 and Float64 are supported.
+        - The result can be unexpected when A is not a full-rank matrix and the backend is cuda.
         """
-        return super(Tensor, self).solve(value)
+        return super(Tensor, self).lstsq(value)
 
     @cast_to_py_tensor
     def inv(self):

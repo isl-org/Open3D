@@ -873,7 +873,12 @@ public:
     Tensor Matmul(const Tensor& rhs) const;
 
     /// Solves the linear system AX = B with QR decomposition and returns X.
+    /// A must be a square matrix.
     Tensor Solve(const Tensor& rhs) const;
+
+    /// Solves the linear system AX = B with QR decomposition and returns X.
+    /// A is a (m, n) matrix with m >= n.
+    Tensor LeastSquares(const Tensor& rhs) const;
 
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.

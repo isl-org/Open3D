@@ -255,6 +255,7 @@ void pybind_core_tensor(py::module& m) {
 
     /// Linalg operations
     tensor.def("matmul", &core::Tensor::Matmul);
+    tensor.def("lstsq", &core::Tensor::LeastSquares);
     tensor.def("solve", &core::Tensor::Solve);
     tensor.def("inv", &core::Tensor::Inv);
     tensor.def("svd", &core::Tensor::SVD);

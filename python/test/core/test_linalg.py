@@ -214,6 +214,27 @@ def test_solve(device, dtype):
     x_numpy = np.linalg.solve(a.cpu().numpy(), b.cpu().numpy())
     np.testing.assert_allclose(x.cpu().numpy(), x_numpy, atol=1e-6)
 
+    with pytest.raises(RuntimeError) as excinfo:
+        a = o3d.core.Tensor.zeros((3, 3), dtype=dtype, device=device)
+        b = o3d.core.Tensor.ones((3,), dtype=dtype, device=device)
+        x = o3d.core.solve(a, b)
+    assert 'singular' in str(excinfo.value)
+
+
+@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("dtype",
+                         [o3d.core.Dtype.Float32, o3d.core.Dtype.Float64])
+def test_lstsq(device, dtype):
+    # Test square
+    a = o3d.core.Tensor([[3, 1], [1, 2]], dtype=dtype, device=device)
+    b = o3d.core.Tensor([9, 8], dtype=dtype, device=device)
+    x = o3d.core.lstsq(a, b)
+
+    x_numpy, _, _, _ = np.linalg.lstsq(a.cpu().numpy(),
+                                       b.cpu().numpy(),
+                                       rcond=None)
+    np.testing.assert_allclose(x.cpu().numpy(), x_numpy, atol=1e-6)
+
     # Test non-square
     a = o3d.core.Tensor(
         [[1.44, -7.84, -4.39, 4.53], [-9.96, -0.28, -3.24, 3.83],
@@ -225,19 +246,18 @@ def test_solve(device, dtype):
                          [-5.28, -0.26], [5.72, -7.36], [8.93, -2.52]],
                         dtype=dtype,
                         device=device)
-    x = a.solve(b)
+    x = a.lstsq(b)
     x_numpy, _, _, _ = np.linalg.lstsq(a.cpu().numpy(),
                                        b.cpu().numpy(),
                                        rcond=None)
     np.testing.assert_allclose(x.cpu().numpy(), x_numpy, atol=1e-6)
 
-    for shapes in [((0, 0), (0, 0)), ((2, 0), (0, 3)), ((0, 2), (2, 0)),
-                   ((2, 0), (0, 0))]:
+    for shapes in [((0, 0), (0, 0)), ((2, 0), (2, 3)), ((2, 0), (2, 0))]:
         with pytest.raises(RuntimeError) as excinfo:
             a_shape, b_shape = shapes
             a = o3d.core.Tensor.zeros(a_shape, dtype=dtype, device=device)
             b = o3d.core.Tensor.zeros(b_shape, dtype=dtype, device=device)
-            c = a.solve(b)
+            c = a.lstsq(b)
         assert 'dimensions with zero' in str(excinfo.value)
 
     for shapes in [((2, 3), (2, 2))]:
@@ -245,5 +265,6 @@ def test_solve(device, dtype):
             a_shape, b_shape = shapes
             a = o3d.core.Tensor.zeros(a_shape, dtype=dtype, device=device)
             b = o3d.core.Tensor.zeros(b_shape, dtype=dtype, device=device)
-            c = a.solve(b)
-        assert f'must satisfy rows({a_shape[0]}) > cols({a_shape[1]})' in str(excinfo.value)
+            c = a.lstsq(b)
+        assert f'must satisfy rows({a_shape[0]}) > cols({a_shape[1]})' in str(
+            excinfo.value)

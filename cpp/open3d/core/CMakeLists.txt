@@ -23,6 +23,8 @@ set(KERNEL_CUDA_SRC
 set(LINALG_SRC
     linalg/Matmul.cpp
     linalg/MatmulCPU.cpp
+    linalg/LeastSquares.cpp
+    linalg/LeastSquaresCPU.cpp
     linalg/Solve.cpp
     linalg/SolveCPU.cpp
     linalg/Inverse.cpp
@@ -34,6 +36,7 @@ set(LINALG_SRC
 set(LINALG_CUDA_SRC
     linalg/LinalgUtils.cpp
     linalg/MatmulCUDA.cpp
+    linalg/LeastSquaresCUDA.cpp
     linalg/SolveCUDA.cpp
     linalg/InverseCUDA.cpp
     linalg/SVDCUDA.cpp
@@ -82,4 +85,4 @@ open3d_show_and_abort_on_warning(core)
 
 if(BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-endif()
+  endif()

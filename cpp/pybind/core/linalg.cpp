@@ -29,6 +29,7 @@
 #include "pybind/open3d_pybind.h"
 
 #include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LeastSquares.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
@@ -57,6 +58,16 @@ void pybind_core_linalg(py::module &m) {
           [](const core::Tensor &A, const core::Tensor &B) {
               core::Tensor output;
               core::Solve(A, B, output);
+              return output;
+          },
+          "Function to solve X for a linear system AX = B where A is a square "
+          "matrix",
+          "A"_a, "B"_a);
+
+    m.def("lstsq",
+          [](const core::Tensor &A, const core::Tensor &B) {
+              core::Tensor output;
+              core::LeastSquares(A, B, output);
               return output;
           },
           "Function to solve X for a linear system AX = B where A is a full "
