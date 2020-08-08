@@ -4,6 +4,10 @@ set(ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileData.h")
 list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileMtlImporter.cpp")
 list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileImporter.cpp")
 
+if(NOT STATIC_WINDOWS_RUNTIME)
+    set(ASSIMP_MSVC_RUNTIME_SUFFIX, "DLL")
+endif()
+
 ExternalProject_Add(
     ext_assimp
     PREFIX assimp
@@ -20,7 +24,7 @@ ExternalProject_Add(
         -DASSIMP_BUILD_TESTS=OFF
         -DASSIMP_INSTALL_PDB=OFF
 	-DCMAKE_POLICY_DEFAULT_CMP0091=NEW
-	-DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>"
+	-DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>${ASSIMP_MSVC_RUNTIME_SUFFIX}"
 )
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
