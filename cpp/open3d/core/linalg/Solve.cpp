@@ -25,7 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/linalg/Solve.h"
+
+#ifdef BUILD_CUDA_MODULE
 #include <cuda_runtime_api.h>
+#endif
 
 #include <unordered_map>
 
