@@ -19,6 +19,8 @@ ExternalProject_Add(
         -DASSIMP_BUILD_ASSIMP_TOOLS=OFF
         -DASSIMP_BUILD_TESTS=OFF
         -DASSIMP_INSTALL_PDB=OFF
+	-DCMAKE_POLICY_DEFAULT_CMP0091=NEW
+	-DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>"
 )
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
