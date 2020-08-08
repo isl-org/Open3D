@@ -9,7 +9,7 @@ set -e
 SUDO=${SUDO:=sudo}  
 
 $SUDO apt-get update
-$SUDO apt-get -y install software-properties-common
+$SUDO apt-get -y install git software-properties-common
 echo "Installing Python3 and setting as default python"
 $SUDO apt-get --yes install python3 python3-pip
 if  ! which python || python -V 2>/dev/null | grep -q ' 2.' ; then
