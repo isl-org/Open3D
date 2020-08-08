@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include <cusolver_common.h>
 #include <mkl.h>
 
 #ifdef BUILD_CUDA_MODULE
 #include <cublas_v2.h>
 #include <cusolverDn.h>
+#include <cusolver_common.h>
 #endif
 
 #include "open3d/utility/Console.h"
