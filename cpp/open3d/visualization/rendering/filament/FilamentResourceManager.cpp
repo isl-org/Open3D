@@ -202,6 +202,10 @@ const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlit =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultNormalShader =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultDepthShader =
+        MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
@@ -218,6 +222,8 @@ const TextureHandle FilamentResourceManager::kDefaultNormalMap =
 static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultLit,
         FilamentResourceManager::kDefaultUnlit,
+        FilamentResourceManager::kDefaultNormalShader,
+        FilamentResourceManager::kDefaultDepthShader,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
@@ -700,19 +706,29 @@ void FilamentResourceManager::LoadDefaults() {
     materials_[kDefaultUnlit] = MakeShared(unlit_mat, engine_);
 
     const auto depth_path = resource_root + "/depth.filamat";
-    const auto hdepth = CreateMaterial(ResourceLoadRequest(depth_path.data()));
-    auto depth_mat = materials_[hdepth];
+    auto depth_mat = LoadMaterialFromFile(depth_path, engine_);
     depth_mat->setDefaultParameter("pointSize", 3.f);
+    materials_[kDefaultDepthShader] = MakeShared(depth_mat, engine_);
+
+    // NOTE: Legacy. Can be removed soon.
+    const auto hdepth = CreateMaterial(ResourceLoadRequest(depth_path.data()));
+    auto depth_mat_inst = materials_[hdepth];
+    depth_mat_inst->setDefaultParameter("pointSize", 3.f);
     material_instances_[kDepthMaterial] =
-            MakeShared(depth_mat->createInstance(), engine_);
+            MakeShared(depth_mat_inst->createInstance(), engine_);
 
     const auto normals_path = resource_root + "/normals.filamat";
+    auto normals_mat = LoadMaterialFromFile(normals_path, engine_);
+    normals_mat->setDefaultParameter("pointSize", 3.f);
+    materials_[kDefaultNormalShader] = MakeShared(normals_mat, engine_);
+
+    // NOTE: Leacy. Can be removed soon.
     const auto hnormals =
             CreateMaterial(ResourceLoadRequest(normals_path.data()));
-    auto normals_mat = materials_[hnormals];
-    normals_mat->setDefaultParameter("pointSize", 3.f);
+    auto normals_mat_inst = materials_[hnormals];
+    normals_mat_inst->setDefaultParameter("pointSize", 3.f);
     material_instances_[kNormalsMaterial] =
-            MakeShared(normals_mat->createInstance(), engine_);
+            MakeShared(normals_mat_inst->createInstance(), engine_);
 
     const auto colormap_map_path = resource_root + "/colorMap.filamat";
     const auto hcolormap_mat =

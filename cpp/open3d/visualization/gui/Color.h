@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <Eigen/Geometry>
+
 namespace open3d {
 namespace visualization {
 namespace gui {
@@ -34,6 +36,7 @@ class Color {
 public:
     Color();
     Color(float r, float g, float b, float a = 1.0);
+    Color(const Eigen::Vector3f& rgb);  // not explicit: want auto-convert
 
     float GetRed() const;
     float GetGreen() const;

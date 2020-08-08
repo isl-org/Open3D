@@ -1,6 +1,8 @@
 from open3d.ml.tf import ops
 import tensorflow as tf
 
+__all__ = ['FixedRadiusSearch', 'RadiusSearch', 'KNNSearch']
+
 
 class FixedRadiusSearch(tf.keras.layers.Layer):
     """Fixed radius search for 3D point clouds.
@@ -160,7 +162,7 @@ class RadiusSearch(tf.keras.layers.Layer):
              radii,
              points_row_splits=None,
              queries_row_splits=None):
-        """This function the neighbors within a radius for each query point.
+        """This function computes the neighbors within a radius for each query point.
 
         Arguments:
 
@@ -251,7 +253,7 @@ class KNNSearch(tf.keras.layers.Layer):
              k,
              points_row_splits=None,
              queries_row_splits=None):
-        """This function the neighbors within a radius for each query point.
+        """This function computes the k nearest neighbors for each query point.
 
         Arguments:
 

@@ -40,7 +40,7 @@ if(WIN32)
                                 ${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll
                                 ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
     endif()
-    if(ENABLE_GUI)
+    if(BUILD_GUI)
         if(EXISTS "${CMAKE_INSTALL_PREFIX}/lib/SDL2.dll")
             message(STATUS "Will copy SDL2.dll to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
             add_custom_command(TARGET TestVisualizer POST_BUILD
