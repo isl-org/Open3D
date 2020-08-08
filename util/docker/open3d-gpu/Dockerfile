@@ -19,4 +19,4 @@ RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes
 COPY . /root/Open3D
 WORKDIR /root/Open3D
 
-ENTRYPOINT util/run-ci.sh
+ENTRYPOINT util/run_ci.sh
