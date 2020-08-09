@@ -6,7 +6,7 @@
 set -e
 
 # Use SUDO=command to run in docker (user is root, sudo is not installed)
-SUDO=${SUDO:=sudo}  
+SUDO=${SUDO:=sudo}
 
 $SUDO apt-get update
 $SUDO apt-get -y install git software-properties-common
@@ -23,7 +23,7 @@ if ! which cmake || cmake -P CMakeLists.txt 2>&1 | grep -q "or higher is require
     echo 'Installing backported cmake from https://apt.kitware.com/'
     $SUDO apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
     $SUDO apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
-    $SUDO apt-get --yes install cmake 
+    $SUDO apt-get --yes install cmake
 fi
 
 if [ -n "${NVIDIA_DRIVER_VERSION}" ] ; then
