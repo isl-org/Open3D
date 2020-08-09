@@ -11,15 +11,19 @@
 include(ExternalProject)
 
 if(WIN32)
-    set(MKL_INCLUDE_URL "https://anaconda.org/intel/mkl-include/2020.1/download/win-64/mkl-include-2020.1-intel_216.tar.bz2")
-    set(MKL_URL         "https://anaconda.org/intel/mkl-static/2020.1/download/win-64/mkl-static-2020.1-intel_216.tar.bz2")
+    set(MKL_INCLUDE_URL      "https://anaconda.org/intel/mkl-include/2020.1/download/win-64/mkl-include-2020.1-intel_216.tar.bz2")
+    set(MKL_URL              "https://anaconda.org/intel/mkl-static/2020.1/download/win-64/mkl-static-2020.1-intel_216.tar.bz2")
 elseif(APPLE)
-    set(MKL_INCLUDE_URL   "https://anaconda.org/intel/mkl-include/2020.1/download/osx-64/mkl-include-2020.1-intel_216.tar.bz2")
-    set(MKL_URL           "https://anaconda.org/intel/mkl-static/2020.1/download/osx-64/mkl-static-2020.1-intel_216.tar.bz2")
+    set(MKL_INCLUDE_URL      "https://anaconda.org/intel/mkl-include/2020.1/download/osx-64/mkl-include-2020.1-intel_216.tar.bz2")
+    set(MKL_URL              "https://anaconda.org/intel/mkl-static/2020.1/download/osx-64/mkl-static-2020.1-intel_216.tar.bz2")
 else()
-    set(MKL_INCLUDE_URL   "https://anaconda.org/intel/mkl-include/2020.1/download/linux-64/mkl-include-2020.1-intel_217.tar.bz2")
-    set(MKL_URL           "https://anaconda.org/intel/mkl-static/2020.1/download/linux-64/mkl-static-2020.1-intel_217.tar.bz2")
-    set(MKL_MERGED_URL    "https://storage.googleapis.com/isl-datasets/open3d-dev/mkl-static-merged-2020.1-intel_217.zip")
+    set(MKL_INCLUDE_URL      "https://anaconda.org/intel/mkl-include/2020.1/download/linux-64/mkl-include-2020.1-intel_217.tar.bz2")
+    set(MKL_URL              "https://anaconda.org/intel/mkl-static/2020.1/download/linux-64/mkl-static-2020.1-intel_217.tar.bz2")
+    set_local_or_remote_url(
+        MKL_MERGED_URL
+        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/linux-merged-mkl-static-2020.1-intel_217.zip"
+        REMOTE_URLS "https://github.com/intel-isl/Open3D/releases/download/v0.10.0/linux-merged-mkl-static-2020.1-intel_217.zip"
+    )
 endif()
 
 # Where MKL and TBB headers and libs will be installed.
