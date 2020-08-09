@@ -44,10 +44,11 @@ option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF
 option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                    OFF)
 
-# If THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will first try to look for
-# the required files in ExternalProject_Add, before downloading it from the
-# internet. The files inside THIRD_PARTY_DOWNLOAD_DIR are prepared manually
-# by the user. This is only supported by limited 3rd party libraries.
+# In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
+# first try to look for the required files in THIRD_PARTY_DOWNLOAD_DIR, before
+# downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
+# are prepared manually by the user. This is only supported by limited 3rd party
+# libraries.
 if(THIRD_PARTY_DOWNLOAD_DIR)
     message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to ${THIRD_PARTY_DOWNLOAD_DIR}.")
 else()
