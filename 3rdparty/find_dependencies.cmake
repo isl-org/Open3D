@@ -204,6 +204,7 @@ endfunction()
 function(import_3rdparty_library name)
     cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
+        message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
     endif()
     if(NOT arg_LIB_DIR)
@@ -861,30 +862,41 @@ if(ENABLE_GUI)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
 endif()
 
+# RPC interface
+# - boost: predef
+# - zeromq
+# - msgpack
 if(BUILD_RPC_INTERFACE)
-    include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
-    import_3rdparty_library(3rdparty_zeromq 
+    # boost: predef
+    include(${Open3D_3RDPARTY_DIR}/boost/boost.cmake)
+    import_3rdparty_library(3rdparty_boost
         PUBLIC
-        INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS} 
+        INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
+    )
+    set(BOOST_TARGET "3rdparty_boost")
+    add_dependencies(3rdparty_boost ext_boost)
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${BOOST_TARGET}")
+
+    # zeromq
+    include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
+    import_3rdparty_library(3rdparty_zeromq
+        PUBLIC
+        INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS}
         LIB_DIR ${ZEROMQ_LIB_DIR}
         LIBRARIES ${ZEROMQ_LIBRARIES}
     )
     set(ZEROMQ_TARGET "3rdparty_zeromq")
-    add_dependencies( ${ZEROMQ_TARGET} ext_zeromq )
+    add_dependencies(${ZEROMQ_TARGET} ext_zeromq)
     list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${ZEROMQ_TARGET}")
 
+    # msgpack
     include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
-    import_3rdparty_library(3rdparty_msgpack 
+    import_3rdparty_library(3rdparty_msgpack
         PUBLIC
         INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
-        )
+    )
     set(MSGPACK_TARGET "3rdparty_msgpack")
     list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${MSGPACK_TARGET}")
-
-    find_package(Boost REQUIRED)
-    add_library(Boost_headers INTERFACE)
-    target_include_directories(Boost_headers SYSTEM INTERFACE $<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>)
-    list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Boost")
 endif()
 
 # MKL
