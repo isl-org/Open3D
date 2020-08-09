@@ -43,6 +43,7 @@ option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                    OFF)
+option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 set(FILAMENT_SOURCE_ROOT "" CACHE PATH "Path to Filament library sources (used if BUILD_FILAMENT_FROM_SOURCE=ON)")
@@ -426,6 +427,7 @@ endif()
 open3d_aligned_print("Build Tensorflow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build Pytorch Ops" "${BUILD_PYTORCH_OPS}")
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
+open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
 if(GLIBCXX_USE_CXX11_ABI)
     set(usage "1")
 else()

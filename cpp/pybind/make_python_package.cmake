@@ -50,6 +50,12 @@ if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )
 endif()
 
+if (BUNDLE_OPEN3D_ML)
+    file(COPY "${PYTHON_PACKAGE_DST_DIR}/../../open3d_ml/src/open3d_ml/ml3d" 
+         DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )
+    file(RENAME "${PYTHON_PACKAGE_DST_DIR}/open3d/ml3d" "${PYTHON_PACKAGE_DST_DIR}/open3d/_ml3d")
+endif()
+
 # Build Jupyter plugin with webpack. This step distills and merges all js
 # dependencies and include all static assets. The generated output is in
 # ${PYTHON_PACKAGE_DST_DIR}/open3d/static.
