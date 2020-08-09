@@ -18,7 +18,11 @@ elseif(APPLE)
     set(MKL_URL              "https://anaconda.org/intel/mkl-static/2020.1/download/osx-64/mkl-static-2020.1-intel_216.tar.bz2")
 else()
     set(MKL_INCLUDE_URL      "https://anaconda.org/intel/mkl-include/2020.1/download/linux-64/mkl-include-2020.1-intel_217.tar.bz2")
-    set(MKL_URL              "https://anaconda.org/intel/mkl-static/2020.1/download/linux-64/mkl-static-2020.1-intel_217.tar.bz2")
+    set_local_or_remote_url(
+        MKL_URL
+        LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/mkl-static-2020.1-intel_217.tar.bz2"
+        REMOTE_URLS "https://anaconda.org/intel/mkl-static/2020.1/download/linux-64/mkl-static-2020.1-intel_217.tar.bz2"
+    )
     set_local_or_remote_url(
         MKL_MERGED_URL
         LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/linux-merged-mkl-static-2020.1-intel_217.zip"
