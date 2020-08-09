@@ -88,6 +88,7 @@ def _find_clang_format():
       - version mismatch: print warning
     """
     preferred_clang_format_name = "clang-format-10"
+    preferred_version_major = 10
     clang_format_bin = shutil.which(preferred_clang_format_name)
     if clang_format_bin is None:
         clang_format_bin = shutil.which("clang-format")
@@ -99,13 +100,12 @@ def _find_clang_format():
     version_str = subprocess.check_output([clang_format_bin, "--version"
                                           ]).decode("utf-8").strip()
     try:
-        m = re.match("^clang-format version ([0-9.-]*) .*$", version_str)
+        m = re.match("^clang-format version ([0-9.]*).*$", version_str)
         if m:
             version_str = m.group(1)
             version_str_token = version_str.split(".")
             major = int(version_str_token[0])
-            minor = int(version_str_token[1])
-            if major != 5 or minor != 0:
+            if major != preferred_version_major:
                 print("Warning: {} required, but got {}.".format(
                     preferred_clang_format_name, version_str))
         else:
