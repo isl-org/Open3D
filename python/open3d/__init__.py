@@ -59,7 +59,7 @@ __version__ = "@PROJECT_VERSION@"
 if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
 
-if "@ENABLE_JUPYTER@" == "ON":
+if "@BUILD_JUPYTER_EXTENSION@" == "ON":
     from .j_visualizer import *
 
     def _jupyter_nbextension_paths():

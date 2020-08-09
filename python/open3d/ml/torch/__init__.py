@@ -2,11 +2,14 @@
 import os as _os
 import sys as _sys
 import torch as _torch
+from open3d import _build_config
 
 _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
-_lib_path = _os.path.join(_package_root, 'open3d_torch_ops' + _lib_ext)
+_lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
+_lib_path = _os.path.join(_package_root,
+                          'open3d_torch_ops' + _lib_suffix + _lib_ext)
 
 # allow overriding the path to the op library with an env var.
 if 'OPEN3D_TORCH_OP_LIB' in _os.environ:

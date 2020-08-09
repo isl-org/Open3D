@@ -21,7 +21,7 @@ if (NOT BUILD_AZURE_KINECT)
 endif()
 
 # TODO: handle conditional compilation more systematically
-if (NOT ENABLE_GUI)
+if (NOT BUILD_GUI)
     list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/visualization/rendering/.*cpp)
 endif()
 
