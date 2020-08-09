@@ -4,8 +4,16 @@ set(ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileData.h")
 list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileMtlImporter.cpp")
 list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileImporter.cpp")
 
-if(NOT STATIC_WINDOWS_RUNTIME)
-    set(ASSIMP_MSVC_RUNTIME_SUFFIX, "DLL")
+if(STATIC_WINDOWS_RUNTIME)
+    set(ASSIMP_MSVC_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+    set(ASSIMP_MSVC_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    set(ASSIMP_BUILD_TYPE "Release")
+else()
+    set(ASSIMP_BUILD_TYPE ${CMAKE_BUILD_TYPE})
 endif()
 
 ExternalProject_Add(
@@ -15,7 +23,7 @@ ExternalProject_Add(
     GIT_TAG v5.0.1 # Jan 2020
     UPDATE_COMMAND ""
     CMAKE_ARGS
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_BUILD_TYPE=${ASSIMP_BUILD_TYPE}
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
@@ -24,7 +32,7 @@ ExternalProject_Add(
         -DASSIMP_BUILD_TESTS=OFF
         -DASSIMP_INSTALL_PDB=OFF
 	-DCMAKE_POLICY_DEFAULT_CMP0091=NEW
-	-DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>${ASSIMP_MSVC_RUNTIME_SUFFIX}"
+	-DCMAKE_MSVC_RUNTIME_LIBRARY=${ASSIMP_MSVC_RUNTIME}
 )
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
@@ -39,7 +47,7 @@ set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
 if (UNIX OR APPLE)
   set(ASSIMP_LIBRARIES assimp IrrXML)
 else()
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ASSIMP_LIBRARIES assimp-vc142-mtd IrrXMLd zlibstaticd)
   else()
     set(ASSIMP_LIBRARIES assimp-vc142-mt IrrXML zlibstatic)
