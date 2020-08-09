@@ -50,7 +50,7 @@ namespace io {
 namespace rpc {
 
 struct ReceiverBase::MsgpackObject {
-    MsgpackObject(msgpack::object& obj) : obj_(obj) {}
+    explicit MsgpackObject(msgpack::object& obj) : obj_(obj) {}
     msgpack::object& obj_;
 };
 
