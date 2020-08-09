@@ -870,33 +870,30 @@ if(BUILD_RPC_INTERFACE)
     # boost: predef
     include(${Open3D_3RDPARTY_DIR}/boost/boost.cmake)
     import_3rdparty_library(3rdparty_boost
-        PUBLIC
         INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
     )
     set(BOOST_TARGET "3rdparty_boost")
     add_dependencies(3rdparty_boost ext_boost)
-    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${BOOST_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
 
     # zeromq
     include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
     import_3rdparty_library(3rdparty_zeromq
-        PUBLIC
         INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS}
         LIB_DIR ${ZEROMQ_LIB_DIR}
         LIBRARIES ${ZEROMQ_LIBRARIES}
     )
     set(ZEROMQ_TARGET "3rdparty_zeromq")
     add_dependencies(${ZEROMQ_TARGET} ext_zeromq)
-    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${ZEROMQ_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZEROMQ_TARGET}")
 
     # msgpack
     include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
     import_3rdparty_library(3rdparty_msgpack
-        PUBLIC
         INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
     )
     set(MSGPACK_TARGET "3rdparty_msgpack")
-    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${MSGPACK_TARGET}")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MSGPACK_TARGET}")
 endif()
 
 # MKL

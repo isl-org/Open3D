@@ -27,6 +27,7 @@
 #pragma once
 
 #include <memory>
+#include <sstream>
 #include "open3d/io/rpc/ConnectionBase.h"
 
 namespace open3d {
