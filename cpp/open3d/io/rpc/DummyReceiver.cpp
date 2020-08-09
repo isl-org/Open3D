@@ -24,18 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-namespace zmq {
-class context_t;
-}
+#include "open3d/io/rpc/DummyReceiver.h"
+#include <zmq.hpp>
+#include "open3d/io/rpc/Messages.h"
 
 namespace open3d {
 namespace io {
 namespace rpc {
 
-/// Returns the zeromq context for this process.
-zmq::context_t& GetZMQContext();
+std::shared_ptr<zmq::message_t> DummyReceiver::CreateStatusOKMsg() {
+    auto OK = messages::Status::OK();
+    msgpack::sbuffer sbuf;
+    messages::Reply reply{OK.MsgId()};
+    msgpack::pack(sbuf, reply);
+    msgpack::pack(sbuf, OK);
+    return std::shared_ptr<zmq::message_t>(
+            new zmq::message_t(sbuf.data(), sbuf.size()));
+}
 
 }  // namespace rpc
 }  // namespace io

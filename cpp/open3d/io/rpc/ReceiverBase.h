@@ -29,13 +29,26 @@
 #include <atomic>
 #include <mutex>
 #include <thread>
-#include <zmq.hpp>
-#include "open3d/io/rpc/Messages.h"
 #include "open3d/utility/Console.h"
+
+namespace zmq {
+class message_t;
+class socket_t;
+}  // namespace zmq
 
 namespace open3d {
 namespace io {
 namespace rpc {
+
+namespace messages {
+struct Request;
+struct SetMeshData;
+struct GetMeshData;
+struct SetCameraData;
+struct SetProperties;
+struct SetActiveCamera;
+struct SetTime;
+}  // namespace messages
 
 /// Base class for the server side receiving requests from a client.
 /// Subclass from this and implement the overloaded ProcessMessage functions as
@@ -53,6 +66,19 @@ public:
 
     ~ReceiverBase();
 
+    /// Starts the receiver mainloop in a new thread.
+    void Start();
+
+    /// Stops the receiver mainloop and joins the thread.
+    /// This function blocks until the mainloop is done with processing
+    /// messages that have already been received.
+    void Stop();
+
+protected:
+    // Opaque type for providing the original msgpack::object to the
+    // ProcessMessage functions
+    struct MsgpackObject;
+
     /// Function for processing a msg.
     /// \param req  The Request object that accompanies the \param msg object.
     ///
@@ -63,78 +89,34 @@ public:
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetMeshData& msg,
-            const msgpack::object& obj) {
-        utility::LogInfo(
-                "ReceiverBase::ProcessMessage: messages with id {} will be "
-                "ignored",
-                msg.MsgId());
-        return std::shared_ptr<zmq::message_t>();
-    }
+            const MsgpackObject& obj);
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::GetMeshData& msg,
-            const msgpack::object& obj) {
-        utility::LogInfo(
-                "ReceiverBase::ProcessMessage: messages with id {} will be "
-                "ignored",
-                msg.MsgId());
-        return std::shared_ptr<zmq::message_t>();
-    }
+            const MsgpackObject& obj);
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetCameraData& msg,
-            const msgpack::object& obj) {
-        utility::LogInfo(
-                "ReceiverBase::ProcessMessage: messages with id {} will be "
-                "ignored",
-                msg.MsgId());
-        return std::shared_ptr<zmq::message_t>();
-    }
+            const MsgpackObject& obj);
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetProperties& msg,
-            const msgpack::object& obj) {
-        utility::LogInfo(
-                "ReceiverBase::ProcessMessage: messages with id {} will be "
-                "ignored",
-                msg.MsgId());
-        return std::shared_ptr<zmq::message_t>();
-    }
+            const MsgpackObject& obj);
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetActiveCamera& msg,
-            const msgpack::object& obj) {
-        utility::LogInfo(
-                "ReceiverBase::ProcessMessage: messages with id {} will be "
-                "ignored",
-                msg.MsgId());
-        return std::shared_ptr<zmq::message_t>();
-    }
+            const MsgpackObject& obj);
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetTime& msg,
-            const msgpack::object& obj) {
-        utility::LogInfo(
-                "ReceiverBase::ProcessMessage: messages with id {} will be "
-                "ignored",
-                msg.MsgId());
-        return std::shared_ptr<zmq::message_t>();
-    }
-
-    /// Starts the receiver mainloop in a new thread.
-    void Start();
-
-    /// Stops the receiver mainloop and joins the thread.
-    /// This function blocks until the mainloop is done with processing
-    /// messages that have already been received.
-    void Stop();
+            const MsgpackObject& obj);
 
 private:
     void Mainloop();
 
     const std::string address_;
     const int timeout_;
-    zmq::socket_t socket_;
+    std::unique_ptr<zmq::socket_t> socket_;
     std::thread thread_;
     std::mutex mutex_;
     bool keep_running_;

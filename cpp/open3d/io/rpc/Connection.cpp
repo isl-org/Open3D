@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/io/rpc/Connection.h"
+#include <zmq.hpp>
 #include "open3d/io/rpc/ZMQContext.h"
 #include "open3d/utility/Console.h"
 
@@ -83,6 +84,12 @@ std::shared_ptr<zmq::message_t> Connection::Send(zmq::message_t& send_msg) {
         }
     }
     return msg;
+}
+
+std::shared_ptr<zmq::message_t> Connection::Send(const void* data,
+                                                 size_t size) {
+    zmq::message_t send_msg(data, size);
+    return Send(send_msg);
 }
 
 }  // namespace rpc

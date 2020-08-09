@@ -30,38 +30,21 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/io/rpc/Connection.h"
-#include "open3d/io/rpc/Messages.h"
+#include "open3d/io/rpc/ConnectionBase.h"
 
 #include <map>
+
+namespace zmq {
+class message_t;
+}
 
 namespace open3d {
 namespace io {
 namespace rpc {
 
-/// Helper function for unpacking the Status message from a reply.
-/// \param msg     The message that contains the Reply and the Status messages.
-///
-/// \param offset  Byte offset into the message. Defines where to start parsing
-/// the message. The offset will be updated and will point to the first byte
-/// after the parse messages. If unpacking fails offset will be set to the end
-/// of the message.
-///
-/// \param ok      Output variable which will be set to true if the unpacking
-/// was successful.
-///
-/// \return The extracted Status message object. Check \param ok to see if the
-/// returned object is valid.
-messages::Status UnpackStatusFromReply(const zmq::message_t& msg,
-                                       size_t& offset,
-                                       bool& ok);
-
-/// Convenience function for checking if the message is an OK.
-bool ReplyIsOKStatus(const zmq::message_t& msg);
-
-/// Convenience function for checking if the message is an OK.
-/// \param offset \see UnpackStatusFromReply
-bool ReplyIsOKStatus(const zmq::message_t& msg, size_t& offset);
+namespace messages {
+struct Status;
+}
 
 /// Function for sending a PointCloud.
 /// \param pcd         The PointCloud object.
@@ -76,12 +59,12 @@ bool ReplyIsOKStatus(const zmq::message_t& msg, size_t& offset);
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetPointCloud(
-        const geometry::PointCloud& pcd,
-        const std::string& path = "",
-        int time = 0,
-        const std::string& layer = "",
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetPointCloud(const geometry::PointCloud& pcd,
+                   const std::string& path = "",
+                   int time = 0,
+                   const std::string& layer = "",
+                   std::shared_ptr<ConnectionBase> connection =
+                           std::shared_ptr<ConnectionBase>());
 
 /// Function for sending a TriangleMesh.
 /// \param pcd         The TriangleMesh object.
@@ -96,12 +79,12 @@ bool SetPointCloud(
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetTriangleMesh(
-        const geometry::TriangleMesh& mesh,
-        const std::string& path = "",
-        int time = 0,
-        const std::string& layer = "",
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
+                     const std::string& path = "",
+                     int time = 0,
+                     const std::string& layer = "",
+                     std::shared_ptr<ConnectionBase> connection =
+                             std::shared_ptr<ConnectionBase>());
 
 /// Function for sending general mesh data.
 /// \param vertices    Tensor with vertices of shape [N,3]
@@ -139,22 +122,24 @@ bool SetTriangleMesh(
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetMeshData(
-        const core::Tensor& vertices,
-        const std::string& path = "",
-        int time = 0,
-        const std::string& layer = "",
-        const std::map<std::string, core::Tensor>& vertex_attributes =
-                std::map<std::string, core::Tensor>(),
-        const core::Tensor& faces = core::Tensor({0}, core::Dtype::Int32),
-        const std::map<std::string, core::Tensor>& face_attributes =
-                std::map<std::string, core::Tensor>(),
-        const core::Tensor& lines = core::Tensor({0}, core::Dtype::Int32),
-        const std::map<std::string, core::Tensor>& line_attributes =
-                std::map<std::string, core::Tensor>(),
-        const std::map<std::string, core::Tensor>& textures =
-                std::map<std::string, core::Tensor>(),
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetMeshData(const core::Tensor& vertices,
+                 const std::string& path = "",
+                 int time = 0,
+                 const std::string& layer = "",
+                 const std::map<std::string, core::Tensor>& vertex_attributes =
+                         std::map<std::string, core::Tensor>(),
+                 const core::Tensor& faces = core::Tensor({0},
+                                                          core::Dtype::Int32),
+                 const std::map<std::string, core::Tensor>& face_attributes =
+                         std::map<std::string, core::Tensor>(),
+                 const core::Tensor& lines = core::Tensor({0},
+                                                          core::Dtype::Int32),
+                 const std::map<std::string, core::Tensor>& line_attributes =
+                         std::map<std::string, core::Tensor>(),
+                 const std::map<std::string, core::Tensor>& textures =
+                         std::map<std::string, core::Tensor>(),
+                 std::shared_ptr<ConnectionBase> connection =
+                         std::shared_ptr<ConnectionBase>());
 
 /// Function for sending Camera data.
 /// \param camera      The PinholeCameraParameters object.
@@ -169,12 +154,12 @@ bool SetMeshData(
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetLegacyCamera(
-        const camera::PinholeCameraParameters& camera,
-        const std::string& path = "",
-        int time = 0,
-        const std::string& layer = "",
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetLegacyCamera(const camera::PinholeCameraParameters& camera,
+                     const std::string& path = "",
+                     int time = 0,
+                     const std::string& layer = "",
+                     std::shared_ptr<ConnectionBase> connection =
+                             std::shared_ptr<ConnectionBase>());
 
 /// Sets the time in the external visualizer.
 /// \param time        The time value
@@ -182,9 +167,9 @@ bool SetLegacyCamera(
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetTime(
-        int time,
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetTime(int time,
+             std::shared_ptr<ConnectionBase> connection =
+                     std::shared_ptr<ConnectionBase>());
 
 /// Sets the object with the specified path as the active camera.
 /// \param path        Path descriptor defining a location in the scene tree.
@@ -193,9 +178,9 @@ bool SetTime(
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetActiveCamera(
-        const std::string& path,
-        std::shared_ptr<Connection> connection = std::shared_ptr<Connection>());
+bool SetActiveCamera(const std::string& path,
+                     std::shared_ptr<ConnectionBase> connection =
+                             std::shared_ptr<ConnectionBase>());
 
 }  // namespace rpc
 }  // namespace io

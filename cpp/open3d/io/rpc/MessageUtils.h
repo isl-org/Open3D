@@ -26,16 +26,51 @@
 
 #pragma once
 
+#include "open3d/io/rpc/ReceiverBase.h"
+
 namespace zmq {
-class context_t;
+class message_t;
 }
 
 namespace open3d {
 namespace io {
 namespace rpc {
 
-/// Returns the zeromq context for this process.
-zmq::context_t& GetZMQContext();
+namespace messages {
+struct Status;
+}
+
+/// Helper function for unpacking the Status message from a reply.
+/// \param msg     The message that contains the Reply and the Status messages.
+///
+/// \param offset  Byte offset into the message. Defines where to start parsing
+/// the message. The offset will be updated and will point to the first byte
+/// after the parse messages. If unpacking fails offset will be set to the end
+/// of the message.
+///
+/// \param ok      Output variable which will be set to true if the unpacking
+/// was successful.
+///
+/// \return The extracted Status message object. Check \param ok to see if the
+/// returned object is valid.
+std::shared_ptr<messages::Status> UnpackStatusFromReply(
+        const zmq::message_t& msg, size_t& offset, bool& ok);
+
+/// Convenience function for checking if the message is an OK.
+bool ReplyIsOKStatus(const zmq::message_t& msg);
+
+/// Convenience function for checking if the message is an OK.
+/// \param offset \see UnpackStatusFromReply
+bool ReplyIsOKStatus(const zmq::message_t& msg, size_t& offset);
+
+/// Creates a serialized Request message for testing purposes.
+std::string CreateSerializedRequestMessage(const std::string& msg_id);
+
+std::tuple<const void*, size_t> GetZMQMessageDataAndSize(
+        const zmq::message_t& msg);
+
+std::tuple<int32_t, std::string> GetStatusCodeAndStr(
+        const messages::Status& status);
 
 }  // namespace rpc
 }  // namespace io

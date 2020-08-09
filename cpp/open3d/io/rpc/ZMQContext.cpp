@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/io/rpc/ZMQContext.h"
+#include <zmq.hpp>
 
 namespace open3d {
 namespace io {

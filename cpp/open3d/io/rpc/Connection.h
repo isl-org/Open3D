@@ -27,13 +27,15 @@
 #pragma once
 
 #include <memory>
-#include <zmq.hpp>
+#include "open3d/io/rpc/ConnectionBase.h"
 
 namespace open3d {
 namespace io {
 namespace rpc {
 
-class Connection {
+/// This class implements the Connection which is used as default in all
+/// functions.
+class Connection : public ConnectionBase {
 public:
     Connection();
 
@@ -50,6 +52,9 @@ public:
 
     /// Function for sending data wrapped in a zmq message object.
     std::shared_ptr<zmq::message_t> Send(zmq::message_t& send_msg);
+
+    /// Function for sending raw data. Meant for testing purposes
+    std::shared_ptr<zmq::message_t> Send(const void* data, size_t size);
 
 private:
     std::unique_ptr<zmq::socket_t> socket_;

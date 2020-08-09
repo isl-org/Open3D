@@ -26,17 +26,28 @@
 
 #pragma once
 
+#include <memory>
+
 namespace zmq {
-class context_t;
-}
+class message_t;
+class socket_t;
+}  // namespace zmq
 
 namespace open3d {
 namespace io {
 namespace rpc {
 
-/// Returns the zeromq context for this process.
-zmq::context_t& GetZMQContext();
+/// Base class for all connections
+class ConnectionBase {
+public:
+    ConnectionBase(){};
+    virtual ~ConnectionBase(){};
 
+    /// Function for sending data wrapped in a zmq message object.
+    virtual std::shared_ptr<zmq::message_t> Send(zmq::message_t& send_msg) = 0;
+    virtual std::shared_ptr<zmq::message_t> Send(const void* data,
+                                                 size_t size) = 0;
+};
 }  // namespace rpc
 }  // namespace io
 }  // namespace open3d

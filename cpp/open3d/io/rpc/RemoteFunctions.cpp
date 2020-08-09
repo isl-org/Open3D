@@ -26,7 +26,11 @@
 
 #include "open3d/io/rpc/RemoteFunctions.h"
 #include <Eigen/Geometry>
+#include <zmq.hpp>
 #include "open3d/core/Dispatch.h"
+#include "open3d/io/rpc/Connection.h"
+#include "open3d/io/rpc/MessageUtils.h"
+#include "open3d/io/rpc/Messages.h"
 #include "open3d/utility/Console.h"
 
 using namespace open3d::utility;
@@ -35,55 +39,11 @@ namespace open3d {
 namespace io {
 namespace rpc {
 
-messages::Status UnpackStatusFromReply(const zmq::message_t& msg,
-                                       size_t& offset,
-                                       bool& ok) {
-    ok = false;
-    if (msg.size() <= offset) {
-        return messages::Status();
-    };
-
-    messages::Reply reply;
-    messages::Status status;
-    try {
-        auto obj_handle =
-                msgpack::unpack((char*)msg.data(), msg.size(), offset);
-        obj_handle.get().convert(reply);
-        if (reply.msg_id != status.MsgId()) {
-            LogDebug("Expected msg with id {} but got {}", status.MsgId(),
-                     reply.msg_id);
-        } else {
-            auto status_obj_handle =
-                    msgpack::unpack((char*)msg.data(), msg.size(), offset);
-            status_obj_handle.get().convert(status);
-            ok = true;
-        }
-    } catch (std::exception& e) {
-        LogDebug("Failed to parse message: {}", e.what());
-        offset = msg.size();
-    }
-    return status;
-}
-
-bool ReplyIsOKStatus(const zmq::message_t& msg) {
-    size_t offset = 0;
-    return ReplyIsOKStatus(msg, offset);
-}
-
-bool ReplyIsOKStatus(const zmq::message_t& msg, size_t& offset) {
-    bool ok;
-    auto status = UnpackStatusFromReply(msg, offset, ok);
-    if (ok && 0 == status.code) {
-        return true;
-    }
-    return false;
-}
-
 bool SetPointCloud(const geometry::PointCloud& pcd,
                    const std::string& path,
                    int time,
                    const std::string& layer,
-                   std::shared_ptr<Connection> connection) {
+                   std::shared_ptr<ConnectionBase> connection) {
     // TODO use SetMeshData here after switching to the new PointCloud class.
     if (!pcd.HasPoints()) {
         LogInfo("SetMeshData: point cloud is empty");
@@ -113,6 +73,9 @@ bool SetPointCloud(const geometry::PointCloud& pcd,
     msgpack::pack(sbuf, msg);
 
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
+    if (!connection) {
+        connection = std::shared_ptr<Connection>(new Connection());
+    }
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }
@@ -121,7 +84,7 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
                      const std::string& path,
                      int time,
                      const std::string& layer,
-                     std::shared_ptr<Connection> connection) {
+                     std::shared_ptr<ConnectionBase> connection) {
     // TODO use SetMeshData here after switching to the new TriangleMesh class.
     if (!mesh.HasTriangles()) {
         LogInfo("SetMeshData: triangle mesh is empty");
@@ -188,6 +151,9 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
     msgpack::pack(sbuf, msg);
 
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
+    if (!connection) {
+        connection = std::shared_ptr<Connection>(new Connection());
+    }
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }
@@ -202,7 +168,7 @@ bool SetMeshData(const core::Tensor& vertices,
                  const core::Tensor& lines,
                  const std::map<std::string, core::Tensor>& line_attributes,
                  const std::map<std::string, core::Tensor>& textures,
-                 std::shared_ptr<Connection> connection) {
+                 std::shared_ptr<ConnectionBase> connection) {
     if (vertices.NumElements() == 0) {
         LogInfo("SetMeshData: vertices Tensor is empty");
         return false;
@@ -342,6 +308,9 @@ bool SetMeshData(const core::Tensor& vertices,
     msgpack::pack(sbuf, msg);
 
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
+    if (!connection) {
+        connection = std::shared_ptr<Connection>(new Connection());
+    }
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }
@@ -350,7 +319,7 @@ bool SetLegacyCamera(const camera::PinholeCameraParameters& camera,
                      const std::string& path,
                      int time,
                      const std::string& layer,
-                     std::shared_ptr<Connection> connection) {
+                     std::shared_ptr<ConnectionBase> connection) {
     messages::SetCameraData msg;
     msg.path = path;
     msg.time = time;
@@ -396,11 +365,14 @@ bool SetLegacyCamera(const camera::PinholeCameraParameters& camera,
     msgpack::pack(sbuf, msg);
 
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
+    if (!connection) {
+        connection = std::shared_ptr<Connection>(new Connection());
+    }
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }
 
-bool SetTime(int time, std::shared_ptr<Connection> connection) {
+bool SetTime(int time, std::shared_ptr<ConnectionBase> connection) {
     messages::SetTime msg;
     msg.time = time;
 
@@ -410,12 +382,15 @@ bool SetTime(int time, std::shared_ptr<Connection> connection) {
     msgpack::pack(sbuf, msg);
 
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
+    if (!connection) {
+        connection = std::shared_ptr<Connection>(new Connection());
+    }
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }
 
 bool SetActiveCamera(const std::string& path,
-                     std::shared_ptr<Connection> connection) {
+                     std::shared_ptr<ConnectionBase> connection) {
     messages::SetActiveCamera msg;
     msg.path = path;
 
@@ -425,6 +400,9 @@ bool SetActiveCamera(const std::string& path,
     msgpack::pack(sbuf, msg);
 
     zmq::message_t send_msg(sbuf.data(), sbuf.size());
+    if (!connection) {
+        connection = std::shared_ptr<Connection>(new Connection());
+    }
     auto reply = connection->Send(send_msg);
     return ReplyIsOKStatus(*reply);
 }

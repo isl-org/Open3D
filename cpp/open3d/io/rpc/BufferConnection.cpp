@@ -24,18 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/io/rpc/BufferConnection.h"
+#include <zmq.hpp>
+#include "open3d/io/rpc/Messages.h"
+#include "open3d/utility/Console.h"
 
-namespace zmq {
-class context_t;
-}
+using namespace open3d::utility;
 
 namespace open3d {
 namespace io {
 namespace rpc {
 
-/// Returns the zeromq context for this process.
-zmq::context_t& GetZMQContext();
+std::shared_ptr<zmq::message_t> BufferConnection::Send(
+        zmq::message_t& send_msg) {
+    buffer_.write((char*)send_msg.data(), send_msg.size());
+
+    auto OK = messages::Status::OK();
+    msgpack::sbuffer sbuf;
+    messages::Reply reply{OK.MsgId()};
+    msgpack::pack(sbuf, reply);
+    msgpack::pack(sbuf, OK);
+    return std::shared_ptr<zmq::message_t>(
+            new zmq::message_t(sbuf.data(), sbuf.size()));
+}
+
+std::shared_ptr<zmq::message_t> BufferConnection::Send(const void* data,
+                                                       size_t size) {
+    zmq::message_t send_msg(data, size);
+    return Send(send_msg);
+}
 
 }  // namespace rpc
 }  // namespace io

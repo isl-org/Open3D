@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/io/rpc/ReceiverBase.h"
+#include <zmq.hpp>
+#include "open3d/io/rpc/Messages.h"
 #include "open3d/io/rpc/ZMQContext.h"
 
 using namespace open3d::utility;
@@ -46,6 +48,11 @@ std::shared_ptr<zmq::message_t> CreateStatusMessage(
 namespace open3d {
 namespace io {
 namespace rpc {
+
+struct ReceiverBase::MsgpackObject {
+    MsgpackObject(msgpack::object& obj) : obj_(obj) {}
+    msgpack::object& obj_;
+};
 
 ReceiverBase::ReceiverBase(const std::string& address, int timeout)
     : address_(address),
@@ -89,11 +96,12 @@ void ReceiverBase::Stop() {
 }
 
 void ReceiverBase::Mainloop() {
-    socket_ = zmq::socket_t(GetZMQContext(), ZMQ_REP);
+    socket_ = std::unique_ptr<zmq::socket_t>(
+            new zmq::socket_t(GetZMQContext(), ZMQ_REP));
 
-    socket_.setsockopt(ZMQ_LINGER, 1000);
-    socket_.setsockopt(ZMQ_RCVTIMEO, 1000);
-    socket_.setsockopt(ZMQ_SNDTIMEO, timeout_);
+    socket_->setsockopt(ZMQ_LINGER, 1000);
+    socket_->setsockopt(ZMQ_RCVTIMEO, 1000);
+    socket_->setsockopt(ZMQ_SNDTIMEO, timeout_);
 
     auto limits = msgpack::unpack_limit(0xffffffff,  // array
                                         0xffffffff,  // map
@@ -103,7 +111,7 @@ void ReceiverBase::Mainloop() {
                                         100          // depth
     );
     try {
-        socket_.bind(address_.c_str());
+        socket_->bind(address_.c_str());
     } catch (const zmq::error_t& err) {
         LogError("ReceiverBase::Mainloop: Failed to bind address, {}",
                  err.what());
@@ -117,7 +125,7 @@ void ReceiverBase::Mainloop() {
         }
         try {
             zmq::message_t message;
-            if (!socket_.recv(message)) {
+            if (!socket_->recv(message)) {
                 continue;
             }
 
@@ -145,7 +153,7 @@ void ReceiverBase::Mainloop() {
         auto obj = oh.get();                                            \
         MSGTYPE msg;                                                    \
         msg = obj.as<MSGTYPE>();                                        \
-        auto reply = ProcessMessage(req, msg, obj);                     \
+        auto reply = ProcessMessage(req, msg, MsgpackObject(obj));      \
         replies.push_back(reply);                                       \
     }
                     PROCESS_MESSAGE(messages::SetMeshData)
@@ -171,7 +179,7 @@ void ReceiverBase::Mainloop() {
                 }
             }
             if (replies.size() == 1) {
-                socket_.send(*replies[0]);
+                socket_->send(*replies[0]);
             } else {
                 size_t size = 0;
                 for (auto r : replies) {
@@ -183,14 +191,75 @@ void ReceiverBase::Mainloop() {
                     memcpy((char*)reply.data() + offset, r->data(), r->size());
                     offset += r->size();
                 }
-                socket_.send(reply);
+                socket_->send(reply);
             }
         } catch (const zmq::error_t& err) {
             LogInfo("ReceiverBase::Mainloop: {}", err.what());
         }
     }
-    socket_.close();
+    socket_->close();
     loop_running_.store(false);
+}
+
+std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
+        const messages::Request& req,
+        const messages::SetMeshData& msg,
+        const MsgpackObject& obj) {
+    utility::LogInfo(
+            "ReceiverBase::ProcessMessage: messages with id {} will be "
+            "ignored",
+            msg.MsgId());
+    return std::shared_ptr<zmq::message_t>();
+}
+std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
+        const messages::Request& req,
+        const messages::GetMeshData& msg,
+        const MsgpackObject& obj) {
+    utility::LogInfo(
+            "ReceiverBase::ProcessMessage: messages with id {} will be "
+            "ignored",
+            msg.MsgId());
+    return std::shared_ptr<zmq::message_t>();
+}
+std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
+        const messages::Request& req,
+        const messages::SetCameraData& msg,
+        const MsgpackObject& obj) {
+    utility::LogInfo(
+            "ReceiverBase::ProcessMessage: messages with id {} will be "
+            "ignored",
+            msg.MsgId());
+    return std::shared_ptr<zmq::message_t>();
+}
+std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
+        const messages::Request& req,
+        const messages::SetProperties& msg,
+        const MsgpackObject& obj) {
+    utility::LogInfo(
+            "ReceiverBase::ProcessMessage: messages with id {} will be "
+            "ignored",
+            msg.MsgId());
+    return std::shared_ptr<zmq::message_t>();
+}
+std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
+        const messages::Request& req,
+        const messages::SetActiveCamera& msg,
+        const MsgpackObject& obj) {
+    utility::LogInfo(
+            "ReceiverBase::ProcessMessage: messages with id {} will be "
+            "ignored",
+            msg.MsgId());
+    return std::shared_ptr<zmq::message_t>();
+}
+std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
+        const messages::Request& req,
+        const messages::SetTime& msg,
+        const MsgpackObject& obj) {
+    utility::LogInfo(
+            "ReceiverBase::ProcessMessage: messages with id {} will be "
+            "ignored",
+            msg.MsgId());
+    return std::shared_ptr<zmq::message_t>();
 }
 
 }  // namespace rpc

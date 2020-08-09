@@ -35,8 +35,11 @@ namespace open3d {
 
 void pybind_rpc(py::module& m_io) {
     py::module m = m_io.def_submodule("rpc");
-    py::class_<io::rpc::Connection, std::shared_ptr<io::rpc::Connection>>(
-            m, "Connection")
+    py::class_<io::rpc::ConnectionBase,
+               std::shared_ptr<io::rpc::ConnectionBase>>(m, "_ConnectionBase");
+
+    py::class_<io::rpc::Connection, std::shared_ptr<io::rpc::Connection>,
+               io::rpc::ConnectionBase>(m, "Connection")
             .def(py::init([](std::string address, int connect_timeout,
                              int timeout) {
                      return std::shared_ptr<io::rpc::Connection>(
@@ -83,7 +86,7 @@ void pybind_rpc(py::module& m_io) {
 
     m.def("set_triangle_mesh", &io::rpc::SetTriangleMesh, "mesh"_a,
           "path"_a = "", "time"_a = 0, "layer"_a = "",
-          "connection"_a = std::shared_ptr<io::rpc::Connection>(),
+          "connection"_a = std::shared_ptr<io::rpc::ConnectionBase>(),
           "Sends a point cloud message to a viewer.");
     docstring::FunctionDocInject(
             m, "set_triangle_mesh",
@@ -105,7 +108,7 @@ void pybind_rpc(py::module& m_io) {
           "lines"_a = core::Tensor({0}, core::Dtype::Int32),
           "line_attributes"_a = std::map<std::string, core::Tensor>(),
           "textures"_a = std::map<std::string, core::Tensor>(),
-          "connection"_a = std::shared_ptr<io::rpc::Connection>(),
+          "connection"_a = std::shared_ptr<io::rpc::ConnectionBase>(),
           "Sends a set_mesh_data message.");
     docstring::FunctionDocInject(
             m, "set_mesh_data",
@@ -130,7 +133,7 @@ void pybind_rpc(py::module& m_io) {
 
     m.def("set_legacy_camera", &io::rpc::SetLegacyCamera, "camera"_a,
           "path"_a = "", "time"_a = 0, "layer"_a = "",
-          "connection"_a = std::shared_ptr<io::rpc::Connection>(),
+          "connection"_a = std::shared_ptr<io::rpc::ConnectionBase>(),
           "Sends a PinholeCameraParameters object.");
     docstring::FunctionDocInject(
             m, "set_legacy_camera",
@@ -144,7 +147,7 @@ void pybind_rpc(py::module& m_io) {
             });
 
     m.def("set_time", &io::rpc::SetTime, "time"_a,
-          "connection"_a = std::shared_ptr<io::rpc::Connection>(),
+          "connection"_a = std::shared_ptr<io::rpc::ConnectionBase>(),
           "Sets the time in the external visualizer.");
     docstring::FunctionDocInject(
             m, "set_time",
@@ -156,7 +159,7 @@ void pybind_rpc(py::module& m_io) {
             });
 
     m.def("set_active_camera", &io::rpc::SetActiveCamera, "path"_a,
-          "connection"_a = std::shared_ptr<io::rpc::Connection>(),
+          "connection"_a = std::shared_ptr<io::rpc::ConnectionBase>(),
           "Sets the object with the specified path as the active camera.");
     docstring::FunctionDocInject(
             m, "set_active_camera",

@@ -39,50 +39,42 @@ public:
     DummyReceiver(const std::string& address, int timeout)
         : ReceiverBase(address, timeout) {}
 
-    std::shared_ptr<zmq::message_t> CreateStatusOKMsg() {
-        auto OK = messages::Status::OK();
-        msgpack::sbuffer sbuf;
-        messages::Reply reply{OK.MsgId()};
-        msgpack::pack(sbuf, reply);
-        msgpack::pack(sbuf, OK);
-        return std::shared_ptr<zmq::message_t>(
-                new zmq::message_t(sbuf.data(), sbuf.size()));
-    }
+    std::shared_ptr<zmq::message_t> CreateStatusOKMsg();
 
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetMeshData& msg,
-            const msgpack::object& obj) override {
+            const MsgpackObject& obj) override {
         return CreateStatusOKMsg();
     }
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::GetMeshData& msg,
-            const msgpack::object& obj) override {
+            const MsgpackObject& obj) override {
         return CreateStatusOKMsg();
     }
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetCameraData& msg,
-            const msgpack::object& obj) override {
+            const MsgpackObject& obj) override {
         return CreateStatusOKMsg();
     }
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetProperties& msg,
-            const msgpack::object& obj) override {
+            const MsgpackObject& obj) override {
         return CreateStatusOKMsg();
     }
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetActiveCamera& msg,
-            const msgpack::object& obj) override {
+            const MsgpackObject& obj) override {
         return CreateStatusOKMsg();
     }
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetTime& msg,
-            const msgpack::object& obj) override {
+            const MsgpackObject& obj) override {
         return CreateStatusOKMsg();
     }
 };
