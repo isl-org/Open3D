@@ -50,7 +50,7 @@ const unsigned int kPostProcessFlags =
         aiProcess_ImproveCacheLocality | aiProcess_RemoveRedundantMaterials |
         aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_SortByPType |
         aiProcess_FindDegenerates | aiProcess_OptimizeMeshes |
-        aiProcess_OptimizeGraph | aiProcess_PreTransformVertices;
+        aiProcess_PreTransformVertices;
 
 bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
                                  geometry::TriangleMesh& mesh,
