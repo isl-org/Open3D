@@ -35,6 +35,7 @@ void PostNativeExposeEvent(GLFWwindow* glfw_window);
 void ShowNativeAlert(const char* message);
 
 #ifdef __APPLE__
+void MacTransformIntoApp();
 void SetNativeMenubar(void* menubar);
 #endif  // __APPLE_
 
