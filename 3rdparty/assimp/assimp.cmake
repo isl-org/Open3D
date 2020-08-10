@@ -33,6 +33,7 @@ ExternalProject_Add(
         -DASSIMP_INSTALL_PDB=OFF
 	-DCMAKE_POLICY_DEFAULT_CMP0091=NEW
 	-DCMAKE_MSVC_RUNTIME_LIBRARY=${ASSIMP_MSVC_RUNTIME}
+	-DCMAKE_DEBUG_POSTFIX=
 )
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
@@ -47,9 +48,5 @@ set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
 if (UNIX OR APPLE)
   set(ASSIMP_LIBRARIES assimp IrrXML)
 else()
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(ASSIMP_LIBRARIES assimp-vc142-mtd IrrXMLd zlibstaticd)
-  else()
-    set(ASSIMP_LIBRARIES assimp-vc142-mt IrrXML zlibstatic)
-  endif()
+    set(ASSIMP_LIBRARIES assimp-vc142-mt IrrXML)
 endif()
