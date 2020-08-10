@@ -99,6 +99,19 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
                     RENAME "${APP_NAME}.xml")
             # Various caches need to be updated for the app to become visible
             install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
+        elseif (WIN32)
+            # MSVC puts the binary in bin/Open3D/Release/Open3D.exe
+            # so we can't just install() the build results, and need to do them piecemeal.
+            install(DIRECTORY   "${APP_DIR}/resources"
+                    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
+                    USE_SOURCE_PERMISSIONS)
+            install(DIRECTORY   "${APP_DIR}/$<CONFIG>/Open3D.exe"
+                    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
+                    USE_SOURCE_PERMISSIONS)
+        else()
+            install(DIRECTORY   "${APP_DIR}"
+                    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+                    USE_SOURCE_PERMISSIONS)
         endif()
     endif()
 endmacro(APP)
