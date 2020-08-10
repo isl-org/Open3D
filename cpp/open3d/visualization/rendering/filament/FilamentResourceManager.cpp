@@ -691,9 +691,11 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("ambientOcclusionMap", texture,
                                  default_sampler);
     lit_mat->setDefaultParameter("reflectanceMap", texture, default_sampler);
-    lit_mat->setDefaultParameter("clearCoatMap", texture, default_sampler);
-    lit_mat->setDefaultParameter("clearCoatRoughnessMap", texture,
-                                 default_sampler);
+    // NOTE: Disabled to avoid Filament warning until shader is reworked to
+    // reduce sampler usage.
+    // lit_mat->setDefaultParameter("clearCoatMap", texture, default_sampler);
+    // lit_mat->setDefaultParameter("clearCoatRoughnessMap", texture,
+    //                              default_sampler);
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
     materials_[kDefaultLit] = MakeShared(lit_mat, engine_);
 
