@@ -41,7 +41,7 @@ ExternalProject_Add(
         -DUSE_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}
 )
 
-set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)
+set(filament_LIBRARIES filameshio filament filamat_lite filamat filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)
 if (USE_VULKAN)
     set(filament_LIBRARIES ${filament_LIBRARIES} bluevk)
 endif()
