@@ -186,7 +186,9 @@ struct Window::Impl {
     bool wants_auto_size_ = false;
     bool wants_auto_center_ = false;
     bool needs_layout_ = true;
+    bool needs_redraw_ = true;  // set by PostRedraw to defer if already drawing
     bool is_resizing_ = false;
+    bool is_drawing_ = false;
 };
 
 Window::Window(const std::string& title, int flags /*= 0*/)
@@ -527,7 +529,16 @@ void Window::Close() { Application::GetInstance().RemoveWindow(this); }
 
 void Window::SetNeedsLayout() { impl_->needs_layout_ = true; }
 
-void Window::PostRedraw() { PostNativeExposeEvent(impl_->window_); }
+void Window::PostRedraw() {
+    // Windows cannot actually post an expose event, and the actual mechanism
+    // requires that PostNativeExposeEvent() not be called while drawing
+    // (see the implementation for details).
+    if (impl_->is_drawing_) {
+        impl_->needs_redraw_ = true;
+    } else {
+        PostNativeExposeEvent(impl_->window_);
+    }
+}
 
 void Window::RaiseToTop() const { glfwFocusWindow(impl_->window_); }
 
@@ -836,6 +847,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
 }
 
 Window::DrawResult Window::OnDraw() {
+    impl_->is_drawing_ = true;
     bool needed_layout = impl_->needs_layout_;
 
     auto result = DrawOnce(needed_layout);
@@ -849,6 +861,12 @@ Window::DrawResult Window::OnDraw() {
     // window initially appears underneath the mouse.
     if (needed_layout || impl_->needs_layout_) {
         DrawOnce(false);
+    }
+
+    impl_->is_drawing_ = false;
+    if (impl_->needs_redraw_) {
+        result = Widget::DrawResult::REDRAW;
+        impl_->needs_redraw_ = false;
     }
 
     return (result == Widget::DrawResult::NONE ? NONE : REDRAW);
