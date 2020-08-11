@@ -218,9 +218,12 @@ def compute_filter_coordinates(pos, filter_xyz_size, inv_extents, offset,
         # integer div
         p += filter_xyz_size // 2
 
-        if filter_xyz_size[0] % 2 == 0: p[0] -= 0.5
-        if filter_xyz_size[1] % 2 == 0: p[1] -= 0.5
-        if filter_xyz_size[2] % 2 == 0: p[2] -= 0.5
+        if filter_xyz_size[0] % 2 == 0:
+            p[0] -= 0.5
+        if filter_xyz_size[1] % 2 == 0:
+            p[1] -= 0.5
+        if filter_xyz_size[2] % 2 == 0:
+            p[2] -= 0.5
 
     return p
 
@@ -721,8 +724,8 @@ def cconv_transpose(filter, out_positions, out_importance, extent, offset,
 
             for out_idx, n_importance in zip(
                     inp_neighbors_index[inp_neighbors_start:inp_neighbors_end],
-                    inp_neighbors_importance[inp_neighbors_start:
-                                             inp_neighbors_end]):
+                    inp_neighbors_importance[
+                        inp_neighbors_start:inp_neighbors_end]):
                 inp_n_importance_sums[inp_idx] += n_importance
 
     filter_xyz_size = np.array(list(reversed(filter.shape[0:3])))
@@ -844,8 +847,8 @@ def cconv_transpose_backprop_filter(
 
             for out_idx, n_importance in zip(
                     inp_neighbors_index[inp_neighbors_start:inp_neighbors_end],
-                    inp_neighbors_importance[inp_neighbors_start:
-                                             inp_neighbors_end]):
+                    inp_neighbors_importance[
+                        inp_neighbors_start:inp_neighbors_end]):
                 inp_n_importance_sums[inp_idx] += n_importance
 
     filter_xyz_size = np.array(list(reversed(filter.shape[0:3])))

@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "open3d/visualization/rendering/Scene.h"
-
 #include <map>
+
+#include "open3d/visualization/rendering/Scene.h"
 
 namespace open3d {
 namespace visualization {

@@ -27,6 +27,7 @@
 #pragma once
 
 #include <filament/Color.h>
+
 #include <memory>
 #include <numeric>
 

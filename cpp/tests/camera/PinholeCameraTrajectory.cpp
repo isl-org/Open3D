@@ -24,9 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/camera/PinholeCameraTrajectory.h"
+
 #include <json/json.h>
 
-#include "open3d/camera/PinholeCameraTrajectory.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {

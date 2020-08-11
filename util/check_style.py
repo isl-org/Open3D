@@ -22,10 +22,10 @@ try:
     import yapf
 except:
     raise ImportError(
-        "yapf not found. Install with `pip install yapf==0.28.0`.")
-if yapf.__version__ != "0.28.0":
+        "yapf not found. Install with `pip install yapf==0.30.0`.")
+if yapf.__version__ != "0.30.0":
     raise RuntimeError(
-        "yapf 0.28.0 required. Install with `pip install yapf==0.28.0`.")
+        "yapf 0.30.0 required. Install with `pip install yapf==0.30.0`.")
 print("Using yapf version {}".format(yapf.__version__))
 
 # Check and import nbformat
@@ -82,10 +82,14 @@ def _glob_files(directories, extensions):
 
 
 def _find_clang_format():
-    # Find clang-format
-    # > not found: throw exception
-    # > version mismatch: print warning
-    clang_format_bin = shutil.which("clang-format-5.0")
+    """
+    Find clang-format:
+      - not found: throw exception
+      - version mismatch: print warning
+    """
+    preferred_clang_format_name = "clang-format-10"
+    preferred_version_major = 10
+    clang_format_bin = shutil.which(preferred_clang_format_name)
     if clang_format_bin is None:
         clang_format_bin = shutil.which("clang-format")
     if clang_format_bin is None:
@@ -96,21 +100,20 @@ def _find_clang_format():
     version_str = subprocess.check_output([clang_format_bin, "--version"
                                           ]).decode("utf-8").strip()
     try:
-        m = re.match("^clang-format version ([0-9.-]*) .*$", version_str)
+        m = re.match("^clang-format version ([0-9.]*).*$", version_str)
         if m:
             version_str = m.group(1)
             version_str_token = version_str.split(".")
             major = int(version_str_token[0])
-            minor = int(version_str_token[1])
-            if major != 5 or minor != 0:
-                print("Warning: clang-format 5.0 required, but got {}.".format(
-                    version_str))
+            if major != preferred_version_major:
+                print("Warning: {} required, but got {}.".format(
+                    preferred_clang_format_name, version_str))
         else:
             raise
     except:
-        print("Warning: failed to parse clang-format version {}".format(
-            version_str))
-        print("Please ensure clang-format 5.0 is used.")
+        print("Warning: failed to parse clang-format version {}, "
+              "please ensure {} is used.".format(version_str,
+                                                 preferred_clang_format_name))
     print("Using clang-format version {}.".format(version_str))
 
     return clang_format_bin

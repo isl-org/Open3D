@@ -150,15 +150,15 @@ def test_invert_neighbors_list_shape_checking(ml):
     assert 'invalid shape' in str(einfo.value)
 
     with pytest.raises(Exception) as einfo:
-        _ = mltest.run_op(
-            ml,
-            mltest.cpu_device,
-            ml.ops.invert_neighbors_list,
-            check_device=False,
-            num_points=num_points,
-            inp_neighbors_index=inp_neighbors_index[:, np.newaxis],
-            inp_neighbors_row_splits=inp_neighbors_row_splits,
-            inp_neighbors_attributes=inp_neighbors_attributes)
+        _ = mltest.run_op(ml,
+                          mltest.cpu_device,
+                          ml.ops.invert_neighbors_list,
+                          check_device=False,
+                          num_points=num_points,
+                          inp_neighbors_index=inp_neighbors_index[:,
+                                                                  np.newaxis],
+                          inp_neighbors_row_splits=inp_neighbors_row_splits,
+                          inp_neighbors_attributes=inp_neighbors_attributes)
     assert 'invalid shape' in str(einfo.value)
 
     with pytest.raises(Exception) as einfo:
