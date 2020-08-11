@@ -24,9 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/tgeometry/TensorListMap.h"
+
 #include <vector>
 
-#include "open3d/tgeometry/TensorListMap.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 

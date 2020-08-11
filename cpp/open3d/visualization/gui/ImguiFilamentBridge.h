@@ -51,6 +51,7 @@
 #include <filament/Texture.h>
 #include <filament/VertexBuffer.h>
 #include <filament/View.h>
+
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 #include <memory>
 

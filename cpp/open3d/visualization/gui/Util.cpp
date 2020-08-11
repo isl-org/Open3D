@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/Util.h"
 
 #include <cmath>
+
 #include "open3d/visualization/gui/Color.h"
 
 namespace open3d {

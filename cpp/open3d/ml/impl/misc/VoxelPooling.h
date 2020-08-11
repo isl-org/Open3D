@@ -27,6 +27,7 @@
 #pragma once
 
 #include <tbb/task_group.h>
+
 #include <Eigen/Core>
 #include <unordered_map>
 

@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/ProgressBar.h"
 
 #include <imgui.h>
+
 #include <cmath>
 
 #include "open3d/visualization/gui/Theme.h"

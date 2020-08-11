@@ -24,14 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "tests/UnitTest.h"
+#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
 
 #include <json/json.h>
 #include <k4a/k4a.h>
+
 #include <string>
 #include <unordered_map>
 
-#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
 namespace tests {

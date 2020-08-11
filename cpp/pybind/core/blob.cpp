@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/Blob.h"
+
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
-
-#include "open3d/core/Blob.h"
 
 namespace open3d {
 

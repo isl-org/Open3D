@@ -27,14 +27,14 @@ matrix:
           packages:
             - cmake
             - clang-7
-            - clang-format-5.0
+            - clang-format-10
       install:
         - ./util/install_deps_ubuntu.sh assume-yes
       script:
         - mkdir build
         - cd build
         - cmake ..
-        - pip install -U yapf==0.28.0 nbformat
+        - pip install -U yapf==0.30.0 nbformat
         - make check-style
 
     # Build headless and docs

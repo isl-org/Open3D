@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/registration/Registration.h"
+
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
@@ -32,7 +33,6 @@
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Console.h"
-
 #include "pybind/docstring.h"
 #include "pybind/pipelines/registration/registration.h"
 

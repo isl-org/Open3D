@@ -29,6 +29,7 @@
 #include <k4a/k4a.h>
 #include <k4arecord/record.h>
 #include <turbojpeg.h>
+
 #include <memory>
 
 #include "open3d/geometry/RGBDImage.h"

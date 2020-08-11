@@ -27,6 +27,7 @@
 #pragma once
 
 #include <tbb/parallel_for.h>
+
 #include <mutex>
 
 #include "open3d/core/Atomic.h"

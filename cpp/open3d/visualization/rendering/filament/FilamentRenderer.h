@@ -26,12 +26,13 @@
 
 #pragma once
 
-#include "open3d/visualization/rendering/Renderer.h"
-
 #include <utils/Entity.h>
+
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "open3d/visualization/rendering/Renderer.h"
 
 /// @cond
 namespace filament {

@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "VoxelPoolingGradOpKernel.h"
+
 #include "open3d/ml/impl/misc/VoxelPooling.h"
 
 using namespace open3d::ml::impl;
