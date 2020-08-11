@@ -27,6 +27,7 @@
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 
 #include <filament/Camera.h>
+#include <filament/ColorGrading.h>
 #include <filament/Engine.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
@@ -62,8 +63,15 @@ FilamentView::FilamentView(filament::Engine& engine,
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
     view_->setPostProcessingEnabled(true);
     view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
-    view_->setToneMapping(filament::View::ToneMapping::LINEAR);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
+    color_grading_ =
+            filament::ColorGrading::Builder()
+                    .quality(filament::ColorGrading::QualityLevel::HIGH)
+                    .toneMapping(
+                            filament::ColorGrading::ToneMapping::ACES_LEGACY)
+                    .build(engine);
+    //view_->setColorGrading(color_grading_);
+    view_->setColorGrading(nullptr);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
     view_->setCamera(camera_->GetNativeCamera());
@@ -89,6 +97,7 @@ FilamentView::~FilamentView() {
 
     camera_.reset();
     engine_.destroy(view_);
+    engine_.destroy(color_grading_);
 }
 
 View::Mode FilamentView::GetMode() const { return mode_; }

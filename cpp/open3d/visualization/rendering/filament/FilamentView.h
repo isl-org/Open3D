@@ -38,6 +38,7 @@ class Engine;
 class Scene;
 class View;
 class Viewport;
+class ColorGrading;
 }  // namespace filament
 /// @endcond
 
@@ -99,6 +100,7 @@ private:
     FilamentScene* scene_ = nullptr;
     FilamentResourceManager& resource_mgr_;
     filament::View* view_ = nullptr;
+    filament::ColorGrading* color_grading_ = nullptr;
 };
 
 }  // namespace rendering
