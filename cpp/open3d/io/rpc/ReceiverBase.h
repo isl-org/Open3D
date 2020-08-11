@@ -29,6 +29,7 @@
 #include <atomic>
 #include <mutex>
 #include <thread>
+
 #include "open3d/utility/Console.h"
 
 namespace zmq {

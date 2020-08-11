@@ -25,7 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/io/rpc/Connection.h"
+
 #include <zmq.hpp>
+
 #include "open3d/io/rpc/ZMQContext.h"
 #include "open3d/utility/Console.h"
 

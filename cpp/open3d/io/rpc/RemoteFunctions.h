@@ -26,13 +26,13 @@
 
 #pragma once
 
+#include <map>
+
 #include "open3d/camera/PinholeCameraParameters.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/rpc/ConnectionBase.h"
-
-#include <map>
 
 namespace zmq {
 class message_t;

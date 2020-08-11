@@ -25,8 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/io/rpc/RemoteFunctions.h"
+
 #include <Eigen/Geometry>
 #include <zmq.hpp>
+
 #include "open3d/core/Dispatch.h"
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/MessageUtils.h"

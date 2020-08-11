@@ -27,7 +27,6 @@
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/DummyReceiver.h"
 #include "open3d/io/rpc/RemoteFunctions.h"
-
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 

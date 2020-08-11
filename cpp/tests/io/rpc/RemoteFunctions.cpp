@@ -25,6 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/io/rpc/RemoteFunctions.h"
+
+#include <random>
+
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/rpc/BufferConnection.h"
@@ -175,6 +178,9 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
 }
 
 TEST(RemoteFunctions, SendGarbage) {
+    std::mt19937 rng;
+    rng.seed(123);
+
     // start receiver
     DummyReceiver receiver(connection_address, 500);
     receiver.Start();
@@ -206,7 +212,7 @@ TEST(RemoteFunctions, SendGarbage) {
 
         std::vector<uint8_t> data;
         for (int i = 0; i < 123; ++i) {
-            data.push_back(rand() % 256);
+            data.push_back(rng() % 256);
         }
         BufferConnection buf_connection;
         buf_connection.Send(req.data(), req.size());
@@ -234,7 +240,7 @@ TEST(RemoteFunctions, SendGarbage) {
     {
         std::vector<uint8_t> data;
         for (int i = 0; i < 1234; ++i) {
-            data.push_back(rand() % 256);
+            data.push_back(rng() % 256);
         }
 
         BufferConnection buf_connection;
@@ -261,5 +267,5 @@ TEST(RemoteFunctions, SendGarbage) {
     receiver.Stop();
 }
 
-}  // namespace open3d
+}  // namespace tests
 }  // namespace open3d

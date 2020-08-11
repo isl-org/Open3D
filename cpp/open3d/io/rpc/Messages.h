@@ -26,6 +26,7 @@
 
 #pragma once
 #include <boost/predef/other/endian.h>
+
 #include <map>
 #include <msgpack.hpp>
 #include <string>
