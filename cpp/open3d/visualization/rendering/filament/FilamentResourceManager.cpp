@@ -171,7 +171,8 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image) {
             break;
         case 3:
             settings.image_format = filament::Texture::Format::RGB;
-            settings.format = filament::Texture::InternalFormat::RGB8;
+            settings.format = filament::Texture::InternalFormat::SRGB8;
+            //settings.format = filament::Texture::InternalFormat::RGB8;
             break;
         case 4:
             settings.image_format = filament::Texture::Format::RGBA;
