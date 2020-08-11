@@ -900,6 +900,8 @@ void GuiVisualizer::SetGeometry(
                             mesh_material.baseColor.b();
                     loaded_material.base_roughness =
                             mesh_material.baseRoughness;
+                    loaded_material.base_metallic =
+                            mesh_material.baseMetallic;
                     loaded_material.base_reflectance =
                             mesh_material.baseReflectance;
                     loaded_material.base_clearcoat =
@@ -932,7 +934,9 @@ void GuiVisualizer::SetGeometry(
                                 !is_map_valid(mesh_material.clearCoat) &&
                                 !is_map_valid(
                                         mesh_material.clearCoatRoughness) &&
-                                !is_map_valid(mesh_material.anisotropy);
+                                !is_map_valid(mesh_material.anisotropy) &&
+                                loaded_material.base_metallic == 0.f &&
+                                loaded_material.base_roughness == 1.f;
                     }
                     material_is_loaded = true;
                 }
@@ -941,8 +945,6 @@ void GuiVisualizer::SetGeometry(
                     (mesh->HasMaterials() && albedo_only)) {
                     loaded_material.shader = "defaultUnlit";
                     num_unlit += 1;
-                } else {
-                    loaded_material.shader = "defaultLit";
                 }
             } break;
             default:
