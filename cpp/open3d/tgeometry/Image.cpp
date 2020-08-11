@@ -48,8 +48,8 @@ Image::Image(int64_t rows,
     if (channels <= 0) {
         utility::LogError("channels must be > 0, but got {}.", channels);
     }
-    if (dtype != core::Dtype::UInt8 && dtype != core::Dtype::Float32 &&
-        dtype != core::Dtype::Float64) {
+    if (dtype != core::Dtype::UInt8 && dtype != core::Dtype::UInt16 &&
+        dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
         utility::LogError("Unsupported type {} for image.",
                           core::DtypeUtil::ToString(dtype));
     }

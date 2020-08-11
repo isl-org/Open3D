@@ -52,11 +52,11 @@ public:
     /// be non-negative.
     /// \param cols Number of columns of the image, i.e. image width. \p cols
     /// must be non-negative.
-    /// \param channels Number of channels of the image. For RGB image, channels
-    /// == 3; for grayscale image, channels == 1. \p channels must be greater
-    /// than 0. greater or equal to 0.
+    /// \param channels Number of channels of the image. E.g. for RGB image,
+    /// channels == 3; for grayscale image, channels == 1. \p channels must be
+    /// greater than 0.
     /// \param dtype Data type of the image. \p dtype must be one of {UInt8,
-    /// Float32, Float64}.
+    /// UInt16 Float32, Float64}.
     /// \param device Device where the image is stored.
     Image(int64_t rows = 0,
           int64_t cols = 0,
@@ -114,6 +114,9 @@ public:
 
     /// Get raw buffer of the Image data.
     void *GetDataPtr() { return data_.GetDataPtr(); }
+
+    /// Retuns the underlying Tensor of the Image.
+    core::Tensor AsTensor() const { return data_; }
 
     /// Get raw buffer of the Image data.
     const void *GetDataPtr() const { return data_.GetDataPtr(); }

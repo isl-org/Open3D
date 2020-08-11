@@ -77,6 +77,8 @@ TEST_P(ImagePermuteDevices, Constructor) {
     // Unsupported dtypes.
     EXPECT_NO_THROW(
             tgeometry::Image(rows, cols, channels, core::Dtype::UInt8, device));
+    EXPECT_NO_THROW(tgeometry::Image(rows, cols, channels, core::Dtype::UInt16,
+                                     device));
     EXPECT_NO_THROW(tgeometry::Image(rows, cols, channels, core::Dtype::Float32,
                                      device));
     EXPECT_NO_THROW(tgeometry::Image(rows, cols, channels, core::Dtype::Float64,
