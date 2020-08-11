@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
-
 #include "open3d/utility/Helper.h"
 
 using open3d::utility::DivUp;

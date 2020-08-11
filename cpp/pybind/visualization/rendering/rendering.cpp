@@ -24,15 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/visualization/gui/gui.h"
-
-#include "pybind/docstring.h"
-#include "pybind11/functional.h"
-
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
+#include "pybind/docstring.h"
+#include "pybind/visualization/gui/gui.h"
+#include "pybind11/functional.h"
 
 using namespace open3d::visualization;
 using namespace open3d::visualization::rendering;

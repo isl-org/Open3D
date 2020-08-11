@@ -26,13 +26,13 @@
 
 #pragma once
 
-#include "open3d/utility/Console.h"
-#include "tests/test_utility/Compare.h"
-
 #include <Eigen/Core>
 #include <algorithm>
 #include <numeric>
 #include <vector>
+
+#include "open3d/utility/Console.h"
+#include "tests/test_utility/Compare.h"
 
 namespace open3d {
 namespace tests {

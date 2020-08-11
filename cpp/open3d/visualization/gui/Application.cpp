@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/Application.h"
 
 #include <GLFW/glfw3.h>
+
 #include <algorithm>
 #include <chrono>
 #include <list>

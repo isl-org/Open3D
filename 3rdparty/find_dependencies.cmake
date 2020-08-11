@@ -865,7 +865,7 @@ if(BUILD_GUI)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
 endif()
 
-# MKL
+# MKL, cuSOLVER, cuBLAS
 # We link MKL statically. For MKL link flags, refer to:
 # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
 message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
@@ -883,6 +883,12 @@ message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
 if(UNIX)
     target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
     target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+    # cuSOLVER and cuBLAS
+    if(BUILD_CUDA_MODULE)
+        target_link_libraries(3rdparty_mkl INTERFACE
+                              ${CUDA_cusolver_LIBRARY}
+                              ${CUDA_CUBLAS_LIBRARIES})
+    endif()
 elseif(MSVC)
     target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
 endif()

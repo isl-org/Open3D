@@ -87,7 +87,7 @@ if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     fi
 fi
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" -o "$BUILD_PYTORCH_OPS" == "ON" ]; then
-    reportRun pip install -U yapf==0.28.0
+    reportRun pip install -U yapf==0.30.0
 fi
 mkdir -p build
 cd build
@@ -114,12 +114,14 @@ date
 reportRun make VERBOSE=1 -j"$NPROC"
 reportRun make install -j"$NPROC"
 reportRun make VERBOSE=1 install-pip-package -j"$NPROC"
-reportRun python -c "import open3d; print(open3d)"
-reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
 echo
 
 # skip unit tests if built with CUDA, unless system contains Nvidia GPUs
 if [ "$BUILD_CUDA_MODULE" == "OFF" ] || nvidia-smi -L | grep -q GPU ; then
+    echo "try importing Open3D python package"
+    reportRun python -c "import open3d; print(open3d)"
+    reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+
     echo "running Open3D unit tests..."
     unitTestFlags=
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
@@ -148,7 +150,9 @@ mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
 make
+if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
 ./TestVisualizer
+fi
 echo
 
 echo "test uninstalling Open3D..."

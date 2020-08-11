@@ -24,12 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/geometry/PointCloud.h"
+
 #include <algorithm>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
-#include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/ImageIO.h"

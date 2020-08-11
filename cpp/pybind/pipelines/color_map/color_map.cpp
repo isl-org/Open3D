@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "pybind/pipelines/color_map/color_map.h"
+
 #include "open3d/camera/PinholeCameraTrajectory.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/pipelines/color_map/ColorMapOptimization.h"
 #include "open3d/utility/Console.h"
-
 #include "pybind/docstring.h"
-#include "pybind/pipelines/color_map/color_map.h"
 
 namespace open3d {
 

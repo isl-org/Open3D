@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/tgeometry/PointCloud.h"
-#include "open3d/core/TensorList.h"
 
 #include "core/CoreTest.h"
+#include "open3d/core/TensorList.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {

@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/utility/Console.h"
+
 #include "tests/UnitTest.h"
 
 namespace open3d {

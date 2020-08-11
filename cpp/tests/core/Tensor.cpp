@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/Tensor.h"
+
 #include <cmath>
 #include <limits>
 
@@ -31,10 +33,8 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/Helper.h"
-
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
@@ -410,16 +410,13 @@ TEST_P(TensorPermuteDevices, ToString) {
 
     // 0D
     t = core::Tensor::Ones({}, core::Dtype::Float32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"(1.0)");
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(1.0)");
     t = core::Tensor::Full({}, std::numeric_limits<float>::quiet_NaN(),
                            core::Dtype::Float32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"(nan)");
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
     t = core::Tensor::Full({}, std::numeric_limits<double>::quiet_NaN(),
                            core::Dtype::Float32, device);  // Casting
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"(nan)");
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
 
     // 1D float
     t = core::Tensor(std::vector<float>{0, 1, 2, 3, 4}, {5},

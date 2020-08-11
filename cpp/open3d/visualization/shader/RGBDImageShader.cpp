@@ -27,6 +27,7 @@
 #include "RGBDImageShader.h"
 
 #include <open3d/Open3D.h>
+
 #include <algorithm>
 
 #include "open3d/geometry/Image.h"
