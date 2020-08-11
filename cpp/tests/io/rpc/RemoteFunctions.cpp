@@ -47,37 +47,7 @@ const std::string connection_address = "tcp://127.0.0.1:51454";
 const std::string connection_address = "ipc:///tmp/open3d_ipc";
 #endif
 
-// template <class TMsg>
-// void TestSendReceiveUnpackMessages() {
-//// start receiver
-// DummyReceiver receiver(connection_address, 500);
-// receiver.Start();
-
-//// create message to send
-// TMsg msg;
-// messages::Request req{msg.MsgId()};
-// msgpack::sbuffer sbuf;
-// msgpack::pack(sbuf, req);
-// msgpack::pack(sbuf, msg);
-// zmq::message_t send_msg(sbuf.data(), sbuf.size());
-
-//// send to receiver
-// Connection connection(connection_address, 500, 500);
-// auto reply = connection.Send(send_msg);
-
-//// check reply and stop listening
-// ASSERT_TRUE(ReplyIsOKStatus(*reply));
-// receiver.Stop();
-//}
-
 TEST(RemoteFunctions, SendReceiveUnpackMessages) {
-    // TestSendReceiveUnpackMessages<messages::SetMeshData>();
-    // TestSendReceiveUnpackMessages<messages::GetMeshData>();
-    // TestSendReceiveUnpackMessages<messages::SetCameraData>();
-    // TestSendReceiveUnpackMessages<messages::SetProperties>();
-    // TestSendReceiveUnpackMessages<messages::SetActiveCamera>();
-    // TestSendReceiveUnpackMessages<messages::SetTime>();
-
     {
         // start receiver
         DummyReceiver receiver(connection_address, 500);

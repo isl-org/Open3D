@@ -897,6 +897,7 @@ if(BUILD_RPC_INTERFACE)
         INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
     )
     set(MSGPACK_TARGET "3rdparty_msgpack")
+    add_dependencies(3rdparty_msgpack ext_msgpack-c)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MSGPACK_TARGET}")
 endif()
 

@@ -57,9 +57,9 @@ struct SetTime;
 class ReceiverBase {
 public:
     /// Constructs a receiver listening on the specified address.
-    /// \param bind_address  Address to listen on.
+    /// \param address  Address to listen on.
     /// \param timeout       Timeout in milliseconds for sending the repy.
-    ReceiverBase(const std::string& bind_address = "tcp://127.0.0.1:51454",
+    ReceiverBase(const std::string& address = "tcp://127.0.0.1:51454",
                  int timeout = 10000);
 
     ReceiverBase(const ReceiverBase&) = delete;
