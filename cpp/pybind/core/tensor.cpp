@@ -103,6 +103,8 @@ void pybind_core_tensor(py::module& m) {
     tensor.def_static("full", &core::Tensor::Full<bool>);
     tensor.def_static("zeros", &core::Tensor::Zeros);
     tensor.def_static("ones", &core::Tensor::Ones);
+    tensor.def_static("eye", &core::Tensor::Eye);
+    tensor.def_static("diag", &core::Tensor::Diag);
 
     // Tensor copy
     tensor.def("shallow_copy_from", &core::Tensor::ShallowCopyFrom);
@@ -247,6 +249,13 @@ void pybind_core_tensor(py::module& m) {
         return t;
     });
 
+    /// Linalg operations
+    tensor.def("matmul", &core::Tensor::Matmul);
+    tensor.def("lstsq", &core::Tensor::LeastSquares);
+    tensor.def("solve", &core::Tensor::Solve);
+    tensor.def("inv", &core::Tensor::Inverse);
+    tensor.def("svd", &core::Tensor::SVD);
+
     tensor.def("_getitem",
                [](const core::Tensor& tensor, const core::TensorKey& tk) {
                    return tensor.GetItem(tk);
@@ -270,6 +279,8 @@ void pybind_core_tensor(py::module& m) {
 
     // Casting
     tensor.def("to", &core::Tensor::To);
+    tensor.def("T", &core::Tensor::T);
+    tensor.def("contiguous", &core::Tensor::Contiguous);
 
     // Binary element-wise ops
     BIND_BINARY_OP_ALL_DTYPES(add, Add, CONST_ARG);

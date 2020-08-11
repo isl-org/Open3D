@@ -24,24 +24,31 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
+#pragma once
 
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace core {
 
-void pybind_core(py::module &m) {
-    py::module m_core = m.def_submodule("core");
-    pybind_cuda_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor_key(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensorlist(m_core);
-    pybind_core_linalg(m_core);
-    pybind_core_kernel(m_core);
-}
+/// Computes matrix multiplication C = AB.
+void Matmul(const Tensor& A, const Tensor& B, Tensor& C);
 
+#ifdef BUILD_CUDA_MODULE
+void MatmulCUDA(void* A_data,
+                void* B_data,
+                void* C_data,
+                int64_t m,
+                int64_t k,
+                int64_t n,
+                Dtype dtype);
+#endif
+void MatmulCPU(void* A_data,
+               void* B_data,
+               void* C_data,
+               int64_t m,
+               int64_t k,
+               int64_t n,
+               Dtype dtype);
+}  // namespace core
 }  // namespace open3d

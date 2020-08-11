@@ -24,24 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LAPACK.h"
+#include "open3d/core/linalg/LinalgUtils.h"
 
 namespace open3d {
+namespace core {
 
-void pybind_core(py::module &m) {
-    py::module m_core = m.def_submodule("core");
-    pybind_cuda_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor_key(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensorlist(m_core);
-    pybind_core_linalg(m_core);
-    pybind_core_kernel(m_core);
+void InverseCPU(void* A_data,
+                void* ipiv_data,
+                void* output_data,
+                int64_t n,
+                Dtype dtype,
+                const Device& device) {
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        OPEN3D_LAPACK_CHECK(
+                getrf_cpu<scalar_t>(LAPACK_COL_MAJOR, n, n,
+                                    static_cast<scalar_t*>(A_data), n,
+                                    static_cast<MKL_INT*>(ipiv_data)),
+                "getrf failed in InverseCPU");
+        OPEN3D_LAPACK_CHECK(
+                getri_cpu<scalar_t>(LAPACK_COL_MAJOR, n,
+                                    static_cast<scalar_t*>(A_data), n,
+                                    static_cast<MKL_INT*>(ipiv_data)),
+                "getri failed in InverseCPU");
+    });
 }
 
+}  // namespace core
 }  // namespace open3d

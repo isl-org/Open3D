@@ -24,24 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/linalg/LAPACK.h"
+#include "open3d/core/linalg/LinalgUtils.h"
+#include "open3d/core/linalg/SVD.h"
 
 namespace open3d {
+namespace core {
 
-void pybind_core(py::module &m) {
-    py::module m_core = m.def_submodule("core");
-    pybind_cuda_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor_key(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensorlist(m_core);
-    pybind_core_linalg(m_core);
-    pybind_core_kernel(m_core);
+void SVDCPU(const void* A_data,
+            void* U_data,
+            void* S_data,
+            void* VT_data,
+            void* superb_data,
+            int64_t m,
+            int64_t n,
+            Dtype dtype,
+            const Device& device) {
+    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        OPEN3D_LAPACK_CHECK(
+                gesvd_cpu<scalar_t>(
+                        LAPACK_COL_MAJOR, 'A', 'A', m, n,
+                        const_cast<scalar_t*>(
+                                static_cast<const scalar_t*>(A_data)),
+                        m, static_cast<scalar_t*>(S_data),
+                        static_cast<scalar_t*>(U_data), m,
+                        static_cast<scalar_t*>(VT_data), n,
+                        static_cast<scalar_t*>(superb_data)),
+                "gesvd failed in SVDCPU");
+    });
 }
 
+}  // namespace core
 }  // namespace open3d

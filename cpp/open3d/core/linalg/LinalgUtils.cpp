@@ -24,24 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
-
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/linalg/LinalgUtils.h"
 
 namespace open3d {
+namespace core {
 
-void pybind_core(py::module &m) {
-    py::module m_core = m.def_submodule("core");
-    pybind_cuda_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor_key(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensorlist(m_core);
-    pybind_core_linalg(m_core);
-    pybind_core_kernel(m_core);
+std::shared_ptr<CuSolverContext> CuSolverContext::GetInstance() {
+    if (instance_ == nullptr) {
+        instance_ = std::make_shared<CuSolverContext>();
+    }
+    return instance_;
+};
+
+CuSolverContext::CuSolverContext() {
+    if (cusolverDnCreate(&handle_) != CUSOLVER_STATUS_SUCCESS) {
+        utility::LogError("Unable to create cuSolver handle");
+    }
+}
+CuSolverContext::~CuSolverContext() {
+    if (cusolverDnDestroy(handle_) != CUSOLVER_STATUS_SUCCESS) {
+        utility::LogError("Unable to destroy cuSolver handle");
+    }
 }
 
+std::shared_ptr<CuSolverContext> CuSolverContext::instance_ =
+        CuSolverContext::GetInstance();
+
+std::shared_ptr<CuBLASContext> CuBLASContext::GetInstance() {
+    if (instance_ == nullptr) {
+        instance_ = std::make_shared<CuBLASContext>();
+    }
+    return instance_;
+};
+
+CuBLASContext::CuBLASContext() {
+    if (cublasCreate(&handle_) != CUBLAS_STATUS_SUCCESS) {
+        utility::LogError("Unable to create cublas handle");
+    }
+}
+CuBLASContext::~CuBLASContext() { cublasDestroy(handle_); }
+
+std::shared_ptr<CuBLASContext> CuBLASContext::instance_ =
+        CuBLASContext::GetInstance();
+
+}  // namespace core
 }  // namespace open3d

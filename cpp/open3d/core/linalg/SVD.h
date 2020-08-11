@@ -24,24 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
+#pragma once
 
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
+namespace core {
 
-void pybind_core(py::module &m) {
-    py::module m_core = m.def_submodule("core");
-    pybind_cuda_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor_key(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensorlist(m_core);
-    pybind_core_linalg(m_core);
-    pybind_core_kernel(m_core);
-}
+/// Computes SVD decomposition A = U S VT, where A is an m x n, U is an m x m, S
+/// is a min(m, n), VT is an n x n tensor.
+void SVD(const Tensor& A, Tensor& U, Tensor& S, Tensor& VT);
 
+#ifdef BUILD_CUDA_MODULE
+void SVDCUDA(const void* A_data,
+             void* U_data,
+             void* S_data,
+             void* VT_data,
+             void* superb_data,
+             int64_t m,
+             int64_t n,
+             Dtype dtype,
+             const Device& device);
+#endif
+
+void SVDCPU(const void* A_data,
+            void* U_data,
+            void* S_data,
+            void* VT_data,
+            void* superb_data,
+            int64_t m,
+            int64_t n,
+            Dtype dtype,
+            const Device& device);
+
+}  // namespace core
 }  // namespace open3d
