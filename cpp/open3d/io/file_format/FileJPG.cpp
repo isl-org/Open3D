@@ -24,10 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// clang-format off
 #include <cstddef>
 #include <cstdio>
-
 #include <jpeglib.h>  // Include after cstddef to define size_t
+// clang-format on
 
 #include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"

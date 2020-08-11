@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/Image.h"
+
 #include "open3d/geometry/RGBDImage.h"
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
@@ -163,50 +164,53 @@ void pybind_image(py::module &m) {
                                     "buffer "
                                     "data.");
                  })
-            .def("filter",
-                 [](const geometry::Image &input,
-                    geometry::Image::FilterType filter_type) {
-                     if (input.num_of_channels_ != 1 ||
-                         input.bytes_per_channel_ != 4) {
-                         auto input_f = input.CreateFloatImage();
-                         auto output = input_f->Filter(filter_type);
-                         return *output;
-                     } else {
-                         auto output = input.Filter(filter_type);
-                         return *output;
-                     }
-                 },
-                 "Function to filter Image", "filter_type"_a)
+            .def(
+                    "filter",
+                    [](const geometry::Image &input,
+                       geometry::Image::FilterType filter_type) {
+                        if (input.num_of_channels_ != 1 ||
+                            input.bytes_per_channel_ != 4) {
+                            auto input_f = input.CreateFloatImage();
+                            auto output = input_f->Filter(filter_type);
+                            return *output;
+                        } else {
+                            auto output = input.Filter(filter_type);
+                            return *output;
+                        }
+                    },
+                    "Function to filter Image", "filter_type"_a)
             .def("flip_vertical", &geometry::Image::FlipVertical,
                  "Function to flip image vertically (upside down)")
             .def("flip_horizontal", &geometry::Image::FlipHorizontal,
                  "Function to flip image horizontally (from left to right)")
-            .def("create_pyramid",
-                 [](const geometry::Image &input, size_t num_of_levels,
-                    bool with_gaussian_filter) {
-                     if (input.num_of_channels_ != 1 ||
-                         input.bytes_per_channel_ != 4) {
-                         auto input_f = input.CreateFloatImage();
-                         auto output = input_f->CreatePyramid(
-                                 num_of_levels, with_gaussian_filter);
-                         return output;
-                     } else {
-                         auto output = input.CreatePyramid(
-                                 num_of_levels, with_gaussian_filter);
-                         return output;
-                     }
-                 },
-                 "Function to create ImagePyramid", "num_of_levels"_a,
-                 "with_gaussian_filter"_a)
-            .def_static("filter_pyramid",
-                        [](const geometry::ImagePyramid &input,
-                           geometry::Image::FilterType filter_type) {
-                            auto output = geometry::Image::FilterPyramid(
-                                    input, filter_type);
+            .def(
+                    "create_pyramid",
+                    [](const geometry::Image &input, size_t num_of_levels,
+                       bool with_gaussian_filter) {
+                        if (input.num_of_channels_ != 1 ||
+                            input.bytes_per_channel_ != 4) {
+                            auto input_f = input.CreateFloatImage();
+                            auto output = input_f->CreatePyramid(
+                                    num_of_levels, with_gaussian_filter);
                             return output;
-                        },
-                        "Function to filter ImagePyramid", "image_pyramid"_a,
-                        "filter_type"_a);
+                        } else {
+                            auto output = input.CreatePyramid(
+                                    num_of_levels, with_gaussian_filter);
+                            return output;
+                        }
+                    },
+                    "Function to create ImagePyramid", "num_of_levels"_a,
+                    "with_gaussian_filter"_a)
+            .def_static(
+                    "filter_pyramid",
+                    [](const geometry::ImagePyramid &input,
+                       geometry::Image::FilterType filter_type) {
+                        auto output = geometry::Image::FilterPyramid(
+                                input, filter_type);
+                        return output;
+                    },
+                    "Function to filter ImagePyramid", "image_pyramid"_a,
+                    "filter_type"_a);
 
     docstring::ClassMethodDocInject(m, "Image", "filter",
                                     map_shared_argument_docstrings);

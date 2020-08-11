@@ -85,7 +85,7 @@ if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     fi
 fi
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" -o "$BUILD_PYTORCH_OPS" == "ON" ]; then
-    reportRun pip install -U yapf==0.28.0
+    reportRun pip install -U yapf==0.30.0
 fi
 mkdir build
 cd build

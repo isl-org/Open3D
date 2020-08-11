@@ -24,12 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/IndexGetSet.h"
-
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
+#include "open3d/core/kernel/IndexGetSet.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

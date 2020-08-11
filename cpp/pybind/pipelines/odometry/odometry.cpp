@@ -25,11 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/odometry/Odometry.h"
+
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/pipelines/odometry/OdometryOption.h"
 #include "open3d/pipelines/odometry/RGBDOdometryJacobian.h"
-
 #include "pybind/docstring.h"
 #include "pybind/pipelines/odometry/odometry.h"
 

@@ -24,12 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Native.h"
-
 #include <GLFW/glfw3.h>
+
+#include "Native.h"
 #define GLFW_EXPOSE_NATIVE_WIN32 1
 #include <GLFW/glfw3native.h>
-
 #include <winuser.h>
 
 namespace open3d {

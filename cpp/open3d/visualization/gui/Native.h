@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include "FileDialog.h"
-
 #include <string>
 #include <vector>
+
+#include "FileDialog.h"
 
 struct GLFWwindow;
 
