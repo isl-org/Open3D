@@ -27,10 +27,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "open3d/core/linalg/LAPACK.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 #include "open3d/core/linalg/Solve.h"
-
-#include "open3d/core/linalg/LAPACK.h"
 
 namespace open3d {
 namespace core {

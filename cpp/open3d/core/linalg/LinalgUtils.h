@@ -26,14 +26,13 @@
 
 #pragma once
 
+#include <mkl.h>
 #include <open3d/core/Dtype.h>
 #include <open3d/core/MemoryManager.h>
 #include <open3d/utility/Console.h>
 
 #include <memory>
 #include <string>
-
-#include <mkl.h>
 
 #ifdef BUILD_CUDA_MODULE
 #include <cublas_v2.h>

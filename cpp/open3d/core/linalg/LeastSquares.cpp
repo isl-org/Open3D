@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/linalg/LeastSquares.h"
+
 #include <unordered_map>
 
 namespace open3d {
