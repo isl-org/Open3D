@@ -74,17 +74,49 @@ TEST_P(ImagePermuteDevices, Constructor) {
     EXPECT_ANY_THROW(tgeometry::Image(rows, cols, 0, dtype, device));
     EXPECT_ANY_THROW(tgeometry::Image(rows, cols, -1, dtype, device));
 
-    // Unsupported dtypes.
-    EXPECT_NO_THROW(
-            tgeometry::Image(rows, cols, channels, core::Dtype::UInt8, device));
-    EXPECT_NO_THROW(tgeometry::Image(rows, cols, channels, core::Dtype::UInt16,
-                                     device));
-    EXPECT_NO_THROW(tgeometry::Image(rows, cols, channels, core::Dtype::Float32,
-                                     device));
-    EXPECT_NO_THROW(tgeometry::Image(rows, cols, channels, core::Dtype::Float64,
-                                     device));
-    EXPECT_ANY_THROW(
-            tgeometry::Image(rows, cols, channels, core::Dtype::Int64, device));
+    // Check all dtypes.
+    for (const core::Dtype& dtype : std::vector<core::Dtype>{
+                 core::Dtype::Float32,
+                 core::Dtype::Float64,
+                 core::Dtype::Int32,
+                 core::Dtype::Int64,
+                 core::Dtype::UInt8,
+                 core::Dtype::UInt16,
+                 core::Dtype::Bool,
+         }) {
+        EXPECT_NO_THROW(tgeometry::Image(rows, cols, channels, dtype, device));
+    }
+}
+
+TEST_P(ImagePermuteDevices, ConstructorFromTensor) {
+    core::Device device = GetParam();
+
+    int64_t rows = 480;
+    int64_t cols = 640;
+    int64_t channels = 3;
+    core::Dtype dtype = core::Dtype::UInt8;
+
+    // 2D Tensor. IsSame() tests memory sharing and shape matching.
+    core::Tensor t_2d({rows, cols}, dtype, device);
+    tgeometry::Image im_2d(t_2d);
+    EXPECT_FALSE(im_2d.AsTensor().IsSame(t_2d));
+    EXPECT_TRUE(im_2d.AsTensor().Reshape(t_2d.GetShape()).IsSame(t_2d));
+
+    // 3D Tensor.
+    core::Tensor t_3d({rows, cols, channels}, dtype, device);
+    tgeometry::Image im_3d(t_3d);
+    EXPECT_TRUE(im_3d.AsTensor().IsSame(t_3d));
+
+    // Not 2D nor 3D.
+    core::Tensor t_4d({rows, cols, channels, channels}, dtype, device);
+    EXPECT_ANY_THROW(tgeometry::Image im_4d(t_4d); (void)im_4d;);
+
+    // Non-contiguous tensor.
+    // t_3d_sliced = t_3d[:, :, 0:3:2]
+    core::Tensor t_3d_sliced = t_3d.Slice(2, 0, 3, 2);
+    EXPECT_EQ(t_3d_sliced.GetShape(), core::SizeVector({rows, cols, 2}));
+    EXPECT_FALSE(t_3d_sliced.IsContiguous());
+    EXPECT_ANY_THROW(tgeometry::Image im_nc(t_3d_sliced); (void)im_nc;);
 }
 
 }  // namespace tests

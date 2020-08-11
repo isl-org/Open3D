@@ -27,6 +27,7 @@
 #include "open3d/tgeometry/Image.h"
 
 #include "open3d/core/Dtype.h"
+#include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
 
@@ -38,7 +39,7 @@ Image::Image(int64_t rows,
              int64_t channels,
              core::Dtype dtype,
              const core::Device &device)
-    : Geometry(Geometry::GeometryType::Image, 3) {
+    : Geometry(Geometry::GeometryType::Image, 2) {
     if (rows < 0) {
         utility::LogError("rows must be >= 0, but got {}.", rows);
     }
@@ -48,12 +49,23 @@ Image::Image(int64_t rows,
     if (channels <= 0) {
         utility::LogError("channels must be > 0, but got {}.", channels);
     }
-    if (dtype != core::Dtype::UInt8 && dtype != core::Dtype::UInt16 &&
-        dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
-        utility::LogError("Unsupported type {} for image.",
-                          core::DtypeUtil::ToString(dtype));
-    }
     data_ = core::Tensor({rows, cols, channels}, dtype, device);
+}
+
+Image::Image(const core::Tensor &tensor)
+    : Geometry(Geometry::GeometryType::Image, 2) {
+    if (!tensor.IsContiguous()) {
+        utility::LogError("Input tensor must be contiguous.");
+    }
+    if (tensor.NumDims() == 2) {
+        data_ = tensor.Reshape(
+                core::shape_util::Concat(tensor.GetShape(), {1}));
+    } else if (tensor.NumDims() == 3) {
+        data_ = tensor;
+    } else {
+        utility::LogError("Input tensor must be 2-D or 3-D, but got shape {}.",
+                          tensor.GetShape().ToString());
+    }
 }
 
 }  // namespace tgeometry

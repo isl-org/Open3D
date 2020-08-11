@@ -41,7 +41,7 @@ namespace tgeometry {
 /// dtype and device.
 class Image : public Geometry {
 public:
-    /// \brief Constructor for Image.
+    /// \brief Constructor for image.
     ///
     /// Row-major storage is used, similar to OpenCV. Use (row, col, channel)
     /// indexing order for image creation and accessing. In general, (r, c, ch)
@@ -55,14 +55,20 @@ public:
     /// \param channels Number of channels of the image. E.g. for RGB image,
     /// channels == 3; for grayscale image, channels == 1. \p channels must be
     /// greater than 0.
-    /// \param dtype Data type of the image. \p dtype must be one of {UInt8,
-    /// UInt16 Float32, Float64}.
+    /// \param dtype Data type of the image.
     /// \param device Device where the image is stored.
     Image(int64_t rows = 0,
           int64_t cols = 0,
           int64_t channels = 1,
           core::Dtype dtype = core::Dtype::Float32,
           const core::Device &device = core::Device("CPU:0"));
+
+    /// \brief Construct from a tensor. The tensor won't be copied and memory
+    /// will be shared.
+    ///
+    /// \param tensor: Tensor of the image. The tensor must be contiguous. The
+    /// tensor must be 2D (rows, cols) or 3D (rows, cols, channels).
+    Image(const core::Tensor &tensor);
 
     virtual ~Image() override {}
 
