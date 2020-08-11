@@ -2,28 +2,34 @@
 
 The GCE CI workflow performs these steps:
 
-- Creates a new VM instance with a blank OS image
-- Clones the repository and checks out the specific commit
-- Installs dependencies (including NVIDIA drivers and CUDA)
-- Builds the code and runs tests (`run-ci.sh`)
-- Deletes the VM instance.
+- Clone the repository
+- Build docker image, starting with a an NVIDIA base devel image with CUDA and
+  cuDNN.
+- Push image to Google container registry.
+- On Google Compute Engine (GCE), in parallel (up to GPU quota limit - currently
+  4):
+  - Create a new VM instance with a custom OS image
+  - Run docker image on GCE (Google Compute Engine) with environment variables
+    set for specific build config.
+  - The docker image entrypoint is the `run-ci.sh` script: build, install, run
+    tests and uninstall.
+  - Delete the VM instance.
 
 A separate VM instance is created for each commit and build option. The VM
-instances are named according to the commit hash and build options used.
+instances are named according to the commit hash and build config ID used. We
+cycle through 13 different US GCE zones if VM creation fails in the first zone,
+either due to lack of resources or GPU quota exhaustion.
 
-## Current VM settings
+## Custom VM image creation
 
-```yaml
-- NPROC: 8                      # {2,4,8,16,32,64,96}
-- GCE_PROJECT: open3d-dev
-- GCE_INSTANCE_BASENAME: ci-gpu-vm
-- GCE_INSTANCE_BASE_TYPE: n1-standard
-- GCE_INSTANCE_ZONE: us-west1-b
-- GCE_IMAGE_FAMILY: ubuntu-1804-lts
-- GCE_GPU: count=1,type=nvidia-tesla-t4
-- GCE_BOOT_DISK_TYPE: pd-ssd
-- NVIDIA_DRIVER_VERSION: 440    # Must be present in Ubuntu repos
+```sh
+./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh create-base-vm-image
 ```
+
+The custom VM image has NVIDIA drivers, `nvidia-container-toolkit` and `docker`
+installed. It contains today's date in the name and the image family is set to
+`ubuntu-os-docker-gpu-2004-lts`. The latest image from this family is
+used for running CI.
 
 ## Create service account and key
 

@@ -28,7 +28,7 @@ fi
 
 if [ -n "${NVIDIA_DRIVER_VERSION}" ] ; then
     echo "Installing NVIDIA drivers."
-    $SUDO apt-get --yes install nvidia-driver-${NVIDIA_DRIVER_VERSION}
+    $SUDO apt-get --yes "install nvidia-driver-${NVIDIA_DRIVER_VERSION}"
 fi
 
 # Cleanup apt cache (for docker)

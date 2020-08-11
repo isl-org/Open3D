@@ -4,7 +4,7 @@
 ## (for portability and ease of maintenance)
 
 # exit when any command fails
-set -e    
+set -e
 
 ## These variables should be in the environment (from github repo secrets)
     # GCE_PROJECT
@@ -15,7 +15,6 @@ set -e
 CI_CONFIG_ID=${CI_CONFIG_ID:=0}
 
 # CI configuration specification
-BUILD_DEPENDENCY_FROM_SOURCE=( ON ON ON ON ON )
 SHARED=( OFF ON OFF ON OFF )
 BUILD_ML_OPS=( OFF ON OFF ON ON )
 BUILD_TENSORFLOW_OPS=( "${BUILD_ML_OPS[@]}" )
@@ -33,21 +32,22 @@ GCE_INSTANCE_ZONE=( us-west1-a us-central1-a us-east1-b us-east4-a \
     us-west1-b us-central1-b us-east1-c us-east4-b \
     us-west1-c us-central1-c us-east1-d us-east4-c \
     us-central1-f )
-export GCE_ZID=${GCE_ZID:=0}    # Persist between calls of this script
+GCE_ZID=${GCE_ZID:=0}    # Persist between calls of this script
 GCE_GPU="count=1,type=nvidia-tesla-t4"
 GCE_BOOT_DISK_TYPE=pd-ssd
 GCE_BOOT_DISK_SIZE=32GB
-NVIDIA_DRIVER_VERSION=440    # Must be present in Ubuntu repos
-CUDA_VERSION=10.1
-CUDNN="cudnn7-"             # {"", "cudnn7-", "cudnn8-"}
+NVIDIA_DRIVER_VERSION=440    # Must be present in Ubuntu repos 20.04: {390, 418, 430, 435, 440}
 GCE_VM_BASE_OS=ubuntu20.04
-GCE_VM_IMAGE_SPEC="--image-project=ubuntu-os-cloud --image-family=ubuntu-2004-lts"
+GCE_VM_IMAGE_SPEC=(--image-project=ubuntu-os-cloud --image-family=ubuntu-2004-lts)
+GCE_VM_CUSTOM_IMAGE_FAMILY=ubuntu-os-docker-gpu-2004-lts
 VM_IMAGE=open3d-gpu-ci-base-$(date +%Y%m%d)
 
 # Container configuration
 CONTAINER_BASE_OS=ubuntu18.04
 REGISTRY_HOSTNAME=gcr.io
 DC_IMAGE_TAG="$REGISTRY_HOSTNAME/$GCE_PROJECT/open3d-gpu-ci-base:$GITHUB_SHA"
+CUDA_VERSION=10.1
+CUDNN="cudnn7-"             # {"", "cudnn7-", "cudnn8-"}
 
 
 case "$1" in
@@ -74,13 +74,13 @@ case "$1" in
 
 
     create-base-vm-image )
-        gcloud compute instances create $VM_IMAGE \
-        --zone=${GCE_INSTANCE_ZONE[$GCE_ZID]} \
+        gcloud compute instances create "$VM_IMAGE" \
+        --zone="${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
         --service-account="$GCE_GPU_CI_SA" \
         --accelerator="$GCE_GPU" \
         --maintenance-policy=TERMINATE \
         --machine-type=$GCE_INSTANCE_TYPE \
-        $GCE_VM_IMAGE_SPEC \
+        "${GCE_VM_IMAGE_SPEC[@]}" \
         --boot-disk-size=$GCE_BOOT_DISK_SIZE \
         --boot-disk-type=$GCE_BOOT_DISK_TYPE \
         --metadata=startup-script="\
@@ -97,41 +97,41 @@ case "$1" in
         echo "Waiting 5 minutes for VM image creation script..."
         sleep 300
         TRIES=0
-        until (( TRIES>=5 )) || gcloud compute images create ${VM_IMAGE} --source-disk=$VM_IMAGE \
-            --source-disk-zone=${GCE_INSTANCE_ZONE[$GCE_ZID]} \
-            --family=ubuntu-os-docker-gpu-1804-lts \
+        until (( TRIES>=5 )) || gcloud compute images create "$VM_IMAGE" --source-disk="$VM_IMAGE" \
+            --source-disk-zone="${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
+            --family="$GCE_VM_CUSTOM_IMAGE_FAMILY" \
             --storage-location=us ; do
             sleep 60
             (( TRIES=TRIES+1 ))
         done
-        gcloud compute instances delete $VM_IMAGE --zone=${GCE_INSTANCE_ZONE[$GCE_ZID]}
+        gcloud compute instances delete "$VM_IMAGE" --zone="${GCE_INSTANCE_ZONE[$GCE_ZID]}"
         ;;
 
     create-vm )
         # Try creating a VM instance in each zone
         until (( GCE_ZID>=${#GCE_INSTANCE_ZONE[@]} )) || \
-            gcloud compute instances create $GCE_INSTANCE \
-            --zone=${GCE_INSTANCE_ZONE[$GCE_ZID]} \
+            gcloud compute instances create "$GCE_INSTANCE" \
+            --zone="${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
             --accelerator="$GCE_GPU" \
             --maintenance-policy=TERMINATE \
             --machine-type=$GCE_INSTANCE_TYPE \
             --boot-disk-size=$GCE_BOOT_DISK_SIZE \
             --boot-disk-type=$GCE_BOOT_DISK_TYPE \
-            --image-family=ubuntu-os-docker-gpu-1804-lts \
+            --image-family="$GCE_VM_CUSTOM_IMAGE_FAMILY" \
             --service-account="$GCE_GPU_CI_SA"
             do
                 (( GCE_ZID=GCE_ZID+1 ))
             done
             sleep 30              # wait for instance ssh service startup
+            echo "::set-env name=GCE_ZID::$GCE_ZID"     # Export environment variable for next step
             exit $(( GCE_ZID>=${#GCE_INSTANCE_ZONE[@]} ))  # 0 => success
             ;;
 
     run-ci )
-        gcloud compute ssh ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE[$GCE_ZID]} --command \
+        gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" --command \
             "sudo docker run --rm --gpus all \
             --env NPROC=$NPROC \
             --env SHARED=${SHARED[$CI_CONFIG_ID]} \
-            --env BUILD_DEPENDENCY_FROM_SOURCE=${BUILD_DEPENDENCY_FROM_SOURCE[$CI_CONFIG_ID]} \
             --env BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE[$CI_CONFIG_ID]} \
             --env BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS[$CI_CONFIG_ID]} \
             --env BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS[$CI_CONFIG_ID]} \
@@ -144,11 +144,11 @@ case "$1" in
         ;;
 
     delete-vm )
-        gcloud compute instances delete ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE[$GCE_ZID]}
+        gcloud compute instances delete "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}"
         ;;
 
     ssh-vm )
-        gcloud compute ssh ${GCE_INSTANCE} --zone ${GCE_INSTANCE_ZONE[$GCE_ZID]}
+        gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}"
         ;;
 
     *)
