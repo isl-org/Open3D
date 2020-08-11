@@ -1,6 +1,10 @@
 # Hand authored mtl file
 
 newmtl monkey_mat
+#Kd 0.8 0.8 0.8
+#Pm 1.0
+#Pr 0.4
+#Ps 0.5
 Kd 1 1 1
 map_Kd albedo.png
 map_Ka ao.png
