@@ -882,7 +882,7 @@ public:
 
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.
-    Tensor Inv() const;
+    Tensor Inverse() const;
 
     /// Computes the matrix SVD decomposition A = U S VT and returns the result.
     /// Note VT (V transpose) is returned instead of V.

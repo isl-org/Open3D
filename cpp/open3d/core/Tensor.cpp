@@ -1227,7 +1227,7 @@ Tensor Tensor::LeastSquares(const Tensor& rhs) const {
     return output;
 };
 
-Tensor Tensor::Inv() const {
+Tensor Tensor::Inverse() const {
     Tensor output;
     core::Inverse(*this, output);
     return output;
