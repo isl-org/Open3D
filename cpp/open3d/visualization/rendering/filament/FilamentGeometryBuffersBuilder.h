@@ -30,8 +30,22 @@
 // occurs between Filament and standard headers
 #include "open3d/visualization/rendering/RendererHandle.h"
 
+// 4293:  Filament's utils/algorithm.h utils::details::clz() does strange 
+//        things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//        32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//        determine the if statement does not run.)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4293)
+#endif // _MSC_VER
+
 #include <filament/Box.h>
 #include <filament/RenderableManager.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
+
 #include <memory>
 #include <tuple>
 

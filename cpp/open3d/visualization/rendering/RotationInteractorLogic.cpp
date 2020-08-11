@@ -64,13 +64,13 @@ Eigen::Vector3f RotationInteractorLogic::CalcPanVectorWorld(int dx, int dy) {
     // the depth of the center of rotation.
     auto pos = camera_->GetPosition();
     auto forward = camera_->GetForwardVector();
-    float near = camera_->GetNear();
+    float near = float(camera_->GetNear());
     float dist = forward.dot(center_of_rotation_at_mouse_down_ - pos);
     dist = std::max(near, dist);
 
     // How far is one pixel?
-    float half_fov = camera_->GetFieldOfView() / 2.0;
-    float hal_fov_radians = half_fov * M_PI / 180.0;
+    float half_fov = float(camera_->GetFieldOfView() / 2.0);
+    float hal_fov_radians = half_fov * float(M_PI / 180.0);
     float units_at_dist = 2.0f * std::tan(hal_fov_radians) * (near + dist);
     float units_per_px = units_at_dist / float(view_height_);
 

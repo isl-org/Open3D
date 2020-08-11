@@ -27,7 +27,6 @@
 #include "open3d/visualization/gui/Window.h"
 
 #include <GLFW/glfw3.h>
-#include <filament/Engine.h>
 #include <imgui.h>
 #include <imgui_internal.h>  // so we can examine the current context
 #include <algorithm>
@@ -262,9 +261,9 @@ Window::Window(const std::string& title,
     // the appropriate scale factor for text and icons and such.
     float scaling = GetScalingGLFW(impl_->window_);
     impl_->theme_ = Application::GetInstance().GetTheme();
-    impl_->theme_.font_size *= scaling;
-    impl_->theme_.default_margin *= scaling;
-    impl_->theme_.default_layout_spacing *= scaling;
+    impl_->theme_.font_size = int(std::round(impl_->theme_.font_size * scaling));
+    impl_->theme_.default_margin = int(std::round(impl_->theme_.default_margin * scaling));
+    impl_->theme_.default_layout_spacing = int(std::round(impl_->theme_.default_layout_spacing * scaling));
 
     auto& engine = visualization::rendering::EngineInstance::GetInstance();
     auto& resource_manager =
@@ -286,9 +285,9 @@ Window::Window(const std::string& title,
     style.WindowPadding = ImVec2(0, 0);
     style.WindowRounding = 0;
     style.WindowBorderSize = 0;
-    style.FrameBorderSize = theme.border_width;
-    style.FrameRounding = theme.border_radius;
-    style.ChildRounding = theme.border_radius;
+    style.FrameBorderSize = float(theme.border_width);
+    style.FrameRounding = float(theme.border_radius);
+    style.ChildRounding = float(theme.border_radius);
     style.Colors[ImGuiCol_WindowBg] = colorToImgui(theme.background_color);
     style.Colors[ImGuiCol_Text] = colorToImgui(theme.text_color);
     style.Colors[ImGuiCol_Border] = colorToImgui(theme.border_color);
@@ -317,7 +316,7 @@ Window::Window(const std::string& title,
     if (!theme.font_path.empty()) {
         ImGuiIO& io = ImGui::GetIO();
         impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                theme.font_path.c_str(), theme.font_size);
+                theme.font_path.c_str(), float(theme.font_size));
         /*static*/ unsigned char* pixels;
         int textureW, textureH, bytesPerPx;
         io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
@@ -430,7 +429,8 @@ Size Window::CalcPreferredSize() {
     // how to config the library--return a non-zero size, since a size of (0, 0)
     // will end up with a crash.
     if (impl_->children_.empty()) {
-        return Size(640 * impl_->imgui_.scaling, 480 * impl_->imgui_.scaling);
+        return Size(int(std::round(640.0f * impl_->imgui_.scaling)),
+                    int(std::round(480.0f * impl_->imgui_.scaling)));
     }
 
     Rect bbox(0, 0, 0, 0);
@@ -459,9 +459,10 @@ void Window::SetSize(const Size& size) {
     // Make sure we do the resize outside of a draw, to avoid unsightly
     // errors if we happen to do this in the middle of a draw.
     auto resize = [this, size /*copy*/]() {
+        auto scaling = this->impl_->imgui_.scaling;
         glfwSetWindowSize(this->impl_->window_,
-                          size.width / this->impl_->imgui_.scaling,
-                          size.height / this->impl_->imgui_.scaling);
+                          int(std::round(float(size.width) / scaling)),
+                          int(std::round(float(size.height) / scaling)));
         // SDL_SetWindowSize() doesn't generate an event, so we need to update
         // the size ourselves
         this->OnResize();
@@ -647,8 +648,8 @@ Widget::DrawResult DrawChild(DrawContext& dc,
     if (is_container) {
         dc.uiOffsetX = frame.x;
         dc.uiOffsetY = frame.y;
-        ImGui::SetNextWindowPos(ImVec2(frame.x, frame.y));
-        ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
+        ImGui::SetNextWindowPos(ImVec2(float(frame.x), float(frame.y)));
+        ImGui::SetNextWindowSize(ImVec2(float(frame.width), float(frame.height)));
         if (bg_color_not_default) {
             auto& bgColor = child->GetBackgroundColor();
             ImGui::PushStyleColor(ImGuiCol_WindowBg, colorToImgui(bgColor));
@@ -692,7 +693,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // ImGUI uses the dt parameter to calculate double-clicks, so it
     // needs to be reasonably accurate.
     double now = Application::GetInstance().Now();
-    float dt_sec = now - impl_->last_render_time_;
+    double dt_sec = now - impl_->last_render_time_;
     impl_->last_render_time_ = now;
 
     // Run the deferred callbacks that need to happen outside a draw
@@ -704,7 +705,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // Set current context
     MakeDrawContextCurrent();  // make sure our ImGUI context is active
     ImGuiIO& io = ImGui::GetIO();
-    io.DeltaTime = dt_sec;
+    io.DeltaTime = float(dt_sec);
 
     // Set mouse information
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
@@ -712,7 +713,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
         double mx, my;
         glfwGetCursorPos(impl_->window_, &mx, &my);
         auto scaling = GetScaling();
-        io.MousePos = ImVec2(mx * scaling, my * scaling);
+        io.MousePos = ImVec2(float(mx) * scaling, float(my) * scaling);
     }
     io.MouseDown[0] =
             (glfwGetMouseButton(impl_->window_, GLFW_MOUSE_BUTTON_LEFT) ==
@@ -760,7 +761,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     auto size = GetSize();
     int em = theme.font_size;  // em = font size in digital type (see Wikipedia)
     DrawContext dc{theme,      *impl_->renderer_, 0,  0,
-                   size.width, size.height,       em, dt_sec};
+                   size.width, size.height,       em, float(dt_sec)};
 
     // Draw all the widgets. These will get recorded by ImGui.
     size_t win_idx = 0;
@@ -798,9 +799,9 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // Draw any active dialog
     if (impl_->active_dialog_) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,
-                            theme.dialog_border_width);
+                            float(theme.dialog_border_width));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,
-                            theme.dialog_border_radius);
+                            float(theme.dialog_border_radius));
         if (DrawChild(dc, "dialog", impl_->active_dialog_, DIALOG) !=
             Widget::DrawResult::NONE) {
             needs_redraw = true;
@@ -869,9 +870,9 @@ void Window::OnResize() {
 
     auto old_context = MakeDrawContextCurrent();
     ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(size.width, size.height);
+    io.DisplaySize = ImVec2(float(size.width), float(size.height));
     if (impl_->imgui_.scaling != scaling) {
-        UpdateImGuiForScaling(1.0 / impl_->imgui_.scaling);  // undo previous
+        UpdateImGuiForScaling(1.0f / impl_->imgui_.scaling);  // undo previous
         UpdateImGuiForScaling(scaling);
         impl_->imgui_.scaling = scaling;
     }
@@ -970,16 +971,16 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             ImGuiIO& io = ImGui::GetIO();
             float dx = 0.0, dy = 0.0;
             if (e.wheel.dx != 0) {
-                dx = e.wheel.dx / std::abs(e.wheel.dx);  // get sign
+                dx = float(e.wheel.dx / std::abs(e.wheel.dx));  // get sign
             }
             if (e.wheel.dy != 0) {
-                dy = e.wheel.dy / std::abs(e.wheel.dy);  // get sign
+                dy = float(e.wheel.dy / std::abs(e.wheel.dy));  // get sign
             }
             // Note: ImGUI's documentation says that 1 unit of wheel movement
             //       is about 5 lines of text scrolling.
             if (e.wheel.isTrackpad) {
-                io.MouseWheelH += dx * 0.25;
-                io.MouseWheel += dy * 0.25;
+                io.MouseWheelH += dx * 0.25f;
+                io.MouseWheel += dy * 0.25f;
             } else {
                 io.MouseWheelH += dx;
                 io.MouseWheel += dy;
@@ -1006,7 +1007,8 @@ void Window::OnMouseEvent(const MouseEvent& e) {
         ImGuiContext* context = ImGui::GetCurrentContext();
         for (auto* w : context->Windows) {
             if (!w->Hidden && w->Flags & ImGuiWindowFlags_Popup) {
-                Rect r(w->Pos.x, w->Pos.y, w->Size.x, w->Size.y);
+                Rect r(int(w->Pos.x), int(w->Pos.y),
+                       int(w->Size.x), int(w->Size.y));
                 if (r.Contains(e.x, e.y)) {
                     bool weKnowThis = false;
                     for (auto child : impl_->children_) {
@@ -1200,8 +1202,8 @@ void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
     int iy = int(std::ceil(my * scaling));
 
     MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->impl_->mouse_mods_};
-    me.wheel.dx = dx;
-    me.wheel.dy = dy;
+    me.wheel.dx = int(std::round(dx));
+    me.wheel.dy = int(std::round(dy));
 
     // GLFW doesn't give us any information about whether this scroll event
     // came from a mousewheel or a trackpad two-finger scroll.

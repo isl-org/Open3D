@@ -187,10 +187,10 @@ void Open3DScene::AddGeometry(
         const std::size_t kMinPointsForDecimation = 6000000;
         auto pcd = std::dynamic_pointer_cast<const geometry::PointCloud>(geom);
         if (pcd && pcd->points_.size() > kMinPointsForDecimation) {
-            int sample_rate =
+            size_t sample_rate =
                     pcd->points_.size() / (kMinPointsForDecimation / 2);
-            auto small = pcd->UniformDownSample(sample_rate);
-            scene->AddGeometry(kFastModelObjectName, *small, mat);
+            auto fast = pcd->UniformDownSample(sample_rate);
+            scene->AddGeometry(kFastModelObjectName, *fast, mat);
             fast_model_name_ = kFastModelObjectName;
             scene->ShowGeometry(fast_model_name_, (lod_ == LOD::FAST));
         } else {

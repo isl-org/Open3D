@@ -77,6 +77,7 @@ fragment {
         float maxLayers = 48.0;
         float numLayers = mix(maxLayers, minLayers,
                 dot(getWorldGeometricNormalVector(), getWorldViewVector()));
+        int iNumLayers = int(numLayers);
         float heightScale = 0.05;
 
         float layerDepth = 1.0 / numLayers;
@@ -85,7 +86,7 @@ fragment {
         vec2 deltaUV = v.xy * heightScale / (v.z * numLayers);
         vec2 currUV = uv0;
         float height = 1.0 - textureGrad(materialParams_heightMap, currUV, uvDx, uvDy).r;
-        for (int i = 0; i < numLayers; i++) {
+        for (int i = 0; i < iNumLayers; i++) {
             currLayerDepth += layerDepth;
             currUV -= deltaUV;
             height = 1.0 - textureGrad(materialParams_heightMap, currUV, uvDx, uvDy).r;

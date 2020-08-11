@@ -26,7 +26,18 @@
 
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 
-#include <backend/PixelBufferDescriptor.h>
+// 4293:  Filament's utils/algorithm.h utils::details::clz() does strange 
+//        things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//        32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//        determine the if statement does not run.)
+// 4146: PixelBufferDescriptor assert unsigned is positive before subtracting
+//       but MSVC can't figure that out.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4293 4146)
+#endif // _MSC_VER
+
+#include <backend/PixelBufferDescriptor.h>  // bogus 4146 warning on MSVC
 #include <filament/Engine.h>
 #include <filament/IndirectLight.h>
 #include <filament/LightManager.h>
@@ -39,6 +50,10 @@
 #include <filament/TransformManager.h>
 #include <filament/View.h>
 #include <utils/EntityManager.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/LineSet.h"
@@ -408,8 +423,8 @@ void FilamentScene::UpdateNormalShader(GeometryMaterialInstance& geom_mi) {
 
 void FilamentScene::UpdateDepthShader(GeometryMaterialInstance& geom_mi) {
     auto* camera = views_.begin()->second.view->GetCamera();
-    const float f = camera->GetFar();
-    const float n = camera->GetNear();
+    const float f = float(camera->GetFar());
+    const float n = float(camera->GetNear());
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetParameter("pointSize", geom_mi.properties.point_size)
             .SetParameter("cameraNear", n)

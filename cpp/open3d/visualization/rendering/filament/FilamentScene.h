@@ -26,9 +26,23 @@
 
 #pragma once
 
+// Filament's utils/algorithm.h utils::details::clz() does strange things 
+// with MSVC. Somehow sizeof(unsigned int) > 4, but its size is 32 so that
+// x >> 32 gives a warning. (Or maybe the compiler can't determine the if
+// statement does not run.) Turn off the warning, since we have warn = error.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4293)
+#endif // _MSC_VER
+
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <utils/Entity.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
+
 #include <Eigen/Geometry>
 #include <unordered_map>
 #include <vector>

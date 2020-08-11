@@ -39,7 +39,7 @@ namespace filament {
 class Engine;
 class IndexBuffer;
 class IndirectLight;
-struct Material;
+class Material;
 class MaterialInstance;
 class Skybox;
 class Texture;

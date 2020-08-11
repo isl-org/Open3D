@@ -410,7 +410,7 @@ void pybind_gui_classes(py::module &m) {
                               auto vert = b->GetVerticalPaddingEm();
                               try {
                                   b->SetPaddingEm(em.cast<float>(), vert);
-                              } catch (const py::cast_error &e) {
+                              } catch (const py::cast_error &) {
                                   py::print(
                                           "open3d.visualization.gui.Button."
                                           "horizontal_padding_em can only be "
@@ -423,7 +423,7 @@ void pybind_gui_classes(py::module &m) {
                               auto horiz = b->GetHorizontalPaddingEm();
                               try {
                                   b->SetPaddingEm(horiz, em.cast<float>());
-                              } catch (const py::cast_error &e) {
+                              } catch (const py::cast_error &) {
                                   py::print(
                                           "open3d.visualization.gui.Button."
                                           "vertical_padding_em can only be "
