@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/TriangleMesh.h"
+
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/PointCloud.h"
-
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
@@ -326,16 +326,17 @@ void pybind_trianglemesh(py::module &m) {
                  "energy"_a = geometry::MeshBase::
                          DeformAsRigidAsPossibleEnergy::Spokes,
                  "smoothed_alpha"_a = 0.01)
-            .def_static("create_from_point_cloud_alpha_shape",
-                        [](const geometry::PointCloud &pcd, double alpha) {
-                            return geometry::TriangleMesh::
-                                    CreateFromPointCloudAlphaShape(pcd, alpha);
-                        },
-                        "Alpha shapes are a generalization of the convex hull. "
-                        "With decreasing alpha value the shape schrinks and "
-                        "creates cavities. See Edelsbrunner and Muecke, "
-                        "\"Three-Dimensional Alpha Shapes\", 1994.",
-                        "pcd"_a, "alpha"_a)
+            .def_static(
+                    "create_from_point_cloud_alpha_shape",
+                    [](const geometry::PointCloud &pcd, double alpha) {
+                        return geometry::TriangleMesh::
+                                CreateFromPointCloudAlphaShape(pcd, alpha);
+                    },
+                    "Alpha shapes are a generalization of the convex hull. "
+                    "With decreasing alpha value the shape schrinks and "
+                    "creates cavities. See Edelsbrunner and Muecke, "
+                    "\"Three-Dimensional Alpha Shapes\", 1994.",
+                    "pcd"_a, "alpha"_a)
             .def_static("create_from_point_cloud_alpha_shape",
                         &geometry::TriangleMesh::CreateFromPointCloudAlphaShape,
                         "Alpha shapes are a generalization of the convex hull. "

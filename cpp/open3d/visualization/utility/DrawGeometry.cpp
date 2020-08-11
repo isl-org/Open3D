@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Eigen/Core>
-
 #include "open3d/visualization/utility/DrawGeometry.h"
+
+#include <Eigen/Core>
 
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/visualizer/GuiVisualizer.h"

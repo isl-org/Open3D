@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <functional>
 #include <map>
 #include <memory>

@@ -37,7 +37,8 @@ try:
     ml3d_ops = importlib.import_module('open3d.ml.torch.nn.functional')
     ml3d_layers = importlib.import_module('open3d.ml.torch.nn')
     _ml_modules['torch'] = MLModules(torch, ml3d_ops, ml3d_layers)
-    if torch.cuda.is_available(): _device_names.add('GPU:0')
+    if torch.cuda.is_available():
+        _device_names.add('GPU:0')
 except ImportError:
     pass
 

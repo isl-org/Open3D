@@ -30,6 +30,7 @@
 #include <filament/Engine.h>
 #include <imgui.h>
 #include <imgui_internal.h>  // so we can examine the current context
+
 #include <algorithm>
 #include <cmath>
 #include <queue>

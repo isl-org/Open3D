@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/KDTreeFlann.h"
+
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "tests/UnitTest.h"

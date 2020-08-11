@@ -26,7 +26,9 @@
 
 #pragma once
 #include <torch/script.h>
+
 #include <type_traits>
+
 #include "open3d/ml/ShapeChecking.h"
 
 // Macros for checking tensor properties
