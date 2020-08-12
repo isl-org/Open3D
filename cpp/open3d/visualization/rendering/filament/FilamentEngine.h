@@ -44,6 +44,11 @@ public:
     static filament::Engine& GetInstance();
     static FilamentResourceManager& GetResourceManager();
 
+    /// Destroys the singleton instance, to force Filament cleanup at a
+    /// specific time. Calling GetInstance() after this will re-create
+    /// the instance.
+    static void DestroyInstance();
+
     ~EngineInstance();
 
 private:

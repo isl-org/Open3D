@@ -120,7 +120,10 @@ void pybind_gui_classes(py::module &m) {
                          }
                      }
                  },
-                 "Runs the event loop")
+                 "Runs the event loop. After this finishes, all windows and "
+                 "widgets should be considered uninitialized, even if they "
+                 "are still held by Python variables. Using them is unsafe, "
+                 "even if run() is called again.")
             .def("quit", [](Application &instance) { instance.Quit(); },
                  "Closes all the windows, exiting as a result")
             .def_property("menubar", &Application::GetMenubar,

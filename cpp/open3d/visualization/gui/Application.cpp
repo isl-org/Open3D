@@ -149,6 +149,30 @@ struct Application::Impl {
         glfwInit();
         this->is_GLFW_initalized_ = true;
     }
+
+    void PrepareForRunning() {
+        // We already called this in the constructor, but it is possible
+        // (but unlikely) that the run loop finished and is starting again.
+        InitGLFW();
+
+        // We don't need to initialize rendering, it will happen automatically
+        // at the appropriate time.
+    }
+
+    void CleanupAfterRunning() {
+        // Aside from general tidiness in shutting down rendering,
+        // failure to do this causes the Python module to hang on
+        // Windows. (Specifically, if a widget is has been assigned a
+        // Python function as a callback, the Python interpretter will
+        // not delete the objects, the Window's destructor will not be
+        // called, and the Filament threads will not stop, causing the
+        // Python process to remain running even after execution of the
+        // script finishes.
+        visualization::rendering::EngineInstance::DestroyInstance();
+
+        glfwTerminate();
+        is_GLFW_initalized_ = false;
+    }
 };
 
 Application &Application::GetInstance() {
@@ -296,6 +320,7 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
 void Application::RemoveWindow(Window *window) {
     for (auto it = impl_->windows_.begin(); it != impl_->windows_.end(); ++it) {
         if (it->get() == window) {
+            window->Show(false);
             impl_->windows_to_be_destroyed_.insert(*it);
             impl_->windows_.erase(it);
             break;
@@ -366,10 +391,7 @@ bool Application::RunOneTick() {
             return false;
         }
 
-        // We already called this in the constructor, but it is possible
-        // (but unlikely) that the run loop finished and is starting again.
-        impl_->InitGLFW();
-
+        impl_->PrepareForRunning();
         impl_->is_running_ = true;
     }
 
@@ -387,9 +409,8 @@ bool Application::RunOneTick() {
             impl_->running_tasks_.erase(current);  // calls join()
         }
 
-        glfwTerminate();
-        impl_->is_GLFW_initalized_ = false;
         impl_->is_running_ = false;
+        impl_->CleanupAfterRunning();
     }
 
     return impl_->is_running_;
