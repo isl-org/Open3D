@@ -837,19 +837,23 @@ if(BUILD_GUI)
     endif()
     set(FILAMENT_RUNTIME_VER "")
     if (WIN32)
+        message("[DEBUG] CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+        message("[DEBUG] CMAKE_MSVC_RUNTIME_LIBRARY: ${CMAKE_MSVC_RUNTIME_LIBRARY}")
+        message("[DEBUG] STATIC_WINDOWS_RUNTIME: ${STATIC_WINDOWS_RUNTIME}")
         if (CMAKE_BUILD_TYPE MATCHES "Debug")
-            if (CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "DLL")
-                set(FILAMENT_RUNTIME_VER "mdd")
+            if (STATIC_WINDOWS_RUNTIME)
+                set(FILAMENT_RUNTIME_VER "mtd")  # static, debug
             else()
-                set(FILAMENT_RUNTIME_VER "mtd")
+                set(FILAMENT_RUNTIME_VER "mdd")  # DLL, debug
             endif()
         else()
-            if (CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "DLL")
-                set(FILAMENT_RUNTIME_VER "md")
+            if (STATIC_WINDOWS_RUNTIME)
+                set(FILAMENT_RUNTIME_VER "mt")  # static, release
             else()
-                set(FILAMENT_RUNTIME_VER "mt")
+                set(FILAMENT_RUNTIME_VER "md")  # DLL, release
             endif()
         endif()
+        message("[DEBUG] FILAMENT_RUNTIME_VER: ${FILAMENT_RUNTIME_VER}")
     endif()
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
