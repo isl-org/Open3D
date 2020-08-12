@@ -26,6 +26,7 @@
 
 #include "open3d/visualization/gui/Native.h"
 
+#import <ApplicationServices/ApplicationServices.h>
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
 
@@ -38,6 +39,34 @@
 namespace open3d {
 namespace visualization {
 namespace gui {
+
+void MacTransformIntoApp() {
+    // This is Deep Magic. Some versions of Python (for instance, MacPorts) do
+    // properly active the python process when a window is created, despite
+    // being created as a Framework. This results in the window being
+    // visible, but it cannot get a menubar and it never gets text focus.
+    // Some more official attempts that do NOT work are:
+    // * ensure NSApp is created (by use of [NSApplication sharedApplication])
+    // * [NSApp finishLaunching]
+    // * [NSApp activateIgnoringOtherApps:NO] (YES also doesn't work)
+    // * [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular]
+    //     (the activation policy already appears to be Regular)
+    // * Calling -makeKeyAndOrderFront on the NSWindow (GLFW surely does this
+    //     anyway)
+    // So, we come to the Deep Magic. ApplicationServices contains some
+    // functions that were part of Carbon, and expanded on them. Most have been
+    // deprecated and moved into NSRunnableApplication, but TransformProcessType
+    // does not appear to have been. Documention is limited to the Processes.h
+    // header file and various digitally-dusty archival tomes. One particularly
+    // salient archive is
+    // http://svn.python.org/projects/external/tk-8.5.11.0/macosx/tkMacOSXInit.c
+    // (which appears to have changed in upstream Tk) wherein a comment says
+    // that TransformProcessType() needs to be called if we aren't in a bundle.
+    // Absent any concrete documentation, we chant the incantation and hope that
+    // any side-effects or age-related effects are minimal.
+    ProcessSerialNumber psn = { 0, kCurrentProcess };
+    TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+}
 
 void* GetNativeDrawable(GLFWwindow* glfw_window) {
     NSWindow* win = glfwGetCocoaWindow(glfw_window);

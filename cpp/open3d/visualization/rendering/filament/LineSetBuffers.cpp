@@ -26,6 +26,7 @@
 
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
+
 #include <Eigen/Core>
 #include <map>
 

@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <liblzf/lzf.h>
+
 #include <cstdint>
 #include <cstdio>
 #include <sstream>

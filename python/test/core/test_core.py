@@ -382,10 +382,10 @@ def test_getitem(device):
     np.testing.assert_equal(o3_t[0, :, :-2].cpu().numpy(), np_t[0, :, :-2])
     np.testing.assert_equal(o3_t[0, 1:3, 2].cpu().numpy(), np_t[0, 1:3, 2])
     np.testing.assert_equal(o3_t[0, 1:-1, 2].cpu().numpy(), np_t[0, 1:-1, 2])
-    np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].cpu().numpy(),
-                            np_t[0, 1:3, 0:4:2])
-    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].cpu().numpy(),
-                            np_t[0, 1:3, 0:-1:2])
+    np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].cpu().numpy(), np_t[0, 1:3,
+                                                                    0:4:2])
+    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].cpu().numpy(), np_t[0, 1:3,
+                                                                     0:-1:2])
     np.testing.assert_equal(o3_t[0, 1, :].cpu().numpy(), np_t[0, 1, :])
 
     # Slice the slice
@@ -1055,3 +1055,32 @@ def test_issame(device):
     e = a[:, 0:2]
     assert d.allclose(e)
     assert d.issame(e)
+
+
+@pytest.mark.parametrize("device", core_test_utils.list_devices())
+def test_item(device):
+    o3_t = o3d.core.Tensor.ones(
+        (2, 3), dtype=o3d.core.Dtype.Float32, device=device) * 1.5
+    assert o3_t[0, 0].item() == 1.5
+    assert isinstance(o3_t[0, 0].item(), float)
+
+    o3_t = o3d.core.Tensor.ones(
+        (2, 3), dtype=o3d.core.Dtype.Float64, device=device) * 1.5
+    assert o3_t[0, 0].item() == 1.5
+    assert isinstance(o3_t[0, 0].item(), float)
+
+    o3_t = o3d.core.Tensor.ones(
+        (2, 3), dtype=o3d.core.Dtype.Int32, device=device) * 1.5
+    assert o3_t[0, 0].item() == 1
+    assert isinstance(o3_t[0, 0].item(), int)
+
+    o3_t = o3d.core.Tensor.ones(
+        (2, 3), dtype=o3d.core.Dtype.Int64, device=device) * 1.5
+    assert o3_t[0, 0].item() == 1
+    assert isinstance(o3_t[0, 0].item(), int)
+
+    o3_t = o3d.core.Tensor.ones((2, 3),
+                                dtype=o3d.core.Dtype.Bool,
+                                device=device)
+    assert o3_t[0, 0].item() == True
+    assert isinstance(o3_t[0, 0].item(), bool)

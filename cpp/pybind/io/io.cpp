@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "pybind/io/io.h"
+
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
@@ -34,6 +35,9 @@ void pybind_io(py::module &m) {
     pybind_class_io(m_io);
 #ifdef BUILD_AZURE_KINECT
     pybind_sensor(m_io);
+#endif
+#ifdef BUILD_RPC_INTERFACE
+    pybind_rpc(m_io);
 #endif
 }
 

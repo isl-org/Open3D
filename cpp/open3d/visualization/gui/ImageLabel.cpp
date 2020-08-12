@@ -84,8 +84,7 @@ Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
     if (params.texture != visualization::rendering::TextureHandle::kBad) {
         ImTextureID image_id =
                 reinterpret_cast<ImTextureID>(params.texture.GetId());
-        ImGui::SetCursorPos(ImVec2(params.pos_x - context.uiOffsetX,
-                                   params.pos_y - context.uiOffsetY));
+        ImGui::SetCursorScreenPos(ImVec2(params.pos_x, params.pos_y));
         ImGui::Image(image_id, ImVec2(params.width, params.height),
                      ImVec2(params.u0, params.v0),
                      ImVec2(params.u1, params.v1));
@@ -113,8 +112,7 @@ Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
         float x = (float(frame.width) - text_size.x) / 2.0f;
         float y = (float(frame.height) - text_size.y) / 2.0f;
 
-        ImGui::SetCursorPos(ImVec2(x + frame.x - context.uiOffsetX,
-                                   y + frame.y - context.uiOffsetY));
+        ImGui::SetCursorScreenPos(ImVec2(x + frame.x, y + frame.y));
         ImGui::PushTextWrapPos(wrapX);
         ImGui::TextWrapped("%s", error_text);
         ImGui::PopTextWrapPos();

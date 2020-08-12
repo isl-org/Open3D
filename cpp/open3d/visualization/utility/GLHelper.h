@@ -34,6 +34,7 @@
 
 #include <GL/glew.h>  // Make sure glew.h is included before gl.h
 #include <GLFW/glfw3.h>
+
 #include <Eigen/Core>
 #include <string>
 #include <unordered_map>

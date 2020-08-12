@@ -27,6 +27,7 @@
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
 #include <geometry/SurfaceOrientation.h>
+
 #include <Eigen/Core>
 
 #include "open3d/geometry/BoundingVolume.h"

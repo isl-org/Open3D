@@ -26,6 +26,7 @@
 //
 
 #include "FixedRadiusSearchOpKernel.h"
+
 #include "open3d/ml/impl/misc/FixedRadiusSearch.h"
 
 using namespace open3d::ml::impl;

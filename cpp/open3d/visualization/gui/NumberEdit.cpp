@@ -27,7 +27,8 @@
 #include "open3d/visualization/gui/NumberEdit.h"
 
 #include <imgui.h>
-#include <string.h>   // for snprintf
+#include <string.h>  // for snprintf
+
 #include <algorithm>  // for min, max
 #include <cmath>
 #include <sstream>
@@ -124,8 +125,7 @@ Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
 
 Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text edit borders

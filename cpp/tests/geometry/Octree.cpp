@@ -24,11 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/geometry/Octree.h"
+
 #include <json/json.h>
+
 #include <iostream>
 #include <memory>
 
-#include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/io/PointCloudIO.h"

@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/ListView.h"
 
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -99,8 +100,7 @@ Size ListView::CalcPreferredSize(const Theme &theme) const {
 
 Widget::DrawResult ListView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
     ImGui::PushItemWidth(frame.width);
 
     ImGui::PushStyleColor(ImGuiCol_FrameBg,

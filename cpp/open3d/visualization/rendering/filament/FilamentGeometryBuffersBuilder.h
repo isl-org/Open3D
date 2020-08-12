@@ -26,12 +26,15 @@
 
 #pragma once
 
+// clang-format off
 // NOTE: This header must precede the Filament headers otherwise a conflict
 // occurs between Filament and standard headers
 #include "open3d/visualization/rendering/RendererHandle.h"
 
 #include <filament/Box.h>
 #include <filament/RenderableManager.h>
+// clang-format on
+
 #include <memory>
 #include <tuple>
 

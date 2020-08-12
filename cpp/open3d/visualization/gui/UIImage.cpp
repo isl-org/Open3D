@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/ImageLabel.h"
-
 #include <filament/Texture.h>
+
 #include <string>
 
 #include "open3d/geometry/Image.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/visualization/gui/ImageLabel.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"

@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/MemoryManager.h"
-
 #include <cstdlib>
+
+#include "open3d/core/MemoryManager.h"
 
 namespace open3d {
 namespace core {

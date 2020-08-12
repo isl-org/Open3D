@@ -125,13 +125,13 @@ class ExampleWindow:
 
         # Add a tree view
         tree = gui.TreeView()
-        tree.add_item(tree.get_root_item(), "Camera")
-        geo_id = tree.add_item(tree.get_root_item(), "Geometries")
-        mesh_id = tree.add_item(geo_id, "Mesh")
-        tree.add_item(mesh_id, "Triangles")
-        tree.add_item(mesh_id, "Albedo texture")
-        tree.add_item(mesh_id, "Normal map")
-        points_id = tree.add_item(geo_id, "Points")
+        tree.add_text_item(tree.get_root_item(), "Camera")
+        geo_id = tree.add_text_item(tree.get_root_item(), "Geometries")
+        mesh_id = tree.add_text_item(geo_id, "Mesh")
+        tree.add_text_item(mesh_id, "Triangles")
+        tree.add_text_item(mesh_id, "Albedo texture")
+        tree.add_text_item(mesh_id, "Normal map")
+        points_id = tree.add_text_item(geo_id, "Points")
         tree.can_select_items_with_children = True
         tree.set_on_selection_changed(self._on_tree)
         # does not call on_selection_changed: user did not change selection
@@ -307,8 +307,8 @@ class ExampleWindow:
     def _on_list(self, new_val, is_dbl_click):
         print(new_val)
 
-    def _on_tree(self, new_text, new_item):
-        print(new_text)
+    def _on_tree(self, new_item_id):
+        print(new_item_id)
 
     def _on_slider(self, new_val):
         self._progress.value = new_val / 20.0

@@ -31,7 +31,6 @@
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "open3d/visualization/utility/SelectionPolygonVolume.h"
 #include "open3d/visualization/visualizer/Visualizer.h"
-
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"
 
@@ -46,18 +45,20 @@ void pybind_visualization_utility(py::module &m) {
     py::detail::bind_copy_functions<visualization::SelectionPolygonVolume>(
             selection_volume);
     selection_volume
-            .def("crop_point_cloud",
-                 [](const visualization::SelectionPolygonVolume &s,
-                    const geometry::PointCloud &input) {
-                     return s.CropPointCloud(input);
-                 },
-                 "input"_a, "Function to crop point cloud.")
-            .def("crop_triangle_mesh",
-                 [](const visualization::SelectionPolygonVolume &s,
-                    const geometry::TriangleMesh &input) {
-                     return s.CropTriangleMesh(input);
-                 },
-                 "input"_a, "Function to crop crop triangle mesh.")
+            .def(
+                    "crop_point_cloud",
+                    [](const visualization::SelectionPolygonVolume &s,
+                       const geometry::PointCloud &input) {
+                        return s.CropPointCloud(input);
+                    },
+                    "input"_a, "Function to crop point cloud.")
+            .def(
+                    "crop_triangle_mesh",
+                    [](const visualization::SelectionPolygonVolume &s,
+                       const geometry::TriangleMesh &input) {
+                        return s.CropTriangleMesh(input);
+                    },
+                    "input"_a, "Function to crop crop triangle mesh.")
             .def("__repr__",
                  [](const visualization::SelectionPolygonVolume &s) {
                      return std::string(
@@ -117,153 +118,161 @@ static const std::unordered_map<std::string, std::string>
                 {"zoom", "The zoom of the camera."}};
 
 void pybind_visualization_utility_methods(py::module &m) {
-    m.def("draw_geometries",
-          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
-                     &geometry_ptrs,
-             const std::string &window_name, int width, int height, int left,
-             int top, bool point_show_normal, bool mesh_show_wireframe,
-             bool mesh_show_back_face) {
-              std::string current_dir =
-                      utility::filesystem::GetWorkingDirectory();
-              visualization::DrawGeometries(
-                      geometry_ptrs, window_name, width, height, left, top,
-                      point_show_normal, mesh_show_wireframe,
-                      mesh_show_back_face);
-              utility::filesystem::ChangeWorkingDirectory(current_dir);
-          },
-          "Function to draw a list of geometry::Geometry objects",
-          "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
-          "height"_a = 1080, "left"_a = 50, "top"_a = 50,
-          "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
-          "mesh_show_back_face"_a = false);
-    m.def("draw_geometries",
-          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
-                     &geometry_ptrs,
-             const std::string &window_name, int width, int height, int left,
-             int top, bool point_show_normal, bool mesh_show_wireframe,
-             bool mesh_show_back_face, Eigen::Vector3d lookat,
-             Eigen::Vector3d up, Eigen::Vector3d front, double zoom) {
-              std::string current_dir =
-                      utility::filesystem::GetWorkingDirectory();
-              visualization::DrawGeometries(
-                      geometry_ptrs, window_name, width, height, left, top,
-                      point_show_normal, mesh_show_wireframe,
-                      mesh_show_back_face, &lookat, &up, &front, &zoom);
-              utility::filesystem::ChangeWorkingDirectory(current_dir);
-          },
-          "Function to draw a list of geometry::Geometry objects",
-          "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
-          "height"_a = 1080, "left"_a = 50, "top"_a = 50,
-          "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
-          "mesh_show_back_face"_a = false, "lookat"_a, "up"_a, "front"_a,
-          "zoom"_a);
+    m.def(
+            "draw_geometries",
+            [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                       &geometry_ptrs,
+               const std::string &window_name, int width, int height, int left,
+               int top, bool point_show_normal, bool mesh_show_wireframe,
+               bool mesh_show_back_face) {
+                std::string current_dir =
+                        utility::filesystem::GetWorkingDirectory();
+                visualization::DrawGeometries(
+                        geometry_ptrs, window_name, width, height, left, top,
+                        point_show_normal, mesh_show_wireframe,
+                        mesh_show_back_face);
+                utility::filesystem::ChangeWorkingDirectory(current_dir);
+            },
+            "Function to draw a list of geometry::Geometry objects",
+            "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+            "height"_a = 1080, "left"_a = 50, "top"_a = 50,
+            "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
+            "mesh_show_back_face"_a = false);
+    m.def(
+            "draw_geometries",
+            [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                       &geometry_ptrs,
+               const std::string &window_name, int width, int height, int left,
+               int top, bool point_show_normal, bool mesh_show_wireframe,
+               bool mesh_show_back_face, Eigen::Vector3d lookat,
+               Eigen::Vector3d up, Eigen::Vector3d front, double zoom) {
+                std::string current_dir =
+                        utility::filesystem::GetWorkingDirectory();
+                visualization::DrawGeometries(
+                        geometry_ptrs, window_name, width, height, left, top,
+                        point_show_normal, mesh_show_wireframe,
+                        mesh_show_back_face, &lookat, &up, &front, &zoom);
+                utility::filesystem::ChangeWorkingDirectory(current_dir);
+            },
+            "Function to draw a list of geometry::Geometry objects",
+            "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+            "height"_a = 1080, "left"_a = 50, "top"_a = 50,
+            "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
+            "mesh_show_back_face"_a = false, "lookat"_a, "up"_a, "front"_a,
+            "zoom"_a);
     docstring::FunctionDocInject(m, "draw_geometries",
                                  map_shared_argument_docstrings);
 
-    m.def("draw_geometries_with_custom_animation",
-          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
-                     &geometry_ptrs,
-             const std::string &window_name, int width, int height, int left,
-             int top, const std::string &json_filename) {
-              std::string current_dir =
-                      utility::filesystem::GetWorkingDirectory();
-              visualization::DrawGeometriesWithCustomAnimation(
-                      geometry_ptrs, window_name, width, height, left, top,
-                      json_filename);
-              utility::filesystem::ChangeWorkingDirectory(current_dir);
-          },
-          "Function to draw a list of geometry::Geometry objects with a GUI "
-          "that "
-          "supports animation",
-          "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
-          "height"_a = 1080, "left"_a = 50, "top"_a = 50,
-          "optional_view_trajectory_json_file"_a = "");
+    m.def(
+            "draw_geometries_with_custom_animation",
+            [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                       &geometry_ptrs,
+               const std::string &window_name, int width, int height, int left,
+               int top, const std::string &json_filename) {
+                std::string current_dir =
+                        utility::filesystem::GetWorkingDirectory();
+                visualization::DrawGeometriesWithCustomAnimation(
+                        geometry_ptrs, window_name, width, height, left, top,
+                        json_filename);
+                utility::filesystem::ChangeWorkingDirectory(current_dir);
+            },
+            "Function to draw a list of geometry::Geometry objects with a GUI "
+            "that "
+            "supports animation",
+            "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+            "height"_a = 1080, "left"_a = 50, "top"_a = 50,
+            "optional_view_trajectory_json_file"_a = "");
     docstring::FunctionDocInject(m, "draw_geometries_with_custom_animation",
                                  map_shared_argument_docstrings);
 
-    m.def("draw_geometries_with_animation_callback",
-          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
-                     &geometry_ptrs,
-             std::function<bool(visualization::Visualizer *)> callback_func,
-             const std::string &window_name, int width, int height, int left,
-             int top) {
-              std::string current_dir =
-                      utility::filesystem::GetWorkingDirectory();
-              visualization::DrawGeometriesWithAnimationCallback(
-                      geometry_ptrs, callback_func, window_name, width, height,
-                      left, top);
-              utility::filesystem::ChangeWorkingDirectory(current_dir);
-          },
-          "Function to draw a list of geometry::Geometry objects with a "
-          "customized "
-          "animation callback function",
-          "geometry_list"_a, "callback_function"_a, "window_name"_a = "Open3D",
-          "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50,
-          py::return_value_policy::reference);
+    m.def(
+            "draw_geometries_with_animation_callback",
+            [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                       &geometry_ptrs,
+               std::function<bool(visualization::Visualizer *)> callback_func,
+               const std::string &window_name, int width, int height, int left,
+               int top) {
+                std::string current_dir =
+                        utility::filesystem::GetWorkingDirectory();
+                visualization::DrawGeometriesWithAnimationCallback(
+                        geometry_ptrs, callback_func, window_name, width,
+                        height, left, top);
+                utility::filesystem::ChangeWorkingDirectory(current_dir);
+            },
+            "Function to draw a list of geometry::Geometry objects with a "
+            "customized "
+            "animation callback function",
+            "geometry_list"_a, "callback_function"_a,
+            "window_name"_a = "Open3D", "width"_a = 1920, "height"_a = 1080,
+            "left"_a = 50, "top"_a = 50, py::return_value_policy::reference);
     docstring::FunctionDocInject(m, "draw_geometries_with_animation_callback",
                                  map_shared_argument_docstrings);
 
-    m.def("draw_geometries_with_key_callbacks",
-          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
-                     &geometry_ptrs,
-             const std::map<int,
-                            std::function<bool(visualization::Visualizer *)>>
-                     &key_to_callback,
-             const std::string &window_name, int width, int height, int left,
-             int top) {
-              std::string current_dir =
-                      utility::filesystem::GetWorkingDirectory();
-              visualization::DrawGeometriesWithKeyCallbacks(
-                      geometry_ptrs, key_to_callback, window_name, width,
-                      height, left, top);
-              utility::filesystem::ChangeWorkingDirectory(current_dir);
-          },
-          "Function to draw a list of geometry::Geometry objects with a "
-          "customized "
-          "key-callback mapping",
-          "geometry_list"_a, "key_to_callback"_a, "window_name"_a = "Open3D",
-          "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    m.def(
+            "draw_geometries_with_key_callbacks",
+            [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                       &geometry_ptrs,
+               const std::map<int,
+                              std::function<bool(visualization::Visualizer *)>>
+                       &key_to_callback,
+               const std::string &window_name, int width, int height, int left,
+               int top) {
+                std::string current_dir =
+                        utility::filesystem::GetWorkingDirectory();
+                visualization::DrawGeometriesWithKeyCallbacks(
+                        geometry_ptrs, key_to_callback, window_name, width,
+                        height, left, top);
+                utility::filesystem::ChangeWorkingDirectory(current_dir);
+            },
+            "Function to draw a list of geometry::Geometry objects with a "
+            "customized "
+            "key-callback mapping",
+            "geometry_list"_a, "key_to_callback"_a, "window_name"_a = "Open3D",
+            "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
     docstring::FunctionDocInject(m, "draw_geometries_with_key_callbacks",
                                  map_shared_argument_docstrings);
 
-    m.def("draw_geometries_with_editing",
-          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
-                     &geometry_ptrs,
-             const std::string &window_name, int width, int height, int left,
-             int top) {
-              visualization::DrawGeometriesWithEditing(
-                      geometry_ptrs, window_name, width, height, left, top);
-          },
-          "Function to draw a list of geometry::Geometry providing user "
-          "interaction",
-          "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
-          "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    m.def(
+            "draw_geometries_with_editing",
+            [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                       &geometry_ptrs,
+               const std::string &window_name, int width, int height, int left,
+               int top) {
+                visualization::DrawGeometriesWithEditing(
+                        geometry_ptrs, window_name, width, height, left, top);
+            },
+            "Function to draw a list of geometry::Geometry providing user "
+            "interaction",
+            "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+            "height"_a = 1080, "left"_a = 50, "top"_a = 50);
     docstring::FunctionDocInject(m, "draw_geometries_with_editing",
                                  map_shared_argument_docstrings);
 
-    m.def("draw_geometries_with_vertex_selection",
-          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
-                     &geometry_ptrs,
-             const std::string &window_name, int width, int height, int left,
-             int top) {
-              visualization::DrawGeometriesWithVertexSelection(
-                      geometry_ptrs, window_name, width, height, left, top);
-          },
-          "Function to draw a list of geometry::Geometry providing ability "
-          "for user to select points",
-          "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
-          "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    m.def(
+            "draw_geometries_with_vertex_selection",
+            [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                       &geometry_ptrs,
+               const std::string &window_name, int width, int height, int left,
+               int top) {
+                visualization::DrawGeometriesWithVertexSelection(
+                        geometry_ptrs, window_name, width, height, left, top);
+            },
+            "Function to draw a list of geometry::Geometry providing ability "
+            "for user to select points",
+            "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+            "height"_a = 1080, "left"_a = 50, "top"_a = 50);
     docstring::FunctionDocInject(m, "draw_geometries_with_vertex_selection",
                                  map_shared_argument_docstrings);
 
-    m.def("read_selection_polygon_volume",
-          [](const std::string &filename) {
-              visualization::SelectionPolygonVolume vol;
-              io::ReadIJsonConvertible(filename, vol);
-              return vol;
-          },
-          "Function to read visualization::SelectionPolygonVolume from file",
-          "filename"_a);
+    m.def(
+            "read_selection_polygon_volume",
+            [](const std::string &filename) {
+                visualization::SelectionPolygonVolume vol;
+                io::ReadIJsonConvertible(filename, vol);
+                return vol;
+            },
+            "Function to read visualization::SelectionPolygonVolume from file",
+            "filename"_a);
     docstring::FunctionDocInject(m, "read_selection_polygon_volume",
                                  map_shared_argument_docstrings);
 }

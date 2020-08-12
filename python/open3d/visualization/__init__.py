@@ -23,5 +23,8 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-if "@ENABLE_GUI@" == "ON":
+if "@BUILD_GUI@" == "ON":
     from open3d.pybind.visualization import gui
+
+from open3d.pybind.visualization import *
+from ._external_visualizer import *

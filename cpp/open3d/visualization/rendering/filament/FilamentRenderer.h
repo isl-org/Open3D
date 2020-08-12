@@ -26,12 +26,13 @@
 
 #pragma once
 
-#include "open3d/visualization/rendering/Renderer.h"
-
 #include <utils/Entity.h>
+
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "open3d/visualization/rendering/Renderer.h"
 
 /// @cond
 namespace filament {
@@ -98,6 +99,8 @@ public:
     // WARNING: will destroy previous gui scene if there was any
     void ConvertToGuiScene(const SceneHandle& id);
     FilamentScene* GetGuiScene() const { return gui_scene_.get(); }
+
+    filament::Renderer* GetNative() { return renderer_; }
 
 private:
     friend class FilamentRenderToBuffer;

@@ -83,6 +83,22 @@ public:
                 init_vals.size() * DtypeUtil::ByteSize(dtype));
     }
 
+    /// Constructor from raw host buffer. The memory will be copied.
+    template <typename T>
+    Tensor(const T* init_vals,
+           const SizeVector& shape,
+           Dtype dtype,
+           const Device& device = Device("CPU:0"))
+        : Tensor(shape, dtype, device) {
+        // Check data types
+        AssertTemplateDtype<T>();
+
+        // Copy data to blob
+        MemoryManager::MemcpyFromHost(
+                blob_->GetDataPtr(), GetDevice(), init_vals,
+                shape_.NumElements() * DtypeUtil::ByteSize(dtype));
+    }
+
     /// The fully specified constructor
     Tensor(const SizeVector& shape,
            const SizeVector& strides,
@@ -175,6 +191,12 @@ public:
     static Tensor Ones(const SizeVector& shape,
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
+
+    /// Create a identity matrix of size n x n.
+    static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
+
+    /// Create a square matrix with specified diagonal elements in input.
+    static Tensor Diag(const Tensor& input);
 
     /// Pythonic __getitem__ for tensor.
     ///
@@ -337,7 +359,7 @@ public:
     /// Convert to rvalue such that the Tensor can be assigned.
     /// E.g. in numpy
     /// tensor_a = tensor_b     # tensor_a is lvalue, tensor_a variable will
-    ///                         # now referecne tensor_b, that is, tensor_a
+    ///                         # now reference tensor_b, that is, tensor_a
     ///                         # and tensor_b share exactly the same memory.
     /// tensor_a[:] = tensor_b  # tensor_a[:] is rvalue, tensor_b's values are
     ///                         # assigned to tensor_a's memory.
@@ -846,6 +868,26 @@ public:
     /// used.
     Tensor Contiguous() const;
 
+    /// Computes matrix multiplication with *this and rhs and returns the
+    /// result.
+    Tensor Matmul(const Tensor& rhs) const;
+
+    /// Solves the linear system AX = B with QR decomposition and returns X.
+    /// A must be a square matrix.
+    Tensor Solve(const Tensor& rhs) const;
+
+    /// Solves the linear system AX = B with QR decomposition and returns X.
+    /// A is a (m, n) matrix with m >= n.
+    Tensor LeastSquares(const Tensor& rhs) const;
+
+    /// Computes the matrix inversion of the square matrix *this with LU
+    /// factorization and returns the result.
+    Tensor Inverse() const;
+
+    /// Computes the matrix SVD decomposition A = U S VT and returns the result.
+    /// Note VT (V transpose) is returned instead of V.
+    std::tuple<Tensor, Tensor, Tensor> SVD() const;
+
     inline SizeVector GetShape() const { return shape_; }
 
     inline const SizeVector& GetShapeRef() const { return shape_; }
@@ -911,6 +953,9 @@ public:
     /// Convert DLManagedTensor to Tensor.
     static Tensor FromDLPack(const DLManagedTensor* dlmt);
 
+    /// Assert that the Tensor has the specified shape.
+    void AssertShape(const SizeVector& expected_shape) const;
+
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
@@ -946,7 +991,7 @@ protected:
 
     /// Underlying memory buffer for Tensor.
     std::shared_ptr<Blob> blob_ = nullptr;
-};
+};  // namespace core
 
 template <>
 inline Tensor::Tensor(const std::vector<bool>& init_vals,
