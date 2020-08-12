@@ -25,15 +25,15 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/TetraMesh.h"
-#include "open3d/geometry/BoundingVolume.h"
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/TriangleMesh.h"
 
 #include <Eigen/Dense>
 #include <array>
 #include <numeric>
 #include <tuple>
 
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -67,8 +67,7 @@ TetraMesh TetraMesh::operator+(const TetraMesh &mesh) const {
 TetraMesh &TetraMesh::RemoveDuplicatedVertices() {
     typedef decltype(tetras_)::value_type::Scalar Index;
     typedef std::tuple<double, double, double> Coordinate3;
-    std::unordered_map<Coordinate3, size_t,
-                       utility::hash_tuple::hash<Coordinate3>>
+    std::unordered_map<Coordinate3, size_t, utility::hash_tuple<Coordinate3>>
             point_to_old_index;
     std::vector<Index> index_old_to_new(vertices_.size());
     size_t old_vertex_num = vertices_.size();
@@ -104,7 +103,7 @@ TetraMesh &TetraMesh::RemoveDuplicatedVertices() {
 TetraMesh &TetraMesh::RemoveDuplicatedTetras() {
     typedef decltype(tetras_)::value_type::Scalar Index;
     typedef std::tuple<Index, Index, Index, Index> Index4;
-    std::unordered_map<Index4, size_t, utility::hash_tuple::hash<Index4>>
+    std::unordered_map<Index4, size_t, utility::hash_tuple<Index4>>
             tetra_to_old_index;
     size_t old_tetra_num = tetras_.size();
     size_t k = 0;
@@ -242,7 +241,7 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
                std::get<1>(b) == std::get<1>(a);
     };
 
-    std::unordered_map<Index2, size_t, utility::hash_tuple::hash<Index2>>
+    std::unordered_map<Index2, size_t, utility::hash_tuple<Index2>>
             intersecting_edges;
 
     const int tetra_edges[][2] = {{0, 1}, {0, 2}, {0, 3},

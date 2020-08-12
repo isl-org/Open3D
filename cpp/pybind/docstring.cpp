@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "pybind/docstring.h"
+
 #include <regex>
 #include <sstream>
 #include <string>
@@ -33,7 +35,6 @@
 
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
-#include "pybind/docstring.h"
 
 namespace open3d {
 namespace docstring {

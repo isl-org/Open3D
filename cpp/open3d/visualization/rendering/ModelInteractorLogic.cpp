@@ -75,7 +75,7 @@ void ModelInteractorLogic::Rotate(int dx, int dy) {
                                        rot_matrix * t.rotation(),
                                        Eigen::Vector3f(1, 1, 1));
         t.translate(-center_of_rotation_);
-        scene_->SetEntityTransform(o, t);
+        // scene_->SetEntityTransform(o, t);
     }
     UpdateBoundingBox(Camera::Transform(rot_matrix));
 }
@@ -91,7 +91,7 @@ void ModelInteractorLogic::RotateZ(int dx, int dy) {
                                        rot_matrix * t.rotation(),
                                        Eigen::Vector3f(1, 1, 1));
         t.translate(-center_of_rotation_);
-        scene_->SetEntityTransform(o, t);
+        // scene_->SetEntityTransform(o, t);
     }
     UpdateBoundingBox(Camera::Transform(rot_matrix));
 }
@@ -105,12 +105,12 @@ void ModelInteractorLogic::Dolly(int dy, DragType drag_type) {
         if (drag_type == DragType::MOUSE) {
             t = transforms_at_mouse_down_[o];  // copy
         } else {
-            t = scene_->GetEntityTransform(o);
+            // t = scene_->GetEntityTransform(o);
         }
         Eigen::Vector3f new_trans = t.translation() + world_move;
         t.fromPositionOrientationScale(new_trans, t.rotation(),
                                        Eigen::Vector3f(1, 1, 1));
-        scene_->SetEntityTransform(o, t);
+        // scene_->SetEntityTransform(o, t);
     }
 
     Camera::Transform t = Camera::Transform::Identity();
@@ -129,7 +129,7 @@ void ModelInteractorLogic::Pan(int dx, int dy) {
         Eigen::Vector3f new_trans = t.translation() + world_move;
         t.fromPositionOrientationScale(new_trans, t.rotation(),
                                        Eigen::Vector3f(1, 1, 1));
-        scene_->SetEntityTransform(o, t);
+        // scene_->SetEntityTransform(o, t);
     }
     Camera::Transform t = Camera::Transform::Identity();
     t.translate(world_move);
@@ -151,13 +151,13 @@ void ModelInteractorLogic::StartMouseDrag() {
     SetMouseDownInfo(Camera::Transform::Identity(), center_of_rotation_);
 
     transforms_at_mouse_down_.clear();
-    for (auto o : model_) {
-        transforms_at_mouse_down_[o] = scene_->GetEntityTransform(o);
-    }
+    // for (auto o : model_) {
+    //     transforms_at_mouse_down_[o] = scene_->GetEntityTransform(o);
+    // }
 
     // Show axes while user is dragging
-    is_axes_visible_ = scene_->GetEntityEnabled(axes_);
-    scene_->SetEntityEnabled(axes_, true);
+    // is_axes_visible_ = scene_->GetEntityEnabled(axes_);
+    // scene_->SetEntityEnabled(axes_, true);
 
     // Fix far plane if the center of the model is offset from origin
     Super::UpdateCameraFarPlane();
@@ -166,7 +166,7 @@ void ModelInteractorLogic::StartMouseDrag() {
 void ModelInteractorLogic::UpdateMouseDragUI() {}
 
 void ModelInteractorLogic::EndMouseDrag() {
-    scene_->SetEntityEnabled(axes_, is_axes_visible_);
+    // scene_->SetEntityEnabled(axes_, is_axes_visible_);
 }
 
 }  // namespace rendering

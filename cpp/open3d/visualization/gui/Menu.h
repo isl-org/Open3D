@@ -39,6 +39,11 @@ namespace gui {
 struct DrawContext;
 struct Theme;
 
+/// The menu item action is handled by Window, rather than by registering a
+/// a callback function with (non-existent) Menu::SetOnClicked(). This is
+/// because on macOS the menubar is global over all application windows, so any
+/// callback would need to go find the data object corresponding to the active
+/// window.
 class Menu {
     friend class Application;
 
@@ -54,6 +59,15 @@ public:
                  KeyName key = KEY_NONE);
     void AddMenu(const char* name, std::shared_ptr<Menu> submenu);
     void AddSeparator();
+
+    void InsertItem(int index,
+                    const char* name,
+                    ItemId item_id = NO_ITEM,
+                    KeyName key = KEY_NONE);
+    void InsertMenu(int index, const char* name, std::shared_ptr<Menu> submenu);
+    void InsertSeparator(int index);
+
+    int GetNumberOfItems() const;
 
     /// Searches the menu hierarchy down from this menu to find the item
     /// and returns true if the item is enabled.

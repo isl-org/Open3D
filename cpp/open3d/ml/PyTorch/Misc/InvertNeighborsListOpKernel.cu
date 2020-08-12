@@ -1,14 +1,42 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2020 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+//
+
 #include <ATen/cuda/CUDAContext.h>
-#include "../TorchHelper.h"
-#include "open3d/ml/Misc/Detail/InvertNeighborsList.cuh"
+
+#include "open3d/ml/PyTorch/TorchHelper.h"
+#include "open3d/ml/impl/misc/InvertNeighborsList.cuh"
 #include "torch/script.h"
 
 template <class TIndex, class TAttr>
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
         int64_t num_points,
-        torch::Tensor inp_neighbors_index,
-        torch::Tensor inp_neighbors_row_splits,
-        torch::Tensor inp_neighbors_attributes,
+        const torch::Tensor& inp_neighbors_index,
+        const torch::Tensor& inp_neighbors_row_splits,
+        const torch::Tensor& inp_neighbors_attributes,
         int num_attributes) {
     auto device = inp_neighbors_index.device().type();
     auto device_idx = inp_neighbors_index.device().index();
@@ -29,7 +57,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
     size_t temp_size = 0;
 
     // determine temp_size
-    open3d::ml::detail::InvertNeighborsListCUDA(
+    open3d::ml::impl::InvertNeighborsListCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             inp_neighbors_index.data_ptr<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()
@@ -49,7 +77,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
     temp_ptr = temp_tensor.data_ptr<uint8_t>();
 
     // actually invert the list
-    open3d::ml::detail::InvertNeighborsListCUDA(
+    open3d::ml::impl::InvertNeighborsListCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             inp_neighbors_index.data_ptr<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()
@@ -66,11 +94,11 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
     return std::make_tuple(neighbors_index, neighbors_row_splits,
                            neighbors_attributes);
 }
-#define INSTANTIATE(TIndex, TAttr)                                       \
-    template std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>     \
-    InvertNeighborsListCUDA<TIndex, TAttr>(int64_t, torch::Tensor,       \
-                                           torch::Tensor, torch::Tensor, \
-                                           int num_attributes);
+#define INSTANTIATE(TIndex, TAttr)                                   \
+    template std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> \
+    InvertNeighborsListCUDA<TIndex, TAttr>(                          \
+            int64_t, const torch::Tensor&, const torch::Tensor&,     \
+            const torch::Tensor&, int num_attributes);
 
 INSTANTIATE(int32_t, int32_t)
 INSTANTIATE(int32_t, int64_t)

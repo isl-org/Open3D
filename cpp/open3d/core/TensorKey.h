@@ -70,7 +70,7 @@ public:
     static TensorKey Slice(NoneType start, NoneType stop, int64_t step);
     static TensorKey Slice(NoneType start, NoneType stop, NoneType step);
 
-    /// Construct an TensorKeyMode::IndexTensor type TensorKey (advnced
+    /// Construct an TensorKeyMode::IndexTensor type TensorKey (advanced
     /// indexing).
     static TensorKey IndexTensor(const Tensor& index_tensor);
 

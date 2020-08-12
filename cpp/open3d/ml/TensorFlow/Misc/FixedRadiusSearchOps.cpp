@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "../TensorFlowHelper.h"
+#include "open3d/ml/TensorFlow/TensorFlowHelper.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
@@ -50,7 +50,7 @@ REGISTER_OP("Open3DFixedRadiusSearch")
         .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
-            using namespace open3d::ml::shape_checking;
+            using namespace open3d::ml::op_util;
             ShapeHandle points_shape, queries_shape, radius_shape,
                     points_row_splits_shape, queries_row_splits_shape,
                     hash_table_splits_shape, hash_table_index_shape,

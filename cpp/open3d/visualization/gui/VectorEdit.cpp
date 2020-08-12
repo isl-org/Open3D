@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 
 #include <imgui.h>
+
 #include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
@@ -77,21 +78,20 @@ Size VectorEdit::CalcPreferredSize(const Theme& theme) const {
 
 Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text editing
 
     ImGui::PushStyleColor(
             ImGuiCol_FrameBg,
-            util::colorToImgui(context.theme.text_edit_background_color));
+            colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgHovered,
-            util::colorToImgui(context.theme.text_edit_background_color));
+            colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgActive,
-            util::colorToImgui(context.theme.text_edit_background_color));
+            colorToImgui(context.theme.text_edit_background_color));
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();

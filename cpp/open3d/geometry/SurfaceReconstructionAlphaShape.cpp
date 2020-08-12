@@ -24,16 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Eigen/Dense>
+#include <iostream>
+#include <list>
+
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
-
-#include <Eigen/Dense>
-
-#include <iostream>
-#include <list>
 
 namespace open3d {
 namespace geometry {
@@ -140,7 +139,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
             "[CreateFromPointCloudAlphaShape] remove triangles within "
             "the mesh");
     std::unordered_map<Eigen::Vector3i, int,
-                       utility::hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen<Eigen::Vector3i>>
             triangle_count;
     for (size_t tidx = 0; tidx < mesh->triangles_.size(); ++tidx) {
         Eigen::Vector3i triangle = mesh->triangles_[tidx];

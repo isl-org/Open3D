@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/Application.h"
 
 #include <GLFW/glfw3.h>
+
 #include <algorithm>
 #include <chrono>
 #include <list>
@@ -73,6 +74,15 @@ std::string FindResourcePath(int argc, const char *argv[]) {
     } else {
         // relative path:  prepend working directory
         auto cwd = open3d::utility::filesystem::GetWorkingDirectory();
+#ifdef __APPLE__
+        // When running an app from the command line with the full relative
+        // path (e.g. `bin/Open3D.app/Contents/MacOS/Open3D`), the working
+        // directory can be set to the resources directory, in which case
+        // a) we are done, and b) cwd + / + argv0 is wrong.
+        if (cwd.rfind("/Contents/Resources") == cwd.size() - 19) {
+            return cwd;
+        }
+#endif  // __APPLE__
         path = cwd + "/" + path;
     }
 
@@ -119,12 +129,16 @@ struct Application::Impl {
     std::vector<Posted> posted_;
     // ----
 
-    void InitGFLW() {
+    void InitGLFW() {
         if (this->is_GLFW_initalized_) {
             return;
         }
 
 #if __APPLE__
+        // If we are running from Python we might not be running from a bundle
+        // and would therefore not be a Proper app yet.
+        MacTransformIntoApp();
+
         glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
 #endif
         glfwInit();
@@ -188,7 +202,12 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.combobox_hover_color = Color(0.5, 0.5, 0.5);
     impl_->theme_.combobox_arrow_background_color = highlight_color;
     impl_->theme_.slider_grab_color = Color(0.666, 0.666, 0.666);
-    impl_->theme_.text_edit_background_color = Color(0.25, 0.25, 0.25);
+    impl_->theme_.text_edit_background_color = Color(0.1, 0.1, 0.1);
+    impl_->theme_.list_background_color = Color(0.1, 0.1, 0.1);
+    impl_->theme_.list_hover_color = Color(0.6, 0.6, 0.6);
+    impl_->theme_.list_selected_color = Color(0.5, 0.5, 0.5);
+    impl_->theme_.tree_background_color = impl_->theme_.list_background_color;
+    impl_->theme_.tree_selected_color = impl_->theme_.list_selected_color;
     impl_->theme_.tab_inactive_color = impl_->theme_.button_color;
     impl_->theme_.tab_hover_color = impl_->theme_.button_hover_color;
     impl_->theme_.tab_active_color = impl_->theme_.button_active_color;
@@ -199,7 +218,7 @@ Application::Application() : impl_(new Application::Impl()) {
             filament::backend::Backend::OPENGL);
 
     // Init GLFW here so that we can create windows before running
-    impl_->InitGFLW();
+    impl_->InitGLFW();
 }
 
 Application::~Application() {}
@@ -217,7 +236,23 @@ void Application::Initialize() {
 }
 
 void Application::Initialize(int argc, const char *argv[]) {
-    impl_->resource_path_ = FindResourcePath(argc, argv);
+    Initialize(FindResourcePath(argc, argv).c_str());
+}
+
+void Application::Initialize(const char *resource_path) {
+    impl_->resource_path_ = resource_path;
+    if (!utility::filesystem::DirectoryExists(impl_->resource_path_)) {
+        utility::LogError(
+                ("Can't find resource directory: " + impl_->resource_path_)
+                        .c_str());
+    }
+    if (!utility::filesystem::FileExists(impl_->resource_path_ +
+                                         "/ui_blit.filamat")) {
+        utility::LogError(
+                ("Resource directory does not have Open3D resources: " +
+                 impl_->resource_path_)
+                        .c_str());
+    }
     impl_->theme_.font_path =
             impl_->resource_path_ + "/" + impl_->theme_.font_path;
 }
@@ -328,7 +363,7 @@ bool Application::RunOneTick() {
 
         // We already called this in the constructor, but it is possible
         // (but unlikely) that the run loop finished and is starting again.
-        impl_->InitGFLW();
+        impl_->InitGLFW();
 
         impl_->is_running_ = true;
     }

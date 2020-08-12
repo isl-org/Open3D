@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/TabControl.h"
 
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -90,8 +91,7 @@ void TabControl::Layout(const Theme& theme) {
 
 TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();

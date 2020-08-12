@@ -96,12 +96,12 @@ protected:
     std::vector<GLuint> diffuse_texture_buffers_;
 
     // At most support 4 lights
-    GLHelper::GLMatrix4f light_position_world_data_;
-    GLHelper::GLMatrix4f light_color_data_;
-    GLHelper::GLVector4f light_diffuse_power_data_;
-    GLHelper::GLVector4f light_specular_power_data_;
-    GLHelper::GLVector4f light_specular_shininess_data_;
-    GLHelper::GLVector4f light_ambient_data_;
+    gl_util::GLMatrix4f light_position_world_data_;
+    gl_util::GLMatrix4f light_color_data_;
+    gl_util::GLVector4f light_diffuse_power_data_;
+    gl_util::GLVector4f light_specular_power_data_;
+    gl_util::GLVector4f light_specular_shininess_data_;
+    gl_util::GLVector4f light_ambient_data_;
 };
 
 class TexturePhongShaderForTriangleMesh : public TexturePhongShader {

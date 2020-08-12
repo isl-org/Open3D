@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/Layout.h"
 
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -216,6 +217,9 @@ int Layout1D::GetSpacing() const { return impl_->spacing_; }
 const Margins& Layout1D::GetMargins() const { return impl_->margins_; }
 Margins& Layout1D::GetMutableMargins() { return impl_->margins_; }
 
+void Layout1D::SetSpacing(int spacing) { impl_->spacing_ = spacing; }
+void Layout1D::SetMargins(const Margins& margins) { impl_->margins_ = margins; }
+
 void Layout1D::AddFixed(int size) {
     AddChild(std::make_shared<Fixed>(size, impl_->dir_));
 }
@@ -400,10 +404,9 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
     auto padding = ImGui::GetStyle().FramePadding;
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, padding.y));
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
-                          util::colorToImgui(context.theme.button_hover_color));
-    ImGui::PushStyleColor(
-            ImGuiCol_HeaderActive,
-            util::colorToImgui(context.theme.button_active_color));
+                          colorToImgui(context.theme.button_hover_color));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive,
+                          colorToImgui(context.theme.button_active_color));
 
     ImGui::SetNextTreeNodeOpen(impl_->is_open_);
     if (ImGui::TreeNode(impl_->id_.c_str())) {

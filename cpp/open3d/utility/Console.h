@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -87,7 +88,7 @@ public:
         return instance;
     }
 
-    void VError[[noreturn]](const char *format, fmt::format_args args) const {
+    void VError [[noreturn]] (const char *format, fmt::format_args args) const {
         std::string err_msg = fmt::vformat(format, args);
         err_msg = fmt::format("[Open3D ERROR] {}", err_msg);
         err_msg = ColorString(err_msg, TextColor::Red, 1);
@@ -120,7 +121,7 @@ public:
     }
 
     template <typename... Args>
-    void Error[[noreturn]](const char *format, const Args &... args) const {
+    void Error [[noreturn]] (const char *format, const Args &... args) const {
         VError(format, fmt::make_format_args(args...));
     }
 
@@ -155,10 +156,7 @@ protected:
 public:
     VerbosityLevel verbosity_level_;
     std::function<void(const std::string &)> print_fcn_ =
-            [](const std::string &msg) {
-                fmt::print(msg);
-                fmt::print("\n");
-            };
+            [](const std::string &msg) { std::cout << msg << std::endl; };
 };
 
 /// Set global verbosity level of Open3D
@@ -175,7 +173,7 @@ inline VerbosityLevel GetVerbosityLevel() {
 }
 
 template <typename... Args>
-inline void LogError[[noreturn]](const char *format, const Args &... args) {
+inline void LogError [[noreturn]] (const char *format, const Args &... args) {
     Logger::i().VError(format, fmt::make_format_args(args...));
 }
 

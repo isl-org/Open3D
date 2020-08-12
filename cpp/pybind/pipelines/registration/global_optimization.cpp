@@ -28,7 +28,6 @@
 #include "open3d/pipelines/registration/GlobalOptimizationConvergenceCriteria.h"
 #include "open3d/pipelines/registration/GlobalOptimizationMethod.h"
 #include "open3d/pipelines/registration/PoseGraph.h"
-
 #include "pybind/docstring.h"
 #include "pybind/pipelines/registration/registration.h"
 
@@ -387,17 +386,19 @@ void pybind_global_optimization(py::module &m) {
 }
 
 void pybind_global_optimization_methods(py::module &m) {
-    m.def("global_optimization",
-          [](pipelines::registration::PoseGraph &pose_graph,
-             const pipelines::registration::GlobalOptimizationMethod &method,
-             const pipelines::registration::
-                     GlobalOptimizationConvergenceCriteria &criteria,
-             const pipelines::registration::GlobalOptimizationOption &option) {
-              pipelines::registration::GlobalOptimization(pose_graph, method,
-                                                          criteria, option);
-          },
-          "Function to optimize pipelines::registration::PoseGraph",
-          "pose_graph"_a, "method"_a, "criteria"_a, "option"_a);
+    m.def(
+            "global_optimization",
+            [](pipelines::registration::PoseGraph &pose_graph,
+               const pipelines::registration::GlobalOptimizationMethod &method,
+               const pipelines::registration::
+                       GlobalOptimizationConvergenceCriteria &criteria,
+               const pipelines::registration::GlobalOptimizationOption
+                       &option) {
+                pipelines::registration::GlobalOptimization(pose_graph, method,
+                                                            criteria, option);
+            },
+            "Function to optimize pipelines::registration::PoseGraph",
+            "pose_graph"_a, "method"_a, "criteria"_a, "option"_a);
     docstring::FunctionDocInject(
             m, "global_optimization",
             {{"pose_graph", "The pose_graph to be optimized (in-place)."},

@@ -28,6 +28,7 @@
 // These are internal helper functions
 
 #include <imgui.h>
+
 #include <string>
 #include <vector>
 
@@ -37,11 +38,12 @@ namespace gui {
 
 class Color;
 
-namespace util {
-
+// These functions are here, because ImVec4 requires imgui.h, and can't be
+// forward-declared because we need to know the size, since it is a return
+// value. Since imgui.h is an implementation detail, we can't put this function
+// in Color or it would pull in imgui.h pretty much everywhere that gui is used.
 ImVec4 colorToImgui(const Color& color);
-
-}  // namespace util
+uint32_t colorToImguiRGBA(const Color& color);
 
 }  // namespace gui
 }  // namespace visualization

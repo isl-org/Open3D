@@ -47,6 +47,7 @@ class GuiVisualizer : public gui::Window {
     using Super = gui::Window;
 
 public:
+    GuiVisualizer(const std::string& title, int width, int height);
     GuiVisualizer(const std::vector<std::shared_ptr<const geometry::Geometry>>&
                           geometries,
                   const std::string& title,
@@ -71,12 +72,19 @@ public:
     void Layout(const gui::Theme& theme) override;
 
 protected:
+    // Add custom items to the application menu (only relevant on macOS)
+    void AddItemsToAppMenu(
+            const std::vector<std::pair<std::string, gui::Menu::ItemId>>&
+                    items);
+
     void OnMenuItemSelected(gui::Menu::ItemId item_id) override;
     void OnDragDropped(const char* path) override;
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
+
+    void Init();
 };
 
 }  // namespace visualization

@@ -5,15 +5,15 @@ endif()
 # Detect whether `npm` is installed. Jupyter support will only be enabled if
 # `npm` is found.
 find_program(NPM "npm")
-if (ENABLE_JUPYTER)
+if (BUILD_JUPYTER_EXTENSION)
     if (NOT NPM)
         message(WARNING "Cannot find npm. Jupyter support will be disabled.")
-        set(ENABLE_JUPYTER OFF)
+        set(BUILD_JUPYTER_EXTENSION OFF)
     else()
         message(STATUS "npm found at: ${NPM}. Jupyter support will be enabled.")
     endif()
 endif()
-message(STATUS "ENABLE_JUPYTER is set to ${ENABLE_JUPYTER}")
+message(STATUS "BUILD_JUPYTER_EXTENSION is set to ${BUILD_JUPYTER_EXTENSION}")
 
 # We need to get python version to configure some meta files
 execute_process(
@@ -34,9 +34,22 @@ set(PACKAGE_NAME pybind)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
 
+if (NOT BUILD_GUI)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp")
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/rendering/rendering.cpp")
+endif()
+
 if (NOT BUILD_AZURE_KINECT)
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
+endif()
+
+if (NOT BUILD_RPC_INTERFACE)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/io/rpc.cpp"
+        )
 endif()
 
 # NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
@@ -66,6 +79,9 @@ open3d_set_global_properties(${PACKAGE_NAME})
 # use the target_compile_definitions approach. Otherwise, use configure_file.
 if (BUILD_AZURE_KINECT)
     target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_AZURE_KINECT)
+endif()
+if (BUILD_GUI)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_GUI)
 endif()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
@@ -111,6 +127,8 @@ if ( BUILD_TENSORFLOW_OPS )
                         COMMENT "Generating python ops.py" )
 
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py")
+    # find tensorflow to get some info for the _build_config.py
+    find_package(Tensorflow)
 endif ()
 
 # add additional optional compiled modules
@@ -123,6 +141,12 @@ if ( BUILD_PYTORCH_OPS )
                         COMMENT "Generating python ops.py and return_types.py" )
 
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py")
+    # get the pytorch version information again here for _build_config.py
+    # because it is not safe to call find_package(Pytorch) again.
+    execute_process(
+        COMMAND ${PYTHON_EXECUTABLE} "-c"
+                "import torch; print(torch.__version__, end='')"
+        OUTPUT_VARIABLE Pytorch_VERSION)
 endif ()
 
 configure_file("_build_config.py.in"
@@ -134,9 +158,11 @@ add_custom_target(python-package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
-            -DENABLE_JUPYTER=${ENABLE_JUPYTER}
+            -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+            -DBUILD_GUI=${BUILD_GUI}
+            -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}

@@ -97,7 +97,7 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
         const Device& device) {
     static std::unordered_map<Device::DeviceType,
                               std::shared_ptr<DeviceMemoryManager>,
-                              utility::hash_enum_class::hash>
+                              utility::hash_enum_class>
             map_device_type_to_memory_manager = {
                     {Device::DeviceType::CPU,
                      std::make_shared<CPUMemoryManager>()},

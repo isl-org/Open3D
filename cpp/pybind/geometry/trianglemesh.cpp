@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/TriangleMesh.h"
+
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/PointCloud.h"
-
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
@@ -326,16 +326,17 @@ void pybind_trianglemesh(py::module &m) {
                  "energy"_a = geometry::MeshBase::
                          DeformAsRigidAsPossibleEnergy::Spokes,
                  "smoothed_alpha"_a = 0.01)
-            .def_static("create_from_point_cloud_alpha_shape",
-                        [](const geometry::PointCloud &pcd, double alpha) {
-                            return geometry::TriangleMesh::
-                                    CreateFromPointCloudAlphaShape(pcd, alpha);
-                        },
-                        "Alpha shapes are a generalization of the convex hull. "
-                        "With decreasing alpha value the shape schrinks and "
-                        "creates cavities. See Edelsbrunner and Muecke, "
-                        "\"Three-Dimensional Alpha Shapes\", 1994.",
-                        "pcd"_a, "alpha"_a)
+            .def_static(
+                    "create_from_point_cloud_alpha_shape",
+                    [](const geometry::PointCloud &pcd, double alpha) {
+                        return geometry::TriangleMesh::
+                                CreateFromPointCloudAlphaShape(pcd, alpha);
+                    },
+                    "Alpha shapes are a generalization of the convex hull. "
+                    "With decreasing alpha value the shape schrinks and "
+                    "creates cavities. See Edelsbrunner and Muecke, "
+                    "\"Three-Dimensional Alpha Shapes\", 1994.",
+                    "pcd"_a, "alpha"_a)
             .def_static("create_from_point_cloud_alpha_shape",
                         &geometry::TriangleMesh::CreateFromPointCloudAlphaShape,
                         "Alpha shapes are a generalization of the convex hull. "
@@ -366,7 +367,7 @@ void pybind_trianglemesh(py::module &m) {
                         "This function uses the original implementation by "
                         "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
                         "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
-                        "linear_fit"_a = false)
+                        "linear_fit"_a = false, "n_threads"_a = -1)
             .def_static("create_box", &geometry::TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "
@@ -701,7 +702,10 @@ void pybind_trianglemesh(py::module &m) {
               "reconstruction and the diameter of the samples' bounding cube."},
              {"linear_fit",
               "If true, the reconstructor will use linear interpolation to "
-              "estimate the positions of iso-vertices."}});
+              "estimate the positions of iso-vertices."},
+             {"n_threads",
+              "Number of threads used for reconstruction. Set to -1 to "
+              "automatically determine it."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
                                     {{"width", "x-directional length."},
                                      {"height", "y-directional length."},

@@ -83,6 +83,7 @@
 #include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/TextEdit.h"
 #include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "open3d/visualization/utility/SelectionPolygon.h"

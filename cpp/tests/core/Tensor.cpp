@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/Tensor.h"
+
 #include <cmath>
 #include <limits>
 
@@ -31,10 +33,8 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/Helper.h"
-
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
@@ -65,13 +65,19 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(TensorPermuteDevices, Constructor) {
     core::Device device = GetParam();
-
-    core::SizeVector shape{2, 3};
     core::Dtype dtype = core::Dtype::Float32;
-    core::Tensor t(shape, dtype, device);
 
-    EXPECT_EQ(t.GetShape(), shape);
-    EXPECT_EQ(t.GetBlob()->GetDevice(), device);
+    for (const core::SizeVector &shape : std::vector<core::SizeVector>{
+                 {}, {0}, {0, 0}, {0, 1}, {1, 0}, {2, 3}}) {
+        core::Tensor t(shape, dtype, device);
+        EXPECT_EQ(t.GetShape(), shape);
+        EXPECT_EQ(t.GetDtype(), dtype);
+        EXPECT_EQ(t.GetDevice(), device);
+    }
+
+    EXPECT_ANY_THROW(core::Tensor({-1}, dtype, device));
+    EXPECT_ANY_THROW(core::Tensor({0, -2}, dtype, device));
+    EXPECT_ANY_THROW(core::Tensor({-1, -1}, dtype, device));
 }
 
 TEST_P(TensorPermuteDevices, ConstructorBool) {
@@ -365,6 +371,21 @@ TEST_P(TensorPermuteDevices, Item) {
     EXPECT_EQ(t_1_2_3.Item<float>(), 23.f);
 }
 
+TEST_P(TensorPermuteDevices, ItemBool) {
+    core::Device device = GetParam();
+
+    std::vector<bool> vals{true, true, false};
+    core::Tensor t(vals, {3}, core::Dtype::Bool, device);
+
+    core::Tensor t_0 = t[0];
+    EXPECT_THROW(t_0.Item<float>(), std::runtime_error);
+    EXPECT_THROW(t_0.Item<uint8_t>(), std::runtime_error);
+
+    EXPECT_EQ(t[0].Item<bool>(), true);
+    EXPECT_EQ(t[1].Item<bool>(), true);
+    EXPECT_EQ(t[2].Item<bool>(), false);
+}
+
 TEST_P(TensorPermuteDevices, ItemAssign) {
     core::Device device = GetParam();
 
@@ -389,16 +410,13 @@ TEST_P(TensorPermuteDevices, ToString) {
 
     // 0D
     t = core::Tensor::Ones({}, core::Dtype::Float32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"(1.0)");
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(1.0)");
     t = core::Tensor::Full({}, std::numeric_limits<float>::quiet_NaN(),
                            core::Dtype::Float32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"(nan)");
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
     t = core::Tensor::Full({}, std::numeric_limits<double>::quiet_NaN(),
                            core::Dtype::Float32, device);  // Casting
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"(nan)");
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
 
     // 1D float
     t = core::Tensor(std::vector<float>{0, 1, 2, 3, 4}, {5},
@@ -2439,6 +2457,85 @@ TEST_P(TensorPermuteDevices, ReduceMean) {
     dst = src.Mean({0, 1}, true);
     EXPECT_EQ(dst.GetShape(), core::SizeVector({1, 1}));
     EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
+}
+
+TEST_P(TensorPermuteDevices, ToDLPackFromDLPack) {
+    core::Device device = GetParam();
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+
+    core::Tensor src_t(vals, {2, 3, 4}, core::Dtype::Float32, device);
+    const void *blob_head = src_t.GetBlob()->GetDataPtr();
+
+    // src_t = src_t[1, 0:3:2, 0:4:2], a mix of [] and slice
+    src_t = src_t[1].Slice(0, 0, 3, 2).Slice(1, 0, 4, 2);
+    EXPECT_EQ(src_t.GetShape(), core::SizeVector({2, 2}));
+    EXPECT_EQ(src_t.GetStrides(), core::SizeVector({8, 2}));
+    EXPECT_EQ(src_t.GetBlob()->GetDataPtr(), blob_head);
+    EXPECT_EQ(src_t.GetDataPtr(),
+              static_cast<const char *>(blob_head) +
+                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+    EXPECT_EQ(src_t.ToFlatVector<float>(),
+              std::vector<float>({12, 14, 20, 22}));
+
+    DLManagedTensor *dl_t = src_t.ToDLPack();
+
+    core::Tensor dst_t = core::Tensor::FromDLPack(dl_t);
+    EXPECT_EQ(dst_t.GetShape(), core::SizeVector({2, 2}));
+    EXPECT_EQ(dst_t.GetStrides(), core::SizeVector({8, 2}));
+    // Note that the original blob head's info has been discarded.
+    EXPECT_EQ(dst_t.GetBlob()->GetDataPtr(),
+              static_cast<const char *>(blob_head) +
+                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+    EXPECT_EQ(dst_t.GetDataPtr(),
+              static_cast<const char *>(blob_head) +
+                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+    EXPECT_EQ(dst_t.ToFlatVector<float>(),
+              std::vector<float>({12, 14, 20, 22}));
+}
+
+TEST_P(TensorPermuteDevices, IsSame) {
+    core::Device device = GetParam();
+
+    // "Shallow" copy.
+    core::Tensor t0 = core::Tensor::Ones({6, 8}, core::Dtype::Float32, device);
+    core::Tensor t1 = t0;  // "Shallow" copy
+    EXPECT_TRUE(t0.IsSame(t1));
+    EXPECT_TRUE(t1.IsSame(t0));
+
+    // Copy constructor copies view.
+    core::Tensor t0_copy_construct(t0);
+    EXPECT_TRUE(t0.IsSame(t0_copy_construct));
+    EXPECT_TRUE(t0_copy_construct.IsSame(t0));
+
+    // New tensor of the same value.
+    core::Tensor t2 = core::Tensor::Ones({6, 8}, core::Dtype::Float32, device);
+    EXPECT_FALSE(t0.IsSame(t2));
+    EXPECT_FALSE(t2.IsSame(t0));
+
+    // Tensor::Contiguous() does not copy if already contiguous.
+    core::Tensor t0_contiguous = t0.Contiguous();
+    EXPECT_TRUE(t0.IsSame(t0_contiguous));
+    EXPECT_TRUE(t0_contiguous.IsSame(t0));
+
+    // Slices are views.
+    core::Tensor t0_slice =
+            t0.GetItem({core::TensorKey::Slice(0, 5, 2)})[0];  // t0[0:5:2][0]
+    core::Tensor t1_slice = t1[0];
+    EXPECT_TRUE(t0_slice.IsSame(t1_slice));
+    EXPECT_TRUE(t1_slice.IsSame(t0_slice));
+
+    // Explicit copy to the same device.
+    core::Tensor t0_copy = t0.Copy(device);
+    EXPECT_FALSE(t0.IsSame(t0_copy));
+    EXPECT_FALSE(t0_copy.IsSame(t0));
+
+    // std::vector<Tensor> initializer list and push_back() are views.
+    std::vector<core::Tensor> vec{t0};
+    vec.push_back(t1);
+    EXPECT_TRUE(t0.IsSame(vec[0]));
+    EXPECT_TRUE(t1.IsSame(vec[1]));
+    EXPECT_TRUE(vec[0].IsSame(vec[1]));
 }
 
 }  // namespace tests

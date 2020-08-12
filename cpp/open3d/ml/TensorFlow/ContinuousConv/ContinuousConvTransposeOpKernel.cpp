@@ -25,10 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "ContinuousConvTransposeOpKernel.h"
-#include "open3d/ml/ContinuousConv/Detail/ContinuousConvTranspose.h"
+
+#include "open3d/ml/impl/continuous_conv/ContinuousConvTranspose.h"
 
 using namespace open3d;
-using namespace open3d::ml::detail;
+using namespace open3d::ml::impl;
 using namespace tensorflow;
 
 template <class TReal, class TIndex>

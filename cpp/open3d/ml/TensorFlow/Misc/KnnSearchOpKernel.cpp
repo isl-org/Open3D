@@ -25,9 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "KnnSearchOpKernel.h"
-#include "open3d/ml/Misc/Detail/KnnSearch.h"
 
-using namespace open3d::ml::detail;
+#include "open3d/ml/impl/misc/KnnSearch.h"
+
+using namespace open3d::ml::impl;
 using namespace knn_search_opkernel;
 using namespace tensorflow;
 

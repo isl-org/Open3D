@@ -27,13 +27,12 @@
 #include "open3d/visualization/gui/Checkbox.h"
 
 #include <imgui.h>
+
 #include <cmath>
 #include <string>
 
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
-
-using namespace open3d::visualization::gui::util;
 
 namespace open3d {
 namespace visualization {
@@ -72,8 +71,7 @@ Size Checkbox::CalcPreferredSize(const Theme& theme) const {
 
 Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
     auto result = Widget::DrawResult::NONE;
 
     // ImGUI doesn't offer styling specific to checkboxes other than the

@@ -191,7 +191,7 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
             break;
     }
     for (const auto &point : polygon_) {
-        auto point3d = GLHelper::Unproject(
+        auto point3d = gl_util::Unproject(
                 Eigen::Vector3d(point(0), point(1), 1.0), view.GetMVPMatrix(),
                 view.GetWindowWidth(), view.GetWindowHeight());
         point3d(idx) = 0.0;

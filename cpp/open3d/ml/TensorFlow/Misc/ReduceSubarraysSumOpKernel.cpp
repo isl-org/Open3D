@@ -25,9 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "ReduceSubarraysSumOpKernel.h"
-#include "open3d/ml/Misc/Detail/ReduceSubarraysSum.h"
 
-using namespace open3d::ml::detail;
+#include "open3d/ml/impl/misc/ReduceSubarraysSum.h"
+
+using namespace open3d::ml::impl;
 using namespace reduce_subarrays_sum_opkernel;
 using namespace tensorflow;
 

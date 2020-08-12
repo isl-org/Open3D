@@ -25,10 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "ContinuousConvBackpropFilterOpKernel.h"
-#include "open3d/ml/ContinuousConv/Detail/ContinuousConvBackpropFilter.h"
+
+#include "open3d/ml/impl/continuous_conv/ContinuousConvBackpropFilter.h"
 
 using namespace open3d;
-using namespace open3d::ml::detail;
+using namespace open3d::ml::impl;
 using namespace tensorflow;
 
 template <class TReal, class TIndex>

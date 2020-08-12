@@ -1,4 +1,4 @@
-set (KERNEL_SRC
+set(KERNEL_SRC
     kernel/IndexGetSet.cpp
     kernel/IndexGetSetCPU.cpp
     kernel/NonZero.cpp
@@ -9,9 +9,10 @@ set (KERNEL_SRC
     kernel/BinaryEWCPU.cpp
     kernel/Reduction.cpp
     kernel/ReductionCPU.cpp
+    kernel/Kernel.cpp
 )
 
-set (KERNEL_CUDA_SRC
+set(KERNEL_CUDA_SRC
     kernel/IndexGetSetCUDA.cu
     kernel/NonZeroCUDA.cu
     kernel/UnaryEWCUDA.cu
@@ -19,11 +20,33 @@ set (KERNEL_CUDA_SRC
     kernel/ReductionCUDA.cu
 )
 
-set (CORE_SRC
-    dlpack/DLPackConverter.cpp
+set(LINALG_SRC
+    linalg/Matmul.cpp
+    linalg/MatmulCPU.cpp
+    linalg/LeastSquares.cpp
+    linalg/LeastSquaresCPU.cpp
+    linalg/Solve.cpp
+    linalg/SolveCPU.cpp
+    linalg/Inverse.cpp
+    linalg/InverseCPU.cpp
+    linalg/SVD.cpp
+    linalg/SVDCPU.cpp
+)
+
+set(LINALG_CUDA_SRC
+    linalg/LinalgUtils.cpp
+    linalg/MatmulCUDA.cpp
+    linalg/LeastSquaresCUDA.cpp
+    linalg/SolveCUDA.cpp
+    linalg/InverseCUDA.cpp
+    linalg/SVDCUDA.cpp
+)
+
+set(CORE_SRC
     AdvancedIndexing.cpp
     ShapeUtil.cpp
     CUDAUtils.cpp
+    EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
@@ -33,20 +56,23 @@ set (CORE_SRC
     TensorList.cpp
 )
 
-set (CORE_CUDA_SRC
+set(CORE_CUDA_SRC
     MemoryManagerCUDA.cu
 )
 
-if (BUILD_CUDA_MODULE)
-    set (ALL_CORE_SRC
+if(BUILD_CUDA_MODULE)
+    set(ALL_CORE_SRC
         ${CORE_SRC}
         ${CORE_CUDA_SRC}
+        ${LINALG_SRC}
+        ${LINALG_CUDA_SRC}
         ${KERNEL_SRC}
         ${KERNEL_CUDA_SRC}
     )
 else()
-    set (ALL_CORE_SRC
+  set(ALL_CORE_SRC
         ${CORE_SRC}
+        ${LINALG_SRC}
         ${KERNEL_SRC}
     )
 endif()
@@ -57,6 +83,6 @@ open3d_set_global_properties(core)
 open3d_link_3rdparty_libraries(core)
 open3d_show_and_abort_on_warning(core)
 
-if (BUILD_CUDA_MODULE)
+if(BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-endif()
+  endif()

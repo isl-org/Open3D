@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/Label.h"
 
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 #include <string>
@@ -115,12 +116,11 @@ Size Label::CalcPreferredSize(const Theme& theme) const {
 
 Widget::DrawResult Label::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
     ImGui::PushItemWidth(frame.width);
     bool is_default_color = (impl_->color_ == DEFAULT_COLOR);
     if (!is_default_color) {
-        ImGui::PushStyleColor(ImGuiCol_Text, util::colorToImgui(impl_->color_));
+        ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(impl_->color_));
     }
     if (impl_->is_single_line) {
         ImGui::TextUnformatted(impl_->text_.c_str());

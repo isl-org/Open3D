@@ -1,7 +1,6 @@
 message(STATUS "Building Pytorch ops")
 
 if(BUILD_CUDA_MODULE)
-    set(CUDA_ENABLED YES)
     message(STATUS "Building Pytorch ops with CUDA")
 endif()
 
@@ -9,23 +8,23 @@ find_package(Pytorch REQUIRED)
 find_package(TBB REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(parallelstl REQUIRED)
-if(CUDA_ENABLED)
+if(BUILD_CUDA_MODULE)
     find_package(CUB REQUIRED)
     # find_package(CUTLASS REQUIRED)
 endif()
 
-if(CUDA_ENABLED)
+if(BUILD_CUDA_MODULE)
     file(
         GLOB_RECURSE
         open3d_torch_ops_SOURCES
         "*.cpp"
         "*.cu"
-        "../*/Detail/*.cc"
-        "../*/Detail/*.cpp"
-        "../*/Detail/*.cu")
+        "../impl/*/*.cc"
+        "../impl/*/*.cpp"
+        "../impl/*/*.cu")
 else()
-    file(GLOB_RECURSE open3d_torch_ops_SOURCES "*.cpp" "../*/Detail/*.cc"
-         "../*/Detail/*.cpp")
+    file(GLOB_RECURSE open3d_torch_ops_SOURCES "*.cpp" "../impl/*/*.cc"
+         "../impl/*/*.cpp")
 endif()
 message(STATUS ${open3d_torch_ops_SOURCES})
 
@@ -37,15 +36,18 @@ open3d_show_and_abort_on_warning(open3d_torch_ops)
 set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
-if(CUDA_ENABLED)
+set( open3d_torch_ops_DEFINITIONS )
+if(BUILD_CUDA_MODULE)
     target_include_directories(open3d_torch_ops SYSTEM PRIVATE
         ${CUB_INCLUDE_DIR}
         # ${CUTLASS_INCLUDE_DIR}
     )
-    target_compile_definitions(open3d_torch_ops PRIVATE CUDA_ENABLED)
+    list(APPEND open3d_torch_ops_DEFINITIONS "BUILD_CUDA_MODULE")
 endif()
+target_compile_definitions(open3d_torch_ops PRIVATE "${open3d_torch_ops_DEFINITIONS}")
 
 target_include_directories(open3d_torch_ops SYSTEM PRIVATE
+    ${PROJECT_SOURCE_DIR}/cpp
     ${TBB_INCLUDE_DIR}
     ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
@@ -53,7 +55,6 @@ target_include_directories(open3d_torch_ops SYSTEM PRIVATE
 )
 
 target_link_libraries(open3d_torch_ops PRIVATE
-    ${CMAKE_PROJECT_NAME}
     ${TBB_LIBRARY}
     ${TBB_MALLOC_LIBRARY}
     ${TORCH_LIBRARIES}

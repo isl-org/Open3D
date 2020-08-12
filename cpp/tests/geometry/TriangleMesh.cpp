@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/TriangleMesh.h"
+
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
 #include "tests/UnitTest.h"
@@ -1875,8 +1876,25 @@ TEST(TriangleMesh, CreateFromPointCloudPoisson) {
 
     std::shared_ptr<geometry::TriangleMesh> mesh_es;
     std::vector<double> densities_es;
+#if __APPLE__
+    // TODO: To be investigated.
+    //
+    // macOS could sometimes be stuck on this test. Examples:
+    // - https://github.com/intel-isl/Open3D/runs/844549493#step:6:3150
+    // - https://github.com/intel-isl/Open3D/runs/741891346#step:5:3146
+    // - https://github.com/intel-isl/Open3D/runs/734021844#step:5:3169
+    //
+    // We suspect that this is related to threading. Here we set n_threads=1,
+    // and if the macOS CI still stuck on this test occasionally, we might need
+    // to look somewhere else.
+    std::tie(mesh_es, densities_es) =
+            geometry::TriangleMesh::CreateFromPointCloudPoisson(
+                    pcd, 2, 0, 1.1f, false, /*n_threads=*/1);
+#else
     std::tie(mesh_es, densities_es) =
             geometry::TriangleMesh::CreateFromPointCloudPoisson(pcd, 2);
+#endif
+
     ExpectMeshEQ(*mesh_es, mesh_gt, 1e-4);
     ExpectEQ(densities_es, densities_gt, 1e-4);
 }
@@ -2181,6 +2199,25 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
     ExpectEQ(ref_vertex_colors, output->vertex_colors_);
     ExpectEQ(ref_triangles, output->triangles_);
     ExpectEQ(ref_triangle_normals, output->triangle_normals_);
+
+    // Test with different origin
+    double size = 1;
+    auto center_frame = geometry::TriangleMesh::CreateCoordinateFrame(size);
+
+    Eigen::Vector3d x(1, 0, 0);
+    auto x_frame = geometry::TriangleMesh::CreateCoordinateFrame(size, x);
+    Eigen::Vector3d x_center = x_frame->GetCenter() - x;
+    ExpectEQ(center_frame->GetCenter(), x_center);
+
+    Eigen::Vector3d y(0, 1, 0);
+    auto y_frame = geometry::TriangleMesh::CreateCoordinateFrame(size, y);
+    Eigen::Vector3d y_center = y_frame->GetCenter() - y;
+    ExpectEQ(center_frame->GetCenter(), y_center);
+
+    Eigen::Vector3d z(0, 0, 1);
+    auto z_frame = geometry::TriangleMesh::CreateCoordinateFrame(size, z);
+    Eigen::Vector3d z_center = z_frame->GetCenter() - z;
+    ExpectEQ(center_frame->GetCenter(), z_center);
 }
 
 }  // namespace tests

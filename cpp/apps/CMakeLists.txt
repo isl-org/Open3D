@@ -14,7 +14,7 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
         list(APPEND RESOURCE_FILES "${SOURCE_DIR}/Assets.car")
 
         set(INFO_PLIST "${SOURCE_DIR}/Info.plist.in")
-        
+
         set(MACOSX_BUNDLE_NAME ${APP_NAME})
         set(MACOSX_BUNDLE_EXECUTABLE_NAME ${APP_NAME})
         set(MACOSX_BUNDLE_GUI_IDENTIFIER com.intel-isl.open3d.${APP_NAME})
@@ -103,6 +103,6 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
     endif()
 endmacro(APP)
 
-if (ENABLE_GUI)
+if (BUILD_GUI)
     APP(Open3DViewer Open3D Open3DViewer ${CMAKE_PROJECT_NAME})
 endif()

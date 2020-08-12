@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/Combobox.h"
 
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -110,6 +111,10 @@ void Combobox::RemoveItem(int index) {
     }
 }
 
+int Combobox::GetNumberOfItems() const {
+    return static_cast<int>(impl_->items_.size());
+}
+
 const char* Combobox::GetItem(int index) const {
     return impl_->items_[index].c_str();
 }
@@ -131,14 +136,15 @@ void Combobox::SetSelectedIndex(int index) {
     }
 }
 
-void Combobox::SetSelectedValue(const char* value) {
+bool Combobox::SetSelectedValue(const char* value) {
     std::string svalue = value;
     for (size_t i = 0; i < impl_->items_.size(); ++i) {
         if (impl_->items_[i] == svalue) {
             SetSelectedIndex(i);
-            return;
+            return true;
         }
     }
+    return false;
 }
 
 void Combobox::SetOnValueChanged(
@@ -164,18 +170,17 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
     bool did_open = false;
 
     auto& frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
 
     ImGui::PushStyleColor(
             ImGuiCol_Button,
-            util::colorToImgui(context.theme.combobox_arrow_background_color));
+            colorToImgui(context.theme.combobox_arrow_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_ButtonHovered,
-            util::colorToImgui(context.theme.combobox_arrow_background_color));
+            colorToImgui(context.theme.combobox_arrow_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_ButtonActive,
-            util::colorToImgui(context.theme.combobox_arrow_background_color));
+            colorToImgui(context.theme.combobox_arrow_background_color));
 
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(frame.width);
