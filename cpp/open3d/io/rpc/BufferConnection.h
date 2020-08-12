@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,21 +24,34 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/io/io.h"
+#pragma once
 
-#include "pybind/open3d_pybind.h"
+#include <memory>
+#include <sstream>
+
+#include "open3d/io/rpc/ConnectionBase.h"
 
 namespace open3d {
+namespace io {
+namespace rpc {
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-#ifdef BUILD_RPC_INTERFACE
-    pybind_rpc(m_io);
-#endif
-}
+/// Implements a connection writing to a buffer
+class BufferConnection : public ConnectionBase {
+public:
+    BufferConnection() {}
 
+    /// Function for sending data wrapped in a zmq message object.
+    std::shared_ptr<zmq::message_t> Send(zmq::message_t& send_msg);
+
+    /// Function for sending raw data. Meant for testing purposes
+    std::shared_ptr<zmq::message_t> Send(const void* data, size_t size);
+
+    std::stringstream& buffer() { return buffer_; }
+    const std::stringstream& buffer() const { return buffer_; }
+
+private:
+    std::stringstream buffer_;
+};
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d
