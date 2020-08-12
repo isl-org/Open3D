@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,21 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/io/io.h"
+#include "open3d/io/rpc/ZMQContext.h"
 
-#include "pybind/open3d_pybind.h"
+#include <zmq.hpp>
 
 namespace open3d {
+namespace io {
+namespace rpc {
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-#ifdef BUILD_RPC_INTERFACE
-    pybind_rpc(m_io);
-#endif
+zmq::context_t& GetZMQContext() {
+    static zmq::context_t context;
+    return context;
 }
 
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

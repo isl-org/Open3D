@@ -1,5 +1,5 @@
 # Adapted from: https://acaird.github.io/computers/2020/02/11/github-google-container-cloud-run
-name: Google Cloud Ubuntu GPU CI (docker)
+name: Ubuntu GPU CI (docker)
 
 on:
   workflow_dispatch:

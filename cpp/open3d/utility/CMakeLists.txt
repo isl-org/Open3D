@@ -1,5 +1,5 @@
 # build
-file(GLOB_RECURSE ALL_SOURCE_FILES "*.cpp")
+file(GLOB ALL_SOURCE_FILES "*.cpp")
 
 # create object library
 add_library(utility OBJECT ${ALL_SOURCE_FILES})

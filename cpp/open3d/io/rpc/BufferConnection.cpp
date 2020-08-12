@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,21 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/io/io.h"
+#include "open3d/io/rpc/BufferConnection.h"
 
-#include "pybind/open3d_pybind.h"
+#include <zmq.hpp>
+
+#include "open3d/io/rpc/Messages.h"
+#include "open3d/utility/Console.h"
+
+using namespace open3d::utility;
 
 namespace open3d {
+namespace io {
+namespace rpc {
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-#ifdef BUILD_RPC_INTERFACE
-    pybind_rpc(m_io);
-#endif
+std::shared_ptr<zmq::message_t> BufferConnection::Send(
+        zmq::message_t& send_msg) {
+    buffer_.write((char*)send_msg.data(), send_msg.size());
+
+    auto OK = messages::Status::OK();
+    msgpack::sbuffer sbuf;
+    messages::Reply reply{OK.MsgId()};
+    msgpack::pack(sbuf, reply);
+    msgpack::pack(sbuf, OK);
+    return std::shared_ptr<zmq::message_t>(
+            new zmq::message_t(sbuf.data(), sbuf.size()));
 }
 
+std::shared_ptr<zmq::message_t> BufferConnection::Send(const void* data,
+                                                       size_t size) {
+    zmq::message_t send_msg(data, size);
+    return Send(send_msg);
+}
+
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d
