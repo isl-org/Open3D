@@ -246,11 +246,11 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
     int padding = context.theme.default_margin;
     int name_width = 0, shortcut_width = 0;
     for (auto &item : impl_->items_) {
-        auto size1 = font->CalcTextSizeA(float(context.theme.font_size),
-                                         10000, 10000, item.name_.c_str());
+        auto size1 = font->CalcTextSizeA(float(context.theme.font_size), 10000,
+                                         10000, item.name_.c_str());
         auto shortcut = CalcShortcutText(item.shortcut_key_);
-        auto size2 = font->CalcTextSizeA(float(context.theme.font_size),
-                                         10000, 10000, shortcut.c_str());
+        auto size2 = font->CalcTextSizeA(float(context.theme.font_size), 10000,
+                                         10000, shortcut.c_str());
         name_width = std::max(name_width, int(std::ceil(size1.x)));
         shortcut_width = std::max(shortcut_width, int(std::ceil(size2.x)));
     }
@@ -262,10 +262,9 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
                         ImVec2(0, float(context.theme.default_margin)));
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,
                         float(context.theme.font_size) / 3.0f);
-    ImGui::PushStyleVar(
-            ImGuiStyleVar_ItemSpacing,
-            ImVec2(float(context.theme.default_margin),
-                   float(context.theme.default_margin)));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
+                        ImVec2(float(context.theme.default_margin),
+                               float(context.theme.default_margin)));
 
     if (ImGui::BeginMenu(name, is_enabled)) {
         for (size_t i = 0; i < impl_->items_.size(); ++i) {

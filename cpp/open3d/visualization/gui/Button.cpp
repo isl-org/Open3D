@@ -111,10 +111,11 @@ Size Button::CalcPreferredSize(const Theme& theme) const {
         // ImGUI will position the text so that the descender is cut off,
         // because it is assuming that it gets a little extra on the bottom.
         // This looks really bad...)
-        return Size(int(std::ceil(size.x + 2.0f + imguiVertPadding)) +
-                              2 * padding_horiz,
-                    int(std::ceil(ImGui::GetTextLineHeight() + imguiVertPadding)) +
-                              2 * padding_vert);
+        return Size(
+                int(std::ceil(size.x + 2.0f + imguiVertPadding)) +
+                        2 * padding_horiz,
+                int(std::ceil(ImGui::GetTextLineHeight() + imguiVertPadding)) +
+                        2 * padding_vert);
     }
 }
 
@@ -147,8 +148,9 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
                 image_id, ImVec2(params.width, params.height),
                 ImVec2(params.u0, params.v0), ImVec2(params.u1, params.v1));
     } else {
-        pressed = ImGui::Button(impl_->title_.c_str(),
-                                ImVec2(float(GetFrame().width), float(GetFrame().height)));
+        pressed = ImGui::Button(
+                impl_->title_.c_str(),
+                ImVec2(float(GetFrame().width), float(GetFrame().height)));
     }
     if (pressed) {
         if (impl_->is_toggleable_) {

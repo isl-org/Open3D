@@ -95,11 +95,13 @@ Size Label::CalcPreferredSize(const Theme& theme) const {
         do {
             ImVec2 sz;
             if (line_end == std::string::npos) {
-                sz = font->CalcTextSizeA(float(theme.font_size), FLT_MAX, wrap_width,
+                sz = font->CalcTextSizeA(float(theme.font_size), FLT_MAX,
+                                         wrap_width,
                                          impl_->text_.c_str() + line_start);
                 line_start = line_end;
             } else {
-                sz = font->CalcTextSizeA(float(theme.font_size), FLT_MAX, wrap_width,
+                sz = font->CalcTextSizeA(float(theme.font_size), FLT_MAX,
+                                         wrap_width,
                                          impl_->text_.c_str() + line_start,
                                          impl_->text_.c_str() + line_end);
                 line_start = line_end + 1;
@@ -110,7 +112,8 @@ Size Label::CalcPreferredSize(const Theme& theme) const {
         } while (line_start != std::string::npos);
 
         return Size(int(std::ceil(size.x)) + int(std::ceil(2.0f * padding.x)),
-                    int(std::ceil(size.y - spacing)) + int(std::ceil(2.0f * padding.y)));
+                    int(std::ceil(size.y - spacing)) +
+                            int(std::ceil(2.0f * padding.y)));
     }
 }
 

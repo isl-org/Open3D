@@ -346,7 +346,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             // upper left)
             auto y = frame.y + ImGui::GetCursorPosY() - ImGui::GetScrollY();
             ImGui::GetWindowDrawList()->AddRectFilled(
-                    ImVec2(float(frame.x), y), ImVec2(float(frame.GetRight()), y + height),
+                    ImVec2(float(frame.x), y),
+                    ImVec2(float(frame.GetRight()), y + height),
                     colorToImguiRGBA(context.theme.tree_selected_color));
         }
 

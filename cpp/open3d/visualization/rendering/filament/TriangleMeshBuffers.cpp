@@ -31,7 +31,7 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4293)
-#endif // _MSC_VER
+#endif  // _MSC_VER
 
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>

@@ -264,9 +264,12 @@ Window::Window(const std::string& title,
     // the appropriate scale factor for text and icons and such.
     float scaling = GetScalingGLFW(impl_->window_);
     impl_->theme_ = Application::GetInstance().GetTheme();
-    impl_->theme_.font_size = int(std::round(impl_->theme_.font_size * scaling));
-    impl_->theme_.default_margin = int(std::round(impl_->theme_.default_margin * scaling));
-    impl_->theme_.default_layout_spacing = int(std::round(impl_->theme_.default_layout_spacing * scaling));
+    impl_->theme_.font_size =
+            int(std::round(impl_->theme_.font_size * scaling));
+    impl_->theme_.default_margin =
+            int(std::round(impl_->theme_.default_margin * scaling));
+    impl_->theme_.default_layout_spacing =
+            int(std::round(impl_->theme_.default_layout_spacing * scaling));
 
     auto& engine = visualization::rendering::EngineInstance::GetInstance();
     auto& resource_manager =
@@ -661,7 +664,8 @@ Widget::DrawResult DrawChild(DrawContext& dc,
         dc.uiOffsetX = frame.x;
         dc.uiOffsetY = frame.y;
         ImGui::SetNextWindowPos(ImVec2(float(frame.x), float(frame.y)));
-        ImGui::SetNextWindowSize(ImVec2(float(frame.width), float(frame.height)));
+        ImGui::SetNextWindowSize(
+                ImVec2(float(frame.width), float(frame.height)));
         if (bg_color_not_default) {
             auto& bgColor = child->GetBackgroundColor();
             ImGui::PushStyleColor(ImGuiCol_WindowBg, colorToImgui(bgColor));
@@ -1026,8 +1030,8 @@ void Window::OnMouseEvent(const MouseEvent& e) {
         ImGuiContext* context = ImGui::GetCurrentContext();
         for (auto* w : context->Windows) {
             if (!w->Hidden && w->Flags & ImGuiWindowFlags_Popup) {
-                Rect r(int(w->Pos.x), int(w->Pos.y),
-                       int(w->Size.x), int(w->Size.y));
+                Rect r(int(w->Pos.x), int(w->Pos.y), int(w->Size.x),
+                       int(w->Size.y));
                 if (r.Contains(e.x, e.y)) {
                     bool weKnowThis = false;
                     for (auto child : impl_->children_) {

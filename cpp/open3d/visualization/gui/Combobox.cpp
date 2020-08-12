@@ -157,8 +157,8 @@ Size Combobox::CalcPreferredSize(const Theme& theme) const {
     auto padding = ImGui::GetStyle().FramePadding;
     int width = 0;
     for (auto& item : impl_->items_) {
-        auto size = ImGui::GetFont()->CalcTextSizeA(float(theme.font_size), 10000,
-                                                    10000, item.c_str());
+        auto size = ImGui::GetFont()->CalcTextSizeA(float(theme.font_size),
+                                                    10000, 10000, item.c_str());
         width = std::max(width, int(std::ceil(size.x)));
     }
     return Size(width + int(std::round(button_width + 2.0 * padding.x)),

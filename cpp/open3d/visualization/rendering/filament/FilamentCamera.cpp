@@ -154,13 +154,13 @@ FilamentCamera::Transform FilamentCamera::GetViewMatrix() const {
     Transform::MatrixType matrix;
 
     matrix << float(ftransform(0, 0)), float(ftransform(0, 1)),
-              float(ftransform(0, 2)), float(ftransform(0, 3)),
-              float(ftransform(1, 0)), float(ftransform(1, 1)),
-              float(ftransform(1, 2)), float(ftransform(1, 3)),
-              float(ftransform(2, 0)), float(ftransform(2, 1)),
-              float(ftransform(2, 2)), float(ftransform(2, 3)),
-              float(ftransform(3, 0)), float(ftransform(3, 1)),
-              float(ftransform(3, 2)), float(ftransform(3, 3));
+            float(ftransform(0, 2)), float(ftransform(0, 3)),
+            float(ftransform(1, 0)), float(ftransform(1, 1)),
+            float(ftransform(1, 2)), float(ftransform(1, 3)),
+            float(ftransform(2, 0)), float(ftransform(2, 1)),
+            float(ftransform(2, 2)), float(ftransform(2, 3)),
+            float(ftransform(3, 0)), float(ftransform(3, 1)),
+            float(ftransform(3, 2)), float(ftransform(3, 3));
 
     return Transform(matrix);
 }

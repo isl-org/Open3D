@@ -84,47 +84,53 @@ void pybind_gui_classes(py::module &m) {
                     },
                     py::return_value_policy::reference,
                     "Gets the Application singleton (read-only)")
-            .def("initialize",
-                 [](Application &instance) {
-                     // We need to find the resources directory. Fortunately,
-                     // Python knows where the module lives (open3d.__file__ is
-                     // the path to
-                     // __init__.py), so we can use that to find the resources
-                     // included in the wheel.
-                     py::object o3d = py::module::import("open3d");
-                     auto o3d_init_path =
-                             o3d.attr("__file__").cast<std::string>();
-                     auto module_path =
-                             utility::filesystem::GetFileParentDirectory(
-                                     o3d_init_path);
-                     auto resource_path = module_path + "/resources";
-                     instance.Initialize(resource_path.c_str());
-                 },
-                 "Initializes the application, using the resources included "
-                 "in the wheel. One of the `initialize` functions _must_ be "
-                 "called prior to using anything in the gui module")
-            .def("initialize",
-                 [](Application &instance, const char *resource_dir) {
-                     instance.Initialize(resource_dir);
-                 },
-                 "Initializes the application with location of the resources "
-                 "provided by the caller. One of the `initialize` functions "
-                 "_must_ be called prior to using anything in the gui module")
-            .def("run",
-                 [](Application &instance) {
-                     while (instance.RunOneTick()) {
-                         // Enable Ctrl-C to kill Python
-                         if (PyErr_CheckSignals() != 0) {
-                             throw py::error_already_set();
-                         }
-                     }
-                 },
-                 "Runs the event loop. After this finishes, all windows and "
-                 "widgets should be considered uninitialized, even if they "
-                 "are still held by Python variables. Using them is unsafe, "
-                 "even if run() is called again.")
-            .def("quit", [](Application &instance) { instance.Quit(); },
-                 "Closes all the windows, exiting as a result")
+            .def(
+                    "initialize",
+                    [](Application &instance) {
+                        // We need to find the resources directory. Fortunately,
+                        // Python knows where the module lives (open3d.__file__
+                        // is the path to
+                        // __init__.py), so we can use that to find the
+                        // resources included in the wheel.
+                        py::object o3d = py::module::import("open3d");
+                        auto o3d_init_path =
+                                o3d.attr("__file__").cast<std::string>();
+                        auto module_path =
+                                utility::filesystem::GetFileParentDirectory(
+                                        o3d_init_path);
+                        auto resource_path = module_path + "/resources";
+                        instance.Initialize(resource_path.c_str());
+                    },
+                    "Initializes the application, using the resources included "
+                    "in the wheel. One of the `initialize` functions _must_ be "
+                    "called prior to using anything in the gui module")
+            .def(
+                    "initialize",
+                    [](Application &instance, const char *resource_dir) {
+                        instance.Initialize(resource_dir);
+                    },
+                    "Initializes the application with location of the "
+                    "resources "
+                    "provided by the caller. One of the `initialize` functions "
+                    "_must_ be called prior to using anything in the gui "
+                    "module")
+            .def(
+                    "run",
+                    [](Application &instance) {
+                        while (instance.RunOneTick()) {
+                            // Enable Ctrl-C to kill Python
+                            if (PyErr_CheckSignals() != 0) {
+                                throw py::error_already_set();
+                            }
+                        }
+                    },
+                    "Runs the event loop. After this finishes, all windows and "
+                    "widgets should be considered uninitialized, even if they "
+                    "are still held by Python variables. Using them is unsafe, "
+                    "even if run() is called again.")
+            .def(
+                    "quit", [](Application &instance) { instance.Quit(); },
+                    "Closes all the windows, exiting as a result")
             .def_property("menubar", &Application::GetMenubar,
                           &Application::SetMenubar,
                           "The Menu for the application (initially None)")
@@ -411,35 +417,6 @@ void pybind_gui_classes(py::module &m) {
             // and float and int are different types. Fortunately, we want
             // a float, which is easily castable from int. So we can pass
             // a py::object and cast it ourselves.
-<<<<<<< HEAD
-            .def_property("horizontal_padding_em",
-                          &Button::GetHorizontalPaddingEm,
-                          [](std::shared_ptr<Button> b, const py::object &em) {
-                              auto vert = b->GetVerticalPaddingEm();
-                              try {
-                                  b->SetPaddingEm(em.cast<float>(), vert);
-                              } catch (const py::cast_error &) {
-                                  py::print(
-                                          "open3d.visualization.gui.Button."
-                                          "horizontal_padding_em can only be "
-                                          "assigned a numeric type");
-                              }
-                          },
-                          "Horizontal padding in em units")
-            .def_property("vertical_padding_em", &Button::GetVerticalPaddingEm,
-                          [](std::shared_ptr<Button> b, const py::object &em) {
-                              auto horiz = b->GetHorizontalPaddingEm();
-                              try {
-                                  b->SetPaddingEm(horiz, em.cast<float>());
-                              } catch (const py::cast_error &) {
-                                  py::print(
-                                          "open3d.visualization.gui.Button."
-                                          "vertical_padding_em can only be "
-                                          "assigned a numeric type");
-                              }
-                          },
-                          "Vertical padding in em units")
-=======
             .def_property(
                     "horizontal_padding_em", &Button::GetHorizontalPaddingEm,
                     [](std::shared_ptr<Button> b, const py::object &em) {
@@ -468,7 +445,6 @@ void pybind_gui_classes(py::module &m) {
                         }
                     },
                     "Vertical padding in em units")
->>>>>>> master
             .def("set_on_clicked", &Button::SetOnClicked,
                  "Calls passed function when button is pressed");
 

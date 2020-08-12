@@ -31,7 +31,7 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4293)
-#endif // _MSC_VER
+#endif  // _MSC_VER
 
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
@@ -39,7 +39,7 @@
 
 #ifdef _MSC_VER
 #pragma warning(pop)
-#endif // _MSC_VER
+#endif  // _MSC_VER
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"

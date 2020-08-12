@@ -29,7 +29,7 @@
 #ifdef _MSC_VER
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>  // so APIENTRY gets defined and GLFW doesn't define it
-#endif  // _MSC_VER
+#endif                // _MSC_VER
 
 #include <GLFW/glfw3.h>
 

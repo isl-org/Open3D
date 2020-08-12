@@ -59,6 +59,7 @@
 #include <map>
 #include <vector>
 
+#include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Gui.h"
@@ -70,7 +71,6 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/utility/FileSystem.h"
 
 using namespace filament::math;
 using namespace filament;

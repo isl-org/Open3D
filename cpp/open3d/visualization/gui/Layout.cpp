@@ -361,8 +361,8 @@ void CollapsableVert::SetIsOpen(bool is_open) { impl_->is_open_ = is_open; }
 Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
     auto* font = ImGui::GetFont();
     auto padding = ImGui::GetStyle().FramePadding;
-    int text_height =
-            int(std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
+    int text_height = int(
+            std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
     int text_width =
             int(std::ceil(font->CalcTextSizeA(float(theme.font_size), FLT_MAX,
                                               FLT_MAX, impl_->text_.c_str())
@@ -380,8 +380,8 @@ Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
 
 void CollapsableVert::Layout(const Theme& theme) {
     auto padding = ImGui::GetStyle().FramePadding;
-    int text_height =
-            int(std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
+    int text_height = int(
+            std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
 
     auto& margins = GetMutableMargins();
     auto orig_top = margins.top;

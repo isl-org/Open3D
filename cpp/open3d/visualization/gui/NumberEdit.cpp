@@ -105,8 +105,10 @@ void NumberEdit::SetOnValueChanged(std::function<void(double)> on_changed) {
 }
 
 Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
-    int num_min_digits = int(std::ceil(std::log10(std::abs(impl_->min_value_))));
-    int num_max_digits = int(std::ceil(std::log10(std::abs(impl_->max_value_))));
+    int num_min_digits =
+            int(std::ceil(std::log10(std::abs(impl_->min_value_))));
+    int num_max_digits =
+            int(std::ceil(std::log10(std::abs(impl_->max_value_))));
     int num_digits = std::max(6, std::max(num_min_digits, num_max_digits));
     if (impl_->min_value_ < 0) {
         num_digits += 1;

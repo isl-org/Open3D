@@ -109,13 +109,13 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
     ImGui::PushItemWidth(float(GetFrame().width));
     if (impl_->type_ == INT) {
         int i_new_value = int(new_value);
-        ImGui::SliderInt(impl_->id_.c_str(), &i_new_value, int(impl_->min_value_),
-                         int(impl_->max_value_));
+        ImGui::SliderInt(impl_->id_.c_str(), &i_new_value,
+                         int(impl_->min_value_), int(impl_->max_value_));
         new_value = double(i_new_value);
     } else {
         float f_new_value = float(new_value);
-        ImGui::SliderFloat(impl_->id_.c_str(), &f_new_value, float(impl_->min_value_),
-                           float(impl_->max_value_));
+        ImGui::SliderFloat(impl_->id_.c_str(), &f_new_value,
+                           float(impl_->min_value_), float(impl_->max_value_));
         new_value = double(f_new_value);
     }
     ImGui::PopItemWidth();

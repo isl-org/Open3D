@@ -107,8 +107,9 @@ Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
         float wrap_width = frame.width - std::ceil(2.0f * padding.x);
         float wrapX = ImGui::GetCursorPos().x + wrap_width;
         auto* font = ImGui::GetFont();
-        auto text_size = font->CalcTextSizeA(
-                float(context.theme.font_size), wrap_width, wrap_width, error_text);
+        auto text_size =
+                font->CalcTextSizeA(float(context.theme.font_size), wrap_width,
+                                    wrap_width, error_text);
         float x = (float(frame.width) - text_size.x) / 2.0f;
         float y = (float(frame.height) - text_size.y) / 2.0f;
 

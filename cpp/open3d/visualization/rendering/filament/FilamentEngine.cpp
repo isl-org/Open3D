@@ -35,7 +35,7 @@ namespace visualization {
 namespace rendering {
 
 namespace {
-    static std::shared_ptr<EngineInstance> g_instance = nullptr;
+static std::shared_ptr<EngineInstance> g_instance = nullptr;
 }  // namespace
 
 filament::backend::Backend EngineInstance::backend_ =
@@ -67,9 +67,7 @@ EngineInstance& EngineInstance::Get() {
     return *g_instance;
 }
 
-void EngineInstance::DestroyInstance() {
-    g_instance.reset();
-}
+void EngineInstance::DestroyInstance() { g_instance.reset(); }
 
 EngineInstance::EngineInstance() {
     engine_ = filament::Engine::create(backend_);

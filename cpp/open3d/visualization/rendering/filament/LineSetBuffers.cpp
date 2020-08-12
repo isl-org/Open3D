@@ -31,7 +31,7 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4293)
-#endif // _MSC_VER
+#endif  // _MSC_VER
 
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
@@ -62,7 +62,9 @@ struct ColoredVertex {
     static std::uint32_t GetPositionOffset() {
         return offsetof(ColoredVertex, position);
     }
-    static std::uint32_t GetColorOffset() { return offsetof(ColoredVertex, color); }
+    static std::uint32_t GetColorOffset() {
+        return offsetof(ColoredVertex, color);
+    }
 
     void SetVertexPosition(const Eigen::Vector3d& pos) {
         auto float_pos = pos.cast<float>();
@@ -159,7 +161,8 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
                 element.SetVertexPosition(pos);
                 element.SetVertexColor(color);
 
-                index_lookup[lookup_key] = {IndexType(index), IndexType(vertex_idx)};
+                index_lookup[lookup_key] = {IndexType(index),
+                                            IndexType(vertex_idx)};
                 index = vertex_idx;
 
                 ++vertex_idx;

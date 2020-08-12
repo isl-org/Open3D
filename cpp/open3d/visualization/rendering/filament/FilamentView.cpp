@@ -33,7 +33,7 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4293)
-#endif // _MSC_VER
+#endif  // _MSC_VER
 
 #include <filament/Camera.h>
 #include <filament/Engine.h>
