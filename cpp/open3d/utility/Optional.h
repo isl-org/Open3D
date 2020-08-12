@@ -281,7 +281,7 @@ class optional : private OptionalBase<T> {
         return detail_::static_addressof(OptionalBase<T>::storage_.value_);
     }
 
-    constexpr const T& contained_val() const & {
+    constexpr const T& contained_val() const& {
         return OptionalBase<T>::storage_.value_;
     }
     constexpr T&& contained_val() && {
@@ -462,7 +462,7 @@ public:
         return dataptr();
     }
 
-    TR2_OPTIONAL_HOST_CONSTEXPR T const& operator*() const & {
+    TR2_OPTIONAL_HOST_CONSTEXPR T const& operator*() const& {
         return TR2_OPTIONAL_ASSERTED_EXPRESSION(initialized(), contained_val());
     }
 
@@ -476,7 +476,7 @@ public:
         return constexpr_move(contained_val());
     }
 
-    TR2_OPTIONAL_HOST_CONSTEXPR T const& value() const & {
+    TR2_OPTIONAL_HOST_CONSTEXPR T const& value() const& {
         return initialized()
                        ? contained_val()
                        : (throw bad_optional_access("bad optional access"),
@@ -496,7 +496,7 @@ public:
     }
 
     template <class V>
-    constexpr T value_or(V&& v) const & {
+    constexpr T value_or(V&& v) const& {
         return *this ? **this : detail_::convert<T>(constexpr_forward<V>(v));
     }
 

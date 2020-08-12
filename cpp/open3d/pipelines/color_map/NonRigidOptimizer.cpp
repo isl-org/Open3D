@@ -24,12 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/pipelines/color_map/NonRigidOptimizer.h"
+
 #include <memory>
 #include <vector>
 
 #include "open3d/pipelines/color_map/ColorMapUtils.h"
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
-#include "open3d/pipelines/color_map/NonRigidOptimizer.h"
 
 namespace Eigen {
 
