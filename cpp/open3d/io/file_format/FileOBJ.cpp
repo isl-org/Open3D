@@ -373,17 +373,16 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
             mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
             mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
             mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
-            if (write_triangle_uvs && mesh.HasTextures()) {
-                std::string tex_filename = parent_dir + mtl_name + ".png";
-                if (!io::WriteImage(tex_filename,
-                                    *mesh.textures_[i].FlipVertical())) {
-                    utility::LogWarning(
-                            "Write OBJ successful, but failed to write texture "
-                            "file.");
-                    return true;
-                }
-                mtl_file << "map_Kd " << mtl_name << ".png\n";
+
+            std::string tex_filename = parent_dir + mtl_name + ".png";
+            if (!io::WriteImage(tex_filename,
+                                *mesh.textures_[i].FlipVertical())) {
+                utility::LogWarning(
+                        "Write OBJ successful, but failed to write texture "
+                        "file.");
+                return true;
             }
+            mtl_file << "map_Kd " << mtl_name << ".png\n";
         }
 
         // write the default material
