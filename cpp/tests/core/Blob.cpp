@@ -43,6 +43,7 @@ TEST_P(BlobPermuteDevices, BlobConstructor) {
     core::Device device = GetParam();
 
     core::Blob b(10, core::Device(device));
+    EXPECT_TRUE(false);
 }
 
 TEST_P(BlobPermuteDevices, BlobConstructorWithExternalMemory) {
