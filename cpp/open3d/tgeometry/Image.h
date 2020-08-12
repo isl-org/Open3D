@@ -121,11 +121,11 @@ public:
     /// Get raw buffer of the Image data.
     void *GetDataPtr() { return data_.GetDataPtr(); }
 
-    /// Retuns the underlying Tensor of the Image.
-    core::Tensor AsTensor() const { return data_; }
-
     /// Get raw buffer of the Image data.
     const void *GetDataPtr() const { return data_.GetDataPtr(); }
+
+    /// Retuns the underlying Tensor of the Image.
+    core::Tensor AsTensor() const { return data_; }
 
 protected:
     /// Internal data of the Image, represented as a 3D tensor of shape {rols,
