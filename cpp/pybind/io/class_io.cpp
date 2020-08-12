@@ -75,6 +75,10 @@ static const std::unordered_map<std::string, std::string>
                 {"write_vertex_colors",
                  "Set to ``False`` to not write any vertex colors, even if "
                  "present on the mesh"},
+                {"write_triangle_uvs",
+                 "Set to ``False`` to not write any triangle uvs, even if "
+                 "present on the mesh. For ``obj`` format, mtl file is saved only "
+                 "when ``True`` is set"},
                 // Entities
                 {"config", "AzureKinectSensor's config file."},
                 {"pointcloud", "The ``PointCloud`` object for I/O"},
