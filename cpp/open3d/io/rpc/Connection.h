@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,21 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/io/io.h"
+#pragma once
 
-#include "pybind/open3d_pybind.h"
+#include <memory>
+#include <string>
+
+#include "open3d/io/rpc/ConnectionBase.h"
 
 namespace open3d {
+namespace io {
+namespace rpc {
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-#ifdef BUILD_RPC_INTERFACE
-    pybind_rpc(m_io);
-#endif
-}
+/// This class implements the Connection which is used as default in all
+/// functions.
+class Connection : public ConnectionBase {
+public:
+    Connection();
 
+    /// Creates a Connection object used for sending data.
+    /// \param address          The address of the receiving end.
+    ///
+    /// \param connect_timeout  The timeout for the connect operation of the
+    /// socket.
+    ///
+    /// \param timeout          The timeout for sending data.
+    ///
+    Connection(const std::string& address, int connect_timeout, int timeout);
+    ~Connection();
+
+    /// Function for sending data wrapped in a zmq message object.
+    std::shared_ptr<zmq::message_t> Send(zmq::message_t& send_msg);
+
+    /// Function for sending raw data. Meant for testing purposes
+    std::shared_ptr<zmq::message_t> Send(const void* data, size_t size);
+
+private:
+    std::unique_ptr<zmq::socket_t> socket_;
+    const std::string address_;
+    const int connect_timeout_;
+    const int timeout_;
+};
+}  // namespace rpc
+}  // namespace io
 }  // namespace open3d

@@ -38,4 +38,7 @@ void pybind_class_io(py::module& m);
 void pybind_sensor(py::module& m);
 #endif
 
+#ifdef BUILD_RPC_INTERFACE
+void pybind_rpc(py::module& m);
+#endif
 }  // namespace open3d

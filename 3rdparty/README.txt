@@ -98,3 +98,15 @@ https://github.com/NVIDIA/cutlass
 benchmark                   1.5.0                               Apache-2 license
 A microbenchmark support library
 https://github.com/google/benchmark
+--------------------------------------------------------------------------------
+msgpack-c                   da2fc25f8                 Boost Software License 1.0
+MessagePack implementation for C and C++
+https://github.com/msgpack/msgpack-c/tree/cpp_master
+--------------------------------------------------------------------------------
+libzmq                      4.3.2         LGPLv3 + static link exception license
+ZeroMQ is a high-performance asynchronous messaging library
+https://github.com/zeromq/libzmq
+--------------------------------------------------------------------------------
+cppzmq                      4.6.0                                    MIT license
+Header-only C++ binding for libzmq
+https://github.com/zeromq/cppzmq
