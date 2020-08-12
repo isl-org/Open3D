@@ -27,6 +27,7 @@
 #pragma once
 
 #include <tbb/parallel_for.h>
+
 #include <mutex>
 
 #include "open3d/ml/impl/continuous_conv/CoordinateTransformation.h"
@@ -83,7 +84,6 @@ void _CConvTransposeBackpropFilterCPU(TReal* filter_backprop,
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
             [&](const tbb::blocked_range<size_t>& r) {
-
                 int range_length = r.end() - r.begin();
 
                 Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> B(
@@ -230,7 +230,6 @@ void _CConvTransposeBackpropFilterCPU(TReal* filter_backprop,
                             filter_backprop[linear_i] += A(i, j);
                         }
                 }
-
             });
 }
 

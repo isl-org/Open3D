@@ -26,11 +26,11 @@
 
 #pragma once
 
-#include "open3d/visualization/gui/Layout.h"
-
 #include <functional>
 #include <memory>
 #include <string>
+
+#include "open3d/visualization/gui/Layout.h"
 
 namespace open3d {
 

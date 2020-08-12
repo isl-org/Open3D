@@ -27,6 +27,7 @@
 #pragma once
 
 #include <tbb/parallel_for.h>
+
 #include <set>
 
 #include "open3d/core/Atomic.h"
@@ -253,7 +254,6 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                 tbb::blocked_range<size_t>(queries_row_splits[i],
                                            queries_row_splits[i + 1]),
                 [&](const tbb::blocked_range<size_t>& r) {
-
                     size_t num_indices_local = 0;
                     for (size_t i = r.begin(); i != r.end(); ++i) {
                         size_t neighbors_count = 0;
@@ -362,7 +362,6 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                 tbb::blocked_range<size_t>(queries_row_splits[i],
                                            queries_row_splits[i + 1]),
                 [&](const tbb::blocked_range<size_t>& r) {
-
                     for (size_t i = r.begin(); i != r.end(); ++i) {
                         size_t neighbors_count = 0;
 
@@ -564,7 +563,7 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                           const bool ignore_query_point,
                           const bool return_distances,
                           OUTPUT_ALLOCATOR& output_allocator) {
-// Dispatch all template parameter combinations
+    // Dispatch all template parameter combinations
 
 #define FN_PARAMETERS                                                       \
     query_neighbors_row_splits, num_points, points, num_queries, queries,   \

@@ -26,6 +26,7 @@
 
 #pragma once
 
+// clang-format off
 // NOTE: This header must precede the Filament headers otherwise a conflict
 // occurs between Filament and standard headers
 #include "open3d/visualization/rendering/RendererHandle.h"
@@ -45,6 +46,7 @@
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif  // _MSC_VER
+// clang-format on
 
 #include <memory>
 #include <tuple>

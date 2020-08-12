@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/Label.h"
 
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 #include <string>

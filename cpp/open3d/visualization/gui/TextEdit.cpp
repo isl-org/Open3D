@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/TextEdit.h"
 
 #include <imgui.h>
+
 #include <cmath>
 #include <sstream>
 #include <string>

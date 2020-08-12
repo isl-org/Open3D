@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <sstream>
-
 #include "open3d/geometry/HalfEdgeTriangleMesh.h"
+
+#include <sstream>
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"

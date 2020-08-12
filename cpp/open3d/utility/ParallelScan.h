@@ -27,6 +27,7 @@
 #pragma once
 
 #include <tbb/parallel_for.h>
+
 #include "tbb/parallel_scan.h"
 #if TBB_INTERFACE_VERSION >= 10000
 #include "pstl/execution"

@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 
 #include <imgui.h>
+
 #include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"

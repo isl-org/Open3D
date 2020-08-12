@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/ColorEdit.h"
 
 #include <imgui.h>
+
 #include <cmath>
 #include <sstream>
 

@@ -25,17 +25,18 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/geometry/BoundingVolume.h"
-#include "open3d/geometry/IntersectionTest.h"
-#include "open3d/geometry/KDTreeFlann.h"
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/Qhull.h"
 
 #include <Eigen/Dense>
 #include <numeric>
 #include <queue>
 #include <random>
 #include <tuple>
+
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/IntersectionTest.h"
+#include "open3d/geometry/KDTreeFlann.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/Qhull.h"
 
 #ifdef _OPENMP
 #include <omp.h>

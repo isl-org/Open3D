@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/TreeView.h"
 
 #include <imgui.h>
+
 #include <cmath>
 #include <list>
 #include <sstream>
@@ -359,8 +360,9 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         }
         bool is_selectable =
                 (item.children.empty() || impl_->can_select_parents_);
-        auto DrawThis = [ this, &tree_frame = frame, &context, &new_selection ](
-                TreeView::Impl::Item & item, int height, bool is_selectable) {
+        auto DrawThis = [this, &tree_frame = frame, &context, &new_selection](
+                                TreeView::Impl::Item &item, int height,
+                                bool is_selectable) {
             ImGui::SameLine(0, 0);
             auto x = int(std::round(ImGui::GetCursorScreenPos().x));
             auto y = int(std::round(ImGui::GetCursorScreenPos().y));

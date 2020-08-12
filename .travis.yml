@@ -27,14 +27,14 @@ matrix:
           packages:
             - cmake
             - clang-7
-            - clang-format-5.0
+            - clang-format-10
       install:
         - ./util/install_deps_ubuntu.sh assume-yes
       script:
         - mkdir build
         - cd build
         - cmake ..
-        - pip install -U yapf==0.28.0 nbformat
+        - pip install -U yapf==0.30.0 nbformat
         - make check-style
 
     # Build headless and docs
@@ -70,7 +70,7 @@ matrix:
         # Install Python dependencies for building docs
         - which python
         - python -V
-        - pip install -U -q "sphinx>=3.0" sphinx-rtd-theme nbsphinx Pillow
+        - pip install -U -q "sphinx==3.1.2" "sphinx-rtd-theme==0.5.0" "nbsphinx==0.7.1" "Pillow==7.2.0"
         # m2r needs a patch for sphinx 3
         # https://github.com/sphinx-doc/sphinx/issues/7420
         - pip install -U -q git+https://github.com/intel-isl/m2r@dev#egg=m2r

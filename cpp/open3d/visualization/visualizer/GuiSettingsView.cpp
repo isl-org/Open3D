@@ -27,6 +27,7 @@
 #include "open3d/visualization/visualizer/GuiSettingsView.h"
 
 #include <cmath>
+
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Checkbox.h"

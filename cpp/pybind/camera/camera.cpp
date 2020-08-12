@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "pybind/camera/camera.h"
+
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/camera/PinholeCameraTrajectory.h"
-
-#include "pybind/camera/camera.h"
 #include "pybind/docstring.h"
 
 namespace open3d {

@@ -27,6 +27,7 @@
 #pragma once
 
 #include <json/json.h>
+
 #include <Eigen/Geometry>
 
 #include "open3d/visualization/rendering/RendererHandle.h"

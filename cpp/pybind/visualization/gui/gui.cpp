@@ -26,9 +26,6 @@
 
 #include "pybind/visualization/gui/gui.h"
 
-#include "pybind/docstring.h"
-#include "pybind11/functional.h"
-
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
@@ -56,6 +53,8 @@
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
+#include "pybind/docstring.h"
+#include "pybind11/functional.h"
 
 using namespace open3d::visualization::gui;
 using namespace open3d::visualization::rendering;
@@ -231,12 +230,13 @@ void pybind_gui_classes(py::module &m) {
             .def("set_on_menu_item_activated",
                  &PyWindow::SetOnMenuItemActivated,
                  "Sets callback function for menu item:  callback()")
-            .def("set_on_layout",
-                 [](PyWindow *w, std::function<void(const Theme &)> f) {
-                     w->on_layout_ = f;
-                 },
-                 "Sets a callback function that manually sets the frames of "
-                 "children of the window")
+            .def(
+                    "set_on_layout",
+                    [](PyWindow *w, std::function<void(const Theme &)> f) {
+                        w->on_layout_ = f;
+                    },
+                    "Sets a callback function that manually sets the frames of "
+                    "children of the window")
             .def_property_readonly("theme", &PyWindow::GetTheme,
                                    "Get's window's theme info")
             .def("show_dialog", &PyWindow::ShowDialog, "Displays the dialog")
@@ -253,34 +253,38 @@ void pybind_gui_classes(py::module &m) {
     py::class_<Menu, std::shared_ptr<Menu>> menu(
             m, "Menu", "A menu, possibly a menu tree");
     menu.def(py::init<>())
-            .def("add_item",
-                 [](std::shared_ptr<Menu> menu, const char *text, int item_id) {
-                     menu->AddItem(text, item_id);
-                 },
-                 "Adds a menu item with id to the menu")
-            .def("add_menu",
-                 [](std::shared_ptr<Menu> menu, const char *text,
-                    std::shared_ptr<Menu> submenu) {
-                     menu->AddMenu(text, submenu);
-                 },
-                 "Adds a submenu to the menu")
+            .def(
+                    "add_item",
+                    [](std::shared_ptr<Menu> menu, const char *text,
+                       int item_id) { menu->AddItem(text, item_id); },
+                    "Adds a menu item with id to the menu")
+            .def(
+                    "add_menu",
+                    [](std::shared_ptr<Menu> menu, const char *text,
+                       std::shared_ptr<Menu> submenu) {
+                        menu->AddMenu(text, submenu);
+                    },
+                    "Adds a submenu to the menu")
             .def("add_separator", &Menu::AddSeparator,
                  "Adds a separator to the menu")
-            .def("set_enabled",
-                 [](std::shared_ptr<Menu> menu, int item_id, bool enabled) {
-                     menu->SetEnabled(item_id, enabled);
-                 },
-                 "Sets menu item enabled or disabled")
-            .def("is_checked",
-                 [](std::shared_ptr<Menu> menu, int item_id) -> bool {
-                     return menu->IsChecked(item_id);
-                 },
-                 "Returns True if menu item is checked")
-            .def("set_checked",
-                 [](std::shared_ptr<Menu> menu, int item_id, bool checked) {
-                     menu->SetChecked(item_id, checked);
-                 },
-                 "Sets menu item (un)checked");
+            .def(
+                    "set_enabled",
+                    [](std::shared_ptr<Menu> menu, int item_id, bool enabled) {
+                        menu->SetEnabled(item_id, enabled);
+                    },
+                    "Sets menu item enabled or disabled")
+            .def(
+                    "is_checked",
+                    [](std::shared_ptr<Menu> menu, int item_id) -> bool {
+                        return menu->IsChecked(item_id);
+                    },
+                    "Returns True if menu item is checked")
+            .def(
+                    "set_checked",
+                    [](std::shared_ptr<Menu> menu, int item_id, bool checked) {
+                        menu->SetChecked(item_id, checked);
+                    },
+                    "Sets menu item (un)checked");
 
     // ---- Color ----
     py::class_<Color, std::shared_ptr<Color>> color(
@@ -407,6 +411,7 @@ void pybind_gui_classes(py::module &m) {
             // and float and int are different types. Fortunately, we want
             // a float, which is easily castable from int. So we can pass
             // a py::object and cast it ourselves.
+<<<<<<< HEAD
             .def_property("horizontal_padding_em",
                           &Button::GetHorizontalPaddingEm,
                           [](std::shared_ptr<Button> b, const py::object &em) {
@@ -434,6 +439,36 @@ void pybind_gui_classes(py::module &m) {
                               }
                           },
                           "Vertical padding in em units")
+=======
+            .def_property(
+                    "horizontal_padding_em", &Button::GetHorizontalPaddingEm,
+                    [](std::shared_ptr<Button> b, const py::object &em) {
+                        auto vert = b->GetVerticalPaddingEm();
+                        try {
+                            b->SetPaddingEm(em.cast<float>(), vert);
+                        } catch (const py::cast_error &e) {
+                            py::print(
+                                    "open3d.visualization.gui.Button."
+                                    "horizontal_padding_em can only be "
+                                    "assigned a numeric type");
+                        }
+                    },
+                    "Horizontal padding in em units")
+            .def_property(
+                    "vertical_padding_em", &Button::GetVerticalPaddingEm,
+                    [](std::shared_ptr<Button> b, const py::object &em) {
+                        auto horiz = b->GetHorizontalPaddingEm();
+                        try {
+                            b->SetPaddingEm(horiz, em.cast<float>());
+                        } catch (const py::cast_error &e) {
+                            py::print(
+                                    "open3d.visualization.gui.Button."
+                                    "vertical_padding_em can only be "
+                                    "assigned a numeric type");
+                        }
+                    },
+                    "Vertical padding in em units")
+>>>>>>> master
             .def("set_on_clicked", &Button::SetOnClicked,
                  "Calls passed function when button is pressed");
 
@@ -604,11 +639,12 @@ void pybind_gui_classes(py::module &m) {
                        << ne.GetFrame().width << " x " << ne.GetFrame().height;
                      return s.str().c_str();
                  })
-            .def_property("int_value", &NumberEdit::GetIntValue,
-                          [](std::shared_ptr<NumberEdit> ne, int val) {
-                              ne->SetValue(double(val));
-                          },
-                          "Current value (int)")
+            .def_property(
+                    "int_value", &NumberEdit::GetIntValue,
+                    [](std::shared_ptr<NumberEdit> ne, int val) {
+                        ne->SetValue(double(val));
+                    },
+                    "Current value (int)")
             .def_property("double_value", &NumberEdit::GetDoubleValue,
                           &NumberEdit::SetValue, "Current value (double)")
             .def("set_value", &NumberEdit::SetValue, "Sets value")
@@ -705,11 +741,12 @@ void pybind_gui_classes(py::module &m) {
                        << sl.GetFrame().width << " x " << sl.GetFrame().height;
                      return s.str().c_str();
                  })
-            .def_property("int_value", &Slider::GetIntValue,
-                          [](std::shared_ptr<Slider> ne, int val) {
-                              ne->SetValue(double(val));
-                          },
-                          "Slider value (int)")
+            .def_property(
+                    "int_value", &Slider::GetIntValue,
+                    [](std::shared_ptr<Slider> ne, int val) {
+                        ne->SetValue(double(val));
+                    },
+                    "Slider value (int)")
             .def_property("double_value", &Slider::GetDoubleValue,
                           &Slider::SetValue, "Slider value (double)")
             .def_property_readonly("get_minimum_value",
@@ -887,11 +924,12 @@ void pybind_gui_classes(py::module &m) {
             //        0, Margins(), {}); }))
             .def("add_fixed", &Layout1D::AddFixed,
                  "Adds a fixed amount of empty space to the layout")
-            .def("add_fixed",
-                 [](std::shared_ptr<Layout1D> layout, float px) {
-                     layout->AddFixed(int(std::round(px)));
-                 },
-                 "Adds a fixed amount of empty space to the layout")
+            .def(
+                    "add_fixed",
+                    [](std::shared_ptr<Layout1D> layout, float px) {
+                        layout->AddFixed(int(std::round(px)));
+                    },
+                    "Adds a fixed amount of empty space to the layout")
             .def("add_stretch", &Layout1D::AddStretch,
                  "Adds empty space to the layout that will take up as much "
                  "extra space as there is available in the layout");

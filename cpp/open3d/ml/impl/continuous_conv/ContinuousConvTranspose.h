@@ -81,7 +81,6 @@ void _CConvTransposeComputeFeaturesCPU(
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
             [&](const tbb::blocked_range<size_t>& r) {
-
                 int range_length = r.end() - r.begin();
 
                 Eigen::Matrix<TReal, Eigen::Dynamic, Eigen::Dynamic> B(
@@ -215,7 +214,6 @@ void _CConvTransposeComputeFeaturesCPU(
                     for (int i = 0; i < range_length; ++i)
                         C.col(i) *= out_importance[r.begin() + i];
                 }
-
             });
 }
 

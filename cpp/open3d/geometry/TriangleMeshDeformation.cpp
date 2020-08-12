@@ -24,12 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/TriangleMesh.h"
-
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <algorithm>
 
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

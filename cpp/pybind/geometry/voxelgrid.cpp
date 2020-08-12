@@ -25,16 +25,16 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/VoxelGrid.h"
+
+#include <sstream>
+
 #include "open3d/camera/PinholeCameraParameters.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
-
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
-
-#include <sstream>
 
 namespace open3d {
 
