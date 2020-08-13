@@ -289,6 +289,18 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
 find_package(Threads REQUIRED)
 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Threads")
 
+# Assimp
+message(STATUS "Building library Assimp from source")
+include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
+import_3rdparty_library(3rdparty_assimp
+    INCLUDE_DIRS ${ASSIMP_INCLUDE_DIR}
+    LIB_DIR      ${ASSIMP_LIB_DIR}
+    LIBRARIES    ${ASSIMP_LIBRARIES}
+)
+set(ASSIMP_TARGET "3rdparty_assimp")
+add_dependencies(3rdparty_assimp ext_assimp)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ASSIMP_TARGET}")
+
 # OpenMP
 if(WITH_OPENMP)
     find_package(OpenMP)
