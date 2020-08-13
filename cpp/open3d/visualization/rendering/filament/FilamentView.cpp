@@ -70,8 +70,7 @@ FilamentView::FilamentView(filament::Engine& engine,
                     .toneMapping(
                             filament::ColorGrading::ToneMapping::ACES_LEGACY)
                     .build(engine);
-    // view_->setColorGrading(color_grading_);
-    view_->setColorGrading(nullptr);
+    view_->setColorGrading(color_grading_);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
     view_->setCamera(camera_->GetNativeCamera());
