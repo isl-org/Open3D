@@ -147,19 +147,6 @@ void FilamentView::SetViewport(std::int32_t x,
     view_->setViewport({x, y, w, h});
 }
 
-void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
-    clear_color_ = color;
-
-    /*#if AUTO_CLEAR_COLOR
-        if (mode_ == Mode::Color || mode_ >= Mode::ColorMapX) {
-            view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
-        }
-    #else
-        view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
-    #endif
-     */
-}
-
 void FilamentView::SetSSAOEnabled(const bool enabled) {
     const auto option = enabled ? filament::View::AmbientOcclusion::SSAO
                                 : filament::View::AmbientOcclusion::NONE;
@@ -174,8 +161,6 @@ void FilamentView::CopySettingsFrom(const FilamentView& other) {
 
     auto vp = other.view_->getViewport();
     SetViewport(0, 0, vp.width, vp.height);
-
-    SetClearColor(other.clear_color_);
 
     // TODO: Consider moving this code to FilamentCamera
     auto& camera = view_->getCamera();

@@ -75,7 +75,6 @@ public:
                      std::int32_t y,
                      std::uint32_t w,
                      std::uint32_t h) override;
-    void SetClearColor(const Eigen::Vector3f& color) override;
 
     void SetSSAOEnabled(bool enabled) override;
 
@@ -93,7 +92,6 @@ public:
 
 private:
     std::unique_ptr<FilamentCamera> camera_;
-    Eigen::Vector3f clear_color_;
     Mode mode_ = Mode::Color;
     TargetBuffers discard_buffers_;
 

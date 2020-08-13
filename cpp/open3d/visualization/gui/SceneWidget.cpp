@@ -627,11 +627,6 @@ void SceneWidget::SetFrame(const Rect& f) {
     impl_->frame_rect_changed_ = true;
 }
 
-void SceneWidget::SetBackgroundColor(const Color& color) {
-    auto view = impl_->scene_->GetView(impl_->view_id_);
-    view->SetClearColor({color.GetRed(), color.GetGreen(), color.GetBlue()});
-}
-
 void SceneWidget::SetupCamera(
         float verticalFoV,
         const geometry::AxisAlignedBoundingBox& geometry_bounds,
