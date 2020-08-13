@@ -68,19 +68,19 @@ public:
     template <typename T>
     int Search(const T &query,
                const KDTreeSearchParam &param,
-               std::vector<long> &indices,
+               std::vector<int64_t> &indices,
                std::vector<float> &distance2) const;
 
     template <typename T>
     int SearchKNN(const T &query,
                   int knn,
-                  std::vector<long> &indices,
+                  std::vector<int64_t> &indices,
                   std::vector<float> &distance2) const;
 
     template <typename T>
     int SearchRadius(const T &query,
                      float radius,
-                     std::vector<long> &indices,
+                     std::vector<int64_t> &indices,
                      std::vector<float> &distance2) const;
 
 private:

@@ -133,7 +133,7 @@ bool KnnFaiss::SetFeature(const pipelines::registration::Feature &feature) {
 template <typename T>
 int KnnFaiss::Search(const T &query,
                      const KDTreeSearchParam &param,
-                     std::vector<long> &indices,
+                     std::vector<int64_t> &indices,
                      std::vector<float> &distance2) const {
     switch (param.GetSearchType()) {
         case KDTreeSearchParam::SearchType::Knn:
@@ -153,7 +153,7 @@ int KnnFaiss::Search(const T &query,
 template <typename T>
 int KnnFaiss::SearchKNN(const T &query,
                         int knn,
-                        std::vector<long> &indices,
+                        std::vector<int64_t> &indices,
                         std::vector<float> &distance2) const {
     if (data_.empty() || dataset_size_ <= 0 ||
         size_t(query.rows()) != dimension_ || knn < 0) {
@@ -174,7 +174,7 @@ int KnnFaiss::SearchKNN(const T &query,
 template <typename T>
 int KnnFaiss::SearchRadius(const T &query,
                            float radius,
-                           std::vector<long> &indices,
+                           std::vector<int64_t> &indices,
                            std::vector<float> &distance2) const {
     if (data_.empty() || dataset_size_ <= 0 ||
         size_t(query.rows()) != dimension_) {
@@ -190,7 +190,7 @@ int KnnFaiss::SearchRadius(const T &query,
             query.cols(), tmp_query.data(), std::pow(radius, 2),
             &result);  // square radius to maintain unify with kdtreeflann
 
-    std::vector<long> tmp_indices;
+    std::vector<int64_t> tmp_indices;
     std::vector<float> tmp_distances;
     for (unsigned int i = 0; i < result.lims[query.cols()]; i++) {
         tmp_indices.push_back(result.labels[i]);
@@ -232,33 +232,33 @@ bool KnnFaiss::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
 template int KnnFaiss::Search<Eigen::Vector3d>(
         const Eigen::Vector3d &query,
         const KDTreeSearchParam &param,
-        std::vector<long> &indices,
+        std::vector<int64_t> &indices,
         std::vector<float> &distance2) const;
 template int KnnFaiss::SearchKNN<Eigen::Vector3d>(
         const Eigen::Vector3d &query,
         int knn,
-        std::vector<long> &indices,
+        std::vector<int64_t> &indices,
         std::vector<float> &distance2) const;
 template int KnnFaiss::SearchRadius<Eigen::Vector3d>(
         const Eigen::Vector3d &query,
         float radius,
-        std::vector<long> &indices,
+        std::vector<int64_t> &indices,
         std::vector<float> &distance2) const;
 
 template int KnnFaiss::Search<Eigen::VectorXd>(
         const Eigen::VectorXd &query,
         const KDTreeSearchParam &param,
-        std::vector<long> &indices,
+        std::vector<int64_t> &indices,
         std::vector<float> &distance2) const;
 template int KnnFaiss::SearchKNN<Eigen::VectorXd>(
         const Eigen::VectorXd &query,
         int knn,
-        std::vector<long> &indices,
+        std::vector<int64_t> &indices,
         std::vector<float> &distance2) const;
 template int KnnFaiss::SearchRadius<Eigen::VectorXd>(
         const Eigen::VectorXd &query,
         float radius,
-        std::vector<long> &indices,
+        std::vector<int64_t> &indices,
         std::vector<float> &distance2) const;
 
 }  // namespace geometry

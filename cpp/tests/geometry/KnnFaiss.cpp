@@ -75,7 +75,7 @@ TEST(KnnFaiss, SearchKNN) {
 
     Vector3d query = {1.647059, 4.392157, 8.784314};
     int knn = 30;
-    vector<long> indices;
+    vector<int64_t> indices;
     vector<float> distance2;
 
     int result = knnFaiss.SearchKNN(query, knn, indices, distance2);
@@ -113,7 +113,7 @@ TEST(KnnFaiss, SearchRadius) {
 
     Vector3d query = {1.647059, 4.392157, 8.784314};
     float radius = 5.0;
-    vector<long> indices;
+    vector<int64_t> indices;
     vector<float> distance2;
 
     int result =
@@ -169,7 +169,7 @@ TEST_P(KnnFaissPermuteDevices, SetTensorData) {
 
     Vector3d query = {1.647059, 4.392157, 8.784314};
     int knn = 30;
-    vector<long> indices;
+    vector<int64_t> indices;
     vector<float> distance2;
 
     int result = knnFaiss.SearchKNN(query, knn, indices, distance2);

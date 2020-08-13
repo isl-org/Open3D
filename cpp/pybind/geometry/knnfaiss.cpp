@@ -65,7 +65,7 @@ void pybind_knnfaiss(py::module &m) {
             .def("search_knn_vector_3d",
                  [](const geometry::KnnFaiss &index,
                     const Eigen::Vector3d &query, int knn) {
-                     std::vector<long> indices;
+                     std::vector<int64_t> indices;
                      std::vector<float> distance2;
                      int k = index.SearchKNN(query, knn, indices, distance2);
                      if (k < 0)
@@ -77,7 +77,7 @@ void pybind_knnfaiss(py::module &m) {
             .def("search_radius_vector_3d",
                  [](const geometry::KnnFaiss &index,
                     const Eigen::Vector3d &query, float radius) {
-                     std::vector<long> indices;
+                     std::vector<int64_t> indices;
                      std::vector<float> distance2;
                      int k = index.SearchRadius(query, radius, indices,
                                                 distance2);
@@ -90,7 +90,7 @@ void pybind_knnfaiss(py::module &m) {
             .def("search_knn_vector_xd",
                  [](const geometry::KnnFaiss &index,
                     const Eigen::VectorXd &query, int knn) {
-                     std::vector<long> indices;
+                     std::vector<int64_t> indices;
                      std::vector<float> distance2;
                      int k = index.SearchKNN(query, knn, indices, distance2);
 
@@ -103,7 +103,7 @@ void pybind_knnfaiss(py::module &m) {
             .def("search_radius_vector_xd",
                  [](const geometry::KnnFaiss &index,
                     const Eigen::VectorXd &query, float radius) {
-                     std::vector<long> indices;
+                     std::vector<int64_t> indices;
                      std::vector<float> distance2;
                      int k = index.SearchRadius(query, radius, indices,
                                                 distance2);
