@@ -844,24 +844,29 @@ if(BUILD_GUI)
         #    RelWithDebInfo  static: debug    dynamic: debug
         #    Release         static: release  dynamic: release
         #    Debug           static: debug    dynamic: release
-        if (CMAKE_BUILD_TYPE EQUAL "RelWithDebInfo")
-            if (STATIC_WINDOWS_RUNTIME)
-                set(FILAMENT_RUNTIME_VER "mtd")  # static, debug
-            else()
-                set(FILAMENT_RUNTIME_VER "mdd")  # DLL, debug
-            endif()
-        elseif (CMAKE_BUILD_TYPE EQUAL "Debug")
-            if (STATIC_WINDOWS_RUNTIME)
-                set(FILAMENT_RUNTIME_VER "mtd")  # static, debug
-            else()
-                set(FILAMENT_RUNTIME_VER "mdd")  # DLL, debug
-            endif()
+#        if (CMAKE_BUILD_TYPE EQUAL "RelWithDebInfo")
+#            if (STATIC_WINDOWS_RUNTIME)
+#                set(FILAMENT_RUNTIME_VER "mtd")  # static, debug
+#            else()
+#                set(FILAMENT_RUNTIME_VER "mdd")  # DLL, debug
+#            endif()
+#        elseif (CMAKE_BUILD_TYPE EQUAL "Debug")
+#            if (STATIC_WINDOWS_RUNTIME)
+#                set(FILAMENT_RUNTIME_VER "mtd")  # static, debug
+#            else()
+#                set(FILAMENT_RUNTIME_VER "mdd")  # DLL, debug
+#            endif()
+#        else()
+#            if (STATIC_WINDOWS_RUNTIME)
+#                set(FILAMENT_RUNTIME_VER "mt")  # static, release
+#            else()
+#                set(FILAMENT_RUNTIME_VER "md")  # DLL, release
+#            endif()
+#        endif()
+        if (STATIC_WINDOWS_RUNTIME)
+            set(FILAMENT_RUNTIME_VER "mt$<$<CONFIG:DEBUG>:d>")
         else()
-            if (STATIC_WINDOWS_RUNTIME)
-                set(FILAMENT_RUNTIME_VER "mt")  # static, release
-            else()
-                set(FILAMENT_RUNTIME_VER "md")  # DLL, release
-            endif()
+            set(FILAMENT_RUNTIME_VER "mt$<$<CONFIG:DEBUG>:d>")
         endif()
         message("[DEBUG] FILAMENT_RUNTIME_VER: ${FILAMENT_RUNTIME_VER}")
     endif()
