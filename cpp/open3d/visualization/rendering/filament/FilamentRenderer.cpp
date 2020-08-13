@@ -210,14 +210,14 @@ void FilamentRenderer::RemoveMaterialInstance(
     resource_mgr_.Destroy(id);
 }
 
-TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request) {
+TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request, bool srgb) {
     if (request.path_.empty()) {
         request.error_callback_(request, -1,
                                 "Texture can be loaded only from file");
         return {};
     }
 
-    return resource_mgr_.CreateTexture(request.path_.data());
+    return resource_mgr_.CreateTexture(request.path_.data(), srgb);
 }
 
 void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
@@ -274,8 +274,8 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
 }
 
 TextureHandle FilamentRenderer::AddTexture(
-        const std::shared_ptr<geometry::Image>& image) {
-    return resource_mgr_.CreateTexture(image);
+        const std::shared_ptr<geometry::Image>& image, bool srgb) {
+    return resource_mgr_.CreateTexture(image, srgb);
 }
 
 void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {

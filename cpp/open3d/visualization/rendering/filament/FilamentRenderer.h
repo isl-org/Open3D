@@ -80,9 +80,10 @@ public:
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
     void RemoveMaterialInstance(const MaterialInstanceHandle& id) override;
 
-    TextureHandle AddTexture(const ResourceLoadRequest& request) override;
-    TextureHandle AddTexture(
-            const std::shared_ptr<geometry::Image>& image) override;
+    TextureHandle AddTexture(const ResourceLoadRequest& request,
+                             bool srgb = false) override;
+    TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image,
+                             bool srgb = false) override;
     void RemoveTexture(const TextureHandle& id) override;
 
     IndirectLightHandle AddIndirectLight(
