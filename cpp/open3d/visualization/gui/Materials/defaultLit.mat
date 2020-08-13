@@ -20,7 +20,9 @@ material {
         { type : sampler2d, name : reflectanceMap },
 // NOTE: Disable clear coat textures to avoid Filament warning about exceeding
 // 16 sampler limit. There is currently no supported standard format that
-// supports these textures so they don't get used any way. Once the shader
+// supports these textures so they don't get used any way. Once the shader has
+// been updated to combine roughness/metallic/reflectance/ao these textures
+// will be reenabled.
 // 
 //        { type : sampler2d, name : clearCoatMap },
 //        { type : sampler2d, name : clearCoatRoughnessMap },
