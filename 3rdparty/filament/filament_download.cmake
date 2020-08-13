@@ -9,14 +9,11 @@ if (FILAMENT_PRECOMPILED_ROOT)
 else()
     # Setup download links
     if(WIN32)
-        #set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-windows.tgz")
-        set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-windows.tgz")
+        set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-windows.tgz")
     elseif(APPLE)
-        #set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-mac-10.14-resizefix2.tgz")
-        set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-mac.tgz")
+        set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-mac.tgz")
     else()
-        #set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200220-linux.tgz")
-        set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-linux.tgz")
+        set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-linux.tgz")
     endif()
 
     # ExternalProject_Add happends at build time.
