@@ -6,7 +6,13 @@
 # - BUILD_CUDA_MODULE
 # - BUILD_TENSORFLOW_OPS
 # - BUILD_PYTORCH_OPS
+# - BUILD_RPC_INTERFACE
 # - LOW_MEM_USAGE
+
+TENSORFLOW_VER="2.3.0"
+TORCH_GLNX_VER=("1.5.0+cu101" "1.4.0+cpu")
+TORCH_MACOS_VER="1.4.0"
+YAPF_VER="0.30.0"
 
 set -euo pipefail
 
@@ -32,7 +38,7 @@ reportJobFinishSession() {
 }
 reportRun() {
     reportJobStart "$*"
-    echo "path: $(which $1)"
+    echo "path: $(which "$1")"
     "$@"
 }
 
@@ -66,7 +72,7 @@ fi
 
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
-    reportRun pip install -U tensorflow==2.0.0
+    reportRun pip install -U tensorflow=="$TENSORFLOW_VER"
 fi
 if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     # disable pytorch build if CUDA is enabled for now until the problem with caffe2 and cudnn is solved
@@ -75,28 +81,21 @@ fi
 if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-            reportRun pip install -U torch==1.5.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html
+            reportRun pip install -U torch=="${TORCH_GLNX_VER[0]}" -f https://download.pytorch.org/whl/torch_stable.html
         else
-            reportRun pip install -U torch==1.4.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+            reportRun pip install -U torch=="${TORCH_GLNX_VER[1]}" -f https://download.pytorch.org/whl/torch_stable.html
         fi
     elif [[ "$OSTYPE" == "darwin"* ]]; then
-        reportRun pip install -U torch==1.4.0
+        reportRun pip install -U torch=="$TORCH_MACOS_VER"
     else
         echo "unknown OS $OSTYPE"
         exit 1
     fi
 fi
-if [ "$BUILD_TENSORFLOW_OPS" == "ON" -o "$BUILD_PYTORCH_OPS" == "ON" ]; then
-    reportRun pip install -U yapf==0.30.0
+if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    reportRun pip install -U yapf=="$YAPF_VER"
 fi
 
-# Build the rpc interface only if we do not build the cuda module and the
-# ml module to keep build times short
-if [ "$BUILD_CUDA_MODULE" == "OFF" -a "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-    BUILD_RPC_INTERFACE="ON"
-else
-    BUILD_RPC_INTERFACE="OFF"
-fi
 mkdir -p build
 cd build
 
@@ -135,7 +134,7 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ] || nvidia-smi -L | grep -q GPU ; then
     unitTestFlags=
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     date
-    reportRun ./bin/tests $unitTestFlags
+    reportRun ./bin/tests "$unitTestFlags"
     echo
 
     if $runBenchmarks; then
@@ -155,7 +154,7 @@ reportJobStart "test build C++ example"
 echo "test building a C++ example with installed Open3D..."
 date
 cd ../docs/_static/C++
-mkdir build
+mkdir -p build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
 make
