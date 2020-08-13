@@ -8,6 +8,10 @@ endif()
 include_directories(".")
 
 file(GLOB_RECURSE UNIT_TEST_SOURCE_FILES "*.cpp")
+if (WIN32)
+    get_filename_component(full_path_test_cpp ${CMAKE_CURRENT_SOURCE_DIR}/geometry/KnnFaiss.cpp ABSOLUTE)
+    list(REMOVE_ITEM UNIT_TEST_SOURCE_FILES ${full_path_test_cpp})
+endif()
 
 # TODO: consider explicitly listing the files
 if (NOT BUILD_AZURE_KINECT)

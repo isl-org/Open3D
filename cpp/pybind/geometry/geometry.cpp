@@ -205,7 +205,9 @@ void pybind_geometry(py::module &m) {
     py::module m_submodule = m.def_submodule("geometry");
     pybind_geometry_classes(m_submodule);
     pybind_kdtreeflann(m_submodule);
+#ifdef BUILD_FAISS
     pybind_knnfaiss(m_submodule);
+#endif
     pybind_pointcloud(m_submodule);
     pybind_voxelgrid(m_submodule);
     pybind_lineset(m_submodule);
