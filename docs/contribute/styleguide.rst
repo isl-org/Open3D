@@ -64,6 +64,7 @@ macOS
 ~~~~~~~~~
 
 .. code:: bash
+
    # Install from official brew formula.
    brew install clang-format
    clang-format --version
