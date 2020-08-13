@@ -107,6 +107,10 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
         double gamma_21 /* = 0.975 */,
         double gamma_32 /* = 0.975 */,
         int min_neighbors /*= 5 */) {
+    if (input.points_.empty()) {
+        utility::LogWarning("[ComputeISSKeypoints] Input PointCloud is empty!");
+        return std::make_shared<PointCloud>();
+    }
     const auto& points = input.points_;
     KDTreeFlann kdtree(input);
 
