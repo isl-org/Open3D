@@ -19,10 +19,6 @@ else()
         set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-linux.tgz")
     endif()
 
-    if (USE_VULKAN AND (ANDROID OR WIN32 OR WEBGL OR IOS))
-        MESSAGE(FATAL_ERROR "Downloadable version of Filament supports vulkan only on Linux and Apple")
-    endif()
-
     # ExternalProject_Add happends at build time.
     ExternalProject_Add(
         ext_filament
