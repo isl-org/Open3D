@@ -70,5 +70,5 @@ def test_tensor_constructor(device):
     o3_t = o3d.core.Tensor(np_t, dtype, device)
     index = o3d.geometry.KnnFaiss()
     index.set_tensor_data(o3_t)
-    [_, indices, distances] = index.search_knn_vector_3d(np_t[0], knn=1)
+    [_, indices, _] = index.search_knn_vector_3d(np_t[0], knn=1)
     np.testing.assert_equal(np.asarray(indices), np.array([0]))

@@ -16,7 +16,7 @@ cd faiss
 dt=$(date '+%Y%m%d')
 
 # get cuda version
-if [ $BUILD_CUDA = true ]; then
+if [ "$BUILD_CUDA" = true ]; then
     if command -v nvcc &> /dev/null
         then
             CUDA_VERSION=$(nvcc --version | egrep -o '[0-9]+\.[0-9]\.[0-9]+')
@@ -30,7 +30,7 @@ else
 fi
 
 # configure faiss
-if [ $BUILD_CUDA = true ]; then
+if [ "$BUILD_CUDA" = true ]; then
     echo "Build With CUDA"
     ./configure --with-cuda=${CUDA_PATH} --prefix="$(pwd)/${INSTALL_DIR}"
 else
@@ -43,6 +43,6 @@ make -j && make install
 
 # zip faiss binaries
 rm libfaiss-install/lib/libfaiss.so
-tar -cvzf faiss-${CUDA_VERSION}-${dt}-linux.tgz ${INSTALL_DIR}
+tar -cvzf "faiss-${CUDA_VERSION}-${dt}-linux.tgz" ${INSTALL_DIR}
 
 cd ~
