@@ -214,13 +214,6 @@ KnnFaiss::SearchKNN_Tensor(const core::Tensor &query,
         return error_pair;
     }
     
-    if(!support_on_gpu_ &&
-        query.GetBlob()->GetDevice().GetType() ==
-        core::Device::DeviceType::CUDA){
-        utility::LogWarning("[KnnFaiss::SearchKNN_Tensor] Current Faiss Index is not supported on gpu. So, Query is moved to CPU memory.");
-        query = query.Copy(core::Device("CPU:0"));
-    }
-    
     float *_data_ptr = static_cast<float *>(query.GetBlob()->GetDataPtr());
 
     std::vector<long> indices;
@@ -288,21 +281,12 @@ KnnFaiss::SearchRadius_Tensor(const core::Tensor &query,
     size_t query_size = size[0];
 
     if (dataset_size_ <= 0 || query_dim != dimension_ || radius < 0) {
-        std::pair<core::Tensor, core::Tensor> error_pair;
         return -1;
     }
 
     if (query.GetDtype() != core::Dtype::Float32){
         utility::LogWarning("[KnnFaiss::SearchKNN_Tensor] Unsupported data type of Tensor.");
-        std::pair<core::Tensor, core::Tensor> error_pair;
         return -1;
-    }
-    
-    if(!support_on_gpu_ &&
-        query.GetBlob()->GetDevice().GetType() ==
-        core::Device::DeviceType::CUDA){
-        utility::LogWarning("[KnnFaiss::SearchKNN_Tensor] Current Faiss Index is not supported on gpu. So, query is moved to CPU memory.");
-        query = query.Copy(core::Device("CPU:0"));
     }
     
     float *_data_ptr = static_cast<float *>(query.GetBlob()->GetDataPtr());
@@ -343,13 +327,6 @@ KnnFaiss::SearchHybrid_Tensor(const core::Tensor &query,
         utility::LogWarning("[KnnFaiss::SearchHybrid_Tensor] Unsupported Data type of Tensor.");
         std::pair<core::Tensor, core::Tensor> error_pair;
         return error_pair;
-    }
-    
-    if(!support_on_gpu_ &&
-        query.GetBlob()->GetDevice().GetType() ==
-        core::Device::DeviceType::CUDA){
-        utility::LogWarning("[KnnFaiss::SearchHybrid_Tensor] Current Faiss Index is not supported on gpu. So, Query is moved to CPU memory.");
-        query = query.Copy(core::Device("CPU:0"));
     }
     
     float *_data_ptr = static_cast<float *>(query.GetBlob()->GetDataPtr());
