@@ -14,10 +14,10 @@
 
 option(DO_APPLY_STYLE "Apply style to files in-place." OFF)
 
-# Try to locate "clang-format-5.0" and then "clang-format"
-find_program(CLANG_FORMAT clang-format-5.0 PATHS ENV PATH)
+# Try to locate "clang-format-10" and then "clang-format"
+find_program(CLANG_FORMAT clang-format-10 PATHS ENV PATH)
 if(NOT CLANG_FORMAT)
-    find_program(CLANG_FORMAT clang-format-mp-5.0 PATHS ENV PATH)
+    find_program(CLANG_FORMAT clang-format-mp-10 PATHS ENV PATH)
 endif()
 if(NOT CLANG_FORMAT)
     find_program(CLANG_FORMAT clang-format PATHS ENV PATH)

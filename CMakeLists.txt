@@ -43,6 +43,18 @@ option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                    OFF)
+option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
+
+# In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
+# first try to look for the required files in THIRD_PARTY_DOWNLOAD_DIR, before
+# downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
+# are prepared manually by the user. This is only supported by limited 3rd party
+# libraries.
+if(THIRD_PARTY_DOWNLOAD_DIR)
+    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to ${THIRD_PARTY_DOWNLOAD_DIR}.")
+else()
+    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
+endif()
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 set(FILAMENT_SOURCE_ROOT "" CACHE PATH "Path to Filament library sources (used if BUILD_FILAMENT_FROM_SOURCE=ON)")
@@ -103,6 +115,10 @@ endif()
 if(BUILD_GUI AND WIN32)
     message(STATUS "New GUI is currently unsupported on Windows")
     set(BUILD_GUI OFF)
+endif()
+if(BUILD_RPC_INTERFACE AND WIN32)
+    message(STATUS "The RPC interface is currently unsupported on Windows.")
+    set(BUILD_RPC_INTERFACE OFF)
 endif()
 
 # Parse Open3D version number
@@ -301,6 +317,9 @@ function(open3d_set_global_properties target)
     if(BUILD_CUDA_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
     endif()
+    if(BUILD_RPC_INTERFACE)
+        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE)
+    endif()
     if(GLIBCXX_USE_CXX11_ABI)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
     else()
@@ -426,6 +445,7 @@ endif()
 open3d_aligned_print("Build Tensorflow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build Pytorch Ops" "${BUILD_PYTORCH_OPS}")
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
+open3d_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
 if(GLIBCXX_USE_CXX11_ABI)
     set(usage "1")
 else()

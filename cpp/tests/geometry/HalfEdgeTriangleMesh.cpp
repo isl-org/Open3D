@@ -24,10 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/geometry/HalfEdgeTriangleMesh.h"
+
 #include <iostream>
 #include <string>
 
-#include "open3d/geometry/HalfEdgeTriangleMesh.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Helper.h"
 #include "tests/UnitTest.h"

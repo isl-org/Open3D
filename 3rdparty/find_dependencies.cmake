@@ -204,6 +204,7 @@ endfunction()
 function(import_3rdparty_library name)
     cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
+        message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
     endif()
     if(NOT arg_LIB_DIR)
@@ -249,6 +250,37 @@ function(import_3rdparty_library name)
         install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
     endif()
     add_library(${PROJECT_NAME}::${name} ALIAS ${name})
+endfunction()
+
+#
+# set_local_or_remote_url(url ...)
+#
+# If LOCAL_URL exists, set URL to LOCAL_URL, otherwise set URL to REMOTE_URLS.
+# This function is needed since CMake does not allow specifying remote URL(s) if
+# a local URL is specified.
+#
+# Valid options:
+#    LOCAL_URL
+#        local url to a file. Optional parameter. If the file does not exist,
+#        LOCAL_URL will be ignored. If the file exists, REMOTE URLS will be
+#        ignored. CMake only allows setting single LOCAL_URL for external
+#        projects.
+#    REMOTE_URLS
+#        remote url(s) to download a file. CMake will try to download the file
+#        in the specified order.
+#
+function(set_local_or_remote_url URL)
+    cmake_parse_arguments(arg "" "LOCAL_URL" "REMOTE_URLS" ${ARGN})
+    if(arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Invalid syntax: set_local_or_remote_url(${name} ${ARGN})")
+    endif()
+    if(arg_LOCAL_URL AND (EXISTS ${arg_LOCAL_URL}))
+        message(STATUS "Using local url: ${arg_LOCAL_URL}")
+        set(${URL} "${arg_LOCAL_URL}" PARENT_SCOPE)
+    else()
+        message(STATUS "Using remote url(s): ${arg_REMOTE_URLS}")
+        set(${URL} "${arg_REMOTE_URLS}" PARENT_SCOPE)
+    endif()
 endfunction()
 
 # Threads
@@ -865,7 +897,42 @@ if(BUILD_GUI)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
 endif()
 
-# MKL
+# RPC interface
+# - boost: predef
+# - zeromq
+# - msgpack
+if(BUILD_RPC_INTERFACE)
+    # boost: predef
+    include(${Open3D_3RDPARTY_DIR}/boost/boost.cmake)
+    import_3rdparty_library(3rdparty_boost
+        INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
+    )
+    set(BOOST_TARGET "3rdparty_boost")
+    add_dependencies(3rdparty_boost ext_boost)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
+
+    # zeromq
+    include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
+    import_3rdparty_library(3rdparty_zeromq
+        INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS}
+        LIB_DIR ${ZEROMQ_LIB_DIR}
+        LIBRARIES ${ZEROMQ_LIBRARIES}
+    )
+    set(ZEROMQ_TARGET "3rdparty_zeromq")
+    add_dependencies(${ZEROMQ_TARGET} ext_zeromq)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZEROMQ_TARGET}")
+
+    # msgpack
+    include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
+    import_3rdparty_library(3rdparty_msgpack
+        INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
+    )
+    set(MSGPACK_TARGET "3rdparty_msgpack")
+    add_dependencies(3rdparty_msgpack ext_msgpack-c)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MSGPACK_TARGET}")
+endif()
+
+# MKL, cuSOLVER, cuBLAS
 # We link MKL statically. For MKL link flags, refer to:
 # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
 message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
@@ -883,6 +950,12 @@ message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
 if(UNIX)
     target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
     target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+    # cuSOLVER and cuBLAS
+    if(BUILD_CUDA_MODULE)
+        target_link_libraries(3rdparty_mkl INTERFACE
+                              ${CUDA_cusolver_LIBRARY}
+                              ${CUDA_CUBLAS_LIBRARIES})
+    endif()
 elseif(MSVC)
     target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
 endif()

@@ -25,10 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/KDTreeFlann.h"
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/TriangleMesh.h"
 
 #include <benchmark/benchmark.h>
+
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace benchmarks {

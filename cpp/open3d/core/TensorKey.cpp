@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/TensorKey.h"
+
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
 

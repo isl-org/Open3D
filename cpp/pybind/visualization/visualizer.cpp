@@ -25,11 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/visualizer/Visualizer.h"
+
 #include "open3d/geometry/Image.h"
 #include "open3d/visualization/visualizer/VisualizerWithEditing.h"
 #include "open3d/visualization/visualizer/VisualizerWithKeyCallback.h"
 #include "open3d/visualization/visualizer/VisualizerWithVertexSelection.h"
-
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"
 #include "pybind/visualization/visualization_trampoline.h"

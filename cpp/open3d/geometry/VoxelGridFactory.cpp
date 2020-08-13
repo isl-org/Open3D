@@ -38,6 +38,7 @@ namespace open3d {
 namespace geometry {
 
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
+                                                  const Eigen::Vector3d &color,
                                                   double voxel_size,
                                                   double width,
                                                   double height,
@@ -52,7 +53,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
         for (int hidx = 0; hidx < num_h; hidx++) {
             for (int didx = 0; didx < num_d; didx++) {
                 Eigen::Vector3i grid_index(widx, hidx, didx);
-                output->AddVoxel(geometry::Voxel(grid_index));
+                output->AddVoxel(geometry::Voxel(grid_index, color));
             }
         }
     }

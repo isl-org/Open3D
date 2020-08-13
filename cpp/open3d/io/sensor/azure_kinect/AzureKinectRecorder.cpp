@@ -30,14 +30,14 @@
 #include "open3d/io/sensor/azure_kinect/AzureKinectRecorder.h"
 
 #include <assert.h>
+#include <k4a/k4a.h>
+#include <k4arecord/record.h>
+
 #include <Eigen/Core>
 #include <algorithm>
 #include <atomic>
 #include <ctime>
 #include <iostream>
-
-#include <k4a/k4a.h>
-#include <k4arecord/record.h>
 
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/io/sensor/azure_kinect/K4aPlugin.h"
