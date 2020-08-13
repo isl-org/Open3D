@@ -29,7 +29,6 @@
 #include "open3d/io/sensor/azure_kinect/AzureKinectSensor.h"
 #include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
 #include "open3d/io/sensor/azure_kinect/MKVReader.h"
-
 #include "pybind/docstring.h"
 #include "pybind/io/io.h"
 

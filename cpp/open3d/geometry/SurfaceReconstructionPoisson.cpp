@@ -24,10 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
-
 #include <Eigen/Dense>
 #include <cfloat>
 #include <cmath>
@@ -35,6 +31,10 @@
 #include <cstdlib>
 #include <iostream>
 #include <list>
+
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/utility/Console.h"
 
 // clang-format off
 #include "PoissonRecon/Src/PreProcessor.h"

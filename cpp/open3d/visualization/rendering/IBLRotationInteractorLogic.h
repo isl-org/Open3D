@@ -27,7 +27,6 @@
 #pragma once
 
 #include "open3d/visualization/rendering/MatrixInteractorLogic.h"
-
 #include "open3d/visualization/rendering/RendererHandle.h"
 
 namespace open3d {

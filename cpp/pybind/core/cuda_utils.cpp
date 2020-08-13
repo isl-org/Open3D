@@ -24,9 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
-
 #include "open3d/core/CUDAUtils.h"
+#include "pybind/core/core.h"
 
 namespace open3d {
 

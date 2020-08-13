@@ -24,12 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/io/OctreeIO.h"
+
 #include <json/json.h>
+
 #include <cstdio>
 
 #include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/io/OctreeIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/utility/IJsonConvertible.h"
 #include "tests/UnitTest.h"

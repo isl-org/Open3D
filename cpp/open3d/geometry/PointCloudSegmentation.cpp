@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/PointCloud.h"
-
 #include <Eigen/Dense>
 #include <algorithm>
 #include <iterator>
@@ -33,6 +31,7 @@
 #include <random>
 #include <unordered_set>
 
+#include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
 

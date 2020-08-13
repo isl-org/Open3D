@@ -24,12 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/tgeometry/TensorListMap.h"
+
 #include <fmt/format.h>
+
 #include <sstream>
 #include <string>
 #include <unordered_map>
 
-#include "open3d/tgeometry/TensorListMap.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

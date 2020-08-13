@@ -53,7 +53,7 @@ endif()
 # Build Jupyter plugin with webpack. This step distills and merges all js
 # dependencies and include all static assets. The generated output is in
 # ${PYTHON_PACKAGE_DST_DIR}/open3d/static.
-if (ENABLE_JUPYTER)
+if (BUILD_JUPYTER_EXTENSION)
     file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR}/open3d/static)
     message(STATUS "Jupyter support is enabled. Building Jupyter plugin ...")
     if (WIN32)
@@ -92,8 +92,8 @@ if (ENABLE_JUPYTER)
         DESTINATION ${PYTHON_PACKAGE_SRC_DIR}/js)
 endif()
 
-if (ENABLE_GUI)
+if (BUILD_GUI)
     file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
     file(COPY ${GUI_RESOURCE_DIR}
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
-endif()    
+endif()

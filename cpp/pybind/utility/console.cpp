@@ -65,14 +65,16 @@ void pybind_console(py::module& m) {
             .def(py::init<utility::VerbosityLevel>(),
                  "Create a VerbosityContextManager with a given VerbosityLevel",
                  "level"_a)
-            .def("__enter__",
-                 [&](utility::VerbosityContextManager& cm) { cm.enter(); },
-                 "Enter the context manager")
-            .def("__exit__",
-                 [&](utility::VerbosityContextManager& cm,
-                     pybind11::object exc_type, pybind11::object exc_value,
-                     pybind11::object traceback) { cm.exit(); },
-                 "Exit the context manager");
+            .def(
+                    "__enter__",
+                    [&](utility::VerbosityContextManager& cm) { cm.enter(); },
+                    "Enter the context manager")
+            .def(
+                    "__exit__",
+                    [&](utility::VerbosityContextManager& cm,
+                        pybind11::object exc_type, pybind11::object exc_value,
+                        pybind11::object traceback) { cm.exit(); },
+                    "Exit the context manager");
 }
 
 }  // namespace open3d

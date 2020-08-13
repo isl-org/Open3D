@@ -30,6 +30,7 @@
 #include <filament/Engine.h>
 #include <imgui.h>
 #include <imgui_internal.h>  // so we can examine the current context
+
 #include <algorithm>
 #include <cmath>
 #include <queue>
@@ -72,6 +73,18 @@ void UpdateImGuiForScaling(float new_scaling) {
     ImGuiStyle& style = ImGui::GetStyle();
     // FrameBorderSize is not adjusted (we want minimal borders)
     style.FrameRounding *= new_scaling;
+}
+
+float GetScalingGLFW(GLFWwindow* w) {
+// Ubuntu 18.04 uses GLFW 3.1, which doesn't have this function
+#if (GLFW_VERSION_MAJOR > 3 || \
+     (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3))
+    float xscale, yscale;
+    glfwGetWindowContentScale(w, &xscale, &yscale);
+    return std::min(xscale, yscale);
+#else
+    return 1.0f;
+#endif  // GLFW version >= 3.3
 }
 
 int MouseButtonFromGLFW(int button) {
@@ -243,7 +256,12 @@ Window::Window(const std::string& title,
     // ImGUI creates a bitmap atlas from a font, so we need to have the correct
     // size when we create it, because we can't change the bitmap without
     // reloading the whole thing (expensive).
-    float scaling = GetScaling();
+    // Note that GetScaling() gets the pixel scaling. On macOS, coordinates are
+    // specified in points, not device pixels. The conversion to device pixels
+    // is the scaling factor. On Linux, there is no scaling of pixels (just
+    // like in Open3D's GUI library), and glfwGetWindowContentScale() returns
+    // the appropriate scale factor for text and icons and such.
+    float scaling = GetScalingGLFW(impl_->window_);
     impl_->theme_ = Application::GetInstance().GetTheme();
     impl_->theme_.font_size *= scaling;
     impl_->theme_.default_margin *= scaling;
@@ -474,14 +492,18 @@ Rect Window::GetContentRect() const {
 }
 
 float Window::GetScaling() const {
-#if GLFW_VERSION_MAJOR > 3 || \
-        (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3)
-    float xscale, yscale;
-    glfwGetWindowContentScale(impl_->window_, &xscale, &yscale);
-    return xscale;
+// macOS unit of measurement is 72 dpi pixels, which on newer displays
+// is a factor of 2 or 3 smaller than the real number of pixels per inch.
+// This means that you can keep your hard-coded 12 pixel font and N pixel
+// sizes and it will be the same size on any disply.
+// On X Windows a pixel is a device pixel, so glfwGetWindowContentScale()
+// returns the scale factor needed so that your fonts and icons and sizes
+// are correct. This is not the same thing as Apple does.
+#if __APPLE__
+    return GetScalingGLFW(impl_->window_);
 #else
     return 1.0f;
-#endif  // GLFW version >= 3.3
+#endif  // __APPLE__
 }
 
 Point Window::GlobalToWindowCoord(int global_x, int global_y) {

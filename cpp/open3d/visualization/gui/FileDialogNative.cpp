@@ -26,11 +26,10 @@
 
 #if defined(__APPLE__)
 
-#include "open3d/visualization/gui/FileDialog.h"
-
 #include <string>
 #include <vector>
 
+#include "open3d/visualization/gui/FileDialog.h"
 #include "open3d/visualization/gui/Native.h"
 
 namespace open3d {

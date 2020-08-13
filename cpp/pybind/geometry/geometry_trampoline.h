@@ -32,7 +32,6 @@
 #include "open3d/geometry/Geometry3D.h"
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
-
 #include "pybind/geometry/geometry.h"
 #include "pybind/open3d_pybind.h"
 
