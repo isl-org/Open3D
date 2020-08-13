@@ -900,8 +900,7 @@ void GuiVisualizer::SetGeometry(
                             mesh_material.baseColor.b();
                     loaded_material.base_roughness =
                             mesh_material.baseRoughness;
-                    loaded_material.base_metallic =
-                            mesh_material.baseMetallic;
+                    loaded_material.base_metallic = mesh_material.baseMetallic;
                     loaded_material.base_reflectance =
                             mesh_material.baseReflectance;
                     loaded_material.base_clearcoat =

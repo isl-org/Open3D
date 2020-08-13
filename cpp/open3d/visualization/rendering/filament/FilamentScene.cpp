@@ -386,7 +386,8 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
             // defaultLit is reworked to use fewer samplers
             // .SetTexture("clearCoatMap", maps.clear_coat_map,
             //             rendering::TextureSamplerParameters::Pretty())
-            // .SetTexture("clearCoatRoughnessMap", maps.clear_coat_roughness_map,
+            // .SetTexture("clearCoatRoughnessMap",
+            // maps.clear_coat_roughness_map,
             //             rendering::TextureSamplerParameters::Pretty())
             .SetTexture("anisotropyMap", maps.anisotropy_map,
                         rendering::TextureSamplerParameters::Pretty())

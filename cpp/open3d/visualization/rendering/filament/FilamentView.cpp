@@ -70,7 +70,7 @@ FilamentView::FilamentView(filament::Engine& engine,
                     .toneMapping(
                             filament::ColorGrading::ToneMapping::ACES_LEGACY)
                     .build(engine);
-    //view_->setColorGrading(color_grading_);
+    // view_->setColorGrading(color_grading_);
     view_->setColorGrading(nullptr);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
@@ -151,14 +151,14 @@ void FilamentView::SetViewport(std::int32_t x,
 void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
     clear_color_ = color;
 
-/*#if AUTO_CLEAR_COLOR
-    if (mode_ == Mode::Color || mode_ >= Mode::ColorMapX) {
+    /*#if AUTO_CLEAR_COLOR
+        if (mode_ == Mode::Color || mode_ >= Mode::ColorMapX) {
+            view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
+        }
+    #else
         view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
-    }
-#else
-    view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
-#endif
- */
+    #endif
+     */
 }
 
 void FilamentView::SetSSAOEnabled(const bool enabled) {

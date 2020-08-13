@@ -339,7 +339,8 @@ MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
     return handle;
 }
 
-TextureHandle FilamentResourceManager::CreateTexture(const char* path, bool srgb) {
+TextureHandle FilamentResourceManager::CreateTexture(const char* path,
+                                                     bool srgb) {
     std::shared_ptr<geometry::Image> img;
 
     if (path) {
@@ -352,7 +353,7 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path, bool srgb
 }
 
 TextureHandle FilamentResourceManager::CreateTexture(
-    const std::shared_ptr<geometry::Image>& img, bool srgb) {
+        const std::shared_ptr<geometry::Image>& img, bool srgb) {
     TextureHandle handle;
     if (img->HasData()) {
         auto texture = LoadTextureFromImage(img, srgb);
@@ -364,7 +365,7 @@ TextureHandle FilamentResourceManager::CreateTexture(
 }
 
 TextureHandle FilamentResourceManager::CreateTexture(
-    const geometry::Image& image, bool srgb) {
+        const geometry::Image& image, bool srgb) {
     TextureHandle handle;
     if (image.HasData()) {
         auto copy = std::make_shared<geometry::Image>(image);

@@ -36,10 +36,10 @@ ModelInteractorLogic::ModelInteractorLogic(Scene* scene,
                                            Camera* camera,
                                            double min_far_plane)
     : RotationInteractorLogic(camera, min_far_plane)
-      // scene_(scene),
-      // is_axes_visible_(false) {}
+// scene_(scene),
+// is_axes_visible_(false) {}
 {}
-      
+
 ModelInteractorLogic::~ModelInteractorLogic() {}
 
 void ModelInteractorLogic::SetBoundingBox(

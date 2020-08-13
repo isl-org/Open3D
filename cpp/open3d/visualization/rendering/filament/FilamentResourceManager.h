@@ -87,8 +87,7 @@ public:
     TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image,
                                 bool srgb);
     // Slow, will make copy of image data and free it after.
-    TextureHandle CreateTexture(const geometry::Image& image,
-                                bool srgb);
+    TextureHandle CreateTexture(const geometry::Image& image, bool srgb);
     // Creates texture of size 'dimension' filled with color 'color'
     TextureHandle CreateTextureFilled(const Eigen::Vector3f& color,
                                       size_t dimension);

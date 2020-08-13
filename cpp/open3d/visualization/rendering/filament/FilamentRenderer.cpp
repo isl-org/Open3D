@@ -210,7 +210,8 @@ void FilamentRenderer::RemoveMaterialInstance(
     resource_mgr_.Destroy(id);
 }
 
-TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request, bool srgb) {
+TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request,
+                                           bool srgb) {
     if (request.path_.empty()) {
         request.error_callback_(request, -1,
                                 "Texture can be loaded only from file");

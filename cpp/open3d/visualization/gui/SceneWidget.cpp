@@ -404,9 +404,8 @@ public:
                                    rendering::Camera* camera)
         : RotationInteractor(),
           rotation_(new rendering::ModelInteractorLogic(
-                  scene->GetScene(), camera, MIN_FAR_PLANE))
-        {
-            //          scene_(scene) {
+                  scene->GetScene(), camera, MIN_FAR_PLANE)) {
+        //          scene_(scene) {
         SetInteractor(rotation_.get());
     }
 
@@ -436,7 +435,7 @@ public:
 
 private:
     std::unique_ptr<rendering::ModelInteractorLogic> rotation_;
-    //rendering::Open3DScene* scene_;
+    // rendering::Open3DScene* scene_;
 };
 
 class RotateCameraInteractor : public RotationInteractor {
