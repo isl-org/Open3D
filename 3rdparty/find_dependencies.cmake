@@ -840,7 +840,7 @@ if(BUILD_GUI)
         message("[DEBUG] CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
         message("[DEBUG] CMAKE_MSVC_RUNTIME_LIBRARY: ${CMAKE_MSVC_RUNTIME_LIBRARY}")
         message("[DEBUG] STATIC_WINDOWS_RUNTIME: ${STATIC_WINDOWS_RUNTIME}")
-        if (CMAKE_BUILD_TYPE MATCHES "Debug")
+        if (CMAKE_BUILD_TYPE MATCHES "Deb")
             if (STATIC_WINDOWS_RUNTIME)
                 set(FILAMENT_RUNTIME_VER "mtd")  # static, debug
             else()
