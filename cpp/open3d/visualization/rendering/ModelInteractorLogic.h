@@ -60,10 +60,8 @@ public:
     void EndMouseDrag() override;
 
 private:
-    // Scene* scene_;
     GeometryHandle axes_;
     std::vector<GeometryHandle> model_;
-    // bool is_axes_visible_;
 
     geometry::AxisAlignedBoundingBox bounds_at_mouse_down_;
     std::map<GeometryHandle, Camera::Transform> transforms_at_mouse_down_;
