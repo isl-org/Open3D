@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 BUILD_CUDA=$1
 CUDA_PATH=/usr/local/cuda
 INSTALL_DIR=libfaiss-install
