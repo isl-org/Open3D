@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - ssheorey/build-wheel
   pull_request:
     types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
 
