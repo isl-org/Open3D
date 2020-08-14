@@ -26,9 +26,19 @@
 
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068)
+#endif  // _MSC_VER
+
 #include <filament/Camera.h>
 #include <filament/Engine.h>
 #include <math/mat4.h>  // necessary for mat4f
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 namespace open3d {
 namespace visualization {

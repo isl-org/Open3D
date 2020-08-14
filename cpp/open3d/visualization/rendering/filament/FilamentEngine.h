@@ -26,7 +26,17 @@
 
 #pragma once
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068)
+#endif  // _MSC_VER
+
 #include <filament/Engine.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 namespace open3d {
 namespace visualization {

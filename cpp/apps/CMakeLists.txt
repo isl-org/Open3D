@@ -30,6 +30,12 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
                               XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "" # disable
                               OUTPUT_NAME ${APP_NAME}
                              )
+    elseif (WIN32)
+        # MSVC started giving LNK:1114, error 5, which appears to be caused by
+        # the executable having the same name as the library. (Except that this
+        # was working before, so not sure what changed.)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
+        add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
     else()
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
@@ -105,9 +111,9 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
             install(DIRECTORY   "${APP_DIR}/resources"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     USE_SOURCE_PERMISSIONS)
-            install(DIRECTORY   "${APP_DIR}/$<CONFIG>/Open3D.exe"
+            install(FILES   "${APP_DIR}/$<CONFIG>/${TARGET_NAME}.exe"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
-                    USE_SOURCE_PERMISSIONS)
+                    RENAME "${APP_NAME}.exe")
         else()
             install(DIRECTORY   "${APP_DIR}"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"

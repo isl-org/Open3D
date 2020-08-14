@@ -26,13 +26,16 @@
 
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 
-// 4293:  Filament's utils/algorithm.h utils::details::clz() does strange
-//        things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
-//        32 so that x >> 32 gives a warning. (Or maybe the compiler can't
-//        determine the if statement does not run.)
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable : 4293)
+#pragma warning(disable : 4068 4146 4293)
 #endif  // _MSC_VER
 
 #include <filament/Camera.h>
