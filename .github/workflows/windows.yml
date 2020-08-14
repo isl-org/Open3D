@@ -85,9 +85,9 @@ jobs:
           pip install -U wheel
           cd build
           cmake --build . --config ${{ env.CONFIG }} --target install-pip-package
-          $PIP_PKG_NAME=(Get-ChildItem build/lib/python_package/pip_package/open3d*.whl).Name
+          $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "::set-env name=PIP_PKG_NAME::$PIP_PKG_NAME"
-      - name: Test python package
+      - name: Test Python package
         run: |
           python -c "import open3d; print(open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
