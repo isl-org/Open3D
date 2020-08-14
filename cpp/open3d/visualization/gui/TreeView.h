@@ -34,6 +34,10 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
+class Checkbox;
+class ColorEdit;
+class Label;
+
 /// The only difference between just putting in a Checkbox with
 /// TreeView::AddItem() is that with a Checkbox, clicking on the
 /// text will toggle on/off, whereas with this you must click on
@@ -46,6 +50,9 @@ public:
                           std::function<void(bool)> on_toggled);
     ~CheckableTextTreeCell();
 
+    std::shared_ptr<Checkbox> GetCheckbox();
+    std::shared_ptr<Label> GetLabel();
+    
     Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;
 
@@ -62,6 +69,10 @@ public:
                 std::function<void(bool)> on_enabled,
                 std::function<void(const Color&)> on_color_changed);
     ~LUTTreeCell();
+
+    std::shared_ptr<Checkbox> GetCheckbox();
+    std::shared_ptr<Label> GetLabel();
+    std::shared_ptr<ColorEdit> GetColorEdit();
 
     Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;

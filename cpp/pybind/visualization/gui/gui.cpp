@@ -821,7 +821,18 @@ void pybind_gui_classes(py::module &m) {
                                      std::function<void(bool)> on_toggled) {
         return std::make_shared<CheckableTextTreeCell>(text, checked,
                                                        on_toggled);
-    }));
+                                  }),
+                       "Creates a TreeView cell with a checkbox and text. "
+                       "CheckableTextTreeCell(text, is_checked, on_toggled): "
+                       "on_toggled takes a boolean and returns nothing")
+                  .def_property_readonly("checkbox",
+                                         &CheckableTextTreeCell::GetCheckbox,
+                                         "Returns the checkbox widget "
+                                         "(property is read-only)")
+                  .def_property_readonly("label",
+                                         &CheckableTextTreeCell::GetLabel,
+                                         "Returns the label widget "
+                                         "(property is read-only)");
 
     py::class_<LUTTreeCell, std::shared_ptr<LUTTreeCell>, Widget> lut_cell(
             m, "LUTTreeCell",
@@ -832,7 +843,22 @@ void pybind_gui_classes(py::module &m) {
                           std::function<void(const Color &)> on_color) {
                 return std::make_shared<LUTTreeCell>(text, checked, color,
                                                      on_enabled, on_color);
-            }));
+                       }),
+                 "Creates a TreeView cell with a checkbox, text, and "
+                 "a color editor. LUTTreeCell(text, is_checked, color, "
+                 "on_enabled, on_color): on_enabled is called when the "
+                 "checkbox toggles, and takes a boolean and returns "
+                 "; on_color is called when the user changes the color "
+                 "and it takes a gui.Color and returns nothing.")
+            .def_property_readonly("checkbox", &LUTTreeCell::GetCheckbox,
+                                   "Returns the checkbox widget "
+                                   "(property is read-only)")
+            .def_property_readonly("label", &LUTTreeCell::GetLabel,
+                                   "Returns the label widget "
+                                   "(property is read-only)")
+            .def_property_readonly("color_edit", &LUTTreeCell::GetColorEdit,
+                                   "Returns the ColorEdit widget "
+                                   "(property is read-only)");
 
     // ---- VectorEdit ----
     py::class_<VectorEdit, std::shared_ptr<VectorEdit>, Widget> vectoredit(
@@ -851,9 +877,8 @@ void pybind_gui_classes(py::module &m) {
             .def_property("vector_value", &VectorEdit::GetValue,
                           &VectorEdit::SetValue, "Returns value [x, y, z]")
             .def("set_on_value_changed", &VectorEdit::SetOnValueChanged,
-                 "Sets f([x, y, z]) which is called whenever the user changes "
-                 "the "
-                 "value of a component");
+                 "Sets f([x, y, z]) which is called whenever the user "
+                 "changes the value of a component");
 
     // ---- Margins ----
     py::class_<Margins, std::shared_ptr<Margins>> margins(

@@ -64,6 +64,14 @@ CheckableTextTreeCell::CheckableTextTreeCell(
 
 CheckableTextTreeCell::~CheckableTextTreeCell() {}
 
+std::shared_ptr<Checkbox> CheckableTextTreeCell::GetCheckbox() {
+    return impl_->checkbox_;
+}
+
+std::shared_ptr<Label> CheckableTextTreeCell::GetLabel() {
+    return impl_->label_;
+}
+
 Size CheckableTextTreeCell::CalcPreferredSize(const Theme &theme) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);
     auto label_pref = impl_->label_->CalcPreferredSize(theme);
@@ -111,6 +119,18 @@ LUTTreeCell::LUTTreeCell(const char *text,
 }
 
 LUTTreeCell::~LUTTreeCell() {}
+
+std::shared_ptr<Checkbox> LUTTreeCell::GetCheckbox() {
+    return impl_->checkbox_;
+}
+
+std::shared_ptr<Label> LUTTreeCell::GetLabel() {
+    return impl_->label_;
+}
+
+std::shared_ptr<ColorEdit> LUTTreeCell::GetColorEdit() {
+    return impl_->color_;
+}
 
 Size LUTTreeCell::CalcPreferredSize(const Theme &theme) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);

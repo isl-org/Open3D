@@ -850,7 +850,6 @@ void GuiVisualizer::SetGeometry(
         }
     }
 
-    geometry::AxisAlignedBoundingBox bounds;
     std::size_t num_unlit = 0;
     for (size_t i = 0; i < geometries.size(); ++i) {
         std::shared_ptr<const geometry::Geometry> g = geometries[i];
@@ -951,9 +950,10 @@ void GuiVisualizer::SetGeometry(
                 break;
         }
 
+        std::stringstream ss;
+        ss << "object " << i;
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
-        scene3d->AddGeometry(g3, loaded_material);
-        bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
+        scene3d->AddGeometry(ss.str(), g3, loaded_material);
         if (material_is_loaded) {
             impl_->settings_.have_loaded_material_ = true;
             impl_->settings_.loaded_material_ = loaded_material;
@@ -1002,6 +1002,7 @@ void GuiVisualizer::SetGeometry(
     }
     impl_->settings_.view_->Update();  // make sure prefab material is correct
 
+    auto &bounds = scene3d->GetBoundingBox();
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
                                    bounds.GetCenter().cast<float>());
 }
