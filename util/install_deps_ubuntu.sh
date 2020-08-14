@@ -10,7 +10,7 @@ if [ "$1" == "assume-yes" ]; then
     $SUDO apt-get --yes install xorg-dev
     $SUDO apt-get --yes install libglu1-mesa-dev
     $SUDO apt-get --yes install python3-dev
-    # Filament build-from-source dpes
+    # Filament build-from-source deps
     $SUDO apt-get --yes install libsdl2-dev
     $SUDO apt-get --yes install libc++-7-dev
     $SUDO apt-get --yes install libc++abi-7-dev

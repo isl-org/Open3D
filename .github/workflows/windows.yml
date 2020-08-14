@@ -12,11 +12,11 @@ jobs:
   windows:
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
         shared: [ON, OFF]
-    env:
-      static_runtime: ON
-      CONFIG: Release
+        static_runtime: [ON, OFF]
+        CONFIG: [Release, Debug]
 
     steps:
       - name: Checkout source code
@@ -31,24 +31,24 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ env.static_runtime }} ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
       - name: Build
         run: |
           cd build
-          cmake --build . --parallel 2 --config ${{ env.CONFIG }} --target INSTALL
+          cmake --build . --parallel 2 --config ${{ matrix.CONFIG }} --target INSTALL
       - name: Linking to Open3D
         run: |
           cd docs\_static\C++
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ env.static_runtime }} ..
-          cmake --build . --config ${{ env.CONFIG }} && .\${{ env.CONFIG }}\TestVisualizer.exe
+          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
+          cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
       - name: Install Python package
         run: |
           pip install --upgrade pip
           pip install -U wheel
           cd build
-          cmake --build . --config ${{ env.CONFIG }} --target install-pip-package
+          cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
         # If shared == ON, Open3D.dll needs to be copied, which is not recommended for python.
         if: ${{ matrix.shared == 'OFF' }}
