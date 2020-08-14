@@ -17,9 +17,9 @@ jobs:
         SHARED: [ON, OFF]
     env:
       SHARED: ${{ matrix.SHARED }}
-      BUILD_ML_OPS: ${{ env.SHARED }}
-      BUILD_TENSORFLOW_OPS: ${{ env.BUILD_ML_OPS }}
-      BUILD_PYTORCH_OPS: ${{ env.BUILD_ML_OPS }}
+      BUILD_ML_OPS: ${{ matrix.SHARED }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.SHARED }}
+      BUILD_PYTORCH_OPS: ${{ matrix.SHARED }}
       BUILD_CUDA_MODULE: OFF
       BUILD_RPC_INTERFACE: ON
       NPROC: 2
