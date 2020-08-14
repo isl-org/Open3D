@@ -70,6 +70,7 @@ public:
     virtual Scene* GetScene(const SceneHandle& id) const = 0;
     virtual void DestroyScene(const SceneHandle& id) = 0;
 
+    virtual void SetClearColor(const Eigen::Vector4f& color) = 0;
     virtual void UpdateSwapChain() = 0;
 
     virtual void BeginFrame() = 0;
@@ -86,9 +87,11 @@ public:
             const MaterialInstanceHandle& id) = 0;
     virtual void RemoveMaterialInstance(const MaterialInstanceHandle& id) = 0;
 
-    virtual TextureHandle AddTexture(const ResourceLoadRequest& request) = 0;
+    virtual TextureHandle AddTexture(const ResourceLoadRequest& request,
+                                     bool srgb = false) = 0;
     virtual TextureHandle AddTexture(
-            const std::shared_ptr<geometry::Image>& image) = 0;
+            const std::shared_ptr<geometry::Image>& image,
+            bool srgb = false) = 0;
     virtual void RemoveTexture(const TextureHandle& id) = 0;
 
     virtual IndirectLightHandle AddIndirectLight(

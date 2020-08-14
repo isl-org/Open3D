@@ -17,7 +17,6 @@ option(BUILD_GUI                  "Builds new GUI"                           ON 
 option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
-option(USE_VULKAN                 "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON )
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 # 3rd-party build options
@@ -44,6 +43,17 @@ option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF
 option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                    OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
+
+# In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
+# first try to look for the required files in THIRD_PARTY_DOWNLOAD_DIR, before
+# downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
+# are prepared manually by the user. This is only supported by limited 3rd party
+# libraries.
+if(THIRD_PARTY_DOWNLOAD_DIR)
+    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to ${THIRD_PARTY_DOWNLOAD_DIR}.")
+else()
+    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
+endif()
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 set(FILAMENT_SOURCE_ROOT "" CACHE PATH "Path to Filament library sources (used if BUILD_FILAMENT_FROM_SOURCE=ON)")

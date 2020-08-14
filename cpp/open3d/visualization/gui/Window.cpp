@@ -278,6 +278,7 @@ Window::Window(const std::string& title,
     impl_->renderer_ =
             std::make_unique<visualization::rendering::FilamentRenderer>(
                     engine, GetNativeDrawable(), resource_manager);
+    impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
 
     auto& theme = impl_->theme_;  // shorter alias
     impl_->imgui_.context = ImGui::CreateContext();

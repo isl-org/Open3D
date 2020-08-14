@@ -252,11 +252,54 @@ function(import_3rdparty_library name)
     add_library(${PROJECT_NAME}::${name} ALIAS ${name})
 endfunction()
 
+#
+# set_local_or_remote_url(url ...)
+#
+# If LOCAL_URL exists, set URL to LOCAL_URL, otherwise set URL to REMOTE_URLS.
+# This function is needed since CMake does not allow specifying remote URL(s) if
+# a local URL is specified.
+#
+# Valid options:
+#    LOCAL_URL
+#        local url to a file. Optional parameter. If the file does not exist,
+#        LOCAL_URL will be ignored. If the file exists, REMOTE URLS will be
+#        ignored. CMake only allows setting single LOCAL_URL for external
+#        projects.
+#    REMOTE_URLS
+#        remote url(s) to download a file. CMake will try to download the file
+#        in the specified order.
+#
+function(set_local_or_remote_url URL)
+    cmake_parse_arguments(arg "" "LOCAL_URL" "REMOTE_URLS" ${ARGN})
+    if(arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Invalid syntax: set_local_or_remote_url(${name} ${ARGN})")
+    endif()
+    if(arg_LOCAL_URL AND (EXISTS ${arg_LOCAL_URL}))
+        message(STATUS "Using local url: ${arg_LOCAL_URL}")
+        set(${URL} "${arg_LOCAL_URL}" PARENT_SCOPE)
+    else()
+        message(STATUS "Using remote url(s): ${arg_REMOTE_URLS}")
+        set(${URL} "${arg_REMOTE_URLS}" PARENT_SCOPE)
+    endif()
+endfunction()
+
 # Threads
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
 find_package(Threads REQUIRED)
 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Threads")
+
+# Assimp
+message(STATUS "Building library Assimp from source")
+include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
+import_3rdparty_library(3rdparty_assimp
+    INCLUDE_DIRS ${ASSIMP_INCLUDE_DIR}
+    LIB_DIR      ${ASSIMP_LIB_DIR}
+    LIBRARIES    ${ASSIMP_LIBRARIES}
+)
+set(ASSIMP_TARGET "3rdparty_assimp")
+add_dependencies(3rdparty_assimp ext_assimp)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ASSIMP_TARGET}")
 
 # OpenMP
 if(WITH_OPENMP)

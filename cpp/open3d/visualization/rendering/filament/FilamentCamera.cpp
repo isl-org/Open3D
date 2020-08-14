@@ -28,6 +28,7 @@
 
 #include <filament/Camera.h>
 #include <filament/Engine.h>
+#include <math/mat4.h>  // necessary for mat4f
 
 namespace open3d {
 namespace visualization {

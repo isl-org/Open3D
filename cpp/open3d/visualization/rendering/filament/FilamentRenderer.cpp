@@ -96,6 +96,17 @@ void FilamentRenderer::DestroyScene(const SceneHandle& id) {
     scenes_.erase(id);
 }
 
+void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
+    filament::Renderer::ClearOptions co;
+    co.clearColor.r = color.x();
+    co.clearColor.g = color.y();
+    co.clearColor.b = color.z();
+    co.clearColor.a = color.w();
+    co.clear = true;
+    co.discard = true;
+    renderer_->setClearOptions(co);
+}
+
 void FilamentRenderer::UpdateSwapChain() {
     void* native_win = swap_chain_->getNativeWindow();
     engine_.destroy(swap_chain_);
@@ -212,14 +223,15 @@ void FilamentRenderer::RemoveMaterialInstance(
     resource_mgr_.Destroy(id);
 }
 
-TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request) {
+TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request,
+                                           bool srgb) {
     if (request.path_.empty()) {
         request.error_callback_(request, -1,
                                 "Texture can be loaded only from file");
         return {};
     }
 
-    return resource_mgr_.CreateTexture(request.path_.data());
+    return resource_mgr_.CreateTexture(request.path_.data(), srgb);
 }
 
 void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
@@ -276,8 +288,8 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
 }
 
 TextureHandle FilamentRenderer::AddTexture(
-        const std::shared_ptr<geometry::Image>& image) {
-    return resource_mgr_.CreateTexture(image);
+        const std::shared_ptr<geometry::Image>& image, bool srgb) {
+    return resource_mgr_.CreateTexture(image, srgb);
 }
 
 void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {
