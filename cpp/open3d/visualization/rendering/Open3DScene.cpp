@@ -128,8 +128,6 @@ Open3DScene::~Open3DScene() {
 ViewHandle Open3DScene::CreateView() {
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
-    auto view = scene->GetView(view_);
-    view->SetClearColor({1.0f, 1.0f, 1.0f});
 
     return view_;
 }

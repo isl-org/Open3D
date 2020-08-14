@@ -382,10 +382,13 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
                         rendering::TextureSamplerParameters::Pretty())
             .SetTexture("reflectanceMap", maps.reflectance_map,
                         rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("clearCoatMap", maps.clear_coat_map,
-                        rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("clearCoatRoughnessMap", maps.clear_coat_roughness_map,
-                        rendering::TextureSamplerParameters::Pretty())
+            // NOTE: Disabled temporarily to avoid Filament warning until
+            // defaultLit is reworked to use fewer samplers
+            // .SetTexture("clearCoatMap", maps.clear_coat_map,
+            //             rendering::TextureSamplerParameters::Pretty())
+            // .SetTexture("clearCoatRoughnessMap",
+            // maps.clear_coat_roughness_map,
+            //             rendering::TextureSamplerParameters::Pretty())
             .SetTexture("anisotropyMap", maps.anisotropy_map,
                         rendering::TextureSamplerParameters::Pretty())
             .Finish();
@@ -426,7 +429,7 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         return map && map->HasData();
     };
     if (is_map_valid(props.albedo_img)) {
-        maps.albedo_map = renderer_.AddTexture(props.albedo_img);
+        maps.albedo_map = renderer_.AddTexture(props.albedo_img, true);
     }
     if (is_map_valid(props.normal_img)) {
         maps.normal_map = renderer_.AddTexture(props.normal_img);

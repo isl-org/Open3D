@@ -47,7 +47,7 @@ class Renderer;
 class View;
 class Model;
 struct Material;
-class Light;
+struct Light;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views

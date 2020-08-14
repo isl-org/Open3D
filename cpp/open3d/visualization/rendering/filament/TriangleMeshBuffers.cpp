@@ -387,7 +387,7 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
                                    .normals(reinterpret_cast<math::float3*>(
                                            normals.data()))
                                    .build();
-        orientation.getQuats(float4v_tangents, n_vertices);
+        orientation->getQuats(float4v_tangents, n_vertices);
     } else {
         utility::LogWarning(
                 "Trying to create mesh without vertex normals. Shading would "
