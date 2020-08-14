@@ -8,7 +8,10 @@
 # - BUILD_PYTORCH_OPS
 # - BUILD_RPC_INTERFACE
 # - LOW_MEM_USAGE
+# Optional:
+# - BUILD_WHEEL_ONLY
 
+BUILD_WHEEL_ONLY=${BUILD_WHEEL_ONLY:-OFF}
 TENSORFLOW_VER="2.3.0"
 TORCH_GLNX_VER=("1.5.0+cu101" "1.4.0+cpu")
 TORCH_MACOS_VER="1.4.0"
@@ -44,17 +47,19 @@ reportRun() {
 
 echo "nproc = $(nproc) NPROC = ${NPROC}"
 reportJobStart "installing Python unit test dependencies"
-echo "using pip: $(which pip)"
-pip install --upgrade pip
-pip install -U pytest
-pip install -U wheel
-pip install scipy
-echo
-
 echo "using python: $(which python)"
 python --version
-echo "using pytest: $(which pytest)"
-pytest --version
+pip install --upgrade pip
+echo "using pip: $(which pip)"
+pip install -U wheel
+if [ "$BUILD_WHEEL_ONLY" == OFF ] ; then
+    pip install -U pytest
+    pip install scipy
+    echo "using pytest: $(which pytest)"
+    pytest --version
+fi
+echo
+
 echo "using cmake: $(which cmake)"
 cmake --version
 
@@ -99,7 +104,6 @@ fi
 mkdir -p build
 cd build
 
-runBenchmarks=true
 OPEN3D_INSTALL_DIR=~/open3d_install
 cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
         -DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE \
@@ -107,15 +111,46 @@ cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
         -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
         -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
         -DBUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE} \
-        -DBUILD_UNIT_TESTS=ON \
-        -DBUILD_BENCHMARKS=ON \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
         -DPYTHON_EXECUTABLE=$(which python)"
 
+if [ "$BUILD_WHEEL_ONLY" == ON ] ; then
+    runBenchmarks=false
+    cmakeOptions="$cmakeOptions \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_UNIT_TESTS=OFF \
+        -DBUILD_BENCHMARKS=OFF"
+else
+    runBenchmarks=true
+    cmakeOptions="$cmakeOptions \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DBUILD_UNIT_TESTS=ON \
+        -DBUILD_BENCHMARKS=ON"
+fi
+
 echo
-echo "Running cmake" $cmakeOptions ..
+echo "Running cmake $cmakeOptions .."
 reportRun cmake $cmakeOptions ..
 echo
+
+if [ "$BUILD_WHEEL_ONLY" == ON ] ; then
+    echo "Building Open3D wheel..."
+    date
+    reportRun make VERBOSE=1 -j"$NPROC" pip-package
+    echo
+    echo "Installing Open3D wheel..."
+    date
+    reportRun pip install lib/python_package/pip_package/open3d-*.whl
+    if [ "$BUILD_CUDA_MODULE" == "OFF" ] || nvidia-smi -L | grep -q GPU ; then
+        echo
+        echo "Testing Open3D wheel..."
+        date
+        reportRun python -c "import open3d; print(open3d)"
+        reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+    fi
+    reportJobFinishSession
+    exit 0
+fi
 
 echo "build & install Open3D..."
 date
