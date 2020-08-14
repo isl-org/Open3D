@@ -201,6 +201,10 @@ if (BUILD_CUDA_MODULE)
         find_package(CUDA REQUIRED) # required for cuda_select_nvcc_arch_flags
         message(STATUS "Building CUDA enabled")
         enable_language(CUDA)
+        # TODO: when CMake minimum version is 3.18+, switch to the NEW behavior
+        # of CMP0104 and replease CUDA_GENCODES with CUDA_ARCHITECTURES target
+        # properties. See https://cmake.org/cmake/help/v3.18/policy/CMP0104.html.
+        cmake_policy(SET CMP0104 OLD)
         # Get gencode flags
         if("${CUDA_ARCH}" STREQUAL "User")
             cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
