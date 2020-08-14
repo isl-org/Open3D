@@ -501,8 +501,10 @@ struct GuiVisualizer::Impl {
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
         auto &current_materials = settings_.model_.GetCurrentMaterials();
-        if (current_materials.lit_name ==
-            GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+        if (settings_.model_.GetMaterialType() ==
+                    GuiSettingsModel::MaterialType::LIT &&
+            current_materials.lit_name ==
+                    GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
             scene_wgt_->GetScene()->UpdateMaterial(settings_.loaded_material_);
         } else {
             UpdateMaterials(renderer, current_materials);
