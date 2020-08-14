@@ -243,6 +243,8 @@ Camera* Open3DScene::GetCamera() const {
     return view->GetCamera();
 }
 
+Renderer& Open3DScene::GetRenderer() const { return renderer_; }
+
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

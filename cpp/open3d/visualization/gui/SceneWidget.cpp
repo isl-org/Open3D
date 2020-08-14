@@ -672,6 +672,12 @@ void SceneWidget::SetOnSunDirectionChanged(
             });
 }
 
+void SceneWidget::SetBackgroundColor(const Color& color) {
+    Super::SetBackgroundColor(color);
+    auto& renderer = impl_->scene_->GetRenderer();
+    renderer.SetClearColor(Eigen::Vector4f(color.GetPointer()));
+}
+
 void SceneWidget::ShowSkybox(bool is_on) {
     impl_->controls_->ShowSkybox(is_on);
 }

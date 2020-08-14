@@ -68,6 +68,7 @@ public:
 
     Scene* GetScene() const;
     Camera* GetCamera() const;
+    Renderer& GetRenderer() const;
 
 private:
     Renderer& renderer_;

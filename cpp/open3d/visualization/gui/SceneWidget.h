@@ -76,6 +76,7 @@ public:
             std::function<void(const Eigen::Vector3f&)> on_dir_changed);
     /// Enables showing the skybox while in skybox ROTATE_IBL mode.
     void ShowSkybox(bool is_on);
+    void SetBackgroundColor(const Color& color);
 
     void SetScene(std::shared_ptr<rendering::Open3DScene> scene);
     std::shared_ptr<rendering::Open3DScene> GetScene() const;
