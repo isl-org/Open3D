@@ -505,6 +505,12 @@ struct GuiVisualizer::Impl {
                     GuiSettingsModel::MaterialType::LIT &&
             current_materials.lit_name ==
                     GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+            settings_.loaded_material_.base_color.x() =
+                    current_materials.lit.base_color.x();
+            settings_.loaded_material_.base_color.y() =
+                    current_materials.lit.base_color.y();
+            settings_.loaded_material_.base_color.z() =
+                    current_materials.lit.base_color.z();
             scene_wgt_->GetScene()->UpdateMaterial(settings_.loaded_material_);
         } else {
             UpdateMaterials(renderer, current_materials);
@@ -999,6 +1005,7 @@ void GuiVisualizer::SetGeometry(
         impl_->settings_.model_.SetCustomDefaultColor(color);
         impl_->settings_.model_.SetCurrentMaterials(
                 GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
+        impl_->settings_.model_.SetCurrentMaterialColor(color);
         impl_->settings_.view_->ShowFileMaterialEntry(true);
     } else {
         impl_->settings_.view_->ShowFileMaterialEntry(false);
