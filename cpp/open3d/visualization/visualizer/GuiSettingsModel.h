@@ -115,6 +115,7 @@ public:
 
     // TODO: Get/SetMaterial
     const Materials& GetCurrentMaterials() const;
+    Materials& GetCurrentMaterials();
     void SetLitMaterial(const LitMaterial& material, const std::string& name);
     void SetCurrentMaterials(const Materials& materials,
                              const std::string& name);

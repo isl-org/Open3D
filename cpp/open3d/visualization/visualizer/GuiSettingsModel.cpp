@@ -178,6 +178,10 @@ const GuiSettingsModel::Materials& GuiSettingsModel::GetCurrentMaterials()
     return current_materials_;
 }
 
+GuiSettingsModel::Materials& GuiSettingsModel::GetCurrentMaterials() {
+    return current_materials_;
+}
+
 void GuiSettingsModel::SetLitMaterial(const LitMaterial& material,
                                       const std::string& name) {
     auto color = current_materials_.lit.base_color;

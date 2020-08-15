@@ -864,7 +864,6 @@ void GuiVisualizer::SetGeometry(
         std::shared_ptr<const geometry::Geometry> g = geometries[i];
         rendering::Material loaded_material;
         bool material_is_loaded = false;
-        // GuiSettingsModel::LitMaterial loaded_material;
 
         // If a point cloud or mesh has no vertex colors or a single uniform
         // color (usually white), then we want to display it normally, that is,
@@ -966,6 +965,7 @@ void GuiVisualizer::SetGeometry(
         if (material_is_loaded) {
             impl_->settings_.have_loaded_material_ = true;
             impl_->settings_.loaded_material_ = loaded_material;
+            impl_->settings_.loaded_material_.shader = "defaultLit";
             impl_->settings_.lit_material_ = loaded_material;
             impl_->settings_.lit_material_.shader = "defaultLit";
             impl_->settings_.unlit_material_ = loaded_material;
@@ -1002,10 +1002,12 @@ void GuiVisualizer::SetGeometry(
     if (impl_->settings_.have_loaded_material_) {
         Eigen::Vector3f color(
                 impl_->settings_.loaded_material_.base_color.data());
+        auto &current_materials = impl_->settings_.model_.GetCurrentMaterials();
+        current_materials.lit.base_color = color;
+        current_materials.unlit.base_color = color;
         impl_->settings_.model_.SetCustomDefaultColor(color);
         impl_->settings_.model_.SetCurrentMaterials(
                 GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
-        impl_->settings_.model_.SetCurrentMaterialColor(color);
         impl_->settings_.view_->ShowFileMaterialEntry(true);
     } else {
         impl_->settings_.view_->ShowFileMaterialEntry(false);
