@@ -104,6 +104,7 @@ class MLVisualizer:
         self._data = {}
         self._name2treenode = {}
         self._name2treeid = {}
+        self._label2color = {}
         self.window = gui.Window("ML Visualizer", 1024, 768)
         self.window.set_on_layout(self._on_layout)
 
@@ -206,6 +207,7 @@ class MLVisualizer:
         root = self._lut.get_root_item()
         for key in sorted(labels.keys()):
             name, color = labels[key]
+            self._label2color[key] = color
             color = gui.Color(color[0], color[1], color[2])
             cell = gui.LUTTreeCell(str(key) + ": " + name, True,
                                    color, None, None)
@@ -247,6 +249,11 @@ class MLVisualizer:
             self._dataset.add_text_item(node, "Labels")
 
         cloud = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(datum.points))
+        colors = [[1.0, 0.0, 1.0]] * len(datum.points)
+        for i in range(0, len(datum.points)):
+            if datum.labels[i] in self._label2color:
+                colors[i] = self._label2color[datum.labels[i]]
+        cloud.colors = o3d.utility.Vector3dVector(colors)
         material = rendering.Material()
         material.shader = "defaultUnlit"
         material.base_color = [0.5, 0.5, 0.5, 1.0]
