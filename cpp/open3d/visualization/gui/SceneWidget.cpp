@@ -404,8 +404,8 @@ public:
                                    rendering::Camera* camera)
         : RotationInteractor(),
           rotation_(new rendering::ModelInteractorLogic(
-                  scene->GetScene(), camera, MIN_FAR_PLANE)),
-          scene_(scene) {
+                  scene->GetScene(), camera, MIN_FAR_PLANE)) {
+        //          scene_(scene) {
         SetInteractor(rotation_.get());
     }
 
@@ -435,7 +435,7 @@ public:
 
 private:
     std::unique_ptr<rendering::ModelInteractorLogic> rotation_;
-    rendering::Open3DScene* scene_;
+    // rendering::Open3DScene* scene_;
 };
 
 class RotateCameraInteractor : public RotationInteractor {
@@ -625,11 +625,6 @@ void SceneWidget::SetFrame(const Rect& f) {
     // because we need to know the window height to convert the frame
     // to OpenGL coordinates. We will actually do the updating in Draw().
     impl_->frame_rect_changed_ = true;
-}
-
-void SceneWidget::SetBackgroundColor(const Color& color) {
-    auto view = impl_->scene_->GetView(impl_->view_id_);
-    view->SetClearColor({color.GetRed(), color.GetGreen(), color.GetBlue()});
 }
 
 void SceneWidget::SetupCamera(

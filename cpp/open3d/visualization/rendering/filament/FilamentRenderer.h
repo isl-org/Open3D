@@ -65,6 +65,7 @@ public:
     Scene* GetScene(const SceneHandle& id) const override;
     void DestroyScene(const SceneHandle& id) override;
 
+    virtual void SetClearColor(const Eigen::Vector4f& color) override;
     void UpdateSwapChain() override;
 
     void BeginFrame() override;
@@ -80,9 +81,10 @@ public:
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
     void RemoveMaterialInstance(const MaterialInstanceHandle& id) override;
 
-    TextureHandle AddTexture(const ResourceLoadRequest& request) override;
-    TextureHandle AddTexture(
-            const std::shared_ptr<geometry::Image>& image) override;
+    TextureHandle AddTexture(const ResourceLoadRequest& request,
+                             bool srgb = false) override;
+    TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image,
+                             bool srgb = false) override;
     void RemoveTexture(const TextureHandle& id) override;
 
     IndirectLightHandle AddIndirectLight(
