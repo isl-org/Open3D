@@ -404,39 +404,18 @@ public:
                                    rendering::Camera* camera)
         : RotationInteractor(),
           rotation_(new rendering::ModelInteractorLogic(
-                  scene->GetScene(), camera, MIN_FAR_PLANE)) {
-        //          scene_(scene) {
+                  scene, camera, MIN_FAR_PLANE)) {
         SetInteractor(rotation_.get());
     }
 
     void Mouse(const MouseEvent& e) override {
-        // We need to make sure rotation_ gets the geometry handles it
-        // needs to rotate. We can't just cache this in the constructor,
-        // because the caller may have given us an empty scene which it
-        // later fills. (Also, just in case the scene geometry is updated,
-        // if we all users to load a second model.) We need to make sure
-        // that all levels of detail are updated. The handles might be
-        // the same, but it turns that works out fine because rotation_
-        // calculates the new matrix from the matrix at mouse down, so
-        // the calculation is not cumulative if there are multiple copies
-        // of the object, merely duplicated.
-        if (e.type == MouseEvent::BUTTON_DOWN) {
-            // TODO: Make sure this works with new Scene graph
-            // std::vector<rendering::GeometryHandle> geometries =
-            //         scene_->GetModel();
-            // for (auto& fast :
-            //      scene_->GetModel(rendering::Open3DScene::LOD::FAST)) {
-            //     geometries.push_back(fast);
-            // }
-            // rotation_->SetModel(scene_->GetAxis(), geometries);
-        }
         Super::Mouse(e);
     }
 
 private:
     std::unique_ptr<rendering::ModelInteractorLogic> rotation_;
-    // rendering::Open3DScene* scene_;
 };
+
 
 class RotateCameraInteractor : public RotationInteractor {
     using Super = RotationInteractor;

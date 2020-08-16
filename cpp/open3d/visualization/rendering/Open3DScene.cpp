@@ -214,6 +214,14 @@ void Open3DScene::UpdateMaterial(const Material& mat) {
     }
 }
 
+std::vector<std::string> Open3DScene::GetGeometries() {
+    if (model_name_.empty()) {
+        return {};
+    } else {
+        return { model_name_ };
+    }
+}
+
 void Open3DScene::SetLOD(LOD lod) {
     if (lod != lod_) {
         lod_ = lod;
