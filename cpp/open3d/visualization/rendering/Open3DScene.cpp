@@ -218,7 +218,7 @@ std::vector<std::string> Open3DScene::GetGeometries() {
     if (model_name_.empty()) {
         return {};
     } else {
-        return { model_name_ };
+        return {model_name_};
     }
 }
 

@@ -408,14 +408,11 @@ public:
         SetInteractor(rotation_.get());
     }
 
-    void Mouse(const MouseEvent& e) override {
-        Super::Mouse(e);
-    }
+    void Mouse(const MouseEvent& e) override { Super::Mouse(e); }
 
 private:
     std::unique_ptr<rendering::ModelInteractorLogic> rotation_;
 };
-
 
 class RotateCameraInteractor : public RotationInteractor {
     using Super = RotationInteractor;

@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/rendering/ModelInteractorLogic.h"
+
 #include <Eigen/src/Core/Transpose.h>
 
 #include "open3d/visualization/rendering/Open3DScene.h"
@@ -51,8 +52,7 @@ void ModelInteractorLogic::SetBoundingBox(
 }
 
 void ModelInteractorLogic::SetModel(
-        GeometryHandle axes, const std::vector<GeometryHandle>& objects) {
-}
+        GeometryHandle axes, const std::vector<GeometryHandle>& objects) {}
 
 void ModelInteractorLogic::Rotate(int dx, int dy) {
     Eigen::Vector3f x_axis = -camera_->GetLeftVector();
@@ -148,14 +148,13 @@ void ModelInteractorLogic::UpdateBoundingBox(const Camera::Transform& t) {
 const std::string kAxisObjectName("__axis__");
 
 void ModelInteractorLogic::StartMouseDrag() {
-
     SetMouseDownInfo(Camera::Transform::Identity(), center_of_rotation_);
 
     transforms_at_mouse_down_.clear();
     auto models = scene_->GetGeometries();
     auto* scene = scene_->GetScene();
-    
-    for(const auto& m : models) {
+
+    for (const auto& m : models) {
         transforms_at_mouse_down_[m] = scene->GetGeometryTransform(m);
     }
 

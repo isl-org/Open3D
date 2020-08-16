@@ -41,7 +41,9 @@ class ModelInteractorLogic : public RotationInteractorLogic {
     using Super = RotationInteractorLogic;
 
 public:
-    ModelInteractorLogic(Open3DScene* scene, Camera* camera, double min_far_plane);
+    ModelInteractorLogic(Open3DScene* scene,
+                         Camera* camera,
+                         double min_far_plane);
     virtual ~ModelInteractorLogic();
 
     void SetBoundingBox(
@@ -62,7 +64,7 @@ public:
 private:
     Open3DScene* scene_;
     bool is_axes_visible_;
-    
+
     geometry::AxisAlignedBoundingBox bounds_at_mouse_down_;
     std::map<std::string, Camera::Transform> transforms_at_mouse_down_;
 
