@@ -29,6 +29,7 @@
 #include <string>
 
 #include "open3d/Open3D.h"
+#include "open3d/io/rpc/Connection.h"
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/visualizer/GuiVisualizer.h"
 
@@ -53,6 +54,12 @@ int Run(int argc, const char *argv[]) {
     app.Initialize(argc, argv);
 
     auto vis = std::make_shared<GuiVisualizer>("Open3D", WIDTH, HEIGHT);
+#ifdef BUILD_RPC_INTERFACE
+    std::string address = utility::GetProgramOptionAsString(
+            argc, (char **)argv, "--bind",
+            io::rpc::Connection::DefaultAddress());
+    vis->StartRPCInterface(address, 1000);
+#endif
     bool is_path_valid = (path && path[0] != '\0');
     if (is_path_valid) {
         vis->LoadGeometry(path);
