@@ -149,7 +149,7 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     sphere->PaintUniformColor(kSkyColor);
     auto t0 = Camera::Transform::Identity();
     Material mat;
-    mat.shader = "defaultLit";
+    mat.shader = "defaultUnlit";
     scene_->AddGeometry("__suncagesphere__", *sphere, mat);
     scene_->SetGeometryTransform("__suncagesphere__", t0);
     scene_->GeometryShadows("__suncagesphere__", false, false);
