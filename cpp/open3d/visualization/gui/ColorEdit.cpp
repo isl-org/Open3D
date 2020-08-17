@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/ColorEdit.h"
 
 #include <imgui.h>
+
 #include <cmath>
 #include <sstream>
 
@@ -76,8 +77,7 @@ Size ColorEdit::CalcPreferredSize(const Theme& theme) const {
 
 ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
 
     auto new_value = impl_->value_;
     DrawImGuiPushEnabledState();

@@ -51,19 +51,19 @@ Let's move to build a folder.
 In the next step, there are two cmake flags that need to be specified.
 
 - ``-DENABLE_HEADLESS_RENDERING=ON``: this flag informs glew and glfw should use **OSMesa**.
-- ``-DBUILD_GLEW=ON -DBUILD_GLFW=ON``: note that headless rendering only works with the **glew 2.1** and **glfw 3.3-dev** version.
+- ``-DUSE_SYSTEM_GLEW=OFF -DUSE_SYSTEM_GLFW=OFF``: note that headless rendering only works with the **glew 2.1** and **glfw 3.3-dev** version.
   In most cases, these versions are not installed in vanilla Ubuntu systems.
   Use these CMake options to force to build glew 2.1 and glfw 3.3-dev from source included with Open3D.
-- The Filament-based GUI implementation is not compatible with headless rendering, please set ``-DENABLE_GUI=OFF``.
+- The Filament-based GUI implementation is not compatible with headless rendering, please set ``-DBUILD_GUI=OFF``.
 
 As a result, the cmake command is the following
 
 .. code-block:: shell
 
     (py3env) $ cmake -DENABLE_HEADLESS_RENDERING=ON \
-                     -DENABLE_GUI=OFF \
-                     -DBUILD_GLEW=ON \
-                     -DBUILD_GLFW=ON \
+                     -DBUILD_GUI=OFF \
+                     -DUSE_SYSTEM_GLEW=OFF \
+                     -DUSE_SYSTEM_GLFW=OFF \
                      ..
 
 If cmake successfully generates makefiles, build Open3D.
@@ -110,7 +110,7 @@ Possible Issues
 .. Error:: | If glew and glfw did not correctly link with OSMesa, it may crash with the following error.
            | **GLFW Error: X11: The DISPLAY environment variable is missing. Failed to initialize GLFW**
 
-Try ``cmake`` with ``-DBUILD_GLEW=ON`` and ``-DBUILD_GLFW=ON`` flags.
+Try ``cmake`` with ``-DUSE_SYSTEM_GLEW=OFF`` and ``-DUSE_SYSTEM_GLFW=OFF`` flags.
 
 .. Error:: | If OSMesa does not support GL 3.3 Core you will get the following error:
            | **GLFW Error: OSMesa: Failed to create context**
@@ -181,7 +181,7 @@ Here are instructions for compiling mesa-19.0.8, last version that still support
     # this needs to be done for every shell, or you can add it to your .bashrc
     (py3env) $ cd ~/Open3D
     (py3env) $ mkdir build&&cd build
-    (py3env) $ cmake -DENABLE_HEADLESS_RENDERING=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON \
+    (py3env) $ cmake -DENABLE_HEADLESS_RENDERING=ON -DUSE_SYSTEM_GLEW=OFF -DUSE_SYSTEM_GLFW=OFF \
         -DOSMESA_INCLUDE_DIR=$HOME/osmesa/include -DOSMESA_LIBRARY="$HOME/osmesa/lib/libOSMesa.so" \
         ..
     (py3env) $ make -j$(nproc)

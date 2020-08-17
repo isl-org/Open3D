@@ -27,6 +27,7 @@
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
 #include <geometry/SurfaceOrientation.h>
+
 #include <Eigen/Core>
 
 #include "open3d/geometry/BoundingVolume.h"
@@ -143,7 +144,7 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
                                    .normals(reinterpret_cast<math::float3*>(
                                            normals.data()))
                                    .build();
-        orientation.getQuats(float4v_tagents, n_vertices);
+        orientation->getQuats(float4v_tagents, n_vertices);
     }
 
     const size_t vertices_byte_count = n_vertices * sizeof(ColoredVertex);

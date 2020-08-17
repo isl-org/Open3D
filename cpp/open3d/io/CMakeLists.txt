@@ -8,6 +8,11 @@ if (BUILD_AZURE_KINECT)
     set(IO_ALL_SOURCE_FILES ${IO_ALL_SOURCE_FILES} ${SENSOR_SOURCE_FILES})
 endif ()
 
+if (BUILD_RPC_INTERFACE)
+    file(GLOB      RPC_SOURCE_FILES "rpc/*.cpp")
+    set(IO_ALL_SOURCE_FILES ${IO_ALL_SOURCE_FILES} ${RPC_SOURCE_FILES})
+endif()
+
 # Create object library
 add_library(io OBJECT
             ${IO_ALL_SOURCE_FILES}

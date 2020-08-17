@@ -27,6 +27,7 @@
 #pragma once
 
 #include <filament/Color.h>
+
 #include <memory>
 #include <numeric>
 
@@ -38,6 +39,7 @@ class Engine;
 class Scene;
 class View;
 class Viewport;
+class ColorGrading;
 }  // namespace filament
 /// @endcond
 
@@ -73,7 +75,6 @@ public:
                      std::int32_t y,
                      std::uint32_t w,
                      std::uint32_t h) override;
-    void SetClearColor(const Eigen::Vector3f& color) override;
 
     void SetSSAOEnabled(bool enabled) override;
 
@@ -91,7 +92,6 @@ public:
 
 private:
     std::unique_ptr<FilamentCamera> camera_;
-    Eigen::Vector3f clear_color_;
     Mode mode_ = Mode::Color;
     TargetBuffers discard_buffers_;
 
@@ -99,6 +99,7 @@ private:
     FilamentScene* scene_ = nullptr;
     FilamentResourceManager& resource_mgr_;
     filament::View* view_ = nullptr;
+    filament::ColorGrading* color_grading_ = nullptr;
 };
 
 }  // namespace rendering

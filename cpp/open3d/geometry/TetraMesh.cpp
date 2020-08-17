@@ -25,15 +25,15 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/TetraMesh.h"
-#include "open3d/geometry/BoundingVolume.h"
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/TriangleMesh.h"
 
 #include <Eigen/Dense>
 #include <array>
 #include <numeric>
 #include <tuple>
 
+#include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

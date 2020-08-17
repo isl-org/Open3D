@@ -82,5 +82,5 @@ demonstrate the usage of Open3D Python interface. See ``examples/python`` for al
 
 .. note:: Open3D's Python tutorial utilizes some external packages: ``numpy``,
     ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction
-    system. Please read util/scripts/install-deps-python.sh for installing these
+    system. Please read util/install-deps-python.sh for installing these
     packages.

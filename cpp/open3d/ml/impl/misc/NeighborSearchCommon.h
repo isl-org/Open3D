@@ -28,7 +28,7 @@
 
 #include <nanoflann.hpp>
 
-#include "open3d/utility/Eigen.h"
+#include "open3d/utility/MiniVec.h"
 
 namespace open3d {
 namespace ml {
@@ -48,8 +48,8 @@ HOST_DEVICE inline size_t SpatialHash(int x, int y, int z) {
     return x * 73856096 ^ y * 193649663 ^ z * 83492791;
 }
 
-inline size_t SpatialHash(const Eigen::Vector3i& xyz) {
-    return SpatialHash(xyz.x(), xyz.y(), xyz.z());
+HOST_DEVICE inline size_t SpatialHash(const utility::MiniVec<int, 3>& xyz) {
+    return SpatialHash(xyz[0], xyz[1], xyz[2]);
 }
 
 /// Computes an integer voxel index for a 3D position.
@@ -57,15 +57,13 @@ inline size_t SpatialHash(const Eigen::Vector3i& xyz) {
 /// \param pos               A 3D position.
 /// \param inv_voxel_size    The reciprocal of the voxel size
 ///
-template <class TDerived>
-HOST_DEVICE inline Eigen::Vector3i ComputeVoxelIndex(
-        const Eigen::ArrayBase<TDerived>& pos,
-        const typename TDerived::Scalar& inv_voxel_size) {
-    typedef typename TDerived::Scalar Scalar_t;
-    Eigen::Array<Scalar_t, 3, 1> ref_coord = pos * inv_voxel_size;
+template <class TVecf>
+HOST_DEVICE inline utility::MiniVec<int, 3> ComputeVoxelIndex(
+        const TVecf& pos, const typename TVecf::Scalar_t& inv_voxel_size) {
+    TVecf ref_coord = pos * inv_voxel_size;
 
-    Eigen::Vector3i voxel_index;
-    voxel_index = ref_coord.floor().template cast<int>();
+    utility::MiniVec<int, 3> voxel_index;
+    voxel_index = floor(ref_coord).template cast<int>();
     return voxel_index;
 }
 #undef HOST_DEVICE

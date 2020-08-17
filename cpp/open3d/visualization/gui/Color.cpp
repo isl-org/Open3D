@@ -38,6 +38,9 @@ Color::Color() : rgba_{0.0f, 0.0f, 0.0f, 1.0f} {}
 Color::Color(float r, float g, float b, float a /*= 1.0*/)
     : rgba_{r, g, b, a} {}
 
+Color::Color(const Eigen::Vector3f& rgb)
+    : rgba_{rgb.x(), rgb.y(), rgb.z(), 1.0f} {}
+
 bool Color::operator==(const Color& rhs) const {
     return (this->rgba_[0] == rhs.rgba_[0] && this->rgba_[1] == rhs.rgba_[1] &&
             this->rgba_[2] == rhs.rgba_[2] && this->rgba_[3] == rhs.rgba_[3]);

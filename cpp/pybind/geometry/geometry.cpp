@@ -209,6 +209,7 @@ void pybind_geometry(py::module &m) {
     pybind_knnfaiss(m_submodule);
 #endif
     pybind_pointcloud(m_submodule);
+    pybind_keypoint(m_submodule);
     pybind_voxelgrid(m_submodule);
     pybind_lineset(m_submodule);
     pybind_meshbase(m_submodule);

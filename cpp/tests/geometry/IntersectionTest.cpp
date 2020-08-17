@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/IntersectionTest.h"
+
 #include "tests/UnitTest.h"
 
 namespace open3d {

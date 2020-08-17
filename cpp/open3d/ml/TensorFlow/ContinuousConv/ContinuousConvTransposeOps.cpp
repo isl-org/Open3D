@@ -58,7 +58,6 @@ REGISTER_OP("Open3DContinuousConvTranspose")
         .Input("neighbors_row_splits: int64")          // [num_points_out+1]
         .Output("out_features : TReal")  // [num_points_out, out_ch]
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
-
             using namespace ::tensorflow::shape_inference;
             ShapeHandle filters_shape, out_positions_shape,
                     out_importance_shape, extents_shape, offset_shape,

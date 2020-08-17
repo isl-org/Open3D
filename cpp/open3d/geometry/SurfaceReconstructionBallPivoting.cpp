@@ -24,16 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Eigen/Dense>
+#include <iostream>
+#include <list>
+
 #include "open3d/geometry/IntersectionTest.h"
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
-
-#include <Eigen/Dense>
-
-#include <iostream>
-#include <list>
 
 namespace open3d {
 namespace geometry {

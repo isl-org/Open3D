@@ -25,7 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/TetraMesh.h"
+
 #include <Eigen/Geometry>
+
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "tests/UnitTest.h"

@@ -58,6 +58,7 @@
 #include <filament/VertexBuffer.h>
 #include <imgui.h>
 #include <utils/EntityManager.h>
+
 #include <cerrno>
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 #include <iostream>
@@ -272,9 +273,6 @@ ImguiFilamentBridge::ImguiFilamentBridge(
             scene->GetView(view_id));
 
     auto native_view = impl_->view_->GetNativeView();
-    native_view->setClearTargets(false, false, false);
-    native_view->setRenderTarget(
-            filament::View::TargetBufferFlags::DEPTH_AND_STENCIL);
     native_view->setPostProcessingEnabled(false);
     native_view->setShadowsEnabled(false);
 

@@ -39,8 +39,9 @@ py::class_<Vector, holder_type> bind_vector_without_repr(
     using Class_ = py::class_<Vector, holder_type>;
     Class_ cl(m, name.c_str(), std::forward<Args>(args)...);
     cl.def(py::init<>());
-    cl.def("__bool__", [](const Vector &v) -> bool { return !v.empty(); },
-           "Check whether the list is nonempty");
+    cl.def(
+            "__bool__", [](const Vector &v) -> bool { return !v.empty(); },
+            "Check whether the list is nonempty");
     cl.def("__len__", &Vector::size);
     return cl;
 }

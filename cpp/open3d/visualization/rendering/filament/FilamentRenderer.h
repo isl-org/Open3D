@@ -26,12 +26,13 @@
 
 #pragma once
 
-#include "open3d/visualization/rendering/Renderer.h"
-
 #include <utils/Entity.h>
+
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "open3d/visualization/rendering/Renderer.h"
 
 /// @cond
 namespace filament {
@@ -64,6 +65,7 @@ public:
     Scene* GetScene(const SceneHandle& id) const override;
     void DestroyScene(const SceneHandle& id) override;
 
+    virtual void SetClearColor(const Eigen::Vector4f& color) override;
     void UpdateSwapChain() override;
 
     void BeginFrame() override;
@@ -79,9 +81,10 @@ public:
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
     void RemoveMaterialInstance(const MaterialInstanceHandle& id) override;
 
-    TextureHandle AddTexture(const ResourceLoadRequest& request) override;
-    TextureHandle AddTexture(
-            const std::shared_ptr<geometry::Image>& image) override;
+    TextureHandle AddTexture(const ResourceLoadRequest& request,
+                             bool srgb = false) override;
+    TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image,
+                             bool srgb = false) override;
     void RemoveTexture(const TextureHandle& id) override;
 
     IndirectLightHandle AddIndirectLight(
@@ -98,6 +101,8 @@ public:
     // WARNING: will destroy previous gui scene if there was any
     void ConvertToGuiScene(const SceneHandle& id);
     FilamentScene* GetGuiScene() const { return gui_scene_.get(); }
+
+    filament::Renderer* GetNative() { return renderer_; }
 
 private:
     friend class FilamentRenderToBuffer;

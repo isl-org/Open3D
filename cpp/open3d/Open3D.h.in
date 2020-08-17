@@ -39,6 +39,7 @@
 #ifdef BUILD_FAISS
 #include "open3d/geometry/KnnFaiss.h"
 #endif
+#include "open3d/geometry/Keypoint.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
@@ -86,6 +87,7 @@
 #include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/TextEdit.h"
 #include "open3d/visualization/gui/Theme.h"
+#include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "open3d/visualization/utility/SelectionPolygon.h"

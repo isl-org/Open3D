@@ -45,7 +45,6 @@ Open3D: A Modern Library for 3D Data Processing
     tutorial/Advanced/index
     tutorial/ReconstructionSystem/index
     tutorial/C++/cplusplus_interface
-    tutorial/docker/index
     tutorial/reference
 
 .. _cpp_api_index:
