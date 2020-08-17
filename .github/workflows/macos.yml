@@ -100,14 +100,6 @@ jobs:
           brew install ccache
           ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
 
-      - name: Cache pip
-        uses: actions/cache@v2
-        with:
-          path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip
-          restore-keys: |
-            ${{ runner.os }}-pip
-
       - name: Config and build
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH

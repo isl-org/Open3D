@@ -42,6 +42,14 @@ jobs:
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
           cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip
+          restore-keys: |
+            ${{ runner.os }}-pip
+
       - name: Install Python package
         run: |
           pip install --upgrade pip
@@ -80,6 +88,13 @@ jobs:
           mkdir build
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ env.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ env.static_runtime }} ..
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ matrix.python_version }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Build Python package
         run: |
           pip install --upgrade pip

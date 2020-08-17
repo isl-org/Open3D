@@ -101,14 +101,6 @@ jobs:
           sudo apt-get --yes install ccache
           ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
 
-      - name: Cache pip
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip
-          restore-keys: |
-            ${{ runner.os }}-pip
-
       - name: Config and build wheel
         run: |
           PATH=/usr/lib/ccache:$PATH
