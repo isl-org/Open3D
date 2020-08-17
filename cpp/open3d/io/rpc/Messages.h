@@ -143,7 +143,7 @@ struct Array {
     bool CheckRank(const std::vector<int>& expected_ranks,
                    std::string& errstr) const {
         for (auto rank : expected_ranks) {
-            if (shape.size() == rank) return true;
+            if (shape.size() == size_t(rank)) return true;
         }
         errstr += " expected rank to be in (";
         for (auto rank : expected_ranks) {
