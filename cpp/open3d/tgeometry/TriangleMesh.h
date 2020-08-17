@@ -220,7 +220,6 @@ public:
     /// Set the value of the "points" attribute in point_attr_.
     /// Convenience function.
     void SetPoints(const core::TensorList &value) {
-        value.AssertDevice(device_);
         value.AssertElementShape({3});
         SetPointAttr("points", value);
     }
@@ -228,7 +227,6 @@ public:
     /// Set the value of the "colors" attribute in point_attr_.
     /// Convenience function.
     void SetPointColors(const core::TensorList &value) {
-        value.AssertDevice(device_);
         value.AssertElementShape({3});
         SetPointAttr("colors", value);
     }
@@ -236,7 +234,6 @@ public:
     /// Set the value of the "normals" attribute in point_attr_.
     /// This is a convenience function.
     void SetPointNormals(const core::TensorList &value) {
-        value.AssertDevice(device_);
         value.AssertElementShape({3});
         SetPointAttr("normals", value);
     }
@@ -254,7 +251,6 @@ public:
 
     /// Set the vlaue of the "triangles" attribute in triangle_attr_.
     void SetTriangles(const core::TensorList &value) {
-        value.AssertDevice(device_);
         value.AssertElementShape({3});
         SetTriangleAttr("triangles", value);
     }
@@ -262,7 +258,6 @@ public:
     /// Set the value of the "normals" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleNormals(const core::TensorList &value) {
-        value.AssertDevice(device_);
         value.AssertElementShape({3});
         SetTriangleAttr("normals", value);
     }
