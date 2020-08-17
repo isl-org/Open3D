@@ -56,6 +56,11 @@ set(ZLIB_PUBLIC_HDRS
     zlib.h
 )
 set(ZLIB_PRIVATE_HDRS
+	crypt.h
+	ioapi.h
+	mztools.h
+	unzip.h
+	zip.h
     crc32.h
     deflate.h
     gzguts.h
@@ -66,7 +71,14 @@ set(ZLIB_PRIVATE_HDRS
     trees.h
     zutil.h
 )
+
 set(ZLIB_SRCS
+	ioapi.c
+	miniunz.c
+	minizip.c
+	mztools.c
+	unzip.c
+	zip.c
     adler32.c
     compress.c
     crc32.c
@@ -75,10 +87,10 @@ set(ZLIB_SRCS
     gzlib.c
     gzread.c
     gzwrite.c
-    inflate.c
     infback.c
-    inftrees.c
     inffast.c
+    inflate.c
+    inftrees.c
     trees.c
     uncompr.c
     zutil.c
