@@ -891,7 +891,7 @@ void GuiVisualizer::SetGeometry(
                         std::static_pointer_cast<const geometry::TriangleMesh>(
                                 g);
 
-                bool albedo_only = true;
+                bool albedo_only = false;
                 auto is_map_valid =
                         [](std::shared_ptr<geometry::Image> map) -> bool {
                     return map && map->HasData();
@@ -916,6 +916,7 @@ void GuiVisualizer::SetGeometry(
                             mesh_material.baseClearCoatRoughness;
                     loaded_material.base_anisotropy =
                             mesh_material.baseAnisotropy;
+                    albedo_only = is_map_valid(mesh_material.albedo);
                     loaded_material.albedo_img = mesh_material.albedo;
                     loaded_material.normal_img = mesh_material.normalMap;
                     loaded_material.ao_img = mesh_material.ambientOcclusion;
@@ -951,6 +952,8 @@ void GuiVisualizer::SetGeometry(
                     (mesh->HasMaterials() && albedo_only)) {
                     loaded_material.shader = "defaultUnlit";
                     num_unlit += 1;
+                } else {
+                    loaded_material.shader = "defaultLit";
                 }
             } break;
             default:
