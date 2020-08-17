@@ -8,7 +8,13 @@
 # - BUILD_PYTORCH_OPS
 # - BUILD_RPC_INTERFACE
 # - LOW_MEM_USAGE
+# Optional:
+# - BUILD_WHEEL_ONLY
 
+BUILD_WHEEL_ONLY=${BUILD_WHEEL_ONLY:=OFF}
+CUDA_VERSION=("10-1" "10.1")
+CUDNN_MAJOR_VERSION=7
+CUDNN_VERSION="7.6.5.32-1+cuda10.1"
 TENSORFLOW_VER="2.3.0"
 TORCH_GLNX_VER=("1.5.0+cu101" "1.4.0+cpu")
 TORCH_MACOS_VER="1.4.0"
@@ -60,23 +66,15 @@ cmake --version
 
 date
 if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-    CUDA_TOOLKIT_DIR=~/cuda
-    export PATH="$CUDA_TOOLKIT_DIR/bin:$PATH"
-    export LD_LIBRARY_PATH="$CUDA_TOOLKIT_DIR/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64"
-    if ! which nvcc >/dev/null ; then       # If CUDA is not already installed
-        reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
-        reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
-    fi
+    CUDA_TOOLKIT_DIR=/usr/local/cuda-${CUDA_VERSION[1]}
+    export PATH="$CUDA_TOOLKIT_DIR/bin{PATH:+:$PATH}"
+    export LD_LIBRARY_PATH="$CUDA_TOOLKIT_DIR/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64{LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     nvcc --version
 fi
 
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
     reportRun pip install -U tensorflow=="$TENSORFLOW_VER"
-fi
-if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-    # disable pytorch build if CUDA is enabled for now until the problem with caffe2 and cudnn is solved
-    BUILD_PYTORCH_OPS="OFF"
 fi
 if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -113,7 +111,7 @@ cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
         -DPYTHON_EXECUTABLE=$(which python)"
 
 echo
-echo "Running cmake" $cmakeOptions ..
+echo "Running cmake $cmakeOptions .."
 reportRun cmake $cmakeOptions ..
 echo
 

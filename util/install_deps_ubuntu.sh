@@ -2,37 +2,56 @@
 set -ev
 
 SUDO=${SUDO:=sudo}      # SUDO=command in docker (running as root, sudo not available)
-
-$SUDO apt-get update
+BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE:=OFF}     # Is CUDA needed?
+NEED_CUDNN=${NEED_CUDNN:=$BUILD_CUDA_MODULE}    # Is cuDNN needed? Default is
+                                                # same as CUDA
+CUDA_VERSION=("10-1" "10.1")
+CUDNN_MAJOR_VERSION=7
+CUDNN_VERSION="7.6.5.32-1+cuda10.1"
 
 if [ "$1" == "assume-yes" ]; then
-    # Open3D deps
-    $SUDO apt-get --yes install xorg-dev
-    $SUDO apt-get --yes install libglu1-mesa-dev
-    $SUDO apt-get --yes install python3-dev
-    # Filament build-from-source dpes
-    $SUDO apt-get --yes install libsdl2-dev
-    $SUDO apt-get --yes install libc++-7-dev
-    $SUDO apt-get --yes install libc++abi-7-dev
-    $SUDO apt-get --yes install ninja-build
-    $SUDO apt-get --yes install libxi-dev
-    # ML deps
-    $SUDO apt-get --yes install libtbb-dev
-    # Headless rendering deps
-    $SUDO apt-get --yes install libosmesa6-dev
+    APT_ARG="--yes"
 else
-    # Open3D deps
-    $SUDO apt-get install xorg-dev
-    $SUDO apt-get install libglu1-mesa-dev
-    $SUDO apt-get install python3-dev
-    # Filament build-from-source dpes
-    $SUDO apt-get install libsdl2-dev
-    $SUDO apt-get install libc++-7-dev
-    $SUDO apt-get install libc++abi-7-dev
-    $SUDO apt-get install ninja-build
-    $SUDO apt-get install libxi-dev
-    # ML deps
-    $SUDO apt-get install libtbb-dev
-    # Headless rendering deps
-    $SUDO apt-get install libosmesa6-dev
+    APT_ARG=""
 fi
+
+packages=(
+    # Open3D deps
+    xorg-dev
+    libglu1-mesa-dev
+    python3-dev
+    # Filament build-from-source deps
+    libsdl2-dev
+    libc++-7-dev
+    libc++abi-7-dev
+    ninja-build
+    libxi-dev
+    # ML deps
+    libtbb-dev
+    # Headless rendering deps
+    libosmesa6-dev
+)
+
+if [ $BUILD_CUDA_MODULE == ON ] ; then
+    if ! which nvcc >/dev/null ; then
+        $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
+        packages=("${packages[@]}" "cuda-toolkit-${CUDA_VERSION[0]}")
+        echo "# CUDA installation path" >> ~/.bashrc
+        echo "export PATH=/usr/local/cuda-${CUDA_VERSION[1]}/bin\${PATH:+:\${PATH}}" >> ~/.bashrc
+        echo "CUDA executables location added to PATH in ~/.bashrc: /usr/local/cuda-${CUDA_VERSION[1]}/bin"
+        echo "Open a new shell to use."
+    fi
+    if [ $NEED_CUDNN == ON ] ; then
+        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
+        packages=("${packages[@]}" \
+            "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
+            "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION" \
+        )
+    fi
+fi
+
+$SUDO apt-get update
+for package in "${packages[@]}" ; do
+    $SUDO apt-get install "$APT_ARG" "$package"
+done
