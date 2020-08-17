@@ -32,7 +32,9 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/rpc/MessageUtils.h"
 #include "open3d/io/rpc/Messages.h"
+#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/visualizer/GuiVisualizer.h"
 
 using namespace open3d::io::rpc;
 using namespace open3d::utility;
@@ -197,8 +199,7 @@ std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
             }
         }
 
-        // scene_->AddGeometry(msg.path, rendering::Material());
-        scene_->AddGeometry(mesh, rendering::Material());
+        SetGeometry(mesh, msg.path, msg.time, msg.layer);
 
     } else {
         // create a PointCloud
@@ -304,11 +305,21 @@ std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
                 }
             }
         }
-        // scene_->AddGeometry(msg.path, pcd, rendering::Material());
-        scene_->AddGeometry(pcd, rendering::Material());
+        SetGeometry(pcd, msg.path, msg.time, msg.layer);
     }
 
     return CreateStatusOKMsg();
+}
+
+void Receiver::SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
+                           const std::string& path,
+                           int time,
+                           const std::string& layer) {
+    std::shared_ptr<rendering::Open3DScene> scene = scene_;
+    gui::Application::GetInstance().PostToMainThread(
+            gui_visualizer_, [geom, path, time, layer, scene]() {
+                scene->AddGeometry(geom, rendering::Material());
+            });
 }
 
 }  // namespace visualization

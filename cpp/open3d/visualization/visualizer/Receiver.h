@@ -33,13 +33,18 @@
 namespace open3d {
 namespace visualization {
 
+class GuiVisualizer;
+
 /// Receiver implementation for the GuiVisualizer
 class Receiver : public io::rpc::ReceiverBase {
 public:
-    Receiver(std::shared_ptr<rendering::Open3DScene> scene,
+    Receiver(GuiVisualizer* gui_visualizer,
+             std::shared_ptr<rendering::Open3DScene> scene,
              const std::string& address,
              int timeout)
-        : ReceiverBase(address, timeout), scene_(scene) {}
+        : ReceiverBase(address, timeout),
+          gui_visualizer_(gui_visualizer),
+          scene_(scene) {}
 
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const io::rpc::messages::Request& req,
@@ -47,6 +52,12 @@ public:
             const MsgpackObject& obj) override;
 
 private:
+    void SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
+                     const std::string& path,
+                     int time,
+                     const std::string& layer);
+
+    GuiVisualizer* gui_visualizer_;
     std::shared_ptr<rendering::Open3DScene> scene_;
 };
 

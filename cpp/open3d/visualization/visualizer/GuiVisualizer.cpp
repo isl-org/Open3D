@@ -1039,8 +1039,8 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
 
 void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
 #ifdef BUILD_RPC_INTERFACE
-    impl_->receiver_ = std::make_shared<Receiver>(impl_->scene_wgt_->GetScene(),
-                                                  address, timeout);
+    impl_->receiver_ = std::make_shared<Receiver>(
+            this, impl_->scene_wgt_->GetScene(), address, timeout);
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();
