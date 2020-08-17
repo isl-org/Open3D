@@ -20,7 +20,7 @@ if [ "$1" == "assume-yes" ]; then
     $SUDO apt-get --yes install libtbb-dev
     # Headless rendering deps
     $SUDO apt-get --yes install libosmesa6-dev
-    $SUDA apt-get --yes install libopenblas-dev
+    $SUDO apt-get --yes install libopenblas-dev
 else
     # Open3D deps
     $SUDO apt-get install xorg-dev
@@ -36,5 +36,5 @@ else
     $SUDO apt-get install libtbb-dev
     # Headless rendering deps
     $SUDO apt-get install libosmesa6-dev
-    $SUDA apt-get install libopenblas-dev || true
+    $SUDO apt-get install libopenblas-dev
 fi
