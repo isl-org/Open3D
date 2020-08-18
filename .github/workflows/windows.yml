@@ -16,9 +16,6 @@ jobs:
         static_runtime: [ON, OFF]
         config: [Release, Debug]
     steps:
-    - name: Debugging: disk space
-      run: |
-        dir
     - name: Checkout source code
       uses: actions/checkout@v2
       with:
