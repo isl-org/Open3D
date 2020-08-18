@@ -47,25 +47,43 @@ class Tensor {
 public:
     Tensor(){};
 
-    /// Constructor for creating a contiguous Tensor
+    /// Constructor for creating a contiguous Tensor for scalar types.
     Tensor(const SizeVector& shape,
            Dtype dtype,
            const Device& device = Device("CPU:0"))
         : shape_(shape),
           strides_(DefaultStrides(shape)),
           dtype_(dtype),
+          byte_size_(DtypeUtil::ByteSize(dtype)),
           blob_(std::make_shared<Blob>(
                   shape.NumElements() * DtypeUtil::ByteSize(dtype), device)) {
         data_ptr_ = blob_->GetDataPtr();
     }
 
+    /// Constructor for creating a contiguous Tensor for custom object types
+    /// with a byte size from sizeof(ClassType).
+    Tensor(const SizeVector& shape,
+           Dtype dtype,
+           int64_t byte_size,
+           const Device& device = Device("CPU:0"))
+        : shape_(shape),
+          strides_(DefaultStrides(shape)),
+          dtype_(dtype),
+          byte_size_(byte_size),
+          blob_(std::make_shared<Blob>(shape.NumElements() * byte_size,
+                                       device)) {
+        data_ptr_ = blob_->GetDataPtr();
+    }
+
     /// Constructor for creating a contiguous Tensor with initial values
+    /// ByteSize can be inferred from template T and dtype.
     template <typename T>
     Tensor(const std::vector<T>& init_vals,
            const SizeVector& shape,
            Dtype dtype,
-           const Device& device = Device("CPU:0"))
-        : Tensor(shape, dtype, device) {
+           const Device& device = Device("CPU:0")) {
+        Initialize<T>(shape, dtype, device);
+
         // Check number of elements
         if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
             utility::LogError(
@@ -74,13 +92,13 @@ public:
                     init_vals.size(), shape_.NumElements());
         }
 
-        // Check data types
-        AssertTemplateDtype<T>();
+        // Check data type
+        AssertTemplateDtype<T>(true);
 
         // Copy data to blob
-        MemoryManager::MemcpyFromHost(
-                blob_->GetDataPtr(), GetDevice(), init_vals.data(),
-                init_vals.size() * DtypeUtil::ByteSize(dtype));
+        MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
+                                      init_vals.data(),
+                                      init_vals.size() * byte_size_);
     }
 
     /// Constructor from raw host buffer. The memory will be copied.
@@ -88,15 +106,16 @@ public:
     Tensor(const T* init_vals,
            const SizeVector& shape,
            Dtype dtype,
-           const Device& device = Device("CPU:0"))
-        : Tensor(shape, dtype, device) {
-        // Check data types
-        AssertTemplateDtype<T>();
+           const Device& device = Device("CPU:0")) {
+        Initialize<T>(shape, dtype, device);
+
+        // Check data type
+        AssertTemplateDtype<T>(true);
 
         // Copy data to blob
-        MemoryManager::MemcpyFromHost(
-                blob_->GetDataPtr(), GetDevice(), init_vals,
-                shape_.NumElements() * DtypeUtil::ByteSize(dtype));
+        MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
+                                      init_vals,
+                                      shape_.NumElements() * byte_size_);
     }
 
     /// The fully specified constructor
@@ -104,11 +123,13 @@ public:
            const SizeVector& strides,
            void* data_ptr,
            Dtype dtype,
+           int64_t byte_size,
            const std::shared_ptr<Blob>& blob)
         : shape_(shape),
           strides_(strides),
           data_ptr_(data_ptr),
           dtype_(dtype),
+          byte_size_(byte_size),
           blob_(blob) {}
 
     /// Copy constructor performs a "shallow" copy of the Tensor.
@@ -147,6 +168,8 @@ public:
                     "Assignment with scalar only works for scalar Tensor of "
                     "shape ()");
         }
+
+        // Casting supported for scalars
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
             scalar_t casted_v = static_cast<scalar_t>(v);
             MemoryManager::MemcpyFromHost(GetDataPtr(), GetDevice(), &casted_v,
@@ -155,20 +178,52 @@ public:
         return *this;
     }
 
-    /// \brief Fill the whole Tensor with a scalar value, the scalar will be
-    /// casted to the Tensor's dtype.
+    /// Counterpart of operator= for objects to avoid type casting errors at
+    /// compile time.
     template <typename T>
-    void Fill(T v);
+    Tensor& AssignObject(const T& v) && {
+        if (shape_.size() != 0) {
+            utility::LogError(
+                    "Assignment with scalar only works for scalar Tensor of "
+                    "shape ()");
+        }
 
-    /// Create a tensor with uninitilized values.
+        // Direct copy for objects
+        if (DtypeUtil::IsObject(dtype_)) {
+            AssertTemplateDtype<T>(true);
+            MemoryManager::MemcpyFromHost(GetDataPtr(), GetDevice(), &v,
+                                          sizeof(T));
+        }
+        return *this;
+    }
+
+    /// \brief Fill the whole Tensor with a value. Scalars will be casted to the
+    /// Tensor's dtype.
+    template <typename Scalar>
+    void Fill(Scalar v);
+
+    /// \brief Fill the whole Tensor with a value. Objects will be directly
+    /// copied.
+    template <typename Object>
+    void FillObject(Object v);
+
+    /// Create a scalar / object tensor with uninitilized values.
     static Tensor Empty(const SizeVector& shape,
                         Dtype dtype,
+                        int64_t byte_size,
                         const Device& device = Device("CPU:0"));
+
+    /// Create a scalar tensor with uninitilized values.
+    /// Use a different name here for pybind.
+    static Tensor EmptyScalar(const SizeVector& shape,
+                              Dtype dtype,
+                              const Device& device = Device("CPU:0"));
 
     /// Create a tensor with uninitilized values with the same dtype and device
     /// as the other tensor.
     static Tensor EmptyLike(const Tensor& other) {
-        return Tensor::Empty(other.shape_, other.dtype_, other.GetDevice());
+        return Tensor::Empty(other.GetShape(), other.GetDtype(),
+                             other.GetByteSize(), other.GetDevice());
     }
 
     /// Create a tensor fill with specified value.
@@ -177,7 +232,10 @@ public:
                        T fill_value,
                        Dtype dtype,
                        const Device& device = Device("CPU:0")) {
-        Tensor t = Empty(shape, dtype, device);
+        Tensor t;
+        t.Initialize<T>(shape, dtype, device);
+
+        // We need to support cast so type check cannot be placed here
         t.Fill(fill_value);
         return t;
     }
@@ -410,7 +468,7 @@ public:
         if (shape_.size() != 0) {
             utility::LogError("Item only works for scalar Tensor of shape ()");
         }
-        AssertTemplateDtype<T>();
+        AssertTemplateDtype<T>(true);
         T value;
         MemoryManager::MemcpyToHost(&value, data_ptr_, GetDevice(), sizeof(T));
         return value;
@@ -849,11 +907,10 @@ public:
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>
     std::vector<T> ToFlatVector() const {
-        AssertTemplateDtype<T>();
+        AssertTemplateDtype<T>(true);
         std::vector<T> values(NumElements());
-        MemoryManager::MemcpyToHost(
-                values.data(), Contiguous().GetDataPtr(), GetDevice(),
-                DtypeUtil::ByteSize(GetDtype()) * NumElements());
+        MemoryManager::MemcpyToHost(values.data(), Contiguous().GetDataPtr(),
+                                    GetDevice(), byte_size_ * NumElements());
         return values;
     }
 
@@ -910,6 +967,8 @@ public:
 
     inline Dtype GetDtype() const { return dtype_; }
 
+    inline int64_t GetByteSize() const { return byte_size_; }
+
     Device GetDevice() const;
 
     inline std::shared_ptr<Blob> GetBlob() const { return blob_; }
@@ -919,28 +978,43 @@ public:
     inline int64_t NumDims() const { return shape_.size(); }
 
     template <typename T>
-    void AssertTemplateDtype() const {
-        if (DtypeUtil::FromType<T>() != dtype_) {
+    void AssertTemplateDtype(bool is_object = false) const {
+        // Check dtype
+        if (DtypeUtil::FromType<T>(is_object) != dtype_) {
             utility::LogError(
                     "Requested values have type {} but Tensor has type {}",
                     DtypeUtil::ToString(DtypeUtil::FromType<T>()),
                     DtypeUtil::ToString(dtype_));
         }
-        if (DtypeUtil::ByteSize(dtype_) != sizeof(T)) {
-            utility::LogError("Internal error: element size mismatch {} != {}",
-                              DtypeUtil::ByteSize(dtype_), sizeof(T));
+
+        // Check byte size
+        if (!DtypeUtil::IsObject(dtype_)) {
+            if (DtypeUtil::ByteSize(dtype_) != byte_size_) {
+                utility::LogError(
+                        "Internal error: element size mismatch {} != {}",
+                        DtypeUtil::ByteSize(dtype_), byte_size_);
+            }
+        } else {
+            if (sizeof(T) != byte_size_) {
+                utility::LogError(
+                        "Internal error: element size mismatch {} != "
+                        "{}",
+                        sizeof(T), byte_size_);
+            }
         }
     }
 
     static SizeVector DefaultStrides(const SizeVector& shape);
 
-    /// 1. Separate `oldshape` into chunks of dimensions, where the dimensions
+    /// 1. Separate `oldshape` into chunks of dimensions, where the
+    /// dimensions
     ///    are ``contiguous'' in each chunk, i.e.,
     ///    oldstride[i] = oldshape[i+1] * oldstride[i+1]
-    /// 2. `newshape` must be able to be separated into same number of chunks as
-    ///    `oldshape` was separated into, where each chunk of newshape has
-    ///    matching ``numel'', i.e., number of subspaces, as the corresponding
-    ///    chunk of `oldshape`.
+    /// 2. `newshape` must be able to be separated into same number of
+    /// chunks as
+    ///    `oldshape` was separated into, where each chunk of newshape
+    ///    has matching ``numel'', i.e., number of subspaces, as the
+    ///    corresponding chunk of `oldshape`.
     /// Ref: aten/src/ATen/TensorUtils.cpp
     static std::pair<bool, SizeVector> ComputeNewStrides(
             const SizeVector& old_shape,
@@ -957,26 +1031,45 @@ public:
     void AssertShape(const SizeVector& expected_shape) const;
 
 protected:
+    template <typename T>
+    void inline Initialize(const SizeVector& shape,
+                           Dtype dtype,
+                           const Device& device) {
+        shape_ = shape;
+        strides_ = DefaultStrides(shape);
+        dtype_ = dtype;
+
+        byte_size_ = DtypeUtil::IsObject(dtype) ? sizeof(T)
+                                                : DtypeUtil::ByteSize(dtype);
+
+        blob_ = std::make_shared<Blob>(shape.NumElements() * byte_size_,
+                                       device);
+        data_ptr_ = blob_->GetDataPtr();
+    }
+
     std::string ScalarPtrToString(const void* ptr) const;
 
 protected:
-    /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension i.
+    /// SizeVector of the Tensor. SizeVector[i] is the legnth of
+    /// dimension i.
     SizeVector shape_ = {0};
 
     /// Stride of a Tensor.
-    /// The stride of a n-dimensional tensor is also n-dimensional. Stride(i) is
-    /// the number of elements (not bytes) to jump in a continuous memory space
-    /// before eaching the next element in dimension i. For example, a 2x3x4
-    /// float32 dense tensor has shape(2, 3, 4) and stride(12, 4, 1). A slicing
-    /// operation performed on the tensor can change the shape and stride.
+    /// The stride of a n-dimensional tensor is also n-dimensional.
+    /// Stride(i) is the number of elements (not bytes) to jump in a
+    /// continuous memory space before eaching the next element in
+    /// dimension i. For example, a 2x3x4 float32 dense tensor has
+    /// shape(2, 3, 4) and stride(12, 4, 1). A slicing operation
+    /// performed on the tensor can change the shape and stride.
     SizeVector strides_ = {1};
 
     /// Data pointer pointing to the beginning element of the Tensor.
     ///
-    /// Note that this is not necessarily the same as blob_.GetDataPtr(). When
-    /// this happens, it means that the beginning element of the Tensor is not
-    /// located a the beginning of the underlying blob. This could happen, for
-    /// instance, at slicing:
+    /// Note that this is not necessarily the same as
+    /// blob_.GetDataPtr(). When this happens, it means that the
+    /// beginning element of the Tensor is not located a the beginning
+    /// of the underlying blob. This could happen, for instance, at
+    /// slicing:
     ///
     /// ```cpp
     /// // a.GetDataPtr() == a.GetBlob().GetDataPtr()
@@ -988,6 +1081,9 @@ protected:
 
     /// Data type
     Dtype dtype_ = Dtype::Undefined;
+
+    /// Data byte size reserved for custom data type
+    int64_t byte_size_ = 0;
 
     /// Underlying memory buffer for Tensor.
     std::shared_ptr<Blob> blob_ = nullptr;
@@ -1002,7 +1098,8 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
     // Check number of elements
     if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
         utility::LogError(
-                "Tensor initialization values' size {} does not match the "
+                "Tensor initialization values' size {} does not match "
+                "the "
                 "shape {}",
                 init_vals.size(), shape_.NumElements());
     }
@@ -1010,15 +1107,16 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
     // Check data types
     AssertTemplateDtype<bool>();
 
-    // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
-    // uses 1-byte-sized boolean storage for easy indexing.
+    // std::vector<bool> possibly implements 1-bit-sized boolean
+    // storage. Open3D uses 1-byte-sized boolean storage for easy
+    // indexing.
     std::vector<uint8_t> init_vals_uchar(init_vals.size());
     std::transform(init_vals.begin(), init_vals.end(), init_vals_uchar.begin(),
                    [](bool v) -> uint8_t { return static_cast<uint8_t>(v); });
 
-    MemoryManager::MemcpyFromHost(
-            blob_->GetDataPtr(), GetDevice(), init_vals_uchar.data(),
-            init_vals_uchar.size() * DtypeUtil::ByteSize(dtype));
+    MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
+                                  init_vals_uchar.data(),
+                                  init_vals_uchar.size() * byte_size_);
 }
 
 template <>
@@ -1026,12 +1124,12 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
     AssertTemplateDtype<bool>();
     std::vector<bool> values(NumElements());
     std::vector<uint8_t> values_uchar(NumElements());
-    MemoryManager::MemcpyToHost(
-            values_uchar.data(), Contiguous().GetDataPtr(), GetDevice(),
-            DtypeUtil::ByteSize(GetDtype()) * NumElements());
+    MemoryManager::MemcpyToHost(values_uchar.data(), Contiguous().GetDataPtr(),
+                                GetDevice(), byte_size_ * NumElements());
 
-    // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
-    // uses 1-byte-sized boolean storage for easy indexing.
+    // std::vector<bool> possibly implements 1-bit-sized boolean
+    // storage. Open3D uses 1-byte-sized boolean storage for easy
+    // indexing.
     std::transform(values_uchar.begin(), values_uchar.end(), values.begin(),
                    [](uint8_t v) -> bool { return static_cast<bool>(v); });
     return values;
@@ -1057,6 +1155,13 @@ inline void Tensor::Fill(Scalar v) {
                    GetDtype(), GetDevice());
         AsRvalue() = tmp;
     });
+}
+
+template <typename Object>
+inline void Tensor::FillObject(Object v) {
+    Tensor tmp(std::vector<Object>({v}), SizeVector({}), GetDtype(),
+               GetDevice());
+    AsRvalue() = tmp;
 }
 
 template <typename T>

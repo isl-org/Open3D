@@ -95,6 +95,7 @@ private:
             default:
                 utility::LogError("Unsupported data type");
         }
+        // We are safe to use ByteSize, since custom types are ignored here.
         dl_data_type.bits =
                 static_cast<uint8_t>(DtypeUtil::ByteSize(dtype) * 8);
         dl_data_type.lanes = 1;
@@ -148,6 +149,7 @@ Tensor& Tensor::operator=(const Tensor& other) & {
     shape_ = other.shape_;
     strides_ = other.strides_;
     dtype_ = other.dtype_;
+    byte_size_ = other.byte_size_;
     blob_ = other.blob_;
     data_ptr_ = other.data_ptr_;
     return *this;
@@ -160,6 +162,7 @@ Tensor& Tensor::operator=(Tensor&& other) & {
     shape_ = other.shape_;
     strides_ = other.strides_;
     dtype_ = other.dtype_;
+    byte_size_ = other.byte_size_;
     blob_ = other.blob_;
     data_ptr_ = other.data_ptr_;
     return *this;
@@ -177,10 +180,20 @@ Tensor& Tensor::operator=(Tensor&& other) && {
     return *this;
 }
 
+Tensor Tensor::EmptyScalar(const SizeVector& shape,
+                           Dtype dtype,
+                           const Device& device) {
+    if (DtypeUtil::IsObject(dtype)) {
+        utility::LogError("EmptyScalar only supports non-object types.");
+    }
+    return Tensor(shape, dtype, device);
+}
+
 Tensor Tensor::Empty(const SizeVector& shape,
                      Dtype dtype,
+                     int64_t byte_size,
                      const Device& device) {
-    return Tensor(shape, dtype, device);
+    return Tensor(shape, dtype, byte_size, device);
 }
 
 Tensor Tensor::Zeros(const SizeVector& shape,
@@ -366,9 +379,9 @@ void Tensor::Assign(const Tensor& other) {
     shape_ = other.shape_;
     strides_ = DefaultStrides(shape_);
     dtype_ = other.dtype_;
-    blob_ = std::make_shared<Blob>(
-            shape_.NumElements() * DtypeUtil::ByteSize(dtype_),
-            other.GetDevice());
+    byte_size_ = other.byte_size_;
+    blob_ = std::make_shared<Blob>(shape_.NumElements() * byte_size_,
+                                   other.GetDevice());
     data_ptr_ = blob_->GetDataPtr();
     kernel::Copy(other, *this);
 }
@@ -379,7 +392,7 @@ Tensor Tensor::Broadcast(const SizeVector& dst_shape) const {
         utility::LogError("Cannot broadcast shape {} to shape {}.",
                           shape_.ToString(), dst_shape);
     }
-    Tensor dst_tensor(dst_shape, dtype_, GetDevice());
+    Tensor dst_tensor(dst_shape, dtype_, byte_size_, GetDevice());
     dst_tensor.AsRvalue() = *this;
     return dst_tensor;
 }
@@ -450,7 +463,7 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
 }
 
 Tensor Tensor::Copy(const Device& device) const {
-    Tensor dst_tensor(shape_, dtype_, device);
+    Tensor dst_tensor(shape_, dtype_, byte_size_, device);
     kernel::Copy(*this, dst_tensor);
     return dst_tensor;
 }
@@ -459,7 +472,12 @@ Tensor Tensor::To(Dtype dtype, bool copy) const {
     if (!copy && dtype_ == dtype) {
         return *this;
     }
-    Tensor dst_tensor(shape_, dtype, GetDevice());
+    if (DtypeUtil::IsObject(dtype_) || DtypeUtil::IsObject(dtype)) {
+        utility::LogError(
+                "Object type is unsupported in type conversion. Use Copy for "
+                "vanilla data copy.");
+    }
+    Tensor dst_tensor(shape_, dtype, DtypeUtil::ByteSize(dtype), GetDevice());
     kernel::Copy(*this, dst_tensor);
     return dst_tensor;
 }
@@ -470,6 +488,7 @@ void Tensor::ShallowCopyFrom(const Tensor& other) {
     shape_ = other.shape_;
     strides_ = other.strides_;
     dtype_ = other.dtype_;
+    byte_size_ = other.byte_size_;
     blob_ = other.blob_;
     data_ptr_ = other.data_ptr_;
 }
@@ -477,7 +496,7 @@ void Tensor::ShallowCopyFrom(const Tensor& other) {
 Tensor Tensor::Contiguous() const {
     if (IsContiguous()) {
         // Returns a shallow copy of the current Tensor
-        return Tensor(shape_, strides_, data_ptr_, dtype_, blob_);
+        return Tensor(shape_, strides_, data_ptr_, dtype_, byte_size_, blob_);
     } else {
         // Compact the tensor to contiguous on the same device
         return Copy(GetDevice());
@@ -577,7 +596,7 @@ std::string Tensor::ToString(bool with_suffix,
             const char* ptr = static_cast<const char*>(data_ptr_);
             rc << "[";
             std::string delim = "";
-            int64_t element_byte_size = DtypeUtil::ByteSize(dtype_);
+            int64_t element_byte_size = byte_size_;
             for (int64_t i = 0; i < shape_.NumElements(); ++i) {
                 rc << delim << ScalarPtrToString(ptr);
                 delim = " ";
@@ -610,10 +629,12 @@ std::string Tensor::ScalarPtrToString(const void* ptr) const {
     std::string str = "";
     if (dtype_ == Dtype::Bool) {
         str = *static_cast<const unsigned char*>(ptr) ? "True" : "False";
-    } else {
+    } else if (dtype_ != Dtype::Object) {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
             str = fmt::format("{}", *static_cast<const scalar_t*>(ptr));
         });
+    } else {
+        str = fmt::format("<custom object at {}>", fmt::ptr(ptr));
     }
     return str;
 }
@@ -631,9 +652,10 @@ Tensor Tensor::IndexExtract(int64_t dim, int64_t idx) const {
     new_shape.erase(new_shape.begin() + dim);
     SizeVector new_strides(strides_);
     new_strides.erase(new_strides.begin() + dim);
-    void* new_data_ptr = static_cast<char*>(data_ptr_) +
-                         strides_[dim] * DtypeUtil::ByteSize(dtype_) * idx;
-    return Tensor(new_shape, new_strides, new_data_ptr, dtype_, blob_);
+    void* new_data_ptr =
+            static_cast<char*>(data_ptr_) + strides_[dim] * byte_size_ * idx;
+    return Tensor(new_shape, new_strides, new_data_ptr, dtype_, byte_size_,
+                  blob_);
 }
 
 Tensor Tensor::Slice(int64_t dim,
@@ -658,18 +680,19 @@ Tensor Tensor::Slice(int64_t dim,
         stop = start;
     }
 
-    void* new_data_ptr = static_cast<char*>(data_ptr_) +
-                         start * strides_[dim] * DtypeUtil::ByteSize(dtype_);
+    void* new_data_ptr =
+            static_cast<char*>(data_ptr_) + start * strides_[dim] * byte_size_;
     SizeVector new_shape = shape_;
     SizeVector new_strides = strides_;
     new_shape[dim] = (stop - start + step - 1) / step;
     new_strides[dim] = strides_[dim] * step;
-    return Tensor(new_shape, new_strides, new_data_ptr, dtype_, blob_);
+    return Tensor(new_shape, new_strides, new_data_ptr, dtype_, byte_size_,
+                  blob_);
 }
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
     AdvancedIndexPreprocessor aip(*this, index_tensors);
-    Tensor dst = Tensor(aip.GetOutputShape(), dtype_, GetDevice());
+    Tensor dst = Tensor(aip.GetOutputShape(), dtype_, byte_size_, GetDevice());
     kernel::IndexGet(aip.GetTensor(), dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
 
@@ -720,7 +743,7 @@ Tensor Tensor::Permute(const SizeVector& dims) const {
 Tensor Tensor::AsStrided(const SizeVector& new_shape,
                          const SizeVector& new_strides) const {
     Tensor result(new_shape, new_strides, const_cast<void*>(data_ptr_), dtype_,
-                  blob_);
+                  byte_size_, blob_);
     return result;
 }
 
@@ -1163,10 +1186,11 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
 
     // src->dl_tensor.byte_offset is ignored in PyTorch and MXNet, but
     // according to dlpack.h, we added the offset here.
+    // We are safe to use ByteSize since they are only scalar types.
     return Tensor(shape, strides,
                   reinterpret_cast<char*>(blob->GetDataPtr()) +
                           src->dl_tensor.byte_offset,
-                  dtype, blob);
+                  dtype, DtypeUtil::ByteSize(dtype), blob);
 }
 
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
@@ -1184,6 +1208,10 @@ Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
                           DtypeUtil::ToString(dtype_),
                           DtypeUtil::ToString(other.dtype_));
     }
+    if (byte_size_ != other.byte_size_) {
+        utility::LogError("ByteSize mismatch {} != {}.", byte_size_,
+                          other.byte_size_);
+    }
     if (shape_ != other.shape_) {
         utility::LogError("Shape mismatch {} != {}.", shape_, other.shape_);
     }
@@ -1198,7 +1226,7 @@ Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
 bool Tensor::IsSame(const Tensor& other) const {
     return blob_ == other.blob_ && shape_ == other.shape_ &&
            strides_ == other.strides_ && data_ptr_ == other.data_ptr_ &&
-           dtype_ == other.dtype_;
+           dtype_ == other.dtype_ && byte_size_ == other.byte_size_;
 }
 
 void Tensor::AssertShape(const SizeVector& expected_shape) const {

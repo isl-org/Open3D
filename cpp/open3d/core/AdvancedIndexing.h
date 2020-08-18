@@ -180,7 +180,7 @@ public:
                     DtypeUtil::ToString(src.GetDtype()),
                     DtypeUtil::ToString(dst.GetDtype()));
         }
-        element_byte_size_ = DtypeUtil::ByteSize(src.GetDtype());
+        element_byte_size_ = src.GetByteSize();
     }
 
     inline OPEN3D_HOST_DEVICE char* GetInputPtr(int64_t workload_idx) const {

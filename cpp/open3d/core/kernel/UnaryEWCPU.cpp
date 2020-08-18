@@ -45,6 +45,17 @@ static void CPUCopyElementKernel(const void* src, void* dst) {
             static_cast<dst_t>(*static_cast<const src_t*>(src));
 }
 
+/// Byte-wise copy for custom data types
+static void CPUCopyObjectKernel(const void* src,
+                                void* dst,
+                                int64_t object_byte_size) {
+    const char* src_bytes = static_cast<const char*>(src);
+    char* dst_bytes = static_cast<char*>(dst);
+    for (int i = 0; i < object_byte_size; ++i) {
+        dst_bytes[i] = src_bytes[i];
+    }
+}
+
 template <typename scalar_t>
 static void CPUSqrtElementKernel(const void* src, void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
@@ -93,21 +104,30 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
     Dtype src_dtype = src.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
     if (src.IsContiguous() && dst.IsContiguous() &&
-        src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
-        MemoryManager::Memcpy(
-                dst.GetDataPtr(), dst.GetDevice(), src.GetDataPtr(),
-                src.GetDevice(),
-                DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
+        src.GetShape() == dst.GetShape() &&
+        src.GetByteSize() == dst.GetByteSize() && src_dtype == dst_dtype) {
+        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
+                              src.GetDataPtr(), src.GetDevice(),
+                              src.GetByteSize() * shape.NumElements());
     } else {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-            using src_t = scalar_t;
-            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
-                using dst_t = scalar_t;
-                CPULauncher::LaunchUnaryEWKernel(
-                        indexer, CPUCopyElementKernel<src_t, dst_t>);
+        if (DtypeUtil::IsObject(src.GetDtype())) {
+            int64_t object_byte_size = src.GetByteSize();
+            CPULauncher::LaunchUnaryEWKernel(
+                    indexer, [&](const void* src, void* dst) {
+                        CPUCopyObjectKernel(src, dst, object_byte_size);
+                    });
+
+        } else {
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+                using src_t = scalar_t;
+                DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
+                    using dst_t = scalar_t;
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUCopyElementKernel<src_t, dst_t>);
+                });
             });
-        });
+        }
     }
 }
 

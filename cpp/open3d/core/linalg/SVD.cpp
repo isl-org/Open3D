@@ -61,10 +61,10 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
     }
 
     Tensor A_T = A.T().Contiguous();
-    U = Tensor::Empty({m, m}, dtype, device);
-    S = Tensor::Empty({n}, dtype, device);
-    VT = Tensor::Empty({n, n}, dtype, device);
-    Tensor superb = Tensor::Empty({std::min(m, n) - 1}, dtype, device);
+    U = Tensor::EmptyScalar({m, m}, dtype, device);
+    S = Tensor::EmptyScalar({n}, dtype, device);
+    VT = Tensor::EmptyScalar({n, n}, dtype, device);
+    Tensor superb = Tensor::EmptyScalar({std::min(m, n) - 1}, dtype, device);
 
     void *A_data = A_T.GetDataPtr();
     void *U_data = U.GetDataPtr();

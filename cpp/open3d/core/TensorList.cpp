@@ -63,9 +63,9 @@ TensorList TensorList::FromTensor(const Tensor& tensor, bool inplace) {
                           /*is_resizable=*/false);
     } else {
         int64_t reserved_size = TensorList::ComputeReserveSize(size);
-        Tensor internal_tensor = Tensor::Empty(
+        Tensor internal_tensor(
                 shape_util::Concat({reserved_size}, element_shape),
-                tensor.GetDtype(), tensor.GetDevice());
+                tensor.GetDtype(), tensor.GetByteSize(), tensor.GetDevice());
         internal_tensor.Slice(0, 0, size) = tensor;
         return TensorList(element_shape, size, reserved_size, internal_tensor,
                           /*is_resizable=*/true);
@@ -118,6 +118,11 @@ void TensorList::PushBack(const Tensor& tensor) {
                           DtypeUtil::ToString(GetDtype()),
                           DtypeUtil::ToString(tensor.GetDtype()));
     }
+    if (GetByteSize() != tensor.GetByteSize()) {
+        utility::LogError(
+                "TensorList has byte_size {}, but tensor has shape {}.",
+                GetByteSize(), tensor.GetByteSize());
+    }
     if (GetDevice() != tensor.GetDevice()) {
         utility::LogError("TensorList has device {}, but tensor has shape {}.",
                           GetDevice().ToString(),
@@ -138,6 +143,11 @@ void TensorList::Extend(const TensorList& other) {
     if (GetDevice() != other.GetDevice()) {
         utility::LogError("TensorList device {} and {} are inconsistent.",
                           GetDevice().ToString(), other.GetDevice().ToString());
+    }
+    if (GetByteSize() != other.GetByteSize()) {
+        utility::LogError(
+                "TensorList has byte_size {}, but tensor has shape {}.",
+                GetByteSize(), other.GetByteSize());
     }
     if (GetDtype() != other.GetDtype()) {
         utility::LogError("TensorList dtype {} and {} are inconsistent.",
@@ -181,7 +191,7 @@ void TensorList::ResizeWithExpand(int64_t new_size) {
     } else {
         Tensor new_internal_tensor(
                 shape_util::Concat({new_reserved_size}, element_shape_),
-                GetDtype(), GetDevice());
+                GetDtype(), GetByteSize(), GetDevice());
         new_internal_tensor.Slice(0, 0, size_) =
                 internal_tensor_.Slice(0, 0, size_);
         internal_tensor_ = new_internal_tensor;

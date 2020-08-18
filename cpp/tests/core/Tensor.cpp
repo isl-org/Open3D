@@ -92,6 +92,25 @@ TEST_P(TensorPermuteDevices, ConstructorBool) {
     EXPECT_EQ(t.GetDtype(), dtype);
 }
 
+TEST_P(TensorPermuteDevices, ConstructorObject) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Object;
+    int64_t byte_size = sizeof(TestObject);
+
+    for (const core::SizeVector &shape : std::vector<core::SizeVector>{
+                 {}, {0}, {0, 0}, {0, 1}, {1, 0}, {2, 3}}) {
+        core::Tensor t(shape, dtype, byte_size, device);
+        EXPECT_EQ(t.GetShape(), shape);
+        EXPECT_EQ(t.GetDtype(), dtype);
+        EXPECT_EQ(t.GetByteSize(), byte_size);
+        EXPECT_EQ(t.GetDevice(), device);
+    }
+
+    EXPECT_ANY_THROW(core::Tensor({-1}, dtype, byte_size, device));
+    EXPECT_ANY_THROW(core::Tensor({0, -2}, dtype, byte_size, device));
+    EXPECT_ANY_THROW(core::Tensor({-1, -1}, dtype, byte_size, device));
+}
+
 TEST_P(TensorPermuteDevices, WithInitValue) {
     core::Device device = GetParam();
 
@@ -106,6 +125,16 @@ TEST_P(TensorPermuteDevices, WithInitValueBool) {
     std::vector<bool> vals{true, false, true, true, false, false};
     core::Tensor t(vals, {2, 3}, core::Dtype::Bool, device);
     EXPECT_EQ(t.ToFlatVector<bool>(), vals);
+}
+
+TEST_P(TensorPermuteDevices, WithInitValueObject) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Object;
+
+    std::vector<TestObject> vals{TestObject(0), TestObject(1), TestObject(2),
+                                 TestObject(3), TestObject(4), TestObject(5)};
+    core::Tensor t(vals, {2, 3}, dtype, device);
+    EXPECT_EQ(t.ToFlatVector<TestObject>(), vals);
 }
 
 TEST_P(TensorPermuteDevices, WithInitValueTypeMismatch) {
@@ -140,6 +169,15 @@ TEST_P(TensorPermuteDevices, FillBool) {
     EXPECT_EQ(t.ToFlatVector<bool>(), std::vector<bool>(2 * 3, true));
 }
 
+TEST_P(TensorPermuteDevices, FillObject) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Object;
+    core::Tensor t(std::vector<TestObject>(2 * 3, 0), {2, 3}, dtype, device);
+    t.FillObject(TestObject(1));
+    EXPECT_EQ(t.ToFlatVector<TestObject>(),
+              std::vector<TestObject>({1, 1, 1, 1, 1, 1}));
+}
+
 TEST_P(TensorPermuteDevices, FillSlice) {
     core::Device device = GetParam();
     core::Tensor t(std::vector<float>(2 * 3, 0), {2, 3}, core::Dtype::Float32,
@@ -169,6 +207,30 @@ TEST_P(TensorPermuteDevicePairs, IndexSetFillFancy) {
     EXPECT_EQ(dst_t.ToFlatVector<float>(),
               std::vector<float>({0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0,
                                   0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0}));
+}
+
+TEST_P(TensorPermuteDevicePairs, IndexSetFillFancyObject) {
+    core::Device dst_device;
+    core::Device src_device;
+
+    std::tie(dst_device, src_device) = GetParam();
+    core::Tensor dst_t(std::vector<TestObject>(2 * 3 * 4, 0), {2, 3, 4},
+                       core::Dtype::Object, dst_device);
+    core::Tensor src_t(std::vector<TestObject>({1}), core::SizeVector({}),
+                       core::Dtype::Object, src_device);
+
+    // t[:, [1, 2], [1, 2]]
+    std::vector<core::Tensor> indices = {
+            core::Tensor(core::SizeVector(), core::Dtype::Int64, dst_device),
+            core::Tensor(std::vector<int64_t>({1, 2}), {2}, core::Dtype::Int64,
+                         src_device),
+            core::Tensor(std::vector<int64_t>({1, 2}), {2}, core::Dtype::Int64,
+                         dst_device)};
+
+    dst_t.IndexSet(indices, src_t);  // We cannot use T.Fill() here
+    EXPECT_EQ(dst_t.ToFlatVector<TestObject>(),
+              std::vector<TestObject>({0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0,
+                                       0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0}));
 }
 
 TEST_P(TensorPermuteDevicePairs, Copy) {
@@ -209,6 +271,25 @@ TEST_P(TensorPermuteDevicePairs, CopyBool) {
     EXPECT_EQ(dst_t.ToFlatVector<bool>(), vals);
 }
 
+TEST_P(TensorPermuteDevicePairs, CopyObject) {
+    core::Device dst_device;
+    core::Device src_device;
+    std::tie(dst_device, src_device) = GetParam();
+
+    core::Dtype dtype(core::Dtype::Object);
+    core::SizeVector shape{2, 3};
+
+    std::vector<TestObject> vals{0, 1, 2, 3, 4, 5};
+    core::Tensor src_t(vals, shape, dtype, src_device);
+
+    core::Tensor dst_t = src_t.Copy(dst_device);
+
+    EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
+    EXPECT_EQ(dst_t.GetDevice(), dst_device);
+    EXPECT_EQ(dst_t.GetDtype(), src_t.GetDtype());
+    EXPECT_EQ(dst_t.ToFlatVector<TestObject>(), vals);
+}
+
 TEST_P(TensorPermuteDevices, To) {
     core::Device device = GetParam();
 
@@ -246,6 +327,27 @@ TEST_P(TensorPermuteDevicePairs, CopyBroadcast) {
 
     EXPECT_EQ(dst_t.GetShape(), dst_shape);
     EXPECT_EQ(dst_t.ToFlatVector<float>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevicePairs, CopyBroadcastObject) {
+    core::Device dst_device;
+    core::Device src_device;
+    std::tie(dst_device, src_device) = GetParam();
+    core::Dtype dtype(core::Dtype::Object);
+
+    // Broadcast {2, 1, 3} to {2, 2, 2, 3}
+    core::SizeVector src_shape{2, 1, 3};
+    core::SizeVector dst_shape{2, 2, 2, 3};
+
+    std::vector<TestObject> src_vals{0, 1, 2, 3, 4, 5};
+    std::vector<TestObject> dst_vals{0, 1, 2, 0, 1, 2, 3, 4, 5, 3, 4, 5,
+                                     0, 1, 2, 0, 1, 2, 3, 4, 5, 3, 4, 5};
+    core::Tensor src_t(src_vals, src_shape, dtype, src_device);
+    core::Tensor dst_t(dst_shape, dtype, sizeof(TestObject), dst_device);
+    dst_t.CopyFrom(src_t);  // Equivalently, dst_t.AsRvalue() = src_t;
+
+    EXPECT_EQ(dst_t.GetShape(), dst_shape);
+    EXPECT_EQ(dst_t.ToFlatVector<TestObject>(), dst_vals);
 }
 
 TEST_P(TensorPermuteDevices, Expand) {
@@ -386,6 +488,21 @@ TEST_P(TensorPermuteDevices, ItemBool) {
     EXPECT_EQ(t[2].Item<bool>(), false);
 }
 
+TEST_P(TensorPermuteDevices, ItemObject) {
+    core::Device device = GetParam();
+
+    std::vector<TestObject> vals{3, 7, 4};
+    core::Tensor t(vals, {3}, core::Dtype::Object, device);
+
+    core::Tensor t_0 = t[0];
+    EXPECT_THROW(t_0.Item<int>(), std::runtime_error);
+    EXPECT_THROW(t_0.Item<uint8_t>(), std::runtime_error);
+
+    EXPECT_EQ(t[0].Item<TestObject>(), TestObject(3));
+    EXPECT_EQ(t[1].Item<TestObject>(), TestObject(7));
+    EXPECT_EQ(t[2].Item<TestObject>(), TestObject(4));
+}
+
 TEST_P(TensorPermuteDevices, ItemAssign) {
     core::Device device = GetParam();
 
@@ -402,6 +519,20 @@ TEST_P(TensorPermuteDevices, ItemAssign) {
     uint8_t new_val_1 = 101;
     t[1][2][3] = new_val_1;
     EXPECT_EQ(t[1][2][3].Item<float>(), 101);
+}
+
+TEST_P(TensorPermuteDevices, ItemAssignObject) {
+    core::Device device = GetParam();
+
+    std::vector<TestObject> vals{0,  1,  2,  3,  4,  5,  6,  7,
+                                 8,  9,  10, 11, 12, 13, 14, 15,
+                                 16, 17, 18, 19, 20, 21, 22, 23};
+    core::Tensor t(vals, {2, 3, 4}, core::Dtype::Object, device);
+
+    // Assigning to rvalue
+    TestObject new_val_0(100);
+    t[1][2][3].AssignObject(new_val_0);
+    EXPECT_EQ(t[1][2][3].Item<TestObject>(), TestObject(100));
 }
 
 TEST_P(TensorPermuteDevices, ToString) {
@@ -2207,23 +2338,24 @@ TEST_P(TensorPermuteDevices, NonZeroNumpy) {
 TEST_P(TensorPermuteDevices, CreationEmpty) {
     core::Device device = GetParam();
 
-    core::Tensor a = core::Tensor::Empty({}, core::Dtype::Float32, device);
+    core::Tensor a =
+            core::Tensor::EmptyScalar({}, core::Dtype::Float32, device);
     EXPECT_EQ(a.GetShape(), core::SizeVector({}));
     EXPECT_EQ(a.NumElements(), 1);
 
-    a = core::Tensor::Empty({0}, core::Dtype::Float32, device);
+    a = core::Tensor::EmptyScalar({0}, core::Dtype::Float32, device);
     EXPECT_EQ(a.GetShape(), core::SizeVector({0}));
     EXPECT_EQ(a.NumElements(), 0);
 
-    a = core::Tensor::Empty({1}, core::Dtype::Float32, device);
+    a = core::Tensor::EmptyScalar({1}, core::Dtype::Float32, device);
     EXPECT_EQ(a.GetShape(), core::SizeVector({1}));
     EXPECT_EQ(a.NumElements(), 1);
 
-    a = core::Tensor::Empty({0, 1}, core::Dtype::Float32, device);
+    a = core::Tensor::EmptyScalar({0, 1}, core::Dtype::Float32, device);
     EXPECT_EQ(a.GetShape(), core::SizeVector({0, 1}));
     EXPECT_EQ(a.NumElements(), 0);
 
-    a = core::Tensor::Empty({2, 3}, core::Dtype::Float32, device);
+    a = core::Tensor::EmptyScalar({2, 3}, core::Dtype::Float32, device);
     EXPECT_EQ(a.GetShape(), core::SizeVector({2, 3}));
     EXPECT_EQ(a.NumElements(), 6);
 }
@@ -2492,6 +2624,10 @@ TEST_P(TensorPermuteDevices, ToDLPackFromDLPack) {
                       core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
     EXPECT_EQ(dst_t.ToFlatVector<float>(),
               std::vector<float>({12, 14, 20, 22}));
+
+    core::Tensor obj_t =
+            core::Tensor({2, 2}, core::Dtype::Object, sizeof(int), device);
+    EXPECT_ANY_THROW(obj_t.ToDLPack());
 }
 
 TEST_P(TensorPermuteDevices, IsSame) {
@@ -2519,8 +2655,54 @@ TEST_P(TensorPermuteDevices, IsSame) {
     EXPECT_TRUE(t0_contiguous.IsSame(t0));
 
     // Slices are views.
-    core::Tensor t0_slice =
-            t0.GetItem({core::TensorKey::Slice(0, 5, 2)})[0];  // t0[0:5:2][0]
+    core::Tensor t0_slice = t0.GetItem({core::TensorKey::Slice(0, 5, 2)})[0];
+    // t0 [0:5:2][0]
+    core::Tensor t1_slice = t1[0];
+    EXPECT_TRUE(t0_slice.IsSame(t1_slice));
+    EXPECT_TRUE(t1_slice.IsSame(t0_slice));
+
+    // Explicit copy to the same device.
+    core::Tensor t0_copy = t0.Copy(device);
+    EXPECT_FALSE(t0.IsSame(t0_copy));
+    EXPECT_FALSE(t0_copy.IsSame(t0));
+
+    // std::vector<Tensor> initializer list and push_back() are views.
+    std::vector<core::Tensor> vec{t0};
+    vec.push_back(t1);
+    EXPECT_TRUE(t0.IsSame(vec[0]));
+    EXPECT_TRUE(t1.IsSame(vec[1]));
+    EXPECT_TRUE(vec[0].IsSame(vec[1]));
+}
+
+TEST_P(TensorPermuteDevices, IsSameObject) {
+    core::Device device = GetParam();
+
+    // "Shallow" copy.
+    core::Tensor t0 = core::Tensor::Empty({6, 8}, core::Dtype::Object,
+                                          sizeof(TestObject), device);
+    core::Tensor t1 = t0;  // "Shallow" copy
+    EXPECT_TRUE(t0.IsSame(t1));
+    EXPECT_TRUE(t1.IsSame(t0));
+
+    // Copy constructor copies view.
+    core::Tensor t0_copy_construct(t0);
+    EXPECT_TRUE(t0.IsSame(t0_copy_construct));
+    EXPECT_TRUE(t0_copy_construct.IsSame(t0));
+
+    // New tensor of the same value.
+    core::Tensor t2 = core::Tensor::Empty({6, 8}, core::Dtype::Object,
+                                          sizeof(TestObject), device);
+    EXPECT_FALSE(t0.IsSame(t2));
+    EXPECT_FALSE(t2.IsSame(t0));
+
+    // Tensor::Contiguous() does not copy if already contiguous.
+    core::Tensor t0_contiguous = t0.Contiguous();
+    EXPECT_TRUE(t0.IsSame(t0_contiguous));
+    EXPECT_TRUE(t0_contiguous.IsSame(t0));
+
+    // Slices are views.
+    core::Tensor t0_slice = t0.GetItem({core::TensorKey::Slice(0, 5, 2)})[0];
+    // t0 [0:5:2][0]
     core::Tensor t1_slice = t1[0];
     EXPECT_TRUE(t0_slice.IsSame(t1_slice));
     EXPECT_TRUE(t1_slice.IsSame(t0_slice));

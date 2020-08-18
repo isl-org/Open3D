@@ -94,7 +94,8 @@ void pybind_core_tensor(py::module& m) {
     }));
 
     // Tensor creation API
-    tensor.def_static("empty", &core::Tensor::Empty);
+    // TODO: use a wrapper api to decide Empty and EmptyScalar in at runtime.
+    tensor.def_static("empty", &core::Tensor::EmptyScalar);
     tensor.def_static("full", &core::Tensor::Full<float>);
     tensor.def_static("full", &core::Tensor::Full<double>);
     tensor.def_static("full", &core::Tensor::Full<int32_t>);
@@ -201,6 +202,9 @@ void pybind_core_tensor(py::module& m) {
             strides[i] /= info.itemsize;
         }
         core::Dtype dtype = pybind_utils::ArrayFormatToDtype(info.format);
+
+        // Only support scalar type now. Use DtypeUtil::ByteSize to detect.
+        int64_t byte_size = core::DtypeUtil::ByteSize(dtype);
         core::Device device("CPU:0");
 
         // Blob expects an std::function<void(void*)> deleter, a
@@ -209,7 +213,7 @@ void pybind_core_tensor(py::module& m) {
         std::function<void(void*)> deleter = [](void*) -> void {};
         auto blob = std::make_shared<core::Blob>(device, info.ptr, deleter);
 
-        return core::Tensor(shape, strides, info.ptr, dtype, blob);
+        return core::Tensor(shape, strides, info.ptr, dtype, byte_size, blob);
     });
 
     tensor.def("to_dlpack", [](const core::Tensor& tensor) {

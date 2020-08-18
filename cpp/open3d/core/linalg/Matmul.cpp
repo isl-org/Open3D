@@ -85,7 +85,7 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     void* A_data = A_T.GetDataPtr();
     void* B_data = B_T.GetDataPtr();
 
-    output = Tensor::Empty({n, m}, dtype, device);
+    output = Tensor::EmptyScalar({n, m}, dtype, device);
     void* C_data = output.GetDataPtr();
 
     if (device.GetType() == Device::DeviceType::CUDA) {

@@ -55,10 +55,13 @@ enum class Dtype {
     Int64,
     UInt8,
     Bool,
+    Object,
 };
 
 class DtypeUtil {
 public:
+    static bool IsObject(const Dtype &dtype) { return dtype == Dtype::Object; }
+
     static int64_t ByteSize(const Dtype &dtype) {
         int64_t byte_size = 0;
         switch (dtype) {
@@ -80,17 +83,27 @@ public:
             case Dtype::Bool:
                 byte_size = 1;
                 break;
+            case Dtype::Object:
+                utility::LogError(
+                        "Please use sizeof(T) to get byte size for "
+                        "object dtype.");
+                break;
             default:
-                utility::LogError("Unsupported data type");
+                utility::LogError("Unsupported data type.");
         }
         return byte_size;
     }
 
     /// Convert from C++ types to Dtype. Known types are explicitly specialized,
-    /// e.g. DtypeUtil::FromType<float>(). Unsupported type will result in an
-    /// exception.
+    /// e.g. DtypeUtil::FromType<float>(). Non built-in types will be regarded
+    /// as custom types if is_custom_dtype is set to true. Otherwise they will
+    /// result in an exception. is_custom_dtype is disregarded for built-in
+    /// C++ types.
     template <typename T>
-    static inline Dtype FromType() {
+    static inline Dtype FromType(bool is_object = false) {
+        if (is_object) {
+            return Dtype::Object;
+        }
         utility::LogError("Unsupported data type");
         return Dtype::Undefined;
     }
@@ -119,6 +132,9 @@ public:
             case Dtype::Bool:
                 str = "Bool";
                 break;
+            case Dtype::Object:
+                str = "Object";
+                break;
             default:
                 utility::LogError("Unsupported data type");
         }
@@ -127,32 +143,32 @@ public:
 };
 
 template <>
-inline Dtype DtypeUtil::FromType<float>() {
+inline Dtype DtypeUtil::FromType<float>(bool is_object) {
     return Dtype::Float32;
 }
 
 template <>
-inline Dtype DtypeUtil::FromType<double>() {
+inline Dtype DtypeUtil::FromType<double>(bool is_object) {
     return Dtype::Float64;
 }
 
 template <>
-inline Dtype DtypeUtil::FromType<int32_t>() {
+inline Dtype DtypeUtil::FromType<int32_t>(bool is_object) {
     return Dtype::Int32;
 }
 
 template <>
-inline Dtype DtypeUtil::FromType<int64_t>() {
+inline Dtype DtypeUtil::FromType<int64_t>(bool is_object) {
     return Dtype::Int64;
 }
 
 template <>
-inline Dtype DtypeUtil::FromType<uint8_t>() {
+inline Dtype DtypeUtil::FromType<uint8_t>(bool is_object) {
     return Dtype::UInt8;
 }
 
 template <>
-inline Dtype DtypeUtil::FromType<bool>() {
+inline Dtype DtypeUtil::FromType<bool>(bool is_object) {
     return Dtype::Bool;
 }
 

@@ -41,6 +41,7 @@ void pybind_core_dtype(py::module &m) {
             .value("Int64", core::Dtype::Int64)
             .value("UInt8", core::Dtype::UInt8)
             .value("Bool", core::Dtype::Bool)
+            .value("Object", core::Dtype::Object)
             .export_values();
 
     py::class_<core::DtypeUtil> dtype_util(m, "DtypeUtil", "Dtype utilities.");

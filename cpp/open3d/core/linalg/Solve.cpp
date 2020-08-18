@@ -93,7 +93,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        Tensor ipiv = Tensor::Empty({n}, Dtype::Int32, device);
+        Tensor ipiv = Tensor::EmptyScalar({n}, Dtype::Int32, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
         SolveCUDA(A_data, B_data, ipiv_data, n, k, dtype, device);
@@ -101,7 +101,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        Tensor ipiv = Tensor::Empty({n}, Dtype::Int64, device);
+        Tensor ipiv = Tensor::EmptyScalar({n}, Dtype::Int64, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
         SolveCPU(A_data, B_data, ipiv_data, n, k, dtype, device);

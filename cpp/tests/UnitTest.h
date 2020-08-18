@@ -63,5 +63,16 @@ const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
 // Mechanism for reporting unit tests for which there is no implementation yet.
 void NotImplemented();
 
+class TestObject {
+public:
+    TestObject() = default;
+    TestObject(int a) : a_(a) {}
+
+    bool operator==(const TestObject &other) const { return a_ == other.a_; }
+
+private:
+    int a_;
+};
+
 }  // namespace tests
 }  // namespace open3d

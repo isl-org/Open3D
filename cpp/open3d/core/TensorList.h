@@ -60,7 +60,7 @@ public:
     /// Useful to support operator[] in a map.
     TensorList() : TensorList(SizeVector({}), Dtype::Float32) {}
 
-    /// Constructs an empty tensorlist.
+    /// Constructs an empty tensorlist for scalar data types.
     ///
     /// \param element_shape Shape of the contained tensors, e.g. {3,}. 0-sized
     /// and scalar element_shape are allowed.
@@ -74,6 +74,20 @@ public:
           reserved_size_(ComputeReserveSize(0)),
           internal_tensor_(shape_util::Concat({reserved_size_}, element_shape_),
                            dtype,
+                           DtypeUtil::ByteSize(dtype),
+                           device) {}
+
+    /// Constructs an empty tensorlist for custom object data types.
+    TensorList(const SizeVector& element_shape,
+               Dtype dtype,
+               int64_t byte_size,
+               const Device& device = Device("CPU:0"))
+        : element_shape_(element_shape),
+          size_(0),
+          reserved_size_(ComputeReserveSize(0)),
+          internal_tensor_(shape_util::Concat({reserved_size_}, element_shape_),
+                           dtype,
+                           byte_size,
                            device) {}
 
     /// Constructs a tensorlist from a vector of Tensors. The tensors must have
@@ -130,6 +144,16 @@ public:
             }
         });
 
+        // Check byte size consistency.
+        int64_t byte_size = begin->GetByteSize();
+        std::for_each(begin, end, [&](const Tensor& tensor) -> void {
+            if (tensor.GetByteSize() != byte_size) {
+                utility::LogError(
+                        "Tensors must have the same byte_size {}, but got {}.",
+                        byte_size, tensor.GetByteSize());
+            }
+        });
+
         // Check device consistency.
         Device device = begin->GetDevice();
         std::for_each(begin, end, [&](const Tensor& tensor) -> void {
@@ -143,7 +167,7 @@ public:
         // Construct internal tensor.
         internal_tensor_ =
                 Tensor(shape_util::Concat({reserved_size_}, element_shape_),
-                       dtype, device);
+                       dtype, byte_size, device);
         size_t i = 0;
         for (auto iter = begin; iter != end; ++iter, ++i) {
             internal_tensor_[i] = *iter;
@@ -256,6 +280,8 @@ public:
     Device GetDevice() const { return internal_tensor_.GetDevice(); }
 
     Dtype GetDtype() const { return internal_tensor_.GetDtype(); }
+
+    int64_t GetByteSize() const { return internal_tensor_.GetByteSize(); }
 
     int64_t GetSize() const { return size_; }
 
