@@ -76,14 +76,13 @@ public:
     }
 
     /// Constructor for creating a contiguous Tensor with initial values
-    /// ByteSize can be inferred from template T and dtype.
+    /// ByteSize is decided by T if dtype is Object else dtype itself.
     template <typename T>
     Tensor(const std::vector<T>& init_vals,
            const SizeVector& shape,
            Dtype dtype,
-           const Device& device = Device("CPU:0")) {
-        Initialize<T>(shape, dtype, device);
-
+           const Device& device = Device("CPU:0"))
+        : Tensor(shape, dtype, TemplateByteSize<T>(dtype), device) {
         // Check number of elements
         if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
             utility::LogError(
@@ -106,9 +105,8 @@ public:
     Tensor(const T* init_vals,
            const SizeVector& shape,
            Dtype dtype,
-           const Device& device = Device("CPU:0")) {
-        Initialize<T>(shape, dtype, device);
-
+           const Device& device = Device("CPU:0"))
+        : Tensor(shape, dtype, TemplateByteSize<T>(dtype), device) {
         // Check data type
         AssertTemplateDtype<T>(true);
 
@@ -226,17 +224,40 @@ public:
                              other.GetByteSize(), other.GetDevice());
     }
 
-    /// Create a tensor fill with specified value.
+    /// Create a tensor fill with specified scalar value.
+    /// Type casting is supported. It may lead to compile-time error if an
+    /// object-based Tensor calls it.
     template <typename T>
     static Tensor Full(const SizeVector& shape,
                        T fill_value,
                        Dtype dtype,
                        const Device& device = Device("CPU:0")) {
-        Tensor t;
-        t.Initialize<T>(shape, dtype, device);
-
-        // We need to support cast so type check cannot be placed here
+        if (DtypeUtil::IsObject(dtype)) {
+            utility::LogError(
+                    "Full does not support Object dtype. Please use FullObject "
+                    "instead.");
+        }
+        Tensor t = Tensor::EmptyScalar(shape, dtype, device);
         t.Fill(fill_value);
+        return t;
+    }
+
+    /// Create a tensor fill with specified object value.
+    /// Type casting is not supported.
+    template <typename T>
+    static Tensor FullObject(const SizeVector& shape,
+                             T fill_value,
+                             Dtype dtype,
+                             const Device& device = Device("CPU:0")) {
+        if (!DtypeUtil::IsObject(dtype)) {
+            utility::LogError(
+                    "FullObject does not support non-Object dtype. Please use "
+                    "Full instead for potential type casting.");
+        }
+
+        Tensor t =
+                Tensor::Empty(shape, dtype, TemplateByteSize<T>(dtype), device);
+        t.FillObject(fill_value);
         return t;
     }
 
@@ -1031,20 +1052,12 @@ public:
     void AssertShape(const SizeVector& expected_shape) const;
 
 protected:
+    /// Function to return byte size. Note we cannot directly use sizeof(T),
+    /// since type cast might happen for scalar types.
     template <typename T>
-    void inline Initialize(const SizeVector& shape,
-                           Dtype dtype,
-                           const Device& device) {
-        shape_ = shape;
-        strides_ = DefaultStrides(shape);
-        dtype_ = dtype;
-
-        byte_size_ = DtypeUtil::IsObject(dtype) ? sizeof(T)
-                                                : DtypeUtil::ByteSize(dtype);
-
-        blob_ = std::make_shared<Blob>(shape.NumElements() * byte_size_,
-                                       device);
-        data_ptr_ = blob_->GetDataPtr();
+    int64_t inline TemplateByteSize(Dtype dtype) {
+        return DtypeUtil::IsObject(dtype) ? sizeof(T)
+                                          : DtypeUtil::ByteSize(dtype);
     }
 
     std::string ScalarPtrToString(const void* ptr) const;
