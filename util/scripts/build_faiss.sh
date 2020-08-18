@@ -11,6 +11,7 @@ if [ ! -d ~/faiss ]; then
 fi
 
 cd faiss
+git checkout a93a4b39571db0ab6ad0b4ef42a6b8734ca05135
 
 # get date
 dt=$(date '+%Y%m%d')
