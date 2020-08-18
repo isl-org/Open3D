@@ -485,8 +485,7 @@ struct GuiVisualizer::Impl {
         settings_.wgt_mouse_ibl->SetOn(mode == Controls::ROTATE_IBL);
     }
 
-    void UpdateFromModel(rendering::Renderer &renderer,
-                         bool material_type_changed) {
+    void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
         scene_wgt_->SetBackgroundColor(settings_.model_.GetBackgroundColor());
 
         if (settings_.model_.GetShowSkybox()) {
@@ -499,6 +498,9 @@ struct GuiVisualizer::Impl {
         scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
+
+        // Bail early if there were no material property changes
+        if (!material_changed) return;
 
         auto &current_materials = settings_.model_.GetCurrentMaterials();
         if (settings_.model_.GetMaterialType() ==
@@ -539,24 +541,22 @@ struct GuiVisualizer::Impl {
             }
         }
 
-        if (material_type_changed) {
-            auto *view = scene_wgt_->GetRenderView();
-            switch (settings_.model_.GetMaterialType()) {
-                case GuiSettingsModel::MaterialType::LIT: {
-                    view->SetMode(rendering::View::Mode::Color);
-                    break;
-                }
-                case GuiSettingsModel::MaterialType::UNLIT: {
-                    view->SetMode(rendering::View::Mode::Color);
-                    break;
-                }
-                case GuiSettingsModel::MaterialType::NORMAL_MAP:
-                    view->SetMode(rendering::View::Mode::Normals);
-                    break;
-                case GuiSettingsModel::MaterialType::DEPTH:
-                    view->SetMode(rendering::View::Mode::Depth);
-                    break;
+        auto *view = scene_wgt_->GetRenderView();
+        switch (settings_.model_.GetMaterialType()) {
+            case GuiSettingsModel::MaterialType::LIT: {
+                view->SetMode(rendering::View::Mode::Color);
+                break;
             }
+            case GuiSettingsModel::MaterialType::UNLIT: {
+                view->SetMode(rendering::View::Mode::Color);
+                break;
+            }
+            case GuiSettingsModel::MaterialType::NORMAL_MAP:
+                view->SetMode(rendering::View::Mode::Normals);
+                break;
+            case GuiSettingsModel::MaterialType::DEPTH:
+                view->SetMode(rendering::View::Mode::Depth);
+                break;
         }
     }
 

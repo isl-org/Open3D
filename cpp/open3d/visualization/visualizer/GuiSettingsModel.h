@@ -157,7 +157,7 @@ private:
 
     std::function<void(bool)> on_changed_;
 
-    void NotifyChanged(bool material_type_changed = false);
+    void NotifyChanged(bool material_changed = false);
 };
 
 }  // namespace visualization
