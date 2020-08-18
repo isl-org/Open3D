@@ -34,11 +34,11 @@
 #include "assimp/scene.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/ImageIO.h"
-#include "open3d/io/ModelIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/Model.h"
 
 #define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
 #define AI_MATKEY_CLEARCOAT_ROUGHNESS "$mat.clearcoatroughness", 0, 0
@@ -256,7 +256,7 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
 }
 
 bool ReadModelUsingAssimp(const std::string& filename,
-                          Model& model,
+                          visualization::rendering::Model& model,
                           bool print_progress) {
     Assimp::Importer importer;
     const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);

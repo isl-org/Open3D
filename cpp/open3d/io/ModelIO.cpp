@@ -35,10 +35,12 @@ namespace open3d {
 namespace io {
 
 bool ReadModelUsingAssimp(const std::string& filename,
-                          Model& model,
+                          visualization::rendering::Model& model,
                           bool print_progress);
 
-bool ReadModel(const std::string& filename, Model& model, bool print_progress) {
+bool ReadModel(const std::string& filename,
+               visualization::rendering::Model& model,
+               bool print_progress) {
     return ReadModelUsingAssimp(filename, model, print_progress);
 }
 

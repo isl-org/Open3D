@@ -55,6 +55,7 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
@@ -1075,7 +1076,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
             try {
                 mesh_success = io::ReadTriangleMesh(path, *mesh);
                 utility::LogWarning("Load {} as model", path);
-                io::Model model;
+                visualization::rendering::Model model;
                 io::ReadModel(path, model, false);
                 utility::LogWarning("Model has {} meshes and {} materials",
                                     model.meshes_.size(),

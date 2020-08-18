@@ -26,20 +26,24 @@
 
 #pragma once
 
-#include <string>
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/visualization/rendering/Material.h"
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
-struct Model;
-}
+
+struct Model {
+    struct MeshInfo {
+        std::shared_ptr<geometry::TriangleMesh> mesh;
+        std::string mesh_name;
+        unsigned int material_idx;
+    };
+
+    std::vector<MeshInfo> meshes_;
+    std::vector<visualization::rendering::Material> materials_;
+};
+
+}  // namespace rendering
 }  // namespace visualization
-
-namespace io {
-
-bool ReadModel(const std::string& filename,
-               visualization::rendering::Model& model,
-               bool print_progress);
-
-}  // namespace io
 }  // namespace open3d
