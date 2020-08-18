@@ -45,7 +45,7 @@ namespace rendering {
 
 class Renderer;
 class View;
-class Model;
+struct Model;
 struct Material;
 struct Light;
 
