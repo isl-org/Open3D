@@ -35,7 +35,8 @@ option(USE_SYSTEM_QHULL           "Use system pre-installed qhull"           OFF
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
-option(BUILD_FAISS                "Build faiss from source"                  OFF)
+option(BUILD_FAISS                "Build faiss"                              ON)
+option(BUILD_FAISS_FROM_SOURCE    "Build faiss from source"                  OFF)
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
