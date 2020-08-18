@@ -71,6 +71,9 @@
 namespace open3d {
 namespace visualization {
 
+// TEMP:
+rendering::Model test_model;
+
 namespace {
 
 std::shared_ptr<gui::Dialog> CreateAboutDialog(gui::Window *window) {
@@ -957,6 +960,9 @@ void GuiVisualizer::SetGeometry(
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         scene3d->AddGeometry(g3, loaded_material);
         bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
+        scene3d->GetScene()->ShowGeometry("__model__", false);
+        scene3d->GetScene()->AddGeometry("_the_model_", test_model);
+        
         if (material_is_loaded) {
             impl_->settings_.have_loaded_material_ = true;
             impl_->settings_.loaded_material_ = loaded_material;
@@ -1076,11 +1082,10 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
             try {
                 mesh_success = io::ReadTriangleMesh(path, *mesh);
                 utility::LogWarning("Load {} as model", path);
-                visualization::rendering::Model model;
-                io::ReadModel(path, model, false);
+                io::ReadModel(path, test_model, false);
                 utility::LogWarning("Model has {} meshes and {} materials",
-                                    model.meshes_.size(),
-                                    model.materials_.size());
+                                    test_model.meshes_.size(),
+                                    test_model.materials_.size());
             } catch (...) {
                 mesh_success = false;
             }
