@@ -46,6 +46,8 @@ core::Dtype ArrayFormatToDtype(const std::string& format) {
         return core::Dtype::Int64;
     } else if (format == py::format_descriptor<uint8_t>::format()) {
         return core::Dtype::UInt8;
+    } else if (format == py::format_descriptor<uint16_t>::format()) {
+        return core::Dtype::UInt16;
     } else if (format == py::format_descriptor<bool>::format()) {
         return core::Dtype::Bool;
     } else {
@@ -64,6 +66,8 @@ std::string DtypeToArrayFormat(const core::Dtype& dtype) {
         return py::format_descriptor<int64_t>::format();
     } else if (dtype == core::Dtype::UInt8) {
         return py::format_descriptor<uint8_t>::format();
+    } else if (dtype == core::Dtype::UInt16) {
+        return py::format_descriptor<uint16_t>::format();
     } else if (dtype == core::Dtype::Bool) {
         return py::format_descriptor<bool>::format();
     } else {
