@@ -107,15 +107,13 @@ void LoadTextures(const std::string& filename,
     // format has AO support. Prefer that texture if it is preset. Otherwise,
     // try AMBIENT where OBJ and FBX typically put AO textures.
     if (mat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0) {
-        texture_loader(aiTextureType_AMBIENT_OCCLUSION,
-                       maps.ao);
+        texture_loader(aiTextureType_AMBIENT_OCCLUSION, maps.ao);
     } else {
         texture_loader(aiTextureType_AMBIENT, maps.ao);
     }
     texture_loader(aiTextureType_METALNESS, maps.metallic);
     if (mat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
-        texture_loader(aiTextureType_DIFFUSE_ROUGHNESS,
-                       maps.roughness);
+        texture_loader(aiTextureType_DIFFUSE_ROUGHNESS, maps.roughness);
     } else if (mat->GetTextureCount(aiTextureType_SHININESS) > 0) {
         // NOTE: In some FBX files assimp puts the roughness texture in
         // shininess slot
