@@ -47,6 +47,7 @@
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/Light.h"
 #include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
@@ -251,8 +252,20 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const Model& model) {
-    utility::LogWarning("NOT YET IMPLEMENTED");
-    return false;
+    if (geometries_.count(object_name) > 0) {
+        utility::LogWarning(
+                "Geometry {} has already been added to scene graph.",
+                object_name);
+        return false;
+    }
+
+    for (const auto& mesh : model.meshes_) {
+        auto& mat = model.materials_[mesh.material_idx];
+        std::string derived_name(object_name + ":" + mesh.mesh_name);
+        AddGeometry(derived_name, *(mesh.mesh), mat);
+    }
+
+    return true;
 }
 
 void FilamentScene::RemoveGeometry(const std::string& object_name) {
