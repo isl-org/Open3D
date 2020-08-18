@@ -59,6 +59,80 @@ const unsigned int kPostProcessFlags =
         aiProcess_FindDegenerates | aiProcess_OptimizeMeshes |
         aiProcess_PreTransformVertices;
 
+struct TextureImages {
+    std::shared_ptr<geometry::Image> albedo;
+    std::shared_ptr<geometry::Image> normal;
+    std::shared_ptr<geometry::Image> ao;
+    std::shared_ptr<geometry::Image> roughness;
+    std::shared_ptr<geometry::Image> metallic;
+    std::shared_ptr<geometry::Image> reflectance;
+    std::shared_ptr<geometry::Image> clearcoat;
+    std::shared_ptr<geometry::Image> clearcoat_roughness;
+    std::shared_ptr<geometry::Image> anisotropy;
+};
+
+void LoadTextures(const std::string& filename,
+                  aiMaterial* mat,
+                  TextureImages& maps) {
+    // Retrieve textures
+    std::string base_path =
+            utility::filesystem::GetFileParentDirectory(filename);
+
+    auto texture_loader = [&base_path, &mat](
+                                  aiTextureType type,
+                                  std::shared_ptr<geometry::Image>& img) {
+        if (mat->GetTextureCount(type) > 0) {
+            aiString path;
+            mat->GetTexture(type, 0, &path);
+            std::string strpath(path.C_Str());
+            auto p_win = strpath.rfind("\\");
+            auto p_unix = strpath.rfind("/");
+            if (p_unix != std::string::npos) {
+                strpath = strpath.substr(p_win + 1);
+            } else if (p_win != std::string::npos) {
+                strpath = strpath.substr(p_unix + 1);
+            }
+            // utility::LogWarning("TEXTURE PATH CLEAN: {} for texture type {}",
+            //                     base_path + strpath, type);
+            auto image = io::CreateImageFromFile(base_path + strpath);
+            if (image->HasData()) {
+                img = image;
+            }
+        }
+    };
+
+    texture_loader(aiTextureType_DIFFUSE, maps.albedo);
+    texture_loader(aiTextureType_NORMALS, maps.normal);
+    // Assimp may place ambient occlusion texture in AMBIENT_OCCLUSION if
+    // format has AO support. Prefer that texture if it is preset. Otherwise,
+    // try AMBIENT where OBJ and FBX typically put AO textures.
+    if (mat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0) {
+        texture_loader(aiTextureType_AMBIENT_OCCLUSION,
+                       maps.ao);
+    } else {
+        texture_loader(aiTextureType_AMBIENT, maps.ao);
+    }
+    texture_loader(aiTextureType_METALNESS, maps.metallic);
+    if (mat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
+        texture_loader(aiTextureType_DIFFUSE_ROUGHNESS,
+                       maps.roughness);
+    } else if (mat->GetTextureCount(aiTextureType_SHININESS) > 0) {
+        // NOTE: In some FBX files assimp puts the roughness texture in
+        // shininess slot
+        texture_loader(aiTextureType_SHININESS, maps.roughness);
+    }
+    // NOTE: Currently used for GLTF Roughness/Metal texture.
+    texture_loader(aiTextureType_UNKNOWN, maps.roughness);
+    // NOTE: the following may be non-standard. We are using REFLECTION texture
+    // type to store OBJ map_Ps 'sheen' PBR map
+    texture_loader(aiTextureType_REFLECTION, maps.reflectance);
+
+    // NOTE: ASSIMP doesn't appear to provide texture params for the following
+    // std::shared_ptr<Image> clearCoat;
+    // std::shared_ptr<Image> clearCoatRoughness;
+    // std::shared_ptr<Image> anisotropy;
+}
+
 bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
                                  geometry::TriangleMesh& mesh,
                                  bool print_progress) {
@@ -195,62 +269,14 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
     mat->Get(AI_MATKEY_ANISOTROPY, mesh_material.baseAnisotropy);
 
     // Retrieve textures
-    std::string base_path =
-            utility::filesystem::GetFileParentDirectory(filename);
-
-    auto texture_loader = [&base_path, &mat](
-                                  aiTextureType type,
-                                  std::shared_ptr<geometry::Image>& img) {
-        if (mat->GetTextureCount(type) > 0) {
-            aiString path;
-            mat->GetTexture(type, 0, &path);
-            std::string strpath(path.C_Str());
-            auto p_win = strpath.rfind("\\");
-            auto p_unix = strpath.rfind("/");
-            if (p_unix != std::string::npos) {
-                strpath = strpath.substr(p_win + 1);
-            } else if (p_win != std::string::npos) {
-                strpath = strpath.substr(p_unix + 1);
-            }
-            // utility::LogWarning("TEXTURE PATH CLEAN: {} for texture type {}",
-            //                     base_path + strpath, type);
-            auto image = io::CreateImageFromFile(base_path + strpath);
-            if (image->HasData()) {
-                img = image;
-            }
-        }
-    };
-
-    texture_loader(aiTextureType_DIFFUSE, mesh_material.albedo);
-    texture_loader(aiTextureType_NORMALS, mesh_material.normalMap);
-    // Assimp may place ambient occlusion texture in AMBIENT_OCCLUSION if
-    // format has AO support. Prefer that texture if it is preset. Otherwise,
-    // try AMBIENT where OBJ and FBX typically put AO textures.
-    if (mat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0) {
-        texture_loader(aiTextureType_AMBIENT_OCCLUSION,
-                       mesh_material.ambientOcclusion);
-    } else {
-        texture_loader(aiTextureType_AMBIENT, mesh_material.ambientOcclusion);
-    }
-    texture_loader(aiTextureType_METALNESS, mesh_material.metallic);
-    if (mat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
-        texture_loader(aiTextureType_DIFFUSE_ROUGHNESS,
-                       mesh_material.roughness);
-    } else if (mat->GetTextureCount(aiTextureType_SHININESS) > 0) {
-        // NOTE: In some FBX files assimp puts the roughness texture in
-        // shininess slot
-        texture_loader(aiTextureType_SHININESS, mesh_material.roughness);
-    }
-    // NOTE: Currently used for GLTF Roughness/Metal texture.
-    texture_loader(aiTextureType_UNKNOWN, mesh_material.roughness);
-    // NOTE: the following may be non-standard. We are using REFLECTION texture
-    // type to store OBJ map_Ps 'sheen' PBR map
-    texture_loader(aiTextureType_REFLECTION, mesh_material.reflectance);
-
-    // NOTE: ASSIMP doesn't appear to provide texture params for the following
-    // std::shared_ptr<Image> clearCoat;
-    // std::shared_ptr<Image> clearCoatRoughness;
-    // std::shared_ptr<Image> anisotropy;
+    TextureImages maps;
+    LoadTextures(filename, mat, maps);
+    mesh_material.albedo = maps.albedo;
+    mesh_material.normalMap = maps.normal;
+    mesh_material.ambientOcclusion = maps.ao;
+    mesh_material.metallic = maps.metallic;
+    mesh_material.roughness = maps.roughness;
+    mesh_material.reflectance = maps.reflectance;
 
     return true;
 }
@@ -367,50 +393,16 @@ bool ReadModelUsingAssimp(const std::string& filename,
         mat->Get(AI_MATKEY_ANISOTROPY, o3d_mat.base_anisotropy);
 
         // Retrieve textures
-        std::string base_path =
-                utility::filesystem::GetFileParentDirectory(filename);
+        TextureImages maps;
+        LoadTextures(filename, mat, maps);
+        o3d_mat.albedo_img = maps.albedo;
+        o3d_mat.normal_img = maps.normal;
+        o3d_mat.ao_img = maps.ao;
+        o3d_mat.metallic_img = maps.metallic;
+        o3d_mat.roughness_img = maps.roughness;
+        o3d_mat.reflectance_img = maps.reflectance;
 
-        auto texture_loader = [&base_path, &mat](
-                                      aiTextureType type,
-                                      std::shared_ptr<geometry::Image>& img) {
-            if (mat->GetTextureCount(type) > 0) {
-                aiString path;
-                mat->GetTexture(type, 0, &path);
-                std::string strpath(path.C_Str());
-                auto p_win = strpath.rfind("\\");
-                auto p_unix = strpath.rfind("/");
-                if (p_unix != std::string::npos) {
-                    strpath = strpath.substr(p_win + 1);
-                } else if (p_win != std::string::npos) {
-                    strpath = strpath.substr(p_unix + 1);
-                }
-                // utility::LogWarning("TEXTURE PATH CLEAN: {} for texture type
-                // {}",
-                //                     base_path + strpath, type);
-                auto image = io::CreateImageFromFile(base_path + strpath);
-                if (image->HasData()) {
-                    img = image;
-                }
-            }
-        };
-
-        texture_loader(aiTextureType_DIFFUSE, o3d_mat.albedo_img);
-        texture_loader(aiTextureType_NORMALS, o3d_mat.normal_img);
-        if (mat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0) {
-            texture_loader(aiTextureType_AMBIENT_OCCLUSION, o3d_mat.ao_img);
-        } else {
-            texture_loader(aiTextureType_AMBIENT, o3d_mat.ao_img);
-        }
-        texture_loader(aiTextureType_METALNESS, o3d_mat.metallic_img);
-        if (mat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
-            texture_loader(aiTextureType_DIFFUSE_ROUGHNESS,
-                           o3d_mat.roughness_img);
-        } else if (mat->GetTextureCount(aiTextureType_SHININESS) > 0) {
-            texture_loader(aiTextureType_SHININESS, o3d_mat.roughness_img);
-        }
-        texture_loader(aiTextureType_UNKNOWN, o3d_mat.roughness_img);
-        texture_loader(aiTextureType_REFLECTION, o3d_mat.reflectance_img);
-
+        o3d_mat.shader = "defaultLit";
         model.materials_.push_back(o3d_mat);
     }
 
