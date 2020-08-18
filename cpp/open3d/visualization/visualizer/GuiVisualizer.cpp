@@ -33,6 +33,7 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/io/ModelIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Console.h"
@@ -1073,6 +1074,12 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
         if (geometry_type & io::CONTAINS_TRIANGLES) {
             try {
                 mesh_success = io::ReadTriangleMesh(path, *mesh);
+                utility::LogWarning("Load {} as model", path);
+                io::Model model;
+                io::ReadModel(path, model, false);
+                utility::LogWarning("Model has {} meshes and {} materials",
+                                    model.meshes_.size(),
+                                    model.materials_.size());
             } catch (...) {
                 mesh_success = false;
             }
