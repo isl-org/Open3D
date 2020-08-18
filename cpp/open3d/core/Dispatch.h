@@ -69,6 +69,10 @@
                 using scalar_t = uint8_t;                    \
                 return __VA_ARGS__();                        \
             }                                                \
+            case open3d::core::Dtype::UInt16: {              \
+                using scalar_t = uint16_t;                   \
+                return __VA_ARGS__();                        \
+            }                                                \
             default:                                         \
                 utility::LogError("Unsupported data type."); \
         }                                                    \

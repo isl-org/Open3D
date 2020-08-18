@@ -24,29 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Dtype.h"
+#include "open3d/tgeometry/Image.h"
 
-#include "pybind/core/core.h"
-#include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/ShapeUtil.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace tgeometry {
 
-void pybind_core_dtype(py::module &m) {
-    py::enum_<core::Dtype>(m, "Dtype", "Open3D data types.")
-            .value("Undefined", core::Dtype::Undefined)
-            .value("Float32", core::Dtype::Float32)
-            .value("Float64", core::Dtype::Float64)
-            .value("Int32", core::Dtype::Int32)
-            .value("Int64", core::Dtype::Int64)
-            .value("UInt8", core::Dtype::UInt8)
-            .value("UInt16", core::Dtype::UInt16)
-            .value("Bool", core::Dtype::Bool)
-            .value("Object", core::Dtype::Object)
-            .export_values();
-
-    py::class_<core::DtypeUtil> dtype_util(m, "DtypeUtil", "Dtype utilities.");
-    dtype_util.def(py::init<>()).def("byte_size", &core::DtypeUtil::ByteSize);
+Image::Image(int64_t rows,
+             int64_t cols,
+             int64_t channels,
+             core::Dtype dtype,
+             const core::Device &device)
+    : Geometry(Geometry::GeometryType::Image, 2) {
+    if (rows < 0) {
+        utility::LogError("rows must be >= 0, but got {}.", rows);
+    }
+    if (cols < 0) {
+        utility::LogError("cols must be >= 0, but got {}.", cols);
+    }
+    if (channels <= 0) {
+        utility::LogError("channels must be > 0, but got {}.", channels);
+    }
+    data_ = core::Tensor({rows, cols, channels}, dtype, device);
 }
 
+Image::Image(const core::Tensor &tensor)
+    : Geometry(Geometry::GeometryType::Image, 2) {
+    if (!tensor.IsContiguous()) {
+        utility::LogError("Input tensor must be contiguous.");
+    }
+    if (tensor.NumDims() == 2) {
+        data_ = tensor.Reshape(
+                core::shape_util::Concat(tensor.GetShape(), {1}));
+    } else if (tensor.NumDims() == 3) {
+        data_ = tensor;
+    } else {
+        utility::LogError("Input tensor must be 2-D or 3-D, but got shape {}.",
+                          tensor.GetShape().ToString());
+    }
+}
+
+}  // namespace tgeometry
 }  // namespace open3d
