@@ -34,6 +34,10 @@ set(PACKAGE_NAME pybind)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
 
+if (NOT BUILD_FAISS)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/geometry/knnfaiss.cpp")
+endif()
+
 if (NOT BUILD_GUI)
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp")

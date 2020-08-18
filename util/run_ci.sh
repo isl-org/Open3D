@@ -145,6 +145,9 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ] || nvidia-smi -L | grep -q GPU ; then
             pytest_args+=(--ignore ../python/test/test_tf_op_library.py)
             pytest_args+=(--ignore ../python/test/tf_ops/)
         fi
+        if [ "$BUILD_FAISS" == "OFF" ]; then
+            pytest_args+=(--ignore ../python/test/test_faiss.py)
+        fi
         reportRun pytest "${pytest_args[@]}"
         echo
     fi
