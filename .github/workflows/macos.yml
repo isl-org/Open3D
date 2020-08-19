@@ -22,6 +22,7 @@ jobs:
       BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
       LOW_MEM_USAGE: ON
       BUILD_RPC_INTERFACE: ON
+      USE_OPENBLAS: OFF
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
