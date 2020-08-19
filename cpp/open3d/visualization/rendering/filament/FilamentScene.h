@@ -1,3 +1,4 @@
+
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
@@ -115,6 +116,7 @@ public:
                      const Model& model) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
+    bool GeometryIsVisible(const std::string& object_name) override;
     void SetGeometryTransform(const std::string& object_name,
                               const Transform& transform) override;
     Transform GetGeometryTransform(const std::string& object_name) override;

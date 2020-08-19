@@ -82,6 +82,7 @@ public:
                              const Model& model) = 0;
     virtual void RemoveGeometry(const std::string& object_name) = 0;
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;
+    virtual bool GeometryIsVisible(const std::string& object_name) = 0;
     virtual void OverrideMaterial(const std::string& object_name,
                                   const Material& material) = 0;
     virtual void GeometryShadows(const std::string& object_name,

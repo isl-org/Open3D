@@ -143,20 +143,20 @@ const std::map<std::string, const GuiSettingsModel::LitMaterial>
         GuiSettingsModel::prefab_materials_ = {
                 {DEFAULT_MATERIAL_NAME, {}},
                 {"Metal (rougher)",
-                 {{1.0f, 1.0f, 1.0f}, 1.0f, 0.5f, 0.9f, 0.0f, 0.0f, 0.0f}},
+                 {{1.0f, 1.0f, 1.0f}, 1.0f, 0.7f, 0.5f, 0.0f, 0.0f, 0.0f}},
                 {"Metal (smoother)",
-                 {{1.0f, 1.0f, 1.0f}, 1.0f, 0.3f, 0.9f, 0.0f, 0.0f, 0.0f}},
+                 {{1.0f, 1.0f, 1.0f}, 1.0f, 0.2f, 0.5f, 0.0f, 0.0f, 0.0f}},
                 {"Plastic",
-                 {{1.0f, 1.0f, 1.0f}, 0.0f, 0.5f, 0.5f, 0.5f, 0.2f, 0.0f}},
+                 {{1.0f, 1.0f, 1.0f}, 0.0f, 0.5f, 0.5f, 0.5f, 0.8f, 0.0f}},
                 {"Glazed ceramic",
-                 {{1.0f, 1.0f, 1.0f}, 0.0f, 0.5f, 0.9f, 1.0f, 0.1f, 0.0f}},
+                 {{1.0f, 1.0f, 1.0f}, 0.0f, 0.5f, 0.5f, 1.0f, 0.2f, 0.0f}},
                 {"Clay",
                  {{0.7725f, 0.7725f, 0.7725f},
                   0.0f,
                   1.0f,
-                  0.5f,
-                  0.1f,
-                  0.287f,
+                  0.35f,
+                  0.0f,
+                  0.0f,
                   0.0f}},
 };
 
@@ -244,6 +244,10 @@ const GuiSettingsModel::Materials& GuiSettingsModel::GetCurrentMaterials()
     return current_materials_;
 }
 
+GuiSettingsModel::Materials& GuiSettingsModel::GetCurrentMaterials() {
+    return current_materials_;
+}
+
 void GuiSettingsModel::SetLitMaterial(const LitMaterial& material,
                                       const std::string& name) {
     auto color = current_materials_.lit.base_color;
@@ -252,19 +256,19 @@ void GuiSettingsModel::SetLitMaterial(const LitMaterial& material,
     if (user_has_changed_color_) {
         current_materials_.lit.base_color = color;
     }
-    NotifyChanged();
+    NotifyChanged(true);
 }
 
 void GuiSettingsModel::SetCurrentMaterials(const Materials& materials,
                                            const std::string& name) {
     current_materials_ = materials;
     current_materials_.lit_name = name;
-    NotifyChanged();
+    NotifyChanged(true);
 }
 
 void GuiSettingsModel::SetCurrentMaterials(const std::string& name) {
     current_materials_.lit_name = name;
-    NotifyChanged();
+    NotifyChanged(true);
 }
 
 void GuiSettingsModel::SetMaterialsToDefault() {
@@ -276,7 +280,7 @@ void GuiSettingsModel::SetMaterialsToDefault() {
         current_materials_.unlit.base_color = unlit_color;
         current_materials_.lit.base_color = lit_color;
     }
-    NotifyChanged();
+    NotifyChanged(true);
 }
 
 const Eigen::Vector3f& GuiSettingsModel::GetCurrentMaterialColor() const {
@@ -298,11 +302,11 @@ void GuiSettingsModel::SetCurrentMaterialColor(const Eigen::Vector3f& color) {
     if (current_type_ == LIT) {
         current_materials_.lit.base_color = color;
         user_has_changed_color_ = true;
-        NotifyChanged();
+        NotifyChanged(true);
     } else if (current_type_ == UNLIT) {
         current_materials_.unlit.base_color = color;
         user_has_changed_color_ = true;
-        NotifyChanged();
+        NotifyChanged(true);
     } else {
         // Doesn't make sense to set material color for depth / normal
     }
@@ -318,7 +322,7 @@ void GuiSettingsModel::ResetColors() {
         current_materials_.lit.base_color = defaults.lit.base_color;
     }
     user_has_changed_color_ = false;
-    NotifyChanged();
+    NotifyChanged(true);
 }
 
 void GuiSettingsModel::SetCustomDefaultColor(const Eigen::Vector3f color) {
@@ -335,7 +339,7 @@ int GuiSettingsModel::GetPointSize() const {
 
 void GuiSettingsModel::SetPointSize(int size) {
     current_materials_.point_size = float(size);
-    NotifyChanged();
+    NotifyChanged(true);
 }
 
 bool GuiSettingsModel::GetDisplayingPointClouds() const {
@@ -362,9 +366,9 @@ void GuiSettingsModel::SetOnChanged(std::function<void(bool)> on_changed) {
     on_changed_ = on_changed;
 }
 
-void GuiSettingsModel::NotifyChanged(bool material_type_changed /*= false*/) {
+void GuiSettingsModel::NotifyChanged(bool material_changed /*= false*/) {
     if (on_changed_) {
-        on_changed_(material_type_changed);
+        on_changed_(material_changed);
     }
 }
 

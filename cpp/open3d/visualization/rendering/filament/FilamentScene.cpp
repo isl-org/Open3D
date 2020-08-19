@@ -298,6 +298,15 @@ void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
     }
 }
 
+bool FilamentScene::GeometryIsVisible(const std::string& object_name) {
+    auto geom = GetGeometry(object_name);
+    if (geom) {
+        return geom->visible;
+    } else {
+        return false;
+    }
+}
+
 utils::EntityInstance<filament::TransformManager>
 FilamentScene::GetGeometryTransformInstance(RenderableGeometry* geom) {
     filament::TransformManager::Instance itransform;
