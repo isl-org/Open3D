@@ -1,3 +1,6 @@
+include(ProcessorCount)
+ProcessorCount(NPROC)
+
 macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
     add_executable(${EXAMPLE_CPP_NAME} "${EXAMPLE_CPP_NAME}.cpp")
     open3d_show_and_abort_on_warning(${EXAMPLE_CPP_NAME})
@@ -60,3 +63,10 @@ if(BUILD_AZURE_KINECT)
     EXAMPLE_CPP(AzureKinectMKVReader  ${CMAKE_PROJECT_NAME} ${JSONCPP_TARGET})
     EXAMPLE_CPP(AzureKinectViewer     ${CMAKE_PROJECT_NAME} ${K4A_TARGET})
 endif()
+
+add_custom_target(build-examples-iteratively
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --verbose --target CameraPoseTrajectory --parallel ${NPROC}
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/CameraPoseTrajectory
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --verbose --target ColorMapOptimization --parallel ${NPROC}
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/ColorMapOptimization
+)
