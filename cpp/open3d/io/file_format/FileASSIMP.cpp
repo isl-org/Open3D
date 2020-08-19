@@ -92,8 +92,6 @@ void LoadTextures(const std::string& filename,
             } else if (p_win != std::string::npos) {
                 strpath = strpath.substr(p_unix + 1);
             }
-            // utility::LogWarning("TEXTURE PATH CLEAN: {} for texture type {}",
-            //                     base_path + strpath, type);
             auto image = io::CreateImageFromFile(base_path + strpath);
             if (image->HasData()) {
                 img = image;
@@ -119,16 +117,17 @@ void LoadTextures(const std::string& filename,
         // shininess slot
         texture_loader(aiTextureType_SHININESS, maps.roughness);
     }
-    // NOTE: Currently used for GLTF Roughness/Metal texture.
+    // NOTE: Assimp doesn't have a texture type for GLTF's combined
+    // roughness/metallic texture so it puts it in the 'unknown' texture slot
     texture_loader(aiTextureType_UNKNOWN, maps.roughness);
     // NOTE: the following may be non-standard. We are using REFLECTION texture
     // type to store OBJ map_Ps 'sheen' PBR map
     texture_loader(aiTextureType_REFLECTION, maps.reflectance);
 
-    // NOTE: ASSIMP doesn't appear to provide texture params for the following
-    // std::shared_ptr<Image> clearCoat;
-    // std::shared_ptr<Image> clearCoatRoughness;
-    // std::shared_ptr<Image> anisotropy;
+    // NOTE: ASSIMP doesn't appear to provide texture params for the following:
+    // clearcoat
+    // clearcoat_roughness
+    // anisotropy
 }
 
 bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
@@ -140,18 +139,6 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;
     }
-
-    // NOTE: Developer debug printout below. Commented out for now and will
-    // eventually be removed entirely
-    // utility::LogWarning("Loaded {}\n\tN MESHES: {}\n\tN MATERIALS: {}",
-    // filename, scene->mNumMeshes, scene->mNumMaterials);
-    // const auto* mesh1 = scene->mMeshes[0];
-    // utility::LogWarning(
-    //         "MESH: {}\n\tHas Positions: {}\n\tHas Normals: {}\n\tHasFaces: "
-    //         "{}\n\tVertexColors: {}\n\tUV Channels: {}",
-    //         mesh1->mName.C_Str(), mesh1->HasPositions(), mesh1->HasNormals(),
-    //         mesh1->HasFaces(), mesh1->GetNumColorChannels(),
-    //         mesh1->GetNumUVChannels());
 
     mesh.Clear();
 
@@ -217,28 +204,15 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         current_vidx += assimp_mesh->mNumVertices;
     }
 
-    // Load material data
-    auto* mat = scene->mMaterials[0];
-
-    // NOTE: Developer debug printouts below. To be removed soon.
-    // utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n",
-    // mat->GetName().C_Str(),
-    //                     mat->mNumProperties);
-    // for (size_t i = 0; i < mat->mNumProperties; ++i) {
-    //     auto* prop = mat->mProperties[i];
-    //     utility::LogWarning("\tPROPNAME: {}", prop->mKey.C_Str());
-    //     if(prop->mType == aiPTI_String) {
-    //         std::string val(prop->mData+4);
-    //         utility::LogWarning("\tVAL: {}", val);
-    //     }
-    // }
-
     if (scene->mNumMaterials > 1) {
         utility::LogWarning(
                 "{} has {} materials but only a single material per object is "
                 "currently supported",
                 filename, scene->mNumMaterials);
     }
+
+    // Load material data
+    auto* mat = scene->mMaterials[0];
 
     // create material structure to match this name
     auto& mesh_material = mesh.materials_[std::string(mat->GetName().C_Str())];
@@ -356,8 +330,6 @@ bool ReadModelUsingAssimp(const std::string& filename,
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
 
-        // NOTE: See notes in ReadTriangleMeshUsingAssimp for notes on how
-        // material properties are processed.
         // NOTE: Developer debug printouts below. To be removed soon.
         // utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n",
         // mat->GetName().C_Str(),
