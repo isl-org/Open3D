@@ -37,6 +37,7 @@ namespace gui {
 class Checkbox;
 class ColorEdit;
 class Label;
+class NumberEdit;
 
 /// The only difference between just putting in a Checkbox with
 /// TreeView::AddItem() is that with a Checkbox, clicking on the
@@ -81,6 +82,26 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
+
+class ColormapTreeCell : public Widget {
+public:
+    ColormapTreeCell(float value,
+                     const Color& color,
+                     std::function<void(float)> on_value_changed,
+                     std::function<void(const Color&)> on_color_changed);
+    ~ColormapTreeCell();
+
+    std::shared_ptr<NumberEdit> GetNumberEdit();
+    std::shared_ptr<ColorEdit> GetColorEdit();
+
+    Size CalcPreferredSize(const Theme& theme) const override;
+    void Layout(const Theme& theme) override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
 
 class TreeView : public Widget {
     using Super = Widget;

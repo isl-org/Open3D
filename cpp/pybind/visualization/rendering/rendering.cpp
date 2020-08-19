@@ -110,6 +110,7 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("clearcoat_roughness_img",
                            &Material::clearcoat_roughness_img)
             .def_readwrite("anisotropy_img", &Material::anisotropy_img)
+            .def_readwrite("lut_colors", &Material::lut_colors)
             .def_readwrite("generic_params", &Material::generic_params)
             .def_readwrite("generic_imgs", &Material::generic_imgs)
             .def_readwrite("shader", &Material::shader);
@@ -159,6 +160,8 @@ void pybind_rendering_classes(py::module &m) {
             .def("add_geometry", &Open3DScene::AddGeometry, "name"_a,
                  "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
+            .def("remove_geometry", &Open3DScene::RemoveGeometry, 
+                 "Removes the geometry with the given name")
             .def("show_geometry", &Open3DScene::ShowGeometry,
                  "Shows or hides the geometry with the given name")
             .def("update_material", &Open3DScene::UpdateMaterial,

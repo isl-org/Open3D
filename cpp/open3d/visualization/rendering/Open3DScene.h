@@ -61,6 +61,7 @@ public:
                      std::shared_ptr<const geometry::Geometry3D> geom,
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
+    void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
     /// Updates all geometries to use this material

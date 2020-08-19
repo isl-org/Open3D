@@ -195,6 +195,11 @@ void Open3DScene::AddGeometry(
     RecreateAxis(scene, bounds_, false);
 }
 
+void Open3DScene::RemoveGeometry(const std::string& name) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->RemoveGeometry(name);
+}
+
 void Open3DScene::ShowGeometry(const std::string& name, bool show) {
     auto it = geometries_.find(name);
     if (it != geometries_.end()) {
