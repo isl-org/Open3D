@@ -28,11 +28,12 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
+        cmake -G "Visual Studio 16 2019" -A x64 -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
     - name: Build
       run: |
         cd build
         cmake --build . --parallel 2 --config ${{ matrix.config }} --target INSTALL
+        cmake --build . --parallel 2 --config ${{ matrix.config }} --target build-examples-iteratively
     - name: Linking to Open3D
       run: |
         cd docs\_static\C++
