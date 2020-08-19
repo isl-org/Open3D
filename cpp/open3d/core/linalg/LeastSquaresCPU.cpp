@@ -24,9 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LeastSquares.h"
 #include "open3d/core/linalg/LinalgUtils.h"

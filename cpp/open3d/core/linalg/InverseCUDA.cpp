@@ -24,10 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <bits/stdint-intn.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "open3d/core/linalg/Inverse.h"
 #include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"

@@ -24,9 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/BlasWrapper.h"
 #include "open3d/core/linalg/LapackWrapper.h"
