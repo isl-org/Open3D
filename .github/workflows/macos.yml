@@ -116,17 +116,17 @@ jobs:
     runs-on: macos-10.15
     needs: [build-macos-wheel]
     steps:
-      - name: Download wheel
-        uses: dawidd6/action-download-artifact@v2
-        # https://github.com/dawidd6/action-download-artifact
+      - name: Checkout source code
+        uses: actions/checkout@v2
         with:
-          # Required, workflow file name or ID
-          workflow: macos.yml
-          commit: ${{github.sha}}
-          # Optional, directory where to extract artifact
+          submodules: false
+      - name: Download wheels
+        uses: actions/download-artifact@v2
+        # See https://github.com/dawidd6/action-download-artifact for more
+        # flexible artifact download options
+        with:
           path: open3d_wheels
-          # Optional, defaults to current repo
-          repo: ${{github.repository}}
+
       - name: Set up Python 3.5
         uses: actions/setup-python@v2
         with:

@@ -5,7 +5,7 @@ set -euo pipefail
 # The following environment variables are required:
 SHARED=${SHARED:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)}    # POSIX: MacOS + Linux
-if [ -z "$BUILD_CUDA_MODULE" ] ; then
+if [ -z "${BUILD_CUDA_MODULE:+x}" ] ; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         BUILD_CUDA_MODULE=ON
     else
