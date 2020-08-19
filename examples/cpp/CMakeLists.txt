@@ -9,8 +9,9 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
     endforeach()
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
-            FOLDER "examples/cpp/"
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples")
+        FOLDER "examples/cpp/"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples"
+    )
 endmacro(EXAMPLE_CPP)
 
 EXAMPLE_CPP(CameraPoseTrajectory      ${CMAKE_PROJECT_NAME})
@@ -27,23 +28,10 @@ EXAMPLE_CPP(ISSKeypoints              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(LineSet                   ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Log                       ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(OdometryRGBD              ${CMAKE_PROJECT_NAME})
-if (WITH_OPENMP)
-    EXAMPLE_CPP(OpenMP                ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
-endif (WITH_OPENMP)
 EXAMPLE_CPP(PCDFileFormat             ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(PointCloud                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(PoseGraph                 ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(ProgramOptions            ${CMAKE_PROJECT_NAME})
-if (BUILD_LIBREALSENSE)
-    EXAMPLE_CPP(RealSense             ${CMAKE_PROJECT_NAME} ${LIBREALSENSE_TARGET})
-endif (BUILD_LIBREALSENSE)
-
-if (BUILD_AZURE_KINECT)
-    EXAMPLE_CPP(AzureKinectRecord     ${CMAKE_PROJECT_NAME} ${K4A_TARGET})
-    EXAMPLE_CPP(AzureKinectMKVReader  ${CMAKE_PROJECT_NAME} ${JSONCPP_TARGET})
-    EXAMPLE_CPP(AzureKinectViewer     ${CMAKE_PROJECT_NAME} ${K4A_TARGET})
-endif (BUILD_AZURE_KINECT)
-
 EXAMPLE_CPP(RegistrationRANSAC        ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(RGBDOdometry              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(TriangleMesh              ${CMAKE_PROJECT_NAME})
@@ -52,3 +40,17 @@ EXAMPLE_CPP(ViewDistances             ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(ViewPCDMatch              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Visualizer                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
+
+if(WITH_OPENMP)
+    EXAMPLE_CPP(OpenMP                ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
+endif()
+
+if(BUILD_LIBREALSENSE)
+    EXAMPLE_CPP(RealSense             ${CMAKE_PROJECT_NAME} ${LIBREALSENSE_TARGET})
+endif()
+
+if(BUILD_AZURE_KINECT)
+    EXAMPLE_CPP(AzureKinectRecord     ${CMAKE_PROJECT_NAME} ${K4A_TARGET})
+    EXAMPLE_CPP(AzureKinectMKVReader  ${CMAKE_PROJECT_NAME} ${JSONCPP_TARGET})
+    EXAMPLE_CPP(AzureKinectViewer     ${CMAKE_PROJECT_NAME} ${K4A_TARGET})
+endif()
