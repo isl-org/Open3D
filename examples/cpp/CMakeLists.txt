@@ -12,6 +12,12 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
         FOLDER "examples/cpp/"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples"
     )
+
+    if(NOT BUILD_EXAMPLES)
+        set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
+            EXCLUDE_FROM_ALL TRUE
+        )
+    endif()
 endmacro(EXAMPLE_CPP)
 
 EXAMPLE_CPP(CameraPoseTrajectory      ${CMAKE_PROJECT_NAME})
