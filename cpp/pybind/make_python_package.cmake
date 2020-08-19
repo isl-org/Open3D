@@ -15,8 +15,30 @@ file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
 
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 #    Optionally other modules e.g. open3d_tf_ops.so may be included.
-list( GET COMPILED_MODULE_PATH_LIST 0 PYTHON_COMPILED_MODULE_PATH )
+list(POP_FRONT COMPILED_MODULE_PATH_LIST PYTHON_COMPILED_MODULE_PATH )
 get_filename_component(PYTHON_COMPILED_MODULE_NAME ${PYTHON_COMPILED_MODULE_PATH} NAME)
+
+# For CUDA+CPU package, copy multiple pybind*.so compiled modules in separate
+# architecture folders
+
+get_filename_component(PYTHON_COMPILED_MODULE_DIR
+    ${PYTHON_COMPILED_MODULE_PATH} DIRECTORY)
+message(STATUS "Copying ${PYTHON_COMPILED_MODULE_DIR} to ${PYTHON_PACKAGE_DST_DIR}/open3d")
+file(COPY ${PYTHON_COMPILED_MODULE_DIR}
+    DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d)
+if (${PYTHON_COMPILED_MODULE_DIR} MATCHES ".*/cuda")
+    string(REPLACE "/cuda" "/cpu" PYTHON_COMPILED_MODULE_DIR2
+        ${PYTHON_COMPILED_MODULE_DIR})
+else()
+    string(REPLACE "/cpu" "/cuda" PYTHON_COMPILED_MODULE_DIR2
+        ${PYTHON_COMPILED_MODULE_DIR})
+endif()
+if(EXISTS ${PYTHON_COMPILED_MODULE_DIR2})
+    message(STATUS "Copying ${PYTHON_COMPILED_MODULE_DIR2} to ${PYTHON_PACKAGE_DST_DIR}/open3d")
+    file(COPY ${PYTHON_COMPILED_MODULE_DIR2}
+        DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d)
+endif()
+
 file(COPY ${COMPILED_MODULE_PATH_LIST}
      DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d)
 

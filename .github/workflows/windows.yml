@@ -42,13 +42,6 @@ jobs:
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
           cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
-      - name: Cache pip
-        uses: actions/cache@v2
-        with:
-          path: ~\AppData\Local\pip\Cache
-          key: ${{ runner.os }}-pip
-          restore-keys: |
-            ${{ runner.os }}-pip
 
       - name: Install Python package
         run: |
@@ -88,13 +81,6 @@ jobs:
           mkdir build
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ env.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ env.static_runtime }} ..
-      - name: Cache pip
-        uses: actions/cache@v2
-        with:
-          path: ~\AppData\Local\pip\Cache
-          key: ${{ runner.os }}-pip-${{ matrix.python_version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
       - name: Build Python package
         run: |
           pip install --upgrade pip
@@ -103,13 +89,62 @@ jobs:
           cmake --build . --config ${{ env.CONFIG }} --target install-pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "::set-env name=PIP_PKG_NAME::$PIP_PKG_NAME"
-      - name: Test Python package
-        run: |
-          python -c "import open3d; print(open3d)"
-          python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
       - name: Upload wheel
         uses: actions/upload-artifact@v2
         with:
           name: ${{ env.PIP_PKG_NAME }}
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
+
+  test-windows-wheel:
+    name: Test windows wheel
+    runs-on: windows-latest
+    needs: [build-windows-wheel]
+    steps:
+      - name: Download wheel
+        uses: dawidd6/action-download-artifact@v2
+        # https://github.com/dawidd6/action-download-artifact
+        with:
+          # Required, workflow file name or ID
+          workflow: windows.yml
+          commit: ${{github.sha}}
+          # Optional, directory where to extract artifact
+          path: open3d_wheels
+          # Optional, defaults to current repo
+          repo: ${{github.repository}}
+      - name: Set up Python 3.5
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.5
+      - name: Test Python 3.5 package
+        run: |
+          python3.5 -m pip install open3d_wheels/open3d*cp35*/open3d*cp35*.whl
+          python3.5 -c "import open3d; print(open3d)"
+          python3.5 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Test Python 3.6 package
+        run: |
+          python3.6 -m pip install open3d_wheels/open3d*cp36*/open3d*cp36*.whl
+          python3.6 -c "import open3d; print(open3d)"
+          python3.6 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Test Python 3.7 package
+        run: |
+          python3.7 -m pip install open3d_wheels/open3d*cp37*/open3d*cp37*.whl
+          python3.7 -c "import open3d; print(open3d)"
+          python3.7 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Test Python 3.8 package
+        run: |
+          python3.8 -m pip install open3d_wheels/open3d*cp38*/open3d*cp38*.whl
+          python3.8 -c "import open3d; print(open3d)"
+          python3.8 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"

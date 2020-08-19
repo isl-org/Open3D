@@ -1,17 +1,31 @@
 import open3d as o3d
 import numpy as np
 
-from open3d.pybind.core import Dtype
-from open3d.pybind.core import Device
-from open3d.pybind.core import DtypeUtil
-from open3d.pybind.core import cuda
-from open3d.pybind.core import NoneType
-from open3d.pybind.core import TensorList
-from open3d.pybind.core import matmul as pybind_matmul
-from open3d.pybind.core import lstsq as pybind_lstsq
-from open3d.pybind.core import solve as pybind_solve
-from open3d.pybind.core import inv as pybind_inv
-from open3d.pybind.core import svd as pybind_svd
+
+if o3d.__cuda__:
+    from open3d.cuda.pybind.core import (Dtype,
+                                         Device,
+                                         DtypeUtil,
+                                         cuda,
+                                         NoneType,
+                                         TensorList,
+                                         matmul as pybind_matmul,
+                                         lstsq as pybind_lstsq,
+                                         solve as pybind_solve,
+                                         inv as pybind_inv,
+                                         svd as pybind_svd)
+else:
+    from open3d.cpu.pybind.core import (Dtype,
+                                        Device,
+                                        DtypeUtil,
+                                        cuda,
+                                        NoneType,
+                                        TensorList,
+                                        matmul as pybind_matmul,
+                                        lstsq as pybind_lstsq,
+                                        solve as pybind_solve,
+                                        inv as pybind_inv,
+                                        svd as pybind_svd)
 
 none = NoneType()
 

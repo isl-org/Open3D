@@ -10,9 +10,6 @@ if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     BUILD_PYTORCH_OPS="OFF"
 fi
 
-echo "$rj_startts StartJob ReportInit"
-echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
-
 reportJobStart "Installing Python unit test dependencies"
 date
 if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
@@ -31,30 +28,7 @@ fi
 echo "using cmake: $(which cmake)"
 cmake --version
 
-build_all
-
-# skip unit tests if built with CUDA, unless system contains Nvidia GPUs
-if [ "$BUILD_CUDA_MODULE" == "OFF" ] || nvidia-smi -L | grep -q GPU ; then
-    date
-    echo "try importing Open3D python package"
-    test_wheel
-    echo "running Open3D unit tests..."
-    run_unit_tests
-    echo "running Open3D python tests..."
-    date
-    run_benchmarks
-    echo
-fi
-
-reportJobStart "test build C++ example"
-echo "test building a C++ example with installed Open3D..."
-date
-[ "$BUILD_CUDA_MODULE" == "OFF" ] && runExample=ON || runExample=OFF
-test_cpp_example "$runExample"
-echo
-
-echo "test uninstalling Open3D..."
-date
-make uninstall
+reportJobStart "Building Open3D wheel"
+build_wheel
 
 reportJobFinishSession
