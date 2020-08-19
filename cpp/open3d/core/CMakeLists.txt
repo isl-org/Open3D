@@ -60,6 +60,10 @@ set(CORE_CUDA_SRC
     MemoryManagerCUDA.cu
 )
 
+set(CORE_NN_SRC
+    nn/NanoFlann.cpp
+)
+
 if(BUILD_CUDA_MODULE)
     set(ALL_CORE_SRC
         ${CORE_SRC}
@@ -68,14 +72,18 @@ if(BUILD_CUDA_MODULE)
         ${LINALG_CUDA_SRC}
         ${KERNEL_SRC}
         ${KERNEL_CUDA_SRC}
+        ${CORE_NN_SRC}
     )
 else()
   set(ALL_CORE_SRC
         ${CORE_SRC}
         ${LINALG_SRC}
         ${KERNEL_SRC}
+        ${CORE_NN_SRC}
     )
 endif()
+
+find_package(nanoflann REQUIRED)
 
 # Create object library
 add_library(core OBJECT ${ALL_CORE_SRC})
@@ -83,6 +91,8 @@ open3d_set_global_properties(core)
 open3d_link_3rdparty_libraries(core)
 open3d_show_and_abort_on_warning(core)
 
+target_include_directories(core SYSTEM PRIVATE ${nanoflann_INCLUDE_DIR})
+
 if(BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-  endif()
+endif()

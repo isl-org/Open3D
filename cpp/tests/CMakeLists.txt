@@ -40,7 +40,10 @@ else()
 endif()
 
 find_package(Threads)
+find_package(nanoflann REQUIRED)
+
 target_link_libraries(tests PRIVATE Threads::Threads ${CMAKE_PROJECT_NAME} ${JSONCPP_TARGET} ${GOOGLETEST_TARGET})
+target_include_directories(tests PRIVATE ${nanoflann_INCLUDE_DIR})
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
 
