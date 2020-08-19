@@ -64,9 +64,21 @@ if(BUILD_AZURE_KINECT)
     EXAMPLE_CPP(AzureKinectViewer     ${CMAKE_PROJECT_NAME} ${K4A_TARGET})
 endif()
 
+# add_custom_target(build-examples-iteratively
+#     COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --verbose --target CameraPoseTrajectory --parallel ${NPROC}
+#     COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/CameraPoseTrajectory
+#     COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --verbose --target ColorMapOptimization --parallel ${NPROC}
+#     COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/ColorMapOptimization
+# )
+
+
+set(EXAMPLE_TARGETS
+    ColorMapOptimization
+    CameraPoseTrajectory
+)
+
 add_custom_target(build-examples-iteratively
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --verbose --target CameraPoseTrajectory --parallel ${NPROC}
-    COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/CameraPoseTrajectory
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --verbose --target ColorMapOptimization --parallel ${NPROC}
-    COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/ColorMapOptimization
+    COMMAND ${CMAKE_COMMAND}
+    -DEXAMPLE_TARGETS="${EXAMPLE_TARGETS}"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/iterative_build_examples.cmake
 )
