@@ -1187,14 +1187,15 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
         case FILE_OPEN: {
             auto dlg = std::make_shared<gui::FileDialog>(
                     gui::FileDialog::Mode::OPEN, "Open Geometry", GetTheme());
-            dlg->AddFilter(".ply .stl .obj .off .gltf .glb",
-                           "Triangle mesh files (.ply, .stl, .obj, .off, "
+            dlg->AddFilter(".ply .stl .fbx .obj .off .gltf .glb",
+                           "Triangle mesh files (.ply, .stl, .fbx, .obj, .off, "
                            ".gltf, .glb)");
             dlg->AddFilter(".xyz .xyzn .xyzrgb .ply .pcd .pts",
                            "Point cloud files (.xyz, .xyzn, .xyzrgb, .ply, "
                            ".pcd, .pts)");
             dlg->AddFilter(".ply", "Polygon files (.ply)");
             dlg->AddFilter(".stl", "Stereolithography files (.stl)");
+            dlg->AddFilter(".fbx", "Autodesk Filmbox files (.fbx)");
             dlg->AddFilter(".obj", "Wavefront OBJ files (.obj)");
             dlg->AddFilter(".off", "Object file format (.off)");
             dlg->AddFilter(".gltf", "OpenGL transfer files (.gltf)");
