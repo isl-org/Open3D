@@ -34,6 +34,7 @@
 
 #ifdef USE_OPENBLAS
 #define lapack_int int64_t
+#define MKL_INT int64_t
 #include <cblas.h>
 #include <lapacke.h>
 #else
