@@ -121,6 +121,7 @@ jobs:
           python3.5 -m pip install open3d_wheels/open3d*cp35*/open3d*cp35*.whl
           python3.5 -c "import open3d; print(open3d)"
           python3.5 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+          python3.5 -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
       - name: Set up Python 3.6
         uses: actions/setup-python@v2
         with:
@@ -130,6 +131,7 @@ jobs:
           python3.6 -m pip install open3d_wheels/open3d*cp36*/open3d*cp36*.whl
           python3.6 -c "import open3d; print(open3d)"
           python3.6 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+          python3.6 -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
       - name: Set up Python 3.7
         uses: actions/setup-python@v2
         with:
@@ -139,6 +141,7 @@ jobs:
           python3.7 -m pip install open3d_wheels/open3d*cp37*/open3d*cp37*.whl
           python3.7 -c "import open3d; print(open3d)"
           python3.7 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+          python3.7 -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
@@ -148,3 +151,4 @@ jobs:
           python3.8 -m pip install open3d_wheels/open3d*cp38*/open3d*cp38*.whl
           python3.8 -c "import open3d; print(open3d)"
           python3.8 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+          python3.8 -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"

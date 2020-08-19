@@ -150,27 +150,29 @@ build_wheel() {
     echo
     reportRun make VERBOSE=1 -j"$NPROC" pybind
 
-    echo
-    echo Building with CUDA...
-    date
-    rm -r "${rebuild_list[@]}"
-    cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
-        -DBUILD_CUDA_MODULE=ON \
-        -DCUDA_ARCH=BasicPTX \
-        -DBUILD_TENSORFLOW_OPS=ON \
-        -DBUILD_PYTORCH_OPS=OFF \       # TODO: PyTorch Ops is OFF with CUDA
-        -DBUILD_RPC_INTERFACE=ON \
-        -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR" \
-        -DPYTHON_EXECUTABLE="$(which python)" \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_UNIT_TESTS=OFF \
-        -DBUILD_BENCHMARKS=OFF \
-    )
-    reportRun cmake "${cmakeOptions[@]}" ..
+    if [ "$BUILD_CUDA_MODULE" == ON ] ; then
+        echo
+        echo Building with CUDA...
+        date
+        rm -r "${rebuild_list[@]}"
+        cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
+            -DBUILD_CUDA_MODULE=ON \
+            -DCUDA_ARCH=BasicPTX \
+            -DBUILD_TENSORFLOW_OPS=ON \
+            -DBUILD_PYTORCH_OPS=OFF \       # TODO: PyTorch Ops is OFF with CUDA
+            -DBUILD_RPC_INTERFACE=ON \
+            -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR" \
+            -DPYTHON_EXECUTABLE="$(which python)" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_UNIT_TESTS=OFF \
+            -DBUILD_BENCHMARKS=OFF \
+        )
+        reportRun cmake "${cmakeOptions[@]}" ..
+    fi
     echo
     echo "Building Open3D wheel..."
     date
-    #reportRun make VERBOSE=1 -j"$NPROC" pip-package
+    reportRun make VERBOSE=1 -j"$NPROC" pip-package
 }
 
 install_wheel() {
