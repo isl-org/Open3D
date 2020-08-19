@@ -36,7 +36,7 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-void TestMKLIntegration() {
+void TestLinalgIntegration() {
     // Blas
     std::vector<double> A{1.0, 2.0, 1.0, -3.0, 4.0, -1.0};
     std::vector<double> B{1.0, 2.0, 1.0, -3.0, 4.0, -1.0};
