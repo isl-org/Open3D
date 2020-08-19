@@ -43,8 +43,8 @@ jobs:
         cmake --build . --config ${{ matrix.config }} && .\${{ matrix.config }}\TestVisualizer.exe
     - name: Install Python package
       run: |
-        pip install --upgrade pip
-        pip install -U wheel
+        pip install -U pip --user
+        pip install -U wheel --user
         cd build
         cmake --build . --config ${{ matrix.config }} --target install-pip-package
     - name: Import python package
