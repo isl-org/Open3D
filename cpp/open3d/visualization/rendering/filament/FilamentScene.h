@@ -240,8 +240,9 @@ private:
     };
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
 
-    RenderableGeometry* GetGeometry(const std::string& object_name,
-                                    bool warn_if_not_found = true);
+    std::vector<RenderableGeometry*> GetGeometry(const std::string& object_name,
+                                                 bool warn_if_not_found = true);
+    bool GeometryIsModel(const std::string& object_name);
     LightEntity* GetLightInternal(const std::string& light_name,
                                   bool warn_if_not_found = true);
     void OverrideMaterialInternal(RenderableGeometry* geom,
@@ -258,6 +259,8 @@ private:
 
     std::unordered_map<std::string, RenderableGeometry> geometries_;
     std::unordered_map<std::string, LightEntity> lights_;
+    std::unordered_map<std::string, std::vector<std::string>> model_geometries_;
+
     std::string ibl_name_;
     bool ibl_enabled_ = false;
     bool skybox_enabled_ = false;

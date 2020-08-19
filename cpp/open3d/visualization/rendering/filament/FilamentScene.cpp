@@ -252,47 +252,60 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const TriangleMeshModel& model) {
-    if (geometries_.count(object_name) > 0) {
-        utility::LogWarning(
-                "Geometry {} has already been added to scene graph.",
-                object_name);
+    if (geometries_.count(object_name) > 0 ||
+        model_geometries_.count(object_name) > 0) {
+        utility::LogWarning("Model {} has already been added to scene graph.",
+                            object_name);
         return false;
     }
 
+    std::vector<std::string> mesh_object_names;
     for (const auto& mesh : model.meshes_) {
         auto& mat = model.materials_[mesh.material_idx];
         std::string derived_name(object_name + ":" + mesh.mesh_name);
         AddGeometry(derived_name, *(mesh.mesh), mat);
+        mesh_object_names.push_back(derived_name);
     }
+    model_geometries_[object_name] = mesh_object_names;
 
     return true;
 }
 
 void FilamentScene::RemoveGeometry(const std::string& object_name) {
-    auto geom = GetGeometry(object_name, false);
-    if (geom) {
-        scene_->remove(geom->filament_entity);
-        geom->ReleaseResources(engine_, resource_mgr_);
-        geometries_.erase(object_name);
+    auto geoms = GetGeometry(object_name, false);
+    if (!geoms.empty()) {
+        for (auto* g : geoms) {
+            scene_->remove(g->filament_entity);
+            g->ReleaseResources(engine_, resource_mgr_);
+            geometries_.erase(g->name);
+        }
+    }
+
+    if (GeometryIsModel(object_name)) {
+        model_geometries_.erase(object_name);
     }
 }
 
 void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
-    auto geom = GetGeometry(object_name);
-    if (geom && geom->visible != show) {
-        geom->visible = show;
-        if (show) {
-            scene_->addEntity(geom->filament_entity);
-        } else {
-            scene_->remove(geom->filament_entity);
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
+        if (g->visible != show) {
+            g->visible = show;
+            if (show) {
+                scene_->addEntity(g->filament_entity);
+            } else {
+                scene_->remove(g->filament_entity);
+            }
         }
     }
 }
 
 bool FilamentScene::GeometryIsVisible(const std::string& object_name) {
-    auto geom = GetGeometry(object_name);
-    if (geom) {
-        return geom->visible;
+    auto geoms = GetGeometry(object_name);
+    if (!geoms.empty()) {
+        // NOTE: all meshes of model share same visibility so we only need to
+        // check first entry of this array
+        return geoms[0]->visible;
     } else {
         return false;
     }
@@ -315,9 +328,9 @@ FilamentScene::GetGeometryTransformInstance(RenderableGeometry* geom) {
 
 void FilamentScene::SetGeometryTransform(const std::string& object_name,
                                          const Transform& transform) {
-    auto geom = GetGeometry(object_name);
-    if (geom) {
-        auto itransform = GetGeometryTransformInstance(geom);
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
+        auto itransform = GetGeometryTransformInstance(g);
         if (itransform.isValid()) {
             const auto& ematrix = transform.matrix();
             auto& transform_mgr = engine_.getTransformManager();
@@ -331,9 +344,9 @@ void FilamentScene::SetGeometryTransform(const std::string& object_name,
 FilamentScene::Transform FilamentScene::GetGeometryTransform(
         const std::string& object_name) {
     Transform etransform;
-    auto geom = GetGeometry(object_name);
-    if (geom) {
-        auto itransform = GetGeometryTransformInstance(geom);
+    auto geoms = GetGeometry(object_name);
+    if (!geoms.empty()) {
+        auto itransform = GetGeometryTransformInstance(geoms[0]);
         if (itransform.isValid()) {
             auto& transform_mgr = engine_.getTransformManager();
             auto ftransform = transform_mgr.getTransform(itransform);
@@ -346,21 +359,21 @@ FilamentScene::Transform FilamentScene::GetGeometryTransform(
 geometry::AxisAlignedBoundingBox FilamentScene::GetGeometryBoundingBox(
         const std::string& object_name) {
     geometry::AxisAlignedBoundingBox result;
-    auto geom = GetGeometry(object_name);
-    if (geom) {
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
         auto& renderable_mgr = engine_.getRenderableManager();
-        auto inst = renderable_mgr.getInstance(geom->filament_entity);
+        auto inst = renderable_mgr.getInstance(g->filament_entity);
         auto box = renderable_mgr.getAxisAlignedBoundingBox(inst);
 
         auto& transform_mgr = engine_.getTransformManager();
-        auto itransform = transform_mgr.getInstance(geom->filament_entity);
+        auto itransform = transform_mgr.getInstance(g->filament_entity);
         auto transform = transform_mgr.getWorldTransform(itransform);
 
         box = rigidTransform(box, transform);
 
         auto min = box.center - box.halfExtent;
         auto max = box.center + box.halfExtent;
-        result = {{min.x, min.y, min.z}, {max.x, max.y, max.z}};
+        result += {{min.x, min.y, min.z}, {max.x, max.y, max.z}};
     }
     return result;
 }
@@ -368,11 +381,11 @@ geometry::AxisAlignedBoundingBox FilamentScene::GetGeometryBoundingBox(
 void FilamentScene::GeometryShadows(const std::string& object_name,
                                     bool cast_shadows,
                                     bool receive_shadows) {
-    auto geom = GetGeometry(object_name);
-    if (geom) {
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
         auto& renderable_mgr = engine_.getRenderableManager();
         filament::RenderableManager::Instance inst =
-                renderable_mgr.getInstance(geom->filament_entity);
+                renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setCastShadows(inst, cast_shadows);
         renderable_mgr.setReceiveShadows(inst, receive_shadows);
     }
@@ -531,9 +544,9 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
 
 void FilamentScene::OverrideMaterial(const std::string& object_name,
                                      const Material& material) {
-    auto geom = GetGeometry(object_name);
-    if (geom) {
-        OverrideMaterialInternal(geom, material);
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
+        OverrideMaterialInternal(g, material);
     }
 }
 
@@ -891,17 +904,38 @@ void FilamentScene::RenderToImage(
     renderer_.RenderToImage(width, height, view, this, callback);
 }
 
-FilamentScene::RenderableGeometry* FilamentScene::GetGeometry(
+std::vector<FilamentScene::RenderableGeometry*> FilamentScene::GetGeometry(
         const std::string& object_name, bool warn_if_not_found) {
-    auto geom_entry = geometries_.find(object_name);
-    if (geom_entry == geometries_.end()) {
-        if (warn_if_not_found) {
-            utility::LogWarning("Geometry {} is not in the scene graph",
-                                object_name);
+    std::vector<RenderableGeometry*> geoms;
+    if (GeometryIsModel(object_name)) {
+        for (const auto& name : model_geometries_[object_name]) {
+            auto geom_entry = geometries_.find(name);
+            if (geom_entry == geometries_.end()) {
+                if (warn_if_not_found) {
+                    utility::LogWarning("Geometry {} is not in the scene graph",
+                                        name);
+                }
+            } else {
+                geoms.push_back(&geom_entry->second);
+            }
         }
-        return nullptr;
+    } else {
+        auto geom_entry = geometries_.find(object_name);
+        if (geom_entry == geometries_.end()) {
+            if (warn_if_not_found) {
+                utility::LogWarning("Geometry {} is not in the scene graph",
+                                    object_name);
+            }
+        } else {
+            geoms.push_back(&geom_entry->second);
+        }
     }
-    return &(geom_entry->second);
+
+    return geoms;
+}
+
+bool FilamentScene::GeometryIsModel(const std::string& object_name) {
+    return model_geometries_.count(object_name) > 0;
 }
 
 FilamentScene::LightEntity* FilamentScene::GetLightInternal(
