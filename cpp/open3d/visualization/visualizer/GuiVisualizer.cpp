@@ -969,11 +969,12 @@ void GuiVisualizer::SetGeometry(
         }
 
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
-        scene3d->AddGeometry(g3, loaded_material);
+        //scene3d->AddGeometry(g3, loaded_material);
+        scene3d->AddModel(test_model);
         bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
-        // scene3d->GetScene()->ShowGeometry("__model__", false);
-        scene3d->GetScene()->RemoveGeometry("__model__");
-        scene3d->GetScene()->AddGeometry("_the_model_", test_model);
+        // // scene3d->GetScene()->ShowGeometry("__model__", false);
+        // scene3d->GetScene()->RemoveGeometry("__model__");
+        // scene3d->GetScene()->AddGeometry("_the_model_", test_model);
 
         if (material_is_loaded) {
             impl_->settings_.have_loaded_material_ = true;

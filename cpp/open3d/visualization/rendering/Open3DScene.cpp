@@ -202,16 +202,28 @@ void Open3DScene::AddGeometry(
     RecreateAxis(scene, bounds_, false);
 }
 
+void Open3DScene::AddModel(const TriangleMeshModel& model) {
+    auto scene = renderer_.GetScene(scene_);
+    if (scene->AddGeometry(kModelObjectName, model)) {
+        model_name_ = kModelObjectName;
+        bounds_ = scene->GetGeometryBoundingBox(model_name_);
+        scene->ShowGeometry(model_name_, true);
+        fast_model_name_ = model_name_;
+    }
+
+    RecreateAxis(scene, bounds_, false);
+}
+
 void Open3DScene::UpdateMaterial(const Material& mat) {
     if (model_name_.empty()) {
         return;
     }
 
-    auto scene = renderer_.GetScene(scene_);
-    scene->OverrideMaterial(model_name_, mat);
-    if (model_name_ != fast_model_name_) {
-        scene->OverrideMaterial(fast_model_name_, mat);
-    }
+    // auto scene = renderer_.GetScene(scene_);
+    // scene->OverrideMaterial(model_name_, mat);
+    // if (model_name_ != fast_model_name_) {
+    //     scene->OverrideMaterial(fast_model_name_, mat);
+    // }
 }
 
 std::vector<std::string> Open3DScene::GetGeometries() {
