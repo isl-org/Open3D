@@ -1,6 +1,8 @@
 include(ProcessorCount)
 ProcessorCount(NPROC)
 
+set(EXAMPLE_BIN_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples")
+
 macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
     add_executable(${EXAMPLE_CPP_NAME} "${EXAMPLE_CPP_NAME}.cpp")
     open3d_show_and_abort_on_warning(${EXAMPLE_CPP_NAME})
@@ -13,7 +15,7 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
         FOLDER "examples/cpp/"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples"
+        RUNTIME_OUTPUT_DIRECTORY "${EXAMPLE_BIN_DIR}"
     )
 
     if(NOT BUILD_EXAMPLES)
@@ -21,6 +23,8 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
             EXCLUDE_FROM_ALL TRUE
         )
     endif()
+
+    list(APPEND EXAMPLE_TARGETS ${EXAMPLE_CPP_NAME})
 endmacro(EXAMPLE_CPP)
 
 EXAMPLE_CPP(CameraPoseTrajectory      ${CMAKE_PROJECT_NAME})
@@ -53,32 +57,21 @@ EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
 if(WITH_OPENMP)
     EXAMPLE_CPP(OpenMP                ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
 endif()
-
 if(BUILD_LIBREALSENSE)
     EXAMPLE_CPP(RealSense             ${CMAKE_PROJECT_NAME} ${LIBREALSENSE_TARGET})
 endif()
-
 if(BUILD_AZURE_KINECT)
     EXAMPLE_CPP(AzureKinectRecord     ${CMAKE_PROJECT_NAME} ${K4A_TARGET})
     EXAMPLE_CPP(AzureKinectMKVReader  ${CMAKE_PROJECT_NAME} ${JSONCPP_TARGET})
     EXAMPLE_CPP(AzureKinectViewer     ${CMAKE_PROJECT_NAME} ${K4A_TARGET})
 endif()
 
-# add_custom_target(build-examples-iteratively
-#     COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --verbose --target CameraPoseTrajectory --parallel ${NPROC}
-#     COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/CameraPoseTrajectory
-#     COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --verbose --target ColorMapOptimization --parallel ${NPROC}
-#     COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/ColorMapOptimization
-# )
-
-
-set(EXAMPLE_TARGETS
-    ColorMapOptimization
-    CameraPoseTrajectory
-)
-
+# build-examples-iteratively is used to conserve space at CI machine.
 add_custom_target(build-examples-iteratively
     COMMAND ${CMAKE_COMMAND}
     -DEXAMPLE_TARGETS="${EXAMPLE_TARGETS}"
+    -DCMAKE_BINARY_DIR="${CMAKE_BINARY_DIR}"
+    -DEXAMPLE_BIN_DIR="${EXAMPLE_BIN_DIR}"
+    -DNPROC="${NPROC}"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/iterative_build_examples.cmake
 )
