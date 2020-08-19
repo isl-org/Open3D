@@ -36,10 +36,6 @@
 namespace open3d {
 namespace core {
 
-static_assert(
-        sizeof(MKL_INT) == 8,
-        "MKL_INT must be 8 bytes: please link with MKL 64-bit int library.");
-
 template <typename scalar_t>
 inline void gemm_cpu(CBLAS_LAYOUT layout,
                      CBLAS_TRANSPOSE trans_A,
