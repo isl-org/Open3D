@@ -33,7 +33,6 @@ jobs:
       run: |
         cd build
         cmake --build . --parallel 2 --config ${{ matrix.config }} --target INSTALL
-        cmake --build . --parallel 2 --config ${{ matrix.config }} --target build-examples-iteratively
     - name: Linking to Open3D
       run: |
         cd docs\_static\C++
