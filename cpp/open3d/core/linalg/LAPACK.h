@@ -26,13 +26,8 @@
 
 #pragma once
 
-#ifdef BUILD_CUDA_MODULE
-#include <cublas_v2.h>
-#include <cusolverDn.h>
-#include <cusolver_common.h>
-#endif
-
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
+#include "open3d/core/linalg/LinalgHeadersCUDA.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {

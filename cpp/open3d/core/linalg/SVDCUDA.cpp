@@ -30,6 +30,7 @@
 #include "open3d/core/linalg/LAPACK.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 #include "open3d/core/linalg/SVD.h"
+
 namespace open3d {
 namespace core {
 
