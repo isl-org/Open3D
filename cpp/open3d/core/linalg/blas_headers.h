@@ -24,17 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/Kernel.h"
+// This file contains headers for BLAS/LAPACK implementations. Currently we
+// support int64_t interface of OpenBLAS or Intel MKL.
+//
+// For developers, please make sure that this file is not ultimately included in
+// Open3D.h.
 
-#include "pybind/core/core.h"
-#include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
+#pragma once
 
-namespace open3d {
-
-void pybind_core_kernel(py::module &m) {
-    py::module m_kernel = m.def_submodule("kernel");
-    m_kernel.def("test_int64_tegration", &core::kernel::TestMKLIntegration);
-}
-
-}  // namespace open3d
+#ifdef USE_OPENBLAS
+#define lapack_int int64_t
+#include <cblas.h>
+#include <lapacke.h>
+#else
+#include <mkl.h>
+static_assert(
+        sizeof(MKL_INT) == 8,
+        "MKL_INT must be 8 bytes: please link with MKL 64-bit int library.");
+#endif

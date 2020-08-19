@@ -944,31 +944,51 @@ if(BUILD_RPC_INTERFACE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MSGPACK_TARGET}")
 endif()
 
-# MKL, cuSOLVER, cuBLAS
-# We link MKL statically. For MKL link flags, refer to:
-# https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
-message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
-include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
-import_3rdparty_library(3rdparty_mkl
-    INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
-    LIB_DIR      ${STATIC_MKL_LIB_DIR}
-    LIBRARIES    ${STATIC_MKL_LIBRARIES}
-)
-set(MKL_TARGET "3rdparty_mkl")
-add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
-message(STATUS "STATIC_MKL_INCLUDE_DIR: ${STATIC_MKL_INCLUDE_DIR}")
-message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
-message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
-if(UNIX)
-    target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
-    target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
-    # cuSOLVER and cuBLAS
+if(USE_OPENBLAS)
+    # OpenBLAS, cuSOLVER, cuBLAS
+    message(STATUS "Building OpenBLAS from source")
+    include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
+    import_3rdparty_library(3rdparty_openblas
+        INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
+        LIB_DIR ${OPENBLAS_LIB_DIR}
+        LIBRARIES ${OPENBLAS_LIBRARIES}
+    )
+    set(OPENBLAS_TARGET "3rdparty_openblas")
+    add_dependencies(3rdparty_openblas ext_openblas)
+    target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads gfortran)
     if(BUILD_CUDA_MODULE)
-        target_link_libraries(3rdparty_mkl INTERFACE
-                              ${CUDA_cusolver_LIBRARY}
-                              ${CUDA_CUBLAS_LIBRARIES})
+        target_link_libraries(3rdparty_openblas INTERFACE
+                            ${CUDA_cusolver_LIBRARY}
+                            ${CUDA_CUBLAS_LIBRARIES})
     endif()
-elseif(MSVC)
-    target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
+else()
+    # MKL, cuSOLVER, cuBLAS
+    # We link MKL statically. For MKL link flags, refer to:
+    # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
+    message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
+    include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
+    import_3rdparty_library(3rdparty_mkl
+        INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
+        LIB_DIR      ${STATIC_MKL_LIB_DIR}
+        LIBRARIES    ${STATIC_MKL_LIBRARIES}
+    )
+    set(MKL_TARGET "3rdparty_mkl")
+    add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
+    message(STATUS "STATIC_MKL_INCLUDE_DIR: ${STATIC_MKL_INCLUDE_DIR}")
+    message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
+    message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
+    if(UNIX)
+        target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
+        target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+        # cuSOLVER and cuBLAS
+        if(BUILD_CUDA_MODULE)
+            target_link_libraries(3rdparty_mkl INTERFACE
+                                ${CUDA_cusolver_LIBRARY}
+                                ${CUDA_CUBLAS_LIBRARIES})
+        endif()
+    elseif(MSVC)
+        target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
+    endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
