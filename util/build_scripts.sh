@@ -5,7 +5,13 @@ set -euo pipefail
 # The following environment variables are required:
 SHARED=${SHARED:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)}    # POSIX: MacOS + Linux
-BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE:-ON}
+if [ -z "$BUILD_CUDA_MODULE" ] ; then
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        BUILD_CUDA_MODULE=ON
+    else
+        BUILD_CUDA_MODULE=OFF
+    fi
+fi
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE:-ON}
@@ -138,7 +144,7 @@ build_wheel() {
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
         -DBUILD_CUDA_MODULE=OFF \
         -DBUILD_TENSORFLOW_OPS=ON \
-        -DBUILD_PYTORCH_OPS=ON \
+        -DBUILD_PYTORCH_OPS=OFF \       # TODO: PyTorch Ops is OFF with CUDA
         -DBUILD_RPC_INTERFACE=ON \
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR" \
         -DPYTHON_EXECUTABLE="$(which python)" \

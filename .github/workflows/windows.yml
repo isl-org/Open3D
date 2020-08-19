@@ -30,11 +30,12 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
       - name: Build
         run: |
           cd build
           cmake --build . --parallel 2 --config ${{ matrix.CONFIG }} --target INSTALL
+          cmake --build . --parallel 2 --config ${{ matrix.CONFIG }} --target build-examples-iteratively
       - name: Linking to Open3D
         run: |
           cd docs\_static\C++
@@ -42,11 +43,10 @@ jobs:
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
           cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
-
       - name: Install Python package
         run: |
-          pip install --upgrade pip
-          pip install -U wheel
+          python -m pip install --upgrade pip
+          python -m pip install -U wheel
           cd build
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
@@ -63,10 +63,6 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.5, 3.6, 3.7, 3.8]
-    env:
-      shared: OFF
-      static_runtime: ON
-      CONFIG: Release
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -80,13 +76,13 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ env.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ env.static_runtime }} ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON ..
       - name: Build Python package
         run: |
-          pip install --upgrade pip
-          pip install -U wheel
+          python -m pip install --upgrade pip
+          python -m pip install -U wheel
           cd build
-          cmake --build . --config ${{ env.CONFIG }} --target install-pip-package
+          cmake --build . --config Release --target install-pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "::set-env name=PIP_PKG_NAME::$PIP_PKG_NAME"
       - name: Upload wheel
