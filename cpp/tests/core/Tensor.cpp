@@ -216,7 +216,7 @@ TEST_P(TensorPermuteDevicePairs, IndexSetFillFancyObject) {
     std::tie(dst_device, src_device) = GetParam();
     core::Tensor dst_t(std::vector<TestObject>(2 * 3 * 4, 0), {2, 3, 4},
                        core::Dtype::Object, dst_device);
-    core::Tensor src_t(std::vector<TestObject>({1}), core::SizeVector({}),
+    core::Tensor src_t(std::vector<TestObject>{1}, core::SizeVector({}),
                        core::Dtype::Object, src_device);
 
     // t[:, [1, 2], [1, 2]]

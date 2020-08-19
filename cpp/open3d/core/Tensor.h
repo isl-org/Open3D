@@ -1055,7 +1055,7 @@ protected:
     /// Function to return byte size. Note we cannot directly use sizeof(T),
     /// since type cast might happen for scalar types.
     template <typename T>
-    int64_t inline TemplateByteSize(Dtype dtype) {
+    static int64_t inline TemplateByteSize(Dtype dtype) {
         return DtypeUtil::IsObject(dtype) ? sizeof(T)
                                           : DtypeUtil::ByteSize(dtype);
     }
