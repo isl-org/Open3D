@@ -28,7 +28,7 @@
 #include <stdlib.h>
 
 #include "open3d/core/linalg/Inverse.h"
-#include "open3d/core/linalg/LAPACK.h"
+#include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 
 namespace open3d {
