@@ -66,12 +66,13 @@ if(BUILD_AZURE_KINECT)
     EXAMPLE_CPP(AzureKinectViewer     ${CMAKE_PROJECT_NAME} ${K4A_TARGET})
 endif()
 
-# build-examples-iteratively is used to conserve space at CI machine.
+# build-examples-iteratively is used to conserve space on CI machine.
 add_custom_target(build-examples-iteratively
     COMMAND ${CMAKE_COMMAND}
     -DEXAMPLE_TARGETS="${EXAMPLE_TARGETS}"
     -DCMAKE_BINARY_DIR="${CMAKE_BINARY_DIR}"
     -DEXAMPLE_BIN_DIR="${EXAMPLE_BIN_DIR}"
+    -DCMAKE_BUILD_TYPE="$<$<CONFIG:Release>:Release>$<$<CONFIG:Debug>:Debug>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:MinSizeRel>:MinSizeRel>"
     -DNPROC="${NPROC}"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/iterative_build_examples.cmake
 )
