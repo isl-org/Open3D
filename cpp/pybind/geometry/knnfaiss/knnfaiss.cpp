@@ -27,8 +27,9 @@
 #include "open3d/geometry/KnnFaiss.h"
 
 #include "pybind/docstring.h"
-#include "pybind/geometry/geometry.h"
-#include "pybind/geometry/geometry_trampoline.h"
+#include "pybind/geometry/knnfaiss/knnfaiss.h"
+//#include "pybind/geometry/geometry.h"
+//#include "pybind/geometry/geometry_trampoline.h"
 
 namespace open3d {
 
@@ -62,57 +63,61 @@ void pybind_knnfaiss(py::module &m) {
             .def("set_feature", &geometry::KnnFaiss::SetFeature,
                  "Sets the data for the Faiss Index from the feature data.",
                  "feature"_a)
-            .def("search_knn_vector_3d",
-                 [](const geometry::KnnFaiss &index,
-                    const Eigen::Vector3d &query, int knn) {
-                     std::vector<int64_t> indices;
-                     std::vector<float> distance2;
-                     int k = index.SearchKNN(query, knn, indices, distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_knn_vector_3d() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "knn"_a)
-            .def("search_radius_vector_3d",
-                 [](const geometry::KnnFaiss &index,
-                    const Eigen::Vector3d &query, float radius) {
-                     std::vector<int64_t> indices;
-                     std::vector<float> distance2;
-                     int k = index.SearchRadius(query, radius, indices,
-                                                distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_radius_vector_3d() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "radius"_a)
-            .def("search_knn_vector_xd",
-                 [](const geometry::KnnFaiss &index,
-                    const Eigen::VectorXd &query, int knn) {
-                     std::vector<int64_t> indices;
-                     std::vector<float> distance2;
-                     int k = index.SearchKNN(query, knn, indices, distance2);
+            .def(
+                    "search_knn_vector_3d",
+                    [](const geometry::KnnFaiss &index,
+                       const Eigen::Vector3d &query, int knn) {
+                        std::vector<int64_t> indices;
+                        std::vector<float> distance2;
+                        int k = index.SearchKNN(query, knn, indices, distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_knn_vector_3d() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "knn"_a)
+            .def(
+                    "search_radius_vector_3d",
+                    [](const geometry::KnnFaiss &index,
+                       const Eigen::Vector3d &query, float radius) {
+                        std::vector<int64_t> indices;
+                        std::vector<float> distance2;
+                        int k = index.SearchRadius(query, radius, indices,
+                                                   distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_radius_vector_3d() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "radius"_a)
+            .def(
+                    "search_knn_vector_xd",
+                    [](const geometry::KnnFaiss &index,
+                       const Eigen::VectorXd &query, int knn) {
+                        std::vector<int64_t> indices;
+                        std::vector<float> distance2;
+                        int k = index.SearchKNN(query, knn, indices, distance2);
 
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_knn_vector_xd() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "knn"_a)
-            .def("search_radius_vector_xd",
-                 [](const geometry::KnnFaiss &index,
-                    const Eigen::VectorXd &query, float radius) {
-                     std::vector<int64_t> indices;
-                     std::vector<float> distance2;
-                     int k = index.SearchRadius(query, radius, indices,
-                                                distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_radius_vector_xd() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "radius"_a);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_knn_vector_xd() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "knn"_a)
+            .def(
+                    "search_radius_vector_xd",
+                    [](const geometry::KnnFaiss &index,
+                       const Eigen::VectorXd &query, float radius) {
+                        std::vector<int64_t> indices;
+                        std::vector<float> distance2;
+                        int k = index.SearchRadius(query, radius, indices,
+                                                   distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_radius_vector_xd() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "radius"_a);
     docstring::ClassMethodDocInject(m, "KnnFaiss", "search_knn_vector_3d",
                                     map_knn_faiss_method_docs);
     docstring::ClassMethodDocInject(m, "KnnFaiss", "search_knn_vector_xd",

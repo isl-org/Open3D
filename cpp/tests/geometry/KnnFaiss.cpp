@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 #include "open3d/geometry/KnnFaiss.h"
+
+#include "core/CoreTest.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-
-#include "core/CoreTest.h"
 #include "tests/UnitTest.h"
 
 using namespace Eigen;

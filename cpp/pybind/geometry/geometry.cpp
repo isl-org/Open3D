@@ -29,6 +29,7 @@
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
+#include "pybind/geometry/knnfaiss/knnfaiss.h"
 
 namespace open3d {
 
@@ -205,9 +206,6 @@ void pybind_geometry(py::module &m) {
     py::module m_submodule = m.def_submodule("geometry");
     pybind_geometry_classes(m_submodule);
     pybind_kdtreeflann(m_submodule);
-#ifdef BUILD_FAISS
-    pybind_knnfaiss(m_submodule);
-#endif
     pybind_pointcloud(m_submodule);
     pybind_keypoint(m_submodule);
     pybind_voxelgrid(m_submodule);
@@ -225,6 +223,10 @@ void pybind_geometry(py::module &m) {
     pybind_octree_methods(m_submodule);
     pybind_octree(m_submodule);
     pybind_boundingvolume(m_submodule);
+
+#ifdef BUILD_FAISS
+    pybind_knnfaiss(m_submodule);
+#endif
 }
 
 }  // namespace open3d

@@ -27,40 +27,10 @@
 import open3d as o3d
 import numpy as np
 import pytest
-
-try:
-    import torch
-    import torch.utils.dlpack
-except ImportError:
-    _torch_imported = False
-else:
-    _torch_imported = True
+import core.core_test_utils as core_test_utils
 
 
-def list_devices():
-    """
-    If Open3D is built with CUDA support:
-    - If cuda device is available, returns [Device("CPU:0"), Device("CUDA:0")].
-    - If cuda device is not available, returns [Device("CPU:0")].
-
-    If Open3D is built without CUDA support:
-    - returns [Device("CPU:0")].
-    """
-    devices = [o3d.core.Device("CPU:" + str(0))]
-    if _torch_imported and o3d._build_config['BUILD_CUDA_MODULE']:
-        if (o3d.core.cuda.device_count() != torch.cuda.device_count()):
-            raise RuntimeError(
-                "o3d.core.cuda.device_count() != torch.cuda.device_count(), "
-                "{} != {}".format(o3d.core.cuda.device_count(),
-                                  torch.cuda.device_count()))
-    else:
-        print("Warning: PyTorch is not imported")
-    if o3d.core.cuda.device_count() > 0:
-        devices.append(o3d.core.Device("CUDA:0"))
-    return devices
-
-
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", core_test_utils.list_devices())
 def test_tensor_constructor(device):
     print(device)
     dtype = o3d.core.Dtype.Int32
