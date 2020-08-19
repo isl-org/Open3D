@@ -58,7 +58,8 @@ namespace core {
         }                                                    \
     }()
 
-inline void OPEN3D_LAPACK_CHECK(MKL_INT info, const std::string& msg) {
+inline void OPEN3D_LAPACK_CHECK(OPEN3D_LINALG_INT info,
+                                const std::string& msg) {
     if (info < 0) {
         utility::LogError("{}: {}-th parameter is invalid.", msg, -info);
     } else if (info > 0) {
