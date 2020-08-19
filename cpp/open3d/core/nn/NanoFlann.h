@@ -99,6 +99,9 @@ public:
                                                     int knn);
 
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
+            const core::Tensor &query, double *radii);
+
+    std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
             const core::Tensor &query, double radius);
 
 protected:

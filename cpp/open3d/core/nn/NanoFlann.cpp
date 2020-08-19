@@ -113,7 +113,7 @@ std::pair<core::Tensor, core::Tensor> NanoFlann::SearchKnn(
 };
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
-        const core::Tensor &query, double radius) {
+        const core::Tensor &query, double *radii) {
     core::SizeVector shape = query.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
@@ -133,6 +133,7 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
     for (int i = 0; i < num_query; i++) {
         core::Tensor query_point = query[i];
         std::vector<double> query_vector = query_point.ToFlatVector<double>();
+        double radius = radii[i];
 
         nanoflann::SearchParams params;
         std::vector<std::pair<size_t, double>> ret_matches;
@@ -160,6 +161,17 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
     return std::make_tuple(indices, distances, nums);
 
     return std::make_tuple(core::Tensor(), core::Tensor(), core::Tensor());
+};
+
+std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
+        const core::Tensor &query, double radius) {
+    core::SizeVector shape = query.GetShape();
+    int num_query = shape[0];
+    double radii[num_query];
+    for (int i = 0; i < num_query; i++) {
+        radii[i] = radius;
+    }
+    return SearchRadius(query, radii);
 };
 
 }  // namespace nn
