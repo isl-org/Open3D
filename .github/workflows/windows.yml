@@ -52,4 +52,4 @@ jobs:
       if: ${{ matrix.shared == 'OFF' }}
       run: |
         python -c "import open3d; print(open3d)"
-        python -c "import open3d; open3d.pybind.core.kernel.test_int64_tegration()"
+        python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"

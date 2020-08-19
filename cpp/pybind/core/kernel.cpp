@@ -34,7 +34,7 @@ namespace open3d {
 
 void pybind_core_kernel(py::module &m) {
     py::module m_kernel = m.def_submodule("kernel");
-    m_kernel.def("test_int64_tegration", &core::kernel::TestMKLIntegration);
+    m_kernel.def("test_mkl_integration", &core::kernel::TestMKLIntegration);
 }
 
 }  // namespace open3d
