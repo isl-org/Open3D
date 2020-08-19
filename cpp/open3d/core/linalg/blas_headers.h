@@ -33,6 +33,7 @@
 #pragma once
 
 #ifdef USE_OPENBLAS
+#define OPEN3D_LINALG_INT int64_t
 #define lapack_int int64_t
 #define MKL_INT int64_t
 #include <cblas.h>
