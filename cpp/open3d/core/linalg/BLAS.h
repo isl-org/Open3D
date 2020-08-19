@@ -26,12 +26,11 @@
 
 #pragma once
 
-#include <mkl.h>
-
 #ifdef BUILD_CUDA_MODULE
 #include <cublas_v2.h>
 #endif
 
+#include "open3d/core/linalg/blas_headers.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
