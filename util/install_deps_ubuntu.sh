@@ -20,6 +20,8 @@ if [ "$1" == "assume-yes" ]; then
     $SUDO apt-get --yes install libtbb-dev
     # Headless rendering deps
     $SUDO apt-get --yes install libosmesa6-dev
+    # OpenBLAS build-from-source deps
+    $SUDO apt-get --yes install gfortran
 else
     # Open3D deps
     $SUDO apt-get install xorg-dev
@@ -35,4 +37,6 @@ else
     $SUDO apt-get install libtbb-dev
     # Headless rendering deps
     $SUDO apt-get install libosmesa6-dev
+    # OpenBLAS build-from-source deps
+    $SUDO apt-get install gfortran
 fi
