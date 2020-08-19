@@ -41,6 +41,8 @@ def _numpy_dtype_to_dtype(numpy_dtype):
         return Dtype.Int64
     elif numpy_dtype == np.uint8:
         return Dtype.UInt8
+    elif numpy_dtype == np.uint16:
+        return Dtype.UInt16
     elif numpy_dtype == np.bool:
         return Dtype.Bool
     else:
@@ -940,6 +942,8 @@ class Tensor(o3d.pybind.core.Tensor):
             return super(Tensor, self)._item_int64_t()
         elif self.dtype == Dtype.UInt8:
             return super(Tensor, self)._item_uint8_t()
+        elif self.dtype == Dtype.UInt16:
+            return super(Tensor, self)._item_uint16_t()
         elif self.dtype == Dtype.Bool:
             return super(Tensor, self)._item_bool()
         else:

@@ -24,66 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/tgeometry/Image.h"
 
-#include <vector>
-
-#include "open3d/geometry/BoundingVolume.h"
-#include "open3d/visualization/rendering/Renderer.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/ShapeUtil.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
+namespace tgeometry {
 
-namespace geometry {
-class Geometry3D;
-}  // namespace geometry
+Image::Image(int64_t rows,
+             int64_t cols,
+             int64_t channels,
+             core::Dtype dtype,
+             const core::Device &device)
+    : Geometry(Geometry::GeometryType::Image, 2) {
+    if (rows < 0) {
+        utility::LogError("rows must be >= 0, but got {}.", rows);
+    }
+    if (cols < 0) {
+        utility::LogError("cols must be >= 0, but got {}.", cols);
+    }
+    if (channels <= 0) {
+        utility::LogError("channels must be > 0, but got {}.", channels);
+    }
+    data_ = core::Tensor({rows, cols, channels}, dtype, device);
+}
 
-namespace visualization {
-namespace rendering {
+Image::Image(const core::Tensor &tensor)
+    : Geometry(Geometry::GeometryType::Image, 2) {
+    if (!tensor.IsContiguous()) {
+        utility::LogError("Input tensor must be contiguous.");
+    }
+    if (tensor.NumDims() == 2) {
+        data_ = tensor.Reshape(
+                core::shape_util::Concat(tensor.GetShape(), {1}));
+    } else if (tensor.NumDims() == 3) {
+        data_ = tensor;
+    } else {
+        utility::LogError("Input tensor must be 2-D or 3-D, but got shape {}.",
+                          tensor.GetShape().ToString());
+    }
+}
 
-class Camera;
-struct Material;
-
-class Open3DScene {
-public:
-    Open3DScene(Renderer& renderer);
-    ~Open3DScene();
-
-    ViewHandle CreateView();
-    void DestroyView(ViewHandle view);
-    View* GetView(ViewHandle view) const;
-
-    void ShowSkybox(bool enable);
-    void ShowAxes(bool enable);
-
-    void ClearGeometry();
-    void AddGeometry(std::shared_ptr<const geometry::Geometry3D> geom,
-                     const Material& mat,
-                     bool add_downsampled_copy_for_fast_rendering = true);
-    void UpdateMaterial(const Material& mat);
-    std::vector<std::string> GetGeometries();
-
-    enum class LOD {
-        HIGH_DETAIL,  // used when rendering time is not as important
-        FAST,         // used when rendering time is important, like rotating
-    };
-    void SetLOD(LOD lod);
-    LOD GetLOD() const;
-
-    Scene* GetScene() const;
-    Camera* GetCamera() const;
-    Renderer& GetRenderer() const;
-
-private:
-    Renderer& renderer_;
-    SceneHandle scene_;
-    ViewHandle view_;
-
-    LOD lod_ = LOD::HIGH_DETAIL;
-    std::string model_name_;
-    std::string fast_model_name_;
-    geometry::AxisAlignedBoundingBox bounds_;
-};
-
-}  // namespace rendering
-}  // namespace visualization
+}  // namespace tgeometry
 }  // namespace open3d
