@@ -61,7 +61,6 @@ class FilamentResourceManager;
 class FilamentView;
 class Renderer;
 class View;
-class Model;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views
@@ -95,7 +94,7 @@ public:
                      const geometry::Geometry3D& geometry,
                      const Material& material) override;
     bool AddGeometry(const std::string& object_name,
-                     const Model& model) override;
+                     const TriangleMeshModel& model) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
     void SetGeometryTransform(const std::string& object_name,

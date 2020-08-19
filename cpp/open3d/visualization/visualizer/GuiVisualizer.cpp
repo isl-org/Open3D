@@ -72,7 +72,7 @@ namespace open3d {
 namespace visualization {
 
 // TEMP:
-rendering::Model test_model;
+rendering::TriangleMeshModel test_model;
 
 namespace {
 
@@ -861,7 +861,6 @@ void GuiVisualizer::SetGeometry(
         std::shared_ptr<const geometry::Geometry> g = geometries[i];
         rendering::Material loaded_material;
         bool material_is_loaded = false;
-        // GuiSettingsModel::LitMaterial loaded_material;
 
         // If a point cloud or mesh has no vertex colors or a single uniform
         // color (usually white), then we want to display it normally, that is,
@@ -962,7 +961,7 @@ void GuiVisualizer::SetGeometry(
         bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
         scene3d->GetScene()->ShowGeometry("__model__", false);
         scene3d->GetScene()->AddGeometry("_the_model_", test_model);
-        
+
         if (material_is_loaded) {
             impl_->settings_.have_loaded_material_ = true;
             impl_->settings_.loaded_material_ = loaded_material;
@@ -1082,7 +1081,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
             try {
                 mesh_success = io::ReadTriangleMesh(path, *mesh);
                 utility::LogWarning("Load {} as model", path);
-                io::ReadModel(path, test_model, false);
+                io::ReadTriangleModel(path, test_model, false);
                 utility::LogWarning("Model has {} meshes and {} materials",
                                     test_model.meshes_.size(),
                                     test_model.materials_.size());

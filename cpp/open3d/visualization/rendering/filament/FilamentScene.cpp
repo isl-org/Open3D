@@ -251,7 +251,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
-                                const Model& model) {
+                                const TriangleMeshModel& model) {
     if (geometries_.count(object_name) > 0) {
         utility::LogWarning(
                 "Geometry {} has already been added to scene graph.",

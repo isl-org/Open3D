@@ -280,7 +280,7 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
 }
 
 bool ReadModelUsingAssimp(const std::string& filename,
-                          visualization::rendering::Model& model,
+                          visualization::rendering::TriangleMeshModel& model,
                           bool print_progress) {
     Assimp::Importer importer;
     const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);

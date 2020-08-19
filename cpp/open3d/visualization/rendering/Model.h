@@ -33,7 +33,7 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-struct Model {
+struct TriangleMeshModel {
     struct MeshInfo {
         std::shared_ptr<geometry::TriangleMesh> mesh;
         std::string mesh_name;
