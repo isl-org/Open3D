@@ -44,6 +44,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/tgeometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/Light.h"
 #include "open3d/visualization/rendering/Material.h"
@@ -246,6 +247,23 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         return false;
     }
 
+    return true;
+}
+
+bool FilamentScene::AddGeometry(const std::string& object_name,
+                                const tgeometry::PointCloud& point_cloud,
+                                const Material& material) {
+    if(point_cloud.IsEmpty()) {
+        utility::LogWarning("Point cloud for object {} is empty", object_name);
+        return false;
+    }
+    
+    const auto& points = point_cloud.GetPoints();
+    if(points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+        utility::LogWarning("GPU resident tensor point clouds are not supported at this time");
+        return false;
+    }
+    
     return true;
 }
 
