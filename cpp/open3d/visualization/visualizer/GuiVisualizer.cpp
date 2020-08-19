@@ -490,9 +490,9 @@ struct GuiVisualizer::Impl {
         settings_.wgt_mouse_ibl->SetOn(mode == Controls::ROTATE_IBL);
     }
 
-    void UpdateFromModel(rendering::Renderer &renderer,
-                         bool material_type_changed) {
-        scene_wgt_->SetBackgroundColor(settings_.model_.GetBackgroundColor());
+    void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
+        auto bcolor = settings_.model_.GetBackgroundColor();
+        renderer.SetClearColor({bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
 
         if (settings_.model_.GetShowSkybox()) {
             scene_wgt_->GetScene()->ShowSkybox(true);
@@ -505,9 +505,20 @@ struct GuiVisualizer::Impl {
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
+        // Bail early if there were no material property changes
+        if (!material_changed) return;
+
         auto &current_materials = settings_.model_.GetCurrentMaterials();
-        if (current_materials.lit_name ==
-            GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+        if (settings_.model_.GetMaterialType() ==
+                    GuiSettingsModel::MaterialType::LIT &&
+            current_materials.lit_name ==
+                    GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+            settings_.loaded_material_.base_color.x() =
+                    current_materials.lit.base_color.x();
+            settings_.loaded_material_.base_color.y() =
+                    current_materials.lit.base_color.y();
+            settings_.loaded_material_.base_color.z() =
+                    current_materials.lit.base_color.z();
             scene_wgt_->GetScene()->UpdateMaterial(settings_.loaded_material_);
         } else {
             UpdateMaterials(renderer, current_materials);
@@ -536,24 +547,22 @@ struct GuiVisualizer::Impl {
             }
         }
 
-        if (material_type_changed) {
-            auto *view = scene_wgt_->GetRenderView();
-            switch (settings_.model_.GetMaterialType()) {
-                case GuiSettingsModel::MaterialType::LIT: {
-                    view->SetMode(rendering::View::Mode::Color);
-                    break;
-                }
-                case GuiSettingsModel::MaterialType::UNLIT: {
-                    view->SetMode(rendering::View::Mode::Color);
-                    break;
-                }
-                case GuiSettingsModel::MaterialType::NORMAL_MAP:
-                    view->SetMode(rendering::View::Mode::Normals);
-                    break;
-                case GuiSettingsModel::MaterialType::DEPTH:
-                    view->SetMode(rendering::View::Mode::Depth);
-                    break;
+        auto *view = scene_wgt_->GetRenderView();
+        switch (settings_.model_.GetMaterialType()) {
+            case GuiSettingsModel::MaterialType::LIT: {
+                view->SetMode(rendering::View::Mode::Color);
+                break;
             }
+            case GuiSettingsModel::MaterialType::UNLIT: {
+                view->SetMode(rendering::View::Mode::Color);
+                break;
+            }
+            case GuiSettingsModel::MaterialType::NORMAL_MAP:
+                view->SetMode(rendering::View::Mode::Normals);
+                break;
+            case GuiSettingsModel::MaterialType::DEPTH:
+                view->SetMode(rendering::View::Mode::Depth);
+                break;
         }
     }
 
@@ -888,7 +897,7 @@ void GuiVisualizer::SetGeometry(
                         std::static_pointer_cast<const geometry::TriangleMesh>(
                                 g);
 
-                bool albedo_only = true;
+                bool albedo_only = false;
                 auto is_map_valid =
                         [](std::shared_ptr<geometry::Image> map) -> bool {
                     return map && map->HasData();
@@ -913,6 +922,7 @@ void GuiVisualizer::SetGeometry(
                             mesh_material.baseClearCoatRoughness;
                     loaded_material.base_anisotropy =
                             mesh_material.baseAnisotropy;
+                    albedo_only = is_map_valid(mesh_material.albedo);
                     loaded_material.albedo_img = mesh_material.albedo;
                     loaded_material.normal_img = mesh_material.normalMap;
                     loaded_material.ao_img = mesh_material.ambientOcclusion;
@@ -948,6 +958,8 @@ void GuiVisualizer::SetGeometry(
                     (mesh->HasMaterials() && albedo_only)) {
                     loaded_material.shader = "defaultUnlit";
                     num_unlit += 1;
+                } else {
+                    loaded_material.shader = "defaultLit";
                 }
             } break;
             default:
@@ -965,6 +977,7 @@ void GuiVisualizer::SetGeometry(
         if (material_is_loaded) {
             impl_->settings_.have_loaded_material_ = true;
             impl_->settings_.loaded_material_ = loaded_material;
+            impl_->settings_.loaded_material_.shader = "defaultLit";
             impl_->settings_.lit_material_ = loaded_material;
             impl_->settings_.lit_material_.shader = "defaultLit";
             impl_->settings_.unlit_material_ = loaded_material;
@@ -1001,6 +1014,9 @@ void GuiVisualizer::SetGeometry(
     if (impl_->settings_.have_loaded_material_) {
         Eigen::Vector3f color(
                 impl_->settings_.loaded_material_.base_color.data());
+        auto &current_materials = impl_->settings_.model_.GetCurrentMaterials();
+        current_materials.lit.base_color = color;
+        current_materials.unlit.base_color = color;
         impl_->settings_.model_.SetCustomDefaultColor(color);
         impl_->settings_.model_.SetCurrentMaterials(
                 GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
