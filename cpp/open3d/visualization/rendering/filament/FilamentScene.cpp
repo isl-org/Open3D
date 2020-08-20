@@ -420,7 +420,7 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
     auto& maps = geom_mi.maps;
 
     renderer_.ModifyMaterial(geom_mi.mat_instance)
-            .SetColor("baseColor", material.base_color)
+            .SetColor("baseColor", material.base_color, true)
             .SetParameter("pointSize", material.point_size)
             .SetParameter("baseRoughness", material.base_roughness)
             .SetParameter("baseMetallic", material.base_metallic)
@@ -451,7 +451,7 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
 
 void FilamentScene::UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
-            .SetColor("baseColor", geom_mi.properties.base_color)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
             .SetParameter("pointSize", geom_mi.properties.point_size)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
