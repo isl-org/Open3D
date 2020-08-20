@@ -1,3 +1,4 @@
+
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
@@ -26,30 +27,19 @@
 
 #include "open3d/core/Dtype.h"
 
-#include "pybind/core/core.h"
-#include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
-
 namespace open3d {
+namespace core {
 
-void pybind_core_dtype(py::module &m) {
-    py::class_<core::Dtype, std::shared_ptr<core::Dtype>> dtype(
-            m, "Dtype", "Open3D data types.");
-    dtype.def_readonly_static("Undefined", &core::Dtype::Undefined)
-            .def_readonly_static("Float32", &core::Dtype::Float32)
-            .def_readonly_static("Float64", &core::Dtype::Float64)
-            .def_readonly_static("Int32", &core::Dtype::Int32)
-            .def_readonly_static("Int64", &core::Dtype::Int64)
-            .def_readonly_static("UInt8", &core::Dtype::UInt8)
-            .def_readonly_static("UInt16", &core::Dtype::UInt16)
-            .def_readonly_static("Bool", &core::Dtype::Bool)
-            .def("__eq__", &core::Dtype::operator==)
-            .def("__ene__", &core::Dtype::operator!=)
-            .def("__repr__", &core::Dtype::ToString)
-            .def("__str__", &core::Dtype::ToString);
+// clang-format off
+const Dtype Dtype::Undefined = Dtype(Dtype::DtypeCode::Undefined, 1, "Undefined");
+const Dtype Dtype::Float32   = Dtype(Dtype::DtypeCode::Float,     4, "Float32"  );
+const Dtype Dtype::Float64   = Dtype(Dtype::DtypeCode::Float,     8, "Float64"  );
+const Dtype Dtype::Int32     = Dtype(Dtype::DtypeCode::Int,       4, "Int32"    );
+const Dtype Dtype::Int64     = Dtype(Dtype::DtypeCode::Int,       8, "Int64"    );
+const Dtype Dtype::UInt8     = Dtype(Dtype::DtypeCode::UInt,      1, "UInt8"    );
+const Dtype Dtype::UInt16    = Dtype(Dtype::DtypeCode::UInt,      2, "UInt16"   );
+const Dtype Dtype::Bool      = Dtype(Dtype::DtypeCode::Bool,      1, "Bool"     );
+// clang-format on
 
-    py::class_<core::DtypeUtil> dtype_util(m, "DtypeUtil", "Dtype utilities.");
-    dtype_util.def(py::init<>()).def("byte_size", &core::DtypeUtil::ByteSize);
-}
-
+}  // namespace core
 }  // namespace open3d

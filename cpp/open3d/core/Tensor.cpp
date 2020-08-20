@@ -76,28 +76,23 @@ private:
         // Prepare dl_data_type
         DLDataType dl_data_type;
         Dtype dtype = o3d_tensor_.GetDtype();
-        switch (dtype) {
-            case Dtype::Float32:
-                dl_data_type.code = DLDataTypeCode::kDLFloat;
-                break;
-            case Dtype::Float64:
-                dl_data_type.code = DLDataTypeCode::kDLFloat;
-                break;
-            case Dtype::Int32:
-                dl_data_type.code = DLDataTypeCode::kDLInt;
-                break;
-            case Dtype::Int64:
-                dl_data_type.code = DLDataTypeCode::kDLInt;
-                break;
-            case Dtype::UInt8:
-                dl_data_type.code = DLDataTypeCode::kDLUInt;
-                break;
-            case Dtype::UInt16:
-                dl_data_type.code = DLDataTypeCode::kDLUInt;
-                break;
-            default:
-                utility::LogError("Unsupported data type");
+
+        if (dtype == Dtype::Float32) {
+            dl_data_type.code = DLDataTypeCode::kDLFloat;
+        } else if (dtype == Dtype::Float64) {
+            dl_data_type.code = DLDataTypeCode::kDLFloat;
+        } else if (dtype == Dtype::Int32) {
+            dl_data_type.code = DLDataTypeCode::kDLInt;
+        } else if (dtype == Dtype::Int64) {
+            dl_data_type.code = DLDataTypeCode::kDLInt;
+        } else if (dtype == Dtype::UInt8) {
+            dl_data_type.code = DLDataTypeCode::kDLUInt;
+        } else if (dtype == Dtype::UInt16) {
+            dl_data_type.code = DLDataTypeCode::kDLUInt;
+        } else {
+            utility::LogError("Unsupported data type");
         }
+
         dl_data_type.bits =
                 static_cast<uint8_t>(DtypeUtil::ByteSize(dtype) * 8);
         dl_data_type.lanes = 1;

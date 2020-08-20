@@ -46,6 +46,7 @@ set(CORE_SRC
     AdvancedIndexing.cpp
     ShapeUtil.cpp
     CUDAUtils.cpp
+    Dtype.cpp
     EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
