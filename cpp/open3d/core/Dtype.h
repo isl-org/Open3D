@@ -80,8 +80,7 @@ public:
     }
 
     /// Convert from C++ types to Dtype. Known types are explicitly specialized,
-    /// e.g. DtypeUtil::FromType<float>(). Unsupported type will result in an
-    /// exception.
+    /// e.g. FromType<float>(). Unsupported type results in an exception.
     template <typename T>
     static inline const Dtype FromType() {
         utility::LogError("Unsupported data type");
@@ -139,18 +138,6 @@ template <>
 inline const Dtype Dtype::FromType<bool>() {
     return Dtype::Bool;
 }
-
-class DtypeUtil {
-public:
-    static int64_t ByteSize(const Dtype &dtype) { return dtype.ByteSize(); }
-
-    template <typename T>
-    static const Dtype FromType() {
-        return Dtype::FromType<T>();
-    }
-
-    static std::string ToString(const Dtype &dtype) { return dtype.ToString(); }
-};
 
 }  // namespace core
 }  // namespace open3d

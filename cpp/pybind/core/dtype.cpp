@@ -36,6 +36,7 @@ void pybind_core_dtype(py::module &m) {
     py::class_<core::Dtype, std::shared_ptr<core::Dtype>> dtype(
             m, "Dtype", "Open3D data types.");
     dtype.def_readonly_static("Undefined", &core::Dtype::Undefined)
+            .def("byte_size", &core::Dtype::ByteSize)
             .def_readonly_static("Float32", &core::Dtype::Float32)
             .def_readonly_static("Float64", &core::Dtype::Float64)
             .def_readonly_static("Int32", &core::Dtype::Int32)
@@ -47,9 +48,6 @@ void pybind_core_dtype(py::module &m) {
             .def("__ene__", &core::Dtype::operator!=)
             .def("__repr__", &core::Dtype::ToString)
             .def("__str__", &core::Dtype::ToString);
-
-    py::class_<core::DtypeUtil> dtype_util(m, "DtypeUtil", "Dtype utilities.");
-    dtype_util.def(py::init<>()).def("byte_size", &core::DtypeUtil::ByteSize);
 }
 
 }  // namespace open3d

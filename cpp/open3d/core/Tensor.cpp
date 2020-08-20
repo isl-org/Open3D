@@ -93,8 +93,7 @@ private:
             utility::LogError("Unsupported data type");
         }
 
-        dl_data_type.bits =
-                static_cast<uint8_t>(DtypeUtil::ByteSize(dtype) * 8);
+        dl_data_type.bits = static_cast<uint8_t>(dtype.ByteSize() * 8);
         dl_data_type.lanes = 1;
 
         // Prepare dl_tensor, this uses dl_device_type, dl_context and
@@ -364,9 +363,8 @@ void Tensor::Assign(const Tensor& other) {
     shape_ = other.shape_;
     strides_ = DefaultStrides(shape_);
     dtype_ = other.dtype_;
-    blob_ = std::make_shared<Blob>(
-            shape_.NumElements() * DtypeUtil::ByteSize(dtype_),
-            other.GetDevice());
+    blob_ = std::make_shared<Blob>(shape_.NumElements() * dtype_.ByteSize(),
+                                   other.GetDevice());
     data_ptr_ = blob_->GetDataPtr();
     kernel::Copy(other, *this);
 }
@@ -575,7 +573,7 @@ std::string Tensor::ToString(bool with_suffix,
             const char* ptr = static_cast<const char*>(data_ptr_);
             rc << "[";
             std::string delim = "";
-            int64_t element_byte_size = DtypeUtil::ByteSize(dtype_);
+            int64_t element_byte_size = dtype_.ByteSize();
             for (int64_t i = 0; i < shape_.NumElements(); ++i) {
                 rc << delim << ScalarPtrToString(ptr);
                 delim = " ";
@@ -598,8 +596,7 @@ std::string Tensor::ToString(bool with_suffix,
     if (with_suffix) {
         rc << fmt::format("\nTensor[shape={}, stride={}, {}, {}, {}]",
                           shape_.ToString(), strides_.ToString(),
-                          DtypeUtil::ToString(dtype_), GetDevice().ToString(),
-                          data_ptr_);
+                          dtype_.ToString(), GetDevice().ToString(), data_ptr_);
     }
     return rc.str();
 }
@@ -630,7 +627,7 @@ Tensor Tensor::IndexExtract(int64_t dim, int64_t idx) const {
     SizeVector new_strides(strides_);
     new_strides.erase(new_strides.begin() + dim);
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
-                         strides_[dim] * DtypeUtil::ByteSize(dtype_) * idx;
+                         strides_[dim] * dtype_.ByteSize() * idx;
     return Tensor(new_shape, new_strides, new_data_ptr, dtype_, blob_);
 }
 
@@ -657,7 +654,7 @@ Tensor Tensor::Slice(int64_t dim,
     }
 
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
-                         start * strides_[dim] * DtypeUtil::ByteSize(dtype_);
+                         start * strides_[dim] * dtype_.ByteSize();
     SizeVector new_shape = shape_;
     SizeVector new_strides = strides_;
     new_shape[dim] = (stop - start + step - 1) / step;
@@ -805,7 +802,7 @@ Tensor Tensor::Mean(const SizeVector& dims, bool keepdim) const {
     if (dtype_ != Dtype::Float32 && dtype_ != Dtype::Float64) {
         utility::LogError(
                 "Can only compute mean for Float32 or Float64, got {} instead.",
-                DtypeUtil::ToString(dtype_));
+                dtype_.ToString());
     }
 
     // Following Numpy's semantics, reduction on 0-sized Tensor will result in
@@ -1181,9 +1178,8 @@ Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
                           other.GetDevice().ToString());
     }
     if (dtype_ != other.dtype_) {
-        utility::LogError("Dtype mismatch {} != {}.",
-                          DtypeUtil::ToString(dtype_),
-                          DtypeUtil::ToString(other.dtype_));
+        utility::LogError("Dtype mismatch {} != {}.", dtype_.ToString(),
+                          other.dtype_.ToString());
     }
     if (shape_ != other.shape_) {
         utility::LogError("Shape mismatch {} != {}.", shape_, other.shape_);

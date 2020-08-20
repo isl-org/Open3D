@@ -78,7 +78,7 @@ Tensor NonZeroCUDA(const Tensor& src) {
     Tensor src_contiguous = src.Contiguous();
     const int64_t num_elements = src_contiguous.NumElements();
     const int64_t num_bytes =
-            num_elements * DtypeUtil::ByteSize(src_contiguous.GetDtype());
+            num_elements * src_contiguous.GetDtype().ByteSize();
 
     thrust::counting_iterator<int64_t> index_first(0);
     thrust::counting_iterator<int64_t> index_last = index_first + num_elements;
