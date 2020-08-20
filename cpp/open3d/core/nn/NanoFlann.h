@@ -108,7 +108,7 @@ protected:
     std::vector<double> data_;
     std::unique_ptr<KDTree_t> index_;
     std::unique_ptr<Adaptor<double>> adaptor_;
-    size_t dimension_ = 0;
+    int dimension_ = 0;
     size_t dataset_size_ = 0;
 };
 }  // namespace nn

@@ -72,7 +72,7 @@ TEST(NearestNeighbor, KnnSearch) {
 
     core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
     core::nn::NearestNeighbor index(ref);
-    index.KnnIndex(knn);
+    index.KnnIndex();
 
     core::Tensor query(std::vector<double>({1.647059, 4.392157, 8.784314}),
                        {1, 3}, core::Dtype::Float64);

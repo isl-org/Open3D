@@ -51,15 +51,15 @@ bool NanoFlann::SetTensorData(const core::Tensor &data) {
         return false;
     }
 
-    dataset_size_ = shape[0];
-    dimension_ = shape[1];
+    dataset_size_ = static_cast<size_t>(shape[0]);
+    dimension_ = static_cast<int>(shape[1]);
     data_.resize(dataset_size_ * dimension_);
     memcpy(data_.data(), data.ToFlatVector<double>().data(),
            dataset_size_ * dimension_ * sizeof(double));
     adaptor_.reset(
-            new Adaptor<double>((size_t)dataset_size_, dimension_, data_.data()));
+            new Adaptor<double>(dataset_size_, dimension_, data_.data()));
 
-    index_.reset(new KDTree_t((size_t)dimension_, *adaptor_.get()));
+    index_.reset(new KDTree_t(dimension_, *adaptor_.get()));
     index_->buildIndex();
     return true;
 };
@@ -72,25 +72,26 @@ std::pair<core::Tensor, core::Tensor> NanoFlann::SearchKnn(
                 "[NanoFlann::SearchKnn] query tensor must be 2 dimensional "
                 "matrix");
     }
-    if ((size_t)shape[1] != dimension_) {
+    if (shape[1] != dimension_) {
         utility::LogError(
                 "[NanoFlann::SearchKnn] query tensor has different dimension "
                 "with reference tensor");
     }
     std::vector<size_t> result_indices;
     std::vector<double> result_distances;
-    int num_query = (int)shape[0];
-    int num_results = 0;
+    int64_t num_query = shape[0];
+    size_t num_results = 0;
 
-    for (int i = 0; i < num_query; i++) {
+    for (auto i = 0; i < shape[0]; i++) {
         core::Tensor query_point = query[i];
         std::vector<double> query_vector = query_point.ToFlatVector<double>();
 
         std::vector<size_t> _indices(knn);
         std::vector<double> _distances(knn);
 
-        num_results = index_->knnSearch(query_vector.data(), (size_t)knn,
-                                        _indices.data(), _distances.data());
+        num_results =
+                index_->knnSearch(query_vector.data(), static_cast<size_t>(knn),
+                                  _indices.data(), _distances.data());
 
         _indices.resize(num_results);
         _distances.resize(num_results);
@@ -105,9 +106,11 @@ std::pair<core::Tensor, core::Tensor> NanoFlann::SearchKnn(
 
     std::vector<int64_t> result_indices2(result_indices.begin(),
                                          result_indices.end());
-    core::Tensor indices(result_indices2, {num_query, num_results},
+    core::Tensor indices(result_indices2,
+                         {num_query, static_cast<int64_t>(num_results)},
                          core::Dtype::Int64);
-    core::Tensor distances(result_distances, {num_query, num_results},
+    core::Tensor distances(result_distances,
+                           {num_query, static_cast<int64_t>(num_results)},
                            core::Dtype::Float64);
     return std::make_pair(indices, distances);
 };
@@ -120,7 +123,7 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
                 "[NanoFlann::SearchRadius] query tensor must be 2 dimensional "
                 "matrix");
     }
-    if ((size_t)shape[1] != dimension_) {
+    if (shape[1] != dimension_) {
         utility::LogError(
                 "[NanoFlann::SearchRadius] query tensor has different "
                 "dimension with reference tensor");
@@ -128,9 +131,8 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
     std::vector<size_t> result_indices;
     std::vector<double> result_distances;
     std::vector<size_t> result_nums;
-    int num_query = (int)shape[0];
 
-    for (int i = 0; i < num_query; i++) {
+    for (auto i = 0; i < shape[0]; i++) {
         core::Tensor query_point = query[i];
         std::vector<double> query_vector = query_point.ToFlatVector<double>();
         double radius = radii[i];
@@ -166,9 +168,9 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
 std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
         const core::Tensor &query, double radius) {
     core::SizeVector shape = query.GetShape();
-    int num_query = shape[0];
+    int64_t num_query = shape[0];
     double radii[num_query];
-    for (int i = 0; i < num_query; i++) {
+    for (int64_t i = 0; i < shape[0]; i++) {
         radii[i] = radius;
     }
     return SearchRadius(query, radii);

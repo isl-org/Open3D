@@ -48,7 +48,7 @@ public:
     NearestNeighbor &operator=(const NearestNeighbor &) = delete;
 
 public:
-    bool KnnIndex(int knn);
+    bool KnnIndex();
     bool RadiusIndex();
     bool FixedRadiusIndex();
     bool HybridIndex();
@@ -62,10 +62,12 @@ public:
     std::pair<core::Tensor, core::Tensor> HybridSearch(
             const core::Tensor &tensor, double radius, int max_knn);
 
+private:
+    bool SetIndex();
+
 protected:
     std::unique_ptr<NanoFlann> index_;
     const Tensor data_;
-    int knn_;
 };
 }  // namespace nn
 }  // namespace core

@@ -34,23 +34,17 @@ namespace nn {
 
 NearestNeighbor::~NearestNeighbor(){};
 
-bool NearestNeighbor::KnnIndex(int knn) {
-    index_.reset(new NanoFlann());
-    knn_ = knn;
-    return index_->SetTensorData(data_);
-};
-bool NearestNeighbor::RadiusIndex() {
+bool NearestNeighbor::SetIndex() {
     index_.reset(new NanoFlann());
     return index_->SetTensorData(data_);
 };
-bool NearestNeighbor::FixedRadiusIndex() {
+bool NearestNeighbor::KnnIndex() {
     index_.reset(new NanoFlann());
-    return index_->SetTensorData(data_);
-}
-bool NearestNeighbor::HybridIndex() {
-    index_.reset(new NanoFlann());
-    return index_->SetTensorData(data_);
-}
+    return SetIndex();
+};
+bool NearestNeighbor::RadiusIndex() { return SetIndex(); };
+bool NearestNeighbor::FixedRadiusIndex() { return SetIndex(); }
+bool NearestNeighbor::HybridIndex() { return SetIndex(); };
 
 std::pair<core::Tensor, core::Tensor> NearestNeighbor::KnnSearch(
         const core::Tensor& tensor, int knn) {
