@@ -422,7 +422,7 @@ struct GuiVisualizer::Impl {
                     GuiSettingsModel::MaterialType::LIT &&
             current_materials.lit_name ==
                     GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
-            scene_wgt_->GetScene()->UpdateMaterial(loaded_model_);
+            scene_wgt_->GetScene()->UpdateModelMaterial(loaded_model_);
         } else {
             UpdateMaterials(renderer, current_materials);
             switch (settings_.model_.GetMaterialType()) {

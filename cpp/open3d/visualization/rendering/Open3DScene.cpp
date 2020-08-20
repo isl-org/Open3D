@@ -226,7 +226,7 @@ void Open3DScene::UpdateMaterial(const Material& mat) {
     }
 }
 
-void Open3DScene::UpdateMaterial(const TriangleMeshModel& model) {
+void Open3DScene::UpdateModelMaterial(const TriangleMeshModel& model) {
     auto scene = renderer_.GetScene(scene_);
     scene->RemoveGeometry(model_name_);
     scene->AddGeometry(model_name_, model);
