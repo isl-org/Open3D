@@ -33,7 +33,6 @@
 
 #include "open3d/geometry/Geometry3D.h"
 #include "open3d/utility/Console.h"
-
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
@@ -181,11 +180,13 @@ public:
     /// useful starting point for voxel carving.
     ///
     /// \param origin Coordinate center of the VoxelGrid
+    /// \param color Voxel color for all voxels of the VoxelGrid.
     /// \param voxel_size Voxel size of of the VoxelGrid construction.
     /// \param width Spatial width extend of the VoxelGrid.
     /// \param height Spatial height extend of the VoxelGrid.
     /// \param depth Spatial depth extend of the VoxelGrid.
     static std::shared_ptr<VoxelGrid> CreateDense(const Eigen::Vector3d &origin,
+                                                  const Eigen::Vector3d &color,
                                                   double voxel_size,
                                                   double width,
                                                   double height,

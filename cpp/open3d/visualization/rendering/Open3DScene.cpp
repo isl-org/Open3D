@@ -128,8 +128,6 @@ Open3DScene::~Open3DScene() {
 ViewHandle Open3DScene::CreateView() {
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
-    auto view = scene->GetView(view_);
-    view->SetClearColor({1.0f, 1.0f, 1.0f});
 
     return view_;
 }
@@ -187,10 +185,10 @@ void Open3DScene::AddGeometry(
         const std::size_t kMinPointsForDecimation = 6000000;
         auto pcd = std::dynamic_pointer_cast<const geometry::PointCloud>(geom);
         if (pcd && pcd->points_.size() > kMinPointsForDecimation) {
-            int sample_rate =
+            size_t sample_rate =
                     pcd->points_.size() / (kMinPointsForDecimation / 2);
-            auto small = pcd->UniformDownSample(sample_rate);
-            scene->AddGeometry(kFastModelObjectName, *small, mat);
+            auto fast = pcd->UniformDownSample(sample_rate);
+            scene->AddGeometry(kFastModelObjectName, *fast, mat);
             fast_model_name_ = kFastModelObjectName;
             scene->ShowGeometry(fast_model_name_, (lod_ == LOD::FAST));
         } else {
@@ -213,6 +211,14 @@ void Open3DScene::UpdateMaterial(const Material& mat) {
     scene->OverrideMaterial(model_name_, mat);
     if (model_name_ != fast_model_name_) {
         scene->OverrideMaterial(fast_model_name_, mat);
+    }
+}
+
+std::vector<std::string> Open3DScene::GetGeometries() {
+    if (model_name_.empty()) {
+        return {};
+    } else {
+        return {model_name_};
     }
 }
 
@@ -244,6 +250,8 @@ Camera* Open3DScene::GetCamera() const {
     auto view = scene->GetView(view_);
     return view->GetCamera();
 }
+
+Renderer& Open3DScene::GetRenderer() const { return renderer_; }
 
 }  // namespace rendering
 }  // namespace visualization

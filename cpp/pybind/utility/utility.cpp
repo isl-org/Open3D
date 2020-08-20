@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "pybind/utility/utility.h"
+
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 

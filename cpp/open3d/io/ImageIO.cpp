@@ -70,13 +70,14 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Read geometry::Image failed: unknown file extension.");
+                "Read geometry::Image failed: missing file extension.");
         return false;
     }
     auto map_itr = file_extension_to_image_read_function.find(filename_ext);
     if (map_itr == file_extension_to_image_read_function.end()) {
         utility::LogWarning(
-                "Read geometry::Image failed: unknown file extension.");
+                "Read geometry::Image failed: file extension {} unknown",
+                filename_ext);
         return false;
     }
     return map_itr->second(filename, image);

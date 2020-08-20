@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/Slider.h"
 
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -96,24 +97,26 @@ Size Slider::CalcPreferredSize(const Theme& theme) const {
     auto line_height = ImGui::GetTextLineHeight();
     auto height = line_height + 2.0 * ImGui::GetStyle().FramePadding.y;
 
-    return Size(Widget::DIM_GROW, std::ceil(height));
+    return Size(Widget::DIM_GROW, int(std::ceil(height)));
 }
 
 Widget::DrawResult Slider::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
-    float new_value = impl_->value_;
+    auto new_value = impl_->value_;
     DrawImGuiPushEnabledState();
-    ImGui::PushItemWidth(GetFrame().width);
+    ImGui::PushItemWidth(float(GetFrame().width));
     if (impl_->type_ == INT) {
-        int i_new_value = new_value;
-        ImGui::SliderInt(impl_->id_.c_str(), &i_new_value, impl_->min_value_,
-                         impl_->max_value_);
+        int i_new_value = int(new_value);
+        ImGui::SliderInt(impl_->id_.c_str(), &i_new_value,
+                         int(impl_->min_value_), int(impl_->max_value_));
         new_value = double(i_new_value);
     } else {
-        ImGui::SliderFloat(impl_->id_.c_str(), &new_value, impl_->min_value_,
-                           impl_->max_value_);
+        float f_new_value = float(new_value);
+        ImGui::SliderFloat(impl_->id_.c_str(), &f_new_value,
+                           float(impl_->min_value_), float(impl_->max_value_));
+        new_value = double(f_new_value);
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();

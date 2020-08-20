@@ -24,10 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/geometry/RGBDImage.h"
+
 #include <vector>
 
 #include "open3d/geometry/Image.h"
-#include "open3d/geometry/RGBDImage.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {

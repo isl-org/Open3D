@@ -485,9 +485,9 @@ struct GuiVisualizer::Impl {
         settings_.wgt_mouse_ibl->SetOn(mode == Controls::ROTATE_IBL);
     }
 
-    void UpdateFromModel(rendering::Renderer &renderer,
-                         bool material_type_changed) {
-        scene_wgt_->SetBackgroundColor(settings_.model_.GetBackgroundColor());
+    void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
+        auto bcolor = settings_.model_.GetBackgroundColor();
+        renderer.SetClearColor({bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
 
         if (settings_.model_.GetShowSkybox()) {
             scene_wgt_->GetScene()->ShowSkybox(true);
@@ -500,9 +500,20 @@ struct GuiVisualizer::Impl {
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
+        // Bail early if there were no material property changes
+        if (!material_changed) return;
+
         auto &current_materials = settings_.model_.GetCurrentMaterials();
-        if (current_materials.lit_name ==
-            GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+        if (settings_.model_.GetMaterialType() ==
+                    GuiSettingsModel::MaterialType::LIT &&
+            current_materials.lit_name ==
+                    GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+            settings_.loaded_material_.base_color.x() =
+                    current_materials.lit.base_color.x();
+            settings_.loaded_material_.base_color.y() =
+                    current_materials.lit.base_color.y();
+            settings_.loaded_material_.base_color.z() =
+                    current_materials.lit.base_color.z();
             scene_wgt_->GetScene()->UpdateMaterial(settings_.loaded_material_);
         } else {
             UpdateMaterials(renderer, current_materials);
@@ -531,24 +542,22 @@ struct GuiVisualizer::Impl {
             }
         }
 
-        if (material_type_changed) {
-            auto *view = scene_wgt_->GetRenderView();
-            switch (settings_.model_.GetMaterialType()) {
-                case GuiSettingsModel::MaterialType::LIT: {
-                    view->SetMode(rendering::View::Mode::Color);
-                    break;
-                }
-                case GuiSettingsModel::MaterialType::UNLIT: {
-                    view->SetMode(rendering::View::Mode::Color);
-                    break;
-                }
-                case GuiSettingsModel::MaterialType::NORMAL_MAP:
-                    view->SetMode(rendering::View::Mode::Normals);
-                    break;
-                case GuiSettingsModel::MaterialType::DEPTH:
-                    view->SetMode(rendering::View::Mode::Depth);
-                    break;
+        auto *view = scene_wgt_->GetRenderView();
+        switch (settings_.model_.GetMaterialType()) {
+            case GuiSettingsModel::MaterialType::LIT: {
+                view->SetMode(rendering::View::Mode::Color);
+                break;
             }
+            case GuiSettingsModel::MaterialType::UNLIT: {
+                view->SetMode(rendering::View::Mode::Color);
+                break;
+            }
+            case GuiSettingsModel::MaterialType::NORMAL_MAP:
+                view->SetMode(rendering::View::Mode::Normals);
+                break;
+            case GuiSettingsModel::MaterialType::DEPTH:
+                view->SetMode(rendering::View::Mode::Depth);
+                break;
         }
     }
 
@@ -562,10 +571,10 @@ private:
         }
 
         render_scene->EnableIndirectLight(lighting.ibl_enabled);
-        render_scene->SetIndirectLightIntensity(lighting.ibl_intensity);
+        render_scene->SetIndirectLightIntensity(float(lighting.ibl_intensity));
         render_scene->SetIndirectLightRotation(lighting.ibl_rotation);
         render_scene->SetDirectionalLight(lighting.sun_dir, lighting.sun_color,
-                                          lighting.sun_intensity);
+                                          float(lighting.sun_intensity));
         render_scene->EnableDirectionalLight(lighting.sun_enabled);
     }
 
@@ -718,16 +727,16 @@ void GuiVisualizer::Init() {
 
     // Setup UI
     const auto em = theme.font_size;
-    const int lm = std::ceil(0.5 * em);
-    const int grid_spacing = std::ceil(0.25 * em);
+    const int lm = int(std::ceil(0.5 * em));
+    const int grid_spacing = int(std::ceil(0.25 * em));
 
     AddChild(impl_->scene_wgt_);
 
     // Add settings widget
-    const int separation_height = std::ceil(0.75 * em);
+    const int separation_height = int(std::ceil(0.75 * em));
     // (we don't want as much left margin because the twisty arrow is the
     // only thing there, and visually it looks larger than the right.)
-    const gui::Margins base_margins(0.5 * lm, lm, lm, lm);
+    const gui::Margins base_margins(int(std::round(0.5 * lm)), lm, lm, lm);
     settings.wgt_base = std::make_shared<gui::Vert>(0, base_margins);
 
     gui::Margins indent(em, 0, 0, 0);
@@ -777,7 +786,7 @@ void GuiVisualizer::Init() {
     camera_controls2->AddChild(settings.wgt_mouse_ibl);
     camera_controls2->AddStretch();
     view_ctrls->AddChild(camera_controls1);
-    view_ctrls->AddFixed(0.25 * em);
+    view_ctrls->AddFixed(int(std::ceil(0.25 * em)));
     view_ctrls->AddChild(camera_controls2);
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(gui::Horiz::MakeCentered(reset_camera));
@@ -856,7 +865,6 @@ void GuiVisualizer::SetGeometry(
         std::shared_ptr<const geometry::Geometry> g = geometries[i];
         rendering::Material loaded_material;
         bool material_is_loaded = false;
-        // GuiSettingsModel::LitMaterial loaded_material;
 
         // If a point cloud or mesh has no vertex colors or a single uniform
         // color (usually white), then we want to display it normally, that is,
@@ -884,7 +892,7 @@ void GuiVisualizer::SetGeometry(
                         std::static_pointer_cast<const geometry::TriangleMesh>(
                                 g);
 
-                bool albedo_only = true;
+                bool albedo_only = false;
                 auto is_map_valid =
                         [](std::shared_ptr<geometry::Image> map) -> bool {
                     return map && map->HasData();
@@ -900,6 +908,7 @@ void GuiVisualizer::SetGeometry(
                             mesh_material.baseColor.b();
                     loaded_material.base_roughness =
                             mesh_material.baseRoughness;
+                    loaded_material.base_metallic = mesh_material.baseMetallic;
                     loaded_material.base_reflectance =
                             mesh_material.baseReflectance;
                     loaded_material.base_clearcoat =
@@ -908,6 +917,7 @@ void GuiVisualizer::SetGeometry(
                             mesh_material.baseClearCoatRoughness;
                     loaded_material.base_anisotropy =
                             mesh_material.baseAnisotropy;
+                    albedo_only = is_map_valid(mesh_material.albedo);
                     loaded_material.albedo_img = mesh_material.albedo;
                     loaded_material.normal_img = mesh_material.normalMap;
                     loaded_material.ao_img = mesh_material.ambientOcclusion;
@@ -932,7 +942,9 @@ void GuiVisualizer::SetGeometry(
                                 !is_map_valid(mesh_material.clearCoat) &&
                                 !is_map_valid(
                                         mesh_material.clearCoatRoughness) &&
-                                !is_map_valid(mesh_material.anisotropy);
+                                !is_map_valid(mesh_material.anisotropy) &&
+                                loaded_material.base_metallic == 0.f &&
+                                loaded_material.base_roughness == 1.f;
                     }
                     material_is_loaded = true;
                 }
@@ -957,6 +969,7 @@ void GuiVisualizer::SetGeometry(
         if (material_is_loaded) {
             impl_->settings_.have_loaded_material_ = true;
             impl_->settings_.loaded_material_ = loaded_material;
+            impl_->settings_.loaded_material_.shader = "defaultLit";
             impl_->settings_.lit_material_ = loaded_material;
             impl_->settings_.lit_material_.shader = "defaultLit";
             impl_->settings_.unlit_material_ = loaded_material;
@@ -993,6 +1006,9 @@ void GuiVisualizer::SetGeometry(
     if (impl_->settings_.have_loaded_material_) {
         Eigen::Vector3f color(
                 impl_->settings_.loaded_material_.base_color.data());
+        auto &current_materials = impl_->settings_.model_.GetCurrentMaterials();
+        current_materials.lit.base_color = color;
+        current_materials.unlit.base_color = color;
         impl_->settings_.model_.SetCustomDefaultColor(color);
         impl_->settings_.model_.SetCurrentMaterials(
                 GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
@@ -1082,12 +1098,12 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                         "Contains 0 triangles, will read as point cloud");
                 mesh.reset();
             } else {
-                UpdateProgress(0.5);
+                UpdateProgress(0.5f);
                 mesh->ComputeVertexNormals();
                 if (mesh->vertex_colors_.empty()) {
                     mesh->PaintUniformColor({1, 1, 1});
                 }
-                UpdateProgress(0.666);
+                UpdateProgress(0.666f);
                 geometry = mesh;
             }
             // Make sure the mesh has texture coordinates
@@ -1110,7 +1126,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 io::ReadPointCloudOption opt;
                 opt.update_progress = [ioProgressAmount,
                                        UpdateProgress](double percent) -> bool {
-                    UpdateProgress(ioProgressAmount * percent / 100.0);
+                    UpdateProgress(ioProgressAmount * float(percent / 100.0));
                     return true;
                 };
                 success = io::ReadPointCloud(path, *cloud, opt);
@@ -1123,9 +1139,9 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 if (!cloud->HasNormals()) {
                     cloud->EstimateNormals();
                 }
-                UpdateProgress(0.666);
+                UpdateProgress(0.666f);
                 cloud->NormalizeNormals();
-                UpdateProgress(0.75);
+                UpdateProgress(0.75f);
                 geometry = cloud;
             } else {
                 utility::LogWarning("Failed to read points {}", path.c_str());

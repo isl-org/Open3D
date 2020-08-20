@@ -26,11 +26,28 @@
 
 #include "open3d/visualization/gui/ImageLabel.h"
 
+// 4293:  Filament's utils/algorithm.h utils::details::clz() does strange
+//        things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//        32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//        determine the if statement does not run.)
+// 4146: PixelBufferDescriptor assert unsigned is positive before subtracting
+//       but MSVC can't figure that out.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4293 4146)
+#endif  // _MSC_VER
+
 #include <filament/Texture.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
+
 #include <string>
 
 #include "open3d/geometry/Image.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/visualization/gui/ImageLabel.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -108,7 +125,8 @@ UIImage::Scaling UIImage::GetScaling() const { return impl_->scaling_; }
 
 Size UIImage::CalcPreferredSize(const Theme& theme) const {
     if (impl_->image_width_ != 0.0f && impl_->image_height_ != 0.0f) {
-        return Size(impl_->image_width_, impl_->image_height_);
+        return Size(int(std::round(impl_->image_width_)),
+                    int(std::round(impl_->image_height_)));
     } else {
         return Size(0, 0);
     }
@@ -148,8 +166,8 @@ UIImage::DrawParams UIImage::CalcDrawParams(
                 break;
             }
             case Scaling::ANY:
-                params.width = frame.width;
-                params.height = frame.height;
+                params.width = float(frame.width);
+                params.height = float(frame.height);
                 params.u0 = impl_->u0_;
                 params.v0 = impl_->v0_;
                 params.u1 = impl_->u1_;

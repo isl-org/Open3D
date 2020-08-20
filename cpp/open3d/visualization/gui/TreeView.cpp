@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/TreeView.h"
 
 #include <imgui.h>
+
 #include <cmath>
 #include <list>
 #include <sstream>
@@ -305,7 +306,7 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
 
     DrawImGuiPushEnabledState();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     // ImGUI's tree wants to highlight the row as the user moves over it.
     // There are several problems here. First, there seems to be a bug in
@@ -326,7 +327,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
 
     // ImGUI's tree is basically a layout in the parent ImGUI window.
     // Make this a child so it's all in a nice frame.
-    ImGui::BeginChild(impl_->id_, ImVec2(frame.width, frame.height), true);
+    ImGui::BeginChild(impl_->id_,
+                      ImVec2(float(frame.width), float(frame.height)), true);
 
     Impl::Item *new_selection = nullptr;
 
@@ -344,7 +346,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             // upper left)
             auto y = frame.y + ImGui::GetCursorPosY() - ImGui::GetScrollY();
             ImGui::GetWindowDrawList()->AddRectFilled(
-                    ImVec2(frame.x, y), ImVec2(frame.GetRight(), y + height),
+                    ImVec2(float(frame.x), y),
+                    ImVec2(float(frame.GetRight()), y + height),
                     colorToImguiRGBA(context.theme.tree_selected_color));
         }
 
@@ -358,13 +361,14 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         }
         bool is_selectable =
                 (item.children.empty() || impl_->can_select_parents_);
-        auto DrawThis = [ this, &tree_frame = frame, &context, &new_selection ](
-                TreeView::Impl::Item & item, int height, bool is_selectable) {
+        auto DrawThis = [this, &tree_frame = frame, &context, &new_selection](
+                                TreeView::Impl::Item &item, int height,
+                                bool is_selectable) {
             ImGui::SameLine(0, 0);
-            auto x = ImGui::GetCursorScreenPos().x;
-            auto y = ImGui::GetCursorScreenPos().y;
-            auto scroll_width = ImGui::GetStyle().ScrollbarSize;
-            auto indent = ImGui::GetCursorScreenPos().x - tree_frame.x;
+            auto x = int(std::round(ImGui::GetCursorScreenPos().x));
+            auto y = int(std::round(ImGui::GetCursorScreenPos().y));
+            auto scroll_width = int(ImGui::GetStyle().ScrollbarSize);
+            auto indent = x - tree_frame.x;
             item.cell->SetFrame(Rect(
                     x, y, tree_frame.width - indent - scroll_width, height));
             // Now that we know the frame we can finally layout. It would be

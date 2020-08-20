@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/TabControl.h"
 
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -42,7 +43,7 @@ static int g_next_tab_control_id_ = 1;
 
 int CalcTabHeight(const Theme& theme) {
     auto em = std::ceil(ImGui::GetTextLineHeight());
-    return std::ceil(em + 2.0f * ImGui::GetStyle().FramePadding.y);
+    return int(std::ceil(em + 2.0f * ImGui::GetStyle().FramePadding.y));
 }
 }  // namespace
 
@@ -90,11 +91,11 @@ void TabControl::Layout(const Theme& theme) {
 
 TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
-    ImGui::PushItemWidth(GetFrame().width);
+    ImGui::PushItemWidth(float(GetFrame().width));
     if (ImGui::BeginTabBar(impl_->imgui_id_.c_str())) {
         for (size_t i = 0; i < impl_->tab_names_.size(); ++i) {
             if (ImGui::BeginTabItem(impl_->tab_names_[i].c_str())) {

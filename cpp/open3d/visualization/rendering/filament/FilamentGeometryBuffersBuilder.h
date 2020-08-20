@@ -26,12 +26,31 @@
 
 #pragma once
 
+// clang-format off
 // NOTE: This header must precede the Filament headers otherwise a conflict
 // occurs between Filament and standard headers
 #include "open3d/visualization/rendering/RendererHandle.h"
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293:  Filament's utils/algorithm.h utils::details::clz() does strange 
+//        things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//        32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//        determine the if statement does not run.)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293)
+#endif // _MSC_VER
+
 #include <filament/Box.h>
 #include <filament/RenderableManager.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
+// clang-format on
+
 #include <memory>
 #include <tuple>
 

@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/Dtype.h"
+
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
-
-#include "open3d/core/Dtype.h"
 
 namespace open3d {
 
@@ -40,6 +40,7 @@ void pybind_core_dtype(py::module &m) {
             .value("Int32", core::Dtype::Int32)
             .value("Int64", core::Dtype::Int64)
             .value("UInt8", core::Dtype::UInt8)
+            .value("UInt16", core::Dtype::UInt16)
             .value("Bool", core::Dtype::Bool)
             .export_values();
 

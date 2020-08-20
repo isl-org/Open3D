@@ -37,6 +37,11 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LeastSquares.h"
+#include "open3d/core/linalg/Matmul.h"
+#include "open3d/core/linalg/SVD.h"
+#include "open3d/core/linalg/Solve.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -85,6 +90,9 @@ private:
                 dl_data_type.code = DLDataTypeCode::kDLInt;
                 break;
             case Dtype::UInt8:
+                dl_data_type.code = DLDataTypeCode::kDLUInt;
+                break;
+            case Dtype::UInt16:
                 dl_data_type.code = DLDataTypeCode::kDLUInt;
                 break;
             default:
@@ -188,6 +196,24 @@ Tensor Tensor::Ones(const SizeVector& shape,
                     Dtype dtype,
                     const Device& device) {
     return Full(shape, 1, dtype, device);
+}
+
+Tensor Tensor::Eye(int64_t n, Dtype dtype, const Device& device) {
+    Tensor eye = Tensor::Zeros({n, n}, dtype, device);
+    eye.AsStrided({n}, {eye.strides_[0] + eye.strides_[1]}).Fill(1);
+    return eye;
+}
+
+Tensor Tensor::Diag(const Tensor& input) {
+    const SizeVector& shape = input.GetShape();
+    if (shape.size() != 1) {
+        utility::LogError("Input tensor must be 1D, but got shape {}.",
+                          input.shape_.ToString());
+    }
+    int64_t n = shape[0];
+    Tensor diag = Tensor::Zeros({n, n}, input.GetDtype(), input.GetDevice());
+    diag.AsStrided({n}, {diag.strides_[0] + diag.strides_[1]}) = input;
+    return diag;
 }
 
 Tensor Tensor::GetItem(const TensorKey& tk) const {
@@ -1082,6 +1108,9 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
                 case 8:
                     dtype = Dtype::UInt8;
                     break;
+                case 16:
+                    dtype = Dtype::UInt16;
+                    break;
                 default:
                     utility::LogError("Unsupported kDLUInt bits {}",
                                       src->dl_tensor.dtype.bits);
@@ -1184,6 +1213,36 @@ void Tensor::AssertShape(const SizeVector& expected_shape) const {
                 "Tensor shape {} does not match expected shape {}: {}", shape_,
                 expected_shape);
     }
+}
+
+Tensor Tensor::Matmul(const Tensor& rhs) const {
+    Tensor output;
+    core::Matmul(*this, rhs, output);
+    return output;
+}
+
+Tensor Tensor::Solve(const Tensor& rhs) const {
+    Tensor output;
+    core::Solve(*this, rhs, output);
+    return output;
+};
+
+Tensor Tensor::LeastSquares(const Tensor& rhs) const {
+    Tensor output;
+    core::LeastSquares(*this, rhs, output);
+    return output;
+};
+
+Tensor Tensor::Inverse() const {
+    Tensor output;
+    core::Inverse(*this, output);
+    return output;
+}
+
+std::tuple<Tensor, Tensor, Tensor> Tensor::SVD() const {
+    Tensor U, S, VT;
+    core::SVD(*this, U, S, VT);
+    return std::tie(U, S, VT);
 }
 
 }  // namespace core

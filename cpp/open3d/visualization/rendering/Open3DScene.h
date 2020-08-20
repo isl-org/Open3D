@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/rendering/Renderer.h"
 
@@ -58,6 +60,7 @@ public:
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     void UpdateMaterial(const Material& mat);
+    std::vector<std::string> GetGeometries();
 
     enum class LOD {
         HIGH_DETAIL,  // used when rendering time is not as important
@@ -68,6 +71,7 @@ public:
 
     Scene* GetScene() const;
     Camera* GetCamera() const;
+    Renderer& GetRenderer() const;
 
 private:
     Renderer& renderer_;

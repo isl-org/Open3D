@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/ProgressBar.h"
 
 #include <imgui.h>
+
 #include <cmath>
 
 #include "open3d/visualization/gui/Theme.h"
@@ -50,7 +51,7 @@ void ProgressBar::SetValue(float value) { impl_->value_ = value; }
 float ProgressBar::GetValue() const { return impl_->value_; }
 
 Size ProgressBar::CalcPreferredSize(const Theme& theme) const {
-    return Size(Widget::DIM_GROW, 0.25 * theme.font_size);
+    return Size(Widget::DIM_GROW, int(std::ceil(0.25 * theme.font_size)));
 }
 
 Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {
@@ -59,13 +60,15 @@ Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {
     auto color = colorToImguiRGBA(fg);
     float rounding = frame.height / 2.0f;
     ImGui::GetWindowDrawList()->AddRect(
-            ImVec2(frame.x, frame.y),
-            ImVec2(frame.GetRight(), frame.GetBottom()), color, rounding);
+            ImVec2(float(frame.x), float(frame.y)),
+            ImVec2(float(frame.GetRight()), float(frame.GetBottom())), color,
+            rounding);
     float x = float(frame.x) + float(frame.width) * impl_->value_;
     x = std::max(x, float(frame.x + rounding));
-    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(frame.x, frame.y),
-                                              ImVec2(x, frame.GetBottom()),
-                                              color, frame.height / 2.0f);
+    ImGui::GetWindowDrawList()->AddRectFilled(
+            ImVec2(float(frame.x), float(frame.y)),
+            ImVec2(float(x), float(frame.GetBottom())), color,
+            frame.height / 2.0f);
     return DrawResult::NONE;
 }
 

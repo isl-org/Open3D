@@ -113,9 +113,9 @@ def test_compare_to_conv3d(dtype, device, kernel_size, out_channels,
     y_conv3d = conv3d(inp_volume).numpy()
 
     # extract result at output positions
-    y_conv3d = np.ascontiguousarray(
-        y_conv3d[0, out_positions_int[:, 2], out_positions_int[:, 1],
-                 out_positions_int[:, 0], :])
+    y_conv3d = np.ascontiguousarray(y_conv3d[0, out_positions_int[:, 2],
+                                             out_positions_int[:, 1],
+                                             out_positions_int[:, 0], :])
 
     if with_normalization:
         for i, v in enumerate(y_conv3d):
@@ -213,9 +213,9 @@ def test_compare_to_conv3dtranspose(dtype, device, kernel_size, out_channels,
     y_conv3d = conv3d(inp_volume).numpy()
 
     # extract result at output positions
-    y_conv3d = np.ascontiguousarray(
-        y_conv3d[0, out_positions_int[:, 2], out_positions_int[:, 1],
-                 out_positions_int[:, 0], :])
+    y_conv3d = np.ascontiguousarray(y_conv3d[0, out_positions_int[:, 2],
+                                             out_positions_int[:, 1],
+                                             out_positions_int[:, 0], :])
 
     if with_out_importance:
         y_conv3d *= out_importance[:, np.newaxis]

@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/Checkbox.h"
 
 #include <imgui.h>
+
 #include <cmath>
 #include <string>
 
@@ -61,16 +62,16 @@ Size Checkbox::CalcPreferredSize(const Theme& theme) const {
     auto em = ImGui::GetTextLineHeight();
     auto padding = ImGui::GetStyle().FramePadding;
     auto text_size = ImGui::GetFont()->CalcTextSizeA(
-            theme.font_size, 10000, 10000, impl_->name_.c_str());
-    int height = std::ceil(em + 2.0f * padding.y);
+            float(theme.font_size), 10000, 10000, impl_->name_.c_str());
+    int height = int(std::ceil(em + 2.0f * padding.y));
     auto checkbox_width = height + padding.x;
-    return Size(checkbox_width + std::ceil(text_size.x + 2.0f * padding.x),
+    return Size(int(checkbox_width + std::ceil(text_size.x + 2.0f * padding.x)),
                 height);
 }
 
 Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
     auto result = Widget::DrawResult::NONE;
 
     // ImGUI doesn't offer styling specific to checkboxes other than the
@@ -93,7 +94,7 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
     }
 
     DrawImGuiPushEnabledState();
-    ImGui::PushItemWidth(GetFrame().width);
+    ImGui::PushItemWidth(float(GetFrame().width));
     if (ImGui::Checkbox(impl_->name_.c_str(), &impl_->is_checked_)) {
         if (impl_->on_checked_) {
             impl_->on_checked_(impl_->is_checked_);

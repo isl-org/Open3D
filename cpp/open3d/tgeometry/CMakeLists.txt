@@ -1,6 +1,7 @@
 # Create object library
 set(ALL_SOURCE_FILES
     PointCloud.cpp
+    Image.cpp
     TensorListMap.cpp
 )
 

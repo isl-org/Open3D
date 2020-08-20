@@ -24,12 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/utility/FileSystem.h"
+
 #include <fcntl.h>
 #include <sys/stat.h>
+
 #include <algorithm>
 
 #include "open3d/utility/Console.h"
-#include "open3d/utility/FileSystem.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {

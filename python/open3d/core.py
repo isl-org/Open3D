@@ -7,6 +7,11 @@ from open3d.pybind.core import DtypeUtil
 from open3d.pybind.core import cuda
 from open3d.pybind.core import NoneType
 from open3d.pybind.core import TensorList
+from open3d.pybind.core import matmul as pybind_matmul
+from open3d.pybind.core import lstsq as pybind_lstsq
+from open3d.pybind.core import solve as pybind_solve
+from open3d.pybind.core import inv as pybind_inv
+from open3d.pybind.core import svd as pybind_svd
 
 none = NoneType()
 
@@ -22,6 +27,8 @@ def _numpy_dtype_to_dtype(numpy_dtype):
         return Dtype.Int64
     elif numpy_dtype == np.uint8:
         return Dtype.UInt8
+    elif numpy_dtype == np.uint16:
+        return Dtype.UInt16
     elif numpy_dtype == np.bool:
         return Dtype.Bool
     else:
@@ -93,6 +100,97 @@ def _to_o3d_tensor_key(key):
         return o3d.pybind.core.TensorKey.index_tensor(key)
     else:
         raise TypeError("Invalid key type {}.".format(type(key)))
+
+
+@cast_to_py_tensor
+def matmul(lhs, rhs):
+    """
+    Matrix multiplication between Tensor \param lhs and Tensor \param rhs
+
+    Args:
+      lhs: Tensor of shape (m, k)
+      rhs: Tensor of shape (k, n)
+
+    Returns:
+      Tensor of shape (m, n)
+
+    - Both tensors should share the same device and dtype.
+    - Int32, Int64, Float32, Float64 are supported,
+      but results of big integers' matmul are not guaranteed, overflow can happen.
+    """
+    return pybind_matmul(lhs, rhs)
+
+
+@cast_to_py_tensor
+def solve(lhs, rhs):
+    """
+    Returns X by solving linear system AX = B with LU decomposition,
+    where A is Tensor \param lhs and B is Tensor \param rhs.
+
+    Args:
+      lhs: Tensor of shape (n, n)
+      rhs: Tensor of shape (n, k)
+
+    Returns:
+      Tensor of shape (n, k)
+
+    - Both tensors should share the same device and dtype.
+    - Float32 and Float64 are supported.
+    """
+    return pybind_solve(lhs, rhs)
+
+
+@cast_to_py_tensor
+def lstsq(lhs, rhs):
+    """
+    Returns X by solving linear system AX = B with QR decomposition,
+    where A is Tensor \param lhs and B is Tensor \param rhs.
+
+    Args:
+      lhs: Tensor of shape (m, n), m >= n and is a full rank matrix.
+      rhs: Tensor of shape (m, k)
+
+    Returns:
+      Tensor of shape (n, k)
+
+    - Both tensors should share the same device and dtype.
+    - Float32 and Float64 are supported.
+    """
+    return pybind_lstsq(lhs, rhs)
+
+
+@cast_to_py_tensor
+def inv(val):
+    """
+    Returns matrix's inversion with LU decomposition.
+
+    Args:
+      val: Tensor of shape (m, m) and is an invertable matrix
+
+    Returns:
+      Tensor of shape (m, m)
+
+    - Float32 and Float64 are supported.
+    """
+    return pybind_inv(val)
+
+
+@cast_to_py_tensor
+def svd(val):
+    """
+    Returns matrix's SVD decomposition: U S VT = A, where A is Tensor \param val.
+
+    Args:
+      val: Tensor of shape (m, n).
+
+    Returns: a tuple of tensors:
+      U: Tensor of shape (m, n)
+      S: Tensor of shape (min(m, n))
+      VT: Tensor of shape (n, n)
+
+    - Float32 and Float64 are supported.
+    """
+    return pybind_svd(val)
 
 
 class Tensor(o3d.pybind.core.Tensor):
@@ -197,6 +295,30 @@ class Tensor(o3d.pybind.core.Tensor):
         if not isinstance(shape, SizeVector):
             shape = SizeVector(shape)
         return super(Tensor, Tensor).ones(shape, dtype, device)
+
+    @staticmethod
+    @cast_to_py_tensor
+    def eye(n, dtype=Dtype.Float64, device=Device("CPU:0")):
+        """
+        Create an identity square matrix.
+
+        Args:
+            n (int): size of square matrix
+            dtype (Dtype): Data type of the tensor.
+            device (Device): Device where the tensor is created.
+        """
+        return super(Tensor, Tensor).eye(n, dtype, device)
+
+    @staticmethod
+    @cast_to_py_tensor
+    def diag(value):
+        """
+        Create an diagonal square matrix.
+
+        Args:
+            value (Tensor): array of numbers on the diagonal
+        """
+        return super(Tensor, Tensor).diag(value)
 
     @cast_to_py_tensor
     def cuda(self, device_id=0):
@@ -492,11 +614,116 @@ class Tensor(o3d.pybind.core.Tensor):
         return super(Tensor, self).to(dtype, copy)
 
     @cast_to_py_tensor
+    def contiguous(self):
+        """
+        Returns a contiguous Tensor containing the same data in the same device.
+        If self tensor is already contiguous, the same underlying memory will be
+        used.
+        """
+        return super(Tensor, self).contiguous()
+
+    @cast_to_py_tensor
+    def T(self):
+        """
+        Expects input to be <= 2-D Tensor by swapping dimension 0 and 1.
+        0-D and 1-D Tensor remains the same.
+        """
+        return super(Tensor, self).T()
+
+    @cast_to_py_tensor
     def nonzero(self, as_tuple=False):
         if as_tuple:
             return super(Tensor, self)._non_zero_numpy()
         else:
             return super(Tensor, self)._non_zero()
+
+    @cast_to_py_tensor
+    def matmul(self, value):
+        """
+        Matrix multiplication between Tensor \param self and Tensor \param value
+
+        Args:
+          self: Tensor of shape (m, k)
+          value: Tensor of shape (k, n)
+
+        Returns:
+          Tensor of shape (m, n)
+
+        - Both tensors should share the same device and dtype.
+        - Int32, Int64, Float32, Float64 are supported,
+          but results of big integers' matmul are not guaranteed, overflow can happen.
+        """
+        return super(Tensor, self).matmul(value)
+
+    @cast_to_py_tensor
+    def solve(self, value):
+        """
+        Returns X by solving linear system AX = B with LU decomposition,
+        where A is Tensor \param self and B is Tensor \param value.
+
+        Args:
+          self: Tensor of shape (n, n)
+          value: Tensor of shape (n, k)
+
+        Returns:
+          Tensor of shape (n, k)
+
+        - Both tensors should share the same device and dtype.
+        - Float32 and Float64 are supported.
+        """
+        return super(Tensor, self).solve(value)
+
+    @cast_to_py_tensor
+    def lstsq(self, value):
+        """
+        Returns X by solving linear system AX = B with QR decomposition,
+        where A is Tensor \param self and B is Tensor \param value.
+        Use it only when A is non-square.
+
+        Args:
+          self: Tensor of shape (m, n), m >= n and is a full rank matrix.
+          value: Tensor of shape (m, k)
+
+        Returns:
+          Tensor of shape (n, k)
+
+        - Both tensors should share the same device and dtype.
+        - Float32 and Float64 are supported.
+        - The result can be unexpected when A is not a full-rank matrix and the backend is cuda.
+        """
+        return super(Tensor, self).lstsq(value)
+
+    @cast_to_py_tensor
+    def inv(self):
+        """
+        Returns matrix's inversion with LU decomposition.
+
+        Args:
+          self: Tensor of shape (m, m) and is an invertable matrix
+
+        Returns:
+          Tensor of shape (m, m)
+
+        - Float32 and Float64 are supported.
+        """
+        return super(Tensor, self).inv()
+
+    @cast_to_py_tensor
+    def svd(self):
+        """
+        Returns matrix's SVD decomposition: U S VT = A, where A is Tensor \param self.
+
+        Args:
+          self: Tensor of shape (m, n).
+
+        Returns: a tuple of tensors:
+          U: Tensor of shape (m, n)
+          S: Tensor of shape (min(m, n))
+          VT: Tensor of shape (n, n)
+
+        - Float32 and Float64 are supported.
+        """
+        return super(Tensor, self).svd()
 
     def __add__(self, value):
         return self.add(value)
@@ -521,6 +748,9 @@ class Tensor(o3d.pybind.core.Tensor):
 
     def __rmul__(self, value):
         return self.mul(value)
+
+    def __matmul__(self, value):
+        return self.matmul(value)
 
     def __imul__(self, value):
         return self.mul_(value)
@@ -698,6 +928,8 @@ class Tensor(o3d.pybind.core.Tensor):
             return super(Tensor, self)._item_int64_t()
         elif self.dtype == Dtype.UInt8:
             return super(Tensor, self)._item_uint8_t()
+        elif self.dtype == Dtype.UInt16:
+            return super(Tensor, self)._item_uint16_t()
         elif self.dtype == Dtype.Bool:
             return super(Tensor, self)._item_bool()
         else:

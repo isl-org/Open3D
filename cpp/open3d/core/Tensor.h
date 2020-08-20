@@ -192,6 +192,12 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
+    /// Create a identity matrix of size n x n.
+    static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
+
+    /// Create a square matrix with specified diagonal elements in input.
+    static Tensor Diag(const Tensor& input);
+
     /// Pythonic __getitem__ for tensor.
     ///
     /// Returns a view of the original tensor, if TensorKey is
@@ -862,6 +868,26 @@ public:
     /// used.
     Tensor Contiguous() const;
 
+    /// Computes matrix multiplication with *this and rhs and returns the
+    /// result.
+    Tensor Matmul(const Tensor& rhs) const;
+
+    /// Solves the linear system AX = B with QR decomposition and returns X.
+    /// A must be a square matrix.
+    Tensor Solve(const Tensor& rhs) const;
+
+    /// Solves the linear system AX = B with QR decomposition and returns X.
+    /// A is a (m, n) matrix with m >= n.
+    Tensor LeastSquares(const Tensor& rhs) const;
+
+    /// Computes the matrix inversion of the square matrix *this with LU
+    /// factorization and returns the result.
+    Tensor Inverse() const;
+
+    /// Computes the matrix SVD decomposition A = U S VT and returns the result.
+    /// Note VT (V transpose) is returned instead of V.
+    std::tuple<Tensor, Tensor, Tensor> SVD() const;
+
     inline SizeVector GetShape() const { return shape_; }
 
     inline const SizeVector& GetShapeRef() const { return shape_; }
@@ -965,7 +991,7 @@ protected:
 
     /// Underlying memory buffer for Tensor.
     std::shared_ptr<Blob> blob_ = nullptr;
-};
+};  // namespace core
 
 template <>
 inline Tensor::Tensor(const std::vector<bool>& init_vals,

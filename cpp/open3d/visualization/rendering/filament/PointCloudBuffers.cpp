@@ -24,10 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293)
+#endif  // _MSC_VER
+
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
 #include <geometry/SurfaceOrientation.h>
-#include <Eigen/Core>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
@@ -48,14 +63,16 @@ struct ColoredVertex {
     math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
     math::float2 uv = {0.f, 0.f};
 
-    static size_t GetPositionOffset() {
+    static std::uint32_t GetPositionOffset() {
         return offsetof(ColoredVertex, position);
     }
-    static size_t GetColorOffset() { return offsetof(ColoredVertex, color); }
-    static size_t GetTangentOffset() {
+    static std::uint32_t GetColorOffset() {
+        return offsetof(ColoredVertex, color);
+    }
+    static std::uint32_t GetTangentOffset() {
         return offsetof(ColoredVertex, tangent);
     }
-    static size_t GetUVOffset() { return offsetof(ColoredVertex, uv); }
+    static std::uint32_t GetUVOffset() { return offsetof(ColoredVertex, uv); }
     void SetVertexPosition(const Eigen::Vector3d& pos) {
         auto float_pos = pos.cast<float>();
         position.x = float_pos(0);
@@ -93,7 +110,7 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
     // we need to use this workaround.
     VertexBuffer* vbuf = VertexBuffer::Builder()
                                  .bufferCount(1)
-                                 .vertexCount(n_vertices)
+                                 .vertexCount(std::uint32_t(n_vertices))
                                  .attribute(VertexAttribute::POSITION, 0,
                                             VertexBuffer::AttributeType::FLOAT3,
                                             ColoredVertex::GetPositionOffset(),
@@ -143,7 +160,7 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
                                    .normals(reinterpret_cast<math::float3*>(
                                            normals.data()))
                                    .build();
-        orientation.getQuats(float4v_tagents, n_vertices);
+        orientation->getQuats(float4v_tagents, n_vertices);
     }
 
     const size_t vertices_byte_count = n_vertices * sizeof(ColoredVertex);

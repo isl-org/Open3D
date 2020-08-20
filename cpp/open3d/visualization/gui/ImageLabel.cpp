@@ -94,12 +94,12 @@ Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
         const char* error_text = "  Error\nloading\n image";
         Color fg(1.0, 1.0, 1.0);
         ImGui::GetWindowDrawList()->AddRectFilled(
-                ImVec2(frame.x, frame.y),
-                ImVec2(frame.GetRight(), frame.GetBottom()),
+                ImVec2(float(frame.x), float(frame.y)),
+                ImVec2(float(frame.GetRight()), float(frame.GetBottom())),
                 IM_COL32(255, 0, 0, 255));
         ImGui::GetWindowDrawList()->AddRect(
-                ImVec2(frame.x, frame.y),
-                ImVec2(frame.GetRight(), frame.GetBottom()),
+                ImVec2(float(frame.x), float(frame.y)),
+                ImVec2(float(frame.GetRight()), float(frame.GetBottom())),
                 IM_COL32(255, 255, 255, 255));
         ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(fg));
 
@@ -107,8 +107,9 @@ Widget::DrawResult ImageLabel::Draw(const DrawContext& context) {
         float wrap_width = frame.width - std::ceil(2.0f * padding.x);
         float wrapX = ImGui::GetCursorPos().x + wrap_width;
         auto* font = ImGui::GetFont();
-        auto text_size = font->CalcTextSizeA(
-                context.theme.font_size, wrap_width, wrap_width, error_text);
+        auto text_size =
+                font->CalcTextSizeA(float(context.theme.font_size), wrap_width,
+                                    wrap_width, error_text);
         float x = (float(frame.width) - text_size.x) / 2.0f;
         float y = (float(frame.height) - text_size.y) / 2.0f;
 
