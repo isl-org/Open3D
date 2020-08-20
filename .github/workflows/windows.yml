@@ -115,41 +115,46 @@ jobs:
       - name: Test Python 3.5 package
         run: |
           python -V
-          ls -R
-          python -m pip install open3d*cp35*.whl
+          python -m pip install (Get-ChildItem open3d*cp35*.whl).Name
           python -c "import open3d; print(open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
       - name: Set up Python 3.6
+        if: ${{ !cancelled() }}
         uses: actions/setup-python@v2
         with:
           python-version: 3.6
       - name: Test Python 3.6 package
+        if: ${{ !cancelled() }}
         run: |
           python -V
-          python -m pip install open3d*cp36*.whl
+          python -m pip install (Get-ChildItem open3d*cp36*.whl).Name
           python -c "import open3d; print(open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
       - name: Set up Python 3.7
+        if: ${{ !cancelled() }}
         uses: actions\setup-python@v2
         with:
           python-version: 3.7
       - name: Test Python 3.7 package
+        if: ${{ !cancelled() }}
         run: |
           python -V
-          python -m pip install open3d*cp37*.whl
+          python -m pip install (Get-ChildItem open3d*cp37*.whl).Name
           python -c "import open3d; print(open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
       - name: Set up Python 3.8
+        if: ${{ !cancelled() }}
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Test Python 3.8 package
+        if: ${{ !cancelled() }}
         run: |
           python -V
-          python -m pip install open3d*cp38*.whl
+          python -m pip install (Get-ChildItem open3d*cp38*.whl).Name
           python -c "import open3d; print(open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
