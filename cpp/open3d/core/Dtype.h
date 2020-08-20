@@ -31,21 +31,6 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/utility/Console.h"
 
-static_assert(sizeof(float) == 4,
-              "Unsupported platform: float must be 4 bytes.");
-static_assert(sizeof(double) == 8,
-              "Unsupported platform: double must be 8 bytes.");
-static_assert(sizeof(int) == 4, "Unsupported platform: int must be 4 bytes.");
-static_assert(sizeof(int32_t) == 4,
-              "Unsupported platform: int32_t must be 4 bytes.");
-static_assert(sizeof(int64_t) == 8,
-              "Unsupported platform: int64_t must be 8 bytes.");
-static_assert(sizeof(uint8_t) == 1,
-              "Unsupported platform: uint8_t must be 1 byte.");
-static_assert(sizeof(uint16_t) == 2,
-              "Unsupported platform: uint16_t must be 2 bytes.");
-static_assert(sizeof(bool) == 1, "Unsupported platform: bool must be 1 byte.");
-
 namespace open3d {
 namespace core {
 
