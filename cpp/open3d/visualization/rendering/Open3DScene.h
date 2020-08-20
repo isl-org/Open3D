@@ -61,7 +61,7 @@ public:
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     void AddModel(const TriangleMeshModel& model);
-    
+
     void UpdateMaterial(const Material& mat);
     std::vector<std::string> GetGeometries();
 
