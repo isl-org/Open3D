@@ -89,7 +89,7 @@ jobs:
       - name: Upload wheel
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.PIP_PKG_NAME }}
+          name: open3d_win_amd64_wheels
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
@@ -107,7 +107,7 @@ jobs:
         # See https://github.com/dawidd6/action-download-artifact for more
         # flexible artifact download options
         with:
-          path: open3d_wheels
+          name: open3d_win_amd64_wheels
       - name: Set up Python 3.5
         uses: actions/setup-python@v2
         with:
@@ -115,7 +115,8 @@ jobs:
       - name: Test Python 3.5 package
         run: |
           python -V
-          python -m pip install open3d_wheels/open3d*cp35*/open3d*cp35*.whl
+          ls -R
+          python -m pip install open3d*cp35*.whl
           python -c "import open3d; print(open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
@@ -126,18 +127,18 @@ jobs:
       - name: Test Python 3.6 package
         run: |
           python -V
-          python -m pip install open3d_wheels/open3d*cp36*/open3d*cp36*.whl
+          python -m pip install open3d*cp36*.whl
           python -c "import open3d; print(open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
       - name: Set up Python 3.7
-        uses: actions/setup-python@v2
+        uses: actions\setup-python@v2
         with:
           python-version: 3.7
       - name: Test Python 3.7 package
         run: |
           python -V
-          python -m pip install open3d_wheels/open3d*cp37*/open3d*cp37*.whl
+          python -m pip install open3d*cp37*.whl
           python -c "import open3d; print(open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
@@ -148,7 +149,7 @@ jobs:
       - name: Test Python 3.8 package
         run: |
           python -V
-          python -m pip install open3d_wheels/open3d*cp38*/open3d*cp38*.whl
+          python -m pip install open3d*cp38*.whl
           python -c "import open3d; print(open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"

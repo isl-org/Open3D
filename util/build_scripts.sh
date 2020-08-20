@@ -161,7 +161,7 @@ build_wheel() {
         rebuild_list=(bin lib/Release/*.{a,so}  lib/_build_config.py cpp)
         echo
         echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
-        rm -r "${rebuild_list[@]}"
+        rm -r "${rebuild_list[@]}" || true
         cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
             -DBUILD_CUDA_MODULE=ON \
             -DCUDA_ARCH=BasicPTX \
