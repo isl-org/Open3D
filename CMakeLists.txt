@@ -8,8 +8,8 @@ set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment ve
 
 # Open3D build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
-option(BUILD_CPP_EXAMPLES         "Build the Open3D example programs"        ON )
-option(BUILD_UNIT_TESTS           "Build the Open3D unit tests"              OFF)
+option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
+option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
@@ -17,7 +17,6 @@ option(BUILD_GUI                  "Builds new GUI"                           ON 
 option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
-option(USE_VULKAN                 "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON )
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 # 3rd-party build options
@@ -112,10 +111,6 @@ if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
     set(USE_SYSTEM_GLEW OFF)
     set(USE_SYSTEM_GLFW OFF)
 endif()
-if(BUILD_GUI AND WIN32)
-    message(STATUS "New GUI is currently unsupported on Windows")
-    set(BUILD_GUI OFF)
-endif()
 if(BUILD_RPC_INTERFACE AND WIN32)
     message(STATUS "The RPC interface is currently unsupported on Windows.")
     set(BUILD_RPC_INTERFACE OFF)
@@ -201,6 +196,12 @@ if (BUILD_CUDA_MODULE)
         find_package(CUDA REQUIRED) # required for cuda_select_nvcc_arch_flags
         message(STATUS "Building CUDA enabled")
         enable_language(CUDA)
+        # TODO: when CMake minimum version is 3.18+, switch to the NEW behavior
+        # of CMP0104 and replease CUDA_GENCODES with CUDA_ARCHITECTURES target
+        # properties. See https://cmake.org/cmake/help/v3.18/policy/CMP0104.html.
+        if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18.0")
+            cmake_policy(SET CMP0104 OLD)
+        endif()
         # Get gencode flags
         if("${CUDA_ARCH}" STREQUAL "User")
             cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
@@ -231,8 +232,6 @@ endif ()
 
 # OS specific settings
 if(BUILD_GUI AND WIN32)
-    # Filament links normally only against static runtime
-    set(STATIC_WINDOWS_RUNTIME ON)
     if(NOT COMMAND target_link_options)  # CMake 3.13+ required
         # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
         # Filament needs to link through bluegl.lib.
@@ -344,13 +343,16 @@ function(open3d_set_global_properties target)
             # Option 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
             target_compile_options(${target} PRIVATE /MP)
-            if(COMMAND target_link_options)
+            if(COMMAND target_link_options) # target_link_options add in 3.13
                 if(BUILD_GUI)
                     # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
                     # Filament needs to link through bluegl.lib.
                     # See https://github.com/google/filament/issues/652
                     target_link_options(${target} PRIVATE /force:multiple)
                 endif()
+                # The examples' .pdb files use up a lot of space and cause us to run
+                # out of space on Github Actions. Compressing gives us another couple of GB.
+                target_link_options(${target} PRIVATE /pdbcompress)
             endif()
         endif()
     elseif(APPLE)
@@ -436,6 +438,9 @@ open3d_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
 open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
 open3d_aligned_print("Build GUI" "${BUILD_GUI}")
 open3d_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
+if(WIN32)
+    open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
+endif()
 open3d_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
 open3d_aligned_print("Build Examples" "${BUILD_CPP_EXAMPLES}")
 open3d_aligned_print("Build Python Module" "${BUILD_PYTHON_MODULE}")

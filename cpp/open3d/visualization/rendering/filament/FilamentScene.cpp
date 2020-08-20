@@ -24,9 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/FilamentScene.h"
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: PixelBufferDescriptor assert unsigned is positive before subtracting
+//       but MSVC can't figure that out.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+// 4305: LightManager.h needs to specify some constants as floats
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293 4305)
+#endif  // _MSC_VER
 
-#include <backend/PixelBufferDescriptor.h>
+#include <backend/PixelBufferDescriptor.h>  // bogus 4146 warning on MSVC
 #include <filament/Engine.h>
 #include <filament/IndirectLight.h>
 #include <filament/LightManager.h>
@@ -39,6 +50,19 @@
 #include <filament/TransformManager.h>
 #include <filament/View.h>
 #include <utils/EntityManager.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
+
+// We do NOT include this first because it includes Image.h, which includes
+// the fmt library, which includes windows.h (on Windows), which #defines
+// OPAQUE (!!??) which causes syntax errors with filament/View.h which tries
+// to make OPAQUE an member of a class enum. So include this after all the
+// Filament headers to avoid this problem.
+#if 1  // (enclose in #if so that apply-style doesn't move this)
+#include "open3d/visualization/rendering/filament/FilamentScene.h"
+#endif  // 1
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/LineSet.h"
@@ -276,6 +300,15 @@ void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
     }
 }
 
+bool FilamentScene::GeometryIsVisible(const std::string& object_name) {
+    auto geom = GetGeometry(object_name);
+    if (geom) {
+        return geom->visible;
+    } else {
+        return false;
+    }
+}
+
 utils::EntityInstance<filament::TransformManager>
 FilamentScene::GetGeometryTransformInstance(RenderableGeometry* geom) {
     filament::TransformManager::Instance itransform;
@@ -382,10 +415,13 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
                         rendering::TextureSamplerParameters::Pretty())
             .SetTexture("reflectanceMap", maps.reflectance_map,
                         rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("clearCoatMap", maps.clear_coat_map,
-                        rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("clearCoatRoughnessMap", maps.clear_coat_roughness_map,
-                        rendering::TextureSamplerParameters::Pretty())
+            // NOTE: Disabled temporarily to avoid Filament warning until
+            // defaultLit is reworked to use fewer samplers
+            // .SetTexture("clearCoatMap", maps.clear_coat_map,
+            //             rendering::TextureSamplerParameters::Pretty())
+            // .SetTexture("clearCoatRoughnessMap",
+            // maps.clear_coat_roughness_map,
+            //             rendering::TextureSamplerParameters::Pretty())
             .SetTexture("anisotropyMap", maps.anisotropy_map,
                         rendering::TextureSamplerParameters::Pretty())
             .Finish();
@@ -408,8 +444,8 @@ void FilamentScene::UpdateNormalShader(GeometryMaterialInstance& geom_mi) {
 
 void FilamentScene::UpdateDepthShader(GeometryMaterialInstance& geom_mi) {
     auto* camera = views_.begin()->second.view->GetCamera();
-    const float f = camera->GetFar();
-    const float n = camera->GetNear();
+    const float f = float(camera->GetFar());
+    const float n = float(camera->GetNear());
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetParameter("pointSize", geom_mi.properties.point_size)
             .SetParameter("cameraNear", n)
@@ -426,7 +462,7 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         return map && map->HasData();
     };
     if (is_map_valid(props.albedo_img)) {
-        maps.albedo_map = renderer_.AddTexture(props.albedo_img);
+        maps.albedo_map = renderer_.AddTexture(props.albedo_img, true);
     }
     if (is_map_valid(props.normal_img)) {
         maps.normal_map = renderer_.AddTexture(props.normal_img);

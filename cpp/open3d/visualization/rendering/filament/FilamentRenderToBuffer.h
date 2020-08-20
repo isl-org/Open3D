@@ -54,7 +54,7 @@ public:
     FilamentRenderToBuffer(filament::Engine& engine, FilamentRenderer& parent);
     ~FilamentRenderToBuffer() override;
 
-    void SetDimensions(std::size_t width, std::size_t height) override;
+    void SetDimensions(std::uint32_t width, std::uint32_t height) override;
     void CopySettings(const View* view) override;
     View& GetView() override;
 
