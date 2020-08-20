@@ -86,12 +86,11 @@ void LoadTextures(const std::string& filename,
             aiString path;
             mat->GetTexture(type, 0, &path);
             std::string strpath(path.C_Str());
-            auto p_win = strpath.rfind("\\");
-            auto p_unix = strpath.rfind("/");
-            if (p_unix != std::string::npos) {
-                strpath = strpath.substr(p_win + 1);
-            } else if (p_win != std::string::npos) {
-                strpath = strpath.substr(p_unix + 1);
+            // normalize path separators
+            auto p_win = strpath.find("\\");
+            while (p_win != std::string::npos) {
+                strpath[p_win] = '/';
+                p_win = strpath.find("\\", p_win + 1);
             }
             auto image = io::CreateImageFromFile(base_path + strpath);
             if (image->HasData()) {
