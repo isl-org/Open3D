@@ -47,8 +47,8 @@ struct Light {
     Eigen::Vector3f direction = Eigen::Vector3f(0.f, 0.f, -1.f);
 
     // Spot lights parameters
-    float light_cone_inner = M_PI / 4.f;
-    float light_cone_outer = M_PI / 2.f;
+    float light_cone_inner = float(M_PI / 4.0);
+    float light_cone_outer = float(M_PI / 2.0);
 };
 
 }  // namespace rendering
