@@ -128,12 +128,10 @@ bool SetMeshData(const core::Tensor& vertices,
                  const std::string& layer = "",
                  const std::map<std::string, core::Tensor>& vertex_attributes =
                          std::map<std::string, core::Tensor>(),
-                 const core::Tensor& faces = core::Tensor({0},
-                                                          core::Dtype::Int32),
+                 const core::Tensor& faces = core::Tensor({0}, core::Int32),
                  const std::map<std::string, core::Tensor>& face_attributes =
                          std::map<std::string, core::Tensor>(),
-                 const core::Tensor& lines = core::Tensor({0},
-                                                          core::Dtype::Int32),
+                 const core::Tensor& lines = core::Tensor({0}, core::Int32),
                  const std::map<std::string, core::Tensor>& line_attributes =
                          std::map<std::string, core::Tensor>(),
                  const std::map<std::string, core::Tensor>& textures =

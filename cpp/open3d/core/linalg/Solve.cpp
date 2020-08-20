@@ -50,7 +50,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
                           A.GetDtype().ToString(), B.GetDtype().ToString());
     }
 
-    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
+    if (dtype != Float32 && dtype != Float64) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}",
@@ -92,7 +92,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        Tensor ipiv = Tensor::Empty({n}, Dtype::Int32, device);
+        Tensor ipiv = Tensor::Empty({n}, Int32, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
         SolveCUDA(A_data, B_data, ipiv_data, n, k, dtype, device);
@@ -100,7 +100,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        Tensor ipiv = Tensor::Empty({n}, Dtype::Int64, device);
+        Tensor ipiv = Tensor::Empty({n}, Int64, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
         SolveCPU(A_data, B_data, ipiv_data, n, k, dtype, device);

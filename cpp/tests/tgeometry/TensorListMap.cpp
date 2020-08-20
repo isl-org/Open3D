@@ -40,7 +40,7 @@ TEST(TensorListMap, Constructor_GetPrimaryKey) {
 }
 
 TEST(TensorListMap, Assign) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     core::Device device = core::Device("CPU:0");
 
     tgeometry::TensorListMap tm("points");
@@ -68,7 +68,7 @@ TEST(TensorListMap, Assign) {
 }
 
 TEST(TensorListMap, SynchronizedPushBack) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     core::Device device = core::Device("CPU:0");
 
     tgeometry::TensorListMap tm(
@@ -101,17 +101,17 @@ TEST(TensorListMap, SynchronizedPushBack) {
 
     // Wrong dtype.
     EXPECT_ANY_THROW(tm.SynchronizedPushBack(
-            {{"points", core::Tensor::Ones({3}, core::Dtype::Float64, device)},
+            {{"points", core::Tensor::Ones({3}, core::Float64, device)},
              {"colors", a_color}}));
 
     // Wrong shape.
     EXPECT_ANY_THROW(tm.SynchronizedPushBack(
-            {{"points", core::Tensor::Ones({5}, core::Dtype::Float32, device)},
+            {{"points", core::Tensor::Ones({5}, core::Float32, device)},
              {"colors", a_color}}));
 }
 
 TEST(TensorListMap, IsSizeSynchronized) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     core::Device device = core::Device("CPU:0");
 
     tgeometry::TensorListMap tm(
@@ -127,7 +127,7 @@ TEST(TensorListMap, IsSizeSynchronized) {
 }
 
 TEST(TensorListMap, AssertSizeSynchronized) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     core::Device device = core::Device("CPU:0");
 
     tgeometry::TensorListMap tm(
@@ -143,7 +143,7 @@ TEST(TensorListMap, AssertSizeSynchronized) {
 }
 
 TEST(TensorListMap, Contains) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     core::Device device = core::Device("CPU:0");
 
     tgeometry::TensorListMap tm(

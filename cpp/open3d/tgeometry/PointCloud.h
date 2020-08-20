@@ -92,7 +92,7 @@ namespace tgeometry {
 class PointCloud : public Geometry {
 public:
     /// Construct an empty pointcloud.
-    PointCloud(core::Dtype dtype = core::Dtype::Float32,
+    PointCloud(core::Dtype dtype = core::Float32,
                const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a pointcloud from points.
@@ -240,7 +240,7 @@ public:
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static tgeometry::PointCloud FromLegacyPointCloud(
             const geometry::PointCloud &pcd_legacy,
-            core::Dtype dtype = core::Dtype::Float32,
+            core::Dtype dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D PointCloud.
