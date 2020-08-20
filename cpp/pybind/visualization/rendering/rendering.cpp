@@ -110,7 +110,6 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("clearcoat_roughness_img",
                            &Material::clearcoat_roughness_img)
             .def_readwrite("anisotropy_img", &Material::anisotropy_img)
-            .def_readwrite("lut_colors", &Material::lut_colors)
             .def_readwrite("generic_params", &Material::generic_params)
             .def_readwrite("generic_imgs", &Material::generic_imgs)
             .def_readwrite("shader", &Material::shader);

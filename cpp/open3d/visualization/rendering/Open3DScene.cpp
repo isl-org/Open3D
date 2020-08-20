@@ -222,7 +222,6 @@ void Open3DScene::SetLOD(LOD lod) {
     if (lod != lod_) {
         lod_ = lod;
 
-        auto scene = renderer_.GetScene(scene_);
         for (auto &g : geometries_) {
             SetGeometryToLOD(g.second, lod);
         }

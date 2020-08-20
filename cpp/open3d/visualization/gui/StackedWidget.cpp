@@ -69,7 +69,7 @@ Widget::DrawResult StackedWidget::Draw(const DrawContext& context) {
     // Don't Super, because Widget::Draw will draw all the children,
     // and we only want to draw the selected child.
     if (impl_->selected_index_ >= 0
-        && impl_->selected_index_ < GetChildren().size()) {
+        && impl_->selected_index_ < int(GetChildren().size())) {
         return GetChildren()[impl_->selected_index_]->Draw(context);
     }
     return DrawResult::NONE;
