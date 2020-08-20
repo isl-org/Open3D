@@ -60,7 +60,9 @@
 // OPAQUE (!!??) which causes syntax errors with filament/View.h which tries
 // to make OPAQUE an member of a class enum. So include this after all the
 // Filament headers to avoid this problem.
+#if 1  // (enclose in #if so that apply-style doesn't move this)
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
+#endif  // 1
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/LineSet.h"

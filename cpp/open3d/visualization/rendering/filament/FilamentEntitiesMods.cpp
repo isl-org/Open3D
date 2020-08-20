@@ -30,7 +30,7 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068)
-#endif // _MSC_VER
+#endif  // _MSC_VER
 
 #include <filament/MaterialInstance.h>
 #include <filament/TextureSampler.h>
