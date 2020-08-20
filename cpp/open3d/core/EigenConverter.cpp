@@ -36,7 +36,8 @@ Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor) {
         utility::LogError("Tensor shape must be {3}, but got {}.",
                           tensor.GetShape().ToString());
     }
-    core::Tensor dtensor = tensor.To(core::Float64).Copy(core::Device("CPU:0"));
+    core::Tensor dtensor =
+            tensor.To(core::Dtype::Float64).Copy(core::Device("CPU:0"));
     return Eigen::Vector3d(dtensor[0].Item<double>(), dtensor[1].Item<double>(),
                            dtensor[2].Item<double>());
 }
@@ -45,7 +46,8 @@ core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
                                    core::Dtype dtype,
                                    const core::Device &device) {
     // The memory will be copied.
-    return core::Tensor(value.data(), {3}, core::Float64, device).To(dtype);
+    return core::Tensor(value.data(), {3}, core::Dtype::Float64, device)
+            .To(dtype);
 }
 
 }  // namespace eigen_converter

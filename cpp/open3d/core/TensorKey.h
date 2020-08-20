@@ -45,7 +45,7 @@ extern NoneType None;
 ///
 /// Example usage:
 /// ```cpp
-/// Tensor x({2, 3, 4}, Float32);
+/// Tensor x({2, 3, 4}, Dtype::Float32);
 /// // Equivalent to y = x[1, :3, 0:-1:2] in Python
 /// Tensor y = t.GetItem({TensorKey::Index(1),
 ///                       TensorKey::Slice(None, 3, None),

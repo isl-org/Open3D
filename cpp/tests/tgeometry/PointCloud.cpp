@@ -61,7 +61,7 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
     core::Tensor t = core::Tensor::Ones({10, 3}, dtype, device);
     core::Tensor single_point = core::Tensor::Ones({3}, dtype, device);
 
@@ -84,7 +84,7 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     core::TensorList points = core::TensorList::FromTensor(
             core::Tensor::Ones({10, 3}, dtype, device));
@@ -113,7 +113,7 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
 
 TEST_P(PointCloudPermuteDevices, SynchronizedPushBack) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     // Crate pointcloud.
     core::TensorList points = core::TensorList::FromTensor(
@@ -138,13 +138,13 @@ TEST_P(PointCloudPermuteDevices, SynchronizedPushBack) {
 
 TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
     core::Device device = GetParam();
-    tgeometry::PointCloud pcd(core::Float32, device);
+    tgeometry::PointCloud pcd(core::Dtype::Float32, device);
 
     core::TensorList& points = pcd.GetPointAttr("points");
     points.PushBack(core::Tensor(std::vector<float>{1, 2, 3}, {3},
-                                 core::Float32, device));
+                                 core::Dtype::Float32, device));
     points.PushBack(core::Tensor(std::vector<float>{4, 5, 6}, {3},
-                                 core::Float32, device));
+                                 core::Dtype::Float32, device));
 
     EXPECT_FALSE(pcd.IsEmpty());
     EXPECT_TRUE(pcd.HasPoints());
@@ -162,8 +162,8 @@ TEST_P(PointCloudPermuteDevices, Scale) {
     core::TensorList& points = pcd.GetPointAttr("points");
     points = core::TensorList::FromTensor(
             core::Tensor(std::vector<float>{0, 0, 0, 1, 1, 1, 2, 2, 2}, {3, 3},
-                         core::Float32, device));
-    core::Tensor center(std::vector<float>{1, 1, 1}, {3}, core::Float32,
+                         core::Dtype::Float32, device));
+    core::Tensor center(std::vector<float>{1, 1, 1}, {3}, core::Dtype::Float32,
                         device);
     float scale = 4;
     pcd.Scale(scale, center);
@@ -180,7 +180,7 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
                                                       Eigen::Vector3d(1, 1, 1)};
 
     // Float32: vector3d will be converted to float32.
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
     tgeometry::PointCloud pcd = tgeometry::PointCloud::FromLegacyPointCloud(
             legacy_pcd, dtype, device);
     EXPECT_TRUE(pcd.HasPoints());
@@ -192,7 +192,7 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
             core::Tensor::Ones({2, 3}, dtype, device)));
 
     // Float64 case.
-    dtype = core::Float64;
+    dtype = core::Dtype::Float64;
     pcd = tgeometry::PointCloud::FromLegacyPointCloud(legacy_pcd, dtype,
                                                       device);
     EXPECT_TRUE(pcd.HasPoints());
@@ -206,7 +206,7 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
 
 TEST_P(PointCloudPermuteDevices, ToLegacyPointCloud) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     tgeometry::PointCloud pcd({
             {"points", core::TensorList::FromTensor(
@@ -232,7 +232,7 @@ TEST_P(PointCloudPermuteDevices, ToLegacyPointCloud) {
 
 TEST_P(PointCloudPermuteDevices, Getters) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     tgeometry::PointCloud pcd({
             {"points", core::TensorList::FromTensor(
@@ -263,7 +263,7 @@ TEST_P(PointCloudPermuteDevices, Getters) {
 
 TEST_P(PointCloudPermuteDevices, Setters) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     core::TensorList points = core::TensorList::FromTensor(
             core::Tensor::Ones({2, 3}, dtype, device));
@@ -289,7 +289,7 @@ TEST_P(PointCloudPermuteDevices, Setters) {
 
 TEST_P(PointCloudPermuteDevices, Has) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     tgeometry::PointCloud pcd(dtype, device);
     EXPECT_FALSE(pcd.HasPoints());

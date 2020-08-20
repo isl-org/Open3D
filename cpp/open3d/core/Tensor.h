@@ -213,7 +213,7 @@ public:
     ///
     /// The equivalent Open3D C++ calls:
     /// ```cpp
-    /// Tensor t({4, 5}, Float32);
+    /// Tensor t({4, 5}, Dtype::Float32);
     /// Tensor t1 = t.GetItem(TensorIndex(2));
     /// Tensor t2 = t.GetItem(TensorSlice(0, 4, 2));
     /// ```
@@ -233,7 +233,7 @@ public:
     ///
     /// The equivalent Open3D C++ calls:
     /// ```cpp
-    /// Tensor t({4, 5}, Float32);
+    /// Tensor t({4, 5}, Dtype::Float32);
     /// Tensor t1 = t.GetItem({TensorIndex(2), TensorSlice(0, 4, 2)});
     /// ```
     ///
@@ -253,9 +253,9 @@ public:
     ///
     /// The equivalent Open3D C++ calls:
     /// ```cpp
-    /// Tensor t({4, 5}, Float32);
-    /// t.SetItem(TensorIndex(2), Tensor({5}, Float32));
-    /// t.SetItem(TensorSlice(0, 4, 2), Tensor({2, 5}, Float32));
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// t.SetItem(TensorIndex(2), Tensor({5}, Dtype::Float32));
+    /// t.SetItem(TensorSlice(0, 4, 2), Tensor({2, 5}, Dtype::Float32));
     /// ```
     Tensor SetItem(const TensorKey& tk, const Tensor& value);
 
@@ -269,9 +269,9 @@ public:
     ///
     /// The equivalent Open3D C++ calls:
     /// ```cpp
-    /// Tensor t({4, 5}, Float32);
+    /// Tensor t({4, 5}, Dtype::Float32);
     /// t.SetItem({TensorIndex(2), TensorSlice(0, 4, 2)},
-    ///           Tensor({2, 5}, Float32));
+    ///           Tensor({2, 5}, Dtype::Float32));
     /// ```
     Tensor SetItem(const std::vector<TensorKey>& tks, const Tensor& value);
 
@@ -986,7 +986,7 @@ protected:
     void* data_ptr_ = nullptr;
 
     /// Data type
-    Dtype dtype_ = Undefined;
+    Dtype dtype_ = Dtype::Undefined;
 
     /// Underlying memory buffer for Tensor.
     std::shared_ptr<Blob> blob_ = nullptr;

@@ -58,13 +58,13 @@ namespace core {
 class TensorList {
 public:
     /// Useful to support operator[] in a map.
-    TensorList() : TensorList(SizeVector({}), Float32) {}
+    TensorList() : TensorList(SizeVector({}), Dtype::Float32) {}
 
     /// Constructs an empty tensorlist.
     ///
     /// \param element_shape Shape of the contained tensors, e.g. {3,}. 0-sized
     /// and scalar element_shape are allowed.
-    /// \param dtype Data type of the contained tensors. e.g. Float32.
+    /// \param dtype Data type of the contained tensors. e.g. Dtype::Float32.
     /// \param device Device of the contained tensors. e.g. Device("CPU:0").
     TensorList(const SizeVector& element_shape,
                Dtype dtype,

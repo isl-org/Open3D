@@ -242,7 +242,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                 Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
                 LaunchBoolBinaryEWCUDAKernel<scalar_t, scalar_t>(
                         lhs, rhs, dst, op_code, indexer);
-            } else if (dst_dtype == Bool) {
+            } else if (dst_dtype == Dtype::Bool) {
                 // By default, output is boolean type.
                 Indexer indexer({lhs, rhs}, dst,
                                 DtypePolicy::INPUT_SAME_OUTPUT_BOOL);

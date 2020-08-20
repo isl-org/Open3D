@@ -155,7 +155,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     Dtype dst_dtype = dst.GetDtype();
 
     auto assert_dtype_is_float = [](Dtype dtype) -> void {
-        if (dtype != Float32 && dtype != Float64) {
+        if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
             utility::LogError(
                     "Only supports Float32 and Float64, but {} is used.",
                     dtype.ToString());
@@ -172,7 +172,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                             CUDALogicalNotElementKernel<scalar_t, scalar_t>(
                                     src, dst);
                         });
-            } else if (dst_dtype == Bool) {
+            } else if (dst_dtype == Dtype::Bool) {
                 Indexer indexer({src}, dst,
                                 DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
                 CUDALauncher::LaunchUnaryEWKernel(

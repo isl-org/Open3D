@@ -37,7 +37,7 @@ void Inverse(const Tensor &A, Tensor &output) {
 
     // Check dtypes
     Dtype dtype = A.GetDtype();
-    if (dtype != Float32 && dtype != Float64) {
+    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}.",
@@ -61,7 +61,7 @@ void Inverse(const Tensor &A, Tensor &output) {
     }
 
     // Pivot to shuffle during matrix factorization.
-    Tensor ipiv = Tensor::Zeros({n}, Int64, device);
+    Tensor ipiv = Tensor::Zeros({n}, Dtype::Int64, device);
 
     void *ipiv_data = ipiv.GetDataPtr();
 

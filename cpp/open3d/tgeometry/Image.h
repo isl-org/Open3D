@@ -60,7 +60,7 @@ public:
     Image(int64_t rows = 0,
           int64_t cols = 0,
           int64_t channels = 1,
-          core::Dtype dtype = core::Float32,
+          core::Dtype dtype = core::Dtype::Float32,
           const core::Device &device = core::Device("CPU:0"));
 
     /// \brief Construct from a tensor. The tensor won't be copied and memory

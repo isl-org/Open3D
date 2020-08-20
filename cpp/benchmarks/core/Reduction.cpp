@@ -40,7 +40,7 @@ static void ReductionCPU(benchmark::State& state) {
     Device device("CPU:0");
     int64_t large_dim = (1ULL << 27) + 10;
     SizeVector shape{2, large_dim};
-    Tensor src(shape, Int64, device);
+    Tensor src(shape, Dtype::Int64, device);
     Tensor warm_up = src.Sum({1});
     (void)warm_up;
     for (auto _ : state) {
@@ -59,7 +59,7 @@ static void ReductionCUDA(benchmark::State& state) {
     Device device("CUDA:0");
     int64_t large_dim = (1ULL << 27) + 10;
     SizeVector shape{2, large_dim};
-    Tensor src(shape, Int64, device);
+    Tensor src(shape, Dtype::Int64, device);
     Tensor warm_up = src.Sum({1});
     (void)warm_up;
     for (auto _ : state) {

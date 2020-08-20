@@ -49,7 +49,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
     const float EPSILON = 1e-8;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     // Matmul test
     core::Tensor A(std::vector<float>{1, 2, 3, 4, 5, 6}, {2, 3}, dtype, device);
@@ -71,7 +71,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
              core::TensorKey::Slice(1, core::None, core::None)});
     core::Tensor B_slice =
             B.IndexGet({core::Tensor(std::vector<int64_t>{0, 2}, {2},
-                                     core::Int64, device)})
+                                     core::Dtype::Int64, device)})
                     .GetItem({core::TensorKey::Slice(core::None, core::None,
                                                      core::None)});
     core::Tensor C_slice = A_slice.Matmul(B_slice);
@@ -92,7 +92,7 @@ TEST_P(LinalgPermuteDevices, Inverse) {
     const float EPSILON = 1e-6;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     // Inverse test
     core::Tensor A(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3}, dtype,
@@ -120,7 +120,7 @@ TEST_P(LinalgPermuteDevices, SVD) {
     const float EPSILON = 1e-5;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     // matmul test
     core::Tensor A(std::vector<float>{2, 4, 1, 3, 0, 0, 0, 0}, {4, 2}, dtype,
@@ -165,7 +165,7 @@ TEST_P(LinalgPermuteDevices, Solve) {
     const float EPSILON = 1e-8;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     // Solve test
     core::Tensor A(std::vector<float>{3, 1, 1, 2}, {2, 2}, dtype, device);
@@ -193,7 +193,7 @@ TEST_P(LinalgPermuteDevices, LeastSquares) {
     const float EPSILON = 1e-5;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Float32;
+    core::Dtype dtype = core::Dtype::Float32;
 
     // Solve test
     core::Tensor A(std::vector<float>{1.44,  -7.84, -4.39, 4.53,  -9.96, -0.28,

@@ -98,10 +98,10 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
             }
         }
         for (const auto& output_tensor : output_tensors) {
-            if (output_tensor.GetDtype() != Bool) {
+            if (output_tensor.GetDtype() != Dtype::Bool) {
                 utility::LogError("Dype mismatch {} != {}.",
                                   output_tensor.GetDtype().ToString(),
-                                  Bool.ToString());
+                                  Dtype::Bool.ToString());
             }
         }
     } else if (dtype_policy == DtypePolicy::NONE) {
