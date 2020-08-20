@@ -26,6 +26,18 @@
 
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: PixelBufferDescriptor assert unsigned is positive before subtracting
+//       but MSVC can't figure that out.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293)
+#endif  // _MSC_VER
+
 #include <filament/Engine.h>
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
@@ -34,6 +46,10 @@
 #include <filament/Texture.h>
 #include <filament/View.h>
 #include <filament/Viewport.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -73,8 +89,8 @@ FilamentRenderToBuffer::~FilamentRenderToBuffer() {
     }
 }
 
-void FilamentRenderToBuffer::SetDimensions(const std::size_t width,
-                                           const std::size_t height) {
+void FilamentRenderToBuffer::SetDimensions(const std::uint32_t width,
+                                           const std::uint32_t height) {
     if (swapchain_) {
         engine_.destroy(swapchain_);
     }

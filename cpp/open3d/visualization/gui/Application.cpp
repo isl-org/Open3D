@@ -26,6 +26,11 @@
 
 #include "open3d/visualization/gui/Application.h"
 
+#ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>  // so APIENTRY gets defined and GLFW doesn't define it
+#endif                // _MSC_VER
+
 #include <GLFW/glfw3.h>
 
 #include <algorithm>
@@ -144,6 +149,30 @@ struct Application::Impl {
         glfwInit();
         this->is_GLFW_initalized_ = true;
     }
+
+    void PrepareForRunning() {
+        // We already called this in the constructor, but it is possible
+        // (but unlikely) that the run loop finished and is starting again.
+        InitGLFW();
+
+        // We don't need to initialize rendering, it will happen automatically
+        // at the appropriate time.
+    }
+
+    void CleanupAfterRunning() {
+        // Aside from general tidiness in shutting down rendering,
+        // failure to do this causes the Python module to hang on
+        // Windows. (Specifically, if a widget is has been assigned a
+        // Python function as a callback, the Python interpretter will
+        // not delete the objects, the Window's destructor will not be
+        // called, and the Filament threads will not stop, causing the
+        // Python process to remain running even after execution of the
+        // script finishes.
+        visualization::rendering::EngineInstance::DestroyInstance();
+
+        glfwTerminate();
+        is_GLFW_initalized_ = false;
+    }
 };
 
 Application &Application::GetInstance() {
@@ -179,33 +208,33 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.default_margin = 8;          // 0.5 * em
     impl_->theme_.default_layout_spacing = 6;  // 0.333 * em
 
-    impl_->theme_.background_color = Color(0.175, 0.175, 0.175);
-    impl_->theme_.text_color = Color(0.875, 0.875, 0.875);
+    impl_->theme_.background_color = Color(0.175f, 0.175f, 0.175f);
+    impl_->theme_.text_color = Color(0.875f, 0.875f, 0.875f);
     impl_->theme_.border_width = 1;
     impl_->theme_.border_radius = 3;
-    impl_->theme_.border_color = Color(0.5, 0.5, 0.5);
-    impl_->theme_.menubar_border_color = Color(0.25, 0.25, 0.25);
-    impl_->theme_.button_color = Color(0.4, 0.4, 0.4);
-    impl_->theme_.button_hover_color = Color(0.6, 0.6, 0.6);
-    impl_->theme_.button_active_color = Color(0.5, 0.5, 0.5);
-    impl_->theme_.button_on_color = Color(0.7, 0.7, 0.7);
-    impl_->theme_.button_on_hover_color = Color(0.9, 0.9, 0.9);
-    impl_->theme_.button_on_active_color = Color(0.8, 0.8, 0.8);
+    impl_->theme_.border_color = Color(0.5f, 0.5f, 0.5f);
+    impl_->theme_.menubar_border_color = Color(0.25f, 0.25f, 0.25f);
+    impl_->theme_.button_color = Color(0.4f, 0.4f, 0.4f);
+    impl_->theme_.button_hover_color = Color(0.6f, 0.6f, 0.6f);
+    impl_->theme_.button_active_color = Color(0.5f, 0.5f, 0.5f);
+    impl_->theme_.button_on_color = Color(0.7f, 0.7f, 0.7f);
+    impl_->theme_.button_on_hover_color = Color(0.9f, 0.9f, 0.9f);
+    impl_->theme_.button_on_active_color = Color(0.8f, 0.8f, 0.8f);
     impl_->theme_.button_on_text_color = Color(0, 0, 0);
-    impl_->theme_.checkbox_background_off_color = Color(0.333, 0.333, .333);
+    impl_->theme_.checkbox_background_off_color = Color(0.333f, 0.333f, .333f);
     impl_->theme_.checkbox_background_on_color = highlight_color;
-    impl_->theme_.checkbox_background_hover_off_color = Color(0.5, 0.5, 0.5);
+    impl_->theme_.checkbox_background_hover_off_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.checkbox_background_hover_on_color =
-            highlight_color.Lightened(0.15);
+            highlight_color.Lightened(0.15f);
     impl_->theme_.checkbox_check_color = Color(1, 1, 1);
-    impl_->theme_.combobox_background_color = Color(0.4, 0.4, 0.4);
-    impl_->theme_.combobox_hover_color = Color(0.5, 0.5, 0.5);
+    impl_->theme_.combobox_background_color = Color(0.4f, 0.4f, 0.4f);
+    impl_->theme_.combobox_hover_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.combobox_arrow_background_color = highlight_color;
-    impl_->theme_.slider_grab_color = Color(0.666, 0.666, 0.666);
-    impl_->theme_.text_edit_background_color = Color(0.1, 0.1, 0.1);
-    impl_->theme_.list_background_color = Color(0.1, 0.1, 0.1);
-    impl_->theme_.list_hover_color = Color(0.6, 0.6, 0.6);
-    impl_->theme_.list_selected_color = Color(0.5, 0.5, 0.5);
+    impl_->theme_.slider_grab_color = Color(0.666f, 0.666f, 0.666f);
+    impl_->theme_.text_edit_background_color = Color(0.1f, 0.1f, 0.1f);
+    impl_->theme_.list_background_color = Color(0.1f, 0.1f, 0.1f);
+    impl_->theme_.list_hover_color = Color(0.6f, 0.6f, 0.6f);
+    impl_->theme_.list_selected_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.tree_background_color = impl_->theme_.list_background_color;
     impl_->theme_.tree_selected_color = impl_->theme_.list_selected_color;
     impl_->theme_.tab_inactive_color = impl_->theme_.button_color;
@@ -291,6 +320,7 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
 void Application::RemoveWindow(Window *window) {
     for (auto it = impl_->windows_.begin(); it != impl_->windows_.end(); ++it) {
         if (it->get() == window) {
+            window->Show(false);
             impl_->windows_to_be_destroyed_.insert(*it);
             impl_->windows_.erase(it);
             break;
@@ -361,10 +391,7 @@ bool Application::RunOneTick() {
             return false;
         }
 
-        // We already called this in the constructor, but it is possible
-        // (but unlikely) that the run loop finished and is starting again.
-        impl_->InitGLFW();
-
+        impl_->PrepareForRunning();
         impl_->is_running_ = true;
     }
 
@@ -382,9 +409,8 @@ bool Application::RunOneTick() {
             impl_->running_tasks_.erase(current);  // calls join()
         }
 
-        glfwTerminate();
-        impl_->is_GLFW_initalized_ = false;
         impl_->is_running_ = false;
+        impl_->CleanupAfterRunning();
     }
 
     return impl_->is_running_;

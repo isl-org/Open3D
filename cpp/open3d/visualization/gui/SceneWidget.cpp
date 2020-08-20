@@ -231,7 +231,7 @@ public:
         bool redraw = false;
         if (!keys_down_.empty()) {
             auto& bounds = camera_controls_->GetBoundingBox();
-            const float dist = 0.0025f * bounds.GetExtent().norm();
+            const float dist = float(0.0025 * bounds.GetExtent().norm());
             const float angle_rad = 0.0075f;
 
             auto HasKey = [this](uint32_t key) -> bool {
@@ -368,7 +368,7 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                interactor_->Dolly(2.0 * e.wheel.dy,
+                interactor_->Dolly(2 * e.wheel.dy,
                                    e.wheel.isTrackpad
                                            ? rendering::MatrixInteractorLogic::
                                                      DragType::TWO_FINGER
@@ -730,7 +730,7 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     // (0, 0, 0), and this will result in the far plane being not being
     // far enough and clipping the model. To test, use
     // https://docs.google.com/uc?export=download&id=0B-ePgl6HF260ODdvT09Xc1JxOFE
-    float max_dim = 1.25f * impl_->bounds_.GetMaxExtent();
+    float max_dim = float(1.25 * impl_->bounds_.GetMaxExtent());
     Eigen::Vector3f center = impl_->bounds_.GetCenter().cast<float>();
     Eigen::Vector3f eye, up;
     switch (preset) {
