@@ -124,5 +124,14 @@ inline const Dtype Dtype::FromType<bool>() {
     return Dtype::Bool;
 }
 
+extern const Dtype Undefined;
+extern const Dtype Float32;
+extern const Dtype Float64;
+extern const Dtype Int32;
+extern const Dtype Int64;
+extern const Dtype UInt8;
+extern const Dtype UInt16;
+extern const Dtype Bool;
+
 }  // namespace core
 }  // namespace open3d
