@@ -63,6 +63,7 @@ public:
     void AddModel(const TriangleMeshModel& model);
 
     void UpdateMaterial(const Material& mat);
+    void UpdateMaterial(const TriangleMeshModel& model);
     std::vector<std::string> GetGeometries();
 
     enum class LOD {

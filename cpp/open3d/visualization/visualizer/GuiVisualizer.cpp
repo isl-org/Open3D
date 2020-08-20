@@ -505,13 +505,7 @@ struct GuiVisualizer::Impl {
                     GuiSettingsModel::MaterialType::LIT &&
             current_materials.lit_name ==
                     GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
-            settings_.loaded_material_.base_color.x() =
-                    current_materials.lit.base_color.x();
-            settings_.loaded_material_.base_color.y() =
-                    current_materials.lit.base_color.y();
-            settings_.loaded_material_.base_color.z() =
-                    current_materials.lit.base_color.z();
-            scene_wgt_->GetScene()->UpdateMaterial(settings_.loaded_material_);
+            scene_wgt_->GetScene()->UpdateMaterial(loaded_model_);
         } else {
             UpdateMaterials(renderer, current_materials);
             switch (settings_.model_.GetMaterialType()) {
@@ -982,7 +976,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
             }
         }
         if (model_success) {
-            // TODO: Are the operations here necessary for a model?
+            // TODO: Are the following operations here necessary for a model?
             // if (mesh->triangles_.size() == 0) {
             //     utility::LogWarning(
             //             "Contains 0 triangles, will read as point cloud");

@@ -219,11 +219,17 @@ void Open3DScene::UpdateMaterial(const Material& mat) {
         return;
     }
 
-    // auto scene = renderer_.GetScene(scene_);
-    // scene->OverrideMaterial(model_name_, mat);
-    // if (model_name_ != fast_model_name_) {
-    //     scene->OverrideMaterial(fast_model_name_, mat);
-    // }
+    auto scene = renderer_.GetScene(scene_);
+    scene->OverrideMaterial(model_name_, mat);
+    if (model_name_ != fast_model_name_) {
+        scene->OverrideMaterial(fast_model_name_, mat);
+    }
+}
+
+void Open3DScene::UpdateMaterial(const TriangleMeshModel& model) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->RemoveGeometry(model_name_);
+    scene->AddGeometry(model_name_, model);
 }
 
 std::vector<std::string> Open3DScene::GetGeometries() {
