@@ -57,9 +57,9 @@ bool NanoFlann::SetTensorData(const core::Tensor &data) {
     memcpy(data_.data(), data.ToFlatVector<double>().data(),
            dataset_size_ * dimension_ * sizeof(double));
     adaptor_.reset(
-            new Adaptor<double>(dataset_size_, dimension_, data_.data()));
+            new Adaptor<double>((size_t)dataset_size_, dimension_, data_.data()));
 
-    index_.reset(new KDTree_t(dimension_, *adaptor_.get()));
+    index_.reset(new KDTree_t((size_t)dimension_, *adaptor_.get()));
     index_->buildIndex();
     return true;
 };
@@ -79,7 +79,7 @@ std::pair<core::Tensor, core::Tensor> NanoFlann::SearchKnn(
     }
     std::vector<size_t> result_indices;
     std::vector<double> result_distances;
-    int num_query = shape[0];
+    int num_query = (int)shape[0];
     int num_results = 0;
 
     for (int i = 0; i < num_query; i++) {
@@ -89,7 +89,7 @@ std::pair<core::Tensor, core::Tensor> NanoFlann::SearchKnn(
         std::vector<size_t> _indices(knn);
         std::vector<double> _distances(knn);
 
-        num_results = index_->knnSearch(query_vector.data(), knn,
+        num_results = index_->knnSearch(query_vector.data(), (size_t)knn,
                                         _indices.data(), _distances.data());
 
         _indices.resize(num_results);
@@ -128,7 +128,7 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
     std::vector<size_t> result_indices;
     std::vector<double> result_distances;
     std::vector<size_t> result_nums;
-    int num_query = shape[0];
+    int num_query = (int)shape[0];
 
     for (int i = 0; i < num_query; i++) {
         core::Tensor query_point = query[i];
