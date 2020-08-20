@@ -149,16 +149,16 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
             result_distances.push_back(ret->second);
         }
     }
-    int size = 0;
+    size_t size = 0;
     for (auto &s : result_nums) {
         size += s;
     }
     std::vector<int64_t> result_nums2(result_nums.begin(), result_nums.end());
     std::vector<int64_t> result_indices2(result_indices.begin(),
                                          result_indices.end());
-    core::Tensor indices(result_indices2, {size}, core::Dtype::Int64);
-    core::Tensor distances(result_distances, {size}, core::Dtype::Float64);
-    core::Tensor nums(result_nums2, {(int)result_nums2.size()},
+    core::Tensor indices(result_indices2, {static_cast<int64_t>(size)}, core::Dtype::Int64);
+    core::Tensor distances(result_distances, {static_cast<int64_t>(size)}, core::Dtype::Float64);
+    core::Tensor nums(result_nums2, {static_cast<int64_t>(result_nums2.size())},
                       core::Dtype::Int64);
     return std::make_tuple(indices, distances, nums);
 
@@ -168,8 +168,15 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
 std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
         const core::Tensor &query, double radius) {
     core::SizeVector shape = query.GetShape();
+    if (shape.size() != 2) {
+        utility::LogError(
+                "[NanoFlann::SearchRadius] query tensor must be 2 dimensional "
+                "matrix");
+    }
+
     int64_t num_query = shape[0];
     double radii[num_query];
+
     for (int64_t i = 0; i < shape[0]; i++) {
         radii[i] = radius;
     }
