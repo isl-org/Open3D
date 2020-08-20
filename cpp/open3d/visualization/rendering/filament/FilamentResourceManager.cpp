@@ -711,11 +711,8 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("anisotropy", 0.f);
     lit_mat->setDefaultParameter("pointSize", 3.f);
     lit_mat->setDefaultParameter("albedo", texture, default_sampler);
-    lit_mat->setDefaultParameter("metallicMap", texture, default_sampler);
-    lit_mat->setDefaultParameter("roughnessMap", texture, default_sampler);
+    lit_mat->setDefaultParameter("ao_rough_metalMap", texture, default_sampler);
     lit_mat->setDefaultParameter("normalMap", normal_map, default_sampler);
-    lit_mat->setDefaultParameter("ambientOcclusionMap", texture,
-                                 default_sampler);
     lit_mat->setDefaultParameter("reflectanceMap", texture, default_sampler);
     // NOTE: Disabled to avoid Filament warning until shader is reworked to
     // reduce sampler usage.

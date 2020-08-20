@@ -58,6 +58,9 @@ struct Material {
     std::shared_ptr<geometry::Image> clearcoat_roughness_img;
     std::shared_ptr<geometry::Image> anisotropy_img;
 
+    // Combined images
+    std::shared_ptr<geometry::Image> ao_rough_metal_img;
+
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
     std::unordered_map<std::string, geometry::Image> generic_imgs;

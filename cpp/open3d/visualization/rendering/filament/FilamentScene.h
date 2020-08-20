@@ -207,11 +207,7 @@ private:
                 rendering::FilamentResourceManager::kDefaultTexture;
         rendering::TextureHandle normal_map =
                 rendering::FilamentResourceManager::kDefaultNormalMap;
-        rendering::TextureHandle ambient_occlusion_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle metallic_map =
+        rendering::TextureHandle ao_rough_metal_map =
                 rendering::FilamentResourceManager::kDefaultTexture;
         rendering::TextureHandle reflectance_map =
                 rendering::FilamentResourceManager::kDefaultTexture;

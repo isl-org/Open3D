@@ -433,11 +433,7 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
                         rendering::TextureSamplerParameters::Pretty())
             .SetTexture("normalMap", maps.normal_map,
                         rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("ambientOcclusionMap", maps.ambient_occlusion_map,
-                        rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("roughnessMap", maps.roughness_map,
-                        rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("metallicMap", maps.metallic_map,
+            .SetTexture("ao_rough_metalMap", maps.ao_rough_metal_map,
                         rendering::TextureSamplerParameters::Pretty())
             .SetTexture("reflectanceMap", maps.reflectance_map,
                         rendering::TextureSamplerParameters::Pretty())
@@ -479,6 +475,92 @@ void FilamentScene::UpdateDepthShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+std::shared_ptr<geometry::Image> CombineTextures(
+        std::shared_ptr<geometry::Image> ao,
+        std::shared_ptr<geometry::Image> rough,
+        std::shared_ptr<geometry::Image> metal) {
+    int width = 0, height = 0;
+    if (ao && ao->HasData()) {
+        width = ao->width_;
+        height = ao->height_;
+    }
+    if (rough && rough->HasData()) {
+        if (width == 0) {
+            width = rough->width_;
+            height = rough->height_;
+        } else if (width != rough->width_ || height != rough->height_) {
+            utility::LogWarning(
+                    "Attribute texture maps must have same dimensions");
+            return {};
+        }
+    }
+    if (metal && metal->HasData()) {
+        if (width == 0) {
+            width = metal->width_;
+            height = metal->height_;
+        } else if (width != metal->width_ || height != metal->height_) {
+            utility::LogWarning(
+                    "Attribute texture maps must have same dimensions");
+            return {};
+        }
+    }
+
+    // no maps are valid so return empty texture and let caller use defaults
+    if (width == 0 || height == 0) {
+        return {};
+    }
+
+    auto image = std::make_shared<geometry::Image>();
+    image->Prepare(width, height, 3, 1);
+    auto data = reinterpret_cast<uint8_t*>(image->data_.data());
+
+    auto set_pixel = [&data](std::shared_ptr<geometry::Image> map, int i,
+                             int j) {
+        if (map && map->HasData()) {
+            *data++ = *(map->PointerAt<uint8_t>(j, i, 0));
+        } else {
+            *data++ = 255;
+        }
+    };
+
+    for (int i = 0; i < width; ++i) {
+        for (int j = 0; j < height; ++j) {
+            set_pixel(ao, i, j);
+            set_pixel(rough, i, j);
+            set_pixel(metal, i, j);
+        }
+    }
+
+    return image;
+}
+
+void CombineTextures(std::shared_ptr<geometry::Image> ao,
+                     std::shared_ptr<geometry::Image> rough_metal) {
+    int width = rough_metal->width_;
+    int height = rough_metal->height_;
+
+    if (ao && ao->HasData()) {
+        if (width != ao->width_ || height != ao->height_) {
+            utility::LogWarning(
+                    "Attribute texture maps must have same dimensions");
+            return;
+        }
+    }
+
+    auto data = reinterpret_cast<uint8_t*>(rough_metal->data_.data());
+
+    for (int i = 0; i < width; ++i) {
+        for (int j = 0; j < height; ++j) {
+            if (ao && ao->HasData()) {
+                *data = *(ao->PointerAt<uint8_t>(j, i, 0));
+            } else {
+                *data = 255;
+            }
+            data += 3;
+        }
+    }
+}
+
 void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     auto& props = geom.mat.properties;
     auto& maps = geom.mat.maps;
@@ -493,15 +575,6 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     if (is_map_valid(props.normal_img)) {
         maps.normal_map = renderer_.AddTexture(props.normal_img);
     }
-    if (is_map_valid(props.ao_img)) {
-        maps.ambient_occlusion_map = renderer_.AddTexture(props.ao_img);
-    }
-    if (is_map_valid(props.roughness_img)) {
-        maps.roughness_map = renderer_.AddTexture(props.roughness_img);
-    }
-    if (is_map_valid(props.metallic_img)) {
-        maps.metallic_map = renderer_.AddTexture(props.metallic_img);
-    }
     if (is_map_valid(props.reflectance_img)) {
         maps.reflectance_map = renderer_.AddTexture(props.reflectance_img);
     }
@@ -514,6 +587,20 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     }
     if (is_map_valid(props.anisotropy_img)) {
         maps.anisotropy_map = renderer_.AddTexture(props.anisotropy_img);
+    }
+
+    // Create combined ao/rough/metal texture
+    if (is_map_valid(props.ao_rough_metal_img)) {
+        CombineTextures(props.ao_img, props.ao_rough_metal_img);
+        maps.ao_rough_metal_map =
+                renderer_.AddTexture(props.ao_rough_metal_img);
+    } else if (is_map_valid(props.ao_img) ||
+               is_map_valid(props.roughness_img) ||
+               is_map_valid(props.metallic_img)) {
+        props.ao_rough_metal_img = CombineTextures(
+                props.ao_img, props.roughness_img, props.metallic_img);
+        maps.ao_rough_metal_map =
+                renderer_.AddTexture(props.ao_rough_metal_img);
     }
 
     // Update shader properties

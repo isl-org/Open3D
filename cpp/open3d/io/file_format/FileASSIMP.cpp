@@ -69,6 +69,7 @@ struct TextureImages {
     std::shared_ptr<geometry::Image> clearcoat;
     std::shared_ptr<geometry::Image> clearcoat_roughness;
     std::shared_ptr<geometry::Image> anisotropy;
+    std::shared_ptr<geometry::Image> gltf_rough_metal;
 };
 
 void LoadTextures(const std::string& filename,
@@ -119,7 +120,7 @@ void LoadTextures(const std::string& filename,
     }
     // NOTE: Assimp doesn't have a texture type for GLTF's combined
     // roughness/metallic texture so it puts it in the 'unknown' texture slot
-    texture_loader(aiTextureType_UNKNOWN, maps.roughness);
+    texture_loader(aiTextureType_UNKNOWN, maps.gltf_rough_metal);
     // NOTE: the following may be non-standard. We are using REFLECTION texture
     // type to store OBJ map_Ps 'sheen' PBR map
     texture_loader(aiTextureType_REFLECTION, maps.reflectance);
@@ -330,7 +331,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
 
-        // NOTE: Developer debug printouts below. To be removed soon.
+        // NOTE: Developer debug printouts below to help diagnose issues with
+        // individual models. Will be removed before 0.11 release.
         // utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n",
         // mat->GetName().C_Str(),
         //                     mat->mNumProperties);
@@ -371,6 +373,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
         o3d_mat.metallic_img = maps.metallic;
         o3d_mat.roughness_img = maps.roughness;
         o3d_mat.reflectance_img = maps.reflectance;
+        o3d_mat.ao_rough_metal_img = maps.gltf_rough_metal;
 
         o3d_mat.shader = "defaultLit";
         model.materials_.push_back(o3d_mat);
