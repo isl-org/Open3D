@@ -122,7 +122,6 @@ build_all() {
     echo Running cmake "${cmakeOptions[@]}" ..
     reportRun cmake "${cmakeOptions[@]}" ..
     echo
-
     echo "build & install Open3D..."
     date
     reportRun make VERBOSE=1 -j"$NPROC"
@@ -139,7 +138,6 @@ build_wheel() {
     date
     mkdir -p build
     cd build         # PWD=Open3D/build
-    rebuild_list=(bin lib/Release/*.{a,so}  lib/_build_config.py cpp)
 
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
         -DBUILD_CUDA_MODULE=OFF \
@@ -160,6 +158,9 @@ build_wheel() {
         echo
         echo Building with CUDA...
         date
+        rebuild_list=(bin lib/Release/*.{a,so}  lib/_build_config.py cpp)
+        echo
+        echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
         rm -r "${rebuild_list[@]}"
         cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
             -DBUILD_CUDA_MODULE=ON \
