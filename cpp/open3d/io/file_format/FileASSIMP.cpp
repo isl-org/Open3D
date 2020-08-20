@@ -330,20 +330,6 @@ bool ReadModelUsingAssimp(const std::string& filename,
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
 
-        // NOTE: Developer debug printouts below to help diagnose issues with
-        // individual models. Will be removed before 0.11 release.
-        // utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n",
-        // mat->GetName().C_Str(),
-        //                     mat->mNumProperties);
-        // for (size_t i = 0; i < mat->mNumProperties; ++i) {
-        //     auto* prop = mat->mProperties[i];
-        //     utility::LogWarning("\tPROPNAME: {}", prop->mKey.C_Str());
-        //     if(prop->mType == aiPTI_String) {
-        //         std::string val(prop->mData+4);
-        //         utility::LogWarning("\tVAL: {}", val);
-        //     }
-        // }
-
         visualization::rendering::Material o3d_mat;
 
         // Retrieve base material properties

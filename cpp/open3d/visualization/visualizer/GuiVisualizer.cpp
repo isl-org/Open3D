@@ -892,27 +892,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 model_success = false;
             }
         }
-        if (model_success) {
-            // TODO: Are the following operations here necessary for a model?
-            // if (mesh->triangles_.size() == 0) {
-            //     utility::LogWarning(
-            //             "Contains 0 triangles, will read as point cloud");
-            //     mesh.reset();
-            // } else {
-            //     UpdateProgress(0.5);
-            //     mesh->ComputeVertexNormals();
-            //     if (mesh->vertex_colors_.empty()) {
-            //         mesh->PaintUniformColor({1, 1, 1});
-            //     }
-            //     UpdateProgress(0.666);
-            //     geometry = mesh;
-            // }
-            // // Make sure the mesh has texture coordinates
-            // if (!mesh->HasTriangleUvs()) {
-            //     mesh->triangle_uvs_.resize(mesh->triangles_.size() * 3,
-            //                                {0.0, 0.0});
-            // }
-        } else {
+        if (!model_success) {
             utility::LogInfo("{} appears to be a point cloud", path.c_str());
         }
 
