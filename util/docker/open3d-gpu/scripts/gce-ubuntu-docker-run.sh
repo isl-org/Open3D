@@ -21,6 +21,7 @@ BUILD_TENSORFLOW_OPS=( "${BUILD_ML_OPS[@]}" )
 BUILD_PYTORCH_OPS=( "${BUILD_ML_OPS[@]}" )
 BUILD_CUDA_MODULE=( OFF OFF ON ON ON )
 BUILD_RPC_INTERFACE=( ON ON OFF OFF ON )
+USE_OPENBLAS=( OFF OFF OFF OFF OFF )
 
 # VM instance configuration
 NPROC=8                      # {2,4,8,16,32,64,96}
@@ -136,6 +137,7 @@ case "$1" in
             --env BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS[$CI_CONFIG_ID]} \
             --env BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS[$CI_CONFIG_ID]} \
             --env BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE[$CI_CONFIG_ID]} \
+            --env USE_OPENBLAS=${USE_OPENBLAS[$CI_CONFIG_ID]} \
             $DC_IMAGE_TAG"
                 ;;
 
