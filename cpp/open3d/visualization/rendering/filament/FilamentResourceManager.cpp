@@ -283,7 +283,6 @@ MaterialHandle FilamentResourceManager::CreateMaterial(
         const ResourceLoadRequest& request) {
     MaterialHandle handle;
 
-    utility::LogDebug("CreateMaterial");
     if (!request.path_.empty()) {
         std::vector<char> material_data;
         std::string error_str;
