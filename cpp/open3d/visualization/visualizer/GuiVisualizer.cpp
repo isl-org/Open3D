@@ -329,37 +329,7 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
 
-    struct TextureMaps {
-        rendering::TextureHandle albedo_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle normal_map =
-                rendering::FilamentResourceManager::kDefaultNormalMap;
-        rendering::TextureHandle ambient_occlusion_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle metallic_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle reflectance_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle clear_coat_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle clear_coat_roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle anisotropy_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-    };
-
     struct Settings {
-        rendering::MaterialHandle lit_template;
-        rendering::MaterialHandle unlit_template;
-
-        rendering::MaterialInstanceHandle lit;
-        rendering::MaterialInstanceHandle unlit;
-        TextureMaps maps;
-
-        // geometry -> material  (entry exists if mesh HasMaterials())
-        bool have_loaded_material_;
         rendering::Material loaded_material_;
         rendering::Material lit_material_;
         rendering::Material unlit_material_;
@@ -387,66 +357,13 @@ struct GuiVisualizer::Impl {
 
         auto &defaults = settings_.model_.GetCurrentMaterials();
 
-        settings_.maps.albedo_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.normal_map =
-                rendering::FilamentResourceManager::kDefaultNormalMap;
-        settings_.maps.ambient_occlusion_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.metallic_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.reflectance_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.clear_coat_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.clear_coat_roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.anisotropy_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-
         UpdateMaterials(renderer, defaults);
     }
 
     void SetMaterialsToDefault() {
         settings_.view_->ShowFileMaterialEntry(false);
 
-        settings_.maps.albedo_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.normal_map =
-                rendering::FilamentResourceManager::kDefaultNormalMap;
-        settings_.maps.ambient_occlusion_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.metallic_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.reflectance_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.clear_coat_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.clear_coat_roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.anisotropy_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-
         settings_.model_.SetMaterialsToDefault();
-        // model's OnChanged callback will get called (if set), which will
-        // update everything.
-    }
-
-    void SetLoadedMaterial(rendering::Renderer &renderer,
-                           GuiSettingsModel::LitMaterial material,
-                           TextureMaps maps) {
-        settings_.maps = maps;
-
-        GuiSettingsModel::Materials materials;
-        materials.lit = material;
-        materials.unlit.base_color = material.base_color;
-
-        settings_.model_.SetCurrentMaterials(
-                materials, GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
         // model's OnChanged callback will get called (if set), which will
         // update everything.
     }
