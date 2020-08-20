@@ -46,7 +46,7 @@ public:
 
     inline size_t kdtree_get_point_count() const { return num_points; }
 
-    inline T kdtree_get_pt(const size_t idx, int dim) const {
+    inline T kdtree_get_pt(const size_t idx, const size_t dim) const {
         return data[idx * dimension + dim];
     }
 
