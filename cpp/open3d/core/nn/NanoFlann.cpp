@@ -175,12 +175,9 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
     }
 
     int64_t num_query = shape[0];
-    double radii[num_query];
+    std::vector<double> radii (num_query, radius);
 
-    for (int64_t i = 0; i < shape[0]; i++) {
-        radii[i] = radius;
-    }
-    return SearchRadius(query, radii);
+    return SearchRadius(query, radii.data());
 };
 
 }  // namespace nn
