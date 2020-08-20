@@ -67,8 +67,11 @@ cmake --version
 date
 if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     CUDA_TOOLKIT_DIR=/usr/local/cuda-${CUDA_VERSION[1]}
+# Disable "unbound variable is error" since that gives a false alarm error below:
+    set +u
     export PATH="$CUDA_TOOLKIT_DIR/bin{PATH:+:$PATH}"
     export LD_LIBRARY_PATH="$CUDA_TOOLKIT_DIR/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64{LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    set -u
     nvcc --version
 fi
 
