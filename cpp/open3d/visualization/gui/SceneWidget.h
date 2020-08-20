@@ -58,7 +58,6 @@ public:
     ~SceneWidget() override;
 
     void SetFrame(const Rect& f) override;
-    void SetBackgroundColor(const Color& color);
 
     enum Controls { ROTATE_CAMERA, FLY, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL };
     void SetViewControls(Controls mode);

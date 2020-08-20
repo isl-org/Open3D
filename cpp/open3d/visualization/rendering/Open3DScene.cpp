@@ -127,8 +127,6 @@ Open3DScene::~Open3DScene() {
 ViewHandle Open3DScene::CreateView() {
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
-    auto view = scene->GetView(view_);
-    view->SetClearColor({1.0f, 1.0f, 1.0f});
 
     return view_;
 }
@@ -218,6 +216,15 @@ void Open3DScene::UpdateMaterial(const Material& mat) {
     }
 }
 
+std::vector<std::string> Open3DScene::GetGeometries() {
+    std::vector<std::string> names;
+    names.reserve(geometries_.size());
+    for (auto &it : geometries_) {
+        names.push_back(it.first);
+    }
+    return names;
+}
+
 void Open3DScene::SetLOD(LOD lod) {
     if (lod != lod_) {
         lod_ = lod;
@@ -257,6 +264,8 @@ Camera* Open3DScene::GetCamera() const {
     auto view = scene->GetView(view_);
     return view->GetCamera();
 }
+
+Renderer& Open3DScene::GetRenderer() const { return renderer_; }
 
 }  // namespace rendering
 }  // namespace visualization

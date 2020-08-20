@@ -26,6 +26,19 @@
 
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: PixelBufferDescriptor assert unsigned is positive before subtracting
+//       but MSVC can't figure that out.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+// 4305: LightManager.h needs to specify some constants as floats
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293 4305)
+#endif  // _MSC_VER
+
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
 #include <filament/IndirectLight.h>
@@ -38,6 +51,10 @@
 #include <filament/TextureSampler.h>
 #include <image/KtxBundle.h>
 #include <image/KtxUtility.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"
@@ -105,7 +122,7 @@ void DestroyResource(const REHandle_abstract& id,
 
 // Image data that is retained by renderer thread,
 // will be freed on PixelBufferDescriptor callback
-std::unordered_map<std::uint32_t, std::shared_ptr<geometry::Image>>
+std::unordered_map<std::intptr_t, std::shared_ptr<geometry::Image>>
         pending_images;
 
 std::intptr_t RetainImageForLoading(
@@ -136,7 +153,13 @@ filament::Material* LoadMaterialFromFile(const std::string& path,
     std::vector<char> material_data;
     std::string error_str;
 
-    if (utility::filesystem::FReadToBuffer(path, material_data, &error_str)) {
+    std::string platform_path = path;
+#ifdef _WIN32
+    std::replace(platform_path.begin(), platform_path.end(), '/', '\\');
+#endif  // _WIN32
+    utility::LogDebug("LoadMaterialFromFile(): {}", platform_path);
+    if (utility::filesystem::FReadToBuffer(platform_path, material_data,
+                                           &error_str)) {
         using namespace filament;
         return Material::Builder()
                 .package(material_data.data(), material_data.size())
@@ -144,7 +167,7 @@ filament::Material* LoadMaterialFromFile(const std::string& path,
     }
 
     utility::LogDebug("Failed to load default material from {}. Error: {}",
-                      path, error_str);
+                      platform_path, error_str);
 
     return nullptr;
 }
@@ -158,7 +181,7 @@ struct TextureSettings {
     std::uint32_t texel_height = 0;
 };
 
-TextureSettings GetSettingsFromImage(const geometry::Image& image) {
+TextureSettings GetSettingsFromImage(const geometry::Image& image, bool srgb) {
     TextureSettings settings;
 
     settings.texel_width = image.width_;
@@ -171,11 +194,13 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image) {
             break;
         case 3:
             settings.image_format = filament::Texture::Format::RGB;
-            settings.format = filament::Texture::InternalFormat::RGB8;
+            settings.format = srgb ? filament::Texture::InternalFormat::SRGB8
+                                   : filament::Texture::InternalFormat::RGB8;
             break;
         case 4:
             settings.image_format = filament::Texture::Format::RGBA;
-            settings.format = filament::Texture::InternalFormat::RGBA8;
+            settings.format = srgb ? filament::Texture::InternalFormat::SRGB8_A8
+                                   : filament::Texture::InternalFormat::RGBA8;
             break;
         default:
             utility::LogError("Unsupported image number of channels: {}",
@@ -311,10 +336,10 @@ MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
     material_instance->setParameter("baseColor", filament::RgbType::sRGB,
                                     base_color);
 
-#define TRY_ASSIGN_MAP(map)                                       \
+#define TRY_ASSIGN_MAP(map, srgb)                                 \
     {                                                             \
         if (descriptor.map && descriptor.map->HasData()) {        \
-            auto hmaptex = CreateTexture(descriptor.map);         \
+            auto hmaptex = CreateTexture(descriptor.map, srgb);   \
             if (hmaptex) {                                        \
                 material_instance->setParameter(                  \
                         #map, textures_[hmaptex].get(), sampler); \
@@ -326,18 +351,19 @@ MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
     material_instance->setParameter("baseRoughness", descriptor.baseRoughness);
     material_instance->setParameter("baseMetallic", descriptor.baseMetallic);
 
-    TRY_ASSIGN_MAP(albedo);
-    TRY_ASSIGN_MAP(normalMap);
-    TRY_ASSIGN_MAP(ambientOcclusion);
-    TRY_ASSIGN_MAP(metallic);
-    TRY_ASSIGN_MAP(roughness);
+    TRY_ASSIGN_MAP(albedo, true);
+    TRY_ASSIGN_MAP(normalMap, false);
+    TRY_ASSIGN_MAP(ambientOcclusion, false);
+    TRY_ASSIGN_MAP(metallic, false);
+    TRY_ASSIGN_MAP(roughness, false);
 
 #undef TRY_ASSIGN_MAP
 
     return handle;
 }
 
-TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
+TextureHandle FilamentResourceManager::CreateTexture(const char* path,
+                                                     bool srgb) {
     std::shared_ptr<geometry::Image> img;
 
     if (path) {
@@ -346,14 +372,14 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
         utility::LogWarning("Empty path for texture loading provided");
     }
 
-    return CreateTexture(img);
+    return CreateTexture(img, srgb);
 }
 
 TextureHandle FilamentResourceManager::CreateTexture(
-        const std::shared_ptr<geometry::Image>& img) {
+        const std::shared_ptr<geometry::Image>& img, bool srgb) {
     TextureHandle handle;
     if (img->HasData()) {
-        auto texture = LoadTextureFromImage(img);
+        auto texture = LoadTextureFromImage(img, srgb);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
     }
@@ -362,12 +388,12 @@ TextureHandle FilamentResourceManager::CreateTexture(
 }
 
 TextureHandle FilamentResourceManager::CreateTexture(
-        const geometry::Image& image) {
+        const geometry::Image& image, bool srgb) {
     TextureHandle handle;
     if (image.HasData()) {
         auto copy = std::make_shared<geometry::Image>(image);
 
-        auto texture = LoadTextureFromImage(copy);
+        auto texture = LoadTextureFromImage(copy, srgb);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
     }
@@ -398,7 +424,7 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
             // will be destroyed later by image::ktx::createTexture
             auto* ibl_ktx = new image::KtxBundle(
                     reinterpret_cast<std::uint8_t*>(ibl_data.data()),
-                    ibl_data.size());
+                    std::uint32_t(ibl_data.size()));
             auto* ibl_texture =
                     image::ktx::createTexture(&engine_, ibl_ktx, false);
 
@@ -453,7 +479,7 @@ SkyboxHandle FilamentResourceManager::CreateSkybox(
             // will be destroyed later by image::ktx::createTexture
             auto* sky_ktx = new image::KtxBundle(
                     reinterpret_cast<std::uint8_t*>(sky_data.data()),
-                    sky_data.size());
+                    std::uint32_t(sky_data.size()));
             auto* sky_texture =
                     image::ktx::createTexture(&engine_, sky_ktx, false);
 
@@ -499,7 +525,7 @@ IndexBufferHandle FilamentResourceManager::CreateIndexBuffer(
                     .bufferType(index_stride == 2
                                         ? IndexBuffer::IndexType::USHORT
                                         : IndexBuffer::IndexType::UINT)
-                    .indexCount(indices_count)
+                    .indexCount(std::uint32_t(indices_count))
                     .build(engine_);
 
     IndexBufferHandle handle;
@@ -605,11 +631,11 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
 }
 
 filament::Texture* FilamentResourceManager::LoadTextureFromImage(
-        const std::shared_ptr<geometry::Image>& image) {
+        const std::shared_ptr<geometry::Image>& image, bool srgb) {
     using namespace filament;
 
     auto retained_img_id = RetainImageForLoading(image);
-    auto texture_settings = GetSettingsFromImage(*image);
+    auto texture_settings = GetSettingsFromImage(*image, srgb);
 
     Texture::PixelBufferDescriptor pb(
             image->data_.data(), image->data_.size(),
@@ -631,7 +657,7 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
 filament::Texture* FilamentResourceManager::LoadFilledTexture(
         const Eigen::Vector3f& color, size_t dimension) {
     auto image = std::make_shared<geometry::Image>();
-    image->Prepare(dimension, dimension, 3, 1);
+    image->Prepare(int(dimension), int(dimension), 3, 1);
 
     struct RGB {
         std::uint8_t r, g, b;
@@ -646,7 +672,7 @@ filament::Texture* FilamentResourceManager::LoadFilledTexture(
         data[i] = c;
     }
 
-    auto texture = LoadTextureFromImage(image);
+    auto texture = LoadTextureFromImage(image, false);
     return texture;
 }
 
@@ -657,12 +683,12 @@ void FilamentResourceManager::LoadDefaults() {
 
     const auto texture_path = resource_root + "/defaultTexture.png";
     auto texture_img = io::CreateImageFromFile(texture_path);
-    auto texture = LoadTextureFromImage(texture_img);
+    auto texture = LoadTextureFromImage(texture_img, false);
     textures_[kDefaultTexture] = MakeShared(texture, engine_);
 
     const auto colormap_path = resource_root + "/defaultGradient.png";
     auto colormap_img = io::CreateImageFromFile(colormap_path);
-    auto color_map = LoadTextureFromImage(colormap_img);
+    auto color_map = LoadTextureFromImage(colormap_img, false);
     textures_[kDefaultColorMap] = MakeShared(color_map, engine_);
 
     auto normal_map = LoadFilledTexture(Eigen::Vector3f(0.5, 0.5, 1.f), 1);
@@ -691,9 +717,11 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("ambientOcclusionMap", texture,
                                  default_sampler);
     lit_mat->setDefaultParameter("reflectanceMap", texture, default_sampler);
-    lit_mat->setDefaultParameter("clearCoatMap", texture, default_sampler);
-    lit_mat->setDefaultParameter("clearCoatRoughnessMap", texture,
-                                 default_sampler);
+    // NOTE: Disabled to avoid Filament warning until shader is reworked to
+    // reduce sampler usage.
+    // lit_mat->setDefaultParameter("clearCoatMap", texture, default_sampler);
+    // lit_mat->setDefaultParameter("clearCoatRoughnessMap", texture,
+    //                              default_sampler);
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
     materials_[kDefaultLit] = MakeShared(lit_mat, engine_);
 

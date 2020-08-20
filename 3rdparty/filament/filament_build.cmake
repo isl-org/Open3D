@@ -37,11 +37,7 @@ ExternalProject_Add(
         -DCMAKE_CXX_COMPILER=${FILAMENT_CXX_COMPILER}
         -DCMAKE_INSTALL_PREFIX=${FILAMENT_ROOT}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        -DFILAMENT_SUPPORTS_VULKAN=${USE_VULKAN}
         -DUSE_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}
 )
 
-set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)
-if (USE_VULKAN)
-    set(filament_LIBRARIES ${filament_LIBRARIES} bluevk)
-endif()
+set(filament_LIBRARIES filameshio filament filamat_lite filamat filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)

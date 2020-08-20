@@ -6,7 +6,13 @@
 # - BUILD_CUDA_MODULE
 # - BUILD_TENSORFLOW_OPS
 # - BUILD_PYTORCH_OPS
+# - BUILD_RPC_INTERFACE
 # - LOW_MEM_USAGE
+
+TENSORFLOW_VER="2.3.0"
+TORCH_GLNX_VER=("1.5.0+cu101" "1.4.0+cpu")
+TORCH_MACOS_VER="1.4.0"
+YAPF_VER="0.30.0"
 
 set -euo pipefail
 
@@ -32,7 +38,7 @@ reportJobFinishSession() {
 }
 reportRun() {
     reportJobStart "$*"
-    echo "path: $(which $1)"
+    echo "path: $(which "$1")"
     "$@"
 }
 
@@ -55,16 +61,18 @@ cmake --version
 date
 if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     CUDA_TOOLKIT_DIR=~/cuda
-    reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
-    reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
     export PATH="$CUDA_TOOLKIT_DIR/bin:$PATH"
     export LD_LIBRARY_PATH="$CUDA_TOOLKIT_DIR/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64"
+    if ! which nvcc >/dev/null ; then       # If CUDA is not already installed
+        reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
+        reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
+    fi
     nvcc --version
 fi
 
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
-    reportRun pip install -U tensorflow==2.0.0
+    reportRun pip install -U tensorflow=="$TENSORFLOW_VER"
 fi
 if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     # disable pytorch build if CUDA is enabled for now until the problem with caffe2 and cudnn is solved
@@ -73,29 +81,22 @@ fi
 if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-            reportRun pip install -U torch==1.5.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html
+            reportRun pip install -U torch=="${TORCH_GLNX_VER[0]}" -f https://download.pytorch.org/whl/torch_stable.html
         else
-            reportRun pip install -U torch==1.4.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+            reportRun pip install -U torch=="${TORCH_GLNX_VER[1]}" -f https://download.pytorch.org/whl/torch_stable.html
         fi
     elif [[ "$OSTYPE" == "darwin"* ]]; then
-        reportRun pip install -U torch==1.4.0
+        reportRun pip install -U torch=="$TORCH_MACOS_VER"
     else
         echo "unknown OS $OSTYPE"
         exit 1
     fi
 fi
-if [ "$BUILD_TENSORFLOW_OPS" == "ON" -o "$BUILD_PYTORCH_OPS" == "ON" ]; then
-    reportRun pip install -U yapf==0.30.0
+if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    reportRun pip install -U yapf=="$YAPF_VER"
 fi
 
-# build the rpc interface only if we do not build the cuda module and the
-# ml module to keep build times short
-if [ "$BUILD_CUDA_MODULE" == "OFF" -a "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-    BUILD_RPC_INTERFACE="ON"
-else
-    BUILD_RPC_INTERFACE="OFF"
-fi
-mkdir build
+mkdir -p build
 cd build
 
 runBenchmarks=true
@@ -123,8 +124,8 @@ reportRun make install -j"$NPROC"
 reportRun make VERBOSE=1 install-pip-package -j"$NPROC"
 echo
 
-# skip unit tests if built with CUDA
-if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
+# skip unit tests if built with CUDA, unless system contains Nvidia GPUs
+if [ "$BUILD_CUDA_MODULE" == "OFF" ] || nvidia-smi -L | grep -q GPU ; then
     echo "try importing Open3D python package"
     reportRun python -c "import open3d; print(open3d)"
     reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
@@ -133,7 +134,7 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
     unitTestFlags=
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     date
-    reportRun ./bin/tests $unitTestFlags
+    reportRun ./bin/tests "$unitTestFlags"
     echo
 
     if $runBenchmarks; then
@@ -153,7 +154,7 @@ reportJobStart "test build C++ example"
 echo "test building a C++ example with installed Open3D..."
 date
 cd ../docs/_static/C++
-mkdir build
+mkdir -p build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
 make

@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/rendering/Renderer.h"
 
@@ -66,6 +68,7 @@ public:
     void ShowGeometry(const std::string& name, bool show);
     /// Updates all geometries to use this material
     void UpdateMaterial(const Material& mat);
+    std::vector<std::string> GetGeometries();
 
     const geometry::AxisAlignedBoundingBox& GetBoundingBox() { return bounds_; }
 
@@ -78,6 +81,7 @@ public:
 
     Scene* GetScene() const;
     Camera* GetCamera() const;
+    Renderer& GetRenderer() const;
 
 private:
     struct GeometryData {
