@@ -40,12 +40,12 @@ bool NanoFlann::SetTensorData(const core::Tensor &data) {
     core::SizeVector shape = data.GetShape();
     core::Dtype dtype = data.GetDtype();
     if (shape.size() != 2) {
-        utility::LogWarning(
+        utility::LogError(
                 "[NanoFlann::SetTensorData] Tensor must be two-dimenional");
         return false;
     }
     if (dtype != core::Dtype::Float64) {
-        utility::LogWarning(
+        utility::LogError(
                 "[NanoFlann::SetTensorData] Tensor with dtype other than "
                 "float64 is not supported currently");
         return false;
