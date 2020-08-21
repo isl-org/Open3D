@@ -1,4 +1,4 @@
-p  // ----------------------------------------------------------------------------
+// ----------------------------p------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
@@ -39,92 +39,92 @@ p  // --------------------------------------------------------------------------
 // and limitations under the License.
 
 #pragma once
+#include <cstdint>
+
 #include "open3d/core/CUDAUtils.h"
 
-        namespace open3d {
-#include <cstdint>
+namespace open3d {
 
 #define MAX_KEY_BYTESIZE 32
 
-    /** Built-in flags **/
-    static constexpr uint32_t BASE_UNIT_SIZE = 32;
-    static constexpr uint32_t EMPTY_SLAB_PTR = 0xFFFFFFFF;
-    static constexpr uint32_t EMPTY_PAIR_PTR = 0xFFFFFFFF;
-    static constexpr uint32_t HEAD_SLAB_PTR = 0xFFFFFFFE;
+/** Built-in flags **/
+static constexpr uint32_t BASE_UNIT_SIZE = 32;
+static constexpr uint32_t EMPTY_SLAB_PTR = 0xFFFFFFFF;
+static constexpr uint32_t EMPTY_PAIR_PTR = 0xFFFFFFFF;
+static constexpr uint32_t HEAD_SLAB_PTR = 0xFFFFFFFE;
 
-    /** Queries **/
-    static constexpr uint32_t SEARCH_NOT_FOUND = 0xFFFFFFFF;
+/** Queries **/
+static constexpr uint32_t SEARCH_NOT_FOUND = 0xFFFFFFFF;
 
-    /** Warp operations **/
-    static constexpr uint32_t WARP_WIDTH = 32;
-    static constexpr uint32_t BLOCKSIZE_ = 128;
+/** Warp operations **/
+static constexpr uint32_t WARP_WIDTH = 32;
+static constexpr uint32_t BLOCKSIZE_ = 128;
 
-    /* bits:   31 | 30 | ... | 3 | 2 | 1 | 0 */
-    static constexpr uint32_t ACTIVE_LANES_MASK = 0xFFFFFFFF;
-    static constexpr uint32_t PAIR_PTR_LANES_MASK = 0x7FFFFFFF;
-    static constexpr uint32_t NEXT_SLAB_PTR_LANE = 31;
+/* bits:   31 | 30 | ... | 3 | 2 | 1 | 0 */
+static constexpr uint32_t ACTIVE_LANES_MASK = 0xFFFFFFFF;
+static constexpr uint32_t PAIR_PTR_LANES_MASK = 0x7FFFFFFF;
+static constexpr uint32_t NEXT_SLAB_PTR_LANE = 31;
 
-    static constexpr uint32_t NULL_ITERATOR = 0xFFFFFFFF;
+static constexpr uint32_t NULL_ITERATOR = 0xFFFFFFFF;
 
-    static constexpr uint32_t NUM_SUPER_BLOCKS_ = 32;
+static constexpr uint32_t NUM_SUPER_BLOCKS_ = 32;
 
-    static constexpr uint32_t LOG_NUM_MEM_BLOCKS_ = 2;
-    static constexpr uint32_t NUM_MEM_BLOCKS_PER_SUPER_BLOCK_ = 4;
-    static constexpr uint32_t NUM_MEM_UNITS_PER_BLOCK_ = 1024;
+static constexpr uint32_t LOG_NUM_MEM_BLOCKS_ = 2;
+static constexpr uint32_t NUM_MEM_BLOCKS_PER_SUPER_BLOCK_ = 4;
+static constexpr uint32_t NUM_MEM_UNITS_PER_BLOCK_ = 1024;
 
-    static constexpr uint32_t NUM_BITMAP_PER_MEM_BLOCK_ = 32;
-    static constexpr uint32_t BITMAP_SIZE_ = 32;
-    static constexpr uint32_t WARP_SIZE = 32;
-    static constexpr uint32_t MEM_UNIT_SIZE_ = 32;
-    static constexpr uint32_t SUPER_BLOCK_BIT_OFFSET_ALLOC_ = 27;
-    static constexpr uint32_t MEM_BLOCK_BIT_OFFSET_ALLOC_ = 10;
-    static constexpr uint32_t MEM_UNIT_BIT_OFFSET_ALLOC_ = 5;
+static constexpr uint32_t NUM_BITMAP_PER_MEM_BLOCK_ = 32;
+static constexpr uint32_t BITMAP_SIZE_ = 32;
+static constexpr uint32_t WARP_SIZE = 32;
+static constexpr uint32_t MEM_UNIT_SIZE_ = 32;
+static constexpr uint32_t SUPER_BLOCK_BIT_OFFSET_ALLOC_ = 27;
+static constexpr uint32_t MEM_BLOCK_BIT_OFFSET_ALLOC_ = 10;
+static constexpr uint32_t MEM_UNIT_BIT_OFFSET_ALLOC_ = 5;
 
-    static constexpr uint32_t MEM_BLOCK_SIZE_ =
-            NUM_MEM_UNITS_PER_BLOCK_ * MEM_UNIT_SIZE_;
-    static constexpr uint32_t SUPER_BLOCK_SIZE_ =
-            ((BITMAP_SIZE_ + MEM_BLOCK_SIZE_) *
-             NUM_MEM_BLOCKS_PER_SUPER_BLOCK_);
-    static constexpr uint32_t MEM_BLOCK_OFFSET_ =
-            (BITMAP_SIZE_ * NUM_MEM_BLOCKS_PER_SUPER_BLOCK_);
+static constexpr uint32_t MEM_BLOCK_SIZE_ =
+        NUM_MEM_UNITS_PER_BLOCK_ * MEM_UNIT_SIZE_;
+static constexpr uint32_t SUPER_BLOCK_SIZE_ =
+        ((BITMAP_SIZE_ + MEM_BLOCK_SIZE_) * NUM_MEM_BLOCKS_PER_SUPER_BLOCK_);
+static constexpr uint32_t MEM_BLOCK_OFFSET_ =
+        (BITMAP_SIZE_ * NUM_MEM_BLOCKS_PER_SUPER_BLOCK_);
 
-    typedef uint32_t ptr_t;
-    struct iterator_t {
-        OPEN3D_HOST_DEVICE iterator_t() : first(nullptr), second(nullptr) {}
-        OPEN3D_HOST_DEVICE iterator_t(void* key_ptr, void* value_ptr)
-            : first(key_ptr), second(value_ptr) {}
+typedef uint32_t ptr_t;
+struct iterator_t {
+    OPEN3D_HOST_DEVICE iterator_t() : first(nullptr), second(nullptr) {}
+    OPEN3D_HOST_DEVICE iterator_t(void* key_ptr, void* value_ptr)
+        : first(key_ptr), second(value_ptr) {}
 
-        void* first;
-        void* second;
-    };
+    void* first;
+    void* second;
+};
 
-    typedef uint64_t (*hash_t)(uint8_t*, uint32_t);
+typedef uint64_t (*hash_t)(uint8_t*, uint32_t);
 
-    /// Internal Hashtable Node: (31 units and 1 next ptr) representation.
-    /// \member kv_pair_ptrs:
-    /// Each element is an internal ptr to a kv pair managed by the
-    /// InternalMemoryManager. Can be converted to a real ptr.
-    /// \member next_slab_ptr:
-    /// An internal ptr managed by InternalNodeManager.
-    class Slab {
-    public:
-        ptr_t kv_pair_ptrs[31];
-        ptr_t next_slab_ptr;
-    };
+/// Internal Hashtable Node: (31 units and 1 next ptr) representation.
+/// \member kv_pair_ptrs:
+/// Each element is an internal ptr to a kv pair managed by the
+/// InternalMemoryManager. Can be converted to a real ptr.
+/// \member next_slab_ptr:
+/// An internal ptr managed by InternalNodeManager.
+class Slab {
+public:
+    ptr_t kv_pair_ptrs[31];
+    ptr_t next_slab_ptr;
+};
 
-    template <typename Key, typename Value>
-    struct Pair {
-        Key first;
-        Value second;
-        OPEN3D_HOST_DEVICE Pair() {}
-        OPEN3D_HOST_DEVICE Pair(const Key& key, const Value& value)
-            : first(key), second(value) {}
-    };
+template <typename Key, typename Value>
+struct Pair {
+    Key first;
+    Value second;
+    OPEN3D_HOST_DEVICE Pair() {}
+    OPEN3D_HOST_DEVICE Pair(const Key& key, const Value& value)
+        : first(key), second(value) {}
+};
 
-    template <typename Key, typename Value>
-    OPEN3D_HOST_DEVICE Pair<Key, Value> make_pair(const Key& key,
-                                                  const Value& value) {
-        return Pair<Key, Value>(key, value);
-    }
+template <typename Key, typename Value>
+OPEN3D_HOST_DEVICE Pair<Key, Value> make_pair(const Key& key,
+                                              const Value& value) {
+    return Pair<Key, Value>(key, value);
+}
 
 }  // namespace open3d

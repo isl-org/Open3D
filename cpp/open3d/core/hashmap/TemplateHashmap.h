@@ -50,10 +50,8 @@
 #include <unordered_map>
 
 namespace open3d {
-<<<<<<< HEAD:src/Open3D/Core/Hashmap/TemplateHashmap.h
-=======
 namespace core {
->>>>>>> aa83da2b5df8dfabd437a1d61a326bb2ee6b9af1:cpp/open3d/core/hashmap/TemplateHashmap.h
+
 template <typename Hash, typename KeyEq>
 std::shared_ptr<Hashmap<Hash, KeyEq>> CreateHashmap(size_t init_capacity,
                                                     size_t dsize_key,
@@ -92,9 +90,5 @@ std::shared_ptr<Hashmap<Hash, KeyEq>> CreateHashmap(size_t init_buckets,
     return constructor(init_buckets, init_capacity, dsize_key, dsize_value,
                        device);
 }
-<<<<<<< HEAD:src/Open3D/Core/Hashmap/TemplateHashmap.h
-
-=======
 }  // namespace core
->>>>>>> aa83da2b5df8dfabd437a1d61a326bb2ee6b9af1:cpp/open3d/core/hashmap/TemplateHashmap.h
 }  // namespace open3d
