@@ -6,4 +6,5 @@ map_Kd albedo.png
 map_Ka ao.png
 map_Pr roughness.png
 map_Pm metallic.png
+Pm 1.0
 norm normal.png
