@@ -54,8 +54,8 @@ bool NanoFlann::SetTensorData(const core::Tensor &data) {
     dataset_size_ = static_cast<size_t>(shape[0]);
     dimension_ = static_cast<int>(shape[1]);
 
-    data_ = data;
-    double* data_ptr = static_cast<double*>(data_.GetBlob()->GetDataPtr());
+    data_ = data.Contiguous();
+    double* data_ptr = static_cast<double*>(data_.GetDataPtr());
     adaptor_.reset(new Adaptor<double>(dataset_size_, dimension_, data_ptr));
 
     index_.reset(new KDTree_t(dimension_, *adaptor_.get()));
