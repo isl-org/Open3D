@@ -31,47 +31,113 @@
 namespace open3d {
 namespace visualization {
 
+namespace {
+// When we move to C++20 it would be nice to use designated initializers
+// for the lighting profiles and materials.
+class LightingProfileBuilder {
+public:
+    LightingProfileBuilder& name(const std::string& name) {
+        profile_.name = name;
+        return *this;
+    }
+    LightingProfileBuilder& ibl_intensity(float x) {
+        profile_.ibl_intensity = x;
+        return *this;
+    }
+    LightingProfileBuilder& sun_intensity(float x) {
+        profile_.sun_intensity = x;
+        return *this;
+    }
+    LightingProfileBuilder& sun_dir(const Eigen::Vector3f& dir) {
+        profile_.sun_dir = dir;
+        return *this;
+    }
+    LightingProfileBuilder& sun_color(const Eigen::Vector3f& c) {
+        profile_.sun_color = c;
+        return *this;
+    }
+    LightingProfileBuilder& ibl_rotation(const rendering::Scene::Transform& t) {
+        profile_.ibl_rotation = t;
+        return *this;
+    }
+    LightingProfileBuilder& ibl_enabled(bool enabled) {
+        profile_.ibl_enabled = enabled;
+        return *this;
+    }
+    LightingProfileBuilder& use_default_ibl(bool use) {
+        profile_.use_default_ibl = use;
+        return *this;
+    }
+    LightingProfileBuilder& sun_enabled(bool enabled) {
+        profile_.sun_enabled = enabled;
+        return *this;
+    }
+
+    GuiSettingsModel::LightingProfile build() { return profile_; }
+
+private:
+    GuiSettingsModel::LightingProfile profile_;
+};
+
+}  // namespace
+
 const std::vector<GuiSettingsModel::LightingProfile>
         GuiSettingsModel::lighting_profiles_ = {
-                {.name = "Bright day with sun at +Y [default]",
-                 .ibl_intensity = 45000,
-                 .sun_intensity = 45000,
-                 .sun_dir = {0.577f, -0.577f, -0.577f}},
-                {.name = "Bright day with sun at -Y",
-                 .ibl_intensity = 45000,
-                 .sun_intensity = 45000,
-                 .sun_dir = {0.577f, 0.577f, 0.577f},
-                 .sun_color = {1.0f, 1.0f, 1.0f},
-                 .ibl_rotation = rendering::Scene::Transform(
-                         Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
-                {.name = "Bright day with sun at +Z",
-                 .ibl_intensity = 45000,
-                 .sun_intensity = 45000,
-                 .sun_dir = {0.577f, 0.577f, -0.577f}},
-                {.name = "Less bright day with sun at +Y",
-                 .ibl_intensity = 35000,
-                 .sun_intensity = 50000,
-                 .sun_dir = {0.577f, -0.577f, -0.577f}},
-                {.name = "Less bright day with sun at -Y",
-                 .ibl_intensity = 35000,
-                 .sun_intensity = 50000,
-                 .sun_dir = {0.577f, 0.577f, 0.577f},
-                 .sun_color = {1.0f, 1.0f, 1.0f},
-                 .ibl_rotation = rendering::Scene::Transform(
-                         Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
-                {.name = "Less bright day with sun at +Z",
-                 .ibl_intensity = 35000,
-                 .sun_intensity = 50000,
-                 .sun_dir = {0.577f, 0.577f, -0.577f}},
-                {.name = POINT_CLOUD_PROFILE_NAME,
-                 .ibl_intensity = 60000,
-                 .sun_intensity = 50000,
-                 .sun_dir = {0.577f, -0.577f, -0.577f},
-                 .sun_color = {1.0f, 1.0f, 1.0f},
-                 .ibl_rotation = rendering::Scene::Transform::Identity(),
-                 .ibl_enabled = true,
-                 .use_default_ibl = true,
-                 .sun_enabled = false}};
+                LightingProfileBuilder()
+                        .name("Bright day with sun at +Y [default]")
+                        .ibl_intensity(45000)
+                        .sun_intensity(45000)
+                        .sun_dir({0.577f, -0.577f, -0.577f})
+                        .build(),
+                LightingProfileBuilder()
+                        .name("Bright day with sun at -Y")
+                        .ibl_intensity(45000)
+                        .sun_intensity(45000)
+                        .sun_dir({0.577f, 0.577f, 0.577f})
+                        .sun_color({1.0f, 1.0f, 1.0f})
+                        .ibl_rotation(
+                                rendering::Scene::Transform(Eigen::AngleAxisf(
+                                        float(M_PI), Eigen::Vector3f::UnitX())))
+                        .build(),
+                LightingProfileBuilder()
+                        .name("Bright day with sun at +Z")
+                        .ibl_intensity(45000)
+                        .sun_intensity(45000)
+                        .sun_dir({0.577f, 0.577f, -0.577f})
+                        .build(),
+                LightingProfileBuilder()
+                        .name("Less bright day with sun at +Y")
+                        .ibl_intensity(35000)
+                        .sun_intensity(50000)
+                        .sun_dir({0.577f, -0.577f, -0.577f})
+                        .build(),
+                LightingProfileBuilder()
+                        .name("Less bright day with sun at -Y")
+                        .ibl_intensity(35000)
+                        .sun_intensity(50000)
+                        .sun_dir({0.577f, 0.577f, 0.577f})
+                        .sun_color({1.0f, 1.0f, 1.0f})
+                        .ibl_rotation(
+                                rendering::Scene::Transform(Eigen::AngleAxisf(
+                                        float(M_PI), Eigen::Vector3f::UnitX())))
+                        .build(),
+                LightingProfileBuilder()
+                        .name("Less bright day with sun at +Z")
+                        .ibl_intensity(35000)
+                        .sun_intensity(50000)
+                        .sun_dir({0.577f, 0.577f, -0.577f})
+                        .build(),
+                LightingProfileBuilder()
+                        .name(POINT_CLOUD_PROFILE_NAME)
+                        .ibl_intensity(60000)
+                        .sun_intensity(50000)
+                        .sun_dir({0.577f, -0.577f, -0.577f})
+                        .sun_color({1.0f, 1.0f, 1.0f})
+                        .ibl_rotation(rendering::Scene::Transform::Identity())
+                        .ibl_enabled(true)
+                        .use_default_ibl(true)
+                        .sun_enabled(false)
+                        .build()};
 
 const std::map<std::string, const GuiSettingsModel::LitMaterial>
         GuiSettingsModel::prefab_materials_ = {
@@ -268,11 +334,11 @@ void GuiSettingsModel::UnsetCustomDefaultColor() {
 }
 
 int GuiSettingsModel::GetPointSize() const {
-    return current_materials_.point_size;
+    return int(current_materials_.point_size);
 }
 
 void GuiSettingsModel::SetPointSize(int size) {
-    current_materials_.point_size = size;
+    current_materials_.point_size = float(size);
     NotifyChanged(true);
 }
 

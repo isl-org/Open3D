@@ -571,10 +571,10 @@ private:
         }
 
         render_scene->EnableIndirectLight(lighting.ibl_enabled);
-        render_scene->SetIndirectLightIntensity(lighting.ibl_intensity);
+        render_scene->SetIndirectLightIntensity(float(lighting.ibl_intensity));
         render_scene->SetIndirectLightRotation(lighting.ibl_rotation);
         render_scene->SetDirectionalLight(lighting.sun_dir, lighting.sun_color,
-                                          lighting.sun_intensity);
+                                          float(lighting.sun_intensity));
         render_scene->EnableDirectionalLight(lighting.sun_enabled);
     }
 
@@ -727,16 +727,16 @@ void GuiVisualizer::Init() {
 
     // Setup UI
     const auto em = theme.font_size;
-    const int lm = std::ceil(0.5 * em);
-    const int grid_spacing = std::ceil(0.25 * em);
+    const int lm = int(std::ceil(0.5 * em));
+    const int grid_spacing = int(std::ceil(0.25 * em));
 
     AddChild(impl_->scene_wgt_);
 
     // Add settings widget
-    const int separation_height = std::ceil(0.75 * em);
+    const int separation_height = int(std::ceil(0.75 * em));
     // (we don't want as much left margin because the twisty arrow is the
     // only thing there, and visually it looks larger than the right.)
-    const gui::Margins base_margins(0.5 * lm, lm, lm, lm);
+    const gui::Margins base_margins(int(std::round(0.5 * lm)), lm, lm, lm);
     settings.wgt_base = std::make_shared<gui::Vert>(0, base_margins);
 
     gui::Margins indent(em, 0, 0, 0);
@@ -786,7 +786,7 @@ void GuiVisualizer::Init() {
     camera_controls2->AddChild(settings.wgt_mouse_ibl);
     camera_controls2->AddStretch();
     view_ctrls->AddChild(camera_controls1);
-    view_ctrls->AddFixed(0.25 * em);
+    view_ctrls->AddFixed(int(std::ceil(0.25 * em)));
     view_ctrls->AddChild(camera_controls2);
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(gui::Horiz::MakeCentered(reset_camera));
@@ -1098,12 +1098,12 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                         "Contains 0 triangles, will read as point cloud");
                 mesh.reset();
             } else {
-                UpdateProgress(0.5);
+                UpdateProgress(0.5f);
                 mesh->ComputeVertexNormals();
                 if (mesh->vertex_colors_.empty()) {
                     mesh->PaintUniformColor({1, 1, 1});
                 }
-                UpdateProgress(0.666);
+                UpdateProgress(0.666f);
                 geometry = mesh;
             }
             // Make sure the mesh has texture coordinates
@@ -1126,7 +1126,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 io::ReadPointCloudOption opt;
                 opt.update_progress = [ioProgressAmount,
                                        UpdateProgress](double percent) -> bool {
-                    UpdateProgress(ioProgressAmount * percent / 100.0);
+                    UpdateProgress(ioProgressAmount * float(percent / 100.0));
                     return true;
                 };
                 success = io::ReadPointCloud(path, *cloud, opt);
@@ -1139,9 +1139,9 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 if (!cloud->HasNormals()) {
                     cloud->EstimateNormals();
                 }
-                UpdateProgress(0.666);
+                UpdateProgress(0.666f);
                 cloud->NormalizeNormals();
-                UpdateProgress(0.75);
+                UpdateProgress(0.75f);
                 geometry = cloud;
             } else {
                 utility::LogWarning("Failed to read points {}", path.c_str());
@@ -1187,14 +1187,15 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
         case FILE_OPEN: {
             auto dlg = std::make_shared<gui::FileDialog>(
                     gui::FileDialog::Mode::OPEN, "Open Geometry", GetTheme());
-            dlg->AddFilter(".ply .stl .obj .off .gltf .glb",
-                           "Triangle mesh files (.ply, .stl, .obj, .off, "
+            dlg->AddFilter(".ply .stl .fbx .obj .off .gltf .glb",
+                           "Triangle mesh files (.ply, .stl, .fbx, .obj, .off, "
                            ".gltf, .glb)");
             dlg->AddFilter(".xyz .xyzn .xyzrgb .ply .pcd .pts",
                            "Point cloud files (.xyz, .xyzn, .xyzrgb, .ply, "
                            ".pcd, .pts)");
             dlg->AddFilter(".ply", "Polygon files (.ply)");
             dlg->AddFilter(".stl", "Stereolithography files (.stl)");
+            dlg->AddFilter(".fbx", "Autodesk Filmbox files (.fbx)");
             dlg->AddFilter(".obj", "Wavefront OBJ files (.obj)");
             dlg->AddFilter(".off", "Object file format (.off)");
             dlg->AddFilter(".gltf", "OpenGL transfer files (.gltf)");

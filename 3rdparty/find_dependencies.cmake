@@ -878,9 +878,17 @@ if(BUILD_GUI)
         message(STATUS "Using prebuilt third-party library Filament")
         include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
     endif()
+    set(FILAMENT_RUNTIME_VER "")
+    if (WIN32)
+        if (STATIC_WINDOWS_RUNTIME)
+            set(FILAMENT_RUNTIME_VER "mt$<$<CONFIG:DEBUG>:d>")
+        else()
+            set(FILAMENT_RUNTIME_VER "md$<$<CONFIG:DEBUG>:d>")
+        endif()
+    endif()
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
-        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64
+        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_RUNTIME_VER}
         LIBRARIES ${filament_LIBRARIES}
     )
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
