@@ -199,7 +199,6 @@ std::shared_ptr<DefaultHashmap> CreateDefaultHashmap(size_t init_buckets,
                                                      size_t dsize_value,
                                                      Device device);
 
-namespace _factory {
 std::shared_ptr<DefaultHashmap> CreateDefaultCPUHashmap(size_t init_buckets,
                                                         size_t init_capacity,
                                                         size_t dsize_key,
@@ -211,6 +210,6 @@ std::shared_ptr<DefaultHashmap> CreateDefaultCUDAHashmap(size_t init_buckets,
                                                          size_t dsize_key,
                                                          size_t dsize_value,
                                                          Device device);
-}  // namespace _factory
+
 }  // namespace core
 }  // namespace open3d

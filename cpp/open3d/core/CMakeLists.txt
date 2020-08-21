@@ -64,7 +64,7 @@ set(HASHMAP_SRC
   hashmap/CPU/DefaultHashmapCPU.cpp
 )
 
-set(HASHMAP_SRC
+set(HASHMAP_CUDA_SRC
   hashmap/CUDA/DefaultHashmapCUDA.cu
 )
 

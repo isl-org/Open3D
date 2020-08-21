@@ -30,9 +30,10 @@
 // disable code inside DefaultHashmap.cpp
 // Else, link DefaultHashmap.cpp and disregard DefaultHashmap.cu
 
-#include "HashmapBase.h"
-
 #include <unordered_map>
+
+#include "HashmapBase.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace core {
@@ -52,11 +53,11 @@ std::shared_ptr<DefaultHashmap> CreateDefaultHashmap(size_t init_buckets,
     static std::unordered_map<Device::DeviceType,
                               std::function<std::shared_ptr<DefaultHashmap>(
                                       size_t, size_t, size_t, size_t, Device)>,
-                              utility::hash_enum_class::hash>
+                              utility::hash_enum_class>
             map_device_type_to_hashmap_constructor = {
-                {Device::DeviceType::CPU, _factory::CreateDefaultCPUHashmap},
+                {Device::DeviceType::CPU, CreateDefaultCPUHashmap},
 #if defined(BUILD_CUDA_MODULE)
-                {Device::DeviceType::CUDA, _factory::CreateDefaultCUDAHashmap}
+                {Device::DeviceType::CUDA, CreateDefaultCUDAHashmap}
 #endif
             };
 
