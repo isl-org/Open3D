@@ -53,11 +53,9 @@ bool NanoFlann::SetTensorData(const core::Tensor &data) {
 
     dataset_size_ = static_cast<size_t>(shape[0]);
     dimension_ = static_cast<int>(shape[1]);
-    data_.resize(dataset_size_ * dimension_);
-    memcpy(data_.data(), data.ToFlatVector<double>().data(),
-           dataset_size_ * dimension_ * sizeof(double));
-    adaptor_.reset(
-            new Adaptor<double>(dataset_size_, dimension_, data_.data()));
+
+    std::vector<double> flat_vec = data.ToFlatVector<double>();
+    adaptor_.reset(new Adaptor<double>(dataset_size_, dimension_, flat_vec.data()));
 
     index_.reset(new KDTree_t(dimension_, *adaptor_.get()));
     index_->buildIndex();

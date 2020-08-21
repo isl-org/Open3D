@@ -105,7 +105,6 @@ public:
             const core::Tensor &query, double radius);
 
 protected:
-    std::vector<double> data_;
     std::unique_ptr<KDTree_t> index_;
     std::unique_ptr<Adaptor<double>> adaptor_;
     int dimension_ = 0;
