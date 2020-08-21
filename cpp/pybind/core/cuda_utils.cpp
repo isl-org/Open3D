@@ -34,6 +34,7 @@ void pybind_cuda_utils(py::module &m) {
 
     m_cuda.def("device_count", core::cuda::DeviceCount);
     m_cuda.def("is_available", core::cuda::IsAvailable);
+    m_cuda.def("release_cache", core::cuda::ReleaseCache);
 }
 
 }  // namespace open3d

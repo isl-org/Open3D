@@ -27,6 +27,10 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+#include <set>
+#include <string>
+#include <unordered_map>
+
 #include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
@@ -34,27 +38,288 @@
 namespace open3d {
 namespace core {
 
+struct Block;
+
+// Refrence: https://tinyurl.com/yxkplte3
+// We need raw pointers (not smart ptrs) for exact comparison and reference
+typedef Block* BlockPtr;
+
+struct Block {
+    int device_;   // gpu id
+    size_t size_;  // block size in bytes
+    void* ptr_;    // memory address
+
+    BlockPtr prev_;
+    BlockPtr next_;
+
+    bool in_use_;
+
+    Block(int device,
+          size_t size,
+          void* ptr = nullptr,
+          BlockPtr prev = nullptr,
+          BlockPtr next = nullptr)
+        : device_(device),
+          size_(size),
+          ptr_(ptr),
+          prev_(prev),
+          next_(next),
+          in_use_(false) {}
+};
+
+struct BlockComparator {
+    bool operator()(const BlockPtr& a, const BlockPtr& b) const {
+        // Not on the same device: treat as smaller, will be filtered in
+        // lower_bound operation.
+        if (a->device_ != b->device_) {
+            return true;
+        }
+        if (a->size_ != b->size_) {
+            return a->size_ < b->size_;
+        }
+        return (size_t)a->ptr_ < (size_t)b->ptr_;
+    }
+};
+
+// Singleton cacher
+class CUDACacher {
+public:
+    static std::shared_ptr<CUDACacher> GetInstance() {
+        if (instance_ == nullptr) {
+            instance_ = std::make_shared<CUDACacher>();
+        }
+        return instance_;
+    }
+
+public:
+    typedef std::set<BlockPtr, BlockComparator> BlockPool;
+
+    inline std::shared_ptr<BlockPool>& get_pool(size_t byte_size) {
+        // largest "small" allocation is 1 MiB (1024 * 1024)
+        constexpr size_t kSmallSize = 1048576;
+        return byte_size <= kSmallSize ? small_block_pool_ : large_block_pool_;
+    }
+
+    inline size_t align_bytes(size_t byte_size, size_t alignment = 8) {
+        return ((byte_size + alignment - 1) / alignment) * alignment;
+    }
+
+    CUDACacher() {
+        small_block_pool_ = std::make_shared<BlockPool>();
+        large_block_pool_ = std::make_shared<BlockPool>();
+    }
+
+    ~CUDACacher() {
+        if (!allocated_blocks_.empty()) {
+            // Should never reach here
+            utility::LogError("[CUDACacher] Memory leak in destructor.");
+        }
+        ReleaseCache();
+    }
+
+    void* Malloc(size_t byte_size, const Device& device) {
+        auto find_free_block = [&](BlockPtr query_block) -> BlockPtr {
+            auto pool = get_pool(query_block->size_);
+            auto it = pool->lower_bound(query_block);
+            if (it != pool->end()) {
+                BlockPtr block = *it;
+                pool->erase(it);
+                return block;
+            }
+            return nullptr;
+        };
+
+        void* ptr;
+        size_t alloc_size = align_bytes(byte_size);
+        Block query_block = Block(device.GetID(), alloc_size);
+        BlockPtr found_block = find_free_block(&query_block);
+
+        if (found_block == nullptr) {
+            // Allocate a new block and insert it to the allocated pool
+            OPEN3D_CUDA_CHECK(cudaMalloc(&ptr, alloc_size));
+            BlockPtr new_block = new Block(device.GetID(), alloc_size, ptr);
+            new_block->in_use_ = true;
+            allocated_blocks_.insert({ptr, new_block});
+        } else {
+            ptr = found_block->ptr_;
+
+            size_t remain_size = found_block->size_ - alloc_size;
+            if (remain_size > 0) {
+                // Split block
+                // found_block <-> remain_block <-> found_block->next_
+                BlockPtr next_block = found_block->next_;
+                BlockPtr remain_block =
+                        new Block(device.GetID(), remain_size,
+                                  static_cast<char*>(ptr) + alloc_size,
+                                  found_block, next_block);
+                found_block->next_ = remain_block;
+                if (next_block) {
+                    next_block->prev_ = remain_block;
+                }
+
+                // Place the remain block to cache pool
+                get_pool(remain_size)->emplace(remain_block);
+            }
+
+            found_block->size_ = alloc_size;
+            found_block->in_use_ = true;
+            allocated_blocks_.insert({ptr, found_block});
+        }
+
+        return ptr;
+    }
+
+    void Free(void* ptr, const Device& device) {
+        auto release_block = [&](BlockPtr block) {
+            auto block_pool = get_pool(block->size_);
+            auto it = block_pool->find(block);
+            if (it == block_pool->end()) {
+                // Should never reach here
+                utility::LogError(
+                        "[CUDACacher] Linked list node {} not found in pool.",
+                        fmt::ptr(block));
+            }
+            block_pool->erase(it);
+            delete block;
+        };
+
+        auto it = allocated_blocks_.find(ptr);
+
+        if (it == allocated_blocks_.end()) {
+            // Should never reach here
+            utility::LogError("[CUDACacher] Block should have been recorded.");
+        } else {
+            // Release memory and check if merge is required
+            BlockPtr block = it->second;
+            allocated_blocks_.erase(it);
+
+            // Merge free blocks towards 'next' direction
+            BlockPtr block_it = block;
+            while (block_it != nullptr && block_it->next_ != nullptr) {
+                BlockPtr next_block = block_it->next_;
+                if (next_block->prev_ != block_it) {
+                    // Should never reach here
+                    utility::LogError(
+                            "[CUDACacher] Linked list nodes mismatch in "
+                            "forward-direction merge.");
+                }
+
+                if (next_block->in_use_) {
+                    break;
+                }
+
+                // Merge
+                block_it->next_ = next_block->next_;
+                if (block_it->next_) {
+                    block_it->next_->prev_ = block_it;
+                }
+                block_it->size_ += next_block->size_;
+                release_block(next_block);
+
+                block_it = block_it->next_;
+            }
+
+            // Merge free blocks towards 'prev' direction
+            block_it = block;
+            while (block_it != nullptr && block_it->prev_ != nullptr) {
+                BlockPtr prev_block = block_it->prev_;
+                if (prev_block->next_ != block_it) {
+                    // Should never reach here.
+                    utility::LogError(
+                            "[CUDACacher]: linked list nodes mismatch in "
+                            "backward-direction merge.");
+                }
+
+                if (prev_block->in_use_) {
+                    break;
+                }
+
+                // Merge
+                block_it->prev_ = prev_block->prev_;
+                if (block_it->prev_) {
+                    block_it->prev_->next_ = block_it;
+                }
+                block_it->size_ += prev_block->size_;
+                block_it->ptr_ = prev_block->ptr_;
+                release_block(prev_block);
+
+                block_it = block_it->prev_;
+            }
+
+            block->in_use_ = false;
+            get_pool(block->size_)->emplace(block);
+        }
+    }
+
+    void ReleaseCache() {
+        size_t total_bytes = 0;
+        // Reference:
+        // https://stackoverflow.com/questions/2874441/deleting-elements-from-stdset-while-iterating
+        auto release_pool = [&](std::set<BlockPtr, BlockComparator>& pool) {
+            auto it = pool.begin();
+            auto end = pool.end();
+            while (it != end) {
+                BlockPtr block = *it;
+                if (block->prev_ == nullptr && block->next_ == nullptr) {
+                    OPEN3D_CUDA_CHECK(cudaFree(block->ptr_));
+                    total_bytes += block->size_;
+                    delete block;
+                    it = pool.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        };
+
+        release_pool(*small_block_pool_);
+        release_pool(*large_block_pool_);
+
+        utility::LogInfo("{} bytes released.", total_bytes);
+    }
+
+private:
+    std::unordered_map<void*, BlockPtr> allocated_blocks_;
+    std::shared_ptr<BlockPool> small_block_pool_;
+    std::shared_ptr<BlockPool> large_block_pool_;
+
+    static std::shared_ptr<CUDACacher> instance_;
+};
+
+// Create instance on intialization to avoid 'cuda error driver shutdown'
+std::shared_ptr<CUDACacher> CUDACacher::instance_ = CUDACacher::GetInstance();
+
 CUDAMemoryManager::CUDAMemoryManager() {}
 
 void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
+    if (byte_size == 0) return nullptr;
+
     CUDADeviceSwitcher switcher(device);
-    void* ptr;
+
     if (device.GetType() == Device::DeviceType::CUDA) {
-        OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
+        std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
+        return instance->Malloc(byte_size, device);
     } else {
-        utility::LogError("CUDAMemoryManager::Malloc: Unimplemented device");
+        utility::LogError("[CUDAMemoryManager] Malloc: Unimplemented device");
+        return nullptr;
     }
-    return ptr;
+    // Should never reach here
+    return nullptr;
 }
 
 void CUDAMemoryManager::Free(void* ptr, const Device& device) {
+    if (ptr == nullptr) return;
+
     CUDADeviceSwitcher switcher(device);
+
     if (device.GetType() == Device::DeviceType::CUDA) {
         if (ptr && IsCUDAPointer(ptr)) {
-            OPEN3D_CUDA_CHECK(cudaFree(ptr));
+            std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
+            instance->Free(ptr, device);
+        } else {
+            utility::LogError("[CUDAMemoryManager] Free: Invalid pointer");
         }
     } else {
-        utility::LogError("CUDAMemoryManager::Free: Unimplemented device");
+        utility::LogError("[CUDAMemoryManager] Free: Unimplemented device");
     }
 }
 
@@ -121,6 +386,11 @@ bool CUDAMemoryManager::IsCUDAPointer(const void* ptr) {
         return true;
     }
     return false;
+}
+
+void CUDAMemoryManager::ReleaseCache() {
+    std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
+    instance->ReleaseCache();
 }
 
 }  // namespace core

@@ -100,6 +100,9 @@ public:
                 const Device& src_device,
                 size_t num_bytes) override;
 
+public:
+    static void ReleaseCache();
+
 protected:
     bool IsCUDAPointer(const void* ptr);
 };

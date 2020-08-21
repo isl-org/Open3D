@@ -28,6 +28,7 @@
 
 #ifdef BUILD_CUDA_MODULE
 #include "open3d/core/CUDAState.cuh"
+#include "open3d/core/MemoryManager.h"
 #endif
 
 namespace open3d {
@@ -44,6 +45,8 @@ int DeviceCount() {
 }
 
 bool IsAvailable() { return cuda::DeviceCount() > 0; }
+
+void ReleaseCache() { CUDAMemoryManager::ReleaseCache(); }
 
 }  // namespace cuda
 }  // namespace core
