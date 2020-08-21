@@ -39,10 +39,7 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ] || nvidia-smi -L | grep -q GPU ; then
     echo "try importing Open3D python package"
     test_wheel
     echo "running Open3D unit tests..."
-    run_unit_tests
-    echo "running Open3D python tests..."
-    date
-    run_benchmarks
+    run_cpp_unit_tests
     echo
 fi
 

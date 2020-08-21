@@ -45,19 +45,14 @@ import sys
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 from open3d._build_config import _build_config
-try:
-    from open3d.cuda.pybind.core import cuda
-    __cuda__ = _build_config["BUILD_CUDA_MODULE"] and cuda.is_available()
-    del cuda
-except ImportError:
-    __cuda__ = False
-
-if __cuda__:
+from open3d.cuda.pybind.core import cuda
+if cuda.is_available():
     from open3d.cuda.pybind import (camera, geometry, io, pipelines, utility)
     from open3d.cuda import pybind
 else:
     from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility)
     from open3d.cpu import pybind
+del cuda
 
 import open3d.core
 import open3d.visualization

@@ -65,9 +65,7 @@ jobs:
         python_version: [3.5, 3.6, 3.7, 3.8]
     env:
       BUILD_CUDA_MODULE: OFF
-      BUILD_PYTORCH_OPS: ON
       NPROC: 2
-      LOW_MEM_USAGE: ON
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -115,6 +113,10 @@ jobs:
     name: Test macos wheel
     runs-on: macos-10.15
     needs: [build-macos-wheel]
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [3.5, 3.6, 3.7, 3.8]
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -127,53 +129,22 @@ jobs:
         with:
           name: open3d_macosx_x86_64_wheels
 
-      - name: Set up Python 3.5
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.5
-      - name: Test Python 3.5 package
+          python-version: ${{ matrix.python_version }}
+      - name: Test Python package
         run: |
           python -V
-          python3.5 -m pip install open3d*cp35*.whl
-          python3.5 -c "import open3d; print(open3d)"
-          python3.5 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
-          python3.5 -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
-      - name: Set up Python 3.6
-        if: ${{ !cancelled() }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.6
-      - name: Test Python 3.6 package
-        if: ${{ !cancelled() }}
+          python -m pip install -U pytest
+          python -m pip install open3d -f .
+          python -c "import open3d; \
+                     print('Imported:', open3d); \
+                     open3d.pybind.core.kernel.test_mkl_integration(); \
+                     print('CUDA enabled:', open3d.cuda.is_available())"
+      - name: Run Python unit tests (benchmarks)
         run: |
-          python -V
-          python3.6 -m pip install open3d*cp36*.whl
-          python3.6 -c "import open3d; print(open3d)"
-          python3.6 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
-          python3.6 -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
-      - name: Set up Python 3.7
-        if: ${{ !cancelled() }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
-      - name: Test Python 3.7 package
-        if: ${{ !cancelled() }}
-        run: |
-          python -V
-          python3.7 -m pip install open3d*cp37*.whl
-          python3.7 -c "import open3d; print(open3d)"
-          python3.7 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
-          python3.7 -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
-      - name: Set up Python 3.8
-        if: ${{ !cancelled() }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Test Python 3.8 package
-        if: ${{ !cancelled() }}
-        run: |
-          python -V
-          python3.8 -m pip install open3d*cp38*.whl
-          python3.8 -c "import open3d; print(open3d)"
-          python3.8 -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
-          python3.8 -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
+          echo "running Open3D python tests..."
+          cd util
+          source build_scripts.sh
+          run_python_tests

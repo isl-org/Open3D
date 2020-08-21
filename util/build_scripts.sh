@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 # The following environment variables are required:
 SHARED=${SHARED:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)}    # POSIX: MacOS + Linux
@@ -192,22 +190,22 @@ install_wheel() {
 test_wheel() {
     reportRun python -c "import open3d; print(open3d)"
     reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
-    reportRun python -c "import open3d; print('CUDA enabled: ', open3d.__cuda__)"
+    reportRun python -c "import open3d; print('CUDA enabled: ', open3d.cuda.is_available())"
 }
 
 # Use: run_unit_tests
-run_unit_tests() {
+run_cpp_unit_tests() {
     unitTestFlags=
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     reportRun ./bin/tests "$unitTestFlags"
     echo
 }
 
-run_benchmarks() {
+run_python_tests() {
     pytest_args=(../python/test/)
-    if [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-        pytest_args+=(--ignore ../python/test/test_tf_op_library.py)
-        pytest_args+=(--ignore ../python/test/tf_ops/)
+    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
+        echo Testing ML Ops disabled
+        pytest_args+=(--ignore ../python/test/ml_ops/)
     fi
     reportRun python -m pytest "${pytest_args[@]}"
 }
@@ -227,13 +225,4 @@ test_cpp_example() {
     fi
     cd ../../../../build
 
-}
-
-repair_wheel() {
-    wheel="$1"
-    if ! auditwheel show "$wheel"; then
-        echo "Skipping non-platform wheel $wheel"
-    else
-        auditwheel repair "$wheel" --plat "$PLAT" -w /io/wheelhouse/
-    fi
 }
