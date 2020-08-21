@@ -35,6 +35,7 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
+#include "open3d/tgeometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
@@ -851,6 +852,7 @@ void GuiVisualizer::SetGeometry(
     }
 
     geometry::AxisAlignedBoundingBox bounds;
+    tgeometry::PointCloud tpcd;
     std::size_t num_unlit = 0;
     for (size_t i = 0; i < geometries.size(); ++i) {
         std::shared_ptr<const geometry::Geometry> g = geometries[i];
@@ -874,6 +876,8 @@ void GuiVisualizer::SetGeometry(
                 } else {
                     loaded_material.shader = "defaultLit";
                 }
+                // NOTE: comment this in to test tgeometry::PointCloud
+                // tpcd = tgeometry::PointCloud::FromLegacyPointCloud(*pcd);
             } break;
             case geometry::Geometry::GeometryType::LineSet: {
                 loaded_material.shader = "defaultUnlit";
@@ -954,6 +958,10 @@ void GuiVisualizer::SetGeometry(
 
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         scene3d->AddGeometry(g3, loaded_material);
+        // NOTE: Comment in the following 2 lines to test tgeometry::PointCloud
+        // scene3d->GetScene()->RemoveGeometry("__model__");
+        // scene3d->GetScene()->AddGeometry("__model__", tpcd, loaded_material);
+
         bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
         if (material_is_loaded) {
             impl_->settings_.have_loaded_material_ = true;

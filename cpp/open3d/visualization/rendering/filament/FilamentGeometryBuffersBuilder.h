@@ -47,6 +47,10 @@ class PointCloud;
 class TriangleMesh;
 }  // namespace geometry
 
+namespace tgeometry {
+class PointCloud;
+}  // namespace tgeometry
+
 namespace visualization {
 namespace rendering {
 
@@ -57,6 +61,9 @@ public:
 
     static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(
             const geometry::Geometry3D& geometry);
+    static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(
+            const tgeometry::PointCloud& geometry);
+
     virtual ~GeometryBuffersBuilder() = default;
 
     virtual filament::RenderableManager::PrimitiveType GetPrimitiveType()
@@ -95,6 +102,20 @@ public:
 
 private:
     const geometry::PointCloud& geometry_;
+};
+
+class TPointCloudBuffersBuilder : public GeometryBuffersBuilder {
+public:
+    explicit TPointCloudBuffersBuilder(const tgeometry::PointCloud& geometry);
+
+    filament::RenderableManager::PrimitiveType GetPrimitiveType()
+            const override;
+
+    Buffers ConstructBuffers() override;
+    filament::Box ComputeAABB() override;
+
+private:
+    const tgeometry::PointCloud& geometry_;
 };
 
 class LineSetBuffersBuilder : public GeometryBuffersBuilder {

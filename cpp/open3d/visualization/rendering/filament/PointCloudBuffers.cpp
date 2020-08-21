@@ -32,6 +32,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/tgeometry/PointCloud.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -64,11 +65,23 @@ struct ColoredVertex {
         position.z = float_pos(2);
     }
 
+    void SetVertexPosition(const Eigen::Vector3f& pos) {
+        position.x = pos(0);
+        position.y = pos(1);
+        position.z = pos(2);
+    }
+
     void SetVertexColor(const Eigen::Vector3d& c) {
         auto float_color = c.cast<float>();
         color.x = float_color(0);
         color.y = float_color(1);
         color.z = float_color(2);
+    }
+
+    void SetVertexColor(const Eigen::Vector3f& c) {
+        color.x = c(0);
+        color.y = c(1);
+        color.z = c(2);
     }
 };
 }  // namespace
@@ -209,6 +222,153 @@ filament::Box PointCloudBuffersBuilder::ComputeAABB() {
     const filament::math::float3 max(geometry_aabb.max_bound_.x(),
                                      geometry_aabb.max_bound_.y(),
                                      geometry_aabb.max_bound_.z());
+
+    Box aabb;
+    aabb.set(min, max);
+
+    return aabb;
+}
+
+TPointCloudBuffersBuilder::TPointCloudBuffersBuilder(
+        const tgeometry::PointCloud& geometry)
+    : geometry_(geometry) {}
+
+RenderableManager::PrimitiveType TPointCloudBuffersBuilder::GetPrimitiveType()
+        const {
+    return RenderableManager::PrimitiveType::POINTS;
+}
+
+GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
+    auto& engine = EngineInstance::GetInstance();
+    auto& resource_mgr = EngineInstance::GetResourceManager();
+
+    // NOTE: ConstructBuffers assumes caller has checked that DTYPE of the
+    // tensor is float32. It is an error to call this with a tensor of any other
+    // dtype
+
+    const auto& points = geometry_.GetPoints();
+    const size_t n_vertices = points.GetSize();
+
+    // We use CUSTOM0 for tangents along with TANGENTS attribute
+    // because Filament would optimize out anything about normals and lightning
+    // from unlit materials. But our shader for normals visualizing is unlit, so
+    // we need to use this workaround.
+    VertexBuffer* vbuf = VertexBuffer::Builder()
+                                 .bufferCount(1)
+                                 .vertexCount(n_vertices)
+                                 .attribute(VertexAttribute::POSITION, 0,
+                                            VertexBuffer::AttributeType::FLOAT3,
+                                            ColoredVertex::GetPositionOffset(),
+                                            sizeof(ColoredVertex))
+                                 .normalized(VertexAttribute::COLOR)
+                                 .attribute(VertexAttribute::COLOR, 0,
+                                            VertexBuffer::AttributeType::FLOAT4,
+                                            ColoredVertex::GetColorOffset(),
+                                            sizeof(ColoredVertex))
+                                 .normalized(VertexAttribute::TANGENTS)
+                                 .attribute(VertexAttribute::TANGENTS, 0,
+                                            VertexBuffer::AttributeType::FLOAT4,
+                                            ColoredVertex::GetTangentOffset(),
+                                            sizeof(ColoredVertex))
+                                 .attribute(VertexAttribute::CUSTOM0, 0,
+                                            VertexBuffer::AttributeType::FLOAT4,
+                                            ColoredVertex::GetTangentOffset(),
+                                            sizeof(ColoredVertex))
+                                 .attribute(VertexAttribute::UV0, 0,
+                                            VertexBuffer::AttributeType::FLOAT2,
+                                            ColoredVertex::GetUVOffset(),
+                                            sizeof(ColoredVertex))
+                                 .build(engine);
+
+    VertexBufferHandle vb_handle;
+    if (vbuf) {
+        vb_handle = resource_mgr.AddVertexBuffer(vbuf);
+    } else {
+        return {};
+    }
+
+    math::quatf* float4v_tagents = nullptr;
+    if (geometry_.HasPointNormals()) {
+        const auto& normals = geometry_.GetPointNormals();
+
+        // Converting normals to Filament type - quaternions
+        const size_t tangents_byte_count = n_vertices * 4 * sizeof(float);
+        float4v_tagents =
+                static_cast<math::quatf*>(malloc(tangents_byte_count));
+        auto orientation = filament::geometry::SurfaceOrientation::Builder()
+                                   .vertexCount(n_vertices)
+                                   .normals(reinterpret_cast<math::float3*>(
+                                           normals.AsTensor().GetDataPtr()))
+                                   .build();
+        orientation->getQuats(float4v_tagents, n_vertices);
+    }
+
+    const auto& colors = geometry_.GetPointColors();
+    const size_t vertices_byte_count = n_vertices * sizeof(ColoredVertex);
+    auto* vertices = static_cast<ColoredVertex*>(malloc(vertices_byte_count));
+    const ColoredVertex kDefault;
+    for (size_t i = 0; i < n_vertices; ++i) {
+        ColoredVertex& element = vertices[i];
+        const Eigen::Vector3f vtx(static_cast<float*>(points[i].GetDataPtr()));
+        element.SetVertexPosition(vtx);
+        if (geometry_.HasPointColors()) {
+            const Eigen::Vector3f c(
+                    static_cast<float*>(colors[i].GetDataPtr()));
+            element.SetVertexColor(c);
+        } else {
+            element.color = kDefault.color;
+        }
+
+        if (float4v_tagents) {
+            element.tangent = float4v_tagents[i];
+        } else {
+            element.tangent = kDefault.tangent;
+        }
+        element.uv = kDefault.uv;
+    }
+
+    free(float4v_tagents);
+
+    // Moving `vertices` to IndexBuffer, which will clean them up later
+    // with DeallocateBuffer
+    VertexBuffer::BufferDescriptor vb_descriptor(vertices, vertices_byte_count);
+    vb_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    vbuf->setBufferAt(engine, 0, std::move(vb_descriptor));
+
+    const size_t indices_byte_count = n_vertices * sizeof(IndexType);
+    auto* uint_indices = static_cast<IndexType*>(malloc(indices_byte_count));
+    for (std::uint32_t i = 0; i < n_vertices; ++i) {
+        uint_indices[i] = i;
+    }
+
+    auto ib_handle =
+            resource_mgr.CreateIndexBuffer(n_vertices, sizeof(IndexType));
+    if (!ib_handle) {
+        free(uint_indices);
+        return {};
+    }
+
+    auto ibuf = resource_mgr.GetIndexBuffer(ib_handle).lock();
+
+    // Moving `uintIndices` to IndexBuffer, which will clean them up later
+    // with DeallocateBuffer
+    IndexBuffer::BufferDescriptor indices_descriptor(uint_indices,
+                                                     indices_byte_count);
+    indices_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    ibuf->setBuffer(engine, std::move(indices_descriptor));
+    return std::make_tuple(vb_handle, ib_handle);
+}
+
+filament::Box TPointCloudBuffersBuilder::ComputeAABB() {
+    auto min_bounds = geometry_.GetMinBound();
+    auto max_bounds = geometry_.GetMaxBound();
+    auto* min_bounds_float = static_cast<float*>(min_bounds.GetDataPtr());
+    auto* max_bounds_float = static_cast<float*>(max_bounds.GetDataPtr());
+
+    const filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
+                                     min_bounds_float[2]);
+    const filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
+                                     max_bounds_float[2]);
 
     Box aabb;
     aabb.set(min, max);
