@@ -62,7 +62,7 @@ TEST_P(HashmapPermuteDevices, Init) {
     hashmap->Insert(keys.GetDataPtr(), values.GetDataPtr(), iterators,
                     static_cast<bool *>(masks.GetDataPtr()), n);
     EXPECT_EQ(masks.All(), true);
-
+    EXPECT_EQ(hashmap->Size(), 5);
     core::MemoryManager::Free(iterators, device);
 }
 
@@ -129,6 +129,7 @@ TEST_P(HashmapPermuteDevices, Insert) {
                                device);
     hashmap->Insert(keys_insert.GetDataPtr(), values_insert.GetDataPtr(),
                     iterators, static_cast<bool *>(masks.GetDataPtr()), n);
+    EXPECT_EQ(hashmap->Size(), 7);
     EXPECT_EQ(masks[0].Item<bool>(), false);
     EXPECT_EQ(masks[1].Item<bool>(), false);
     EXPECT_EQ(masks[2].Item<bool>(), true);
@@ -162,6 +163,7 @@ TEST_P(HashmapPermuteDevices, Erase) {
     core::Tensor keys_erase(keys_erase_val, {5}, core::Dtype::Int32, device);
     hashmap->Erase(keys_erase.GetDataPtr(),
                    static_cast<bool *>(masks.GetDataPtr()), n);
+    EXPECT_EQ(hashmap->Size(), 2);
     EXPECT_EQ(masks[0].Item<bool>(), true);
     EXPECT_EQ(masks[1].Item<bool>(), true);
     EXPECT_EQ(masks[2].Item<bool>(), false);

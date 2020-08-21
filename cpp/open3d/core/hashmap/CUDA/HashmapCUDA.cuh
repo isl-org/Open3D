@@ -41,6 +41,7 @@
 #pragma once
 
 #include <thrust/device_vector.h>
+
 #include "open3d/core/hashmap/CUDA/HashmapCUDA.h"
 #include "open3d/core/hashmap/CUDA/HashmapCUDAImpl.cuh"
 #include "open3d/utility/Timer.h"
@@ -310,6 +311,11 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
     MemoryManager::Free(output_masks, this->device_);
 }
 
+template <typename Hash, typename KeyEq>
+size_t CUDAHashmap<Hash, KeyEq>::Size() {
+    return mem_mgr_->heap_counter();
+}
+
 /// Bucket-related utilitiesx
 /// Return number of elems per bucket
 template <typename Hash, typename KeyEq>
@@ -364,7 +370,6 @@ std::shared_ptr<CUDAHashmap<Hash, KeyEq>> CreateCUDAHashmap(
         size_t dsize_key,
         size_t dsize_value,
         Device device) {
-
     return std::make_shared<CUDAHashmap<Hash, KeyEq>>(
             init_buckets, init_capacity, dsize_key, dsize_value, device);
 }

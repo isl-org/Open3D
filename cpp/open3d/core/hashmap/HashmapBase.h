@@ -146,6 +146,8 @@ public:
                                  const void* input_values,
                                  size_t count) = 0;
 
+    virtual size_t Size() = 0;
+
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
     virtual std::vector<size_t> BucketSizes() = 0;

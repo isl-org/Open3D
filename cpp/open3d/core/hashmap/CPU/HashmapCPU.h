@@ -29,6 +29,7 @@
 // Interface for the CPU hashmap. Separated from HashmapCPU.hpp for brevity.
 
 #include <unordered_map>
+
 #include "open3d/core/hashmap/HashmapBase.h"
 #include "open3d/core/hashmap/Traits.h"
 
@@ -73,6 +74,7 @@ public:
                          const void* input_values,
                          size_t count);
 
+    size_t Size();
     std::vector<size_t> BucketSizes();
     float LoadFactor();
 

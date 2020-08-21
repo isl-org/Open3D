@@ -217,6 +217,11 @@ void CPUHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
 }
 
 template <typename Hash, typename KeyEq>
+size_t CPUHashmap<Hash, KeyEq>::Size() {
+    return impl_->size();
+}
+
+template <typename Hash, typename KeyEq>
 std::vector<size_t> CPUHashmap<Hash, KeyEq>::BucketSizes() {
     size_t bucket_count = impl_->bucket_count();
     std::vector<size_t> ret;

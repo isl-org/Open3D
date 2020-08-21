@@ -42,14 +42,13 @@
 
 // Interface for the CUDA hashmap. Separated from HashmapCUDA.cuh for brevity.
 
+#include <thrust/pair.h>
+
 #include <cassert>
 #include <memory>
 
-#include <thrust/pair.h>
-
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
-
 #include "open3d/core/hashmap/CUDA/HashmapCUDAImpl.h"
 #include "open3d/core/hashmap/HashmapBase.h"
 
@@ -94,8 +93,8 @@ public:
                          const void* input_values,
                          size_t count);
 
+    size_t Size();
     std::vector<size_t> BucketSizes();
-
     float LoadFactor();
 
 protected:
