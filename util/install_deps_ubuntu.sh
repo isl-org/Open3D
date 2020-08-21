@@ -37,10 +37,10 @@ if [ $BUILD_CUDA_MODULE == ON ] ; then
         $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
         packages=("${packages[@]}" "cuda-toolkit-${CUDA_VERSION[0]}")
-        echo "# CUDA installation path" >> ~/.bashrc
-        echo "export PATH=/usr/local/cuda-${CUDA_VERSION[1]}/bin\${PATH:+:\${PATH}}" >> ~/.bashrc
-        echo "CUDA executables location added to PATH in ~/.bashrc: /usr/local/cuda-${CUDA_VERSION[1]}/bin"
-        echo "Open a new shell to use."
+        echo "Add CUDA executables location to PATH in /etc/environment"
+        echo "(system) or ~/.bashrc (user) and restart your shell:"
+        echo "# CUDA installation path"
+        echo "export PATH=/usr/local/cuda-${CUDA_VERSION[1]}/bin\${PATH:+:\${PATH}}"
     fi
     if [ $NEED_CUDNN == ON ] ; then
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
