@@ -50,7 +50,6 @@ set(CORE_SRC
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
-    MemoryManagerCUDA.cu
     Tensor.cpp
     TensorKey.cpp
     TensorList.cpp
@@ -58,6 +57,15 @@ set(CORE_SRC
 
 set(CORE_CUDA_SRC
     MemoryManagerCUDA.cu
+)
+
+set(HASHMAP_SRC
+  hashmap/DefaultHashmap.cpp
+  hashmap/CPU/DefaultHashmapCPU.cpp
+)
+
+set(HASHMAP_SRC
+  hashmap/CUDA/DefaultHashmapCUDA.cu
 )
 
 if(BUILD_CUDA_MODULE)
@@ -68,12 +76,15 @@ if(BUILD_CUDA_MODULE)
         ${LINALG_CUDA_SRC}
         ${KERNEL_SRC}
         ${KERNEL_CUDA_SRC}
+        ${HASHMAP_SRC}
+        ${HASHMAP_CUDA_SRC}
     )
 else()
   set(ALL_CORE_SRC
         ${CORE_SRC}
         ${LINALG_SRC}
         ${KERNEL_SRC}
+        ${HASHMAP_SRC}
     )
 endif()
 
