@@ -46,7 +46,11 @@ int DeviceCount() {
 
 bool IsAvailable() { return cuda::DeviceCount() > 0; }
 
-void ReleaseCache() { CUDAMemoryManager::ReleaseCache(); }
+void ReleaseCache() {
+#ifdef BUILD_CUDA_MODULE
+    CUDAMemoryManager::ReleaseCache();
+#endif
+}
 
 }  // namespace cuda
 }  // namespace core
