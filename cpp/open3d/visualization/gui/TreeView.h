@@ -85,9 +85,9 @@ private:
 
 class ColormapTreeCell : public Widget {
 public:
-    ColormapTreeCell(float value,
+    ColormapTreeCell(double value,
                      const Color& color,
-                     std::function<void(float)> on_value_changed,
+                     std::function<void(double)> on_value_changed,
                      std::function<void(const Color&)> on_color_changed);
     ~ColormapTreeCell();
 

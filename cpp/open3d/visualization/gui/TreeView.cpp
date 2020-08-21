@@ -168,15 +168,15 @@ struct ColormapTreeCell::Impl {
     std::shared_ptr<ColorEdit> color_;
 };
 
-ColormapTreeCell::ColormapTreeCell(float value,
+ColormapTreeCell::ColormapTreeCell(double value,
                 const Color& color,
-                std::function<void(float)> on_value_changed,
+                std::function<void(double)> on_value_changed,
                 std::function<void(const Color&)> on_color_changed)
     : impl_(new ColormapTreeCell::Impl()) {
     impl_->value_ = std::make_shared<NumberEdit>(NumberEdit::DOUBLE);
     impl_->value_->SetDecimalPrecision(3);
     impl_->value_->SetLimits(0.0, 1.0);
-    impl_->value_->SetValue(double(value));
+    impl_->value_->SetValue(value);
     impl_->value_->SetOnValueChanged(on_value_changed);
     impl_->color_ = std::make_shared<ColorEdit>();
     impl_->color_->SetValue(color);
