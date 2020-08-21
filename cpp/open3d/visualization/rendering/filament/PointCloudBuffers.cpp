@@ -337,7 +337,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
 
     const size_t indices_byte_count = n_vertices * sizeof(IndexType);
     auto* uint_indices = static_cast<IndexType*>(malloc(indices_byte_count));
-    for (std::uint32_t i = 0; i < n_vertices; ++i) {
+    for (size_t i = 0; i < n_vertices; ++i) {
         uint_indices[i] = i;
     }
 
