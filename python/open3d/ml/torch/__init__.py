@@ -4,6 +4,17 @@ import sys as _sys
 import torch as _torch
 from open3d import _build_config
 
+if not _build_config["Pytorch_VERSION"]:
+    raise Exception('Open3D was not built with PyTorch support!')
+
+o3d_torch_version = _build_config["Pytorch_VERSION"].split('.')
+if _torch.__version__.split('.')[:2] != o3d_torch_version[:2]:
+    o3d_torch_version[2] = '*'   # Any patch level is OK
+    match_torch_ver = '.'.join(o3d_torch_version)
+    raise Exception('Version mismatch: Open3D needs Pytorch version {}, but '
+                    'version {} is installed!'.format(match_torch_ver,
+                                                      _torch.__version__))
+
 _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
@@ -19,9 +30,8 @@ try:
     _torch.ops.load_library(_lib_path)
 except Exception as ex:
     if not _os.path.isfile(_lib_path):
-        print(
-            'The op library at "{}" was not found. Make sure that BUILD_PYTORCH_OPS was enabled.'
-            .format(_lib_path))
+        print('The op library at "{}" was not found. Make sure that '
+              'BUILD_PYTORCH_OPS was enabled.'.format(_lib_path))
     raise ex
 
 from . import nn
