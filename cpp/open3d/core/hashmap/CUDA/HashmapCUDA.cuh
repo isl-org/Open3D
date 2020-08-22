@@ -243,6 +243,7 @@ void CUDAHashmap<Hash, KeyEq>::UnpackIterators(
     const size_t num_threads = 32;
     const size_t num_blocks = (iterator_count + num_threads - 1) / num_threads;
 
+    utility::LogInfo("iterator_count = {}", iterator_count);
     UnpackIteratorsKernel<<<num_blocks, num_threads>>>(
             input_iterators, input_masks, output_keys, output_values,
             this->dsize_key_, this->dsize_value_, iterator_count);

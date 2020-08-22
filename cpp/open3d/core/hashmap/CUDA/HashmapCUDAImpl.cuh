@@ -552,8 +552,10 @@ __global__ void EraseKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                  bool* masks,
                                  size_t input_count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if (tid < input_count && masks[tid]) {
-        hash_ctx.mem_mgr_ctx_.Free(iterator_ptrs[tid]);
+    if (tid < input_count) {
+        if (masks[tid]) {
+            hash_ctx.mem_mgr_ctx_.Free(iterator_ptrs[tid]);
+        }
     }
 }
 
@@ -572,24 +574,15 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
 
     hash_ctx.node_mgr_ctx_.Init(tid, lane_id);
 
-    uint32_t count = 0;
-    uint32_t prev_count = 0;
-
-    // TODO simplify code
-    // count head node
     uint32_t src_unit_data =
             *hash_ctx.get_unit_ptr_from_list_head(wid, lane_id);
     bool is_active = src_unit_data != EMPTY_PAIR_PTR;
-    count = __popc(__ballot_sync(PAIR_PTR_LANES_MASK, is_active));
-    if (lane_id == 0) {
-        prev_count = atomicAdd(iterator_count, count);
-    }
-    __syncwarp(0xffffffff);
-    prev_count = __shfl_sync(ACTIVE_LANES_MASK, prev_count, 0, WARP_WIDTH);
 
     if (is_active && ((1 << lane_id) & PAIR_PTR_LANES_MASK)) {
-        iterators[prev_count + lane_id] =
+        iterator_t iterator =
                 hash_ctx.mem_mgr_ctx_.extract_iterator(src_unit_data);
+        int index = atomicAdd(iterator_count, 1);
+        iterators[index] = iterator;
     }
 
     ptr_t next = __shfl_sync(ACTIVE_LANES_MASK, src_unit_data,
@@ -599,16 +592,12 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     while (next != EMPTY_SLAB_PTR) {
         src_unit_data = *hash_ctx.get_unit_ptr_from_list_nodes(next, lane_id);
         is_active = (src_unit_data != EMPTY_PAIR_PTR);
-        count = __popc(__ballot_sync(PAIR_PTR_LANES_MASK, is_active));
-        if (lane_id == 0) {
-            prev_count = atomicAdd(iterator_count, count);
-        }
-        __syncwarp(0xffffffff);
-        prev_count = __shfl_sync(ACTIVE_LANES_MASK, prev_count, 0, WARP_WIDTH);
 
         if (is_active && ((1 << lane_id) & PAIR_PTR_LANES_MASK)) {
-            iterators[prev_count + lane_id] =
+            iterator_t iterator =
                     hash_ctx.mem_mgr_ctx_.extract_iterator(src_unit_data);
+            int index = atomicAdd(iterator_count, 1);
+            iterators[index] = iterator;
         }
         next = __shfl_sync(ACTIVE_LANES_MASK, src_unit_data, NEXT_SLAB_PTR_LANE,
                            WARP_WIDTH);
