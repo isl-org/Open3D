@@ -26,6 +26,8 @@
 
 #include "open3d/visualization/gui/StackedWidget.h"
 
+#include <algorithm>  // for std::max, std::min
+
 namespace open3d {
 namespace visualization {
 namespace gui {
