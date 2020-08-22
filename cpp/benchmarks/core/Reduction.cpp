@@ -49,12 +49,10 @@ void Reduction(benchmark::State& state, const Device& device) {
 
 BENCHMARK_CAPTURE(Reduction, CPU, Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
-;
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(Reduction, CUDA, Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
-;
 #endif
 
 }  // namespace core
