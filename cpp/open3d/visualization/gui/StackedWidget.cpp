@@ -33,12 +33,10 @@ namespace gui {
 struct StackedWidget::Impl {
     int selected_index_ = 0;
 };
-    
-StackedWidget::StackedWidget() : impl_(new StackedWidget::Impl()) {
-}
 
-StackedWidget::~StackedWidget() {
-}
+StackedWidget::StackedWidget() : impl_(new StackedWidget::Impl()) {}
+
+StackedWidget::~StackedWidget() {}
 
 void StackedWidget::SetSelectedIndex(int index) {
     impl_->selected_index_ = index;
@@ -68,8 +66,8 @@ void StackedWidget::Layout(const Theme& theme) {
 Widget::DrawResult StackedWidget::Draw(const DrawContext& context) {
     // Don't Super, because Widget::Draw will draw all the children,
     // and we only want to draw the selected child.
-    if (impl_->selected_index_ >= 0
-        && impl_->selected_index_ < int(GetChildren().size())) {
+    if (impl_->selected_index_ >= 0 &&
+        impl_->selected_index_ < int(GetChildren().size())) {
         return GetChildren()[impl_->selected_index_]->Draw(context);
     }
     return DrawResult::NONE;

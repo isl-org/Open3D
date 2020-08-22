@@ -744,9 +744,9 @@ void pybind_gui_classes(py::module &m) {
     py::class_<StackedWidget, std::shared_ptr<StackedWidget>, Widget> stacked(
             m, "StackedWidget", "Like a TabControl but without the tabs");
     stacked.def(py::init<>())
-           .def_property("selected_index", &StackedWidget::GetSelectedIndex,
-                         &StackedWidget::SetSelectedIndex,
-                         "Selects the index of the child to display");
+            .def_property("selected_index", &StackedWidget::GetSelectedIndex,
+                          &StackedWidget::SetSelectedIndex,
+                          "Selects the index of the child to display");
 
     // ---- TabControl ----
     py::class_<TabControl, std::shared_ptr<TabControl>, Widget> tabctrl(
@@ -829,33 +829,33 @@ void pybind_gui_classes(py::module &m) {
                Widget>
             checkable_cell(m, "CheckableTextTreeCell",
                            "TreeView cell with a checkbox and text");
-    checkable_cell.def(py::init<>([](const char *text, bool checked,
-                                     std::function<void(bool)> on_toggled) {
-        return std::make_shared<CheckableTextTreeCell>(text, checked,
-                                                       on_toggled);
-                                  }),
-                       "Creates a TreeView cell with a checkbox and text. "
-                       "CheckableTextTreeCell(text, is_checked, on_toggled): "
-                       "on_toggled takes a boolean and returns None")
-                  .def_property_readonly("checkbox",
-                                         &CheckableTextTreeCell::GetCheckbox,
-                                         "Returns the checkbox widget "
-                                         "(property is read-only)")
-                  .def_property_readonly("label",
-                                         &CheckableTextTreeCell::GetLabel,
-                                         "Returns the label widget "
-                                         "(property is read-only)");
+    checkable_cell
+            .def(py::init<>([](const char *text, bool checked,
+                               std::function<void(bool)> on_toggled) {
+                     return std::make_shared<CheckableTextTreeCell>(
+                             text, checked, on_toggled);
+                 }),
+                 "Creates a TreeView cell with a checkbox and text. "
+                 "CheckableTextTreeCell(text, is_checked, on_toggled): "
+                 "on_toggled takes a boolean and returns None")
+            .def_property_readonly("checkbox",
+                                   &CheckableTextTreeCell::GetCheckbox,
+                                   "Returns the checkbox widget "
+                                   "(property is read-only)")
+            .def_property_readonly("label", &CheckableTextTreeCell::GetLabel,
+                                   "Returns the label widget "
+                                   "(property is read-only)");
 
     py::class_<LUTTreeCell, std::shared_ptr<LUTTreeCell>, Widget> lut_cell(
             m, "LUTTreeCell",
             "TreeView cell with checkbox, text, and color edit");
-    lut_cell.def(
-            py::init<>([](const char *text, bool checked, const Color &color,
-                          std::function<void(bool)> on_enabled,
-                          std::function<void(const Color &)> on_color) {
-                return std::make_shared<LUTTreeCell>(text, checked, color,
-                                                     on_enabled, on_color);
-                       }),
+    lut_cell.def(py::init<>([](const char *text, bool checked,
+                               const Color &color,
+                               std::function<void(bool)> on_enabled,
+                               std::function<void(const Color &)> on_color) {
+                     return std::make_shared<LUTTreeCell>(text, checked, color,
+                                                          on_enabled, on_color);
+                 }),
                  "Creates a TreeView cell with a checkbox, text, and "
                  "a color editor. LUTTreeCell(text, is_checked, color, "
                  "on_enabled, on_color): on_enabled is called when the "
@@ -874,27 +874,28 @@ void pybind_gui_classes(py::module &m) {
 
     py::class_<ColormapTreeCell, std::shared_ptr<ColormapTreeCell>, Widget>
             colormap_cell(m, "ColormapTreeCell",
-                           "TreeView cell with a number edit and color edit");
-    colormap_cell.def(py::init<>([](float value, const Color& color,
-                                    std::function<void(double)> on_value_changed,
-                                    std::function<void(const Color&)> on_color_changed) {
-                      return std::make_shared<ColormapTreeCell>(value, color,
-                                                              on_value_changed,
-                                                              on_color_changed);
-                                  }),
-                       "Creates a TreeView cell with a number and a color edit. "
-                       "ColormapTreeCell(value, color, on_value_changed, "
-                       "on_color_changed): on_value_changed takes a double "
-                       "and returns None; on_color_changed takes a "
-                       "gui.Color and returns None")
-                  .def_property_readonly("number_edit",
-                                         &ColormapTreeCell::GetNumberEdit,
-                                         "Returns the NumberEdit widget "
-                                         "(property is read-only)")
-                  .def_property_readonly("color_edit",
-                                         &ColormapTreeCell::GetColorEdit,
-                                         "Returns the ColorEdit widget "
-                                         "(property is read-only)");
+                          "TreeView cell with a number edit and color edit");
+    colormap_cell
+            .def(py::init<>([](float value, const Color &color,
+                               std::function<void(double)> on_value_changed,
+                               std::function<void(const Color &)>
+                                       on_color_changed) {
+                     return std::make_shared<ColormapTreeCell>(
+                             value, color, on_value_changed, on_color_changed);
+                 }),
+                 "Creates a TreeView cell with a number and a color edit. "
+                 "ColormapTreeCell(value, color, on_value_changed, "
+                 "on_color_changed): on_value_changed takes a double "
+                 "and returns None; on_color_changed takes a "
+                 "gui.Color and returns None")
+            .def_property_readonly("number_edit",
+                                   &ColormapTreeCell::GetNumberEdit,
+                                   "Returns the NumberEdit widget "
+                                   "(property is read-only)")
+            .def_property_readonly("color_edit",
+                                   &ColormapTreeCell::GetColorEdit,
+                                   "Returns the ColorEdit widget "
+                                   "(property is read-only)");
 
     // ---- VectorEdit ----
     py::class_<VectorEdit, std::shared_ptr<VectorEdit>, Widget> vectoredit(

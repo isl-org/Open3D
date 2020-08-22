@@ -36,6 +36,7 @@ namespace gui {
 /// showing. It is like a tab control without the tabs.
 class StackedWidget : public Widget {
     using Super = Widget;
+
 public:
     StackedWidget();
     virtual ~StackedWidget();

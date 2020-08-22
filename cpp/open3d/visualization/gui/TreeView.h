@@ -53,7 +53,7 @@ public:
 
     std::shared_ptr<Checkbox> GetCheckbox();
     std::shared_ptr<Label> GetLabel();
-    
+
     Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;
 
@@ -101,7 +101,6 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
-
 
 class TreeView : public Widget {
     using Super = Widget;
