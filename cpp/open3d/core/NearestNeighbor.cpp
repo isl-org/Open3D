@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/nn/NearestNeighbor.h"
+#include "open3d/core/NearestNeighbor.h"
 
 #include "open3d/utility/Console.h"
 

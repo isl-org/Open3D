@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/nn/NanoFlann.h"
+#include "open3d/core/NanoFlann.h"
 
 #include <cmath>
 #include <limits>

@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/nn/NanoFlann.h"
+#include "open3d/core/NanoFlann.h"
 
 namespace open3d {
 namespace core {
