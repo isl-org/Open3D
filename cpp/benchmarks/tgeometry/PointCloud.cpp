@@ -24,30 +24,43 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/tgeometry/PointCloud.h"
 
-#include <Eigen/Core>
+#include <benchmark/benchmark.h>
 
-#include "open3d/core/Device.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/Tensor.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/TensorList.h"
+#include "open3d/core/kernel/CPULauncher.h"
 
 namespace open3d {
-namespace core {
-namespace eigen_converter {
+namespace tgeometry {
 
-Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
+void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
+    geometry::PointCloud legacy_pcd;
+    size_t num_points = 1000000;  // 1M
+    legacy_pcd.points_ =
+            std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
+    legacy_pcd.points_ =
+            std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
 
-core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
-                                   core::Dtype dtype,
-                                   const core::Device &device);
+    // Warm up.
+    tgeometry::PointCloud pcd = tgeometry::PointCloud::FromLegacyPointCloud(
+            legacy_pcd, core::Dtype::Float32, device);
+    (void)pcd;
 
-core::TensorList EigenVector3dVectorToTensorList(
-        const std::vector<Eigen::Vector3d> &values,
-        core::Dtype dtype,
-        const core::Device &device);
+    for (auto _ : state) {
+        tgeometry::PointCloud pcd = tgeometry::PointCloud::FromLegacyPointCloud(
+                legacy_pcd, core::Dtype::Float32, device);
+    }
+}
 
-}  // namespace eigen_converter
-}  // namespace core
+BENCHMARK_CAPTURE(FromLegacyPointCloud, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(FromLegacyPointCloud, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+}  // namespace tgeometry
 }  // namespace open3d
