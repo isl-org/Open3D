@@ -28,10 +28,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include "open3d/core/EigenConverter.h"
-#include "open3d/core/TensorList.h"
-#include "open3d/core/kernel/CPULauncher.h"
-
 namespace open3d {
 namespace tgeometry {
 
