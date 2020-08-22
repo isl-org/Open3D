@@ -431,21 +431,21 @@ struct GuiVisualizer::Impl {
             switch (settings_.model_.GetMaterialType()) {
                 case GuiSettingsModel::MaterialType::LIT:
                     scene_wgt_->GetScene()->UpdateMaterial(
-                                              settings_.lit_material_);
+                            settings_.lit_material_);
                     break;
                 case GuiSettingsModel::MaterialType::UNLIT:
                     scene_wgt_->GetScene()->UpdateMaterial(
-                                              settings_.unlit_material_);
+                            settings_.unlit_material_);
                     break;
                 case GuiSettingsModel::MaterialType::NORMAL_MAP: {
                     settings_.normal_depth_material_.shader = "normals";
                     scene_wgt_->GetScene()->UpdateMaterial(
-                                              settings_.normal_depth_material_);
+                            settings_.normal_depth_material_);
                 } break;
                 case GuiSettingsModel::MaterialType::DEPTH: {
                     settings_.normal_depth_material_.shader = "depth";
                     scene_wgt_->GetScene()->UpdateMaterial(
-                                              settings_.normal_depth_material_);
+                            settings_.normal_depth_material_);
                 } break;
 
                 default:
@@ -786,7 +786,7 @@ void GuiVisualizer::SetGeometry(
             impl_->settings_.model_.SetDisplayingPointClouds(true);
             if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
                 auto &profile =
-                    GuiSettingsModel::GetDefaultPointCloudLightingProfile();
+                        GuiSettingsModel::GetDefaultPointCloudLightingProfile();
                 impl_->settings_.model_.SetLightingProfile(profile);
             }
         }
