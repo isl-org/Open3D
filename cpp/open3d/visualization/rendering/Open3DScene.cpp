@@ -206,6 +206,20 @@ void Open3DScene::ShowGeometry(const std::string& name, bool show) {
     }
 }
 
+void Open3DScene::AddModel(const std::string& name,
+                           const TriangleMeshModel& model) {
+    auto scene = renderer_.GetScene(scene_);
+    if (scene->AddGeometry(name, model)) {
+        GeometryData info(name, "");
+        bounds_ += scene->GetGeometryBoundingBox(name);
+        geometries_[name] = info;
+        scene->ShowGeometry(name, true);
+    }
+
+    // Bounding box may have changed, force recreation of axes
+    RecreateAxis(scene, bounds_, false);
+}
+
 void Open3DScene::UpdateMaterial(const Material& mat) {
     auto scene = renderer_.GetScene(scene_);
     for (auto &g : geometries_) {
@@ -214,6 +228,13 @@ void Open3DScene::UpdateMaterial(const Material& mat) {
             scene->OverrideMaterial(g.second.fast_name, mat);
         }
     }
+}
+
+void Open3DScene::UpdateModelMaterial(const std::string& name,
+                                      const TriangleMeshModel& model) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->RemoveGeometry(name);
+    scene->AddGeometry(name, model);
 }
 
 std::vector<std::string> Open3DScene::GetGeometries() {
