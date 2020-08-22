@@ -125,13 +125,9 @@ std::shared_ptr<Checkbox> LUTTreeCell::GetCheckbox() {
     return impl_->checkbox_;
 }
 
-std::shared_ptr<Label> LUTTreeCell::GetLabel() {
-    return impl_->label_;
-}
+std::shared_ptr<Label> LUTTreeCell::GetLabel() { return impl_->label_; }
 
-std::shared_ptr<ColorEdit> LUTTreeCell::GetColorEdit() {
-    return impl_->color_;
-}
+std::shared_ptr<ColorEdit> LUTTreeCell::GetColorEdit() { return impl_->color_; }
 
 Size LUTTreeCell::CalcPreferredSize(const Theme &theme) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);
@@ -168,10 +164,11 @@ struct ColormapTreeCell::Impl {
     std::shared_ptr<ColorEdit> color_;
 };
 
-ColormapTreeCell::ColormapTreeCell(double value,
-                const Color& color,
-                std::function<void(double)> on_value_changed,
-                std::function<void(const Color&)> on_color_changed)
+ColormapTreeCell::ColormapTreeCell(
+        double value,
+        const Color &color,
+        std::function<void(double)> on_value_changed,
+        std::function<void(const Color &)> on_color_changed)
     : impl_(new ColormapTreeCell::Impl()) {
     impl_->value_ = std::make_shared<NumberEdit>(NumberEdit::DOUBLE);
     impl_->value_->SetDecimalPrecision(3);
@@ -195,21 +192,21 @@ std::shared_ptr<ColorEdit> ColormapTreeCell::GetColorEdit() {
     return impl_->color_;
 }
 
-Size ColormapTreeCell::CalcPreferredSize(const Theme& theme) const {
+Size ColormapTreeCell::CalcPreferredSize(const Theme &theme) const {
     auto number_pref = impl_->value_->CalcPreferredSize(theme);
     auto color_pref = impl_->color_->CalcPreferredSize(theme);
     return Size(number_pref.width + color_pref.width,
                 std::max(number_pref.height, color_pref.height));
 }
 
-void ColormapTreeCell::Layout(const Theme& theme) {
+void ColormapTreeCell::Layout(const Theme &theme) {
     auto &frame = GetFrame();
     auto number_pref = impl_->value_->CalcPreferredSize(theme);
-    impl_->value_->SetFrame(Rect(frame.x, frame.y,
-                                 number_pref.width, frame.height));
+    impl_->value_->SetFrame(
+            Rect(frame.x, frame.y, number_pref.width, frame.height));
     auto x = impl_->value_->GetFrame().GetRight();
-    impl_->color_->SetFrame(Rect(x, frame.y,
-                                 frame.GetRight() - x, frame.height));
+    impl_->color_->SetFrame(
+            Rect(x, frame.y, frame.GetRight() - x, frame.height));
 }
 
 // ----------------------------------------------------------------------------

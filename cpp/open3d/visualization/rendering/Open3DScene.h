@@ -26,12 +26,11 @@
 
 #pragma once
 
+#include <map>
 #include <vector>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/rendering/Renderer.h"
-
-#include <map>
 
 namespace open3d {
 
@@ -96,12 +95,11 @@ private:
 
         GeometryData() : visible(false) {}  // for STL containers
         GeometryData(const std::string& n, const std::string& fast)
-            : name(n), fast_name(fast), visible(true)
-        {}
+            : name(n), fast_name(fast), visible(true) {}
     };
 
     void SetGeometryToLOD(const GeometryData&, LOD lod);
-    
+
 private:
     Renderer& renderer_;
     SceneHandle scene_;

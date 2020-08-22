@@ -153,7 +153,7 @@ void Open3DScene::ShowAxes(bool enable) {
 
 void Open3DScene::ClearGeometry() {
     auto scene = renderer_.GetScene(scene_);
-    for (auto &g : geometries_) {
+    for (auto& g : geometries_) {
         scene->RemoveGeometry(g.second.name);
         if (!g.second.fast_name.empty()) {
             scene->RemoveGeometry(g.second.fast_name);
@@ -176,10 +176,11 @@ void Open3DScene::AddGeometry(
 
         if (add_downsampled_copy_for_fast_rendering) {
             const std::size_t kMinPointsForDecimation = 6000000;
-            auto pcd = std::dynamic_pointer_cast<const geometry::PointCloud>(geom);
+            auto pcd =
+                    std::dynamic_pointer_cast<const geometry::PointCloud>(geom);
             if (pcd && pcd->points_.size() > kMinPointsForDecimation) {
-                int sample_rate =
-                        int(pcd->points_.size()) / (kMinPointsForDecimation / 2);
+                int sample_rate = int(pcd->points_.size()) /
+                                  (kMinPointsForDecimation / 2);
                 auto small_pc = pcd->UniformDownSample(sample_rate);
                 info.fast_name = name + "." + kFastModelObjectSuffix;
                 scene->AddGeometry(info.fast_name, *small_pc, mat);
@@ -222,7 +223,7 @@ void Open3DScene::AddModel(const std::string& name,
 
 void Open3DScene::UpdateMaterial(const Material& mat) {
     auto scene = renderer_.GetScene(scene_);
-    for (auto &g : geometries_) {
+    for (auto& g : geometries_) {
         scene->OverrideMaterial(g.second.name, mat);
         if (!g.second.fast_name.empty()) {
             scene->OverrideMaterial(g.second.fast_name, mat);
@@ -240,7 +241,7 @@ void Open3DScene::UpdateModelMaterial(const std::string& name,
 std::vector<std::string> Open3DScene::GetGeometries() {
     std::vector<std::string> names;
     names.reserve(geometries_.size());
-    for (auto &it : geometries_) {
+    for (auto& it : geometries_) {
         names.push_back(it.first);
     }
     return names;
@@ -250,7 +251,7 @@ void Open3DScene::SetLOD(LOD lod) {
     if (lod != lod_) {
         lod_ = lod;
 
-        for (auto &g : geometries_) {
+        for (auto& g : geometries_) {
             SetGeometryToLOD(g.second, lod);
         }
     }
