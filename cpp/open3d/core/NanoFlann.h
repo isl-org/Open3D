@@ -38,6 +38,7 @@ namespace nn {
 
 enum Metric { L1, L2, Linf };
 
+/// This class is the Adaptor for connecting Open3D Tensor and NanoFlann.
 template <class T>
 class Adaptor {
 public:
@@ -74,7 +75,9 @@ struct SelectNanoflannAdaptor<L1, T> {
     typedef nanoflann::L1_Adaptor<T, Adaptor<T>> Adaptor_t;
 };
 
-// template <int METRIC, class T>
+/// \class NanoFlann
+///
+/// \brief KDTree with NanoFlann for nearest neighbor search.
 class NanoFlann {
     typedef nanoflann::KDTreeSingleIndexAdaptor<
             typename SelectNanoflannAdaptor<L2, double>::Adaptor_t,
@@ -82,25 +85,38 @@ class NanoFlann {
             KDTree_t;
 
 public:
+    /// \brief Default Constructor.
     NanoFlann();
-
+    /// \brief Parameterized Constructor
+    ///
+    /// \param tensor Provides a set of data points as Tensor for KDTree
+    /// construction.
     NanoFlann(const core::Tensor &tensor);
-
     ~NanoFlann();
-
     NanoFlann(const NanoFlann &) = delete;
-
     NanoFlann &operator=(const NanoFlann &) = delete;
 
 public:
+    /// Set the data for the KDTree from a Tensor.
+    ///
+    /// \param data Data points for KDTree Construction.
     bool SetTensorData(const core::Tensor &data);
-
+    /// Perform K nearest neighbor search.
+    ///
+    /// \param query Data points for querying.
+    /// \param knn Number of nearest neighbor to search.
     std::pair<core::Tensor, core::Tensor> SearchKnn(const core::Tensor &query,
                                                     int knn);
-
+    /// Perform radius search.
+    ///
+    /// \param query Data points for querying.
+    /// \param radii A list of radius. Same size with query.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
             const core::Tensor &query, double *radii);
-
+    /// Perform radius search.
+    ///
+    /// \param query Data points for querying.
+    /// \param radius Radius.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
             const core::Tensor &query, double radius);
 

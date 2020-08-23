@@ -55,7 +55,7 @@ bool NanoFlann::SetTensorData(const core::Tensor &data) {
     dimension_ = static_cast<int>(shape[1]);
 
     data_ = data.Contiguous();
-    double* data_ptr = static_cast<double*>(data_.GetDataPtr());
+    double *data_ptr = static_cast<double *>(data_.GetDataPtr());
     adaptor_.reset(new Adaptor<double>(dataset_size_, dimension_, data_ptr));
 
     index_.reset(new KDTree_t(dimension_, *adaptor_.get()));
@@ -155,8 +155,10 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
     std::vector<int64_t> result_nums2(result_nums.begin(), result_nums.end());
     std::vector<int64_t> result_indices2(result_indices.begin(),
                                          result_indices.end());
-    core::Tensor indices(result_indices2, {static_cast<int64_t>(size)}, core::Dtype::Int64);
-    core::Tensor distances(result_distances, {static_cast<int64_t>(size)}, core::Dtype::Float64);
+    core::Tensor indices(result_indices2, {static_cast<int64_t>(size)},
+                         core::Dtype::Int64);
+    core::Tensor distances(result_distances, {static_cast<int64_t>(size)},
+                           core::Dtype::Float64);
     core::Tensor nums(result_nums2, {static_cast<int64_t>(result_nums2.size())},
                       core::Dtype::Int64);
     return std::make_tuple(indices, distances, nums);
@@ -174,7 +176,7 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
     }
 
     int64_t num_query = shape[0];
-    std::vector<double> radii (num_query, radius);
+    std::vector<double> radii(num_query, radius);
 
     return SearchRadius(query, radii.data());
 };

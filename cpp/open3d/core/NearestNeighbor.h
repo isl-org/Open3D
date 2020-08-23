@@ -29,35 +29,61 @@
 #include <iostream>
 #include <vector>
 
-#include "open3d/core/Tensor.h"
 #include "open3d/core/NanoFlann.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace core {
 namespace nn {
 
+/// \class NearestNeighbor
+///
+/// \brief A Class for nearest neighbor search.
 class NearestNeighbor {
 public:
+    /// Constructor
+    ///
+    /// \param tensor Data points for constructing search index.
     NearestNeighbor(const core::Tensor &tensor) : data_(tensor){};
-
     ~NearestNeighbor();
-
     NearestNeighbor(const NearestNeighbor &) = delete;
-
     NearestNeighbor &operator=(const NearestNeighbor &) = delete;
 
 public:
+    /// Set index for knn search.
     bool KnnIndex();
+    /// Set index for radius search.
     bool RadiusIndex();
+    /// Set index for fixed-radius search.
     bool FixedRadiusIndex();
+    /// Set index for hybrid search.
     bool HybridIndex();
 
+    /// Perform knn search.
+    ///
+    /// \param tensor Data points for querying.
+    /// \param knn Number of neighbor to search.
     std::pair<core::Tensor, core::Tensor> KnnSearch(const core::Tensor &tensor,
                                                     int knn);
+    /// Perform radius search.
+    /// User can specify different radius for each data points per query point.
+    ///
+    /// \param tensor Data points for querying.
+    /// \param radii A list of radius, same size with query.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> RadiusSearch(
             const core::Tensor &tensor, double *radii);
+    /// Perform fixed radius search.
+    /// All query points are searched with the same radius value.
+    ///
+    /// \param tensor Data points for querying.
+    /// \param radius Radius.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> FixedRadiusSearch(
             const core::Tensor &tensor, double radius);
+    /// Perform hybrid search.
+    ///
+    /// \param tensor Data points for querying.
+    /// \param radius Radius.
+    /// \param max_knn Maximum number of neighbor to search per query.
     std::pair<core::Tensor, core::Tensor> HybridSearch(
             const core::Tensor &tensor, double radius, int max_knn);
 
