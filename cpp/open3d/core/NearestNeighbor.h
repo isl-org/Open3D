@@ -27,7 +27,6 @@
 #pragma once
 
 #include <iostream>
-#include <nanoflann.hpp>
 #include <vector>
 
 #include "open3d/core/Tensor.h"
