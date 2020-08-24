@@ -59,6 +59,12 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
         return false;
     }
 
+    // Clear colormap flag if necessary to ensure libpng expands the colo
+    // indexed pixels to full color
+    if (pngimage.format & PNG_FORMAT_FLAG_COLORMAP) {
+        pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
+    }
+
     image.Prepare(pngimage.width, pngimage.height,
                   PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
                   PNG_IMAGE_SAMPLE_COMPONENT_SIZE(pngimage.format));
@@ -67,6 +73,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
         0) {
         utility::LogWarning("Read PNG failed: unable to read file: {}",
                             filename);
+        utility::LogWarning("PNG error: {}", pngimage.message);
         return false;
     }
     return true;

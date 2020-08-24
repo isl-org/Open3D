@@ -34,6 +34,10 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
+namespace {
+static std::shared_ptr<EngineInstance> g_instance = nullptr;
+}  // namespace
+
 filament::backend::Backend EngineInstance::backend_ =
         filament::backend::Backend::DEFAULT;
 
@@ -57,9 +61,13 @@ EngineInstance::~EngineInstance() {
 }
 
 EngineInstance& EngineInstance::Get() {
-    static EngineInstance instance;
-    return instance;
+    if (!g_instance) {
+        g_instance = std::shared_ptr<EngineInstance>(new EngineInstance());
+    }
+    return *g_instance;
 }
+
+void EngineInstance::DestroyInstance() { g_instance.reset(); }
 
 EngineInstance::EngineInstance() {
     engine_ = filament::Engine::create(backend_);

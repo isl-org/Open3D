@@ -65,8 +65,6 @@ void UniformTSDFVolume::Integrate(
     // The following implementation is a highly optimized version.
     if ((image.depth_.num_of_channels_ != 1) ||
         (image.depth_.bytes_per_channel_ != 4) ||
-        (image.depth_.width_ != intrinsic.width_) ||
-        (image.depth_.height_ != intrinsic.height_) ||
         (color_type_ == TSDFVolumeColorType::RGB8 &&
          image.color_.num_of_channels_ != 3) ||
         (color_type_ == TSDFVolumeColorType::RGB8 &&
@@ -74,14 +72,28 @@ void UniformTSDFVolume::Integrate(
         (color_type_ == TSDFVolumeColorType::Gray32 &&
          image.color_.num_of_channels_ != 1) ||
         (color_type_ == TSDFVolumeColorType::Gray32 &&
-         image.color_.bytes_per_channel_ != 4) ||
-        (color_type_ != TSDFVolumeColorType::NoColor &&
-         image.color_.width_ != intrinsic.width_) ||
-        (color_type_ != TSDFVolumeColorType::NoColor &&
-         image.color_.height_ != intrinsic.height_)) {
+         image.color_.bytes_per_channel_ != 4)) {
         utility::LogError(
                 "[UniformTSDFVolume::Integrate] Unsupported image format.");
     }
+    if ((image.depth_.width_ != intrinsic.width_) ||
+        (image.depth_.height_ != intrinsic.height_)) {
+        utility::LogError(
+                "[UniformTSDFVolume::Integrate] depth image size is ({} x {}), "
+                "but got ({} x {}) from intrinsic.",
+                image.depth_.width_, image.depth_.height_, intrinsic.width_,
+                intrinsic.height_);
+    }
+    if (color_type_ != TSDFVolumeColorType::NoColor &&
+        (image.color_.width_ != intrinsic.width_ ||
+         image.color_.height_ != intrinsic.height_)) {
+        utility::LogError(
+                "[UniformTSDFVolume::Integrate] color image size is ({} x {}), "
+                "but got ({} x {}) from intrinsic.",
+                image.color_.width_, image.color_.height_, intrinsic.width_,
+                intrinsic.height_);
+    }
+
     auto depth2cameradistance =
             geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(
                     intrinsic);

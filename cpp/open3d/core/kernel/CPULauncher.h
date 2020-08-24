@@ -41,6 +41,25 @@ namespace kernel {
 
 class CPULauncher {
 public:
+    /// Fills tensor[:][i] with element_kernel(i).
+    ///
+    /// \param indexer The input tensor and output tensor to the indexer are the
+    /// same (as a hack), since the tensor are filled in-place.
+    /// \param element_kernel A function that takes pointer location and
+    /// workload_idx, computes the value to fill, and fills the value at the
+    /// pointer location.
+    template <typename func_t>
+    static void LaunchIndexFillKernel(const Indexer& indexer,
+                                      func_t element_kernel) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
+             ++workload_idx) {
+            element_kernel(indexer.GetInputPtr(0, workload_idx), workload_idx);
+        }
+    }
+
     template <typename func_t>
     static void LaunchUnaryEWKernel(const Indexer& indexer,
                                     func_t element_kernel) {

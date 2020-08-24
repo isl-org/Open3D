@@ -33,6 +33,7 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/io/ModelIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/tgeometry/PointCloud.h"
@@ -55,6 +56,7 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
@@ -284,13 +286,6 @@ bool PointCloudHasUniformColor(const geometry::PointCloud &pcd) {
     return ColorArrayIsUniform(pcd.colors_);
 };
 
-bool MeshHasUniformColor(const geometry::MeshBase &mesh) {
-    if (!mesh.HasVertexColors()) {
-        return true;
-    }
-    return ColorArrayIsUniform(mesh.vertex_colors_);
-};
-
 //----
 class DrawTimeLabel : public gui::Label {
     using Super = Label;
@@ -335,37 +330,7 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
 
-    struct TextureMaps {
-        rendering::TextureHandle albedo_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle normal_map =
-                rendering::FilamentResourceManager::kDefaultNormalMap;
-        rendering::TextureHandle ambient_occlusion_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle metallic_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle reflectance_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle clear_coat_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle clear_coat_roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle anisotropy_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-    };
-
     struct Settings {
-        rendering::MaterialHandle lit_template;
-        rendering::MaterialHandle unlit_template;
-
-        rendering::MaterialInstanceHandle lit;
-        rendering::MaterialInstanceHandle unlit;
-        TextureMaps maps;
-
-        // geometry -> material  (entry exists if mesh HasMaterials())
-        bool have_loaded_material_;
         rendering::Material loaded_material_;
         rendering::Material lit_material_;
         rendering::Material unlit_material_;
@@ -381,6 +346,8 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<GuiSettingsView> view_;
     } settings_;
 
+    rendering::TriangleMeshModel loaded_model_;
+
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
 
@@ -391,66 +358,13 @@ struct GuiVisualizer::Impl {
 
         auto &defaults = settings_.model_.GetCurrentMaterials();
 
-        settings_.maps.albedo_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.normal_map =
-                rendering::FilamentResourceManager::kDefaultNormalMap;
-        settings_.maps.ambient_occlusion_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.metallic_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.reflectance_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.clear_coat_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.clear_coat_roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.anisotropy_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-
         UpdateMaterials(renderer, defaults);
     }
 
     void SetMaterialsToDefault() {
         settings_.view_->ShowFileMaterialEntry(false);
 
-        settings_.maps.albedo_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.normal_map =
-                rendering::FilamentResourceManager::kDefaultNormalMap;
-        settings_.maps.ambient_occlusion_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.metallic_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.reflectance_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.clear_coat_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.clear_coat_roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        settings_.maps.anisotropy_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-
         settings_.model_.SetMaterialsToDefault();
-        // model's OnChanged callback will get called (if set), which will
-        // update everything.
-    }
-
-    void SetLoadedMaterial(rendering::Renderer &renderer,
-                           GuiSettingsModel::LitMaterial material,
-                           TextureMaps maps) {
-        settings_.maps = maps;
-
-        GuiSettingsModel::Materials materials;
-        materials.lit = material;
-        materials.unlit.base_color = material.base_color;
-
-        settings_.model_.SetCurrentMaterials(
-                materials, GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
         // model's OnChanged callback will get called (if set), which will
         // update everything.
     }
@@ -486,9 +400,9 @@ struct GuiVisualizer::Impl {
         settings_.wgt_mouse_ibl->SetOn(mode == Controls::ROTATE_IBL);
     }
 
-    void UpdateFromModel(rendering::Renderer &renderer,
-                         bool material_type_changed) {
-        scene_wgt_->SetBackgroundColor(settings_.model_.GetBackgroundColor());
+    void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
+        auto bcolor = settings_.model_.GetBackgroundColor();
+        renderer.SetClearColor({bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
 
         if (settings_.model_.GetShowSkybox()) {
             scene_wgt_->GetScene()->ShowSkybox(true);
@@ -501,10 +415,15 @@ struct GuiVisualizer::Impl {
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
+        // Bail early if there were no material property changes
+        if (!material_changed) return;
+
         auto &current_materials = settings_.model_.GetCurrentMaterials();
-        if (current_materials.lit_name ==
-            GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
-            scene_wgt_->GetScene()->UpdateMaterial(settings_.loaded_material_);
+        if (settings_.model_.GetMaterialType() ==
+                    GuiSettingsModel::MaterialType::LIT &&
+            current_materials.lit_name ==
+                    GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+            scene_wgt_->GetScene()->UpdateModelMaterial(loaded_model_);
         } else {
             UpdateMaterials(renderer, current_materials);
             switch (settings_.model_.GetMaterialType()) {
@@ -532,24 +451,22 @@ struct GuiVisualizer::Impl {
             }
         }
 
-        if (material_type_changed) {
-            auto *view = scene_wgt_->GetRenderView();
-            switch (settings_.model_.GetMaterialType()) {
-                case GuiSettingsModel::MaterialType::LIT: {
-                    view->SetMode(rendering::View::Mode::Color);
-                    break;
-                }
-                case GuiSettingsModel::MaterialType::UNLIT: {
-                    view->SetMode(rendering::View::Mode::Color);
-                    break;
-                }
-                case GuiSettingsModel::MaterialType::NORMAL_MAP:
-                    view->SetMode(rendering::View::Mode::Normals);
-                    break;
-                case GuiSettingsModel::MaterialType::DEPTH:
-                    view->SetMode(rendering::View::Mode::Depth);
-                    break;
+        auto *view = scene_wgt_->GetRenderView();
+        switch (settings_.model_.GetMaterialType()) {
+            case GuiSettingsModel::MaterialType::LIT: {
+                view->SetMode(rendering::View::Mode::Color);
+                break;
             }
+            case GuiSettingsModel::MaterialType::UNLIT: {
+                view->SetMode(rendering::View::Mode::Color);
+                break;
+            }
+            case GuiSettingsModel::MaterialType::NORMAL_MAP:
+                view->SetMode(rendering::View::Mode::Normals);
+                break;
+            case GuiSettingsModel::MaterialType::DEPTH:
+                view->SetMode(rendering::View::Mode::Depth);
+                break;
         }
     }
 
@@ -563,10 +480,10 @@ private:
         }
 
         render_scene->EnableIndirectLight(lighting.ibl_enabled);
-        render_scene->SetIndirectLightIntensity(lighting.ibl_intensity);
+        render_scene->SetIndirectLightIntensity(float(lighting.ibl_intensity));
         render_scene->SetIndirectLightRotation(lighting.ibl_rotation);
         render_scene->SetDirectionalLight(lighting.sun_dir, lighting.sun_color,
-                                          lighting.sun_intensity);
+                                          float(lighting.sun_intensity));
         render_scene->EnableDirectionalLight(lighting.sun_enabled);
     }
 
@@ -637,7 +554,7 @@ GuiVisualizer::GuiVisualizer(
     : gui::Window(title, left, top, width, height),
       impl_(new GuiVisualizer::Impl()) {
     Init();
-    SetGeometry(geometries);  // also updates the camera
+    SetGeometry(geometries[0], false);  // also updates the camera
 }
 
 void GuiVisualizer::Init() {
@@ -719,16 +636,16 @@ void GuiVisualizer::Init() {
 
     // Setup UI
     const auto em = theme.font_size;
-    const int lm = std::ceil(0.5 * em);
-    const int grid_spacing = std::ceil(0.25 * em);
+    const int lm = int(std::ceil(0.5 * em));
+    const int grid_spacing = int(std::ceil(0.25 * em));
 
     AddChild(impl_->scene_wgt_);
 
     // Add settings widget
-    const int separation_height = std::ceil(0.75 * em);
+    const int separation_height = int(std::ceil(0.75 * em));
     // (we don't want as much left margin because the twisty arrow is the
     // only thing there, and visually it looks larger than the right.)
-    const gui::Margins base_margins(0.5 * lm, lm, lm, lm);
+    const gui::Margins base_margins(int(std::round(0.5 * lm)), lm, lm, lm);
     settings.wgt_base = std::make_shared<gui::Vert>(0, base_margins);
 
     gui::Margins indent(em, 0, 0, 0);
@@ -778,7 +695,7 @@ void GuiVisualizer::Init() {
     camera_controls2->AddChild(settings.wgt_mouse_ibl);
     camera_controls2->AddStretch();
     view_ctrls->AddChild(camera_controls1);
-    view_ctrls->AddFixed(0.25 * em);
+    view_ctrls->AddFixed(int(std::ceil(0.25 * em)));
     view_ctrls->AddChild(camera_controls2);
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(gui::Horiz::MakeCentered(reset_camera));
@@ -832,128 +749,35 @@ void GuiVisualizer::AddItemsToAppMenu(
 }
 
 void GuiVisualizer::SetGeometry(
-        const std::vector<std::shared_ptr<const geometry::Geometry>>
-                &geometries) {
+        std::shared_ptr<const geometry::Geometry> geometry, bool loaded_model) {
     auto scene3d = impl_->scene_wgt_->GetScene();
     scene3d->ClearGeometry();
 
     impl_->SetMaterialsToDefault();
 
-    std::size_t num_point_clouds = 0;
-    std::size_t num_point_cloud_points = 0;
-    for (auto &g : geometries) {
-        if (g->GetGeometryType() ==
-            geometry::Geometry::GeometryType::PointCloud) {
-            num_point_clouds++;
-            auto cloud =
-                    std::static_pointer_cast<const geometry::PointCloud>(g);
-            num_point_cloud_points += cloud->points_.size();
-        }
-    }
-
+    rendering::Material loaded_material;
     geometry::AxisAlignedBoundingBox bounds;
     tgeometry::PointCloud tpcd;
-    std::size_t num_unlit = 0;
-    for (size_t i = 0; i < geometries.size(); ++i) {
-        std::shared_ptr<const geometry::Geometry> g = geometries[i];
-        rendering::Material loaded_material;
-        bool material_is_loaded = false;
-        // GuiSettingsModel::LitMaterial loaded_material;
+    if (!loaded_model) {
+        // NOTE: If a model was NOT loaded then these must be point clouds
+        std::shared_ptr<const geometry::Geometry> g = geometry;
 
         // If a point cloud or mesh has no vertex colors or a single uniform
-        // color (usually white), then we want to display it normally, that is,
-        // lit. But if the cloud/mesh has differing vertex colors, then we
-        // assume that the vertex colors have the lighting value baked in
+        // color (usually white), then we want to display it normally, that
+        // is, lit. But if the cloud/mesh has differing vertex colors, then
+        // we assume that the vertex colors have the lighting value baked in
         // (for example, fountain.ply at http://qianyi.info/scenedata.html)
-        switch (g->GetGeometryType()) {
-            case geometry::Geometry::GeometryType::PointCloud: {
-                auto pcd =
-                        std::static_pointer_cast<const geometry::PointCloud>(g);
+        if (g->GetGeometryType() ==
+            geometry::Geometry::GeometryType::PointCloud) {
+            auto pcd = std::static_pointer_cast<const geometry::PointCloud>(g);
 
-                if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
-                    loaded_material.shader = "defaultUnlit";
-                    num_unlit += 1;
-                } else {
-                    loaded_material.shader = "defaultLit";
-                }
-                // NOTE: comment this in to test tgeometry::PointCloud
-                // tpcd = tgeometry::PointCloud::FromLegacyPointCloud(*pcd);
-            } break;
-            case geometry::Geometry::GeometryType::LineSet: {
+            if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
                 loaded_material.shader = "defaultUnlit";
-                num_unlit += 1;
-            } break;
-            case geometry::Geometry::GeometryType::TriangleMesh: {
-                auto mesh =
-                        std::static_pointer_cast<const geometry::TriangleMesh>(
-                                g);
-
-                bool albedo_only = true;
-                auto is_map_valid =
-                        [](std::shared_ptr<geometry::Image> map) -> bool {
-                    return map && map->HasData();
-                };
-
-                if (mesh->HasMaterials()) {
-                    auto mesh_material = mesh->materials_.begin()->second;
-                    loaded_material.base_color.x() =
-                            mesh_material.baseColor.r();
-                    loaded_material.base_color.y() =
-                            mesh_material.baseColor.g();
-                    loaded_material.base_color.z() =
-                            mesh_material.baseColor.b();
-                    loaded_material.base_roughness =
-                            mesh_material.baseRoughness;
-                    loaded_material.base_metallic = mesh_material.baseMetallic;
-                    loaded_material.base_reflectance =
-                            mesh_material.baseReflectance;
-                    loaded_material.base_clearcoat =
-                            mesh_material.baseClearCoat;
-                    loaded_material.base_clearcoat_roughness =
-                            mesh_material.baseClearCoatRoughness;
-                    loaded_material.base_anisotropy =
-                            mesh_material.baseAnisotropy;
-                    loaded_material.albedo_img = mesh_material.albedo;
-                    loaded_material.normal_img = mesh_material.normalMap;
-                    loaded_material.ao_img = mesh_material.ambientOcclusion;
-                    loaded_material.metallic_img = mesh_material.metallic;
-                    loaded_material.roughness_img = mesh_material.roughness;
-                    loaded_material.reflectance_img = mesh_material.reflectance;
-                    loaded_material.clearcoat_img = mesh_material.clearCoat;
-                    loaded_material.clearcoat_roughness_img =
-                            mesh_material.clearCoatRoughness;
-                    loaded_material.anisotropy_img = mesh_material.anisotropy;
-                    loaded_material.shader = "defaultLit";
-                    if (is_map_valid(mesh_material.metallic)) {
-                        loaded_material.base_metallic = 1.f;
-                        albedo_only = false;
-                    }
-                    if (albedo_only) {
-                        albedo_only =
-                                !is_map_valid(mesh_material.normalMap) &&
-                                !is_map_valid(mesh_material.ambientOcclusion) &&
-                                !is_map_valid(mesh_material.roughness) &&
-                                !is_map_valid(mesh_material.reflectance) &&
-                                !is_map_valid(mesh_material.clearCoat) &&
-                                !is_map_valid(
-                                        mesh_material.clearCoatRoughness) &&
-                                !is_map_valid(mesh_material.anisotropy) &&
-                                loaded_material.base_metallic == 0.f &&
-                                loaded_material.base_roughness == 1.f;
-                    }
-                    material_is_loaded = true;
-                }
-
-                if ((mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) ||
-                    (mesh->HasMaterials() && albedo_only)) {
-                    loaded_material.shader = "defaultUnlit";
-                    num_unlit += 1;
-                }
-            } break;
-            default:
-                utility::LogWarning("Geometry type {} not supported!",
-                                    (int)g->GetGeometryType());
-                break;
+            } else {
+                loaded_material.shader = "defaultLit";
+            }
+            // NOTE: comment this in to test tgeometry::PointCloud
+            // tpcd = tgeometry::PointCloud::FromLegacyPointCloud(*pcd);
         }
 
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
@@ -963,46 +787,35 @@ void GuiVisualizer::SetGeometry(
         // scene3d->GetScene()->AddGeometry("__model__", tpcd, loaded_material);
 
         bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
-        if (material_is_loaded) {
-            impl_->settings_.have_loaded_material_ = true;
-            impl_->settings_.loaded_material_ = loaded_material;
-            impl_->settings_.lit_material_ = loaded_material;
-            impl_->settings_.lit_material_.shader = "defaultLit";
-            impl_->settings_.unlit_material_ = loaded_material;
-            impl_->settings_.unlit_material_.shader = "defaultUnlit";
+
+        impl_->settings_.model_.SetDisplayingPointClouds(true);
+        if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
+            auto &profile =
+                    GuiSettingsModel::GetDefaultPointCloudLightingProfile();
+            impl_->settings_.model_.SetLightingProfile(profile);
         }
+    } else {
+        scene3d->AddModel(impl_->loaded_model_);
+        bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
+        impl_->settings_.model_.SetDisplayingPointClouds(false);
+        loaded_material.shader = "defaultLit";
     }
 
-    if (!geometries.empty()) {
-        if (num_point_clouds == geometries.size()) {
-            impl_->settings_.model_.SetDisplayingPointClouds(true);
-            if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
-                auto &profile =
-                        GuiSettingsModel::GetDefaultPointCloudLightingProfile();
-                impl_->settings_.model_.SetLightingProfile(profile);
-            }
+    auto type = impl_->settings_.model_.GetMaterialType();
+    if (type == GuiSettingsModel::MaterialType::LIT ||
+        type == GuiSettingsModel::MaterialType::UNLIT) {
+        if (loaded_material.shader == "defaultUnlit") {
+            impl_->settings_.model_.SetMaterialType(
+                    GuiSettingsModel::MaterialType::UNLIT);
         } else {
-            impl_->settings_.model_.SetDisplayingPointClouds(false);
-        }
-
-        auto type = impl_->settings_.model_.GetMaterialType();
-        if (type == GuiSettingsModel::MaterialType::LIT ||
-            type == GuiSettingsModel::MaterialType::UNLIT) {
-            if (num_unlit == geometries.size()) {
-                impl_->settings_.model_.SetMaterialType(
-                        GuiSettingsModel::MaterialType::UNLIT);
-            } else {
-                impl_->settings_.model_.SetMaterialType(
-                        GuiSettingsModel::MaterialType::LIT);
-            }
+            impl_->settings_.model_.SetMaterialType(
+                    GuiSettingsModel::MaterialType::LIT);
         }
     }
 
+    // Setup UI for loaded model/point cloud
     impl_->settings_.model_.UnsetCustomDefaultColor();
-    if (impl_->settings_.have_loaded_material_) {
-        Eigen::Vector3f color(
-                impl_->settings_.loaded_material_.base_color.data());
-        impl_->settings_.model_.SetCustomDefaultColor(color);
+    if (loaded_model) {
         impl_->settings_.model_.SetCurrentMaterials(
                 GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
         impl_->settings_.view_->ShowFileMaterialEntry(true);
@@ -1072,46 +885,27 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                     [progressbar, value]() { progressbar->SetValue(value); });
         };
 
-        auto geometry = std::shared_ptr<geometry::Geometry3D>();
+        // clear current model
+        impl_->loaded_model_.meshes_.clear();
+        impl_->loaded_model_.materials_.clear();
 
         auto geometry_type = io::ReadFileGeometryType(path);
 
-        auto mesh = std::make_shared<geometry::TriangleMesh>();
-        bool mesh_success = false;
+        bool model_success = false;
         if (geometry_type & io::CONTAINS_TRIANGLES) {
             try {
-                mesh_success = io::ReadTriangleMesh(path, *mesh);
+                model_success = io::ReadTriangleModel(
+                        path, impl_->loaded_model_, false);
             } catch (...) {
-                mesh_success = false;
+                model_success = false;
             }
         }
-        if (mesh_success) {
-            if (mesh->triangles_.size() == 0) {
-                utility::LogWarning(
-                        "Contains 0 triangles, will read as point cloud");
-                mesh.reset();
-            } else {
-                UpdateProgress(0.5);
-                mesh->ComputeVertexNormals();
-                if (mesh->vertex_colors_.empty()) {
-                    mesh->PaintUniformColor({1, 1, 1});
-                }
-                UpdateProgress(0.666);
-                geometry = mesh;
-            }
-            // Make sure the mesh has texture coordinates
-            if (!mesh->HasTriangleUvs()) {
-                mesh->triangle_uvs_.resize(mesh->triangles_.size() * 3,
-                                           {0.0, 0.0});
-            }
-        } else {
-            // LogError throws an exception, which we don't want, because this
-            // might be a point cloud.
+        if (!model_success) {
             utility::LogInfo("{} appears to be a point cloud", path.c_str());
-            mesh.reset();
         }
 
-        if (!geometry) {
+        auto geometry = std::shared_ptr<geometry::Geometry3D>();
+        if (!model_success) {
             auto cloud = std::make_shared<geometry::PointCloud>();
             bool success = false;
             const float ioProgressAmount = 0.5f;
@@ -1119,7 +913,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 io::ReadPointCloudOption opt;
                 opt.update_progress = [ioProgressAmount,
                                        UpdateProgress](double percent) -> bool {
-                    UpdateProgress(ioProgressAmount * percent / 100.0);
+                    UpdateProgress(ioProgressAmount * float(percent / 100.0));
                     return true;
                 };
                 success = io::ReadPointCloud(path, *cloud, opt);
@@ -1132,9 +926,9 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 if (!cloud->HasNormals()) {
                     cloud->EstimateNormals();
                 }
-                UpdateProgress(0.666);
+                UpdateProgress(0.666f);
                 cloud->NormalizeNormals();
-                UpdateProgress(0.75);
+                UpdateProgress(0.75f);
                 geometry = cloud;
             } else {
                 utility::LogWarning("Failed to read points {}", path.c_str());
@@ -1142,10 +936,10 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
             }
         }
 
-        if (geometry) {
+        if (model_success || geometry) {
             gui::Application::GetInstance().PostToMainThread(
-                    this, [this, geometry]() {
-                        SetGeometry({geometry});
+                    this, [this, model_success, geometry]() {
+                        SetGeometry(geometry, model_success);
                         CloseDialog();
                     });
         } else {
@@ -1180,14 +974,15 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
         case FILE_OPEN: {
             auto dlg = std::make_shared<gui::FileDialog>(
                     gui::FileDialog::Mode::OPEN, "Open Geometry", GetTheme());
-            dlg->AddFilter(".ply .stl .obj .off .gltf .glb",
-                           "Triangle mesh files (.ply, .stl, .obj, .off, "
+            dlg->AddFilter(".ply .stl .fbx .obj .off .gltf .glb",
+                           "Triangle mesh files (.ply, .stl, .fbx, .obj, .off, "
                            ".gltf, .glb)");
             dlg->AddFilter(".xyz .xyzn .xyzrgb .ply .pcd .pts",
                            "Point cloud files (.xyz, .xyzn, .xyzrgb, .ply, "
                            ".pcd, .pts)");
             dlg->AddFilter(".ply", "Polygon files (.ply)");
             dlg->AddFilter(".stl", "Stereolithography files (.stl)");
+            dlg->AddFilter(".fbx", "Autodesk Filmbox files (.fbx)");
             dlg->AddFilter(".obj", "Wavefront OBJ files (.obj)");
             dlg->AddFilter(".off", "Object file format (.off)");
             dlg->AddFilter(".gltf", "OpenGL transfer files (.gltf)");
