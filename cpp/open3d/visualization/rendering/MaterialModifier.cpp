@@ -37,7 +37,8 @@ TextureSamplerParameters TextureSamplerParameters::Simple() {
 TextureSamplerParameters TextureSamplerParameters::Pretty() {
     TextureSamplerParameters parameters;
 
-    parameters.filter_min = TextureSamplerParameters::MinFilter::LinearMipmapLinear;
+    parameters.filter_min =
+            TextureSamplerParameters::MinFilter::LinearMipmapLinear;
     parameters.filter_mag = TextureSamplerParameters::MagFilter::Linear;
     parameters.wrap_u = TextureSamplerParameters::WrapMode::Repeat;
     parameters.wrap_v = TextureSamplerParameters::WrapMode::Repeat;
