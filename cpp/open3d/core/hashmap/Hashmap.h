@@ -24,85 +24,87 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Copyright 2019 Saman Ashkiani
-// Rewritten by Wei Dong 2019 - 2020
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-// implied. See the License for the specific language governing permissions
-// and limitations under the License.
-
-#pragma once
-
-// Interface for the CUDA hashmap. Separated from HashmapCUDA.cuh for brevity.
-
-#include <thrust/pair.h>
-
-#include <cassert>
-#include <memory>
-
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/hashmap/CUDA/HashmapCUDAImpl.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 
 namespace open3d {
 namespace core {
-template <typename Hash, typename KeyEq>
-class CUDAHashmap : public DeviceHashmap<Hash, KeyEq> {
+
+class Hashmap {
 public:
-    ~CUDAHashmap();
+    /// Comprehensive constructor for the developer.
+    /// The developer knows all the parameter settings.
+    Hashmap(size_t init_buckets,
+            size_t init_capacity,
+            size_t dsize_key,
+            size_t dsize_value,
+            Device device);
+    Hashmap(size_t init_capacity,
+            size_t dsize_key,
+            size_t dsize_value,
+            Device device);
 
-    CUDAHashmap(size_t init_buckets,
-                size_t init_capacity,
-                size_t dsize_key,
-                size_t dsize_value,
-                Device device);
+    ~Hashmap(){};
 
+    /// Rehash expects extra memory space at runtime, since it consists of
+    /// 1) dumping all key value pairs to a buffer
+    /// 2) create a new hash table
+    /// 3) parallel insert dumped key value pairs
+    /// 4) deallocate old hash table
     void Rehash(size_t buckets);
 
+    /// Parallel insert contiguous arrays of keys and values.
+    /// Output iterators and masks can be nullptrs if return iterators are not
+    /// to be processed.
     void Insert(const void* input_keys,
                 const void* input_values,
                 iterator_t* output_iterators,
                 bool* output_masks,
                 size_t count);
 
+    /// Parallel find a contiguous array of keys.
+    /// Output iterators and masks CANNOT be nullptrs as we have to interpret
+    /// them.
     void Find(const void* input_keys,
               iterator_t* output_iterators,
               bool* output_masks,
               size_t count);
 
+    /// Parallel erase a contiguous array of keys.
+    /// Output masks can be a nullptr if return results are not to be processed.
     void Erase(const void* input_keys, bool* output_masks, size_t count);
 
+    /// Parallel collect all iterators in the hash table
     size_t GetIterators(iterator_t* output_iterators);
 
+    /// Parallel unpack iterators to contiguous arrays of keys and/or values.
+    /// Output keys and values can be nullptrs if they are not to be
+    /// processed/stored.
     void UnpackIterators(const iterator_t* input_iterators,
                          const bool* input_masks,
                          void* output_keys,
                          void* output_values,
                          size_t count);
 
+    /// Parallel assign iterators in-place with associated values.
+    /// Note: users should manage the key-value correspondences around
+    /// iterators.
     void AssignIterators(iterator_t* input_iterators,
                          const bool* input_masks,
                          const void* input_values,
                          size_t count);
 
     size_t Size();
+
+    /// Return number of elems per bucket.
+    /// High performance not required, so directly returns a vector.
     std::vector<size_t> BucketSizes();
+
+    /// Return size / bucket_count.
     float LoadFactor();
 
-protected:
-    /// struct directly passed to kernels, cannot be a pointer
-    CUDAHashmapImplContext<Hash, KeyEq> gpu_context_;
-
-    std::shared_ptr<InternalKvPairManager> mem_mgr_;
-    std::shared_ptr<InternalNodeManager> node_mgr_;
+private:
+    std::shared_ptr<DefaultDeviceHashmap> device_hashmap_;
 };
+
 }  // namespace core
 }  // namespace open3d

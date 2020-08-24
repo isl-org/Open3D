@@ -38,12 +38,13 @@ CPUHashmap<Hash, KeyEq>::CPUHashmap(size_t init_buckets,
                                     size_t dsize_key,
                                     size_t dsize_value,
                                     Device device)
-    : Hashmap<Hash, KeyEq>(init_buckets,
-                           init_capacity,  /// dummy for std unordered_map,
-                                           /// reserved for other hashmaps
-                           dsize_key,
-                           dsize_value,
-                           device) {
+    : DeviceHashmap<Hash, KeyEq>(
+              init_buckets,
+              init_capacity,  /// dummy for std unordered_map,
+                              /// reserved for other hashmaps
+              dsize_key,
+              dsize_value,
+              device) {
     impl_ = std::make_shared<std::unordered_map<void*, void*, Hash, KeyEq>>(
             init_buckets, Hash(dsize_key), KeyEq(dsize_key));
 };

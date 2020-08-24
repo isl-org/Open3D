@@ -60,7 +60,7 @@ set(CORE_CUDA_SRC
 )
 
 set(HASHMAP_SRC
-  hashmap/DefaultHashmap.cpp
+  hashmap/Hashmap.cpp
   hashmap/CPU/DefaultHashmapCPU.cpp
 )
 

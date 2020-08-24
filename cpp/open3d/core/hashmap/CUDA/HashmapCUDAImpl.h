@@ -24,11 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/HashmapBase.h"
-
 #include "open3d/core/hashmap/CUDA/InternalKvPairManager.h"
 #include "open3d/core/hashmap/CUDA/InternalNodeManager.h"
-#include "open3d/core/hashmap/HashmapBase.h"
+#include "open3d/core/hashmap/DeviceHashmap.h"
 
 namespace open3d {
 namespace core {

@@ -24,13 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/hashmap/Hashmap.h"
+
 #include <unordered_map>
 
 #include "open3d/core/Device.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
-#include "open3d/core/hashmap/HashmapBase.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
@@ -53,16 +54,15 @@ TEST_P(HashmapPermuteDevices, Init) {
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
     int max_buckets = n * 2;
-    std::shared_ptr<core::DefaultHashmap> hashmap = core::CreateDefaultHashmap(
-            max_buckets, sizeof(int), sizeof(int), device);
+    core::Hashmap hashmap(max_buckets, sizeof(int), sizeof(int), device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
     iterator_t *iterators = static_cast<iterator_t *>(
             core::MemoryManager::Malloc(sizeof(iterator_t) * n, device));
-    hashmap->Insert(keys.GetDataPtr(), values.GetDataPtr(), iterators,
-                    static_cast<bool *>(masks.GetDataPtr()), n);
+    hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(), iterators,
+                   static_cast<bool *>(masks.GetDataPtr()), n);
     EXPECT_EQ(masks.All(), true);
-    EXPECT_EQ(hashmap->Size(), 5);
+    EXPECT_EQ(hashmap.Size(), 5);
     core::MemoryManager::Free(iterators, device);
 }
 
@@ -77,22 +77,21 @@ TEST_P(HashmapPermuteDevices, Find) {
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
     int max_buckets = n * 2;
-    std::shared_ptr<core::DefaultHashmap> hashmap = core::CreateDefaultHashmap(
-            max_buckets, sizeof(int), sizeof(int), device);
+    core::Hashmap hashmap(max_buckets, sizeof(int), sizeof(int), device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
     iterator_t *iterators = static_cast<iterator_t *>(
             core::MemoryManager::Malloc(sizeof(iterator_t) * n, device));
-    hashmap->Insert(keys.GetDataPtr(), values.GetDataPtr(), iterators,
-                    static_cast<bool *>(masks.GetDataPtr()), n);
-    hashmap->Find(keys.GetDataPtr(), iterators,
-                  static_cast<bool *>(masks.GetDataPtr()), n);
+    hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(), iterators,
+                   static_cast<bool *>(masks.GetDataPtr()), n);
+    hashmap.Find(keys.GetDataPtr(), iterators,
+                 static_cast<bool *>(masks.GetDataPtr()), n);
     EXPECT_EQ(masks.All(), true);
 
     std::vector<int> keys_query_val = {100, 500, 800, 900, 1000};
     core::Tensor keys_query(keys_query_val, {5}, core::Dtype::Int32, device);
-    hashmap->Find(keys_query.GetDataPtr(), iterators,
-                  static_cast<bool *>(masks.GetDataPtr()), n);
+    hashmap.Find(keys_query.GetDataPtr(), iterators,
+                 static_cast<bool *>(masks.GetDataPtr()), n);
     EXPECT_EQ(masks[0].Item<bool>(), true);
     EXPECT_EQ(masks[1].Item<bool>(), true);
     EXPECT_EQ(masks[2].Item<bool>(), false);
@@ -101,9 +100,9 @@ TEST_P(HashmapPermuteDevices, Find) {
 
     core::Tensor keys_valid({5}, core::Dtype::Int32, device);
     core::Tensor values_valid({5}, core::Dtype::Int32, device);
-    hashmap->UnpackIterators(iterators, static_cast<bool *>(masks.GetDataPtr()),
-                             keys_valid.GetDataPtr(), values_valid.GetDataPtr(),
-                             n);
+    hashmap.UnpackIterators(iterators, static_cast<bool *>(masks.GetDataPtr()),
+                            keys_valid.GetDataPtr(), values_valid.GetDataPtr(),
+                            n);
     EXPECT_EQ(keys_valid[0].Item<int>(), 100);
     EXPECT_EQ(keys_valid[1].Item<int>(), 500);
     EXPECT_EQ(keys_valid[3].Item<int>(), 900);
@@ -125,37 +124,36 @@ TEST_P(HashmapPermuteDevices, Insert) {
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
     int max_buckets = n * 2;
-    std::shared_ptr<core::DefaultHashmap> hashmap = core::CreateDefaultHashmap(
-            max_buckets, sizeof(int), sizeof(int), device);
+    core::Hashmap hashmap(max_buckets, sizeof(int), sizeof(int), device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
     iterator_t *iterators = static_cast<iterator_t *>(
             core::MemoryManager::Malloc(sizeof(iterator_t) * n, device));
-    hashmap->Insert(keys.GetDataPtr(), values.GetDataPtr(), iterators,
-                    static_cast<bool *>(masks.GetDataPtr()), n);
+    hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(), iterators,
+                   static_cast<bool *>(masks.GetDataPtr()), n);
 
     std::vector<int> keys_insert_val = {100, 500, 800, 900, 1000};
     std::vector<int> values_insert_val = {1, 5, 8, 9, 10};
     core::Tensor keys_insert(keys_insert_val, {5}, core::Dtype::Int32, device);
     core::Tensor values_insert(values_insert_val, {5}, core::Dtype::Int32,
                                device);
-    hashmap->Insert(keys_insert.GetDataPtr(), values_insert.GetDataPtr(),
-                    iterators, static_cast<bool *>(masks.GetDataPtr()), n);
-    EXPECT_EQ(hashmap->Size(), 7);
+    hashmap.Insert(keys_insert.GetDataPtr(), values_insert.GetDataPtr(),
+                   iterators, static_cast<bool *>(masks.GetDataPtr()), n);
+    EXPECT_EQ(hashmap.Size(), 7);
     EXPECT_EQ(masks[0].Item<bool>(), false);
     EXPECT_EQ(masks[1].Item<bool>(), false);
     EXPECT_EQ(masks[2].Item<bool>(), true);
     EXPECT_EQ(masks[3].Item<bool>(), false);
     EXPECT_EQ(masks[4].Item<bool>(), true);
 
-    n = hashmap->Size();
+    n = hashmap.Size();
     iterator_t *iterators_all = static_cast<iterator_t *>(
             core::MemoryManager::Malloc(sizeof(iterator_t) * n, device));
     core::Tensor keys_all({n}, core::Dtype::Int32, device);
     core::Tensor values_all({n}, core::Dtype::Int32, device);
-    hashmap->GetIterators(iterators_all);
-    hashmap->UnpackIterators(iterators_all, nullptr, keys_all.GetDataPtr(),
-                             values_all.GetDataPtr(), n);
+    hashmap.GetIterators(iterators_all);
+    hashmap.UnpackIterators(iterators_all, nullptr, keys_all.GetDataPtr(),
+                            values_all.GetDataPtr(), n);
     std::unordered_map<int, int> key_value_all = {
             {100, 1}, {300, 3}, {500, 5},   {700, 7},
             {800, 8}, {900, 9}, {1000, 10},
@@ -185,35 +183,34 @@ TEST_P(HashmapPermuteDevices, Erase) {
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
     int max_buckets = n * 2;
-    std::shared_ptr<core::DefaultHashmap> hashmap = core::CreateDefaultHashmap(
-            max_buckets, sizeof(int), sizeof(int), device);
+    core::Hashmap hashmap(max_buckets, sizeof(int), sizeof(int), device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
     iterator_t *iterators = static_cast<iterator_t *>(
             core::MemoryManager::Malloc(sizeof(iterator_t) * n, device));
-    hashmap->Insert(keys.GetDataPtr(), values.GetDataPtr(), iterators,
-                    static_cast<bool *>(masks.GetDataPtr()), n);
+    hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(), iterators,
+                   static_cast<bool *>(masks.GetDataPtr()), n);
 
     std::vector<int> keys_erase_val = {100, 500, 800, 900, 1000};
     core::Tensor keys_erase(keys_erase_val, {5}, core::Dtype::Int32, device);
-    hashmap->Erase(keys_erase.GetDataPtr(),
-                   static_cast<bool *>(masks.GetDataPtr()), n);
-    EXPECT_EQ(hashmap->Size(), 2);
+    hashmap.Erase(keys_erase.GetDataPtr(),
+                  static_cast<bool *>(masks.GetDataPtr()), n);
+    EXPECT_EQ(hashmap.Size(), 2);
     EXPECT_EQ(masks[0].Item<bool>(), true);
     EXPECT_EQ(masks[1].Item<bool>(), true);
     EXPECT_EQ(masks[2].Item<bool>(), false);
     EXPECT_EQ(masks[3].Item<bool>(), true);
     EXPECT_EQ(masks[4].Item<bool>(), false);
 
-    n = hashmap->Size();
+    n = hashmap.Size();
     iterator_t *iterators_all = static_cast<iterator_t *>(
             core::MemoryManager::Malloc(sizeof(iterator_t) * n, device));
     core::Tensor keys_all({n}, core::Dtype::Int32, device);
     core::Tensor values_all({n}, core::Dtype::Int32, device);
-    size_t n_ = hashmap->GetIterators(iterators_all);
+    size_t n_ = hashmap.GetIterators(iterators_all);
     EXPECT_EQ(n, n_);
-    hashmap->UnpackIterators(iterators_all, nullptr, keys_all.GetDataPtr(),
-                             values_all.GetDataPtr(), n);
+    hashmap.UnpackIterators(iterators_all, nullptr, keys_all.GetDataPtr(),
+                            values_all.GetDataPtr(), n);
     std::unordered_map<int, int> key_value_all = {
             {300, 3},
             {700, 7},

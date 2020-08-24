@@ -80,21 +80,21 @@ struct DefaultKeyEq {
 
 /// Base class: shared interface
 template <typename Hash = DefaultHash, typename KeyEq = DefaultKeyEq>
-class Hashmap {
+class DeviceHashmap {
 public:
     /// Comprehensive constructor for the developer.
     /// The developer knows all the parameter settings.
-    Hashmap(size_t init_buckets,
-            size_t init_capacity,
-            size_t dsize_key,
-            size_t dsize_value,
-            Device device)
+    DeviceHashmap(size_t init_buckets,
+                  size_t init_capacity,
+                  size_t dsize_key,
+                  size_t dsize_value,
+                  Device device)
         : bucket_count_(init_buckets),
           capacity_(init_capacity),
           dsize_key_(dsize_key),
           dsize_value_(dsize_value),
           device_(device){};
-    virtual ~Hashmap(){};
+    virtual ~DeviceHashmap(){};
 
     /// Rehash expects extra memory space at runtime, since it consists of
     /// 1) dumping all key value pairs to a buffer
@@ -169,49 +169,55 @@ public:
 /// User-friendly interface: just roughly estimate capacity, we handle
 /// bucket_count.
 template <typename Hash, typename KeyEq>
-std::shared_ptr<Hashmap<Hash, KeyEq>> CreateHashmap(size_t init_capacity,
-                                                    size_t dsize_key,
-                                                    size_t dsize_value,
-                                                    Device device);
+std::shared_ptr<DeviceHashmap<Hash, KeyEq>> CreateDeviceHashmap(
+        size_t init_capacity,
+        size_t dsize_key,
+        size_t dsize_value,
+        Device device);
 
 /// Comprehensive interface
 template <typename Hash, typename KeyEq>
-std::shared_ptr<Hashmap<Hash, KeyEq>> CreateHashmap(size_t init_buckets,
-                                                    size_t init_capacity,
-                                                    size_t dsize_key,
-                                                    size_t dsize_value,
-                                                    Device device);
+std::shared_ptr<DeviceHashmap<Hash, KeyEq>> CreateDeviceHashmap(
+        size_t init_buckets,
+        size_t init_capacity,
+        size_t dsize_key,
+        size_t dsize_value,
+        Device device);
 
 /// High level factory for default functions
 /// Factory interface for non-templated Default hashmap -- to be instantiated in
 /// implementations
-typedef Hashmap<DefaultHash, DefaultKeyEq> DefaultHashmap;
+typedef DeviceHashmap<DefaultHash, DefaultKeyEq> DefaultDeviceHashmap;
 
 /// User-friendly interface: just roughly estimate capacity, we handle
 /// bucket_count.
-std::shared_ptr<DefaultHashmap> CreateDefaultHashmap(size_t init_capacity,
-                                                     size_t dsize_key,
-                                                     size_t dsize_value,
-                                                     Device device);
+std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
+        size_t init_capacity,
+        size_t dsize_key,
+        size_t dsize_value,
+        Device device);
 
 /// Comprehensive interface
-std::shared_ptr<DefaultHashmap> CreateDefaultHashmap(size_t init_buckets,
-                                                     size_t init_capacity,
-                                                     size_t dsize_key,
-                                                     size_t dsize_value,
-                                                     Device device);
+std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
+        size_t init_buckets,
+        size_t init_capacity,
+        size_t dsize_key,
+        size_t dsize_value,
+        Device device);
 
-std::shared_ptr<DefaultHashmap> CreateDefaultCPUHashmap(size_t init_buckets,
-                                                        size_t init_capacity,
-                                                        size_t dsize_key,
-                                                        size_t dsize_value,
-                                                        Device device);
+std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCPUHashmap(
+        size_t init_buckets,
+        size_t init_capacity,
+        size_t dsize_key,
+        size_t dsize_value,
+        Device device);
 
-std::shared_ptr<DefaultHashmap> CreateDefaultCUDAHashmap(size_t init_buckets,
-                                                         size_t init_capacity,
-                                                         size_t dsize_key,
-                                                         size_t dsize_value,
-                                                         Device device);
+std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCUDAHashmap(
+        size_t init_buckets,
+        size_t init_capacity,
+        size_t dsize_key,
+        size_t dsize_value,
+        Device device);
 
 }  // namespace core
 }  // namespace open3d

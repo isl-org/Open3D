@@ -55,7 +55,7 @@ CUDAHashmap<Hash, KeyEq>::CUDAHashmap(size_t init_buckets,
                                       size_t dsize_key,
                                       size_t dsize_value,
                                       Device device)
-    : Hashmap<Hash, KeyEq>(
+    : DeviceHashmap<Hash, KeyEq>(
               init_buckets, init_capacity, dsize_key, dsize_value, device) {
     utility::Timer timer;
     timer.Start();

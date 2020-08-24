@@ -30,13 +30,13 @@
 
 #include <unordered_map>
 
-#include "open3d/core/hashmap/HashmapBase.h"
+#include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/core/hashmap/Traits.h"
 
 namespace open3d {
 namespace core {
 template <typename Hash, typename KeyEq>
-class CPUHashmap : public Hashmap<Hash, KeyEq> {
+class CPUHashmap : public DeviceHashmap<Hash, KeyEq> {
 public:
     ~CPUHashmap();
 

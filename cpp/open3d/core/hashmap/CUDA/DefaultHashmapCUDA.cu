@@ -29,11 +29,12 @@
 namespace open3d {
 namespace core {
 
-std::shared_ptr<DefaultHashmap> CreateDefaultCUDAHashmap(size_t init_buckets,
-                                                         size_t init_capacity,
-                                                         size_t dsize_key,
-                                                         size_t dsize_value,
-                                                         Device device) {
+std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCUDAHashmap(
+        size_t init_buckets,
+        size_t init_capacity,
+        size_t dsize_key,
+        size_t dsize_value,
+        Device device) {
     return std::make_shared<CUDAHashmap<DefaultHash, DefaultKeyEq>>(
             init_buckets, init_capacity, dsize_key, dsize_value, device);
 }
