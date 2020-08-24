@@ -84,7 +84,7 @@ FilamentView::FilamentView(filament::Engine& engine,
             filament::ColorGrading::Builder()
                     .quality(filament::ColorGrading::QualityLevel::HIGH)
                     .toneMapping(
-                            filament::ColorGrading::ToneMapping::ACES_LEGACY)
+                            filament::ColorGrading::ToneMapping::UCHIMURA)
                     .build(engine);
     view_->setColorGrading(color_grading_);
 
