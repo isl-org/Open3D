@@ -606,7 +606,7 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
                            .build(engine_);
 
     texture->setImage(engine_, 0, std::move(pb));
-
+    texture->generateMipmaps(engine_);
     return texture;
 }
 

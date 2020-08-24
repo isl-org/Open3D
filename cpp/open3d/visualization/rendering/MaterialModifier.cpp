@@ -37,7 +37,7 @@ TextureSamplerParameters TextureSamplerParameters::Simple() {
 TextureSamplerParameters TextureSamplerParameters::Pretty() {
     TextureSamplerParameters parameters;
 
-    parameters.filter_min = TextureSamplerParameters::MinFilter::Linear;
+    parameters.filter_min = TextureSamplerParameters::MinFilter::LinearMipmapLinear;
     parameters.filter_mag = TextureSamplerParameters::MagFilter::Linear;
     parameters.SetAnisotropy(4);
 
