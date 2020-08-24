@@ -38,6 +38,7 @@ ExternalProject_Add(
         -DCMAKE_INSTALL_PREFIX=${FILAMENT_ROOT}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DUSE_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}
+        -DUSE_STATIC_LIBCXX=ON
 )
 
 set(filament_LIBRARIES filameshio filament filamat_lite filamat filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)

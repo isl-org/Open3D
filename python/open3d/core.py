@@ -2,7 +2,8 @@ import open3d as o3d
 import numpy as np
 
 
-if o3d.__cuda__:
+from open3d.cuda.pybind.core import cuda
+if cuda.is_available():
     from open3d.cuda.pybind.core import (Dtype,
                                          Device,
                                          DtypeUtil,

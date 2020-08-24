@@ -52,10 +52,11 @@ if cuda.is_available():
 else:
     from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility)
     from open3d.cpu import pybind
-del cuda
 
 import open3d.core
 import open3d.visualization
+
+del open3d.cpu, open3d.open3d   # Cleanup spurious symbols
 
 __version__ = "@PROJECT_VERSION@"
 

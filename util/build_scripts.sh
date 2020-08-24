@@ -138,17 +138,18 @@ build_wheel() {
     cd build         # PWD=Open3D/build
 
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
-        -DBUILD_CUDA_MODULE=OFF \
         -DBUILD_TENSORFLOW_OPS=ON \
         -DBUILD_PYTORCH_OPS=OFF \       # TODO: PyTorch Ops is OFF with CUDA
         -DBUILD_RPC_INTERFACE=ON \
+        -DBUILD_FILAMENT_FROM_SOURCE=ON \
+        -DUSE_STATIC_LIBCXX=ON \
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR" \
         -DPYTHON_EXECUTABLE="$(which python)" \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_UNIT_TESTS=OFF \
         -DBUILD_BENCHMARKS=OFF \
     )
-    reportRun cmake "${cmakeOptions[@]}" ..
+    reportRun cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
     echo
     reportRun make VERBOSE=1 -j"$NPROC" pybind
 
@@ -160,19 +161,7 @@ build_wheel() {
         echo
         echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
         rm -r "${rebuild_list[@]}" || true
-        cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
-            -DBUILD_CUDA_MODULE=ON \
-            -DCUDA_ARCH=BasicPTX \
-            -DBUILD_TENSORFLOW_OPS=ON \
-            -DBUILD_PYTORCH_OPS=OFF \       # TODO: PyTorch Ops is OFF with CUDA
-            -DBUILD_RPC_INTERFACE=ON \
-            -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR" \
-            -DPYTHON_EXECUTABLE="$(which python)" \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_UNIT_TESTS=OFF \
-            -DBUILD_BENCHMARKS=OFF \
-        )
-        reportRun cmake "${cmakeOptions[@]}" ..
+        reportRun cmake -DBUILD_CUDA_MODULE=ON -DCUDA_ARCH=BasicPTX "${cmakeOptions[@]}" ..
     fi
     echo
     echo "Building Open3D wheel..."

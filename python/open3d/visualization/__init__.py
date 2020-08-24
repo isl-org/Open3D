@@ -23,8 +23,8 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-from open3d import __cuda__
-if __cuda__:
+from open3d.cuda.pybind.core import cuda
+if cuda.is_available():
     if "@BUILD_GUI@" == "ON":
         from open3d.cuda.pybind.visualization import gui
     from open3d.cuda.pybind.visualization import *
