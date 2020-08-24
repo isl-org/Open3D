@@ -54,6 +54,11 @@ public:
                 bool* output_masks,
                 size_t count);
 
+    void Activate(const void* input_keys,
+                  iterator_t* output_iterators,
+                  bool* output_masks,
+                  size_t count);
+
     void Find(const void* input_keys,
               iterator_t* output_iterators,
               bool* output_masks,
@@ -74,9 +79,10 @@ public:
                          const void* input_values,
                          size_t count);
 
-    size_t Size();
     std::vector<size_t> BucketSizes();
     float LoadFactor();
+
+    size_t Size();
 
 private:
     std::shared_ptr<std::unordered_map<void*, void*, Hash, KeyEq>> impl_;

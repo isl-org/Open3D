@@ -38,6 +38,7 @@ public:
             size_t dsize_key,
             size_t dsize_value,
             Device device);
+
     Hashmap(size_t init_capacity,
             size_t dsize_key,
             size_t dsize_value,
@@ -60,6 +61,14 @@ public:
                 iterator_t* output_iterators,
                 bool* output_masks,
                 size_t count);
+
+    /// Parallel activate contiguous arrays of keys without copying values.
+    /// Specifically useful for large value elements (e.g., a tensor), where we
+    /// can do in-place management after activation.
+    void Activate(const void* input_keys,
+                  iterator_t* output_iterators,
+                  bool* output_masks,
+                  size_t count);
 
     /// Parallel find a contiguous array of keys.
     /// Output iterators and masks CANNOT be nullptrs as we have to interpret

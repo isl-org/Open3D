@@ -107,6 +107,14 @@ void Hashmap::Insert(const void* input_keys,
                                    output_masks, count);
 }
 
+void Hashmap::Activate(const void* input_keys,
+                       iterator_t* output_iterators,
+                       bool* output_masks,
+                       size_t count) {
+    return device_hashmap_->Activate(input_keys, output_iterators, output_masks,
+                                     count);
+}
+
 void Hashmap::Find(const void* input_keys,
                    iterator_t* output_iterators,
                    bool* output_masks,

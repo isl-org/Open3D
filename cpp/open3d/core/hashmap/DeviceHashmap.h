@@ -112,6 +112,14 @@ public:
                         bool* output_masks,
                         size_t count) = 0;
 
+    /// Parallel activate contiguous arrays of keys without copying values.
+    /// Specifically useful for large value elements (e.g., a tensor), where we
+    /// can do in-place management after activation.
+    virtual void Activate(const void* input_keys,
+                          iterator_t* output_iterators,
+                          bool* output_masks,
+                          size_t count) = 0;
+
     /// Parallel find a contiguous array of keys.
     /// Output iterators and masks CANNOT be nullptrs as we have to interpret
     /// them.
@@ -155,13 +163,16 @@ public:
     /// Return size / bucket_count.
     virtual float LoadFactor() = 0;
 
+protected:
+    float avg_capacity_bucket_ratio() {
+        return float(capacity_) / float(bucket_count_);
+    }
+
 public:
     uint32_t bucket_count_;
     uint32_t capacity_;
     uint32_t dsize_key_;
     uint32_t dsize_value_;
-
-public:
     Device device_;
 };
 

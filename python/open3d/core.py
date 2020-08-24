@@ -12,6 +12,7 @@ from open3d.pybind.core import lstsq as pybind_lstsq
 from open3d.pybind.core import solve as pybind_solve
 from open3d.pybind.core import inv as pybind_inv
 from open3d.pybind.core import svd as pybind_svd
+from open3d.pybind.core import Hashmap
 
 none = NoneType()
 

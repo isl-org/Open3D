@@ -55,6 +55,12 @@ CPUHashmap<Hash, KeyEq>::~CPUHashmap() {
         MemoryManager::Free(kv_pair.first, this->device_);
         MemoryManager::Free(kv_pair.second, this->device_);
     }
+    impl_->clear();
+};
+
+template <typename Hash, typename KeyEq>
+size_t CPUHashmap<Hash, KeyEq>::Size() {
+    return impl_->size();
 };
 
 template <typename Hash, typename KeyEq>
@@ -64,13 +70,16 @@ void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
                                      bool* output_masks,
                                      size_t count) {
     for (size_t i = 0; i < count; ++i) {
-        uint8_t* src_key = (uint8_t*)input_keys + this->dsize_key_ * i;
-        uint8_t* src_value = (uint8_t*)input_values + this->dsize_value_ * i;
+        const uint8_t* src_key =
+                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
+        const uint8_t* src_value = static_cast<const uint8_t*>(input_values) +
+                                   this->dsize_value_ * i;
 
         // Manually copy before insert
-        void* dst_key = MemoryManager::Malloc(this->dsize_key_, this->device_);
-        void* dst_value =
-                MemoryManager::Malloc(this->dsize_value_, this->device_);
+        uint8_t* dst_key = static_cast<uint8_t*>(
+                MemoryManager::Malloc(this->dsize_key_, this->device_));
+        uint8_t* dst_value = static_cast<uint8_t*>(
+                MemoryManager::Malloc(this->dsize_value_, this->device_));
 
         MemoryManager::Memcpy(dst_key, this->device_, src_key, this->device_,
                               this->dsize_key_);
@@ -78,12 +87,11 @@ void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
                               this->device_, this->dsize_value_);
 
         // Try insertion
-        auto res = impl_->insert({(uint8_t*)dst_key, (uint8_t*)dst_value});
+        auto res = impl_->insert({dst_key, dst_value});
 
         // Handle memory
         if (res.second) {
-            output_iterators[i] =
-                    iterator_t((uint8_t*)dst_key, (uint8_t*)dst_value);
+            output_iterators[i] = iterator_t(dst_key, dst_value);
             output_masks[i] = 1;
         } else {
             MemoryManager::Free(dst_key, this->device_);
@@ -92,6 +100,45 @@ void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
             output_masks[i] = 0;
         }
     }
+    this->capacity_ = impl_->size();
+    this->bucket_count_ = impl_->bucket_count();
+}
+
+template <typename Hash, typename KeyEq>
+void CPUHashmap<Hash, KeyEq>::Activate(const void* input_keys,
+                                       iterator_t* output_iterators,
+                                       bool* output_masks,
+                                       size_t count) {
+    for (size_t i = 0; i < count; ++i) {
+        const uint8_t* src_key =
+                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
+
+        // Manually copy before insert
+        uint8_t* dst_key = static_cast<uint8_t*>(
+                MemoryManager::Malloc(this->dsize_key_, this->device_));
+        uint8_t* dummy_value = static_cast<uint8_t*>(
+                MemoryManager::Malloc(this->dsize_value_, this->device_));
+        memset(dummy_value, 0, this->dsize_value_);
+
+        MemoryManager::Memcpy(dst_key, this->device_, src_key, this->device_,
+                              this->dsize_key_);
+
+        // Try insertion
+        auto res = impl_->insert({dst_key, dummy_value});
+
+        // Handle memory
+        if (res.second) {
+            output_iterators[i] = iterator_t(dst_key, dummy_value);
+            output_masks[i] = 1;
+        } else {
+            MemoryManager::Free(dst_key, this->device_);
+            MemoryManager::Free(dummy_value, this->device_);
+            output_iterators[i] = iterator_t();
+            output_masks[i] = 0;
+        }
+    }
+    this->capacity_ = impl_->size();
+    this->bucket_count_ = impl_->bucket_count();
 }
 
 template <typename Hash, typename KeyEq>
@@ -100,14 +147,14 @@ void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
                                    bool* output_masks,
                                    size_t count) {
     for (size_t i = 0; i < count; ++i) {
-        uint8_t* key = (uint8_t*)input_keys + this->dsize_key_ * i;
+        uint8_t* key = const_cast<uint8_t*>(
+                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
 
         auto iter = impl_->find(key);
         if (iter == impl_->end()) {
             output_iterators[i] = iterator_t();
             output_masks[i] = 0;
         } else {
-            // void* key = iter->first;
             output_iterators[i] = iterator_t(iter->first, iter->second);
             output_masks[i] = 1;
         }
@@ -119,7 +166,8 @@ void CPUHashmap<Hash, KeyEq>::Erase(const void* input_keys,
                                     bool* output_masks,
                                     size_t count) {
     for (size_t i = 0; i < count; ++i) {
-        uint8_t* key = (uint8_t*)input_keys + this->dsize_key_ * i;
+        uint8_t* key = const_cast<uint8_t*>(
+                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
 
         size_t erased = impl_->erase(key);
         output_masks[i] = erased > 0;
@@ -148,7 +196,8 @@ void UnpackIteratorsStep(const iterator_t* input_iterators,
     // Valid queries
     if (input_masks == nullptr || input_masks[tid]) {
         if (output_keys != nullptr) {
-            uint8_t* dst_key_ptr = (uint8_t*)output_keys + dsize_key * tid;
+            uint8_t* dst_key_ptr =
+                    static_cast<uint8_t*>(output_keys) + dsize_key * tid;
             uint8_t* src_key_ptr =
                     static_cast<uint8_t*>(input_iterators[tid].first);
 
@@ -159,7 +208,7 @@ void UnpackIteratorsStep(const iterator_t* input_iterators,
 
         if (output_values != nullptr) {
             uint8_t* dst_value_ptr =
-                    (uint8_t*)output_values + dsize_value * tid;
+                    static_cast<uint8_t*>(output_values) + dsize_value * tid;
             uint8_t* src_value_ptr =
                     static_cast<uint8_t*>(input_iterators[tid].second);
 
@@ -190,7 +239,8 @@ void AssignIteratorsStep(iterator_t* input_iterators,
                          size_t tid) {
     // Valid queries
     if (input_masks == nullptr || input_masks[tid]) {
-        uint8_t* src_value_ptr = (uint8_t*)input_values + dsize_value * tid;
+        const uint8_t* src_value_ptr =
+                static_cast<const uint8_t*>(input_values) + dsize_value * tid;
         uint8_t* dst_value_ptr =
                 static_cast<uint8_t*>(input_iterators[tid].second);
 
@@ -215,11 +265,6 @@ void CPUHashmap<Hash, KeyEq>::AssignIterators(iterator_t* input_iterators,
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
     impl_->rehash(buckets);
-}
-
-template <typename Hash, typename KeyEq>
-size_t CPUHashmap<Hash, KeyEq>::Size() {
-    return impl_->size();
 }
 
 template <typename Hash, typename KeyEq>

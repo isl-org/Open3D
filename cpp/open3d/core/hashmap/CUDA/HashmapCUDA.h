@@ -73,6 +73,11 @@ public:
                 bool* output_masks,
                 size_t count);
 
+    void Activate(const void* input_keys,
+                  iterator_t* output_iterators,
+                  bool* output_masks,
+                  size_t count);
+
     void Find(const void* input_keys,
               iterator_t* output_iterators,
               bool* output_masks,
@@ -93,9 +98,11 @@ public:
                          const void* input_values,
                          size_t count);
 
-    size_t Size();
     std::vector<size_t> BucketSizes();
+
     float LoadFactor();
+
+    size_t Size();
 
 protected:
     /// struct directly passed to kernels, cannot be a pointer
@@ -103,6 +110,26 @@ protected:
 
     std::shared_ptr<InternalKvPairManager> mem_mgr_;
     std::shared_ptr<InternalNodeManager> node_mgr_;
+
+    void Allocate(size_t bucket_count, size_t capacity);
+
+    void InsertImpl(const void* input_keys,
+                    const void* input_values,
+                    iterator_t* output_iterators,
+                    bool* output_masks,
+                    size_t count);
+
+    void ActivateImpl(const void* input_keys,
+                      iterator_t* output_iterators,
+                      bool* output_masks,
+                      size_t count);
+
+    void FindImpl(const void* input_keys,
+                  iterator_t* output_iterators,
+                  bool* output_masks,
+                  size_t count);
+
+    void EraseImpl(const void* input_keys, bool* output_masks, size_t count);
 };
 }  // namespace core
 }  // namespace open3d
