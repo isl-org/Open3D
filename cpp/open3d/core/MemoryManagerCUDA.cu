@@ -40,6 +40,7 @@ namespace core {
 
 struct Block;
 
+// This is a simplified reimplementation of PyTorch's CUDA memory manager.
 // Refrence: https://tinyurl.com/yxkplte3
 // We need raw pointers (not smart ptrs) for exact comparison and reference
 typedef Block* BlockPtr;
@@ -81,7 +82,12 @@ struct BlockComparator {
     }
 };
 
-// Singleton cacher
+// Singleton cacher.
+// To improve performance, the cacher will not release cuda memory when Free is
+// called. Instead, it will cache these memory in trees' nodes, and reuse them
+// in following Malloc calls via size queries. Each node can be split to smaller
+// nodes upon malloc requests, and merged when they are all freed.
+// To clear the cache, use cuda::ReleaseCache().
 class CUDACacher {
 public:
     static std::shared_ptr<CUDACacher> GetInstance() {
