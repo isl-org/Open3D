@@ -1,21 +1,22 @@
 import open3d as o3d
 import numpy as np
 
-
-from open3d.cuda.pybind.core import cuda
-if cuda.is_available():
-    from open3d.cuda.pybind.core import (Dtype,
-                                         Device,
-                                         DtypeUtil,
-                                         cuda,
-                                         NoneType,
-                                         TensorList,
-                                         matmul as pybind_matmul,
-                                         lstsq as pybind_lstsq,
-                                         solve as pybind_solve,
-                                         inv as pybind_inv,
-                                         svd as pybind_svd)
-else:
+from open3d._build_config import _build_config
+if _build_config["BUILD_CUDA_MODULE"]:
+    from open3d.cuda.pybind.core import cuda
+    if cuda.is_available():
+        from open3d.cuda.pybind.core import (Dtype,
+                                            Device,
+                                            DtypeUtil,
+                                            cuda,
+                                            NoneType,
+                                            TensorList,
+                                            matmul as pybind_matmul,
+                                            lstsq as pybind_lstsq,
+                                            solve as pybind_solve,
+                                            inv as pybind_inv,
+                                            svd as pybind_svd)
+if not 'Dtype' in locals():
     from open3d.cpu.pybind.core import (Dtype,
                                         Device,
                                         DtypeUtil,
