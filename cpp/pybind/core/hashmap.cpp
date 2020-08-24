@@ -90,7 +90,9 @@ void pybind_core_hashmap(py::module& m) {
         h.Find(keys.GetDataPtr(), static_cast<iterator_t*>(iterators),
                static_cast<bool*>(masks.GetDataPtr()), count);
 
+        // TODO: unpack values to Tensors
         core::MemoryManager::Free(iterators, device);
+
         return masks;
     });
 

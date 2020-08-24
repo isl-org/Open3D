@@ -112,7 +112,7 @@ void CUDAHashmap<Hash, KeyEq>::Insert(const void* input_keys,
     uint32_t new_capacity = capacity + count;
 
     if (new_capacity > this->capacity_) {
-        float avg_ratio = this->avg_capacity_bucket_ratio();
+        float avg_ratio = float(this->capacity_) / float(this->bucket_count_);
         uint32_t exp_buckets = uint32_t(std::ceil(new_capacity / avg_ratio));
 
         // At least increase by a factor of 2
@@ -180,7 +180,7 @@ void CUDAHashmap<Hash, KeyEq>::Activate(const void* input_keys,
     utility::LogInfo("Rehash count = {}, capacity = {}, new_capacity = {}",
                      count, this->capacity_, new_capacity);
     if (new_capacity > this->capacity_) {
-        float avg_ratio = this->avg_capacity_bucket_ratio();
+        float avg_ratio = float(this->capacity_) / float(this->bucket_count_);
         uint32_t exp_buckets = uint32_t(std::ceil(new_capacity / avg_ratio));
 
         // At least increase by a factor of 2
@@ -395,7 +395,7 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
                         output_values, iterator_count);
     }
 
-    float avg_ratio = this->avg_capacity_bucket_ratio();
+    float avg_ratio = float(this->capacity_) / float(this->bucket_count_);
     MemoryManager::Free(gpu_context_.bucket_list_head_, this->device_);
     Allocate(buckets, uint32_t(std::ceil(buckets * avg_ratio)));
 

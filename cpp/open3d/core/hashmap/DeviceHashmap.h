@@ -163,10 +163,11 @@ public:
     /// Return size / bucket_count.
     virtual float LoadFactor() = 0;
 
-protected:
-    float avg_capacity_bucket_ratio() {
-        return float(capacity_) / float(bucket_count_);
-    }
+    int GetBucketCount() const { return bucket_count_; }
+    int GetCapacity() const { return capacity_; }
+    int GetKeyBytesize() const { return dsize_key_; }
+    int GetValueBytesize() const { return dsize_value_; }
+    Device GetDevice() const { return device_; }
 
 public:
     uint32_t bucket_count_;
