@@ -318,50 +318,6 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
     return {};
 }
 
-MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
-        const geometry::TriangleMesh::Material& descriptor) {
-    MaterialInstanceHandle handle;
-    auto pbr_ref = materials_[kDefaultLit];
-    auto material_instance = pbr_ref->createInstance();
-    handle = RegisterResource<MaterialInstanceHandle>(
-            engine_, material_instance, material_instances_);
-
-    static const auto sampler =
-            FilamentMaterialModifier::SamplerFromSamplerParameters(
-                    TextureSamplerParameters::Pretty());
-
-    auto base_color = filament::math::float3{descriptor.baseColor.r(),
-                                             descriptor.baseColor.g(),
-                                             descriptor.baseColor.b()};
-    material_instance->setParameter("baseColor", filament::RgbType::sRGB,
-                                    base_color);
-
-#define TRY_ASSIGN_MAP(map, srgb)                                 \
-    {                                                             \
-        if (descriptor.map && descriptor.map->HasData()) {        \
-            auto hmaptex = CreateTexture(descriptor.map, srgb);   \
-            if (hmaptex) {                                        \
-                material_instance->setParameter(                  \
-                        #map, textures_[hmaptex].get(), sampler); \
-                dependencies_[handle].insert(hmaptex);            \
-            }                                                     \
-        }                                                         \
-    }
-
-    material_instance->setParameter("baseRoughness", descriptor.baseRoughness);
-    material_instance->setParameter("baseMetallic", descriptor.baseMetallic);
-
-    TRY_ASSIGN_MAP(albedo, true);
-    TRY_ASSIGN_MAP(normalMap, false);
-    TRY_ASSIGN_MAP(ambientOcclusion, false);
-    TRY_ASSIGN_MAP(metallic, false);
-    TRY_ASSIGN_MAP(roughness, false);
-
-#undef TRY_ASSIGN_MAP
-
-    return handle;
-}
-
 TextureHandle FilamentResourceManager::CreateTexture(const char* path,
                                                      bool srgb) {
     std::shared_ptr<geometry::Image> img;
