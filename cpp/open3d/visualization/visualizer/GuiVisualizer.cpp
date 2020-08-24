@@ -348,6 +348,9 @@ struct GuiVisualizer::Impl {
 
     rendering::TriangleMeshModel loaded_model_;
 
+    // NOTE: Uncomment this line to test TPointCloud
+    // tgeometry::PointCloud loaded_tpcd;
+
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
 
@@ -757,7 +760,6 @@ void GuiVisualizer::SetGeometry(
 
     rendering::Material loaded_material;
     geometry::AxisAlignedBoundingBox bounds;
-    tgeometry::PointCloud tpcd;
     if (!loaded_model) {
         // NOTE: If a model was NOT loaded then these must be point clouds
         std::shared_ptr<const geometry::Geometry> g = geometry;
@@ -777,14 +779,16 @@ void GuiVisualizer::SetGeometry(
                 loaded_material.shader = "defaultLit";
             }
             // NOTE: comment this in to test tgeometry::PointCloud
-            // tpcd = tgeometry::PointCloud::FromLegacyPointCloud(*pcd);
+            // impl_->loaded_tpcd =
+            //         tgeometry::PointCloud::FromLegacyPointCloud(*pcd);
         }
 
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         scene3d->AddGeometry(g3, loaded_material);
         // NOTE: Comment in the following 2 lines to test tgeometry::PointCloud
         // scene3d->GetScene()->RemoveGeometry("__model__");
-        // scene3d->GetScene()->AddGeometry("__model__", tpcd, loaded_material);
+        // scene3d->GetScene()->AddGeometry("__model__", impl_->loaded_tpcd,
+        //                                  loaded_material);
 
         bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
 

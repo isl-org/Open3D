@@ -278,16 +278,20 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const tgeometry::PointCloud& point_cloud,
                                 const Material& material) {
+    // Basic sanity checks
     if (point_cloud.IsEmpty()) {
         utility::LogWarning("Point cloud for object {} is empty", object_name);
         return false;
     }
-
     const auto& points = point_cloud.GetPoints();
     if (points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
         utility::LogWarning(
                 "GPU resident tensor point clouds are not supported at this "
                 "time");
+        return false;
+    }
+    if (points.GetDtype() != core::Dtype::Float32) {
+        utility::LogWarning("tensor point cloud must have Dtype of Float32");
         return false;
     }
 
