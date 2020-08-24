@@ -185,10 +185,10 @@ void Open3DScene::AddGeometry(
         const std::size_t kMinPointsForDecimation = 6000000;
         auto pcd = std::dynamic_pointer_cast<const geometry::PointCloud>(geom);
         if (pcd && pcd->points_.size() > kMinPointsForDecimation) {
-            int sample_rate =
+            size_t sample_rate =
                     pcd->points_.size() / (kMinPointsForDecimation / 2);
-            auto small = pcd->UniformDownSample(sample_rate);
-            scene->AddGeometry(kFastModelObjectName, *small, mat);
+            auto fast = pcd->UniformDownSample(sample_rate);
+            scene->AddGeometry(kFastModelObjectName, *fast, mat);
             fast_model_name_ = kFastModelObjectName;
             scene->ShowGeometry(fast_model_name_, (lod_ == LOD::FAST));
         } else {
@@ -202,6 +202,18 @@ void Open3DScene::AddGeometry(
     RecreateAxis(scene, bounds_, false);
 }
 
+void Open3DScene::AddModel(const TriangleMeshModel& model) {
+    auto scene = renderer_.GetScene(scene_);
+    if (scene->AddGeometry(kModelObjectName, model)) {
+        model_name_ = kModelObjectName;
+        bounds_ = scene->GetGeometryBoundingBox(model_name_);
+        scene->ShowGeometry(model_name_, true);
+        fast_model_name_ = model_name_;
+    }
+
+    RecreateAxis(scene, bounds_, false);
+}
+
 void Open3DScene::UpdateMaterial(const Material& mat) {
     if (model_name_.empty()) {
         return;
@@ -212,6 +224,12 @@ void Open3DScene::UpdateMaterial(const Material& mat) {
     if (model_name_ != fast_model_name_) {
         scene->OverrideMaterial(fast_model_name_, mat);
     }
+}
+
+void Open3DScene::UpdateModelMaterial(const TriangleMeshModel& model) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->RemoveGeometry(model_name_);
+    scene->AddGeometry(model_name_, model);
 }
 
 std::vector<std::string> Open3DScene::GetGeometries() {

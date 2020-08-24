@@ -205,10 +205,15 @@ struct FileDialog::Impl {
     }
 
     std::string CalcCurrentDirectory() const {
+#ifdef _WIN32
+        const int nSkipSlash = 1;
+#else
+        const int nSkipSlash = 2;  // 0 is "/", so don't need "/" until 2.
+#endif  // _WIN32
         auto idx = dirtree_->GetSelectedIndex();
         std::string path;
         for (int i = 0; i <= idx; ++i) {
-            if (i >= 2) {  // 0 is "/", so don't need "/" until 2.
+            if (i >= nSkipSlash) {
                 path += "/";
             }
             path += dirtree_->GetItem(i);
@@ -224,7 +229,7 @@ struct FileDialog::Impl {
 FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
     : Dialog("File"), impl_(new FileDialog::Impl()) {
     auto em = theme.font_size;
-    auto layout = std::make_shared<Vert>(0.5 * em, Margins(em));
+    auto layout = std::make_shared<Vert>(int(std::ceil(0.5 * em)), Margins(em));
     impl_->mode_ = mode;
 
     // 'filename' needs to always exist, as we use it to store the name of
@@ -333,8 +338,8 @@ void FileDialog::SetPath(const char *path) {
     bool is_dir = utility::filesystem::DirectoryExists(dirpath);
 
     impl_->dirtree_->ClearItems();
-    size_t n = (is_dir ? components.size() : components.size() - 1);
-    for (size_t i = 0; i < n; ++i) {
+    int n = int(is_dir ? components.size() : components.size() - 1);
+    for (int i = 0; i < n; ++i) {
         impl_->dirtree_->AddItem(components[i].c_str());
     }
     impl_->dirtree_->SetSelectedIndex(n - 1);
@@ -358,7 +363,8 @@ void FileDialog::AddFilter(const char *filter, const char *description) {
     }
 
     bool first_filter = impl_->filter_idx_2_filter.empty();
-    impl_->filter_idx_2_filter[impl_->filter_idx_2_filter.size()] = ext_filter;
+    impl_->filter_idx_2_filter[int(impl_->filter_idx_2_filter.size())] =
+            ext_filter;
     impl_->filter_->AddItem(description);
     if (first_filter) {
         impl_->filter_->SetSelectedIndex(0);

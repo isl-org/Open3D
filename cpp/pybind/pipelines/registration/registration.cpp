@@ -536,17 +536,18 @@ must hold true for all edges.)");
 // Registration functions have similar arguments, sharing arg docstrings
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
-                {"checkers", "checkers"},
-                {"corres",
-                 "Checker class to check if two point clouds can be "
-                 "aligned. "
-                 "One of "
+                {"checkers",
+                 "Vector of Checker class to check if two point "
+                 "clouds can be aligned. One of "
                  "(``pipelines::registration::"
                  "CorrespondenceCheckerBasedOnEdgeLength``, "
                  "``pipelines::registration::"
                  "CorrespondenceCheckerBasedOnDistance``, "
                  "``pipelines::registration::"
                  "CorrespondenceCheckerBasedOnNormal``)"},
+                {"corres",
+                 "o3d.utility.Vector2iVector that stores indices of "
+                 "corresponding point or feature arrays."},
                 {"criteria", "Convergence criteria"},
                 {"estimation_method",
                  "Estimation method. One of "

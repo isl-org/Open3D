@@ -66,7 +66,7 @@ public:
     struct LitMaterial {
         Eigen::Vector3f base_color = {0.9f, 0.9f, 0.9f};
         float metallic = 0.f;
-        float roughness = 0.7;
+        float roughness = 0.7f;
         float reflectance = 0.5f;
         float clear_coat = 0.2f;
         float clear_coat_roughness = 0.2f;

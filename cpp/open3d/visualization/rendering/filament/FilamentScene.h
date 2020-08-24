@@ -27,9 +27,26 @@
 
 #pragma once
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+// 4305: LightManager.h needs to specify some constants as floats
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293 4305)
+#endif  // _MSC_VER
+
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <utils/Entity.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include <Eigen/Geometry>
 #include <unordered_map>
@@ -62,7 +79,6 @@ class FilamentResourceManager;
 class FilamentView;
 class Renderer;
 class View;
-class Model;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views
@@ -96,7 +112,7 @@ public:
                      const geometry::Geometry3D& geometry,
                      const Material& material) override;
     bool AddGeometry(const std::string& object_name,
-                     const Model& model) override;
+                     const TriangleMeshModel& model) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
     bool GeometryIsVisible(const std::string& object_name) override;
@@ -191,11 +207,7 @@ private:
                 rendering::FilamentResourceManager::kDefaultTexture;
         rendering::TextureHandle normal_map =
                 rendering::FilamentResourceManager::kDefaultNormalMap;
-        rendering::TextureHandle ambient_occlusion_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle roughness_map =
-                rendering::FilamentResourceManager::kDefaultTexture;
-        rendering::TextureHandle metallic_map =
+        rendering::TextureHandle ao_rough_metal_map =
                 rendering::FilamentResourceManager::kDefaultTexture;
         rendering::TextureHandle reflectance_map =
                 rendering::FilamentResourceManager::kDefaultTexture;
@@ -241,8 +253,9 @@ private:
     };
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
 
-    RenderableGeometry* GetGeometry(const std::string& object_name,
-                                    bool warn_if_not_found = true);
+    std::vector<RenderableGeometry*> GetGeometry(const std::string& object_name,
+                                                 bool warn_if_not_found = true);
+    bool GeometryIsModel(const std::string& object_name);
     LightEntity* GetLightInternal(const std::string& light_name,
                                   bool warn_if_not_found = true);
     void OverrideMaterialInternal(RenderableGeometry* geom,
@@ -259,6 +272,8 @@ private:
 
     std::unordered_map<std::string, RenderableGeometry> geometries_;
     std::unordered_map<std::string, LightEntity> lights_;
+    std::unordered_map<std::string, std::vector<std::string>> model_geometries_;
+
     std::string ibl_name_;
     bool ibl_enabled_ = false;
     bool skybox_enabled_ = false;

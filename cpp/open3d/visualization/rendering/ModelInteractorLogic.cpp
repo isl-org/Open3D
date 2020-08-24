@@ -60,7 +60,7 @@ void ModelInteractorLogic::Rotate(int dx, int dy) {
 
     Eigen::Vector3f axis = -dy * x_axis + dx * y_axis;
     axis = axis.normalized();
-    float theta = CalcRotateRadians(dx, dy);
+    float theta = float(CalcRotateRadians(dx, dy));
     Eigen::AngleAxisf rot_matrix(theta, axis);
 
     // Rotations about a point using a world axis do not produce

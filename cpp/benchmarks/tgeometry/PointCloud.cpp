@@ -24,41 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <GLFW/glfw3.h>
+#include "open3d/tgeometry/PointCloud.h"
 
-#include "Native.h"
-#define GLFW_EXPOSE_NATIVE_WIN32 1
-#include <GLFW/glfw3native.h>
-#include <winuser.h>
+#include <benchmark/benchmark.h>
 
 namespace open3d {
-namespace visualization {
-namespace gui {
+namespace tgeometry {
 
-void* GetNativeDrawable(GLFWwindow* glfw_window) {
-    return glfwGetWin32Window(glfw_window);
+void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
+    geometry::PointCloud legacy_pcd;
+    size_t num_points = 1000000;  // 1M
+    legacy_pcd.points_ =
+            std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
+    legacy_pcd.points_ =
+            std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
+
+    // Warm up.
+    tgeometry::PointCloud pcd = tgeometry::PointCloud::FromLegacyPointCloud(
+            legacy_pcd, core::Dtype::Float32, device);
+    (void)pcd;
+
+    for (auto _ : state) {
+        tgeometry::PointCloud pcd = tgeometry::PointCloud::FromLegacyPointCloud(
+                legacy_pcd, core::Dtype::Float32, device);
+    }
 }
 
-void PostNativeExposeEvent(GLFWwindow* glfw_window) {
-    InvalidateRect(glfwGetWin32Window(glfw_window), NULL, FALSE);
-    // InvalidateRect() does not actually post an event to the message queue.
-    // The way paint events work on Windows is that the window gets marked
-    // as dirty, then the next time GetMessage() is called and there isn't
-    // an actual event and the window is dirty, then a paint event is
-    // synthesized and the wndproc called. For some reason, a paint event
-    // is never actually generated. I suspect it is because Filament's
-    // render thread finishes and presumably buffer swap validates the
-    // window, erasing the dirty flag, before the event queue has time to
-    // notice that the window was marked as dirty. So force an update.
-    // Unfortunately, this draws *now*, so we have to wait until we are
-    // done drawing, which needs to be done at a higher level.
-    UpdateWindow(glfwGetWin32Window(glfw_window));
-}
+BENCHMARK_CAPTURE(FromLegacyPointCloud, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
 
-void ShowNativeAlert(const char* message) {
-    MessageBox(NULL, "Alert", message, MB_OK | MB_ICONEXCLAMATION);
-}
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(FromLegacyPointCloud, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+#endif
 
-}  // namespace gui
-}  // namespace visualization
+}  // namespace tgeometry
 }  // namespace open3d
