@@ -87,12 +87,6 @@ struct ColoredVertex {
         color.y = float_color(1);
         color.z = float_color(2);
     }
-
-    void SetVertexColor(const Eigen::Vector3f& c) {
-        color.x = c(0);
-        color.y = c(1);
-        color.z = c(2);
-    }
 };
 }  // namespace
 
