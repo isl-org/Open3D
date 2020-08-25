@@ -36,7 +36,6 @@
 #include "open3d/io/ModelIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "open3d/tgeometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
@@ -347,9 +346,6 @@ struct GuiVisualizer::Impl {
     } settings_;
 
     rendering::TriangleMeshModel loaded_model_;
-
-    // NOTE: Uncomment this line to test TPointCloud
-    // tgeometry::PointCloud loaded_tpcd;
 
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
@@ -778,18 +774,10 @@ void GuiVisualizer::SetGeometry(
             } else {
                 loaded_material.shader = "defaultLit";
             }
-            // NOTE: comment this in to test tgeometry::PointCloud
-            // impl_->loaded_tpcd =
-            //         tgeometry::PointCloud::FromLegacyPointCloud(*pcd);
         }
 
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         scene3d->AddGeometry(g3, loaded_material);
-        // NOTE: Comment in the following 2 lines to test tgeometry::PointCloud
-        // scene3d->GetScene()->RemoveGeometry("__model__");
-        // scene3d->GetScene()->AddGeometry("__model__", impl_->loaded_tpcd,
-        //                                  loaded_material);
-
         bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
 
         impl_->settings_.model_.SetDisplayingPointClouds(true);

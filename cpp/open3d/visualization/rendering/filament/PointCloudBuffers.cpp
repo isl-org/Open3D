@@ -81,12 +81,6 @@ struct ColoredVertex {
         position.z = float_pos(2);
     }
 
-    void SetVertexPosition(const Eigen::Vector3f& pos) {
-        position.x = pos(0);
-        position.y = pos(1);
-        position.z = pos(2);
-    }
-
     void SetVertexColor(const Eigen::Vector3d& c) {
         auto float_color = c.cast<float>();
         color.x = float_color(0);
