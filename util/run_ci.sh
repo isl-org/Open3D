@@ -97,6 +97,8 @@ if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     reportRun pip install -U yapf=="$YAPF_VER"
 fi
 
+pip cache purge
+
 mkdir -p build
 cd build
 
