@@ -116,6 +116,7 @@ public:
 
     virtual ~PointCloud() override {}
 
+public:
     /// Get attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
@@ -158,6 +159,7 @@ public:
     /// \param key Attribute name.
     /// \param value A tensorlist.
     void SetPointAttr(const std::string &key, const core::TensorList &value) {
+        value.AssertDevice(device_);
         point_attr_[key] = value;
     }
 
@@ -179,7 +181,7 @@ public:
         SetPointAttr("normals", value);
     }
 
-    /// Returns true if all of the following is true:
+    /// Returns true if all of the followings are true:
     /// 1) attribute key exist
     /// 2) attribute's length as points' length
     /// 3) attribute's length > 0
@@ -192,14 +194,14 @@ public:
     /// This is a convenience function.
     bool HasPoints() const { return HasPointAttr("points"); }
 
-    /// Returns true if all of the following is true:
+    /// Returns true if all of the followings are true:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as points' length
     /// 3) attribute "colors"'s length > 0
     /// This is a convenience function.
     bool HasPointColors() const { return HasPointAttr("colors"); }
 
-    /// Returns true if all of the following is true:
+    /// Returns true if all of the followings are true:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as points' length
     /// 3) attribute "normals"'s length > 0
@@ -214,13 +216,19 @@ public:
     /// same dtype and device.
     void SynchronizedPushBack(
             const std::unordered_map<std::string, core::Tensor>
-                    &map_keys_to_tensors);
+                    &map_keys_to_tensors) {
+        point_attr_.SynchronizedPushBack(map_keys_to_tensors);
+    }
 
+public:
     /// Clear all data in the pointcloud.
-    PointCloud &Clear() override;
+    PointCloud &Clear() override {
+        point_attr_.clear();
+        return *this;
+    }
 
     /// Returns !HasPoints().
-    bool IsEmpty() const override;
+    bool IsEmpty() const override { return !HasPoints(); }
 
     core::Tensor GetMinBound() const;
 
@@ -236,6 +244,8 @@ public:
     PointCloud &Scale(double scale, const core::Tensor &center);
 
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
+
+    core::Device GetDevice() const { return device_; }
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static tgeometry::PointCloud FromLegacyPointCloud(
