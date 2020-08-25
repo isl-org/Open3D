@@ -26,10 +26,24 @@
 
 #pragma once
 
-#include <nanoflann.hpp>
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+
+// forward declaration
+namespace nanoflann {
+
+template <class T, class DataSource, typename _DistanceType>
+struct L2_Adaptor;
+
+template <class T, class DataSource, typename _DistanceType>
+struct L1_Adaptor;
+
+template <typename Distance, class DatasetAdaptor, int DIM, typename IndexType>
+class KDTreeSingleIndexAdaptor;
+
+struct SearchParams;
+};  // namespace nanoflann
 
 namespace open3d {
 namespace core {
@@ -66,12 +80,12 @@ struct SelectNanoflannAdaptor {};
 
 template <class T>
 struct SelectNanoflannAdaptor<L2, T> {
-    typedef nanoflann::L2_Adaptor<T, Adaptor<T>> Adaptor_t;
+    typedef nanoflann::L2_Adaptor<T, Adaptor<T>, T> Adaptor_t;
 };
 
 template <class T>
 struct SelectNanoflannAdaptor<L1, T> {
-    typedef nanoflann::L1_Adaptor<T, Adaptor<T>> Adaptor_t;
+    typedef nanoflann::L1_Adaptor<T, Adaptor<T>, T> Adaptor_t;
 };
 
 /// \class NanoFlann
@@ -80,7 +94,9 @@ struct SelectNanoflannAdaptor<L1, T> {
 class NanoFlann {
     typedef nanoflann::KDTreeSingleIndexAdaptor<
             typename SelectNanoflannAdaptor<L2, double>::Adaptor_t,
-            Adaptor<double>>
+            Adaptor<double>,
+            -1,
+            size_t>
             KDTree_t;
 
 public:

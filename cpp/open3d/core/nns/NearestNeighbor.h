@@ -29,8 +29,8 @@
 #include <iostream>
 #include <vector>
 
-#include "open3d/core/nns/NanoFlann.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/nns/NanoFlann.h"
 
 namespace open3d {
 namespace core {

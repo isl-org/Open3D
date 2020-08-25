@@ -26,6 +26,8 @@
 
 #include "open3d/core/nns/NanoFlann.h"
 
+#include <nanoflann.hpp>
+
 #include "open3d/utility/Console.h"
 
 namespace open3d {
