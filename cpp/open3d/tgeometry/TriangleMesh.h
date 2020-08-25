@@ -80,6 +80,10 @@ namespace tgeometry {
 ///             - TriangleMesh::GetTriangleNormals()
 ///             - TriangleMesh::SetTriangleNormals(triangle_normals_tensorlist)
 ///             - TriangleMesh::HasTriangleNormals()
+///         - Triangle colors (stored at triangle_attr_["colors"])
+///             - TriangleMesh::GetTriangleColors()
+///             - TriangleMesh::SetTriangleColors(triangle_colors_tensorlist)
+///             - TriangleMesh::HasTriangleColors()
 ///     - For all attributes, the device must be consistent with the device of
 ///       the trianglemesh. Dtype can be different.
 /// - Level 2: Custom attributes, e.g. {"labels"}.
@@ -164,6 +168,10 @@ public:
         return GetTriangleAttr("normals");
     }
 
+    /// Get the value of the "colors" attribute in triangle_attr_.
+    /// Convenience function.
+    core::TensorList &GetTriangleColors() { return GetTriangleAttr("colors"); }
+
     /// Get vertex attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
@@ -207,6 +215,12 @@ public:
     /// Convenience function.
     const core::TensorList &GetTriangleNormals() const {
         return GetTriangleAttr("normals");
+    }
+
+    /// Get the value of the "colors" attribute in triangle_attr_.
+    /// Convenience function.
+    const core::TensorList &GetTriangleColors() const {
+        return GetTriangleAttr("colors");
     }
 
     /// Set vertex attributes. If the attribute key already exists, its value
@@ -264,6 +278,13 @@ public:
         SetTriangleAttr("normals", value);
     }
 
+    /// Set the value of the "colors" attribute in triangle_attr_.
+    /// This is a convenience function.
+    void SetTriangleColors(const core::TensorList &value) {
+        value.AssertElementShape({3});
+        SetTriangleAttr("colors", value);
+    }
+
     /// Returns true if all of the followings are true in vertex_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as vertices' length
@@ -312,6 +333,13 @@ public:
     /// 3) attribute "normals"'s length > 0
     /// Convenience function.
     bool HasTriangleNormals() const { return HasTriangleAttr("normals"); }
+
+    /// Returns true if all of the followings are true in triangle_attr_:
+    /// 1) attribute "colors" exist
+    /// 2) attribute "colors"'s length as vertices' length
+    /// 3) attribute "colors"'s length > 0
+    /// Convenience function.
+    bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
 
     /// Synchronized push back to the vertex_attr_, data will be
     /// copied. Before push back, all existing tensorlists must have the same
