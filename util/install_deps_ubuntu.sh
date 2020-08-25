@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
 set -ev
 
+# Install Open3D build dependencies from Ubuntu repositories
+# Use: install_deps_ubuntu.sh [ assume-yes ] [ install-cuda ]
+
 SUDO=${SUDO:=sudo}      # SUDO=command in docker (running as root, sudo not available)
-BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE:=OFF}     # Is CUDA needed?
-NEED_CUDNN=${NEED_CUDNN:=$BUILD_CUDA_MODULE}    # Is cuDNN needed? Default is
-                                                # same as CUDA
 CUDA_VERSION=("10-1" "10.1")
 CUDNN_MAJOR_VERSION=7
 CUDNN_VERSION="7.6.5.32-1+cuda10.1"
 
-if [ "$1" == "assume-yes" ]; then
-    APT_ARG="--yes"
-else
-    APT_ARG=""
-fi
+APT_ARG=""
+INSTALL_CUDA=""
+for arg in "$@" ; do
+    case $arg in
+        "assume-yes")
+            APT_ARG="--yes"
+            ;;
+        "install-cuda")
+            INSTALL_CUDA=ON
+            ;;
+        *)
+            echo "Use: install_deps_ubuntu.sh [ assume-yes ] [ install-cuda ]"
+            echo "install-cuda: Install CUDA and cuDNN"
+            exit 1
+            ;;
+    esac
+done
 
 packages=(
     # Open3D deps
@@ -32,8 +44,9 @@ packages=(
     libosmesa6-dev
 )
 
-if [ $BUILD_CUDA_MODULE == ON ] ; then
-    if ! which nvcc >/dev/null ; then
+if [ $INSTALL_CUDA == ON ] ; then
+    if ! nvcc --version >/dev/null ; then
+        echo "Installing CUDA ${CUDA_VERSION[1]} with apt ..."
         $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
         packages=("${packages[@]}" "cuda-toolkit-${CUDA_VERSION[0]}")
@@ -41,14 +54,16 @@ if [ $BUILD_CUDA_MODULE == ON ] ; then
         echo "(system) or ~/.bashrc (user) and restart your shell:"
         echo "# CUDA installation path"
         echo "export PATH=/usr/local/cuda-${CUDA_VERSION[1]}/bin\${PATH:+:\${PATH}}"
+    else
+        echo "CUDA found:"
+        nvcc --version
     fi
-    if [ $NEED_CUDNN == ON ] ; then
-        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
-        packages=("${packages[@]}" \
-            "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
-            "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION" \
-        )
-    fi
+    echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
+    $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
+    packages=("${packages[@]}" \
+        "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
+        "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION" \
+    )
 fi
 
 $SUDO apt-get update
