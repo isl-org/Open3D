@@ -54,6 +54,10 @@ def test_constructor_and_accessors():
     assert len(pcd.point["points"]) == 1
     assert len(pcd.point["colors"]) == 1
 
+    # Edit and access values.
+    pcd.point["points"][0] = o3c.Tensor([1, 2, 3], dtype, device)
+    assert pcd.point["points"][0].allclose(o3c.Tensor([1, 2, 3], dtype, device))
+
     # Pushback.
     pcd.synchronized_push_back({"points": one_point, "colors": one_color})
     assert len(pcd.point["points"]) == 2
