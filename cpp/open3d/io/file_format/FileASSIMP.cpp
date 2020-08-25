@@ -37,6 +37,13 @@
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/Model.h"
+
+#define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
+#define AI_MATKEY_CLEARCOAT_ROUGHNESS "$mat.clearcoatroughness", 0, 0
+#define AI_MATKEY_SHEEN "$mat.sheen", 0, 0
+#define AI_MATKEY_ANISOTROPY "$mat.anisotropy", 0, 0
 
 namespace open3d {
 namespace io {
@@ -52,6 +59,77 @@ const unsigned int kPostProcessFlags =
         aiProcess_FindDegenerates | aiProcess_OptimizeMeshes |
         aiProcess_PreTransformVertices;
 
+struct TextureImages {
+    std::shared_ptr<geometry::Image> albedo;
+    std::shared_ptr<geometry::Image> normal;
+    std::shared_ptr<geometry::Image> ao;
+    std::shared_ptr<geometry::Image> roughness;
+    std::shared_ptr<geometry::Image> metallic;
+    std::shared_ptr<geometry::Image> reflectance;
+    std::shared_ptr<geometry::Image> clearcoat;
+    std::shared_ptr<geometry::Image> clearcoat_roughness;
+    std::shared_ptr<geometry::Image> anisotropy;
+    std::shared_ptr<geometry::Image> gltf_rough_metal;
+};
+
+void LoadTextures(const std::string& filename,
+                  aiMaterial* mat,
+                  TextureImages& maps) {
+    // Retrieve textures
+    std::string base_path =
+            utility::filesystem::GetFileParentDirectory(filename);
+
+    auto texture_loader = [&base_path, &mat](
+                                  aiTextureType type,
+                                  std::shared_ptr<geometry::Image>& img) {
+        if (mat->GetTextureCount(type) > 0) {
+            aiString path;
+            mat->GetTexture(type, 0, &path);
+            std::string strpath(path.C_Str());
+            // normalize path separators
+            auto p_win = strpath.find("\\");
+            while (p_win != std::string::npos) {
+                strpath[p_win] = '/';
+                p_win = strpath.find("\\", p_win + 1);
+            }
+            auto image = io::CreateImageFromFile(base_path + strpath);
+            if (image->HasData()) {
+                img = image;
+            }
+        }
+    };
+
+    texture_loader(aiTextureType_DIFFUSE, maps.albedo);
+    texture_loader(aiTextureType_NORMALS, maps.normal);
+    // Assimp may place ambient occlusion texture in AMBIENT_OCCLUSION if
+    // format has AO support. Prefer that texture if it is preset. Otherwise,
+    // try AMBIENT where OBJ and FBX typically put AO textures.
+    if (mat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0) {
+        texture_loader(aiTextureType_AMBIENT_OCCLUSION, maps.ao);
+    } else {
+        texture_loader(aiTextureType_AMBIENT, maps.ao);
+    }
+    texture_loader(aiTextureType_METALNESS, maps.metallic);
+    if (mat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
+        texture_loader(aiTextureType_DIFFUSE_ROUGHNESS, maps.roughness);
+    } else if (mat->GetTextureCount(aiTextureType_SHININESS) > 0) {
+        // NOTE: In some FBX files assimp puts the roughness texture in
+        // shininess slot
+        texture_loader(aiTextureType_SHININESS, maps.roughness);
+    }
+    // NOTE: Assimp doesn't have a texture type for GLTF's combined
+    // roughness/metallic texture so it puts it in the 'unknown' texture slot
+    texture_loader(aiTextureType_UNKNOWN, maps.gltf_rough_metal);
+    // NOTE: the following may be non-standard. We are using REFLECTION texture
+    // type to store OBJ map_Ps 'sheen' PBR map
+    texture_loader(aiTextureType_REFLECTION, maps.reflectance);
+
+    // NOTE: ASSIMP doesn't appear to provide texture params for the following:
+    // clearcoat
+    // clearcoat_roughness
+    // anisotropy
+}
+
 bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
                                  geometry::TriangleMesh& mesh,
                                  bool print_progress) {
@@ -61,18 +139,6 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;
     }
-
-    // NOTE: Developer debug printout below. Commented out for now and will
-    // eventually be removed entirely
-    // utility::LogWarning("Loaded {}\n\tN MESHES: {}\n\tN MATERIALS: {}",
-    // filename, scene->mNumMeshes, scene->mNumMaterials);
-    // const auto* mesh1 = scene->mMeshes[0];
-    // utility::LogWarning(
-    //         "MESH: {}\n\tHas Positions: {}\n\tHas Normals: {}\n\tHasFaces: "
-    //         "{}\n\tVertexColors: {}\n\tUV Channels: {}",
-    //         mesh1->mName.C_Str(), mesh1->HasPositions(), mesh1->HasNormals(),
-    //         mesh1->HasFaces(), mesh1->GetNumColorChannels(),
-    //         mesh1->GetNumUVChannels());
 
     mesh.Clear();
 
@@ -138,28 +204,15 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         current_vidx += assimp_mesh->mNumVertices;
     }
 
-    // Load material data
-    auto* mat = scene->mMaterials[0];
-
-    // NOTE: Developer debug printouts below. To be removed soon.
-    // utility::LogWarning("MATERIAL: {}\n\tPROPS: {}\n",
-    // mat->GetName().C_Str(),
-    //                     mat->mNumProperties);
-    // for (size_t i = 0; i < mat->mNumProperties; ++i) {
-    //     auto* prop = mat->mProperties[i];
-    //     utility::LogWarning("\tPROPNAME: {}", prop->mKey.C_Str());
-    //     if(prop->mType == aiPTI_String) {
-    //         std::string val(prop->mData+4);
-    //         utility::LogWarning("\tVAL: {}", val);
-    //     }
-    // }
-
     if (scene->mNumMaterials > 1) {
         utility::LogWarning(
                 "{} has {} materials but only a single material per object is "
                 "currently supported",
                 filename, scene->mNumMaterials);
     }
+
+    // Load material data
+    auto* mat = scene->mMaterials[0];
 
     // create material structure to match this name
     auto& mesh_material = mesh.materials_[std::string(mat->GetName().C_Str())];
@@ -169,11 +222,6 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
 
     // Retrieve base material properties
     aiColor3D color(1.f, 1.f, 1.f);
-
-#define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
-#define AI_MATKEY_CLEARCOAT_ROUGHNESS "$mat.clearcoatroughness", 0, 0
-#define AI_MATKEY_SHEEN "$mat.sheen", 0, 0
-#define AI_MATKEY_ANISOTROPY "$mat.anisotropy", 0, 0
 
     mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
     mesh_material.baseColor =
@@ -193,62 +241,128 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
     mat->Get(AI_MATKEY_ANISOTROPY, mesh_material.baseAnisotropy);
 
     // Retrieve textures
-    std::string base_path =
-            utility::filesystem::GetFileParentDirectory(filename);
+    TextureImages maps;
+    LoadTextures(filename, mat, maps);
+    mesh_material.albedo = maps.albedo;
+    mesh_material.normalMap = maps.normal;
+    mesh_material.ambientOcclusion = maps.ao;
+    mesh_material.metallic = maps.metallic;
+    mesh_material.roughness = maps.roughness;
+    mesh_material.reflectance = maps.reflectance;
 
-    auto texture_loader = [&base_path, &mat](
-                                  aiTextureType type,
-                                  std::shared_ptr<geometry::Image>& img) {
-        if (mat->GetTextureCount(type) > 0) {
-            aiString path;
-            mat->GetTexture(type, 0, &path);
-            std::string strpath(path.C_Str());
-            auto p_win = strpath.rfind("\\");
-            auto p_unix = strpath.rfind("/");
-            if (p_unix != std::string::npos) {
-                strpath = strpath.substr(p_unix + 1);
-            } else if (p_win != std::string::npos) {
-                strpath = strpath.substr(p_win + 1);
-            }
-            // utility::LogWarning("TEXTURE PATH CLEAN: {} for texture type {}",
-            //                     base_path + strpath, type);
-            auto image = io::CreateImageFromFile(base_path + strpath);
-            if (image->HasData()) {
-                img = image;
+    return true;
+}
+
+bool ReadModelUsingAssimp(const std::string& filename,
+                          visualization::rendering::TriangleMeshModel& model,
+                          bool print_progress) {
+    Assimp::Importer importer;
+    const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
+    if (!scene) {
+        utility::LogWarning("Unable to load file {} with ASSIMP", filename);
+        return false;
+    }
+
+    // Process each Assimp mesh into a geometry::TriangleMesh
+    for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
+        const auto* assimp_mesh = scene->mMeshes[midx];
+        // Only process triangle meshes
+        if (assimp_mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
+            utility::LogInfo(
+                    "Skipping non-triangle primitive geometry of type: "
+                    "{}",
+                    assimp_mesh->mPrimitiveTypes);
+            continue;
+        }
+
+        std::shared_ptr<geometry::TriangleMesh> mesh =
+                std::make_shared<geometry::TriangleMesh>();
+
+        // copy vertex data
+        for (size_t vidx = 0; vidx < assimp_mesh->mNumVertices; ++vidx) {
+            auto& vertex = assimp_mesh->mVertices[vidx];
+            mesh->vertices_.push_back(
+                    Eigen::Vector3d(vertex.x, vertex.y, vertex.z));
+        }
+
+        // copy face indices data
+        for (size_t fidx = 0; fidx < assimp_mesh->mNumFaces; ++fidx) {
+            auto& face = assimp_mesh->mFaces[fidx];
+            Eigen::Vector3i facet(face.mIndices[0], face.mIndices[1],
+                                  face.mIndices[2]);
+            mesh->triangles_.push_back(facet);
+        }
+
+        if (assimp_mesh->mNormals) {
+            for (size_t nidx = 0; nidx < assimp_mesh->mNumVertices; ++nidx) {
+                auto& normal = assimp_mesh->mNormals[nidx];
+                mesh->vertex_normals_.push_back({normal.x, normal.y, normal.z});
             }
         }
-    };
 
-    texture_loader(aiTextureType_DIFFUSE, mesh_material.albedo);
-    texture_loader(aiTextureType_NORMALS, mesh_material.normalMap);
-    // Assimp may place ambient occlusion texture in AMBIENT_OCCLUSION if
-    // format has AO support. Prefer that texture if it is preset. Otherwise,
-    // try AMBIENT where OBJ and FBX typically put AO textures.
-    if (mat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0) {
-        texture_loader(aiTextureType_AMBIENT_OCCLUSION,
-                       mesh_material.ambientOcclusion);
-    } else {
-        texture_loader(aiTextureType_AMBIENT, mesh_material.ambientOcclusion);
-    }
-    texture_loader(aiTextureType_METALNESS, mesh_material.metallic);
-    if (mat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
-        texture_loader(aiTextureType_DIFFUSE_ROUGHNESS,
-                       mesh_material.roughness);
-    } else if (mat->GetTextureCount(aiTextureType_SHININESS) > 0) {
-        // NOTE: In some FBX files assimp puts the roughness texture in
-        // shininess slot
-        texture_loader(aiTextureType_SHININESS, mesh_material.roughness);
-    }
-    // NOTE: Currently used for GLTF Roughness/Metal texture.
-    texture_loader(aiTextureType_UNKNOWN, mesh_material.roughness);
-    // NOTE: the following may be non-standard. We are using REFLECTION texture
-    // type to store OBJ map_Ps 'sheen' PBR map
-    texture_loader(aiTextureType_REFLECTION, mesh_material.reflectance);
+        // NOTE: only use the first UV channel
+        if (assimp_mesh->HasTextureCoords(0)) {
+            for (size_t fidx = 0; fidx < assimp_mesh->mNumFaces; ++fidx) {
+                auto& face = assimp_mesh->mFaces[fidx];
+                auto& uv1 = assimp_mesh->mTextureCoords[0][face.mIndices[0]];
+                auto& uv2 = assimp_mesh->mTextureCoords[0][face.mIndices[1]];
+                auto& uv3 = assimp_mesh->mTextureCoords[0][face.mIndices[2]];
+                mesh->triangle_uvs_.push_back(Eigen::Vector2d(uv1.x, uv1.y));
+                mesh->triangle_uvs_.push_back(Eigen::Vector2d(uv2.x, uv2.y));
+                mesh->triangle_uvs_.push_back(Eigen::Vector2d(uv3.x, uv3.y));
+            }
+        }
 
-    // NOTE: ASSIMP doesn't appear to provide texture params for the following
-    // std::shared_ptr<Image> clearCoat;
-    // std::shared_ptr<Image> clearCoatRoughness;
-    // std::shared_ptr<Image> anisotropy;
+        // NOTE: only use the first color attribute
+        if (assimp_mesh->HasVertexColors(0)) {
+            for (size_t cidx = 0; cidx < assimp_mesh->mNumVertices; ++cidx) {
+                auto& c = assimp_mesh->mColors[0][cidx];
+                mesh->vertex_colors_.push_back({c.r, c.g, c.b});
+            }
+        }
+
+        // Add the mesh to the model
+        model.meshes_.push_back({mesh, std::string(assimp_mesh->mName.C_Str()),
+                                 assimp_mesh->mMaterialIndex});
+    }
+
+    // Load materials
+    for (size_t i = 0; i < scene->mNumMaterials; ++i) {
+        auto* mat = scene->mMaterials[i];
+
+        visualization::rendering::Material o3d_mat;
+
+        // Retrieve base material properties
+        aiColor3D color(1.f, 1.f, 1.f);
+
+        mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+        o3d_mat.base_color = Eigen::Vector4f(color.r, color.g, color.b, 1.f);
+        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
+                 o3d_mat.base_metallic);
+        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
+                 o3d_mat.base_roughness);
+        mat->Get(AI_MATKEY_REFLECTIVITY, o3d_mat.base_reflectance);
+        mat->Get(AI_MATKEY_SHEEN, o3d_mat.base_reflectance);
+
+        mat->Get(AI_MATKEY_CLEARCOAT_THICKNESS, o3d_mat.base_clearcoat);
+        mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS,
+                 o3d_mat.base_clearcoat_roughness);
+        mat->Get(AI_MATKEY_ANISOTROPY, o3d_mat.base_anisotropy);
+
+        // Retrieve textures
+        TextureImages maps;
+        LoadTextures(filename, mat, maps);
+        o3d_mat.albedo_img = maps.albedo;
+        o3d_mat.normal_img = maps.normal;
+        o3d_mat.ao_img = maps.ao;
+        o3d_mat.metallic_img = maps.metallic;
+        o3d_mat.roughness_img = maps.roughness;
+        o3d_mat.reflectance_img = maps.reflectance;
+        o3d_mat.ao_rough_metal_img = maps.gltf_rough_metal;
+
+        o3d_mat.shader = "defaultLit";
+        model.materials_.push_back(o3d_mat);
+    }
 
     return true;
 }
