@@ -29,9 +29,14 @@ import open3d.core as o3c
 import numpy as np
 import pytest
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+from open3d_test import list_devices
 
-def test_constructor_and_accessors():
-    device = o3c.Device("CPU:0")
+
+@pytest.mark.parametrize("device", list_devices())
+def test_constructor_and_accessors(device):
     dtype = o3c.Dtype.Float32
 
     # Constructor.
@@ -64,8 +69,8 @@ def test_constructor_and_accessors():
     assert len(pcd.point["colors"]) == 2
 
 
-def test_from_legacy_pointcloud():
-    device = o3c.Device("CPU:0")
+@pytest.mark.parametrize("device", list_devices())
+def test_from_legacy_pointcloud(device):
     dtype = o3c.Dtype.Float32
 
     legacy_pcd = o3d.geometry.PointCloud()
@@ -80,7 +85,8 @@ def test_from_legacy_pointcloud():
             [9, 10, 11],
         ]))
 
-    pcd = o3d.tgeometry.PointCloud.from_legacy_pointcloud(legacy_pcd)
+    pcd = o3d.tgeometry.PointCloud.from_legacy_pointcloud(
+        legacy_pcd, dtype, device)
     assert pcd.point["points"].as_tensor().allclose(
         o3c.Tensor([
             [0, 1, 2],
@@ -93,8 +99,8 @@ def test_from_legacy_pointcloud():
         ], dtype, device))
 
 
-def test_to_legacy_pointcloud():
-    device = o3c.Device("CPU:0")
+@pytest.mark.parametrize("device", list_devices())
+def test_to_legacy_pointcloud(device):
     dtype = o3c.Dtype.Float32
 
     pcd = o3d.tgeometry.PointCloud(dtype, device)
@@ -122,8 +128,8 @@ def test_to_legacy_pointcloud():
                                ]))
 
 
-def test_member_functions():
-    device = o3c.Device("CPU:0")
+@pytest.mark.parametrize("device", list_devices())
+def test_member_functions(device):
     dtype = o3c.Dtype.Float32
 
     # get_min_bound, get_max_bound, get_center.

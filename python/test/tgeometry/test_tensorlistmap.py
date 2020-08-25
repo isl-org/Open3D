@@ -29,9 +29,14 @@ import open3d.core as o3c
 import numpy as np
 import pytest
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+from open3d_test import list_devices
 
-def test_tensorlistmap():
-    device = o3c.Device("CPU:0")
+
+@pytest.mark.parametrize("device", list_devices())
+def test_tensorlistmap(device):
     dtype = o3c.Dtype.Float32
 
     # Constructor.
