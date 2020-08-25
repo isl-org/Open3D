@@ -83,7 +83,7 @@ jobs:
           ./util/make_documentation.sh
 
       - name: Deploy docs
-        if: ${{ github.ref == "refs/heads/master" || github.ref == "refs/heads/ssheorey/docs-github-actions" }}
+        if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/ssheorey/docs-github-actions' }}
         run: |
           # Compress and upload the docs, only for master branch
           docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
