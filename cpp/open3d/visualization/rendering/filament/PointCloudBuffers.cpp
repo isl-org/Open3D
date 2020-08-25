@@ -82,7 +82,7 @@ struct ColoredVertex {
 
     float sRGBToLinear(float color) {
         return color <= 0.04045f ? color / 12.92f
-                                 : pow((color + 0.055f) / 1.055f, 2.4);
+                                 : pow((color + 0.055f) / 1.055f, 2.4f);
     }
 
     void SetVertexColor(const Eigen::Vector3d& c) {

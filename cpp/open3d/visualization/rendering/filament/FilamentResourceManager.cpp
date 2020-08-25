@@ -587,7 +587,9 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
 }
 
 inline uint8_t maxLevelCount(uint32_t width, uint32_t height) {
-    return std::max(1, std::ilogbf(std::max(width, height)) + 1);
+    auto maxdim = std::max(width, height);
+    uint8_t levels = static_cast<uint8_t>(std::ilogbf(float(maxdim)));
+    return std::max(1, levels + 1);
 }
 
 filament::Texture* FilamentResourceManager::LoadTextureFromImage(
