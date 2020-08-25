@@ -1,10 +1,7 @@
-name: Style checks and documentation update
+name: Documentation build
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - master
 
 env:
   SHARED: OFF
@@ -14,32 +11,6 @@ env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
-  style-check:
-    # Style check only
-    runs-on: ubuntu-20.04     # No need for cmake repo
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Set up Python version
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.6
-      - name: Install dependencies
-        run: |
-          ./util/install_deps_ubuntu.sh assume-yes
-          sudo apt-get install --yes cmake
-          sudo apt-get install --yes clang-7
-          sudo apt-get install --yes clang-format-10
-          python -m pip install -U yapf==0.30.0 nbformat
-      - name: Run style check
-        run: |
-          mkdir build
-          cd build
-          cmake ..
-          make check-style
-
   headless-docs:
     # Build headless and docs
     runs-on: ubuntu-18.04
@@ -112,8 +83,9 @@ jobs:
           ./util/make_documentation.sh
 
       - name: Deploy docs
+        if: ${{ github.ref == "refs/heads/master" || github.ref == "refs/heads/ssheorey/docs-github-actions" }}
         run: |
-          # Compress and upload the docs
+          # Compress and upload the docs, only for master branch
           docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
           tar_file="${{ github.sha }}.tar.gz"
           rm -rf ${tar_file}
