@@ -116,6 +116,14 @@ public:
 
     virtual ~PointCloud() override {}
 
+    /// Getter for point_attr_ TensorListMap. Used in Pybind.
+    const TensorListMap &GetPointAttrPybind() const { return point_attr_; }
+
+    /// Setter for point_attr_ TensorListMap. Used in Pybind.
+    void SetPointAttrPybind(const TensorListMap &point_attr) {
+        point_attr_ = point_attr;
+    };
+
     /// Get attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
@@ -222,19 +230,26 @@ public:
     /// Returns !HasPoints().
     bool IsEmpty() const override;
 
+    /// Returns the min bound for point coordinates.
     core::Tensor GetMinBound() const;
 
+    /// Returns the max bound for point coordinates.
     core::Tensor GetMaxBound() const;
 
+    /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
+    /// Transforms the points and normals (if exist).
     PointCloud &Transform(const core::Tensor &transformation);
 
+    /// Translates points.
     PointCloud &Translate(const core::Tensor &translation,
                           bool relative = true);
 
+    /// Scale points.
     PointCloud &Scale(double scale, const core::Tensor &center);
 
+    /// Rotate points and normals (if exist).
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.

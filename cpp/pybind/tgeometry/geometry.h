@@ -24,14 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Blob.h"
+#pragma once
 
-#include "pybind/core/core.h"
-#include "pybind/docstring.h"
+#include "open3d/tgeometry/Geometry.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace tgeometry {
 
-void pybind_core_blob(py::module &m) { py::class_<core::Blob> blob(m, "Blob"); }
+// Geometry trampoline class.
+template <class GeometryBase = Geometry>
+class PyGeometry : public GeometryBase {
+public:
+    using GeometryBase::GeometryBase;
 
+    GeometryBase& Clear() override {
+        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
+    }
+
+    bool IsEmpty() const override {
+        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
+    }
+};
+
+void pybind_geometry(py::module& m);
+void pybind_geometry_class(py::module& m);
+void pybind_tensorlistmap(py::module& m);
+void pybind_pointcloud(py::module& m);
+
+}  // namespace tgeometry
 }  // namespace open3d

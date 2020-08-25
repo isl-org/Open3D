@@ -7,6 +7,7 @@ from open3d.pybind.core import DtypeUtil
 from open3d.pybind.core import cuda
 from open3d.pybind.core import NoneType
 from open3d.pybind.core import TensorList
+from open3d.pybind.core import SizeVector
 from open3d.pybind.core import matmul as pybind_matmul
 from open3d.pybind.core import lstsq as pybind_lstsq
 from open3d.pybind.core import solve as pybind_solve
@@ -33,23 +34,6 @@ def _numpy_dtype_to_dtype(numpy_dtype):
         return Dtype.Bool
     else:
         raise ValueError("Unsupported numpy dtype:", numpy_dtype)
-
-
-class SizeVector(o3d.pybind.core.SizeVector):
-    """
-    SizeVector is a vector of integers for specifying shape, strides, etc.
-    """
-
-    def __init__(self, values=None):
-        if values is None:
-            values = []
-        # TODO: determine whether conversion can be done in C++ as well.
-        if isinstance(values, tuple) or isinstance(values, list):
-            values = np.array(values)
-        if not isinstance(values, np.ndarray) or values.ndim != 1:
-            raise ValueError(
-                "SizeVector only takes 1-D list, tuple or Numpy array.")
-        super(SizeVector, self).__init__(values.astype(np.int64))
 
 
 def cast_to_py_tensor(func):

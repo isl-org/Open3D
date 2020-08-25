@@ -100,44 +100,43 @@ def test_device():
 def test_size_vector():
     # List
     sv = o3d.core.SizeVector([-1, 2, 3])
-    assert "{}".format(sv) == "{-1, 2, 3}"
+    assert "{}".format(sv) == "SizeVector[-1, 2, 3]"
 
     # Tuple
     sv = o3d.core.SizeVector((-1, 2, 3))
-    assert "{}".format(sv) == "{-1, 2, 3}"
+    assert "{}".format(sv) == "SizeVector[-1, 2, 3]"
 
     # Numpy 1D array
     sv = o3d.core.SizeVector(np.array([-1, 2, 3]))
-    assert "{}".format(sv) == "{-1, 2, 3}"
+    assert "{}".format(sv) == "SizeVector[-1, 2, 3]"
 
     # Empty
     sv = o3d.core.SizeVector()
-    assert "{}".format(sv) == "{}"
+    assert "{}".format(sv) == "SizeVector[]"
     sv = o3d.core.SizeVector([])
-    assert "{}".format(sv) == "{}"
+    assert "{}".format(sv) == "SizeVector[]"
     sv = o3d.core.SizeVector(())
-    assert "{}".format(sv) == "{}"
+    assert "{}".format(sv) == "SizeVector[]"
     sv = o3d.core.SizeVector(np.array([]))
-    assert "{}".format(sv) == "{}"
+    assert "{}".format(sv) == "SizeVector[]"
 
-    # Automatic int casting (not rounding to nearest)
-    sv = o3d.core.SizeVector((1.9, 2, 3))
-    assert "{}".format(sv) == "{1, 2, 3}"
+    # Not integer: thorws exception
+    with pytest.raises(RuntimeError):
+        sv = o3d.core.SizeVector([1.9, 2, 3])
 
-    # Automatic casting negative
-    sv = o3d.core.SizeVector((-1.5, 2, 3))
-    assert "{}".format(sv) == "{-1, 2, 3}"
+    with pytest.raises(RuntimeError):
+        sv = o3d.core.SizeVector([-1.5, 2, 3])
 
     # 2D list exception
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         sv = o3d.core.SizeVector([[1, 2], [3, 4]])
 
     # 2D Numpy array exception
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         sv = o3d.core.SizeVector(np.array([[1, 2], [3, 4]]))
 
     # Garbage input
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         sv = o3d.core.SizeVector(["foo", "bar"])
 
 
