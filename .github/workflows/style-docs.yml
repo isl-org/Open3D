@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - master
-      - ssheorey/docs-github-actions
 
 env:
   SHARED: OFF
@@ -119,5 +118,5 @@ jobs:
           tar_file="${{ github.sha }}.tar.gz"
           rm -rf ${tar_file}
           tar -C ${docs_out_dir} -czvf ${tar_file} html
-          gsutil cp ${tar_file} gs://open3d-docs-test/${tar_file}
-          echo "Download the docs at: https://storage.googleapis.com/open3d-docs-test/${tar_file}"
+          gsutil cp ${tar_file} gs://open3d-docs/${tar_file}
+          echo "Download the docs at: https://storage.googleapis.com/open3d-docs/${tar_file}"
