@@ -1083,7 +1083,7 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
     destroy_map(mat.maps.anisotropy_map);
 
     manager.Destroy(mat.mat_instance);
-    
+
     filament_entity.clear();
 }
 
