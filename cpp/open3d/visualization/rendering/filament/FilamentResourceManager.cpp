@@ -586,12 +586,18 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
     }
 }
 
+inline uint8_t maxLevelCount(uint32_t width, uint32_t height) {
+    return std::max(1, std::ilogbf(std::max(width, height)) + 1);
+}
+
 filament::Texture* FilamentResourceManager::LoadTextureFromImage(
         const std::shared_ptr<geometry::Image>& image, bool srgb) {
     using namespace filament;
 
     auto retained_img_id = RetainImageForLoading(image);
     auto texture_settings = GetSettingsFromImage(*image, srgb);
+    auto levels = maxLevelCount(texture_settings.texel_width,
+                                texture_settings.texel_height);
 
     Texture::PixelBufferDescriptor pb(
             image->data_.data(), image->data_.size(),
@@ -600,7 +606,7 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     auto texture = Texture::Builder()
                            .width(texture_settings.texel_width)
                            .height(texture_settings.texel_height)
-                           .levels((uint8_t)1)
+                           .levels(levels)
                            .format(texture_settings.format)
                            .sampler(Texture::Sampler::SAMPLER_2D)
                            .build(engine_);
