@@ -112,7 +112,7 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
                 }
                 ImGui::EndTabItem();
 
-                if (i != impl_->current_index_) {
+                if (int(i) != impl_->current_index_) {
                     impl_->current_index_ = i;
                     if (impl_->on_changed_) {
                         impl_->on_changed_(i);
