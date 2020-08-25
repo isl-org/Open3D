@@ -46,7 +46,7 @@ public:
     /// "".
     const char* GetText() const;
     /// Sets the text of the button. Do not call if this is an image button.
-    void SetText(const char *text);
+    void SetText(const char* text);
 
     /// Returns the padding, in units of ems
     float GetHorizontalPaddingEm() const;

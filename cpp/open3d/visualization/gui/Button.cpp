@@ -58,13 +58,9 @@ Button::Button(std::shared_ptr<UIImage> image) : impl_(new Button::Impl()) {
 
 Button::~Button() {}
 
-const char* Button::GetText() const {
-    return impl_->title_.c_str();
-}
+const char* Button::GetText() const { return impl_->title_.c_str(); }
 
-void Button::SetText(const char *text) {
-    impl_->title_ = text;
-}
+void Button::SetText(const char* text) { impl_->title_ = text; }
 
 float Button::GetHorizontalPaddingEm() const {
     return impl_->padding_horizontal_em_;

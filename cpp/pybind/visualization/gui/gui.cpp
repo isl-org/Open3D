@@ -354,8 +354,8 @@ void pybind_gui_classes(py::module &m) {
             .def("__repr__",
                  [](const Rect &r) {
                      std::stringstream s;
-                     s << "Rect (" << r.x << ", " << r.y
-                       << "), " << r.width << " x " << r.height;
+                     s << "Rect (" << r.x << ", " << r.y << "), " << r.width
+                       << " x " << r.height;
                      return s.str().c_str();
                  })
             .def_readwrite("x", &Rect::x)
