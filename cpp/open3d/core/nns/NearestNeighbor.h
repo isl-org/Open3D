@@ -44,7 +44,7 @@ public:
     /// Constructor
     ///
     /// \param tensor Data points for constructing search index.
-    NearestNeighbor(const core::Tensor &tensor) : data_(tensor){};
+    NearestNeighbor(const core::Tensor &data) : data_(data){};
     ~NearestNeighbor();
     NearestNeighbor(const NearestNeighbor &) = delete;
     NearestNeighbor &operator=(const NearestNeighbor &) = delete;
@@ -61,31 +61,31 @@ public:
 
     /// Perform knn search.
     ///
-    /// \param tensor Data points for querying.
+    /// \param query Data points for querying.
     /// \param knn Number of neighbor to search.
-    std::pair<core::Tensor, core::Tensor> KnnSearch(const core::Tensor &tensor,
+    std::pair<core::Tensor, core::Tensor> KnnSearch(const core::Tensor &query,
                                                     int knn);
     /// Perform radius search.
     /// User can specify different radius for each data points per query point.
     ///
-    /// \param tensor Data points for querying.
+    /// \param query Data points for querying.
     /// \param radii A list of radius, same size with query.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> RadiusSearch(
-            const core::Tensor &tensor, double *radii);
+            const core::Tensor &query, double *radii);
     /// Perform fixed radius search.
     /// All query points are searched with the same radius value.
     ///
-    /// \param tensor Data points for querying.
+    /// \param query Data points for querying.
     /// \param radius Radius.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> FixedRadiusSearch(
-            const core::Tensor &tensor, double radius);
+            const core::Tensor &query, double radius);
     /// Perform hybrid search.
     ///
-    /// \param tensor Data points for querying.
+    /// \param query Data points for querying.
     /// \param radius Radius.
     /// \param max_knn Maximum number of neighbor to search per query.
     std::pair<core::Tensor, core::Tensor> HybridSearch(
-            const core::Tensor &tensor, double radius, int max_knn);
+            const core::Tensor &query, double radius, int max_knn);
 
 private:
     bool SetIndex();
@@ -94,6 +94,6 @@ protected:
     std::unique_ptr<NanoFlann> index_;
     const Tensor data_;
 };
-}  // namespace nn
+}  // namespace nns
 }  // namespace core
 }  // namespace open3d

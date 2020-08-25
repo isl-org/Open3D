@@ -47,37 +47,37 @@ bool NearestNeighbor::FixedRadiusIndex() { return SetIndex(); }
 bool NearestNeighbor::HybridIndex() { return SetIndex(); };
 
 std::pair<core::Tensor, core::Tensor> NearestNeighbor::KnnSearch(
-        const core::Tensor& tensor, int knn) {
+        const core::Tensor& query, int knn) {
     if (!index_) {
         utility::LogError("[NearestNeighbor::KnnSearch] Index is not set");
     }
-    return index_->SearchKnn(tensor, knn);
+    return index_->SearchKnn(query, knn);
 }
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighbor::RadiusSearch(const core::Tensor& tensor, double* radii) {
+NearestNeighbor::RadiusSearch(const core::Tensor& query, double* radii) {
     if (!index_) {
         utility::LogError("[NearestNeighbor::RadiusSearch] Index is not set");
     }
-    return index_->SearchRadius(tensor, radii);
+    return index_->SearchRadius(query, radii);
 }
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighbor::FixedRadiusSearch(const core::Tensor& tensor, double radius) {
+NearestNeighbor::FixedRadiusSearch(const core::Tensor& query, double radius) {
     if (!index_) {
         utility::LogError(
                 "[NearestNeighbor::FixedRadiusSearch] Index is not set");
     }
-    return index_->SearchRadius(tensor, radius);
+    return index_->SearchRadius(query, radius);
 }
 
 std::pair<core::Tensor, core::Tensor> NearestNeighbor::HybridSearch(
-        const core::Tensor& tensor, double radius, int max_knn) {
+        const core::Tensor& query, double radius, int max_knn) {
     if (!index_) {
         utility::LogError("[NearestNeighbor::HybridSearch] Index is not set");
     }
     std::pair<core::Tensor, core::Tensor> result =
-            index_->SearchKnn(tensor, max_knn);
+            index_->SearchKnn(query, max_knn);
     core::Tensor indices = result.first;
     core::Tensor distances = result.second;
     core::SizeVector size = distances.GetShape();
@@ -96,6 +96,6 @@ std::pair<core::Tensor, core::Tensor> NearestNeighbor::HybridSearch(
     core::Tensor distances_new(distances_vec, size, core::Dtype::Float64);
     return std::make_pair(indices_new, distances_new);
 }
-}  // namespace nn
+}  // namespace nns
 }  // namespace core
 }  // namespace open3d

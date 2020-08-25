@@ -181,6 +181,6 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlann::SearchRadius(
     return SearchRadius(query, radii.data());
 };
 
-}  // namespace nn
+}  // namespace nns
 }  // namespace core
 }  // namespace open3d

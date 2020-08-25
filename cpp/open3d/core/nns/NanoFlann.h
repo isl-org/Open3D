@@ -42,12 +42,12 @@ template <class T>
 class Adaptor {
 public:
     Adaptor(size_t num_points, int dimension, const T *const data)
-        : num_points(num_points), dimension(dimension), data(data) {}
+        : num_points_(num_points), dimension_(dimension), data_(data) {}
 
-    inline size_t kdtree_get_point_count() const { return num_points; }
+    inline size_t kdtree_get_point_count() const { return num_points_; }
 
     inline T kdtree_get_pt(const size_t idx, const size_t dim) const {
-        return data[idx * dimension + dim];
+        return data_[idx * dimension_ + dim];
     }
 
     template <class BBOX>
@@ -56,9 +56,9 @@ public:
     }
 
 private:
-    size_t num_points = 0;
-    int dimension = 0;
-    const T *const data;
+    size_t num_points_ = 0;
+    int dimension_ = 0;
+    const T *const data_;
 };
 
 template <int METRIC, class T>
@@ -126,6 +126,6 @@ protected:
     int dimension_ = 0;
     size_t dataset_size_ = 0;
 };
-}  // namespace nn
+}  // namespace nns
 }  // namespace core
 }  // namespace open3d
