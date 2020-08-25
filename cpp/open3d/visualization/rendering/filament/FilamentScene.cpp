@@ -1067,7 +1067,23 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
     if (vb) manager.Destroy(vb);
     if (ib) manager.Destroy(ib);
     engine.destroy(filament_entity);
-    // NOTE: is this really necessary?
+
+    // Delete texture maps...
+    auto destroy_map = [&manager](rendering::TextureHandle map) {
+        if (map && map != rendering::FilamentResourceManager::kDefaultTexture &&
+            map != rendering::FilamentResourceManager::kDefaultNormalMap)
+            manager.Destroy(map);
+    };
+    destroy_map(mat.maps.albedo_map);
+    destroy_map(mat.maps.normal_map);
+    destroy_map(mat.maps.ao_rough_metal_map);
+    destroy_map(mat.maps.reflectance_map);
+    destroy_map(mat.maps.clear_coat_map);
+    destroy_map(mat.maps.clear_coat_roughness_map);
+    destroy_map(mat.maps.anisotropy_map);
+
+    manager.Destroy(mat.mat_instance);
+
     filament_entity.clear();
 }
 

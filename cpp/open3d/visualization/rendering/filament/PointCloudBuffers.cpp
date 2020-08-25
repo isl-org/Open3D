@@ -80,11 +80,16 @@ struct ColoredVertex {
         position.z = float_pos(2);
     }
 
+    float sRGBToLinear(float color) {
+        return color <= 0.04045f ? color / 12.92f
+                                 : pow((color + 0.055f) / 1.055f, 2.4f);
+    }
+
     void SetVertexColor(const Eigen::Vector3d& c) {
         auto float_color = c.cast<float>();
-        color.x = float_color(0);
-        color.y = float_color(1);
-        color.z = float_color(2);
+        color.x = sRGBToLinear(float_color(0));
+        color.y = sRGBToLinear(float_color(1));
+        color.z = sRGBToLinear(float_color(2));
     }
 };
 }  // namespace
