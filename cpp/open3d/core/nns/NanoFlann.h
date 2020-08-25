@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <iostream>
 #include <nanoflann.hpp>
 #include <vector>
 
@@ -34,7 +33,7 @@
 
 namespace open3d {
 namespace core {
-namespace nn {
+namespace nns {
 
 enum Metric { L1, L2, Linf };
 

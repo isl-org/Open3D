@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/NanoFlann.h"
+#include "open3d/core/nns/NanoFlann.h"
 
 #include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
-namespace nn {
+namespace nns {
 
 NanoFlann::NanoFlann(){};
 NanoFlann::NanoFlann(const core::Tensor &tensor) { SetTensorData(tensor); };

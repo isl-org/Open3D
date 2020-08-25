@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/NanoFlann.h"
+#include "open3d/core/nns/NanoFlann.h"
 
 #include <cmath>
 #include <limits>
@@ -71,7 +71,7 @@ TEST(NanoFlann, SearchKnn) {
     }
 
     core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
-    core::nn::NanoFlann nanoflann(ref);
+    core::nns::NanoFlann nanoflann(ref);
 
     core::Tensor query(std::vector<double>({1.647059, 4.392157, 8.784314}),
                        {1, 3}, core::Dtype::Float64);
@@ -121,7 +121,7 @@ TEST(NanoFlann, SearchRadius) {
     }
 
     core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
-    core::nn::NanoFlann nanoflann(ref);
+    core::nns::NanoFlann nanoflann(ref);
 
     core::Tensor query(std::vector<double>({1.647059, 4.392157, 8.784314,
                                             1.647059, 4.392157, 8.784314}),

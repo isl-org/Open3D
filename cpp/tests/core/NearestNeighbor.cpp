@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/NearestNeighbor.h"
+#include "open3d/core/nns/NearestNeighbor.h"
 
 #include <cmath>
 #include <limits>
@@ -71,7 +71,7 @@ TEST(NearestNeighbor, KnnSearch) {
     }
 
     core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
-    core::nn::NearestNeighbor index(ref);
+    core::nns::NearestNeighbor index(ref);
     index.KnnIndex();
 
     core::Tensor query(std::vector<double>({1.647059, 4.392157, 8.784314}),
@@ -121,7 +121,7 @@ TEST(NearestNeighbor, FixedRadiusSearch) {
     }
 
     core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
-    core::nn::NearestNeighbor index(ref);
+    core::nns::NearestNeighbor index(ref);
     index.FixedRadiusIndex();
 
     core::Tensor query(std::vector<double>({1.647059, 4.392157, 8.784314,
@@ -173,7 +173,7 @@ TEST(NearestNeighbor, RadiusSearch) {
     }
 
     core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
-    core::nn::NearestNeighbor index(ref);
+    core::nns::NearestNeighbor index(ref);
     index.RadiusIndex();
 
     core::Tensor query(std::vector<double>({1.647059, 4.392157, 8.784314,
@@ -216,7 +216,7 @@ TEST(NearestNeighbor, HybridSearch) {
     }
 
     core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
-    core::nn::NearestNeighbor index(ref);
+    core::nns::NearestNeighbor index(ref);
     index.HybridIndex();
 
     core::Tensor query(std::vector<double>({

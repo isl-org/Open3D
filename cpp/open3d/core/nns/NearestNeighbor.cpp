@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/NearestNeighbor.h"
+#include "open3d/core/nns/NearestNeighbor.h"
 
 #include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
-namespace nn {
+namespace nns {
 
 NearestNeighbor::~NearestNeighbor(){};
 

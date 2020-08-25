@@ -29,12 +29,12 @@
 #include <iostream>
 #include <vector>
 
-#include "open3d/core/NanoFlann.h"
+#include "open3d/core/nns/NanoFlann.h"
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace core {
-namespace nn {
+namespace nns {
 
 /// \class NearestNeighbor
 ///
