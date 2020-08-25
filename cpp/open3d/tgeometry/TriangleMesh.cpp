@@ -38,29 +38,30 @@
 namespace open3d {
 namespace tgeometry {
 
-TriangleMesh::TriangleMesh(core::Dtype point_dtype,
+TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
                            core::Dtype triangle_dtype,
                            const core::Device &device)
     : Geometry(Geometry::GeometryType::TriangleMesh, 3),
       device_(device),
-      point_attr_(TensorListMap("points")),
+      vertex_attr_(TensorListMap("vertices")),
       triangle_attr_(TensorListMap("triangles")) {
-    SetPoints(core::TensorList({3}, point_dtype, device_));
+    SetVertices(core::TensorList({3}, vertex_dtype, device_));
     SetTriangles(core::TensorList({3}, triangle_dtype, device_));
 }
 
-TriangleMesh::TriangleMesh(const core::TensorList &points,
+TriangleMesh::TriangleMesh(const core::TensorList &vertices,
                            const core::TensorList &triangles)
-    : TriangleMesh(points.GetDtype(), triangles.GetDtype(), [&]() {
-          if (points.GetDevice() != triangles.GetDevice()) {
+    : TriangleMesh(vertices.GetDtype(), triangles.GetDtype(), [&]() {
+          if (vertices.GetDevice() != triangles.GetDevice()) {
               utility::LogError(
-                      "points' device {} does not match triangles' device {}.",
-                      points.GetDevice().ToString(),
+                      "vertices' device {} does not match triangles' device "
+                      "{}.",
+                      vertices.GetDevice().ToString(),
                       triangles.GetDevice().ToString());
           }
-          return points.GetDevice();
+          return vertices.GetDevice();
       }()) {
-    SetPoints(points);
+    SetVertices(vertices);
     SetTriangles(triangles);
 }
 
