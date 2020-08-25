@@ -237,6 +237,11 @@ void pybind_gui_classes(py::module &m) {
             .def("set_on_menu_item_activated",
                  &PyWindow::SetOnMenuItemActivated,
                  "Sets callback function for menu item:  callback()")
+            .def("set_on_tick_event", &PyWindow::SetOnTickEvent,
+                 "Sets callback for tick event. Callback takes no arguments "
+                 "and must return True if a redraw is needed (that is, if "
+                 "any widget has changed in any fashion) or False if nothing "
+                 "has changed")
             .def(
                     "set_on_layout",
                     [](PyWindow *w, std::function<void(const Theme &)> f) {
@@ -346,6 +351,13 @@ void pybind_gui_classes(py::module &m) {
                 return Rect(int(std::round(x)), int(std::round(y)),
                             int(std::round(w)), int(std::round(h)));
             }))
+            .def("__repr__",
+                 [](const Rect &r) {
+                     std::stringstream s;
+                     s << "Rect (" << r.x << ", " << r.y
+                       << "), " << r.width << " x " << r.height;
+                     return s.str().c_str();
+                 })
             .def_readwrite("x", &Rect::x)
             .def_readwrite("y", &Rect::y)
             .def_readwrite("width", &Rect::width)
@@ -362,6 +374,12 @@ void pybind_gui_classes(py::module &m) {
             .def(py::init([](float w, float h) {
                 return Size(int(std::round(w)), int(std::round(h)));
             }))
+            .def("__repr__",
+                 [](const Size &sz) {
+                     std::stringstream s;
+                     s << "Size (" << sz.width << ", " << sz.height << ")";
+                     return s.str().c_str();
+                 })
             .def_readwrite("width", &Size::width)
             .def_readwrite("height", &Size::height);
 
@@ -406,6 +424,8 @@ void pybind_gui_classes(py::module &m) {
                        << b.GetFrame().height;
                      return s.str().c_str();
                  })
+            .def_property("text", &Button::GetText, &Button::SetText,
+                          "Gets/sets the button text.")
             .def_property(
                     "toggleable", &Button::GetIsToggleable,
                     &Button::SetToggleable,
@@ -755,7 +775,12 @@ void pybind_gui_classes(py::module &m) {
             .def("add_tab", &TabControl::AddTab,
                  "Adds a tab. The first parameter is the title of the tab, and "
                  "the second parameter is a widget--normally this is a "
-                 "layout.");
+                 "layout.")
+            .def("set_on_selected_tab_changed",
+                 &TabControl::SetOnSelectedTabChanged,
+                 "Calls the provided callback function with the index of the "
+                 "currently selected tab whenever the user clicks on a "
+                 "different tab");
 
     // ---- TextEdit ----
     py::class_<TextEdit, std::shared_ptr<TextEdit>, Widget> textedit(

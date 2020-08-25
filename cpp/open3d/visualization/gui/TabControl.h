@@ -46,6 +46,8 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
+    void SetOnSelectedTabChanged(std::function<void(int)> on_changed);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

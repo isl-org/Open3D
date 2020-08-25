@@ -50,6 +50,8 @@ int CalcTabHeight(const Theme& theme) {
 struct TabControl::Impl {
     std::vector<std::string> tab_names_;
     std::string imgui_id_;
+    int current_index_ = 0;
+    std::function<void(int)> on_changed_;
 };
 
 TabControl::TabControl() : impl_(new TabControl::Impl()) {
@@ -62,7 +64,12 @@ TabControl::~TabControl() {}
 
 void TabControl::AddTab(const char* name, std::shared_ptr<Widget> panel) {
     AddChild(panel);
-    impl_->tab_names_.push_back(name);
+    // Add spaces around the name to add padding
+    impl_->tab_names_.push_back(std::string(" ") + name + " ");
+}
+
+void TabControl::SetOnSelectedTabChanged(std::function<void(int)> on_changed) {
+    impl_->on_changed_ = on_changed;
 }
 
 Size TabControl::CalcPreferredSize(const Theme& theme) const {
@@ -104,6 +111,13 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
                     result = r;
                 }
                 ImGui::EndTabItem();
+
+                if (i != impl_->current_index_) {
+                    impl_->current_index_ = i;
+                    if (impl_->on_changed_) {
+                        impl_->on_changed_(i);
+                    }
+                }
             }
         }
         ImGui::EndTabBar();
