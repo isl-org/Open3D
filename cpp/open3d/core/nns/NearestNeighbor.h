@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <iostream>
 #include <vector>
 
 #include "open3d/core/Tensor.h"
