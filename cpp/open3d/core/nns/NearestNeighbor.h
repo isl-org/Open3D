@@ -29,7 +29,7 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/nns/NanoFlann.h"
+#include "open3d/core/nns/NanoFlannIndex.h"
 
 namespace open3d {
 namespace core {
@@ -90,7 +90,7 @@ private:
     bool SetIndex();
 
 protected:
-    std::unique_ptr<NanoFlann> index_;
+    std::unique_ptr<NanoFlannIndex> index_;
     const Tensor data_;
 };
 }  // namespace nns

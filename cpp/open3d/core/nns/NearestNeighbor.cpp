@@ -35,11 +35,11 @@ namespace nns {
 NearestNeighbor::~NearestNeighbor(){};
 
 bool NearestNeighbor::SetIndex() {
-    index_.reset(new NanoFlann());
+    index_.reset(new NanoFlannIndex());
     return index_->SetTensorData(data_);
 };
 bool NearestNeighbor::KnnIndex() {
-    index_.reset(new NanoFlann());
+    index_.reset(new NanoFlannIndex());
     return SetIndex();
 };
 bool NearestNeighbor::RadiusIndex() { return SetIndex(); };

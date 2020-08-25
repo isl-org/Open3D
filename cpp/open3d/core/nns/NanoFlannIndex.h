@@ -91,7 +91,7 @@ struct SelectNanoflannAdaptor<L1, T> {
 /// \class NanoFlann
 ///
 /// \brief KDTree with NanoFlann for nearest neighbor search.
-class NanoFlann {
+class NanoFlannIndex {
     typedef nanoflann::KDTreeSingleIndexAdaptor<
             typename SelectNanoflannAdaptor<L2, double>::Adaptor_t,
             Adaptor<double>,
@@ -101,15 +101,15 @@ class NanoFlann {
 
 public:
     /// \brief Default Constructor.
-    NanoFlann();
+    NanoFlannIndex();
     /// \brief Parameterized Constructor
     ///
     /// \param tensor Provides a set of data points as Tensor for KDTree
     /// construction.
-    NanoFlann(const core::Tensor &tensor);
-    ~NanoFlann();
-    NanoFlann(const NanoFlann &) = delete;
-    NanoFlann &operator=(const NanoFlann &) = delete;
+    NanoFlannIndex(const core::Tensor &tensor);
+    ~NanoFlannIndex();
+    NanoFlannIndex(const NanoFlannIndex &) = delete;
+    NanoFlannIndex &operator=(const NanoFlannIndex &) = delete;
 
 public:
     /// Set the data for the KDTree from a Tensor.

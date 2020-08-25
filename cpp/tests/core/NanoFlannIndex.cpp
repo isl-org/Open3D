@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/nns/NanoFlann.h"
+#include "open3d/core/nns/NanoFlannIndex.h"
 
 #include <cmath>
 #include <limits>
@@ -38,7 +38,7 @@
 namespace open3d {
 namespace tests {
 
-TEST(NanoFlann, SearchKnn) {
+TEST(NanoFlannIndex, SearchKnn) {
     std::vector<int> ref_indices = {27, 48, 4,  77, 90, 7,  54, 17, 76, 38,
                                     39, 60, 15, 84, 11, 57, 3,  32, 99, 36,
                                     52, 40, 26, 59, 22, 97, 20, 42, 73, 24};
@@ -71,7 +71,7 @@ TEST(NanoFlann, SearchKnn) {
     }
 
     core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
-    core::nns::NanoFlann nanoflann(ref);
+    core::nns::NanoFlannIndex nanoflann(ref);
 
     core::Tensor query(std::vector<double>({1.647059, 4.392157, 8.784314}),
                        {1, 3}, core::Dtype::Float64);
@@ -85,7 +85,7 @@ TEST(NanoFlann, SearchKnn) {
     ExpectEQ(ref_distance2, result.second.ToFlatVector<double>());
 }
 
-TEST(NanoFlann, SearchRadius) {
+TEST(NanoFlannIndex, SearchRadius) {
     std::vector<int> ref_indices = {27, 48, 4,  77, 90, 7,  54, 17, 76, 38, 39,
                                     60, 15, 84, 11, 57, 3,  32, 99, 36, 52, 27,
                                     48, 4,  77, 90, 7,  54, 17, 76, 38, 39, 60,
@@ -121,7 +121,7 @@ TEST(NanoFlann, SearchRadius) {
     }
 
     core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
-    core::nns::NanoFlann nanoflann(ref);
+    core::nns::NanoFlannIndex nanoflann(ref);
 
     core::Tensor query(std::vector<double>({1.647059, 4.392157, 8.784314,
                                             1.647059, 4.392157, 8.784314}),
