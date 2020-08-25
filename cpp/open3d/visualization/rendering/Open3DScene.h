@@ -66,10 +66,11 @@ public:
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
-    /// Updates all geometries to use this material
     void AddModel(const std::string& name, const TriangleMeshModel& model);
 
+    /// Updates all geometries to use this material
     void UpdateMaterial(const Material& mat);
+    /// Updates the named model to use this material
     void UpdateModelMaterial(const std::string& name,
                              const TriangleMeshModel& model);
     std::vector<std::string> GetGeometries();

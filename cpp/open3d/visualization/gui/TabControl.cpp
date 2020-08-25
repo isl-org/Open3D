@@ -65,7 +65,7 @@ TabControl::~TabControl() {}
 void TabControl::AddTab(const char* name, std::shared_ptr<Widget> panel) {
     AddChild(panel);
     // Add spaces around the name to add padding
-    impl_->tab_names_.push_back(std::string(" ") + name + " ");
+    impl_->tab_names_.push_back(std::string(" ") + name + std::string(" "));
 }
 
 void TabControl::SetOnSelectedTabChanged(std::function<void(int)> on_changed) {
