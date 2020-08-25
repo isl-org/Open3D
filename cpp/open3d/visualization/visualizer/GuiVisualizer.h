@@ -58,9 +58,8 @@ public:
     virtual ~GuiVisualizer();
 
     void SetTitle(const std::string& title);
-    void SetGeometry(
-            const std::vector<std::shared_ptr<const geometry::Geometry>>&
-                    geometries);
+    void SetGeometry(std::shared_ptr<const geometry::Geometry> geometry,
+                     bool loaded_model);
 
     bool SetIBL(const char* path);
 
