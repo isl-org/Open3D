@@ -36,7 +36,7 @@ SmallButton::SmallButton(const char *title) : gui::Button(title) {}
 gui::Size SmallButton::CalcPreferredSize(const gui::Theme &theme) const {
     auto em = theme.font_size;
     auto size = Super::CalcPreferredSize(theme);
-    return gui::Size(size.width - em, 1.2 * em);
+    return gui::Size(size.width - em, int(std::round(1.2 * em)));
 }
 
 SmallToggleButton::SmallToggleButton(const char *title) : SmallButton(title) {

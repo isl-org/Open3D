@@ -24,6 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293)
+#endif  // _MSC_VER
+
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
 #include <filament/MaterialEnums.h>
@@ -31,6 +43,10 @@
 #include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
 #include <geometry/SurfaceOrientation.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include <map>
 
@@ -90,27 +106,27 @@ void SetVertexUV(VertexType& vertex, const Eigen::Vector2d& UV) {
 }
 
 template <typename VertexType>
-size_t GetVertexPositionOffset() {
+std::uint32_t GetVertexPositionOffset() {
     return offsetof(VertexType, position);
 }
 
 template <typename VertexType>
-size_t GetVertexTangentOffset() {
+std::uint32_t GetVertexTangentOffset() {
     return offsetof(VertexType, tangent);
 }
 
 template <typename VertexType>
-size_t GetVertexColorOffset() {
+std::uint32_t GetVertexColorOffset() {
     return offsetof(VertexType, color);
 }
 
 template <typename VertexType>
-size_t GetVertexUVOffset() {
+std::uint32_t GetVertexUVOffset() {
     return offsetof(VertexType, uv);
 }
 
 template <typename VertexType>
-size_t GetVertexStride() {
+std::uint32_t GetVertexStride() {
     return sizeof(VertexType);
 }
 
@@ -387,7 +403,7 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
                                    .normals(reinterpret_cast<math::float3*>(
                                            normals.data()))
                                    .build();
-        orientation.getQuats(float4v_tangents, n_vertices);
+        orientation->getQuats(float4v_tangents, n_vertices);
     } else {
         utility::LogWarning(
                 "Trying to create mesh without vertex normals. Shading would "
@@ -419,8 +435,9 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
     const ibdata& index_data = std::get<1>(buffers_data);
 
     VertexBuffer* vbuf = nullptr;
-    vbuf = BuildFilamentVertexBuffer(engine, vertex_data.vertices_count, stride,
-                                     has_uvs, has_colors);
+    vbuf = BuildFilamentVertexBuffer(
+            engine, std::uint32_t(vertex_data.vertices_count),
+            std::uint32_t(stride), has_uvs, has_colors);
 
     VertexBufferHandle vb_handle;
     if (vbuf) {

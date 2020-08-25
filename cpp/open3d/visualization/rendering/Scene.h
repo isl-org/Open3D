@@ -45,9 +45,9 @@ namespace rendering {
 
 class Renderer;
 class View;
-class Model;
+struct TriangleMeshModel;
 struct Material;
-class Light;
+struct Light;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views
@@ -79,9 +79,10 @@ public:
                              const geometry::Geometry3D& geometry,
                              const Material& material) = 0;
     virtual bool AddGeometry(const std::string& object_name,
-                             const Model& model) = 0;
+                             const TriangleMeshModel& model) = 0;
     virtual void RemoveGeometry(const std::string& object_name) = 0;
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;
+    virtual bool GeometryIsVisible(const std::string& object_name) = 0;
     virtual void OverrideMaterial(const std::string& object_name,
                                   const Material& material) = 0;
     virtual void GeometryShadows(const std::string& object_name,

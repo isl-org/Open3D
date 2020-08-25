@@ -92,6 +92,9 @@ private:
             case Dtype::UInt8:
                 dl_data_type.code = DLDataTypeCode::kDLUInt;
                 break;
+            case Dtype::UInt16:
+                dl_data_type.code = DLDataTypeCode::kDLUInt;
+                break;
             default:
                 utility::LogError("Unsupported data type");
         }
@@ -1104,6 +1107,9 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
             switch (src->dl_tensor.dtype.bits) {
                 case 8:
                     dtype = Dtype::UInt8;
+                    break;
+                case 16:
+                    dtype = Dtype::UInt16;
                     break;
                 default:
                     utility::LogError("Unsupported kDLUInt bits {}",

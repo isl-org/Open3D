@@ -13,13 +13,17 @@ material {
         { type : float,     name : anisotropy },
         { type : float,     name : pointSize },
         { type : sampler2d, name : albedo },
-        { type : sampler2d, name : metallicMap },
-        { type : sampler2d, name : roughnessMap },
+        { type : sampler2d, name : ao_rough_metalMap },
         { type : sampler2d, name : normalMap },
-        { type : sampler2d, name : ambientOcclusionMap },
         { type : sampler2d, name : reflectanceMap },
-        { type : sampler2d, name : clearCoatMap },
-        { type : sampler2d, name : clearCoatRoughnessMap },
+// NOTE: Disable clear coat textures to avoid Filament warning about exceeding
+// 16 sampler limit. There is currently no supported standard format that
+// supports these textures so they don't get used any way. Once the shader has
+// been updated to combine roughness/metallic/reflectance/ao these textures
+// will be reenabled.
+// 
+//        { type : sampler2d, name : clearCoatMap },
+//        { type : sampler2d, name : clearCoatRoughnessMap },
         { type : sampler2d, name : anisotropyMap }
     ],
     requires : [
@@ -42,16 +46,17 @@ fragment {
         prepareMaterial(material);
 
         material.baseColor.rgb = getColor().rgb*materialParams.baseColor * texture(materialParams_albedo, getUV0()).rgb;
-        material.metallic = materialParams.baseMetallic * texture(materialParams_metallicMap, getUV0()).r;
-        material.roughness = materialParams.baseRoughness * texture(materialParams_roughnessMap, getUV0()).r;
-        material.ambientOcclusion = texture(materialParams_ambientOcclusionMap, getUV0()).r;
+        material.metallic = materialParams.baseMetallic * texture(materialParams_ao_rough_metalMap, getUV0()).b;
+        material.roughness = materialParams.baseRoughness * texture(materialParams_ao_rough_metalMap, getUV0()).g;
+        material.ambientOcclusion = texture(materialParams_ao_rough_metalMap, getUV0()).r;
         //material.reflectance = materialParams.reflectance;
-        //material.clearCoat = materialParams.clearCoat;
-        //material.clearCoatRoughness = materialParams.clearCoatRoughness;
         //material.anisotropy = materialParams.anisotropy;
         material.reflectance = materialParams.reflectance * texture(materialParams_reflectanceMap, getUV0()).r;
-        material.clearCoat = materialParams.clearCoat * texture(materialParams_clearCoatMap, getUV0()).r;
-        material.clearCoatRoughness = materialParams.clearCoatRoughness * texture(materialParams_clearCoatRoughnessMap, getUV0()).r;
+        // See note above about following disabled textures
+        material.clearCoat = materialParams.clearCoat;
+        //material.clearCoat = materialParams.clearCoat * texture(materialParams_clearCoatMap, getUV0()).r;
+        material.clearCoatRoughness = materialParams.clearCoatRoughness;
+        //material.clearCoatRoughness = materialParams.clearCoatRoughness * texture(materialParams_clearCoatRoughnessMap, getUV0()).r;
         material.anisotropy = materialParams.anisotropy * texture(materialParams_anisotropyMap, getUV0()).r;
     }
 }
