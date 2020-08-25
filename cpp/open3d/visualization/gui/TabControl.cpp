@@ -104,7 +104,7 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(float(GetFrame().width));
     if (ImGui::BeginTabBar(impl_->imgui_id_.c_str())) {
-        for (size_t i = 0; i < impl_->tab_names_.size(); ++i) {
+        for (int i = 0; i < int(impl_->tab_names_.size()); ++i) {
             if (ImGui::BeginTabItem(impl_->tab_names_[i].c_str())) {
                 auto r = GetChildren()[i]->Draw(context);
                 if (r != Widget::DrawResult::NONE) {
@@ -112,7 +112,7 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
                 }
                 ImGui::EndTabItem();
 
-                if (int(i) != impl_->current_index_) {
+                if (i != impl_->current_index_) {
                     impl_->current_index_ = i;
                     if (impl_->on_changed_) {
                         impl_->on_changed_(i);
