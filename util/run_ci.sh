@@ -112,6 +112,8 @@ cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
         -DBUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE} \
         -DBUILD_UNIT_TESTS=ON \
         -DBUILD_BENCHMARKS=ON \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_EXAMPLES=OFF \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
         -DPYTHON_EXECUTABLE=$(which python)"
 
@@ -125,6 +127,11 @@ date
 reportRun make VERBOSE=1 -j"$NPROC"
 reportRun make install -j"$NPROC"
 reportRun make VERBOSE=1 install-pip-package -j"$NPROC"
+echo
+
+echo "Building examples iteratively..."
+date
+reportRun make VERBOSE=1 -j"$NPROC" build-examples-iteratively
 echo
 
 # skip unit tests if built with CUDA, unless system contains Nvidia GPUs
