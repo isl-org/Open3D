@@ -271,7 +271,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     // we need to use this workaround.
     VertexBuffer* vbuf = VertexBuffer::Builder()
                                  .bufferCount(4)
-                                 .vertexCount(n_vertices)
+                                 .vertexCount(uint32_t(n_vertices))
                                  .attribute(VertexAttribute::POSITION, 0,
                                             VertexBuffer::AttributeType::FLOAT3)
                                  .normalized(VertexAttribute::COLOR)
@@ -355,7 +355,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     const size_t indices_byte_count = n_vertices * sizeof(IndexType);
     auto* uint_indices = static_cast<IndexType*>(malloc(indices_byte_count));
     for (size_t i = 0; i < n_vertices; ++i) {
-        uint_indices[i] = i;
+        uint_indices[i] = IndexType(i);
     }
 
     auto ib_handle =
