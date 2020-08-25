@@ -1,6 +1,7 @@
 name: macOS CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -49,6 +50,7 @@ jobs:
           ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
           ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          rm -rf $(brew --cache)  # Remove homebrew cached packages
       - name: Config and build
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
@@ -93,6 +95,7 @@ jobs:
           ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
           ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          rm -rf $(brew --cache)  # Remove homebrew cached packages
 
       - name: Config and build
         run: |

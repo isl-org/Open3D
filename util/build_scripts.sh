@@ -94,6 +94,8 @@ install_dependencies() {
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         reportRun python -m pip install -U yapf=="$YAPF_VER"
     fi
+    echo "Purge pip cache"
+    python -m pip cache purge || true
 
 }
 
@@ -142,7 +144,7 @@ build_wheel() {
         -DBUILD_PYTORCH_OPS=OFF \       # TODO: PyTorch Ops is OFF with CUDA
         -DBUILD_RPC_INTERFACE=ON \
         -DBUILD_FILAMENT_FROM_SOURCE=ON \
-        -DUSE_STATIC_LIBCXX=ON \
+        -DBUILD_JUPYTER_EXTENSION=ON \
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR" \
         -DPYTHON_EXECUTABLE="$(which python)" \
         -DCMAKE_BUILD_TYPE=Release \
