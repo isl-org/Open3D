@@ -26,7 +26,9 @@
 
 #pragma once
 #include <torch/script.h>
+
 #include <type_traits>
+
 #include "open3d/ml/ShapeChecking.h"
 
 // Macros for checking tensor properties
@@ -49,6 +51,12 @@
     do {                                                                \
         TORCH_CHECK(SameDeviceType({__VA_ARGS__}),                      \
                     #__VA_ARGS__ " must all have the same device type") \
+    } while (0)
+
+#define CHECK_SAME_DTYPE(...)                                     \
+    do {                                                          \
+        TORCH_CHECK(SameDtype({__VA_ARGS__}),                     \
+                    #__VA_ARGS__ " must all have the same dtype") \
     } while (0)
 
 // Conversion from standard types to torch types
@@ -98,6 +106,19 @@ inline bool SameDeviceType(std::initializer_list<torch::Tensor> tensors) {
         auto device_type = tensors.begin()->device().type();
         for (auto t : tensors) {
             if (device_type != t.device().type()) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// convenience function to check if all tensors have the same dtype
+inline bool SameDtype(std::initializer_list<torch::Tensor> tensors) {
+    if (tensors.size()) {
+        auto device_type = tensors.begin()->dtype();
+        for (auto t : tensors) {
+            if (device_type != t.dtype()) {
                 return false;
             }
         }

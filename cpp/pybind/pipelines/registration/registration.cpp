@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/registration/Registration.h"
+
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
@@ -32,7 +33,6 @@
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Console.h"
-
 #include "pybind/docstring.h"
 #include "pybind/pipelines/registration/registration.h"
 
@@ -536,17 +536,18 @@ must hold true for all edges.)");
 // Registration functions have similar arguments, sharing arg docstrings
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
-                {"checkers", "checkers"},
-                {"corres",
-                 "Checker class to check if two point clouds can be "
-                 "aligned. "
-                 "One of "
+                {"checkers",
+                 "Vector of Checker class to check if two point "
+                 "clouds can be aligned. One of "
                  "(``pipelines::registration::"
                  "CorrespondenceCheckerBasedOnEdgeLength``, "
                  "``pipelines::registration::"
                  "CorrespondenceCheckerBasedOnDistance``, "
                  "``pipelines::registration::"
                  "CorrespondenceCheckerBasedOnNormal``)"},
+                {"corres",
+                 "o3d.utility.Vector2iVector that stores indices of "
+                 "corresponding point or feature arrays."},
                 {"criteria", "Convergence criteria"},
                 {"estimation_method",
                  "Estimation method. One of "

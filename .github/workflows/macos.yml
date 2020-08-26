@@ -3,9 +3,9 @@ name: macOS CI
 on:
   push:
     branches:
-    - master
+      - master
   pull_request:
-    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+    types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
 jobs:
   macos:
@@ -17,41 +17,41 @@ jobs:
     env:
       SHARED: OFF
       NPROC: 2
-      BUILD_DEPENDENCY_FROM_SOURCE: OFF
       BUILD_CUDA_MODULE: OFF
       BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
       BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
       LOW_MEM_USAGE: ON
+      BUILD_RPC_INTERFACE: ON
     steps:
-    - name: Checkout source code
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Setup cache
-      uses: actions/cache@v2
-      with:
-        # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
-        path: ~/.ccache
-        # We include the commit sha in the cache key, as new cache entries are
-        # only created if there is no existing entry for the key yet.
-        key: ${{ runner.os }}-ccache-${{ github.sha }}
-        # Restore any ccache cache entry, if none for
-        # ${{ runner.os }}-ccache-${{ github.sha }} exists.
-        # Common prefix will be used so that ccache can be used across commits.
-        restore-keys: |
-          ${{ runner.os }}-ccache
-    - name: Set up Python version
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Install dependencies
-      run: |
-        ./util/scripts/install-deps-osx.sh skip-upgrade
-        brew install ccache
-        ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
-    - name: Config and build
-      run: |
-        PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
-        ccache -s
-        ./util/scripts/run-ci.sh
-        ccache -s
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
+          path: ~/.ccache
+          # We include the commit sha in the cache key, as new cache entries are
+          # only created if there is no existing entry for the key yet.
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          # Restore any ccache cache entry, if none for
+          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+          # Common prefix will be used so that ccache can be used across commits.
+          restore-keys: |
+            ${{ runner.os }}-ccache
+      - name: Set up Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Install dependencies
+        run: |
+          ./util/install_deps_macos.sh skip-upgrade
+          brew install ccache
+          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+      - name: Config and build
+        run: |
+          PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
+          ccache -s
+          ./util/run_ci.sh
+          ccache -s

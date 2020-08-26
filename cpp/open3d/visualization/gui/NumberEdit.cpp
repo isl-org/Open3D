@@ -27,7 +27,8 @@
 #include "open3d/visualization/gui/NumberEdit.h"
 
 #include <imgui.h>
-#include <string.h>   // for snprintf
+#include <string.h>  // for snprintf
+
 #include <algorithm>  // for min, max
 #include <cmath>
 #include <sstream>
@@ -93,6 +94,8 @@ void NumberEdit::SetLimits(double min_value, double max_value) {
     impl_->value_ = std::min(max_value, std::max(min_value, impl_->value_));
 }
 
+int NumberEdit::GetDecimalPrecision() { return impl_->num_decimal_digits_; }
+
 void NumberEdit::SetDecimalPrecision(int num_digits) {
     impl_->num_decimal_digits_ = num_digits;
 }
@@ -102,22 +105,29 @@ void NumberEdit::SetOnValueChanged(std::function<void(double)> on_changed) {
 }
 
 Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
-    int num_min_digits = std::ceil(std::log10(std::abs(impl_->min_value_)));
-    int num_max_digits = std::ceil(std::log10(std::abs(impl_->max_value_)));
+    int num_min_digits =
+            int(std::ceil(std::log10(std::abs(impl_->min_value_))));
+    int num_max_digits =
+            int(std::ceil(std::log10(std::abs(impl_->max_value_))));
     int num_digits = std::max(6, std::max(num_min_digits, num_max_digits));
     if (impl_->min_value_ < 0) {
         num_digits += 1;
     }
 
-    auto pref = Super::CalcPreferredSize(theme);
-    auto padding = pref.height - theme.font_size;
-    return Size((num_digits * theme.font_size) / 2 + padding, pref.height);
+    int height = int(std::round(ImGui::GetTextLineHeightWithSpacing()));
+    auto padding = height - int(std::round(ImGui::GetTextLineHeight()));
+    int incdec_width = 0;
+    if (impl_->type_ == INT) {
+        // padding is for the spacing between buttons and between text box
+        incdec_width = 2 * height + padding;
+    }
+    return Size((num_digits * theme.font_size) / 2 + padding + incdec_width,
+                height);
 }
 
 Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
-    ImGui::SetCursorPos(
-            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text edit borders
@@ -134,9 +144,9 @@ Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
-    ImGui::PushItemWidth(GetFrame().width);
+    ImGui::PushItemWidth(float(GetFrame().width));
     if (impl_->type_ == INT) {
-        int ivalue = impl_->value_;
+        int ivalue = int(impl_->value_);
         if (ImGui::InputInt(impl_->id_.c_str(), &ivalue)) {
             SetValue(ivalue);
             result = Widget::DrawResult::REDRAW;

@@ -25,13 +25,13 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#define EIGEN_USE_GPU
 
 #include <cub/cub.cuh>
 
 #include "open3d/ml/impl/misc/MemoryAllocation.h"
 #include "open3d/ml/impl/misc/NeighborSearchCommon.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/MiniVec.h"
 
 using namespace open3d::utility;
 
@@ -42,7 +42,8 @@ namespace impl {
 namespace {
 
 template <class T>
-using Vec3 = Eigen::Matrix<T, 3, 1>;
+// using Vec3 = Eigen::Matrix<T, 3, 1>;
+using Vec3 = MiniVec<T, 3>;
 
 /// Computes the distance of two points and tests if the distance is below a
 /// threshold.
@@ -64,11 +65,11 @@ inline __device__ bool NeighborTest(const Vec3<T>& p1,
                                     T threshold) {
     bool result = false;
     if (METRIC == Linf) {
-        Vec3<T> d = (p1 - p2).cwiseAbs();
+        Vec3<T> d = (p1 - p2).abs();
         *dist = d[0] > d[1] ? d[0] : d[1];
         *dist = *dist > d[2] ? *dist : d[2];
     } else if (METRIC == L1) {
-        Vec3<T> d = (p1 - p2).cwiseAbs();
+        Vec3<T> d = (p1 - p2).abs();
         *dist = (d[0] + d[1] + d[2]);
     } else {
         Vec3<T> d = p1 - p2;
@@ -88,12 +89,10 @@ __global__ void CountHashTableEntriesKernel(uint32_t* count_table,
     const int idx = blockDim.x * blockIdx.x + threadIdx.x;
     if (idx >= num_points) return;
 
-    Vec3<T> pos(
-            {points[idx * 3 + 0], points[idx * 3 + 1], points[idx * 3 + 2]});
+    Vec3<T> pos(&points[idx * 3]);
 
-    Vec3<int> voxel_index = ComputeVoxelIndex(pos.array(), inv_voxel_size);
-    size_t hash = SpatialHash(voxel_index[0], voxel_index[1], voxel_index[2]) %
-                  hash_table_size;
+    Vec3<int> voxel_index = ComputeVoxelIndex(pos, inv_voxel_size);
+    size_t hash = SpatialHash(voxel_index) % hash_table_size;
     atomicAdd(&count_table[hash + 1], 1);
 }
 
@@ -144,10 +143,9 @@ __global__ void ComputePointIndexTableKernel(
     const int idx = blockDim.x * blockIdx.x + threadIdx.x + points_start_idx;
     if (idx >= points_end_idx) return;
 
-    Vec3<T> pos(
-            {points[idx * 3 + 0], points[idx * 3 + 1], points[idx * 3 + 2]});
+    Vec3<T> pos(&points[idx * 3]);
 
-    Vec3<int> voxel_index = ComputeVoxelIndex(pos.array(), inv_voxel_size);
+    Vec3<int> voxel_index = ComputeVoxelIndex(pos, inv_voxel_size);
     size_t hash = SpatialHash(voxel_index[0], voxel_index[1], voxel_index[2]) %
                   hash_table_size;
 
@@ -221,11 +219,10 @@ __global__ void CountNeighborsKernel(
 
     int count = 0;  // counts the number of neighbors for this query point
 
-    Vec3<T> query_pos({query_points[query_idx * 3 + 0],
-                       query_points[query_idx * 3 + 1],
-                       query_points[query_idx * 3 + 2]});
-    Vec3<int> voxel_index =
-            ComputeVoxelIndex(query_pos.array(), inv_voxel_size);
+    Vec3<T> query_pos(query_points[query_idx * 3 + 0],
+                      query_points[query_idx * 3 + 1],
+                      query_points[query_idx * 3 + 2]);
+    Vec3<int> voxel_index = ComputeVoxelIndex(query_pos, inv_voxel_size);
     int hash = SpatialHash(voxel_index[0], voxel_index[1], voxel_index[2]) %
                hash_table_size;
 
@@ -234,8 +231,8 @@ __global__ void CountNeighborsKernel(
     for (int dz = -1; dz <= 1; dz += 2)
         for (int dy = -1; dy <= 1; dy += 2)
             for (int dx = -1; dx <= 1; dx += 2) {
-                Vec3<T> p = query_pos + radius * Vec3<T>({T(dx), T(dy), T(dz)});
-                voxel_index = ComputeVoxelIndex(p.array(), inv_voxel_size);
+                Vec3<T> p = query_pos + radius * Vec3<T>(T(dx), T(dy), T(dz));
+                voxel_index = ComputeVoxelIndex(p, inv_voxel_size);
                 hash = SpatialHash(voxel_index[0], voxel_index[1],
                                    voxel_index[2]) %
                        hash_table_size;
@@ -261,8 +258,7 @@ __global__ void CountNeighborsKernel(
         for (size_t j = begin_idx; j < end_idx; ++j) {
             uint32_t idx = point_index_table[j];
 
-            Vec3<T> p({points[idx * 3 + 0], points[idx * 3 + 1],
-                       points[idx * 3 + 2]});
+            Vec3<T> p(&points[idx * 3 + 0]);
             if (IGNORE_QUERY_POINT) {
                 if (query_pos == p) continue;
             }
@@ -377,24 +373,20 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 
     size_t indices_offset = neighbors_row_splits[query_idx];
 
-    Vec3<T> query_pos({query_points[query_idx * 3 + 0],
-                       query_points[query_idx * 3 + 1],
-                       query_points[query_idx * 3 + 2]});
-    Vec3<int> voxel_index =
-            ComputeVoxelIndex(query_pos.array(), inv_voxel_size);
-    int hash = SpatialHash(voxel_index[0], voxel_index[1], voxel_index[2]) %
-               hash_table_size;
+    Vec3<T> query_pos(query_points[query_idx * 3 + 0],
+                      query_points[query_idx * 3 + 1],
+                      query_points[query_idx * 3 + 2]);
+    Vec3<int> voxel_index = ComputeVoxelIndex(query_pos, inv_voxel_size);
+    int hash = SpatialHash(voxel_index) % hash_table_size;
 
     int bins_to_visit[8] = {hash, -1, -1, -1, -1, -1, -1, -1};
 
     for (int dz = -1; dz <= 1; dz += 2)
         for (int dy = -1; dy <= 1; dy += 2)
             for (int dx = -1; dx <= 1; dx += 2) {
-                Vec3<T> p = query_pos + radius * Vec3<T>({T(dx), T(dy), T(dz)});
-                voxel_index = ComputeVoxelIndex(p.array(), inv_voxel_size);
-                hash = SpatialHash(voxel_index[0], voxel_index[1],
-                                   voxel_index[2]) %
-                       hash_table_size;
+                Vec3<T> p = query_pos + radius * Vec3<T>(T(dx), T(dy), T(dz));
+                voxel_index = ComputeVoxelIndex(p, inv_voxel_size);
+                hash = SpatialHash(voxel_index) % hash_table_size;
 
                 // insert without duplicates
                 for (int i = 0; i < 8; ++i) {
@@ -417,8 +409,7 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
         for (size_t j = begin_idx; j < end_idx; ++j) {
             uint32_t idx = point_index_table[j];
 
-            Vec3<T> p({points[idx * 3 + 0], points[idx * 3 + 1],
-                       points[idx * 3 + 2]});
+            Vec3<T> p(&points[idx * 3 + 0]);
             if (IGNORE_QUERY_POINT) {
                 if (query_pos == p) continue;
             }

@@ -37,9 +37,16 @@ TextureSamplerParameters TextureSamplerParameters::Simple() {
 TextureSamplerParameters TextureSamplerParameters::Pretty() {
     TextureSamplerParameters parameters;
 
-    parameters.filter_min = TextureSamplerParameters::MinFilter::Linear;
+    parameters.filter_min =
+            TextureSamplerParameters::MinFilter::LinearMipmapLinear;
     parameters.filter_mag = TextureSamplerParameters::MagFilter::Linear;
-    parameters.SetAnisotropy(4);
+    // NOTE: Default to repeat wrap mode. Assets authored assuming a repeating
+    // texture mode will always look wrong with Clamp mode. However, assets
+    // authored assuming Clamp generally look correct with Repeat mode.
+    parameters.wrap_u = TextureSamplerParameters::WrapMode::Repeat;
+    parameters.wrap_v = TextureSamplerParameters::WrapMode::Repeat;
+    parameters.wrap_w = TextureSamplerParameters::WrapMode::Repeat;
+    parameters.SetAnisotropy(8);
 
     return parameters;
 }

@@ -6,13 +6,15 @@ if(POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
 
-# The options shall be the same as Open3D's default
+# The options need to be the same as Open3D's default
 # If Open3D is configured and built with custom options, you'll also need to
 # specify the same custom options.
-option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
-if(STATIC_WINDOWS_RUNTIME)
-    # This needs cmake_policy(SET CMP0091 NEW)
+option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" ON)
+# This needs cmake_policy(SET CMP0091 NEW)
+if (STATIC_WINDOWS_RUNTIME)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 
 project(TestVisualizer LANGUAGES C CXX)
@@ -39,16 +41,5 @@ if(WIN32)
                         COMMAND ${CMAKE_COMMAND} -E copy
                                 ${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll
                                 ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
-    endif()
-    if(ENABLE_GUI)
-        if(EXISTS "${CMAKE_INSTALL_PREFIX}/lib/SDL2.dll")
-            message(STATUS "Will copy SDL2.dll to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
-            add_custom_command(TARGET TestVisualizer POST_BUILD
-                            COMMAND ${CMAKE_COMMAND} -E copy
-                                    ${CMAKE_INSTALL_PREFIX}/lib/SDL2.dll
-                                    ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
-        else()
-            message(WARNING "SDL2.dll not found in ${CMAKE_INSTALL_PREFIX}/lib")
-        endif()
     endif()
 endif()

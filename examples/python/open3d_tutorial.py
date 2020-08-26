@@ -15,19 +15,19 @@ interactive = True
 
 
 def jupyter_draw_geometries(
-        geoms,
-        window_name="Open3D",
-        width=1920,
-        height=1080,
-        left=50,
-        top=50,
-        point_show_normal=False,
-        mesh_show_wireframe=False,
-        mesh_show_back_face=False,
-        lookat=None,
-        up=None,
-        front=None,
-        zoom=None,
+    geoms,
+    window_name="Open3D",
+    width=1920,
+    height=1080,
+    left=50,
+    top=50,
+    point_show_normal=False,
+    mesh_show_wireframe=False,
+    mesh_show_back_face=False,
+    lookat=None,
+    up=None,
+    front=None,
+    zoom=None,
 ):
     vis = o3d.visualization.Visualizer()
     vis.create_window(

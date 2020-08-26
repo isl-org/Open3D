@@ -24,12 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/PointCloud.h"
-
 #include <Eigen/Dense>
 #include <unordered_set>
 
 #include "open3d/geometry/KDTreeFlann.h"
+#include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 
 #ifdef _OPENMP

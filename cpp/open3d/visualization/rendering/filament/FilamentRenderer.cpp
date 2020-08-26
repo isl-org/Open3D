@@ -26,12 +26,29 @@
 
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+// 4305: LightManager.h needs to specify some constants as floats
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293 4305)
+#endif  // _MSC_VER
+
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
 #include <filament/SwapChain.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
@@ -64,7 +81,8 @@ FilamentRenderer::~FilamentRenderer() {
 
 SceneHandle FilamentRenderer::CreateScene() {
     auto handle = SceneHandle::Next();
-    scenes_[handle] = std::make_unique<FilamentScene>(engine_, resource_mgr_);
+    scenes_[handle] =
+            std::make_unique<FilamentScene>(engine_, resource_mgr_, *this);
 
     return handle;
 }
@@ -80,6 +98,17 @@ Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
 
 void FilamentRenderer::DestroyScene(const SceneHandle& id) {
     scenes_.erase(id);
+}
+
+void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
+    filament::Renderer::ClearOptions co;
+    co.clearColor.r = color.x();
+    co.clearColor.g = color.y();
+    co.clearColor.b = color.z();
+    co.clearColor.a = color.w();
+    co.clear = true;
+    co.discard = true;
+    renderer_->setClearOptions(co);
 }
 
 void FilamentRenderer::UpdateSwapChain() {
@@ -153,11 +182,6 @@ MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
     return resource_mgr_.CreateMaterialInstance(material);
 }
 
-MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
-        const geometry::TriangleMesh::Material& material) {
-    return resource_mgr_.CreateFromDescriptor(material);
-}
-
 MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
     materials_modifier_->Reset();
 
@@ -198,14 +222,15 @@ void FilamentRenderer::RemoveMaterialInstance(
     resource_mgr_.Destroy(id);
 }
 
-TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request) {
+TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request,
+                                           bool srgb) {
     if (request.path_.empty()) {
         request.error_callback_(request, -1,
                                 "Texture can be loaded only from file");
         return {};
     }
 
-    return resource_mgr_.CreateTexture(request.path_.data());
+    return resource_mgr_.CreateTexture(request.path_.data(), srgb);
 }
 
 void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
@@ -262,8 +287,8 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
 }
 
 TextureHandle FilamentRenderer::AddTexture(
-        const std::shared_ptr<geometry::Image>& image) {
-    return resource_mgr_.CreateTexture(image);
+        const std::shared_ptr<geometry::Image>& image, bool srgb) {
+    return resource_mgr_.CreateTexture(image, srgb);
 }
 
 void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {

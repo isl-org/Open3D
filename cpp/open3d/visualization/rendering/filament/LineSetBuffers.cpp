@@ -24,9 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293)
+#endif  // _MSC_VER
+
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
-#include <Eigen/Core>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
+
 #include <map>
 
 #include "open3d/geometry/BoundingVolume.h"
@@ -46,10 +62,12 @@ struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
     math::float4 color = {1.f, 1.f, 1.f, 1.f};
 
-    static size_t GetPositionOffset() {
+    static std::uint32_t GetPositionOffset() {
         return offsetof(ColoredVertex, position);
     }
-    static size_t GetColorOffset() { return offsetof(ColoredVertex, color); }
+    static std::uint32_t GetColorOffset() {
+        return offsetof(ColoredVertex, color);
+    }
 
     void SetVertexPosition(const Eigen::Vector3d& pos) {
         auto float_pos = pos.cast<float>();
@@ -146,13 +164,14 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
                 element.SetVertexPosition(pos);
                 element.SetVertexColor(color);
 
-                index_lookup[lookup_key] = {index, vertex_idx};
+                index_lookup[lookup_key] = {IndexType(index),
+                                            IndexType(vertex_idx)};
                 index = vertex_idx;
 
                 ++vertex_idx;
             }
 
-            indices[2 * i + j] = index;
+            indices[2 * i + j] = IndexType(index);
         }
     }
 
@@ -160,7 +179,7 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
 
     VertexBuffer* vbuf = VertexBuffer::Builder()
                                  .bufferCount(1)
-                                 .vertexCount(vertices_count)
+                                 .vertexCount(std::uint32_t(vertices_count))
                                  .attribute(VertexAttribute::POSITION, 0,
                                             VertexBuffer::AttributeType::FLOAT3,
                                             ColoredVertex::GetPositionOffset(),

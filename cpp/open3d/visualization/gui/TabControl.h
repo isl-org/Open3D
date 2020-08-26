@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
@@ -45,6 +47,8 @@ public:
     void Layout(const Theme& theme) override;
 
     DrawResult Draw(const DrawContext& context) override;
+
+    void SetOnSelectedTabChanged(std::function<void(int)> on_changed);
 
 private:
     struct Impl;

@@ -36,14 +36,14 @@ CMake target before submitting a pull request, or use your editor's
 
 Different ``clang-format`` versions may produce slightly different
 formatting results. For standardization, ``clang-format`` version
-``5.0`` shall be used.
+``10`` shall be used.
 
 .. _1-installing-clang-format-50:
 
 Install clang-format
 --------------------
 
-By default, the make system tries to detect either ``clang-format-5.0``
+By default, the make system tries to detect either ``clang-format-10``
 or ``clang-format`` from PATH.
 
 .. _11-ubuntu:
@@ -53,15 +53,10 @@ Ubuntu
 
 .. code:: bash
 
-   # Ubuntu 16.04
-   sudo apt update
-   sudo apt install clang-format-5.0
-   clang-format-5.0 --version
-
    # Ubuntu 18.04
    sudo apt update
-   sudo apt install clang-format-5.0
-   clang-format-5.0 --version
+   sudo apt install clang-format-10
+   clang-format-10 --version
 
 .. _12-macos:
 
@@ -70,27 +65,33 @@ macOS
 
 .. code:: bash
 
-   curl https://raw.githubusercontent.com/intel-isl/Open3D-3rdparty/master/clang-format/clang-format%405.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@5.rb
-   brew install clang-format@5
+   # Install from official brew formula.
+   brew install clang-format
    clang-format --version
 
-   # (Optional) If another clang-format version was previously installed, we can keep
-   # both versions and switch the default to version 5
-   brew unlink clang-format
-   brew link clang-format@5
+   # (Optional) If you previously have a tagged version (e.g. clang-format@5)
+   # of clang-format installed, unlink the tagged version and link the new version.
+   brew unlink clang-format@5
+   brew link clang-format
+   clang-format --version
 
-   # (Optional) If you'd like to uninstall
-   brew uninstall clang-format@5
+   # (Optional) In case brew updates to a newer clang-format version, we also
+   # provide a tagged clang-format@10 backup formula.
+   curl https://raw.githubusercontent.com/intel-isl/Open3D/master/3rdparty/clang-format/clang-format%4010.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@10.rb
+   brew install clang-format@10
+   clang-format --version
 
-Alternatively, download the clang-5.0 macOS package from `LLVM Download Page`_,
-unzip and add the directory containing ``clang-format`` to ``PATH``.
+
+Alternatively, you may also download the clang-10 macOS package from
+`LLVM Download Page`_, unzip and add the directory containing ``clang-format``
+to ``PATH``.
 
 .. _13-windows:
 
 Windows
 ~~~~~~~~~~~
 
-Download clang-5.0 Windows package from `LLVM Download Page`_. During
+Download LLVM version 10 Windows package from `LLVM Download Page`_. During
 installation, select the option which allows adding clang toolchains to
 ``PATH``. After installation, open a CMD terminal and try
 
@@ -104,17 +105,15 @@ installation, select the option which allows adding clang toolchains to
 Checking clang-format version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After installation, check ``clang-format``'s version with
+After installation, check ``clang-format``'s version with:
 
 .. code:: bash
 
    # In most cases
    clang-format --version
 
-   # Or, when installed as clang-format-5.0, e.g. on Ubuntu
-   clang-format-5.0 --version
-
-and make sure that version ``5.0`` is installed.
+   # Or, when installed as clang-format-10, e.g. on Ubuntu
+   clang-format-10 --version
 
 
 .. _2-install-yapf:
@@ -124,17 +123,17 @@ Install YAPF
 
 We use `YAPF <https://github.com/google/yapf.git>`_ for Python formatting.
 Different YAPF versions may produce slightly different formatting results, thus
-we choose version ``0.28.0`` as the standard version to be used.
+we choose version ``0.30.0`` as the standard version to be used.
 
 Install YAPF with
 
 .. code:: bash
 
    # For Pip
-   pip install yapf==0.28.0
+   pip install yapf==0.30.0
 
    # For conda
-   conda install yapf=0.28.0
+   conda install yapf=0.30.0
 
 You can also download `YAPF <https://github.com/google/yapf.git>`_ and install
 it from source.

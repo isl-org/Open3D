@@ -63,6 +63,8 @@ class FilamentResourceManager {
 public:
     static const MaterialHandle kDefaultLit;
     static const MaterialHandle kDefaultUnlit;
+    static const MaterialHandle kDefaultNormalShader;
+    static const MaterialHandle kDefaultDepthShader;
     static const MaterialInstanceHandle kDepthMaterial;
     static const MaterialInstanceHandle kNormalsMaterial;
     static const MaterialInstanceHandle kColorMapMaterial;
@@ -78,13 +80,12 @@ public:
     MaterialHandle CreateMaterial(const void* material_data, size_t data_size);
     MaterialHandle CreateMaterial(const ResourceLoadRequest& request);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
-    MaterialInstanceHandle CreateFromDescriptor(
-            const geometry::TriangleMesh::Material& material_attributes);
 
-    TextureHandle CreateTexture(const char* path);
-    TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image);
+    TextureHandle CreateTexture(const char* path, bool srgb);
+    TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image,
+                                bool srgb);
     // Slow, will make copy of image data and free it after.
-    TextureHandle CreateTexture(const geometry::Image& image);
+    TextureHandle CreateTexture(const geometry::Image& image, bool srgb);
     // Creates texture of size 'dimension' filled with color 'color'
     TextureHandle CreateTextureFilled(const Eigen::Vector3f& color,
                                       size_t dimension);
@@ -138,7 +139,7 @@ private:
             dependencies_;
 
     filament::Texture* LoadTextureFromImage(
-            const std::shared_ptr<geometry::Image>& image);
+            const std::shared_ptr<geometry::Image>& image, bool srgb);
     filament::Texture* LoadFilledTexture(const Eigen::Vector3f& color,
                                          size_t dimension);
 

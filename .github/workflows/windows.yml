@@ -23,16 +23,17 @@ jobs:
     - name: Set up Python version
       uses: actions/setup-python@v2
       with:
-        python-version: 3.5
+        python-version: 3.6
     - name: Config
       run: |
         mkdir build
         cd build
-        cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
+        cmake -G "Visual Studio 16 2019" -A x64 -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
     - name: Build
       run: |
         cd build
         cmake --build . --parallel 2 --config ${{ matrix.config }} --target INSTALL
+        cmake --build . --parallel 2 --config ${{ matrix.config }} --target build-examples-iteratively
     - name: Linking to Open3D
       run: |
         cd docs\_static\C++
@@ -40,3 +41,15 @@ jobs:
         cd build
         cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
         cmake --build . --config ${{ matrix.config }} && .\${{ matrix.config }}\TestVisualizer.exe
+    - name: Install Python package
+      run: |
+        pip install --upgrade pip
+        pip install -U wheel
+        cd build
+        cmake --build . --config ${{ matrix.config }} --target install-pip-package
+    - name: Import python package
+      # If shared == ON, Open3D.dll needs to be copied, which is not recommended for python.
+      if: ${{ matrix.shared == 'OFF' }}
+      run: |
+        python -c "import open3d; print(open3d)"
+        python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"

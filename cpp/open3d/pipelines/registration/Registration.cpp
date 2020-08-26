@@ -157,11 +157,11 @@ RegistrationResult RegistrationICP(
                  TransformationEstimationType::PointToPlane ||
          estimation.GetTransformationEstimationType() ==
                  TransformationEstimationType::ColoredICP) &&
-        (!source.HasNormals() || !target.HasNormals())) {
+        (!target.HasNormals())) {
         utility::LogError(
                 "TransformationEstimationPointToPlane and "
                 "TransformationEstimationColoredICP "
-                "require pre-computed normal vectors.");
+                "require pre-computed normal vectors for target PointCloud.");
     }
 
     Eigen::Matrix4d transformation = init;

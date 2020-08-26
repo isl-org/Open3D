@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/MeshBase.h"
-#include "open3d/geometry/PointCloud.h"
 
+#include "open3d/geometry/PointCloud.h"
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"

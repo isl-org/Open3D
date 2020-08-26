@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,21 +27,27 @@
 #pragma once
 
 #include <Eigen/Geometry>
+#include <memory>
+#include <vector>
 
+#include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
-#include "open3d/visualization/rendering/RendererStructs.h"
 
 namespace open3d {
-
 namespace geometry {
 class Geometry3D;
 class AxisAlignedBoundingBox;
+class Image;
 }  // namespace geometry
 
 namespace visualization {
 namespace rendering {
 
+class Renderer;
 class View;
+struct TriangleMeshModel;
+struct Material;
+struct Light;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views
@@ -49,75 +55,109 @@ class Scene {
 public:
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
 
+    Scene(Renderer& renderer) : renderer_(renderer) {}
     virtual ~Scene() = default;
 
+    // NOTE: Temporarily need to support old View interface for ImGUI
     virtual ViewHandle AddView(std::int32_t x,
                                std::int32_t y,
                                std::uint32_t w,
                                std::uint32_t h) = 0;
+
     virtual View* GetView(const ViewHandle& view_id) const = 0;
     virtual void SetViewActive(const ViewHandle& view_id, bool is_active) = 0;
     virtual void RemoveView(const ViewHandle& view_id) = 0;
 
-    // 'All defaults' way:
-    // * Will use geometry name as entity name
-    // * Will use apropriate default material for rendering
-    // * For geometries with textures, will try load and assign a texture
-    virtual GeometryHandle AddGeometry(
-            const geometry::Geometry3D& geometry) = 0;
-    // Will use geometry name as entity name
-    virtual GeometryHandle AddGeometry(
-            const geometry::Geometry3D& geometry,
-            const MaterialInstanceHandle& material_id) = 0;
-    virtual GeometryHandle AddGeometry(
-            const geometry::Geometry3D& geometry,
-            const MaterialInstanceHandle& material_id,
-            const std::string& name) = 0;
-    virtual void AssignMaterial(const GeometryHandle& geometry_id,
-                                const MaterialInstanceHandle& material_id) = 0;
-    virtual MaterialInstanceHandle GetMaterial(
-            const GeometryHandle& geometry_id) const = 0;
-    virtual void SetGeometryShadows(const GeometryHandle& geometry_id,
-                                    bool casts_shadows,
-                                    bool receives_shadows) = 0;
-    virtual std::vector<GeometryHandle> FindGeometryByName(
-            const std::string& name) = 0;
-    virtual void RemoveGeometry(const GeometryHandle& geometry_id) = 0;
+    // Camera
+    virtual void AddCamera(const std::string& camera_name,
+                           std::shared_ptr<Camera> cam) = 0;
+    virtual void RemoveCamera(const std::string& camera_name) = 0;
+    virtual void SetActiveCamera(const std::string& camera_name) = 0;
 
-    virtual LightHandle AddLight(const LightDescription& descr) = 0;
-    // TODO: If possible, add getters
-    virtual void SetLightIntensity(const LightHandle& id, float intensity) = 0;
-    virtual void SetLightColor(const LightHandle& id,
-                               const Eigen::Vector3f& color) = 0;
-    virtual Eigen::Vector3f GetLightDirection(const LightHandle& id) const = 0;
-    virtual void SetLightDirection(const LightHandle& id,
-                                   const Eigen::Vector3f& dir) = 0;
-    virtual void SetLightPosition(const LightHandle& id,
-                                  const Eigen::Vector3f& pos) = 0;
-    virtual void SetLightFalloff(const LightHandle& id, float falloff) = 0;
-    virtual void RemoveLight(const LightHandle& id) = 0;
+    // Scene geometry
+    virtual bool AddGeometry(const std::string& object_name,
+                             const geometry::Geometry3D& geometry,
+                             const Material& material) = 0;
+    virtual bool AddGeometry(const std::string& object_name,
+                             const TriangleMeshModel& model) = 0;
+    virtual void RemoveGeometry(const std::string& object_name) = 0;
+    virtual void ShowGeometry(const std::string& object_name, bool show) = 0;
+    virtual bool GeometryIsVisible(const std::string& object_name) = 0;
+    virtual void OverrideMaterial(const std::string& object_name,
+                                  const Material& material) = 0;
+    virtual void GeometryShadows(const std::string& object_name,
+                                 bool cast_shadows,
+                                 bool receive_shadows) = 0;
+    virtual void QueryGeometry(std::vector<std::string>& geometry) = 0;
+    virtual void SetGeometryTransform(const std::string& object_name,
+                                      const Transform& transform) = 0;
+    virtual Transform GetGeometryTransform(const std::string& object_name) = 0;
+    virtual geometry::AxisAlignedBoundingBox GetGeometryBoundingBox(
+            const std::string& object_name) = 0;
+    virtual void OverrideMaterialAll(const Material& material,
+                                     bool shader_only = true) = 0;
 
-    // Passing empty id disables indirect lightning
-    virtual void SetIndirectLight(const IndirectLightHandle& id) = 0;
+    // Lighting Environment
+    virtual bool AddPointLight(const std::string& light_name,
+                               const Eigen::Vector3f& color,
+                               const Eigen::Vector3f& position,
+                               float intensity,
+                               float falloff,
+                               bool cast_shadows) = 0;
+    virtual bool AddSpotLight(const std::string& light_name,
+                              const Eigen::Vector3f& color,
+                              const Eigen::Vector3f& position,
+                              const Eigen::Vector3f& direction,
+                              float intensity,
+                              float falloff,
+                              float inner_cone_angle,
+                              float outer_cone_angle,
+                              bool cast_shadows) = 0;
+    virtual Light& GetLight(const std::string& light_name) = 0;
+    virtual void RemoveLight(const std::string& light_name) = 0;
+    virtual void UpdateLight(const std::string& light_name,
+                             const Light& light) = 0;
+    virtual void UpdateLightColor(const std::string& light_name,
+                                  const Eigen::Vector3f& color) = 0;
+    virtual void UpdateLightPosition(const std::string& light_name,
+                                     const Eigen::Vector3f& position) = 0;
+    virtual void UpdateLightDirection(const std::string& light_name,
+                                      const Eigen::Vector3f& direction) = 0;
+    virtual void UpdateLightIntensity(const std::string& light_name,
+                                      float intensity) = 0;
+    virtual void UpdateLightFalloff(const std::string& light_name,
+                                    float falloff) = 0;
+    virtual void UpdateLightConeAngles(const std::string& light_name,
+                                       float inner_cone_angle,
+                                       float outer_cone_angle) = 0;
+    virtual void EnableLightShadow(const std::string& light_name,
+                                   bool cast_shadows) = 0;
+
+    virtual void SetDirectionalLight(const Eigen::Vector3f& direction,
+                                     const Eigen::Vector3f& color,
+                                     float intensity) = 0;
+    virtual void EnableDirectionalLight(bool enable) = 0;
+    virtual void EnableDirectionalLightShadows(bool enable) = 0;
+    virtual void SetDirectionalLightDirection(
+            const Eigen::Vector3f& direction) = 0;
+    virtual Eigen::Vector3f GetDirectionalLightDirection() = 0;
+
+    virtual bool SetIndirectLight(const std::string& ibl_name) = 0;
+    virtual const std::string& GetIndirectLight() = 0;
+    virtual void EnableIndirectLight(bool enable) = 0;
     virtual void SetIndirectLightIntensity(float intensity) = 0;
-    virtual float GetIndirectLightIntensity() const = 0;
+    virtual float GetIndirectLightIntensity() = 0;
     virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
-    virtual Transform GetIndirectLightRotation() const = 0;
+    virtual Transform GetIndirectLightRotation() = 0;
+    virtual void ShowSkybox(bool show) = 0;
 
-    // Passing empty id removes skybox
-    virtual void SetSkybox(const SkyboxHandle& id) = 0;
+    virtual void RenderToImage(
+            int width,
+            int height,
+            std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
 
-    virtual void SetEntityEnabled(const REHandle_abstract& entity_id,
-                                  bool enabled) = 0;
-    virtual bool GetEntityEnabled(const REHandle_abstract& entity_id) = 0;
-    virtual void SetEntityTransform(const REHandle_abstract& entity_id,
-                                    const Transform& transform) = 0;
-    virtual Transform GetEntityTransform(
-            const REHandle_abstract& entity_id) = 0;
-
-    // Returns world space AABB
-    virtual geometry::AxisAlignedBoundingBox GetEntityBoundingBox(
-            const REHandle_abstract& entity_id) = 0;
+protected:
+    Renderer& renderer_;
 };
 
 }  // namespace rendering
