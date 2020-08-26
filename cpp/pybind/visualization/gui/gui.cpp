@@ -132,6 +132,12 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
+            .def(
+                    "post_to_main_thread", &Application::PostToMainThread,
+                    "Runs the provided function on the main thread. This can "
+                    "be used to execute UI-related code at a safe point in "
+                    "time. If the UI changes, you will need to manually "
+                    "request a redraw of the window with w.post_redraw()")
             .def_property("menubar", &Application::GetMenubar,
                           &Application::SetMenubar,
                           "The Menu for the application (initially None)")
