@@ -75,6 +75,8 @@ private:
     int val_;
 };
 
+static_assert(std::is_pod<TestObject>(), "TestObject must be a POD.");
+
 TEST_P(TensorObjectPermuteDevices, Constructor) {
     core::Device device = GetParam();
     int64_t byte_size = sizeof(TestObject);
@@ -94,6 +96,18 @@ TEST_P(TensorObjectPermuteDevices, Constructor) {
     EXPECT_ANY_THROW(core::Tensor({-1}, dtype, device));
     EXPECT_ANY_THROW(core::Tensor({0, -2}, dtype, device));
     EXPECT_ANY_THROW(core::Tensor({-1, -1}, dtype, device));
+}
+
+TEST_P(TensorObjectPermuteDevices, WithInitValueObject) {
+    core::Device device = GetParam();
+    int64_t byte_size = sizeof(TestObject);
+    core::Dtype dtype = core::Dtype(core::Dtype::DtypeCode::Object, byte_size,
+                                    "TestObjectDtype");
+
+    std::vector<TestObject> vals{TestObject(0), TestObject(1), TestObject(2),
+                                 TestObject(3), TestObject(4), TestObject(5)};
+    core::Tensor t(vals, {2, 3}, dtype, device);
+    EXPECT_EQ(t.ToFlatVector<TestObject>(), vals);
 }
 
 }  // namespace tests
