@@ -62,9 +62,38 @@ INSTANTIATE_TEST_SUITE_P(
                 testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
                 testing::ValuesIn(PermuteDevices::TestCases())));
 
+class TestObject {
+public:
+    TestObject() = default;
+    TestObject(int val) : val_(val) {}
+
+    bool operator==(const TestObject &other) const {
+        return val_ == other.val_;
+    }
+
+private:
+    int val_;
+};
+
 TEST_P(TensorObjectPermuteDevices, Constructor) {
     core::Device device = GetParam();
-    (void)device;
+    int64_t byte_size = sizeof(TestObject);
+    core::Dtype dtype = core::Dtype(core::Dtype::DtypeCode::Object, byte_size,
+                                    "TestObjectDtype");
+
+    for (const core::SizeVector &shape : std::vector<core::SizeVector>{
+                 {}, {0}, {0, 0}, {0, 1}, {1, 0}, {2, 3}}) {
+        core::Tensor t(shape, dtype, device);
+        EXPECT_EQ(t.GetShape(), shape);
+        EXPECT_EQ(t.GetDtype(), dtype);
+        EXPECT_EQ(t.GetDtype().ToString(), "TestObjectDtype");
+        EXPECT_EQ(t.GetDtype().ByteSize(), byte_size);
+        EXPECT_EQ(t.GetDevice(), device);
+    }
+
+    EXPECT_ANY_THROW(core::Tensor({-1}, dtype, device));
+    EXPECT_ANY_THROW(core::Tensor({0, -2}, dtype, device));
+    EXPECT_ANY_THROW(core::Tensor({-1, -1}, dtype, device));
 }
 
 }  // namespace tests
