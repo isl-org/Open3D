@@ -74,8 +74,8 @@ def test_creation_special_shapes(shape, device):
 
 def test_dtype():
     dtype = o3d.core.Dtype.Int32
-    assert o3d.core.DtypeUtil.byte_size(dtype) == 4
-    assert "{}".format(dtype) == "Dtype.Int32"
+    assert dtype.byte_size() == 4
+    assert "{}".format(dtype) == "Int32"
 
 
 def test_device():
