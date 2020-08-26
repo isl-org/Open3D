@@ -24,8 +24,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.6
-    - name: Debugging
-      run: Get-CimInstance -ClassName Win32_logicaldisk
     - name: Config
       run: |
         mkdir build

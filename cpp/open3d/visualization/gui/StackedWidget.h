@@ -26,29 +26,31 @@
 
 #pragma once
 
-#include <functional>
-
 #include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
 namespace visualization {
 namespace gui {
 
-class TabControl : public Widget {
+/// Stacks its children on top of each other, with only the selected child
+/// showing. It is like a tab control without the tabs.
+class StackedWidget : public Widget {
     using Super = Widget;
 
 public:
-    TabControl();
-    ~TabControl();
+    StackedWidget();
+    virtual ~StackedWidget();
 
-    void AddTab(const char* name, std::shared_ptr<Widget> panel);
+    /// Sets the index of the child to draw.
+    void SetSelectedIndex(int index);
+    /// Returns the index of the selected child.
+    int GetSelectedIndex() const;
 
     Size CalcPreferredSize(const Theme& theme) const override;
+
     void Layout(const Theme& theme) override;
 
-    DrawResult Draw(const DrawContext& context) override;
-
-    void SetOnSelectedTabChanged(std::function<void(int)> on_changed);
+    Widget::DrawResult Draw(const DrawContext& context) override;
 
 private:
     struct Impl;
