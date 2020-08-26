@@ -46,6 +46,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/tgeometry/PointCloud.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -230,6 +231,154 @@ filament::Box PointCloudBuffersBuilder::ComputeAABB() {
     const filament::math::float3 max(geometry_aabb.max_bound_.x(),
                                      geometry_aabb.max_bound_.y(),
                                      geometry_aabb.max_bound_.z());
+
+    Box aabb;
+    aabb.set(min, max);
+
+    return aabb;
+}
+
+TPointCloudBuffersBuilder::TPointCloudBuffersBuilder(
+        const tgeometry::PointCloud& geometry)
+    : geometry_(geometry) {}
+
+RenderableManager::PrimitiveType TPointCloudBuffersBuilder::GetPrimitiveType()
+        const {
+    return RenderableManager::PrimitiveType::POINTS;
+}
+
+GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
+    auto& engine = EngineInstance::GetInstance();
+    auto& resource_mgr = EngineInstance::GetResourceManager();
+
+    // NOTE: ConstructBuffers assumes caller has checked that DTYPE of the
+    // tensor is float32. It is an error to call this with a tensor of any other
+    // dtype
+
+    const auto& points = geometry_.GetPoints();
+    const size_t n_vertices = points.GetSize();
+
+    // We use CUSTOM0 for tangents along with TANGENTS attribute
+    // because Filament would optimize out anything about normals and lightning
+    // from unlit materials. But our shader for normals visualizing is unlit, so
+    // we need to use this workaround.
+    VertexBuffer* vbuf = VertexBuffer::Builder()
+                                 .bufferCount(4)
+                                 .vertexCount(uint32_t(n_vertices))
+                                 .attribute(VertexAttribute::POSITION, 0,
+                                            VertexBuffer::AttributeType::FLOAT3)
+                                 .normalized(VertexAttribute::COLOR)
+                                 .attribute(VertexAttribute::COLOR, 1,
+                                            VertexBuffer::AttributeType::FLOAT3)
+                                 .normalized(VertexAttribute::TANGENTS)
+                                 .attribute(VertexAttribute::TANGENTS, 2,
+                                            VertexBuffer::AttributeType::FLOAT4)
+                                 .attribute(VertexAttribute::CUSTOM0, 2,
+                                            VertexBuffer::AttributeType::FLOAT4)
+                                 .attribute(VertexAttribute::UV0, 3,
+                                            VertexBuffer::AttributeType::FLOAT2)
+                                 .build(engine);
+
+    VertexBufferHandle vb_handle;
+    if (vbuf) {
+        vb_handle = resource_mgr.AddVertexBuffer(vbuf);
+    } else {
+        return {};
+    }
+
+    VertexBuffer::BufferDescriptor pts_descriptor(
+            points.AsTensor().GetDataPtr(), n_vertices * 3 * sizeof(float));
+    vbuf->setBufferAt(engine, 0, std::move(pts_descriptor));
+
+    const size_t color_array_size = n_vertices * 3 * sizeof(float);
+    if (geometry_.HasPointColors()) {
+        VertexBuffer::BufferDescriptor color_descriptor(
+                geometry_.GetPointColors().AsTensor().GetDataPtr(),
+                color_array_size);
+        vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
+    } else {
+        float* color_array = static_cast<float*>(malloc(color_array_size));
+        for (size_t i = 0; i < n_vertices * 3; ++i) {
+            color_array[i] = 1.f;
+        }
+        VertexBuffer::BufferDescriptor color_descriptor(
+                color_array, color_array_size,
+                GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
+    }
+
+    const size_t normal_array_size = n_vertices * 4 * sizeof(float);
+    if (geometry_.HasPointNormals()) {
+        const auto& normals = geometry_.GetPointNormals();
+
+        // Converting normals to Filament type - quaternions
+        auto float4v_tangents =
+                static_cast<math::quatf*>(malloc(normal_array_size));
+        auto orientation = filament::geometry::SurfaceOrientation::Builder()
+                                   .vertexCount(n_vertices)
+                                   .normals(reinterpret_cast<math::float3*>(
+                                           normals.AsTensor().GetDataPtr()))
+                                   .build();
+        orientation->getQuats(float4v_tangents, n_vertices);
+        VertexBuffer::BufferDescriptor normals_descriptor(
+                float4v_tangents, normal_array_size,
+                GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
+    } else {
+        float* normal_array = static_cast<float*>(malloc(normal_array_size));
+        float* normal_ptr = normal_array;
+        for (size_t i = 0; i < n_vertices; ++i) {
+            *normal_ptr++ = 0.f;
+            *normal_ptr++ = 0.f;
+            *normal_ptr++ = 0.f;
+            *normal_ptr++ = 1.f;
+        }
+        VertexBuffer::BufferDescriptor normals_descriptor(
+                normal_array, normal_array_size,
+                GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
+    }
+
+    const size_t uv_array_size = n_vertices * 2 * sizeof(float);
+    float* uv_array = static_cast<float*>(malloc(uv_array_size));
+    VertexBuffer::BufferDescriptor uv_descriptor(
+            uv_array, uv_array_size, GeometryBuffersBuilder::DeallocateBuffer);
+    vbuf->setBufferAt(engine, 3, std::move(uv_descriptor));
+
+    const size_t indices_byte_count = n_vertices * sizeof(IndexType);
+    auto* uint_indices = static_cast<IndexType*>(malloc(indices_byte_count));
+    for (size_t i = 0; i < n_vertices; ++i) {
+        uint_indices[i] = IndexType(i);
+    }
+
+    auto ib_handle =
+            resource_mgr.CreateIndexBuffer(n_vertices, sizeof(IndexType));
+    if (!ib_handle) {
+        free(uint_indices);
+        return {};
+    }
+
+    auto ibuf = resource_mgr.GetIndexBuffer(ib_handle).lock();
+
+    // Moving `uintIndices` to IndexBuffer, which will clean them up later
+    // with DeallocateBuffer
+    IndexBuffer::BufferDescriptor indices_descriptor(uint_indices,
+                                                     indices_byte_count);
+    indices_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    ibuf->setBuffer(engine, std::move(indices_descriptor));
+    return std::make_tuple(vb_handle, ib_handle);
+}
+
+filament::Box TPointCloudBuffersBuilder::ComputeAABB() {
+    auto min_bounds = geometry_.GetMinBound();
+    auto max_bounds = geometry_.GetMaxBound();
+    auto* min_bounds_float = static_cast<float*>(min_bounds.GetDataPtr());
+    auto* max_bounds_float = static_cast<float*>(max_bounds.GetDataPtr());
+
+    const filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
+                                     min_bounds_float[2]);
+    const filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
+                                     max_bounds_float[2]);
 
     Box aabb;
     aabb.set(min, max);
