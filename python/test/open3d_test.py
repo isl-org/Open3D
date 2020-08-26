@@ -30,18 +30,10 @@ def list_devices():
     - returns [Device("CPU:0")].
     """
     import open3d as o3d
-    devices = [o3d.core.Device("CPU:" + str(0))]
-    if torch_available() and o3d._build_config['BUILD_CUDA_MODULE']:
-        import torch
-        import torch.utils.dlpack
-        if (o3d.core.cuda.device_count() != torch.cuda.device_count()):
-            raise RuntimeError(
-                "o3d.core.cuda.device_count() != torch.cuda.device_count(), "
-                "{} != {}".format(o3d.core.cuda.device_count(),
-                                  torch.cuda.device_count()))
     if o3d.core.cuda.device_count() > 0:
-        devices.append(o3d.core.Device("CUDA:0"))
-    return devices
+        return [o3d.core.Device("CPU:0"), o3d.core.Device("CUDA:0")]
+    else:
+        return [o3d.core.Device("CPU:0")]
 
 
 def download_fountain_dataset():

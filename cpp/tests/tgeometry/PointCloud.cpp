@@ -163,7 +163,7 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 TEST_P(PointCloudPermuteDevices, Translate) {
     core::Device device = GetParam();
 
-    tgeometry::PointCloud pcd;
+    tgeometry::PointCloud pcd(core::Dtype::Float32, device);
     core::Tensor translation(std::vector<float>{10, 20, 30}, {3},
                              core::Dtype::Float32, device);
 
@@ -186,7 +186,7 @@ TEST_P(PointCloudPermuteDevices, Translate) {
 
 TEST_P(PointCloudPermuteDevices, Scale) {
     core::Device device = GetParam();
-    tgeometry::PointCloud pcd;
+    tgeometry::PointCloud pcd(core::Dtype::Float32, device);
     core::TensorList& points = pcd.GetPointAttr("points");
     points = core::TensorList::FromTensor(
             core::Tensor(std::vector<float>{0, 0, 0, 1, 1, 1, 2, 2, 2}, {3, 3},
