@@ -26,28 +26,37 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
-#include "open3d/core/Device.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
+#include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
-namespace core {
-namespace eigen_converter {
+namespace visualization {
+namespace gui {
 
-Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
+/// Stacks its children on top of each other, with only the selected child
+/// showing. It is like a tab control without the tabs.
+class StackedWidget : public Widget {
+    using Super = Widget;
 
-core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
-                                   core::Dtype dtype,
-                                   const core::Device &device);
+public:
+    StackedWidget();
+    virtual ~StackedWidget();
 
-core::TensorList EigenVector3dVectorToTensorList(
-        const std::vector<Eigen::Vector3d> &values,
-        core::Dtype dtype,
-        const core::Device &device);
+    /// Sets the index of the child to draw.
+    void SetSelectedIndex(int index);
+    /// Returns the index of the selected child.
+    int GetSelectedIndex() const;
 
-}  // namespace eigen_converter
-}  // namespace core
+    Size CalcPreferredSize(const Theme& theme) const override;
+
+    void Layout(const Theme& theme) override;
+
+    Widget::DrawResult Draw(const DrawContext& context) override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

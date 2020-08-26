@@ -57,6 +57,10 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
     EXPECT_FALSE(pcd.HasPoints());
     EXPECT_FALSE(pcd.HasPointColors());
     EXPECT_FALSE(pcd.HasPointNormals());
+
+    // Default dtypes
+    EXPECT_EQ(pcd.GetPoints().GetDevice(), core::Device("CPU:0"));
+    EXPECT_EQ(pcd.GetPoints().GetDtype(), core::Dtype::Float32);
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
@@ -115,7 +119,7 @@ TEST_P(PointCloudPermuteDevices, SynchronizedPushBack) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Crate pointcloud.
+    // Create pointcloud.
     core::TensorList points = core::TensorList::FromTensor(
             core::Tensor::Ones({10, 3}, dtype, device));
     core::TensorList colors = core::TensorList::FromTensor(
@@ -285,6 +289,22 @@ TEST_P(PointCloudPermuteDevices, Setters) {
     EXPECT_TRUE(pcd.GetPointAttr("labels").AsTensor().AllClose(
             core::Tensor::Ones({2, 3}, dtype, device) * 3));
     EXPECT_ANY_THROW(pcd.GetPointNormals());
+
+    // Mismatched device should throw an exception. This test is only effective
+    // is device is a CUDA device.
+    core::Device cpu_device = core::Device("CPU:0");
+    if (cpu_device != device) {
+        core::TensorList cpu_points = core::TensorList::FromTensor(
+                core::Tensor::Ones({2, 3}, dtype, cpu_device));
+        core::TensorList cpu_colors = core::TensorList::FromTensor(
+                core::Tensor::Ones({2, 3}, dtype, cpu_device) * 2);
+        core::TensorList cpu_labels = core::TensorList::FromTensor(
+                core::Tensor::Ones({2, 3}, dtype, cpu_device) * 3);
+
+        EXPECT_ANY_THROW(pcd.SetPoints(cpu_points));
+        EXPECT_ANY_THROW(pcd.SetPointColors(cpu_colors));
+        EXPECT_ANY_THROW(pcd.SetPointAttr("labels", cpu_labels));
+    }
 }
 
 TEST_P(PointCloudPermuteDevices, Has) {

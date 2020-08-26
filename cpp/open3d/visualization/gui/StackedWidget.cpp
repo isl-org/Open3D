@@ -24,30 +24,57 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/visualization/gui/StackedWidget.h"
 
-#include <Eigen/Core>
-
-#include "open3d/core/Device.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
+#include <algorithm>  // for std::max, std::min
 
 namespace open3d {
-namespace core {
-namespace eigen_converter {
+namespace visualization {
+namespace gui {
 
-Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
+struct StackedWidget::Impl {
+    int selected_index_ = 0;
+};
 
-core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
-                                   core::Dtype dtype,
-                                   const core::Device &device);
+StackedWidget::StackedWidget() : impl_(new StackedWidget::Impl()) {}
 
-core::TensorList EigenVector3dVectorToTensorList(
-        const std::vector<Eigen::Vector3d> &values,
-        core::Dtype dtype,
-        const core::Device &device);
+StackedWidget::~StackedWidget() {}
 
-}  // namespace eigen_converter
-}  // namespace core
+void StackedWidget::SetSelectedIndex(int index) {
+    impl_->selected_index_ = index;
+}
+
+int StackedWidget::GetSelectedIndex() const { return impl_->selected_index_; }
+
+Size StackedWidget::CalcPreferredSize(const Theme& theme) const {
+    Size size(0, 0);
+    for (auto child : GetChildren()) {
+        auto sz = child->CalcPreferredSize(theme);
+        size.width = std::max(size.width, sz.width);
+        size.height = std::max(size.height, sz.height);
+    }
+    return size;
+}
+
+void StackedWidget::Layout(const Theme& theme) {
+    auto& frame = GetFrame();
+    for (auto child : GetChildren()) {
+        child->SetFrame(frame);
+    }
+
+    Super::Layout(theme);
+}
+
+Widget::DrawResult StackedWidget::Draw(const DrawContext& context) {
+    // Don't Super, because Widget::Draw will draw all the children,
+    // and we only want to draw the selected child.
+    if (impl_->selected_index_ >= 0 &&
+        impl_->selected_index_ < int(GetChildren().size())) {
+        return GetChildren()[impl_->selected_index_]->Draw(context);
+    }
+    return DrawResult::NONE;
+}
+
+}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

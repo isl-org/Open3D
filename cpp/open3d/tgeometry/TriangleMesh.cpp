@@ -24,30 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/tgeometry/TriangleMesh.h"
 
 #include <Eigen/Core>
+#include <string>
+#include <unordered_map>
 
-#include "open3d/core/Device.h"
-#include "open3d/core/Dtype.h"
+#include "open3d/core/EigenConverter.h"
+#include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
 
 namespace open3d {
-namespace core {
-namespace eigen_converter {
+namespace tgeometry {
 
-Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
+TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
+                           core::Dtype triangle_dtype,
+                           const core::Device &device)
+    : Geometry(Geometry::GeometryType::TriangleMesh, 3),
+      device_(device),
+      vertex_attr_(TensorListMap("vertices")),
+      triangle_attr_(TensorListMap("triangles")) {
+    SetVertices(core::TensorList({3}, vertex_dtype, device_));
+    SetTriangles(core::TensorList({3}, triangle_dtype, device_));
+}
 
-core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
-                                   core::Dtype dtype,
-                                   const core::Device &device);
+TriangleMesh::TriangleMesh(const core::TensorList &vertices,
+                           const core::TensorList &triangles)
+    : TriangleMesh(vertices.GetDtype(), triangles.GetDtype(), [&]() {
+          if (vertices.GetDevice() != triangles.GetDevice()) {
+              utility::LogError(
+                      "vertices' device {} does not match triangles' device "
+                      "{}.",
+                      vertices.GetDevice().ToString(),
+                      triangles.GetDevice().ToString());
+          }
+          return vertices.GetDevice();
+      }()) {
+    SetVertices(vertices);
+    SetTriangles(triangles);
+}
 
-core::TensorList EigenVector3dVectorToTensorList(
-        const std::vector<Eigen::Vector3d> &values,
-        core::Dtype dtype,
-        const core::Device &device);
-
-}  // namespace eigen_converter
-}  // namespace core
+}  // namespace tgeometry
 }  // namespace open3d

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,30 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/io/ModelIO.h"
 
-#include <Eigen/Core>
+#include <unordered_map>
 
-#include "open3d/core/Device.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
+#include "open3d/utility/Console.h"
+#include "open3d/utility/FileSystem.h"
 
 namespace open3d {
-namespace core {
-namespace eigen_converter {
+namespace io {
 
-Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
+bool ReadModelUsingAssimp(const std::string& filename,
+                          visualization::rendering::TriangleMeshModel& model,
+                          bool print_progress);
 
-core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
-                                   core::Dtype dtype,
-                                   const core::Device &device);
+bool ReadTriangleModel(const std::string& filename,
+                       visualization::rendering::TriangleMeshModel& model,
+                       bool print_progress) {
+    return ReadModelUsingAssimp(filename, model, print_progress);
+}
 
-core::TensorList EigenVector3dVectorToTensorList(
-        const std::vector<Eigen::Vector3d> &values,
-        core::Dtype dtype,
-        const core::Device &device);
-
-}  // namespace eigen_converter
-}  // namespace core
+}  // namespace io
 }  // namespace open3d

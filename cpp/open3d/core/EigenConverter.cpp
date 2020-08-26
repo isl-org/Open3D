@@ -26,6 +26,8 @@
 
 #include "open3d/core/EigenConverter.h"
 
+#include "open3d/core/kernel/CPULauncher.h"
+
 namespace open3d {
 namespace core {
 namespace eigen_converter {
@@ -48,6 +50,40 @@ core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
     // The memory will be copied.
     return core::Tensor(value.data(), {3}, core::Dtype::Float64, device)
             .To(dtype);
+}
+
+core::TensorList EigenVector3dVectorToTensorList(
+        const std::vector<Eigen::Vector3d> &values,
+        core::Dtype dtype,
+        const core::Device &device) {
+    // Init CPU TensorList.
+    int64_t num_values = static_cast<int64_t>(values.size());
+    core::TensorList tl_cpu = core::TensorList({3}, dtype, Device("CPU:0"));
+    tl_cpu.Resize(num_values);
+
+    // Fill TensorList.
+    core::Indexer indexer({tl_cpu.AsTensor()}, tl_cpu.AsTensor(),
+                          core::DtypePolicy::ALL_SAME);
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        core::kernel::CPULauncher::LaunchIndexFillKernel(
+                indexer, [&](void *ptr, int64_t workload_idx) {
+                    // Fills the flattened tensor tl_cpu.AsTensor()[:] with
+                    // dtype casting. tl_cpu.AsTensor()[:][i] corresponds to the
+                    // (i/3)-th element's (i%3)-th coordinate value.
+                    *static_cast<scalar_t *>(ptr) = static_cast<scalar_t>(
+                            values[workload_idx / 3](workload_idx % 3));
+                });
+    });
+
+    // Copy TensorList to device if necessary.
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        return tl_cpu;
+    } else {
+        core::TensorList tl_device = core::TensorList({3}, dtype, device);
+        tl_device.Resize(tl_cpu.GetSize());
+        tl_device.AsTensor().CopyFrom(tl_cpu.AsTensor());
+        return tl_device;
+    }
 }
 
 }  // namespace eigen_converter

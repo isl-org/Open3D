@@ -143,7 +143,7 @@ const std::map<std::string, const GuiSettingsModel::LitMaterial>
         GuiSettingsModel::prefab_materials_ = {
                 {DEFAULT_MATERIAL_NAME, {}},
                 {"Metal (rougher)",
-                 {{1.0f, 1.0f, 1.0f}, 1.0f, 0.7f, 0.5f, 0.0f, 0.0f, 0.0f}},
+                 {{1.0f, 1.0f, 1.0f}, 1.0f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},
                 {"Metal (smoother)",
                  {{1.0f, 1.0f, 1.0f}, 1.0f, 0.2f, 0.5f, 0.0f, 0.0f, 0.0f}},
                 {"Plastic",

@@ -3,6 +3,7 @@ set(ALL_SOURCE_FILES
     PointCloud.cpp
     Image.cpp
     TensorListMap.cpp
+    TriangleMesh.cpp
 )
 
 add_library(tgeometry OBJECT ${ALL_SOURCE_FILES})
