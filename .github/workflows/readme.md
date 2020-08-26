@@ -4,25 +4,25 @@
 
 ### Directory structure
 
-- `.github/workflows/documentation.yml`: Github Actions workflow file to
+-   `.github/workflows/documentation.yml`: Github Actions workflow file to
     create and deploy documentation. Documentation is created for every branch
     as a CI test, but deployed only for `master`.
 
-- `util/make_documentation.sh`: Called by GitHub Actions to buld documentation.
+-   `util/make_documentation.sh`: Called by GitHub Actions to buld documentation.
 
-- `unpack_docs.sh`: Called by the documentation server to deploy the docs into
+-   `unpack_docs.sh`: Called by the documentation server to deploy the docs into
     the website.
 
 ### Setting up the docs deployment
 
 #### Step 1: Google Cloud
 
-1. Setup `gcloud`
+1.  Setup `gcloud`
 
-   - [Install `gcloud`](https://cloud.google.com/sdk/install)
-   - `gcloud init` and login with admin's google account on the web
+   -   [Install `gcloud`](https://cloud.google.com/sdk/install)
+   -   `gcloud init` and login with admin's google account on the web
 
-2. Create storage bucket
+2.  Create storage bucket
 
    ```bash
    # Create with uniform bucket-level access: `-b`
@@ -44,7 +44,7 @@
    If the documentation server fails to fetch the docs matching the `master`
    commit id, the last successfully fetched docs will be displayed.
 
-3. Create service account
+3.  Create service account
 
    ```bash
    gcloud iam service-accounts create open3d-ci-sa \
@@ -52,7 +52,7 @@
        --display-name="open3d-ci-sa"
    ```
 
-4. Grant `objectAdmin` to the service account
+4.  Grant `objectAdmin` to the service account
 
    ```bash
    gsutil iam ch \
@@ -60,7 +60,7 @@
        gs://open3d-docs
    ```
 
-5. Create key for service account
+5.  Create key for service account
 
    ```bash
    gcloud iam service-accounts keys create ~/open3d-ci-sa-key.json \
@@ -71,12 +71,12 @@
 
 #### Step 2: GitHub
 
-1. Encode the private key json file with `base64 ~/open3d-ci-sa-key.json` and
+1.  Encode the private key json file with `base64 ~/open3d-ci-sa-key.json` and
     add the output text to the
     [GitHub repository secrets](https://github.com/intel-isl/Open3D/settings/secrets)
     with name `GCE_SA_KEY_DOCS_CI`
 
-2. Also add secret `GCE_DOCS_PROJECT: isl-buckets`
+2.  Also add secret `GCE_DOCS_PROJECT: isl-buckets`
 
 ## B. Google compute engine setup for GPU CI
 
@@ -84,24 +84,24 @@
 
 The GCE CI workflow `.github/workflows/gce-ubuntu-docker.yml` performs these steps:
 
-- Clone the repository
+-   Clone the repository
 
-- Build docker image, starting with a an NVIDIA base devel image with CUDA and
+-   Build docker image, starting with a an NVIDIA base devel image with CUDA and
     cuDNN.
 
-- Push image to Google container registry.
+-   Push image to Google container registry.
 
-- On Google Compute Engine (GCE), in parallel (up to GPU quota limit - currently
+-   On Google Compute Engine (GCE), in parallel (up to GPU quota limit - currently
     4):
-  - Create a new VM instance with a custom OS image
+  -   Create a new VM instance with a custom OS image
 
-  - Run docker image on GCE (Google Compute Engine) with environment variables
+  -   Run docker image on GCE (Google Compute Engine) with environment variables
       set for specific build config.
 
-  - The docker image entrypoint is the `run-ci.sh` script: build, install, run
+  -   The docker image entrypoint is the `run-ci.sh` script: build, install, run
       tests and uninstall.
 
-  - Delete the VM instance.
+  -   Delete the VM instance.
 
 A separate VM instance is created for each commit and build option. The VM
 instances are named according to the commit hash and build config ID used. We
@@ -112,7 +112,7 @@ either due to lack of resources or GPU quota exhaustion.
 
 #### Step 1: Google Cloud: Create service account and key
 
-1. Create service account
+1.  Create service account
 
     ```bash
     gcloud iam service-accounts create open3d-ci-sa \
@@ -121,7 +121,7 @@ either due to lack of resources or GPU quota exhaustion.
         --project open3d-dev
     ```
 
-2. Grant `Compute Instance Admin (beta)` to the service account
+2.  Grant `Compute Instance Admin (beta)` to the service account
 
     ```bash
     gcloud projects add-iam-policy-binding open3d-dev \
@@ -130,7 +130,7 @@ either due to lack of resources or GPU quota exhaustion.
         --project open3d-dev
     ```
 
-3. Create key for service account
+3.  Create key for service account
 
     ```bash
     gcloud iam service-accounts keys create ~/open3d-ci-sa-key.json \
@@ -153,9 +153,9 @@ used for running CI.
 
 #### Step 3: GitHub
 
-1. Encode the private key json file with `base64 ~/open3d-ci-sa-key.json` and
+1.  Encode the private key json file with `base64 ~/open3d-ci-sa-key.json` and
     add the output text to the
     [GitHub repository secrets](https://github.com/intel-isl/Open3D/settings/secrets)
     with name `GCE_SA_KEY_GPU_CI`
 
-2. Also add secret `GCE_PROJECT: open3d-dev`
+2.  Also add secret `GCE_PROJECT: open3d-dev`
