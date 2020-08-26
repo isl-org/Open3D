@@ -24,14 +24,34 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Blob.h"
+#include "open3d/tgeometry/Geometry.h"
 
-#include "pybind/core/core.h"
 #include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
+#include "pybind/tgeometry/geometry.h"
 
 namespace open3d {
+namespace tgeometry {
 
-void pybind_core_blob(py::module &m) { py::class_<core::Blob> blob(m, "Blob"); }
 
+void pybind_geometry_class(py::module& m) {
+    py::class_<Geometry, PyGeometry<Geometry>, std::unique_ptr<Geometry>>
+            geometry(m, "Geometry", "The base geometry class.");
+
+    geometry.def("clear", &Geometry::Clear,
+                 "Clear all elements in the geometry.")
+            .def("is_empty", &Geometry::IsEmpty,
+                 "Returns ``True`` iff the geometry is empty.");
+    docstring::ClassMethodDocInject(m, "Geometry", "clear");
+    docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
+}
+
+void pybind_geometry(py::module& m) {
+    py::module m_submodule = m.def_submodule("tgeometry");
+
+    pybind_geometry_class(m_submodule);
+    pybind_tensorlistmap(m_submodule);
+    pybind_pointcloud(m_submodule);
+}
+
+}  // namespace tgeometry
 }  // namespace open3d
