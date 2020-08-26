@@ -24,25 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
+#include "open3d/core/nns/NearestNeighbor.h"
 
+#include "pybind/core/core.h"
+#include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
 
-void pybind_core(py::module &m) {
-    py::module m_core = m.def_submodule("core");
-    pybind_cuda_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor_key(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensorlist(m_core);
-    pybind_core_linalg(m_core);
-    pybind_core_kernel(m_core);
-    pybind_core_nn(m_core); 
+void pybind_core_nn(py::module &m) {
+    py::module m_nn = m.def_submodule("nns");
+
+    py::class_<core::nns::NearestNeighbor, std::shared_ptr<core::nns::NearestNeighbor>>
+            nearestneighbor(m_nn, "NearestNeighbor",
+                    "[SOME DESCRIPTION HERE]");
+
+    nearestneighbor.def(py::init<const core::Tensor &>(), "data"_a)
+        .def("knn_index", &core::nns::NearestNeighbor::KnnIndex)
+        .def("radius_index", &core::nns::NearestNeighbor::RadiusIndex)
+        .def("fixed_radius_index", &core::nns::NearestNeighbor::FixedRadiusIndex)
+        .def("hybrid_index", &core::nns::NearestNeighbor::HybridIndex)
+        .def("knn_search", &core::nns::NearestNeighbor::KnnSearch, "query"_a, "knn"_a)
+        .def("radius_search", &core::nns::NearestNeighbor::RadiusSearch, "query"_a, "radii"_a)
+        .def("fixed_radius_search", &core::nns::NearestNeighbor::FixedRadiusSearch, "query"_a, "radius"_a)
+        .def("hybrid_search", &core::nns::NearestNeighbor::HybridSearch, "query"_a, "radius"_a, "max_knn"_a);
 }
 
 }  // namespace open3d
