@@ -39,101 +39,72 @@ namespace open3d {
 namespace tests {
 
 TEST(NanoFlannIndex, SearchKnn) {
-    std::vector<int> ref_indices = {27, 48, 4,  77, 90, 7,  54, 17, 76, 38,
-                                    39, 60, 15, 84, 11, 57, 3,  32, 99, 36,
-                                    52, 40, 26, 59, 22, 97, 20, 42, 73, 24};
+    // set up index
+    int size = 10;
+    std::vector<double> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
+                               0.2, 0.0, 0.1, 0.0, 0.0, 0.1, 0.1, 0.0,
+                               0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
+                               0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
+    core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
+    core::nns::NanoFlannIndex index(ref);
 
-    std::vector<double> ref_distance2 = {
-            0.000000,  4.684353,  4.996539,  9.191849,  10.034604, 10.466745,
-            10.649751, 11.434066, 12.089195, 13.345638, 13.696270, 14.016148,
-            16.851978, 17.073435, 18.254518, 20.019994, 21.496347, 23.077277,
-            23.692427, 23.809303, 24.104578, 25.005770, 26.952710, 27.487888,
-            27.998463, 28.262975, 28.581313, 28.816608, 31.603230, 31.610916};
-
-    int size = 100;
-
-    geometry::PointCloud pc;
-
-    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d vmax(10.0, 10.0, 10.0);
-
-    pc.points_.resize(size);
-    Rand(pc.points_, vmin, vmax, 0);
-    int knn = 30;
-
-    std::vector<double> points;
-    for (unsigned int i = 0; i < pc.points_.size(); i++) {
-        Eigen::Vector3d point_vec = pc.points_[i];
-        std::vector<double> point(
-                point_vec.data(),
-                point_vec.data() + point_vec.rows() * point_vec.cols());
-        points.insert(points.end(), point.begin(), point.end());
-    }
-
-    core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
-    core::nns::NanoFlannIndex nanoflann(ref);
-
-    core::Tensor query(std::vector<double>({1.647059, 4.392157, 8.784314}),
+    core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843}),
                        {1, 3}, core::Dtype::Float64);
 
-    std::pair<core::Tensor, core::Tensor> result =
-            nanoflann.SearchKnn(query, knn);
+    // if k is smaller or equal to 0
+    EXPECT_THROW(index.SearchKnn(query, -1), std::runtime_error);
+    EXPECT_THROW(index.SearchKnn(query, 0), std::runtime_error);
 
-    std::vector<int64_t> indices = result.first.ToFlatVector<int64_t>();
-    std::vector<int> indices2(indices.begin(), indices.end());
-    ExpectEQ(ref_indices, indices2);
-    ExpectEQ(ref_distance2, result.second.ToFlatVector<double>());
+    // if k == 3
+    std::pair<core::Tensor, core::Tensor> result_3 = index.SearchKnn(query, 3);
+
+    core::Tensor indices_3 = result_3.first.To(core::Dtype::Int32);
+    core::Tensor distances_3 = result_3.second;
+    ExpectEQ(indices_3.ToFlatVector<int>(), std::vector<int>({1, 4, 9}));
+    ExpectEQ(distances_3.ToFlatVector<double>(),
+             std::vector<double>({0.00626358, 0.00747938, 0.0108912}));
+
+    // if k > size
+    std::pair<core::Tensor, core::Tensor> result_12 =
+            index.SearchKnn(query, 12);
+
+    core::Tensor indices_12 = result_12.first.To(core::Dtype::Int32);
+    core::Tensor distances_12 = result_12.second;
+    ExpectEQ(indices_12.ToFlatVector<int>(),
+             std::vector<int>({1, 4, 9, 0, 3, 2, 5, 7, 6, 8}));
+    ExpectEQ(distances_12.ToFlatVector<double>(),
+             std::vector<double>({0.00626358, 0.00747938, 0.0108912, 0.0138322,
+                                  0.015048, 0.018695, 0.0199108, 0.0286952,
+                                  0.0362638, 0.0411266}));
 }
 
 TEST(NanoFlannIndex, SearchRadius) {
-    std::vector<int> ref_indices = {27, 48, 4,  77, 90, 7,  54, 17, 76, 38, 39,
-                                    60, 15, 84, 11, 57, 3,  32, 99, 36, 52, 27,
-                                    48, 4,  77, 90, 7,  54, 17, 76, 38, 39, 60,
-                                    15, 84, 11, 57, 3,  32, 99, 36, 52};
+    std::vector<int> ref_indices = {1, 4};
+    std::vector<double> ref_distance = {0.00626358, 0.00747938};
 
-    std::vector<double> ref_distance2 = {
-            0.000000,  4.684353,  4.996539,  9.191849,  10.034604, 10.466745,
-            10.649751, 11.434066, 12.089195, 13.345638, 13.696270, 14.016148,
-            16.851978, 17.073435, 18.254518, 20.019994, 21.496347, 23.077277,
-            23.692427, 23.809303, 24.104578, 0.000000,  4.684353,  4.996539,
-            9.191849,  10.034604, 10.466745, 10.649751, 11.434066, 12.089195,
-            13.345638, 13.696270, 14.016148, 16.851978, 17.073435, 18.254518,
-            20.019994, 21.496347, 23.077277, 23.692427, 23.809303, 24.104578};
+    int size = 10;
+    std::vector<double> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
+                               0.2, 0.0, 0.1, 0.0, 0.0, 0.1, 0.1, 0.0,
+                               0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
+                               0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
+    core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
+    core::nns::NanoFlannIndex index(ref);
 
-    int size = 100;
+    core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843}),
+                       {1, 3}, core::Dtype::Float64);
 
-    geometry::PointCloud pc;
+    // if radius <= 0
+    EXPECT_THROW(index.SearchRadius(query, -1.0), std::runtime_error);
+    EXPECT_THROW(index.SearchRadius(query, 0.0), std::runtime_error);
 
-    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d vmax(10.0, 10.0, 10.0);
-
-    pc.points_.resize(size);
-    Rand(pc.points_, vmin, vmax, 0);
-    double radius = 5.0;
-
-    std::vector<double> points;
-    for (unsigned int i = 0; i < pc.points_.size(); i++) {
-        Eigen::Vector3d point_vec = pc.points_[i];
-        std::vector<double> point(
-                point_vec.data(),
-                point_vec.data() + point_vec.rows() * point_vec.cols());
-        points.insert(points.end(), point.begin(), point.end());
-    }
-
-    core::Tensor ref(points.data(), {size, 3}, core::Dtype::Float64);
-    core::nns::NanoFlannIndex nanoflann(ref);
-
-    core::Tensor query(std::vector<double>({1.647059, 4.392157, 8.784314,
-                                            1.647059, 4.392157, 8.784314}),
-                       {2, 3}, core::Dtype::Float64);
-
+    // if radius == 0.1
     std::tuple<core::Tensor, core::Tensor, core::Tensor> result =
-            nanoflann.SearchRadius(query, radius);
-
-    std::vector<int64_t> indices = std::get<0>(result).ToFlatVector<int64_t>();
-    std::vector<int> indices2(indices.begin(), indices.end());
-    ExpectEQ(ref_indices, indices2);
-    ExpectEQ(ref_distance2, std::get<1>(result).ToFlatVector<double>());
+            index.SearchRadius(query, 0.1);
+    core::Tensor indices = std::get<0>(result).To(core::Dtype::Int32);
+    core::Tensor distances = std::get<1>(result);
+    ExpectEQ(indices.ToFlatVector<int>(), std::vector<int>({1, 4}));
+    ExpectEQ(distances.ToFlatVector<double>(),
+             std::vector<double>({0.00626358, 0.00747938}));
 }
 
 }  // namespace tests

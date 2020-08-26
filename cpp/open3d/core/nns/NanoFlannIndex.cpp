@@ -35,7 +35,9 @@ namespace core {
 namespace nns {
 
 NanoFlannIndex::NanoFlannIndex(){};
-NanoFlannIndex::NanoFlannIndex(const core::Tensor &tensor) { SetTensorData(tensor); };
+NanoFlannIndex::NanoFlannIndex(const core::Tensor &tensor) {
+    SetTensorData(tensor);
+};
 NanoFlannIndex::~NanoFlannIndex(){};
 
 bool NanoFlannIndex::SetTensorData(const core::Tensor &data) {
@@ -43,7 +45,8 @@ bool NanoFlannIndex::SetTensorData(const core::Tensor &data) {
     core::Dtype dtype = data.GetDtype();
     if (shape.size() != 2) {
         utility::LogError(
-                "[NanoFlannIndex::SetTensorData] Tensor must be two-dimenional");
+                "[NanoFlannIndex::SetTensorData] Tensor must be "
+                "two-dimenional");
         return false;
     }
     if (dtype != core::Dtype::Float64) {
@@ -70,13 +73,19 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
     core::SizeVector shape = query.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
-                "[NanoFlannIndex::SearchKnn] query tensor must be 2 dimensional "
+                "[NanoFlannIndex::SearchKnn] query tensor must be 2 "
+                "dimensional "
                 "matrix");
     }
     if (shape[1] != dimension_) {
         utility::LogError(
-                "[NanoFlannIndex::SearchKnn] query tensor has different dimension "
+                "[NanoFlannIndex::SearchKnn] query tensor has different "
+                "dimension "
                 "with reference tensor");
+    }
+    if (knn <= 0) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchKnn] knn should be larger than 0");
     }
     std::vector<size_t> result_indices;
     std::vector<double> result_distances;
@@ -116,12 +125,13 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
     return std::make_pair(indices, distances);
 };
 
-std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlannIndex::SearchRadius(
-        const core::Tensor &query, double *radii) {
+std::tuple<core::Tensor, core::Tensor, core::Tensor>
+NanoFlannIndex::SearchRadius(const core::Tensor &query, double *radii) {
     core::SizeVector shape = query.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
-                "[NanoFlannIndex::SearchRadius] query tensor must be 2 dimensional "
+                "[NanoFlannIndex::SearchRadius] query tensor must be 2 "
+                "dimensional "
                 "matrix");
     }
     if (shape[1] != dimension_) {
@@ -137,6 +147,11 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlannIndex::SearchRadiu
         core::Tensor query_point = query[i];
         std::vector<double> query_vector = query_point.ToFlatVector<double>();
         double radius = radii[i];
+        if (radius <= 0.0) {
+            utility::LogError(
+                    "[NanoFlannIndex::SearchRadius] radius should be larger "
+                    "than 0");
+        }
 
         nanoflann::SearchParams params;
         std::vector<std::pair<size_t, double>> ret_matches;
@@ -168,12 +183,13 @@ std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlannIndex::SearchRadiu
     return std::make_tuple(core::Tensor(), core::Tensor(), core::Tensor());
 };
 
-std::tuple<core::Tensor, core::Tensor, core::Tensor> NanoFlannIndex::SearchRadius(
-        const core::Tensor &query, double radius) {
+std::tuple<core::Tensor, core::Tensor, core::Tensor>
+NanoFlannIndex::SearchRadius(const core::Tensor &query, double radius) {
     core::SizeVector shape = query.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
-                "[NanoFlannIndex::SearchRadius] query tensor must be 2 dimensional "
+                "[NanoFlannIndex::SearchRadius] query tensor must be 2 "
+                "dimensional "
                 "matrix");
     }
 
