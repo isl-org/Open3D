@@ -144,9 +144,8 @@ void pybind_rendering_classes(py::module &m) {
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene; image will be provided via a callback "
                  "function. The callback is necessary because rendering is "
-                 "done "
-                 "on a different thread. The image remains valid after the "
-                 "callback, assuming it was assigned somewhere.");
+                 "done on a different thread. The image remains valid "
+                 "after the callback, assuming it was assigned somewhere.");
 
     // ---- Open3DScene ----
     py::class_<Open3DScene, std::shared_ptr<Open3DScene>> o3dscene(
@@ -157,15 +156,22 @@ void pybind_rendering_classes(py::module &m) {
             .def("show_axes", &Open3DScene::ShowAxes,
                  "Toggles display of xyz axes")
             .def("clear_geometry", &Open3DScene::ClearGeometry)
-            .def("add_geometry", &Open3DScene::AddGeometry, "geometry"_a,
-                 "material"_a,
+            .def("add_geometry", &Open3DScene::AddGeometry, "name"_a,
+                 "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
+            .def("remove_geometry", &Open3DScene::RemoveGeometry,
+                 "Removes the geometry with the given name")
+            .def("show_geometry", &Open3DScene::ShowGeometry,
+                 "Shows or hides the geometry with the given name")
             .def("update_material", &Open3DScene::UpdateMaterial,
                  "Applies the passed material to all the geometries")
             .def_property_readonly("scene", &Open3DScene::GetScene,
                                    "The low-level rendering scene object")
             .def_property_readonly("camera", &Open3DScene::GetCamera,
-                                   "The camera object");
+                                   "The camera object")
+            .def_property_readonly("bounding_box", &Open3DScene::GetBoundingBox,
+                                   "The bounding box of all the items in the "
+                                   "scene, visible and invisible");
 }
 
 void pybind_rendering(py::module &m) {

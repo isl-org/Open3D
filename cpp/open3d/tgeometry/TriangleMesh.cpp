@@ -24,37 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/tgeometry/TriangleMesh.h"
 
-#include <functional>
+#include <Eigen/Core>
+#include <string>
+#include <unordered_map>
 
-#include "open3d/visualization/gui/Widget.h"
+#include "open3d/core/EigenConverter.h"
+#include "open3d/core/ShapeUtil.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/core/TensorList.h"
 
 namespace open3d {
-namespace visualization {
-namespace gui {
+namespace tgeometry {
 
-class TabControl : public Widget {
-    using Super = Widget;
+TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
+                           core::Dtype triangle_dtype,
+                           const core::Device &device)
+    : Geometry(Geometry::GeometryType::TriangleMesh, 3),
+      device_(device),
+      vertex_attr_(TensorListMap("vertices")),
+      triangle_attr_(TensorListMap("triangles")) {
+    SetVertices(core::TensorList({3}, vertex_dtype, device_));
+    SetTriangles(core::TensorList({3}, triangle_dtype, device_));
+}
 
-public:
-    TabControl();
-    ~TabControl();
+TriangleMesh::TriangleMesh(const core::TensorList &vertices,
+                           const core::TensorList &triangles)
+    : TriangleMesh(vertices.GetDtype(), triangles.GetDtype(), [&]() {
+          if (vertices.GetDevice() != triangles.GetDevice()) {
+              utility::LogError(
+                      "vertices' device {} does not match triangles' device "
+                      "{}.",
+                      vertices.GetDevice().ToString(),
+                      triangles.GetDevice().ToString());
+          }
+          return vertices.GetDevice();
+      }()) {
+    SetVertices(vertices);
+    SetTriangles(triangles);
+}
 
-    void AddTab(const char* name, std::shared_ptr<Widget> panel);
-
-    Size CalcPreferredSize(const Theme& theme) const override;
-    void Layout(const Theme& theme) override;
-
-    DrawResult Draw(const DrawContext& context) override;
-
-    void SetOnSelectedTabChanged(std::function<void(int)> on_changed);
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
-}  // namespace gui
-}  // namespace visualization
+}  // namespace tgeometry
 }  // namespace open3d

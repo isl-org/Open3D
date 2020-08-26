@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,50 +24,57 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
+#include "open3d/visualization/gui/StackedWidget.h"
 
-#include "open3d/geometry/LineSet.h"
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/TriangleMesh.h"
+#include <algorithm>  // for std::max, std::min
 
 namespace open3d {
 namespace visualization {
-namespace rendering {
+namespace gui {
 
-std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
-        const geometry::Geometry3D& geometry) {
-    using GT = geometry::Geometry::GeometryType;
+struct StackedWidget::Impl {
+    int selected_index_ = 0;
+};
 
-    switch (geometry.GetGeometryType()) {
-        case GT::TriangleMesh:
-            return std::make_unique<TriangleMeshBuffersBuilder>(
-                    static_cast<const geometry::TriangleMesh&>(geometry));
+StackedWidget::StackedWidget() : impl_(new StackedWidget::Impl()) {}
 
-        case GT::PointCloud:
-            return std::make_unique<PointCloudBuffersBuilder>(
-                    static_cast<const geometry::PointCloud&>(geometry));
+StackedWidget::~StackedWidget() {}
 
-        case GT::LineSet:
-            return std::make_unique<LineSetBuffersBuilder>(
-                    static_cast<const geometry::LineSet&>(geometry));
-        default:
-            break;
+void StackedWidget::SetSelectedIndex(int index) {
+    impl_->selected_index_ = index;
+}
+
+int StackedWidget::GetSelectedIndex() const { return impl_->selected_index_; }
+
+Size StackedWidget::CalcPreferredSize(const Theme& theme) const {
+    Size size(0, 0);
+    for (auto child : GetChildren()) {
+        auto sz = child->CalcPreferredSize(theme);
+        size.width = std::max(size.width, sz.width);
+        size.height = std::max(size.height, sz.height);
+    }
+    return size;
+}
+
+void StackedWidget::Layout(const Theme& theme) {
+    auto& frame = GetFrame();
+    for (auto child : GetChildren()) {
+        child->SetFrame(frame);
     }
 
-    return nullptr;
+    Super::Layout(theme);
 }
 
-std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
-        const tgeometry::PointCloud& geometry) {
-    return std::make_unique<TPointCloudBuffersBuilder>(geometry);
+Widget::DrawResult StackedWidget::Draw(const DrawContext& context) {
+    // Don't Super, because Widget::Draw will draw all the children,
+    // and we only want to draw the selected child.
+    if (impl_->selected_index_ >= 0 &&
+        impl_->selected_index_ < int(GetChildren().size())) {
+        return GetChildren()[impl_->selected_index_]->Draw(context);
+    }
+    return DrawResult::NONE;
 }
 
-void GeometryBuffersBuilder::DeallocateBuffer(void* buffer,
-                                              size_t size,
-                                              void* user_ptr) {
-    free(buffer);
-}
-
-}  // namespace rendering
+}  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

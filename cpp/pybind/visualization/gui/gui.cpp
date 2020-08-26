@@ -44,6 +44,7 @@
 #include "open3d/visualization/gui/ProgressBar.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Slider.h"
+#include "open3d/visualization/gui/StackedWidget.h"
 #include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/TextEdit.h"
 #include "open3d/visualization/gui/Theme.h"
@@ -236,6 +237,11 @@ void pybind_gui_classes(py::module &m) {
             .def("set_on_menu_item_activated",
                  &PyWindow::SetOnMenuItemActivated,
                  "Sets callback function for menu item:  callback()")
+            .def("set_on_tick_event", &PyWindow::SetOnTickEvent,
+                 "Sets callback for tick event. Callback takes no arguments "
+                 "and must return True if a redraw is needed (that is, if "
+                 "any widget has changed in any fashion) or False if nothing "
+                 "has changed")
             .def(
                     "set_on_layout",
                     [](PyWindow *w, std::function<void(const Theme &)> f) {
@@ -345,6 +351,13 @@ void pybind_gui_classes(py::module &m) {
                 return Rect(int(std::round(x)), int(std::round(y)),
                             int(std::round(w)), int(std::round(h)));
             }))
+            .def("__repr__",
+                 [](const Rect &r) {
+                     std::stringstream s;
+                     s << "Rect (" << r.x << ", " << r.y << "), " << r.width
+                       << " x " << r.height;
+                     return s.str().c_str();
+                 })
             .def_readwrite("x", &Rect::x)
             .def_readwrite("y", &Rect::y)
             .def_readwrite("width", &Rect::width)
@@ -361,6 +374,12 @@ void pybind_gui_classes(py::module &m) {
             .def(py::init([](float w, float h) {
                 return Size(int(std::round(w)), int(std::round(h)));
             }))
+            .def("__repr__",
+                 [](const Size &sz) {
+                     std::stringstream s;
+                     s << "Size (" << sz.width << ", " << sz.height << ")";
+                     return s.str().c_str();
+                 })
             .def_readwrite("width", &Size::width)
             .def_readwrite("height", &Size::height);
 
@@ -405,6 +424,8 @@ void pybind_gui_classes(py::module &m) {
                        << b.GetFrame().height;
                      return s.str().c_str();
                  })
+            .def_property("text", &Button::GetText, &Button::SetText,
+                          "Gets/sets the button text.")
             .def_property(
                     "toggleable", &Button::GetIsToggleable,
                     &Button::SetToggleable,
@@ -739,6 +760,14 @@ void pybind_gui_classes(py::module &m) {
                  "Sets f(new_value) which is called with a Float when user "
                  "changes widget's value");
 
+    // ---- StackedWidget ----
+    py::class_<StackedWidget, std::shared_ptr<StackedWidget>, Widget> stacked(
+            m, "StackedWidget", "Like a TabControl but without the tabs");
+    stacked.def(py::init<>())
+            .def_property("selected_index", &StackedWidget::GetSelectedIndex,
+                          &StackedWidget::SetSelectedIndex,
+                          "Selects the index of the child to display");
+
     // ---- TabControl ----
     py::class_<TabControl, std::shared_ptr<TabControl>, Widget> tabctrl(
             m, "TabControl", "Tab control");
@@ -746,7 +775,12 @@ void pybind_gui_classes(py::module &m) {
             .def("add_tab", &TabControl::AddTab,
                  "Adds a tab. The first parameter is the title of the tab, and "
                  "the second parameter is a widget--normally this is a "
-                 "layout.");
+                 "layout.")
+            .def("set_on_selected_tab_changed",
+                 &TabControl::SetOnSelectedTabChanged,
+                 "Calls the provided callback function with the index of the "
+                 "currently selected tab whenever the user clicks on a "
+                 "different tab");
 
     // ---- TextEdit ----
     py::class_<TextEdit, std::shared_ptr<TextEdit>, Widget> textedit(
@@ -820,22 +854,73 @@ void pybind_gui_classes(py::module &m) {
                Widget>
             checkable_cell(m, "CheckableTextTreeCell",
                            "TreeView cell with a checkbox and text");
-    checkable_cell.def(py::init<>([](const char *text, bool checked,
-                                     std::function<void(bool)> on_toggled) {
-        return std::make_shared<CheckableTextTreeCell>(text, checked,
-                                                       on_toggled);
-    }));
+    checkable_cell
+            .def(py::init<>([](const char *text, bool checked,
+                               std::function<void(bool)> on_toggled) {
+                     return std::make_shared<CheckableTextTreeCell>(
+                             text, checked, on_toggled);
+                 }),
+                 "Creates a TreeView cell with a checkbox and text. "
+                 "CheckableTextTreeCell(text, is_checked, on_toggled): "
+                 "on_toggled takes a boolean and returns None")
+            .def_property_readonly("checkbox",
+                                   &CheckableTextTreeCell::GetCheckbox,
+                                   "Returns the checkbox widget "
+                                   "(property is read-only)")
+            .def_property_readonly("label", &CheckableTextTreeCell::GetLabel,
+                                   "Returns the label widget "
+                                   "(property is read-only)");
 
     py::class_<LUTTreeCell, std::shared_ptr<LUTTreeCell>, Widget> lut_cell(
             m, "LUTTreeCell",
             "TreeView cell with checkbox, text, and color edit");
-    lut_cell.def(
-            py::init<>([](const char *text, bool checked, const Color &color,
-                          std::function<void(bool)> on_enabled,
-                          std::function<void(const Color &)> on_color) {
-                return std::make_shared<LUTTreeCell>(text, checked, color,
-                                                     on_enabled, on_color);
-            }));
+    lut_cell.def(py::init<>([](const char *text, bool checked,
+                               const Color &color,
+                               std::function<void(bool)> on_enabled,
+                               std::function<void(const Color &)> on_color) {
+                     return std::make_shared<LUTTreeCell>(text, checked, color,
+                                                          on_enabled, on_color);
+                 }),
+                 "Creates a TreeView cell with a checkbox, text, and "
+                 "a color editor. LUTTreeCell(text, is_checked, color, "
+                 "on_enabled, on_color): on_enabled is called when the "
+                 "checkbox toggles, and takes a boolean and returns None"
+                 "; on_color is called when the user changes the color "
+                 "and it takes a gui.Color and returns None.")
+            .def_property_readonly("checkbox", &LUTTreeCell::GetCheckbox,
+                                   "Returns the checkbox widget "
+                                   "(property is read-only)")
+            .def_property_readonly("label", &LUTTreeCell::GetLabel,
+                                   "Returns the label widget "
+                                   "(property is read-only)")
+            .def_property_readonly("color_edit", &LUTTreeCell::GetColorEdit,
+                                   "Returns the ColorEdit widget "
+                                   "(property is read-only)");
+
+    py::class_<ColormapTreeCell, std::shared_ptr<ColormapTreeCell>, Widget>
+            colormap_cell(m, "ColormapTreeCell",
+                          "TreeView cell with a number edit and color edit");
+    colormap_cell
+            .def(py::init<>([](float value, const Color &color,
+                               std::function<void(double)> on_value_changed,
+                               std::function<void(const Color &)>
+                                       on_color_changed) {
+                     return std::make_shared<ColormapTreeCell>(
+                             value, color, on_value_changed, on_color_changed);
+                 }),
+                 "Creates a TreeView cell with a number and a color edit. "
+                 "ColormapTreeCell(value, color, on_value_changed, "
+                 "on_color_changed): on_value_changed takes a double "
+                 "and returns None; on_color_changed takes a "
+                 "gui.Color and returns None")
+            .def_property_readonly("number_edit",
+                                   &ColormapTreeCell::GetNumberEdit,
+                                   "Returns the NumberEdit widget "
+                                   "(property is read-only)")
+            .def_property_readonly("color_edit",
+                                   &ColormapTreeCell::GetColorEdit,
+                                   "Returns the ColorEdit widget "
+                                   "(property is read-only)");
 
     // ---- VectorEdit ----
     py::class_<VectorEdit, std::shared_ptr<VectorEdit>, Widget> vectoredit(
@@ -854,9 +939,8 @@ void pybind_gui_classes(py::module &m) {
             .def_property("vector_value", &VectorEdit::GetValue,
                           &VectorEdit::SetValue, "Returns value [x, y, z]")
             .def("set_on_value_changed", &VectorEdit::SetOnValueChanged,
-                 "Sets f([x, y, z]) which is called whenever the user changes "
-                 "the "
-                 "value of a component");
+                 "Sets f([x, y, z]) which is called whenever the user "
+                 "changes the value of a component");
 
     // ---- Margins ----
     py::class_<Margins, std::shared_ptr<Margins>> margins(
