@@ -32,7 +32,6 @@
 namespace open3d {
 namespace tgeometry {
 
-
 void pybind_geometry_class(py::module& m) {
     py::class_<Geometry, PyGeometry<Geometry>, std::unique_ptr<Geometry>>
             geometry(m, "Geometry", "The base geometry class.");
