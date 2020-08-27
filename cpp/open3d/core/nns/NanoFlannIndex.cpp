@@ -100,13 +100,12 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
     std::vector<size_t> batch_nums;
 
     int64_t num_query_points = shape[0];
-    size_t num_results = 0;
 
     for (auto i = 0; i < num_query_points; i++) {
         std::vector<size_t> single_indices(knn);
         std::vector<double> single_distances(knn);
 
-        num_results = index_->knnSearch(
+        size_t num_results = index_->knnSearch(
                 static_cast<double *>(query_points[i].GetDataPtr()),
                 static_cast<size_t>(knn), single_indices.data(),
                 single_distances.data());
