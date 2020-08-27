@@ -622,6 +622,7 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
 
     auto data = reinterpret_cast<uint8_t*>(rough_metal->data_.data());
 
+    auto stride = rough_metal->num_of_channels_;
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
             if (ao && ao->HasData()) {
@@ -629,7 +630,7 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
             } else {
                 *data = 255;
             }
-            data += 3;
+            data += stride;
         }
     }
 }
