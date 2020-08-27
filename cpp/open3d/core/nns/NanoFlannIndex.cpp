@@ -97,10 +97,12 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
     }
     std::vector<size_t> batch_indices;
     std::vector<double> batch_distances;
+    std::vector<size_t> batch_nums;
+
     int64_t num_query_points = shape[0];
     size_t num_results = 0;
 
-    for (auto i = 0; i < shape[0]; i++) {
+    for (auto i = 0; i < num_query_points; i++) {
         std::vector<size_t> single_indices(knn);
         std::vector<double> single_distances(knn);
 
@@ -115,19 +117,27 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
                              single_indices.end());
         batch_distances.insert(batch_distances.end(), single_distances.begin(),
                                single_distances.end());
+        batch_nums.push_back(num_results);
     }
-    if (num_results < 1) {
+    if (!all_of(batch_nums.begin(), batch_nums.end(),
+                [&](size_t i) { return i == batch_nums[0]; })) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchKnn] The number of neighbors are "
+                "different. Something went wrong.");
+    }
+    if (batch_nums[0] < 1) {
         return std::make_pair(core::Tensor(), core::Tensor());
     }
 
     std::vector<int64_t> batch_indices2(batch_indices.begin(),
                                         batch_indices.end());
-    core::Tensor indices(batch_indices2,
-                         {num_query_points, static_cast<int64_t>(num_results)},
-                         core::Dtype::Int64);
+    core::Tensor indices(
+            batch_indices2,
+            {num_query_points, static_cast<int64_t>(batch_nums[0])},
+            core::Dtype::Int64);
     core::Tensor distances(
             batch_distances,
-            {num_query_points, static_cast<int64_t>(num_results)},
+            {num_query_points, static_cast<int64_t>(batch_nums[0])},
             core::Dtype::Float64);
     return std::make_pair(indices, distances);
 };
