@@ -65,8 +65,7 @@ public:
     /// e.g. FromType<float>(). Unsupported type results in an exception.
     template <typename T>
     static inline const Dtype FromType() {
-        utility::LogError("Unsupported data type");
-        return Dtype::Undefined;
+        utility::LogError("Unsupported data for Dtype::FromType.");
     }
 
     int64_t ByteSize() const { return byte_size_; }
@@ -80,9 +79,10 @@ public:
     bool operator!=(const Dtype &other) const;
 
 private:
+    static constexpr size_t max_name_len_ = 16;
     DtypeCode dtype_code_;
     int64_t byte_size_;
-    char name_[16];  // Avoids MSVC warning on exporting std::string to DLL.
+    char name_[max_name_len_];  // MSVC warns if std::string is exported to DLL.
 };
 
 template <>

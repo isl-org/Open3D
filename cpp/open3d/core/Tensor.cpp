@@ -133,7 +133,6 @@ public:
     }
 
     static void Deleter(DLManagedTensor* arg) {
-        utility::LogInfo("Deleter called");
         delete static_cast<Open3DDLManagedTensor*>(arg->manager_ctx);
     }
 };

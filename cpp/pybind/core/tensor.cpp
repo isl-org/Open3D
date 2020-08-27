@@ -76,7 +76,7 @@ static std::vector<T> ToFlatVector(
 }
 
 void pybind_core_tensor(py::module& m) {
-    py::class_<core::Tensor, std::shared_ptr<core::Tensor>> tensor(
+    py::class_<core::Tensor> tensor(
             m, "Tensor",
             "A Tensor is a view of a data Blob with shape, stride, data_ptr.");
 

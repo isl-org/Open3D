@@ -94,6 +94,11 @@ void pybind_core_tensorlist(py::module& m) {
     tensorlist.def("__add__", &core::TensorList::operator+);
     tensorlist.def_static("concat", &core::TensorList::Concatenate);
 
+    // Python list properties.
+    // TODO: make TensorList behave more like regular python list, see
+    // std_bind.h.
+    tensorlist.def("__len__", &core::TensorList::GetSize);
+
     // Properties.
     tensorlist.def_property_readonly("size", &core::TensorList::GetSize);
     tensorlist.def_property_readonly("element_shape",
