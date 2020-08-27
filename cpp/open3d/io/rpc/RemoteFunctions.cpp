@@ -185,7 +185,7 @@ bool SetMeshData(const core::Tensor& vertices,
         LogError(
                 "SetMeshData: vertices must have dtype Float32 or Float64 but "
                 "is {}",
-                core::DtypeUtil::ToString(vertices.GetDtype()));
+                vertices.GetDtype().ToString());
     }
 
     auto PrepareTensor = [](const core::Tensor& a) {
@@ -232,7 +232,7 @@ bool SetMeshData(const core::Tensor& vertices,
             LogError(
                     "SetMeshData: faces must have dtype Int32 or Int64 but "
                     "is {}",
-                    core::DtypeUtil::ToString(vertices.GetDtype()));
+                    vertices.GetDtype().ToString());
         } else if (faces.NumDims() != 2) {
             LogError("SetMeshData: faces must have rank 2 but is {}",
                      faces.NumDims());
@@ -266,7 +266,7 @@ bool SetMeshData(const core::Tensor& vertices,
             LogError(
                     "SetMeshData: lines must have dtype Int32 or Int64 but "
                     "is {}",
-                    core::DtypeUtil::ToString(vertices.GetDtype()));
+                    vertices.GetDtype().ToString());
         } else if (lines.NumDims() != 2) {
             LogError("SetMeshData: lines must have rank 2 but is {}",
                      lines.NumDims());

@@ -106,9 +106,9 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
         if (src.IsContiguous() && dst.IsContiguous() &&
             src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
             // MemoryManager handles p2p and non-p2p device copy.
-            MemoryManager::Memcpy(
-                    dst.GetDataPtr(), dst_device, src.GetDataPtr(), src_device,
-                    DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
+            MemoryManager::Memcpy(dst.GetDataPtr(), dst_device,
+                                  src.GetDataPtr(), src_device,
+                                  src_dtype.ByteSize() * shape.NumElements());
         } else if (src_device == dst_device) {
             // For more optimized version, one can check if P2P from src to
             // dst is enabled, then put synchronization with streams on both
@@ -137,10 +137,9 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
         Tensor src_conti = src.Contiguous();  // No op if already contiguous
         if (dst.IsContiguous() && src.GetShape() == dst.GetShape() &&
             src_dtype == dst_dtype) {
-            MemoryManager::Memcpy(
-                    dst.GetDataPtr(), dst_device, src_conti.GetDataPtr(),
-                    src_conti.GetDevice(),
-                    DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
+            MemoryManager::Memcpy(dst.GetDataPtr(), dst_device,
+                                  src_conti.GetDataPtr(), src_conti.GetDevice(),
+                                  src_dtype.ByteSize() * shape.NumElements());
         } else {
             dst.CopyFrom(src.Contiguous().Copy(dst_device));
         }
@@ -159,7 +158,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
             utility::LogError(
                     "Only supports Float32 and Float64, but {} is used.",
-                    DtypeUtil::ToString(dtype));
+                    dtype.ToString());
         }
     };
 

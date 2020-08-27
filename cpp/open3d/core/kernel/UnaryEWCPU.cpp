@@ -94,10 +94,9 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
     Dtype dst_dtype = dst.GetDtype();
     if (src.IsContiguous() && dst.IsContiguous() &&
         src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
-        MemoryManager::Memcpy(
-                dst.GetDataPtr(), dst.GetDevice(), src.GetDataPtr(),
-                src.GetDevice(),
-                DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
+        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
+                              src.GetDataPtr(), src.GetDevice(),
+                              src_dtype.ByteSize() * shape.NumElements());
     } else {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
@@ -120,7 +119,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
             utility::LogError(
                     "Only supports Float32 and Float64, but {} is used.",
-                    DtypeUtil::ToString(dtype));
+                    dtype.ToString());
         }
     };
 
