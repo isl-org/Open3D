@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/impl/cloud/cloud.h"
-#include <nanoflann.hpp>
-
-#include <set>
 #include <cstdint>
+#include <nanoflann.hpp>
+#include <set>
+
+#include "open3d/ml/impl/cloud/cloud.h"
 
 namespace open3d {
 namespace ml {
@@ -36,25 +36,24 @@ namespace impl {
 
 using namespace std;
 
-
 void ordered_neighbors(vector<PointXYZ>& queries,
-                        vector<PointXYZ>& supports,
-                        vector<int>& neighbors_indices,
-                        float radius);
+                       vector<PointXYZ>& supports,
+                       vector<int>& neighbors_indices,
+                       float radius);
 
 void batch_ordered_neighbors(vector<PointXYZ>& queries,
-                                vector<PointXYZ>& supports,
-                                vector<int>& q_batches,
-                                vector<int>& s_batches,
-                                vector<int>& neighbors_indices,
-                                float radius);
+                             vector<PointXYZ>& supports,
+                             vector<int>& q_batches,
+                             vector<int>& s_batches,
+                             vector<int>& neighbors_indices,
+                             float radius);
 
 void batch_nanoflann_neighbors(vector<PointXYZ>& queries,
-                                vector<PointXYZ>& supports,
-                                vector<int>& q_batches,
-                                vector<int>& s_batches,
-                                vector<int>& neighbors_indices,
-                                float radius);
+                               vector<PointXYZ>& supports,
+                               vector<int>& q_batches,
+                               vector<int>& s_batches,
+                               vector<int>& neighbors_indices,
+                               float radius);
 }  // namespace impl
 }  // namespace ml
 }  // namespace open3d
