@@ -209,7 +209,7 @@ test_cpp_example() {
     mkdir -p build
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
-    make -j"$NPROC"
+    make -j"$NPROC" VERBOSE=1
     runExample="$1"
     if [ "$runExample" == ON ]; then
         ./TestVisualizer
