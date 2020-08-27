@@ -126,7 +126,7 @@ public:
     /// indices: Tensor of shape <n, knn>, with dtype Int64.
     /// distainces: Tensor of shape <n, knn>, with dtype Float64.
     std::pair<core::Tensor, core::Tensor> SearchKnn(
-            const core::Tensor &queryquery_points, int knn);
+            const core::Tensor &query_points, int knn);
     /// Perform radius search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
@@ -137,7 +137,7 @@ public:
     /// dtype Float64. number of neighbor: Tensor of shape <n, >, with dtype
     /// Int64.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
-            const core::Tensor &queryquery_points,
+            const core::Tensor &query_points,
             const std::vector<double> &radii);
     /// Perform radius search.
     ///
@@ -149,7 +149,7 @@ public:
     /// dtype Float64. number of neighbor: Tensor of shape <n, >, with dtype
     /// Int64.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
-            const core::Tensor &queryquery_points, double radius);
+            const core::Tensor &query_points, double radius);
     /// Get dimension of the dataset points.
     /// \return dimension of dataset points.
     int GetDimension() const;
