@@ -130,14 +130,15 @@ public:
     /// Perform radius search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
-    /// \param radii A list of radius. Same size with query.
+    /// \param radii Vector of radius. The size must be n.
     /// \return tuple of Tensor, <indices, distances, number of neighbors>
     /// indicecs: Tensor of shape <total_number_of_neighbors, >, with dtype
     /// Int64. distances: Tensor of shape <total_number_of_neighbors, >, with
     /// dtype Float64. number of neighbor: Tensor of shape <n, >, with dtype
     /// Int64.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
-            const core::Tensor &queryquery_points, const std::vector<double> &radii);
+            const core::Tensor &queryquery_points,
+            const std::vector<double> &radii);
     /// Perform radius search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.

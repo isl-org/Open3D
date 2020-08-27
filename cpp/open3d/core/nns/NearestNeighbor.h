@@ -81,7 +81,7 @@ public:
     /// User can specify different radius for each data points per query point.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
-    /// \param radii A list of radius, same size with query.
+    /// \param radii Vector of radius. The size must be n.
     /// \return tuple of Tensor, <indices, distances, number of neighbors>
     /// indicecs: Tensor of shape <total_number_of_neighbors, >, with dtype
     /// Int64. distances: Tensor of shape <total_number_of_neighbors, >, with
@@ -92,7 +92,7 @@ public:
     /// Perform fixed radius search.
     /// All query points are searched with the same radius value.
     ///
-    /// \param query Data points for querying.
+    /// \param query Data points for querying. Must be 2D, with shape {n, d}.
     /// \param radius Radius.
     /// \return tuple of Tensor, <indices, distances, number of neighbors>
     /// indicecs: Tensor of shape <total_number_of_neighbors, >, with dtype
@@ -103,7 +103,7 @@ public:
             const core::Tensor &query_points, double radius);
     /// Perform hybrid search.
     ///
-    /// \param query Data points for querying.
+    /// \param query Data points for querying. Must be 2D, with shape {n, d}.
     /// \param radius Radius.
     /// \param max_knn Maximum number of neighbor to search per query.
     /// \return pair of Tensor, <indices, distances>.

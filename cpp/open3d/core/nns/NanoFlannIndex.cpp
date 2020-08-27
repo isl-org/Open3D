@@ -133,7 +133,8 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
 };
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NanoFlannIndex::SearchRadius(const core::Tensor &query_points, const std::vector<double> &radii) {
+NanoFlannIndex::SearchRadius(const core::Tensor &query_points,
+                             const std::vector<double> &radii) {
     core::SizeVector shape = query_points.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
