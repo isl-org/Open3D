@@ -42,6 +42,15 @@ static OPEN3D_HOST_DEVICE void CUDACopyElementKernel(const void* src,
             static_cast<dst_t>(*static_cast<const src_t*>(src));
 }
 
+static OPEN3D_HOST_DEVICE void CUDACopyObjectElementKernel(
+        const void* src, void* dst, int64_t object_byte_size) {
+    const char* src_bytes = static_cast<const char*>(src);
+    char* dst_bytes = static_cast<char*>(dst);
+    for (int i = 0; i < object_byte_size; ++i) {
+        dst_bytes[i] = src_bytes[i];
+    }
+}
+
 template <typename scalar_t>
 static OPEN3D_HOST_DEVICE void CUDASqrtElementKernel(const void* src,
                                                      void* dst) {
@@ -115,18 +124,31 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
             // src and dst to wait for copy kernel to complete.
             CUDADeviceSwitcher switcher(src_device);
             Indexer indexer({src}, dst, DtypePolicy::NONE);
-            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-                using src_t = scalar_t;
-                DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
-                    using dst_t = scalar_t;
-                    CUDALauncher::LaunchUnaryEWKernel(
-                            indexer,
-                            // Need to wrap as extended CUDA lambda function
-                            [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
-                                CUDACopyElementKernel<src_t, dst_t>(src, dst);
-                            });
+            if (src.GetDtype().GetDtypeCode() == Dtype::DtypeCode::Object) {
+                int64_t object_byte_size = src.GetDtype().ByteSize();
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDACopyObjectElementKernel(src, dst,
+                                                        object_byte_size);
+                        });
+
+            } else {
+                DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+                    using src_t = scalar_t;
+                    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
+                        using dst_t = scalar_t;
+                        CUDALauncher::LaunchUnaryEWKernel(
+                                indexer,
+                                // Need to wrap as extended CUDA lambda function
+                                [] OPEN3D_HOST_DEVICE(const void* src,
+                                                      void* dst) {
+                                    CUDACopyElementKernel<src_t, dst_t>(src,
+                                                                        dst);
+                                });
+                    });
                 });
-            });
+            }
         } else {
             dst.CopyFrom(src.Contiguous().Copy(dst_device));
         }

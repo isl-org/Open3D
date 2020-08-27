@@ -71,6 +71,8 @@ public:
 
     int64_t ByteSize() const { return byte_size_; }
 
+    DtypeCode GetDtypeCode() const { return dtype_code_; }
+
     std::string ToString() const { return name_; }
 
     bool operator==(const Dtype &other) const;

@@ -44,6 +44,7 @@ void pybind_core_dtype(py::module &m) {
     dtype.def_readonly_static("UInt16", &core::Dtype::UInt16);
     dtype.def_readonly_static("Bool", &core::Dtype::Bool);
     dtype.def("byte_size", &core::Dtype::ByteSize);
+    dtype.def("byte_code", &core::Dtype::GetDtypeCode);
     dtype.def("__eq__", &core::Dtype::operator==);
     dtype.def("__ene__", &core::Dtype::operator!=);
     dtype.def("__repr__", &core::Dtype::ToString);

@@ -155,10 +155,28 @@ public:
         return *this;
     }
 
+    /// Similar signature to above, but only supports objects and doesn't
+    /// support type cast.
+    template <typename Object>
+    Tensor& AssignObject(const Object& v) && {
+        if (shape_.size() != 0) {
+            utility::LogError(
+                    "Assignment with scalar only works for scalar Tensor of "
+                    "shape ()");
+        }
+        AssertTemplateDtype<Object>();
+        MemoryManager::MemcpyFromHost(GetDataPtr(), GetDevice(), &v,
+                                      sizeof(Object));
+        return *this;
+    }
+
     /// \brief Fill the whole Tensor with a scalar value, the scalar will be
     /// casted to the Tensor's dtype.
-    template <typename T>
-    void Fill(T v);
+    template <typename Scalar>
+    void Fill(Scalar v);
+
+    template <typename Object>
+    void FillObject(const Object& v);
 
     /// Create a tensor with uninitilized values.
     static Tensor Empty(const SizeVector& shape,
@@ -920,7 +938,8 @@ public:
 
     template <typename T>
     void AssertTemplateDtype() const {
-        if (Dtype::FromType<T>() != dtype_) {
+        if (dtype_.GetDtypeCode() != Dtype::DtypeCode::Object &&
+            Dtype::FromType<T>() != dtype_) {
             utility::LogError(
                     "Requested values have type {} but Tensor has type {}",
                     Dtype::FromType<T>().ToString(), dtype_.ToString());
@@ -1056,6 +1075,13 @@ inline void Tensor::Fill(Scalar v) {
                    GetDtype(), GetDevice());
         AsRvalue() = tmp;
     });
+}
+
+template <typename Object>
+inline void Tensor::FillObject(const Object& v) {
+    Tensor tmp(std::vector<Object>({v}), SizeVector({}), GetDtype(),
+               GetDevice());
+    AsRvalue() = tmp;
 }
 
 template <typename T>
