@@ -35,168 +35,179 @@ namespace core {
 namespace nns {
 
 NanoFlannIndex::NanoFlannIndex(){};
-NanoFlannIndex::NanoFlannIndex(const core::Tensor &tensor) {
-    SetTensorData(tensor);
+NanoFlannIndex::NanoFlannIndex(const core::Tensor &dataset_points) {
+    SetTensorData(dataset_points);
 };
 NanoFlannIndex::~NanoFlannIndex(){};
 
-bool NanoFlannIndex::SetTensorData(const core::Tensor &data) {
-    core::SizeVector shape = data.GetShape();
-    core::Dtype dtype = data.GetDtype();
+int NanoFlannIndex::GetDimension() const {
+    core::SizeVector shape = dataset_points_.GetShape();
+    return static_cast<int>(shape[1]);
+}
+
+size_t NanoFlannIndex::GetDatasetSize() const {
+    core::SizeVector shape = dataset_points_.GetShape();
+    return static_cast<size_t>(shape[0]);
+}
+
+bool NanoFlannIndex::SetTensorData(const core::Tensor &dataset_points) {
+    core::SizeVector shape = dataset_points.GetShape();
+    core::Dtype dtype = dataset_points.GetDtype();
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SetTensorData] Tensor must be "
-                "two-dimenional");
-        return false;
+                "two-dimenional, with shape {n, d}.");
     }
     if (dtype != core::Dtype::Float64) {
         utility::LogError(
                 "[NanoFlannIndex::SetTensorData] Tensor with dtype other than "
-                "float64 is not supported currently");
-        return false;
+                "float64 is not supported currently.");
     }
 
-    dataset_size_ = static_cast<size_t>(shape[0]);
-    dimension_ = static_cast<int>(shape[1]);
+    dataset_points_ = dataset_points.Contiguous();
+    size_t dataset_size = GetDatasetSize();
+    int dimension = GetDimension();
 
-    data_ = data.Contiguous();
-    double *data_ptr = static_cast<double *>(data_.GetDataPtr());
-    adaptor_.reset(new Adaptor<double>(dataset_size_, dimension_, data_ptr));
+    double *data_ptr = static_cast<double *>(dataset_points_.GetDataPtr());
+    adaptor_.reset(new Adaptor<double>(dataset_size, dimension, data_ptr));
 
-    index_.reset(new KDTree_t(dimension_, *adaptor_.get()));
+    index_.reset(new KDTree_t(GetDimension(), *adaptor_.get()));
     index_->buildIndex();
     return true;
 };
 
 std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
-        const core::Tensor &query, int knn) {
-    core::SizeVector shape = query.GetShape();
+        const core::Tensor &query_points, int knn) {
+    core::SizeVector shape = query_points.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SearchKnn] query tensor must be 2 "
                 "dimensional "
-                "matrix");
+                "matrix, with shape {n, d}.");
     }
-    if (shape[1] != dimension_) {
+    if (shape[1] != GetDimension()) {
         utility::LogError(
                 "[NanoFlannIndex::SearchKnn] query tensor has different "
                 "dimension "
-                "with reference tensor");
+                "with reference tensor.");
     }
     if (knn <= 0) {
         utility::LogError(
-                "[NanoFlannIndex::SearchKnn] knn should be larger than 0");
+                "[NanoFlannIndex::SearchKnn] knn should be larger than 0.");
     }
-    std::vector<size_t> result_indices;
-    std::vector<double> result_distances;
-    int64_t num_query = shape[0];
+    std::vector<size_t> batch_indices;
+    std::vector<double> batch_distances;
+    int64_t num_query_points = shape[0];
     size_t num_results = 0;
 
     for (auto i = 0; i < shape[0]; i++) {
-        core::Tensor query_point = query[i];
-        std::vector<double> query_vector = query_point.ToFlatVector<double>();
+        // double* query_vector = static_cast<double*>(query[i].GetDataPtr());
+        // std::vector<double> query_vector =
+        // query_point.ToFlatVector<double>();
 
-        std::vector<size_t> _indices(knn);
-        std::vector<double> _distances(knn);
+        std::vector<size_t> single_indices(knn);
+        std::vector<double> single_distances(knn);
 
-        num_results =
-                index_->knnSearch(query_vector.data(), static_cast<size_t>(knn),
-                                  _indices.data(), _distances.data());
+        num_results = index_->knnSearch(
+                static_cast<double *>(query_points[i].GetDataPtr()),
+                static_cast<size_t>(knn), single_indices.data(),
+                single_distances.data());
 
-        _indices.resize(num_results);
-        _distances.resize(num_results);
-        result_indices.insert(result_indices.end(), _indices.begin(),
-                              _indices.end());
-        result_distances.insert(result_distances.end(), _distances.begin(),
-                                _distances.end());
+        single_indices.resize(num_results);
+        single_distances.resize(num_results);
+        batch_indices.insert(batch_indices.end(), single_indices.begin(),
+                             single_indices.end());
+        batch_distances.insert(batch_distances.end(), single_distances.begin(),
+                               single_distances.end());
     }
     if (num_results < 1) {
         return std::make_pair(core::Tensor(), core::Tensor());
     }
 
-    std::vector<int64_t> result_indices2(result_indices.begin(),
-                                         result_indices.end());
-    core::Tensor indices(result_indices2,
-                         {num_query, static_cast<int64_t>(num_results)},
+    std::vector<int64_t> batch_indices2(batch_indices.begin(),
+                                        batch_indices.end());
+    core::Tensor indices(batch_indices2,
+                         {num_query_points, static_cast<int64_t>(num_results)},
                          core::Dtype::Int64);
-    core::Tensor distances(result_distances,
-                           {num_query, static_cast<int64_t>(num_results)},
-                           core::Dtype::Float64);
+    core::Tensor distances(
+            batch_distances,
+            {num_query_points, static_cast<int64_t>(num_results)},
+            core::Dtype::Float64);
     return std::make_pair(indices, distances);
 };
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NanoFlannIndex::SearchRadius(const core::Tensor &query, double *radii) {
-    core::SizeVector shape = query.GetShape();
+NanoFlannIndex::SearchRadius(const core::Tensor &query_points, double *radii) {
+    core::SizeVector shape = query_points.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SearchRadius] query tensor must be 2 "
                 "dimensional "
-                "matrix");
+                "matrix, with shape {n, d}");
     }
-    if (shape[1] != dimension_) {
+    if (shape[1] != GetDimension()) {
         utility::LogError(
                 "[NanoFlannIndex::SearchRadius] query tensor has different "
-                "dimension with reference tensor");
+                "dimension with reference tensor.");
     }
-    std::vector<size_t> result_indices;
-    std::vector<double> result_distances;
-    std::vector<size_t> result_nums;
+    std::vector<size_t> batch_indices;
+    std::vector<double> batch_distances;
+    std::vector<size_t> batch_nums;
 
     for (auto i = 0; i < shape[0]; i++) {
-        core::Tensor query_point = query[i];
-        std::vector<double> query_vector = query_point.ToFlatVector<double>();
+        // core::Tensor query_point = query[i];
+        // std::vector<double> query_vector =
+        // query_point.ToFlatVector<double>();
         double radius = radii[i];
         if (radius <= 0.0) {
             utility::LogError(
                     "[NanoFlannIndex::SearchRadius] radius should be larger "
-                    "than 0");
+                    "than 0.");
         }
 
         nanoflann::SearchParams params;
         std::vector<std::pair<size_t, double>> ret_matches;
         size_t num_matches = index_->radiusSearch(
-                query_vector.data(), radius * radius, ret_matches, params);
+                static_cast<double *>(query_points[i].GetDataPtr()),
+                radius * radius, ret_matches, params);
 
         ret_matches.resize(num_matches);
-        result_nums.push_back(num_matches);
+        batch_nums.push_back(num_matches);
         for (auto ret = ret_matches.begin(); ret < ret_matches.end(); ret++) {
-            result_indices.push_back(ret->first);
-            result_distances.push_back(ret->second);
+            batch_indices.push_back(ret->first);
+            batch_distances.push_back(ret->second);
         }
     }
     size_t size = 0;
-    for (auto &s : result_nums) {
+    for (auto &s : batch_nums) {
         size += s;
     }
-    std::vector<int64_t> result_nums2(result_nums.begin(), result_nums.end());
-    std::vector<int64_t> result_indices2(result_indices.begin(),
-                                         result_indices.end());
-    core::Tensor indices(result_indices2, {static_cast<int64_t>(size)},
+    std::vector<int64_t> batch_nums2(batch_nums.begin(), batch_nums.end());
+    std::vector<int64_t> batch_indices2(batch_indices.begin(),
+                                        batch_indices.end());
+    core::Tensor indices(batch_indices2, {static_cast<int64_t>(size)},
                          core::Dtype::Int64);
-    core::Tensor distances(result_distances, {static_cast<int64_t>(size)},
+    core::Tensor distances(batch_distances, {static_cast<int64_t>(size)},
                            core::Dtype::Float64);
-    core::Tensor nums(result_nums2, {static_cast<int64_t>(result_nums2.size())},
+    core::Tensor nums(batch_nums2, {static_cast<int64_t>(batch_nums2.size())},
                       core::Dtype::Int64);
     return std::make_tuple(indices, distances, nums);
-
-    return std::make_tuple(core::Tensor(), core::Tensor(), core::Tensor());
 };
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NanoFlannIndex::SearchRadius(const core::Tensor &query, double radius) {
-    core::SizeVector shape = query.GetShape();
+NanoFlannIndex::SearchRadius(const core::Tensor &query_points, double radius) {
+    core::SizeVector shape = query_points.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SearchRadius] query tensor must be 2 "
                 "dimensional "
-                "matrix");
+                "matrix, with shape {n, d}.");
     }
 
-    int64_t num_query = shape[0];
-    std::vector<double> radii(num_query, radius);
+    int64_t num_query_points = shape[0];
+    std::vector<double> radii(num_query_points, radius);
 
-    return SearchRadius(query, radii.data());
+    return SearchRadius(query_points, radii.data());
 };
 
 }  // namespace nns

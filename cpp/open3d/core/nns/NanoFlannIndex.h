@@ -102,11 +102,11 @@ class NanoFlannIndex {
 public:
     /// \brief Default Constructor.
     NanoFlannIndex();
-    /// \brief Parameterized Constructor
+    /// \brief Parameterized Constructor.
     ///
     /// \param tensor Provides a set of data points as Tensor for KDTree
     /// construction.
-    NanoFlannIndex(const core::Tensor &tensor);
+    NanoFlannIndex(const core::Tensor &dataset_points);
     ~NanoFlannIndex();
     NanoFlannIndex(const NanoFlannIndex &) = delete;
     NanoFlannIndex &operator=(const NanoFlannIndex &) = delete;
@@ -114,33 +114,52 @@ public:
 public:
     /// Set the data for the KDTree from a Tensor.
     ///
-    /// \param data Data points for KDTree Construction.
-    bool SetTensorData(const core::Tensor &data);
+    /// \param dataset_points Dataset points for KDTree construction. Must be
+    /// 2D, with shape {n, d}
+    /// \return Returns true if the construction success, otherwise false.
+    bool SetTensorData(const core::Tensor &dataset_points);
     /// Perform K nearest neighbor search.
     ///
-    /// \param query Data points for querying.
+    /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param knn Number of nearest neighbor to search.
-    std::pair<core::Tensor, core::Tensor> SearchKnn(const core::Tensor &query,
-                                                    int knn);
+    /// \return pair of Tensor, <indices, distances>.
+    /// indices: Tensor of shape <n, knn>, with dtype Int64.
+    /// distainces: Tensor of shape <n, knn>, with dtype Float64.
+    std::pair<core::Tensor, core::Tensor> SearchKnn(
+            const core::Tensor &queryquery_points, int knn);
     /// Perform radius search.
     ///
-    /// \param query Data points for querying.
+    /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param radii A list of radius. Same size with query.
+    /// \return tuple of Tensor, <indices, distances, number of neighbors>
+    /// indicecs: Tensor of shape <total_number_of_neighbors, >, with dtype
+    /// Int64. distances: Tensor of shape <total_number_of_neighbors, >, with
+    /// dtype Float64. number of neighbor: Tensor of shape <n, >, with dtype
+    /// Int64.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
-            const core::Tensor &query, double *radii);
+            const core::Tensor &queryquery_points, double *radii);
     /// Perform radius search.
     ///
-    /// \param query Data points for querying.
+    /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param radius Radius.
+    /// \return tuple of Tensor, <indices, distances, number of neighbors>
+    /// indicecs: Tensor of shape <total_number_of_neighbors, >, with dtype
+    /// Int64. distances: Tensor of shape <total_number_of_neighbors, >, with
+    /// dtype Float64. number of neighbor: Tensor of shape <n, >, with dtype
+    /// Int64.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
-            const core::Tensor &query, double radius);
+            const core::Tensor &queryquery_points, double radius);
+    /// Get dimension of the dataset points.
+    /// \return dimension of dataset points.
+    int GetDimension() const;
+    /// Get size of the dataset points.
+    /// \return number of points in dataset.
+    size_t GetDatasetSize() const;
 
 protected:
-    core::Tensor data_;
+    core::Tensor dataset_points_;
     std::unique_ptr<KDTree_t> index_;
     std::unique_ptr<Adaptor<double>> adaptor_;
-    int dimension_ = 0;
-    size_t dataset_size_ = 0;
 };
 }  // namespace nns
 }  // namespace core

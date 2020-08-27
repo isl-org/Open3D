@@ -36,48 +36,46 @@ NearestNeighbor::~NearestNeighbor(){};
 
 bool NearestNeighbor::SetIndex() {
     index_.reset(new NanoFlannIndex());
-    return index_->SetTensorData(data_);
+    return index_->SetTensorData(dataset_points_);
 };
-bool NearestNeighbor::KnnIndex() {
-    index_.reset(new NanoFlannIndex());
-    return SetIndex();
-};
+bool NearestNeighbor::KnnIndex() { return SetIndex(); };
 bool NearestNeighbor::RadiusIndex() { return SetIndex(); };
 bool NearestNeighbor::FixedRadiusIndex() { return SetIndex(); }
 bool NearestNeighbor::HybridIndex() { return SetIndex(); };
 
 std::pair<core::Tensor, core::Tensor> NearestNeighbor::KnnSearch(
-        const core::Tensor& query, int knn) {
+        const core::Tensor& query_points, int knn) {
     if (!index_) {
         utility::LogError("[NearestNeighbor::KnnSearch] Index is not set");
     }
-    return index_->SearchKnn(query, knn);
+    return index_->SearchKnn(query_points, knn);
 }
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighbor::RadiusSearch(const core::Tensor& query, double* radii) {
+NearestNeighbor::RadiusSearch(const core::Tensor& query_points, double* radii) {
     if (!index_) {
         utility::LogError("[NearestNeighbor::RadiusSearch] Index is not set");
     }
-    return index_->SearchRadius(query, radii);
+    return index_->SearchRadius(query_points, radii);
 }
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighbor::FixedRadiusSearch(const core::Tensor& query, double radius) {
+NearestNeighbor::FixedRadiusSearch(const core::Tensor& query_points,
+                                   double radius) {
     if (!index_) {
         utility::LogError(
                 "[NearestNeighbor::FixedRadiusSearch] Index is not set");
     }
-    return index_->SearchRadius(query, radius);
+    return index_->SearchRadius(query_points, radius);
 }
 
 std::pair<core::Tensor, core::Tensor> NearestNeighbor::HybridSearch(
-        const core::Tensor& query, double radius, int max_knn) {
+        const core::Tensor& query_points, double radius, int max_knn) {
     if (!index_) {
         utility::LogError("[NearestNeighbor::HybridSearch] Index is not set");
     }
     std::pair<core::Tensor, core::Tensor> result =
-            index_->SearchKnn(query, max_knn);
+            index_->SearchKnn(query_points, max_knn);
     core::Tensor indices = result.first;
     core::Tensor distances = result.second;
     core::SizeVector size = distances.GetShape();

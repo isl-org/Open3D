@@ -42,56 +42,82 @@ class NearestNeighbor {
 public:
     /// Constructor
     ///
-    /// \param tensor Data points for constructing search index.
-    NearestNeighbor(const core::Tensor &data) : data_(data){};
+    /// \param dataset_points Dataset points for constructing search index. Must
+    /// be 2D, with shape {n, d}.
+    NearestNeighbor(const core::Tensor &dataset_points)
+        : dataset_points_(dataset_points){};
     ~NearestNeighbor();
     NearestNeighbor(const NearestNeighbor &) = delete;
     NearestNeighbor &operator=(const NearestNeighbor &) = delete;
 
 public:
     /// Set index for knn search.
+    ///
+    /// \return Returns true if building index success, otherwise false.
     bool KnnIndex();
     /// Set index for radius search.
+    ///
+    /// \return Returns true if building index success, otherwise false.
     bool RadiusIndex();
     /// Set index for fixed-radius search.
+    ///
+    /// \return Returns true if building index success, otherwise false.
     bool FixedRadiusIndex();
     /// Set index for hybrid search.
+    ///
+    /// \return Returns true if building index success, otherwise false.
     bool HybridIndex();
 
     /// Perform knn search.
     ///
-    /// \param query Data points for querying.
+    /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param knn Number of neighbor to search.
-    std::pair<core::Tensor, core::Tensor> KnnSearch(const core::Tensor &query,
-                                                    int knn);
+    /// \return pair of Tensor, <indices, distances>.
+    /// indices: Tensor of shape <n, knn>, with dtype Int64.
+    /// distainces: Tensor of shape <n, knn>, with dtype Float64.
+    std::pair<core::Tensor, core::Tensor> KnnSearch(
+            const core::Tensor &query_points, int knn);
     /// Perform radius search.
     /// User can specify different radius for each data points per query point.
     ///
-    /// \param query Data points for querying.
+    /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param radii A list of radius, same size with query.
+    /// \return tuple of Tensor, <indices, distances, number of neighbors>
+    /// indicecs: Tensor of shape <total_number_of_neighbors, >, with dtype
+    /// Int64. distances: Tensor of shape <total_number_of_neighbors, >, with
+    /// dtype Float64. number of neighbor: Tensor of shape <n, >, with dtype
+    /// Int64.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> RadiusSearch(
-            const core::Tensor &query, double *radii);
+            const core::Tensor &query_points, double *radii);
     /// Perform fixed radius search.
     /// All query points are searched with the same radius value.
     ///
     /// \param query Data points for querying.
     /// \param radius Radius.
+    /// \return tuple of Tensor, <indices, distances, number of neighbors>
+    /// indicecs: Tensor of shape <total_number_of_neighbors, >, with dtype
+    /// Int64. distances: Tensor of shape <total_number_of_neighbors, >, with
+    /// dtype Float64. number of neighbor: Tensor of shape <n, >, with dtype
+    /// Int64.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> FixedRadiusSearch(
-            const core::Tensor &query, double radius);
+            const core::Tensor &query_points, double radius);
     /// Perform hybrid search.
     ///
     /// \param query Data points for querying.
     /// \param radius Radius.
     /// \param max_knn Maximum number of neighbor to search per query.
+    /// \return pair of Tensor, <indices, distances>.
+    /// indices: Tensor of shape <n, knn>, with dtype Int64.
+    /// distainces: Tensor of shape <n, knn>, with dtype Float64.
     std::pair<core::Tensor, core::Tensor> HybridSearch(
-            const core::Tensor &query, double radius, int max_knn);
+            const core::Tensor &query_points, double radius, int max_knn);
 
 private:
     bool SetIndex();
 
 protected:
     std::unique_ptr<NanoFlannIndex> index_;
-    const Tensor data_;
+    const Tensor dataset_points_;
 };
 }  // namespace nns
 }  // namespace core
