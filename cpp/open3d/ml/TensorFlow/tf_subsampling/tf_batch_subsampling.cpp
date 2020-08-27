@@ -24,41 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "tensorflow/core/framework/op.h"
-#include "tensorflow/core/framework/shape_inference.h"
-#include "tensorflow/core/framework/op_kernel.h"
-
 #include "open3d/ml/impl/grid_subsampling/grid_subsampling.h"
+#include "tensorflow/core/framework/op.h"
+#include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow/core/framework/shape_inference.h"
 
 using namespace std;
 using namespace tensorflow;
 using namespace open3d::ml::impl;
 
 REGISTER_OP("BatchGridSubsampling")
-    .Input("points: float")
-    .Input("batches: int32")
-    .Input("dl: float")
-    .Output("sub_points: float")
-    .Output("sub_batches: int32")
-    .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
-        ::tensorflow::shape_inference::ShapeHandle input0_shape;
-        TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &input0_shape));
-        c->set_output(0, input0_shape);
-        c->set_output(1, c->input(1));
-        return Status::OK();
-    });
-
-
-
-
+        .Input("points: float")
+        .Input("batches: int32")
+        .Input("dl: float")
+        .Output("sub_points: float")
+        .Output("sub_batches: int32")
+        .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
+            ::tensorflow::shape_inference::ShapeHandle input0_shape;
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &input0_shape));
+            c->set_output(0, input0_shape);
+            c->set_output(1, c->input(1));
+            return Status::OK();
+        });
 
 class BatchGridSubsamplingOp : public OpKernel {
-    public:
-    explicit BatchGridSubsamplingOp(OpKernelConstruction* context) : OpKernel(context) {}
+public:
+    explicit BatchGridSubsamplingOp(OpKernelConstruction* context)
+        : OpKernel(context) {}
 
-    void Compute(OpKernelContext* context) override
-    {
-
+    void Compute(OpKernelContext* context) override {
         // Grab the input tensors
         const Tensor& points_tensor = context->input(0);
         const Tensor& batches_tensor = context->input(1);
@@ -83,12 +77,14 @@ class BatchGridSubsamplingOp : public OpKernel {
 
         // get the data as std vector of points
         float sampleDl = dl_tensor.flat<float>().data()[0];
-        vector<PointXYZ> original_points = vector<PointXYZ>((PointXYZ*)points_tensor.flat<float>().data(),
-                                                            (PointXYZ*)points_tensor.flat<float>().data() + N);
+        vector<PointXYZ> original_points = vector<PointXYZ>(
+                (PointXYZ*)points_tensor.flat<float>().data(),
+                (PointXYZ*)points_tensor.flat<float>().data() + N);
 
         // Batches lengths
-        vector<int> batches = vector<int>((int*)batches_tensor.flat<int>().data(),
-                                          (int*)batches_tensor.flat<int>().data() + Nb);
+        vector<int> batches =
+                vector<int>((int*)batches_tensor.flat<int>().data(),
+                            (int*)batches_tensor.flat<int>().data() + Nb);
 
         // Unsupported label and features
         vector<float> original_features;
@@ -101,15 +97,10 @@ class BatchGridSubsamplingOp : public OpKernel {
         vector<int> subsampled_batches;
 
         // Compute results
-        batch_grid_subsampling(original_points,
-                                 subsampled_points,
-                                 original_features,
-                                 subsampled_features,
-                                 original_classes,
-                                 subsampled_classes,
-                                 batches,
-                                 subsampled_batches,
-                                 sampleDl);
+        batch_grid_subsampling(original_points, subsampled_points,
+                               original_features, subsampled_features,
+                               original_classes, subsampled_classes, batches,
+                               subsampled_batches, sampleDl);
 
         // Sub_points output
         // *****************
@@ -121,12 +112,12 @@ class BatchGridSubsamplingOp : public OpKernel {
 
         // create output tensor
         Tensor* sub_points_output = NULL;
-        OP_REQUIRES_OK(context, context->allocate_output(0, sub_points_shape, &sub_points_output));
+        OP_REQUIRES_OK(context, context->allocate_output(0, sub_points_shape,
+                                                         &sub_points_output));
         auto sub_points_tensor = sub_points_output->matrix<float>();
 
         // Fill output tensor
-        for (int i = 0; i < subsampled_points.size(); i++)
-        {
+        for (int i = 0; i < subsampled_points.size(); i++) {
             sub_points_tensor(i, 0) = subsampled_points[i].x;
             sub_points_tensor(i, 1) = subsampled_points[i].y;
             sub_points_tensor(i, 2) = subsampled_points[i].z;
@@ -141,15 +132,15 @@ class BatchGridSubsamplingOp : public OpKernel {
 
         // create output tensor
         Tensor* sub_batches_output = NULL;
-        OP_REQUIRES_OK(context, context->allocate_output(1, sub_batches_shape, &sub_batches_output));
+        OP_REQUIRES_OK(context, context->allocate_output(1, sub_batches_shape,
+                                                         &sub_batches_output));
         auto sub_batches_tensor = sub_batches_output->flat<int>();
 
         // Fill output tensor
         for (int i = 0; i < subsampled_batches.size(); i++)
             sub_batches_tensor(i) = subsampled_batches[i];
-
     }
 };
 
-
-REGISTER_KERNEL_BUILDER(Name("BatchGridSubsampling").Device(DEVICE_CPU), BatchGridSubsamplingOp);
+REGISTER_KERNEL_BUILDER(Name("BatchGridSubsampling").Device(DEVICE_CPU),
+                        BatchGridSubsamplingOp);
