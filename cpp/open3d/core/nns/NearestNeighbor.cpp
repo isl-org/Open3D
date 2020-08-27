@@ -52,7 +52,7 @@ std::pair<core::Tensor, core::Tensor> NearestNeighbor::KnnSearch(
 }
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighbor::RadiusSearch(const core::Tensor& query_points, double* radii) {
+NearestNeighbor::RadiusSearch(const core::Tensor& query_points, const std::vector<double> &radii) {
     if (!index_) {
         utility::LogError("[NearestNeighbor::RadiusSearch] Index is not set");
     }

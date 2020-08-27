@@ -101,10 +101,6 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
     size_t num_results = 0;
 
     for (auto i = 0; i < shape[0]; i++) {
-        // double* query_vector = static_cast<double*>(query[i].GetDataPtr());
-        // std::vector<double> query_vector =
-        // query_point.ToFlatVector<double>();
-
         std::vector<size_t> single_indices(knn);
         std::vector<double> single_distances(knn);
 
@@ -137,7 +133,7 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
 };
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NanoFlannIndex::SearchRadius(const core::Tensor &query_points, double *radii) {
+NanoFlannIndex::SearchRadius(const core::Tensor &query_points, const std::vector<double> &radii) {
     core::SizeVector shape = query_points.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
@@ -155,9 +151,6 @@ NanoFlannIndex::SearchRadius(const core::Tensor &query_points, double *radii) {
     std::vector<size_t> batch_nums;
 
     for (auto i = 0; i < shape[0]; i++) {
-        // core::Tensor query_point = query[i];
-        // std::vector<double> query_vector =
-        // query_point.ToFlatVector<double>();
         double radius = radii[i];
         if (radius <= 0.0) {
             utility::LogError(
@@ -207,7 +200,7 @@ NanoFlannIndex::SearchRadius(const core::Tensor &query_points, double radius) {
     int64_t num_query_points = shape[0];
     std::vector<double> radii(num_query_points, radius);
 
-    return SearchRadius(query_points, radii.data());
+    return SearchRadius(query_points, radii);
 };
 
 }  // namespace nns

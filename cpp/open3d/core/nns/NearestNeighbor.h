@@ -88,7 +88,7 @@ public:
     /// dtype Float64. number of neighbor: Tensor of shape <n, >, with dtype
     /// Int64.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> RadiusSearch(
-            const core::Tensor &query_points, double *radii);
+            const core::Tensor &query_points, const std::vector<double> &radii);
     /// Perform fixed radius search.
     /// All query points are searched with the same radius value.
     ///

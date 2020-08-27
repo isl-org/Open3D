@@ -123,12 +123,12 @@ TEST(NearestNeighbor, RadiusSearch) {
                        {2, 3}, core::Dtype::Float64);
 
     // if radius <= 0
-    double radius_0[] = {1.0, 0.0};
+    std::vector<double> radius_0{1.0, 0.0};
     EXPECT_THROW(index.RadiusSearch(query, radius_0), std::runtime_error);
     EXPECT_THROW(index.RadiusSearch(query, radius_0), std::runtime_error);
 
     // if radius == 0.1
-    double radius[] = {0.1, 0.1};
+    std::vector<double> radius{0.1, 0.1};
     std::tuple<core::Tensor, core::Tensor, core::Tensor> result =
             index.RadiusSearch(query, radius);
     core::Tensor indices = std::get<0>(result).To(core::Dtype::Int32);
