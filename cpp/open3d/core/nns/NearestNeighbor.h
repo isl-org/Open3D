@@ -69,28 +69,33 @@ public:
     ///
     /// \param query Data points for querying.
     /// \param radii A list of radius, same size with query.
+    template <typename T>
     std::tuple<core::Tensor, core::Tensor, core::Tensor> RadiusSearch(
-            const core::Tensor &query, double *radii);
+            const core::Tensor &query, T *radii);
     /// Perform fixed radius search.
     /// All query points are searched with the same radius value.
     ///
     /// \param query Data points for querying.
     /// \param radius Radius.
+    template <typename T>
     std::tuple<core::Tensor, core::Tensor, core::Tensor> FixedRadiusSearch(
-            const core::Tensor &query, double radius);
+            const core::Tensor &query, T radius);
     /// Perform hybrid search.
     ///
     /// \param query Data points for querying.
     /// \param radius Radius.
     /// \param max_knn Maximum number of neighbor to search per query.
+    template <typename T>
     std::pair<core::Tensor, core::Tensor> HybridSearch(
-            const core::Tensor &query, double radius, int max_knn);
+            const core::Tensor &query, T radius, int max_knn);
 
 private:
     bool SetIndex();
+    template <class T>
+    NanoFlannIndex<T> *cast_index();
 
 protected:
-    std::unique_ptr<NanoFlannIndex> index_;
+    std::unique_ptr<NanoFlannIndexBase> index_;
     const Tensor data_;
 };
 }  // namespace nns

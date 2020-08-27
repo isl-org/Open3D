@@ -88,13 +88,24 @@ struct SelectNanoflannAdaptor<L1, T> {
     typedef nanoflann::L1_Adaptor<T, Adaptor<T>, T> Adaptor_t;
 };
 
+class NanoFlannIndexBase {
+public:
+    NanoFlannIndexBase();
+    ~NanoFlannIndexBase();
+
+protected:
+    core::Tensor data_;
+    int dimension_ = 0;
+    size_t dataset_size_ = 0;
+};
 /// \class NanoFlann
 ///
 /// \brief KDTree with NanoFlann for nearest neighbor search.
-class NanoFlannIndex {
+template <typename T>
+class NanoFlannIndex : public NanoFlannIndexBase {
     typedef nanoflann::KDTreeSingleIndexAdaptor<
-            typename SelectNanoflannAdaptor<L2, double>::Adaptor_t,
-            Adaptor<double>,
+            typename SelectNanoflannAdaptor<L2, T>::Adaptor_t,
+            Adaptor<T>,
             -1,
             size_t>
             KDTree_t;
@@ -127,18 +138,18 @@ public:
     /// \param query Data points for querying.
     /// \param radii A list of radius. Same size with query.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
-            const core::Tensor &query, double *radii);
+            const core::Tensor &query, T *radii);
     /// Perform radius search.
     ///
     /// \param query Data points for querying.
     /// \param radius Radius.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
-            const core::Tensor &query, double radius);
+            const core::Tensor &query, T radius);
 
 protected:
     core::Tensor data_;
     std::unique_ptr<KDTree_t> index_;
-    std::unique_ptr<Adaptor<double>> adaptor_;
+    std::unique_ptr<Adaptor<T>> adaptor_;
     int dimension_ = 0;
     size_t dataset_size_ = 0;
 };

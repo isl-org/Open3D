@@ -46,7 +46,7 @@ TEST(NanoFlannIndex, SearchKnn) {
                                0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
                                0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
     core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
-    core::nns::NanoFlannIndex index(ref);
+    core::nns::NanoFlannIndex<double> index(ref);
 
     core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843}),
                        {1, 3}, core::Dtype::Float64);
@@ -88,7 +88,7 @@ TEST(NanoFlannIndex, SearchRadius) {
                                0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
                                0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
     core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
-    core::nns::NanoFlannIndex index(ref);
+    core::nns::NanoFlannIndex<double> index(ref);
 
     core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843}),
                        {1, 3}, core::Dtype::Float64);

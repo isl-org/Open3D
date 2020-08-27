@@ -76,6 +76,23 @@ TEST(NearestNeighbor, KnnSearch) {
              std::vector<double>({0.00626358, 0.00747938, 0.0108912, 0.0138322,
                                   0.015048, 0.018695, 0.0199108, 0.0286952,
                                   0.0362638, 0.0411266}));
+
+    // float
+    core::Tensor ref_float = ref.To(core::Dtype::Float32);
+    core::Tensor query_float = query.To(core::Dtype::Float32);
+    core::nns::NearestNeighbor index_float(ref_float);
+    index_float.KnnIndex();
+
+    // throw if query and reference have different data type
+    EXPECT_THROW(index_float.KnnSearch(query, 3), std::runtime_error);
+
+    std::pair<core::Tensor, core::Tensor> result_float =
+            index_float.KnnSearch(query_float, 3);
+    core::Tensor indices_float = result_float.first.To(core::Dtype::Int32);
+    core::Tensor distances_float = result_float.second;
+    ExpectEQ(indices_float.ToFlatVector<int>(), std::vector<int>({1, 4, 9}));
+    ExpectEQ(distances_float.ToFlatVector<float>(),
+             std::vector<float>({0.00626358, 0.00747938, 0.0108912}));
 }
 
 TEST(NearestNeighbor, FixedRadiusSearch) {
@@ -105,6 +122,22 @@ TEST(NearestNeighbor, FixedRadiusSearch) {
     ExpectEQ(indices.ToFlatVector<int>(), std::vector<int>({1, 4}));
     ExpectEQ(distances.ToFlatVector<double>(),
              std::vector<double>({0.00626358, 0.00747938}));
+
+    // float
+    core::Tensor ref_float = ref.To(core::Dtype::Float32);
+    core::Tensor query_float = query.To(core::Dtype::Float32);
+    core::nns::NearestNeighbor index_float(ref_float);
+    index_float.FixedRadiusIndex();
+
+    std::tuple<core::Tensor, core::Tensor, core::Tensor> result_float =
+            index_float.FixedRadiusSearch(query_float, (float)0.1);
+
+    core::Tensor indices_float =
+            std::get<0>(result_float).To(core::Dtype::Int32);
+    core::Tensor distances_float = std::get<1>(result_float);
+    ExpectEQ(indices_float.ToFlatVector<int>(), std::vector<int>({1, 4}));
+    ExpectEQ(distances_float.ToFlatVector<float>(),
+             std::vector<float>({0.00626358, 0.00747938}));
 }
 
 TEST(NearestNeighbor, RadiusSearch) {
@@ -116,7 +149,7 @@ TEST(NearestNeighbor, RadiusSearch) {
                                0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
     core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
     core::nns::NearestNeighbor index(ref);
-    index.FixedRadiusIndex();
+    index.RadiusIndex();
 
     core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843,
                                             0.064705, 0.043921, 0.087843}),
@@ -137,6 +170,29 @@ TEST(NearestNeighbor, RadiusSearch) {
     ExpectEQ(indices.ToFlatVector<int>(), std::vector<int>({1, 4, 1, 4}));
     ExpectEQ(distances.ToFlatVector<double>(),
              std::vector<double>(
+                     {0.00626358, 0.00747938, 0.00626358, 0.00747938}));
+
+    // float
+    core::Tensor ref_float = ref.To(core::Dtype::Float32);
+    core::Tensor query_float = query.To(core::Dtype::Float32);
+    core::nns::NearestNeighbor index_float(ref_float);
+    index_float.RadiusIndex();
+
+    float radius_0_float[] = {1.0, 0.0};
+    float radius_float[] = {0.1, 0.1};
+
+    EXPECT_THROW(index_float.RadiusSearch(query, radius), std::runtime_error);
+    EXPECT_THROW(index_float.RadiusSearch(query_float, radius_0_float),
+                 std::runtime_error);
+
+    std::tuple<core::Tensor, core::Tensor, core::Tensor> result_float =
+            index_float.RadiusSearch(query_float, radius_float);
+    core::Tensor indices_float =
+            std::get<0>(result_float).To(core::Dtype::Int32);
+    core::Tensor distances_float = std::get<1>(result_float);
+    ExpectEQ(indices_float.ToFlatVector<int>(), std::vector<int>({1, 4, 1, 4}));
+    ExpectEQ(distances_float.ToFlatVector<float>(),
+             std::vector<float>(
                      {0.00626358, 0.00747938, 0.00626358, 0.00747938}));
 }
 
@@ -163,6 +219,23 @@ TEST(NearestNeighbor, HybridSearch) {
     ExpectEQ(indices.ToFlatVector<int>(), std::vector<int>({1}));
     ExpectEQ(distainces.ToFlatVector<double>(),
              std::vector<double>({0.00626358}));
+
+    // float
+    core::Tensor ref_float = ref.To(core::Dtype::Float32);
+    core::Tensor query_float = query.To(core::Dtype::Float32);
+    core::nns::NearestNeighbor index_float(ref_float);
+    index_float.HybridIndex();
+
+    EXPECT_THROW(index_float.HybridSearch(query, (float)0.1, 1),
+                 std::runtime_error);
+
+    std::pair<core::Tensor, core::Tensor> result_float =
+            index_float.HybridSearch(query_float, (float)0.1, 1);
+    core::Tensor indices_float = result_float.first.To(core::Dtype::Int32);
+    core::Tensor distances_float = result_float.second;
+    ExpectEQ(indices_float.ToFlatVector<int>(), std::vector<int>({1}));
+    ExpectEQ(distances_float.ToFlatVector<float>(),
+             std::vector<float>({0.00626358}));
 }
 
 }  // namespace tests

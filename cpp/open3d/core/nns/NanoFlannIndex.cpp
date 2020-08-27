@@ -34,25 +34,27 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-NanoFlannIndex::NanoFlannIndex(){};
-NanoFlannIndex::NanoFlannIndex(const core::Tensor &tensor) {
+NanoFlannIndexBase::NanoFlannIndexBase(){};
+NanoFlannIndexBase::~NanoFlannIndexBase(){};
+
+template <typename T>
+NanoFlannIndex<T>::NanoFlannIndex(){};
+
+template <typename T>
+NanoFlannIndex<T>::NanoFlannIndex(const core::Tensor &tensor) {
     SetTensorData(tensor);
 };
-NanoFlannIndex::~NanoFlannIndex(){};
 
-bool NanoFlannIndex::SetTensorData(const core::Tensor &data) {
+template <typename T>
+NanoFlannIndex<T>::~NanoFlannIndex(){};
+
+template <typename T>
+bool NanoFlannIndex<T>::SetTensorData(const core::Tensor &data) {
     core::SizeVector shape = data.GetShape();
-    core::Dtype dtype = data.GetDtype();
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SetTensorData] Tensor must be "
                 "two-dimenional");
-        return false;
-    }
-    if (dtype != core::Dtype::Float64) {
-        utility::LogError(
-                "[NanoFlannIndex::SetTensorData] Tensor with dtype other than "
-                "float64 is not supported currently");
         return false;
     }
 
@@ -60,15 +62,16 @@ bool NanoFlannIndex::SetTensorData(const core::Tensor &data) {
     dimension_ = static_cast<int>(shape[1]);
 
     data_ = data.Contiguous();
-    double *data_ptr = static_cast<double *>(data_.GetDataPtr());
-    adaptor_.reset(new Adaptor<double>(dataset_size_, dimension_, data_ptr));
+    T *data_ptr = static_cast<T *>(data_.GetDataPtr());
+    adaptor_.reset(new Adaptor<T>(dataset_size_, dimension_, data_ptr));
 
     index_.reset(new KDTree_t(dimension_, *adaptor_.get()));
     index_->buildIndex();
     return true;
 };
 
-std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
+template <typename T>
+std::pair<core::Tensor, core::Tensor> NanoFlannIndex<T>::SearchKnn(
         const core::Tensor &query, int knn) {
     core::SizeVector shape = query.GetShape();
     if (shape.size() != 2) {
@@ -88,16 +91,16 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
                 "[NanoFlannIndex::SearchKnn] knn should be larger than 0");
     }
     std::vector<size_t> result_indices;
-    std::vector<double> result_distances;
+    std::vector<T> result_distances;
     int64_t num_query = shape[0];
     size_t num_results = 0;
 
     for (auto i = 0; i < shape[0]; i++) {
         core::Tensor query_point = query[i];
-        std::vector<double> query_vector = query_point.ToFlatVector<double>();
+        std::vector<T> query_vector = query_point.ToFlatVector<T>();
 
         std::vector<size_t> _indices(knn);
-        std::vector<double> _distances(knn);
+        std::vector<T> _distances(knn);
 
         num_results =
                 index_->knnSearch(query_vector.data(), static_cast<size_t>(knn),
@@ -121,12 +124,13 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
                          core::Dtype::Int64);
     core::Tensor distances(result_distances,
                            {num_query, static_cast<int64_t>(num_results)},
-                           core::Dtype::Float64);
+                           core::DtypeUtil::FromType<T>());
     return std::make_pair(indices, distances);
 };
 
+template <typename T>
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NanoFlannIndex::SearchRadius(const core::Tensor &query, double *radii) {
+NanoFlannIndex<T>::SearchRadius(const core::Tensor &query, T *radii) {
     core::SizeVector shape = query.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
@@ -140,13 +144,13 @@ NanoFlannIndex::SearchRadius(const core::Tensor &query, double *radii) {
                 "dimension with reference tensor");
     }
     std::vector<size_t> result_indices;
-    std::vector<double> result_distances;
+    std::vector<T> result_distances;
     std::vector<size_t> result_nums;
 
     for (auto i = 0; i < shape[0]; i++) {
         core::Tensor query_point = query[i];
-        std::vector<double> query_vector = query_point.ToFlatVector<double>();
-        double radius = radii[i];
+        std::vector<T> query_vector = query_point.ToFlatVector<T>();
+        T radius = radii[i];
         if (radius <= 0.0) {
             utility::LogError(
                     "[NanoFlannIndex::SearchRadius] radius should be larger "
@@ -154,7 +158,7 @@ NanoFlannIndex::SearchRadius(const core::Tensor &query, double *radii) {
         }
 
         nanoflann::SearchParams params;
-        std::vector<std::pair<size_t, double>> ret_matches;
+        std::vector<std::pair<size_t, T>> ret_matches;
         size_t num_matches = index_->radiusSearch(
                 query_vector.data(), radius * radius, ret_matches, params);
 
@@ -175,7 +179,7 @@ NanoFlannIndex::SearchRadius(const core::Tensor &query, double *radii) {
     core::Tensor indices(result_indices2, {static_cast<int64_t>(size)},
                          core::Dtype::Int64);
     core::Tensor distances(result_distances, {static_cast<int64_t>(size)},
-                           core::Dtype::Float64);
+                           core::DtypeUtil::FromType<T>());
     core::Tensor nums(result_nums2, {static_cast<int64_t>(result_nums2.size())},
                       core::Dtype::Int64);
     return std::make_tuple(indices, distances, nums);
@@ -183,8 +187,9 @@ NanoFlannIndex::SearchRadius(const core::Tensor &query, double *radii) {
     return std::make_tuple(core::Tensor(), core::Tensor(), core::Tensor());
 };
 
+template <typename T>
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NanoFlannIndex::SearchRadius(const core::Tensor &query, double radius) {
+NanoFlannIndex<T>::SearchRadius(const core::Tensor &query, T radius) {
     core::SizeVector shape = query.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
@@ -194,11 +199,13 @@ NanoFlannIndex::SearchRadius(const core::Tensor &query, double radius) {
     }
 
     int64_t num_query = shape[0];
-    std::vector<double> radii(num_query, radius);
+    std::vector<T> radii(num_query, radius);
 
     return SearchRadius(query, radii.data());
 };
 
+template class NanoFlannIndex<double>;
+template class NanoFlannIndex<float>;
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d
