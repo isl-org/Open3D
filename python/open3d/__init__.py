@@ -29,7 +29,7 @@ try:
     # unofficial workaround. Install the fix package with
     # `pip install open3d_azure_kinect_ubuntu1604_fix`
     import open3d_azure_kinect_ubuntu1604_fix
-except:
+except ImportError:
     pass
 
 # Workaround when multiple copies of the OpenMP runtime have been linked to
@@ -46,13 +46,18 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 from open3d._build_config import _build_config
 if _build_config["BUILD_CUDA_MODULE"]:
-    from open3d.cuda.pybind.core import cuda
-    if cuda.is_available():
-        from open3d.cuda.pybind import (camera, geometry, io, pipelines, utility)
-        from open3d.cuda import pybind
+    try:
+        from open3d.cuda.pybind.core import cuda
+        if cuda.is_available():
+            from open3d.cuda.pybind import (camera, geometry, io, pipelines,
+                                            utility, tgeometry)
+            from open3d.cuda import pybind
+    except ImportError:
+        pass
 
-if not 'pybind' in locals():
-    from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility)
+if 'pybind' not in locals():
+    from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility,
+                                   tgeometry)
     from open3d.cpu import pybind
 
 import open3d.core

@@ -57,6 +57,11 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
     return nullptr;
 }
 
+std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
+        const tgeometry::PointCloud& geometry) {
+    return std::make_unique<TPointCloudBuffersBuilder>(geometry);
+}
+
 void GeometryBuffersBuilder::DeallocateBuffer(void* buffer,
                                               size_t size,
                                               void* user_ptr) {

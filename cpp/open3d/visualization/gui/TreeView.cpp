@@ -36,6 +36,7 @@
 #include "open3d/visualization/gui/Checkbox.h"
 #include "open3d/visualization/gui/ColorEdit.h"
 #include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/NumberEdit.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -63,6 +64,14 @@ CheckableTextTreeCell::CheckableTextTreeCell(
 }
 
 CheckableTextTreeCell::~CheckableTextTreeCell() {}
+
+std::shared_ptr<Checkbox> CheckableTextTreeCell::GetCheckbox() {
+    return impl_->checkbox_;
+}
+
+std::shared_ptr<Label> CheckableTextTreeCell::GetLabel() {
+    return impl_->label_;
+}
 
 Size CheckableTextTreeCell::CalcPreferredSize(const Theme &theme) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);
@@ -112,6 +121,14 @@ LUTTreeCell::LUTTreeCell(const char *text,
 
 LUTTreeCell::~LUTTreeCell() {}
 
+std::shared_ptr<Checkbox> LUTTreeCell::GetCheckbox() {
+    return impl_->checkbox_;
+}
+
+std::shared_ptr<Label> LUTTreeCell::GetLabel() { return impl_->label_; }
+
+std::shared_ptr<ColorEdit> LUTTreeCell::GetColorEdit() { return impl_->color_; }
+
 Size LUTTreeCell::CalcPreferredSize(const Theme &theme) const {
     auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);
     auto label_pref = impl_->label_->CalcPreferredSize(theme);
@@ -139,6 +156,57 @@ void LUTTreeCell::Layout(const Theme &theme) {
     auto x = impl_->checkbox_->GetFrame().GetRight();
     impl_->label_->SetFrame(
             Rect(x, frame.y, impl_->color_->GetFrame().x - x, frame.height));
+}
+
+// ----------------------------------------------------------------------------
+struct ColormapTreeCell::Impl {
+    std::shared_ptr<NumberEdit> value_;
+    std::shared_ptr<ColorEdit> color_;
+};
+
+ColormapTreeCell::ColormapTreeCell(
+        double value,
+        const Color &color,
+        std::function<void(double)> on_value_changed,
+        std::function<void(const Color &)> on_color_changed)
+    : impl_(new ColormapTreeCell::Impl()) {
+    impl_->value_ = std::make_shared<NumberEdit>(NumberEdit::DOUBLE);
+    impl_->value_->SetDecimalPrecision(3);
+    impl_->value_->SetLimits(0.0, 1.0);
+    impl_->value_->SetValue(value);
+    impl_->value_->SetOnValueChanged(on_value_changed);
+    impl_->color_ = std::make_shared<ColorEdit>();
+    impl_->color_->SetValue(color);
+    impl_->color_->SetOnValueChanged(on_color_changed);
+    AddChild(impl_->value_);
+    AddChild(impl_->color_);
+}
+
+ColormapTreeCell::~ColormapTreeCell() {}
+
+std::shared_ptr<NumberEdit> ColormapTreeCell::GetNumberEdit() {
+    return impl_->value_;
+}
+
+std::shared_ptr<ColorEdit> ColormapTreeCell::GetColorEdit() {
+    return impl_->color_;
+}
+
+Size ColormapTreeCell::CalcPreferredSize(const Theme &theme) const {
+    auto number_pref = impl_->value_->CalcPreferredSize(theme);
+    auto color_pref = impl_->color_->CalcPreferredSize(theme);
+    return Size(number_pref.width + color_pref.width,
+                std::max(number_pref.height, color_pref.height));
+}
+
+void ColormapTreeCell::Layout(const Theme &theme) {
+    auto &frame = GetFrame();
+    auto number_pref = impl_->value_->CalcPreferredSize(theme);
+    impl_->value_->SetFrame(
+            Rect(frame.x, frame.y, number_pref.width, frame.height));
+    auto x = impl_->value_->GetFrame().GetRight();
+    impl_->color_->SetFrame(
+            Rect(x, frame.y, frame.GetRight() - x, frame.height));
 }
 
 // ----------------------------------------------------------------------------

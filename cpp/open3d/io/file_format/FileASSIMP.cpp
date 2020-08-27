@@ -92,6 +92,12 @@ void LoadTextures(const std::string& filename,
                 strpath[p_win] = '/';
                 p_win = strpath.find("\\", p_win + 1);
             }
+            // if absolute path convert to relative to base path
+            if (strpath.length() > 1 &&
+                (strpath[0] == '/' || strpath[1] == ':')) {
+                strpath = utility::filesystem::GetFileNameWithoutDirectory(
+                        strpath);
+            }
             auto image = io::CreateImageFromFile(base_path + strpath);
             if (image->HasData()) {
                 img = image;

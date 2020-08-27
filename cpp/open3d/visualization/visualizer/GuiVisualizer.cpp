@@ -313,6 +313,8 @@ private:
 
 }  // namespace
 
+const std::string MODEL_NAME = "__model__";
+
 enum MenuId {
     FILE_OPEN,
     FILE_EXPORT_RGB,
@@ -422,7 +424,8 @@ struct GuiVisualizer::Impl {
                     GuiSettingsModel::MaterialType::LIT &&
             current_materials.lit_name ==
                     GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
-            scene_wgt_->GetScene()->UpdateModelMaterial(loaded_model_);
+            scene_wgt_->GetScene()->UpdateModelMaterial(MODEL_NAME,
+                                                        loaded_model_);
         } else {
             UpdateMaterials(renderer, current_materials);
             switch (settings_.model_.GetMaterialType()) {
@@ -755,8 +758,11 @@ void GuiVisualizer::SetGeometry(
     impl_->SetMaterialsToDefault();
 
     rendering::Material loaded_material;
-    geometry::AxisAlignedBoundingBox bounds;
-    if (!loaded_model) {
+    if (loaded_model) {
+        scene3d->AddModel(MODEL_NAME, impl_->loaded_model_);
+        impl_->settings_.model_.SetDisplayingPointClouds(false);
+        loaded_material.shader = "defaultLit";
+    } else {
         // NOTE: If a model was NOT loaded then these must be point clouds
         std::shared_ptr<const geometry::Geometry> g = geometry;
 
@@ -774,23 +780,16 @@ void GuiVisualizer::SetGeometry(
             } else {
                 loaded_material.shader = "defaultLit";
             }
-        }
 
-        auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
-        scene3d->AddGeometry(g3, loaded_material);
-        bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
+            scene3d->AddGeometry(MODEL_NAME, pcd, loaded_material);
 
-        impl_->settings_.model_.SetDisplayingPointClouds(true);
-        if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
-            auto &profile =
-                    GuiSettingsModel::GetDefaultPointCloudLightingProfile();
-            impl_->settings_.model_.SetLightingProfile(profile);
+            impl_->settings_.model_.SetDisplayingPointClouds(true);
+            if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
+                auto &profile =
+                        GuiSettingsModel::GetDefaultPointCloudLightingProfile();
+                impl_->settings_.model_.SetLightingProfile(profile);
+            }
         }
-    } else {
-        scene3d->AddModel(impl_->loaded_model_);
-        bounds += scene3d->GetScene()->GetGeometryBoundingBox("__model__");
-        impl_->settings_.model_.SetDisplayingPointClouds(false);
-        loaded_material.shader = "defaultLit";
     }
 
     auto type = impl_->settings_.model_.GetMaterialType();
@@ -816,6 +815,7 @@ void GuiVisualizer::SetGeometry(
     }
     impl_->settings_.view_->Update();  // make sure prefab material is correct
 
+    auto &bounds = scene3d->GetBoundingBox();
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
                                    bounds.GetCenter().cast<float>());
 }
