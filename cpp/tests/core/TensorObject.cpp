@@ -276,7 +276,7 @@ TEST_P(TensorObjectPermuteDevices, ConstructFromObjectTensorVector) {
     EXPECT_EQ(tl.GetSize(), 3);
     EXPECT_EQ(tl.GetReservedSize(), 8);
 
-    // Values should be copied. IsClose also ensures the same dtype and device.
+    // Values should be copied.
     EXPECT_ANY_THROW(tl[0].AllClose(t0));
     EXPECT_ANY_THROW(tl[1].AllClose(t1));
     EXPECT_ANY_THROW(tl[2].AllClose(t2));
