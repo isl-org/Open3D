@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-for i in {1..100000}
+for i in {1..10}
 do
    echo "Allocating file #$i"
-   truncate -s 10M "$i.tmp"
+   head -c 1048576 </dev/urandom >$i.tmp
 done
