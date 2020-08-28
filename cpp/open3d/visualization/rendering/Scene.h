@@ -40,12 +40,16 @@ class AxisAlignedBoundingBox;
 class Image;
 }  // namespace geometry
 
+namespace tgeometry {
+class PointCloud;
+}  // namespace tgeometry
+
 namespace visualization {
 namespace rendering {
 
 class Renderer;
 class View;
-class Model;
+struct TriangleMeshModel;
 struct Material;
 struct Light;
 
@@ -79,9 +83,13 @@ public:
                              const geometry::Geometry3D& geometry,
                              const Material& material) = 0;
     virtual bool AddGeometry(const std::string& object_name,
-                             const Model& model) = 0;
+                             const tgeometry::PointCloud& point_cloud,
+                             const Material& material) = 0;
+    virtual bool AddGeometry(const std::string& object_name,
+                             const TriangleMeshModel& model) = 0;
     virtual void RemoveGeometry(const std::string& object_name) = 0;
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;
+    virtual bool GeometryIsVisible(const std::string& object_name) = 0;
     virtual void OverrideMaterial(const std::string& object_name,
                                   const Material& material) = 0;
     virtual void GeometryShadows(const std::string& object_name,

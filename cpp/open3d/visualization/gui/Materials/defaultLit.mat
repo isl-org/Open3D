@@ -2,6 +2,9 @@ material {
     name : defaultLit,
     shadingModel : lit,
     doubleSided : true,
+    blending : fade,
+    depthWrite : true,
+    transparency : twoPassesOneSide,
 
     parameters : [
         { type : float3,    name : baseColor },
@@ -13,10 +16,8 @@ material {
         { type : float,     name : anisotropy },
         { type : float,     name : pointSize },
         { type : sampler2d, name : albedo },
-        { type : sampler2d, name : metallicMap },
-        { type : sampler2d, name : roughnessMap },
+        { type : sampler2d, name : ao_rough_metalMap },
         { type : sampler2d, name : normalMap },
-        { type : sampler2d, name : ambientOcclusionMap },
         { type : sampler2d, name : reflectanceMap },
 // NOTE: Disable clear coat textures to avoid Filament warning about exceeding
 // 16 sampler limit. There is currently no supported standard format that
@@ -47,10 +48,12 @@ fragment {
 
         prepareMaterial(material);
 
-        material.baseColor.rgb = getColor().rgb*materialParams.baseColor * texture(materialParams_albedo, getUV0()).rgb;
-        material.metallic = materialParams.baseMetallic * texture(materialParams_metallicMap, getUV0()).r;
-        material.roughness = materialParams.baseRoughness * texture(materialParams_roughnessMap, getUV0()).r;
-        material.ambientOcclusion = texture(materialParams_ambientOcclusionMap, getUV0()).r;
+        material.baseColor.rgb = getColor().rgb * materialParams.baseColor * texture(materialParams_albedo, getUV0()).rgb;
+        material.baseColor.rgb *= texture(materialParams_albedo, getUV0()).a;
+        material.baseColor.a = texture(materialParams_albedo, getUV0()).a;
+        material.metallic = materialParams.baseMetallic * texture(materialParams_ao_rough_metalMap, getUV0()).b;
+        material.roughness = materialParams.baseRoughness * texture(materialParams_ao_rough_metalMap, getUV0()).g;
+        material.ambientOcclusion = texture(materialParams_ao_rough_metalMap, getUV0()).r;
         //material.reflectance = materialParams.reflectance;
         //material.anisotropy = materialParams.anisotropy;
         material.reflectance = materialParams.reflectance * texture(materialParams_reflectanceMap, getUV0()).r;

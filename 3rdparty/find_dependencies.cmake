@@ -841,7 +841,9 @@ endif()
 if(BUILD_GUI)
     if(BUILD_FILAMENT_FROM_SOURCE)
         message(STATUS "Building third-party library Filament from source")
-        if(MSVC OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7))
+        if(MSVC OR (CMAKE_C_COMPILER_ID MATCHES ".*Clang" AND
+            CMAKE_CXX_COMPILER_ID MATCHES ".*Clang"
+            AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7))
             set(FILAMENT_C_COMPILER "${CMAKE_C_COMPILER}")
             set(FILAMENT_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
         else()
@@ -878,9 +880,17 @@ if(BUILD_GUI)
         message(STATUS "Using prebuilt third-party library Filament")
         include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
     endif()
+    set(FILAMENT_RUNTIME_VER "")
+    if (WIN32)
+        if (STATIC_WINDOWS_RUNTIME)
+            set(FILAMENT_RUNTIME_VER "mt$<$<CONFIG:DEBUG>:d>")
+        else()
+            set(FILAMENT_RUNTIME_VER "md$<$<CONFIG:DEBUG>:d>")
+        endif()
+    endif()
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
-        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64
+        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_RUNTIME_VER}
         LIBRARIES ${filament_LIBRARIES}
     )
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
@@ -944,7 +954,7 @@ if(BUILD_RPC_INTERFACE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MSGPACK_TARGET}")
 endif()
 
-# MKL, cuSOLVER, cuBLAS
+# MKL, TBB, cuSOLVER, cuBLAS
 # We link MKL statically. For MKL link flags, refer to:
 # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
 message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
@@ -953,6 +963,11 @@ import_3rdparty_library(3rdparty_mkl
     INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
     LIB_DIR      ${STATIC_MKL_LIB_DIR}
     LIBRARIES    ${STATIC_MKL_LIBRARIES}
+)
+import_3rdparty_library(3rdparty_tbb
+    INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
+    LIB_DIR      ${STATIC_TBB_LIB_DIR}
+    LIBRARIES    ${STATIC_TBB_LIBRARIES}
 )
 set(MKL_TARGET "3rdparty_mkl")
 add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
@@ -973,13 +988,8 @@ elseif(MSVC)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 
-import_3rdparty_library(3rdparty_tbb
-    INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
-    LIB_DIR      ${STATIC_MKL_LIB_DIR}
-    LIBRARIES    ${STATIC_TBB_LIBRARIES}
-)
 set(TBB_TARGET "3rdparty_tbb")
-add_dependencies(3rdparty_mkl ext_tbb)
+add_dependencies(3rdparty_tbb ext_tbb)
 # Do not add TBB_TARGET to the Open3D_3RDPARTY_PRIVATE_TARGETS because MKL
 # already includes it.
 

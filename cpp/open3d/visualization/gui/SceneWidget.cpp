@@ -231,7 +231,7 @@ public:
         bool redraw = false;
         if (!keys_down_.empty()) {
             auto& bounds = camera_controls_->GetBoundingBox();
-            const float dist = 0.0025f * bounds.GetExtent().norm();
+            const float dist = float(0.0025 * bounds.GetExtent().norm());
             const float angle_rad = 0.0075f;
 
             auto HasKey = [this](uint32_t key) -> bool {
@@ -368,7 +368,7 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                interactor_->Dolly(2.0 * e.wheel.dy,
+                interactor_->Dolly(2 * e.wheel.dy,
                                    e.wheel.isTrackpad
                                            ? rendering::MatrixInteractorLogic::
                                                      DragType::TWO_FINGER
@@ -404,38 +404,14 @@ public:
                                    rendering::Camera* camera)
         : RotationInteractor(),
           rotation_(new rendering::ModelInteractorLogic(
-                  scene->GetScene(), camera, MIN_FAR_PLANE)) {
-        //          scene_(scene) {
+                  scene, camera, MIN_FAR_PLANE)) {
         SetInteractor(rotation_.get());
     }
 
-    void Mouse(const MouseEvent& e) override {
-        // We need to make sure rotation_ gets the geometry handles it
-        // needs to rotate. We can't just cache this in the constructor,
-        // because the caller may have given us an empty scene which it
-        // later fills. (Also, just in case the scene geometry is updated,
-        // if we all users to load a second model.) We need to make sure
-        // that all levels of detail are updated. The handles might be
-        // the same, but it turns that works out fine because rotation_
-        // calculates the new matrix from the matrix at mouse down, so
-        // the calculation is not cumulative if there are multiple copies
-        // of the object, merely duplicated.
-        if (e.type == MouseEvent::BUTTON_DOWN) {
-            // TODO: Make sure this works with new Scene graph
-            // std::vector<rendering::GeometryHandle> geometries =
-            //         scene_->GetModel();
-            // for (auto& fast :
-            //      scene_->GetModel(rendering::Open3DScene::LOD::FAST)) {
-            //     geometries.push_back(fast);
-            // }
-            // rotation_->SetModel(scene_->GetAxis(), geometries);
-        }
-        Super::Mouse(e);
-    }
+    void Mouse(const MouseEvent& e) override { Super::Mouse(e); }
 
 private:
     std::unique_ptr<rendering::ModelInteractorLogic> rotation_;
-    // rendering::Open3DScene* scene_;
 };
 
 class RotateCameraInteractor : public RotationInteractor {
@@ -754,7 +730,7 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     // (0, 0, 0), and this will result in the far plane being not being
     // far enough and clipping the model. To test, use
     // https://docs.google.com/uc?export=download&id=0B-ePgl6HF260ODdvT09Xc1JxOFE
-    float max_dim = 1.25f * impl_->bounds_.GetMaxExtent();
+    float max_dim = float(1.25 * impl_->bounds_.GetMaxExtent());
     Eigen::Vector3f center = impl_->bounds_.GetCenter().cast<float>();
     Eigen::Vector3f eye, up;
     switch (preset) {

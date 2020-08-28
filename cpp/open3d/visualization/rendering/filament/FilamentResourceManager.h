@@ -39,7 +39,7 @@ namespace filament {
 class Engine;
 class IndexBuffer;
 class IndirectLight;
-struct Material;
+class Material;
 class MaterialInstance;
 class Skybox;
 class Texture;
@@ -80,8 +80,6 @@ public:
     MaterialHandle CreateMaterial(const void* material_data, size_t data_size);
     MaterialHandle CreateMaterial(const ResourceLoadRequest& request);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
-    MaterialInstanceHandle CreateFromDescriptor(
-            const geometry::TriangleMesh::Material& material_attributes);
 
     TextureHandle CreateTexture(const char* path, bool srgb);
     TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image,

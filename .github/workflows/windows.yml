@@ -1,6 +1,7 @@
 name: Windows CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -30,11 +31,12 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
       - name: Build
         run: |
           cd build
           cmake --build . --parallel 2 --config ${{ matrix.CONFIG }} --target INSTALL
+          cmake --build . --parallel 2 --config ${{ matrix.CONFIG }} --target build-examples-iteratively
       - name: Linking to Open3D
         run: |
           cd docs\_static\C++
@@ -54,7 +56,7 @@ jobs:
         run: |
           python -c "import open3d; print(open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
-
+          python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 
   build-windows-wheel:
     runs-on: windows-latest
@@ -62,10 +64,6 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.5, 3.6, 3.7, 3.8]
-    env:
-      shared: OFF
-      static_runtime: ON
-      CONFIG: Release
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -79,22 +77,57 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ env.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ env.static_runtime }} ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON ..
       - name: Build Python package
         run: |
-          pip install --upgrade pip
-          pip install -U wheel
+          python -m pip install --upgrade pip
+          python -m pip install -U wheel
           cd build
-          cmake --build . --config ${{ env.CONFIG }} --target install-pip-package
+          cmake --build . --config Release --target install-pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "::set-env name=PIP_PKG_NAME::$PIP_PKG_NAME"
-      - name: Test Python package
-        run: |
-          python -c "import open3d; print(open3d)"
-          python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
       - name: Upload wheel
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.PIP_PKG_NAME }}
+          name: open3d_win_amd64_wheels
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
+
+  test-windows-wheel:
+    name: Test windows wheel
+    runs-on: windows-latest
+    needs: [build-windows-wheel]
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [3.5, 3.6, 3.7, 3.8]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: false
+      - name: Download wheels
+        uses: actions/download-artifact@v2
+        # See https://github.com/dawidd6/action-download-artifact for more
+        # flexible artifact download options
+        with:
+          name: open3d_win_amd64_wheels
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Test Python package
+        run: |
+          python -V
+          python -m pip install -U pytest
+          python -m pip install -U scipy
+          python -m pip install open3d -f .
+          python -c "import open3d; \
+                     print('Imported:', open3d); \
+                     open3d.pybind.core.kernel.test_mkl_integration(); \
+                     print('CUDA enabled:', open3d.core.cuda.is_available())"
+      - name: Run Python unit tests (benchmarks)
+        run: |
+          echo "Running Open3D python tests..."
+          echo "Testing ML Ops disabled"
+          python -m pytest python/test/ --ignore python/test/ml_ops/

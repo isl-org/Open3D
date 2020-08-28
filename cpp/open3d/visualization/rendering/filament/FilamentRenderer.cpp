@@ -26,12 +26,29 @@
 
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
+//       an unsigned int.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+// 4305: LightManager.h needs to specify some constants as floats
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293 4305)
+#endif  // _MSC_VER
+
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
 #include <filament/SwapChain.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
@@ -163,11 +180,6 @@ MaterialHandle FilamentRenderer::AddMaterial(
 MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
         const MaterialHandle& material) {
     return resource_mgr_.CreateMaterialInstance(material);
-}
-
-MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
-        const geometry::TriangleMesh::Material& material) {
-    return resource_mgr_.CreateFromDescriptor(material);
 }
 
 MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {

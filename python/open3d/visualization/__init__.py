@@ -23,8 +23,20 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-if "@BUILD_GUI@" == "ON":
-    from open3d.pybind.visualization import gui
+from open3d._build_config import _build_config
+if _build_config["BUILD_CUDA_MODULE"]:
+    try:
+        from open3d.cuda.pybind.core import cuda
+        if cuda.is_available():
+            if "@BUILD_GUI@" == "ON":
+                from open3d.cuda.pybind.visualization import gui
+            from open3d.cuda.pybind.visualization import *
+    except ImportError:
+        pass
 
-from open3d.pybind.visualization import *
+if 'Visualizer' not in locals():
+    if "@BUILD_GUI@" == "ON":
+        from open3d.cpu.pybind.visualization import gui
+    from open3d.cpu.pybind.visualization import *
+
 from ._external_visualizer import *

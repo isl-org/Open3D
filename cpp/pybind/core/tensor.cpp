@@ -76,7 +76,7 @@ static std::vector<T> ToFlatVector(
 }
 
 void pybind_core_tensor(py::module& m) {
-    py::class_<core::Tensor, std::shared_ptr<core::Tensor>> tensor(
+    py::class_<core::Tensor> tensor(
             m, "Tensor",
             "A Tensor is a view of a data Blob with shape, stride, data_ptr.");
 
@@ -138,8 +138,7 @@ void pybind_core_tensor(py::module& m) {
                 py::dtype(pybind_utils::DtypeToArrayFormat(tensor.GetDtype()));
         py::array::ShapeContainer py_shape(tensor.GetShape());
         core::SizeVector strides = tensor.GetStrides();
-        int64_t element_byte_size =
-                core::DtypeUtil::ByteSize(tensor.GetDtype());
+        int64_t element_byte_size = tensor.GetDtype().ByteSize();
         for (auto& s : strides) {
             s *= element_byte_size;
         }

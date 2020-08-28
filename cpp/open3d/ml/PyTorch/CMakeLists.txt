@@ -58,4 +58,3 @@ target_link_libraries(open3d_torch_ops PRIVATE
     ${EIGEN3_TARGET}
     ${FMT_TARGET}
 )
-

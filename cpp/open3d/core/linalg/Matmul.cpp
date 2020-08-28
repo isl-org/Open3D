@@ -43,13 +43,12 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     Dtype dtype = A.GetDtype(), dtype_original = dtype;
     if (dtype != B.GetDtype()) {
         utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch.",
-                          DtypeUtil::ToString(A.GetDtype()),
-                          DtypeUtil::ToString(B.GetDtype()));
+                          A.GetDtype().ToString(), B.GetDtype().ToString());
     }
 
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
         utility::LogDebug("Converting to Float32 dtype to from {}.",
-                          DtypeUtil::ToString(dtype));
+                          dtype.ToString());
         dtype = Dtype::Float32;
     }
 

@@ -54,8 +54,8 @@ public:
         : shape_(shape),
           strides_(DefaultStrides(shape)),
           dtype_(dtype),
-          blob_(std::make_shared<Blob>(
-                  shape.NumElements() * DtypeUtil::ByteSize(dtype), device)) {
+          blob_(std::make_shared<Blob>(shape.NumElements() * dtype.ByteSize(),
+                                       device)) {
         data_ptr_ = blob_->GetDataPtr();
     }
 
@@ -78,9 +78,9 @@ public:
         AssertTemplateDtype<T>();
 
         // Copy data to blob
-        MemoryManager::MemcpyFromHost(
-                blob_->GetDataPtr(), GetDevice(), init_vals.data(),
-                init_vals.size() * DtypeUtil::ByteSize(dtype));
+        MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
+                                      init_vals.data(),
+                                      init_vals.size() * dtype.ByteSize());
     }
 
     /// Constructor from raw host buffer. The memory will be copied.
@@ -94,9 +94,9 @@ public:
         AssertTemplateDtype<T>();
 
         // Copy data to blob
-        MemoryManager::MemcpyFromHost(
-                blob_->GetDataPtr(), GetDevice(), init_vals,
-                shape_.NumElements() * DtypeUtil::ByteSize(dtype));
+        MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
+                                      init_vals,
+                                      shape_.NumElements() * dtype.ByteSize());
     }
 
     /// The fully specified constructor
@@ -321,8 +321,8 @@ public:
     ///      aten/src/ATen/TensorUtils.cpp
     Tensor View(const SizeVector& dst_shape) const;
 
-    /// Copy Tensor to a specified device
-    /// The resulting Tensor will be compacted and contiguous
+    /// Copy Tensor to a specified device.
+    /// The resulting Tensor will be compacted and contiguous.
     Tensor Copy(const Device& device) const;
 
     /// Copy Tensor to the same device.
@@ -851,9 +851,9 @@ public:
     std::vector<T> ToFlatVector() const {
         AssertTemplateDtype<T>();
         std::vector<T> values(NumElements());
-        MemoryManager::MemcpyToHost(
-                values.data(), Contiguous().GetDataPtr(), GetDevice(),
-                DtypeUtil::ByteSize(GetDtype()) * NumElements());
+        MemoryManager::MemcpyToHost(values.data(), Contiguous().GetDataPtr(),
+                                    GetDevice(),
+                                    GetDtype().ByteSize() * NumElements());
         return values;
     }
 
@@ -920,15 +920,14 @@ public:
 
     template <typename T>
     void AssertTemplateDtype() const {
-        if (DtypeUtil::FromType<T>() != dtype_) {
+        if (Dtype::FromType<T>() != dtype_) {
             utility::LogError(
                     "Requested values have type {} but Tensor has type {}",
-                    DtypeUtil::ToString(DtypeUtil::FromType<T>()),
-                    DtypeUtil::ToString(dtype_));
+                    Dtype::FromType<T>().ToString(), dtype_.ToString());
         }
-        if (DtypeUtil::ByteSize(dtype_) != sizeof(T)) {
+        if (dtype_.ByteSize() != sizeof(T)) {
             utility::LogError("Internal error: element size mismatch {} != {}",
-                              DtypeUtil::ByteSize(dtype_), sizeof(T));
+                              dtype_.ByteSize(), sizeof(T));
         }
     }
 
@@ -1016,9 +1015,9 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
     std::transform(init_vals.begin(), init_vals.end(), init_vals_uchar.begin(),
                    [](bool v) -> uint8_t { return static_cast<uint8_t>(v); });
 
-    MemoryManager::MemcpyFromHost(
-            blob_->GetDataPtr(), GetDevice(), init_vals_uchar.data(),
-            init_vals_uchar.size() * DtypeUtil::ByteSize(dtype));
+    MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
+                                  init_vals_uchar.data(),
+                                  init_vals_uchar.size() * dtype.ByteSize());
 }
 
 template <>
@@ -1026,9 +1025,9 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
     AssertTemplateDtype<bool>();
     std::vector<bool> values(NumElements());
     std::vector<uint8_t> values_uchar(NumElements());
-    MemoryManager::MemcpyToHost(
-            values_uchar.data(), Contiguous().GetDataPtr(), GetDevice(),
-            DtypeUtil::ByteSize(GetDtype()) * NumElements());
+    MemoryManager::MemcpyToHost(values_uchar.data(), Contiguous().GetDataPtr(),
+                                GetDevice(),
+                                GetDtype().ByteSize() * NumElements());
 
     // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
     // uses 1-byte-sized boolean storage for easy indexing.

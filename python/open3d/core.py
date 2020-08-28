@@ -1,17 +1,25 @@
 import open3d as o3d
 import numpy as np
 
-from open3d.pybind.core import Dtype
-from open3d.pybind.core import Device
-from open3d.pybind.core import DtypeUtil
-from open3d.pybind.core import cuda
-from open3d.pybind.core import NoneType
-from open3d.pybind.core import TensorList
-from open3d.pybind.core import matmul as pybind_matmul
-from open3d.pybind.core import lstsq as pybind_lstsq
-from open3d.pybind.core import solve as pybind_solve
-from open3d.pybind.core import inv as pybind_inv
-from open3d.pybind.core import svd as pybind_svd
+from open3d._build_config import _build_config
+if _build_config["BUILD_CUDA_MODULE"]:
+    try:
+        from open3d.cuda.pybind.core import cuda
+        if cuda.is_available():
+            from open3d.cuda.pybind.core import (Dtype, Device, cuda, NoneType,
+                                                 TensorList, SizeVector, matmul
+                                                 as pybind_matmul, lstsq as
+                                                 pybind_lstsq, solve as
+                                                 pybind_solve, inv as
+                                                 pybind_inv, svd as pybind_svd)
+    except ImportError:
+        pass
+if 'Dtype' not in locals():
+    from open3d.cpu.pybind.core import (Dtype, Device, cuda, NoneType,
+                                        TensorList, SizeVector, matmul as
+                                        pybind_matmul, lstsq as pybind_lstsq,
+                                        solve as pybind_solve, inv as
+                                        pybind_inv, svd as pybind_svd)
 
 none = NoneType()
 
@@ -27,27 +35,12 @@ def _numpy_dtype_to_dtype(numpy_dtype):
         return Dtype.Int64
     elif numpy_dtype == np.uint8:
         return Dtype.UInt8
+    elif numpy_dtype == np.uint16:
+        return Dtype.UInt16
     elif numpy_dtype == np.bool:
         return Dtype.Bool
     else:
         raise ValueError("Unsupported numpy dtype:", numpy_dtype)
-
-
-class SizeVector(o3d.pybind.core.SizeVector):
-    """
-    SizeVector is a vector of integers for specifying shape, strides, etc.
-    """
-
-    def __init__(self, values=None):
-        if values is None:
-            values = []
-        # TODO: determine whether conversion can be done in C++ as well.
-        if isinstance(values, tuple) or isinstance(values, list):
-            values = np.array(values)
-        if not isinstance(values, np.ndarray) or values.ndim != 1:
-            raise ValueError(
-                "SizeVector only takes 1-D list, tuple or Numpy array.")
-        super(SizeVector, self).__init__(values.astype(np.int64))
 
 
 def cast_to_py_tensor(func):
@@ -114,7 +107,8 @@ def matmul(lhs, rhs):
 
     - Both tensors should share the same device and dtype.
     - Int32, Int64, Float32, Float64 are supported,
-      but results of big integers' matmul are not guaranteed, overflow can happen.
+      but results of big integers' matmul are not guaranteed, overflow can
+      happen.
     """
     return pybind_matmul(lhs, rhs)
 
@@ -649,7 +643,8 @@ class Tensor(o3d.pybind.core.Tensor):
 
         - Both tensors should share the same device and dtype.
         - Int32, Int64, Float32, Float64 are supported,
-          but results of big integers' matmul are not guaranteed, overflow can happen.
+          but results of big integers' matmul are not guaranteed, overflow can
+          happen.
         """
         return super(Tensor, self).matmul(value)
 
@@ -687,7 +682,8 @@ class Tensor(o3d.pybind.core.Tensor):
 
         - Both tensors should share the same device and dtype.
         - Float32 and Float64 are supported.
-        - The result can be unexpected when A is not a full-rank matrix and the backend is cuda.
+        - The result can be unexpected when A is not a full-rank matrix and the
+          backend is cuda.
         """
         return super(Tensor, self).lstsq(value)
 
@@ -709,7 +705,8 @@ class Tensor(o3d.pybind.core.Tensor):
     @cast_to_py_tensor
     def svd(self):
         """
-        Returns matrix's SVD decomposition: U S VT = A, where A is Tensor \param self.
+        Returns matrix's SVD decomposition: U S VT = A, where A is Tensor
+        \param self.
 
         Args:
           self: Tensor of shape (m, n).
@@ -926,6 +923,8 @@ class Tensor(o3d.pybind.core.Tensor):
             return super(Tensor, self)._item_int64_t()
         elif self.dtype == Dtype.UInt8:
             return super(Tensor, self)._item_uint8_t()
+        elif self.dtype == Dtype.UInt16:
+            return super(Tensor, self)._item_uint16_t()
         elif self.dtype == Dtype.Bool:
             return super(Tensor, self)._item_bool()
         else:
