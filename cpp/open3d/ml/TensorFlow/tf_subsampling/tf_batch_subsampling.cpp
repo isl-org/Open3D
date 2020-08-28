@@ -117,7 +117,7 @@ public:
         auto sub_points_tensor = sub_points_output->matrix<float>();
 
         // Fill output tensor
-        for (int i = 0; i < subsampled_points.size(); i++) {
+        for (int i = 0; i < (signed)subsampled_points.size(); i++) {
             sub_points_tensor(i, 0) = subsampled_points[i].x;
             sub_points_tensor(i, 1) = subsampled_points[i].y;
             sub_points_tensor(i, 2) = subsampled_points[i].z;
@@ -137,7 +137,7 @@ public:
         auto sub_batches_tensor = sub_batches_output->flat<int>();
 
         // Fill output tensor
-        for (int i = 0; i < subsampled_batches.size(); i++)
+        for (int i = 0; i < (signed)subsampled_batches.size(); i++)
             sub_batches_tensor(i) = subsampled_batches[i];
     }
 };
