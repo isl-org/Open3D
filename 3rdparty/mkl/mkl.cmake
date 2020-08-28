@@ -85,6 +85,10 @@ if(WIN32)
     list(REMOVE_ITEM MKL_LIBRARIES "$<$<CONFIG:Debug>:mkl_tbb_thread>")
     list(REMOVE_ITEM MKL_LIBRARIES "$<$<CONFIG:Debug>:tbb_static>")
     list(REMOVE_ITEM MKL_LIBRARIES "$<$<CONFIG:Release>:mkl_sequential>")
+    set(STATIC_TBB_LIBRARIES
+        tbb_static
+        tbbmalloc_proxy_static
+    )
 elseif(APPLE)
     ExternalProject_Add(
         ext_mkl_include
@@ -105,6 +109,10 @@ elseif(APPLE)
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/lib ${MKL_INSTALL_PREFIX}/lib
     )
     set(STATIC_MKL_LIBRARIES mkl_intel_ilp64 mkl_tbb_thread mkl_core tbb_static)
+    set(STATIC_TBB_LIBRARIES
+        tbb_static
+        tbbmalloc_proxy_static
+    )
 else()
     ExternalProject_Add(
         ext_mkl_include
@@ -162,4 +170,8 @@ else()
         )
     endif()
     set(STATIC_MKL_LIBRARIES mkl_merged tbb_static)
+    set(STATIC_TBB_LIBRARIES
+        tbb_static
+        tbbmalloc_proxy_static
+    )
 endif()

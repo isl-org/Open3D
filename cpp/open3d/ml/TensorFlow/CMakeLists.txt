@@ -7,7 +7,6 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 find_package(Tensorflow REQUIRED)
-find_package(TBB REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(parallelstl REQUIRED)
 if(CUDA_ENABLED)
@@ -61,14 +60,12 @@ target_compile_definitions(open3d_tf_ops PRIVATE "${open3d_tf_ops_DEFINITIONS}")
 target_include_directories(open3d_tf_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
     ${Tensorflow_INCLUDE_DIR}
-    ${TBB_INCLUDE_DIR}
     ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
 )
 
 target_link_libraries(open3d_tf_ops PRIVATE
-    ${TBB_LIBRARY}
-    ${TBB_MALLOC_LIBRARY}
+    ${TBB_TARGET}
     ${Tensorflow_FRAMEWORK_LIB}
     ${FMT_TARGET}
 )

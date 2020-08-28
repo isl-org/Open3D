@@ -5,7 +5,6 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 find_package(Pytorch REQUIRED)
-find_package(TBB REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(parallelstl REQUIRED)
 if(BUILD_CUDA_MODULE)
@@ -48,15 +47,13 @@ target_compile_definitions(open3d_torch_ops PRIVATE "${open3d_torch_ops_DEFINITI
 
 target_include_directories(open3d_torch_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
-    ${TBB_INCLUDE_DIR}
     ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
     ${TORCH_INCLUDE_DIRS}
 )
 
 target_link_libraries(open3d_torch_ops PRIVATE
-    ${TBB_LIBRARY}
-    ${TBB_MALLOC_LIBRARY}
+    ${TBB_TARGET}
     ${TORCH_LIBRARIES}
     ${EIGEN3_TARGET}
     ${FMT_TARGET}
