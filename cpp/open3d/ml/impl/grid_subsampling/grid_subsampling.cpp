@@ -71,7 +71,6 @@ void grid_subsampling(vector<PointXYZ>& original_points,
 
     // Verbose parameters
     int i = 0;
-    int nDisp = N / 100;
 
     // Initiate variables
     size_t iX, iY, iZ, mapIdx;
@@ -142,7 +141,7 @@ void batch_grid_subsampling(vector<PointXYZ>& original_points,
     // Initiate variables
     // ******************
 
-    int b = 0;
+    unsigned b = 0;
     int sum_b = 0;
 
     // Loop over batches
