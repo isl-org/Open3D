@@ -124,7 +124,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
             // src and dst to wait for copy kernel to complete.
             CUDADeviceSwitcher switcher(src_device);
             Indexer indexer({src}, dst, DtypePolicy::NONE);
-            if (src.GetDtype().GetDtypeCode() == Dtype::DtypeCode::Object) {
+            if (src.GetDtype().IsObject()) {
                 int64_t object_byte_size = src.GetDtype().ByteSize();
                 CUDALauncher::LaunchUnaryEWKernel(
                         indexer,

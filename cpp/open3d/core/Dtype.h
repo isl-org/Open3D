@@ -72,6 +72,8 @@ public:
 
     DtypeCode GetDtypeCode() const { return dtype_code_; }
 
+    bool IsObject() const { return dtype_code_ == DtypeCode::Object; }
+
     std::string ToString() const { return name_; }
 
     bool operator==(const Dtype &other) const;

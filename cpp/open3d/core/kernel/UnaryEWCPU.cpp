@@ -109,7 +109,7 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
                               src_dtype.ByteSize() * shape.NumElements());
     } else {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
-        if (src.GetDtype().GetDtypeCode() == Dtype::DtypeCode::Object) {
+        if (src.GetDtype().IsObject()) {
             int64_t object_byte_size = src.GetDtype().ByteSize();
             CPULauncher::LaunchUnaryEWKernel(
                     indexer, [&](const void* src, void* dst) {

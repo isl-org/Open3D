@@ -1180,7 +1180,7 @@ Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
         utility::LogError("Dtype mismatch {} != {}.", dtype_.ToString(),
                           other.dtype_.ToString());
     }
-    if (dtype_.GetDtypeCode() == Dtype::DtypeCode::Object) {
+    if (dtype_.IsObject()) {
         utility::LogError("Comparison is not supported for Dtype {}.",
                           dtype_.ToString());
     }

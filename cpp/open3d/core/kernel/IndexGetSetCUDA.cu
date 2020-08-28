@@ -59,7 +59,7 @@ void IndexGetCUDA(const Tensor& src,
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
     CUDADeviceSwitcher switcher(src.GetDevice());
-    if (dtype.GetDtypeCode() == Dtype::DtypeCode::Object) {
+    if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         CUDALauncher::LaunchAdvancedIndexerKernel(
                 ai, [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
@@ -86,7 +86,7 @@ void IndexSetCUDA(const Tensor& src,
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
     CUDADeviceSwitcher switcher(dst.GetDevice());
-    if (dtype.GetDtypeCode() == Dtype::DtypeCode::Object) {
+    if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         CUDALauncher::LaunchAdvancedIndexerKernel(
                 ai, [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {

@@ -944,8 +944,7 @@ public:
 
     template <typename T>
     void AssertTemplateDtype() const {
-        if (dtype_.GetDtypeCode() != Dtype::DtypeCode::Object &&
-            Dtype::FromType<T>() != dtype_) {
+        if (!dtype_.IsObject() && Dtype::FromType<T>() != dtype_) {
             utility::LogError(
                     "Requested values have type {} but Tensor has type {}",
                     Dtype::FromType<T>().ToString(), dtype_.ToString());
