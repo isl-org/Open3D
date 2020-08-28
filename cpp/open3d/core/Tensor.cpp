@@ -454,6 +454,13 @@ Tensor Tensor::To(Dtype dtype, bool copy) const {
     if (!copy && dtype_ == dtype) {
         return *this;
     }
+
+    // We only support scalar type conversion
+    if (dtype_.GetDtypeCode() == Dtype::DtypeCode::Object ||
+        dtype.GetDtypeCode() == Dtype::DtypeCode::Object) {
+        utility::LogError("Cannot cast type from {} to {}.", dtype_.ToString(),
+                          dtype.ToString());
+    }
     Tensor dst_tensor(shape_, dtype, GetDevice());
     kernel::Copy(*this, dst_tensor);
     return dst_tensor;
@@ -1179,10 +1186,6 @@ Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
     if (dtype_ != other.dtype_) {
         utility::LogError("Dtype mismatch {} != {}.", dtype_.ToString(),
                           other.dtype_.ToString());
-    }
-    if (dtype_.GetDtypeCode() == Dtype::DtypeCode::Object) {
-        utility::LogError("Comparison is not supported for Dtype {}.",
-                          dtype_.ToString());
     }
     if (shape_ != other.shape_) {
         utility::LogError("Shape mismatch {} != {}.", shape_, other.shape_);

@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <cmath>
+#include <cstring>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -50,9 +51,7 @@ static void CPUCopyObjectElementKernel(const void* src,
                                        int64_t object_byte_size) {
     const char* src_bytes = static_cast<const char*>(src);
     char* dst_bytes = static_cast<char*>(dst);
-    for (int i = 0; i < object_byte_size; ++i) {
-        dst_bytes[i] = src_bytes[i];
-    }
+    memcpy(dst_bytes, src_bytes, object_byte_size);
 }
 
 template <typename scalar_t>

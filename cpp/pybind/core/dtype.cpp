@@ -26,6 +26,8 @@
 
 #include "open3d/core/Dtype.h"
 
+#include <pybind11/pybind11.h>
+
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
@@ -49,6 +51,15 @@ void pybind_core_dtype(py::module &m) {
     dtype.def("__ene__", &core::Dtype::operator!=);
     dtype.def("__repr__", &core::Dtype::ToString);
     dtype.def("__str__", &core::Dtype::ToString);
+
+    py::enum_<core::Dtype::DtypeCode>(m, "DtypeCode", "Open3D data type codes.")
+            .value("Undefined", core::Dtype::DtypeCode::Undefined)
+            .value("Bool", core::Dtype::DtypeCode::Bool)
+            .value("Int", core::Dtype::DtypeCode::Int)
+            .value("UInt", core::Dtype::DtypeCode::UInt)
+            .value("Float", core::Dtype::DtypeCode::Float)
+            .value("Object", core::Dtype::DtypeCode::Object)
+            .export_values();
 }
 
 }  // namespace open3d
