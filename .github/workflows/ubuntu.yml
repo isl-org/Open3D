@@ -120,6 +120,8 @@ jobs:
     name: Test ubuntu wheel
     runs-on: ubuntu-18.04
     needs: [build-ubuntu-wheel]
+    env:
+      BUILD_PYTORCH_OPS: OFF    # TODO: Enable PyTorch with CUDA
     strategy:
       fail-fast: false
       matrix:

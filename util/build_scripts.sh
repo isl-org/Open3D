@@ -147,10 +147,12 @@ build_wheel() {
             BUILD_FILAMENT_FROM_SOURCE=ON
         fi
     fi
+    # TODO: PyTorch Ops is OFF with CUDA
+    [ "$BUILD_CUDA_MODULE" == ON ] && BUILD_PYTORCH_OPS=OFF || BUILD_PYTORCH_OPS=ON
 
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
         -DBUILD_TENSORFLOW_OPS=ON \
-        -DBUILD_PYTORCH_OPS=OFF \       # TODO: PyTorch Ops is OFF with CUDA
+        -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS" \
         -DBUILD_RPC_INTERFACE=ON \
         -DBUILD_FILAMENT_FROM_SOURCE="$BUILD_FILAMENT_FROM_SOURCE" \
         -DBUILD_JUPYTER_EXTENSION=ON \
@@ -184,7 +186,7 @@ install_wheel() {
     echo
     echo "Installing Open3D wheel..."
     date
-    reportRun python -m pip install lib/python_package/pip_package/open3d-*.whl
+    reportRun python -m pip install open3d -f lib/python_package/pip_package/
 }
 
 test_wheel() {

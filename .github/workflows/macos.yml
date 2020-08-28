@@ -140,6 +140,7 @@ jobs:
         run: |
           python -V
           python -m pip install -U pytest
+          python -m pip install -U scipy
           python -m pip install open3d -f .
           python -c "import open3d; \
                      print('Imported:', open3d); \

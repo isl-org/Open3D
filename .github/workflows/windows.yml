@@ -120,6 +120,7 @@ jobs:
         run: |
           python -V
           python -m pip install -U pytest
+          python -m pip install -U scipy
           python -m pip install open3d -f .
           python -c "import open3d; \
                      print('Imported:', open3d); \
@@ -127,5 +128,6 @@ jobs:
                      print('CUDA enabled:', open3d.core.cuda.is_available())"
       - name: Run Python unit tests (benchmarks)
         run: |
-          echo "running Open3D python tests..."
-          python -m pytest python/tests/ --ignore ../python/test/ml_ops/
+          echo "Running Open3D python tests..."
+          echo "Testing ML Ops disabled"
+          python -m pytest python/test/ --ignore python/test/ml_ops/
