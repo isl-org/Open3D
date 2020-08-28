@@ -332,7 +332,6 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<gui::VGrid> help_camera_;
 
     struct Settings {
-        rendering::Material loaded_material_;
         rendering::Material lit_material_;
         rendering::Material unlit_material_;
         rendering::Material normal_depth_material_;
@@ -761,7 +760,6 @@ void GuiVisualizer::SetGeometry(
     if (loaded_model) {
         scene3d->AddModel(MODEL_NAME, impl_->loaded_model_);
         impl_->settings_.model_.SetDisplayingPointClouds(false);
-        loaded_material.shader = "defaultLit";
     } else {
         // NOTE: If a model was NOT loaded then these must be point clouds
         std::shared_ptr<const geometry::Geometry> g = geometry;
