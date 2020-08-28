@@ -59,7 +59,7 @@ void brute_neighbors(vector<PointXYZ>& queries,
         for (auto& p : supports) {
             if ((p0 - p).sq_norm() < r2) {
                 tmp[i0].push_back(i);
-                if (tmp[i0].size() > max_count) max_count = tmp[i0].size();
+                if ((signed)tmp[i0].size() > max_count) max_count = tmp[i0].size();
             }
             i++;
         }
@@ -71,7 +71,7 @@ void brute_neighbors(vector<PointXYZ>& queries,
     i0 = 0;
     for (auto& inds : tmp) {
         for (int j = 0; j < max_count; j++) {
-            if (j < inds.size())
+            if (j < (signed)inds.size())
                 neighbors_indices[i0 * max_count + j] = inds[j];
             else
                 neighbors_indices[i0 * max_count + j] = -1;
@@ -119,7 +119,7 @@ void ordered_neighbors(vector<PointXYZ>& queries,
                 tmp[i0].insert(tmp[i0].begin() + index, i);
 
                 // Update max count
-                if (tmp[i0].size() > max_count) max_count = tmp[i0].size();
+                if ((signed)tmp[i0].size() > max_count) max_count = tmp[i0].size();
             }
             i++;
         }
@@ -131,7 +131,7 @@ void ordered_neighbors(vector<PointXYZ>& queries,
     i0 = 0;
     for (auto& inds : tmp) {
         for (int j = 0; j < max_count; j++) {
-            if (j < inds.size())
+            if (j < (signed)inds.size())
                 neighbors_indices[i0 * max_count + j] = inds[j];
             else
                 neighbors_indices[i0 * max_count + j] = -1;
@@ -196,7 +196,7 @@ void batch_ordered_neighbors(vector<PointXYZ>& queries,
                 tmp[i0].insert(tmp[i0].begin() + index, sum_sb + i);
 
                 // Update max count
-                if (tmp[i0].size() > max_count) max_count = tmp[i0].size();
+                if ((signed)tmp[i0].size() > max_count) max_count = tmp[i0].size();
             }
             i++;
         }
@@ -208,7 +208,7 @@ void batch_ordered_neighbors(vector<PointXYZ>& queries,
     i0 = 0;
     for (auto& inds : tmp) {
         for (int j = 0; j < max_count; j++) {
-            if (j < inds.size())
+            if (j < (signed)inds.size())
                 neighbors_indices[i0 * max_count + j] = inds[j];
             else
                 neighbors_indices[i0 * max_count + j] = supports.size();
@@ -236,7 +236,6 @@ void batch_nanoflann_neighbors(vector<PointXYZ>& queries,
 
     // Counting vector
     int max_count = 0;
-    float d2;
     vector<vector<pair<size_t, float>>> all_inds_dists(queries.size());
 
     // batch index
@@ -303,7 +302,7 @@ void batch_nanoflann_neighbors(vector<PointXYZ>& queries,
                                               search_params);
 
         // Update max count
-        if (nMatches > max_count) max_count = nMatches;
+        if ((signed)nMatches > max_count) max_count = nMatches;
 
         // Increment query idx
         i0++;
@@ -324,7 +323,7 @@ void batch_nanoflann_neighbors(vector<PointXYZ>& queries,
         }
 
         for (int j = 0; j < max_count; j++) {
-            if (j < inds_dists.size())
+            if (j < (signed)inds_dists.size())
                 neighbors_indices[i0 * max_count + j] =
                         inds_dists[j].first + sum_sb;
             else
