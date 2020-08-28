@@ -548,7 +548,7 @@ TEST_P(TensorPermuteDevices, Slice) {
     EXPECT_EQ(t_4.GetStrides(), core::SizeVector({8, 2}));
     EXPECT_EQ(t_4.GetDataPtr(),
               static_cast<const char *>(blob_head) +
-                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+                      core::Dtype::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(t_4.ToFlatVector<float>(), std::vector<float>({12, 14, 20, 22}));
 
     // t_5 = t[1, 0:-1, 0:-2:2] == t[1, 0:2, 0:2:2]
@@ -557,7 +557,7 @@ TEST_P(TensorPermuteDevices, Slice) {
     EXPECT_EQ(t_5.GetStrides(), core::SizeVector({4, 2}));
     EXPECT_EQ(t_5.GetDataPtr(),
               static_cast<const char *>(blob_head) +
-                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+                      core::Dtype::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(t_5.ToFlatVector<float>(), std::vector<float>({12, 16}));
 }
 
@@ -2474,7 +2474,7 @@ TEST_P(TensorPermuteDevices, ToDLPackFromDLPack) {
     EXPECT_EQ(src_t.GetBlob()->GetDataPtr(), blob_head);
     EXPECT_EQ(src_t.GetDataPtr(),
               static_cast<const char *>(blob_head) +
-                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+                      core::Dtype::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(src_t.ToFlatVector<float>(),
               std::vector<float>({12, 14, 20, 22}));
 
@@ -2486,10 +2486,10 @@ TEST_P(TensorPermuteDevices, ToDLPackFromDLPack) {
     // Note that the original blob head's info has been discarded.
     EXPECT_EQ(dst_t.GetBlob()->GetDataPtr(),
               static_cast<const char *>(blob_head) +
-                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+                      core::Dtype::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(dst_t.GetDataPtr(),
               static_cast<const char *>(blob_head) +
-                      core::DtypeUtil::ByteSize(core::Dtype::Float32) * 3 * 4);
+                      core::Dtype::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(dst_t.ToFlatVector<float>(),
               std::vector<float>({12, 14, 20, 22}));
 }

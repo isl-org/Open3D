@@ -136,6 +136,8 @@ public:
     void SetOnMenuItemActivated(Menu::ItemId item_id,
                                 std::function<void()> callback);
 
+    void SetOnTickEvent(std::function<bool()> callback);
+
     /// Shows the dialog. If a dialog is currently being shown it will be
     /// closed.
     void ShowDialog(std::shared_ptr<Dialog> dlg);

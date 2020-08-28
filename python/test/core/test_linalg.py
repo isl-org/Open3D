@@ -27,10 +27,14 @@
 import open3d as o3d
 import numpy as np
 import pytest
-import core_test_utils
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+from open3d_test import list_devices
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
     o3d.core.Dtype.Float64
@@ -85,7 +89,7 @@ def test_matmul(device, dtype):
         assert 'dimensions with zero' in str(excinfo.value)
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
     o3d.core.Dtype.Float64
@@ -136,7 +140,7 @@ def test_inverse(device, dtype):
         assert 'Singular matrix' in str(excinfo.value)
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [
     o3d.core.Dtype.Int32, o3d.core.Dtype.Int64, o3d.core.Dtype.Float32,
     o3d.core.Dtype.Float64
@@ -202,7 +206,7 @@ def test_svd(device, dtype):
     assert 'must be 2D' in str(excinfo.value)
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype",
                          [o3d.core.Dtype.Float32, o3d.core.Dtype.Float64])
 def test_solve(device, dtype):
@@ -221,7 +225,7 @@ def test_solve(device, dtype):
     assert 'singular' in str(excinfo.value)
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype",
                          [o3d.core.Dtype.Float32, o3d.core.Dtype.Float64])
 def test_lstsq(device, dtype):
