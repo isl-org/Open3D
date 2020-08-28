@@ -26,9 +26,11 @@
 
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "open3d/core/Blob.h"
 #include "open3d/core/DLPack.h"
@@ -76,6 +78,9 @@ public:
 
         // Check data types
         AssertTemplateDtype<T>();
+        if (!std::is_pod<T>()) {
+            utility::LogError("Object must be a POD.");
+        }
 
         // Copy data to blob
         MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
@@ -155,8 +160,9 @@ public:
         return *this;
     }
 
-    /// Similar signature to above, but only supports objects and doesn't
-    /// support type cast.
+    /// Assign an object to a tensor. The tensor being assigned to must be a
+    /// scalr tensor of shape {}. The element byte size of the tensor must be
+    /// the same as the size of the object. The object must be a POD.
     template <typename Object>
     Tensor& AssignObject(const Object& v) && {
         if (shape_.size() != 0) {
@@ -938,8 +944,7 @@ public:
 
     template <typename T>
     void AssertTemplateDtype() const {
-        if (dtype_.GetDtypeCode() != Dtype::DtypeCode::Object &&
-            Dtype::FromType<T>() != dtype_) {
+        if (!dtype_.IsObject() && Dtype::FromType<T>() != dtype_) {
             utility::LogError(
                     "Requested values have type {} but Tensor has type {}",
                     Dtype::FromType<T>().ToString(), dtype_.ToString());

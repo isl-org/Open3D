@@ -456,8 +456,7 @@ Tensor Tensor::To(Dtype dtype, bool copy) const {
     }
 
     // We only support scalar type conversion
-    if (dtype_.GetDtypeCode() == Dtype::DtypeCode::Object ||
-        dtype.GetDtypeCode() == Dtype::DtypeCode::Object) {
+    if (dtype_.IsObject() || dtype.IsObject()) {
         utility::LogError("Cannot cast type from {} to {}.", dtype_.ToString(),
                           dtype.ToString());
     }

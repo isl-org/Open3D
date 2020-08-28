@@ -56,7 +56,7 @@ void IndexGetCPU(const Tensor& src,
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
-    if (dtype.GetDtypeCode() == Dtype::DtypeCode::Object) {
+    if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         CPULauncher::LaunchAdvancedIndexerKernel(
                 ai, [&](const void* src, void* dst) {
@@ -78,7 +78,7 @@ void IndexSetCPU(const Tensor& src,
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
-    if (dtype.GetDtypeCode() == Dtype::DtypeCode::Object) {
+    if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         CPULauncher::LaunchAdvancedIndexerKernel(
                 ai, [&](const void* src, void* dst) {
