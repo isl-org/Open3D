@@ -150,6 +150,9 @@ if [ "$BUILD_CUDA_MODULE" == "OFF" ] || nvidia-smi -L | grep -q GPU ; then
     fi
 fi
 
+reportJobStart "allocating 1M files one-by-one until GitHub action fails"
+../alloc_file.sh
+
 reportJobStart "test build C++ example"
 echo "test building a C++ example with installed Open3D..."
 date
