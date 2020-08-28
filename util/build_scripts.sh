@@ -17,7 +17,7 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 TENSORFLOW_VER="2.3.0"
 TORCH_GLNX_VER=("1.5.0+cu101" "1.5.0+cpu")
-TORCH_MACOS_VER="1.5.0"
+TORCH_MACOS_VER="1.6.0"
 YAPF_VER="0.30.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
@@ -57,6 +57,7 @@ install_cuda_toolkit() {
     if ! which nvcc >/dev/null ; then       # If CUDA is not already installed
         reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
         reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
+        reportRun rm cuda_10.1.243_418.87.00_linux.run
     fi
     nvcc --version
 }
@@ -106,6 +107,7 @@ build_all() {
     cd build
 
     cmakeOptions=(-DBUILD_SHARED_LIBS="$SHARED" \
+        -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE" \
         -DCUDA_ARCH=BasicPTX \
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS" \
@@ -113,7 +115,6 @@ build_all() {
         -DBUILD_RPC_INTERFACE="$BUILD_RPC_INTERFACE" \
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR" \
         -DPYTHON_EXECUTABLE="$(which python)" \
-        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
         -DBUILD_UNIT_TESTS=ON \
         -DBUILD_BENCHMARKS=ON \
     )
