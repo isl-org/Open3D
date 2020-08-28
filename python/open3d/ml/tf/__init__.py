@@ -6,7 +6,7 @@ if not _build_config["Tensorflow_VERSION"]:
 
 o3d_tf_version = _build_config["Tensorflow_VERSION"].split('.')
 if tf_version.split('.')[:2] != o3d_tf_version[:2]:
-    o3d_tf_version[2] = '*'   # Any patch level is OK
+    o3d_tf_version[2] = '*'  # Any patch level is OK
     match_tf_ver = '.'.join(o3d_tf_version)
     raise Exception('Version mismatch: Open3D needs Tensorflow version {}, but'
                     ' version {} is installed!'.format(match_tf_ver,

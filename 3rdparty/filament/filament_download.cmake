@@ -28,7 +28,7 @@ else()
         endif()
     endif()
 
-    # ExternalProject_Add happends at build time.
+    # ExternalProject_Add happens at build time.
     ExternalProject_Add(
         ext_filament
         PREFIX filament

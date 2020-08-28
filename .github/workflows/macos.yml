@@ -144,7 +144,7 @@ jobs:
           python -c "import open3d; \
                      print('Imported:', open3d); \
                      open3d.pybind.core.kernel.test_mkl_integration(); \
-                     print('CUDA enabled:', open3d.cuda.is_available())"
+                     print('CUDA enabled:', open3d.core.cuda.is_available())"
       - name: Run Python unit tests (benchmarks)
         run: |
           echo "running Open3D python tests..."

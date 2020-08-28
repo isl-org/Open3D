@@ -9,7 +9,7 @@ if not _build_config["Pytorch_VERSION"]:
 
 o3d_torch_version = _build_config["Pytorch_VERSION"].split('.')
 if _torch.__version__.split('.')[:2] != o3d_torch_version[:2]:
-    o3d_torch_version[2] = '*'   # Any patch level is OK
+    o3d_torch_version[2] = '*'  # Any patch level is OK
     match_torch_ver = '.'.join(o3d_torch_version)
     raise Exception('Version mismatch: Open3D needs Pytorch version {}, but '
                     'version {} is installed!'.format(match_torch_ver,

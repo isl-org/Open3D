@@ -95,7 +95,7 @@ install_dependencies() {
         reportRun python -m pip install -U yapf=="$YAPF_VER"
     fi
     echo "Purge pip cache"
-    python -m pip cache purge || true
+    python -m pip cache purge 2>/dev/null || true
 
 }
 
@@ -139,11 +139,20 @@ build_wheel() {
     mkdir -p build
     cd build         # PWD=Open3D/build
 
+    # BUILD_FILAMENT_FROM_SOURCE if Linux and old glibc (Ubuntu 18.04)
+    BUILD_FILAMENT_FROM_SOURCE=OFF
+    if [ "$OSTYPE" == "linux-gnu*" ] ; then
+        glibc_version=$(ldd --version | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
+        if dpkg --compare-versions "$glibc_version" lt 2.31 ; then
+            BUILD_FILAMENT_FROM_SOURCE=ON
+        fi
+    fi
+
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
         -DBUILD_TENSORFLOW_OPS=ON \
         -DBUILD_PYTORCH_OPS=OFF \       # TODO: PyTorch Ops is OFF with CUDA
         -DBUILD_RPC_INTERFACE=ON \
-        -DBUILD_FILAMENT_FROM_SOURCE=ON \
+        -DBUILD_FILAMENT_FROM_SOURCE="$BUILD_FILAMENT_FROM_SOURCE" \
         -DBUILD_JUPYTER_EXTENSION=ON \
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR" \
         -DPYTHON_EXECUTABLE="$(which python)" \
@@ -181,7 +190,7 @@ install_wheel() {
 test_wheel() {
     reportRun python -c "import open3d; print(open3d)"
     reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
-    reportRun python -c "import open3d; print('CUDA enabled: ', open3d.cuda.is_available())"
+    reportRun python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 }
 
 # Use: run_unit_tests
