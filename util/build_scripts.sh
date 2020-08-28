@@ -168,6 +168,9 @@ build_wheel() {
 
     if [ "$BUILD_CUDA_MODULE" == ON ] ; then
         echo
+        echo Installing CUDA toolkit...
+            install_cuda_toolkit
+        echo
         echo Building with CUDA...
         date
         rebuild_list=(bin lib/Release/*.{a,so}  lib/_build_config.py cpp)

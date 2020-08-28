@@ -12,9 +12,6 @@ fi
 
 reportJobStart "Installing Python unit test dependencies"
 date
-if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-    install_cuda_toolkit
-fi
 install_dependencies "${unittestDependencies:=ON}"
 
 echo "using python: $(which python)"
