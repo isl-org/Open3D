@@ -10,9 +10,10 @@ if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     BUILD_PYTORCH_OPS="OFF"
 fi
 
+echo "$rj_startts StartJob ReportInit"
 reportJobStart "Installing Python unit test dependencies"
 date
-install_dependencies "${unittestDependencies:=ON}"
+install_python_dependencies "${unittestDependencies:=ON}"
 
 echo "using python: $(which python)"
 python --version

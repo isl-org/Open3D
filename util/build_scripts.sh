@@ -63,7 +63,7 @@ install_cuda_toolkit() {
 }
 
 
-install_dependencies() {
+install_python_dependencies() {
 
     python -m pip install --upgrade pip
     python -m pip install -U wheel

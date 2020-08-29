@@ -18,7 +18,7 @@ date
 if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     install_cuda_toolkit
 fi
-install_dependencies "${unittestDependencies:=ON}"
+install_python_dependencies "${unittestDependencies:=ON}"
 
 echo "using python: $(which python)"
 python --version

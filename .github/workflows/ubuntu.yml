@@ -144,15 +144,18 @@ jobs:
       - name: Test Python package
         run: |
           python -V
-          python -m pip install -U pytest
-          python -m pip install open3d -f .
-          python -c "import open3d; \
+          cd util
+          source build_scripts.sh
+          echo "$rj_startts StartJob ReportInit"
+          reportJobStart "Installing Python dependencies..."
+          reportRun install_python_dependencies "${unittestDependencies:=ON}"
+          reportRun python -m pip install open3d -f .
+          reportRun python -c "import open3d; \
                      print('Imported:', open3d); \
                      open3d.pybind.core.kernel.test_mkl_integration(); \
                      print('CUDA enabled:', open3d.core.cuda.is_available())"
       - name: Run Python unit tests (benchmarks)
         run: |
-          echo "running Open3D python tests..."
-          cd util
-          source build_scripts.sh
+          reportJobStart "running Open3D python tests..."
           run_python_tests
+          reportJobFinishSession
