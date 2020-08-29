@@ -29,7 +29,9 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace pipelines {
 
 void pybind_pipelines(py::module& m);
 
+}
 }  // namespace open3d
