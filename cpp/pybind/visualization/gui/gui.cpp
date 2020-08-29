@@ -57,10 +57,9 @@
 #include "pybind/docstring.h"
 #include "pybind11/functional.h"
 
-using namespace open3d::visualization::gui;
-using namespace open3d::visualization::rendering;
-
 namespace open3d {
+namespace visualization {
+namespace gui {
 
 void pybind_gui_classes(py::module &m) {
     // ---- Application ----
@@ -1147,4 +1146,6 @@ void pybind_gui(py::module &m) {
     pybind_gui_classes(m_gui);
 }
 
+}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

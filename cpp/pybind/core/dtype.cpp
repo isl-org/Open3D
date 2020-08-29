@@ -33,33 +33,35 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace core {
 
 void pybind_core_dtype(py::module &m) {
-    py::enum_<core::Dtype::DtypeCode>(m, "DtypeCode", "Open3D data type codes.")
-            .value("Undefined", core::Dtype::DtypeCode::Undefined)
-            .value("Bool", core::Dtype::DtypeCode::Bool)
-            .value("Int", core::Dtype::DtypeCode::Int)
-            .value("UInt", core::Dtype::DtypeCode::UInt)
-            .value("Float", core::Dtype::DtypeCode::Float)
-            .value("Object", core::Dtype::DtypeCode::Object)
+    py::enum_<Dtype::DtypeCode>(m, "DtypeCode", "Open3D data type codes.")
+            .value("Undefined", Dtype::DtypeCode::Undefined)
+            .value("Bool", Dtype::DtypeCode::Bool)
+            .value("Int", Dtype::DtypeCode::Int)
+            .value("UInt", Dtype::DtypeCode::UInt)
+            .value("Float", Dtype::DtypeCode::Float)
+            .value("Object", Dtype::DtypeCode::Object)
             .export_values();
 
-    py::class_<core::Dtype, std::shared_ptr<core::Dtype>> dtype(
-            m, "Dtype", "Open3D data types.");
-    dtype.def_readonly_static("Undefined", &core::Dtype::Undefined);
-    dtype.def_readonly_static("Float32", &core::Dtype::Float32);
-    dtype.def_readonly_static("Float64", &core::Dtype::Float64);
-    dtype.def_readonly_static("Int32", &core::Dtype::Int32);
-    dtype.def_readonly_static("Int64", &core::Dtype::Int64);
-    dtype.def_readonly_static("UInt8", &core::Dtype::UInt8);
-    dtype.def_readonly_static("UInt16", &core::Dtype::UInt16);
-    dtype.def_readonly_static("Bool", &core::Dtype::Bool);
-    dtype.def("byte_size", &core::Dtype::ByteSize);
-    dtype.def("byte_code", &core::Dtype::GetDtypeCode);
-    dtype.def("__eq__", &core::Dtype::operator==);
-    dtype.def("__ene__", &core::Dtype::operator!=);
-    dtype.def("__repr__", &core::Dtype::ToString);
-    dtype.def("__str__", &core::Dtype::ToString);
+    py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype",
+                                                    "Open3D data types.");
+    dtype.def_readonly_static("Undefined", &Dtype::Undefined);
+    dtype.def_readonly_static("Float32", &Dtype::Float32);
+    dtype.def_readonly_static("Float64", &Dtype::Float64);
+    dtype.def_readonly_static("Int32", &Dtype::Int32);
+    dtype.def_readonly_static("Int64", &Dtype::Int64);
+    dtype.def_readonly_static("UInt8", &Dtype::UInt8);
+    dtype.def_readonly_static("UInt16", &Dtype::UInt16);
+    dtype.def_readonly_static("Bool", &Dtype::Bool);
+    dtype.def("byte_size", &Dtype::ByteSize);
+    dtype.def("byte_code", &Dtype::GetDtypeCode);
+    dtype.def("__eq__", &Dtype::operator==);
+    dtype.def("__ene__", &Dtype::operator!=);
+    dtype.def("__repr__", &Dtype::ToString);
+    dtype.def("__str__", &Dtype::ToString);
 }
 
+}  // namespace core
 }  // namespace open3d

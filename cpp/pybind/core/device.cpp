@@ -31,25 +31,28 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace core {
 
 void pybind_core_device(py::module &m) {
-    py::class_<core::Device> device(
+    py::class_<Device> device(
             m, "Device",
             "Device context specifying device type and device id.");
     device.def(py::init<>())
-            .def(py::init<core::Device::DeviceType, int>())
+            .def(py::init<Device::DeviceType, int>())
             .def(py::init<const std::string &, int>())
             .def(py::init<const std::string &>())
-            .def("__eq__", &core::Device::operator==)
-            .def("__ene__", &core::Device::operator!=)
-            .def("__repr__", &core::Device::ToString)
-            .def("__str__", &core::Device::ToString)
-            .def("get_type", &core::Device::GetType)
-            .def("get_id", &core::Device::GetID);
+            .def("__eq__", &Device::operator==)
+            .def("__ene__", &Device::operator!=)
+            .def("__repr__", &Device::ToString)
+            .def("__str__", &Device::ToString)
+            .def("get_type", &Device::GetType)
+            .def("get_id", &Device::GetID);
 
-    py::enum_<core::Device::DeviceType>(device, "DeviceType")
-            .value("CPU", core::Device::DeviceType::CPU)
-            .value("CUDA", core::Device::DeviceType::CUDA)
+    py::enum_<Device::DeviceType>(device, "DeviceType")
+            .value("CPU", Device::DeviceType::CPU)
+            .value("CUDA", Device::DeviceType::CUDA)
             .export_values();
 }
+
+}  // namespace core
 }  // namespace open3d

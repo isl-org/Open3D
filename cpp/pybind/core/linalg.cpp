@@ -34,12 +34,14 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace core {
+
 void pybind_core_linalg(py::module &m) {
     m.def(
             "matmul",
-            [](const core::Tensor &A, const core::Tensor &B) {
-                core::Tensor output;
-                core::Matmul(A, B, output);
+            [](const Tensor &A, const Tensor &B) {
+                Tensor output;
+                Matmul(A, B, output);
                 return output;
             },
             "Function to perform matrix multiplication of two 2D tensors with "
@@ -48,18 +50,18 @@ void pybind_core_linalg(py::module &m) {
 
     m.def(
             "inv",
-            [](const core::Tensor &A) {
-                core::Tensor output;
-                core::Inverse(A, output);
+            [](const Tensor &A) {
+                Tensor output;
+                Inverse(A, output);
                 return output;
             },
             "Function to inverse a square 2D tensor.", "A"_a);
 
     m.def(
             "solve",
-            [](const core::Tensor &A, const core::Tensor &B) {
-                core::Tensor output;
-                core::Solve(A, B, output);
+            [](const Tensor &A, const Tensor &B) {
+                Tensor output;
+                Solve(A, B, output);
                 return output;
             },
             "Function to solve X for a linear system AX = B where A is a "
@@ -69,9 +71,9 @@ void pybind_core_linalg(py::module &m) {
 
     m.def(
             "lstsq",
-            [](const core::Tensor &A, const core::Tensor &B) {
-                core::Tensor output;
-                core::LeastSquares(A, B, output);
+            [](const Tensor &A, const Tensor &B) {
+                Tensor output;
+                LeastSquares(A, B, output);
                 return output;
             },
             "Function to solve X for a linear system AX = B where A is a full "
@@ -80,11 +82,13 @@ void pybind_core_linalg(py::module &m) {
 
     m.def(
             "svd",
-            [](const core::Tensor &A) {
-                core::Tensor U, S, VT;
-                core::SVD(A, U, S, VT);
+            [](const Tensor &A) {
+                Tensor U, S, VT;
+                SVD(A, U, S, VT);
                 return py::make_tuple(U, S, VT);
             },
             "Function to decompose A with A = U S VT.", "A"_a);
 }
+
+}  // namespace core
 }  // namespace open3d

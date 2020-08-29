@@ -30,11 +30,13 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace core {
 
 void pybind_core_size_vector(py::module &m) {
-    auto size_vector = py::bind_vector<core::SizeVector>(
+    auto size_vector = py::bind_vector<SizeVector>(
             m, "SizeVector",
             "A vector of integers for specifying shape, strides, etc.");
 }
 
+}  // namespace core
 }  // namespace open3d
