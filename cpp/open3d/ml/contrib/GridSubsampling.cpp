@@ -120,7 +120,7 @@ void grid_subsampling(std::vector<PointXYZ>& original_points,
                                        v.second.features.end());
         }
         if (use_classes) {
-            for (int i = 0; i < ldim; i++)
+            for (int i = 0; i < static_cast<int>(ldim); i++)
                 subsampled_classes.push_back(
                         max_element(v.second.labels[i].begin(),
                                     v.second.labels[i].end(),
@@ -164,7 +164,7 @@ void batch_grid_subsampling(std::vector<PointXYZ>& original_points,
     // Loop over batches
     // *****************
 
-    for (b = 0; b < original_batches.size(); b++) {
+    for (b = 0; b < static_cast<int>(original_batches.size()); b++) {
         // Extract batch points features and labels
         std::vector<PointXYZ> b_o_points = std::vector<PointXYZ>(
                 original_points.begin() + sum_b,
@@ -199,7 +199,7 @@ void batch_grid_subsampling(std::vector<PointXYZ>& original_points,
         // ****************************************
 
         // If too many points remove some
-        if (b_s_points.size() <= max_p) {
+        if (static_cast<int>(b_s_points.size()) <= max_p) {
             subsampled_points.insert(subsampled_points.end(),
                                      b_s_points.begin(), b_s_points.end());
 
