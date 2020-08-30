@@ -72,10 +72,11 @@ void grid_subsampling(std::vector<PointXYZ>& original_points,
     int nDisp = static_cast<int>(N / 100);
 
     // Initialize variables
-    size_t iX, iY, iZ, mapIdx;
     std::unordered_map<size_t, SampledData> data;
 
     for (auto& p : original_points) {
+        size_t iX, iY, iZ, mapIdx;
+
         // Position of point in sample map
         iX = (size_t)std::floor((p.x - originCorner.x) / sampleDl);
         iY = (size_t)std::floor((p.y - originCorner.y) / sampleDl);

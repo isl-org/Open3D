@@ -81,6 +81,10 @@ const py::tuple SubsampleBatch(py::array points,
                           batches_t.Sum({0}).Item<int32_t>(), num_points);
     }
     original_batches = batches_t.ToFlatVector<int32_t>();
+    if (verbose) {
+        utility::LogInfo("Got {} batches with a total of {} points as inputs.",
+                         num_batches, num_points);
+    }
 
     // Fill original_features.
     int64_t feature_dim = -1;
@@ -154,6 +158,10 @@ const py::tuple SubsampleBatch(py::array points,
                 "{} points.",
                 subsampled_batches_t.Sum({0}).Item<int32_t>(),
                 num_subsampled_points);
+    }
+    if (verbose) {
+        utility::LogInfo("Subsampled to {} batches with a total of {} points.",
+                         num_subsampled_batches, num_subsampled_points);
     }
 
     // Wrap result subsampled_features. Data will be copied.
@@ -238,6 +246,9 @@ const py::tuple Subsample(py::array points,
             reinterpret_cast<contrib::PointXYZ*>(points_t.GetDataPtr()),
             reinterpret_cast<contrib::PointXYZ*>(points_t.GetDataPtr()) +
                     num_points);
+    if (verbose) {
+        utility::LogInfo("Got {} points as inputs.", num_points);
+    }
 
     // Fill original_features.
     int64_t feature_dim = -1;
@@ -297,6 +308,9 @@ const py::tuple Subsample(py::array points,
     core::Tensor subsampled_points_t(
             reinterpret_cast<float*>(subsampled_points.data()),
             {num_subsampled_points, 3}, core::Dtype::Float32);
+    if (verbose) {
+        utility::LogInfo("Subsampled to {} points.", num_subsampled_points);
+    }
 
     // Wrap result subsampled_features. Data will be copied.
     core::Tensor subsampled_features_t;
