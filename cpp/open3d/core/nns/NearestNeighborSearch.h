@@ -35,21 +35,21 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-/// \class NearestNeighbor
+/// \class NearestNeighborSearch
 ///
 /// \brief A Class for nearest neighbor search.
-class NearestNeighbor {
+class NearestNeighborSearch {
 public:
     /// Constructor.
     ///
     /// \param dataset_points Dataset points for constructing search index. Must
     /// be 2D, with shape {n, d}.
-    NearestNeighbor(const core::Tensor &dataset_points)
+    NearestNeighborSearch(const core::Tensor &dataset_points)
         : dataset_points_(dataset_points){};
 
-    ~NearestNeighbor();
-    NearestNeighbor(const NearestNeighbor &) = delete;
-    NearestNeighbor &operator=(const NearestNeighbor &) = delete;
+    ~NearestNeighborSearch();
+    NearestNeighborSearch(const NearestNeighborSearch &) = delete;
+    NearestNeighborSearch &operator=(const NearestNeighborSearch &) = delete;
 
 public:
     /// Set index for knn search.
