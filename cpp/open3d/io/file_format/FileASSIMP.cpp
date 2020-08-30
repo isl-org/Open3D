@@ -92,6 +92,12 @@ void LoadTextures(const std::string& filename,
                 strpath[p_win] = '/';
                 p_win = strpath.find("\\", p_win + 1);
             }
+            // if absolute path convert to relative to base path
+            if (strpath.length() > 1 &&
+                (strpath[0] == '/' || strpath[1] == ':')) {
+                strpath = utility::filesystem::GetFileNameWithoutDirectory(
+                        strpath);
+            }
             auto image = io::CreateImageFromFile(base_path + strpath);
             if (image->HasData()) {
                 img = image;
@@ -336,6 +342,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
         aiColor3D color(1.f, 1.f, 1.f);
 
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, color);
         o3d_mat.base_color = Eigen::Vector4f(color.r, color.g, color.b, 1.f);
         mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
                  o3d_mat.base_metallic);

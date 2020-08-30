@@ -26,12 +26,23 @@
 
 #pragma once
 
+#include "open3d/core/Tensor.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace core {
+
+/// Converts py::array (Numpy array) to Tensor.
+///
+/// You may use this helper function for importing data from Numpy.
+///
+/// \param inplace If True, Tensor will directly use the underlying Numpy
+/// buffer. However, The data will become invalid once the Numpy variable is
+/// deallocated, the Tensor's data becomes invalid without notice. If False, the
+/// python buffer will be copied.
+Tensor PyArrayToTensor(py::array array, bool inplace);
 
 void pybind_core(py::module& m);
-
 void pybind_cuda_utils(py::module& m);
 void pybind_core_blob(py::module& m);
 void pybind_core_dtype(py::module& m);
@@ -44,4 +55,5 @@ void pybind_core_linalg(py::module& m);
 void pybind_core_kernel(py::module& m);
 void pybind_core_nn(py::module& m);
 
+}  // namespace core
 }  // namespace open3d

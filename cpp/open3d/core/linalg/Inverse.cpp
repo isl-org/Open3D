@@ -41,7 +41,7 @@ void Inverse(const Tensor &A, Tensor &output) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}.",
-                DtypeUtil::ToString(dtype));
+                dtype.ToString());
     }
 
     // Check dimensions

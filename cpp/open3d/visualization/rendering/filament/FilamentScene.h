@@ -1,4 +1,3 @@
-
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
@@ -110,6 +109,9 @@ public:
     // Scene geometry
     bool AddGeometry(const std::string& object_name,
                      const geometry::Geometry3D& geometry,
+                     const Material& material) override;
+    bool AddGeometry(const std::string& object_name,
+                     const tgeometry::PointCloud& point_cloud,
                      const Material& material) override;
     bool AddGeometry(const std::string& object_name,
                      const TriangleMeshModel& model) override;

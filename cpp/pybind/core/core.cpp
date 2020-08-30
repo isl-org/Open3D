@@ -26,9 +26,35 @@
 
 #include "pybind/core/core.h"
 
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 #include "pybind/open3d_pybind.h"
+#include "pybind/pybind_utils.h"
 
 namespace open3d {
+namespace core {
+
+Tensor PyArrayToTensor(py::array array, bool inplace) {
+    py::buffer_info info = array.request();
+
+    SizeVector shape(info.shape.begin(), info.shape.end());
+    SizeVector strides(info.strides.begin(), info.strides.end());
+    for (size_t i = 0; i < strides.size(); ++i) {
+        strides[i] /= info.itemsize;
+    }
+    Dtype dtype = pybind_utils::ArrayFormatToDtype(info.format);
+    Device device("CPU:0");
+
+    std::function<void(void *)> deleter = [](void *) -> void {};
+    auto blob = std::make_shared<Blob>(device, info.ptr, deleter);
+    Tensor t_inplace(shape, strides, info.ptr, dtype, blob);
+
+    if (inplace) {
+        return t_inplace;
+    } else {
+        return t_inplace.Copy();
+    }
+}
 
 void pybind_core(py::module &m) {
     py::module m_core = m.def_submodule("core");
@@ -45,4 +71,5 @@ void pybind_core(py::module &m) {
     pybind_core_nn(m_core);
 }
 
+}  // namespace core
 }  // namespace open3d
