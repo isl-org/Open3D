@@ -61,6 +61,11 @@ set(CORE_CUDA_SRC
     MemoryManagerCUDA.cu
 )
 
+set(CORE_NNS_SRC
+    nns/NanoFlannIndex.cpp
+    nns/NearestNeighborSearch.cpp
+)
+
 if(BUILD_CUDA_MODULE)
     set(ALL_CORE_SRC
         ${CORE_SRC}
@@ -69,12 +74,14 @@ if(BUILD_CUDA_MODULE)
         ${LINALG_CUDA_SRC}
         ${KERNEL_SRC}
         ${KERNEL_CUDA_SRC}
+        ${CORE_NNS_SRC}
     )
 else()
   set(ALL_CORE_SRC
         ${CORE_SRC}
         ${LINALG_SRC}
         ${KERNEL_SRC}
+        ${CORE_NNS_SRC}
     )
 endif()
 
