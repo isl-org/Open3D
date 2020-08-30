@@ -101,7 +101,7 @@ void bind_copy_functions(Class_ &cl) {
 ///         if (!b.has_value()) {
 ///             return a;
 ///         } else {
-///             return a + b;
+///             return a + b.value();
 ///         }
 ///     },
 ///     py::arg("a"), py::arg("b") = py::none()
