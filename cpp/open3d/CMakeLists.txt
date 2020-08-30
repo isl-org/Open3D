@@ -48,6 +48,7 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:geometry>
     $<TARGET_OBJECTS:tgeometry>
     $<TARGET_OBJECTS:io>
+    $<TARGET_OBJECTS:ml_contrib>
     $<TARGET_OBJECTS:pipelines>
     $<TARGET_OBJECTS:utility>
     $<TARGET_OBJECTS:visualization>
