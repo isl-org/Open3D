@@ -2,6 +2,7 @@ import open3d as o3d
 import numpy as np
 
 from open3d.pybind.core import Dtype
+from open3d.pybind.core import DtypeCode
 from open3d.pybind.core import Device
 from open3d.pybind.core import cuda
 from open3d.pybind.core import NoneType

@@ -32,10 +32,9 @@
 #include "pybind/visualization/gui/gui.h"
 #include "pybind11/functional.h"
 
-using namespace open3d::visualization;
-using namespace open3d::visualization::rendering;
-
 namespace open3d {
+namespace visualization {
+namespace rendering {
 
 void pybind_rendering_classes(py::module &m) {
     py::class_<Renderer> renderer(
@@ -179,4 +178,6 @@ void pybind_rendering(py::module &m) {
     pybind_rendering_classes(m_rendering);
 }
 
+}  // namespace rendering
+}  // namespace visualization
 }  // namespace open3d

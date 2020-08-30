@@ -66,6 +66,7 @@ if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     if ! which nvcc >/dev/null ; then       # If CUDA is not already installed
         reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
         reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
+        reportRun rm cuda_10.1.243_418.87.00_linux.run
     fi
     nvcc --version
 fi
@@ -102,6 +103,7 @@ cd build
 runBenchmarks=true
 OPEN3D_INSTALL_DIR=~/open3d_install
 cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
+        -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE \
         -DCUDA_ARCH=BasicPTX \
         -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
