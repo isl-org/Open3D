@@ -125,17 +125,17 @@ public:
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param knn Number of nearest neighbor to search.
-    /// \return Pair of Tensors: (indices, distances).
+    /// \return Pair of Tensors: (indices, distances):
     /// indices: Tensor of shape {n, knn}, with dtype Int64.
     /// distainces: Tensor of shape {n, knn}, with dtype Float64.
     std::pair<core::Tensor, core::Tensor> SearchKnn(
             const core::Tensor &query_points, int knn);
 
-    /// Perform radius search.
+    /// Perform radius search with multiple radii.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param radii Vector of radius. The size must be n.
-    /// \return Tuple of Tensors: (indices, distances, num_neighbors)
+    /// \return Tuple of Tensors: (indices, distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
     /// - distances: Tensor of shape {total_num_neighbors,}, dtype Float64.
     /// - num_neighbors: Tensor of shape {n,}, dtype Int64.
@@ -146,7 +146,7 @@ public:
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param radius Radius.
-    /// \return tuple of Tensor, (indices, distances, num_neighbors)
+    /// \return Tuple of Tensors, (indices, distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
     /// - distances: Tensor of shape {total_num_neighbors,}, dtype Float64.
     /// - num_neighbors: Tensor of shape {n}, dtype Int64.
@@ -166,6 +166,7 @@ protected:
     std::unique_ptr<KDTree_t> index_;
     std::unique_ptr<Adaptor<double>> adaptor_;
 };
+
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

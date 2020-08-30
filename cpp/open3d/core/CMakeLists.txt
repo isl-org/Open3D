@@ -63,7 +63,7 @@ set(CORE_CUDA_SRC
 
 set(CORE_NNS_SRC
     nns/NanoFlannIndex.cpp
-    nns/NearestNeighbor.cpp
+    nns/NearestNeighborSearch.cpp
 )
 
 if(BUILD_CUDA_MODULE)

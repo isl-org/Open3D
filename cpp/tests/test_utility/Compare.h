@@ -152,6 +152,11 @@ void ExpectEQInternal(const std::string& line_info,
                       const std::vector<int>& v0,
                       const std::vector<int>& v1);
 
+// Test equality of two vectors of int64_t.
+void ExpectEQInternal(const std::string& line_info,
+                      const std::vector<int64_t>& v0,
+                      const std::vector<int64_t>& v1);
+
 // Test equality of two arrays of float.
 void ExpectEQInternal(const std::string& line_info,
                       const float* const v0,
