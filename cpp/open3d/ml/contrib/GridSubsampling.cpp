@@ -69,7 +69,7 @@ void grid_subsampling(std::vector<PointXYZ>& original_points,
 
     // Verbose parameters
     int i = 0;
-    int nDisp = N / 100;
+    int nDisp = static_cast<int>(N / 100);
 
     // Initialize variables
     size_t iX, iY, iZ, mapIdx;
@@ -109,7 +109,7 @@ void grid_subsampling(std::vector<PointXYZ>& original_points,
     if (use_feature) subsampled_features.reserve(data.size() * fdim);
     if (use_classes) subsampled_classes.reserve(data.size() * ldim);
     for (auto& v : data) {
-        subsampled_points.push_back(v.second.point * (1.0 / v.second.count));
+        subsampled_points.push_back(v.second.point * (1.0f / v.second.count));
         if (use_feature) {
             float count = (float)v.second.count;
             transform(v.second.features.begin(), v.second.features.end(),
@@ -159,7 +159,7 @@ void batch_grid_subsampling(std::vector<PointXYZ>& original_points,
     size_t ldim = original_classes.size() / N;
 
     // Handle max_p = 0
-    if (max_p < 1) max_p = N;
+    if (max_p < 1) max_p = static_cast<int>(N);
 
     // Loop over batches
     // *****************
@@ -213,7 +213,7 @@ void batch_grid_subsampling(std::vector<PointXYZ>& original_points,
                                           b_s_classes.begin(),
                                           b_s_classes.end());
 
-            subsampled_batches.push_back(b_s_points.size());
+            subsampled_batches.push_back(static_cast<int>(b_s_points.size()));
         } else {
             subsampled_points.insert(subsampled_points.end(),
                                      b_s_points.begin(),
