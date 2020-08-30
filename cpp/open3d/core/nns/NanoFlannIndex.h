@@ -30,7 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 
-// forward declaration
+// Forward declarations.
 namespace nanoflann {
 
 template <class T, class DataSource, typename _DistanceType>
@@ -102,11 +102,13 @@ class NanoFlannIndex {
 public:
     /// \brief Default Constructor.
     NanoFlannIndex();
+
     /// \brief Parameterized Constructor.
     ///
     /// \param tensor Provides a set of data points as Tensor for KDTree
     /// construction.
     NanoFlannIndex(const core::Tensor &dataset_points);
+
     ~NanoFlannIndex();
     NanoFlannIndex(const NanoFlannIndex &) = delete;
     NanoFlannIndex &operator=(const NanoFlannIndex &) = delete;
@@ -115,43 +117,46 @@ public:
     /// Set the data for the KDTree from a Tensor.
     ///
     /// \param dataset_points Dataset points for KDTree construction. Must be
-    /// 2D, with shape {n, d}
+    /// 2D, with shape {n, d}.
     /// \return Returns true if the construction success, otherwise false.
     bool SetTensorData(const core::Tensor &dataset_points);
+
     /// Perform K nearest neighbor search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param knn Number of nearest neighbor to search.
-    /// \return pair of Tensor, <indices, distances>.
-    /// indices: Tensor of shape <n, knn>, with dtype Int64.
-    /// distainces: Tensor of shape <n, knn>, with dtype Float64.
+    /// \return Pair of Tensors: (indices, distances).
+    /// indices: Tensor of shape {n, knn}, with dtype Int64.
+    /// distainces: Tensor of shape {n, knn}, with dtype Float64.
     std::pair<core::Tensor, core::Tensor> SearchKnn(
             const core::Tensor &query_points, int knn);
+
     /// Perform radius search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param radii Vector of radius. The size must be n.
-    /// \return tuple of Tensor, <indices, distances, number of neighbors>
-    /// indicecs: Tensor of shape <total_number_of_neighbors, >, with dtype
-    /// Int64. distances: Tensor of shape <total_number_of_neighbors, >, with
-    /// dtype Float64. number of neighbor: Tensor of shape <n, >, with dtype
-    /// Int64.
+    /// \return Tuple of Tensors: (indices, distances, num_neighbors)
+    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
+    /// - distances: Tensor of shape {total_num_neighbors,}, dtype Float64.
+    /// - num_neighbors: Tensor of shape {n,}, dtype Int64.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
             const core::Tensor &query_points, const std::vector<double> &radii);
+
     /// Perform radius search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param radius Radius.
-    /// \return tuple of Tensor, <indices, distances, number of neighbors>
-    /// indicecs: Tensor of shape <total_number_of_neighbors, >, with dtype
-    /// Int64. distances: Tensor of shape <total_number_of_neighbors, >, with
-    /// dtype Float64. number of neighbor: Tensor of shape <n, >, with dtype
-    /// Int64.
+    /// \return tuple of Tensor, (indices, distances, num_neighbors)
+    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
+    /// - distances: Tensor of shape {total_num_neighbors,}, dtype Float64.
+    /// - num_neighbors: Tensor of shape {n}, dtype Int64.
     std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
             const core::Tensor &query_points, double radius);
+
     /// Get dimension of the dataset points.
     /// \return dimension of dataset points.
     int GetDimension() const;
+
     /// Get size of the dataset points.
     /// \return number of points in dataset.
     size_t GetDatasetSize() const;
