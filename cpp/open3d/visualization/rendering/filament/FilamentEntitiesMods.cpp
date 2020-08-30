@@ -171,24 +171,26 @@ MaterialModifier& FilamentMaterialModifier::SetParameter(
 }
 
 MaterialModifier& FilamentMaterialModifier::SetColor(
-        const char* parameter, const Eigen::Vector3f& value) {
+        const char* parameter, const Eigen::Vector3f& value, bool srgb) {
     if (material_instance_) {
         const auto color =
                 filament::math::float3{value.x(), value.y(), value.z()};
-        material_instance_->setParameter(parameter, filament::RgbType::LINEAR,
-                                         color);
+        auto rgb_type =
+                srgb ? filament::RgbType::sRGB : filament::RgbType::LINEAR;
+        material_instance_->setParameter(parameter, rgb_type, color);
     }
 
     return *this;
 }
 
 MaterialModifier& FilamentMaterialModifier::SetColor(
-        const char* parameter, const Eigen::Vector4f& value) {
+        const char* parameter, const Eigen::Vector4f& value, bool srgb) {
     if (material_instance_) {
-        auto color =
+        const auto color =
                 filament::math::float4{value(0), value(1), value(2), value(3)};
-        material_instance_->setParameter(parameter, filament::RgbaType::LINEAR,
-                                         color);
+        auto rgba_type =
+                srgb ? filament::RgbaType::sRGB : filament::RgbaType::LINEAR;
+        material_instance_->setParameter(parameter, rgba_type, color);
     }
 
     return *this;

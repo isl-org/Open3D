@@ -68,9 +68,11 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/tgeometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/Light.h"
 #include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
@@ -274,36 +276,147 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
-                                const Model& model) {
-    utility::LogWarning("NOT YET IMPLEMENTED");
-    return false;
+                                const tgeometry::PointCloud& point_cloud,
+                                const Material& material) {
+    // Basic sanity checks
+    if (point_cloud.IsEmpty()) {
+        utility::LogWarning("Point cloud for object {} is empty", object_name);
+        return false;
+    }
+    const auto& points = point_cloud.GetPoints();
+    if (points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+        utility::LogWarning(
+                "GPU resident tensor point clouds are not supported at this "
+                "time");
+        return false;
+    }
+    if (points.GetDtype() != core::Dtype::Float32) {
+        utility::LogWarning("tensor point cloud must have Dtype of Float32");
+        return false;
+    }
+
+    auto geometry_buffer_builder =
+            GeometryBuffersBuilder::GetBuilder(point_cloud);
+    auto buffers = geometry_buffer_builder->ConstructBuffers();
+    auto vb = std::get<0>(buffers);
+    auto ib = std::get<1>(buffers);
+
+    filament::Box aabb = geometry_buffer_builder->ComputeAABB();
+
+    auto vbuf = resource_mgr_.GetVertexBuffer(vb).lock();
+    auto ibuf = resource_mgr_.GetIndexBuffer(ib).lock();
+
+    auto filament_entity = utils::EntityManager::get().create();
+    filament::RenderableManager::Builder builder(1);
+    builder.boundingBox(aabb)
+            .layerMask(FilamentView::kAllLayersMask, FilamentView::kMainLayer)
+            .castShadows(true)
+            .receiveShadows(true)
+            .geometry(0, geometry_buffer_builder->GetPrimitiveType(),
+                      vbuf.get(), ibuf.get());
+
+    auto material_instance =
+            AssignMaterialToFilamentGeometry(builder, material);
+
+    auto result = builder.build(engine_, filament_entity);
+    if (result == filament::RenderableManager::Builder::Success) {
+        scene_->addEntity(filament_entity);
+
+        auto giter = geometries_.emplace(std::make_pair(
+                object_name,
+                RenderableGeometry{object_name,
+                                   true,
+                                   true,
+                                   true,
+                                   {{}, material, material_instance},
+                                   filament_entity,
+                                   vb,
+                                   ib}));
+
+        SetGeometryTransform(object_name, Transform::Identity());
+        UpdateMaterialProperties(giter.first->second);
+    } else {
+        // NOTE: Is there a better way to handle builder failing? That's a
+        // sign of a major problem.
+        utility::LogWarning(
+                "Failed to build Filament resources for geometry {}",
+                object_name);
+        return false;
+    }
+
+    return true;
+}
+
+#ifndef NDEBUG
+void OutputMaterialProperties(const std::string& name,
+                              const visualization::rendering::Material& mat) {
+    utility::LogInfo("Material {}", name);
+    utility::LogInfo("\tBase Color: {},{},{},{}", mat.base_color.x(),
+                     mat.base_color.y(), mat.base_color.z(),
+                     mat.base_color.w());
+    utility::LogInfo("\tBase Metallic: {}", mat.base_metallic);
+    utility::LogInfo("\tBase Roughness: {}", mat.base_roughness);
+    utility::LogInfo("\tBase Reflectance: {}", mat.base_reflectance);
+    utility::LogInfo("\tBase Clear Cout: {}", mat.base_clearcoat);
+}
+#endif
+
+bool FilamentScene::AddGeometry(const std::string& object_name,
+                                const TriangleMeshModel& model) {
+    if (geometries_.count(object_name) > 0 ||
+        model_geometries_.count(object_name) > 0) {
+        utility::LogWarning("Model {} has already been added to scene graph.",
+                            object_name);
+        return false;
+    }
+
+    std::vector<std::string> mesh_object_names;
+    for (const auto& mesh : model.meshes_) {
+        auto& mat = model.materials_[mesh.material_idx];
+        std::string derived_name(object_name + ":" + mesh.mesh_name);
+        AddGeometry(derived_name, *(mesh.mesh), mat);
+        mesh_object_names.push_back(derived_name);
+    }
+    model_geometries_[object_name] = mesh_object_names;
+
+    return true;
 }
 
 void FilamentScene::RemoveGeometry(const std::string& object_name) {
-    auto geom = GetGeometry(object_name, false);
-    if (geom) {
-        scene_->remove(geom->filament_entity);
-        geom->ReleaseResources(engine_, resource_mgr_);
-        geometries_.erase(object_name);
+    auto geoms = GetGeometry(object_name, false);
+    if (!geoms.empty()) {
+        for (auto* g : geoms) {
+            scene_->remove(g->filament_entity);
+            g->ReleaseResources(engine_, resource_mgr_);
+            geometries_.erase(g->name);
+        }
+    }
+
+    if (GeometryIsModel(object_name)) {
+        model_geometries_.erase(object_name);
     }
 }
 
 void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
-    auto geom = GetGeometry(object_name);
-    if (geom && geom->visible != show) {
-        geom->visible = show;
-        if (show) {
-            scene_->addEntity(geom->filament_entity);
-        } else {
-            scene_->remove(geom->filament_entity);
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
+        if (g->visible != show) {
+            g->visible = show;
+            if (show) {
+                scene_->addEntity(g->filament_entity);
+            } else {
+                scene_->remove(g->filament_entity);
+            }
         }
     }
 }
 
 bool FilamentScene::GeometryIsVisible(const std::string& object_name) {
-    auto geom = GetGeometry(object_name);
-    if (geom) {
-        return geom->visible;
+    auto geoms = GetGeometry(object_name);
+    if (!geoms.empty()) {
+        // NOTE: all meshes of model share same visibility so we only need to
+        // check first entry of this array
+        return geoms[0]->visible;
     } else {
         return false;
     }
@@ -326,9 +439,9 @@ FilamentScene::GetGeometryTransformInstance(RenderableGeometry* geom) {
 
 void FilamentScene::SetGeometryTransform(const std::string& object_name,
                                          const Transform& transform) {
-    auto geom = GetGeometry(object_name);
-    if (geom) {
-        auto itransform = GetGeometryTransformInstance(geom);
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
+        auto itransform = GetGeometryTransformInstance(g);
         if (itransform.isValid()) {
             const auto& ematrix = transform.matrix();
             auto& transform_mgr = engine_.getTransformManager();
@@ -342,9 +455,9 @@ void FilamentScene::SetGeometryTransform(const std::string& object_name,
 FilamentScene::Transform FilamentScene::GetGeometryTransform(
         const std::string& object_name) {
     Transform etransform;
-    auto geom = GetGeometry(object_name);
-    if (geom) {
-        auto itransform = GetGeometryTransformInstance(geom);
+    auto geoms = GetGeometry(object_name);
+    if (!geoms.empty()) {
+        auto itransform = GetGeometryTransformInstance(geoms[0]);
         if (itransform.isValid()) {
             auto& transform_mgr = engine_.getTransformManager();
             auto ftransform = transform_mgr.getTransform(itransform);
@@ -357,21 +470,21 @@ FilamentScene::Transform FilamentScene::GetGeometryTransform(
 geometry::AxisAlignedBoundingBox FilamentScene::GetGeometryBoundingBox(
         const std::string& object_name) {
     geometry::AxisAlignedBoundingBox result;
-    auto geom = GetGeometry(object_name);
-    if (geom) {
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
         auto& renderable_mgr = engine_.getRenderableManager();
-        auto inst = renderable_mgr.getInstance(geom->filament_entity);
+        auto inst = renderable_mgr.getInstance(g->filament_entity);
         auto box = renderable_mgr.getAxisAlignedBoundingBox(inst);
 
         auto& transform_mgr = engine_.getTransformManager();
-        auto itransform = transform_mgr.getInstance(geom->filament_entity);
+        auto itransform = transform_mgr.getInstance(g->filament_entity);
         auto transform = transform_mgr.getWorldTransform(itransform);
 
         box = rigidTransform(box, transform);
 
         auto min = box.center - box.halfExtent;
         auto max = box.center + box.halfExtent;
-        result = {{min.x, min.y, min.z}, {max.x, max.y, max.z}};
+        result += {{min.x, min.y, min.z}, {max.x, max.y, max.z}};
     }
     return result;
 }
@@ -379,11 +492,11 @@ geometry::AxisAlignedBoundingBox FilamentScene::GetGeometryBoundingBox(
 void FilamentScene::GeometryShadows(const std::string& object_name,
                                     bool cast_shadows,
                                     bool receive_shadows) {
-    auto geom = GetGeometry(object_name);
-    if (geom) {
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
         auto& renderable_mgr = engine_.getRenderableManager();
         filament::RenderableManager::Instance inst =
-                renderable_mgr.getInstance(geom->filament_entity);
+                renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setCastShadows(inst, cast_shadows);
         renderable_mgr.setReceiveShadows(inst, receive_shadows);
     }
@@ -394,7 +507,7 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
     auto& maps = geom_mi.maps;
 
     renderer_.ModifyMaterial(geom_mi.mat_instance)
-            .SetColor("baseColor", material.base_color)
+            .SetColor("baseColor", material.base_color, false)
             .SetParameter("pointSize", material.point_size)
             .SetParameter("baseRoughness", material.base_roughness)
             .SetParameter("baseMetallic", material.base_metallic)
@@ -407,11 +520,7 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
                         rendering::TextureSamplerParameters::Pretty())
             .SetTexture("normalMap", maps.normal_map,
                         rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("ambientOcclusionMap", maps.ambient_occlusion_map,
-                        rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("roughnessMap", maps.roughness_map,
-                        rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("metallicMap", maps.metallic_map,
+            .SetTexture("ao_rough_metalMap", maps.ao_rough_metal_map,
                         rendering::TextureSamplerParameters::Pretty())
             .SetTexture("reflectanceMap", maps.reflectance_map,
                         rendering::TextureSamplerParameters::Pretty())
@@ -429,7 +538,7 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
 
 void FilamentScene::UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
-            .SetColor("baseColor", geom_mi.properties.base_color)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
             .SetParameter("pointSize", geom_mi.properties.point_size)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
@@ -453,6 +562,93 @@ void FilamentScene::UpdateDepthShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+std::shared_ptr<geometry::Image> CombineTextures(
+        std::shared_ptr<geometry::Image> ao,
+        std::shared_ptr<geometry::Image> rough,
+        std::shared_ptr<geometry::Image> metal) {
+    int width = 0, height = 0;
+    if (ao && ao->HasData()) {
+        width = ao->width_;
+        height = ao->height_;
+    }
+    if (rough && rough->HasData()) {
+        if (width == 0) {
+            width = rough->width_;
+            height = rough->height_;
+        } else if (width != rough->width_ || height != rough->height_) {
+            utility::LogWarning(
+                    "Attribute texture maps must have same dimensions");
+            return {};
+        }
+    }
+    if (metal && metal->HasData()) {
+        if (width == 0) {
+            width = metal->width_;
+            height = metal->height_;
+        } else if (width != metal->width_ || height != metal->height_) {
+            utility::LogWarning(
+                    "Attribute texture maps must have same dimensions");
+            return {};
+        }
+    }
+
+    // no maps are valid so return empty texture and let caller use defaults
+    if (width == 0 || height == 0) {
+        return {};
+    }
+
+    auto image = std::make_shared<geometry::Image>();
+    image->Prepare(width, height, 3, 1);
+    auto data = reinterpret_cast<uint8_t*>(image->data_.data());
+
+    auto set_pixel = [&data](std::shared_ptr<geometry::Image> map, int i,
+                             int j) {
+        if (map && map->HasData()) {
+            *data++ = *(map->PointerAt<uint8_t>(j, i, 0));
+        } else {
+            *data++ = 255;
+        }
+    };
+
+    for (int i = 0; i < width; ++i) {
+        for (int j = 0; j < height; ++j) {
+            set_pixel(ao, i, j);
+            set_pixel(rough, i, j);
+            set_pixel(metal, i, j);
+        }
+    }
+
+    return image;
+}
+
+void CombineTextures(std::shared_ptr<geometry::Image> ao,
+                     std::shared_ptr<geometry::Image> rough_metal) {
+    int width = rough_metal->width_;
+    int height = rough_metal->height_;
+
+    if (ao && ao->HasData()) {
+        if (width != ao->width_ || height != ao->height_) {
+            utility::LogWarning(
+                    "Attribute texture maps must have same dimensions");
+            return;
+        }
+    }
+
+    auto data = reinterpret_cast<uint8_t*>(rough_metal->data_.data());
+
+    auto stride = rough_metal->num_of_channels_;
+    for (int i = 0; i < width; ++i) {
+        for (int j = 0; j < height; ++j) {
+            if (ao && ao->HasData()) {
+                *data = *(ao->PointerAt<uint8_t>(j, i, 0));
+            } else {
+                *data = 255;
+            }
+            data += stride;
+        }
+    }
+}
+
 void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     auto& props = geom.mat.properties;
     auto& maps = geom.mat.maps;
@@ -467,15 +663,6 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     if (is_map_valid(props.normal_img)) {
         maps.normal_map = renderer_.AddTexture(props.normal_img);
     }
-    if (is_map_valid(props.ao_img)) {
-        maps.ambient_occlusion_map = renderer_.AddTexture(props.ao_img);
-    }
-    if (is_map_valid(props.roughness_img)) {
-        maps.roughness_map = renderer_.AddTexture(props.roughness_img);
-    }
-    if (is_map_valid(props.metallic_img)) {
-        maps.metallic_map = renderer_.AddTexture(props.metallic_img);
-    }
     if (is_map_valid(props.reflectance_img)) {
         maps.reflectance_map = renderer_.AddTexture(props.reflectance_img);
     }
@@ -488,6 +675,20 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     }
     if (is_map_valid(props.anisotropy_img)) {
         maps.anisotropy_map = renderer_.AddTexture(props.anisotropy_img);
+    }
+
+    // Create combined ao/rough/metal texture
+    if (is_map_valid(props.ao_rough_metal_img)) {
+        CombineTextures(props.ao_img, props.ao_rough_metal_img);
+        maps.ao_rough_metal_map =
+                renderer_.AddTexture(props.ao_rough_metal_img);
+    } else if (is_map_valid(props.ao_img) ||
+               is_map_valid(props.roughness_img) ||
+               is_map_valid(props.metallic_img)) {
+        props.ao_rough_metal_img = CombineTextures(
+                props.ao_img, props.roughness_img, props.metallic_img);
+        maps.ao_rough_metal_map =
+                renderer_.AddTexture(props.ao_rough_metal_img);
     }
 
     // Update shader properties
@@ -542,9 +743,9 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
 
 void FilamentScene::OverrideMaterial(const std::string& object_name,
                                      const Material& material) {
-    auto geom = GetGeometry(object_name);
-    if (geom) {
-        OverrideMaterialInternal(geom, material);
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
+        OverrideMaterialInternal(g, material);
     }
 }
 
@@ -902,17 +1103,38 @@ void FilamentScene::RenderToImage(
     renderer_.RenderToImage(width, height, view, this, callback);
 }
 
-FilamentScene::RenderableGeometry* FilamentScene::GetGeometry(
+std::vector<FilamentScene::RenderableGeometry*> FilamentScene::GetGeometry(
         const std::string& object_name, bool warn_if_not_found) {
-    auto geom_entry = geometries_.find(object_name);
-    if (geom_entry == geometries_.end()) {
-        if (warn_if_not_found) {
-            utility::LogWarning("Geometry {} is not in the scene graph",
-                                object_name);
+    std::vector<RenderableGeometry*> geoms;
+    if (GeometryIsModel(object_name)) {
+        for (const auto& name : model_geometries_[object_name]) {
+            auto geom_entry = geometries_.find(name);
+            if (geom_entry == geometries_.end()) {
+                if (warn_if_not_found) {
+                    utility::LogWarning("Geometry {} is not in the scene graph",
+                                        name);
+                }
+            } else {
+                geoms.push_back(&geom_entry->second);
+            }
         }
-        return nullptr;
+    } else {
+        auto geom_entry = geometries_.find(object_name);
+        if (geom_entry == geometries_.end()) {
+            if (warn_if_not_found) {
+                utility::LogWarning("Geometry {} is not in the scene graph",
+                                    object_name);
+            }
+        } else {
+            geoms.push_back(&geom_entry->second);
+        }
     }
-    return &(geom_entry->second);
+
+    return geoms;
+}
+
+bool FilamentScene::GeometryIsModel(const std::string& object_name) {
+    return model_geometries_.count(object_name) > 0;
 }
 
 FilamentScene::LightEntity* FilamentScene::GetLightInternal(
@@ -933,7 +1155,23 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
     if (vb) manager.Destroy(vb);
     if (ib) manager.Destroy(ib);
     engine.destroy(filament_entity);
-    // NOTE: is this really necessary?
+
+    // Delete texture maps...
+    auto destroy_map = [&manager](rendering::TextureHandle map) {
+        if (map && map != rendering::FilamentResourceManager::kDefaultTexture &&
+            map != rendering::FilamentResourceManager::kDefaultNormalMap)
+            manager.Destroy(map);
+    };
+    destroy_map(mat.maps.albedo_map);
+    destroy_map(mat.maps.normal_map);
+    destroy_map(mat.maps.ao_rough_metal_map);
+    destroy_map(mat.maps.reflectance_map);
+    destroy_map(mat.maps.clear_coat_map);
+    destroy_map(mat.maps.clear_coat_roughness_map);
+    destroy_map(mat.maps.anisotropy_map);
+
+    manager.Destroy(mat.mat_instance);
+
     filament_entity.clear();
 }
 

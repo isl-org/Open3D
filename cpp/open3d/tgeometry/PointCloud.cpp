@@ -59,19 +59,6 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::TensorList>
     point_attr_.Assign(map_keys_to_tensorlists);
 }
 
-void PointCloud::SynchronizedPushBack(
-        const std::unordered_map<std::string, core::Tensor>
-                &map_keys_to_tensors) {
-    point_attr_.SynchronizedPushBack(map_keys_to_tensors);
-}
-
-PointCloud &PointCloud::Clear() {
-    point_attr_.clear();
-    return *this;
-}
-
-bool PointCloud::IsEmpty() const { return !HasPoints(); }
-
 core::Tensor PointCloud::GetMinBound() const {
     return GetPoints().AsTensor().Min({0});
 }
@@ -119,34 +106,22 @@ tgeometry::PointCloud PointCloud::FromLegacyPointCloud(
         const core::Device &device) {
     tgeometry::PointCloud pcd(dtype, device);
     if (pcd_legacy.HasPoints()) {
-        pcd.GetPoints() = core::TensorList({3}, dtype, device);
-        // TODO: optimization always create host tensorlist first, and then copy
-        // to device.
-        for (const Eigen::Vector3d &point : pcd_legacy.points_) {
-            pcd.GetPoints().PushBack(
-                    core::eigen_converter::EigenVector3dToTensor(point, dtype,
-                                                                 device));
-        }
+        pcd.SetPoints(core::eigen_converter::EigenVector3dVectorToTensorList(
+                pcd_legacy.points_, dtype, device));
     } else {
         utility::LogWarning(
                 "Creating from an empty legacy pointcloud, an empty pointcloud "
                 "with default dtype and device will be created.");
     }
     if (pcd_legacy.HasColors()) {
-        pcd.SetPointColors(core::TensorList({3}, dtype, device));
-        for (const Eigen::Vector3d &color : pcd_legacy.colors_) {
-            pcd.GetPointColors().PushBack(
-                    core::eigen_converter::EigenVector3dToTensor(color, dtype,
-                                                                 device));
-        }
+        pcd.SetPointColors(
+                core::eigen_converter::EigenVector3dVectorToTensorList(
+                        pcd_legacy.colors_, dtype, device));
     }
     if (pcd_legacy.HasNormals()) {
-        pcd.SetPointNormals(core::TensorList({3}, dtype, device));
-        for (const Eigen::Vector3d &normal : pcd_legacy.normals_) {
-            pcd.GetPointNormals().PushBack(
-                    core::eigen_converter::EigenVector3dToTensor(normal, dtype,
-                                                                 device));
-        }
+        pcd.SetPointNormals(
+                core::eigen_converter::EigenVector3dVectorToTensorList(
+                        pcd_legacy.normals_, dtype, device));
     }
     return pcd;
 }

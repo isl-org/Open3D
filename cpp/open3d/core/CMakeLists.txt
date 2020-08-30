@@ -46,6 +46,7 @@ set(CORE_SRC
     AdvancedIndexing.cpp
     ShapeUtil.cpp
     CUDAUtils.cpp
+    Dtype.cpp
     EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
@@ -81,8 +82,9 @@ endif()
 add_library(core OBJECT ${ALL_CORE_SRC})
 open3d_set_global_properties(core)
 open3d_link_3rdparty_libraries(core)
+open3d_set_open3d_lib_properties(core)
 open3d_show_and_abort_on_warning(core)
 
 if(BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-  endif()
+endif()
