@@ -10,8 +10,8 @@
 # - LOW_MEM_USAGE
 
 TENSORFLOW_VER="2.3.0"
-TORCH_GLNX_VER=("1.5.0+cu101" "1.4.0+cpu")
-TORCH_MACOS_VER="1.4.0"
+TORCH_GLNX_VER=("1.6.0+cu101" "1.6.0+cpu")
+TORCH_MACOS_VER="1.6.0"
 YAPF_VER="0.30.0"
 
 set -euo pipefail
