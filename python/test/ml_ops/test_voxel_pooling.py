@@ -145,17 +145,6 @@ def test_voxel_pooling_empty_point_set(ml, pos_dtype, feat_dtype, position_fn,
 gradient_feature_dtypes = pytest.mark.parametrize('feat_dtype',
                                                   [np.float32, np.float64])
 
-# gradient_feature_dtypes = pytest.mark.parametrize('feat_dtype', [np.float32])
-
-# position_functions = pytest.mark.parametrize('position_fn', [
-# 'average',
-# ])
-# feature_functions = pytest.mark.parametrize('feature_fn', [
-# 'average',
-# ])
-
-# position_dtypes = pytest.mark.parametrize('pos_dtype', [np.float32])
-
 
 @mltest.parametrize.ml
 @position_dtypes
