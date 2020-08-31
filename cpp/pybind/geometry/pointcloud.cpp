@@ -36,55 +36,55 @@
 #include "pybind/geometry/geometry_trampoline.h"
 
 namespace open3d {
+namespace geometry {
 
 void pybind_pointcloud(py::module &m) {
-    py::class_<geometry::PointCloud, PyGeometry3D<geometry::PointCloud>,
-               std::shared_ptr<geometry::PointCloud>, geometry::Geometry3D>
+    py::class_<PointCloud, PyGeometry3D<PointCloud>,
+               std::shared_ptr<PointCloud>, Geometry3D>
             pointcloud(m, "PointCloud",
                        "PointCloud class. A point cloud consists of point "
                        "coordinates, and optionally point colors and point "
                        "normals.");
-    py::detail::bind_default_constructor<geometry::PointCloud>(pointcloud);
-    py::detail::bind_copy_functions<geometry::PointCloud>(pointcloud);
+    py::detail::bind_default_constructor<PointCloud>(pointcloud);
+    py::detail::bind_copy_functions<PointCloud>(pointcloud);
     pointcloud
             .def(py::init<const std::vector<Eigen::Vector3d> &>(),
                  "Create a PointCloud from points", "points"_a)
             .def("__repr__",
-                 [](const geometry::PointCloud &pcd) {
-                     return std::string("geometry::PointCloud with ") +
+                 [](const PointCloud &pcd) {
+                     return std::string("PointCloud with ") +
                             std::to_string(pcd.points_.size()) + " points.";
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_points", &geometry::PointCloud::HasPoints,
+            .def("has_points", &PointCloud::HasPoints,
                  "Returns ``True`` if the point cloud contains points.")
-            .def("has_normals", &geometry::PointCloud::HasNormals,
+            .def("has_normals", &PointCloud::HasNormals,
                  "Returns ``True`` if the point cloud contains point normals.")
-            .def("has_colors", &geometry::PointCloud::HasColors,
+            .def("has_colors", &PointCloud::HasColors,
                  "Returns ``True`` if the point cloud contains point colors.")
-            .def("normalize_normals", &geometry::PointCloud::NormalizeNormals,
+            .def("normalize_normals", &PointCloud::NormalizeNormals,
                  "Normalize point normals to length 1.")
-            .def("paint_uniform_color",
-                 &geometry::PointCloud::PaintUniformColor, "color"_a,
+            .def("paint_uniform_color", &PointCloud::PaintUniformColor,
+                 "color"_a,
                  "Assigns each point in the PointCloud the same color.")
-            .def("select_by_index", &geometry::PointCloud::SelectByIndex,
+            .def("select_by_index", &PointCloud::SelectByIndex,
                  "Function to select points from input pointcloud into output "
                  "pointcloud.",
                  "indices"_a, "invert"_a = false)
-            .def("voxel_down_sample", &geometry::PointCloud::VoxelDownSample,
+            .def("voxel_down_sample", &PointCloud::VoxelDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud with "
                  "a voxel. Normals and colors are averaged if they exist.",
                  "voxel_size"_a)
             .def("voxel_down_sample_and_trace",
-                 &geometry::PointCloud::VoxelDownSampleAndTrace,
+                 &PointCloud::VoxelDownSampleAndTrace,
                  "Function to downsample using "
-                 "geometry::PointCloud::VoxelDownSample. Also records point "
+                 "PointCloud::VoxelDownSample. Also records point "
                  "cloud index before downsampling",
                  "voxel_size"_a, "min_bound"_a, "max_bound"_a,
                  "approximate_class"_a = false)
-            .def("uniform_down_sample",
-                 &geometry::PointCloud::UniformDownSample,
+            .def("uniform_down_sample", &PointCloud::UniformDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud "
                  "uniformly. The sample is performed in the order of the "
@@ -92,78 +92,72 @@ void pybind_pointcloud(py::module &m) {
                  "the 0-th point always chosen, not at random.",
                  "every_k_points"_a)
             .def("crop",
-                 (std::shared_ptr<geometry::PointCloud>(
-                         geometry::PointCloud::*)(
-                         const geometry::AxisAlignedBoundingBox &) const) &
-                         geometry::PointCloud::Crop,
+                 (std::shared_ptr<PointCloud>(PointCloud::*)(
+                         const AxisAlignedBoundingBox &) const) &
+                         PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
             .def("crop",
-                 (std::shared_ptr<geometry::PointCloud>(
-                         geometry::PointCloud::*)(
-                         const geometry::OrientedBoundingBox &) const) &
-                         geometry::PointCloud::Crop,
+                 (std::shared_ptr<PointCloud>(PointCloud::*)(
+                         const OrientedBoundingBox &) const) &
+                         PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
-            .def("remove_non_finite_points",
-                 &geometry::PointCloud::RemoveNonFinitePoints,
+            .def("remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
                  "Function to remove non-finite points from the PointCloud",
                  "remove_nan"_a = true, "remove_infinite"_a = true)
-            .def("remove_radius_outlier",
-                 &geometry::PointCloud::RemoveRadiusOutliers,
+            .def("remove_radius_outlier", &PointCloud::RemoveRadiusOutliers,
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
                  "nb_points"_a, "radius"_a)
             .def("remove_statistical_outlier",
-                 &geometry::PointCloud::RemoveStatisticalOutliers,
+                 &PointCloud::RemoveStatisticalOutliers,
                  "Function to remove points that are further away from their "
                  "neighbors in average",
                  "nb_neighbors"_a, "std_ratio"_a)
-            .def("estimate_normals", &geometry::PointCloud::EstimateNormals,
+            .def("estimate_normals", &PointCloud::EstimateNormals,
                  "Function to compute the normals of a point cloud. Normals "
                  "are oriented with respect to the input point cloud if "
                  "normals exist",
-                 "search_param"_a = geometry::KDTreeSearchParamKNN(),
+                 "search_param"_a = KDTreeSearchParamKNN(),
                  "fast_normal_computation"_a = true)
             .def("orient_normals_to_align_with_direction",
-                 &geometry::PointCloud::OrientNormalsToAlignWithDirection,
+                 &PointCloud::OrientNormalsToAlignWithDirection,
                  "Function to orient the normals of a point cloud",
                  "orientation_reference"_a = Eigen::Vector3d(0.0, 0.0, 1.0))
             .def("orient_normals_towards_camera_location",
-                 &geometry::PointCloud::OrientNormalsTowardsCameraLocation,
+                 &PointCloud::OrientNormalsTowardsCameraLocation,
                  "Function to orient the normals of a point cloud",
                  "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
             .def("orient_normals_consistent_tangent_plane",
-                 &geometry::PointCloud::OrientNormalsConsistentTangentPlane,
+                 &PointCloud::OrientNormalsConsistentTangentPlane,
                  "Function to orient the normals with respect to consistent "
                  "tangent planes",
                  "k"_a)
             .def("compute_point_cloud_distance",
-                 &geometry::PointCloud::ComputePointCloudDistance,
+                 &PointCloud::ComputePointCloudDistance,
                  "For each point in the source point cloud, compute the "
                  "distance to "
                  "the target point cloud.",
                  "target"_a)
             .def("compute_mean_and_covariance",
-                 &geometry::PointCloud::ComputeMeanAndCovariance,
+                 &PointCloud::ComputeMeanAndCovariance,
                  "Function to compute the mean and covariance matrix of a "
                  "point "
                  "cloud.")
             .def("compute_mahalanobis_distance",
-                 &geometry::PointCloud::ComputeMahalanobisDistance,
+                 &PointCloud::ComputeMahalanobisDistance,
                  "Function to compute the Mahalanobis distance for points in a "
                  "point "
                  "cloud. See: "
                  "https://en.wikipedia.org/wiki/Mahalanobis_distance.")
             .def("compute_nearest_neighbor_distance",
-                 &geometry::PointCloud::ComputeNearestNeighborDistance,
+                 &PointCloud::ComputeNearestNeighborDistance,
                  "Function to compute the distance from a point to its nearest "
                  "neighbor in the point cloud")
-            .def("compute_convex_hull",
-                 &geometry::PointCloud::ComputeConvexHull,
+            .def("compute_convex_hull", &PointCloud::ComputeConvexHull,
                  "Computes the convex hull of the point cloud.")
-            .def("hidden_point_removal",
-                 &geometry::PointCloud::HiddenPointRemoval,
+            .def("hidden_point_removal", &PointCloud::HiddenPointRemoval,
                  "Removes hidden points from a point cloud and returns a mesh "
                  "of the remaining points. Based on Katz et al. 'Direct "
                  "Visibility of Point Sets', 2007. Additional information "
@@ -171,19 +165,19 @@ void pybind_pointcloud(py::module &m) {
                  "found in Mehra et. al. 'Visibility of Noisy Point Cloud "
                  "Data', 2010.",
                  "camera_location"_a, "radius"_a)
-            .def("cluster_dbscan", &geometry::PointCloud::ClusterDBSCAN,
+            .def("cluster_dbscan", &PointCloud::ClusterDBSCAN,
                  "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
                  "'A Density-Based Algorithm for Discovering Clusters in Large "
                  "Spatial Databases with Noise', 1996. Returns a list of point "
                  "labels, -1 indicates noise according to the algorithm.",
                  "eps"_a, "min_points"_a, "print_progress"_a = false)
-            .def("segment_plane", &geometry::PointCloud::SegmentPlane,
+            .def("segment_plane", &PointCloud::SegmentPlane,
                  "Segments a plane in the point cloud using the RANSAC "
                  "algorithm.",
                  "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a)
             .def_static(
                     "create_from_depth_image",
-                    &geometry::PointCloud::CreateFromDepthImage,
+                    &PointCloud::CreateFromDepthImage,
                     R"(Factory function to create a pointcloud from a depth image and a
         camera. Given depth value d at (u, v) image coordinate, the corresponding 3d
         point is:
@@ -197,7 +191,7 @@ void pybind_pointcloud(py::module &m) {
                     "depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0,
                     "stride"_a = 1, "project_valid_depth_only"_a = true)
             .def_static("create_from_rgbd_image",
-                        &geometry::PointCloud::CreateFromRGBDImage,
+                        &PointCloud::CreateFromRGBDImage,
                         "Factory function to create a pointcloud from an RGB-D "
                         "image and a        camera. Given depth value d at (u, "
                         "v) image coordinate, the corresponding 3d point is: "
@@ -207,16 +201,16 @@ void pybind_pointcloud(py::module &m) {
                         "image"_a, "intrinsic"_a,
                         "extrinsic"_a = Eigen::Matrix4d::Identity(),
                         "project_valid_depth_only"_a = true)
-            .def_readwrite("points", &geometry::PointCloud::points_,
+            .def_readwrite("points", &PointCloud::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
                            "coordinates.")
-            .def_readwrite("normals", &geometry::PointCloud::normals_,
+            .def_readwrite("normals", &PointCloud::normals_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
                            "normals.")
             .def_readwrite(
-                    "colors", &geometry::PointCloud::colors_,
+                    "colors", &PointCloud::colors_,
                     "``float64`` array of shape ``(num_points, 3)``, "
                     "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                     "data: RGB colors of points.");
@@ -335,4 +329,5 @@ void pybind_pointcloud(py::module &m) {
 
 void pybind_pointcloud_methods(py::module &m) {}
 
+}  // namespace geometry
 }  // namespace open3d

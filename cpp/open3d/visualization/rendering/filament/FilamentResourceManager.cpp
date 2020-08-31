@@ -318,50 +318,6 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
     return {};
 }
 
-MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
-        const geometry::TriangleMesh::Material& descriptor) {
-    MaterialInstanceHandle handle;
-    auto pbr_ref = materials_[kDefaultLit];
-    auto material_instance = pbr_ref->createInstance();
-    handle = RegisterResource<MaterialInstanceHandle>(
-            engine_, material_instance, material_instances_);
-
-    static const auto sampler =
-            FilamentMaterialModifier::SamplerFromSamplerParameters(
-                    TextureSamplerParameters::Pretty());
-
-    auto base_color = filament::math::float3{descriptor.baseColor.r(),
-                                             descriptor.baseColor.g(),
-                                             descriptor.baseColor.b()};
-    material_instance->setParameter("baseColor", filament::RgbType::sRGB,
-                                    base_color);
-
-#define TRY_ASSIGN_MAP(map, srgb)                                 \
-    {                                                             \
-        if (descriptor.map && descriptor.map->HasData()) {        \
-            auto hmaptex = CreateTexture(descriptor.map, srgb);   \
-            if (hmaptex) {                                        \
-                material_instance->setParameter(                  \
-                        #map, textures_[hmaptex].get(), sampler); \
-                dependencies_[handle].insert(hmaptex);            \
-            }                                                     \
-        }                                                         \
-    }
-
-    material_instance->setParameter("baseRoughness", descriptor.baseRoughness);
-    material_instance->setParameter("baseMetallic", descriptor.baseMetallic);
-
-    TRY_ASSIGN_MAP(albedo, true);
-    TRY_ASSIGN_MAP(normalMap, false);
-    TRY_ASSIGN_MAP(ambientOcclusion, false);
-    TRY_ASSIGN_MAP(metallic, false);
-    TRY_ASSIGN_MAP(roughness, false);
-
-#undef TRY_ASSIGN_MAP
-
-    return handle;
-}
-
 TextureHandle FilamentResourceManager::CreateTexture(const char* path,
                                                      bool srgb) {
     std::shared_ptr<geometry::Image> img;
@@ -630,12 +586,20 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
     }
 }
 
+inline uint8_t maxLevelCount(uint32_t width, uint32_t height) {
+    auto maxdim = std::max(width, height);
+    uint8_t levels = static_cast<uint8_t>(std::ilogbf(float(maxdim)));
+    return std::max(1, levels + 1);
+}
+
 filament::Texture* FilamentResourceManager::LoadTextureFromImage(
         const std::shared_ptr<geometry::Image>& image, bool srgb) {
     using namespace filament;
 
     auto retained_img_id = RetainImageForLoading(image);
     auto texture_settings = GetSettingsFromImage(*image, srgb);
+    auto levels = maxLevelCount(texture_settings.texel_width,
+                                texture_settings.texel_height);
 
     Texture::PixelBufferDescriptor pb(
             image->data_.data(), image->data_.size(),
@@ -644,13 +608,13 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     auto texture = Texture::Builder()
                            .width(texture_settings.texel_width)
                            .height(texture_settings.texel_height)
-                           .levels((uint8_t)1)
+                           .levels(levels)
                            .format(texture_settings.format)
                            .sampler(Texture::Sampler::SAMPLER_2D)
                            .build(engine_);
 
     texture->setImage(engine_, 0, std::move(pb));
-
+    texture->generateMipmaps(engine_);
     return texture;
 }
 

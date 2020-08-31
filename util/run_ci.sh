@@ -105,6 +105,7 @@ cd build
 runBenchmarks=true
 OPEN3D_INSTALL_DIR=~/open3d_install
 cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
+        -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE \
         -DCUDA_ARCH=BasicPTX \
         -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
@@ -167,7 +168,7 @@ cd ../docs/_static/C++
 mkdir -p build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
-make
+make VERBOSE=1
 if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
 ./TestVisualizer
 fi

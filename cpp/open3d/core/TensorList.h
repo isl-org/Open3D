@@ -125,8 +125,7 @@ public:
             if (tensor.GetDtype() != dtype) {
                 utility::LogError(
                         "Tensors must have the same dtype {}, but got {}.",
-                        DtypeUtil::ToString(dtype),
-                        DtypeUtil::ToString(tensor.GetDtype()));
+                        dtype.ToString(), tensor.GetDtype().ToString());
             }
         });
 
