@@ -26,8 +26,19 @@
 
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068)
+#endif  // _MSC_VER
+
 #include <filament/Camera.h>
 #include <filament/Engine.h>
+#include <math/mat4.h>  // necessary for mat4f
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 namespace open3d {
 namespace visualization {
@@ -149,31 +160,35 @@ FilamentCamera::Transform FilamentCamera::GetModelMatrix() const {
 }
 
 FilamentCamera::Transform FilamentCamera::GetViewMatrix() const {
-    auto ftransform = camera_->getViewMatrix();
+    auto ftransform = camera_->getViewMatrix();  // returns mat4 (not mat4f)
 
     Transform::MatrixType matrix;
 
-    matrix << ftransform(0, 0), ftransform(0, 1), ftransform(0, 2),
-            ftransform(0, 3), ftransform(1, 0), ftransform(1, 1),
-            ftransform(1, 2), ftransform(1, 3), ftransform(2, 0),
-            ftransform(2, 1), ftransform(2, 2), ftransform(2, 3),
-            ftransform(3, 0), ftransform(3, 1), ftransform(3, 2),
-            ftransform(3, 3);
+    matrix << float(ftransform(0, 0)), float(ftransform(0, 1)),
+            float(ftransform(0, 2)), float(ftransform(0, 3)),
+            float(ftransform(1, 0)), float(ftransform(1, 1)),
+            float(ftransform(1, 2)), float(ftransform(1, 3)),
+            float(ftransform(2, 0)), float(ftransform(2, 1)),
+            float(ftransform(2, 2)), float(ftransform(2, 3)),
+            float(ftransform(3, 0)), float(ftransform(3, 1)),
+            float(ftransform(3, 2)), float(ftransform(3, 3));
 
     return Transform(matrix);
 }
 
 FilamentCamera::Transform FilamentCamera::GetProjectionMatrix() const {
-    auto ftransform = camera_->getProjectionMatrix();
+    auto ftransform = camera_->getProjectionMatrix();  // mat4 (not mat4f)
 
     Transform::MatrixType matrix;
 
-    matrix << ftransform(0, 0), ftransform(0, 1), ftransform(0, 2),
-            ftransform(0, 3), ftransform(1, 0), ftransform(1, 1),
-            ftransform(1, 2), ftransform(1, 3), ftransform(2, 0),
-            ftransform(2, 1), ftransform(2, 2), ftransform(2, 3),
-            ftransform(3, 0), ftransform(3, 1), ftransform(3, 2),
-            ftransform(3, 3);
+    matrix << float(ftransform(0, 0)), float(ftransform(0, 1)),
+            float(ftransform(0, 2)), float(ftransform(0, 3)),
+            float(ftransform(1, 0)), float(ftransform(1, 1)),
+            float(ftransform(1, 2)), float(ftransform(1, 3)),
+            float(ftransform(2, 0)), float(ftransform(2, 1)),
+            float(ftransform(2, 2)), float(ftransform(2, 3)),
+            float(ftransform(3, 0)), float(ftransform(3, 1)),
+            float(ftransform(3, 2)), float(ftransform(3, 3));
 
     return Transform(matrix);
 }

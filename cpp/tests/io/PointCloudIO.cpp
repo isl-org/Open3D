@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/io/PointCloudIO.h"
+
 #include "open3d/geometry/PointCloud.h"
 #include "tests/UnitTest.h"
 

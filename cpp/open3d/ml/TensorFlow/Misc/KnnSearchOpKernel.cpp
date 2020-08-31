@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "KnnSearchOpKernel.h"
+
 #include "open3d/ml/impl/misc/KnnSearch.h"
 
 using namespace open3d::ml::impl;

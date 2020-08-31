@@ -40,18 +40,12 @@ First, install a TeX distribution such as `MacTeX <http://www.tug.org/mactex/>`_
 
 .. code-block:: bash
 
-    # For pip
-    pip install "sphinx>=3.0" sphinx-autobuild nbsphinx Pillow
+    # Install deps
+    pip install -U "sphinx==3.1.2" "sphinx-rtd-theme==0.5.0" "nbsphinx==0.7.1" "Pillow==7.2.0"
 
-    # Or, for Conda
-    conda install "sphinx>=3.0" sphinx-autobuild nbsphinx Pillow
-
-Install the patched ``m2r`` package for converting ``.md`` to ``.rst``.
-
-.. code-block:: bash
-
-    # https://github.com/sphinx-doc/sphinx/issues/7420
+    # Patched m2r: https://github.com/sphinx-doc/sphinx/issues/7420
     pip install -U -q git+https://github.com/intel-isl/m2r@dev#egg=m2r
+
 
 Build
 -----

@@ -28,10 +28,14 @@ import open3d as o3d
 import open3d.core as o3c
 import numpy as np
 import pytest
-import core_test_utils
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+from open3d_test import list_devices
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 def test_tensorlist_create(device):
     dtype = o3c.Dtype.Float32
 
@@ -89,7 +93,7 @@ def test_tensorlist_create(device):
     assert tl.as_tensor().issame(t)
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 def test_tensorlist_operation(device):
     dtype = o3c.Dtype.Float32
     t0 = o3c.Tensor.ones((2, 3), dtype, device) * 0

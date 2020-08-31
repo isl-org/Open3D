@@ -27,6 +27,7 @@
 #pragma once
 
 #include <json/json.h>
+
 #include <Eigen/Geometry>
 
 #include "open3d/visualization/rendering/RendererHandle.h"
@@ -61,8 +62,8 @@ struct LightDescription {
         : type(POINT),
           intensity(10000),
           falloff(10),
-          light_cone_inner(M_PI / 4),
-          light_cone_outer(M_PI / 2),
+          light_cone_inner(float(M_PI / 4.0)),
+          light_cone_outer(float(M_PI / 2.0)),
           color(1.f, 1.f, 1.f),
           direction(0.f, 0.f, -1.f),
           position(0.f, 0.f, 0.f),

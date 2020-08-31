@@ -29,6 +29,7 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace io {
 
 void pybind_io(py::module& m);
 
@@ -38,4 +39,8 @@ void pybind_class_io(py::module& m);
 void pybind_sensor(py::module& m);
 #endif
 
+#ifdef BUILD_RPC_INTERFACE
+void pybind_rpc(py::module& m);
+#endif
+}  // namespace io
 }  // namespace open3d

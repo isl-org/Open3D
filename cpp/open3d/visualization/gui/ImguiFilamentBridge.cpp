@@ -44,32 +44,33 @@
 
 #include "open3d/visualization/gui/ImguiFilamentBridge.h"
 
-#include <fcntl.h>
-#include <filamat/MaterialBuilder.h>
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4305: LightManager.h needs to specify some constants as floats
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4305)
+#endif  // _MSC_VER
+
 #include <filament/Fence.h>
-#include <filament/IndexBuffer.h>
-#include <filament/Material.h>
-#include <filament/MaterialInstance.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
-#include <filament/Texture.h>
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
-#include <filament/VertexBuffer.h>
-#include <imgui.h>
 #include <utils/EntityManager.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
+
+#include <fcntl.h>
+#include <imgui.h>
+
 #include <cerrno>
-#include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 #include <iostream>
 #include <map>
 #include <vector>
 
-#if !defined(WIN32)
-#include <unistd.h>
-#else
-#include <io.h>
-#endif
-
+#include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Gui.h"
@@ -90,89 +91,10 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-static std::string GetIOErrorString(int errno_val) {
-    switch (errno_val) {
-        case EPERM:
-            return "Operation not permitted";
-        case EACCES:
-            return "Access denied";
-        case EAGAIN:
-            return "EAGAIN";
-#ifndef WIN32
-        case EDQUOT:
-            return "Over quota";
-#endif
-        case EEXIST:
-            return "File already exists";
-        case EFAULT:
-            return "Bad filename pointer";
-        case EINTR:
-            return "open() interrupted by a signal";
-        case EIO:
-            return "I/O error";
-        case ELOOP:
-            return "Too many symlinks, could be a loop";
-        case EMFILE:
-            return "Process is out of file descriptors";
-        case ENAMETOOLONG:
-            return "Filename is too long";
-        case ENFILE:
-            return "File system table is full";
-        case ENOENT:
-            return "No such file or directory";
-        case ENOSPC:
-            return "No space available to create file";
-        case ENOTDIR:
-            return "Bad path";
-        case EOVERFLOW:
-            return "File is too big";
-        case EROFS:
-            return "Can't modify file on read-only filesystem";
-        default: {
-            std::stringstream s;
-            s << "IO error " << errno_val << " (see cerrno)";
-            return s.str();
-        }
-    }
-}
-
-static bool ReadBinaryFile(const std::string& path,
-                           std::vector<char>* bytes,
-                           std::string* error_str) {
-    bytes->clear();
-    if (error_str) {
-        *error_str = "";
-    }
-
-    // Open file
-    int fd = open(path.c_str(), O_RDONLY);
-    if (fd == -1) {
-        if (error_str) {
-            *error_str = GetIOErrorString(errno);
-        }
-        return false;
-    }
-
-    // Get file size
-    off_t filesize = (off_t)lseek(fd, 0, SEEK_END);
-    lseek(fd, 0, SEEK_SET);  // reset file pointer back to beginning
-
-    // Read data
-    bytes->resize(filesize);
-    bool result = true;
-    if (read(fd, bytes->data(), filesize) != filesize) {
-        result = false;
-    }
-
-    // We're done, close and return
-    close(fd);
-    return result;
-}
-
 static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
     std::vector<char> bytes;
     std::string error_str;
-    if (!ReadBinaryFile(path, &bytes, &error_str)) {
+    if (!utility::filesystem::FReadToBuffer(path, bytes, &error_str)) {
         std::cout << "[ERROR] Could not read " << path << ": " << error_str
                   << std::endl;
         return nullptr;
@@ -272,9 +194,6 @@ ImguiFilamentBridge::ImguiFilamentBridge(
             scene->GetView(view_id));
 
     auto native_view = impl_->view_->GetNativeView();
-    native_view->setClearTargets(false, false, false);
-    native_view->setRenderTarget(
-            filament::View::TargetBufferFlags::DEPTH_AND_STENCIL);
     native_view->setPostProcessingEnabled(false);
     native_view->setShadowsEnabled(false);
 
@@ -482,7 +401,7 @@ void ImguiFilamentBridge::CreateVertexBuffer(size_t buffer_index,
     engine.destroy(impl_->vertex_buffers_[buffer_index]);
     impl_->vertex_buffers_[buffer_index] =
             VertexBuffer::Builder()
-                    .vertexCount(capacity)
+                    .vertexCount(std::uint32_t(capacity))
                     .bufferCount(1)
                     .attribute(VertexAttribute::POSITION, 0,
                                VertexBuffer::AttributeType::FLOAT2, 0,
@@ -508,7 +427,7 @@ void ImguiFilamentBridge::CreateIndexBuffer(size_t buffer_index,
     engine.destroy(impl_->index_buffers_[buffer_index]);
     impl_->index_buffers_[buffer_index] =
             IndexBuffer::Builder()
-                    .indexCount(capacity)
+                    .indexCount(std::uint32_t(capacity))
                     .bufferType(IndexBuffer::IndexType::USHORT)
                     .build(engine);
 }

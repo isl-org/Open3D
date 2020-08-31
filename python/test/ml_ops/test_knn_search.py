@@ -38,16 +38,16 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
 
 @dtypes
+@mltest.parametrize.ml
 @pytest.mark.parametrize('num_points_queries', [(2, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('metric', ['L1', 'L2'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
-def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
+def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
                     return_distances):
-    import open3d.ml.tf as ml3d
-
     rng = np.random.RandomState(123)
+    device = mltest.cpu_device
 
     num_points, num_queries = num_points_queries
 
@@ -70,22 +70,24 @@ def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
     else:
         gt_neighbors_index = [tree.query(q, k, p=p_norm)[1] for q in queries]
 
-    layer = ml3d.layers.KNNSearch(metric=metric,
-                                  ignore_query_point=ignore_query_point,
-                                  return_distances=return_distances)
-    ans = layer(points, queries, k)
-
-    # convert to numpy for convenience
-    ans_neighbors_index = ans.neighbors_index.numpy()
-    ans_neighbors_row_splits = ans.neighbors_row_splits.numpy()
-    if return_distances:
-        ans_neighbors_distance = ans.neighbors_distance.numpy()
+    layer = ml.layers.KNNSearch(metric=metric,
+                                ignore_query_point=ignore_query_point,
+                                return_distances=return_distances)
+    ans = mltest.run_op(
+        ml,
+        device,
+        layer,
+        True,
+        points,
+        queries=queries,
+        k=k,
+    )
 
     for i, q in enumerate(queries):
         # check neighbors
-        start = ans_neighbors_row_splits[i]
-        end = ans_neighbors_row_splits[i + 1]
-        q_neighbors_index = ans_neighbors_index[start:end]
+        start = ans.neighbors_row_splits[i]
+        end = ans.neighbors_row_splits[i + 1]
+        q_neighbors_index = ans.neighbors_index[start:end]
 
         if k == 1:
             gt_set = set([gt_neighbors_index[i]])
@@ -98,7 +100,7 @@ def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
 
         # check distances
         if return_distances:
-            q_neighbors_dist = ans_neighbors_distance[start:end]
+            q_neighbors_dist = ans.neighbors_distance[start:end]
             for j, dist in zip(q_neighbors_index, q_neighbors_dist):
                 if metric == 'L2':
                     gt_dist = np.sum((q - points[j])**2)
@@ -108,11 +110,11 @@ def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
 
 
-def test_knn_search_empty_point_sets():
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+@mltest.parametrize.ml
+def test_knn_search_empty_point_sets(ml):
     rng = np.random.RandomState(123)
 
+    device = mltest.cpu_device
     dtype = np.float32
 
     # no query points
@@ -120,32 +122,48 @@ def test_knn_search_empty_point_sets():
     queries = rng.random(size=(0, 3)).astype(dtype)
     k = rng.randint(1, 11)
 
-    layer = ml3d.layers.KNNSearch(return_distances=True)
-    ans = layer(points, queries, k)
+    layer = ml.layers.KNNSearch(return_distances=True)
+    ans = mltest.run_op(
+        ml,
+        device,
+        layer,
+        True,
+        points,
+        queries=queries,
+        k=k,
+    )
 
-    assert ans.neighbors_index.shape.as_list() == [0]
-    assert ans.neighbors_row_splits.shape.as_list() == [1]
-    assert ans.neighbors_distance.shape.as_list() == [0]
+    assert ans.neighbors_index.shape == (0,)
+    assert ans.neighbors_row_splits.shape == (1,)
+    assert ans.neighbors_distance.shape == (0,)
 
     # no input points
     points = rng.random(size=(0, 3)).astype(dtype)
     queries = rng.random(size=(100, 3)).astype(dtype)
 
-    layer = ml3d.layers.KNNSearch(return_distances=True)
-    ans = layer(points, queries, k)
+    layer = ml.layers.KNNSearch(return_distances=True)
+    ans = mltest.run_op(
+        ml,
+        device,
+        layer,
+        True,
+        points,
+        queries=queries,
+        k=k,
+    )
 
-    assert ans.neighbors_index.shape.as_list() == [0]
-    assert ans.neighbors_row_splits.shape.as_list() == [101]
+    assert ans.neighbors_index.shape == (0,)
+    assert ans.neighbors_row_splits.shape == (101,)
     np.testing.assert_array_equal(np.zeros_like(ans.neighbors_row_splits),
                                   ans.neighbors_row_splits)
-    assert ans.neighbors_distance.shape.as_list() == [0]
+    assert ans.neighbors_distance.shape == (0,)
 
 
+@mltest.parametrize.ml
 @pytest.mark.parametrize('batch_size', [2, 3, 8])
-def test_knn_search_batches(batch_size):
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+def test_knn_search_batches(ml, batch_size):
 
+    device = mltest.cpu_device
     dtype = np.float32
     metric = 'L2'
     p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
@@ -192,26 +210,24 @@ def test_knn_search_batches(batch_size):
             ]
         gt_neighbors_index.extend(tmp)
 
-    layer = ml3d.layers.KNNSearch(metric=metric,
-                                  ignore_query_point=ignore_query_point,
-                                  return_distances=return_distances)
-    ans = layer(points,
-                queries,
-                k,
-                points_row_splits=points_row_splits,
-                queries_row_splits=queries_row_splits)
-
-    # convert to numpy for convenience
-    ans_neighbors_index = ans.neighbors_index.numpy()
-    ans_neighbors_row_splits = ans.neighbors_row_splits.numpy()
-    if return_distances:
-        ans_neighbors_distance = ans.neighbors_distance.numpy()
+    layer = ml.layers.KNNSearch(metric=metric,
+                                ignore_query_point=ignore_query_point,
+                                return_distances=return_distances)
+    ans = mltest.run_op(ml,
+                        device,
+                        layer,
+                        True,
+                        points,
+                        queries=queries,
+                        k=k,
+                        points_row_splits=points_row_splits,
+                        queries_row_splits=queries_row_splits)
 
     for i, q in enumerate(queries):
         # check neighbors
-        start = ans_neighbors_row_splits[i]
-        end = ans_neighbors_row_splits[i + 1]
-        q_neighbors_index = ans_neighbors_index[start:end]
+        start = ans.neighbors_row_splits[i]
+        end = ans.neighbors_row_splits[i + 1]
+        q_neighbors_index = ans.neighbors_index[start:end]
 
         if k == 1:
             gt_set = set([gt_neighbors_index[i]])
@@ -224,7 +240,7 @@ def test_knn_search_batches(batch_size):
 
         # check distances
         if return_distances:
-            q_neighbors_dist = ans_neighbors_distance[start:end]
+            q_neighbors_dist = ans.neighbors_distance[start:end]
             for j, dist in zip(q_neighbors_index, q_neighbors_dist):
                 if metric == 'L2':
                     gt_dist = np.sum((q - points[j])**2)

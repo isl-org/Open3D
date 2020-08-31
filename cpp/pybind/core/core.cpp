@@ -25,9 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "pybind/core/core.h"
+
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace core {
 
 void pybind_core(py::module &m) {
     py::module m_core = m.def_submodule("core");
@@ -39,6 +41,9 @@ void pybind_core(py::module &m) {
     pybind_core_tensor_key(m_core);
     pybind_core_tensor(m_core);
     pybind_core_tensorlist(m_core);
+    pybind_core_linalg(m_core);
+    pybind_core_kernel(m_core);
 }
 
+}  // namespace core
 }  // namespace open3d

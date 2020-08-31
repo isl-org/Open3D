@@ -25,10 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/HalfEdgeTriangleMesh.h"
-#include "open3d/geometry/TriangleMesh.h"
 
 #include <numeric>
 
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 

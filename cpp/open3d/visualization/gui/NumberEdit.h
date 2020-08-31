@@ -50,6 +50,7 @@ public:
     double GetMaximumValue() const;
     void SetLimits(double min_value, double max_value);
 
+    int GetDecimalPrecision();
     void SetDecimalPrecision(int num_digits);
 
     void SetOnValueChanged(std::function<void(double)> on_changed);

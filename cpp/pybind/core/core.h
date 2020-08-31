@@ -29,6 +29,7 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace core {
 
 void pybind_core(py::module& m);
 
@@ -40,5 +41,8 @@ void pybind_core_size_vector(py::module& m);
 void pybind_core_tensor_key(py::module& m);
 void pybind_core_tensor(py::module& m);
 void pybind_core_tensorlist(py::module& m);
+void pybind_core_linalg(py::module& m);
+void pybind_core_kernel(py::module& m);
 
+}  // namespace core
 }  // namespace open3d

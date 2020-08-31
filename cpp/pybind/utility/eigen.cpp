@@ -39,8 +39,9 @@ py::class_<Vector, holder_type> bind_vector_without_repr(
     using Class_ = py::class_<Vector, holder_type>;
     Class_ cl(m, name.c_str(), std::forward<Args>(args)...);
     cl.def(py::init<>());
-    cl.def("__bool__", [](const Vector &v) -> bool { return !v.empty(); },
-           "Check whether the list is nonempty");
+    cl.def(
+            "__bool__", [](const Vector &v) -> bool { return !v.empty(); },
+            "Check whether the list is nonempty");
     cl.def("__len__", &Vector::size);
     return cl;
 }
@@ -322,6 +323,7 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_matrix(
 }  // unnamed namespace
 
 namespace open3d {
+namespace utility {
 
 void pybind_eigen(py::module &m) {
     auto intvector = pybind_eigen_vector_of_scalar<int>(m, "IntVector");
@@ -449,4 +451,5 @@ Example usage
             py::none(), py::none(), "");
 }
 
+}  // namespace utility
 }  // namespace open3d

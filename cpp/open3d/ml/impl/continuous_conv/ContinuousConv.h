@@ -79,7 +79,6 @@ void _CConvComputeFeaturesCPU(TReal* out_features,
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
             [&](const tbb::blocked_range<size_t>& r) {
-
                 int range_length = r.end() - r.begin();
 
                 Eigen::Matrix<TReal, Eigen::Dynamic, 1> normalizers(
@@ -216,7 +215,6 @@ void _CConvComputeFeaturesCPU(TReal* out_features,
                         if (normalizers(i) != 0) C.col(i) /= normalizers(i);
                     }
                 }
-
             });
 }
 

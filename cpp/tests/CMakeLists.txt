@@ -21,8 +21,12 @@ if (NOT BUILD_AZURE_KINECT)
 endif()
 
 # TODO: handle conditional compilation more systematically
-if (NOT ENABLE_GUI)
+if (NOT BUILD_GUI)
     list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/visualization/rendering/.*cpp)
+endif()
+
+if (NOT BUILD_RPC_INTERFACE)
+    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/io/rpc/RemoteFunctions.cpp)
 endif()
 
 add_executable(tests ${UNIT_TEST_SOURCE_FILES})
@@ -36,6 +40,7 @@ else()
 endif()
 
 find_package(Threads)
+
 target_link_libraries(tests PRIVATE Threads::Threads ${CMAKE_PROJECT_NAME} ${JSONCPP_TARGET} ${GOOGLETEST_TARGET})
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
@@ -47,3 +52,4 @@ if (BUILD_CUDA_MODULE)
     target_link_libraries(tests PRIVATE ${CUDA_LIBRARIES})
     target_include_directories(tests SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
+

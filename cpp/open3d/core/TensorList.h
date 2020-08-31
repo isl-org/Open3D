@@ -37,6 +37,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorKey.h"
+
 namespace open3d {
 namespace core {
 
@@ -56,7 +57,8 @@ namespace core {
 ///   - internal_tensor.shape: (M, 8, 8, 8)
 class TensorList {
 public:
-    TensorList() = delete;
+    /// Useful to support operator[] in a map.
+    TensorList() : TensorList(SizeVector({}), Dtype::Float32) {}
 
     /// Constructs an empty tensorlist.
     ///
@@ -123,8 +125,7 @@ public:
             if (tensor.GetDtype() != dtype) {
                 utility::LogError(
                         "Tensors must have the same dtype {}, but got {}.",
-                        DtypeUtil::ToString(dtype),
-                        DtypeUtil::ToString(tensor.GetDtype()));
+                        dtype.ToString(), tensor.GetDtype().ToString());
             }
         });
 
@@ -243,6 +244,23 @@ public:
     std::string ToString() const;
 
     SizeVector GetElementShape() const { return element_shape_; }
+
+    void AssertElementShape(const SizeVector& expected_element_shape) const {
+        if (expected_element_shape != element_shape_) {
+            utility::LogError(
+                    "TensorList has element shape {}, but is expected to have "
+                    "element shape {}.",
+                    element_shape_, expected_element_shape);
+        }
+    }
+
+    void AssertDevice(const Device& expected_device) const {
+        if (GetDevice() != expected_device) {
+            utility::LogError(
+                    "TensorList has device {}, but is expected to be {}.",
+                    GetDevice().ToString(), expected_device.ToString());
+        }
+    }
 
     Device GetDevice() const { return internal_tensor_.GetDevice(); }
 

@@ -35,11 +35,17 @@ AddSourceDir("shader")
 AddSourceDir("utility")
 AddSourceDir("visualizer")
 
-if (ENABLE_GUI)
+if (BUILD_GUI)
     AddSourceDir("rendering")
 else ()
     list(FILTER VISUALIZATION_ALL_HEADER_FILES EXCLUDE REGEX .*GuiVisualizer.h)
     list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiVisualizer.cpp)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiSettingsModel.cpp)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiSettingsModel.h)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiSettingsView.cpp)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiSettingsView.h)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiWidgets.cpp)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiWidgets.h)
 endif()
 
 # create object library
@@ -54,4 +60,10 @@ add_dependencies(visualization ShaderFileTarget)
 
 open3d_show_and_abort_on_warning(visualization)
 open3d_set_global_properties(visualization)
+open3d_set_open3d_lib_properties(visualization)
 open3d_link_3rdparty_libraries(visualization)
+
+# export GUI_RESOURCE_DIR to parent scope
+if (BUILD_GUI)
+    set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
+endif()

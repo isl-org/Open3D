@@ -25,9 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/LineSet.h"
-#include "open3d/geometry/BoundingVolume.h"
 
 #include <numeric>
+
+#include "open3d/geometry/BoundingVolume.h"
 
 namespace open3d {
 namespace geometry {
