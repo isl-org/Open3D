@@ -17,6 +17,7 @@ env:
 jobs:
   build-push-docker-image:
     name: Build and push docker
+    if: ${{ secrets.GCE_GPU_CI_SA != '' }}
     runs-on: ubuntu-18.04
 
     steps:
@@ -88,7 +89,7 @@ jobs:
     name: Clean-up container image
     runs-on: ubuntu-18.04
     needs: [build-install-test]
-    if: always()
+    if: ${{ success() || failure() }}   # Skip only if workflow cancelled
 
     steps:
       - name: Checkout code
