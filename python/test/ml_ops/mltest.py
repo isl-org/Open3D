@@ -158,7 +158,6 @@ def run_op_grad(ml, device_name, check_device, fn, x, y_attr_name,
             if isinstance(dy_dx, torch.Tensor) and device == dy_dx.device.type:
                 tensor_on_device = True
             assert tensor_on_device
-        pass
     else:
         raise ValueError('unsupported ml framework {}'.format(ml.framework))
 
