@@ -109,9 +109,8 @@ public:
     /// - distances: Tensor of shape {total_number_of_neighbors,}, with
     /// dtype Float64.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
-    template <typename T>
     std::tuple<core::Tensor, core::Tensor, core::Tensor> MultiRadiusSearch(
-            const core::Tensor &query_points, const std::vector<T> &radii);
+            const core::Tensor &query_points, const core::Tensor &radii);
 
     /// Perform hybrid search.
     ///

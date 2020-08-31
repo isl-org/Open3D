@@ -97,26 +97,34 @@ NearestNeighborSearch::FixedRadiusSearch(const core::Tensor& query_points,
     return cast_index<T>()->SearchRadius(query_points, radius);
 }
 
-template <typename T>
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
 NearestNeighborSearch::MultiRadiusSearch(const core::Tensor& query_points,
-                                         const std::vector<T>& radii) {
+                                         const core::Tensor& radii) {
     if (!nanoflann_index_) {
         utility::LogError(
                 "[NearestNeighborSearch::MultiRadiusSearch] Index is not set.");
     }
-    if (dataset_points_.GetDtype() != query_points.GetDtype()) {
+    core::Dtype dtype = dataset_points_.GetDtype();
+    if (dtype != query_points.GetDtype()) {
         utility::LogError(
                 "[NearestNeighbor::MultiRadiusSearch] reference and query have "
                 "different dtype.");
     }
-    if (dataset_points_.GetDtype() != core::Dtype::FromType<T>()) {
+    if (dtype != radii.GetDtype()) {
         utility::LogError(
                 "[NearestNeighbor::MultiRadiusSearch] radii and data have "
                 "different "
                 "data type.");
     }
-    return cast_index<T>()->SearchRadius(query_points, radii);
+    if (dtype == core::Dtype::Float64) {
+        return cast_index<double>()->SearchRadius(query_points, radii);
+    } else if (dtype == core::Dtype::Float32) {
+        return cast_index<float>()->SearchRadius(query_points, radii);
+    } else {
+        utility::LogError(
+                "Unsupported data type. NearestNeighborSearch only supports "
+                "Float32 and Float64.");
+    }
 }
 
 template <typename T>
@@ -146,14 +154,6 @@ std::pair<core::Tensor, core::Tensor> NearestNeighborSearch::HybridSearch(
     core::Tensor distances_new(distances_vec, size, core::Dtype::FromType<T>());
     return std::make_pair(indices_new, distances_new);
 }
-
-template std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighborSearch::MultiRadiusSearch(const core::Tensor& query_points,
-                                         const std::vector<double>& radii);
-
-template std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighborSearch::MultiRadiusSearch(const core::Tensor& query_points,
-                                         const std::vector<float>& radii);
 
 template std::tuple<core::Tensor, core::Tensor, core::Tensor>
 NearestNeighborSearch::FixedRadiusSearch(const core::Tensor& query_points,
