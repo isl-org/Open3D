@@ -29,6 +29,7 @@ jobs:
           python-version: 3.6
       - name: Config
         run: |
+          Set-PSDebug -Trace 1
           mkdir build
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
@@ -54,9 +55,11 @@ jobs:
         # If shared == ON, Open3D.dll needs to be copied, which is not recommended for python.
         if: ${{ matrix.shared == 'OFF' }}
         run: |
-          python -c "import open3d; print(open3d)"
+          python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+      - name: Disk space used
+        run: Get-PSDrive .
 
   build-windows-wheel:
     runs-on: windows-latest
@@ -75,6 +78,7 @@ jobs:
           python-version: ${{ matrix.python_version }}
       - name: Config
         run: |
+          Set-PSDebug -Trace 1
           mkdir build
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON ..
@@ -118,14 +122,14 @@ jobs:
           python-version: ${{ matrix.python_version }}
       - name: Test Python package
         run: |
+          Set-PSDebug -Trace 1
           python -V
           python -m pip install -U pytest
           python -m pip install -U scipy
           python -m pip install open3d -f .
-          python -c "import open3d; \
-                     print('Imported:', open3d); \
-                     open3d.pybind.core.kernel.test_mkl_integration(); \
-                     print('CUDA enabled:', open3d.core.cuda.is_available())"
+          python -c "import open3d; print('Imported:', open3d)"
+          python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
+          python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
       - name: Run Python unit tests (benchmarks)
         run: |
           echo "Running Open3D python tests..."

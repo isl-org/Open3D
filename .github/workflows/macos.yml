@@ -57,6 +57,8 @@ jobs:
           ccache -s
           ./util/run_ci.sh
           ccache -s
+          echo
+          echo "Disk space used: $(du -hs $PWD)"
 
 
   build-macos-wheel:
@@ -142,13 +144,9 @@ jobs:
           cd util
           source build_scripts.sh
           echo "$rj_startts StartJob ReportInit"
-          reportJobStart "Installing Python dependencies..."
           reportRun install_python_dependencies "${unittestDependencies:=ON}"
           reportRun python -m pip install open3d -f .
-          reportRun python -c "import open3d; \
-                     print('Imported:', open3d); \
-                     open3d.pybind.core.kernel.test_mkl_integration(); \
-                     print('CUDA enabled:', open3d.core.cuda.is_available())"
+          reportRun test_wheel
       - name: Run Python unit tests (benchmarks)
         run: |
           reportJobStart "running Open3D python tests..."

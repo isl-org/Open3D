@@ -194,7 +194,7 @@ install_wheel() {
 }
 
 test_wheel() {
-    reportRun python -c "import open3d; print(open3d)"
+    reportRun python -c "import open3d; print('Installed:', open3d)"
     reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
     reportRun python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 }
@@ -230,5 +230,4 @@ test_cpp_example() {
         ./TestVisualizer
     fi
     cd ../../../../build
-
 }

@@ -46,18 +46,20 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 from open3d._build_config import _build_config
 if _build_config["BUILD_CUDA_MODULE"]:
-# Load CPU pybind dll gracefully without introducing new python variable.
-# Do this before loading the CUDA pybind dll to correctly resolve symbols
+    # Load CPU pybind dll gracefully without introducing new python variable.
+    # Do this before loading the CUDA pybind dll to correctly resolve symbols
     from ctypes import CDLL
     from pathlib import Path
-    CDLL(next((Path(__file__).parent / 'cpu').glob('pybind*')))
     try:
+        # StopIteration if cpu version not available
+        CDLL(next((Path(__file__).parent / 'cpu').glob('pybind*')))
+        # ImportError if cuda version not available
         from open3d.cuda.pybind.core import cuda
         if cuda.is_available():
             from open3d.cuda.pybind import (camera, geometry, io, pipelines,
                                             utility, tgeometry)
             from open3d.cuda import pybind
-    except ImportError:
+    except (ImportError, StopIteration):
         pass
 
 if 'pybind' not in locals():
