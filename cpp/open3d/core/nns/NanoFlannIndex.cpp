@@ -66,7 +66,7 @@ bool NanoFlannIndex<T>::SetTensorData(const core::Tensor &dataset_points) {
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SetTensorData] Tensor must be "
-                "two-dimenional");
+                "two-dimenional.");
         return false;
     }
     dataset_points_ = dataset_points.Contiguous();
@@ -150,13 +150,13 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex<T>::SearchKnn(
 template <typename T>
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
 NanoFlannIndex<T>::SearchRadius(const core::Tensor &query_points,
-                             const std::vector<T> &radii) {
+                                const std::vector<T> &radii) {
     core::SizeVector shape = query_points.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SearchRadius] query tensor must be 2 "
                 "dimensional "
-                "matrix, with shape {n, d}");
+                "matrix, with shape {n, d}.");
     }
     if (shape[1] != GetDimension()) {
         utility::LogError(
@@ -178,8 +178,8 @@ NanoFlannIndex<T>::SearchRadius(const core::Tensor &query_points,
         nanoflann::SearchParams params;
         std::vector<std::pair<size_t, T>> ret_matches;
         size_t num_matches = index_->radiusSearch(
-                static_cast<T *>(query_points[i].GetDataPtr()),
-                radius * radius, ret_matches, params);
+                static_cast<T *>(query_points[i].GetDataPtr()), radius * radius,
+                ret_matches, params);
 
         ret_matches.resize(num_matches);
         batch_nums.push_back(num_matches);
@@ -208,12 +208,6 @@ template <typename T>
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
 NanoFlannIndex<T>::SearchRadius(const core::Tensor &query_points, T radius) {
     core::SizeVector shape = query_points.GetShape();
-    if (shape.size() != 2) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchRadius] query tensor must be 2 "
-                "dimensional "
-                "matrix, with shape {n, d}.");
-    }
 
     int64_t num_query_points = shape[0];
     std::vector<T> radii(num_query_points, radius);
