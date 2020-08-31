@@ -41,7 +41,7 @@ namespace core {
 struct Block;
 
 // This is a simplified reimplementation of PyTorch's CUDA memory manager.
-// Refrence: https://tinyurl.com/yxkplte3
+// Refrence: https://git.io/JUqUA
 // We need raw pointers (not smart ptrs) for exact comparison and reference
 typedef Block* BlockPtr;
 
