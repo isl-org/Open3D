@@ -34,8 +34,8 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <Eigen/Core>
 
+#include <Eigen/Core>
 #include <memory>
 #include <string>
 #include <unordered_map>
