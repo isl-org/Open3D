@@ -14,6 +14,18 @@ TORCH_GLNX_VER=("1.6.0+cu101" "1.6.0+cpu")
 TORCH_MACOS_VER="1.6.0"
 YAPF_VER="0.30.0"
 
+# disable incompatible pytorch configurations
+if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    # we need cudnn for building pytorch ops
+    if ! find $(dirname $(which nvcc))/.. -name "libcudnn*"; then
+        export BUILD_PYTORCH_OPS=OFF
+    fi
+    # pytorch 1.6 requires at least python 3.6
+    if ! python -c "import sys; sys.exit(0) if sys.version_info.major==3 and sys.version_info.minor > 5 else sys.exit(1)"; then
+        export BUILD_PYTORCH_OPS=OFF
+    fi
+fi
+
 set -euo pipefail
 
 # $1 - name of the job
@@ -73,10 +85,6 @@ fi
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
     reportRun pip install -U tensorflow=="$TENSORFLOW_VER"
-fi
-if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-    # disable pytorch build if CUDA is enabled for now until the problem with caffe2 and cudnn is solved
-    BUILD_PYTORCH_OPS="OFF"
 fi
 if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
