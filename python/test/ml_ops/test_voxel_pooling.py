@@ -45,7 +45,6 @@ feature_functions = pytest.mark.parametrize(
     'feature_fn', ['average', 'max', 'nearest_neighbor'])
 
 
-@pytest.mark.skip
 @mltest.parametrize.ml
 @position_dtypes
 @feature_dtypes
@@ -123,7 +122,6 @@ def test_voxel_pooling(ml, pos_dtype, feat_dtype, position_fn, feature_fn):
     np.testing.assert_allclose(ans.pooled_features, expected_features[index])
 
 
-@pytest.mark.skip
 @mltest.parametrize.ml
 @position_dtypes
 @feature_dtypes
