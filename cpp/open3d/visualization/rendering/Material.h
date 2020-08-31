@@ -37,6 +37,8 @@ namespace visualization {
 namespace rendering {
 
 struct Material {
+    bool has_alpha = false;
+
     // PBR Material properties and maps
     Eigen::Vector4f base_color = Eigen::Vector4f(1.f, 1.f, 1.f, 1.f);
     float base_metallic = 0.f;
