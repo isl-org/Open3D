@@ -47,7 +47,7 @@ void RadiusSearchCPU(const torch::Tensor& points,
                      torch::Tensor& neighbors_row_splits,
                      torch::Tensor& neighbors_distance);
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RadiusSearch(
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> MultiRadiusSearch(
         const torch::Tensor& points,
         const torch::Tensor& queries,
         const torch::Tensor& radii,
@@ -115,13 +115,13 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RadiusSearch(
     }
 
     if (points.is_cuda()) {
-        TORCH_CHECK(false, "RadiusSearch does not support CUDA")
+        TORCH_CHECK(false, "MultiRadiusSearch does not support CUDA")
     } else {
         CALL(float, RadiusSearchCPU)
         CALL(double, RadiusSearchCPU)
     }
-    TORCH_CHECK(false, "RadiusSearch does not support " + points.toString() +
-                               " as input for points")
+    TORCH_CHECK(false, "MultiRadiusSearch does not support " +
+                               points.toString() + " as input for points")
     return std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>();
 }
 
@@ -132,4 +132,4 @@ static auto registry = torch::RegisterOperators(
         "return_distances, bool normalize_distances) -> (Tensor "
         "neighbors_index, Tensor "
         "neighbors_row_splits, Tensor neighbors_distance)",
-        &RadiusSearch);
+        &MultiRadiusSearch);

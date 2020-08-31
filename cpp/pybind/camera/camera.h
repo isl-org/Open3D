@@ -29,7 +29,9 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace camera {
 
 void pybind_camera(py::module &m);
 
+}  // namespace camera
 }  // namespace open3d

@@ -29,6 +29,7 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace core {
 
 void pybind_core(py::module &m) {
     py::module m_core = m.def_submodule("core");
@@ -45,4 +46,5 @@ void pybind_core(py::module &m) {
     pybind_core_hashmap(m_core);
 }
 
+}  // namespace core
 }  // namespace open3d

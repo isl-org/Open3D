@@ -68,6 +68,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/tgeometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/Light.h"
 #include "open3d/visualization/rendering/Material.h"
@@ -275,6 +276,92 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
+                                const tgeometry::PointCloud& point_cloud,
+                                const Material& material) {
+    // Basic sanity checks
+    if (point_cloud.IsEmpty()) {
+        utility::LogWarning("Point cloud for object {} is empty", object_name);
+        return false;
+    }
+    const auto& points = point_cloud.GetPoints();
+    if (points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+        utility::LogWarning(
+                "GPU resident tensor point clouds are not supported at this "
+                "time");
+        return false;
+    }
+    if (points.GetDtype() != core::Dtype::Float32) {
+        utility::LogWarning("tensor point cloud must have Dtype of Float32");
+        return false;
+    }
+
+    auto geometry_buffer_builder =
+            GeometryBuffersBuilder::GetBuilder(point_cloud);
+    auto buffers = geometry_buffer_builder->ConstructBuffers();
+    auto vb = std::get<0>(buffers);
+    auto ib = std::get<1>(buffers);
+
+    filament::Box aabb = geometry_buffer_builder->ComputeAABB();
+
+    auto vbuf = resource_mgr_.GetVertexBuffer(vb).lock();
+    auto ibuf = resource_mgr_.GetIndexBuffer(ib).lock();
+
+    auto filament_entity = utils::EntityManager::get().create();
+    filament::RenderableManager::Builder builder(1);
+    builder.boundingBox(aabb)
+            .layerMask(FilamentView::kAllLayersMask, FilamentView::kMainLayer)
+            .castShadows(true)
+            .receiveShadows(true)
+            .geometry(0, geometry_buffer_builder->GetPrimitiveType(),
+                      vbuf.get(), ibuf.get());
+
+    auto material_instance =
+            AssignMaterialToFilamentGeometry(builder, material);
+
+    auto result = builder.build(engine_, filament_entity);
+    if (result == filament::RenderableManager::Builder::Success) {
+        scene_->addEntity(filament_entity);
+
+        auto giter = geometries_.emplace(std::make_pair(
+                object_name,
+                RenderableGeometry{object_name,
+                                   true,
+                                   true,
+                                   true,
+                                   {{}, material, material_instance},
+                                   filament_entity,
+                                   vb,
+                                   ib}));
+
+        SetGeometryTransform(object_name, Transform::Identity());
+        UpdateMaterialProperties(giter.first->second);
+    } else {
+        // NOTE: Is there a better way to handle builder failing? That's a
+        // sign of a major problem.
+        utility::LogWarning(
+                "Failed to build Filament resources for geometry {}",
+                object_name);
+        return false;
+    }
+
+    return true;
+}
+
+#ifndef NDEBUG
+void OutputMaterialProperties(const std::string& name,
+                              const visualization::rendering::Material& mat) {
+    utility::LogInfo("Material {}", name);
+    utility::LogInfo("\tBase Color: {},{},{},{}", mat.base_color.x(),
+                     mat.base_color.y(), mat.base_color.z(),
+                     mat.base_color.w());
+    utility::LogInfo("\tBase Metallic: {}", mat.base_metallic);
+    utility::LogInfo("\tBase Roughness: {}", mat.base_roughness);
+    utility::LogInfo("\tBase Reflectance: {}", mat.base_reflectance);
+    utility::LogInfo("\tBase Clear Cout: {}", mat.base_clearcoat);
+}
+#endif
+
+bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const TriangleMeshModel& model) {
     if (geometries_.count(object_name) > 0 ||
         model_geometries_.count(object_name) > 0) {
@@ -420,7 +507,7 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
     auto& maps = geom_mi.maps;
 
     renderer_.ModifyMaterial(geom_mi.mat_instance)
-            .SetColor("baseColor", material.base_color, true)
+            .SetColor("baseColor", material.base_color, false)
             .SetParameter("pointSize", material.point_size)
             .SetParameter("baseRoughness", material.base_roughness)
             .SetParameter("baseMetallic", material.base_metallic)
@@ -549,6 +636,7 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
 
     auto data = reinterpret_cast<uint8_t*>(rough_metal->data_.data());
 
+    auto stride = rough_metal->num_of_channels_;
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
             if (ao && ao->HasData()) {
@@ -556,7 +644,7 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
             } else {
                 *data = 255;
             }
-            data += 3;
+            data += stride;
         }
     }
 }
