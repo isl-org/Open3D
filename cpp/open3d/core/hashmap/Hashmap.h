@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/Dtype.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 
 namespace open3d {
@@ -35,13 +36,13 @@ public:
     /// The developer knows all the parameter settings.
     Hashmap(size_t init_buckets,
             size_t init_capacity,
-            size_t dsize_key,
-            size_t dsize_value,
+            Dtype dtype_key,
+            Dtype dtype_val,
             Device device);
 
     Hashmap(size_t init_capacity,
-            size_t dsize_key,
-            size_t dsize_value,
+            Dtype dtype_key,
+            Dtype dsize_val,
             Device device);
 
     ~Hashmap(){};
@@ -85,9 +86,9 @@ public:
     /// Parallel collect all iterators in the hash table
     size_t GetIterators(iterator_t* output_iterators);
 
-    /// Parallel unpack iterators to contiguous arrays of keys and/or values.
-    /// Output keys and values can be nullptrs if they are not to be
-    /// processed/stored.
+    /// Parallel unpack iterators to contiguous arrays of keys and/or
+    /// values. Output keys and values can be nullptrs if they are not
+    /// to be processed/stored.
     void UnpackIterators(const iterator_t* input_iterators,
                          const bool* input_masks,
                          void* output_keys,
@@ -111,8 +112,17 @@ public:
     /// Return size / bucket_count.
     float LoadFactor();
 
+    void AssertKeyDtype(const Dtype& dtype_key) const;
+    void AssertValueDtype(const Dtype& dtype_val) const;
+
+    Dtype GetKeyDtype() { return dtype_key_; }
+    Dtype GetValueDtype() { return dtype_val_; }
+
 private:
     std::shared_ptr<DefaultDeviceHashmap> device_hashmap_;
+
+    Dtype dtype_key_ = Dtype::Undefined;
+    Dtype dtype_val_ = Dtype::Undefined;
 };
 
 }  // namespace core

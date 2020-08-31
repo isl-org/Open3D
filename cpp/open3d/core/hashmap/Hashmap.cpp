@@ -34,6 +34,7 @@
 
 #include <unordered_map>
 
+#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
@@ -79,19 +80,22 @@ std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
 
 Hashmap::Hashmap(size_t init_buckets,
                  size_t init_capacity,
-                 size_t dsize_key,
-                 size_t dsize_value,
-                 Device device) {
-    device_hashmap_ = CreateDefaultDeviceHashmap(
-            init_buckets, init_capacity, dsize_key, dsize_value, device);
+                 Dtype dtype_key,
+                 Dtype dtype_val,
+                 Device device)
+    : dtype_key_(dtype_key), dtype_val_(dtype_val) {
+    device_hashmap_ = CreateDefaultDeviceHashmap(init_buckets, init_capacity,
+                                                 dtype_key.ByteSize(),
+                                                 dtype_val.ByteSize(), device);
 }
 
 Hashmap::Hashmap(size_t init_capacity,
-                 size_t dsize_key,
-                 size_t dsize_value,
-                 Device device) {
-    device_hashmap_ = CreateDefaultDeviceHashmap(init_capacity, dsize_key,
-                                                 dsize_value, device);
+                 Dtype dtype_key,
+                 Dtype dtype_val,
+                 Device device)
+    : dtype_key_(dtype_key), dtype_val_(dtype_val) {
+    device_hashmap_ = CreateDefaultDeviceHashmap(
+            init_capacity, dtype_key.ByteSize(), dtype_val.ByteSize(), device);
 }
 
 void Hashmap::Rehash(size_t buckets) {
@@ -156,5 +160,21 @@ std::vector<size_t> Hashmap::BucketSizes() {
 
 float Hashmap::LoadFactor() { return device_hashmap_->LoadFactor(); }
 
+void Hashmap::AssertKeyDtype(const Dtype& dtype_key) const {
+    if (dtype_key != dtype_key_) {
+        utility::LogError(
+                "[Hashmap] Inconsistent key dtype, expected {}, but got {}",
+                dtype_key_.ToString(), dtype_key.ToString());
+    }
+}
+
+void Hashmap::AssertValueDtype(const Dtype& dtype_val) const {
+    if (dtype_val != dtype_val_) {
+        utility::LogError(
+                "[Hashmap] Inconsistent value dtype, expected {}, but got "
+                "{}",
+                dtype_val_.ToString(), dtype_val.ToString());
+    }
+}
 }  // namespace core
 }  // namespace open3d

@@ -27,43 +27,60 @@
 import open3d as o3d
 import numpy as np
 import pytest
-import core_test_utils
+
+import sys, os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+from open3d_test import list_devices
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 def test_creation(device):
-    hashmap = o3d.core.Hashmap(10, 8, 8, device)
+    hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
+                               device)
     print(hashmap.size())
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 def test_insertion(device):
-    hashmap = o3d.core.Hashmap(10, 8, 8, device)
+    hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
+                               device)
     keys = o3d.core.Tensor([100, 300, 500, 700, 900], device=device)
     values = o3d.core.Tensor([1, 3, 5, 7, 9], device=device)
     hashmap.insert(keys, values)
 
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+@pytest.mark.parametrize("device", list_devices())
 def test_find(device):
-    hashmap = o3d.core.Hashmap(10, 8, 8, device)
+    hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
+                               device)
     keys = o3d.core.Tensor([100, 300, 500, 700, 900], device=device)
     values = o3d.core.Tensor([1, 3, 5, 7, 9], device=device)
     hashmap.insert(keys, values)
 
     keys = o3d.core.Tensor([100, 200, 500], device=device)
-    masks_c = hashmap.find(keys)
+    iterators_c, masks_c = hashmap.find(keys)
     masks = o3d.core.Tensor([])
     masks.shallow_copy_from(masks_c)
+    iterators = o3d.core.Tensor([])
+    iterators.shallow_copy_from(iterators_c)
+
+    keys, values = hashmap.decode_iterators(iterators)
 
     assert masks[0].item() == True
     assert masks[1].item() == False
     assert masks[2].item() == True
 
+    assert keys[0].item() == 100
+    assert keys[2].item() == 500
 
-@pytest.mark.parametrize("device", core_test_utils.list_devices())
+    assert values[0].item() == 1
+    assert values[2].item() == 5
+
+
+@pytest.mark.parametrize("device", list_devices())
 def test_erase(device):
-    hashmap = o3d.core.Hashmap(10, 8, 8, device)
+    hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
+                               device)
     keys = o3d.core.Tensor([100, 300, 500, 700, 900], device=device)
     values = o3d.core.Tensor([1, 3, 5, 7, 9], device=device)
     hashmap.insert(keys, values)
