@@ -360,7 +360,7 @@ const py::tuple Subsample(py::array points,
         return py::make_tuple(core::TensorToPyArray(subsampled_points_t),
                               core::TensorToPyArray(subsampled_classes_t));
     } else {
-        return py::make_tuple(core::TensorToPyArray(subsampled_points_t));
+        return core::TensorToPyArray(subsampled_points_t);
     }
 }
 
