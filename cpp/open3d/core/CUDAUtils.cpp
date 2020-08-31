@@ -55,12 +55,11 @@ void ReleaseCache() {
 #else
     utility::LogWarning(
             "Built without cached CUDA memory manager, cuda::ReleaseCache() "
-            "has no effect");
+            "has no effect.");
 #endif
 
 #else
-    utility::LogWarning(
-            "Built without CUDA module, cuda::ReleaseCache() has no effect.");
+    utility::LogWarning("Built without CUDA module, cuda::ReleaseCache().");
 #endif
 }
 
