@@ -50,14 +50,14 @@ set(CORE_SRC
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
-    MemoryManagerCUDA.cu
     Tensor.cpp
     TensorKey.cpp
     TensorList.cpp
 )
 
 set(CORE_CUDA_SRC
-    MemoryManagerCUDA.cu
+    MemoryManagerCUDACached.cu
+    MemoryManagerCUDASimple.cu
 )
 
 if(BUILD_CUDA_MODULE)

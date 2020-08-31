@@ -89,9 +89,27 @@ public:
 };
 
 #ifdef BUILD_CUDA_MODULE
-class CUDAMemoryManager : public DeviceMemoryManager {
+class CUDASimpleMemoryManager : public DeviceMemoryManager {
 public:
-    CUDAMemoryManager();
+    CUDASimpleMemoryManager();
+    void* Malloc(size_t byte_size, const Device& device) override;
+    void Free(void* ptr, const Device& device) override;
+    void Memcpy(void* dst_ptr,
+                const Device& dst_device,
+                const void* src_ptr,
+                const Device& src_device,
+                size_t num_bytes) override;
+
+public:
+    static void ReleaseCache(){};
+
+protected:
+    bool IsCUDAPointer(const void* ptr);
+};
+
+class CUDACachedMemoryManager : public DeviceMemoryManager {
+public:
+    CUDACachedMemoryManager();
     void* Malloc(size_t byte_size, const Device& device) override;
     void Free(void* ptr, const Device& device) override;
     void Memcpy(void* dst_ptr,

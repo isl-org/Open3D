@@ -280,7 +280,7 @@ public:
         release_pool(*small_block_pool_);
         release_pool(*large_block_pool_);
 
-        utility::LogInfo("{} bytes released.", total_bytes);
+        utility::LogInfo("[CUDACacher] {} bytes released.", total_bytes);
     }
 
 private:
@@ -294,9 +294,9 @@ private:
 // Create instance on intialization to avoid 'cuda error driver shutdown'
 std::shared_ptr<CUDACacher> CUDACacher::instance_ = CUDACacher::GetInstance();
 
-CUDAMemoryManager::CUDAMemoryManager() {}
+CUDACachedMemoryManager::CUDACachedMemoryManager() {}
 
-void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
+void* CUDACachedMemoryManager::Malloc(size_t byte_size, const Device& device) {
     if (byte_size == 0) return nullptr;
 
     CUDADeviceSwitcher switcher(device);
@@ -305,14 +305,14 @@ void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
         std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
         return instance->Malloc(byte_size, device);
     } else {
-        utility::LogError("[CUDAMemoryManager] Malloc: Unimplemented device");
+        utility::LogError("[CUDACachedMemoryManager] Malloc: Unimplemented device");
         return nullptr;
     }
     // Should never reach here
     return nullptr;
 }
 
-void CUDAMemoryManager::Free(void* ptr, const Device& device) {
+void CUDACachedMemoryManager::Free(void* ptr, const Device& device) {
     if (ptr == nullptr) return;
 
     CUDADeviceSwitcher switcher(device);
@@ -322,14 +322,14 @@ void CUDAMemoryManager::Free(void* ptr, const Device& device) {
             std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
             instance->Free(ptr, device);
         } else {
-            utility::LogError("[CUDAMemoryManager] Free: Invalid pointer");
+            utility::LogError("[CUDACachedMemoryManager] Free: Invalid pointer");
         }
     } else {
-        utility::LogError("[CUDAMemoryManager] Free: Unimplemented device");
+        utility::LogError("[CUDACachedMemoryManager] Free: Unimplemented device");
     }
 }
 
-void CUDAMemoryManager::Memcpy(void* dst_ptr,
+void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
                                const Device& dst_device,
                                const void* src_ptr,
                                const Device& src_device,
@@ -385,7 +385,7 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
     }
 }
 
-bool CUDAMemoryManager::IsCUDAPointer(const void* ptr) {
+bool CUDACachedMemoryManager::IsCUDAPointer(const void* ptr) {
     cudaPointerAttributes attributes;
     cudaPointerGetAttributes(&attributes, ptr);
     if (attributes.devicePointer != nullptr) {
@@ -394,7 +394,7 @@ bool CUDAMemoryManager::IsCUDAPointer(const void* ptr) {
     return false;
 }
 
-void CUDAMemoryManager::ReleaseCache() {
+void CUDACachedMemoryManager::ReleaseCache() {
     std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
     instance->ReleaseCache();
 }
