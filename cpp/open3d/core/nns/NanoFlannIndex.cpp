@@ -167,7 +167,7 @@ NanoFlannIndex<T>::SearchRadius(const core::Tensor &query_points,
     }
     // check if radii is 1D matrix and have same number of elements with
     // query_points
-    if (query_shape[0] != radii_shape[0] or radii_shape.size() != 1) {
+    if (query_shape[0] != radii_shape[0] || radii_shape.size() != 1) {
         utility::LogError(
                 "[NanoFlannIndex::SearchRadius] radii tensor must be 1 "
                 "dimensional matrix, with shape {n, }.");
