@@ -37,6 +37,9 @@ namespace visualization {
 namespace rendering {
 
 struct Material {
+    std::string name;
+
+    // Rendering attributes
     bool has_alpha = false;
 
     // PBR Material properties and maps
