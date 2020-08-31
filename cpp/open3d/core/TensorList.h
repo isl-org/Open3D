@@ -125,8 +125,7 @@ public:
             if (tensor.GetDtype() != dtype) {
                 utility::LogError(
                         "Tensors must have the same dtype {}, but got {}.",
-                        DtypeUtil::ToString(dtype),
-                        DtypeUtil::ToString(tensor.GetDtype()));
+                        dtype.ToString(), tensor.GetDtype().ToString());
             }
         });
 
@@ -246,10 +245,20 @@ public:
 
     SizeVector GetElementShape() const { return element_shape_; }
 
-    void AssertElementShape(const SizeVector& element_shape) const {
-        if (element_shape != element_shape_) {
-            utility::LogError("TensorList shape mismatch, {} != {}",
-                              element_shape, element_shape_);
+    void AssertElementShape(const SizeVector& expected_element_shape) const {
+        if (expected_element_shape != element_shape_) {
+            utility::LogError(
+                    "TensorList has element shape {}, but is expected to have "
+                    "element shape {}.",
+                    element_shape_, expected_element_shape);
+        }
+    }
+
+    void AssertDevice(const Device& expected_device) const {
+        if (GetDevice() != expected_device) {
+            utility::LogError(
+                    "TensorList has device {}, but is expected to be {}.",
+                    GetDevice().ToString(), expected_device.ToString());
         }
     }
 

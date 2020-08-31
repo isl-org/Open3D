@@ -2,6 +2,9 @@ material {
     name : defaultLit,
     shadingModel : lit,
     doubleSided : true,
+    blending : fade,
+    depthWrite : true,
+    transparency : twoPassesOneSide,
 
     parameters : [
         { type : float3,    name : baseColor },
@@ -45,10 +48,13 @@ fragment {
 
         prepareMaterial(material);
 
-        material.baseColor.rgb = getColor().rgb*materialParams.baseColor * texture(materialParams_albedo, getUV0()).rgb;
-        material.metallic = materialParams.baseMetallic * texture(materialParams_ao_rough_metalMap, getUV0()).b;
-        material.roughness = materialParams.baseRoughness * texture(materialParams_ao_rough_metalMap, getUV0()).g;
-        material.ambientOcclusion = texture(materialParams_ao_rough_metalMap, getUV0()).r;
+        material.baseColor.rgb = getColor().rgb * materialParams.baseColor * texture(materialParams_albedo, getUV0()).rgb;
+        material.baseColor.rgb *= texture(materialParams_albedo, getUV0()).a;
+        material.baseColor.a = texture(materialParams_albedo, getUV0()).a;
+        float3 ao_rough_metal = texture(materialParams_ao_rough_metalMap, getUV0()).rgb;
+        material.metallic = materialParams.baseMetallic * ao_rough_metal.b;
+        material.roughness = materialParams.baseRoughness * ao_rough_metal.g;
+        material.ambientOcclusion = ao_rough_metal.r;
         //material.reflectance = materialParams.reflectance;
         //material.anisotropy = materialParams.anisotropy;
         material.reflectance = materialParams.reflectance * texture(materialParams_reflectanceMap, getUV0()).r;

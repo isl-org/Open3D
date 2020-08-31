@@ -36,9 +36,10 @@
 #include "pybind/geometry/geometry_trampoline.h"
 
 namespace open3d {
+namespace geometry {
 
 void pybind_keypoint_methods(py::module &m) {
-    m.def("compute_iss_keypoints", &geometry::keypoint::ComputeISSKeypoints,
+    m.def("compute_iss_keypoints", &keypoint::ComputeISSKeypoints,
           "Function that computes the ISS keypoints from an input point "
           "cloud. This implements the keypoint detection modules "
           "proposed in Yu Zhong, 'Intrinsic Shape Signatures: A Shape "
@@ -72,4 +73,5 @@ void pybind_keypoint(py::module &m) {
     pybind_keypoint_methods(m_submodule);
 }
 
+}  // namespace geometry
 }  // namespace open3d
