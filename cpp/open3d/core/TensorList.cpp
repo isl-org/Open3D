@@ -115,8 +115,7 @@ void TensorList::PushBack(const Tensor& tensor) {
     }
     if (GetDtype() != tensor.GetDtype()) {
         utility::LogError("TensorList has dtype {}, but tensor has shape {}.",
-                          DtypeUtil::ToString(GetDtype()),
-                          DtypeUtil::ToString(tensor.GetDtype()));
+                          GetDtype().ToString(), tensor.GetDtype().ToString());
     }
     if (GetDevice() != tensor.GetDevice()) {
         utility::LogError("TensorList has device {}, but tensor has shape {}.",
@@ -141,8 +140,7 @@ void TensorList::Extend(const TensorList& other) {
     }
     if (GetDtype() != other.GetDtype()) {
         utility::LogError("TensorList dtype {} and {} are inconsistent.",
-                          DtypeUtil::ToString(GetDtype()),
-                          DtypeUtil::ToString(other.GetDtype()));
+                          GetDtype().ToString(), other.GetDtype().ToString());
     }
 
     // Expand *this.
@@ -222,7 +220,7 @@ int64_t TensorList::ComputeReserveSize(int64_t n) {
 std::string TensorList::ToString() const {
     return fmt::format(
             "TensorList[size: {}, element_shape: {}, dtype: {}, device: {}]",
-            size_, element_shape_.ToString(), DtypeUtil::ToString(GetDtype()),
+            size_, element_shape_.ToString(), GetDtype().ToString(),
             GetDevice().ToString());
 }
 

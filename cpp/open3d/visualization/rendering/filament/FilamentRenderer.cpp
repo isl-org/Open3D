@@ -182,11 +182,6 @@ MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
     return resource_mgr_.CreateMaterialInstance(material);
 }
 
-MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
-        const geometry::TriangleMesh::Material& material) {
-    return resource_mgr_.CreateFromDescriptor(material);
-}
-
 MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
     materials_modifier_->Reset();
 

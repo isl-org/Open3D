@@ -28,6 +28,7 @@
 #include "pybind/core/core.h"
 
 namespace open3d {
+namespace core {
 
 void pybind_cuda_utils(py::module &m) {
     py::module m_cuda = m.def_submodule("cuda");
@@ -37,4 +38,5 @@ void pybind_cuda_utils(py::module &m) {
     m_cuda.def("release_cache", core::cuda::ReleaseCache);
 }
 
+}  // namespace core
 }  // namespace open3d

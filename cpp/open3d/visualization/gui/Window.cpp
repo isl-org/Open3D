@@ -155,6 +155,7 @@ struct Window::Impl {
     GLFWwindow* window_ = nullptr;
     std::string title_;  // there is no glfwGetWindowTitle()...
     std::unordered_map<Menu::ItemId, std::function<void()>> menu_callbacks_;
+    std::function<bool(void)> on_tick_event_;
     // We need these for mouse moves and wheel events.
     // The only source of ground truth is button events, so the rest of
     // the time we monitor key up/down events.
@@ -561,6 +562,10 @@ void Window::AddChild(std::shared_ptr<Widget> w) {
 void Window::SetOnMenuItemActivated(Menu::ItemId item_id,
                                     std::function<void()> callback) {
     impl_->menu_callbacks_[item_id] = callback;
+}
+
+void Window::SetOnTickEvent(std::function<bool()> callback) {
+    impl_->on_tick_event_ = callback;
 }
 
 void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
@@ -1131,6 +1136,11 @@ void Window::OnTextInput(const TextInputEvent& e) {
 bool Window::OnTickEvent(const TickEvent& e) {
     auto old_context = MakeDrawContextCurrent();
     bool redraw = false;
+
+    if (impl_->on_tick_event_) {
+        redraw = impl_->on_tick_event_();
+    }
+
     for (auto child : impl_->children_) {
         if (child->Tick(e) == Widget::DrawResult::REDRAW) {
             redraw = true;

@@ -56,8 +56,12 @@ public:
         Assign(map_keys_to_tensorlists);
     }
 
-    /// A primary key is always required.
-    TensorListMap() = delete;
+    /// A primary key is always required. This constructor can be marked as
+    /// delete in C++, but it is needed for pybind to bind as a generic python
+    /// map interface.
+    TensorListMap() : TensorListMap("Undefined") {
+        utility::LogError("Please construct TensorListMap with a primary key.");
+    }
 
     /// Clear the current map and assign new keys and values. The primary key
     /// remains unchanged. The input \p map_keys_to_tensorlists must at least

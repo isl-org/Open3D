@@ -142,7 +142,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
         if (index_tensor.GetDtype() != Dtype::Int64) {
             utility::LogError(
                     "Index tensor must have Int64 dtype, but {} was used.",
-                    DtypeUtil::ToString(index_tensor.GetDtype()));
+                    index_tensor.GetDtype().ToString());
         }
     }
 
