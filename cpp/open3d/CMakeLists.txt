@@ -1,3 +1,12 @@
+# open3d_set_open3d_lib_properties() sets properties for the Open3D lib itself.
+# This should be used for all object libraries that make up the Open3D lib.
+#
+# In comparison, open3d_set_global_properties() sets properties for the Open3D
+# lib, and targets that links to the Open3D lib, e.g pybind, unit tests, etc.
+function(open3d_set_open3d_lib_properties target)
+    target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
+endfunction()
+
 # Configure a header file to pass the version settings to the source code
 configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h.in"
                "${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h")
@@ -46,6 +55,7 @@ add_library(${CMAKE_PROJECT_NAME}
 )
 open3d_show_and_abort_on_warning(${PROJECT_NAME})
 open3d_set_global_properties(${PROJECT_NAME})
+open3d_set_open3d_lib_properties(${PROJECT_NAME})
 open3d_link_3rdparty_libraries(${PROJECT_NAME})
 if(X11_TARGET)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${X11_TARGET})

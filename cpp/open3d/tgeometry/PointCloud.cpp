@@ -59,19 +59,6 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::TensorList>
     point_attr_.Assign(map_keys_to_tensorlists);
 }
 
-void PointCloud::SynchronizedPushBack(
-        const std::unordered_map<std::string, core::Tensor>
-                &map_keys_to_tensors) {
-    point_attr_.SynchronizedPushBack(map_keys_to_tensors);
-}
-
-PointCloud &PointCloud::Clear() {
-    point_attr_.clear();
-    return *this;
-}
-
-bool PointCloud::IsEmpty() const { return !HasPoints(); }
-
 core::Tensor PointCloud::GetMinBound() const {
     return GetPoints().AsTensor().Min({0});
 }

@@ -116,6 +116,14 @@ public:
 
     virtual ~PointCloud() override {}
 
+    /// Getter for point_attr_ TensorListMap. Used in Pybind.
+    const TensorListMap &GetPointAttrPybind() const { return point_attr_; }
+
+    /// Setter for point_attr_ TensorListMap. Used in Pybind.
+    void SetPointAttrPybind(const TensorListMap &point_attr) {
+        point_attr_ = point_attr;
+    };
+
     /// Get attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
@@ -158,6 +166,7 @@ public:
     /// \param key Attribute name.
     /// \param value A tensorlist.
     void SetPointAttr(const std::string &key, const core::TensorList &value) {
+        value.AssertDevice(device_);
         point_attr_[key] = value;
     }
 
@@ -179,7 +188,7 @@ public:
         SetPointAttr("normals", value);
     }
 
-    /// Returns true if all of the following is true:
+    /// Returns true if all of the followings are true:
     /// 1) attribute key exist
     /// 2) attribute's length as points' length
     /// 3) attribute's length > 0
@@ -192,14 +201,14 @@ public:
     /// This is a convenience function.
     bool HasPoints() const { return HasPointAttr("points"); }
 
-    /// Returns true if all of the following is true:
+    /// Returns true if all of the followings are true:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as points' length
     /// 3) attribute "colors"'s length > 0
     /// This is a convenience function.
     bool HasPointColors() const { return HasPointAttr("colors"); }
 
-    /// Returns true if all of the following is true:
+    /// Returns true if all of the followings are true:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as points' length
     /// 3) attribute "normals"'s length > 0
@@ -214,28 +223,43 @@ public:
     /// same dtype and device.
     void SynchronizedPushBack(
             const std::unordered_map<std::string, core::Tensor>
-                    &map_keys_to_tensors);
+                    &map_keys_to_tensors) {
+        point_attr_.SynchronizedPushBack(map_keys_to_tensors);
+    }
 
+public:
     /// Clear all data in the pointcloud.
-    PointCloud &Clear() override;
+    PointCloud &Clear() override {
+        point_attr_.clear();
+        return *this;
+    }
 
     /// Returns !HasPoints().
-    bool IsEmpty() const override;
+    bool IsEmpty() const override { return !HasPoints(); }
 
+    /// Returns the min bound for point coordinates.
     core::Tensor GetMinBound() const;
 
+    /// Returns the max bound for point coordinates.
     core::Tensor GetMaxBound() const;
 
+    /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
+    /// Transforms the points and normals (if exist).
     PointCloud &Transform(const core::Tensor &transformation);
 
+    /// Translates points.
     PointCloud &Translate(const core::Tensor &translation,
                           bool relative = true);
 
+    /// Scale points.
     PointCloud &Scale(double scale, const core::Tensor &center);
 
+    /// Rotate points and normals (if exist).
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
+
+    core::Device GetDevice() const { return device_; }
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static tgeometry::PointCloud FromLegacyPointCloud(

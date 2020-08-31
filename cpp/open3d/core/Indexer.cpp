@@ -68,15 +68,15 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
         for (const auto& input_tensor : input_tensors) {
             if (input_tensor.GetDtype() != ref_dtype) {
                 utility::LogError("Dype mismatch {} != {}.",
-                                  DtypeUtil::ToString(input_tensor.GetDtype()),
-                                  DtypeUtil::ToString(ref_dtype));
+                                  input_tensor.GetDtype().ToString(),
+                                  ref_dtype.ToString());
             }
         }
         for (const auto& output_tensor : output_tensors) {
             if (output_tensor.GetDtype() != ref_dtype) {
                 utility::LogError("Dype mismatch {} != {}.",
-                                  DtypeUtil::ToString(output_tensor.GetDtype()),
-                                  DtypeUtil::ToString(ref_dtype));
+                                  output_tensor.GetDtype().ToString(),
+                                  ref_dtype.ToString());
             }
         }
     } else if (dtype_policy == DtypePolicy::INPUT_SAME) {
@@ -84,8 +84,8 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
         for (const auto& input_tensor : input_tensors) {
             if (input_tensor.GetDtype() != ref_dtype) {
                 utility::LogError("Dype mismatch {} != {}.",
-                                  DtypeUtil::ToString(input_tensor.GetDtype()),
-                                  DtypeUtil::ToString(ref_dtype));
+                                  input_tensor.GetDtype().ToString(),
+                                  ref_dtype.ToString());
             }
         }
     } else if (dtype_policy == DtypePolicy::INPUT_SAME_OUTPUT_BOOL) {
@@ -93,15 +93,15 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
         for (const auto& input_tensor : input_tensors) {
             if (input_tensor.GetDtype() != ref_dtype) {
                 utility::LogError("Dype mismatch {} != {}.",
-                                  DtypeUtil::ToString(input_tensor.GetDtype()),
-                                  DtypeUtil::ToString(ref_dtype));
+                                  input_tensor.GetDtype().ToString(),
+                                  ref_dtype.ToString());
             }
         }
         for (const auto& output_tensor : output_tensors) {
             if (output_tensor.GetDtype() != Dtype::Bool) {
                 utility::LogError("Dype mismatch {} != {}.",
-                                  DtypeUtil::ToString(output_tensor.GetDtype()),
-                                  DtypeUtil::ToString(Dtype::Bool));
+                                  output_tensor.GetDtype().ToString(),
+                                  Dtype::Bool.ToString());
             }
         }
     } else if (dtype_policy == DtypePolicy::NONE) {
