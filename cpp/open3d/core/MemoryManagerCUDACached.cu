@@ -305,7 +305,8 @@ void* CUDACachedMemoryManager::Malloc(size_t byte_size, const Device& device) {
         std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
         return instance->Malloc(byte_size, device);
     } else {
-        utility::LogError("[CUDACachedMemoryManager] Malloc: Unimplemented device");
+        utility::LogError(
+                "[CUDACachedMemoryManager] Malloc: Unimplemented device.");
         return nullptr;
     }
     // Should never reach here
@@ -322,23 +323,25 @@ void CUDACachedMemoryManager::Free(void* ptr, const Device& device) {
             std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
             instance->Free(ptr, device);
         } else {
-            utility::LogError("[CUDACachedMemoryManager] Free: Invalid pointer");
+            utility::LogError(
+                    "[CUDACachedMemoryManager] Free: Invalid pointer.");
         }
     } else {
-        utility::LogError("[CUDACachedMemoryManager] Free: Unimplemented device");
+        utility::LogError(
+                "[CUDACachedMemoryManager] Free: Unimplemented device.");
     }
 }
 
 void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
-                               const Device& dst_device,
-                               const void* src_ptr,
-                               const Device& src_device,
-                               size_t num_bytes) {
+                                     const Device& dst_device,
+                                     const void* src_ptr,
+                                     const Device& src_device,
+                                     size_t num_bytes) {
     if (dst_device.GetType() == Device::DeviceType::CUDA &&
         src_device.GetType() == Device::DeviceType::CPU) {
         CUDADeviceSwitcher switcher(dst_device);
         if (!IsCUDAPointer(dst_ptr)) {
-            utility::LogError("dst_ptr is not a CUDA pointer");
+            utility::LogError("dst_ptr is not a CUDA pointer.");
         }
         OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
                                      cudaMemcpyHostToDevice));
@@ -346,7 +349,7 @@ void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
                src_device.GetType() == Device::DeviceType::CUDA) {
         CUDADeviceSwitcher switcher(src_device);
         if (!IsCUDAPointer(src_ptr)) {
-            utility::LogError("src_ptr is not a CUDA pointer");
+            utility::LogError("src_ptr is not a CUDA pointer.");
         }
         OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
                                      cudaMemcpyDeviceToHost));
@@ -354,11 +357,11 @@ void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
                src_device.GetType() == Device::DeviceType::CUDA) {
         CUDADeviceSwitcher switcher(dst_device);
         if (!IsCUDAPointer(dst_ptr)) {
-            utility::LogError("dst_ptr is not a CUDA pointer");
+            utility::LogError("dst_ptr is not a CUDA pointer.");
         }
         switcher.SwitchTo(src_device);
         if (!IsCUDAPointer(src_ptr)) {
-            utility::LogError("src_ptr is not a CUDA pointer");
+            utility::LogError("src_ptr is not a CUDA pointer.");
         }
 
         if (dst_device == src_device) {
@@ -381,7 +384,7 @@ void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
             MemoryManager::Free(cpu_buf, Device("CPU:0"));
         }
     } else {
-        utility::LogError("Wrong cudaMemcpyKind");
+        utility::LogError("Wrong cudaMemcpyKind.");
     }
 }
 
