@@ -33,9 +33,10 @@ fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
 
-        float range = min(1e9, (materialParams.maxValue - materialParams.minValue + materialParams.isLUT));
+        float range = (materialParams.maxValue - materialParams.minValue + materialParams.isLUT); 
+        range = min(1e9, range);  // prevent divide by zero
         float val = (getUV0().x - materialParams.minValue + 0.5 * materialParams.isLUT) / range;
-        val = clamp(val, 0.0, 1.0);  // in case minValue/maxValue are incorrect
+        // (don't need clamp, since we should be using ClampToEdge on the texture
         material.baseColor = texture(materialParams_gradient, float2(val, 0.5));
     }
 }

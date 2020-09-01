@@ -197,8 +197,7 @@ void Open3DScene::AddGeometry(
 void Open3DScene::AddGeometry(
         const std::string& name,
         const tgeometry::PointCloud *geom,
-        const Material& mat/*,
-        bool add_downsampled_copy_for_fast_rendering = true*/) {
+        const Material& mat) {
     auto scene = renderer_.GetScene(scene_);
     if (scene->AddGeometry(name, *geom, mat)) {
         GeometryData info(name, "");

@@ -68,13 +68,11 @@ public:
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     // Note: we can't use shared_ptr here, as we might be given something
-    //       from Python, which is using unique_ptr. Fortunately, this is not
-    //       a problem, as we copy everything to the GPU anyway, so we aren't
-    //       keeping the pointer.
+    //       from Python, which is using unique_ptr. The pointer must live long
+    //       enough to get copied to the GPU by the render thread.
     void AddGeometry(const std::string& name,
                      const tgeometry::PointCloud *geom,
-                     const Material& mat/*,
-                     bool add_downsampled_copy_for_fast_rendering = true*/);
+                     const Material& mat);
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);

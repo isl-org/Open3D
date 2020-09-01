@@ -107,7 +107,7 @@ void pybind_rendering_classes(py::module &m) {
             "      ( 1.000, red ) ]"
             "The gradient will generate a largish texture, so it should "
             "be fairly smooth, but the boundaries may not be exactly as "
-            "specified due to quanitization imposed by the fixed size of "
+            "specified due to quantization imposed by the fixed size of "
             "the texture."
             "  The points *must* be sorted from the smallest value to the "
             "largest. The values must be in the range [0, 1].");
