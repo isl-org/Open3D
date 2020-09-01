@@ -24,11 +24,11 @@ jobs:
       - name: Skip check
         id: check
         run: |
-          echo "$GITHUB_REPOSITORY"
-          echo "size: ${#GCE_GPU_CI_SA}"
           if [ "$GITHUB_REPOSITORY" == "intel-isl/Open3D" ] && [ -n "$GCE_GPU_CI_SA" ] ; then
+            echo "Secrets not available: skipping GCE test"
             echo "::set-output name=skip::yes"
           else
+            echo "Secrets available: performing GCE test"
             echo "::set-output name=skip::no"
           fi
           
@@ -36,7 +36,7 @@ jobs:
     name: Build and push docker
     runs-on: ubuntu-18.04
     needs: [skip-check]
-    if: needs.skip-check.output.skip == 'no'
+    if: needs.skip-check.outputs.skip == 'no'
 
     steps:
       - name: Checkout code
@@ -68,7 +68,7 @@ jobs:
     name: Build and run on VM
     runs-on: ubuntu-18.04
     needs: [skip-check, build-push-docker-image]
-    if: needs.skip-check.output.skip == 'no'
+    if: needs.skip-check.outputs.skip == 'no'
     strategy:
       fail-fast: false
       max-parallel: 4     # Limit parallel runs to max GPU quota (4)
@@ -108,7 +108,7 @@ jobs:
     name: Clean-up container image
     runs-on: ubuntu-18.04
     needs: [skip-check, build-push-docker-image, build-install-test]
-    if: needs.skip-check.output.skip == 'no' && needs.build-push-docker-image.result == 'success'
+    if: needs.skip-check.outputs.skip == 'no' && needs.build-push-docker-image.result == 'success'
 
     steps:
       - name: Checkout code
