@@ -59,7 +59,7 @@ def to_torch(x, device):
         return x
 
 
-def run_op(ml, device_name, fn, check_device, *args, **kwargs):
+def run_op(ml, device_name, check_device, fn, *args, **kwargs):
     """Runs an op using an ml framework"""
     if ml.framework.__name__ == 'tensorflow':
         with tf.device(device_name):
@@ -106,6 +106,62 @@ def run_op(ml, device_name, fn, check_device, *args, **kwargs):
         new_ans = return_type(*output_as_numpy)
 
     return new_ans
+
+
+def run_op_grad(ml, device_name, check_device, fn, x, y_attr_name,
+                backprop_values, *args, **kwargs):
+    """Computes the gradient for input x of an op using an ml framework"""
+    if ml.framework.__name__ == 'tensorflow':
+        x_var = tf.constant(x)
+        _args = [x_var if a is x else a for a in args]
+        _kwargs = {k: x_var if a is x else a for k, a in kwargs.items()}
+        with tf.device(device_name):
+            with tf.GradientTape() as tape:
+                tape.watch(x_var)
+                ans = fn(*_args, **_kwargs)
+                if y_attr_name:
+                    y = getattr(ans, y_attr_name)
+                else:
+                    y = ans
+                dy_dx = tape.gradient(y, x_var, backprop_values)
+
+                if check_device:
+                    # check if the gradient is using device memory
+                    tensor_on_device = False
+                    if device_name in dy_dx.device:
+                        tensor_on_device = True
+                    assert tensor_on_device
+    elif ml.framework.__name__ == 'torch':
+        if 'GPU' in device_name:
+            device = 'cuda'
+        else:
+            device = 'cpu'
+        x_var = to_torch(x, device)
+        x_var.requires_grad = True
+        _args = [x_var if a is x else to_torch(a, device) for a in args]
+        _kwargs = {
+            k: x_var if a is x else to_torch(a, device)
+            for k, a in kwargs.items()
+        }
+
+        ans = fn(*_args, **_kwargs)
+        if y_attr_name:
+            y = getattr(ans, y_attr_name)
+        else:
+            y = ans
+        y.backward(to_torch(backprop_values, device))
+        dy_dx = x_var.grad
+
+        if check_device:
+            # check if the gradient is using device memory
+            tensor_on_device = False
+            if isinstance(dy_dx, torch.Tensor) and device == dy_dx.device.type:
+                tensor_on_device = True
+            assert tensor_on_device
+    else:
+        raise ValueError('unsupported ml framework {}'.format(ml.framework))
+
+    return to_numpy(dy_dx)
 
 
 # add parameterizations for the ml module and the device
