@@ -88,7 +88,7 @@ TextureHandle Gradient::GetTextureHandle(Renderer &renderer) {
                 int idx = 0;
                 for (int img_idx = 0; img_idx < kNGradientPixels; ++img_idx) {
                     auto x = float(img_idx) / n;
-                    while (idx < n_points and x > points_[idx].value) {
+                    while (idx < n_points && x > points_[idx].value) {
                         idx += 1;
                     }
 
