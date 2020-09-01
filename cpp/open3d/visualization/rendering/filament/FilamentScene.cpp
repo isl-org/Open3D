@@ -92,6 +92,8 @@ using ResourceManager =
 
 std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultLit", ResourceManager::kDefaultLit},
+        {"defaultLitTransparency",
+         ResourceManager::kDefaultLitWithTransparency},
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
         {"normals", ResourceManager::kDefaultNormalShader},
         {"depth", ResourceManager::kDefaultDepthShader}};
@@ -348,9 +350,9 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 #ifndef NDEBUG
-void OutputMaterialProperties(const std::string& name,
-                              const visualization::rendering::Material& mat) {
-    utility::LogInfo("Material {}", name);
+void OutputMaterialProperties(const visualization::rendering::Material& mat) {
+    utility::LogInfo("Material {}", mat.name);
+    utility::LogInfo("\tAlpha: {}", mat.has_alpha);
     utility::LogInfo("\tBase Color: {},{},{},{}", mat.base_color.x(),
                      mat.base_color.y(), mat.base_color.z(),
                      mat.base_color.w());
@@ -693,7 +695,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
 
     // Update shader properties
     // TODO: Use a functional interface to get appropriate update methods
-    if (props.shader == "defaultLit") {
+    if (props.shader == "defaultLit" ||
+        props.shader == "defaultLitTransparency") {
         UpdateDefaultLit(geom.mat);
     } else if (props.shader == "defaultUnlit") {
         UpdateDefaultUnlit(geom.mat);
@@ -727,7 +730,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
     }
     geom->mat.properties = material;
     if (shader_only) {
-        if (material.shader == "defaultLit") {
+        if (material.shader == "defaultLit" ||
+            material.shader == "defaultLitTransparency") {
             UpdateDefaultLit(geom->mat);
         } else if (material.shader == "defaultUnlit") {
             UpdateDefaultUnlit(geom->mat);

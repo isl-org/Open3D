@@ -33,8 +33,9 @@ namespace core {
 void pybind_cuda_utils(py::module &m) {
     py::module m_cuda = m.def_submodule("cuda");
 
-    m_cuda.def("device_count", cuda::DeviceCount);
-    m_cuda.def("is_available", cuda::IsAvailable);
+    m_cuda.def("device_count", core::cuda::DeviceCount);
+    m_cuda.def("is_available", core::cuda::IsAvailable);
+    m_cuda.def("release_cache", core::cuda::ReleaseCache);
 }
 
 }  // namespace core
