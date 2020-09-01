@@ -10,7 +10,6 @@ if 'OPEN3D_ML_ROOT' in _os.environ:
     from ml3d.tf import models
     from ml3d.tf import modules
     from ml3d.tf import pipelines
-    from ml3d.tf import utils
 else:
     # import from the bundled ml3d module
     from open3d._ml3d import configs
@@ -20,4 +19,3 @@ else:
     from open3d._ml3d.tf import models
     from open3d._ml3d.tf import modules
     from open3d._ml3d.tf import pipelines
-    from open3d._ml3d.tf import utils

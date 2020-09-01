@@ -34,7 +34,6 @@ if 'OPEN3D_ML_ROOT' in _os.environ:
     from ml3d.torch import models
     from ml3d.torch import modules
     from ml3d.torch import pipelines
-    from ml3d.torch import utils
 else:
     # import from the bundled ml3d module
     from open3d._ml3d import configs
@@ -44,4 +43,3 @@ else:
     from open3d._ml3d.torch import models
     from open3d._ml3d.torch import modules
     from open3d._ml3d.torch import pipelines
-    from open3d._ml3d.torch import utils
