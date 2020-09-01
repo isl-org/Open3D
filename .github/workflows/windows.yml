@@ -65,7 +65,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.5, 3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8]
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -102,7 +102,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.5, 3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8]
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2

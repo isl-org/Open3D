@@ -31,12 +31,11 @@ if _build_config["BUILD_CUDA_MODULE"]:
             if "@BUILD_GUI@" == "ON":
                 from open3d.cuda.pybind.visualization import gui
             from open3d.cuda.pybind.visualization import *
+        else:
+            raise ImportError("CUDA support not available.")
     except ImportError:
-        pass
-
-if 'Visualizer' not in locals():
-    if "@BUILD_GUI@" == "ON":
-        from open3d.cpu.pybind.visualization import gui
-    from open3d.cpu.pybind.visualization import *
+        if "@BUILD_GUI@" == "ON":
+            from open3d.cpu.pybind.visualization import gui
+        from open3d.cpu.pybind.visualization import *
 
 from ._external_visualizer import *

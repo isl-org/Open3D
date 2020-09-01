@@ -44,7 +44,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
-          python-version: 3.5
+          python-version: 3.6
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
         run: |
@@ -68,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.5, 3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8]
     env:
       BUILD_CUDA_MODULE: ON
       NPROC: 2
@@ -127,7 +127,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.5, 3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8]
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
