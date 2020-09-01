@@ -31,7 +31,6 @@ namespace ml {
 namespace impl {
 
 using namespace std;
-using namespace open3d::ml::impl;
 
 void brute_neighbors(vector<PointXYZ>& queries,
                      vector<PointXYZ>& supports,
@@ -59,7 +58,8 @@ void brute_neighbors(vector<PointXYZ>& queries,
         for (auto& p : supports) {
             if ((p0 - p).sq_norm() < r2) {
                 tmp[i0].push_back(i);
-                if ((signed)tmp[i0].size() > max_count) max_count = tmp[i0].size();
+                if ((signed)tmp[i0].size() > max_count)
+                    max_count = tmp[i0].size();
             }
             i++;
         }
@@ -119,7 +119,8 @@ void ordered_neighbors(vector<PointXYZ>& queries,
                 tmp[i0].insert(tmp[i0].begin() + index, i);
 
                 // Update max count
-                if ((signed)tmp[i0].size() > max_count) max_count = tmp[i0].size();
+                if ((signed)tmp[i0].size() > max_count)
+                    max_count = tmp[i0].size();
             }
             i++;
         }
@@ -196,7 +197,8 @@ void batch_ordered_neighbors(vector<PointXYZ>& queries,
                 tmp[i0].insert(tmp[i0].begin() + index, sum_sb + i);
 
                 // Update max count
-                if ((signed)tmp[i0].size() > max_count) max_count = tmp[i0].size();
+                if ((signed)tmp[i0].size() > max_count)
+                    max_count = tmp[i0].size();
             }
             i++;
         }

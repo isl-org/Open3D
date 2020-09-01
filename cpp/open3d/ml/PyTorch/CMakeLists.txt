@@ -21,10 +21,12 @@ if(BUILD_CUDA_MODULE)
         "*.cu"
         "../impl/*/*.cc"
         "../impl/*/*.cpp"
-        "../impl/*/*.cu")
+        "../impl/*/*.cu"
+        "../contrib/Cloud.cpp")
 else()
     file(GLOB_RECURSE open3d_torch_ops_SOURCES "*.cpp" "../impl/*/*.cc"
-         "../impl/*/*.cpp")
+         "../impl/*/*.cpp"
+         "../contrib/Cloud.cpp")
 endif()
 message(STATUS ${open3d_torch_ops_SOURCES})
 

@@ -28,13 +28,14 @@
 #include <nanoflann.hpp>
 #include <set>
 
-#include "open3d/ml/impl/cloud/cloud.h"
+#include "open3d/ml/contrib/Cloud.h"
 
 namespace open3d {
 namespace ml {
 namespace impl {
 
 using namespace std;
+using namespace open3d::ml::contrib;
 
 void ordered_neighbors(vector<PointXYZ>& queries,
                        vector<PointXYZ>& supports,

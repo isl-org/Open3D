@@ -31,7 +31,6 @@ namespace ml {
 namespace impl {
 
 using namespace std;
-using namespace open3d::ml::impl;
 
 void grid_subsampling(vector<PointXYZ>& original_points,
                       vector<PointXYZ>& subsampled_points,
@@ -50,9 +49,10 @@ void grid_subsampling(vector<PointXYZ>& original_points,
     size_t fdim = original_features.size() / N;
 
     // Limits of the cloud
-    PointXYZ minCorner = min_point(original_points);
-    PointXYZ maxCorner = max_point(original_points);
-    PointXYZ originCorner = floor(minCorner * (1 / sampleDl)) * sampleDl;
+    PointXYZ minCorner = open3d::ml::contrib::min_point(original_points);
+    PointXYZ maxCorner = open3d::ml::contrib::max_point(original_points);
+    PointXYZ originCorner =
+            PointXYZ::floor(minCorner * (1 / sampleDl)) * sampleDl;
 
     // Dimensions of the grid
     size_t sampleNX =
