@@ -281,7 +281,7 @@ public:
         // printf("TOTAL ITERATORS: %ld\n", SUPER_BLOCK_SIZE_ *
         // NUM_SUPER_BLOCKS_);
 
-        for (int i = 0; i < NUM_SUPER_BLOCKS_; i++) {
+        for (uint32_t i = 0; i < NUM_SUPER_BLOCKS_; i++) {
             // setting bitmaps into zeros:
             OPEN3D_CUDA_CHECK(
                     cudaMemset(super_blocks_ + i * SUPER_BLOCK_SIZE_, 0x00,
@@ -339,7 +339,7 @@ __global__ void CountSlabsPerSuperblockKernel(
         return;
     }
 
-    for (int i = 0; i < NUM_SUPER_BLOCKS_; i++) {
+    for (uint32_t i = 0; i < NUM_SUPER_BLOCKS_; i++) {
         uint32_t read_bitmap = *(context.get_ptr_for_bitmap(i, tid));
         atomicAdd(&slabs_per_superblock[i], __popc(read_bitmap));
     }
