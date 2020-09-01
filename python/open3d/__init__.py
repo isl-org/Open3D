@@ -50,16 +50,17 @@ if _build_config["BUILD_CUDA_MODULE"]:
     # Do this before loading the CUDA pybind dll to correctly resolve symbols
     from ctypes import CDLL
     from pathlib import Path
-    try:
-        # StopIteration if cpu version not available
+    try:  # StopIteration if cpu version not available
         CDLL(next((Path(__file__).parent / 'cpu').glob('pybind*')))
-        # ImportError if cuda version not available
+    except StopIteration:
+        pass
+    try:  # ImportError if cuda version not available
         from open3d.cuda.pybind.core import cuda
         if cuda.is_available():
             from open3d.cuda.pybind import (camera, geometry, io, pipelines,
                                             utility, tgeometry)
             from open3d.cuda import pybind
-    except (ImportError, StopIteration):
+    except ImportError:
         pass
 
 if 'pybind' not in locals():

@@ -60,7 +60,7 @@ jobs:
           ./util/run_ci.sh
           ccache -s
           echo
-          echo "Disk space used: $(du -hs $PWD)"
+          echo "Disk space used: $(df -h $PWD)"
 
   build-ubuntu-wheel:
     name: Make Python package
@@ -149,9 +149,9 @@ jobs:
           cd util
           source build_scripts.sh
           echo "$rj_startts StartJob ReportInit"
-          reportRun install_python_dependencies "${unittestDependencies:=ON}"
+          install_python_dependencies "${unittestDependencies:=ON}"
           reportRun python -m pip install open3d -f .
-          reportRun test_wheel
+          test_wheel
       - name: Run Python unit tests (benchmarks)
         run: |
           reportJobStart "running Open3D python tests..."
