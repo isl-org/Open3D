@@ -24,45 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/CUDAUtils.h"
+#pragma once
 
-#include "open3d/utility/Console.h"
-
-#ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
-#include "open3d/core/MemoryManager.h"
-#endif
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace core {
-namespace cuda {
+namespace ml {
 
-int DeviceCount() {
-#ifdef BUILD_CUDA_MODULE
-    std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
-    return cuda_state->GetNumDevices();
-#else
-    return 0;
-#endif
-}
+void pybind_ml(py::module& m);
+void pybind_contrib(py::module& m);
 
-bool IsAvailable() { return cuda::DeviceCount() > 0; }
-
-void ReleaseCache() {
-#ifdef BUILD_CUDA_MODULE
-#ifdef BUILD_CACHED_CUDA_MANAGER
-    CUDACachedMemoryManager::ReleaseCache();
-#else
-    utility::LogWarning(
-            "Built without cached CUDA memory manager, cuda::ReleaseCache() "
-            "has no effect.");
-#endif
-
-#else
-    utility::LogWarning("Built without CUDA module, cuda::ReleaseCache().");
-#endif
-}
-
-}  // namespace cuda
-}  // namespace core
+}  // namespace ml
 }  // namespace open3d

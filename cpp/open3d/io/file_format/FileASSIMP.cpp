@@ -342,15 +342,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         // Retrieve base material properties
         aiColor3D color(1.f, 1.f, 1.f);
-        bool gltf_specular_glossiness = false;
 
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-        mat->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS,
-                 gltf_specular_glossiness);
-        if (!gltf_specular_glossiness) {
-            mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR,
-                     color);
-        }
         o3d_mat.base_color = Eigen::Vector4f(color.r, color.g, color.b, 1.f);
         mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
                  o3d_mat.base_metallic);

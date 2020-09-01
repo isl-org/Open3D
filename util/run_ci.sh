@@ -16,9 +16,21 @@ CUDA_VERSION=("10-1" "10.1")
 CUDNN_MAJOR_VERSION=7
 CUDNN_VERSION="7.6.5.32-1+cuda10.1"
 TENSORFLOW_VER="2.3.0"
-TORCH_GLNX_VER=("1.5.0+cu101" "1.4.0+cpu")
-TORCH_MACOS_VER="1.4.0"
+TORCH_GLNX_VER=("1.6.0+cu101" "1.6.0+cpu")
+TORCH_MACOS_VER="1.6.0"
 YAPF_VER="0.30.0"
+
+# disable incompatible pytorch configurations
+if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    # we need cudnn for building pytorch ops
+    if ! find $(dirname $(which nvcc))/.. -name "libcudnn*"; then
+        export BUILD_PYTORCH_OPS=OFF
+    fi
+    # pytorch 1.6 requires at least python 3.6
+    if ! python -c "import sys; sys.exit(0) if sys.version_info.major==3 and sys.version_info.minor > 5 else sys.exit(1)"; then
+        export BUILD_PYTORCH_OPS=OFF
+    fi
+fi
 
 set -euo pipefail
 

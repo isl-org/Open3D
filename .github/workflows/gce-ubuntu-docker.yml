@@ -15,9 +15,28 @@ env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
+  skip-check:
+    runs-on: ubuntu-18.04
+    name: Skip job for forks
+    outputs: 
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Skip check
+        id: check
+        run: |
+          if [ "$GITHUB_REPOSITORY" == "intel-isl/Open3D" ] && [ -n "$GCE_GPU_CI_SA" ] ; then
+            echo "Secrets available: performing GCE test"
+            echo "::set-output name=skip::no"
+          else
+            echo "Secrets not available: skipping GCE test"
+            echo "::set-output name=skip::yes"
+          fi
+          
   build-push-docker-image:
     name: Build and push docker
     runs-on: ubuntu-18.04
+    needs: [skip-check]
+    if: needs.skip-check.outputs.skip == 'no'
 
     steps:
       - name: Checkout code
@@ -48,7 +67,8 @@ jobs:
   build-install-test:
     name: Build and run on VM
     runs-on: ubuntu-18.04
-    needs: [build-push-docker-image]
+    needs: [skip-check, build-push-docker-image]
+    if: needs.skip-check.outputs.skip == 'no'
     strategy:
       fail-fast: false
       max-parallel: 4     # Limit parallel runs to max GPU quota (4)
@@ -87,8 +107,8 @@ jobs:
   cleanup:
     name: Clean-up container image
     runs-on: ubuntu-18.04
-    needs: [build-install-test]
-    if: always()
+    needs: [skip-check, build-push-docker-image, build-install-test]
+    if: needs.skip-check.outputs.skip == 'no' && needs.build-push-docker-image.result == 'success'
 
     steps:
       - name: Checkout code
