@@ -9,6 +9,7 @@ if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     # disable pytorch build if CUDA is enabled for now until the problem with caffe2 and cudnn is solved
     BUILD_PYTORCH_OPS="OFF"
 fi
+date
 
 echo "$rj_startts StartJob ReportInit"
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
