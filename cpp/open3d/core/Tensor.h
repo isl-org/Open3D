@@ -104,7 +104,9 @@ public:
                                       shape_.NumElements() * dtype.ByteSize());
     }
 
-    /// The fully specified constructor
+    /// The fully specified constructor. Since you're responsible for creating
+    /// the Blob, take care of Blob's deleter if the memory is allocated
+    /// elsewhere. See Blob.h for more details.
     Tensor(const SizeVector& shape,
            const SizeVector& strides,
            void* data_ptr,

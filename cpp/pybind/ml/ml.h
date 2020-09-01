@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,53 +26,13 @@
 
 #pragma once
 
-#include <Eigen/Core>
-#include <string>
-#include <unordered_map>
-
-#include "open3d/geometry/Image.h"
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace visualization {
-namespace rendering {
+namespace ml {
 
-struct Material {
-    std::string name;
+void pybind_ml(py::module& m);
+void pybind_contrib(py::module& m);
 
-    // Rendering attributes
-    bool has_alpha = false;
-
-    // PBR Material properties and maps
-    Eigen::Vector4f base_color = Eigen::Vector4f(1.f, 1.f, 1.f, 1.f);
-    float base_metallic = 0.f;
-    float base_roughness = 1.f;
-    float base_reflectance = 0.5f;
-    float base_clearcoat = 0.f;
-    float base_clearcoat_roughness = 0.f;
-    float base_anisotropy = 0.f;
-
-    float point_size = 3.f;
-
-    std::shared_ptr<geometry::Image> albedo_img;
-    std::shared_ptr<geometry::Image> normal_img;
-    std::shared_ptr<geometry::Image> ao_img;
-    std::shared_ptr<geometry::Image> metallic_img;
-    std::shared_ptr<geometry::Image> roughness_img;
-    std::shared_ptr<geometry::Image> reflectance_img;
-    std::shared_ptr<geometry::Image> clearcoat_img;
-    std::shared_ptr<geometry::Image> clearcoat_roughness_img;
-    std::shared_ptr<geometry::Image> anisotropy_img;
-
-    // Combined images
-    std::shared_ptr<geometry::Image> ao_rough_metal_img;
-
-    // Generic material properties
-    std::unordered_map<std::string, Eigen::Vector4f> generic_params;
-    std::unordered_map<std::string, geometry::Image> generic_imgs;
-
-    std::string shader;
-};
-
-}  // namespace rendering
-}  // namespace visualization
+}  // namespace ml
 }  // namespace open3d

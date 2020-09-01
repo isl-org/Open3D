@@ -64,8 +64,8 @@ def test_reduce_subarrays_sum_random(seed, dtype, device, ml):
 
     ans = mltest.run_op(ml,
                         device,
+                        True,
                         ml.ops.reduce_subarrays_sum,
-                        check_device=True,
                         values=values,
                         row_splits=row_splits)
 

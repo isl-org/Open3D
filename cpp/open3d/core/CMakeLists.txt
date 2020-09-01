@@ -57,7 +57,8 @@ set(CORE_SRC
 )
 
 set(CORE_CUDA_SRC
-    MemoryManagerCUDA.cu
+    MemoryManagerCUDACached.cu
+    MemoryManagerCUDASimple.cu
 )
 
 set(HASHMAP_SRC
