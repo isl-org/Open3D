@@ -194,6 +194,25 @@ void Open3DScene::AddGeometry(
     RecreateAxis(scene, bounds_, false);
 }
 
+void Open3DScene::AddGeometry(
+        const std::string& name,
+        const tgeometry::PointCloud *geom,
+        const Material& mat/*,
+        bool add_downsampled_copy_for_fast_rendering = true*/) {
+    auto scene = renderer_.GetScene(scene_);
+    if (scene->AddGeometry(name, *geom, mat)) {
+        GeometryData info(name, "");
+        bounds_ += scene->GetGeometryBoundingBox(name);
+        // tgeometry::PointCloud does not have functions for decimation, so we
+        // do not compute a fast version.
+        geometries_[name] = info;
+        SetGeometryToLOD(info, lod_);
+    }
+
+    // Bounding box may have changed, force recreation of axes
+    RecreateAxis(scene, bounds_, false);
+}
+
 void Open3DScene::RemoveGeometry(const std::string& name) {
     auto scene = renderer_.GetScene(scene_);
     scene->RemoveGeometry(name);

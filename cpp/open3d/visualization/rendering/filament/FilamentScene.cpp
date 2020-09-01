@@ -96,7 +96,8 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
          ResourceManager::kDefaultLitWithTransparency},
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
         {"normals", ResourceManager::kDefaultNormalShader},
-        {"depth", ResourceManager::kDefaultDepthShader}};
+        {"depth", ResourceManager::kDefaultDepthShader},
+        {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -651,6 +652,19 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
     }
 }
 
+void FilamentScene::UpdateGradientShader(GeometryMaterialInstance& geom_mi) {
+    float isLUT = (geom_mi.properties.gradient->GetMode() == Gradient::Mode::kLUT
+                   						? 1.0f : 0.0f);
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("minValue", geom_mi.properties.scalar_min)
+            .SetParameter("maxValue", geom_mi.properties.scalar_max)
+            .SetParameter("isLUT", isLUT)
+            .SetParameter("pointSize", geom_mi.properties.point_size)
+            .SetTexture("gradient", geom_mi.maps.gradient_texture,
+                        rendering::TextureSamplerParameters::Simple())
+            .Finish();
+}
+
 void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     auto& props = geom.mat.properties;
     auto& maps = geom.mat.maps;
@@ -678,6 +692,9 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     if (is_map_valid(props.anisotropy_img)) {
         maps.anisotropy_map = renderer_.AddTexture(props.anisotropy_img);
     }
+    if (props.shader == "unlitGradient") {
+        maps.gradient_texture = props.gradient->GetTextureHandle(renderer_);
+    }
 
     // Create combined ao/rough/metal texture
     if (is_map_valid(props.ao_rough_metal_img)) {
@@ -704,6 +721,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateNormalShader(geom.mat);
     } else if (props.shader == "depth") {
         UpdateDepthShader(geom.mat);
+    } else if (props.shader == "unlitGradient") {
+        UpdateGradientShader(geom.mat);
     }
 }
 
@@ -737,6 +756,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateDefaultUnlit(geom->mat);
         } else if (material.shader == "normals") {
             UpdateNormalShader(geom->mat);
+        } else if (material.shader == "unlitGradient") {
+            UpdateGradientShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }
