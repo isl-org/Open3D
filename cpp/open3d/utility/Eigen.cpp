@@ -322,7 +322,7 @@ Eigen::Matrix3d ComputeCovariance(const std::vector<Eigen::Vector3d> &points,
     Eigen::Matrix3d covariance;
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
-    for (const auto& idx : indices) {
+    for (const auto &idx : indices) {
         const Eigen::Vector3d &point = points[idx];
         cumulants(0) += point(0);
         cumulants(1) += point(1);
@@ -355,7 +355,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
     Eigen::Matrix3d covariance;
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
-    for (const auto& idx : indices) {
+    for (const auto &idx : indices) {
         const Eigen::Vector3d &point = points[idx];
         cumulants(0) += point(0);
         cumulants(1) += point(1);
