@@ -39,6 +39,7 @@
 #include "open3d/geometry/Keypoint.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Eigen.h"
 
 namespace open3d {
 
@@ -111,9 +112,7 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
             continue;
         }
 
-        std::vector<size_t> indices_(indices.begin(), indices.end());
-        auto nb_cloud = input.SelectByIndex(indices_);
-        Eigen::Matrix3d cov = std::get<1>(nb_cloud->ComputeMeanAndCovariance());
+        Eigen::Matrix3d cov = utility::ComputeCovariance(points, indices);
         if (cov.isZero()) {
             continue;
         }

@@ -32,6 +32,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Eigen.h"
 
 namespace open3d {
 
@@ -226,10 +227,8 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
     if (indices.size() == 0) {
         return Eigen::Vector3d::Zero();
     }
-    std::vector<size_t> indices_(indices.begin(), indices.end());
-    std::shared_ptr<PointCloud> neighbors = cloud.SelectByIndex(indices_);
     Eigen::Matrix3d covariance =
-            std::get<1>(neighbors->ComputeMeanAndCovariance());
+            utility::ComputeCovariance(cloud.points_, indices);
 
     if (fast_normal_computation) {
         return FastEigen3x3(covariance);
