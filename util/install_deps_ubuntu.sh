@@ -56,8 +56,8 @@ if [ "$INSTALL_CUDA" == ON ] ; then
         $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
         $SUDO apt-get install "$APT_CONFIRM" "cuda-toolkit-${CUDA_VERSION[0]}" \
-            libcublas10="{$CUBLAS_VERSION}" \
-            libcublas-dev="{$CUBLAS_VERSION}"
+            libcublas10="${CUBLAS_VERSION}" \
+            libcublas-dev="${CUBLAS_VERSION}"
         echo "Add CUDA executables location to PATH in /etc/environment"
         echo "(system) or ~/.bashrc (user) and restart your shell:"
         echo "export PATH=/usr/local/cuda-${CUDA_VERSION[1]}/bin\${PATH:+:\${PATH}}"
