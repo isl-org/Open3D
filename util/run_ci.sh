@@ -10,9 +10,21 @@
 # - LOW_MEM_USAGE
 
 TENSORFLOW_VER="2.3.0"
-TORCH_GLNX_VER=("1.5.0+cu101" "1.4.0+cpu")
-TORCH_MACOS_VER="1.4.0"
+TORCH_GLNX_VER=("1.6.0+cu101" "1.6.0+cpu")
+TORCH_MACOS_VER="1.6.0"
 YAPF_VER="0.30.0"
+
+# disable incompatible pytorch configurations
+if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    # we need cudnn for building pytorch ops
+    if ! find $(dirname $(which nvcc))/.. -name "libcudnn*"; then
+        export BUILD_PYTORCH_OPS=OFF
+    fi
+    # pytorch 1.6 requires at least python 3.6
+    if ! python -c "import sys; sys.exit(0) if sys.version_info.major==3 and sys.version_info.minor > 5 else sys.exit(1)"; then
+        export BUILD_PYTORCH_OPS=OFF
+    fi
+fi
 
 set -euo pipefail
 
@@ -66,6 +78,7 @@ if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
     if ! which nvcc >/dev/null ; then       # If CUDA is not already installed
         reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
         reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
+        reportRun rm cuda_10.1.243_418.87.00_linux.run
     fi
     nvcc --version
 fi
@@ -73,10 +86,6 @@ fi
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
     reportRun pip install -U tensorflow=="$TENSORFLOW_VER"
-fi
-if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-    # disable pytorch build if CUDA is enabled for now until the problem with caffe2 and cudnn is solved
-    BUILD_PYTORCH_OPS="OFF"
 fi
 if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -102,6 +111,7 @@ cd build
 runBenchmarks=true
 OPEN3D_INSTALL_DIR=~/open3d_install
 cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
+        -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE \
         -DCUDA_ARCH=BasicPTX \
         -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
@@ -157,7 +167,7 @@ cd ../docs/_static/C++
 mkdir -p build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
-make
+make VERBOSE=1
 if [ "$BUILD_CUDA_MODULE" == "OFF" ]; then
 ./TestVisualizer
 fi

@@ -62,6 +62,7 @@ namespace rendering {
 class FilamentResourceManager {
 public:
     static const MaterialHandle kDefaultLit;
+    static const MaterialHandle kDefaultLitWithTransparency;
     static const MaterialHandle kDefaultUnlit;
     static const MaterialHandle kDefaultNormalShader;
     static const MaterialHandle kDefaultDepthShader;
@@ -80,8 +81,6 @@ public:
     MaterialHandle CreateMaterial(const void* material_data, size_t data_size);
     MaterialHandle CreateMaterial(const ResourceLoadRequest& request);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
-    MaterialInstanceHandle CreateFromDescriptor(
-            const geometry::TriangleMesh::Material& material_attributes);
 
     TextureHandle CreateTexture(const char* path, bool srgb);
     TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image,

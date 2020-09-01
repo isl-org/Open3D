@@ -225,6 +225,8 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image, bool srgb) {
 
 const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultLitWithTransparency =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlit =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultNormalShader =
@@ -246,6 +248,7 @@ const TextureHandle FilamentResourceManager::kDefaultNormalMap =
 
 static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultLit,
+        FilamentResourceManager::kDefaultLitWithTransparency,
         FilamentResourceManager::kDefaultUnlit,
         FilamentResourceManager::kDefaultNormalShader,
         FilamentResourceManager::kDefaultDepthShader,
@@ -316,50 +319,6 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
 
     utility::LogWarning("Material ({}) for creating instance not found", id);
     return {};
-}
-
-MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
-        const geometry::TriangleMesh::Material& descriptor) {
-    MaterialInstanceHandle handle;
-    auto pbr_ref = materials_[kDefaultLit];
-    auto material_instance = pbr_ref->createInstance();
-    handle = RegisterResource<MaterialInstanceHandle>(
-            engine_, material_instance, material_instances_);
-
-    static const auto sampler =
-            FilamentMaterialModifier::SamplerFromSamplerParameters(
-                    TextureSamplerParameters::Pretty());
-
-    auto base_color = filament::math::float3{descriptor.baseColor.r(),
-                                             descriptor.baseColor.g(),
-                                             descriptor.baseColor.b()};
-    material_instance->setParameter("baseColor", filament::RgbType::sRGB,
-                                    base_color);
-
-#define TRY_ASSIGN_MAP(map, srgb)                                 \
-    {                                                             \
-        if (descriptor.map && descriptor.map->HasData()) {        \
-            auto hmaptex = CreateTexture(descriptor.map, srgb);   \
-            if (hmaptex) {                                        \
-                material_instance->setParameter(                  \
-                        #map, textures_[hmaptex].get(), sampler); \
-                dependencies_[handle].insert(hmaptex);            \
-            }                                                     \
-        }                                                         \
-    }
-
-    material_instance->setParameter("baseRoughness", descriptor.baseRoughness);
-    material_instance->setParameter("baseMetallic", descriptor.baseMetallic);
-
-    TRY_ASSIGN_MAP(albedo, true);
-    TRY_ASSIGN_MAP(normalMap, false);
-    TRY_ASSIGN_MAP(ambientOcclusion, false);
-    TRY_ASSIGN_MAP(metallic, false);
-    TRY_ASSIGN_MAP(roughness, false);
-
-#undef TRY_ASSIGN_MAP
-
-    return handle;
 }
 
 TextureHandle FilamentResourceManager::CreateTexture(const char* path,
@@ -630,12 +589,20 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
     }
 }
 
+inline uint8_t maxLevelCount(uint32_t width, uint32_t height) {
+    auto maxdim = std::max(width, height);
+    uint8_t levels = static_cast<uint8_t>(std::ilogbf(float(maxdim)));
+    return std::max(1, levels + 1);
+}
+
 filament::Texture* FilamentResourceManager::LoadTextureFromImage(
         const std::shared_ptr<geometry::Image>& image, bool srgb) {
     using namespace filament;
 
     auto retained_img_id = RetainImageForLoading(image);
     auto texture_settings = GetSettingsFromImage(*image, srgb);
+    auto levels = maxLevelCount(texture_settings.texel_width,
+                                texture_settings.texel_height);
 
     Texture::PixelBufferDescriptor pb(
             image->data_.data(), image->data_.size(),
@@ -644,13 +611,13 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     auto texture = Texture::Builder()
                            .width(texture_settings.texel_width)
                            .height(texture_settings.texel_height)
-                           .levels((uint8_t)1)
+                           .levels(levels)
                            .format(texture_settings.format)
                            .sampler(Texture::Sampler::SAMPLER_2D)
                            .build(engine_);
 
     texture->setImage(engine_, 0, std::move(pb));
-
+    texture->generateMipmaps(engine_);
     return texture;
 }
 
@@ -711,11 +678,8 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("anisotropy", 0.f);
     lit_mat->setDefaultParameter("pointSize", 3.f);
     lit_mat->setDefaultParameter("albedo", texture, default_sampler);
-    lit_mat->setDefaultParameter("metallicMap", texture, default_sampler);
-    lit_mat->setDefaultParameter("roughnessMap", texture, default_sampler);
+    lit_mat->setDefaultParameter("ao_rough_metalMap", texture, default_sampler);
     lit_mat->setDefaultParameter("normalMap", normal_map, default_sampler);
-    lit_mat->setDefaultParameter("ambientOcclusionMap", texture,
-                                 default_sampler);
     lit_mat->setDefaultParameter("reflectanceMap", texture, default_sampler);
     // NOTE: Disabled to avoid Filament warning until shader is reworked to
     // reduce sampler usage.
@@ -724,6 +688,36 @@ void FilamentResourceManager::LoadDefaults() {
     //                              default_sampler);
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
     materials_[kDefaultLit] = MakeShared(lit_mat, engine_);
+
+    const auto lit_trans_path =
+            resource_root + "/defaultLitTransparency.filamat";
+    auto lit_trans_mat = LoadMaterialFromFile(lit_trans_path, engine_);
+    lit_trans_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                       default_color);
+    lit_trans_mat->setDefaultParameter("baseRoughness", 0.7f);
+    lit_trans_mat->setDefaultParameter("reflectance", 0.5f);
+    lit_trans_mat->setDefaultParameter("baseMetallic", 0.f);
+    lit_trans_mat->setDefaultParameter("clearCoat", 0.f);
+    lit_trans_mat->setDefaultParameter("clearCoatRoughness", 0.f);
+    lit_trans_mat->setDefaultParameter("anisotropy", 0.f);
+    lit_trans_mat->setDefaultParameter("pointSize", 3.f);
+    lit_trans_mat->setDefaultParameter("albedo", texture, default_sampler);
+    lit_trans_mat->setDefaultParameter("ao_rough_metalMap", texture,
+                                       default_sampler);
+    lit_trans_mat->setDefaultParameter("normalMap", normal_map,
+                                       default_sampler);
+    lit_trans_mat->setDefaultParameter("reflectanceMap", texture,
+                                       default_sampler);
+    // NOTE: Disabled to avoid Filament warning until shader is reworked to
+    // reduce sampler usage.
+    // lit_trans_mat->setDefaultParameter("clearCoatMap", texture,
+    // default_sampler);
+    // lit_trans_mat->setDefaultParameter("clearCoatRoughnessMap", texture,
+    //                              default_sampler);
+    lit_trans_mat->setDefaultParameter("anisotropyMap", texture,
+                                       default_sampler);
+    materials_[kDefaultLitWithTransparency] =
+            MakeShared(lit_trans_mat, engine_);
 
     const auto unlit_path = resource_root + "/defaultUnlit.filamat";
     auto unlit_mat = LoadMaterialFromFile(unlit_path, engine_);

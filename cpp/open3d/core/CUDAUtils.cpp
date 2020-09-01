@@ -26,8 +26,11 @@
 
 #include "open3d/core/CUDAUtils.h"
 
+#include "open3d/utility/Console.h"
+
 #ifdef BUILD_CUDA_MODULE
 #include "open3d/core/CUDAState.cuh"
+#include "open3d/core/MemoryManager.h"
 #endif
 
 namespace open3d {
@@ -44,6 +47,21 @@ int DeviceCount() {
 }
 
 bool IsAvailable() { return cuda::DeviceCount() > 0; }
+
+void ReleaseCache() {
+#ifdef BUILD_CUDA_MODULE
+#ifdef BUILD_CACHED_CUDA_MANAGER
+    CUDACachedMemoryManager::ReleaseCache();
+#else
+    utility::LogWarning(
+            "Built without cached CUDA memory manager, cuda::ReleaseCache() "
+            "has no effect.");
+#endif
+
+#else
+    utility::LogWarning("Built without CUDA module, cuda::ReleaseCache().");
+#endif
+}
 
 }  // namespace cuda
 }  // namespace core
