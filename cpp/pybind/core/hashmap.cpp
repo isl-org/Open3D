@@ -116,7 +116,7 @@ void pybind_core_hashmap(py::module& m) {
         return masks;
     });
 
-    hashmap.def("decode_iterators", [](Hashmap& h, const Tensor& iterators,
+    hashmap.def("unpack_iterators", [](Hashmap& h, const Tensor& iterators,
                                        const Tensor& masks = Tensor()) {
         int64_t count = iterators.GetShape()[0];
 
