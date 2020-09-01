@@ -952,4 +952,3 @@ class Hashmap(o3d.pybind.core.Hashmap):
     @cast_to_py_tensor
     def assign_iterators(self, iterators, values, masks=Tensor([])):
         return super(Hashmap, self).assign_iterators(iterators, values, masks)
-
