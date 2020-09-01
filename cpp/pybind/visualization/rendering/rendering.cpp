@@ -89,50 +89,50 @@ void pybind_rendering_classes(py::module &m) {
 
     // ---- Gradient ----
     py::class_<Gradient, std::shared_ptr<Gradient>> gradient(
-                m, "Gradient",
-                "Manages a gradient for the unlitGradient shader."
-                "In gradient mode, the array of points specifies points along "
-                "the gradient, from 0 to 1 (inclusive). These do need to be "
-                "evenly spaced."
-                "Simple greyscale:"
-                "    [ ( 0.0, black ),"
-                "      ( 1.0, white ) ]"
-                "Rainbow (note the gaps around green):"
-                "    [ ( 0.000, blue ),"
-                "      ( 0.125, cornflower blue ),"
-                "      ( 0.250, cyan ),"
-                "      ( 0.500, green ),"
-                "      ( 0.750, yellow ),"
-                "      ( 0.875, orange ),"
-                "      ( 1.000, red ) ]"
-                "The gradient will generate a largish texture, so it should "
-                "be fairly smooth, but the boundaries may not be exactly as "
-                "specified due to quanitization imposed by the fixed size of "
-                "the texture."
-                "  The points *must* be sorted from the smallest value to the "
-                "largest. The values must be in the range [0, 1].");
+            m, "Gradient",
+            "Manages a gradient for the unlitGradient shader."
+            "In gradient mode, the array of points specifies points along "
+            "the gradient, from 0 to 1 (inclusive). These do need to be "
+            "evenly spaced."
+            "Simple greyscale:"
+            "    [ ( 0.0, black ),"
+            "      ( 1.0, white ) ]"
+            "Rainbow (note the gaps around green):"
+            "    [ ( 0.000, blue ),"
+            "      ( 0.125, cornflower blue ),"
+            "      ( 0.250, cyan ),"
+            "      ( 0.500, green ),"
+            "      ( 0.750, yellow ),"
+            "      ( 0.875, orange ),"
+            "      ( 1.000, red ) ]"
+            "The gradient will generate a largish texture, so it should "
+            "be fairly smooth, but the boundaries may not be exactly as "
+            "specified due to quanitization imposed by the fixed size of "
+            "the texture."
+            "  The points *must* be sorted from the smallest value to the "
+            "largest. The values must be in the range [0, 1].");
     py::enum_<Gradient::Mode> gradient_mode(gradient, "Mode", py::arithmetic());
     gradient_mode.value("GRADIENT", Gradient::Mode::kGradient)
-                 .value("LUT", Gradient::Mode::kLUT)
-                 .export_values();
+            .value("LUT", Gradient::Mode::kLUT)
+            .export_values();
     py::class_<Gradient::Point> gpt(gradient, "Point");
     gpt.def(py::init<float, const Eigen::Vector4f>())
-       .def("__repr__",
-            [](const Gradient::Point &p) {
-                std::stringstream s;
-                s << "Gradient.Point[" << p.value << ", ("
-                  << p.color[0] << ", " << p.color[1] << ", " << p.color[2]
-                  << ", " << p.color[3] << ")]";
-                return s.str().c_str();
-            })
-       .def_readwrite("value", &Gradient::Point::value,
-                      "Must be within 0.0 and 1.0")
-       .def_readwrite("color", &Gradient::Point::color,
-                      "[R, G, B, A]. Color values must be in [0.0, 1.0]");
+            .def("__repr__",
+                 [](const Gradient::Point &p) {
+                     std::stringstream s;
+                     s << "Gradient.Point[" << p.value << ", (" << p.color[0]
+                       << ", " << p.color[1] << ", " << p.color[2] << ", "
+                       << p.color[3] << ")]";
+                     return s.str().c_str();
+                 })
+            .def_readwrite("value", &Gradient::Point::value,
+                           "Must be within 0.0 and 1.0")
+            .def_readwrite("color", &Gradient::Point::color,
+                           "[R, G, B, A]. Color values must be in [0.0, 1.0]");
     gradient.def(py::init<>())
-        .def(py::init<std::vector<Gradient::Point>>())
-        .def_property("points", &Gradient::GetPoints, &Gradient::SetPoints)
-        .def_property("mode", &Gradient::GetMode, &Gradient::SetMode);
+            .def(py::init<std::vector<Gradient::Point>>())
+            .def_property("points", &Gradient::GetPoints, &Gradient::SetPoints)
+            .def_property("mode", &Gradient::GetMode, &Gradient::SetMode);
 
     // ---- Material ----
     py::class_<Material> mat(m, "Material",
@@ -208,15 +208,16 @@ void pybind_rendering_classes(py::module &m) {
                  "Toggles display of xyz axes")
             .def("clear_geometry", &Open3DScene::ClearGeometry)
             .def("add_geometry",
-                 py::overload_cast<const std::string&,
+                 py::overload_cast<const std::string &,
                                    std::shared_ptr<const geometry::Geometry3D>,
-                                   const Material&, bool>(&Open3DScene::AddGeometry),
+                                   const Material &, bool>(
+                         &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
             .def("add_geometry",
-                 py::overload_cast<const std::string&,
-                                   const tgeometry::PointCloud*,
-                                   const Material&>(&Open3DScene::AddGeometry),
+                 py::overload_cast<const std::string &,
+                                   const tgeometry::PointCloud *,
+                                   const Material &>(&Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a)
             .def("remove_geometry", &Open3DScene::RemoveGeometry,
                  "Removes the geometry with the given name")

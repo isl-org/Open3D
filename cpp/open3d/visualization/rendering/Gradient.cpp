@@ -37,9 +37,11 @@ namespace {
 static const int kNGradientPixels = 512;
 static const int kNChannels = 4;
 
-void SetPixel(std::vector<uint8_t>& img, int idx, const Eigen::Vector4f& color) {
+void SetPixel(std::vector<uint8_t>& img,
+              int idx,
+              const Eigen::Vector4f& color) {
     int i = kNChannels * idx;
-    img[i    ] = uint8_t(std::round(255.0f * color[0]));
+    img[i] = uint8_t(std::round(255.0f * color[0]));
     img[i + 1] = uint8_t(std::round(255.0f * color[1]));
     img[i + 2] = uint8_t(std::round(255.0f * color[2]));
     img[i + 3] = uint8_t(std::round(255.0f * color[3]));
@@ -47,15 +49,13 @@ void SetPixel(std::vector<uint8_t>& img, int idx, const Eigen::Vector4f& color) 
 
 }  // namespace
 
-Gradient::Gradient() {
-}
+Gradient::Gradient() {}
 
 Gradient::Gradient(const std::vector<Gradient::Point>& points) {
     points_ = points;
 }
 
-Gradient::~Gradient() {
-}
+Gradient::~Gradient() {}
 
 const std::vector<Gradient::Point>& Gradient::GetPoints() const {
     return points_;
@@ -66,9 +66,7 @@ void Gradient::SetPoints(const std::vector<Gradient::Point>& points) {
     textures_.clear();
 }
 
-Gradient::Mode Gradient::GetMode() const {
-    return mode_;
-}
+Gradient::Mode Gradient::GetMode() const { return mode_; }
 
 void Gradient::SetMode(Mode mode) {
     if (mode != mode_) {
@@ -77,7 +75,7 @@ void Gradient::SetMode(Mode mode) {
     }
 }
 
-TextureHandle Gradient::GetTextureHandle(Renderer &renderer) {
+TextureHandle Gradient::GetTextureHandle(Renderer& renderer) {
     if (textures_.find(&renderer) == textures_.end()) {
         auto img = std::make_shared<geometry::Image>();
         if (!points_.empty()) {
@@ -95,10 +93,11 @@ TextureHandle Gradient::GetTextureHandle(Renderer &renderer) {
                     if (idx == 0) {
                         SetPixel(img->data_, img_idx, points_[0].color);
                     } else if (idx == n_points) {
-                        SetPixel(img->data_, img_idx, points_[n_points - 1].color);
+                        SetPixel(img->data_, img_idx,
+                                 points_[n_points - 1].color);
                     } else {
-                        auto &p0 = points_[idx -1];
-                        auto &p1 = points_[idx];
+                        auto& p0 = points_[idx - 1];
+                        auto& p1 = points_[idx];
                         auto dist = p1.value - p0.value;
                         // Calc weights between 0 and 1
                         auto w0 = 1.0f - (x - p0.value) / dist;
@@ -112,7 +111,7 @@ TextureHandle Gradient::GetTextureHandle(Renderer &renderer) {
                 }
             } else {
                 img->Prepare(n_points, 1, kNChannels, 1);
-                for (int i = 0;  i < n_points;  ++i) {
+                for (int i = 0; i < n_points; ++i) {
                     SetPixel(img->data_, i, points_[i].color);
                 }
             }

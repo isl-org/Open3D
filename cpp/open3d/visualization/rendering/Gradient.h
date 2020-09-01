@@ -27,9 +27,9 @@
 #pragma once
 
 #include <Eigen/Core>
-
 #include <map>
 #include <vector>
+
 #include "open3d/visualization/rendering/RendererHandle.h"
 
 namespace open3d {
