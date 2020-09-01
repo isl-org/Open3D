@@ -5,9 +5,16 @@ set -euo pipefail
 # shellcheck source=build_scripts.sh
 source "$(dirname "$0")"/build_scripts.sh
 
-if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-    # disable pytorch build if CUDA is enabled for now until the problem with caffe2 and cudnn is solved
-    BUILD_PYTORCH_OPS="OFF"
+# disable incompatible pytorch configurations
+if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    # we need cudnn for building pytorch ops
+    if ! find $(dirname $(which nvcc))/.. -name "libcudnn*"; then
+        export BUILD_PYTORCH_OPS=OFF
+    fi
+    # pytorch 1.6 requires at least python 3.6
+    if ! python -c "import sys; sys.exit(0) if sys.version_info.major==3 and sys.version_info.minor > 5 else sys.exit(1)"; then
+        export BUILD_PYTORCH_OPS=OFF
+    fi
 fi
 date
 
