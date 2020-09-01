@@ -60,11 +60,15 @@ def test_find(device):
     keys = o3d.core.Tensor([100, 200, 500], device=device)
     iterators_c, masks_c = hashmap.find(keys)
     masks = o3d.core.Tensor([])
-    masks.shallow_copy_from(masks_c)
     iterators = o3d.core.Tensor([])
+    masks.shallow_copy_from(masks_c)
     iterators.shallow_copy_from(iterators_c)
 
-    keys, values = hashmap.decode_iterators(iterators)
+    keys_c, values_c = hashmap.decode_iterators(iterators, masks)
+    keys = o3d.core.Tensor([])
+    values = o3d.core.Tensor([])
+    keys.shallow_copy_from(keys_c)
+    values.shallow_copy_from(values_c)
 
     assert masks[0].item() == True
     assert masks[1].item() == False

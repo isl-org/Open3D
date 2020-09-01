@@ -610,6 +610,8 @@ std::string Tensor::ScalarPtrToString(const void* ptr) const {
     std::string str = "";
     if (dtype_ == Dtype::Bool) {
         str = *static_cast<const unsigned char*>(ptr) ? "True" : "False";
+    } else if (dtype_.IsObject()) {
+        str = fmt::format("{}", fmt::ptr(ptr));
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
             str = fmt::format("{}", *static_cast<const scalar_t*>(ptr));

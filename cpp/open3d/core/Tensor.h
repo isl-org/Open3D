@@ -440,7 +440,7 @@ public:
         return value;
     }
 
-    /// Adds a tensor and returns the resulting tensor.
+    /// Adds a tensor andp returns the resulting tensor.
     Tensor Add(const Tensor& value) const;
     template <typename T>
     Tensor Add(T scalar_value) const {

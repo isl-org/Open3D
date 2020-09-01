@@ -26,6 +26,7 @@
 
 #include "open3d/core/hashmap/Hashmap.h"
 
+#include <pybind11/cast.h>
 #include <pybind11/pytypes.h>
 
 #include "open3d/core/MemoryManager.h"
@@ -50,29 +51,22 @@ void pybind_core_hashmap(py::module& m) {
 
     hashmap.def("insert",
                 [](Hashmap& h, const Tensor& keys, const Tensor& values) {
-                    utility::LogInfo("keys={}", keys.ToString());
-                    utility::LogInfo("vals={}", values.ToString());
                     h.AssertKeyDtype(keys.GetDtype());
                     h.AssertValueDtype(values.GetDtype());
 
-                    utility::LogWarning("keys shape = {}", keys.GetShape());
                     int count = keys.GetShape()[0];
                     Device device = keys.GetDevice();
 
-                    utility::LogInfo("creating masks");
                     Tensor masks({count}, Dtype::Bool, device);
-                    utility::LogInfo("creating iterators");
                     Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t),
                                    "iterator_t");
                     Tensor iterators({count}, dtype_it, device);
 
-                    utility::LogInfo("inserting");
                     h.Insert(keys.GetDataPtr(), values.GetDataPtr(),
                              static_cast<iterator_t*>(iterators.GetDataPtr()),
                              static_cast<bool*>(masks.GetDataPtr()), count);
 
-                    utility::LogInfo("returning");
-                    return iterators;
+                    return py::make_tuple(iterators, masks);
                 });
 
     hashmap.def("activate", [](Hashmap& h, const Tensor& keys) {
