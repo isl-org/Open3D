@@ -225,6 +225,8 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image, bool srgb) {
 
 const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultLitWithTransparency =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlit =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultNormalShader =
@@ -246,6 +248,7 @@ const TextureHandle FilamentResourceManager::kDefaultNormalMap =
 
 static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultLit,
+        FilamentResourceManager::kDefaultLitWithTransparency,
         FilamentResourceManager::kDefaultUnlit,
         FilamentResourceManager::kDefaultNormalShader,
         FilamentResourceManager::kDefaultDepthShader,
@@ -685,6 +688,36 @@ void FilamentResourceManager::LoadDefaults() {
     //                              default_sampler);
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
     materials_[kDefaultLit] = MakeShared(lit_mat, engine_);
+
+    const auto lit_trans_path =
+            resource_root + "/defaultLitTransparency.filamat";
+    auto lit_trans_mat = LoadMaterialFromFile(lit_trans_path, engine_);
+    lit_trans_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                       default_color);
+    lit_trans_mat->setDefaultParameter("baseRoughness", 0.7f);
+    lit_trans_mat->setDefaultParameter("reflectance", 0.5f);
+    lit_trans_mat->setDefaultParameter("baseMetallic", 0.f);
+    lit_trans_mat->setDefaultParameter("clearCoat", 0.f);
+    lit_trans_mat->setDefaultParameter("clearCoatRoughness", 0.f);
+    lit_trans_mat->setDefaultParameter("anisotropy", 0.f);
+    lit_trans_mat->setDefaultParameter("pointSize", 3.f);
+    lit_trans_mat->setDefaultParameter("albedo", texture, default_sampler);
+    lit_trans_mat->setDefaultParameter("ao_rough_metalMap", texture,
+                                       default_sampler);
+    lit_trans_mat->setDefaultParameter("normalMap", normal_map,
+                                       default_sampler);
+    lit_trans_mat->setDefaultParameter("reflectanceMap", texture,
+                                       default_sampler);
+    // NOTE: Disabled to avoid Filament warning until shader is reworked to
+    // reduce sampler usage.
+    // lit_trans_mat->setDefaultParameter("clearCoatMap", texture,
+    // default_sampler);
+    // lit_trans_mat->setDefaultParameter("clearCoatRoughnessMap", texture,
+    //                              default_sampler);
+    lit_trans_mat->setDefaultParameter("anisotropyMap", texture,
+                                       default_sampler);
+    materials_[kDefaultLitWithTransparency] =
+            MakeShared(lit_trans_mat, engine_);
 
     const auto unlit_path = resource_root + "/defaultUnlit.filamat";
     auto unlit_mat = LoadMaterialFromFile(unlit_path, engine_);
