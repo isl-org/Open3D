@@ -334,7 +334,7 @@ Eigen::Matrix3d ComputeCovariance(const std::vector<Eigen::Vector3d> &points,
         cumulants(7) += point(1) * point(2);
         cumulants(8) += point(2) * point(2);
     }
-    cumulants /= (double)points.size();
+    cumulants /= (double)indices.size();
     covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
     covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
     covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
@@ -367,7 +367,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
         cumulants(7) += point(1) * point(2);
         cumulants(8) += point(2) * point(2);
     }
-    cumulants /= (double)points.size();
+    cumulants /= (double)indices.size();
     mean(0) = cumulants(0);
     mean(1) = cumulants(1);
     mean(2) = cumulants(2);
