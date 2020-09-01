@@ -16,7 +16,7 @@ def test_subsample():
 
     np.testing.assert_equal(sub_points, sub_points_ref)
 
-    #Passing points and features.
+    # Passing points and features.
     sub_features_ref = np.array([[16.5, 17.5, 18.5], [6, 7, 8]],
                                 dtype=np.float32)
     sub_points_feat = subsample(points, features=features, sampleDl=1.1)
@@ -29,7 +29,7 @@ def test_subsample():
     np.testing.assert_equal(sub_features, sub_features_ref)
     np.testing.assert_equal(sub_points, sub_points_ref)
 
-    #Passing points, features and labels.
+    # Passing points, features and labels.
     sub_labels_ref = np.array([6, 4], dtype=np.int32)
     sub_points_feat_lab = subsample(points,
                                     features=features,
@@ -93,7 +93,7 @@ def test_subsample_batch():
     labels = np.array(range(7), dtype=np.int32)
     batches = np.array([3, 2, 2], dtype=np.int32)
 
-    #Passing only points.
+    # Passing only points.
     sub_points_ref = np.array(
         [[0.3333333, 0.3333333, 0], [0.5, 0.5, 1], [5, 0.5, 0]],
         dtype=np.float32)
@@ -104,7 +104,7 @@ def test_subsample_batch():
     np.testing.assert_almost_equal(sub_points, sub_points_ref)
     np.testing.assert_almost_equal(sub_batch, sub_batch_ref)
 
-    #Passing points and features.
+    # Passing points and features.
     sub_features_ref = np.array(
         [[4, 5, 6, 7], [14, 15, 16, 17], [22, 23, 24, 25]], dtype=np.float32)
     sub_points_feat = subsample_batch(points,
@@ -121,7 +121,7 @@ def test_subsample_batch():
     np.testing.assert_almost_equal(sub_points, sub_points_ref)
     np.testing.assert_almost_equal(sub_batch, sub_batch_ref)
 
-    #Passing points, features and labels.
+    # Passing points, features and labels.
     sub_labels_ref = np.array([2, 4, 6], dtype=np.int32)
     sub_points_feat_lab = subsample_batch(points,
                                           batches,
