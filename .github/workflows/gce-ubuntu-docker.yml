@@ -24,7 +24,9 @@ jobs:
       - name: Skip check
         id: check
         run: |
-          if [ "$GITHUB_REPOSITORY" == "intel-isl/Open3D" ] && [ -n $GCE_GPU_CI_SA ] ; then
+          echo "$GITHUB_REPOSITORY"
+          echo "$GCE_GPU_CI_SA"
+          if [ "$GITHUB_REPOSITORY" == "intel-isl/Open3D" ] && [ -n "$GCE_GPU_CI_SA" ] ; then
             echo "::set-output name=skip::no"
           else
             echo "::set-output name=skip::yes"
