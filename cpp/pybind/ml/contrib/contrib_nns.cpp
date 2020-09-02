@@ -239,9 +239,21 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
                     "Sanity check failed, batch_id {}: {} != batchsize {}.",
                     batch_idx, num_neighbors.GetShape()[0], batch_size);
         }
+
+        int64_t indices_start_idx = 0;
+        for (int64_t i = 0; i < batch_size; i++) {
+            int64_t num_neighbor = num_neighbors[i].Item<int64_t>();
+            core::Tensor result_slice = result.Slice(0, result_start_idx + i,
+                                                     result_start_idx + i + 1)
+                                                .Slice(1, 0, num_neighbor);
+            core::Tensor indices_slice = indices.Slice(
+                    0, indices_start_idx, indices_start_idx + num_neighbor);
+            result_slice = indices_slice.View({1, num_neighbor});
+            indices_start_idx += num_neighbor;
+        }
     }
 
-    return core::Tensor();
+    return result;
 }
 
 void pybind_contrib_nns(py::module& m_contrib) {
