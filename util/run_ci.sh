@@ -60,6 +60,39 @@ reportRun() {
     "$@"
 }
 
+install_cuda_deb() {
+    echo "Installing CUDA ${CUDA_VERSION[1]} with apt ..."
+    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+    sudo apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
+    sudo apt-get install --yes "cuda-toolkit-${CUDA_VERSION[0]}"
+    if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
+        echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
+        dpkg -L libcublas10 libcublas-dev | while read -r cufile ; do
+            if [ -f "$cufile" ] ; then
+                ln -s "$cufile" "${cufile/10.2/10.1}" 2>/dev/null || true
+            fi
+        done
+    fi
+    set +u  # Disable "unbound variable is error" since that gives a false alarm error below:
+    if [[ "with-cudnn" =~ ^($1|$2)$ ]] ; then
+        echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
+        sudo apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
+        sudo apt-get install --yes \
+            "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
+            "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
+    fi
+    CUDA_TOOLKIT_DIR=/usr/local/cuda-${CUDA_VERSION[1]}
+    export PATH="${CUDA_TOOLKIT_DIR}/bin${PATH:+:$PATH}"
+    export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    echo PATH="$PATH"
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+    if [[ "purge-cache" =~ ^($1|$2)$ ]] ; then
+        sudo apt-get clean
+        sudo rm -rf /var/lib/apt/lists/*
+    fi
+    set -u
+}
+
 echo "nproc = $(nproc) NPROC = ${NPROC}"
 reportJobStart "installing Python unit test dependencies"
 echo "using pip: $(which pip)"
@@ -77,13 +110,9 @@ echo "using cmake: $(which cmake)"
 cmake --version
 
 date
-if [ "$BUILD_CUDA_MODULE" == "ON" ] && ! nvcc --version ; then
-    CUDA_TOOLKIT_DIR=/usr/local/cuda-${CUDA_VERSION[1]}
-# Disable "unbound variable is error" since that gives a false alarm error below:
-    set +u
-    export PATH="${CUDA_TOOLKIT_DIR}/bin${PATH:+:$PATH}"
-    export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-    set -u
+if [ "$BUILD_CUDA_MODULE" == "ON" ] && \
+    ! nvcc --version | grep -q "release ${CUDA_VERSION[1]}" 2>/dev/null ; then
+    reportRun install_cuda_deb with-cudnn purge-cache
     nvcc --version
 fi
 
