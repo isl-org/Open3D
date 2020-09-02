@@ -341,6 +341,13 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
 
     const size_t uv_array_size = n_vertices * 2 * sizeof(float);
     float* uv_array = static_cast<float*>(malloc(uv_array_size));
+    if (geometry_.HasPointAttr("uv")) {
+        float* uv_src = static_cast<float*>(
+                geometry_.GetPointAttr("uv").AsTensor().GetDataPtr());
+        memcpy(uv_array, uv_src, uv_array_size);
+    } else {
+        memset(uv_array, 0, uv_array_size);
+    }
     VertexBuffer::BufferDescriptor uv_descriptor(
             uv_array, uv_array_size, GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 3, std::move(uv_descriptor));

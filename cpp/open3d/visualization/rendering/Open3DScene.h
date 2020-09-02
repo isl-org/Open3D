@@ -38,6 +38,10 @@ namespace geometry {
 class Geometry3D;
 }  // namespace geometry
 
+namespace tgeometry {
+class PointCloud;
+}  // namespace tgeometry
+
 namespace visualization {
 namespace rendering {
 
@@ -63,6 +67,12 @@ public:
                      std::shared_ptr<const geometry::Geometry3D> geom,
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
+    // Note: we can't use shared_ptr here, as we might be given something
+    //       from Python, which is using unique_ptr. The pointer must live long
+    //       enough to get copied to the GPU by the render thread.
+    void AddGeometry(const std::string& name,
+                     const tgeometry::PointCloud* geom,
+                     const Material& mat);
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
