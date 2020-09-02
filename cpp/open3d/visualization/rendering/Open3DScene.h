@@ -71,7 +71,7 @@ public:
     //       from Python, which is using unique_ptr. The pointer must live long
     //       enough to get copied to the GPU by the render thread.
     void AddGeometry(const std::string& name,
-                     const tgeometry::PointCloud *geom,
+                     const tgeometry::PointCloud* geom,
                      const Material& mat);
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.

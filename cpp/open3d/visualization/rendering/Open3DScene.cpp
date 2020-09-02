@@ -194,10 +194,9 @@ void Open3DScene::AddGeometry(
     RecreateAxis(scene, bounds_, false);
 }
 
-void Open3DScene::AddGeometry(
-        const std::string& name,
-        const tgeometry::PointCloud *geom,
-        const Material& mat) {
+void Open3DScene::AddGeometry(const std::string& name,
+                              const tgeometry::PointCloud* geom,
+                              const Material& mat) {
     auto scene = renderer_.GetScene(scene_);
     if (scene->AddGeometry(name, *geom, mat)) {
         GeometryData info(name, "");
