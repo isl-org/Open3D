@@ -225,7 +225,10 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
                                          .Sum({0})
                                          .Item<int32_t>();
 
-        core::Tensor indices = batched_indices[batch_idx];
+        core::Tensor indices = batched_indices[batch_idx].Add(
+                dataset_batches.Slice(0, 0, batch_idx)
+                        .Sum({0})
+                        .Item<int32_t>());
         core::Tensor num_neighbors = batched_num_neighbors[batch_idx];
 
         // Sanity check.
