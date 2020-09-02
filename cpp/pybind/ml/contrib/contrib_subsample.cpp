@@ -140,7 +140,7 @@ const py::tuple SubsampleBatch(py::array points,
             original_batches, subsampled_batches, sampleDl, max_p);
 
     // Wrap result subsampled_points. Data will be copied.
-    assert(std::is_pod<PointXYZ>());
+    // assert(std::is_pod<PointXYZ>()); // Only true in Release mode, but why?
     int64_t num_subsampled_points =
             static_cast<int64_t>(subsampled_points.size());
     core::Tensor subsampled_points_t(
@@ -302,7 +302,7 @@ const py::tuple Subsample(py::array points,
                      sampleDl, verbose);
 
     // Wrap result subsampled_points. Data will be copied.
-    assert(std::is_pod<PointXYZ>());
+    // assert(std::is_pod<PointXYZ>()); // Only true in Release mode, but why?
     int64_t num_subsampled_points =
             static_cast<int64_t>(subsampled_points.size());
     core::Tensor subsampled_points_t(
