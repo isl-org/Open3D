@@ -41,6 +41,7 @@ namespace open3d {
 
 PYBIND11_MODULE(pybind, m) {
     open3d::utility::Logger::i().print_fcn_ = [](const std::string& msg) {
+        py::gil_scoped_acquire acquire;
         py::print(msg);
     };
 
