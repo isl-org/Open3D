@@ -51,6 +51,19 @@ TextureSamplerParameters TextureSamplerParameters::Pretty() {
     return parameters;
 }
 
+TextureSamplerParameters TextureSamplerParameters::LinearClamp() {
+    TextureSamplerParameters parameters;
+
+    parameters.filter_min = TextureSamplerParameters::MinFilter::Linear;
+    parameters.filter_mag = TextureSamplerParameters::MagFilter::Linear;
+    parameters.wrap_u = TextureSamplerParameters::WrapMode::ClampToEdge;
+    parameters.wrap_v = TextureSamplerParameters::WrapMode::ClampToEdge;
+    parameters.wrap_w = TextureSamplerParameters::WrapMode::ClampToEdge;
+    parameters.SetAnisotropy(0);
+
+    return parameters;
+}
+
 TextureSamplerParameters::TextureSamplerParameters(MagFilter min_mag,
                                                    WrapMode uvw) {
     filter_min = MinFilter(min_mag);
