@@ -70,12 +70,11 @@ install_cuda_deb() {
         dpkg -L libcublas10 libcublas-dev | while read -r cufile ; do
             if [ -f "$cufile" ] && [ ! -e "${cufile/10.2/10.1}" ] ; then
                 set -x
-                ln -s "$cufile" "${cufile/10.2/10.1}"
+                sudo ln -s "$cufile" "${cufile/10.2/10.1}"
                 set +x
             fi
         done
     fi
-    [ -r /usr/local/cuda-10.1/include/cublas_v2.h ]
     set +u  # Disable "unbound variable is error" since that gives a false alarm error below:
     if [[ "with-cudnn" =~ ^($1|$2)$ ]] ; then
         echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
