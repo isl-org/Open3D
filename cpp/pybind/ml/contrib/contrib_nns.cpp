@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/nns/NearestNeighborSearch.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/ml/contrib/contrib.h"
@@ -34,12 +35,56 @@ namespace open3d {
 namespace ml {
 namespace contrib {
 
+/// TOOD: This is a temory wrapper for 3DML repositiory use. In the future, the
+/// native Open3D Python API should be improved and used.
+///
+/// TOOD: Currently, open3d::core::NearestNeighborSearch supports Float64
+/// and Int64 only. NearestNeighborSearch will support Float32 and Int32 in the
+/// future. For now, we do a convertion manually.
+///
+/// \param query_points Tensor of shape {n_query_points, d}, dtype Float32.
+/// \param dataset_points Tensor of shape {n_dataset_points, d}, dtype Float32.
+/// \param knn Int.
+/// \return Tensor of shape (n_query_points, knn), dtype Int32.
 const core::Tensor KnnSearch(const core::Tensor& query_points,
                              const core::Tensor& dataset_points,
                              int knn) {
-    return core::Tensor();
+    // Check dtype.
+    if (query_points.GetDtype() != core::Dtype::Float32) {
+        utility::LogError("query_points must be of dtype Float32.");
+    }
+    if (dataset_points.GetDtype() != core::Dtype::Float32) {
+        utility::LogError("dataset_points must be of dtype Float32.");
+    }
+
+    // Check shape.
+    if (query_points.NumDims() != 2) {
+        utility::LogError("query_points must be of shape {n_query_points, d}.");
+    }
+    if (dataset_points.NumDims() != 2) {
+        utility::LogError(
+                "dataset_points must be of shape {n_dataset_points, d}.");
+    }
+    if (query_points.GetShape()[1] != dataset_points.GetShape()[1]) {
+        utility::LogError("Point dimensions mismatch {} != {}.",
+                          query_points.GetShape()[1],
+                          dataset_points.GetShape()[1]);
+    }
+
+    // Call NNS.
+    // TODO: remove dytpe convertion.
+    core::nns::NearestNeighborSearch nns(
+            dataset_points.To(core::Dtype::Float64));
+    nns.KnnIndex();
+    core::Tensor indices;
+    core::Tensor distances;
+    std::tie(indices, distances) =
+            nns.KnnSearch(query_points.To(core::Dtype::Float64), knn);
+    return indices.To(core::Dtype::Float32);
 }
 
+/// TOOD: This is a temory wrapper for 3DML repositiory use. In the future, the
+/// native Open3D Python API should be improved and used.
 const core::Tensor RadiusSearch(const core::Tensor& query_points,
                                 const core::Tensor& dataset_points,
                                 const core::Tensor& query_batches,
