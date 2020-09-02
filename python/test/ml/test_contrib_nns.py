@@ -43,8 +43,10 @@ def test_radius_search():
                             o3c.Tensor.from_numpy(dataset_points),
                             o3c.Tensor.from_numpy(query_batches),
                             o3c.Tensor.from_numpy(dataset_batches), radius)
-    # indices = indices.numpy()
 
-    # np.testing.assert_equal(indices,
-    #                         np.array([[1, 4], [1, 4], [1, 4]], dtype=np.int32))
-    # assert indices.dtype == np.int32
+
+# indices = indices.numpy()
+
+# np.testing.assert_equal(indices,
+#                         np.array([[1, 4], [1, 4], [1, 4]], dtype=np.int32))
+# assert indices.dtype == np.int32

@@ -173,28 +173,35 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
         int32_t query_end_idx = query_batches.Slice(0, 0, batch_idx + 1)
                                         .Sum({0})
                                         .Item<int32_t>();
+        core::Tensor current_query_points =
+                query_points.Slice(0, query_start_idx, query_end_idx)
+                        .To(core::Dtype::Float64);
+
         int32_t dataset_start_idx =
                 dataset_batches.Slice(0, 0, batch_idx).Sum({0}).Item<int32_t>();
         int32_t dataset_end_idx = dataset_batches.Slice(0, 0, batch_idx + 1)
                                           .Sum({0})
                                           .Item<int32_t>();
+        core::Tensor current_dataset_points =
+                dataset_points.Slice(0, dataset_start_idx, dataset_end_idx)
+                        .To(core::Dtype::Float64);
 
         // Call radius search.
         // TODO: remove dytpe convertion.
-        core::nns::NearestNeighborSearch nns(
-                dataset_points.To(core::Dtype::Float64));
+        core::nns::NearestNeighborSearch nns(current_dataset_points);
         nns.FixedRadiusIndex();
         core::Tensor indices;
         core::Tensor distances;
         core::Tensor num_neighbors;
-        std::tie(indices, distances, num_neighbors) = nns.FixedRadiusSearch(
-                query_points.To(core::Dtype::Float64), radius);
+        std::tie(indices, distances, num_neighbors) =
+                nns.FixedRadiusSearch(current_query_points, radius);
         batched_indices[batch_idx] = indices;
         batched_num_neighbors[batch_idx] = num_neighbors;
     }
 
     // Find global maximum number of neighbors.
     int64_t max_num_neighbors = 0;
+    utility::LogInfo("");
     for (const auto& num_neighbors : batched_num_neighbors) {
         utility::LogInfo("num_neighbors: {}", num_neighbors.ToString());
         max_num_neighbors = std::max(num_neighbors.Max({0}).Item<int64_t>(),
