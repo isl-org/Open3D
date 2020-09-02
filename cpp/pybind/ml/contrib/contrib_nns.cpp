@@ -202,7 +202,6 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
 
     // Find global maximum number of neighbors.
     int64_t max_num_neighbors = 0;
-    utility::LogInfo("");
     for (const auto& num_neighbors : batched_num_neighbors) {
         max_num_neighbors = std::max(num_neighbors.Max({0}).Item<int64_t>(),
                                      max_num_neighbors);
