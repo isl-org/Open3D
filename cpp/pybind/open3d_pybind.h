@@ -116,7 +116,6 @@ void bind_copy_functions(Class_ &cl) {
 /// add(1, b=2)
 /// add(1, b=None)
 /// ```
-///
 template <typename T>
 struct open3d_optional_caster {
     using value_conv = make_caster<typename T::value_type>;
@@ -157,3 +156,23 @@ struct type_caster<open3d::utility::nullopt_t>
 
 }  // namespace detail
 }  // namespace pybind11
+
+namespace open3d {
+
+/// Ref:
+/// https://github.com/pytorch/pytorch/blob/master/torch/csrc/utils/auto_gil.h
+struct AutoGIL {
+    AutoGIL() : gstate_(PyGILState_Ensure()) {}
+    ~AutoGIL() { PyGILState_Release(gstate_); }
+    PyGILState_STATE gstate_;
+};
+
+/// Ref:
+/// https://github.com/pytorch/pytorch/blob/master/torch/csrc/utils/auto_gil.h
+struct AutoNoGIL {
+    AutoNoGIL() : save_(PyEval_SaveThread()) {}
+    ~AutoNoGIL() { PyEval_RestoreThread(save_); }
+    PyThreadState *save_;
+};
+
+}  // namespace open3d

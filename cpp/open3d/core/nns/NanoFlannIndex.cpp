@@ -35,30 +35,30 @@ namespace core {
 namespace nns {
 
 NanoFlannIndex::NanoFlannIndex(){};
-NanoFlannIndex::NanoFlannIndex(const core::Tensor &dataset_points) {
+NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
     SetTensorData(dataset_points);
 };
 NanoFlannIndex::~NanoFlannIndex(){};
 
 int NanoFlannIndex::GetDimension() const {
-    core::SizeVector shape = dataset_points_.GetShape();
+    SizeVector shape = dataset_points_.GetShape();
     return static_cast<int>(shape[1]);
 }
 
 size_t NanoFlannIndex::GetDatasetSize() const {
-    core::SizeVector shape = dataset_points_.GetShape();
+    SizeVector shape = dataset_points_.GetShape();
     return static_cast<size_t>(shape[0]);
 }
 
-bool NanoFlannIndex::SetTensorData(const core::Tensor &dataset_points) {
-    core::SizeVector shape = dataset_points.GetShape();
-    core::Dtype dtype = dataset_points.GetDtype();
+bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
+    SizeVector shape = dataset_points.GetShape();
+    Dtype dtype = dataset_points.GetDtype();
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SetTensorData] Tensor must be "
                 "two-dimenional, with shape {n, d}.");
     }
-    if (dtype != core::Dtype::Float64) {
+    if (dtype != Dtype::Float64) {
         utility::LogError(
                 "[NanoFlannIndex::SetTensorData] Tensor with dtype other than "
                 "float64 is not supported currently.");
@@ -76,9 +76,9 @@ bool NanoFlannIndex::SetTensorData(const core::Tensor &dataset_points) {
     return true;
 };
 
-std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
-        const core::Tensor &query_points, int knn) {
-    core::SizeVector shape = query_points.GetShape();
+std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
+                                                    int knn) {
+    SizeVector shape = query_points.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SearchKnn] query tensor must be 2 "
@@ -125,26 +125,23 @@ std::pair<core::Tensor, core::Tensor> NanoFlannIndex::SearchKnn(
                 "different. Something went wrong.");
     }
     if (batch_nums[0] < 1) {
-        return std::make_pair(core::Tensor(), core::Tensor());
+        return std::make_pair(Tensor(), Tensor());
     }
 
     std::vector<int64_t> batch_indices2(batch_indices.begin(),
                                         batch_indices.end());
-    core::Tensor indices(
-            batch_indices2,
-            {num_query_points, static_cast<int64_t>(batch_nums[0])},
-            core::Dtype::Int64);
-    core::Tensor distances(
-            batch_distances,
-            {num_query_points, static_cast<int64_t>(batch_nums[0])},
-            core::Dtype::Float64);
+    Tensor indices(batch_indices2,
+                   {num_query_points, static_cast<int64_t>(batch_nums[0])},
+                   Dtype::Int64);
+    Tensor distances(batch_distances,
+                     {num_query_points, static_cast<int64_t>(batch_nums[0])},
+                     Dtype::Float64);
     return std::make_pair(indices, distances);
 };
 
-std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NanoFlannIndex::SearchRadius(const core::Tensor &query_points,
-                             const std::vector<double> &radii) {
-    core::SizeVector shape = query_points.GetShape();
+std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
+        const Tensor &query_points, const std::vector<double> &radii) {
+    SizeVector shape = query_points.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SearchRadius] query tensor must be 2 "
@@ -188,18 +185,17 @@ NanoFlannIndex::SearchRadius(const core::Tensor &query_points,
     std::vector<int64_t> batch_nums2(batch_nums.begin(), batch_nums.end());
     std::vector<int64_t> batch_indices2(batch_indices.begin(),
                                         batch_indices.end());
-    core::Tensor indices(batch_indices2, {static_cast<int64_t>(size)},
-                         core::Dtype::Int64);
-    core::Tensor distances(batch_distances, {static_cast<int64_t>(size)},
-                           core::Dtype::Float64);
-    core::Tensor nums(batch_nums2, {static_cast<int64_t>(batch_nums2.size())},
-                      core::Dtype::Int64);
+    Tensor indices(batch_indices2, {static_cast<int64_t>(size)}, Dtype::Int64);
+    Tensor distances(batch_distances, {static_cast<int64_t>(size)},
+                     Dtype::Float64);
+    Tensor nums(batch_nums2, {static_cast<int64_t>(batch_nums2.size())},
+                Dtype::Int64);
     return std::make_tuple(indices, distances, nums);
 };
 
-std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NanoFlannIndex::SearchRadius(const core::Tensor &query_points, double radius) {
-    core::SizeVector shape = query_points.GetShape();
+std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
+        const Tensor &query_points, double radius) {
+    SizeVector shape = query_points.GetShape();
     if (shape.size() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SearchRadius] query tensor must be 2 "
