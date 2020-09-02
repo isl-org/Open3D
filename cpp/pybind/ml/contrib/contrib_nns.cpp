@@ -159,6 +159,11 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
     }
 
     // Call radius search for each batch.
+    std::vector<core::Tensor> batched_indices(num_batches);
+    std::vector<core::Tensor> batched_num_neighbors(num_batches);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
     for (int64_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
         // TODO: we need a prefix-sum for 1D Tensor.
         // start_idx: inclusive
@@ -173,6 +178,19 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
         int32_t dataset_end_idx = dataset_batches.Slice(0, 0, batch_idx + 1)
                                           .Sum({0})
                                           .Item<int32_t>();
+
+        // Call radius search.
+        // TODO: remove dytpe convertion.
+        core::nns::NearestNeighborSearch nns(
+                dataset_points.To(core::Dtype::Float64));
+        nns.FixedRadiusIndex();
+        core::Tensor indices;
+        core::Tensor distances;
+        core::Tensor num_neighbors;
+        std::tie(indices, distances, num_neighbors) = nns.FixedRadiusSearch(
+                query_points.To(core::Dtype::Float64), radius);
+        batched_indices[batch_idx] = indices;
+        batched_num_neighbors[batch_idx] = num_neighbors;
     }
 
     return core::Tensor();
