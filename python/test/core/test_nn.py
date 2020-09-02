@@ -25,115 +25,108 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
+import open3d.core as o3c
 import numpy as np
 import pytest
 
 
-@pytest.mark.parametrize("device", [o3d.core.Device("CPU:0")])
-def test_nn_index(device):
-    t = o3d.core.Tensor.zeros((2, 3), o3d.core.Dtype.Float64, device=device)
-    nn = o3d.core.nns.NearestNeighborSearch(t)
-    assert nn.knn_index() == True
-    assert nn.multi_radius_index() == True
-    assert nn.fixed_radius_index() == True
-    assert nn.hybrid_index() == True
+def test_knn_index():
+    dtype = o3c.Dtype.Float64
+    device = o3c.Device("CPU:0")
+
+    t = o3c.Tensor.zeros((10, 3), dtype, device=device)
+    nns = o3c.nns.NearestNeighborSearch(t)
+    assert nns.knn_index()
+    assert nns.multi_radius_index()
+    assert nns.fixed_radius_index()
+    assert nns.hybrid_index()
 
 
-@pytest.mark.parametrize("device", [["CPU", 0]])
-def test_knn_search_single(device):
-    np.random.seed(0)
-    data = np.random.rand(100, 3)
-    query = np.array([0.5, 0.5, 0.5])
-    query.shape = (1, 3)
-    data_t = o3d.core.Tensor(data)
-    query_t = o3d.core.Tensor(query)
+def test_knn_search():
+    dtype = o3c.Dtype.Float64
+    device = o3c.Device("CPU:0")
 
-    if device[0] == "CUDA":
-        data_t = data_t.cuda(device[1])
-        query_t = query_t.cuda(device[1])
+    dataset_points = o3c.Tensor(
+        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.1], [0.0, 0.0, 0.2], [0.0, 0.1, 0.0],
+         [0.0, 0.1, 0.1], [0.0, 0.1, 0.2], [0.0, 0.2, 0.0], [0.0, 0.2, 0.1],
+         [0.0, 0.2, 0.2], [0.1, 0.0, 0.0]],
+        dtype=dtype,
+        device=device)
+    nns = o3c.nns.NearestNeighborSearch(dataset_points)
+    nns.knn_index()
 
-    nn = o3d.core.nns.NearestNeighborSearch(data_t)
-    nn.knn_index()
-    idx, dist = nn.knn_search(query_t, 3)
+    # Single query point.
+    query_points = o3c.Tensor([[0.064705, 0.043921, 0.087843]],
+                              dtype=dtype,
+                              device=device)
+    indices, distances = nns.knn_search(query_points, 3)
+    np.testing.assert_equal(indices.cpu().numpy(),
+                            np.array([[1, 4, 9]], dtype=np.int64))
+    np.testing.assert_allclose(distances.cpu().numpy(),
+                               np.array([[0.00626358, 0.00747938, 0.0108912]],
+                                        dtype=np.float64),
+                               rtol=1e-5,
+                               atol=0)
 
-    expect_idx = np.array([35, 1, 96])
-    expect_idx.shape = (1, 3)
-    expect_dist = np.array([0.019492, 0.0291282, 0.0367294])
-    expect_dist.shape = (1, 3)
-    np.testing.assert_almost_equal(idx.numpy(), expect_idx, 7)
-    np.testing.assert_almost_equal(dist.numpy(), expect_dist, 7)
-
-
-@pytest.mark.parametrize("device", [["CPU", 0]])
-def test_knn_search_multiple(device):
-    np.random.seed(0)
-    data = np.random.rand(100, 3)
-    query = np.array([[0.5, 0.5, 0.5], [0.6, 0.6, 0.6]])
-    data_t = o3d.core.Tensor(data)
-    query_t = o3d.core.Tensor(query)
-
-    if device[0] == "CUDA":
-        data_t = data_t.cuda(device[1])
-        query_t = query_t.cuda(device[1])
-
-    nn = o3d.core.nns.NearestNeighborSearch(data_t)
-    nn.knn_index()
-    idx, dist = nn.knn_search(query_t, 3)
-
-    expect_idx = np.array([[35, 1, 96], [35, 45, 0]])
-    expect_dist = np.array([[0.019492, 0.0291282, 0.0367294],
-                            [0.00140176, 0.00357283, 0.0158963]])
-    np.testing.assert_almost_equal(idx.numpy(), expect_idx, 7)
-    np.testing.assert_almost_equal(dist.numpy(), expect_dist, 7)
+    # Multiple query points.
+    query_points = o3c.Tensor(
+        [[0.064705, 0.043921, 0.087843], [0.064705, 0.043921, 0.087843]],
+        dtype=dtype,
+        device=device)
+    indices, distances = nns.knn_search(query_points, 3)
+    np.testing.assert_equal(indices.cpu().numpy(),
+                            np.array([[1, 4, 9], [1, 4, 9]], dtype=np.int64))
+    np.testing.assert_allclose(distances.cpu().numpy(),
+                               np.array([[0.00626358, 0.00747938, 0.0108912],
+                                         [0.00626358, 0.00747938, 0.0108912]],
+                                        dtype=np.float64),
+                               rtol=1e-5,
+                               atol=0)
 
 
-@pytest.mark.parametrize("device", [["CPU", 0]])
-def test_fixed_radius_search_single(device):
-    np.random.seed(0)
-    data = np.random.rand(100, 3)
-    query = np.array([[0.5, 0.5, 0.5]])
-    data_t = o3d.core.Tensor(data)
-    query_t = o3d.core.Tensor(query)
+def test_fixed_radius_search():
+    dtype = o3c.Dtype.Float64
+    device = o3c.Device("CPU:0")
 
-    if device[0] == "CUDA":
-        data_t = data_t.cuda(device[1])
-        query_t = query_t.cuda(device[1])
+    dataset_points = o3c.Tensor(
+        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.1], [0.0, 0.0, 0.2], [0.0, 0.1, 0.0],
+         [0.0, 0.1, 0.1], [0.0, 0.1, 0.2], [0.0, 0.2, 0.0], [0.0, 0.2, 0.1],
+         [0.0, 0.2, 0.2], [0.1, 0.0, 0.0]],
+        dtype=dtype,
+        device=device)
+    nns = o3c.nns.NearestNeighborSearch(dataset_points)
+    nns.fixed_radius_index()
 
-    nn = o3d.core.nns.NearestNeighborSearch(data_t)
-    nn.fixed_radius_index()
-    idx, dist, lims = nn.fixed_radius_search(query_t, 0.2)
+    # Single query point.
+    query_points = o3c.Tensor([[0.064705, 0.043921, 0.087843]],
+                              dtype=dtype,
+                              device=device)
+    indices, distances, num_neighbors = nns.fixed_radius_search(
+        query_points, 0.1)
+    np.testing.assert_equal(indices.cpu().numpy(),
+                            np.array([1, 4], dtype=np.int64))
+    np.testing.assert_allclose(distances.cpu().numpy(),
+                               np.array([0.00626358, 0.00747938],
+                                        dtype=np.float64),
+                               rtol=1e-5,
+                               atol=0)
+    np.testing.assert_equal(num_neighbors.cpu().numpy(),
+                            np.array([2], dtype=np.int64))
 
-    expect_idx = np.array([35, 1, 96, 45, 41])
-    expect_dist = np.array(
-        [0.019492, 0.0291282, 0.0367294, 0.0372526, 0.0378507])
-    expect_lims = np.array([5])
-    np.testing.assert_almost_equal(idx.numpy(), expect_idx, 7)
-    np.testing.assert_almost_equal(dist.numpy(), expect_dist, 7)
-    np.testing.assert_almost_equal(lims.numpy(), expect_lims, 7)
-
-
-@pytest.mark.parametrize("device", [["CPU", 0]])
-def test_fixed_radius_search_multiple(device):
-    np.random.seed(0)
-    data = np.random.rand(100, 3)
-    query = np.array([[0.5, 0.5, 0.5], [0.6, 0.6, 0.6]])
-    data_t = o3d.core.Tensor(data)
-    query_t = o3d.core.Tensor(query)
-
-    if device[0] == "CUDA":
-        data_t = data_t.cuda(device[1])
-        query_t = query_t.cuda(device[1])
-
-    nn = o3d.core.nns.NearestNeighborSearch(data_t)
-    nn.fixed_radius_index()
-    idx, dist, lims = nn.fixed_radius_search(query_t, 0.2)
-
-    expect_idx = np.array([35, 1, 96, 45, 41, 35, 45, 0, 62, 41, 1])
-    expect_dist = np.array([
-        0.019492, 0.0291282, 0.0367294, 0.0372526, 0.0378507, 0.00140176,
-        0.00357283, 0.0158963, 0.0211767, 0.0330031, 0.0362418
-    ])
-    expect_lims = np.array([5, 6])
-    np.testing.assert_almost_equal(idx.numpy(), expect_idx, 7)
-    np.testing.assert_almost_equal(dist.numpy(), expect_dist, 7)
-    np.testing.assert_almost_equal(lims.numpy(), expect_lims, 7)
+    # Multiple query points.
+    query_points = o3c.Tensor(
+        [[0.064705, 0.043921, 0.087843], [0.064705, 0.043921, 0.087843]],
+        dtype=dtype,
+        device=device)
+    indices, distances, num_neighbors = nns.fixed_radius_search(
+        query_points, 0.1)
+    np.testing.assert_equal(indices.cpu().numpy(),
+                            np.array([1, 4, 1, 4], dtype=np.int64))
+    np.testing.assert_allclose(
+        distances.cpu().numpy(),
+        np.array([0.00626358, 0.00747938, 0.00626358, 0.00747938],
+                 dtype=np.float64),
+        rtol=1e-5,
+        atol=0)
+    np.testing.assert_equal(num_neighbors.cpu().numpy(),
+                            np.array([2, 2], dtype=np.int64))

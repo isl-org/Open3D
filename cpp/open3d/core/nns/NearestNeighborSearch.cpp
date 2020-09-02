@@ -45,36 +45,40 @@ bool NearestNeighborSearch::HybridIndex() { return SetIndex(); };
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
-                "[NearestNeighborSearch::KnnSearch] Index is not set");
+                "[NearestNeighborSearch::KnnSearch] Index is not set.");
     }
     return nanoflann_index_->SearchKnn(query_points, knn);
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
         const Tensor& query_points, double radius) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
-                "[NearestNeighborSearch::FixedRadiusSearch] Index is not set");
+                "[NearestNeighborSearch::FixedRadiusSearch] Index is not set.");
     }
     return nanoflann_index_->SearchRadius(query_points, radius);
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
         const Tensor& query_points, const std::vector<double>& radii) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
-                "[NearestNeighborSearch::MultiRadiusSearch] Index is not set");
+                "[NearestNeighborSearch::MultiRadiusSearch] Index is not set.");
     }
     return nanoflann_index_->SearchRadius(query_points, radii);
 }
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         const Tensor& query_points, double radius, int max_knn) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
-                "[NearestNeighborSearch::HybridSearch] Index is not set");
+                "[NearestNeighborSearch::HybridSearch] Index is not set.");
     }
     std::pair<Tensor, Tensor> result =
             nanoflann_index_->SearchKnn(query_points, max_knn);
@@ -96,6 +100,15 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
     Tensor distances_new(distances_vec, size, Dtype::Float64);
     return std::make_pair(indices_new, distances_new);
 }
+
+void NearestNeighborSearch::AssertNotCUDA(const Tensor& t) const {
+    if (t.GetDevice().GetType() == Device::DeviceType::CUDA) {
+        utility::LogError(
+                "TODO: NearestNeighborSearch does not support CUDA tensor "
+                "yet.");
+    }
+}
+
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

@@ -24,9 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/nns/NearestNeighborSearch.h"
+#include "pybind/core/nns/nearest_neighbor_search.h"
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/nns/NearestNeighborSearch.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
@@ -34,63 +35,66 @@
 
 namespace open3d {
 namespace core {
+namespace nns {
 
-void pybind_core_nn(py::module &m) {
-    py::module m_nn = m.def_submodule("nns");
-
-    // open3d.core.nns.NearestNeighborSearch
+void pybind_core_nns(py::module &m) {
+    py::module m_nns = m.def_submodule("nns");
     static const std::unordered_map<std::string, std::string>
             map_nearest_neighbor_search_method_docs = {
-                    {"query", "The input query tensor."},
+                    {"query_points", "The input query tensor."},
                     {"radii", "Search multiple radii"},
                     {"radius", "Search fixed radius."},
                     {"max_nn",
                      "At maximum, ``max_nn`` neighbors will be searched."},
                     {"knn", "``knn`` neighbors will be searched."}};
-    py::class_<nns::NearestNeighborSearch,
-               std::shared_ptr<nns::NearestNeighborSearch>>
-            nearestneighbor(
-                    m_nn, "NearestNeighborSearch",
-                    "NearestNeighborSearch class for nearest neighbor search.");
 
-    nearestneighbor.def(py::init<const Tensor &>(), "data"_a)
-            .def("knn_index", &nns::NearestNeighborSearch::KnnIndex)
-            .def("fixed_radius_index",
-                 &nns::NearestNeighborSearch::FixedRadiusIndex)
-            .def("multi_radius_index",
-                 &nns::NearestNeighborSearch::MultiRadiusIndex)
-            .def("hybrid_index", &nns::NearestNeighborSearch::HybridIndex)
-            .def("knn_search", &nns::NearestNeighborSearch::KnnSearch,
-                 "query"_a, "knn"_a)
-            .def(
-                    "multi_radius_search",
-                    [](nns::NearestNeighborSearch &nn_, const Tensor &query,
-                       py::array radii) {
-                        Tensor radii_t = PyArrayToTensor(radii, true);
-                        if (radii_t.GetDtype() != Dtype::Float64) {
-                            utility::LogError("Radius type must be Float64!");
-                        }
-                        return nn_.MultiRadiusSearch(
-                                query, radii_t.ToFlatVector<double>());
-                    },
-                    "query"_a, "radii"_a)
-            .def("fixed_radius_search",
-                 &nns::NearestNeighborSearch::FixedRadiusSearch, "query"_a,
-                 "radius"_a)
-            .def("hybrid_search", &nns::NearestNeighborSearch::HybridSearch,
-                 "query"_a, "radius"_a, "max_knn"_a);
-    docstring::ClassMethodDocInject(m_nn, "NearestNeighborSearch", "knn_search",
+    py::class_<NearestNeighborSearch, std::shared_ptr<NearestNeighborSearch>>
+            nns(m_nns, "NearestNeighborSearch",
+                "NearestNeighborSearch class for nearest neighbor search.");
+
+    // Constructors.
+    nns.def(py::init<const Tensor &>(), "dataset_points"_a);
+
+    // Index functions.
+    nns.def("knn_index", &NearestNeighborSearch::KnnIndex,
+            "Set index for knn search.");
+    nns.def("fixed_radius_index", &NearestNeighborSearch::FixedRadiusIndex,
+            "Set index for fixed-radius search.");
+    nns.def("multi_radius_index", &NearestNeighborSearch::MultiRadiusIndex,
+            "Set index for multi-radius search.");
+    nns.def("hybrid_index", &NearestNeighborSearch::HybridIndex,
+            "Set index for hybrid search.");
+
+    // Search functions.
+    nns.def("knn_search", &NearestNeighborSearch::KnnSearch, "query_points"_a,
+            "knn"_a, "Perform knn search.");
+    nns.def("fixed_radius_search", &NearestNeighborSearch::FixedRadiusSearch,
+            "query_points"_a, "radius"_a,
+            "Perform fixed radius search. All query points share the same "
+            "radius.");
+    nns.def("multi_radius_search", &NearestNeighborSearch::MultiRadiusSearch,
+            "query_points"_a, "radii"_a,
+            "Perform multi-radius search. Each query point has an independent "
+            "radius.");
+    nns.def("hybrid_search", &NearestNeighborSearch::HybridSearch,
+            "query_points"_a, "radius"_a, "max_knn"_a,
+            "Perform hybrid search.");
+
+    // Docstrings.
+    docstring::ClassMethodDocInject(m_nns, "NearestNeighborSearch",
+                                    "knn_search",
                                     map_nearest_neighbor_search_method_docs);
-    docstring::ClassMethodDocInject(m_nn, "NearestNeighborSearch",
-                                    "fixed_radius_search",
-                                    map_nearest_neighbor_search_method_docs);
-    docstring::ClassMethodDocInject(m_nn, "NearestNeighborSearch",
+    docstring::ClassMethodDocInject(m_nns, "NearestNeighborSearch",
                                     "multi_radius_search",
                                     map_nearest_neighbor_search_method_docs);
-    docstring::ClassMethodDocInject(m_nn, "NearestNeighborSearch",
+    docstring::ClassMethodDocInject(m_nns, "NearestNeighborSearch",
+                                    "fixed_radius_search",
+                                    map_nearest_neighbor_search_method_docs);
+    docstring::ClassMethodDocInject(m_nns, "NearestNeighborSearch",
                                     "hybrid_search",
                                     map_nearest_neighbor_search_method_docs);
 }
 
+}  // namespace nns
 }  // namespace core
 }  // namespace open3d
