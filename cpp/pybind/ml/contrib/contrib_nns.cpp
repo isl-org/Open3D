@@ -253,7 +253,7 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
         }
     }
 
-    return result;
+    return result.To(core::Dtype::Int32);
 }
 
 void pybind_contrib_nns(py::module& m_contrib) {
