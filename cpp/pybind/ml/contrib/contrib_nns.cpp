@@ -85,11 +85,96 @@ const core::Tensor KnnSearch(const core::Tensor& query_points,
 
 /// TOOD: This is a temory wrapper for 3DML repositiory use. In the future, the
 /// native Open3D Python API should be improved and used.
+///
+/// \param query_points Tensor of shape {n_query_points, d}, dtype Float32.
+/// \param dataset_points Tensor of shape {n_dataset_points, d}, dtype Float32.
+/// \param query_batches Tensor of shape {n_batches,}, dtype Int32. It is
+/// required that sum(query_batches) == n_query_points.
+/// \param dataset_batches Tensor of shape {n_batches,}, dtype Int32. It is
+/// required that that sum(dataset_batches) == n_dataset_points.
+/// \param radius The radius to search.
+/// \return Tensor of shape {n_query_points, max_neighbor}, dtype Int32, where
+/// max_neighbor is the maximum number neighbor of neighbors for all query
+/// points. For query points with less than max_neighbor neighbors, the neighbor
+/// index will be padded by the query pont index.
 const core::Tensor RadiusSearch(const core::Tensor& query_points,
                                 const core::Tensor& dataset_points,
                                 const core::Tensor& query_batches,
                                 const core::Tensor& dataset_batches,
                                 double radius) {
+    // Check dtype.
+    if (query_points.GetDtype() != core::Dtype::Float32) {
+        utility::LogError("query_points must be of dtype Float32.");
+    }
+    if (dataset_points.GetDtype() != core::Dtype::Float32) {
+        utility::LogError("dataset_points must be of dtype Float32.");
+    }
+    if (query_batches.GetDtype() != core::Dtype::Int32) {
+        utility::LogError("query_batches must be of dtype Int32.");
+    }
+    if (dataset_batches.GetDtype() != core::Dtype::Int32) {
+        utility::LogError("dataset_batches must be of dtype Int32.");
+    }
+
+    // Check shapes.
+    if (query_points.NumDims() != 2) {
+        utility::LogError("query_points must be of shape {n_query_points, d}.");
+    }
+    if (dataset_points.NumDims() != 2) {
+        utility::LogError(
+                "dataset_points must be of shape {n_dataset_points, d}.");
+    }
+    if (query_points.GetShape()[1] != dataset_points.GetShape()[1]) {
+        utility::LogError("Point dimensions mismatch {} != {}.",
+                          query_points.GetShape()[1],
+                          dataset_points.GetShape()[1]);
+    }
+    if (query_batches.NumDims() != 1) {
+        utility::LogError("query_batches must be of shape {n_batches,}.");
+    }
+    if (dataset_batches.NumDims() != 1) {
+        utility::LogError("dataset_batches must be of shape {n_batches,}.");
+    }
+    if (query_batches.GetShape()[0] != dataset_batches.GetShape()[0]) {
+        utility::LogError("Number of batches lengths not the same: {} != {}.",
+                          query_batches.GetShape()[0],
+                          dataset_batches.GetShape()[0]);
+    }
+    int64_t num_batches = query_batches.GetShape()[0];
+
+    // Check consistentency of batch sizes with total number of points.
+    if (query_batches.Sum({0}).Item<int32_t>() != query_points.GetShape()[0]) {
+        utility::LogError(
+                "query_batches is not consistent with query_points: {} != {}.",
+                query_batches.Sum({0}).Item<int32_t>(),
+                query_points.GetShape()[0]);
+    }
+    if (dataset_batches.Sum({0}).Item<int32_t>() !=
+        dataset_points.GetShape()[0]) {
+        utility::LogError(
+                "dataset_batches is not consistent with dataset_points: {} != "
+                "{}.",
+                dataset_batches.Sum({0}).Item<int32_t>(),
+                dataset_points.GetShape()[0]);
+    }
+
+    // Call radius search for each batch.
+    for (int64_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
+        // TODO: we need a prefix-sum for 1D Tensor.
+        // start_idx: inclusive
+        // end_idx: exclusive
+        int32_t query_start_idx =
+                query_batches.Slice(0, 0, batch_idx).Sum({0}).Item<int32_t>();
+        int32_t query_end_idx = query_batches.Slice(0, 0, batch_idx + 1)
+                                        .Sum({0})
+                                        .Item<int32_t>();
+        int32_t dataset_start_idx =
+                dataset_batches.Slice(0, 0, batch_idx).Sum({0}).Item<int32_t>();
+        int32_t dataset_end_idx = dataset_batches.Slice(0, 0, batch_idx + 1)
+                                          .Sum({0})
+                                          .Item<int32_t>();
+    }
+
     return core::Tensor();
 }
 
