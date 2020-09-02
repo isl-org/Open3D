@@ -24,18 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/ml/ml.h"
-
 #include "pybind/ml/contrib/contrib.h"
+
+#include "pybind/core/core.h"
+#include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
+#include "pybind/pybind_utils.h"
 
 namespace open3d {
 namespace ml {
+namespace contrib {
 
-void pybind_ml(py::module &m) {
-    py::module m_ml = m.def_submodule("ml");
-    contrib::pybind_contrib(m_ml);
+void pybind_contrib(py::module& m) {
+    py::module m_contrib = m.def_submodule("contrib");
+
+    pybind_contrib_subsample(m_contrib);
+    pybind_contrib_nns(m_contrib);
 }
 
+}  // namespace contrib
 }  // namespace ml
 }  // namespace open3d

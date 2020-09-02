@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"
 

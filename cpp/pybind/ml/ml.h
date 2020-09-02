@@ -32,7 +32,6 @@ namespace open3d {
 namespace ml {
 
 void pybind_ml(py::module& m);
-void pybind_contrib(py::module& m);
 
 }  // namespace ml
 }  // namespace open3d
