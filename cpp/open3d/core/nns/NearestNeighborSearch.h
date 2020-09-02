@@ -95,8 +95,9 @@ public:
     /// - distances: Tensor of shape {total_number_of_neighbors,}, with
     /// same dtype widh query_points.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
+    template <typename T>
     std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
-            const Tensor &query_points, double radius);
+            const Tensor &query_points, T radius);
 
     /// Perform multi-radius search. Each query point has an independent radius.
     ///
@@ -122,8 +123,9 @@ public:
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distainces: Tensor of shape {n, knn}, with same dtype with
     /// query_points.
+    template <typename T>
     std::pair<Tensor, Tensor> HybridSearch(const Tensor &query_points,
-                                           double radius,
+                                           T radius,
                                            int max_knn);
 
 private:
