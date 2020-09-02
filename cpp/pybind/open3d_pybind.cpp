@@ -31,6 +31,7 @@
 #include "pybind/core/core.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/io/io.h"
+#include "pybind/ml/ml.h"
 #include "pybind/pipelines/pipelines.h"
 #include "pybind/tgeometry/geometry.h"
 #include "pybind/utility/utility.h"
@@ -59,6 +60,7 @@ PYBIND11_MODULE(pybind, m) {
     core::pybind_core(m);
     geometry::pybind_geometry(m);
     tgeometry::pybind_geometry(m);
+    ml::pybind_ml(m);
     io::pybind_io(m);
     pipelines::pybind_pipelines(m);
     visualization::pybind_visualization(m);

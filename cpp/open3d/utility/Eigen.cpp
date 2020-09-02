@@ -316,5 +316,84 @@ Eigen::Vector3d ColorToDouble(const Eigen::Vector3uint8 &rgb) {
     return ColorToDouble(rgb(0), rgb(1), rgb(2));
 }
 
+template <typename IdxType>
+Eigen::Matrix3d ComputeCovariance(const std::vector<Eigen::Vector3d> &points,
+                                  const std::vector<IdxType> &indices) {
+    Eigen::Matrix3d covariance;
+    Eigen::Matrix<double, 9, 1> cumulants;
+    cumulants.setZero();
+    for (const auto &idx : indices) {
+        const Eigen::Vector3d &point = points[idx];
+        cumulants(0) += point(0);
+        cumulants(1) += point(1);
+        cumulants(2) += point(2);
+        cumulants(3) += point(0) * point(0);
+        cumulants(4) += point(0) * point(1);
+        cumulants(5) += point(0) * point(2);
+        cumulants(6) += point(1) * point(1);
+        cumulants(7) += point(1) * point(2);
+        cumulants(8) += point(2) * point(2);
+    }
+    cumulants /= (double)indices.size();
+    covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
+    covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
+    covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
+    covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
+    covariance(1, 0) = covariance(0, 1);
+    covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
+    covariance(2, 0) = covariance(0, 2);
+    covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
+    covariance(2, 1) = covariance(1, 2);
+    return covariance;
+}
+
+template <typename IdxType>
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const std::vector<Eigen::Vector3d> &points,
+        const std::vector<IdxType> &indices) {
+    Eigen::Vector3d mean;
+    Eigen::Matrix3d covariance;
+    Eigen::Matrix<double, 9, 1> cumulants;
+    cumulants.setZero();
+    for (const auto &idx : indices) {
+        const Eigen::Vector3d &point = points[idx];
+        cumulants(0) += point(0);
+        cumulants(1) += point(1);
+        cumulants(2) += point(2);
+        cumulants(3) += point(0) * point(0);
+        cumulants(4) += point(0) * point(1);
+        cumulants(5) += point(0) * point(2);
+        cumulants(6) += point(1) * point(1);
+        cumulants(7) += point(1) * point(2);
+        cumulants(8) += point(2) * point(2);
+    }
+    cumulants /= (double)indices.size();
+    mean(0) = cumulants(0);
+    mean(1) = cumulants(1);
+    mean(2) = cumulants(2);
+    covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
+    covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
+    covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
+    covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
+    covariance(1, 0) = covariance(0, 1);
+    covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
+    covariance(2, 0) = covariance(0, 2);
+    covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
+    covariance(2, 1) = covariance(1, 2);
+    return std::make_tuple(mean, covariance);
+}
+
+template Eigen::Matrix3d ComputeCovariance(
+        const std::vector<Eigen::Vector3d> &points,
+        const std::vector<size_t> &indices);
+template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const std::vector<Eigen::Vector3d> &points,
+        const std::vector<size_t> &indices);
+template Eigen::Matrix3d ComputeCovariance(
+        const std::vector<Eigen::Vector3d> &points,
+        const std::vector<int> &indices);
+template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const std::vector<Eigen::Vector3d> &points,
+        const std::vector<int> &indices);
 }  // namespace utility
 }  // namespace open3d

@@ -45,7 +45,9 @@ public:
     /// \param dataset_points Dataset points for constructing search index. Must
     /// be 2D, with shape {n, d}.
     NearestNeighborSearch(const Tensor &dataset_points)
-        : dataset_points_(dataset_points){};
+        : dataset_points_(dataset_points) {
+        AssertNotCUDA(dataset_points);
+    };
 
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
@@ -75,14 +77,13 @@ public:
     /// Perform knn search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
-    /// \param knn Number of neighbor to search.
+    /// \param knn Number of neighbors to search per query point.
     /// \return Ap air of Tensors, (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distainces: Tensor of shape {n, knn}, with dtype Float64.
     std::pair<Tensor, Tensor> KnnSearch(const Tensor &query_points, int knn);
 
-    /// Perform fixed radius search. All query points are searched with the same
-    /// radius value.
+    /// Perform fixed radius search. All query points share the same radius.
     ///
     /// \param query_points Data points for querying. Must be 2D, with shape {n,
     /// d}.
@@ -97,7 +98,7 @@ public:
     std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
             const Tensor &query_points, T radius);
 
-    /// Perform multi-radius search. Each query point has one radius.
+    /// Perform multi-radius search. Each query point has an independent radius.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param radii Radii of query points. Each query point has one radius.
@@ -129,6 +130,9 @@ private:
     bool SetIndex();
     template <class T>
     NanoFlannIndex<T> *cast_index();
+
+    /// Assert a Tensor is not CUDA tensoer. This will be removed in the future.
+    void AssertNotCUDA(const Tensor &t) const;
 
 protected:
     std::unique_ptr<NanoFlannIndexBase> nanoflann_index_;

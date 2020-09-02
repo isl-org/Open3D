@@ -60,6 +60,7 @@ bool NearestNeighborSearch::HybridIndex() { return SetIndex(); };
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
                 "[NearestNeighborSearch::KnnSearch] Index is not set.");
@@ -79,6 +80,7 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
 template <typename T>
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
         const Tensor& query_points, T radius) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
                 "[NearestNeighborSearch::FixedRadiusSearch] Index is not set.");
@@ -98,6 +100,7 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
         const Tensor& query_points, const Tensor& radii) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
                 "[NearestNeighborSearch::MultiRadiusSearch] Index is not set.");
@@ -128,6 +131,7 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
 template <typename T>
 std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         const Tensor& query_points, T radius, int max_knn) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
                 "[NearestNeighborSearch::HybridSearch] Index is not set.");

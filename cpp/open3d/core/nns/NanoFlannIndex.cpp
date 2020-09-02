@@ -223,7 +223,6 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex<T>::SearchRadius(
     int64_t num_query_points = query_shape[0];
     Tensor radii(std::vector<T>(num_query_points, radius), {num_query_points},
                  Dtype::FromType<T>());
-    // std::vector<T> radii(num_query_points, radius);
 
     return SearchRadius(query_points, radii);
 };

@@ -9,6 +9,7 @@ Advanced
     multiway_registration
     rgbd_integration
     voxelization
+    iss_keypoint_detector
     color_map_optimization
     mesh_deformation
     surface_reconstruction
