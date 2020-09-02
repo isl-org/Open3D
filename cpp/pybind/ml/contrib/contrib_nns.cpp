@@ -96,7 +96,7 @@ const core::Tensor KnnSearch(const core::Tensor& query_points,
 /// \return Tensor of shape {n_query_points, max_neighbor}, dtype Int32, where
 /// max_neighbor is the maximum number neighbor of neighbors for all query
 /// points. For query points with less than max_neighbor neighbors, the neighbor
-/// index will be padded by the query pont index.
+/// index will be padded by -1.
 const core::Tensor RadiusSearch(const core::Tensor& query_points,
                                 const core::Tensor& dataset_points,
                                 const core::Tensor& query_batches,
@@ -192,6 +192,18 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
         batched_indices[batch_idx] = indices;
         batched_num_neighbors[batch_idx] = num_neighbors;
     }
+
+    // Find global maximum number of neighbors.
+    int64_t max_num_neighbors = 0;
+    for (const auto& num_neighbors : batched_num_neighbors) {
+        utility::LogInfo("num_neighbors: {}", num_neighbors.ToString());
+        max_num_neighbors = std::max(num_neighbors.Max({0}).Item<int64_t>(),
+                                     max_num_neighbors);
+    }
+    utility::LogInfo("max_num_neighbors: {}", max_num_neighbors);
+
+    // Convert to the required output format.
+    // core::Tensor result();
 
     return core::Tensor();
 }
