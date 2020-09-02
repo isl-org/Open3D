@@ -34,7 +34,26 @@ namespace open3d {
 namespace ml {
 namespace contrib {
 
-void pybind_contrib_nns(py::module& m_contrib) {}
+const core::Tensor KnnSearch(const core::Tensor& query_points,
+                             const core::Tensor& dataset_points,
+                             int knn) {
+    return core::Tensor();
+}
+
+const core::Tensor RadiusSearch(const core::Tensor& query_points,
+                                const core::Tensor& dataset_points,
+                                const core::Tensor& query_batches,
+                                const core::Tensor& dataset_batches,
+                                double radius) {
+    return core::Tensor();
+}
+
+void pybind_contrib_nns(py::module& m_contrib) {
+    m_contrib.def("knn", &KnnSearch, "query_points"_a, "dataset_points"_a,
+                  "knn"_a);
+    m_contrib.def("knn", &RadiusSearch, "query_points"_a, "dataset_points"_a,
+                  "query_batches"_a, "dataset_batches"_a, "radius"_a);
+}
 
 }  // namespace contrib
 }  // namespace ml
