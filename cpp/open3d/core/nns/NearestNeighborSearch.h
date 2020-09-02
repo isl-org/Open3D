@@ -77,7 +77,7 @@ public:
     /// Perform knn search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
-    /// \param knn Number of neighbor to search.
+    /// \param knn Number of neighbors to search per query point.
     /// \return Ap air of Tensors, (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distainces: Tensor of shape {n, knn}, with dtype Float64.

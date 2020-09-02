@@ -41,16 +41,20 @@ void pybind_core_nns(py::module &m) {
     py::module m_nns = m.def_submodule("nns");
     static const std::unordered_map<std::string, std::string>
             map_nearest_neighbor_search_method_docs = {
-                    {"query_points", "The input query tensor."},
-                    {"radii", "Search multiple radii"},
-                    {"radius", "Search fixed radius."},
-                    {"max_nn",
-                     "At maximum, ``max_nn`` neighbors will be searched."},
-                    {"knn", "``knn`` neighbors will be searched."}};
+                    {"query_points", "The query tensor of shape {n_query, d}."},
+                    {"radii",
+                     "Tensor of shape {n_query,} containing multiple radii, "
+                     "one for each query point."},
+                    {"radius", "Radius value for radius search."},
+                    {"max_knn",
+                     "Maximum number of neighbors to search per query point."},
+                    {"knn", "Number of neighbors to search per query point."}};
 
     py::class_<NearestNeighborSearch, std::shared_ptr<NearestNeighborSearch>>
             nns(m_nns, "NearestNeighborSearch",
-                "NearestNeighborSearch class for nearest neighbor search.");
+                "NearestNeighborSearch class for nearest neighbor search. "
+                "Construct a NearestNeighborSearch object with input "
+                "dataset_points of shape {n_dataset, d}.");
 
     // Constructors.
     nns.def(py::init<const Tensor &>(), "dataset_points"_a);
