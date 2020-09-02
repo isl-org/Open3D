@@ -77,9 +77,8 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
     }
 }
 
-template <typename T>
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
-        const Tensor& query_points, T radius) {
+        const Tensor& query_points, double radius) {
     AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
@@ -90,12 +89,17 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
                 "[NearestNeighbor::FixedRadiusSearch] reference and query have "
                 "different dtype.");
     }
-    if (dataset_points_.GetDtype() != Dtype::FromType<T>()) {
+    Dtype dtype = dataset_points_.GetDtype();
+    if (dtype == Dtype::Float64) {
+        return cast_index<double>()->SearchRadius(query_points, radius);
+    } else if (dtype == Dtype::Float32) {
+        return cast_index<float>()->SearchRadius(query_points,
+                                                 static_cast<float>(radius));
+    } else {
         utility::LogError(
-                "[NearestNeighbor::FixedRadiusSearch] radius and data have "
-                "different data type.");
+                "Unsupported data type. NearestNeighborSearch only supports "
+                "Float32 and Float64.");
     }
-    return cast_index<T>()->SearchRadius(query_points, radius);
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
@@ -128,48 +132,66 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
     }
 }
 
-template <typename T>
 std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
-        const Tensor& query_points, T radius, int max_knn) {
+        const Tensor& query_points, double radius, int max_knn) {
     AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
                 "[NearestNeighborSearch::HybridSearch] Index is not set.");
     }
-    std::pair<Tensor, Tensor> result =
-            cast_index<T>()->SearchKnn(query_points, max_knn);
+    Dtype dtype = query_points.GetDtype();
+    std::pair<Tensor, Tensor> result;
+    if (dtype == Dtype::Float64) {
+        result = cast_index<double>()->SearchKnn(query_points, max_knn);
+    } else if (dtype == Dtype::Float32) {
+        result = cast_index<float>()->SearchKnn(query_points, max_knn);
+    } else {
+        utility::LogError(
+                "Unsupported data type. NearestNeighborSearch only supports "
+                "Float32 and Float64.");
+    }
     Tensor indices = result.first;
     Tensor distances = result.second;
     SizeVector size = distances.GetShape();
 
     std::vector<int64_t> indices_vec = indices.ToFlatVector<int64_t>();
-    std::vector<T> distances_vec = distances.ToFlatVector<T>();
 
-    for (unsigned int i = 0; i < distances_vec.size(); i++) {
-        if (distances_vec[i] > radius) {
-            distances_vec[i] = 0;
-            indices_vec[i] = -1;
+    if (dtype == Dtype::Float64) {
+        std::vector<double> distances_vec = distances.ToFlatVector<double>();
+        for (unsigned int i = 0; i < distances_vec.size(); i++) {
+            if (distances_vec[i] > radius) {
+                distances_vec[i] = 0;
+                indices_vec[i] = -1;
+            }
         }
+        Tensor indices_new(indices_vec, size, Dtype::Int64);
+        Tensor distances_new(distances_vec, size, Dtype::FromType<double>());
+        return std::make_pair(indices_new, distances_new);
+    } else if (dtype == Dtype::Float32) {
+        std::vector<float> distances_vec = distances.ToFlatVector<float>();
+        for (unsigned int i = 0; i < distances_vec.size(); i++) {
+            if (distances_vec[i] > static_cast<float>(radius)) {
+                distances_vec[i] = 0;
+                indices_vec[i] = -1;
+            }
+        }
+        Tensor indices_new(indices_vec, size, Dtype::Int64);
+        Tensor distances_new(distances_vec, size, Dtype::FromType<float>());
+        return std::make_pair(indices_new, distances_new);
+    } else {
+        utility::LogError(
+                "Unsupported data type. NearestNeighborSearch only supports "
+                "Float32 and Float64.");
     }
-
-    Tensor indices_new(indices_vec, size, Dtype::Int64);
-    Tensor distances_new(distances_vec, size, Dtype::FromType<T>());
-    return std::make_pair(indices_new, distances_new);
 }
 
-template std::tuple<Tensor, Tensor, Tensor>
-NearestNeighborSearch::FixedRadiusSearch(const Tensor& query_points,
-                                         double radius);
-
-template std::tuple<Tensor, Tensor, Tensor>
-NearestNeighborSearch::FixedRadiusSearch(const Tensor& query_points,
-                                         float radius);
-
-template std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
-        const Tensor& query_points, double radius, int max_knn);
-
-template std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
-        const Tensor& query_points, float radius, int max_knn);
+void NearestNeighborSearch::AssertNotCUDA(const Tensor& t) const {
+    if (t.GetDevice().GetType() == Device::DeviceType::CUDA) {
+        utility::LogError(
+                "TODO: NearestNeighborSearch does not support CUDA tensor "
+                "yet.");
+    }
+}
 
 }  // namespace nns
 }  // namespace core

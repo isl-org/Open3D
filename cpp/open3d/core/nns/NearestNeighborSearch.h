@@ -80,7 +80,8 @@ public:
     /// \param knn Number of neighbors to search per query point.
     /// \return Ap air of Tensors, (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distainces: Tensor of shape {n, knn}, with dtype Float64.
+    /// - distainces: Tensor of shape {n, knn}, with same dtype with
+    /// query_points.
     std::pair<Tensor, Tensor> KnnSearch(const Tensor &query_points, int knn);
 
     /// Perform fixed radius search. All query points share the same radius.
@@ -92,11 +93,10 @@ public:
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
     /// Int64.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, with
-    /// dtype Float64.
+    /// same dtype widh query_points.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
-    template <typename T>
     std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
-            const Tensor &query_points, T radius);
+            const Tensor &query_points, double radius);
 
     /// Perform multi-radius search. Each query point has an independent radius.
     ///
@@ -107,7 +107,7 @@ public:
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
     /// Int64.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, with
-    /// dtype Float64.
+    /// same dtype with query_points.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> MultiRadiusSearch(
             const Tensor &query_points, const Tensor &radii);
@@ -120,10 +120,10 @@ public:
     /// \param max_knn Maximum number of neighbor to search per query.
     /// \return Pair of Tensors, (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distainces: Tensor of shape {n, knn}, with dtype Float64.
-    template <typename T>
+    /// - distainces: Tensor of shape {n, knn}, with same dtype with
+    /// query_points.
     std::pair<Tensor, Tensor> HybridSearch(const Tensor &query_points,
-                                           T radius,
+                                           double radius,
                                            int max_knn);
 
 private:
