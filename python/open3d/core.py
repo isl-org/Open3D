@@ -7,13 +7,13 @@ if _build_config["BUILD_CUDA_MODULE"]:
         from open3d.cuda.pybind.core import cuda
         if cuda.is_available():
             from open3d.cuda.pybind.core import (
-                Dtype, DtypeCode, Device, cuda, NoneType, TensorList,
+                Dtype, DtypeCode, Device, cuda, nns, NoneType, TensorList,
                 SizeVector, matmul as pybind_matmul, lstsq as pybind_lstsq,
                 solve as pybind_solve, inv as pybind_inv, svd as pybind_svd)
     except ImportError:
         pass
 if 'Dtype' not in locals():
-    from open3d.cpu.pybind.core import (Dtype, DtypeCode, Device, cuda,
+    from open3d.cpu.pybind.core import (Dtype, DtypeCode, Device, cuda, nns,
                                         NoneType, TensorList, SizeVector, matmul
                                         as pybind_matmul, lstsq as pybind_lstsq,
                                         solve as pybind_solve, inv as

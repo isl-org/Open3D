@@ -71,11 +71,8 @@ public:
     // *******
 
     // Constructor
-    PointXYZ() {
-        x = 0;
-        y = 0;
-        z = 0;
-    }
+    PointXYZ() = default;
+
     PointXYZ(float x0, float y0, float z0) {
         x = x0;
         y = y0;
