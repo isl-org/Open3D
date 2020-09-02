@@ -376,7 +376,12 @@ public:
     /// IndexExtract, the dimension \p dim will be removed.
     Tensor IndexExtract(int64_t dim, int64_t idx) const;
 
-    /// Slice Tensor
+    /// Slice Tensor.
+    ///
+    /// \param dim The dimension to slice.
+    /// \param start The start index (inclusive).
+    /// \param stop The end index (exclusive).
+    /// \param step Pick one eleemnt for every \p step elements.
     Tensor Slice(int64_t dim,
                  int64_t start,
                  int64_t stop,
