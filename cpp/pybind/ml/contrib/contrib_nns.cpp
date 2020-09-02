@@ -248,7 +248,7 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
                                                 .Slice(1, 0, num_neighbor);
             core::Tensor indices_slice = indices.Slice(
                     0, indices_start_idx, indices_start_idx + num_neighbor);
-            result_slice = indices_slice.View({1, num_neighbor});
+            result_slice.AsRvalue() = indices_slice.View({1, num_neighbor});
             indices_start_idx += num_neighbor;
         }
     }
