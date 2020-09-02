@@ -663,7 +663,8 @@ void FilamentScene::UpdateGradientShader(GeometryMaterialInstance& geom_mi) {
             .SetParameter("isLUT", isLUT)
             .SetParameter("pointSize", geom_mi.properties.point_size)
             .SetTexture("gradient", geom_mi.maps.gradient_texture,
-                        rendering::TextureSamplerParameters::LinearClamp())
+                  isLUT ? rendering::TextureSamplerParameters::Simple()
+                        : rendering::TextureSamplerParameters::LinearClamp())
             .Finish();
 }
 
