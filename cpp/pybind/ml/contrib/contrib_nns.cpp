@@ -232,10 +232,12 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
         core::Tensor num_neighbors = batched_num_neighbors[batch_idx];
 
         // Sanity check.
-        int64_t batch_size = result_end_idx - result_start_idx + 1;
+        int64_t batch_size =
+                result_end_idx - result_start_idx;  // Exclusive result_end_idx.
         if (num_neighbors.GetShape()[0] != batch_size) {
-            utility::LogError("Sanity check failed, {} != batchsize {}.",
-                              num_neighbors.GetShape()[0], batch_size);
+            utility::LogError(
+                    "Sanity check failed, batch_id {}: {} != batchsize {}.",
+                    batch_idx, num_neighbors.GetShape()[0], batch_size);
         }
     }
 
