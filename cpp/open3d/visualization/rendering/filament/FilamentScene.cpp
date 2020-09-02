@@ -653,14 +653,11 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
 }
 
 void FilamentScene::UpdateGradientShader(GeometryMaterialInstance& geom_mi) {
-    float isLUT =
-            (geom_mi.properties.gradient->GetMode() == Gradient::Mode::kLUT
-                     ? 1.0f
-                     : 0.0f);
+    bool isLUT = (geom_mi.properties.gradient->GetMode() == Gradient::Mode::kLUT);
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetParameter("minValue", geom_mi.properties.scalar_min)
             .SetParameter("maxValue", geom_mi.properties.scalar_max)
-            .SetParameter("isLUT", isLUT)
+            .SetParameter("isLUT", (isLUT ? 1.0f : 0.0f))
             .SetParameter("pointSize", geom_mi.properties.point_size)
             .SetTexture("gradient", geom_mi.maps.gradient_texture,
                   isLUT ? rendering::TextureSamplerParameters::Simple()
