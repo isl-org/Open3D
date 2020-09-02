@@ -157,6 +157,7 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
                 dataset_batches.Sum({0}).Item<int32_t>(),
                 dataset_points.GetShape()[0]);
     }
+    int64_t num_query_points = query_points.GetShape()[0];
 
     // Call radius search for each batch.
     std::vector<core::Tensor> batched_indices(num_batches);
@@ -209,8 +210,34 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
     }
     utility::LogInfo("max_num_neighbors: {}", max_num_neighbors);
 
-    // Convert to the required output format.
-    // core::Tensor result();
+    // Convert to the required output format. Pad with -1.
+    core::Tensor result = core::Tensor::Ones(
+            {num_query_points, max_num_neighbors}, core::Dtype::Int64);
+    result *= -1;
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int64_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
+        // TODO: we need a prefix-sum for 1D Tensor.
+        // start_idx: inclusive
+        // end_idx: exclusive
+        int32_t result_start_idx =
+                query_batches.Slice(0, 0, batch_idx).Sum({0}).Item<int32_t>();
+        int32_t result_end_idx = query_batches.Slice(0, 0, batch_idx + 1)
+                                         .Sum({0})
+                                         .Item<int32_t>();
+
+        core::Tensor indices = batched_indices[batch_idx];
+        core::Tensor num_neighbors = batched_num_neighbors[batch_idx];
+
+        // Sanity check.
+        int64_t batch_size = result_end_idx - result_start_idx + 1;
+        if (num_neighbors.GetShape()[0] != batch_size) {
+            utility::LogError("Sanity check failed, {} != batchsize {}.",
+                              num_neighbors.GetShape()[0], batch_size);
+        }
+    }
 
     return core::Tensor();
 }
