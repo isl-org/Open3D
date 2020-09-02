@@ -109,7 +109,11 @@ Tensor PyArrayToTensor(py::array array, bool inplace) {
     Dtype dtype = pybind_utils::ArrayFormatToDtype(info.format);
     Device device("CPU:0");
 
-    std::function<void(void*)> deleter = [](void*) -> void {};
+    array.inc_ref();
+    std::function<void(void*)> deleter = [array](void*) -> void {
+        AutoGIL gil;
+        array.dec_ref();
+    };
     auto blob = std::make_shared<Blob>(device, info.ptr, deleter);
     Tensor t_inplace(shape, strides, info.ptr, dtype, blob);
 

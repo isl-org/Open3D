@@ -79,15 +79,14 @@ def test_radius_search():
          [0.0, 0.0, 0.2], [0.0, 0.1, 0.0], [0.0, 0.1, 0.1], [0.0, 0.1, 0.2],
          [0.0, 0.2, 0.0], [0.0, 0.2, 0.1], [0.0, 0.2, 0.2], [0.1, 0.0, 0.0]],
         dtype=np.float32)
-    query_batches = np.array([1, 2], dtype=np.int32)
-    dataset_batches = np.array([10, 10], dtype=np.int32)
     radius = 0.1
 
-    indices = radius_search(o3c.Tensor.from_numpy(query_points),
-                            o3c.Tensor.from_numpy(dataset_points),
-                            o3c.Tensor.from_numpy(query_batches),
-                            o3c.Tensor.from_numpy(dataset_batches),
-                            radius).numpy()
+    indices = radius_search(
+        o3c.Tensor.from_numpy(query_points),
+        o3c.Tensor.from_numpy(dataset_points),
+        o3c.Tensor.from_numpy(np.array([1, 2], dtype=np.int32)),
+        o3c.Tensor.from_numpy(np.array([10, 10], dtype=np.int32)),
+        radius).numpy()
     np.testing.assert_equal(
         indices, np.array([[1, 4], [11, 14], [11, 14]], dtype=np.int32))
     assert indices.dtype == np.int32
@@ -95,28 +94,23 @@ def test_radius_search():
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1],
                        [5, 0, 0], [5, 1, 0]],
                       dtype=np.float32)
-    query_batches = np.array([2, 3, 2], dtype=np.int32)
-    dataset_batches = np.array([3, 2, 2], dtype=np.int32)
 
-    indices = radius_search(o3c.Tensor.from_numpy(points),
-                            o3c.Tensor.from_numpy(points),
-                            o3c.Tensor.from_numpy(query_batches),
-                            o3c.Tensor.from_numpy(dataset_batches),
-                            11.0).numpy()
+    indices = radius_search(
+        o3c.Tensor.from_numpy(points), o3c.Tensor.from_numpy(points),
+        o3c.Tensor.from_numpy(np.array([2, 3, 2], dtype=np.int32)),
+        o3c.Tensor.from_numpy(np.array([3, 2, 2], dtype=np.int32)),
+        11.0).numpy()
 
     indices_ref = np.array([[0, 1, 2], [1, 0, 2], [3, 4, -1], [3, 4, -1],
                             [4, 3, -1], [5, 6, -1], [6, 5, -1]],
                            dtype=np.int32)
     np.testing.assert_equal(indices, indices_ref)
 
-    query_batches = np.array([1, 1, 5], dtype=np.int32)
-    dataset_batches = np.array([5, 1, 1], dtype=np.int32)
-
-    indices = radius_search(o3c.Tensor.from_numpy(points),
-                            o3c.Tensor.from_numpy(points),
-                            o3c.Tensor.from_numpy(query_batches),
-                            o3c.Tensor.from_numpy(dataset_batches),
-                            11.0).numpy()
+    indices = radius_search(
+        o3c.Tensor.from_numpy(points), o3c.Tensor.from_numpy(points),
+        o3c.Tensor.from_numpy(np.array([1, 1, 5], dtype=np.int32)),
+        o3c.Tensor.from_numpy(np.array([5, 1, 1], dtype=np.int32)),
+        11.0).numpy()
 
     indices_ref = np.ones((7, 5), dtype=np.int32) * -1
     indices_ref[0] = [0, 1, 2, 3, 4]
@@ -124,6 +118,8 @@ def test_radius_search():
     np.testing.assert_equal(indices, indices_ref)
 
     # Test wrong dtype.
+    query_batches = np.array([1, 1, 5], dtype=np.int32)
+    dataset_batches = np.array([5, 1, 1], dtype=np.int32)
     with pytest.raises(RuntimeError):
         indices = radius_search(
             o3c.Tensor.from_numpy(np.array(points, dtype=np.int32)),
