@@ -40,11 +40,11 @@ NanoFlannIndex<T>* NearestNeighborSearch::cast_index() {
 }
 
 bool NearestNeighborSearch::SetIndex() {
-    core::Dtype dtype = dataset_points_.GetDtype();
-    if (dtype == core::Dtype::Float64) {
+    Dtype dtype = dataset_points_.GetDtype();
+    if (dtype == Dtype::Float64) {
         nanoflann_index_.reset(new NanoFlannIndex<double>());
         return cast_index<double>()->SetTensorData(dataset_points_);
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == Dtype::Float32) {
         nanoflann_index_.reset(new NanoFlannIndex<float>());
         return cast_index<float>()->SetTensorData(dataset_points_);
     } else {
@@ -58,16 +58,16 @@ bool NearestNeighborSearch::MultiRadiusIndex() { return SetIndex(); };
 bool NearestNeighborSearch::FixedRadiusIndex() { return SetIndex(); }
 bool NearestNeighborSearch::HybridIndex() { return SetIndex(); };
 
-std::pair<core::Tensor, core::Tensor> NearestNeighborSearch::KnnSearch(
-        const core::Tensor& query_points, int knn) {
+std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
+        const Tensor& query_points, int knn) {
     if (!nanoflann_index_) {
         utility::LogError(
                 "[NearestNeighborSearch::KnnSearch] Index is not set.");
     }
-    core::Dtype dtype = dataset_points_.GetDtype();
-    if (dtype == core::Dtype::Float64) {
+    Dtype dtype = dataset_points_.GetDtype();
+    if (dtype == Dtype::Float64) {
         return cast_index<double>()->SearchKnn(query_points, knn);
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == Dtype::Float32) {
         return cast_index<float>()->SearchKnn(query_points, knn);
     } else {
         utility::LogError(
@@ -77,9 +77,8 @@ std::pair<core::Tensor, core::Tensor> NearestNeighborSearch::KnnSearch(
 }
 
 template <typename T>
-std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighborSearch::FixedRadiusSearch(const core::Tensor& query_points,
-                                         T radius) {
+std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
+        const Tensor& query_points, T radius) {
     if (!nanoflann_index_) {
         utility::LogError(
                 "[NearestNeighborSearch::FixedRadiusSearch] Index is not set.");
@@ -89,7 +88,7 @@ NearestNeighborSearch::FixedRadiusSearch(const core::Tensor& query_points,
                 "[NearestNeighbor::FixedRadiusSearch] reference and query have "
                 "different dtype.");
     }
-    if (dataset_points_.GetDtype() != core::Dtype::FromType<T>()) {
+    if (dataset_points_.GetDtype() != Dtype::FromType<T>()) {
         utility::LogError(
                 "[NearestNeighbor::FixedRadiusSearch] radius and data have "
                 "different data type.");
@@ -97,14 +96,13 @@ NearestNeighborSearch::FixedRadiusSearch(const core::Tensor& query_points,
     return cast_index<T>()->SearchRadius(query_points, radius);
 }
 
-std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighborSearch::MultiRadiusSearch(const core::Tensor& query_points,
-                                         const core::Tensor& radii) {
+std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
+        const Tensor& query_points, const Tensor& radii) {
     if (!nanoflann_index_) {
         utility::LogError(
                 "[NearestNeighborSearch::MultiRadiusSearch] Index is not set.");
     }
-    core::Dtype dtype = dataset_points_.GetDtype();
+    Dtype dtype = dataset_points_.GetDtype();
     if (dtype != query_points.GetDtype()) {
         utility::LogError(
                 "[NearestNeighbor::MultiRadiusSearch] reference and query have "
@@ -116,9 +114,9 @@ NearestNeighborSearch::MultiRadiusSearch(const core::Tensor& query_points,
                 "different "
                 "data type.");
     }
-    if (dtype == core::Dtype::Float64) {
+    if (dtype == Dtype::Float64) {
         return cast_index<double>()->SearchRadius(query_points, radii);
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == Dtype::Float32) {
         return cast_index<float>()->SearchRadius(query_points, radii);
     } else {
         utility::LogError(
@@ -128,17 +126,17 @@ NearestNeighborSearch::MultiRadiusSearch(const core::Tensor& query_points,
 }
 
 template <typename T>
-std::pair<core::Tensor, core::Tensor> NearestNeighborSearch::HybridSearch(
-        const core::Tensor& query_points, T radius, int max_knn) {
+std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
+        const Tensor& query_points, T radius, int max_knn) {
     if (!nanoflann_index_) {
         utility::LogError(
                 "[NearestNeighborSearch::HybridSearch] Index is not set.");
     }
-    std::pair<core::Tensor, core::Tensor> result =
+    std::pair<Tensor, Tensor> result =
             cast_index<T>()->SearchKnn(query_points, max_knn);
-    core::Tensor indices = result.first;
-    core::Tensor distances = result.second;
-    core::SizeVector size = distances.GetShape();
+    Tensor indices = result.first;
+    Tensor distances = result.second;
+    SizeVector size = distances.GetShape();
 
     std::vector<int64_t> indices_vec = indices.ToFlatVector<int64_t>();
     std::vector<T> distances_vec = distances.ToFlatVector<T>();
@@ -150,28 +148,24 @@ std::pair<core::Tensor, core::Tensor> NearestNeighborSearch::HybridSearch(
         }
     }
 
-    core::Tensor indices_new(indices_vec, size, core::Dtype::Int64);
-    core::Tensor distances_new(distances_vec, size, core::Dtype::FromType<T>());
+    Tensor indices_new(indices_vec, size, Dtype::Int64);
+    Tensor distances_new(distances_vec, size, Dtype::FromType<T>());
     return std::make_pair(indices_new, distances_new);
 }
 
-template std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighborSearch::FixedRadiusSearch(const core::Tensor& query_points,
+template std::tuple<Tensor, Tensor, Tensor>
+NearestNeighborSearch::FixedRadiusSearch(const Tensor& query_points,
                                          double radius);
 
-template std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighborSearch::FixedRadiusSearch(const core::Tensor& query_points,
+template std::tuple<Tensor, Tensor, Tensor>
+NearestNeighborSearch::FixedRadiusSearch(const Tensor& query_points,
                                          float radius);
 
-template std::pair<core::Tensor, core::Tensor>
-NearestNeighborSearch::HybridSearch(const core::Tensor& query_points,
-                                    double radius,
-                                    int max_knn);
+template std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
+        const Tensor& query_points, double radius, int max_knn);
 
-template std::pair<core::Tensor, core::Tensor>
-NearestNeighborSearch::HybridSearch(const core::Tensor& query_points,
-                                    float radius,
-                                    int max_knn);
+template std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
+        const Tensor& query_points, float radius, int max_knn);
 
 }  // namespace nns
 }  // namespace core
