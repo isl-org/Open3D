@@ -80,7 +80,7 @@ const core::Tensor KnnSearch(const core::Tensor& query_points,
     core::Tensor distances;
     std::tie(indices, distances) =
             nns.KnnSearch(query_points.To(core::Dtype::Float64), knn);
-    return indices.To(core::Dtype::Float32);
+    return indices.To(core::Dtype::Int32);
 }
 
 /// TOOD: This is a temory wrapper for 3DML repositiory use. In the future, the
@@ -94,10 +94,11 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
 }
 
 void pybind_contrib_nns(py::module& m_contrib) {
-    m_contrib.def("knn", &KnnSearch, "query_points"_a, "dataset_points"_a,
-                  "knn"_a);
-    m_contrib.def("knn", &RadiusSearch, "query_points"_a, "dataset_points"_a,
-                  "query_batches"_a, "dataset_batches"_a, "radius"_a);
+    m_contrib.def("knn_search", &KnnSearch, "query_points"_a,
+                  "dataset_points"_a, "knn"_a);
+    m_contrib.def("radius_search", &RadiusSearch, "query_points"_a,
+                  "dataset_points"_a, "query_batches"_a, "dataset_batches"_a,
+                  "radius"_a);
 }
 
 }  // namespace contrib
