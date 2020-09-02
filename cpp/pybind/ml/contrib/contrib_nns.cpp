@@ -204,11 +204,9 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
     int64_t max_num_neighbors = 0;
     utility::LogInfo("");
     for (const auto& num_neighbors : batched_num_neighbors) {
-        utility::LogInfo("num_neighbors: {}", num_neighbors.ToString());
         max_num_neighbors = std::max(num_neighbors.Max({0}).Item<int64_t>(),
                                      max_num_neighbors);
     }
-    utility::LogInfo("max_num_neighbors: {}", max_num_neighbors);
 
     // Convert to the required output format. Pad with -1.
     core::Tensor result = core::Tensor::Ones(
