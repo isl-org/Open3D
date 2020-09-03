@@ -234,7 +234,8 @@ void batch_nanoflann_neighbors(std::vector<PointXYZ>& queries,
 
     // Counting vector
     int max_count = 0;
-    std::vector<std::vector<std::pair<size_t, float>>> all_inds_dists(queries.size());
+    std::vector<std::vector<std::pair<size_t, float>>> all_inds_dists(
+            queries.size());
 
     // batch index
     int b = 0;
@@ -261,7 +262,7 @@ void batch_nanoflann_neighbors(std::vector<PointXYZ>& queries,
     // Build KDTree for the first batch element
     current_cloud.pts =
             std::vector<PointXYZ>(supports.begin() + sum_sb,
-                             supports.begin() + sum_sb + s_batches[b]);
+                                  supports.begin() + sum_sb + s_batches[b]);
     index = new my_kd_tree_t(3, current_cloud, tree_params);
     index->buildIndex();
 
@@ -281,9 +282,9 @@ void batch_nanoflann_neighbors(std::vector<PointXYZ>& queries,
 
             // Change the points
             current_cloud.pts.clear();
-            current_cloud.pts =
-                    std::vector<PointXYZ>(supports.begin() + sum_sb,
-                                     supports.begin() + sum_sb + s_batches[b]);
+            current_cloud.pts = std::vector<PointXYZ>(
+                    supports.begin() + sum_sb,
+                    supports.begin() + sum_sb + s_batches[b]);
 
             // Build KDTree of the current element of the batch
             delete index;

@@ -32,8 +32,8 @@ namespace open3d {
 namespace ml {
 namespace contrib {
 
-/// TOOD: This is a temporary function for 3DML repositiory use. In the future, the
-/// native Open3D Python API should be improved and used.
+/// TOOD: This is a temporary function for 3DML repositiory use. In the future,
+/// the native Open3D Python API should be improved and used.
 ///
 /// Nearest neighbours within a given radius.
 /// For each query point, finds a set of neighbor indices whose
@@ -44,8 +44,8 @@ void ordered_neighbors(std::vector<PointXYZ>& queries,
                        std::vector<int>& neighbors_indices,
                        float radius);
 
-/// TOOD: This is a temporary function for 3DML repositiory use. In the future, the
-/// native Open3D Python API should be improved and used.
+/// TOOD: This is a temporary function for 3DML repositiory use. In the future,
+/// the native Open3D Python API should be improved and used.
 ///
 /// Nearest neighbours within a radius with batching.
 /// queries and supports are sliced with their respective batch
@@ -58,8 +58,8 @@ void batch_ordered_neighbors(std::vector<PointXYZ>& queries,
                              std::vector<int>& neighbors_indices,
                              float radius);
 
-/// TOOD: This is a temporary function for 3DML repositiory use. In the future, the
-/// native Open3D Python API should be improved and used.
+/// TOOD: This is a temporary function for 3DML repositiory use. In the future,
+/// the native Open3D Python API should be improved and used.
 ///
 /// Nearest neighbours withing a radius with batching.
 /// Optimised version of batch_ordered_neighbors.

@@ -103,12 +103,12 @@ public:
                 (PointXYZ*)supports_tensor.flat<float>().data() + Ns);
 
         // Batches lengths
-        std::vector<int> q_batches =
-                std::vector<int>((int*)q_batches_tensor.flat<int>().data(),
-                            (int*)q_batches_tensor.flat<int>().data() + Nb);
-        std::vector<int> s_batches =
-                std::vector<int>((int*)s_batches_tensor.flat<int>().data(),
-                            (int*)s_batches_tensor.flat<int>().data() + Nb);
+        std::vector<int> q_batches = std::vector<int>(
+                (int*)q_batches_tensor.flat<int>().data(),
+                (int*)q_batches_tensor.flat<int>().data() + Nb);
+        std::vector<int> s_batches = std::vector<int>(
+                (int*)s_batches_tensor.flat<int>().data(),
+                (int*)s_batches_tensor.flat<int>().data() + Nb);
 
         // Create result containers
         std::vector<int> neighbors_indices;

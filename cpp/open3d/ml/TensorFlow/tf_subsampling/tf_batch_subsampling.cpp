@@ -83,7 +83,7 @@ public:
         // Batches lengths
         std::vector<int> batches =
                 std::vector<int>((int*)batches_tensor.flat<int>().data(),
-                            (int*)batches_tensor.flat<int>().data() + Nb);
+                                 (int*)batches_tensor.flat<int>().data() + Nb);
 
         // Unsupported label and features
         std::vector<float> original_features;
