@@ -8,7 +8,13 @@
 # - BUILD_PYTORCH_OPS
 # - BUILD_RPC_INTERFACE
 # - LOW_MEM_USAGE
+# Optional:
+# - BUILD_WHEEL_ONLY
 
+BUILD_WHEEL_ONLY=${BUILD_WHEEL_ONLY:=OFF}
+CUDA_VERSION=("10-1" "10.1")
+CUDNN_MAJOR_VERSION=7
+CUDNN_VERSION="7.6.5.32-1+cuda10.1"
 TENSORFLOW_VER="2.3.0"
 TORCH_GLNX_VER=("1.6.0+cu101" "1.6.0+cpu")
 TORCH_MACOS_VER="1.6.0"
@@ -54,6 +60,41 @@ reportRun() {
     "$@"
 }
 
+install_cuda_deb() {
+    echo "Installing CUDA ${CUDA_VERSION[1]} with apt ..."
+    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+    sudo apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
+    sudo apt-get install --yes "cuda-toolkit-${CUDA_VERSION[0]}"
+    if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
+        echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
+        dpkg -L libcublas10 libcublas-dev | while read -r cufile ; do
+            if [ -f "$cufile" ] && [ ! -e "${cufile/10.2/10.1}" ] ; then
+                set -x
+                sudo ln -s "$cufile" "${cufile/10.2/10.1}"
+                set +x
+            fi
+        done
+    fi
+    set +u  # Disable "unbound variable is error" since that gives a false alarm error below:
+    if [[ "with-cudnn" =~ ^($1|$2)$ ]] ; then
+        echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
+        sudo apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
+        sudo apt-get install --yes \
+            "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
+            "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
+    fi
+    CUDA_TOOLKIT_DIR=/usr/local/cuda-${CUDA_VERSION[1]}
+    export PATH="${CUDA_TOOLKIT_DIR}/bin${PATH:+:$PATH}"
+    export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    echo PATH="$PATH"
+    echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+    if [[ "purge-cache" =~ ^($1|$2)$ ]] ; then
+        sudo apt-get clean
+        sudo rm -rf /var/lib/apt/lists/*
+    fi
+    set -u
+}
+
 echo "nproc = $(nproc) NPROC = ${NPROC}"
 reportJobStart "installing Python unit test dependencies"
 echo "using pip: $(which pip)"
@@ -71,15 +112,9 @@ echo "using cmake: $(which cmake)"
 cmake --version
 
 date
-if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-    CUDA_TOOLKIT_DIR=~/cuda
-    export PATH="$CUDA_TOOLKIT_DIR/bin:$PATH"
-    export LD_LIBRARY_PATH="$CUDA_TOOLKIT_DIR/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64"
-    if ! which nvcc >/dev/null ; then       # If CUDA is not already installed
-        reportRun curl -LO https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda_10.1.243_418.87.00_linux.run
-        reportRun sh cuda_10.1.243_418.87.00_linux.run --silent --toolkit --toolkitpath="$CUDA_TOOLKIT_DIR" --defaultroot="$CUDA_TOOLKIT_DIR"
-        reportRun rm cuda_10.1.243_418.87.00_linux.run
-    fi
+if [ "$BUILD_CUDA_MODULE" == "ON" ] && \
+    ! nvcc --version | grep -q "release ${CUDA_VERSION[1]}" 2>/dev/null ; then
+    reportRun install_cuda_deb with-cudnn purge-cache
     nvcc --version
 fi
 
@@ -105,6 +140,8 @@ if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
     reportRun pip install -U yapf=="$YAPF_VER"
 fi
 
+python -m pip cache purge || true
+
 mkdir -p build
 cd build
 
@@ -119,11 +156,13 @@ cmakeOptions="-DBUILD_SHARED_LIBS=${SHARED} \
         -DBUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE} \
         -DBUILD_UNIT_TESTS=ON \
         -DBUILD_BENCHMARKS=ON \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_EXAMPLES=OFF \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
         -DPYTHON_EXECUTABLE=$(which python)"
 
 echo
-echo "Running cmake" $cmakeOptions ..
+echo "Running cmake $cmakeOptions .."
 reportRun cmake $cmakeOptions ..
 echo
 
@@ -132,6 +171,11 @@ date
 reportRun make VERBOSE=1 -j"$NPROC"
 reportRun make install -j"$NPROC"
 reportRun make VERBOSE=1 install-pip-package -j"$NPROC"
+echo
+
+echo "Building examples iteratively..."
+date
+reportRun make VERBOSE=1 -j"$NPROC" build-examples-iteratively
 echo
 
 # skip unit tests if built with CUDA, unless system contains Nvidia GPUs

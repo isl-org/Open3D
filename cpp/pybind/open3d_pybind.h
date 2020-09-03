@@ -116,7 +116,6 @@ void bind_copy_functions(Class_ &cl) {
 /// add(1, b=2)
 /// add(1, b=None)
 /// ```
-///
 template <typename T>
 struct open3d_optional_caster {
     using value_conv = make_caster<typename T::value_type>;

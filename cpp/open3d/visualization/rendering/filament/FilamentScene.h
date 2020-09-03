@@ -222,6 +222,8 @@ private:
                 rendering::FilamentResourceManager::kDefaultTexture;
         rendering::TextureHandle anisotropy_map =
                 rendering::FilamentResourceManager::kDefaultTexture;
+        rendering::TextureHandle gradient_texture =
+                rendering::FilamentResourceManager::kDefaultTexture;
     };
 
     struct GeometryMaterialInstance {
@@ -271,6 +273,7 @@ private:
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);
     void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
+    void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();

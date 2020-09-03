@@ -31,6 +31,7 @@
 #include <unordered_map>
 
 #include "open3d/geometry/Image.h"
+#include "open3d/visualization/rendering/Gradient.h"
 
 namespace open3d {
 namespace visualization {
@@ -65,6 +66,13 @@ struct Material {
 
     // Combined images
     std::shared_ptr<geometry::Image> ao_rough_metal_img;
+
+    // Colormap (incompatible with other settings except point_size)
+    // Values for 'value' must be in [0, 1] and the vector must be sorted
+    // by increasing value. 'shader' must be "unlitGradient".
+    std::shared_ptr<Gradient> gradient;
+    float scalar_min = 0.0f;
+    float scalar_max = 1.0f;
 
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;

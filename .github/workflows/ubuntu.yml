@@ -48,9 +48,11 @@ jobs:
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
         run: |
-          ./util/install_deps_ubuntu.sh assume-yes
+          ./util/install_deps_ubuntu.sh assume-yes install-cuda
           sudo apt-get --yes install ccache
           ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
       - name: Config and build
         run: |
           PATH=/usr/lib/ccache:$PATH

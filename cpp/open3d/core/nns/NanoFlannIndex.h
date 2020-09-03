@@ -107,7 +107,7 @@ public:
     ///
     /// \param tensor Provides a set of data points as Tensor for KDTree
     /// construction.
-    NanoFlannIndex(const core::Tensor &dataset_points);
+    NanoFlannIndex(const Tensor &dataset_points);
 
     ~NanoFlannIndex();
     NanoFlannIndex(const NanoFlannIndex &) = delete;
@@ -119,7 +119,7 @@ public:
     /// \param dataset_points Dataset points for KDTree construction. Must be
     /// 2D, with shape {n, d}.
     /// \return Returns true if the construction success, otherwise false.
-    bool SetTensorData(const core::Tensor &dataset_points);
+    bool SetTensorData(const Tensor &dataset_points);
 
     /// Perform K nearest neighbor search.
     ///
@@ -128,8 +128,7 @@ public:
     /// \return Pair of Tensors: (indices, distances):
     /// indices: Tensor of shape {n, knn}, with dtype Int64.
     /// distainces: Tensor of shape {n, knn}, with dtype Float64.
-    std::pair<core::Tensor, core::Tensor> SearchKnn(
-            const core::Tensor &query_points, int knn);
+    std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points, int knn);
 
     /// Perform radius search with multiple radii.
     ///
@@ -139,8 +138,8 @@ public:
     /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
     /// - distances: Tensor of shape {total_num_neighbors,}, dtype Float64.
     /// - num_neighbors: Tensor of shape {n,}, dtype Int64.
-    std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
-            const core::Tensor &query_points, const std::vector<double> &radii);
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor &query_points, const std::vector<double> &radii);
 
     /// Perform radius search.
     ///
@@ -150,8 +149,8 @@ public:
     /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
     /// - distances: Tensor of shape {total_num_neighbors,}, dtype Float64.
     /// - num_neighbors: Tensor of shape {n}, dtype Int64.
-    std::tuple<core::Tensor, core::Tensor, core::Tensor> SearchRadius(
-            const core::Tensor &query_points, double radius);
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
+                                                    double radius);
 
     /// Get dimension of the dataset points.
     /// \return dimension of dataset points.
@@ -162,7 +161,7 @@ public:
     size_t GetDatasetSize() const;
 
 protected:
-    core::Tensor dataset_points_;
+    Tensor dataset_points_;
     std::unique_ptr<KDTree_t> index_;
     std::unique_ptr<Adaptor<double>> adaptor_;
 };
