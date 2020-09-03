@@ -35,17 +35,9 @@ namespace nns {
 
 NearestNeighborSearch::~NearestNeighborSearch(){};
 
-template <class T>
-NanoFlannIndex<T>* NearestNeighborSearch::cast_index() {
-    return static_cast<NanoFlannIndex<T>*>(nanoflann_index_.get());
-}
-
 bool NearestNeighborSearch::SetIndex() {
-    Dtype dtype = dataset_points_.GetDtype();
-    return DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        nanoflann_index_.reset(new NanoFlannIndex<scalar_t>());
-        return cast_index<scalar_t>()->SetTensorData(dataset_points_);
-    });
+    nanoflann_index_.reset(new NanoFlannIndex());
+    return nanoflann_index_->SetTensorData(dataset_points_);
 };
 bool NearestNeighborSearch::KnnIndex() { return SetIndex(); };
 bool NearestNeighborSearch::MultiRadiusIndex() { return SetIndex(); };
@@ -59,10 +51,7 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         utility::LogError(
                 "[NearestNeighborSearch::KnnSearch] Index is not set.");
     }
-    Dtype dtype = dataset_points_.GetDtype();
-    return DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        return cast_index<scalar_t>()->SearchKnn(query_points, knn);
-    });
+    return nanoflann_index_->SearchKnn(query_points, knn);
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
@@ -78,11 +67,7 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
                 "query have "
                 "different dtype.");
     }
-    Dtype dtype = dataset_points_.GetDtype();
-    return DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        return cast_index<scalar_t>()->SearchRadius(
-                query_points, static_cast<scalar_t>(radius));
-    });
+    return nanoflann_index_->SearchRadius(query_points, radius);
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
@@ -106,9 +91,7 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
                 "different "
                 "data type.");
     }
-    return DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        return cast_index<scalar_t>()->SearchRadius(query_points, radii);
-    });
+    return nanoflann_index_->SearchRadius(query_points, radii);
 }
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
@@ -121,7 +104,7 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
     Dtype dtype = dataset_points_.GetDtype();
     return DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         std::pair<Tensor, Tensor> result =
-                cast_index<scalar_t>()->SearchKnn(query_points, max_knn);
+                nanoflann_index_->SearchKnn(query_points, max_knn);
         Tensor indices = result.first;
         Tensor distances = result.second;
         SizeVector size = distances.GetShape();

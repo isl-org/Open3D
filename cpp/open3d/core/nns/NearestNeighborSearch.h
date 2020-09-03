@@ -128,14 +128,12 @@ public:
 
 private:
     bool SetIndex();
-    template <class T>
-    NanoFlannIndex<T> *cast_index();
 
     /// Assert a Tensor is not CUDA tensoer. This will be removed in the future.
     void AssertNotCUDA(const Tensor &t) const;
 
 protected:
-    std::unique_ptr<NanoFlannIndexBase> nanoflann_index_;
+    std::unique_ptr<NanoFlannIndex> nanoflann_index_;
     const Tensor dataset_points_;
 };
 }  // namespace nns

@@ -88,25 +88,32 @@ struct SelectNanoflannAdaptor<L1, T> {
     typedef nanoflann::L1_Adaptor<T, Adaptor<T>, T> Adaptor_t;
 };
 
-/// This class is the base class for NanoFlannIndex class.
-class NanoFlannIndexBase {
-public:
-    NanoFlannIndexBase();
-    ~NanoFlannIndexBase();
-};
+struct NanoFlannIndexHolderBase {};
 
-/// \class NanoFlann
-///
-/// \brief KDTree with NanoFlann for nearest neighbor search.
 template <typename T>
-class NanoFlannIndex : public NanoFlannIndexBase {
+struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
     typedef nanoflann::KDTreeSingleIndexAdaptor<
             typename SelectNanoflannAdaptor<L2, T>::Adaptor_t,
             Adaptor<T>,
             -1,
             size_t>
             KDTree_t;
+    std::unique_ptr<KDTree_t> index_;
+    std::unique_ptr<Adaptor<T>> adaptor_;
+    NanoFlannIndexHolder(size_t dataset_size,
+                         int dimension,
+                         const T *data_ptr) {
+        adaptor_.reset(new Adaptor<T>(dataset_size, dimension, data_ptr));
+        index_.reset(new KDTree_t(dimension, *adaptor_.get()));
+        index_->buildIndex();
+    }
+};
 
+/// \class NanoFlann
+///
+/// \brief KDTree with NanoFlann for nearest neighbor search.
+// template <typename T>
+class NanoFlannIndex {
 public:
     /// \brief Default Constructor.
     NanoFlannIndex();
@@ -157,7 +164,7 @@ public:
     /// - distances: Tensor of shape {total_num_neighbors,}, dtype Float64.
     /// - num_neighbors: Tensor of shape {n}, dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
-                                                    T radius);
+                                                    double radius);
 
     /// Get dimension of the dataset points.
     /// \return dimension of dataset points.
@@ -167,10 +174,13 @@ public:
     /// \return number of points in dataset.
     size_t GetDatasetSize() const;
 
+    /// Get dtype of the dataset points.
+    /// \return dtype of dataset points.
+    Dtype GetDtype() const;
+
 protected:
     Tensor dataset_points_;
-    std::unique_ptr<KDTree_t> index_;
-    std::unique_ptr<Adaptor<T>> adaptor_;
+    std::unique_ptr<NanoFlannIndexHolderBase> holder_;
 };
 }  // namespace nns
 }  // namespace core
