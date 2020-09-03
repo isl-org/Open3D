@@ -1,9 +1,8 @@
-// ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
-// ----------------------------------------------------------------------------
-// The MIT License (MIT)
+// Source code from: https://github.com/HuguesTHOMAS/KPConv.
 //
-// Copyright (c) 2020 www.open3d.org
+// MIT License
+//
+// Copyright (c) 2019 HuguesTHOMAS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,22 +18,19 @@
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
-// ----------------------------------------------------------------------------
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-#include "open3d/ml/impl/neighbors/neighbors.h"
+#include "open3d/ml/contrib/neighbors.h"
 
 namespace open3d {
 namespace ml {
-namespace impl {
+namespace contrib {
 
-using namespace std;
-
-void brute_neighbors(vector<PointXYZ>& queries,
-                     vector<PointXYZ>& supports,
-                     vector<int>& neighbors_indices,
+void brute_neighbors(std::vector<PointXYZ>& queries,
+                     std::vector<PointXYZ>& supports,
+                     std::vector<int>& neighbors_indices,
                      float radius,
                      int verbose) {
     // Initiate variables
@@ -48,7 +44,7 @@ void brute_neighbors(vector<PointXYZ>& queries,
 
     // Counting vector
     int max_count = 0;
-    vector<vector<int>> tmp(queries.size());
+    std::vector<std::vector<int>> tmp(queries.size());
 
     // Search neigbors indices
     // ***********************
@@ -82,9 +78,9 @@ void brute_neighbors(vector<PointXYZ>& queries,
     return;
 }
 
-void ordered_neighbors(vector<PointXYZ>& queries,
-                       vector<PointXYZ>& supports,
-                       vector<int>& neighbors_indices,
+void ordered_neighbors(std::vector<PointXYZ>& queries,
+                       std::vector<PointXYZ>& supports,
+                       std::vector<int>& neighbors_indices,
                        float radius) {
     // Initiate variables
     // ******************
@@ -98,8 +94,8 @@ void ordered_neighbors(vector<PointXYZ>& queries,
     // Counting vector
     int max_count = 0;
     float d2;
-    vector<vector<int>> tmp(queries.size());
-    vector<vector<float>> dists(queries.size());
+    std::vector<std::vector<int>> tmp(queries.size());
+    std::vector<std::vector<float>> dists(queries.size());
 
     // Search neigbors indices
     // ***********************
@@ -143,11 +139,11 @@ void ordered_neighbors(vector<PointXYZ>& queries,
     return;
 }
 
-void batch_ordered_neighbors(vector<PointXYZ>& queries,
-                             vector<PointXYZ>& supports,
-                             vector<int>& q_batches,
-                             vector<int>& s_batches,
-                             vector<int>& neighbors_indices,
+void batch_ordered_neighbors(std::vector<PointXYZ>& queries,
+                             std::vector<PointXYZ>& supports,
+                             std::vector<int>& q_batches,
+                             std::vector<int>& s_batches,
+                             std::vector<int>& neighbors_indices,
                              float radius) {
     // Initiate variables
     // ******************
@@ -161,8 +157,8 @@ void batch_ordered_neighbors(vector<PointXYZ>& queries,
     // Counting vector
     int max_count = 0;
     float d2;
-    vector<vector<int>> tmp(queries.size());
-    vector<vector<float>> dists(queries.size());
+    std::vector<std::vector<int>> tmp(queries.size());
+    std::vector<std::vector<float>> dists(queries.size());
 
     // batch index
     int b = 0;
@@ -181,7 +177,7 @@ void batch_ordered_neighbors(vector<PointXYZ>& queries,
         }
 
         // Loop only over the supports of current batch
-        vector<PointXYZ>::iterator p_it;
+        std::vector<PointXYZ>::iterator p_it;
         int i = 0;
         for (p_it = supports.begin() + sum_sb;
              p_it < supports.begin() + sum_sb + s_batches[b]; p_it++) {
@@ -221,11 +217,11 @@ void batch_ordered_neighbors(vector<PointXYZ>& queries,
     return;
 }
 
-void batch_nanoflann_neighbors(vector<PointXYZ>& queries,
-                               vector<PointXYZ>& supports,
-                               vector<int>& q_batches,
-                               vector<int>& s_batches,
-                               vector<int>& neighbors_indices,
+void batch_nanoflann_neighbors(std::vector<PointXYZ>& queries,
+                               std::vector<PointXYZ>& supports,
+                               std::vector<int>& q_batches,
+                               std::vector<int>& s_batches,
+                               std::vector<int>& neighbors_indices,
                                float radius) {
     // Initiate variables
     // ******************
@@ -238,7 +234,7 @@ void batch_nanoflann_neighbors(vector<PointXYZ>& queries,
 
     // Counting vector
     int max_count = 0;
-    vector<vector<pair<size_t, float>>> all_inds_dists(queries.size());
+    std::vector<std::vector<std::pair<size_t, float>>> all_inds_dists(queries.size());
 
     // batch index
     int b = 0;
@@ -264,7 +260,7 @@ void batch_nanoflann_neighbors(vector<PointXYZ>& queries,
 
     // Build KDTree for the first batch element
     current_cloud.pts =
-            vector<PointXYZ>(supports.begin() + sum_sb,
+            std::vector<PointXYZ>(supports.begin() + sum_sb,
                              supports.begin() + sum_sb + s_batches[b]);
     index = new my_kd_tree_t(3, current_cloud, tree_params);
     index->buildIndex();
@@ -286,7 +282,7 @@ void batch_nanoflann_neighbors(vector<PointXYZ>& queries,
             // Change the points
             current_cloud.pts.clear();
             current_cloud.pts =
-                    vector<PointXYZ>(supports.begin() + sum_sb,
+                    std::vector<PointXYZ>(supports.begin() + sum_sb,
                                      supports.begin() + sum_sb + s_batches[b]);
 
             // Build KDTree of the current element of the batch
@@ -339,6 +335,6 @@ void batch_nanoflann_neighbors(vector<PointXYZ>& queries,
     return;
 }
 
-}  // namespace impl
+}  // namespace contrib
 }  // namespace ml
 }  // namespace open3d

@@ -24,15 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/impl/neighbors/neighbors.h"
+#include "open3d/ml/contrib/neighbors.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
 
-using namespace std;
 using namespace tensorflow;
-using namespace open3d::ml::impl;
-using namespace tensorflow;
+using namespace open3d::ml::contrib;
 
 REGISTER_OP("OrderedNeighbors")
         .Input("queries: float")
@@ -73,16 +71,16 @@ public:
 
         // get the data as std vector of points
         float radius = radius_tensor.flat<float>().data()[0];
-        vector<PointXYZ> queries = vector<PointXYZ>(
+        std::vector<PointXYZ> queries = std::vector<PointXYZ>(
                 (PointXYZ*)queries_tensor.flat<float>().data(),
                 (PointXYZ*)queries_tensor.flat<float>().data() + Nq);
 
-        vector<PointXYZ> supports = vector<PointXYZ>(
+        std::vector<PointXYZ> supports = std::vector<PointXYZ>(
                 (PointXYZ*)supports_tensor.flat<float>().data(),
                 (PointXYZ*)supports_tensor.flat<float>().data() + Ns);
 
         // Create result containers
-        vector<int> neighbors_indices;
+        std::vector<int> neighbors_indices;
 
         // Compute results
         ordered_neighbors(queries, supports, neighbors_indices, radius);

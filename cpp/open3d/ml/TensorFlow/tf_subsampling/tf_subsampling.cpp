@@ -24,15 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/impl/grid_subsampling/grid_subsampling.h"
+#include "open3d/ml/contrib/GridSubsampling.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
 
-using namespace std;
 using namespace tensorflow;
-using namespace open3d::ml::impl;
-using namespace tensorflow;
+using namespace open3d::ml::contrib;
 
 REGISTER_OP("GridSubsampling")
         .Input("points: float")
@@ -67,23 +65,23 @@ public:
 
         // get the data as std vector of points
         float sampleDl = dl_tensor.flat<float>().data()[0];
-        vector<PointXYZ> original_points = vector<PointXYZ>(
+        std::vector<PointXYZ> original_points = std::vector<PointXYZ>(
                 (PointXYZ*)points_tensor.flat<float>().data(),
                 (PointXYZ*)points_tensor.flat<float>().data() + N);
 
         // Unsupported label and features
-        vector<float> original_features;
-        vector<int> original_classes;
+        std::vector<float> original_features;
+        std::vector<int> original_classes;
 
         // Create result containers
-        vector<PointXYZ> subsampled_points;
-        vector<float> subsampled_features;
-        vector<int> subsampled_classes;
+        std::vector<PointXYZ> subsampled_points;
+        std::vector<float> subsampled_features;
+        std::vector<int> subsampled_classes;
 
         // Compute results
         grid_subsampling(original_points, subsampled_points, original_features,
                          subsampled_features, original_classes,
-                         subsampled_classes, sampleDl);
+                         subsampled_classes, sampleDl, 0);
 
         // create output shape
         TensorShape output_shape;

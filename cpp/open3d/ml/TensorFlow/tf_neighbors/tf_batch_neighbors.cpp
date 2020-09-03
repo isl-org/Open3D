@@ -24,14 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/impl/neighbors/neighbors.h"
+#include "open3d/ml/contrib/neighbors.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
 
-using namespace std;
 using namespace tensorflow;
-using namespace open3d::ml::impl;
+using namespace open3d::ml::contrib;
 
 REGISTER_OP("BatchOrderedNeighbors")
         .Input("queries: float")
@@ -96,23 +95,23 @@ public:
 
         // get the data as std vector of points
         float radius = radius_tensor.flat<float>().data()[0];
-        vector<PointXYZ> queries = vector<PointXYZ>(
+        std::vector<PointXYZ> queries = std::vector<PointXYZ>(
                 (PointXYZ*)queries_tensor.flat<float>().data(),
                 (PointXYZ*)queries_tensor.flat<float>().data() + Nq);
-        vector<PointXYZ> supports = vector<PointXYZ>(
+        std::vector<PointXYZ> supports = std::vector<PointXYZ>(
                 (PointXYZ*)supports_tensor.flat<float>().data(),
                 (PointXYZ*)supports_tensor.flat<float>().data() + Ns);
 
         // Batches lengths
-        vector<int> q_batches =
-                vector<int>((int*)q_batches_tensor.flat<int>().data(),
+        std::vector<int> q_batches =
+                std::vector<int>((int*)q_batches_tensor.flat<int>().data(),
                             (int*)q_batches_tensor.flat<int>().data() + Nb);
-        vector<int> s_batches =
-                vector<int>((int*)s_batches_tensor.flat<int>().data(),
+        std::vector<int> s_batches =
+                std::vector<int>((int*)s_batches_tensor.flat<int>().data(),
                             (int*)s_batches_tensor.flat<int>().data() + Nb);
 
         // Create result containers
-        vector<int> neighbors_indices;
+        std::vector<int> neighbors_indices;
 
         // Compute results
         // batch_ordered_neighbors(queries, supports, q_batches, s_batches,
