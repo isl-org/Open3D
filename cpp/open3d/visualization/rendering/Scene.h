@@ -57,6 +57,12 @@ struct Light;
 // Can have multiple views
 class Scene {
 public:
+    const uint32_t kUpdatePointsFlag = 0x1;
+    const uint32_t kUpdateNormalsFlag = 0x2;
+    const uint32_t kUpdateColorsFlag = 0x4;
+    const uint32_t kUpdateUv0Flag = 0x8;
+    const uint32_t kUpdateUv1Flag = 0x10;
+
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
 
     Scene(Renderer& renderer) : renderer_(renderer) {}
@@ -87,6 +93,9 @@ public:
                              const Material& material) = 0;
     virtual bool AddGeometry(const std::string& object_name,
                              const TriangleMeshModel& model) = 0;
+    virtual void UpdateGeometry(const std::string& object_name,
+                                const tgeometry::PointCloud& point_cloud,
+                                uint32_t update_flags) = 0;
     virtual void RemoveGeometry(const std::string& object_name) = 0;
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;
     virtual bool GeometryIsVisible(const std::string& object_name) = 0;

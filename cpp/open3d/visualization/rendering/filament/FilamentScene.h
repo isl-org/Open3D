@@ -115,6 +115,9 @@ public:
                      const Material& material) override;
     bool AddGeometry(const std::string& object_name,
                      const TriangleMeshModel& model) override;
+    void UpdateGeometry(const std::string& object_name,
+                        const tgeometry::PointCloud& point_cloud,
+                        uint32_t update_flags) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
     bool GeometryIsVisible(const std::string& object_name) override;
