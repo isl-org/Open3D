@@ -51,7 +51,7 @@ if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
 endif()
 
 if (BUNDLE_OPEN3D_ML)
-    file(COPY "${PYTHON_PACKAGE_DST_DIR}/../../open3d_ml/src/open3d_ml/ml3d" 
+    file(COPY "${PYTHON_PACKAGE_DST_DIR}/../../open3d_ml/src/open3d_ml/ml3d"
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )
     file(RENAME "${PYTHON_PACKAGE_DST_DIR}/open3d/ml3d" "${PYTHON_PACKAGE_DST_DIR}/open3d/_ml3d")
 endif()
