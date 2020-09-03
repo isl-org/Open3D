@@ -233,6 +233,8 @@ const MaterialHandle FilamentResourceManager::kDefaultNormalShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultDepthShader =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
+        MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
@@ -252,6 +254,7 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultUnlit,
         FilamentResourceManager::kDefaultNormalShader,
         FilamentResourceManager::kDefaultDepthShader,
+        FilamentResourceManager::kDefaultUnlitGradientShader,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
@@ -731,6 +734,11 @@ void FilamentResourceManager::LoadDefaults() {
     auto depth_mat = LoadMaterialFromFile(depth_path, engine_);
     depth_mat->setDefaultParameter("pointSize", 3.f);
     materials_[kDefaultDepthShader] = MakeShared(depth_mat, engine_);
+
+    const auto gradient_path = resource_root + "/unlitGradient.filamat";
+    auto gradient_mat = LoadMaterialFromFile(gradient_path, engine_);
+    gradient_mat->setDefaultParameter("pointSize", 3.f);
+    materials_[kDefaultUnlitGradientShader] = MakeShared(gradient_mat, engine_);
 
     // NOTE: Legacy. Can be removed soon.
     const auto hdepth = CreateMaterial(ResourceLoadRequest(depth_path.data()));

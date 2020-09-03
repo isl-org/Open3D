@@ -27,11 +27,13 @@
 #include "open3d/ml/contrib/GridSubsampling.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
+#include "pybind/ml/contrib/contrib.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"
 
 namespace open3d {
 namespace ml {
+namespace contrib {
 
 const py::tuple SubsampleBatch(py::array points,
                                py::array batches,
@@ -41,8 +43,8 @@ const py::tuple SubsampleBatch(py::array points,
                                const std::string& method,
                                int max_p,
                                int verbose) {
-    std::vector<contrib::PointXYZ> original_points;
-    std::vector<contrib::PointXYZ> subsampled_points;
+    std::vector<PointXYZ> original_points;
+    std::vector<PointXYZ> subsampled_points;
     std::vector<int> original_batches;
     std::vector<int> subsampled_batches;
     std::vector<float> original_features;
@@ -60,10 +62,9 @@ const py::tuple SubsampleBatch(py::array points,
                           points_t.GetShape().ToString());
     }
     int64_t num_points = points_t.NumElements() / 3;
-    original_points = std::vector<contrib::PointXYZ>(
-            reinterpret_cast<contrib::PointXYZ*>(points_t.GetDataPtr()),
-            reinterpret_cast<contrib::PointXYZ*>(points_t.GetDataPtr()) +
-                    num_points);
+    original_points = std::vector<PointXYZ>(
+            reinterpret_cast<PointXYZ*>(points_t.GetDataPtr()),
+            reinterpret_cast<PointXYZ*>(points_t.GetDataPtr()) + num_points);
 
     // Fill original batches.
     core::Tensor batches_t = core::PyArrayToTensor(batches, true).Contiguous();
@@ -139,7 +140,7 @@ const py::tuple SubsampleBatch(py::array points,
             original_batches, subsampled_batches, sampleDl, max_p);
 
     // Wrap result subsampled_points. Data will be copied.
-    assert(std::is_pod<contrib::PointXYZ>());
+    assert(std::is_pod<PointXYZ>());
     int64_t num_subsampled_points =
             static_cast<int64_t>(subsampled_points.size());
     core::Tensor subsampled_points_t(
@@ -225,8 +226,8 @@ const py::tuple Subsample(py::array points,
                           utility::optional<py::array> classes,
                           float sampleDl,
                           int verbose) {
-    std::vector<contrib::PointXYZ> original_points;
-    std::vector<contrib::PointXYZ> subsampled_points;
+    std::vector<PointXYZ> original_points;
+    std::vector<PointXYZ> subsampled_points;
     std::vector<float> original_features;
     std::vector<float> subsampled_features;
     std::vector<int> original_classes;
@@ -242,10 +243,9 @@ const py::tuple Subsample(py::array points,
                           points_t.GetShape().ToString());
     }
     int64_t num_points = points_t.NumElements() / 3;
-    original_points = std::vector<contrib::PointXYZ>(
-            reinterpret_cast<contrib::PointXYZ*>(points_t.GetDataPtr()),
-            reinterpret_cast<contrib::PointXYZ*>(points_t.GetDataPtr()) +
-                    num_points);
+    original_points = std::vector<PointXYZ>(
+            reinterpret_cast<PointXYZ*>(points_t.GetDataPtr()),
+            reinterpret_cast<PointXYZ*>(points_t.GetDataPtr()) + num_points);
     if (verbose) {
         utility::LogInfo("Got {} points as inputs.", num_points);
     }
@@ -302,7 +302,7 @@ const py::tuple Subsample(py::array points,
                      sampleDl, verbose);
 
     // Wrap result subsampled_points. Data will be copied.
-    assert(std::is_pod<contrib::PointXYZ>());
+    assert(std::is_pod<PointXYZ>());
     int64_t num_subsampled_points =
             static_cast<int64_t>(subsampled_points.size());
     core::Tensor subsampled_points_t(
@@ -364,9 +364,7 @@ const py::tuple Subsample(py::array points,
     }
 }
 
-void pybind_contrib(py::module& m) {
-    py::module m_contrib = m.def_submodule("contrib");
-
+void pybind_contrib_subsample(py::module& m_contrib) {
     m_contrib.def("subsample", &Subsample, "points"_a,
                   "features"_a = py::none(), "classes"_a = py::none(),
                   "sampleDl"_a = 0.1, "verbose"_a = 0);
@@ -377,5 +375,6 @@ void pybind_contrib(py::module& m) {
                   "verbose"_a = 0);
 }
 
+}  // namespace contrib
 }  // namespace ml
 }  // namespace open3d

@@ -43,46 +43,48 @@ bool NearestNeighborSearch::MultiRadiusIndex() { return SetIndex(); };
 bool NearestNeighborSearch::FixedRadiusIndex() { return SetIndex(); }
 bool NearestNeighborSearch::HybridIndex() { return SetIndex(); };
 
-std::pair<core::Tensor, core::Tensor> NearestNeighborSearch::KnnSearch(
-        const core::Tensor& query_points, int knn) {
+std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
+        const Tensor& query_points, int knn) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
-                "[NearestNeighborSearch::KnnSearch] Index is not set");
+                "[NearestNeighborSearch::KnnSearch] Index is not set.");
     }
     return nanoflann_index_->SearchKnn(query_points, knn);
 }
 
-std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighborSearch::FixedRadiusSearch(const core::Tensor& query_points,
-                                         double radius) {
+std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
+        const Tensor& query_points, double radius) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
-                "[NearestNeighborSearch::FixedRadiusSearch] Index is not set");
+                "[NearestNeighborSearch::FixedRadiusSearch] Index is not set.");
     }
     return nanoflann_index_->SearchRadius(query_points, radius);
 }
 
-std::tuple<core::Tensor, core::Tensor, core::Tensor>
-NearestNeighborSearch::MultiRadiusSearch(const core::Tensor& query_points,
-                                         const std::vector<double>& radii) {
+std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
+        const Tensor& query_points, const std::vector<double>& radii) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
-                "[NearestNeighborSearch::MultiRadiusSearch] Index is not set");
+                "[NearestNeighborSearch::MultiRadiusSearch] Index is not set.");
     }
     return nanoflann_index_->SearchRadius(query_points, radii);
 }
 
-std::pair<core::Tensor, core::Tensor> NearestNeighborSearch::HybridSearch(
-        const core::Tensor& query_points, double radius, int max_knn) {
+std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
+        const Tensor& query_points, double radius, int max_knn) {
+    AssertNotCUDA(query_points);
     if (!nanoflann_index_) {
         utility::LogError(
-                "[NearestNeighborSearch::HybridSearch] Index is not set");
+                "[NearestNeighborSearch::HybridSearch] Index is not set.");
     }
-    std::pair<core::Tensor, core::Tensor> result =
+    std::pair<Tensor, Tensor> result =
             nanoflann_index_->SearchKnn(query_points, max_knn);
-    core::Tensor indices = result.first;
-    core::Tensor distances = result.second;
-    core::SizeVector size = distances.GetShape();
+    Tensor indices = result.first;
+    Tensor distances = result.second;
+    SizeVector size = distances.GetShape();
 
     std::vector<int64_t> indices_vec = indices.ToFlatVector<int64_t>();
     std::vector<double> distances_vec = distances.ToFlatVector<double>();
@@ -94,10 +96,19 @@ std::pair<core::Tensor, core::Tensor> NearestNeighborSearch::HybridSearch(
         }
     }
 
-    core::Tensor indices_new(indices_vec, size, core::Dtype::Int64);
-    core::Tensor distances_new(distances_vec, size, core::Dtype::Float64);
+    Tensor indices_new(indices_vec, size, Dtype::Int64);
+    Tensor distances_new(distances_vec, size, Dtype::Float64);
     return std::make_pair(indices_new, distances_new);
 }
+
+void NearestNeighborSearch::AssertNotCUDA(const Tensor& t) const {
+    if (t.GetDevice().GetType() == Device::DeviceType::CUDA) {
+        utility::LogError(
+                "TODO: NearestNeighborSearch does not support CUDA tensor "
+                "yet.");
+    }
+}
+
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d
