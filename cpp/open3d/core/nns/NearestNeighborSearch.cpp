@@ -64,8 +64,7 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
     if (dataset_points_.GetDtype() != query_points.GetDtype()) {
         utility::LogError(
                 "[NearsetNeighborSearch::FixedRadiusSearch] reference and "
-                "query have "
-                "different dtype.");
+                "query have different dtype.");
     }
     return nanoflann_index_->SearchRadius(query_points, radius);
 }
@@ -81,15 +80,12 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
     if (dtype != query_points.GetDtype()) {
         utility::LogError(
                 "[NearsetNeighborSearch::MultiRadiusSearch] reference and "
-                "query have "
-                "different dtype.");
+                "query have different dtype.");
     }
     if (dtype != radii.GetDtype()) {
         utility::LogError(
                 "[NearsetNeighborSearch::MultiRadiusSearch] radii and data "
-                "have "
-                "different "
-                "data type.");
+                "have different data type.");
     }
     return nanoflann_index_->SearchRadius(query_points, radii);
 }
