@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include "open3d/utility/Console.h"
+
 namespace open3d {
 namespace core {
 
