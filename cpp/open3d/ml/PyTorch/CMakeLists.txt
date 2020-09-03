@@ -13,21 +13,42 @@ if(BUILD_CUDA_MODULE)
     # find_package(CUTLASS REQUIRED)
 endif()
 
-if(BUILD_CUDA_MODULE)
-    file(
-        GLOB_RECURSE
-        open3d_torch_ops_SOURCES
-        "*.cpp"
-        "*.cu"
-        "../impl/*/*.cc"
-        "../impl/*/*.cpp"
-        "../impl/*/*.cu"
-        "../contrib/Cloud.cpp")
+set(TORCH_OPS_SOURCES
+    "Misc/BuildSpatialHashTableOpKernel.cpp"
+    "Misc/InvertNeighborsListOps.cpp"
+    "Misc/RadiusSearchOpKernel.cpp"
+    "Misc/ReduceSubarraysSumOps.cpp"
+    "Misc/FixedRadiusSearchOps.cpp"
+    "Misc/KnnSearchOpKernel.cpp"
+    "Misc/RadiusSearchOps.cpp"
+    "Misc/VoxelPoolingOpKernel.cpp"
+    "Misc/BuildSpatialHashTableOps.cpp"
+    "Misc/InvertNeighborsListOpKernel.cpp"
+    "Misc/KnnSearchOps.cpp"
+    "Misc/ReduceSubarraysSumOpKernel.cpp"
+    "Misc/VoxelPoolingOps.cpp"
+    "Misc/FixedRadiusSearchOpKernel.cpp"
+)
+
+set(TORCH_OPS_CUDA_SOURCES
+    "Misc/FixedRadiusSearchOpKernel.cu"
+    "Misc/BuildSpatialHashTableOpKernel.cu"
+    "Misc/InvertNeighborsListOpKernel.cu"
+    "Misc/ReduceSubarraysSumOpKernel.cu"
+    "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+)
+
+if(CUDA_ENABLED)
+    set(open3d_torch_ops_SOURCES
+        ${TORCH_OPS_SOURCES}
+        ${TORCH_OPS_CUDA_SOURCES}
+    )
 else()
-    file(GLOB_RECURSE open3d_torch_ops_SOURCES "*.cpp" "../impl/*/*.cc"
-         "../impl/*/*.cpp"
-         "../contrib/Cloud.cpp")
+    set(open3d_torch_ops_SOURCES
+        ${TORCH_OPS_SOURCES}
+    )
 endif()
+
 message(STATUS ${open3d_torch_ops_SOURCES})
 
 add_library(open3d_torch_ops SHARED ${open3d_torch_ops_SOURCES})

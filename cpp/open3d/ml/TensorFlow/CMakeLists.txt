@@ -15,20 +15,60 @@ if(CUDA_ENABLED)
     find_package(CUTLASS REQUIRED)
 endif()
 
+set(TF_OPS_SOURCES
+    "ContinuousConv/ContinuousConvBackpropFilterOpKernel.cpp"
+    "ContinuousConv/ContinuousConvOpKernel.cpp"
+    "ContinuousConv/ContinuousConvTransposeBackpropFilterOpKernel.cpp"
+    "ContinuousConv/ContinuousConvTransposeOpKernel.cpp"
+    "ContinuousConv/ContinuousConvBackpropFilterOps.cpp"
+    "ContinuousConv/ContinuousConvOps.cpp"
+    "ContinuousConv/ContinuousConvTransposeBackpropFilterOps.cpp"
+    "ContinuousConv/ContinuousConvTransposeOps.cpp"
+    "Misc/BuildSpatialHashTableOpKernel.cpp"
+    "Misc/RadiusSearchOpKernel.cpp"
+    "Misc/InvertNeighborsListOps.cpp"
+    "Misc/ReduceSubarraysSumOps.cpp"
+    "Misc/VoxelPoolingOps.cpp"
+    "Misc/FixedRadiusSearchOps.cpp"
+    "Misc/KnnSearchOpKernel.cpp"
+    "Misc/RadiusSearchOps.cpp"
+    "Misc/VoxelPoolingGradOpKernel.cpp"
+    "Misc/BuildSpatialHashTableOps.cpp"
+    "Misc/InvertNeighborsListOpKernel.cpp"
+    "Misc/ReduceSubarraysSumOpKernel.cpp"
+    "Misc/FixedRadiusSearchOpKernel.cpp"
+    "Misc/KnnSearchOps.cpp"
+    "Misc/VoxelPoolingOpKernel.cpp"
+    "tf_neighbors/tf_batch_neighbors.cpp"
+    "tf_neighbors/tf_neighbors.cpp"
+    "tf_subsampling/tf_batch_subsampling.cpp"
+    "tf_subsampling/tf_subsampling.cpp"
+    "../contrib/Cloud.cpp"
+    "../contrib/GridSubsampling.cpp"
+    "../contrib/neighbors.cpp"
+)
+
+set(TF_OPS_CUDA_SOURCES
+    "ContinuousConv/ContinuousConvBackpropFilterOpKernel.cu"
+    "ContinuousConv/ContinuousConvOpKernel.cu"
+    "ContinuousConv/ContinuousConvTransposeBackpropFilterOpKernel.cu"
+    "ContinuousConv/ContinuousConvTransposeOpKernel.cu"
+    "Misc/FixedRadiusSearchOpKernel.cu"
+    "Misc/BuildSpatialHashTableOpKernel.cu"
+    "Misc/InvertNeighborsListOpKernel.cu"
+    "Misc/ReduceSubarraysSumOpKernel.cu"
+    "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+)
+
 if(CUDA_ENABLED)
-    file(
-        GLOB_RECURSE
-        open3d_tf_ops_SOURCES
-        "*.cpp"
-        "*.cu"
-        "../impl/*/*.cc"
-        "../impl/*/*.cpp"
-        "../impl/*/*.cu"
-        "../contrib/Cloud.cpp")
+    set(open3d_tf_ops_SOURCES
+        ${TF_OPS_SOURCES}
+        ${TF_OPS_CUDA_SOURCES}
+    )
 else()
-    file(GLOB_RECURSE open3d_tf_ops_SOURCES "*.cpp" "../impl/*/*.cc"
-         "../impl/*/*.cpp"
-         "../contrib/Cloud.cpp")
+    set(open3d_tf_ops_SOURCES
+        ${TF_OPS_SOURCES}
+    )
 endif()
 
 add_library(open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES})
