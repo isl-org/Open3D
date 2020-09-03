@@ -72,24 +72,15 @@ void pybind_core_nns(py::module &m) {
     // Search functions.
     nns.def("knn_search", &NearestNeighborSearch::KnnSearch, "query_points"_a,
             "knn"_a, "Perform knn search.");
-    nns.def("fixed_radius_search",
-            &NearestNeighborSearch::FixedRadiusSearch<double>, "query_points"_a,
-            "radius"_a,
-            "Perform fixed radius search. All query points share the same "
-            "radius.");
-    nns.def("fixed_radius_search",
-            &NearestNeighborSearch::FixedRadiusSearch<float>, "query_points"_a,
-            "radius"_a,
+    nns.def("fixed_radius_search", &NearestNeighborSearch::FixedRadiusSearch,
+            "query_points"_a, "radius"_a,
             "Perform fixed radius search. All query points share the same "
             "radius.");
     nns.def("multi_radius_search", &NearestNeighborSearch::MultiRadiusSearch,
             "query_points"_a, "radii"_a,
             "Perform multi-radius search. Each query point has an independent "
             "radius.");
-    nns.def("hybrid_search", &NearestNeighborSearch::HybridSearch<double>,
-            "query_points"_a, "radius"_a, "max_knn"_a,
-            "Perform hybrid search.");
-    nns.def("hybrid_search", &NearestNeighborSearch::HybridSearch<float>,
+    nns.def("hybrid_search", &NearestNeighborSearch::HybridSearch,
             "query_points"_a, "radius"_a, "max_knn"_a,
             "Perform hybrid search.");
 
