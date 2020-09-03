@@ -66,12 +66,16 @@ def run_op(ml, device_name, check_device, fn, *args, **kwargs):
             ans = fn(*args, **kwargs)
 
             if check_device:
-                # not all returned tensor have to use the device.
+                # not all returned tensors have to use the device.
                 # check if there is at least one tensor using device memory
                 tensor_on_device = False
-                for x in ans:
-                    if device_name in x.device:
+                if isinstance(ans, tf.Tensor):
+                    if device_name in ans.device:
                         tensor_on_device = True
+                else:
+                    for x in ans:
+                        if device_name in x.device:
+                            tensor_on_device = True
                 assert tensor_on_device
 
     elif ml.framework.__name__ == 'torch':
@@ -88,9 +92,13 @@ def run_op(ml, device_name, check_device, fn, *args, **kwargs):
             # not all returned tensor have to use the device.
             # check if there is at least one tensor using device memory
             tensor_on_device = False
-            for x in ans:
-                if isinstance(x, torch.Tensor) and device == x.device.type:
+            if isinstance(ans, torch.Tensor):
+                if device == ans.device.type:
                     tensor_on_device = True
+            else:
+                for x in ans:
+                    if isinstance(x, torch.Tensor) and device == x.device.type:
+                        tensor_on_device = True
             assert tensor_on_device
 
     else:

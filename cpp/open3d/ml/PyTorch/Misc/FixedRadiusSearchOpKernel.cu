@@ -25,8 +25,7 @@
 // ----------------------------------------------------------------------------
 //
 
-#include <ATen/cuda/CUDAContext.h>
-
+#include "ATen/cuda/CUDAContext.h"
 #include "open3d/ml/PyTorch/Misc/NeighborSearchAllocator.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
