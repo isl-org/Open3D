@@ -15,30 +15,16 @@ if [ "$BUILD_CUDA_MODULE" == "ON" ] && \
     nvcc --version
 fi
 
-# disable incompatible pytorch configurations
-if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
-    # we need cudnn for building pytorch ops
-    if ! find $(dirname $(which nvcc))/.. -name "libcudnn*"; then
-        export BUILD_PYTORCH_OPS=OFF
-    fi
-    # pytorch 1.6 requires at least python 3.6
-    if ! python -c "import sys; sys.exit(0) if sys.version_info.major==3 and sys.version_info.minor > 5 else sys.exit(1)"; then
-        export BUILD_PYTORCH_OPS=OFF
-    fi
-fi
-
 date
 reportJobStart "Installing Python unit test dependencies"
-install_python_dependencies "${unittestDependencies:=ON}"
+install_python_dependencies with-unit-test purge-cache
 
 echo "using python: $(which python)"
 python --version
 echo -n "Using pip: "
 python -m pip --version
-if [ "$unittestDependencies" == ON ] ; then
-    echo -n "Using pytest:"
-    python -m pytest --version
-fi
+echo -n "Using pytest:"
+python -m pytest --version
 echo "using cmake: $(which cmake)"
 cmake --version
 

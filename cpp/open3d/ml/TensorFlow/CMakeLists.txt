@@ -33,6 +33,14 @@ add_library(open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES})
 # options are not compatible for tf op libraries
 open3d_show_and_abort_on_warning(open3d_tf_ops)
 
+# Set output directory according to architecture (cpu/cuda)
+get_target_property(TF_OPS_DIR open3d_tf_ops LIBRARY_OUTPUT_DIRECTORY)
+set(TF_OPS_ARCH_DIR
+    "${TF_OPS_DIR}/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+set_target_properties(open3d_tf_ops PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${TF_OPS_ARCH_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY "${TF_OPS_ARCH_DIR}")
+
 # Do not add "lib" prefix
 set_target_properties(open3d_tf_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug")

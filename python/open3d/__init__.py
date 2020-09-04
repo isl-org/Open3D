@@ -48,15 +48,15 @@ from open3d._build_config import _build_config
 if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
     # Do this before loading the CUDA pybind dll to correctly resolve symbols
-    from ctypes import CDLL
-    from pathlib import Path
+    from ctypes import CDLL as _CDLL
+    from pathlib import Path as _Path
     try:  # StopIteration if cpu version not available
-        CDLL(next((Path(__file__).parent / 'cpu').glob('pybind*')))
+        _CDLL(next((_Path(__file__).parent / 'cpu').glob('pybind*')))
     except StopIteration:
         pass
     try:  # ImportError if cuda version not available
-        from open3d.cuda.pybind.core import cuda
-        if cuda.is_available():
+        from open3d.cuda.pybind.core import cuda as _cuda
+        if _cuda.is_available():
             from open3d.cuda.pybind import (camera, geometry, io, pipelines,
                                             utility, tgeometry)
             from open3d.cuda import pybind

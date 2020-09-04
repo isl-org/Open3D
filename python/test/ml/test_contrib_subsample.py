@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
-import open3d
-subsample = open3d.pybind.ml.contrib.subsample
-subsample_batch = open3d.pybind.ml.contrib.subsample_batch
+from open3d.ml.contrib import subsample, subsample_batch
 
 
 def test_subsample():

@@ -95,24 +95,31 @@ install_python_dependencies() {
 
     python -m pip install --upgrade pip
     python -m pip install -U wheel
-    unittestDependencies="$1"
-    if [ "$unittestDependencies" == ON ] ; then
+    options="$(echo $@ | tr ' ' '|')"
+    if [[ "with-unit-test" =~ ^($options)$ ]] ; then
         python -m pip install -U pytest
         python -m pip install scipy
     fi
-    echo
+    if [[ "with-cuda" =~ ^($options)$ ]] ; then
+        TF_ARCH_NAME=tensorflow-gpu
+        TF_ARCH_DISABLE_NAME=tensorflow-cpu
+        TORCH_ARCH_GLNX_VER=${TORCH_GLNX_VER[0]}
+    else
+        TF_ARCH_NAME=tensorflow-cpu
+        TF_ARCH_DISABLE_NAME=tensorflow-gpu
+        TORCH_ARCH_GLNX_VER=${TORCH_GLNX_VER[0]}
+    fi
 
+    echo
     date
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
-        reportRun python -m pip install -U tensorflow=="$TENSORFLOW_VER"
+        # TF happily installs both CPU and GPU versions at the same time, so remove the other
+        reportRun python -m pip uninstall --yes "$TF_ARCH_DISABLE_NAME"
+        reportRun python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER"
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-                reportRun python -m pip install -U torch=="${TORCH_GLNX_VER[0]}" -f https://download.pytorch.org/whl/torch_stable.html
-            else
-                reportRun python -m pip install -U torch=="${TORCH_GLNX_VER[1]}" -f https://download.pytorch.org/whl/torch_stable.html
-            fi
+            reportRun python -m pip install -U torch=="$TORCH_ARCH_GLNX_VER" -f https://download.pytorch.org/whl/torch_stable.html
         elif [[ "$OSTYPE" == "darwin"* ]]; then
             reportRun python -m pip install -U torch=="$TORCH_MACOS_VER"
         else
@@ -123,9 +130,10 @@ install_python_dependencies() {
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         reportRun python -m pip install -U yapf=="$YAPF_VER"
     fi
-    echo "Purge pip cache"
-    python -m pip cache purge 2>/dev/null || true
-
+    if [[ "purge-cache" =~ ^($options)$ ]] ; then
+        echo "Purge pip cache"
+        python -m pip cache purge 2>/dev/null || true
+    fi
 }
 
 
@@ -177,12 +185,10 @@ build_wheel() {
             BUILD_FILAMENT_FROM_SOURCE=ON
         fi
     fi
-    # TODO: PyTorch Ops is OFF with CUDA
-    [ "$BUILD_CUDA_MODULE" == ON ] && BUILD_PYTORCH_OPS=OFF || BUILD_PYTORCH_OPS=ON
 
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF \
         -DBUILD_TENSORFLOW_OPS=ON \
-        -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS" \
+        -DBUILD_PYTORCH_OPS=ON \
         -DBUILD_RPC_INTERFACE=ON \
         -DBUILD_FILAMENT_FROM_SOURCE="$BUILD_FILAMENT_FROM_SOURCE" \
         -DBUILD_JUPYTER_EXTENSION=ON \
@@ -194,16 +200,18 @@ build_wheel() {
     )
     reportRun cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
     echo
-    reportRun make VERBOSE=1 -j"$NPROC" pybind
+    reportRun make VERBOSE=1 -j"$NPROC" pybind open3d_tf_ops open3d_torch_ops
 
     if [ "$BUILD_CUDA_MODULE" == ON ] ; then
         echo
         echo Installing CUDA toolkit...
-            install_cuda_toolkit
+        install_cuda_toolkit
+        echo Installing CUDA versions of Tensorflow and PyTorch...
+        install_python_dependencies with-cuda purge-cache
         echo
         echo Building with CUDA...
         date
-        rebuild_list=(bin lib/Release/*.{a,so}  lib/_build_config.py cpp)
+        rebuild_list=(bin lib/Release/*.a  lib/_build_config.py cpp lib/ml)
         echo
         echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
         rm -r "${rebuild_list[@]}" || true
@@ -226,6 +234,14 @@ test_wheel() {
     reportRun python -c "import open3d; print('Installed:', open3d)"
     reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
     reportRun python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+    if [ "$BUILD_PYTORCH_OPS" == ON ] ; then
+        reportRun python -c \
+            "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
+    fi
+    if [ "$BUILD_TENSORFLOW_OPS" == ON ] ; then
+        reportRun python -c \
+            "import open3d.ml.tf.ops; print('Tensorflow Ops library loaded:', open3d.ml.tf.ops)"
+    fi
 }
 
 # Use: run_unit_tests
