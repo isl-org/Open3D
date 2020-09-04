@@ -68,13 +68,13 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
     int dimension = GetDimension();
     Dtype dtype = GetDtype();
 
-    return DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         const scalar_t *data_ptr =
                 static_cast<const scalar_t *>(dataset_points.GetDataPtr());
         holder_.reset(new NanoFlannIndexHolder<scalar_t>(dataset_size,
                                                          dimension, data_ptr));
-        return true;
     });
+    return true;
 };
 
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
@@ -104,7 +104,9 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     int64_t num_query_points = query_points.GetShape()[0];
     Dtype dtype = GetDtype();
 
-    return DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    Tensor indices;
+    Tensor distances;
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         std::vector<size_t> batch_indices;
         std::vector<scalar_t> batch_distances;
         std::vector<size_t> batch_nums;
@@ -136,21 +138,20 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                     "[NanoFlannIndex::SearchKnn] The number of neighbors are "
                     "different. Something went wrong.");
         }
-        if (batch_nums[0] < 1) {
-            return std::make_pair(Tensor(), Tensor());
+        if (batch_nums[0] > 0) {
+            std::vector<int64_t> batch_indices2(batch_indices.begin(),
+                                                batch_indices.end());
+            indices = Tensor(
+                    batch_indices2,
+                    {num_query_points, static_cast<int64_t>(batch_nums[0])},
+                    Dtype::Int64);
+            distances = Tensor(
+                    batch_distances,
+                    {num_query_points, static_cast<int64_t>(batch_nums[0])},
+                    Dtype::FromType<scalar_t>());
         }
-
-        std::vector<int64_t> batch_indices2(batch_indices.begin(),
-                                            batch_indices.end());
-        Tensor indices(batch_indices2,
-                       {num_query_points, static_cast<int64_t>(batch_nums[0])},
-                       Dtype::Int64);
-        Tensor distances(
-                batch_distances,
-                {num_query_points, static_cast<int64_t>(batch_nums[0])},
-                Dtype::FromType<scalar_t>());
-        return std::make_pair(indices, distances);
     });
+    return std::make_pair(indices, distances);
 };
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
@@ -185,7 +186,10 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     }
 
     Dtype dtype = GetDtype();
-    return DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    Tensor indices;
+    Tensor distances;
+    Tensor num_neighbors;
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         std::vector<size_t> batch_indices;
         std::vector<scalar_t> batch_distances;
         std::vector<size_t> batch_nums;
@@ -222,26 +226,29 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         std::vector<int64_t> batch_nums2(batch_nums.begin(), batch_nums.end());
         std::vector<int64_t> batch_indices2(batch_indices.begin(),
                                             batch_indices.end());
-        Tensor indices(batch_indices2, {static_cast<int64_t>(size)},
+        indices = Tensor(batch_indices2, {static_cast<int64_t>(size)},
+                         Dtype::Int64);
+        distances = Tensor(batch_distances, {static_cast<int64_t>(size)},
+                           Dtype::FromType<scalar_t>());
+        num_neighbors =
+                Tensor(batch_nums2, {static_cast<int64_t>(batch_nums2.size())},
                        Dtype::Int64);
-        Tensor distances(batch_distances, {static_cast<int64_t>(size)},
-                         Dtype::FromType<scalar_t>());
-        Tensor nums(batch_nums2, {static_cast<int64_t>(batch_nums2.size())},
-                    Dtype::Int64);
-        return std::make_tuple(indices, distances, nums);
     });
+    return std::make_tuple(indices, distances, num_neighbors);
 };
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         const Tensor &query_points, double radius) {
     int64_t num_query_points = query_points.GetShape()[0];
     Dtype dtype = GetDtype();
-    return DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    std::tuple<Tensor, Tensor, Tensor> result;
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         Tensor radii(std::vector<scalar_t>(num_query_points,
                                            static_cast<scalar_t>(radius)),
                      {num_query_points}, Dtype::FromType<scalar_t>());
-        return SearchRadius(query_points, radii);
+        result = SearchRadius(query_points, radii);
     });
+    return result;
 };
 
 }  // namespace nns

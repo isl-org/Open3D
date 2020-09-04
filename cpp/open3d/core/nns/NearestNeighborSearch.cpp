@@ -97,14 +97,18 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         utility::LogError(
                 "[NearestNeighborSearch::HybridSearch] Index is not set.");
     }
-    Dtype dtype = dataset_points_.GetDtype();
-    return DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        std::pair<Tensor, Tensor> result =
-                nanoflann_index_->SearchKnn(query_points, max_knn);
-        Tensor indices = result.first;
-        Tensor distances = result.second;
-        SizeVector size = distances.GetShape();
+    // search knn
+    Tensor indices;
+    Tensor distances;
+    std::tie(indices, distances) =
+            nanoflann_index_->SearchKnn(query_points, max_knn);
+    SizeVector size = distances.GetShape();
 
+    // check radius
+    Tensor result_indices;
+    Tensor result_distances;
+    Dtype dtype = dataset_points_.GetDtype();
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         std::vector<int64_t> indices_vec = indices.ToFlatVector<int64_t>();
         std::vector<scalar_t> distances_vec =
                 distances.ToFlatVector<scalar_t>();
@@ -114,10 +118,11 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
                 indices_vec[i] = -1;
             }
         }
-        Tensor indices_new(indices_vec, size, Dtype::Int64);
-        Tensor distances_new(distances_vec, size, Dtype::FromType<scalar_t>());
-        return std::make_pair(indices_new, distances_new);
+        result_indices = Tensor(indices_vec, size, Dtype::Int64);
+        result_distances =
+                Tensor(distances_vec, size, Dtype::FromType<scalar_t>());
     });
+    return std::make_pair(result_indices, result_distances);
 }
 
 void NearestNeighborSearch::AssertNotCUDA(const Tensor& t) const {
