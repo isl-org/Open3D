@@ -11,6 +11,7 @@ material {
     name : unlitGradient,
     shadingModel : unlit,
     doubleSided : true,
+    blending : fade,
 
     parameters : [
         { type : float,     name : minValue },
@@ -37,5 +38,7 @@ fragment {
         float val = (getUV0().x - materialParams.minValue + 0.5 * materialParams.isLUT) / range;
         // (don't need clamp, since we should be using ClampToEdge on the texture
         material.baseColor = texture(materialParams_gradient, float2(val, 0.5));
+        // blending: fade assumes pre-multiplied alpha
+        material.baseColor.rgb *= material.baseColor.a;
     }
 }

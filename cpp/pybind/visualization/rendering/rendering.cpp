@@ -123,7 +123,7 @@ void pybind_rendering_classes(py::module &m) {
                      s << "Gradient.Point[" << p.value << ", (" << p.color[0]
                        << ", " << p.color[1] << ", " << p.color[2] << ", "
                        << p.color[3] << ")]";
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_readwrite("value", &Gradient::Point::value,
                            "Must be within 0.0 and 1.0")
