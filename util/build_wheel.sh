@@ -7,7 +7,8 @@ source "$(dirname "$0")"/build_scripts.sh
 
 echo "$rj_startts StartJob ReportInit"
 date
-if ! nvcc --version | grep -q "release ${CUDA_VERSION[1]}" 2>/dev/null ; then
+if [ "$BUILD_CUDA_MODULE" == "ON" ] && \
+    ! nvcc --version | grep -q "release ${CUDA_VERSION[1]}" 2>/dev/null ; then
     reportRun install_cuda_toolkit with-cudnn purge-cache
     nvcc --version
 fi

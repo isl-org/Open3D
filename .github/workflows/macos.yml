@@ -151,8 +151,12 @@ jobs:
           printf "\n\nInstalled packages...\n"
           python -m pip freeze
           test_wheel
+          reportJobFinishSession
       - name: Run Python unit tests (benchmarks)
         run: |
+          cd util
+          source build_scripts.sh
+          echo "$rj_startts StartJob ReportInit"
           reportJobStart "running Open3D python tests..."
           run_python_tests
           reportJobFinishSession

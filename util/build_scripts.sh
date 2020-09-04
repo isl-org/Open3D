@@ -107,7 +107,7 @@ install_python_dependencies() {
     if [[ "with-cuda" =~ ^($options)$ ]] ; then
         TF_ARCH_NAME=tensorflow-gpu
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
-        TORCH_ARCH_GLNX_VER=${TORCH_GLNX_VER[0]}
+        TORCH_ARCH_GLNX_VER=${TORCH_GLNX_VER[1]}
     else
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow-gpu
