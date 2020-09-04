@@ -44,6 +44,8 @@ bool Visualizer::InitOpenGL() {
         return false;
     }
 
+    render_fbo_ = 0;
+
     glGenVertexArrays(1, &vao_id_);
     glBindVertexArray(vao_id_);
 
@@ -64,10 +66,39 @@ bool Visualizer::InitOpenGL() {
     return true;
 }
 
-void Visualizer::Render() {
+void Visualizer::Render(bool render_screen) {
     glfwMakeContextCurrent(window_);
 
     view_control_ptr_->SetViewMatrices();
+
+    if (render_screen) {
+        if (render_fbo_ != 0) {
+            utility::LogError("Render framebuffer is not released.");
+        }
+
+        glGenFramebuffers(1, &render_fbo_);
+        glBindFramebuffer(GL_FRAMEBUFFER, render_fbo_);
+
+        int tex_w = view_control_ptr_->GetWindowWidth();
+        int tex_h = view_control_ptr_->GetWindowHeight();
+
+        glGenTextures(1, &render_rgb_tex_);
+        glBindTexture(GL_TEXTURE_2D, render_rgb_tex_);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_w, tex_h, 0, GL_RGB,
+                     GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, render_rgb_tex_, 0);
+
+        glGenRenderbuffers(1, &render_depth_stencil_rbo_);
+        glBindRenderbuffer(GL_RENDERBUFFER, render_depth_stencil_rbo_);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, tex_w,
+                              tex_h);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                                  GL_RENDERBUFFER, render_depth_stencil_rbo_);
+    }
 
     glEnable(GL_MULTISAMPLE);
     glDisable(GL_BLEND);
@@ -148,13 +179,21 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
     screen_image.Prepare(view_control_ptr_->GetWindowWidth(),
                          view_control_ptr_->GetWindowHeight(), 3, 4);
     if (do_render) {
-        Render();
+        Render(true);
         is_redraw_required_ = false;
     }
     glFinish();
     glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(),
                  view_control_ptr_->GetWindowHeight(), GL_RGB, GL_FLOAT,
                  screen_image.data_.data());
+
+    if (render_fbo_ != 0) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDeleteFramebuffers(1, &render_fbo_);
+        glDeleteRenderbuffers(1, &render_depth_stencil_rbo_);
+        glDeleteTextures(1, &render_rgb_tex_);
+        render_fbo_ = 0;
+    }
 
     // glReadPixels get the screen in a vertically flipped manner
     // Thus we should flip it back.
@@ -184,13 +223,21 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
     screen_image.Prepare(view_control_ptr_->GetWindowWidth(),
                          view_control_ptr_->GetWindowHeight(), 3, 1);
     if (do_render) {
-        Render();
+        Render(true);
         is_redraw_required_ = false;
     }
     glFinish();
     glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(),
                  view_control_ptr_->GetWindowHeight(), GL_RGB, GL_UNSIGNED_BYTE,
                  screen_image.data_.data());
+
+    if (render_fbo_ != 0) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDeleteFramebuffers(1, &render_fbo_);
+        glDeleteRenderbuffers(1, &render_depth_stencil_rbo_);
+        glDeleteTextures(1, &render_rgb_tex_);
+        render_fbo_ = 0;
+    }
 
     // glReadPixels get the screen in a vertically flipped manner
     // Thus we should flip it back.

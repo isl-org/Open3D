@@ -338,6 +338,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         visualization::rendering::Material o3d_mat;
 
+        o3d_mat.name = mat->GetName().C_Str();
+
         // Retrieve base material properties
         aiColor3D color(1.f, 1.f, 1.f);
 
@@ -354,6 +356,12 @@ bool ReadModelUsingAssimp(const std::string& filename,
         mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS,
                  o3d_mat.base_clearcoat_roughness);
         mat->Get(AI_MATKEY_ANISOTROPY, o3d_mat.base_anisotropy);
+        aiString alpha_mode;
+        mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode);
+        std::string alpha_mode_str(alpha_mode.C_Str());
+        if (alpha_mode_str == "BLEND" || alpha_mode_str == "MASK") {
+            o3d_mat.has_alpha = true;
+        }
 
         // Retrieve textures
         TextureImages maps;
@@ -366,7 +374,12 @@ bool ReadModelUsingAssimp(const std::string& filename,
         o3d_mat.reflectance_img = maps.reflectance;
         o3d_mat.ao_rough_metal_img = maps.gltf_rough_metal;
 
-        o3d_mat.shader = "defaultLit";
+        if (o3d_mat.has_alpha) {
+            o3d_mat.shader = "defaultLitTransparency";
+        } else {
+            o3d_mat.shader = "defaultLit";
+        }
+
         model.materials_.push_back(o3d_mat);
     }
 

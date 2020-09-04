@@ -73,13 +73,22 @@ struct TextureSamplerParameters {
     static TextureSamplerParameters Simple();
 
     /* filterMag = MagFilter::Linear
+     * filterMin = MinFilter::LinearMipmapLinear
+     * wrapU = WrapMode::Repeat
+     * wrapV = WrapMode::Repeat
+     * wrapW = WrapMode::Repeat
+     * anisotropy = 8
+     */
+    static TextureSamplerParameters Pretty();
+
+    /* filterMag = MagFilter::Linear
      * filterMin = MinFilter::Linear
      * wrapU = WrapMode::ClampToEdge
      * wrapV = WrapMode::ClampToEdge
      * wrapW = WrapMode::ClampToEdge
-     * anisotropy = 4
+     * anisotropy = 0
      */
-    static TextureSamplerParameters Pretty();
+    static TextureSamplerParameters LinearClamp();
 
     TextureSamplerParameters() = default;
 

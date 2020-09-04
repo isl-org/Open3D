@@ -26,9 +26,11 @@
 
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "open3d/core/Blob.h"
 #include "open3d/core/DLPack.h"
@@ -54,8 +56,8 @@ public:
         : shape_(shape),
           strides_(DefaultStrides(shape)),
           dtype_(dtype),
-          blob_(std::make_shared<Blob>(
-                  shape.NumElements() * DtypeUtil::ByteSize(dtype), device)) {
+          blob_(std::make_shared<Blob>(shape.NumElements() * dtype.ByteSize(),
+                                       device)) {
         data_ptr_ = blob_->GetDataPtr();
     }
 
@@ -76,11 +78,14 @@ public:
 
         // Check data types
         AssertTemplateDtype<T>();
+        if (!std::is_pod<T>()) {
+            utility::LogError("Object must be a POD.");
+        }
 
         // Copy data to blob
-        MemoryManager::MemcpyFromHost(
-                blob_->GetDataPtr(), GetDevice(), init_vals.data(),
-                init_vals.size() * DtypeUtil::ByteSize(dtype));
+        MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
+                                      init_vals.data(),
+                                      init_vals.size() * dtype.ByteSize());
     }
 
     /// Constructor from raw host buffer. The memory will be copied.
@@ -94,12 +99,14 @@ public:
         AssertTemplateDtype<T>();
 
         // Copy data to blob
-        MemoryManager::MemcpyFromHost(
-                blob_->GetDataPtr(), GetDevice(), init_vals,
-                shape_.NumElements() * DtypeUtil::ByteSize(dtype));
+        MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
+                                      init_vals,
+                                      shape_.NumElements() * dtype.ByteSize());
     }
 
-    /// The fully specified constructor
+    /// The fully specified constructor. Since you're responsible for creating
+    /// the Blob, take care of Blob's deleter if the memory is allocated
+    /// elsewhere. See Blob.h for more details.
     Tensor(const SizeVector& shape,
            const SizeVector& strides,
            void* data_ptr,
@@ -155,10 +162,29 @@ public:
         return *this;
     }
 
+    /// Assign an object to a tensor. The tensor being assigned to must be a
+    /// scalr tensor of shape {}. The element byte size of the tensor must be
+    /// the same as the size of the object. The object must be a POD.
+    template <typename Object>
+    Tensor& AssignObject(const Object& v) && {
+        if (shape_.size() != 0) {
+            utility::LogError(
+                    "Assignment with scalar only works for scalar Tensor of "
+                    "shape ()");
+        }
+        AssertTemplateDtype<Object>();
+        MemoryManager::MemcpyFromHost(GetDataPtr(), GetDevice(), &v,
+                                      sizeof(Object));
+        return *this;
+    }
+
     /// \brief Fill the whole Tensor with a scalar value, the scalar will be
     /// casted to the Tensor's dtype.
-    template <typename T>
-    void Fill(T v);
+    template <typename Scalar>
+    void Fill(Scalar v);
+
+    template <typename Object>
+    void FillObject(const Object& v);
 
     /// Create a tensor with uninitilized values.
     static Tensor Empty(const SizeVector& shape,
@@ -350,7 +376,12 @@ public:
     /// IndexExtract, the dimension \p dim will be removed.
     Tensor IndexExtract(int64_t dim, int64_t idx) const;
 
-    /// Slice Tensor
+    /// Slice Tensor.
+    ///
+    /// \param dim The dimension to slice.
+    /// \param start The start index (inclusive).
+    /// \param stop The end index (exclusive).
+    /// \param step Pick one eleemnt for every \p step elements.
     Tensor Slice(int64_t dim,
                  int64_t start,
                  int64_t stop,
@@ -851,9 +882,9 @@ public:
     std::vector<T> ToFlatVector() const {
         AssertTemplateDtype<T>();
         std::vector<T> values(NumElements());
-        MemoryManager::MemcpyToHost(
-                values.data(), Contiguous().GetDataPtr(), GetDevice(),
-                DtypeUtil::ByteSize(GetDtype()) * NumElements());
+        MemoryManager::MemcpyToHost(values.data(), Contiguous().GetDataPtr(),
+                                    GetDevice(),
+                                    GetDtype().ByteSize() * NumElements());
         return values;
     }
 
@@ -920,27 +951,28 @@ public:
 
     template <typename T>
     void AssertTemplateDtype() const {
-        if (DtypeUtil::FromType<T>() != dtype_) {
+        if (!dtype_.IsObject() && Dtype::FromType<T>() != dtype_) {
             utility::LogError(
                     "Requested values have type {} but Tensor has type {}",
-                    DtypeUtil::ToString(DtypeUtil::FromType<T>()),
-                    DtypeUtil::ToString(dtype_));
+                    Dtype::FromType<T>().ToString(), dtype_.ToString());
         }
-        if (DtypeUtil::ByteSize(dtype_) != sizeof(T)) {
+        if (dtype_.ByteSize() != sizeof(T)) {
             utility::LogError("Internal error: element size mismatch {} != {}",
-                              DtypeUtil::ByteSize(dtype_), sizeof(T));
+                              dtype_.ByteSize(), sizeof(T));
         }
     }
 
     static SizeVector DefaultStrides(const SizeVector& shape);
 
-    /// 1. Separate `oldshape` into chunks of dimensions, where the dimensions
+    /// 1. Separate `oldshape` into chunks of dimensions, where the
+    /// dimensions
     ///    are ``contiguous'' in each chunk, i.e.,
     ///    oldstride[i] = oldshape[i+1] * oldstride[i+1]
-    /// 2. `newshape` must be able to be separated into same number of chunks as
+    /// 2. `newshape` must be able to be separated into same number of
+    /// chunks as
     ///    `oldshape` was separated into, where each chunk of newshape has
-    ///    matching ``numel'', i.e., number of subspaces, as the corresponding
-    ///    chunk of `oldshape`.
+    ///    matching ``numel'', i.e., number of subspaces, as the
+    ///    corresponding chunk of `oldshape`.
     /// Ref: aten/src/ATen/TensorUtils.cpp
     static std::pair<bool, SizeVector> ComputeNewStrides(
             const SizeVector& old_shape,
@@ -960,23 +992,25 @@ protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
 protected:
-    /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension i.
+    /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension
+    /// i.
     SizeVector shape_ = {0};
 
     /// Stride of a Tensor.
-    /// The stride of a n-dimensional tensor is also n-dimensional. Stride(i) is
-    /// the number of elements (not bytes) to jump in a continuous memory space
-    /// before eaching the next element in dimension i. For example, a 2x3x4
-    /// float32 dense tensor has shape(2, 3, 4) and stride(12, 4, 1). A slicing
-    /// operation performed on the tensor can change the shape and stride.
+    /// The stride of a n-dimensional tensor is also n-dimensional.
+    /// Stride(i) is the number of elements (not bytes) to jump in a
+    /// continuous memory space before eaching the next element in dimension
+    /// i. For example, a 2x3x4 float32 dense tensor has shape(2, 3, 4) and
+    /// stride(12, 4, 1). A slicing operation performed on the tensor can
+    /// change the shape and stride.
     SizeVector strides_ = {1};
 
     /// Data pointer pointing to the beginning element of the Tensor.
     ///
-    /// Note that this is not necessarily the same as blob_.GetDataPtr(). When
-    /// this happens, it means that the beginning element of the Tensor is not
-    /// located a the beginning of the underlying blob. This could happen, for
-    /// instance, at slicing:
+    /// Note that this is not necessarily the same as blob_.GetDataPtr().
+    /// When this happens, it means that the beginning element of the Tensor
+    /// is not located a the beginning of the underlying blob. This could
+    /// happen, for instance, at slicing:
     ///
     /// ```cpp
     /// // a.GetDataPtr() == a.GetBlob().GetDataPtr()
@@ -1010,15 +1044,15 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
     // Check data types
     AssertTemplateDtype<bool>();
 
-    // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
-    // uses 1-byte-sized boolean storage for easy indexing.
+    // std::vector<bool> possibly implements 1-bit-sized boolean storage.
+    // Open3D uses 1-byte-sized boolean storage for easy indexing.
     std::vector<uint8_t> init_vals_uchar(init_vals.size());
     std::transform(init_vals.begin(), init_vals.end(), init_vals_uchar.begin(),
                    [](bool v) -> uint8_t { return static_cast<uint8_t>(v); });
 
-    MemoryManager::MemcpyFromHost(
-            blob_->GetDataPtr(), GetDevice(), init_vals_uchar.data(),
-            init_vals_uchar.size() * DtypeUtil::ByteSize(dtype));
+    MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
+                                  init_vals_uchar.data(),
+                                  init_vals_uchar.size() * dtype.ByteSize());
 }
 
 template <>
@@ -1026,12 +1060,12 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
     AssertTemplateDtype<bool>();
     std::vector<bool> values(NumElements());
     std::vector<uint8_t> values_uchar(NumElements());
-    MemoryManager::MemcpyToHost(
-            values_uchar.data(), Contiguous().GetDataPtr(), GetDevice(),
-            DtypeUtil::ByteSize(GetDtype()) * NumElements());
+    MemoryManager::MemcpyToHost(values_uchar.data(), Contiguous().GetDataPtr(),
+                                GetDevice(),
+                                GetDtype().ByteSize() * NumElements());
 
-    // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
-    // uses 1-byte-sized boolean storage for easy indexing.
+    // std::vector<bool> possibly implements 1-bit-sized boolean storage.
+    // Open3D uses 1-byte-sized boolean storage for easy indexing.
     std::transform(values_uchar.begin(), values_uchar.end(), values.begin(),
                    [](uint8_t v) -> bool { return static_cast<bool>(v); });
     return values;
@@ -1057,6 +1091,13 @@ inline void Tensor::Fill(Scalar v) {
                    GetDtype(), GetDevice());
         AsRvalue() = tmp;
     });
+}
+
+template <typename Object>
+inline void Tensor::FillObject(const Object& v) {
+    Tensor tmp(std::vector<Object>({v}), SizeVector({}), GetDtype(),
+               GetDevice());
+    AsRvalue() = tmp;
 }
 
 template <typename T>

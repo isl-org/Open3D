@@ -92,9 +92,12 @@ using ResourceManager =
 
 std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultLit", ResourceManager::kDefaultLit},
+        {"defaultLitTransparency",
+         ResourceManager::kDefaultLitWithTransparency},
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
         {"normals", ResourceManager::kDefaultNormalShader},
-        {"depth", ResourceManager::kDefaultDepthShader}};
+        {"depth", ResourceManager::kDefaultDepthShader},
+        {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -347,6 +350,20 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     return true;
 }
 
+#ifndef NDEBUG
+void OutputMaterialProperties(const visualization::rendering::Material& mat) {
+    utility::LogInfo("Material {}", mat.name);
+    utility::LogInfo("\tAlpha: {}", mat.has_alpha);
+    utility::LogInfo("\tBase Color: {},{},{},{}", mat.base_color.x(),
+                     mat.base_color.y(), mat.base_color.z(),
+                     mat.base_color.w());
+    utility::LogInfo("\tBase Metallic: {}", mat.base_metallic);
+    utility::LogInfo("\tBase Roughness: {}", mat.base_roughness);
+    utility::LogInfo("\tBase Reflectance: {}", mat.base_reflectance);
+    utility::LogInfo("\tBase Clear Cout: {}", mat.base_clearcoat);
+}
+#endif
+
 bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const TriangleMeshModel& model) {
     if (geometries_.count(object_name) > 0 ||
@@ -493,7 +510,7 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
     auto& maps = geom_mi.maps;
 
     renderer_.ModifyMaterial(geom_mi.mat_instance)
-            .SetColor("baseColor", material.base_color, true)
+            .SetColor("baseColor", material.base_color, false)
             .SetParameter("pointSize", material.point_size)
             .SetParameter("baseRoughness", material.base_roughness)
             .SetParameter("baseMetallic", material.base_metallic)
@@ -622,6 +639,7 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
 
     auto data = reinterpret_cast<uint8_t*>(rough_metal->data_.data());
 
+    auto stride = rough_metal->num_of_channels_;
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
             if (ao && ao->HasData()) {
@@ -629,9 +647,24 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
             } else {
                 *data = 255;
             }
-            data += 3;
+            data += stride;
         }
     }
+}
+
+void FilamentScene::UpdateGradientShader(GeometryMaterialInstance& geom_mi) {
+    bool isLUT =
+            (geom_mi.properties.gradient->GetMode() == Gradient::Mode::kLUT);
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("minValue", geom_mi.properties.scalar_min)
+            .SetParameter("maxValue", geom_mi.properties.scalar_max)
+            .SetParameter("isLUT", (isLUT ? 1.0f : 0.0f))
+            .SetParameter("pointSize", geom_mi.properties.point_size)
+            .SetTexture(
+                    "gradient", geom_mi.maps.gradient_texture,
+                    isLUT ? rendering::TextureSamplerParameters::Simple()
+                          : rendering::TextureSamplerParameters::LinearClamp())
+            .Finish();
 }
 
 void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
@@ -661,6 +694,9 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     if (is_map_valid(props.anisotropy_img)) {
         maps.anisotropy_map = renderer_.AddTexture(props.anisotropy_img);
     }
+    if (props.shader == "unlitGradient") {
+        maps.gradient_texture = props.gradient->GetTextureHandle(renderer_);
+    }
 
     // Create combined ao/rough/metal texture
     if (is_map_valid(props.ao_rough_metal_img)) {
@@ -678,7 +714,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
 
     // Update shader properties
     // TODO: Use a functional interface to get appropriate update methods
-    if (props.shader == "defaultLit") {
+    if (props.shader == "defaultLit" ||
+        props.shader == "defaultLitTransparency") {
         UpdateDefaultLit(geom.mat);
     } else if (props.shader == "defaultUnlit") {
         UpdateDefaultUnlit(geom.mat);
@@ -686,6 +723,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateNormalShader(geom.mat);
     } else if (props.shader == "depth") {
         UpdateDepthShader(geom.mat);
+    } else if (props.shader == "unlitGradient") {
+        UpdateGradientShader(geom.mat);
     }
 }
 
@@ -712,12 +751,15 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
     }
     geom->mat.properties = material;
     if (shader_only) {
-        if (material.shader == "defaultLit") {
+        if (material.shader == "defaultLit" ||
+            material.shader == "defaultLitTransparency") {
             UpdateDefaultLit(geom->mat);
         } else if (material.shader == "defaultUnlit") {
             UpdateDefaultUnlit(geom->mat);
         } else if (material.shader == "normals") {
             UpdateNormalShader(geom->mat);
+        } else if (material.shader == "unlitGradient") {
+            UpdateGradientShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }

@@ -32,12 +32,14 @@
 #include <Eigen/Eigenvalues>
 #include <cmath>
 #include <memory>
+#include <tuple>
 #include <vector>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/Keypoint.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Eigen.h"
 
 namespace open3d {
 
@@ -69,33 +71,6 @@ double ComputeModelResolution(const std::vector<Eigen::Vector3d>& points,
     return resolution;
 }
 
-Eigen::Matrix3d ComputeScatterMatrix(const std::vector<Eigen::Vector3d>& points,
-                                     const Eigen::Vector3d& p,
-                                     double salient_radius,
-                                     int min_neighbors,
-                                     const geometry::KDTreeFlann& kdtree) {
-    std::vector<int> indices;
-    std::vector<double> dist;
-    int nb_neighbors = kdtree.SearchRadius(p, salient_radius, indices, dist);
-    if (nb_neighbors < min_neighbors) {
-        return {};
-    }
-
-    // sample mean vector
-    Eigen::Vector3d up = Eigen::Vector3d::Zero();
-    for (const auto& n_idx : indices) {
-        up += points[n_idx];
-    }
-    // up /= indices.size() is a constant factor, doesn't affect the results
-
-    // Compute the scatter matrix
-    Eigen::Matrix3d cov = Eigen::Matrix3d::Zero();
-    for (const auto& n_idx : indices) {
-        const auto& n_point = points[n_idx];
-        cov += (n_point - up) * (n_point - up).transpose();
-    }
-    return cov;
-}
 }  // namespace
 
 namespace geometry {
@@ -129,8 +104,15 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
 #pragma omp parallel for schedule(static) shared(third_eigen_values)
 #endif
     for (int i = 0; i < (int)points.size(); i++) {
-        Eigen::Matrix3d cov = ComputeScatterMatrix(
-                points, points[i], salient_radius, min_neighbors, kdtree);
+        std::vector<int> indices;
+        std::vector<double> dist;
+        int nb_neighbors =
+                kdtree.SearchRadius(points[i], salient_radius, indices, dist);
+        if (nb_neighbors < min_neighbors) {
+            continue;
+        }
+
+        Eigen::Matrix3d cov = utility::ComputeCovariance(points, indices);
         if (cov.isZero()) {
             continue;
         }

@@ -721,7 +721,8 @@ class AppWindow:
                 cloud = None
 
         if geometry is not None:
-            self._scene.scene.add_geometry(geometry, self.settings.material)
+            self._scene.scene.add_geometry("__model__", geometry,
+                                           self.settings.material)
             bounds = geometry.get_axis_aligned_bounding_box()
             self._scene.setup_camera(60, bounds, bounds.get_center())
 

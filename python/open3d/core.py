@@ -2,9 +2,10 @@ import open3d as o3d
 import numpy as np
 
 from open3d.pybind.core import Dtype
+from open3d.pybind.core import DtypeCode
 from open3d.pybind.core import Device
-from open3d.pybind.core import DtypeUtil
 from open3d.pybind.core import cuda
+from open3d.pybind.core import nns
 from open3d.pybind.core import NoneType
 from open3d.pybind.core import TensorList
 from open3d.pybind.core import SizeVector

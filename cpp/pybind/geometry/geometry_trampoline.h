@@ -36,8 +36,9 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace geometry {
 
-template <class GeometryBase = geometry::Geometry>
+template <class GeometryBase = Geometry>
 class PyGeometry : public GeometryBase {
 public:
     using GeometryBase::GeometryBase;
@@ -49,7 +50,7 @@ public:
     }
 };
 
-template <class Geometry3DBase = geometry::Geometry3D>
+template <class Geometry3DBase = Geometry3D>
 class PyGeometry3D : public PyGeometry<Geometry3DBase> {
 public:
     using PyGeometry<Geometry3DBase>::PyGeometry;
@@ -62,20 +63,18 @@ public:
     Eigen::Vector3d GetCenter() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
     }
-    geometry::AxisAlignedBoundingBox GetAxisAlignedBoundingBox()
-            const override {
-        PYBIND11_OVERLOAD_PURE(geometry::AxisAlignedBoundingBox,
-                               Geometry3DBase, );
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override {
+        PYBIND11_OVERLOAD_PURE(AxisAlignedBoundingBox, Geometry3DBase, );
     }
-    geometry::OrientedBoundingBox GetOrientedBoundingBox() const override {
-        PYBIND11_OVERLOAD_PURE(geometry::OrientedBoundingBox, Geometry3DBase, );
+    OrientedBoundingBox GetOrientedBoundingBox() const override {
+        PYBIND11_OVERLOAD_PURE(OrientedBoundingBox, Geometry3DBase, );
     }
     Geometry3DBase& Transform(const Eigen::Matrix4d& transformation) override {
         PYBIND11_OVERLOAD_PURE(Geometry3DBase&, Geometry3DBase, transformation);
     }
 };
 
-template <class Geometry2DBase = geometry::Geometry2D>
+template <class Geometry2DBase = Geometry2D>
 class PyGeometry2D : public PyGeometry<Geometry2DBase> {
 public:
     using PyGeometry<Geometry2DBase>::PyGeometry;
@@ -87,4 +86,5 @@ public:
     }
 };
 
+}  // namespace geometry
 }  // namespace open3d
