@@ -406,6 +406,19 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         const auto& points = point_cloud.GetPoints();
         const size_t n_vertices = points.GetSize();
 
+        // NOTE: number of points in the updated point cloud must be the
+        // same as the number of points when the vertex buffer was first
+        // created. If the number of points has changed then it cannot be
+        // updated. In that case, you must remove the geometry then add it
+        // again.
+        if (n_vertices != vbuf->getVertexCount()) {
+            utility::LogWarning(
+                    "Geometry for point cloud {} cannot be updated because the "
+                    "number of points has changed (Old: {}, New: {})",
+                    object_name, vbuf->getVertexCount(), n_vertices);
+            return;
+        }
+
         if (update_flags & kUpdatePointsFlag) {
             filament::VertexBuffer::BufferDescriptor pts_descriptor(
                     points.AsTensor().GetDataPtr(),
