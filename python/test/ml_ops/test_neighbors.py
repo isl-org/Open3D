@@ -29,13 +29,13 @@ import open3d as o3d
 import pytest
 import importlib
 
-tf = importlib.import_module('tensorflow')
-ops = importlib.import_module('open3d.ml.tf.ops')
-
 
 @pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                     reason='tf ops not built')
 def test_tf_neighbors():
+    tf = importlib.import_module('tensorflow')
+    ops = importlib.import_module('open3d.ml.tf.ops')
+
     query_points = np.array(
         [[0.064705, 0.043921, 0.087843], [0.064705, 0.043921, 0.087843]],
         dtype=np.float32)
@@ -60,15 +60,18 @@ def test_tf_neighbors():
     np.testing.assert_equal(indices, indices_ref)
 
     with pytest.raises(ValueError):
-        sub_points = ops.tf_neighbors(None, dataset_points, 0.1)
+        ops.tf_neighbors(None, dataset_points, 0.1)
 
     with pytest.raises(ValueError):
-        sub_points = ops.tf_neighbors(query_points, None, 1)
+        ops.tf_neighbors(query_points, None, 1)
 
 
 @pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                     reason='tf ops not built')
 def test_tf_batch_neighbors():
+    tf = importlib.import_module('tensorflow')
+    ops = importlib.import_module('open3d.ml.tf.ops')
+
     query_points = np.array(
         [[0.064705, 0.043921, 0.087843], [0.064705, 0.043921, 0.087843],
          [0.064705, 0.043921, 0.087843]],
@@ -111,13 +114,10 @@ def test_tf_batch_neighbors():
     np.testing.assert_equal(indices, indices_ref)
 
     with pytest.raises(ValueError):
-        sub_points = ops.tf_batch_neighbors(None, dataset_points, [1, 2],
-                                            [2, 1], 0.1)
+        ops.tf_batch_neighbors(None, dataset_points, [1, 2], [2, 1], 0.1)
 
     with pytest.raises(ValueError):
-        sub_points = ops.tf_batch_neighbors(query_points, None, [1, 2], [2, 1],
-                                            1)
+        ops.tf_batch_neighbors(query_points, None, [1, 2], [2, 1], 1)
 
     with pytest.raises(ValueError):
-        sub_points = ops.tf_batch_neighbors(query_points, dataset_points, None,
-                                            [2, 1], 1)
+        ops.tf_batch_neighbors(query_points, dataset_points, None, [2, 1], 1)

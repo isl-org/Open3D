@@ -29,13 +29,13 @@ import open3d as o3d
 import pytest
 import importlib
 
-tf = importlib.import_module('tensorflow')
-ops = importlib.import_module('open3d.ml.tf.ops')
-
 
 @pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                     reason='tf ops not built')
 def test_tf_subsampling():
+    tf = importlib.import_module('tensorflow')
+    ops = importlib.import_module('open3d.ml.tf.ops')
+
     points = np.array(range(21)).reshape(-1, 3).astype(np.float32)
 
     sub_points = ops.tf_subsampling(points, 10).cpu().numpy()
@@ -59,12 +59,15 @@ def test_tf_subsampling():
     np.testing.assert_equal(sub_points, sub_points_ref)
 
     with pytest.raises(ValueError):
-        sub_points = ops.tf_subsampling(None, 1)
+        ops.tf_subsampling(None, 1)
 
 
 @pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                     reason='tf ops not built')
 def test_tf_batch_subsampling():
+    tf = importlib.import_module('tensorflow')
+    ops = importlib.import_module('open3d.ml.tf.ops')
+
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1],
                        [5, 0, 0], [5, 1, 0]],
                       dtype=np.float32)
@@ -81,7 +84,7 @@ def test_tf_batch_subsampling():
     np.testing.assert_almost_equal(sub_batch, sub_batch_ref)
 
     with pytest.raises(ValueError):
-        sub_points = ops.tf_batch_subsampling(None, batches, 1)
+        ops.tf_batch_subsampling(None, batches, 1)
 
     with pytest.raises(ValueError):
-        sub_points = ops.tf_batch_subsampling(points, None, 1)
+        ops.tf_batch_subsampling(points, None, 1)
