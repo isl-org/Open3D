@@ -150,6 +150,10 @@ jobs:
           python -m pip show -f open3d
           printf "\n\nInstalled packages...\n"
           python -m pip freeze
+          printf "\n\nDynamic libraries used:\n"
+          DLL_PATH=$(python -c "import open3d; print(open3d.cpu.pybind.__file__)")/..
+          find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
+          echo
           test_wheel
           reportJobFinishSession
       - name: Run Python unit tests (benchmarks)

@@ -24,7 +24,8 @@ CUDA_VERSION=("10-1" "10.1")
 CUDNN_MAJOR_VERSION=7
 CUDNN_VERSION="7.6.5.32-1+cuda10.1"
 TENSORFLOW_VER="2.3.0"
-TORCH_GLNX_VER=("1.6.0+cu101" "1.6.0+cpu")
+TORCH_CUDA_GLNX_VER="1.6.0+cu101"
+TORCH_CPU_GLNX_VER="1.6.0+cpu"
 TORCH_MACOS_VER="1.6.0"
 YAPF_VER="0.30.0"
 
@@ -107,11 +108,11 @@ install_python_dependencies() {
     if [[ "with-cuda" =~ ^($options)$ ]] ; then
         TF_ARCH_NAME=tensorflow-gpu
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
-        TORCH_ARCH_GLNX_VER=${TORCH_GLNX_VER[1]}
+        TORCH_ARCH_GLNX_VER="$TORCH_CUDA_GLNX_VER"
     else
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow-gpu
-        TORCH_ARCH_GLNX_VER=${TORCH_GLNX_VER[0]}
+        TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
     fi
 
     echo
