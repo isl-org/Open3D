@@ -71,8 +71,8 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         const scalar_t *data_ptr =
                 static_cast<const scalar_t *>(dataset_points.GetDataPtr());
-        holder_.reset(new NanoFlannIndexHolder<scalar_t>(dataset_size,
-                                                         dimension, data_ptr));
+        holder_.reset(new NanoFlannIndexHolder<L2, scalar_t>(
+                dataset_size, dimension, data_ptr));
     });
     return true;
 };
@@ -115,7 +115,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
             std::vector<size_t> single_indices(knn);
             std::vector<scalar_t> single_distances(knn);
 
-            auto holder = static_cast<NanoFlannIndexHolder<scalar_t> *>(
+            auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
                     holder_.get());
 
             size_t num_results = holder->index_->knnSearch(
@@ -205,7 +205,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
             nanoflann::SearchParams params;
             std::vector<std::pair<size_t, scalar_t>> ret_matches;
 
-            auto holder = static_cast<NanoFlannIndexHolder<scalar_t> *>(
+            auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
                     holder_.get());
             size_t num_matches = holder->index_->radiusSearch(
                     static_cast<scalar_t *>(query_points[i].GetDataPtr()),
