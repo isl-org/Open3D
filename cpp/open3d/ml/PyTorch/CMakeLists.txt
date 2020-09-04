@@ -38,7 +38,7 @@ set(TORCH_OPS_CUDA_SOURCES
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
 )
 
-if(CUDA_ENABLED)
+if(BUILD_CUDA_MODULE)
     set(open3d_torch_ops_SOURCES
         ${TORCH_OPS_SOURCES}
         ${TORCH_OPS_CUDA_SOURCES}
