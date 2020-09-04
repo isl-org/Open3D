@@ -113,9 +113,8 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
             std::vector<size_t> single_indices(knn);
             std::vector<scalar_t> single_distances(knn);
 
-            NanoFlannIndexHolder<scalar_t> *holder =
-                    static_cast<NanoFlannIndexHolder<scalar_t> *>(
-                            holder_.get());
+            auto holder = static_cast<NanoFlannIndexHolder<scalar_t> *>(
+                    holder_.get());
 
             size_t num_results = holder->index_->knnSearch(
                     static_cast<scalar_t *>(query_points[i].GetDataPtr()),
@@ -192,20 +191,18 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         std::vector<size_t> batch_nums;
 
         for (auto i = 0; i < radii.GetShape()[0]; i++) {
-            scalar_t radius = *static_cast<scalar_t *>(radii[i].GetDataPtr());
+            scalar_t radius = radii[i].Item<scalar_t>();
             if (radius <= 0.0) {
                 utility::LogError(
                         "[NanoFlannIndex::SearchRadius] radius should be "
-                        "larger "
-                        "than 0.");
+                        "larger than 0.");
             }
 
             nanoflann::SearchParams params;
             std::vector<std::pair<size_t, scalar_t>> ret_matches;
 
-            NanoFlannIndexHolder<scalar_t> *holder =
-                    static_cast<NanoFlannIndexHolder<scalar_t> *>(
-                            holder_.get());
+            auto holder = static_cast<NanoFlannIndexHolder<scalar_t> *>(
+                    holder_.get());
             size_t num_matches = holder->index_->radiusSearch(
                     static_cast<scalar_t *>(query_points[i].GetDataPtr()),
                     radius * radius, ret_matches, params);
