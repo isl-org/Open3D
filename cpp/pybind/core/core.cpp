@@ -106,7 +106,7 @@ Tensor PyArrayToTensor(py::array array, bool inplace) {
     for (size_t i = 0; i < strides.size(); ++i) {
         strides[i] /= info.itemsize;
     }
-    Dtype dtype = pybind_utils::ArrayFormatToDtype(info.format);
+    Dtype dtype = pybind_utils::ArrayFormatToDtype(info.format, info.itemsize);
     Device device("CPU:0");
 
     array.inc_ref();
