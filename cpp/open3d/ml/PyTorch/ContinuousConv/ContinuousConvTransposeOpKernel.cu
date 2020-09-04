@@ -66,8 +66,7 @@ void ContinuousConvTransposeCUDA(
     auto cuda_device_props = at::cuda::getCurrentDeviceProperties();
     const int texture_alignment = cuda_device_props->textureAlignment;
 
-    auto device = filters.device().type();
-    auto device_idx = filters.device().index();
+    auto device = filters.device();
 
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
@@ -98,10 +97,7 @@ void ContinuousConvTransposeCUDA(
             std::min(size_t(max_temp_mem_MB) * 1024 * 1024, max_temp_size),
             temp_size);
 
-    torch::Tensor temp_tensor = torch::empty(
-            {int64_t(temp_size)},
-            torch::dtype(ToTorchDtype<uint8_t>()).device(device, device_idx));
-    temp_ptr = temp_tensor.data_ptr<uint8_t>();
+    auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
 
     // actually run the operation
     CConvTransposeComputeFeaturesCUDA<TReal, TIndex>(

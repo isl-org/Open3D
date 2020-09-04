@@ -146,6 +146,18 @@ inline std::string TensorInfoStr(std::initializer_list<torch::Tensor> tensors) {
     return sstr.str();
 }
 
+// convenience function for creating a tensor for temp memory
+inline torch::Tensor CreateTempTensor(const int64_t size,
+                                      const torch::Device& device,
+                                      void** ptr = nullptr) {
+    torch::Tensor tensor = torch::empty(
+            {size}, torch::dtype(ToTorchDtype<uint8_t>()).device(device));
+    if (ptr) {
+        *ptr = tensor.data_ptr<uint8_t>();
+    }
+    return tensor;
+}
+
 inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
         torch::Tensor tensor) {
     using namespace open3d::ml::op_util;

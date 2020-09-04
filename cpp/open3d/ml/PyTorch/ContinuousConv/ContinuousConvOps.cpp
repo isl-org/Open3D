@@ -28,12 +28,12 @@
 #include <vector>
 
 #include "open3d/ml/PyTorch/ContinuousConv/ContinuousConvBackpropFilterOpKernel.h"
+#include "open3d/ml/PyTorch/ContinuousConv/ContinuousConvHelper.h"
 #include "open3d/ml/PyTorch/ContinuousConv/ContinuousConvOpKernel.h"
 #include "open3d/ml/PyTorch/ContinuousConv/ContinuousConvTransposeOpKernel.h"
 #include "open3d/ml/PyTorch/Misc/InvertNeighborsListOps.h"
 #include "open3d/ml/PyTorch/Misc/ReduceSubarraysSumOps.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
-#include "open3d/ml/impl/continuous_conv/ContinuousConvTypes.h"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;
@@ -61,34 +61,10 @@ public:
                             const std::string& interpolation_str,
                             const int64_t max_temp_mem_MB) {
         CoordinateMapping coordinate_mapping =
-                CoordinateMapping::BALL_TO_CUBE_RADIAL;
-        if (coordinate_mapping_str == "ball_to_cube_radial") {
-            coordinate_mapping = CoordinateMapping::BALL_TO_CUBE_RADIAL;
-        } else if (coordinate_mapping_str == "ball_to_cube_volume_preserving") {
-            coordinate_mapping =
-                    CoordinateMapping::BALL_TO_CUBE_VOLUME_PRESERVING;
-        } else if (coordinate_mapping_str == "identity") {
-            coordinate_mapping = CoordinateMapping::IDENTITY;
-        } else {
-            TORCH_CHECK(
-                    false,
-                    "coordinate_mapping must be one of ('ball_to_cube_radial', "
-                    "'ball_to_cube_volume_preserving', 'identity') but got " +
-                            coordinate_mapping_str);
-        }
-        InterpolationMode interpolation = InterpolationMode::LINEAR;
-        if (interpolation_str == "linear") {
-            interpolation = InterpolationMode::LINEAR;
-        } else if (interpolation_str == "linear_border") {
-            interpolation = InterpolationMode::LINEAR_BORDER;
-        } else if (interpolation_str == "nearest_neighbor") {
-            interpolation = InterpolationMode::NEAREST_NEIGHBOR;
-        } else {
-            TORCH_CHECK(false,
-                        "interpolation must be one of ('linear', "
-                        "'linear_border', 'nearest_neighbor') but got " +
-                                interpolation_str);
-        }
+                ParseCoordinateMappingStr(coordinate_mapping_str);
+
+        InterpolationMode interpolation =
+                ParseInterpolationStr(interpolation_str);
 
         CHECK_TYPE(neighbors_row_splits, kInt64);
         CHECK_SAME_DTYPE(filters, out_positions, extents, offset, inp_positions,
@@ -200,35 +176,12 @@ public:
                 ctx->saved_data["interpolation_str"].toStringRef();
         const int64_t max_temp_mem_MB =
                 ctx->saved_data["max_temp_mem_MB"].toInt();
+
         CoordinateMapping coordinate_mapping =
-                CoordinateMapping::BALL_TO_CUBE_RADIAL;
-        if (coordinate_mapping_str == "ball_to_cube_radial") {
-            coordinate_mapping = CoordinateMapping::BALL_TO_CUBE_RADIAL;
-        } else if (coordinate_mapping_str == "ball_to_cube_volume_preserving") {
-            coordinate_mapping =
-                    CoordinateMapping::BALL_TO_CUBE_VOLUME_PRESERVING;
-        } else if (coordinate_mapping_str == "identity") {
-            coordinate_mapping = CoordinateMapping::IDENTITY;
-        } else {
-            TORCH_CHECK(
-                    false,
-                    "coordinate_mapping must be one of ('ball_to_cube_radial', "
-                    "'ball_to_cube_volume_preserving', 'identity') but got " +
-                            coordinate_mapping_str);
-        }
-        InterpolationMode interpolation = InterpolationMode::LINEAR;
-        if (interpolation_str == "linear") {
-            interpolation = InterpolationMode::LINEAR;
-        } else if (interpolation_str == "linear_border") {
-            interpolation = InterpolationMode::LINEAR_BORDER;
-        } else if (interpolation_str == "nearest_neighbor") {
-            interpolation = InterpolationMode::NEAREST_NEIGHBOR;
-        } else {
-            TORCH_CHECK(false,
-                        "interpolation must be one of ('linear', "
-                        "'linear_border', 'nearest_neighbor') but got " +
-                                interpolation_str);
-        }
+                ParseCoordinateMappingStr(coordinate_mapping_str);
+
+        InterpolationMode interpolation =
+                ParseInterpolationStr(interpolation_str);
 
         auto saved_vars = ctx->get_saved_variables();
         auto filters = saved_vars[0];

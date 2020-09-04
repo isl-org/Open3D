@@ -37,14 +37,12 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
         const torch::Tensor& inp_neighbors_index,
         const torch::Tensor& inp_neighbors_row_splits,
         const torch::Tensor& inp_neighbors_attributes) {
-    auto device = inp_neighbors_index.device().type();
-    auto device_idx = inp_neighbors_index.device().index();
-    torch::Tensor neighbors_index = torch::empty(
-            inp_neighbors_index.sizes(),
-            torch::dtype(ToTorchDtype<TIndex>()).device(device, device_idx));
+    auto device = inp_neighbors_index.device();
+    torch::Tensor neighbors_index =
+            torch::empty(inp_neighbors_index.sizes(),
+                         torch::dtype(ToTorchDtype<TIndex>()).device(device));
     torch::Tensor neighbors_row_splits = torch::empty(
-            {num_points + 1},
-            torch::dtype(torch::kInt64).device(device, device_idx));
+            {num_points + 1}, torch::dtype(torch::kInt64).device(device));
     torch::Tensor neighbors_attributes =
             torch::empty_like(inp_neighbors_attributes);
 
@@ -79,10 +77,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
             (int64_t*)neighbors_row_splits.data_ptr<int64_t>(),
             neighbors_row_splits.size(0) - 1);
 
-    torch::Tensor temp_tensor = torch::empty(
-            {int64_t(temp_size)},
-            torch::dtype(ToTorchDtype<uint8_t>()).device(device, device_idx));
-    temp_ptr = temp_tensor.data_ptr<uint8_t>();
+    auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
 
     // actually invert the list
     open3d::ml::impl::InvertNeighborsListCUDA(
