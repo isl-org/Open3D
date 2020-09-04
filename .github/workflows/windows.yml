@@ -123,7 +123,7 @@ jobs:
           python -V
           python -m pip install -U pytest
           python -m pip install -U scipy
-          python -m pip install open3d --no-index -f .
+          python -m pip install open3d -f .
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
