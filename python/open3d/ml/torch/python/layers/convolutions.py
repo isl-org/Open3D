@@ -4,7 +4,7 @@ import torch
 from torch.nn.parameter import Parameter
 import numpy as np
 
-__all__ = ['ContinuousConv']
+__all__ = ['ContinuousConv', 'SparseConv', 'SparseConvTranspose']
 
 
 class ContinuousConv(torch.nn.Module):
@@ -14,6 +14,8 @@ class ContinuousConv(torch.nn.Module):
     specified output points.
 
     Arguments:
+        in_channels: The number of input channels.
+
         filters: The number of filters/output channels.
 
         kernel_size: The spatial resolution of the filter, e.g. [3,3,3].
@@ -113,6 +115,7 @@ class ContinuousConv(torch.nn.Module):
             self.offset = torch.zeros(size=(3,), dtype=torch.float32)
         else:
             self.offset = offset
+        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
 
         self.window_function = window_function
 
@@ -290,6 +293,342 @@ class ContinuousConv(torch.nn.Module):
         if self.use_bias:
             out_features += self.bias
         if not self.activation is None:
+            out_features = self.activation(out_features)
+
+        return out_features
+
+
+class SparseConv(torch.nn.Module):
+    """Sparse Convolution. This layer computes a convolution which is only
+    evaluated at the specified output positions.
+
+    Arguments:
+        in_channels: The number of input channels.
+
+        filters: The number of filters/output channels.
+
+        kernel_size: The spatial resolution of the filter, e.g. [3,3,3].
+
+        activation: The activation function to use. None means no activation.
+
+        use_bias: If True adds an additive bias vector.
+
+        kernel_initializer: Initializer for the kernel weights.
+
+        bias_initializer: Initializer for the bias vector.
+
+        normalize: If true then the result is normalized by the number of input points.
+
+        offset: A single 3D vector used in the filter coordinate computation.
+          The shape is [3]. This can be used to control how the filters are
+          centered. It will be set automatically for kernels with even sizes.
+    """
+
+    def __init__(
+            self,
+            in_channels,
+            filters,
+            kernel_size,
+            activation=None,
+            use_bias=True,
+            kernel_initializer=lambda x: torch.nn.init.uniform_(x, -0.05, 0.05),
+            bias_initializer=torch.nn.init.zeros_,
+            normalize=False,
+            offset=None,
+            **kwargs):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.activation = activation
+        self.use_bias = use_bias
+        self.kernel_initializer = kernel_initializer
+        self.bias_initializer = bias_initializer
+        self.normalize = normalize
+
+        if not (np.asarray(kernel_size) == kernel_size[0]).all():
+            raise Exception("Only cubic kernel sizes are supported.")
+
+        if offset is None:
+            if kernel_size[0] % 2:
+                self.offset = torch.zeros(size=(3,), dtype=torch.float32)
+            else:
+                self.offset = torch.full((3,), -0.5, dtype=torch.float32)
+        else:
+            self.offset = offset
+        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
+
+        self.fixed_radius_search = layers.FixedRadiusSearch(
+            metric='Linf', ignore_query_point=False, return_distances=False)
+
+        kernel_shape = (*self.kernel_size, self.in_channels, self.filters)
+        self.kernel = torch.nn.Parameter(data=torch.Tensor(*kernel_shape),
+                                         requires_grad=True)
+        self.kernel_initializer(self.kernel)
+
+        if self.use_bias:
+            self.bias = torch.nn.Parameter(data=torch.Tensor(self.filters),
+                                           requires_grad=True)
+            self.bias_initializer(self.bias)
+
+    def forward(self,
+                inp_features,
+                inp_positions,
+                out_positions,
+                voxel_size,
+                inp_importance=None,
+                fixed_radius_search_hash_table=None):
+        """This function computes the output features.
+
+        Arguments:
+
+          inp_features: A 2D tensor which stores a feature vector for each input
+            point.
+
+          inp_positions: A 2D tensor with the 3D point positions of each input
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          out_positions: A 2D tensor with the 3D point positions of each output
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          voxel_size: A scalar float that defines the edge length of a voxel.
+
+          inp_importance: Optional scalar importance value for each input point.
+
+          fixed_radius_search_hash_table: A precomputed hash table generated with
+            build_spatial_hash_table(). This input can be used to explicitly force the
+            reuse of a hash table in special cases and is usually not needed.
+            Note that the hash table must have been generated with the same 'points'
+            array. Note that this parameter is only used if 'extents' is a scalar.
+
+        Returns: A tensor of shape [num output points, filters] with the output
+          features.
+        """
+
+        offset = self.offset
+        if isinstance(voxel_size, (float, int)):
+            voxel_size = torch.tensor(voxel_size, dtype=inp_positions.dtype)
+        if len(voxel_size.shape) != 0:
+            raise Exception("voxel_size must be a scalar")
+
+        if inp_importance is None:
+            inp_importance = torch.empty((0,),
+                                         dtype=torch.float32,
+                                         device=self.kernel.device)
+
+        hash_table_size_factor = 1 / 64
+        self.nns = self.fixed_radius_search(
+            inp_positions,
+            queries=out_positions - offset * voxel_size,
+            radius=self.kernel_size[0] * voxel_size * 0.51,
+            hash_table_size_factor=hash_table_size_factor,
+            hash_table=fixed_radius_search_hash_table)
+
+        # for stats and debugging
+        num_pairs = self.nns.neighbors_index.shape[0]
+        self._avg_neighbors = num_pairs / out_positions.shape[0]
+
+        extents_rank2 = torch.full([1, 1], voxel_size * self.kernel_size[0])
+
+        self._conv_values = {
+            'filters': self.kernel,
+            'out_positions': out_positions,
+            'extents': extents_rank2,
+            'offset': offset,
+            'inp_positions': inp_positions,
+            'inp_features': inp_features,
+            'inp_importance': inp_importance,
+            'neighbors_index': self.nns.neighbors_index,
+            'neighbors_importance': torch.empty((0,), dtype=torch.float32),
+            'neighbors_row_splits': self.nns.neighbors_row_splits,
+            'align_corners': False,
+            'coordinate_mapping': 'identity',
+            'interpolation': 'nearest_neighbor',
+            'normalize': self.normalize,
+        }
+
+        out_features = ops.continuous_conv(**self._conv_values)
+
+        self._conv_output = out_features
+
+        if self.use_bias:
+            out_features += self.bias
+        if self.activation:
+            out_features = self.activation(out_features)
+
+        return out_features
+
+
+class SparseConvTranspose(torch.nn.Module):
+    """Sparse Transposed Convolution. This layer computes a transposed convolution which is only evaluated at the specified output positions.
+
+    Arguments:
+        in_channels: The number of input channels.
+
+        filters: The number of filters/output channels.
+
+        kernel_size: The spatial resolution of the filter, e.g. [3,3,3].
+
+        activation: The activation function to use. None means no activation.
+
+        use_bias: If True adds an additive bias vector.
+
+        kernel_initializer: Initializer for the kernel weights.
+
+        bias_initializer: Initializer for the bias vector.
+
+        normalize: If true then the input features will be normalized with the number of
+          output points.
+
+        offset: A single 3D vector used in the filter coordinate computation.
+          The shape is [3]. This can be used to control how the filters are
+          centered. It will be set automatically for kernels with even sizes.
+    """
+
+    def __init__(self,
+                 in_channels,
+                 filters,
+                 kernel_size,
+                 activation=None,
+                 use_bias=True,
+                 kernel_initializer='uniform',
+                 bias_initializer='zeros',
+                 normalize=False,
+                 offset=None,
+                 **kwargs):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.activation = activation
+        self.use_bias = use_bias
+        self.kernel_initializer = kernel_initializer
+        self.bias_initializer = bias_initializer
+        self.normalize = normalize
+
+        if not (np.asarray(kernel_size) == kernel_size[0]).all():
+            raise Exception("Only cubic kernel sizes are supported.")
+
+        if offset is None:
+            if kernel_size[0] % 2:
+                self.offset = torch.zeros(size=(3,), dtype=torch.float32)
+            else:
+                self.offset = torch.full((3,), -0.5, dtype=torch.float32)
+        else:
+            self.offset = offset
+        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
+
+        self.fixed_radius_search = layers.FixedRadiusSearch(
+            metric='Linf', ignore_query_point=False, return_distances=False)
+
+        kernel_shape = (*self.kernel_size, self.in_channels, self.filters)
+        self.kernel = torch.nn.Parameter(data=torch.Tensor(*kernel_shape),
+                                         requires_grad=True)
+        self.kernel_initializer(self.kernel)
+
+        if self.use_bias:
+            self.bias = torch.nn.Parameter(data=torch.Tensor(self.filters),
+                                           requires_grad=True)
+            self.bias_initializer(self.bias)
+
+    def forward(self,
+                inp_features,
+                inp_positions,
+                out_positions,
+                voxel_size,
+                out_importance=None,
+                fixed_radius_search_hash_table=None):
+        """This function computes the output features.
+
+        Arguments:
+
+          inp_features: A 2D tensor which stores a feature vector for each input
+            point.
+
+          inp_positions: A 2D tensor with the 3D point positions of each input
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          out_positions: A 2D tensor with the 3D point positions of each output
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          voxel_size: A scalar float that defines the edge length of a voxel.
+
+          out_importance: Optional scalar importance value for each output point.
+
+          fixed_radius_search_hash_table: A precomputed hash table generated with
+            build_spatial_hash_table(). This input can be used to explicitly force the
+            reuse of a hash table in special cases and is usually not needed.
+            Note that the hash table must have been generated with the same 'points'
+            array. Note that this parameter is only used if 'extents' is a scalar.
+
+        Returns: A tensor of shape [num output points, filters] with the output
+          features.
+        """
+
+        offset = self.offset
+        if isinstance(voxel_size, (float, int)):
+            voxel_size = torch.tensor(voxel_size, dtype=inp_positions.dtype)
+        if len(voxel_size.shape) != 0:
+            raise Exception("voxel_size must be a scalar")
+
+        if out_importance is None:
+            out_importance = torch.empty((0,),
+                                         dtype=torch.float32,
+                                         device=self.kernel.device)
+
+        empty_vec = torch.empty((0,),
+                                dtype=torch.float32,
+                                device=self.kernel.device)
+
+        hash_table_size_factor = 1 / 64
+        self.nns_inp = self.fixed_radius_search(
+            out_positions,
+            queries=inp_positions - offset * voxel_size,
+            radius=self.kernel_size[0] * voxel_size * 0.51,
+            hash_table_size_factor=hash_table_size_factor,
+            hash_table=fixed_radius_search_hash_table)
+
+        num_out = out_positions.shape[0]
+
+        neighbors_index, neighbors_row_splits, _ = ops.invert_neighbors_list(
+            num_out, self.nns_inp.neighbors_index,
+            self.nns_inp.neighbors_row_splits, empty_vec)
+
+        # for stats and debugging
+        num_pairs = neighbors_index.shape[0]
+        self._avg_neighbors = num_pairs / out_positions.shape[0]
+
+        extents_rank2 = torch.full([1, 1], voxel_size * self.kernel_size[0])
+
+        self._conv_values = {
+            'filters': self.kernel,
+            'out_positions': out_positions,
+            'extents': extents_rank2,
+            'offset': offset,
+            'inp_positions': inp_positions,
+            'inp_features': inp_features,
+            'out_importance': out_importance,
+            'inp_neighbors_index': self.nns_inp.neighbors_index,
+            'inp_neighbors_importance_sum': empty_vec,
+            'inp_neighbors_row_splits': self.nns_inp.neighbors_row_splits,
+            'neighbors_index': neighbors_index,
+            'neighbors_importance': empty_vec,
+            'neighbors_row_splits': neighbors_row_splits,
+            'align_corners': False,
+            'coordinate_mapping': 'identity',
+            'interpolation': 'nearest_neighbor',
+            'normalize': self.normalize,
+        }
+
+        out_features = ops.continuous_conv_transpose(**self._conv_values)
+
+        self._conv_output = out_features
+
+        if self.use_bias:
+            out_features += self.bias
+        if self.activation:
             out_features = self.activation(out_features)
 
         return out_features

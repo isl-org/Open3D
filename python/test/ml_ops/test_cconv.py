@@ -46,17 +46,16 @@ pytestmark = mltest.default_marks
                         ])
 # yapf: enable
 @mltest.parametrize.ml
-@mltest.parametrize.device
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_compare_to_conv3d(ml, dtype, device, filter_size, out_channels,
-                           in_channels, with_inp_importance,
-                           with_normalization):
+def test_compare_to_conv3d(ml, dtype, filter_size, out_channels, in_channels,
+                           with_inp_importance, with_normalization):
     """Compares to the 3D convolution in tensorflow"""
 
     # This test requires tensorflow
-    if ml.framework.__name__ != 'tensorflow':
+    try:
+        import tensorflow as tf
+    except ImportError:
         return
-    tf = ml.framework
 
     np.random.seed(0)
 
@@ -80,7 +79,7 @@ def test_compare_to_conv3d(ml, dtype, device, filter_size, out_channels,
         inp_importance = np.random.rand(
             inp_positions.shape[0]).astype(dtype) - 0.5
     else:
-        inp_importance = np.empty((0,))
+        inp_importance = np.empty((0,), dtype=dtype)
     out_positions = np.unique(np.random.randint(
         np.max(filter_size) // 2, max_grid_extent - np.max(filter_size) // 2,
         (5, 3)).astype(dtype),
@@ -89,26 +88,22 @@ def test_compare_to_conv3d(ml, dtype, device, filter_size, out_channels,
 
     voxel_size = np.array([1, 1, 1], dtype=dtype)
     extent = voxel_size[np.newaxis, :] * np.array(filter_size[::-1])
+    extent = extent.astype(np.float32)
     offset = np.array([0.0, 0.0, 0.0], dtype=dtype)
 
     inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
                                      (in_channels,)).astype(dtype)
     fixed_radius_search = ml.layers.FixedRadiusSearch(metric='Linf')
-    neighbors_index, neighbors_row_splits, _ = fixed_radius_search(
-        inp_positions / extent, out_positions / extent,
-        voxel_size[0] / 2 + 0.01)
-    neighbors_index = neighbors_index.numpy()
-    neighbors_row_splits = neighbors_row_splits.numpy()
+    neighbors_index, neighbors_row_splits, _ = mltest.run_op(
+        ml, ml.device, False, fixed_radius_search, inp_positions / extent,
+        out_positions / extent, voxel_size[0] / 2 + 0.01)
 
-    neighbors_importance = np.empty((0,))
+    neighbors_importance = np.empty((0,), dtype=dtype)
 
-    with tf.device(device):
-        y = ml.ops.continuous_conv(filters, out_positions, extent, offset,
-                                   inp_positions, inp_features, inp_importance,
-                                   neighbors_index, neighbors_importance,
-                                   neighbors_row_splits, **conv_attrs)
-        assert device in y.device
-        y = y.numpy()
+    y = mltest.run_op(ml, ml.device, True, ml.ops.continuous_conv, filters,
+                      out_positions, extent, offset, inp_positions,
+                      inp_features, inp_importance, neighbors_index,
+                      neighbors_importance, neighbors_row_splits, **conv_attrs)
 
     # Compare the output to a standard 3d conv
     # store features in a volume to use standard 3d convs
@@ -150,13 +145,11 @@ def test_compare_to_conv3d(ml, dtype, device, filter_size, out_channels,
                              ([5,1,3],            3,           4,               False,                      True,                  False,              False,         False,           'identity',        'linear'),
                         ])
 # yapf: enable
-@mltest.parametrize.device
 @pytest.mark.parametrize('dtype', [np.float32])
-def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
-                        in_channels, with_inp_importance,
-                        with_neighbors_importance, with_individual_extent,
-                        with_normalization, align_corners, coordinate_mapping,
-                        interpolation):
+def test_cconv_gradient(ml, dtype, filter_size, out_channels, in_channels,
+                        with_inp_importance, with_neighbors_importance,
+                        with_individual_extent, with_normalization,
+                        align_corners, coordinate_mapping, interpolation):
 
     if dtype == np.float64:
         tolerance = {'atol': 1e-5, 'rtol': 1e-2, 'epsilon': 1e-6}
@@ -194,14 +187,14 @@ def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
                                      (in_channels,)).astype(dtype)
     fixed_radius_search = ml.layers.FixedRadiusSearch(metric='Linf')
     neighbors_index, neighbors_row_splits, _ = mltest.run_op(
-        ml, device, False, fixed_radius_search, inp_positions, out_positions,
+        ml, ml.device, False, fixed_radius_search, inp_positions, out_positions,
         extent[0, 0] / 2)
 
     if (with_neighbors_importance):
         neighbors_importance = np.random.rand(
             neighbors_index.shape[0]).astype(dtype) - 0.5
 
-        neighbors_importance_sum = mltest.run_op(ml, device, False,
+        neighbors_importance_sum = mltest.run_op(ml, ml.device, False,
                                                  ml.ops.reduce_subarrays_sum,
                                                  neighbors_importance,
                                                  neighbors_row_splits)
@@ -210,8 +203,9 @@ def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
         neighbors_importance_sum = np.empty((0,), dtype=dtype)
 
     inverted_neighbors_index, inverted_neighbors_row_splits, inverted_neighbors_importance = mltest.run_op(
-        ml, device, False, ml.ops.invert_neighbors_list, inp_positions.shape[0],
-        neighbors_index, neighbors_row_splits, neighbors_importance)
+        ml, ml.device, False, ml.ops.invert_neighbors_list,
+        inp_positions.shape[0], neighbors_index, neighbors_row_splits,
+        neighbors_importance)
 
     # print(neighbors_row_splits, inverted_neighbors_row_splits)
     # print(neighbors_index, inverted_neighbors_index)
@@ -219,7 +213,7 @@ def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
     # define functions for the gradient checker
     def conv_infeats(inp_features):
         return mltest.run_op(ml,
-                             device,
+                             ml.device,
                              True,
                              ml.ops.continuous_conv,
                              filters=filters,
@@ -236,7 +230,7 @@ def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
 
     def conv_filter(filters):
         return mltest.run_op(ml,
-                             device,
+                             ml.device,
                              True,
                              ml.ops.continuous_conv,
                              filters=filters,
@@ -253,7 +247,7 @@ def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
 
     def conv_filter_backprop(out_features_gradient, filters):
         return mltest.run_op_grad(ml,
-                                  device,
+                                  ml.device,
                                   True,
                                   ml.ops.continuous_conv,
                                   filters,
@@ -273,7 +267,7 @@ def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
 
     def conv_infeat_backprop(out_features_gradient, inp_features):
         return mltest.run_op_grad(ml,
-                                  device,
+                                  ml.device,
                                   True,
                                   ml.ops.continuous_conv,
                                   inp_features,
@@ -294,7 +288,7 @@ def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
     def conv_transpose_filter(filters):
         return mltest.run_op(
             ml,
-            device,
+            ml.device,
             True,
             ml.ops.continuous_conv_transpose,
             filters=filters,
@@ -315,7 +309,7 @@ def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
     def conv_transpose_infeats(inp_features):
         return mltest.run_op(
             ml,
-            device,
+            ml.device,
             True,
             ml.ops.continuous_conv_transpose,
             filters=filters.transpose([0, 1, 2, 4, 3]),
@@ -336,7 +330,7 @@ def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
     def conv_transpose_filter_backprop(out_features_gradient, filters):
         return mltest.run_op_grad(
             ml,
-            device,
+            ml.device,
             True,
             ml.ops.continuous_conv_transpose,
             filters,
@@ -360,7 +354,7 @@ def test_cconv_gradient(ml, dtype, device, filter_size, out_channels,
     def conv_transpose_infeat_backprop(out_features_gradient, inp_features):
         return mltest.run_op_grad(
             ml,
-            device,
+            ml.device,
             True,
             ml.ops.continuous_conv_transpose,
             inp_features,

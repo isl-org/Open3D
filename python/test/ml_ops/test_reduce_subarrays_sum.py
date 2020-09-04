@@ -39,9 +39,8 @@ value_dtypes = pytest.mark.parametrize(
 
 @pytest.mark.parametrize('seed', range(3))
 @value_dtypes
-@mltest.parametrize.device
 @mltest.parametrize.ml
-def test_reduce_subarrays_sum_random(seed, dtype, device, ml):
+def test_reduce_subarrays_sum_random(seed, dtype, ml):
 
     rng = np.random.RandomState(seed)
 
@@ -63,7 +62,7 @@ def test_reduce_subarrays_sum_random(seed, dtype, device, ml):
     row_splits = np.array(row_splits, dtype=np.int64)
 
     ans = mltest.run_op(ml,
-                        device,
+                        ml.device,
                         True,
                         ml.ops.reduce_subarrays_sum,
                         values=values,
@@ -75,9 +74,8 @@ def test_reduce_subarrays_sum_random(seed, dtype, device, ml):
         np.testing.assert_allclose(ans, expected_result, rtol=1e-5, atol=1e-8)
 
 
-@mltest.parametrize.device
 @mltest.parametrize.ml
-def test_reduce_subarrays_sum_zero_length_values(device, ml):
+def test_reduce_subarrays_sum_zero_length_values(ml):
 
     rng = np.random.RandomState(1)
 
@@ -92,7 +90,7 @@ def test_reduce_subarrays_sum_zero_length_values(device, ml):
     row_splits = np.array(row_splits, dtype=np.int64)
 
     ans = mltest.run_op(ml,
-                        device,
+                        ml.device,
                         True,
                         ml.ops.reduce_subarrays_sum,
                         values=values,
