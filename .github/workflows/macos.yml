@@ -145,7 +145,7 @@ jobs:
           source build_scripts.sh
           echo "$rj_startts StartJob ReportInit"
           install_python_dependencies with-unit-test
-          reportRun python -m pip install open3d --no-index -f ..
+          reportRun python -m pip install open3d -f ..
           printf "\n\nInstalled wheel folder structure:\n"
           python -m pip show -f open3d
           printf "\n\nInstalled packages...\n"

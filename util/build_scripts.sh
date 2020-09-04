@@ -12,6 +12,9 @@ if [ -z "${BUILD_CUDA_MODULE:+x}" ] ; then
 fi
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
+if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$BUILD_CUDA_MODULE" == OFF ] ; then
+    BUILD_PYTORCH_OPS=OFF   # PyTorch Ops requires CUDA + CUDNN to build
+fi
 BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 BUILD_WHEEL_ONLY=${BUILD_WHEEL_ONLY:=OFF}
@@ -70,8 +73,9 @@ install_cuda_toolkit() {
             fi
         done
     fi
+    options="$(echo "$@" | tr ' ' '|')"
     set +u  # Disable "unbound variable is error" since that gives a false alarm error below:
-    if [[ "with-cudnn" =~ ^($1|$2)$ ]] ; then
+    if [[ "with-cudnn" =~ ^($options)$ ]] ; then
         echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
         sudo apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
         sudo apt-get install --yes \
@@ -83,7 +87,7 @@ install_cuda_toolkit() {
     export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     echo PATH="$PATH"
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
-    if [[ "purge-cache" =~ ^($1|$2)$ ]] ; then
+    if [[ "purge-cache" =~ ^($options)$ ]] ; then
         sudo apt-get clean
         sudo rm -rf /var/lib/apt/lists/*
     fi
@@ -95,7 +99,7 @@ install_python_dependencies() {
 
     python -m pip install --upgrade pip
     python -m pip install -U wheel
-    options="$(echo $@ | tr ' ' '|')"
+    options="$(echo "$@" | tr ' ' '|')"
     if [[ "with-unit-test" =~ ^($options)$ ]] ; then
         python -m pip install -U pytest
         python -m pip install scipy
@@ -204,8 +208,6 @@ build_wheel() {
 
     if [ "$BUILD_CUDA_MODULE" == ON ] ; then
         echo
-        echo Installing CUDA toolkit...
-        install_cuda_toolkit
         echo Installing CUDA versions of Tensorflow and PyTorch...
         install_python_dependencies with-cuda purge-cache
         echo

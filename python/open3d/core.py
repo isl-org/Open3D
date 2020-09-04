@@ -6,17 +6,16 @@ try:
     if _cuda.is_available():
         from open3d.cuda.pybind.core import (
             Dtype, DtypeCode, Device, cuda, nns, NoneType, TensorList,
-            SizeVector, matmul as pybind_matmul, lstsq as pybind_lstsq,
-            solve as pybind_solve, inv as pybind_inv, svd as pybind_svd)
+            SizeVector, matmul as pybind_matmul, lstsq as pybind_lstsq, solve as
+            pybind_solve, inv as pybind_inv, svd as pybind_svd)
     else:
         raise ImportError("CUDA support not available.")
 except ImportError:
     from open3d.cpu.pybind.core import (Dtype, DtypeCode, Device, cuda, nns,
-                                        NoneType, TensorList, SizeVector,
-                                        matmul as pybind_matmul, lstsq as
-                                        pybind_lstsq, solve as pybind_solve,
-                                        inv as pybind_inv, svd as
-                                        pybind_svd)
+                                        NoneType, TensorList, SizeVector, matmul
+                                        as pybind_matmul, lstsq as pybind_lstsq,
+                                        solve as pybind_solve, inv as
+                                        pybind_inv, svd as pybind_svd)
 
 none = NoneType()
 

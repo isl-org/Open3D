@@ -17,10 +17,9 @@ jobs:
         SHARED: [ON, OFF]
     env:
       SHARED: ${{ matrix.SHARED }}
-      BUILD_ML_OPS: ${{ matrix.SHARED }}
-      BUILD_TENSORFLOW_OPS: ${{ matrix.SHARED }}
-      BUILD_PYTORCH_OPS: ${{ matrix.SHARED }}
       BUILD_CUDA_MODULE: OFF
+      BUILD_TENSORFLOW_OPS: ${{ matrix.SHARED }}
+      BUILD_PYTORCH_OPS: OFF    # PYTORCH_OPS requires CUDA + CUDNN
       BUILD_RPC_INTERFACE: ON
       NPROC: 2
     steps:
@@ -48,7 +47,7 @@ jobs:
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
         run: |
-          ./util/install_deps_ubuntu.sh assume-yes install-cuda
+          ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
           ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
           sudo apt-get clean    # Remove apt-get cache
@@ -148,7 +147,7 @@ jobs:
           source build_scripts.sh
           echo "$rj_startts StartJob ReportInit"
           install_python_dependencies with-unit-test
-          reportRun python -m pip install open3d  --no-index -f ..
+          reportRun python -m pip install open3d  -f ..
           printf "\n\nInstalled wheel folder structure:\n"
           python -m pip show -f open3d
           printf "\n\nInstalled packages...\n"

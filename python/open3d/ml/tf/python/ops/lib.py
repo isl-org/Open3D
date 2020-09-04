@@ -14,8 +14,10 @@ _package_root = _os.path.join(_this_dir, '..', '..', '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
 _lib_arch = ('cuda', 'cpu') if _build_config["BUILD_CUDA_MODULE"] else ('cpu',)
-_lib_path.extend([_os.path.join(_package_root, la, 'open3d_tf_ops' + _lib_suffix
-                                + _lib_ext) for la in _lib_arch])
+_lib_path.extend([
+    _os.path.join(_package_root, la, 'open3d_tf_ops' + _lib_suffix + _lib_ext)
+    for la in _lib_arch
+])
 
 _load_except = None
 _loaded = False
