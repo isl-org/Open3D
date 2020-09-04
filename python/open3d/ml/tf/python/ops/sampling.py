@@ -9,6 +9,10 @@ def tf_subsampling(points, sampleDl):
     return _lib.grid_subsampling(points, sampleDl)
 
 
+def tf_neighbors(queries, supports, radius):
+    return _lib.ordered_neighbors(queries, supports, radius)
+
+
 def tf_batch_neighbors(queries, supports, q_batches, s_batches, radius):
     return _lib.batch_ordered_neighbors(queries, supports, q_batches, s_batches,
                                         radius)

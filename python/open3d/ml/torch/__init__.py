@@ -26,7 +26,7 @@ except Exception as ex:
 
 from . import nn
 
-if open3d._build_config['BUNDLE_OPEN3D_ML']:
+if _build_config['BUNDLE_OPEN3D_ML']:
     if 'OPEN3D_ML_ROOT' in _os.environ:
         from ml3d import configs
         from ml3d import datasets  # this is for convenience to have everything on the same level

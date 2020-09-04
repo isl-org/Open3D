@@ -47,22 +47,8 @@ void ordered_neighbors(std::vector<PointXYZ>& queries,
 /// TOOD: This is a temporary function for 3DML repositiory use. In the future,
 /// the native Open3D Python API should be improved and used.
 ///
-/// Nearest neighbours within a radius with batching.
-/// queries and supports are sliced with their respective batch
-/// elements and distances are evaluated.
-/// Not efficient, all the distances are mannually calculated.
-void batch_ordered_neighbors(std::vector<PointXYZ>& queries,
-                             std::vector<PointXYZ>& supports,
-                             std::vector<int>& q_batches,
-                             std::vector<int>& s_batches,
-                             std::vector<int>& neighbors_indices,
-                             float radius);
-
-/// TOOD: This is a temporary function for 3DML repositiory use. In the future,
-/// the native Open3D Python API should be improved and used.
-///
 /// Nearest neighbours withing a radius with batching.
-/// Optimised version of batch_ordered_neighbors.
+/// queries and supports are sliced with their respective batch elements.
 /// Uses nanoflann to build a KDTree and find neighbors.
 void batch_nanoflann_neighbors(std::vector<PointXYZ>& queries,
                                std::vector<PointXYZ>& supports,
