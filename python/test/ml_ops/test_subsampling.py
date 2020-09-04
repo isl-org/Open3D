@@ -33,7 +33,6 @@ import importlib
 @pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                     reason='tf ops not built')
 def test_tf_subsampling():
-    tf = importlib.import_module('tensorflow')
     ops = importlib.import_module('open3d.ml.tf.ops')
 
     points = np.array(range(21)).reshape(-1, 3).astype(np.float32)
@@ -43,10 +42,14 @@ def test_tf_subsampling():
         [[13.5, 14.5, 15.5], [18, 19, 20], [9, 10, 11], [3, 4, 5]],
         dtype=np.float32)
 
+    sub_points = sub_points[sub_points[:, 0].argsort()]
+    sub_points_ref = sub_points_ref[sub_points_ref[:, 0].argsort()]
     np.testing.assert_equal(sub_points, sub_points_ref)
 
     sub_points = ops.tf_subsampling(points, 12).cpu().numpy()
     sub_points_ref = np.array([[15, 16, 17], [4.5, 5.5, 6.5]], dtype=np.float32)
+    sub_points = sub_points[sub_points[:, 0].argsort()]
+    sub_points_ref = sub_points_ref[sub_points_ref[:, 0].argsort()]
 
     np.testing.assert_equal(sub_points, sub_points_ref)
 
@@ -55,6 +58,8 @@ def test_tf_subsampling():
                       dtype=np.float32)
     sub_points_ref = np.array([[5, 0.5, 0], [0.4, 0.4, 0.4]], dtype=np.float32)
     sub_points = ops.tf_subsampling(points, 1.1).cpu().numpy()
+    sub_points = sub_points[sub_points[:, 0].argsort()]
+    sub_points_ref = sub_points_ref[sub_points_ref[:, 0].argsort()]
 
     np.testing.assert_equal(sub_points, sub_points_ref)
 
@@ -65,7 +70,6 @@ def test_tf_subsampling():
 @pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                     reason='tf ops not built')
 def test_tf_batch_subsampling():
-    tf = importlib.import_module('tensorflow')
     ops = importlib.import_module('open3d.ml.tf.ops')
 
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1],

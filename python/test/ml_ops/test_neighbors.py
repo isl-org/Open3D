@@ -33,7 +33,6 @@ import importlib
 @pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                     reason='tf ops not built')
 def test_tf_neighbors():
-    tf = importlib.import_module('tensorflow')
     ops = importlib.import_module('open3d.ml.tf.ops')
 
     query_points = np.array(
@@ -69,7 +68,6 @@ def test_tf_neighbors():
 @pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                     reason='tf ops not built')
 def test_tf_batch_neighbors():
-    tf = importlib.import_module('tensorflow')
     ops = importlib.import_module('open3d.ml.tf.ops')
 
     query_points = np.array(
