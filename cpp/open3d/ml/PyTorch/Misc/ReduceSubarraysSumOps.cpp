@@ -25,20 +25,13 @@
 // ----------------------------------------------------------------------------
 //
 
+#include "open3d/ml/PyTorch/Misc/ReduceSubarraysSumOps.h"
+
 #include <vector>
 
+#include "open3d/ml/PyTorch/Misc/ReduceSubarraysSumOpKernel.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "torch/script.h"
-
-template <class TAttr>
-torch::Tensor ReduceSubarraysSumCPU(const torch::Tensor& values,
-                                    const torch::Tensor& row_splits);
-
-#ifdef BUILD_CUDA_MODULE
-template <class TAttr>
-torch::Tensor ReduceSubarraysSumCUDA(const torch::Tensor& values,
-                                     const torch::Tensor& row_splits);
-#endif
 
 torch::Tensor ReduceSubarraysSum(const torch::Tensor& values,
                                  const torch::Tensor& row_splits) {
@@ -48,12 +41,18 @@ torch::Tensor ReduceSubarraysSum(const torch::Tensor& values,
 
     const auto& attr_type = values.dtype();
 
+    // special treatment for empty values vector
+    if (values.size(0) == 0) {
+        return torch::empty_like(values);
+    }
+
 #define CALL(attr_t, fn)                        \
     if (CompareTorchDtype<attr_t>(attr_type)) { \
         return fn<attr_t>(values, row_splits);  \
     }
 
     CHECK_SAME_DEVICE_TYPE(values, row_splits);
+
     if (values.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
         // pass to cuda function

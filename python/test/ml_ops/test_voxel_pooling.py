@@ -45,13 +45,12 @@ feature_functions = pytest.mark.parametrize(
     'feature_fn', ['average', 'max', 'nearest_neighbor'])
 
 
-@mltest.parametrize.ml
+@mltest.parametrize.ml_cpu_only
 @position_dtypes
 @feature_dtypes
 @position_functions
 @feature_functions
 def test_voxel_pooling(ml, pos_dtype, feat_dtype, position_fn, feature_fn):
-    device = mltest.cpu_device
     # yapf: disable
 
     points = np.array([
@@ -77,7 +76,7 @@ def test_voxel_pooling(ml, pos_dtype, feat_dtype, position_fn, feature_fn):
     # yapf: enable
 
     voxel_size = 1
-    ans = mltest.run_op(ml, device, True, ml.ops.voxel_pooling, points,
+    ans = mltest.run_op(ml, ml.device, True, ml.ops.voxel_pooling, points,
                         features, voxel_size, position_fn, feature_fn)
 
     if position_fn == 'average':
@@ -122,19 +121,18 @@ def test_voxel_pooling(ml, pos_dtype, feat_dtype, position_fn, feature_fn):
     np.testing.assert_allclose(ans.pooled_features, expected_features[index])
 
 
-@mltest.parametrize.ml
+@mltest.parametrize.ml_cpu_only
 @position_dtypes
 @feature_dtypes
 @position_functions
 @feature_functions
 def test_voxel_pooling_empty_point_set(ml, pos_dtype, feat_dtype, position_fn,
                                        feature_fn):
-    device = mltest.cpu_device
     points = np.zeros(shape=[0, 3], dtype=pos_dtype)
     features = np.zeros(shape=[0, 5], dtype=feat_dtype)
 
     voxel_size = 1
-    ans = mltest.run_op(ml, device, True, ml.ops.voxel_pooling, points,
+    ans = mltest.run_op(ml, ml.device, True, ml.ops.voxel_pooling, points,
                         features, voxel_size, position_fn, feature_fn)
 
     np.testing.assert_array_equal(points, ans.pooled_positions)
@@ -146,7 +144,7 @@ gradient_feature_dtypes = pytest.mark.parametrize('feat_dtype',
                                                   [np.float32, np.float64])
 
 
-@mltest.parametrize.ml
+@mltest.parametrize.ml_cpu_only
 @position_dtypes
 @gradient_feature_dtypes
 @position_functions
@@ -156,7 +154,6 @@ gradient_feature_dtypes = pytest.mark.parametrize('feat_dtype',
 ])
 def test_voxel_pooling_grad(ml, pos_dtype, feat_dtype, position_fn, feature_fn,
                             empty_point_set):
-    device = mltest.cpu_device
 
     rng = np.random.RandomState(123)
 
@@ -172,13 +169,13 @@ def test_voxel_pooling_grad(ml, pos_dtype, feat_dtype, position_fn, feature_fn,
     voxel_size = 0.25
 
     def fn(features):
-        ans = mltest.run_op(ml, device, True, ml.ops.voxel_pooling, positions,
-                            features, voxel_size, position_fn, feature_fn)
+        ans = mltest.run_op(ml, ml.device, True, ml.ops.voxel_pooling,
+                            positions, features, voxel_size, position_fn,
+                            feature_fn)
         return ans.pooled_features
 
     def fn_grad(features_bp, features):
-        print(features_bp.shape)
-        return mltest.run_op_grad(ml, device, True, ml.ops.voxel_pooling,
+        return mltest.run_op_grad(ml, ml.device, True, ml.ops.voxel_pooling,
                                   features, 'pooled_features', features_bp,
                                   positions, features, voxel_size, position_fn,
                                   feature_fn)

@@ -1,15 +1,21 @@
-from open3d.ml.tf import ops, layers
-import tensorflow as tf
+from open3d.ml.torch.nn import functional as ops
+from open3d.ml.torch import nn as layers
+import torch
+from torch.nn.parameter import Parameter
 import numpy as np
 
+__all__ = ['ContinuousConv', 'SparseConv', 'SparseConvTranspose']
 
-class ContinuousConv(tf.keras.layers.Layer):
+
+class ContinuousConv(torch.nn.Module):
     """Continuous Convolution. This convolution supports continuous input and output point positions.
 
     This layer computes a continuous convolution on a point cloud at the
     specified output points.
 
     Arguments:
+        in_channels: The number of input channels.
+
         filters: The number of filters/output channels.
 
         kernel_size: The spatial resolution of the filter, e.g. [3,3,3].
@@ -21,10 +27,6 @@ class ContinuousConv(tf.keras.layers.Layer):
         kernel_initializer: Initializer for the kernel weights.
 
         bias_initializer: Initializer for the bias vector.
-
-        kernel_regularizer: Regularizer for the kernel weights.
-
-        bias_regularizer: Regularizer for the bias vector.
 
         align_corners: If true then the voxel centers of the outer voxels of the
           filter array are mapped to the boundary of the filter shape.
@@ -72,42 +74,36 @@ class ContinuousConv(tf.keras.layers.Layer):
           useful when using even kernel sizes that have no center element and
           input and output point sets are the same and
           'radius_search_ignore_query_points' has been set to True.
-
-        in_channels: This keyword argument is for compatibility with Pytorch.
-          It is not used and in_channels will be inferred at the first execution
-          of the layer.
     """
 
-    def __init__(self,
-                 filters,
-                 kernel_size,
-                 activation=None,
-                 use_bias=True,
-                 kernel_initializer='uniform',
-                 bias_initializer='zeros',
-                 kernel_regularizer=None,
-                 bias_regularizer=None,
-                 align_corners=True,
-                 coordinate_mapping='ball_to_cube_radial',
-                 interpolation='linear',
-                 normalize=True,
-                 radius_search_ignore_query_points=False,
-                 radius_search_metric='L2',
-                 offset=None,
-                 window_function=None,
-                 use_dense_layer_for_center=False,
-                 in_channels=None,
-                 **kwargs):
+    def __init__(
+            self,
+            in_channels,
+            filters,
+            kernel_size,
+            activation=None,
+            use_bias=True,
+            kernel_initializer=lambda x: torch.nn.init.uniform_(x, -0.05, 0.05),
+            bias_initializer=torch.nn.init.zeros_,
+            align_corners=True,
+            coordinate_mapping='ball_to_cube_radial',
+            interpolation='linear',
+            normalize=True,
+            radius_search_ignore_query_points=False,
+            radius_search_metric='L2',
+            offset=None,
+            window_function=None,
+            use_dense_layer_for_center=False,
+            **kwargs):
+        super().__init__()
 
-        from tensorflow.keras import activations, initializers, regularizers
+        self.in_channels = in_channels
         self.filters = filters
         self.kernel_size = kernel_size
-        self.activation = activations.get(activation)
+        self.activation = activation
         self.use_bias = use_bias
-        self.kernel_initializer = initializers.get(kernel_initializer)
-        self.bias_initializer = initializers.get(bias_initializer)
-        self.kernel_regularizer = regularizers.get(kernel_regularizer)
-        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.kernel_initializer = kernel_initializer
+        self.bias_initializer = bias_initializer
         self.align_corners = align_corners
         self.coordinate_mapping = coordinate_mapping
         self.interpolation = interpolation
@@ -116,9 +112,10 @@ class ContinuousConv(tf.keras.layers.Layer):
         self.radius_search_metric = radius_search_metric
 
         if offset is None:
-            self.offset = tf.zeros(shape=(3,))
+            self.offset = torch.zeros(size=(3,), dtype=torch.float32)
         else:
             self.offset = offset
+        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
 
         self.window_function = window_function
 
@@ -135,44 +132,30 @@ class ContinuousConv(tf.keras.layers.Layer):
 
         self.use_dense_layer_for_center = use_dense_layer_for_center
         if self.use_dense_layer_for_center:
-            self.dense = tf.keras.layers.Dense(self.filters, use_bias=False)
+            self.dense = torch.nn.Linear(self.in_channels,
+                                         self.filters,
+                                         bias=False)
 
-        super().__init__(**kwargs)
-
-    def build(self, inp_features_shape):
-        self.in_channels = inp_features_shape[-1]
-
-        kernel_shape = tf.TensorShape(
-            (*self.kernel_size, self.in_channels, self.filters))
-        self.kernel = self.add_weight(
-            name="kernel",
-            shape=kernel_shape,
-            initializer=self.kernel_initializer,
-            regularizer=self.kernel_regularizer,
-            trainable=self.trainable,
-        )
+        kernel_shape = (*self.kernel_size, self.in_channels, self.filters)
+        self.kernel = torch.nn.Parameter(data=torch.Tensor(*kernel_shape),
+                                         requires_grad=True)
+        self.kernel_initializer(self.kernel)
 
         if self.use_bias:
-            bias_shape = tf.TensorShape((self.filters,))
-            self.bias = self.add_weight(
-                name="bias",
-                shape=bias_shape,
-                initializer=self.bias_initializer,
-                regularizer=self.bias_regularizer,
-                trainable=self.trainable,
-            )
-        super().build(inp_features_shape)
+            self.bias = torch.nn.Parameter(data=torch.Tensor(self.filters),
+                                           requires_grad=True)
+            self.bias_initializer(self.bias)
 
-    def call(self,
-             inp_features,
-             inp_positions,
-             out_positions,
-             extents,
-             inp_importance=None,
-             fixed_radius_search_hash_table=None,
-             user_neighbors_index=None,
-             user_neighbors_row_splits=None,
-             user_neighbors_importance=None):
+    def forward(self,
+                inp_features,
+                inp_positions,
+                out_positions,
+                extents,
+                inp_importance=None,
+                fixed_radius_search_hash_table=None,
+                user_neighbors_index=None,
+                user_neighbors_row_splits=None,
+                user_neighbors_importance=None):
         """This function computes the output features.
 
         Arguments:
@@ -221,16 +204,18 @@ class ContinuousConv(tf.keras.layers.Layer):
         offset = self.offset
 
         if inp_importance is None:
-            inp_importance = tf.ones((0,), dtype=tf.float32)
-
-        extents = tf.convert_to_tensor(extents)
+            inp_importance = torch.empty((0,),
+                                         dtype=torch.float32,
+                                         device=self.kernel.device)
 
         return_distances = not self.window_function is None
 
         if not user_neighbors_index is None and not user_neighbors_row_splits is None:
 
             if user_neighbors_importance is None:
-                neighbors_importance = tf.ones((0,), dtype=tf.float32)
+                neighbors_importance = torch.empty((0,),
+                                                   dtype=torch.float32,
+                                                   device=self.kernel.device)
             else:
                 neighbors_importance = user_neighbors_importance
 
@@ -238,7 +223,9 @@ class ContinuousConv(tf.keras.layers.Layer):
             neighbors_row_splits = user_neighbors_row_splits
 
         else:
-            if extents.shape.rank == 0:
+            if isinstance(extents, float):
+                extents = torch.tensor(extents)
+            if len(extents.shape) == 0:
                 radius = 0.5 * extents
                 self.nns = self.fixed_radius_search(
                     inp_positions,
@@ -252,7 +239,7 @@ class ContinuousConv(tf.keras.layers.Layer):
                     else:  # L1
                         neighbors_distance_normalized = self.nns.neighbors_distance / radius
 
-            elif extents.shape.rank == 1:
+            elif len(extents.shape) == 1:
                 radii = 0.5 * extents
                 self.nns = self.radius_search(inp_positions,
                                               queries=out_positions,
@@ -262,7 +249,7 @@ class ContinuousConv(tf.keras.layers.Layer):
                 raise Exception("extents rank must be 0 or 1")
 
             if self.window_function is None:
-                neighbors_importance = tf.ones((0,), dtype=tf.float32)
+                neighbors_importance = torch.empty((0,), dtype=torch.float32)
             else:
                 neighbors_importance = self.window_function(
                     neighbors_distance_normalized)
@@ -271,14 +258,12 @@ class ContinuousConv(tf.keras.layers.Layer):
             neighbors_row_splits = self.nns.neighbors_row_splits
 
         # for stats and debugging
-        num_pairs = tf.shape(neighbors_index)[0]
-        self._avg_neighbors = tf.dtypes.cast(
-            num_pairs, tf.float32) / tf.dtypes.cast(
-                tf.shape(out_positions)[0], tf.float32)
+        num_pairs = neighbors_index.shape[0]
+        self._avg_neighbors = num_pairs / out_positions.shape[0]
 
         extents_rank2 = extents
-        while extents_rank2.shape.rank < 2:
-            extents_rank2 = tf.expand_dims(extents_rank2, axis=-1)
+        while len(extents_rank2.shape) < 2:
+            extents_rank2 = torch.unsqueeze(extents_rank2, dim=-1)
 
         self._conv_values = {
             'filters': self.kernel,
@@ -307,19 +292,19 @@ class ContinuousConv(tf.keras.layers.Layer):
 
         if self.use_bias:
             out_features += self.bias
-        out_features = self.activation(out_features)
+        if not self.activation is None:
+            out_features = self.activation(out_features)
 
         return out_features
 
-    def compute_output_shape(self, inp_features_shape):
-        return tf.TensorShape((None, self.filters))
 
-
-class SparseConv(tf.keras.layers.Layer):
+class SparseConv(torch.nn.Module):
     """Sparse Convolution. This layer computes a convolution which is only
     evaluated at the specified output positions.
 
     Arguments:
+        in_channels: The number of input channels.
+
         filters: The number of filters/output channels.
 
         kernel_size: The spatial resolution of the filter, e.g. [3,3,3].
@@ -332,44 +317,34 @@ class SparseConv(tf.keras.layers.Layer):
 
         bias_initializer: Initializer for the bias vector.
 
-        kernel_regularizer: Regularizer for the kernel weights.
-
-        bias_regularizer: Regularizer for the bias vector.
-
         normalize: If true then the result is normalized by the number of input points.
 
         offset: A single 3D vector used in the filter coordinate computation.
           The shape is [3]. This can be used to control how the filters are
           centered. It will be set automatically for kernels with even sizes.
-
-        in_channels: This keyword argument is for compatibility with Pytorch.
-          It is not used and in_channels will be inferred at the first execution
-          of the layer.
     """
 
-    def __init__(self,
-                 filters,
-                 kernel_size,
-                 activation=None,
-                 use_bias=True,
-                 kernel_initializer='uniform',
-                 bias_initializer='zeros',
-                 kernel_regularizer=None,
-                 bias_regularizer=None,
-                 normalize=False,
-                 offset=None,
-                 in_channels=None,
-                 **kwargs):
+    def __init__(
+            self,
+            in_channels,
+            filters,
+            kernel_size,
+            activation=None,
+            use_bias=True,
+            kernel_initializer=lambda x: torch.nn.init.uniform_(x, -0.05, 0.05),
+            bias_initializer=torch.nn.init.zeros_,
+            normalize=False,
+            offset=None,
+            **kwargs):
+        super().__init__()
 
-        from tensorflow.keras import activations, initializers, regularizers
+        self.in_channels = in_channels
         self.filters = filters
         self.kernel_size = kernel_size
-        self.activation = activations.get(activation)
+        self.activation = activation
         self.use_bias = use_bias
-        self.kernel_initializer = initializers.get(kernel_initializer)
-        self.bias_initializer = initializers.get(bias_initializer)
-        self.kernel_regularizer = regularizers.get(kernel_regularizer)
-        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.kernel_initializer = kernel_initializer
+        self.bias_initializer = bias_initializer
         self.normalize = normalize
 
         if not (np.asarray(kernel_size) == kernel_size[0]).all():
@@ -377,48 +352,33 @@ class SparseConv(tf.keras.layers.Layer):
 
         if offset is None:
             if kernel_size[0] % 2:
-                self.offset = tf.zeros(shape=(3,))
+                self.offset = torch.zeros(size=(3,), dtype=torch.float32)
             else:
-                self.offset = tf.fill([3], -0.5)
+                self.offset = torch.full((3,), -0.5, dtype=torch.float32)
         else:
             self.offset = offset
+        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
 
         self.fixed_radius_search = layers.FixedRadiusSearch(
             metric='Linf', ignore_query_point=False, return_distances=False)
 
-        super().__init__(**kwargs)
-
-    def build(self, inp_features_shape):
-        self.in_channels = inp_features_shape[-1]
-
-        kernel_shape = tf.TensorShape(
-            (*self.kernel_size, self.in_channels, self.filters))
-        self.kernel = self.add_weight(
-            name="kernel",
-            shape=kernel_shape,
-            initializer=self.kernel_initializer,
-            regularizer=self.kernel_regularizer,
-            trainable=self.trainable,
-        )
+        kernel_shape = (*self.kernel_size, self.in_channels, self.filters)
+        self.kernel = torch.nn.Parameter(data=torch.Tensor(*kernel_shape),
+                                         requires_grad=True)
+        self.kernel_initializer(self.kernel)
 
         if self.use_bias:
-            bias_shape = tf.TensorShape((self.filters,))
-            self.bias = self.add_weight(
-                name="bias",
-                shape=bias_shape,
-                initializer=self.bias_initializer,
-                regularizer=self.bias_regularizer,
-                trainable=self.trainable,
-            )
-        super().build(inp_features_shape)
+            self.bias = torch.nn.Parameter(data=torch.Tensor(self.filters),
+                                           requires_grad=True)
+            self.bias_initializer(self.bias)
 
-    def call(self,
-             inp_features,
-             inp_positions,
-             out_positions,
-             voxel_size,
-             inp_importance=None,
-             fixed_radius_search_hash_table=None):
+    def forward(self,
+                inp_features,
+                inp_positions,
+                out_positions,
+                voxel_size,
+                inp_importance=None,
+                fixed_radius_search_hash_table=None):
         """This function computes the output features.
 
         Arguments:
@@ -447,12 +407,15 @@ class SparseConv(tf.keras.layers.Layer):
         """
 
         offset = self.offset
-        voxel_size = tf.convert_to_tensor(voxel_size, dtype=inp_positions.dtype)
-        if voxel_size.shape.rank != 0:
+        if isinstance(voxel_size, (float, int)):
+            voxel_size = torch.tensor(voxel_size, dtype=inp_positions.dtype)
+        if len(voxel_size.shape) != 0:
             raise Exception("voxel_size must be a scalar")
 
         if inp_importance is None:
-            inp_importance = tf.ones((0,), dtype=tf.float32)
+            inp_importance = torch.empty((0,),
+                                         dtype=torch.float32,
+                                         device=self.kernel.device)
 
         hash_table_size_factor = 1 / 64
         self.nns = self.fixed_radius_search(
@@ -463,10 +426,10 @@ class SparseConv(tf.keras.layers.Layer):
             hash_table=fixed_radius_search_hash_table)
 
         # for stats and debugging
-        num_pairs = tf.shape(self.nns.neighbors_index)[0]
-        self._avg_neighbors = num_pairs / tf.shape(out_positions)[0]
+        num_pairs = self.nns.neighbors_index.shape[0]
+        self._avg_neighbors = num_pairs / out_positions.shape[0]
 
-        extents_rank2 = tf.fill([1, 1], voxel_size * self.kernel_size[0])
+        extents_rank2 = torch.full([1, 1], voxel_size * self.kernel_size[0])
 
         self._conv_values = {
             'filters': self.kernel,
@@ -477,7 +440,7 @@ class SparseConv(tf.keras.layers.Layer):
             'inp_features': inp_features,
             'inp_importance': inp_importance,
             'neighbors_index': self.nns.neighbors_index,
-            'neighbors_importance': tf.ones((0,), dtype=tf.float32),
+            'neighbors_importance': torch.empty((0,), dtype=torch.float32),
             'neighbors_row_splits': self.nns.neighbors_row_splits,
             'align_corners': False,
             'coordinate_mapping': 'identity',
@@ -491,18 +454,18 @@ class SparseConv(tf.keras.layers.Layer):
 
         if self.use_bias:
             out_features += self.bias
-        out_features = self.activation(out_features)
+        if self.activation:
+            out_features = self.activation(out_features)
 
         return out_features
 
-    def compute_output_shape(self, inp_features_shape):
-        return tf.TensorShape((None, self.filters))
 
-
-class SparseConvTranspose(tf.keras.layers.Layer):
+class SparseConvTranspose(torch.nn.Module):
     """Sparse Transposed Convolution. This layer computes a transposed convolution which is only evaluated at the specified output positions.
 
     Arguments:
+        in_channels: The number of input channels.
+
         filters: The number of filters/output channels.
 
         kernel_size: The spatial resolution of the filter, e.g. [3,3,3].
@@ -515,45 +478,34 @@ class SparseConvTranspose(tf.keras.layers.Layer):
 
         bias_initializer: Initializer for the bias vector.
 
-        kernel_regularizer: Regularizer for the kernel weights.
-
-        bias_regularizer: Regularizer for the bias vector.
-
         normalize: If true then the input features will be normalized with the number of
           output points.
 
         offset: A single 3D vector used in the filter coordinate computation.
           The shape is [3]. This can be used to control how the filters are
           centered. It will be set automatically for kernels with even sizes.
-
-        in_channels: This keyword argument is for compatibility with Pytorch.
-          It is not used and in_channels will be inferred at the first execution
-          of the layer.
     """
 
     def __init__(self,
+                 in_channels,
                  filters,
                  kernel_size,
                  activation=None,
                  use_bias=True,
                  kernel_initializer='uniform',
                  bias_initializer='zeros',
-                 kernel_regularizer=None,
-                 bias_regularizer=None,
                  normalize=False,
                  offset=None,
-                 in_channels=None,
                  **kwargs):
+        super().__init__()
 
-        from tensorflow.keras import activations, initializers, regularizers
+        self.in_channels = in_channels
         self.filters = filters
         self.kernel_size = kernel_size
-        self.activation = activations.get(activation)
+        self.activation = activation
         self.use_bias = use_bias
-        self.kernel_initializer = initializers.get(kernel_initializer)
-        self.bias_initializer = initializers.get(bias_initializer)
-        self.kernel_regularizer = regularizers.get(kernel_regularizer)
-        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.kernel_initializer = kernel_initializer
+        self.bias_initializer = bias_initializer
         self.normalize = normalize
 
         if not (np.asarray(kernel_size) == kernel_size[0]).all():
@@ -561,48 +513,33 @@ class SparseConvTranspose(tf.keras.layers.Layer):
 
         if offset is None:
             if kernel_size[0] % 2:
-                self.offset = tf.zeros(shape=(3,))
+                self.offset = torch.zeros(size=(3,), dtype=torch.float32)
             else:
-                self.offset = tf.fill([3], -0.5)
+                self.offset = torch.full((3,), -0.5, dtype=torch.float32)
         else:
             self.offset = offset
+        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
 
         self.fixed_radius_search = layers.FixedRadiusSearch(
             metric='Linf', ignore_query_point=False, return_distances=False)
 
-        super().__init__(**kwargs)
-
-    def build(self, inp_features_shape):
-        self.in_channels = inp_features_shape[-1]
-
-        kernel_shape = tf.TensorShape(
-            (*self.kernel_size, self.in_channels, self.filters))
-        self.kernel = self.add_weight(
-            name="kernel",
-            shape=kernel_shape,
-            initializer=self.kernel_initializer,
-            regularizer=self.kernel_regularizer,
-            trainable=self.trainable,
-        )
+        kernel_shape = (*self.kernel_size, self.in_channels, self.filters)
+        self.kernel = torch.nn.Parameter(data=torch.Tensor(*kernel_shape),
+                                         requires_grad=True)
+        self.kernel_initializer(self.kernel)
 
         if self.use_bias:
-            bias_shape = tf.TensorShape((self.filters,))
-            self.bias = self.add_weight(
-                name="bias",
-                shape=bias_shape,
-                initializer=self.bias_initializer,
-                regularizer=self.bias_regularizer,
-                trainable=self.trainable,
-            )
-        super().build(inp_features_shape)
+            self.bias = torch.nn.Parameter(data=torch.Tensor(self.filters),
+                                           requires_grad=True)
+            self.bias_initializer(self.bias)
 
-    def call(self,
-             inp_features,
-             inp_positions,
-             out_positions,
-             voxel_size,
-             out_importance=None,
-             fixed_radius_search_hash_table=None):
+    def forward(self,
+                inp_features,
+                inp_positions,
+                out_positions,
+                voxel_size,
+                out_importance=None,
+                fixed_radius_search_hash_table=None):
         """This function computes the output features.
 
         Arguments:
@@ -631,14 +568,19 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         """
 
         offset = self.offset
-        voxel_size = tf.convert_to_tensor(voxel_size, dtype=inp_positions.dtype)
-        if voxel_size.shape.rank != 0:
+        if isinstance(voxel_size, (float, int)):
+            voxel_size = torch.tensor(voxel_size, dtype=inp_positions.dtype)
+        if len(voxel_size.shape) != 0:
             raise Exception("voxel_size must be a scalar")
 
         if out_importance is None:
-            out_importance = tf.ones((0,), dtype=tf.float32)
+            out_importance = torch.empty((0,),
+                                         dtype=torch.float32,
+                                         device=self.kernel.device)
 
-        empty_vec = tf.ones((0,), dtype=tf.float32)
+        empty_vec = torch.empty((0,),
+                                dtype=torch.float32,
+                                device=self.kernel.device)
 
         hash_table_size_factor = 1 / 64
         self.nns_inp = self.fixed_radius_search(
@@ -648,17 +590,17 @@ class SparseConvTranspose(tf.keras.layers.Layer):
             hash_table_size_factor=hash_table_size_factor,
             hash_table=fixed_radius_search_hash_table)
 
-        num_out = tf.shape(out_positions, out_type=tf.int64)[0]
+        num_out = out_positions.shape[0]
 
         neighbors_index, neighbors_row_splits, _ = ops.invert_neighbors_list(
             num_out, self.nns_inp.neighbors_index,
             self.nns_inp.neighbors_row_splits, empty_vec)
 
         # for stats and debugging
-        num_pairs = tf.shape(neighbors_index)[0]
-        self._avg_neighbors = num_pairs / tf.shape(out_positions)[0]
+        num_pairs = neighbors_index.shape[0]
+        self._avg_neighbors = num_pairs / out_positions.shape[0]
 
-        extents_rank2 = tf.fill([1, 1], voxel_size * self.kernel_size[0])
+        extents_rank2 = torch.full([1, 1], voxel_size * self.kernel_size[0])
 
         self._conv_values = {
             'filters': self.kernel,
@@ -686,9 +628,7 @@ class SparseConvTranspose(tf.keras.layers.Layer):
 
         if self.use_bias:
             out_features += self.bias
-        out_features = self.activation(out_features)
+        if self.activation:
+            out_features = self.activation(out_features)
 
         return out_features
-
-    def compute_output_shape(self, inp_features_shape):
-        return tf.TensorShape((None, self.filters))

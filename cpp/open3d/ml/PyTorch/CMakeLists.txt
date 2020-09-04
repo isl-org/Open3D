@@ -10,7 +10,7 @@ find_package(nanoflann REQUIRED)
 find_package(parallelstl REQUIRED)
 if(BUILD_CUDA_MODULE)
     find_package(CUB REQUIRED)
-    # find_package(CUTLASS REQUIRED)
+    find_package(CUTLASS REQUIRED)
 endif()
 
 if(BUILD_CUDA_MODULE)
@@ -40,7 +40,7 @@ set( open3d_torch_ops_DEFINITIONS )
 if(BUILD_CUDA_MODULE)
     target_include_directories(open3d_torch_ops SYSTEM PRIVATE
         ${CUB_INCLUDE_DIR}
-        # ${CUTLASS_INCLUDE_DIR}
+        ${CUTLASS_INCLUDE_DIR}
     )
     list(APPEND open3d_torch_ops_DEFINITIONS "BUILD_CUDA_MODULE")
 endif()

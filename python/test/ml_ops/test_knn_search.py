@@ -38,7 +38,7 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
 
 @dtypes
-@mltest.parametrize.ml
+@mltest.parametrize.ml_cpu_only
 @pytest.mark.parametrize('num_points_queries', [(2, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('metric', ['L1', 'L2'])
@@ -47,7 +47,6 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
                     return_distances):
     rng = np.random.RandomState(123)
-    device = mltest.cpu_device
 
     num_points, num_queries = num_points_queries
 
@@ -75,7 +74,7 @@ def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
                                 return_distances=return_distances)
     ans = mltest.run_op(
         ml,
-        device,
+        ml.device,
         True,
         layer,
         points,
@@ -110,11 +109,10 @@ def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
 
 
-@mltest.parametrize.ml
+@mltest.parametrize.ml_cpu_only
 def test_knn_search_empty_point_sets(ml):
     rng = np.random.RandomState(123)
 
-    device = mltest.cpu_device
     dtype = np.float32
 
     # no query points
@@ -125,7 +123,7 @@ def test_knn_search_empty_point_sets(ml):
     layer = ml.layers.KNNSearch(return_distances=True)
     ans = mltest.run_op(
         ml,
-        device,
+        ml.device,
         True,
         layer,
         points,
@@ -144,7 +142,7 @@ def test_knn_search_empty_point_sets(ml):
     layer = ml.layers.KNNSearch(return_distances=True)
     ans = mltest.run_op(
         ml,
-        device,
+        ml.device,
         True,
         layer,
         points,
@@ -159,11 +157,10 @@ def test_knn_search_empty_point_sets(ml):
     assert ans.neighbors_distance.shape == (0,)
 
 
-@mltest.parametrize.ml
+@mltest.parametrize.ml_cpu_only
 @pytest.mark.parametrize('batch_size', [2, 3, 8])
 def test_knn_search_batches(ml, batch_size):
 
-    device = mltest.cpu_device
     dtype = np.float32
     metric = 'L2'
     p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
@@ -214,7 +211,7 @@ def test_knn_search_batches(ml, batch_size):
                                 ignore_query_point=ignore_query_point,
                                 return_distances=return_distances)
     ans = mltest.run_op(ml,
-                        device,
+                        ml.device,
                         True,
                         layer,
                         points,
