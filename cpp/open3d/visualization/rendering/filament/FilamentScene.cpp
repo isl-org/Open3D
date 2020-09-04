@@ -48,7 +48,9 @@
 #include <filament/SwapChain.h>
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
+#include <filament/VertexBuffer.h>
 #include <filament/View.h>
+#include <geometry/SurfaceOrientation.h>
 #include <utils/EntityManager.h>
 
 #ifdef _MSC_VER
@@ -383,6 +385,84 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     model_geometries_[object_name] = mesh_object_names;
 
     return true;
+}
+
+static void deallocate_vertex_buffer(void* buffer,
+                                     size_t size,
+                                     void* user_ptr) {
+    free(buffer);
+}
+
+void FilamentScene::UpdateGeometry(const std::string& object_name,
+                                   const tgeometry::PointCloud& point_cloud,
+                                   uint32_t update_flags) {
+    auto geoms = GetGeometry(object_name, false);
+    if (!geoms.empty()) {
+        // Note: There should only be a single entry in geoms
+        auto* g = geoms[0];
+        auto vbuf_ptr = resource_mgr_.GetVertexBuffer(g->vb).lock();
+        auto vbuf = vbuf_ptr.get();
+
+        const auto& points = point_cloud.GetPoints();
+        const size_t n_vertices = points.GetSize();
+
+        // NOTE: number of points in the updated point cloud must be the
+        // same as the number of points when the vertex buffer was first
+        // created. If the number of points has changed then it cannot be
+        // updated. In that case, you must remove the geometry then add it
+        // again.
+        if (n_vertices != vbuf->getVertexCount()) {
+            utility::LogWarning(
+                    "Geometry for point cloud {} cannot be updated because the "
+                    "number of points has changed (Old: {}, New: {})",
+                    object_name, vbuf->getVertexCount(), n_vertices);
+            return;
+        }
+
+        if (update_flags & kUpdatePointsFlag) {
+            filament::VertexBuffer::BufferDescriptor pts_descriptor(
+                    points.AsTensor().GetDataPtr(),
+                    n_vertices * 3 * sizeof(float));
+            vbuf->setBufferAt(engine_, 0, std::move(pts_descriptor));
+        }
+
+        if (update_flags & kUpdateColorsFlag && point_cloud.HasPointColors()) {
+            const size_t color_array_size = n_vertices * 3 * sizeof(float);
+            filament::VertexBuffer::BufferDescriptor color_descriptor(
+                    point_cloud.GetPointColors().AsTensor().GetDataPtr(),
+                    color_array_size);
+            vbuf->setBufferAt(engine_, 1, std::move(color_descriptor));
+        }
+
+        if (update_flags & kUpdateNormalsFlag &&
+            point_cloud.HasPointNormals()) {
+            const size_t normal_array_size = n_vertices * 4 * sizeof(float);
+            const auto& normals = point_cloud.GetPointNormals();
+
+            // Converting normals to Filament type - quaternions
+            auto float4v_tangents = static_cast<filament::math::quatf*>(
+                    malloc(normal_array_size));
+            auto orientation =
+                    filament::geometry::SurfaceOrientation::Builder()
+                            .vertexCount(n_vertices)
+                            .normals(reinterpret_cast<filament::math::float3*>(
+                                    normals.AsTensor().GetDataPtr()))
+                            .build();
+            orientation->getQuats(float4v_tangents, n_vertices);
+            filament::VertexBuffer::BufferDescriptor normals_descriptor(
+                    float4v_tangents, normal_array_size,
+                    deallocate_vertex_buffer);
+            vbuf->setBufferAt(engine_, 2, std::move(normals_descriptor));
+        }
+
+        if (update_flags & kUpdateUv0Flag && point_cloud.HasPointAttr("uv")) {
+            const size_t uv_array_size = n_vertices * 2 * sizeof(float);
+            filament::VertexBuffer::BufferDescriptor uv_descriptor(
+                    point_cloud.GetPointAttr("uv").AsTensor().GetDataPtr(),
+                    uv_array_size);
+            vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
+        }
+    }
 }
 
 void FilamentScene::RemoveGeometry(const std::string& object_name) {
