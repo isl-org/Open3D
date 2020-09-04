@@ -106,12 +106,12 @@ Tensor PyArrayToTensor(py::array array, bool inplace) {
     for (size_t i = 0; i < strides.size(); ++i) {
         strides[i] /= info.itemsize;
     }
-    Dtype dtype = pybind_utils::ArrayFormatToDtype(info.format);
+    Dtype dtype = pybind_utils::ArrayFormatToDtype(info.format, info.itemsize);
     Device device("CPU:0");
 
     array.inc_ref();
     std::function<void(void*)> deleter = [array](void*) -> void {
-        AutoGIL gil;
+        py::gil_scoped_acquire acquire;
         array.dec_ref();
     };
     auto blob = std::make_shared<Blob>(device, info.ptr, deleter);
