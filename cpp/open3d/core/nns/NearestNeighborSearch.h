@@ -78,10 +78,9 @@ public:
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param knn Number of neighbors to search per query point.
-    /// \return Ap air of Tensors, (indices, distances):
+    /// \return Pair of Tensors, (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distainces: Tensor of shape {n, knn}, with same dtype with
-    /// query_points.
+    /// - distainces: Tensor of shape {n, knn}, same dtype with query_points.
     std::pair<Tensor, Tensor> KnnSearch(const Tensor &query_points, int knn);
 
     /// Perform fixed radius search. All query points share the same radius.
@@ -92,8 +91,8 @@ public:
     /// \return Tuple of Tensors, (indices, distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
     /// Int64.
-    /// - distances: Tensor of shape {total_number_of_neighbors,}, with
-    /// same dtype widh query_points.
+    /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
+    /// widh query_points.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
             const Tensor &query_points, double radius);

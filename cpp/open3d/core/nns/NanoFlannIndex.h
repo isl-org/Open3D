@@ -142,18 +142,19 @@ public:
     /// Perform K nearest neighbor search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points. \param knn Number of nearest neighbor to
-    /// search. \return Pair of Tensors: (indices, distances): indices: Tensor
-    /// of shape {n, knn}, with dtype Int64. distainces: Tensor of shape {n,
-    /// knn}, smae dtype with dataset_points.
+    /// dtype with dataset_points.
+    /// \param knn Number of nearest neighbor to search.
+    /// \return Pair of Tensors: (indices, distances):
+    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
+    /// - distainces: Tensor of shape {n, knn}, same dtype with dataset_points.
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points, int knn);
 
     /// Perform radius search with multiple radii.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points. \param radii list of radius. Must be 1D, with
-    /// shape {n, }. \return Tuple of Tensors: (indices, distances,
-    /// num_neighbors):
+    /// dtype with dataset_points.
+    /// \param radii list of radius. Must be 1D, with shape {n, }.
+    /// \return Tuple of Tensors: (indices, distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
@@ -164,8 +165,9 @@ public:
     /// Perform radius search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points. \param radius Radius. \return Tuple of
-    /// Tensors, (indices, distances, num_neighbors):
+    /// dtype with dataset_points.
+    /// \param radius Radius.
+    /// \return Tuple of Tensors, (indices, distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
