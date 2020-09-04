@@ -26,6 +26,7 @@
 //
 
 #include "open3d/ml/PyTorch/Misc/InvertNeighborsListOpKernel.h"
+
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/InvertNeighborsList.h"
 #include "torch/script.h"

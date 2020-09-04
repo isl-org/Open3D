@@ -25,10 +25,11 @@
 // ----------------------------------------------------------------------------
 //
 
+#include "open3d/ml/PyTorch/Misc/InvertNeighborsListOps.h"
+
 #include <vector>
 
 #include "open3d/ml/PyTorch/Misc/InvertNeighborsListOpKernel.h"
-#include "open3d/ml/PyTorch/Misc/InvertNeighborsListOps.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "torch/script.h"
 
