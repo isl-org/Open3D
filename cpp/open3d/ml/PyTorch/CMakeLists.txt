@@ -5,7 +5,6 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 find_package(Pytorch REQUIRED)
-find_package(TBB REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(parallelstl REQUIRED)
 if(BUILD_CUDA_MODULE)
@@ -32,6 +31,14 @@ add_library(open3d_torch_ops SHARED ${open3d_torch_ops_SOURCES})
 open3d_set_global_properties(open3d_torch_ops)
 open3d_show_and_abort_on_warning(open3d_torch_ops)
 
+# Set output directory according to architecture (cpu/cuda)
+get_target_property(TORCH_OPS_DIR open3d_torch_ops LIBRARY_OUTPUT_DIRECTORY)
+set(TORCH_OPS_ARCH_DIR
+    "${TORCH_OPS_DIR}/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+set_target_properties(open3d_torch_ops PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${TORCH_OPS_ARCH_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY "${TORCH_OPS_ARCH_DIR}")
+
 # Do not add "lib" prefix
 set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
@@ -48,17 +55,14 @@ target_compile_definitions(open3d_torch_ops PRIVATE "${open3d_torch_ops_DEFINITI
 
 target_include_directories(open3d_torch_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
-    ${TBB_INCLUDE_DIR}
     ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
     ${TORCH_INCLUDE_DIRS}
 )
 
 target_link_libraries(open3d_torch_ops PRIVATE
-    ${TBB_LIBRARY}
-    ${TBB_MALLOC_LIBRARY}
+    3rdparty_tbb
     ${TORCH_LIBRARIES}
     ${EIGEN3_TARGET}
     ${FMT_TARGET}
 )
-

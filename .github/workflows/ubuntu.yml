@@ -1,6 +1,7 @@
 name: Ubuntu CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -14,13 +15,11 @@ jobs:
       fail-fast: false
       matrix:
         SHARED: [ON, OFF]
-        BUILD_ML_OPS: [ON, OFF]
-        BUILD_CUDA: [ON, OFF]
     env:
       SHARED: ${{ matrix.SHARED }}
-      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
-      BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
-      BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
+      BUILD_CUDA_MODULE: OFF
+      BUILD_TENSORFLOW_OPS: ${{ matrix.SHARED }}
+      BUILD_PYTORCH_OPS: OFF    # PYTORCH_OPS requires CUDA + CUDNN
       BUILD_RPC_INTERFACE: ON
       NPROC: 2
     steps:
@@ -44,14 +43,14 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
-          python-version: 3.5
+          python-version: 3.6
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
         run: |
-          ./util/install_deps_ubuntu.sh assume-yes install-cuda
+          ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
           ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
-          sudo apt-get clean
+          sudo apt-get clean    # Remove apt-get cache
           sudo rm -rf /var/lib/apt/lists/*
       - name: Config and build
         run: |
@@ -59,3 +58,103 @@ jobs:
           ccache -s
           ./util/run_ci.sh
           ccache -s
+          echo
+          echo "Disk space used: $(df -h $PWD)"
+
+  build-ubuntu-wheel:
+    name: Make Python package
+    runs-on: Ubuntu-18.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [3.6, 3.7, 3.8]
+    env:
+      BUILD_CUDA_MODULE: ON
+      NPROC: 2
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
+          path: ~/.ccache
+          # We include the commit sha in the cache key, as new cache entries are
+          # only created if there is no existing entry for the key yet.
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          # Restore any ccache cache entry, if none for
+          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+          # Common prefix will be used so that ccache can be used across commits.
+          restore-keys: |
+            ${{ runner.os }}-ccache
+      - name: Set up Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      # Pre-installed 18.04 packages: https://git.io/JfHmW
+      - name: Install dependencies
+        run: |
+          ./util/install_deps_ubuntu.sh assume-yes
+          sudo apt-get --yes install ccache
+          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          sudo apt-get clean    # Remove apt-get cache
+          sudo rm -rf /var/lib/apt/lists/*
+
+      - name: Config and build wheel
+        run: |
+          PATH=/usr/lib/ccache:$PATH
+          ccache -s
+          ./util/build_wheel.sh
+          ccache -s
+          echo "::set-env name=PIP_PKG_NAME::$(basename build/lib/python_package/pip_package/open3d*.whl)"
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d_linux_x86_64_wheels
+          path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+          if-no-files-found: error
+
+  test-ubuntu-wheel:
+    name: Test ubuntu wheel
+    runs-on: ubuntu-18.04
+    needs: [build-ubuntu-wheel]
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [3.6, 3.7, 3.8]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: false
+      - name: Download wheels
+        uses: actions/download-artifact@v2
+        # See https://github.com/dawidd6/action-download-artifact for more
+        # flexible artifact download options
+        with:
+          name: open3d_linux_x86_64_wheels
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Test Python package
+        run: |
+          python -V
+          cd util
+          source build_scripts.sh
+          echo "$rj_startts StartJob ReportInit"
+          install_python_dependencies with-unit-test
+          reportRun python -m pip install open3d  -f ..
+          printf "\n\nInstalled wheel folder structure:\n"
+          python -m pip show -f open3d
+          printf "\n\nInstalled packages...\n"
+          python -m pip freeze
+          test_wheel
+      - name: Run Python unit tests (benchmarks)
+        run: |
+          reportJobStart "running Open3D python tests..."
+          run_python_tests
+          reportJobFinishSession

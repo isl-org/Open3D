@@ -12,11 +12,23 @@ else()
         set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-windows.tgz")
     elseif(APPLE)
         set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-mac.tgz")
-    else()
-        set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-linux.tgz")
+    else()      # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
+        execute_process(COMMAND ldd --version OUTPUT_VARIABLE ldd_version)
+        string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
+        if(${glibc_version} VERSION_LESS "2.31")
+            set(DOWNLOAD_URL_PRIMARY
+                "https://github.com/google/filament/releases/download/v1.8.1/filament-v1.8.1-linux.tgz")
+            message(STATUS "GLIBC version ${glibc_version} found: Downloading "
+                "Google Filament binary.")
+        else()
+            set(DOWNLOAD_URL_PRIMARY
+                "https://storage.googleapis.com/open3d-releases/filament/filament-v1.8.1-linux.tgz")
+            message(STATUS "GLIBC version ${glibc_version} found: Downloading "
+                "Open3D Filament binary.")
+        endif()
     endif()
 
-    # ExternalProject_Add happends at build time.
+    # ExternalProject_Add happens at build time.
     ExternalProject_Add(
         ext_filament
         PREFIX filament

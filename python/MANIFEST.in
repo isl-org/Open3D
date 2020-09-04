@@ -30,9 +30,12 @@ include LICENSE.txt
 include requirements.txt
 
 # Compiled module
-include open3d/pybind*.pyd
-include open3d/pybind*.so
-include open3d/pybind*.dylib
+include open3d/cpu/*.pyd
+include open3d/cuda/*.pyd
+include open3d/cpu/*.so
+include open3d/cuda/*.so
+include open3d/cpu/*.dylib
+include open3d/cuda/*.dylib
 include open3d/open3d*.so
 include open3d/open3d*.dylib
 include open3d/*depthengine*

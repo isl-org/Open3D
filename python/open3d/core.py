@@ -1,19 +1,21 @@
 import open3d as o3d
 import numpy as np
 
-from open3d.pybind.core import Dtype
-from open3d.pybind.core import DtypeCode
-from open3d.pybind.core import Device
-from open3d.pybind.core import cuda
-from open3d.pybind.core import nns
-from open3d.pybind.core import NoneType
-from open3d.pybind.core import TensorList
-from open3d.pybind.core import SizeVector
-from open3d.pybind.core import matmul as pybind_matmul
-from open3d.pybind.core import lstsq as pybind_lstsq
-from open3d.pybind.core import solve as pybind_solve
-from open3d.pybind.core import inv as pybind_inv
-from open3d.pybind.core import svd as pybind_svd
+try:
+    from open3d.cuda.pybind.core import cuda as _cuda
+    if _cuda.is_available():
+        from open3d.cuda.pybind.core import (
+            Dtype, DtypeCode, Device, cuda, nns, NoneType, TensorList,
+            SizeVector, matmul as pybind_matmul, lstsq as pybind_lstsq, solve as
+            pybind_solve, inv as pybind_inv, svd as pybind_svd)
+    else:
+        raise ImportError("CUDA support not available.")
+except ImportError:
+    from open3d.cpu.pybind.core import (Dtype, DtypeCode, Device, cuda, nns,
+                                        NoneType, TensorList, SizeVector, matmul
+                                        as pybind_matmul, lstsq as pybind_lstsq,
+                                        solve as pybind_solve, inv as
+                                        pybind_inv, svd as pybind_svd)
 
 none = NoneType()
 
@@ -101,7 +103,8 @@ def matmul(lhs, rhs):
 
     - Both tensors should share the same device and dtype.
     - Int32, Int64, Float32, Float64 are supported,
-      but results of big integers' matmul are not guaranteed, overflow can happen.
+      but results of big integers' matmul are not guaranteed, overflow can
+      happen.
     """
     return pybind_matmul(lhs, rhs)
 
@@ -636,7 +639,8 @@ class Tensor(o3d.pybind.core.Tensor):
 
         - Both tensors should share the same device and dtype.
         - Int32, Int64, Float32, Float64 are supported,
-          but results of big integers' matmul are not guaranteed, overflow can happen.
+          but results of big integers' matmul are not guaranteed, overflow can
+          happen.
         """
         return super(Tensor, self).matmul(value)
 
@@ -674,7 +678,8 @@ class Tensor(o3d.pybind.core.Tensor):
 
         - Both tensors should share the same device and dtype.
         - Float32 and Float64 are supported.
-        - The result can be unexpected when A is not a full-rank matrix and the backend is cuda.
+        - The result can be unexpected when A is not a full-rank matrix and the
+          backend is cuda.
         """
         return super(Tensor, self).lstsq(value)
 
@@ -696,7 +701,8 @@ class Tensor(o3d.pybind.core.Tensor):
     @cast_to_py_tensor
     def svd(self):
         """
-        Returns matrix's SVD decomposition: U S VT = A, where A is Tensor \param self.
+        Returns matrix's SVD decomposition: U S VT = A, where A is Tensor
+        \param self.
 
         Args:
           self: Tensor of shape (m, n).
