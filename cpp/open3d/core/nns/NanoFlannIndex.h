@@ -118,7 +118,6 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
 /// \class NanoFlann
 ///
 /// \brief KDTree with NanoFlann for nearest neighbor search.
-// template <typename T>
 class NanoFlannIndex {
 public:
     /// \brief Default Constructor.
