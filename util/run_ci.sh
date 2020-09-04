@@ -17,7 +17,11 @@ fi
 
 date
 reportJobStart "Installing Python unit test dependencies"
-install_python_dependencies with-unit-test purge-cache
+if [ "$BUILD_CUDA_MODULE" == "ON" ] ; then
+    install_python_dependencies with-unit-test with-cuda purge-cache
+else
+    install_python_dependencies with-unit-test purge-cache
+fi
 
 echo "using python: $(which python)"
 python --version

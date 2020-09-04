@@ -18,7 +18,7 @@ jobs:
   skip-check:
     runs-on: ubuntu-18.04
     name: Skip job for forks
-    outputs: 
+    outputs:
       skip: ${{ steps.check.outputs.skip }}
     steps:
       - name: Skip check
@@ -31,7 +31,7 @@ jobs:
             echo "Secrets not available: skipping GCE test"
             echo "::set-output name=skip::yes"
           fi
-          
+
   build-push-docker-image:
     name: Build and push docker
     runs-on: ubuntu-18.04
