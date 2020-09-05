@@ -28,6 +28,10 @@ TORCH_CUDA_GLNX_VER="1.6.0+cu101"
 TORCH_CPU_GLNX_VER="1.6.0+cpu"
 TORCH_MACOS_VER="1.6.0"
 YAPF_VER="0.30.0"
+PIP_VER="20.2.2"
+WHEEL_VER="0.35.1"
+PYTEST_VER="6.0.1"
+SCIPY_VER="1.4.1"       # Needed by Tensorflow 2.3.0
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 
@@ -98,12 +102,12 @@ install_cuda_toolkit() {
 
 install_python_dependencies() {
 
-    python -m pip install --upgrade pip
-    python -m pip install -U wheel
+    python -m pip install --upgrade pip=="$PIP_VER"
+    python -m pip install -U wheel=="$WHEEL_VER"
     options="$(echo "$@" | tr ' ' '|')"
     if [[ "with-unit-test" =~ ^($options)$ ]] ; then
-        python -m pip install -U pytest
-        python -m pip install scipy
+        python -m pip install -U pytest=="$PYTEST_VER"
+        python -m pip install -U scipy=="$SCIPY_VER"
     fi
     if [[ "with-cuda" =~ ^($options)$ ]] ; then
         TF_ARCH_NAME=tensorflow-gpu
@@ -235,7 +239,6 @@ install_wheel() {
 
 test_wheel() {
     reportRun python -c "import open3d; print('Installed:', open3d)"
-    reportRun python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
     reportRun python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
     if [ "$BUILD_PYTORCH_OPS" == ON ] ; then
         reportRun python -c \

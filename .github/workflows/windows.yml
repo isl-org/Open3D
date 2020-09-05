@@ -8,6 +8,12 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
 
+env:
+  PIP_VER: "20.2.2"
+  WHEEL_VER: "0.35.1"
+  PYTEST_VER: "6.0.1"
+  SCIPY_VER: "1.4.1"       # Needed by Tensorflow 2.3.0
+
 jobs:
   windows:
     runs-on: windows-latest
@@ -46,8 +52,8 @@ jobs:
           cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
       - name: Install Python package
         run: |
-          pip install --upgrade pip
-          pip install -U wheel
+          python -m pip install --upgrade pip==${{ env.PIP_VER }}
+          python -m pip install -U wheel==${{ env.WHEEL_VER }}
           cd build
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
@@ -55,7 +61,6 @@ jobs:
         if: ${{ matrix.shared == 'OFF' }}
         run: |
           python -c "import open3d; print('Imported:', open3d)"
-          python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
       - name: Disk space used
         run: Get-PSDrive (get-location).Drive
@@ -82,8 +87,8 @@ jobs:
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON ..
       - name: Build Python package
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -U wheel
+          python -m pip install --upgrade pip==${{ env.PIP_VER }}
+          python -m pip install -U wheel==${{ env.WHEEL_VER }}
           cd build
           cmake --build . --config Release --target install-pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
@@ -121,14 +126,14 @@ jobs:
       - name: Test Python package
         run: |
           python -V
-          python -m pip install -U pytest
-          python -m pip install -U scipy
-          python -m pip install open3d -f .
+          python -m pip install -U pytest==${{ env.PYTEST_VER }}
+          python -m pip install -U scipy==${{ env.SCIPY_VER }}
+          $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          python -m pip install (Get-ChildItem open3d*-$pi_tag-*.whl).Name
           python -c "import open3d; print('Imported:', open3d)"
-          python -c "import open3d; open3d.pybind.core.kernel.test_mkl_integration()"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
       - name: Run Python unit tests (benchmarks)
         run: |
           echo "Running Open3D python tests..."
-          echo "Testing ML Ops disabled"
+          echo "Testing ML and ML Ops disabled"
           python -m pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/ml/
