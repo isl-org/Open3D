@@ -35,23 +35,39 @@
 namespace open3d {
 namespace pybind_utils {
 
-core::Dtype ArrayFormatToDtype(const std::string& format) {
-    if (format == py::format_descriptor<float>::format()) {
+core::Dtype ArrayFormatToDtype(const std::string& format, size_t byte_size) {
+    // In general, format characters follows the standard:
+    // https://docs.python.org/3/library/struct.html#format-characters
+    //
+    // However, some integer dtypes have aliases. E.g. "l" can be 4 bytes or 8
+    // bytes depending on the OS. To be safe, we always check the byte size.
+    if (format == py::format_descriptor<float>::format() && byte_size == 4) {
         return core::Dtype::Float32;
-    } else if (format == py::format_descriptor<double>::format()) {
+    } else if (format == py::format_descriptor<double>::format() &&
+               byte_size == 8) {
         return core::Dtype::Float64;
-    } else if (format == py::format_descriptor<int32_t>::format()) {
+    } else if ((format == py::format_descriptor<int32_t>::format() ||
+                format == "i" || format == "l") &&
+               byte_size == 4) {
         return core::Dtype::Int32;
-    } else if (format == py::format_descriptor<int64_t>::format()) {
+    } else if ((format == py::format_descriptor<int64_t>::format() ||
+                format == "q" || format == "l") &&
+               byte_size == 8) {
         return core::Dtype::Int64;
-    } else if (format == py::format_descriptor<uint8_t>::format()) {
+    } else if (format == py::format_descriptor<uint8_t>::format() &&
+               byte_size == 1) {
         return core::Dtype::UInt8;
-    } else if (format == py::format_descriptor<uint16_t>::format()) {
+    } else if (format == py::format_descriptor<uint16_t>::format() &&
+               byte_size == 2) {
         return core::Dtype::UInt16;
-    } else if (format == py::format_descriptor<bool>::format()) {
+    } else if (format == py::format_descriptor<bool>::format() &&
+               byte_size == 1) {
         return core::Dtype::Bool;
     } else {
-        utility::LogError("Unsupported data type.");
+        utility::LogError(
+                "ArrayFormatToDtype: unsupported python array format {} with "
+                "byte_size {}.",
+                format, byte_size);
     }
 }
 

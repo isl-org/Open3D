@@ -39,9 +39,8 @@ value_dtypes = pytest.mark.parametrize(
 
 @pytest.mark.parametrize('seed', range(3))
 @value_dtypes
-@mltest.parametrize.device
 @mltest.parametrize.ml
-def test_reduce_subarrays_sum_random(seed, dtype, device, ml):
+def test_reduce_subarrays_sum_random(seed, dtype, ml):
 
     rng = np.random.RandomState(seed)
 
@@ -63,7 +62,7 @@ def test_reduce_subarrays_sum_random(seed, dtype, device, ml):
     row_splits = np.array(row_splits, dtype=np.int64)
 
     ans = mltest.run_op(ml,
-                        device,
+                        ml.device,
                         True,
                         ml.ops.reduce_subarrays_sum,
                         values=values,
@@ -73,3 +72,29 @@ def test_reduce_subarrays_sum_random(seed, dtype, device, ml):
         np.testing.assert_equal(ans, expected_result)
     else:  # floating point types
         np.testing.assert_allclose(ans, expected_result, rtol=1e-5, atol=1e-8)
+
+
+@mltest.parametrize.ml
+def test_reduce_subarrays_sum_zero_length_values(ml):
+
+    rng = np.random.RandomState(1)
+
+    shape = [rng.randint(100, 200)]
+    values = np.array([], dtype=np.float32)
+
+    row_splits = [0]
+    for _ in range(rng.randint(1, 10)):
+        row_splits.append(
+            rng.randint(0, shape[0] - row_splits[-1]) + row_splits[-1])
+    row_splits.extend(shape)
+    row_splits = np.array(row_splits, dtype=np.int64)
+
+    ans = mltest.run_op(ml,
+                        ml.device,
+                        True,
+                        ml.ops.reduce_subarrays_sum,
+                        values=values,
+                        row_splits=row_splits)
+
+    assert ans.shape == values.shape
+    assert ans.dtype == values.dtype

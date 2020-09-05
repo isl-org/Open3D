@@ -25,8 +25,7 @@
 // ----------------------------------------------------------------------------
 //
 
-#include <ATen/cuda/CUDAContext.h>
-
+#include "ATen/cuda/CUDAContext.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
 #include "torch/script.h"
@@ -54,12 +53,8 @@ void BuildSpatialHashTableCUDA(const torch::Tensor& points,
             (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
             (uint32_t*)hash_table_index.data_ptr<int32_t>());
 
-    auto device = points.device().type();
-    auto device_idx = points.device().index();
-    torch::Tensor temp_tensor = torch::empty(
-            {int64_t(temp_size)},
-            torch::dtype(ToTorchDtype<uint8_t>()).device(device, device_idx));
-    temp_ptr = temp_tensor.data_ptr<uint8_t>();
+    auto device = points.device();
+    auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
 
     // actually build the table
     open3d::ml::impl::BuildSpatialHashTableCUDA(

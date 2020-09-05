@@ -72,6 +72,10 @@ class ContinuousConv(tf.keras.layers.Layer):
           useful when using even kernel sizes that have no center element and
           input and output point sets are the same and
           'radius_search_ignore_query_points' has been set to True.
+
+        in_channels: This keyword argument is for compatibility with Pytorch.
+          It is not used and in_channels will be inferred at the first execution
+          of the layer.
     """
 
     def __init__(self,
@@ -92,6 +96,7 @@ class ContinuousConv(tf.keras.layers.Layer):
                  offset=None,
                  window_function=None,
                  use_dense_layer_for_center=False,
+                 in_channels=None,
                  **kwargs):
 
         from tensorflow.keras import activations, initializers, regularizers
@@ -336,6 +341,10 @@ class SparseConv(tf.keras.layers.Layer):
         offset: A single 3D vector used in the filter coordinate computation.
           The shape is [3]. This can be used to control how the filters are
           centered. It will be set automatically for kernels with even sizes.
+
+        in_channels: This keyword argument is for compatibility with Pytorch.
+          It is not used and in_channels will be inferred at the first execution
+          of the layer.
     """
 
     def __init__(self,
@@ -349,6 +358,7 @@ class SparseConv(tf.keras.layers.Layer):
                  bias_regularizer=None,
                  normalize=False,
                  offset=None,
+                 in_channels=None,
                  **kwargs):
 
         from tensorflow.keras import activations, initializers, regularizers
@@ -515,6 +525,10 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         offset: A single 3D vector used in the filter coordinate computation.
           The shape is [3]. This can be used to control how the filters are
           centered. It will be set automatically for kernels with even sizes.
+
+        in_channels: This keyword argument is for compatibility with Pytorch.
+          It is not used and in_channels will be inferred at the first execution
+          of the layer.
     """
 
     def __init__(self,
@@ -528,6 +542,7 @@ class SparseConvTranspose(tf.keras.layers.Layer):
                  bias_regularizer=None,
                  normalize=False,
                  offset=None,
+                 in_channels=None,
                  **kwargs):
 
         from tensorflow.keras import activations, initializers, regularizers

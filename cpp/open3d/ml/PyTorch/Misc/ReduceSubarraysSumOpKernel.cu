@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 //
 
-#include <ATen/cuda/CUDAContext.h>
-
+#include "ATen/cuda/CUDAContext.h"
+#include "open3d/ml/PyTorch/Misc/ReduceSubarraysSumOpKernel.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/ReduceSubarraysSum.cuh"
 #include "torch/script.h"
@@ -34,11 +34,10 @@
 template <class T>
 torch::Tensor ReduceSubarraysSumCUDA(const torch::Tensor& values,
                                      const torch::Tensor& row_splits) {
-    auto device = values.device().type();
-    auto device_idx = values.device().index();
-    torch::Tensor sums = torch::empty(
-            {row_splits.size(0) - 1},
-            torch::dtype(ToTorchDtype<T>()).device(device, device_idx));
+    auto device = values.device();
+    torch::Tensor sums =
+            torch::empty({row_splits.size(0) - 1},
+                         torch::dtype(ToTorchDtype<T>()).device(device));
 
     auto stream = at::cuda::getCurrentCUDAStream();
     auto cuda_device_props = at::cuda::getCurrentDeviceProperties();

@@ -609,7 +609,7 @@ class AppWindow:
                        "ASCII point cloud files with colors (.xyzrgb)")
         dlg.add_filter(".pcd", "Point Cloud Data files (.pcd)")
         dlg.add_filter(".pts", "3D Points files (.pts)")
-        dlg.add_filter("*.*", "All files")
+        dlg.add_filter("", "All files")
 
         # A file dialog MUST define on_cancel and on_done functions
         dlg.set_on_cancel(self._on_file_dialog_cancel)
@@ -721,7 +721,8 @@ class AppWindow:
                 cloud = None
 
         if geometry is not None:
-            self._scene.scene.add_geometry(geometry, self.settings.material)
+            self._scene.scene.add_geometry("__model__", geometry,
+                                           self.settings.material)
             bounds = geometry.get_axis_aligned_bounding_box()
             self._scene.setup_camera(60, bounds, bounds.get_center())
 

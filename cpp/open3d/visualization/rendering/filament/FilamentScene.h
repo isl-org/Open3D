@@ -115,6 +115,9 @@ public:
                      const Material& material) override;
     bool AddGeometry(const std::string& object_name,
                      const TriangleMeshModel& model) override;
+    void UpdateGeometry(const std::string& object_name,
+                        const tgeometry::PointCloud& point_cloud,
+                        uint32_t update_flags) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
     bool GeometryIsVisible(const std::string& object_name) override;
@@ -219,6 +222,8 @@ private:
                 rendering::FilamentResourceManager::kDefaultTexture;
         rendering::TextureHandle anisotropy_map =
                 rendering::FilamentResourceManager::kDefaultTexture;
+        rendering::TextureHandle gradient_texture =
+                rendering::FilamentResourceManager::kDefaultTexture;
     };
 
     struct GeometryMaterialInstance {
@@ -268,6 +273,7 @@ private:
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);
     void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
+    void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
