@@ -25,11 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include <torch/script.h>
-
+#include <sstream>
 #include <type_traits>
 
 #include "open3d/ml/ShapeChecking.h"
+#include "torch/script.h"
 
 // Macros for checking tensor properties
 #define CHECK_CUDA(x)                                         \
@@ -47,16 +47,25 @@
         TORCH_CHECK(x.dtype() == torch::type, #x " must have type " #type) \
     } while (0)
 
-#define CHECK_SAME_DEVICE_TYPE(...)                                     \
-    do {                                                                \
-        TORCH_CHECK(SameDeviceType({__VA_ARGS__}),                      \
-                    #__VA_ARGS__ " must all have the same device type") \
+#define CHECK_SAME_DEVICE_TYPE(...)                                          \
+    do {                                                                     \
+        if (!SameDeviceType({__VA_ARGS__})) {                                \
+            TORCH_CHECK(                                                     \
+                    false,                                                   \
+                    #__VA_ARGS__                                             \
+                            " must all have the same device type but got " + \
+                            TensorInfoStr({__VA_ARGS__}))                    \
+        }                                                                    \
     } while (0)
 
-#define CHECK_SAME_DTYPE(...)                                     \
-    do {                                                          \
-        TORCH_CHECK(SameDtype({__VA_ARGS__}),                     \
-                    #__VA_ARGS__ " must all have the same dtype") \
+#define CHECK_SAME_DTYPE(...)                                              \
+    do {                                                                   \
+        if (!SameDtype({__VA_ARGS__})) {                                   \
+            TORCH_CHECK(false,                                             \
+                        #__VA_ARGS__                                       \
+                                " must all have the same dtype but got " + \
+                                TensorInfoStr({__VA_ARGS__}))              \
+        }                                                                  \
     } while (0)
 
 // Conversion from standard types to torch types
@@ -124,6 +133,29 @@ inline bool SameDtype(std::initializer_list<torch::Tensor> tensors) {
         }
     }
     return true;
+}
+
+inline std::string TensorInfoStr(std::initializer_list<torch::Tensor> tensors) {
+    std::stringstream sstr;
+    size_t count = 0;
+    for (const auto t : tensors) {
+        sstr << t.sizes() << " " << t.toString() << " " << t.device();
+        ++count;
+        if (count < tensors.size()) sstr << ", ";
+    }
+    return sstr.str();
+}
+
+// convenience function for creating a tensor for temp memory
+inline torch::Tensor CreateTempTensor(const int64_t size,
+                                      const torch::Device& device,
+                                      void** ptr = nullptr) {
+    torch::Tensor tensor = torch::empty(
+            {size}, torch::dtype(ToTorchDtype<uint8_t>()).device(device));
+    if (ptr) {
+        *ptr = tensor.data_ptr<uint8_t>();
+    }
+    return tensor;
 }
 
 inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(

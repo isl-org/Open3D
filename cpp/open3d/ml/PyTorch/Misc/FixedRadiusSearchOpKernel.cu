@@ -25,8 +25,7 @@
 // ----------------------------------------------------------------------------
 //
 
-#include <ATen/cuda/CUDAContext.h>
-
+#include "ATen/cuda/CUDAContext.h"
 #include "open3d/ml/PyTorch/Misc/NeighborSearchAllocator.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
@@ -74,10 +73,7 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
             (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric,
             ignore_query_point, return_distances, output_allocator);
 
-    torch::Tensor temp_tensor = torch::empty(
-            {int64_t(temp_size)},
-            torch::dtype(ToTorchDtype<uint8_t>()).device(device, device_idx));
-    temp_ptr = temp_tensor.data_ptr<uint8_t>();
+    auto temp_tensor = CreateTempTensor(temp_size, points.device(), &temp_ptr);
 
     // actually run the search
     FixedRadiusSearchCUDA(

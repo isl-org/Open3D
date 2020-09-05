@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 //
 
-#include <ATen/cuda/CUDAContext.h>
-
+#include "ATen/cuda/CUDAContext.h"
+#include "open3d/ml/PyTorch/Misc/InvertNeighborsListOpKernel.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/InvertNeighborsList.cuh"
 #include "torch/script.h"
@@ -36,22 +36,28 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
         int64_t num_points,
         const torch::Tensor& inp_neighbors_index,
         const torch::Tensor& inp_neighbors_row_splits,
-        const torch::Tensor& inp_neighbors_attributes,
-        int num_attributes) {
-    auto device = inp_neighbors_index.device().type();
-    auto device_idx = inp_neighbors_index.device().index();
-    torch::Tensor neighbors_index = torch::empty(
-            inp_neighbors_index.sizes(),
-            torch::dtype(ToTorchDtype<TIndex>()).device(device, device_idx));
+        const torch::Tensor& inp_neighbors_attributes) {
+    auto device = inp_neighbors_index.device();
+    torch::Tensor neighbors_index =
+            torch::empty(inp_neighbors_index.sizes(),
+                         torch::dtype(ToTorchDtype<TIndex>()).device(device));
     torch::Tensor neighbors_row_splits = torch::empty(
-            {num_points + 1},
-            torch::dtype(torch::kInt64).device(device, device_idx));
+            {num_points + 1}, torch::dtype(torch::kInt64).device(device));
     torch::Tensor neighbors_attributes =
             torch::empty_like(inp_neighbors_attributes);
 
     auto stream = at::cuda::getCurrentCUDAStream();
     auto cuda_device_props = at::cuda::getCurrentDeviceProperties();
     const int texture_alignment = cuda_device_props->textureAlignment;
+
+    int num_attributes;
+    if (inp_neighbors_attributes.size(0) == 0) {
+        num_attributes = 0;
+    } else {
+        num_attributes = 1;
+        for (int i = 1; i < inp_neighbors_attributes.dim(); ++i)
+            num_attributes *= inp_neighbors_attributes.size(i);
+    }
 
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
@@ -71,10 +77,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
             (int64_t*)neighbors_row_splits.data_ptr<int64_t>(),
             neighbors_row_splits.size(0) - 1);
 
-    torch::Tensor temp_tensor = torch::empty(
-            {int64_t(temp_size)},
-            torch::dtype(ToTorchDtype<uint8_t>()).device(device, device_idx));
-    temp_ptr = temp_tensor.data_ptr<uint8_t>();
+    auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
 
     // actually invert the list
     open3d::ml::impl::InvertNeighborsListCUDA(
@@ -94,11 +97,11 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
     return std::make_tuple(neighbors_index, neighbors_row_splits,
                            neighbors_attributes);
 }
-#define INSTANTIATE(TIndex, TAttr)                                   \
-    template std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> \
-    InvertNeighborsListCUDA<TIndex, TAttr>(                          \
-            int64_t, const torch::Tensor&, const torch::Tensor&,     \
-            const torch::Tensor&, int num_attributes);
+#define INSTANTIATE(TIndex, TAttr)                                        \
+    template std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>      \
+    InvertNeighborsListCUDA<TIndex, TAttr>(int64_t, const torch::Tensor&, \
+                                           const torch::Tensor&,          \
+                                           const torch::Tensor&);
 
 INSTANTIATE(int32_t, int32_t)
 INSTANTIATE(int32_t, int64_t)

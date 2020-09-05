@@ -25,28 +25,13 @@
 // ----------------------------------------------------------------------------
 //
 
+#include "open3d/ml/PyTorch/Misc/InvertNeighborsListOps.h"
+
 #include <vector>
 
+#include "open3d/ml/PyTorch/Misc/InvertNeighborsListOpKernel.h"
 #include "open3d/ml/PyTorch/TorchHelper.h"
 #include "torch/script.h"
-
-template <class TIndex, class TAttr>
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCPU(
-        int64_t num_points,
-        const torch::Tensor& inp_neighbors_index,
-        const torch::Tensor& inp_neighbors_row_splits,
-        const torch::Tensor& inp_neighbors_attributes,
-        int num_attributes);
-
-#ifdef BUILD_CUDA_MODULE
-template <class TIndex, class TAttr>
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
-        int64_t num_points,
-        const torch::Tensor& inp_neighbors_index,
-        const torch::Tensor& inp_neighbors_row_splits,
-        const torch::Tensor& inp_neighbors_attributes,
-        int num_attributes);
-#endif
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
         int64_t num_points,
@@ -69,21 +54,12 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
         CHECK_SHAPE(inp_neighbors_row_splits, Dim());
     }
 
-    int num_attributes;
-    if (inp_neighbors_attributes.size(0) == 0) {
-        num_attributes = 0;
-    } else {
-        num_attributes = 1;
-        for (int i = 1; i < inp_neighbors_attributes.dim(); ++i)
-            num_attributes *= inp_neighbors_attributes.size(i);
-    }
-
     const auto& index_type = inp_neighbors_index.dtype();
     const auto& attr_type = inp_neighbors_attributes.dtype();
 
 #define FN_PARAMETERS                                          \
     num_points, inp_neighbors_index, inp_neighbors_row_splits, \
-            inp_neighbors_attributes, num_attributes
+            inp_neighbors_attributes
 
 #define CALL(idx_t, attr_t, fn)                  \
     if (CompareTorchDtype<idx_t>(index_type) &&  \
