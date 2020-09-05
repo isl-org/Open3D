@@ -23,15 +23,12 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-try:
-    from open3d.cuda.pybind.core import cuda as _cuda
-    if _cuda.is_available():
-        if "@BUILD_GUI@" == "ON":
-            from open3d.cuda.pybind.visualization import gui
-        from open3d.cuda.pybind.visualization import *
-    else:
-        raise ImportError("CUDA support not available.")
-except ImportError:
+import open3d
+if open3d.__DEVICE_API__ == 'cuda':
+    if "@BUILD_GUI@" == "ON":
+        from open3d.cuda.pybind.visualization import gui
+    from open3d.cuda.pybind.visualization import *
+else:
     if "@BUILD_GUI@" == "ON":
         from open3d.cpu.pybind.visualization import gui
     from open3d.cpu.pybind.visualization import *

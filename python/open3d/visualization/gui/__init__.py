@@ -24,15 +24,11 @@
 # ----------------------------------------------------------------------------
 
 if "@BUILD_GUI@" == "ON":
-    try:
-        from open3d.cuda.pybind.core import cuda as _cuda
-        if _cuda.is_available():
-            from open3d.cuda.pybind.visualization.gui import *
-        else:
-            raise ImportError("CUDA support not available.")
-    except ImportError:
+    import open3d
+    if open3d.__DEVICE_API__ == 'cuda':
+        from open3d.cuda.pybind.visualization.gui import *
+    else:
         from open3d.cpu.pybind.visualization.gui import *
 else:
-    print(
-        "Open3D was not compiled with BUILD_GUI, but script is importing open3d.visualization.gui"
-    )
+    print("Open3D was not compiled with BUILD_GUI, but script is importing "
+          "open3d.visualization.gui")

@@ -44,6 +44,7 @@ import os
 import sys
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
+__DEVICE_API__ = 'cpu'
 from open3d._build_config import _build_config
 if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
@@ -60,6 +61,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
             from open3d.cuda.pybind import (camera, geometry, io, pipelines,
                                             utility, tgeometry)
             from open3d.cuda import pybind
+            __DEVICE_API__ = 'cuda'
     except ImportError:
         pass
 

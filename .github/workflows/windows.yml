@@ -104,7 +104,7 @@ jobs:
   test-wheel:
     name: Test wheel
     runs-on: windows-latest
-    needs: [build-windows-wheel]
+    needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
