@@ -1,8 +1,9 @@
+# ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +24,8 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-if "@BUILD_GUI@" == "ON":
-    import open3d
-    if open3d.__DEVICE_API__ == 'cuda':
-        from open3d.cuda.pybind.visualization.rendering import *
-    else:
-        from open3d.cpu.pybind.visualization.rendering import *
+import open3d
+if open3d.__DEVICE_API__ == 'cuda':
+    from open3d.cuda.pybind.ml import *
 else:
-    print("Open3D was not compiled with BUILD_GUI, but script is importing "
-          "open3d.visualization.rendering")
+    from open3d.cpu.pybind.ml import *

@@ -1,6 +1,7 @@
 name: macOS CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -8,7 +9,7 @@ on:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
 jobs:
-  macos:
+  MacOS:
     runs-on: macos-10.15
     strategy:
       fail-fast: false
@@ -55,3 +56,113 @@ jobs:
           ccache -s
           ./util/run_ci.sh
           ccache -s
+
+
+  build-wheel:
+    name: Build wheel
+    runs-on: macos-10.15
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [3.6, 3.7, 3.8]
+    env:
+      BUILD_CUDA_MODULE: OFF
+      NPROC: 2
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
+          path: ~/.ccache
+          # We include the commit sha in the cache key, as new cache entries are
+          # only created if there is no existing entry for the key yet.
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          # Restore any ccache cache entry, if none for
+          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+          # Common prefix will be used so that ccache can be used across commits.
+          restore-keys: |
+            ${{ runner.os }}-ccache
+      - name: Set up Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Install dependencies
+        run: |
+          ./util/install_deps_macos.sh skip-upgrade
+          brew install ccache
+          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          echo
+          source util/ci_utils.sh
+          install_python_dependencies
+          echo
+          echo "Using python: $(which python)"
+          python --version
+          echo -n "Using pip: "
+          python -m pip --version
+          echo "Using cmake: $(which cmake)"
+          cmake --version
+
+      - name: Config and build
+        run: |
+          PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
+          ccache -s
+          source util/ci_utils.sh
+          build_wheel
+          ccache -s
+          echo "::set-env name=PIP_PKG_NAME::$(basename build/lib/python_package/pip_package/open3d*.whl)"
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d_macosx_x86_64_wheels
+          path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+          if-no-files-found: error
+
+  test-wheel:
+    name: Test wheel
+    runs-on: macos-10.15
+    needs: [build-wheel]
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [3.6, 3.7, 3.8]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: false
+      - name: Download wheels
+        uses: actions/download-artifact@v2
+        # See https://github.com/dawidd6/action-download-artifact for more
+        # flexible artifact download options
+        with:
+          name: open3d_macosx_x86_64_wheels
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Test Python package
+        run: |
+          python -V
+          cd util
+          source ci_utils.sh
+          install_python_dependencies with-unit-test
+          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          python -m pip install ../open3d*-$pi_tag-*.whl
+          echo
+          echo "Dynamic libraries used:"
+          DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
+          find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
+          echo
+          test_wheel
+      - name: Run Python unit tests (benchmarks)
+        run: |
+          cd util
+          source ci_utils.sh
+          echo "running Open3D python tests..."
+          run_python_tests

@@ -94,8 +94,10 @@ if (${PYTHON_VERSION_MAJOR} EQUAL 2)
 endif ()
 
 # At `make`: open3d.so (or the equivalents) will be created at
-# PYTHON_COMPILED_MODULE_DIR. The default locaiton is `build/lib/Python`
-set(PYTHON_COMPILED_MODULE_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python")
+# PYTHON_COMPILED_MODULE_DIR. The default location is
+# `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
+set(PYTHON_COMPILED_MODULE_DIR
+    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
 set_target_properties(${PACKAGE_NAME} PROPERTIES
                       FOLDER "Python"
                       LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"

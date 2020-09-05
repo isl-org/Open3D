@@ -23,6 +23,19 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
+          path: ~/.ccache
+          # We include the commit sha in the cache key, as new cache entries are
+          # only created if there is no existing entry for the key yet.
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          # Restore any ccache cache entry, if none for
+          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+          # Common prefix will be used so that ccache can be used across commits.
+          restore-keys: |
+            ${{ runner.os }}-ccache
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
@@ -60,6 +73,8 @@ jobs:
           sudo apt-get install --yes texlive-latex-extra
           sudo apt-get install --yes ghostscript
           sudo apt-get install --yes pandoc
+          sudo apt-get install --yes ccache
+          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
           # Install Python dependencies for building docs
           which python
           python -V
@@ -69,6 +84,8 @@ jobs:
           python -m pip install -U -q git+https://github.com/intel-isl/m2r@dev#egg=m2r
       - name: Build docs
         run: |
+          PATH=/usr/lib/ccache:$PATH
+          ccache -s
           nproc
           mkdir build
           cd build
@@ -85,6 +102,7 @@ jobs:
           python -c "from open3d import *; import open3d; print(open3d)"
           cd .. # Back to Open3D/
           ./util/make_documentation.sh
+          ccache -s
 
       - name: Deploy docs
         if: ${{ github.ref == 'refs/heads/master' }}

@@ -1,9 +1,13 @@
 # MKL and TBB build scripts.
 #
-# This scripts exports:
+# This scripts exports: (both MKL and TBB)
 # - STATIC_MKL_INCLUDE_DIR
 # - STATIC_MKL_LIB_DIR
 # - STATIC_MKL_LIBRARIES
+# (Only TBB)
+# - STATIC_TBB_INCLUDE_DIR
+# - STATIC_TBB_LIB_DIR
+# - STATIC_TBB_LIBRARIES
 #
 # The name "STATIC" is used to avoid naming collisions for other 3rdparty CMake
 # files (e.g. PyTorch) that also depends on MKL.
@@ -35,6 +39,11 @@ set(MKL_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/mkl_install)
 set(STATIC_MKL_INCLUDE_DIR "${MKL_INSTALL_PREFIX}/include/")
 set(STATIC_MKL_LIB_DIR "${MKL_INSTALL_PREFIX}/lib")
 
+# TBB variables exported for PyTorch Ops and Tensorflow Ops
+set(STATIC_TBB_INCLUDE_DIR "${STATIC_MKL_INCLUDE_DIR}")
+set(STATIC_TBB_LIB_DIR "${STATIC_MKL_LIB_DIR}")
+set(STATIC_TBB_LIBRARIES tbb_static tbbmalloc_static)
+
 # Need to put TBB right next to MKL in the link flags. So instead of creating a
 # new tbb.cmake, it is also put here.
 ExternalProject_Add(
@@ -46,7 +55,7 @@ ExternalProject_Add(
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=${MKL_INSTALL_PREFIX}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        -DTBB_BUILD_TBBMALLOC=OFF
+        -DTBB_BUILD_TBBMALLOC=ON
         -DTBB_BUILD_TBBMALLOC_PROXYC=OFF
         -DTBB_BUILD_SHARED=OFF
         -DTBB_BUILD_TESTS=OFF
@@ -73,7 +82,7 @@ if(WIN32)
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Library/lib ${MKL_INSTALL_PREFIX}/lib
     )
     # Generator expression can result in an empty string "", causing CMake to try to
-    # locat ".lib". The workaround to first list all libs, and remove unneeded items
+    # locate ".lib". The workaround to first list all libs, and remove unneeded items
     # using generator expressions.
     set(STATIC_MKL_LIBRARIES
         mkl_intel_ilp64
