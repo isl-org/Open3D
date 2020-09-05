@@ -2,7 +2,6 @@ message(STATUS "Building Tensorflow ops")
 
 get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
 if(BUILD_CUDA_MODULE)
-    set(CUDA_ENABLED YES)
     message(STATUS "Building Tensorflow ops with CUDA")
 endif()
 
@@ -10,7 +9,7 @@ find_package(Tensorflow REQUIRED)
 find_package(TBB REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(parallelstl REQUIRED)
-if(CUDA_ENABLED)
+if(BUILD_CUDA_MODULE)
     find_package(CUB REQUIRED)
     find_package(CUTLASS REQUIRED)
 endif()
@@ -60,7 +59,7 @@ set(TF_OPS_CUDA_SOURCES
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
 )
 
-if(CUDA_ENABLED)
+if(BUILD_CUDA_MODULE)
     set(open3d_tf_ops_SOURCES
         ${TF_OPS_SOURCES}
         ${TF_OPS_CUDA_SOURCES}
@@ -89,7 +88,7 @@ set_target_properties( open3d_tf_ops PROPERTIES
         )
 
 set( open3d_tf_ops_DEFINITIONS "${Tensorflow_DEFINITIONS}" )
-if(CUDA_ENABLED)
+if(BUILD_CUDA_MODULE)
     target_include_directories(open3d_tf_ops SYSTEM PRIVATE ${CUB_INCLUDE_DIR}
                                                      ${CUTLASS_INCLUDE_DIR})
     list(APPEND open3d_tf_ops_DEFINITIONS "BUILD_CUDA_MODULE")
