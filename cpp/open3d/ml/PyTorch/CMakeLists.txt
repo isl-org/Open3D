@@ -14,6 +14,12 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 set(TORCH_OPS_SOURCES
+    "ContinuousConv/ContinuousConvBackpropFilterOpKernel.cpp"
+    "ContinuousConv/ContinuousConvOpKernel.cpp"
+    "ContinuousConv/ContinuousConvOps.cpp"
+    "ContinuousConv/ContinuousConvTransposeBackpropFilterOpKernel.cpp"
+    "ContinuousConv/ContinuousConvTransposeOpKernel.cpp"
+    "ContinuousConv/ContinuousConvTransposeOps.cpp"
     "Misc/BuildSpatialHashTableOpKernel.cpp"
     "Misc/InvertNeighborsListOps.cpp"
     "Misc/RadiusSearchOpKernel.cpp"
@@ -31,6 +37,10 @@ set(TORCH_OPS_SOURCES
 )
 
 set(TORCH_OPS_CUDA_SOURCES
+    "ContinuousConv/ContinuousConvBackpropFilterOpKernel.cu"
+    "ContinuousConv/ContinuousConvOpKernel.cu"
+    "ContinuousConv/ContinuousConvTransposeBackpropFilterOpKernel.cu"
+    "ContinuousConv/ContinuousConvTransposeOpKernel.cu"
     "Misc/FixedRadiusSearchOpKernel.cu"
     "Misc/BuildSpatialHashTableOpKernel.cu"
     "Misc/InvertNeighborsListOpKernel.cu"
