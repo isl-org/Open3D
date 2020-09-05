@@ -99,6 +99,9 @@ jobs:
           echo
           install_cuda_toolkit with-cudnn purge-cache
           nvcc --version
+          # Export PATH and LD_LIBRARY_PATH (for CUDA) for the next step
+          echo "::set-env name=PATH::$PATH"
+          echo "::set-env name=LD_LIBRARY_PATH::$LD_LIBRARY_PATH"
           echo
           echo "Installing CPU versions of packages"
           install_python_dependencies
