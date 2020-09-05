@@ -9,7 +9,7 @@ on:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
 jobs:
-  macos:
+  MacOS:
     runs-on: macos-10.15
     strategy:
       fail-fast: false
@@ -50,18 +50,16 @@ jobs:
           ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
           ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
-          rm -rf $(brew --cache)  # Remove homebrew cached packages
       - name: Config and build
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           ./util/run_ci.sh
           ccache -s
-          echo
-          echo "Disk space used: $(df -h $PWD)"
 
 
-  build-macos-wheel:
+  build-wheel:
+    name: Build wheel
     runs-on: macos-10.15
     strategy:
       fail-fast: false
@@ -97,13 +95,23 @@ jobs:
           ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
           ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
-          rm -rf $(brew --cache)  # Remove homebrew cached packages
+          echo
+          source util/ci_utils.sh
+          install_python_dependencies
+          echo
+          echo "Using python: $(which python)"
+          python --version
+          echo -n "Using pip: "
+          python -m pip --version
+          echo "Using cmake: $(which cmake)"
+          cmake --version
 
       - name: Config and build
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
-          ./util/build_wheel.sh
+          source util/ci_utils.sh
+          build_wheel
           ccache -s
           echo "::set-env name=PIP_PKG_NAME::$(basename build/lib/python_package/pip_package/open3d*.whl)"
 
@@ -114,8 +122,8 @@ jobs:
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
-  test-macos-wheel:
-    name: Test macos wheel
+  test-wheel:
+    name: Test wheel
     runs-on: macos-10.15
     needs: [build-macos-wheel]
     strategy:
@@ -142,22 +150,19 @@ jobs:
         run: |
           python -V
           cd util
-          source build_scripts.sh
-          echo "$rj_startts StartJob ReportInit"
+          source ci_utils.sh
           install_python_dependencies with-unit-test
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          reportRun python -m pip install ../open3d*-$pi_tag-*.whl
-          printf "\n\nDynamic libraries used:\n"
+          python -m pip install ../open3d*-$pi_tag-*.whl
+          echo
+          echo "Dynamic libraries used:"
           DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
           find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
           echo
           test_wheel
-          reportJobFinishSession
       - name: Run Python unit tests (benchmarks)
         run: |
           cd util
-          source build_scripts.sh
-          echo "$rj_startts StartJob ReportInit"
-          reportJobStart "running Open3D python tests..."
+          source ci_utils.sh
+          echo "running Open3D python tests..."
           run_python_tests
-          reportJobFinishSession

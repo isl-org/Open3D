@@ -20,8 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shared: [ON, OFF]
-        static_runtime: [ON, OFF]
+        SHARED: [ON, OFF]
+        STATIC_RUNTIME: [ON, OFF]
         CONFIG: [Release, Debug]
 
     steps:
@@ -37,7 +37,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} ..
       - name: Build
         run: |
           cd build
@@ -48,7 +48,7 @@ jobs:
           cd docs\_static\C++
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.static_runtime }} ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} ..
           cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
       - name: Install Python package
         run: |
@@ -57,15 +57,16 @@ jobs:
           cd build
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
-        # If shared == ON, Open3D.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.shared == 'OFF' }}
+        # If SHARED == ON, Open3D.dll needs to be copied, which is not recommended for python.
+        if: ${{ matrix.SHARED == 'OFF' }}
         run: |
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
       - name: Disk space used
         run: Get-PSDrive (get-location).Drive
 
-  build-windows-wheel:
+  build-wheel:
+    name: Build wheel
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -100,8 +101,8 @@ jobs:
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
-  test-windows-wheel:
-    name: Test windows wheel
+  test-wheel:
+    name: Test wheel
     runs-on: windows-latest
     needs: [build-windows-wheel]
     strategy:

@@ -35,32 +35,6 @@ SCIPY_VER="1.4.1"       # Needed by Tensorflow 2.3.0
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 
-rj_startts=${rj_startts:-$(date +%s)}
-rj_prevts=${rj_prevts:-$rj_startts}
-rj_prevj=${rj_prevj:-ReportInit}
-
-reportJobStart() {
-    rj_ts=$(date +%s)
-    ((rj_dt = rj_ts - rj_prevts)) || true
-    echo "$rj_ts EndJob $rj_prevj ran for $rj_dt sec (session started $rj_startts)"
-    echo "$rj_ts StartJob $1"
-    rj_prevj=$1
-    rj_prevts=$rj_ts
-}
-
-reportJobFinishSession() {
-    rj_ts=$(date +%s)
-    ((rj_dt = rj_ts - rj_prevts)) || true
-    echo "$rj_ts EndJob $rj_prevj ran for $rj_dt sec (session started $rj_startts)"
-    ((rj_dt = rj_ts - rj_startts)) || true
-    echo "ReportJobSession: ran for $rj_dt sec"
-}
-
-reportRun() {
-    reportJobStart "$*"
-    echo "path: $(which "$1")"
-    "$@"
-}
 
 install_cuda_toolkit() {
 
@@ -102,6 +76,7 @@ install_cuda_toolkit() {
 
 install_python_dependencies() {
 
+    echo "Installing Python dependencies"
     python -m pip install --upgrade pip=="$PIP_VER"
     python -m pip install -U wheel=="$WHEEL_VER"
     options="$(echo "$@" | tr ' ' '|')"
@@ -120,24 +95,23 @@ install_python_dependencies() {
     fi
 
     echo
-    date
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
         # TF happily installs both CPU and GPU versions at the same time, so remove the other
-        reportRun python -m pip uninstall --yes "$TF_ARCH_DISABLE_NAME"
-        reportRun python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER"
+        python -m pip uninstall --yes "$TF_ARCH_DISABLE_NAME"
+        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER"
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            reportRun python -m pip install -U torch=="$TORCH_ARCH_GLNX_VER" -f https://download.pytorch.org/whl/torch_stable.html
+            python -m pip install -U torch=="$TORCH_ARCH_GLNX_VER" -f https://download.pytorch.org/whl/torch_stable.html
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            reportRun python -m pip install -U torch=="$TORCH_MACOS_VER"
+            python -m pip install -U torch=="$TORCH_MACOS_VER"
         else
             echo "unknown OS $OSTYPE"
             exit 1
         fi
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
-        reportRun python -m pip install -U yapf=="$YAPF_VER"
+        python -m pip install -U yapf=="$YAPF_VER"
     fi
     if [[ "purge-cache" =~ ^($options)$ ]] ; then
         echo "Purge pip cache"
@@ -167,22 +141,21 @@ build_all() {
 
     echo
     echo Running cmake "${cmakeOptions[@]}" ..
-    reportRun cmake "${cmakeOptions[@]}" ..
+    cmake "${cmakeOptions[@]}" ..
     echo
     echo "build & install Open3D..."
-    date
-    reportRun make VERBOSE=1 -j"$NPROC"
-    reportRun make install -j"$NPROC"
-    reportRun make VERBOSE=1 install-pip-package -j"$NPROC"
+    make VERBOSE=1 -j"$NPROC"
+    make install -j"$NPROC"
+    make VERBOSE=1 install-pip-package -j"$NPROC"
     echo
 }
 
 
 build_wheel() {
 
+    echo "Building Open3D wheel"
     echo
     echo Building with CPU only...
-    date
     mkdir -p build
     cd build         # PWD=Open3D/build
 
@@ -207,9 +180,9 @@ build_wheel() {
         -DBUILD_UNIT_TESTS=OFF \
         -DBUILD_BENCHMARKS=OFF \
     )
-    reportRun cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
+    cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
     echo
-    reportRun make VERBOSE=1 -j"$NPROC" pybind open3d_tf_ops open3d_torch_ops
+    make VERBOSE=1 -j"$NPROC" pybind open3d_tf_ops open3d_torch_ops
 
     if [ "$BUILD_CUDA_MODULE" == ON ] ; then
         echo
@@ -217,35 +190,32 @@ build_wheel() {
         install_python_dependencies with-cuda purge-cache
         echo
         echo Building with CUDA...
-        date
         rebuild_list=(bin lib/Release/*.a  lib/_build_config.py cpp lib/ml)
         echo
         echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
         rm -r "${rebuild_list[@]}" || true
-        reportRun cmake -DBUILD_CUDA_MODULE=ON -DCUDA_ARCH=BasicPTX "${cmakeOptions[@]}" ..
+        cmake -DBUILD_CUDA_MODULE=ON -DCUDA_ARCH=BasicPTX "${cmakeOptions[@]}" ..
     fi
     echo
-    echo "Building Open3D wheel..."
-    date
-    reportRun make VERBOSE=1 -j"$NPROC" pip-package
+    echo "Packaging Open3D wheel..."
+    make VERBOSE=1 -j"$NPROC" pip-package
 }
 
 install_wheel() {
     echo
     echo "Installing Open3D wheel..."
-    date
-    reportRun python -m pip install open3d -f lib/python_package/pip_package/
+    python -m pip install open3d -f lib/python_package/pip_package/
 }
 
 test_wheel() {
-    reportRun python -c "import open3d; print('Installed:', open3d)"
-    reportRun python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+    python -c "import open3d; print('Installed:', open3d)"
+    python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
     if [ "$BUILD_PYTORCH_OPS" == ON ] ; then
-        reportRun python -c \
+        python -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == ON ] ; then
-        reportRun python -c \
+        python -c \
             "import open3d.ml.tf.ops; print('Tensorflow Ops library loaded:', open3d.ml.tf.ops)"
     fi
 }
@@ -254,7 +224,7 @@ test_wheel() {
 run_cpp_unit_tests() {
     unitTestFlags=
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
-    reportRun ./bin/tests "$unitTestFlags"
+    ./bin/tests "$unitTestFlags"
     echo
 }
 
@@ -264,7 +234,7 @@ run_python_tests() {
         echo Testing ML Ops disabled
         pytest_args+=(--ignore ../python/test/ml_ops/)
     fi
-    reportRun python -m pytest "${pytest_args[@]}"
+    python -m pytest "${pytest_args[@]}"
 }
 
 # test_cpp_example runExample
