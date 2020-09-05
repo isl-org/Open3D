@@ -130,19 +130,22 @@ TEST(NearestNeighborSearch, MultiRadiusSearch) {
                                0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
     core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
     core::nns::NearestNeighborSearch nns(ref);
-    nns.FixedRadiusIndex();
+    nns.MultiRadiusIndex();
 
     core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843,
                                             0.064705, 0.043921, 0.087843}),
                        {2, 3}, core::Dtype::Float64);
+    core::Tensor radius;
 
     // If radius <= 0.
-    std::vector<double> radius_0{1.0, 0.0};
-    EXPECT_THROW(nns.MultiRadiusSearch(query, radius_0), std::runtime_error);
-    EXPECT_THROW(nns.MultiRadiusSearch(query, radius_0), std::runtime_error);
+    radius = core::Tensor(std::vector<double>({1.0, 0.0}), {2},
+                          core::Dtype::Float64);
+    EXPECT_THROW(nns.MultiRadiusSearch(query, radius), std::runtime_error);
+    EXPECT_THROW(nns.MultiRadiusSearch(query, radius), std::runtime_error);
 
     // If radius == 0.1.
-    std::vector<double> radius{0.1, 0.1};
+    radius = core::Tensor(std::vector<double>({0.1, 0.1}), {2},
+                          core::Dtype::Float64);
     std::tuple<core::Tensor, core::Tensor, core::Tensor> result =
             nns.MultiRadiusSearch(query, radius);
     core::Tensor indices = std::get<0>(result);
