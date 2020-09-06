@@ -22,7 +22,7 @@ fi
 if ! which cmake || cmake -P CMakeLists.txt 2>&1 | grep -q "or higher is required"  ; then
     echo 'Installing backported cmake from https://apt.kitware.com/'
     $SUDO apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
-    $SUDO apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
+    $SUDO apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
     $SUDO apt-get --yes install cmake
 fi
 
