@@ -65,8 +65,9 @@ class PyAPIDocsBuilder:
     ...
     """
 
-    def __init__(self, output_dir, module_names):
+    def __init__(self, output_dir, input_dir, module_names):
         self.output_dir = output_dir
+        self.input_dir = input_dir
         self.module_names = module_names
         print("Generating *.rst Python API docs in directory: %s" %
               self.output_dir)
@@ -76,12 +77,15 @@ class PyAPIDocsBuilder:
 
         for module_name in self.module_names:
             module = self._get_open3d_module(module_name)
-            self._generate_module_class_function_docs(module_name, module,
-                                                      self.output_dir)
+            self._generate_module_class_function_docs(module_name, module)
 
     def _get_open3d_module(self, full_module_name):
         """Returns the module object for the given module path"""
         import open3d  # make sure the root module is loaded
+        if open3d._build_config['BUILD_TENSORFLOW_OPS']:
+            import open3d.ml.tf
+        if open3d._build_config['BUILD_PYTORCH_OPS']:
+            import open3d.ml.torch
 
         try:
             # try to import directly. This will work for pure python submodules
@@ -176,8 +180,7 @@ class PyAPIDocsBuilder:
         with open(sub_module_doc_path, "w") as f:
             f.write(out_string)
 
-    def _generate_module_class_function_docs(self, full_module_name, module,
-                                             output_dir):
+    def _generate_module_class_function_docs(self, full_module_name, module):
         print("Generating docs for submodule: %s" % full_module_name)
 
         # Class docs
@@ -188,18 +191,26 @@ class PyAPIDocsBuilder:
         ]
         for class_name in class_names:
             file_name = "%s.%s.rst" % (full_module_name, class_name)
-            output_path = os.path.join(output_dir, file_name)
+            output_path = os.path.join(self.output_dir, file_name)
+            input_path = os.path.join(self.input_dir, file_name)
+            if os.path.isfile(input_path):
+                shutil.copyfile(input_path, output_path)
+                continue
             self._generate_class_doc(full_module_name, class_name, output_path)
 
         # Function docs
         function_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isbuiltin(obj[1])
+            if inspect.isroutine(obj[1])
         ]
         for function_name in function_names:
             file_name = "%s.%s.rst" % (full_module_name, function_name)
-            output_path = os.path.join(output_dir, file_name)
+            output_path = os.path.join(self.output_dir, file_name)
+            input_path = os.path.join(self.input_dir, file_name)
+            if os.path.isfile(input_path):
+                shutil.copyfile(input_path, output_path)
+                continue
             self._generate_function_doc(full_module_name, function_name,
                                         output_path)
 
@@ -216,8 +227,12 @@ class PyAPIDocsBuilder:
         ]
 
         # Path
-        sub_module_doc_path = os.path.join(output_dir,
+        sub_module_doc_path = os.path.join(self.output_dir,
                                            full_module_name + ".rst")
+        input_path = os.path.join(self.input_dir, full_module_name + ".rst")
+        if os.path.isfile(input_path):
+            shutil.copyfile(input_path, sub_module_doc_path)
+            return
         self._generate_module_doc(
             full_module_name,
             class_names,
@@ -242,9 +257,9 @@ class SphinxDocsBuilder:
         # We use the modules listed in the index.rst file here.
         self.documented_modules = self._get_documented_module_names()
 
-        # self.documented_modules = "open3d.pybind"  # Points to the open3d.so
-        # self.c_module_relative = "open3d"  # The relative module reference to open3d.so
         self.python_api_output_dir = "python_api"
+        # The input dir for custom rst files that override the generated files
+        self.python_api_input_dir = "python_api_in"
         self.html_output_dir = html_output_dir
         self.is_release = is_release
         self.skip_notebooks = skip_notebooks
@@ -276,6 +291,7 @@ class SphinxDocsBuilder:
         # self.python_api_output_dir cannot be a temp dir, since other
         # "*.rst" files reference it
         pd = PyAPIDocsBuilder(self.python_api_output_dir,
+                              self.python_api_input_dir,
                               self.documented_modules)
         pd.generate_rst()
 
