@@ -170,7 +170,7 @@ if ( BUNDLE_OPEN3D_ML )
         # do not configure
         CONFIGURE_COMMAND ""
         # do not build
-        BUILD_COMMAND "make"
+        BUILD_COMMAND ""
         # do not install
         INSTALL_COMMAND ""
         )

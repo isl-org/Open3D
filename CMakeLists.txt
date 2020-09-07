@@ -117,7 +117,7 @@ if(BUILD_RPC_INTERFACE AND WIN32)
     message(STATUS "The RPC interface is currently unsupported on Windows.")
     set(BUILD_RPC_INTERFACE OFF)
 endif()
-if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS AND BUILD_PYTORCH_OPS))
+if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on Tensorflow and PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON and -DBUILD_PYTORCH_OPS=ON")
 endif()
 
