@@ -25,7 +25,6 @@ else()
     file(GLOB_RECURSE open3d_torch_ops_SOURCES "*.cpp" "../impl/*/*.cc"
          "../impl/*/*.cpp")
 endif()
-message(STATUS ${open3d_torch_ops_SOURCES})
 
 add_library(open3d_torch_ops SHARED ${open3d_torch_ops_SOURCES})
 open3d_set_global_properties(open3d_torch_ops)
@@ -62,7 +61,12 @@ target_include_directories(open3d_torch_ops SYSTEM PRIVATE
 
 target_link_libraries(open3d_torch_ops PRIVATE
     3rdparty_tbb
-    ${TORCH_LIBRARIES}
+    torch_cpu
     ${EIGEN3_TARGET}
     ${FMT_TARGET}
 )
+if( BUILD_CUDA_MODULE )
+    target_link_libraries(open3d_torch_ops PRIVATE
+        ${TORCH_LIBRARIES}
+    )
+endif()
