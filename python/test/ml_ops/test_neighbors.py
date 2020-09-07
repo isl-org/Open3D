@@ -45,13 +45,14 @@ def test_tf_neighbors():
         dtype=np.float32)
     radius = 0.1
 
-    indices = ops.tf_neighbors(query_points, dataset_points,
-                               radius).cpu().numpy()
+    indices = ops.ordered_neighbors(query_points, dataset_points,
+                                    radius).cpu().numpy()
     indices_ref = np.array([[1, 4], [1, 4]], dtype=np.int32)
 
     np.testing.assert_equal(indices, indices_ref)
 
-    indices = ops.tf_neighbors(query_points, dataset_points, 0.2).cpu().numpy()
+    indices = ops.ordered_neighbors(query_points, dataset_points,
+                                    0.2).cpu().numpy()
     indices_ref = np.array(
         [[1, 4, 9, 0, 3, 2, 5, 7, 6], [1, 4, 9, 0, 3, 2, 5, 7, 6]],
         dtype=np.int32)
@@ -59,10 +60,10 @@ def test_tf_neighbors():
     np.testing.assert_equal(indices, indices_ref)
 
     with pytest.raises(ValueError):
-        ops.tf_neighbors(None, dataset_points, 0.1)
+        ops.ordered_neighbors(None, dataset_points, 0.1)
 
     with pytest.raises(ValueError):
-        ops.tf_neighbors(query_points, None, 1)
+        ops.ordered_neighbors(query_points, None, 1)
 
 
 @pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
@@ -83,8 +84,8 @@ def test_tf_batch_neighbors():
         dtype=np.float32)
     radius = 0.1
 
-    indices = ops.tf_batch_neighbors(query_points, dataset_points, [1, 2],
-                                     [10, 10], radius)
+    indices = ops.batch_ordered_neighbors(query_points, dataset_points, [1, 2],
+                                          [10, 10], radius)
     indices_ref = np.array([[1, 4], [11, 14], [11, 14]], dtype=np.int32)
 
     np.testing.assert_equal(indices, indices_ref)
@@ -95,16 +96,16 @@ def test_tf_batch_neighbors():
                        [5, 0, 0], [5, 1, 0]],
                       dtype=np.float32)
 
-    indices = ops.tf_batch_neighbors(points, points, [2, 3, 2], [3, 2, 2],
-                                     11).cpu().numpy()
+    indices = ops.batch_ordered_neighbors(points, points, [2, 3, 2], [3, 2, 2],
+                                          11).cpu().numpy()
 
     indices_ref = np.array([[0, 1, 2], [1, 0, 2], [3, 4, 7], [3, 4, 7],
                             [4, 3, 7], [5, 6, 7], [6, 5, 7]],
                            dtype=np.int32)
     np.testing.assert_equal(indices, indices_ref)
 
-    indices = ops.tf_batch_neighbors(points, points, [1, 1, 5], [5, 1, 1],
-                                     11).cpu().numpy()
+    indices = ops.batch_ordered_neighbors(points, points, [1, 1, 5], [5, 1, 1],
+                                          11).cpu().numpy()
 
     indices_ref = np.ones((7, 5), dtype=np.int32) * 7
     indices_ref[0] = [0, 1, 2, 3, 4]
@@ -112,10 +113,11 @@ def test_tf_batch_neighbors():
     np.testing.assert_equal(indices, indices_ref)
 
     with pytest.raises(ValueError):
-        ops.tf_batch_neighbors(None, dataset_points, [1, 2], [2, 1], 0.1)
+        ops.batch_ordered_neighbors(None, dataset_points, [1, 2], [2, 1], 0.1)
 
     with pytest.raises(ValueError):
-        ops.tf_batch_neighbors(query_points, None, [1, 2], [2, 1], 1)
+        ops.batch_ordered_neighbors(query_points, None, [1, 2], [2, 1], 1)
 
     with pytest.raises(ValueError):
-        ops.tf_batch_neighbors(query_points, dataset_points, None, [2, 1], 1)
+        ops.batch_ordered_neighbors(query_points, dataset_points, None, [2, 1],
+                                    1)
