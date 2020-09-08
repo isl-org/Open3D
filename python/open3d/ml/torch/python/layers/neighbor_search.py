@@ -10,17 +10,17 @@ class FixedRadiusSearch(torch.nn.Module):
     This layer computes the neighbors for a fixed radius on a point cloud.
 
     Example:
-      
-      This example shows a neighbor search that returns the indices to the 
+
+      This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
         import torch
         import open3d.ml.torch as ml3d
-        
+
         points = torch.randn([20,3])
         queries = torch.randn([10,3])
         radius = 0.8
-        
+
         nsearch = ml3d.nn.FixedRadiusSearch(return_distances=True)
         ans = nsearch(points, queries, radius)
         # returns a tuple of neighbors_index, neighbors_row_splits, and neighbors_distance
@@ -31,7 +31,7 @@ class FixedRadiusSearch(torch.nn.Module):
       metric: Either L1, L2 or Linf. Default is L2.
 
       ignore_query_point: If True the points that coincide with the center of
-        the search window will be ignored. This excludes the query point if 
+        the search window will be ignored. This excludes the query point if
         'queries' and 'points' are the same point cloud.
 
       return_distances: If True the distances for each neighbor will be returned.
@@ -84,7 +84,7 @@ class FixedRadiusSearch(torch.nn.Module):
             cases and is usually not needed.
             Note that the hash table must have been generated with the same 'points' array.
 
-        Returns: 
+        Returns:
           3 Tensors in the following order
 
           neighbors_index
@@ -138,17 +138,17 @@ class RadiusSearch(torch.nn.Module):
     having an individual radius.
 
     Example:
-      
-      This example shows a neighbor search that returns the indices to the 
+
+      This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
         import torch
         import open3d.ml.torch as ml3d
-        
+
         points = torch.randn([20,3])
         queries = torch.randn([10,3])
         radii = torch.randn([10])+1.0
-        
+
         nsearch = ml3d.nn.RadiusSearch(return_distances=True)
         ans = nsearch(points, queries, radii)
         # returns a tuple of neighbors_index, neighbors_row_splits, and neighbors_distance
@@ -205,7 +205,7 @@ class RadiusSearch(torch.nn.Module):
             if queries is batched. This vector is [0, num_queries] if there is
             only 1 batch item.
 
-        Returns: 
+        Returns:
           3 Tensors in the following order
 
           neighbors_index
@@ -245,17 +245,17 @@ class KNNSearch(torch.nn.Module):
     This layer computes the k nearest neighbors for each query point.
 
     Example:
-      
-      This example shows a neighbor search that returns the indices to the 
+
+      This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
         import torch
         import open3d.ml.torch as ml3d
-        
+
         points = torch.randn([20,3])
         queries = torch.randn([10,3])
         k = 8
-        
+
         nsearch = ml3d.nn.KNNSearch(return_distances=True)
         ans = nsearch(points, queries, k)
         # returns a tuple of neighbors_index, neighbors_row_splits, and neighbors_distance

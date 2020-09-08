@@ -8,10 +8,10 @@ __all__ = ['ContinuousConv', 'SparseConv', 'SparseConvTranspose']
 
 
 class ContinuousConv(torch.nn.Module):
-    r"""Continuous Convolution. 
-    
+    r"""Continuous Convolution.
+
     This convolution supports continuous input and output point positions.
-    This layer implements the convolution defined in 
+    This layer implements the convolution defined in
 
     *B. Ummenhofer and V. Koltun, Lagrangian Fluid Simulation with Continuous Convolutions, ICLR 2020.*
 
@@ -69,7 +69,7 @@ class ContinuousConv(torch.nn.Module):
               preserving mapping to map a sphere to a cube.
             * 'identity' no mapping is applied to the coordinates.
 
-        interpolation: One of 'linear', 'linear_border', 
+        interpolation: One of 'linear', 'linear_border',
           'nearest_neighbor'.
             * 'linear' is trilinear interpolation with coordinate clamping.
             * 'linear_border' uses a zero border if outside the range.
@@ -327,8 +327,8 @@ class ContinuousConv(torch.nn.Module):
 
 
 class SparseConv(torch.nn.Module):
-    """Sparse Convolution. 
-    
+    """Sparse Convolution.
+
     This layer computes a convolution which is only evaluated at the specified output positions.
     The layer assumes that input and output points lie on a regular grid.
 
@@ -337,12 +337,12 @@ class SparseConv(torch.nn.Module):
 
         import torch
         import open3d.ml.torch as ml3d
-        
+
         # +0.5 to move the points to the voxel center
         inp_positions = torch.randint(0, 10, [20,3]).to(torch.float32)+0.5
         inp_features = torch.randn([20,8])
         out_positions = torch.randint(0, 10, [20,3]).to(torch.float32)+0.5
-        
+
         conv = ml3d.nn.SparseConv(in_channels=8, filters=16, kernel_size=[3,3,3])
         out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
 
@@ -506,8 +506,8 @@ class SparseConv(torch.nn.Module):
 
 
 class SparseConvTranspose(torch.nn.Module):
-    """Sparse Transposed Convolution. 
-    
+    """Sparse Transposed Convolution.
+
     This layer computes a transposed convolution which is only evaluated at the specified output positions.
     The layer assumes that input and output points lie on a regular grid.
 
@@ -516,12 +516,12 @@ class SparseConvTranspose(torch.nn.Module):
 
         import torch
         import open3d.ml.torch as ml3d
-        
+
         # +0.5 to move the points to the voxel center
         inp_positions = torch.randint(0, 10, [20,3]).to(torch.float32)+0.5
         inp_features = torch.randn([20,8])
         out_positions = torch.randint(0, 10, [20,3]).to(torch.float32)+0.5
-        
+
         conv = ml3d.nn.SparseConv(in_channels=8, filters=16, kernel_size=[3,3,3])
         out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
 

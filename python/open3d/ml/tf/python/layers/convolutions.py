@@ -4,10 +4,10 @@ import numpy as np
 
 
 class ContinuousConv(tf.keras.layers.Layer):
-    r"""Continuous Convolution. 
-    
+    r"""Continuous Convolution.
+
     This convolution supports continuous input and output point positions.
-    This layer implements the convolution defined in 
+    This layer implements the convolution defined in
 
     *B. Ummenhofer and V. Koltun, Lagrangian Fluid Simulation with Continuous Convolutions, ICLR 2020.*
 
@@ -67,7 +67,7 @@ class ContinuousConv(tf.keras.layers.Layer):
               preserving mapping to map a sphere to a cube.
             * 'identity' no mapping is applied to the coordinates.
 
-        interpolation: One of 'linear', 'linear_border', 
+        interpolation: One of 'linear', 'linear_border',
           'nearest_neighbor'.
             * 'linear' is trilinear interpolation with coordinate clamping.
             * 'linear_border' uses a zero border if outside the range.
@@ -344,8 +344,8 @@ class ContinuousConv(tf.keras.layers.Layer):
 
 
 class SparseConv(tf.keras.layers.Layer):
-    """Sparse Convolution. 
-    
+    """Sparse Convolution.
+
     This layer computes a convolution which is only evaluated at the specified output positions.
     The layer assumes that input and output points lie on a regular grid.
 
@@ -355,12 +355,12 @@ class SparseConv(tf.keras.layers.Layer):
 
         import tensorflow as tf
         import open3d.ml.tf as ml3d
-        
+
         # +0.5 to move the points to the voxel center
         inp_positions = tf.cast(tf.random.uniform([20,3], 0, 10, dtype=tf.int32), tf.float32)+0.5
         inp_features = tf.random.normal([20,8])
         out_positions = tf.cast(tf.random.uniform([20,3], 0, 10, dtype=tf.int32), tf.float32)+0.5
-        
+
         conv = ml3d.layers.SparseConv(filters=16, kernel_size=[3,3,3])
         out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
 
@@ -553,12 +553,12 @@ class SparseConvTranspose(tf.keras.layers.Layer):
 
         import tensorflow as tf
         import open3d.ml.tf as ml3d
-        
+
         # +0.5 to move the points to the voxel center
         inp_positions = tf.cast(tf.random.uniform([20,3], 0, 10, dtype=tf.int32), tf.float32)+0.5
         inp_features = tf.random.normal([20,8])
         out_positions = tf.cast(tf.random.uniform([20,3], 0, 10, dtype=tf.int32), tf.float32)+0.5
-        
+
         conv = ml3d.layers.SparseConvTranspose(filters=16, kernel_size=[3,3,3])
         out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
 
