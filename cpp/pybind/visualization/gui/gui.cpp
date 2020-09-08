@@ -75,6 +75,7 @@ public:
         delete unlocker_;
         unlocker_ = nullptr;
     }
+
 private:
     py::gil_scoped_release *unlocker_;
 };
@@ -151,9 +152,9 @@ void pybind_gui_classes(py::module &m) {
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
             .def("run_in_thread", &Application::RunInThread,
-                    "Runs function in a separate thread. Do not call GUI "
-                    "functions on this thread, call post_to_main_thread() if "
-                    "this thread needs to change the GUI.")
+                 "Runs function in a separate thread. Do not call GUI "
+                 "functions on this thread, call post_to_main_thread() if "
+                 "this thread needs to change the GUI.")
             .def("post_to_main_thread", &Application::PostToMainThread,
                  py::call_guard<py::gil_scoped_release>(),
                  "Runs the provided function on the main thread. This can "
