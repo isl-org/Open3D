@@ -1,3 +1,4 @@
+import os as _os
 from tensorflow import __version__ as _tf_version
 from open3d import _build_config
 
@@ -14,3 +15,15 @@ if _tf_version.split('.')[:2] != _o3d_tf_version[:2]:
 
 from . import layers
 from . import ops
+
+if _build_config['BUNDLE_OPEN3D_ML']:
+    if 'OPEN3D_ML_ROOT' not in _os.environ:
+        import open3d._ml3d as ml3d  # import from the bundled ml3d module.
+
+    from ml3d import configs
+    from ml3d import datasets  # this is for convenience to have everything on the same level.
+    from ml3d import utils
+    from ml3d.tf import dataloaders
+    from ml3d.tf import models
+    from ml3d.tf import modules
+    from ml3d.tf import pipelines

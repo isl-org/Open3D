@@ -12,18 +12,50 @@ if(BUILD_CUDA_MODULE)
     find_package(CUTLASS REQUIRED)
 endif()
 
+set(TORCH_OPS_SOURCES
+    "ContinuousConv/ContinuousConvBackpropFilterOpKernel.cpp"
+    "ContinuousConv/ContinuousConvOpKernel.cpp"
+    "ContinuousConv/ContinuousConvOps.cpp"
+    "ContinuousConv/ContinuousConvTransposeBackpropFilterOpKernel.cpp"
+    "ContinuousConv/ContinuousConvTransposeOpKernel.cpp"
+    "ContinuousConv/ContinuousConvTransposeOps.cpp"
+    "Misc/BuildSpatialHashTableOpKernel.cpp"
+    "Misc/InvertNeighborsListOps.cpp"
+    "Misc/RadiusSearchOpKernel.cpp"
+    "Misc/ReduceSubarraysSumOps.cpp"
+    "Misc/FixedRadiusSearchOps.cpp"
+    "Misc/KnnSearchOpKernel.cpp"
+    "Misc/RadiusSearchOps.cpp"
+    "Misc/VoxelPoolingOpKernel.cpp"
+    "Misc/BuildSpatialHashTableOps.cpp"
+    "Misc/InvertNeighborsListOpKernel.cpp"
+    "Misc/KnnSearchOps.cpp"
+    "Misc/ReduceSubarraysSumOpKernel.cpp"
+    "Misc/VoxelPoolingOps.cpp"
+    "Misc/FixedRadiusSearchOpKernel.cpp"
+)
+
+set(TORCH_OPS_CUDA_SOURCES
+    "ContinuousConv/ContinuousConvBackpropFilterOpKernel.cu"
+    "ContinuousConv/ContinuousConvOpKernel.cu"
+    "ContinuousConv/ContinuousConvTransposeBackpropFilterOpKernel.cu"
+    "ContinuousConv/ContinuousConvTransposeOpKernel.cu"
+    "Misc/FixedRadiusSearchOpKernel.cu"
+    "Misc/BuildSpatialHashTableOpKernel.cu"
+    "Misc/InvertNeighborsListOpKernel.cu"
+    "Misc/ReduceSubarraysSumOpKernel.cu"
+    "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+)
+
 if(BUILD_CUDA_MODULE)
-    file(
-        GLOB_RECURSE
-        open3d_torch_ops_SOURCES
-        "*.cpp"
-        "*.cu"
-        "../impl/*/*.cc"
-        "../impl/*/*.cpp"
-        "../impl/*/*.cu")
+    set(open3d_torch_ops_SOURCES
+        ${TORCH_OPS_SOURCES}
+        ${TORCH_OPS_CUDA_SOURCES}
+    )
 else()
-    file(GLOB_RECURSE open3d_torch_ops_SOURCES "*.cpp" "../impl/*/*.cc"
-         "../impl/*/*.cpp")
+    set(open3d_torch_ops_SOURCES
+        ${TORCH_OPS_SOURCES}
+    )
 endif()
 
 add_library(open3d_torch_ops SHARED ${open3d_torch_ops_SOURCES})

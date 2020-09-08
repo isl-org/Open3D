@@ -2,30 +2,71 @@ message(STATUS "Building Tensorflow ops")
 
 get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
 if(BUILD_CUDA_MODULE)
-    set(CUDA_ENABLED YES)
     message(STATUS "Building Tensorflow ops with CUDA")
 endif()
 
 find_package(Tensorflow REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(parallelstl REQUIRED)
-if(CUDA_ENABLED)
+if(BUILD_CUDA_MODULE)
     find_package(CUB REQUIRED)
     find_package(CUTLASS REQUIRED)
 endif()
 
-if(CUDA_ENABLED)
-    file(
-        GLOB_RECURSE
-        open3d_tf_ops_SOURCES
-        "*.cpp"
-        "*.cu"
-        "../impl/*/*.cc"
-        "../impl/*/*.cpp"
-        "../impl/*/*.cu")
+set(TF_OPS_SOURCES
+    "ContinuousConv/ContinuousConvBackpropFilterOpKernel.cpp"
+    "ContinuousConv/ContinuousConvOpKernel.cpp"
+    "ContinuousConv/ContinuousConvTransposeBackpropFilterOpKernel.cpp"
+    "ContinuousConv/ContinuousConvTransposeOpKernel.cpp"
+    "ContinuousConv/ContinuousConvBackpropFilterOps.cpp"
+    "ContinuousConv/ContinuousConvOps.cpp"
+    "ContinuousConv/ContinuousConvTransposeBackpropFilterOps.cpp"
+    "ContinuousConv/ContinuousConvTransposeOps.cpp"
+    "Misc/BuildSpatialHashTableOpKernel.cpp"
+    "Misc/RadiusSearchOpKernel.cpp"
+    "Misc/InvertNeighborsListOps.cpp"
+    "Misc/ReduceSubarraysSumOps.cpp"
+    "Misc/VoxelPoolingOps.cpp"
+    "Misc/FixedRadiusSearchOps.cpp"
+    "Misc/KnnSearchOpKernel.cpp"
+    "Misc/RadiusSearchOps.cpp"
+    "Misc/VoxelPoolingGradOpKernel.cpp"
+    "Misc/BuildSpatialHashTableOps.cpp"
+    "Misc/InvertNeighborsListOpKernel.cpp"
+    "Misc/ReduceSubarraysSumOpKernel.cpp"
+    "Misc/FixedRadiusSearchOpKernel.cpp"
+    "Misc/KnnSearchOps.cpp"
+    "Misc/VoxelPoolingOpKernel.cpp"
+    "tf_neighbors/tf_batch_neighbors.cpp"
+    "tf_neighbors/tf_neighbors.cpp"
+    "tf_subsampling/tf_batch_subsampling.cpp"
+    "tf_subsampling/tf_subsampling.cpp"
+    "../contrib/Cloud.cpp"
+    "../contrib/GridSubsampling.cpp"
+    "../contrib/neighbors.cpp"
+)
+
+set(TF_OPS_CUDA_SOURCES
+    "ContinuousConv/ContinuousConvBackpropFilterOpKernel.cu"
+    "ContinuousConv/ContinuousConvOpKernel.cu"
+    "ContinuousConv/ContinuousConvTransposeBackpropFilterOpKernel.cu"
+    "ContinuousConv/ContinuousConvTransposeOpKernel.cu"
+    "Misc/FixedRadiusSearchOpKernel.cu"
+    "Misc/BuildSpatialHashTableOpKernel.cu"
+    "Misc/InvertNeighborsListOpKernel.cu"
+    "Misc/ReduceSubarraysSumOpKernel.cu"
+    "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+)
+
+if(BUILD_CUDA_MODULE)
+    set(open3d_tf_ops_SOURCES
+        ${TF_OPS_SOURCES}
+        ${TF_OPS_CUDA_SOURCES}
+    )
 else()
-    file(GLOB_RECURSE open3d_tf_ops_SOURCES "*.cpp" "../impl/*/*.cc"
-         "../impl/*/*.cpp")
+    set(open3d_tf_ops_SOURCES
+        ${TF_OPS_SOURCES}
+    )
 endif()
 
 add_library(open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES})
@@ -54,7 +95,7 @@ set_target_properties( open3d_tf_ops PROPERTIES
         )
 
 set( open3d_tf_ops_DEFINITIONS "${Tensorflow_DEFINITIONS}" )
-if(CUDA_ENABLED)
+if(BUILD_CUDA_MODULE)
     target_include_directories(open3d_tf_ops SYSTEM PRIVATE ${CUB_INCLUDE_DIR}
                                                      ${CUTLASS_INCLUDE_DIR})
     list(APPEND open3d_tf_ops_DEFINITIONS "BUILD_CUDA_MODULE")
