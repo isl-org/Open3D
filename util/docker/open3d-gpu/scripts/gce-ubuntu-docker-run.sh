@@ -19,7 +19,8 @@ SHARED=( OFF ON OFF ON OFF OFF )
 BUILD_ML_OPS=( OFF ON OFF ON ON ON )
 BUILD_CUDA_MODULE=( OFF OFF ON ON ON ON )
 BUILD_RPC_INTERFACE=( ON ON OFF OFF ON ON )
-UBUNTU_VERSION=( bionic bionic bionic bionic focal )
+UBUNTU_VERSION_LIST=( bionic bionic bionic bionic bionic focal )
+UBUNTU_VERSION=${UBUNTU_VERSION:-${UBUNTU_VERSION_LIST[$CI_CONFIG_ID]}}
 BUILD_TENSORFLOW_OPS=( "${BUILD_ML_OPS[@]}" )
 BUILD_PYTORCH_OPS=( "${BUILD_ML_OPS[@]}" )
 
@@ -45,7 +46,7 @@ VM_IMAGE=open3d-gpu-ci-base-$(date +%Y%m%d)
 
 # Container configuration
 REGISTRY_HOSTNAME=gcr.io
-DC_IMAGE_TAG="$REGISTRY_HOSTNAME/$GCE_PROJECT/open3d-gpu-ci-${UBUNTU_VERSION[$CI_CONFIG_ID]}:$GITHUB_SHA"
+DC_IMAGE_TAG="$REGISTRY_HOSTNAME/$GCE_PROJECT/open3d-gpu-ci-$UBUNTU_VERSION:$GITHUB_SHA"
 
 
 case "$1" in
@@ -60,7 +61,7 @@ case "$1" in
     docker-build )
         docker build -t "$DC_IMAGE_TAG" \
             -f util/docker/open3d-gpu/Dockerfile \
-            --build-arg UBUNTU_VERSION="${UBUNTU_VERSION[$CI_CONFIG_ID]}" \
+            --build-arg UBUNTU_VERSION="$UBUNTU_VERSION" \
             --build-arg NVIDIA_DRIVER_VERSION="${NVIDIA_DRIVER_VERSION}" \
             .
         ;;

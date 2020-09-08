@@ -37,6 +37,13 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [skip-check]
     if: needs.skip-check.outputs.skip == 'no'
+    strategy:
+      fail-fast: false
+      matrix:
+        UBUNTU_VERSION: ['bionic', 'focal']  # These configs have bionic and focal versions
+
+    env:
+      UBUNTU_VERSION: ${{ matrix.UBUNTU_VERSION }}
 
     steps:
       - name: Checkout code
@@ -108,7 +115,14 @@ jobs:
     name: Clean-up container image
     runs-on: ubuntu-18.04
     needs: [skip-check, build-push-docker-image, build-install-test]
-    if: needs.skip-check.outputs.skip == 'no' && needs.build-push-docker-image.result == 'success' || needs.build-install-test.result == 'failure'
+    if: needs.skip-check.outputs.skip == 'no' || needs.build-install-test.result == 'failure'
+    strategy:
+      fail-fast: false
+      matrix:
+        UBUNTU_VERSION: ['bionic', 'focal']  # These configs have bionic and focal versions
+    env:
+      UBUNTU_VERSION: ${{ matrix.UBUNTU_VERSION }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
