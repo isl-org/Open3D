@@ -731,14 +731,17 @@ void pybind_gui_classes(py::module &m) {
             .def_property(
                     "scene", &SceneWidget::GetScene, &SceneWidget::SetScene,
                     "The rendering.Open3DScene that the SceneWidget renders")
-            .def("set_background_color", &SceneWidget::SetBackgroundColor,
-                 "Sets the background color of the widget")
             .def("set_view_controls", &SceneWidget::SetViewControls,
                  "Sets mouse interaction, e.g. ROTATE_OBJ")
             .def("setup_camera", &SceneWidget::SetupCamera,
                  "Configure the camera: setup_camera(field_of_view, "
                  "model_bounds, "
-                 "center_of_rotation)");
+                 "center_of_rotation)")
+            .def("set_on_sun_direction_changed",
+                 &SceneWidget::SetOnSunDirectionChanged,
+                 "Callback when user changes sun direction (only called in "
+                 "ROTATE_SUN control mode). Called with one argument, the "
+                 "[i, j, k] vector of the new sun direction");
 
     // ---- Slider ----
     py::class_<Slider, std::shared_ptr<Slider>, Widget> slider(
