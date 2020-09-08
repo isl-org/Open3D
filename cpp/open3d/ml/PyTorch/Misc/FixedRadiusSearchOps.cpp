@@ -167,7 +167,7 @@ static auto registry = torch::RegisterOperators(
         "open3d::fixed_radius_search(Tensor points, Tensor queries, float "
         "radius, Tensor points_row_splits, Tensor queries_row_splits, Tensor "
         "hash_table_splits, Tensor hash_table_index, Tensor "
-        "hash_table_cell_splits, str metric, bool ignore_query_point, bool "
-        "return_distances) -> (Tensor neighbors_index, Tensor "
-        "neighbors_row_splits, Tensor neighbors_distance)",
+        "hash_table_cell_splits, str metric=\"L2\", bool ignore_query_point="
+        "False, bool return_distances=False) -> (Tensor neighbors_index, "
+        "Tensor neighbors_row_splits, Tensor neighbors_distance)",
         &FixedRadiusSearch);

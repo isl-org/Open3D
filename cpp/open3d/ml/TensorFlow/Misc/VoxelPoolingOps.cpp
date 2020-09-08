@@ -77,34 +77,79 @@ REGISTER_OP("Open3DVoxelPooling")
         .Doc(R"doc(
 Spatial pooling for point clouds by combining points that fall into the same voxel bin.
 
-position_fn:
-  Defines how the new point positions will be computed.
-  'average' computes the center of gravity for the points within one voxel.
-  'nearest_neighbor' selects the point closest to the voxel center.
-  'center' uses the voxel center for the position of the generated point.
+The voxel grid used for pooling is always aligned to the origin (0,0,0) to 
+simplify building voxel grid hierarchies. The order of the returned voxels is
+not defined as can be seen in the following example::
 
-feature_fn:
-  'average' computes the average feature vector.
-  'nearest_neighbor' selects the feature vector of the point closest to the voxel center.
-  'max' uses the maximum feature among all points within the voxel.
+  import open3d.ml.tf as ml3d
 
-debug:
-  If true additional checks for debugging will be enabled.
+  positions = [
+      [0.1,0.1,0.1], 
+      [0.5,0.5,0.5], 
+      [1.7,1.7,1.7],
+      [1.8,1.8,1.8],
+      [0.3,2.4,1.4]]
 
-positions:
-  The point positions with shape [N,3] with N as the number of points.
+  features = [[1.0,2.0],
+              [1.1,2.3],
+              [4.2,0.1],
+              [1.3,3.4],
+              [2.3,1.9]]
 
-features:
-  The feature vector with shape [N,channels].
+  ml3d.ops.voxel_pooling(positions, features, 1.0, 
+                         position_fn='center', feature_fn='max')
 
-voxel_size:
-  The voxel size.
+  # or with pytorch
+  import torch
+  import open3d.ml.torch as ml3d
 
-pooled_positions:
-  The output point positions with shape [M,3] and M <= N.
+  positions = torch.Tensor([
+      [0.1,0.1,0.1], 
+      [0.5,0.5,0.5], 
+      [1.7,1.7,1.7],
+      [1.8,1.8,1.8],
+      [0.3,2.4,1.4]])
 
-pooled_features:
-  The output point features with shape [M,channnels] and M <= N.
+  features = torch.Tensor([
+              [1.0,2.0],
+              [1.1,2.3],
+              [4.2,0.1],
+              [1.3,3.4],
+              [2.3,1.9]])
+
+  ml3d.nn.functional.voxel_pooling(positions, features, 1.0, 
+                                   position_fn='center', feature_fn='max')
+
+  # returns the voxel centers  [[0.5, 2.5, 1.5],
+  #                             [1.5, 1.5, 1.5],
+  #                             [0.5, 0.5, 0.5]]
+  # and the max pooled features for each voxel [[2.3, 1.9],
+  #                                             [4.2, 3.4],
+  #                                             [1.1, 2.3]]
+
+position_fn: Defines how the new point positions will be computed.
+  The options are
+    * "average" computes the center of gravity for the points within one voxel.
+    * "nearest_neighbor" selects the point closest to the voxel center.
+    * "center" uses the voxel center for the position of the generated point.
+
+feature_fn: Defines how the pooled features will be computed.
+  The options are
+    * "average" computes the average feature vector.
+    * "nearest_neighbor" selects the feature vector of the point closest to the voxel center.
+    * "max" uses the maximum feature among all points within the voxel.
+
+debug: If true additional checks for debugging will be enabled.
+
+positions: The point positions with shape [N,3] with N as the number of points.
+
+features: The feature vector with shape [N,channels].
+
+voxel_size: The voxel size.
+
+pooled_positions: The output point positions with shape [M,3] and M <= N.
+
+pooled_features: The output point features with shape [M,channnels] and M <= N.
 
 )doc");
 

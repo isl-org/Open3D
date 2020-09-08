@@ -80,39 +80,74 @@ REGISTER_OP("Open3DInvertNeighborsList")
             return Status::OK();
         })
         .Doc(R"doc(
-Inverts a neighbors list stored as neighbor indices and prefix sum and returns
-the inverted list in the same format.
+Inverts a neighbors list made of neighbors_index and neighbors_row_splits.
 
+This op inverts the neighbors list as returned from the neighbor search ops.
+The role of query points and input points is reversed in the returned list.
+The following example illustrates this::
 
-num_points:
-  Scalar integer with the number of points that have been tested in a neighbor
+  import open3d.ml.tf as ml3d
+
+  # in this example we have 4 points and 3 query points with 3, 1, and 2 neighbors
+  # the mapping is 0->(0,1,2), 1->(2), 2->(1,3)
+  neighbors_index = [0, 1, 2, 2, 1, 3]
+  neighbors_row_splits = [0, 3, 4, 6]
+  # optional attributes for each pair
+  neighbors_attributes = [10, 20, 30, 40, 50, 60]
+
+  ans = ml3d.ops.invert_neighbors_list(4,
+                                       neighbors_index,
+                                       neighbors_row_splits,
+                                       neighbors_attributes)
+  # returns ans.neighbors_index      = [0, 0, 2, 0, 1, 2]
+  #         ans.neighbors_row_splits = [0, 1, 3, 5, 6]
+  #         ans.neighbors_attributes = [10, 20, 50, 30, 40, 60]
+  # which is the mapping 0->(0), 1->(0,2), 2->(0,1), 3->(2)
+  # note that the order of the neighbors can be permuted
+
+  import torch
+  import open3d.ml.torch as ml3d
+
+  # in this example we have 4 points and 3 query points with 3, 1, and 2 neighbors
+  # the mapping is 0->(0,1,2), 1->(2), 2->(1,3)
+  neighbors_index = torch.IntTensor([0, 1, 2, 2, 1, 3])
+  neighbors_row_splits = torch.LongTensor([0, 3, 4, 6])
+  # optional attributes for each pair
+  neighbors_attributes = torch.Tensor([10, 20, 30, 40, 50, 60])
+
+  ans = ml3d.nn.functional.invert_neighbors_list(4,
+                                                 neighbors_index,
+                                                 neighbors_row_splits,
+                                                 neighbors_attributes)
+  # returns ans.neighbors_index      = [0, 0, 2, 0, 1, 2]
+  #         ans.neighbors_row_splits = [0, 1, 3, 5, 6]
+  #         ans.neighbors_attributes = [10, 20, 50, 30, 40, 60]
+  # which is the mapping 0->(0), 1->(0,2), 2->(0,1), 3->(2)
+  # note that the order of the neighbors can be permuted
+
+num_points: Scalar integer with the number of points that have been tested in a neighbor
   search. This is the number of the points in the second point cloud (not the
   query point cloud) in a neighbor search.
-  This will be the size of the output prefix_sum.
+  The size of the output **neighbors_row_splits** will be **num_points** +1.
 
-inp_neighbors_index:
-  The input neighbor indices stored linearly.
+inp_neighbors_index: The input neighbor indices stored linearly.
 
-inp_neighbors_row_splits:
-  The number of neighbors for the input queries as exclusive prefix sum.
-  The prefix sum includes the total number as last element. The size is
-  num_points + 1.
+inp_neighbors_row_splits: The number of neighbors for the input queries as
+  exclusive prefix sum. The prefix sum includes the total number as last
+  element.
 
-inp_neighbors_attributes:
-  Array that stores an attribute for each neighbor.
+inp_neighbors_attributes: Array that stores an attribute for each neighbor.
   The size of the first dim must match the first dim of inp_neighbors_index.
   To ignore attributes pass a 1D Tensor with zero size.
 
-neighbors_index:
-  The output neighbor indices stored linearly.
+neighbors_index: The output neighbor indices stored
+  linearly.
 
-neighbors_row_splits:
-  Stores the number of neighbors for the new queries (previously the input
-  points) as exclusive prefix sum including the total number in the last
-  element.
+neighbors_row_splits: Stores the number of neighbors for the new queries,
+  previously the input points, as exclusive prefix sum including the total
+  number in the last element.
 
-neighbors_attributes:
-  Array that stores an attribute for each neighbor.
+neighbors_attributes: Array that stores an attribute for each neighbor.
   If the inp_neighbors_attributes Tensor is a zero length vector then the output
   will be a zero length vector as well.
 

@@ -55,19 +55,39 @@ REGISTER_OP("Open3DReduceSubarraysSum")
             return Status::OK();
         })
         .Doc(R"doc(
-Computes the sum for each subarray. The start and end of the subarrays are
-defined by an exclusive prefix sum.
+Computes the sum for each subarray in a flat vector of arrays.
+
+The start and end of the subarrays are defined by an exclusive prefix sum.
+Zero length subarrays are allowed as shown in the following example::
+
+  import open3d.ml.tf as ml3d
+
+  ml3d.ops.reduce_subarrays_sum(
+      values = [1,2,3,4],
+      row_splits=[0,2,2,4] # defines 3 subarrays with starts and ends 0-2,2-2,2-4
+      )
+  # returns [3,0,7]
 
 
-values:
-  Linear memory which stores the values for all arrays.
+  # or with pytorch
+  import torch
+  import open3d.ml.torch as ml3d
+  
+  ml3d.nn.functional.reduce_subarrays_sum(
+    values = torch.Tensor([1,2,3,4]),
+    row_splits=torch.LongTensor([0,2,2,4]) # defines 3 subarrays with starts and ends 0-2,2-2,2-4
+    )
+  # returns [3,0,7]
 
-row_splits:
-  Defines the start and end of each subarray. This is an exclusive prefix with
-  0 as the first element and the length of values as last element.
 
-sums:
-  The sum of each subarray. The sum of an empty subarray is 0.
+values: Linear memory which stores the values for all arrays.
+
+row_splits: Defines the start and end of each subarray. This is an exclusive
+  prefix sum with 0 as the first element and the length of values as
+  additional last element. If there are N subarrays the length of this vector
+  is N+1.
+
+sums: The sum of each subarray. The sum of an empty subarray is 0.
   sums is a zero length vector if values is a zero length vector.
 
 )doc");
