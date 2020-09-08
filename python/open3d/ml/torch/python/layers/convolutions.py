@@ -8,10 +8,37 @@ __all__ = ['ContinuousConv', 'SparseConv', 'SparseConvTranspose']
 
 
 class ContinuousConv(torch.nn.Module):
-    """Continuous Convolution. This convolution supports continuous input and output point positions.
+    r"""Continuous Convolution.
 
-    This layer computes a continuous convolution on a point cloud at the
-    specified output points.
+    This convolution supports continuous input and output point positions.
+    This layer implements the convolution defined in
+
+    *B. Ummenhofer and V. Koltun, Lagrangian Fluid Simulation with Continuous Convolutions, ICLR 2020.*
+
+    The convolution at position :math:`\mathbf x` is defined as
+
+    .. math::
+        (f*g)(\mathbf x) = \frac{1}{\psi(\mathbf x)} \sum_{i \in \mathcal N(\mathbf x, R)} a(\mathbf x_i, \mathbf x)\; f_i\; g(\Lambda(\mathbf x_i - \mathbf x)).
+
+    With :math:`f` as the input feature function and :math:`g` as the filter function.
+    The input points are :math:`\mathbf x_i` and the input features are :math:`f_i`.
+    The normalization :math:`\frac{1}{\psi(\mathbf x)}` can be turned on with the **normalize** parameter.
+    The per neighbor value :math:`a(\mathbf x_i, \mathbf x)` can be used to implement window functions; see parameter **window_function**.
+    The function :math:`\Lambda` for looking up filter values is defined by the parameters **coordinate_mapping** and **interpolation**.
+
+    Example:
+      This shows a minimal example of how to use the layer::
+
+          import torch
+          import open3d.ml.torch as ml3d
+
+          inp_positions = torch.randn([20,3])
+          inp_features = torch.randn([20,8])
+          out_positions = torch.randn([10,3])
+
+          conv = ml3d.nn.ContinuousConv(in_channels=8, filters=16, kernel_size=[3,3,3])
+          out_features = conv(inp_features, inp_positions, out_positions, extents=2.0)
+
 
     Arguments:
         in_channels: The number of input channels.
@@ -36,16 +63,17 @@ class ContinuousConv(torch.nn.Module):
         coordinate_mapping: The mapping that is applied to the input coordinates.
           One of 'ball_to_cube_radial', 'ball_to_cube_volume_preserving',
           'identity'.
-          - 'ball_to_cube_radial' uses radial stretching to map a sphere to
-            a cube.
-          - 'ball_to_cube_volume_preserving' is using a more expensive volume
-            preserving mapping to map a sphere to a cube.
-          - 'identity' no mapping is applied to the coordinates.
+            * 'ball_to_cube_radial' uses radial stretching to map a sphere to
+              a cube.
+            * 'ball_to_cube_volume_preserving' is using a more expensive volume
+              preserving mapping to map a sphere to a cube.
+            * 'identity' no mapping is applied to the coordinates.
 
-        interpolation: One of 'linear', 'linear_border', 'nearest_neighbor'.
-          - 'linear' is trilinear interpolation with coordinate clamping.
-          - 'linear_border' uses a zero border if outside the range.
-          - 'nearest_neighbor' uses the neares neighbor instead of interpolation.
+        interpolation: One of 'linear', 'linear_border',
+          'nearest_neighbor'.
+            * 'linear' is trilinear interpolation with coordinate clamping.
+            * 'linear_border' uses a zero border if outside the range.
+            * 'nearest_neighbor' uses the neares neighbor instead of interpolation.
 
         normalize: If true then the result is normalized either by the number of
           points (neighbors_importance is null) or by the sum of the respective
@@ -63,10 +91,10 @@ class ContinuousConv(torch.nn.Module):
         window_function: Optional radial window function to steer the importance of
           points based on their distance to the center. The input to the function
           is a 1D tensor of distances (squared distances if radius_search_metric is
-          'L2'). The output must be a tensor of the same shape. Example:
+          'L2'). The output must be a tensor of the same shape. Example::
 
             def window_fn(r_sqr):
-                return tf.clip_by_value((1 - r_sqr)**3, 0, 1)
+                return torch.clamp((1-r_sqr)**3, 0, 1)
 
         use_dense_layer_for_center: If True a linear dense layer is used to
           process the input features for each point. The result is added to the
@@ -299,8 +327,25 @@ class ContinuousConv(torch.nn.Module):
 
 
 class SparseConv(torch.nn.Module):
-    """Sparse Convolution. This layer computes a convolution which is only
-    evaluated at the specified output positions.
+    """Sparse Convolution.
+
+    This layer computes a convolution which is only evaluated at the specified output positions.
+    The layer assumes that input and output points lie on a regular grid.
+
+    Example:
+      This shows a minimal example of how to use the layer::
+
+        import torch
+        import open3d.ml.torch as ml3d
+
+        # +0.5 to move the points to the voxel center
+        inp_positions = torch.randint(0, 10, [20,3]).to(torch.float32)+0.5
+        inp_features = torch.randn([20,8])
+        out_positions = torch.randint(0, 10, [20,3]).to(torch.float32)+0.5
+
+        conv = ml3d.nn.SparseConv(in_channels=8, filters=16, kernel_size=[3,3,3])
+        out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
+
 
     Arguments:
         in_channels: The number of input channels.
@@ -461,7 +506,25 @@ class SparseConv(torch.nn.Module):
 
 
 class SparseConvTranspose(torch.nn.Module):
-    """Sparse Transposed Convolution. This layer computes a transposed convolution which is only evaluated at the specified output positions.
+    """Sparse Transposed Convolution.
+
+    This layer computes a transposed convolution which is only evaluated at the specified output positions.
+    The layer assumes that input and output points lie on a regular grid.
+
+    Example:
+      This shows a minimal example of how to use the layer::
+
+        import torch
+        import open3d.ml.torch as ml3d
+
+        # +0.5 to move the points to the voxel center
+        inp_positions = torch.randint(0, 10, [20,3]).to(torch.float32)+0.5
+        inp_features = torch.randn([20,8])
+        out_positions = torch.randint(0, 10, [20,3]).to(torch.float32)+0.5
+
+        conv = ml3d.nn.SparseConv(in_channels=8, filters=16, kernel_size=[3,3,3])
+        out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
+
 
     Arguments:
         in_channels: The number of input channels.
@@ -486,17 +549,18 @@ class SparseConvTranspose(torch.nn.Module):
           centered. It will be set automatically for kernels with even sizes.
     """
 
-    def __init__(self,
-                 in_channels,
-                 filters,
-                 kernel_size,
-                 activation=None,
-                 use_bias=True,
-                 kernel_initializer='uniform',
-                 bias_initializer='zeros',
-                 normalize=False,
-                 offset=None,
-                 **kwargs):
+    def __init__(
+            self,
+            in_channels,
+            filters,
+            kernel_size,
+            activation=None,
+            use_bias=True,
+            kernel_initializer=lambda x: torch.nn.init.uniform_(x, -0.05, 0.05),
+            bias_initializer=torch.nn.init.zeros_,
+            normalize=False,
+            offset=None,
+            **kwargs):
         super().__init__()
 
         self.in_channels = in_channels

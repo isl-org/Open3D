@@ -90,56 +90,101 @@ REGISTER_OP("Open3DRadiusSearch")
             return Status::OK();
         })
         .Doc(R"doc(
-Computes the indices of all neigbours within a radius.
+Computes the indices and distances of all neigbours within a radius.
 
 This op computes the neighborhood for each query point and returns the indices
-of the neighbors. Each query point has an individual search radius.
+of the neighbors and optionally also the distances. Each query point has an 
+individual search radius. Points and queries can be batched with each batch 
+item having an individual number of points and queries. The following example
+shows a simple search with just a single batch item::
+  
+  import open3d.ml.tf as ml3d
 
-metric:
-  Either L1 or L2. Default is L2
+  points = [
+      [0.1,0.1,0.1], 
+      [0.5,0.5,0.5], 
+      [1.7,1.7,1.7],
+      [1.8,1.8,1.8],
+      [0.3,2.4,1.4]]
 
-ignore_query_point:
-  If true the points that coincide with the center of the search window will be
-  ignored. This excludes the query point if 'queries' and 'points' are the same
-  point cloud.
+  queries = [
+      [1.0,1.0,1.0],
+      [0.5,2.0,2.0],
+      [0.5,2.1,2.2],
+  ]
 
-return_distances:
-  If True the distances for each neighbor will be returned in the tensor
-  'neighbors_distance'.
-  If False a zero length Tensor will be returned for 'neighbors_distances'.
+  radii = [1.0,1.0,1.0]
 
-normalize_distances:
-  If True the returned distances will be normalized with the radii.
+  ml3d.ops.radius_search(points, queries, radii, 
+                         points_row_splits=[0,5], 
+                         queries_row_splits=[0,3]) 
+  # returns neighbors_index      = [1, 4, 4]
+  #         neighbors_row_splits = [0, 1, 2, 3]
+  #         neighbors_distance   = []
+    
 
-points:
-  The 3D positions of the input points.
+  # or with pytorch
+  import torch
+  import open3d.ml.torch as ml3d
 
-queries:
-  The 3D positions of the query points.
+  points = torch.Tensor([
+    [0.1,0.1,0.1], 
+    [0.5,0.5,0.5], 
+    [1.7,1.7,1.7],
+    [1.8,1.8,1.8],
+    [0.3,2.4,1.4]])
 
-radii:
-  A vector with the individual radii for each query point.
+  queries = torch.Tensor([
+      [1.0,1.0,1.0],
+      [0.5,2.0,2.0],
+      [0.5,2.1,2.1],
+  ])
 
-points_row_splits:
-  1D vector with the row splits information if points is batched.
-  This vector is [0, num_points] if there is only 1 batch item.
+  radii = torch.Tensor([1.0,1.0,1.0])
 
-queries_row_splits:
-  1D vector with the row splits information if queries is batched.
-  This vector is [0, num_queries] if there is only 1 batch item.
+  ml3d.nn.functional.radius_search(points, queries, radii, 
+                                   points_row_splits=torch.LongTensor([0,5]), 
+                                   queries_row_splits=torch.LongTensor([0,3]))
+  # returns neighbors_index      = [1, 4, 4]
+  #         neighbors_row_splits = [0, 1, 2, 3]
+  #         neighbors_distance   = []
 
-neighbors_index:
-  The compact list of indices of the neighbors. The corresponding query point
-  can be inferred from the 'neighbor_count_row_splits' vector.
 
-neighbors_row_splits:
-  The exclusive prefix sum of the neighbor count for the query points including
-  the total neighbor count as the last element. The size of this array is the
-  number of queries + 1.
+metric: Either L1 or L2. Default is L2
 
-neighbors_distance:
-  Stores the distance to each neighbor if 'return_distances' is True.
-  The distances are squared only if metric is L2.
-  This is a zero length Tensor if 'return_distances' is False.
+ignore_query_point: If true the points that coincide with the center of the 
+  search window will be ignored. This excludes the query point if **queries** and 
+  **points** are the same point cloud.
+
+return_distances: If True the distances for each neighbor will be returned in 
+  the output tensor **neighbors_distance**.  If False a zero length Tensor will 
+  be returned for **neighbors_distances**.
+
+normalize_distances: If True the returned distances will be normalized with the
+  radii.
+
+points: The 3D positions of the input points.
+
+queries: The 3D positions of the query points.
+
+radii: A vector with the individual radii for each query point.
+
+points_row_splits: 1D vector with the row splits information if points is 
+  batched. This vector is [0, num_points] if there is only 1 batch item.
+
+queries_row_splits: 1D vector with the row splits information if queries is 
+  batched. This vector is [0, num_queries] if there is only 1 batch item.
+
+neighbors_index: The compact list of indices of the neighbors. The 
+  corresponding query point can be inferred from the 
+  **neighbor_count_row_splits** vector.
+
+neighbors_row_splits: The exclusive prefix sum of the neighbor count for the 
+  query points including the total neighbor count as the last element. The 
+  size of this array is the number of queries + 1.
+
+neighbors_distance: Stores the distance to each neighbor if **return_distances** 
+  is True. The distances are squared only if metric is L2.
+  This is a zero length Tensor if **return_distances** is False.
 
 )doc");

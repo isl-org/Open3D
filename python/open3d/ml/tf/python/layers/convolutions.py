@@ -4,10 +4,37 @@ import numpy as np
 
 
 class ContinuousConv(tf.keras.layers.Layer):
-    """Continuous Convolution. This convolution supports continuous input and output point positions.
+    r"""Continuous Convolution.
 
-    This layer computes a continuous convolution on a point cloud at the
-    specified output points.
+    This convolution supports continuous input and output point positions.
+    This layer implements the convolution defined in
+
+    *B. Ummenhofer and V. Koltun, Lagrangian Fluid Simulation with Continuous Convolutions, ICLR 2020.*
+
+    The convolution at position :math:`\mathbf x` is defined as
+
+    .. math::
+        (f*g)(\mathbf x) = \frac{1}{\psi(\mathbf x)} \sum_{i \in \mathcal N(\mathbf x, R)} a(\mathbf x_i, \mathbf x)\; f_i\; g(\Lambda(\mathbf x_i - \mathbf x)).
+
+    With :math:`f` as the input feature function and :math:`g` as the filter function.
+    The input points are :math:`\mathbf x_i` and the input features are :math:`f_i`.
+    The normalization :math:`\frac{1}{\psi(\mathbf x)}` can be turned on with the **normalize** parameter.
+    The per neighbor value :math:`a(\mathbf x_i, \mathbf x)` can be used to implement window functions; see parameter **window_function**.
+    The function :math:`\Lambda` for looking up filter values is defined by the parameters **coordinate_mapping** and **interpolation**.
+
+    Example:
+      This shows a minimal example of how to use the layer::
+
+          import tensorflow as tf
+          import open3d.ml.tf as ml3d
+
+          inp_positions = tf.random.normal([20,3])
+          inp_features = tf.random.normal([20,8])
+          out_positions = tf.random.normal([10,3])
+
+          conv = ml3d.layers.ContinuousConv(filters=16, kernel_size=[3,3,3])
+          out_features = conv(inp_features, inp_positions, out_positions, extents=2.0)
+
 
     Arguments:
         filters: The number of filters/output channels.
@@ -34,16 +61,17 @@ class ContinuousConv(tf.keras.layers.Layer):
         coordinate_mapping: The mapping that is applied to the input coordinates.
           One of 'ball_to_cube_radial', 'ball_to_cube_volume_preserving',
           'identity'.
-          - 'ball_to_cube_radial' uses radial stretching to map a sphere to
-            a cube.
-          - 'ball_to_cube_volume_preserving' is using a more expensive volume
-            preserving mapping to map a sphere to a cube.
-          - 'identity' no mapping is applied to the coordinates.
+            * 'ball_to_cube_radial' uses radial stretching to map a sphere to
+              a cube.
+            * 'ball_to_cube_volume_preserving' is using a more expensive volume
+              preserving mapping to map a sphere to a cube.
+            * 'identity' no mapping is applied to the coordinates.
 
-        interpolation: One of 'linear', 'linear_border', 'nearest_neighbor'.
-          - 'linear' is trilinear interpolation with coordinate clamping.
-          - 'linear_border' uses a zero border if outside the range.
-          - 'nearest_neighbor' uses the neares neighbor instead of interpolation.
+        interpolation: One of 'linear', 'linear_border',
+          'nearest_neighbor'.
+            * 'linear' is trilinear interpolation with coordinate clamping.
+            * 'linear_border' uses a zero border if outside the range.
+            * 'nearest_neighbor' uses the neares neighbor instead of interpolation.
 
         normalize: If true then the result is normalized either by the number of
           points (neighbors_importance is null) or by the sum of the respective
@@ -61,7 +89,7 @@ class ContinuousConv(tf.keras.layers.Layer):
         window_function: Optional radial window function to steer the importance of
           points based on their distance to the center. The input to the function
           is a 1D tensor of distances (squared distances if radius_search_metric is
-          'L2'). The output must be a tensor of the same shape. Example:
+          'L2'). The output must be a tensor of the same shape. Example::
 
             def window_fn(r_sqr):
                 return tf.clip_by_value((1 - r_sqr)**3, 0, 1)
@@ -178,7 +206,7 @@ class ContinuousConv(tf.keras.layers.Layer):
         Arguments:
 
           inp_features: A 2D tensor which stores a feature vector for each input
-            point.
+            point. *This argument must be given as a positional argument!*
 
           inp_positions: A 2D tensor with the 3D point positions of each input
             point. The coordinates for each point is a vector with format [x,y,z].
@@ -214,8 +242,8 @@ class ContinuousConv(tf.keras.layers.Layer):
             element in 'user_neighbors_index'.
 
 
-        Returns: A tensor of shape [num output points, filters] with the output
-          features.
+        Returns:
+          A tensor of shape [num output points, filters] with the output features.
         """
 
         offset = self.offset
@@ -316,8 +344,26 @@ class ContinuousConv(tf.keras.layers.Layer):
 
 
 class SparseConv(tf.keras.layers.Layer):
-    """Sparse Convolution. This layer computes a convolution which is only
-    evaluated at the specified output positions.
+    """Sparse Convolution.
+
+    This layer computes a convolution which is only evaluated at the specified output positions.
+    The layer assumes that input and output points lie on a regular grid.
+
+
+    Example:
+      This shows a minimal example of how to use the layer::
+
+        import tensorflow as tf
+        import open3d.ml.tf as ml3d
+
+        # +0.5 to move the points to the voxel center
+        inp_positions = tf.cast(tf.random.uniform([20,3], 0, 10, dtype=tf.int32), tf.float32)+0.5
+        inp_features = tf.random.normal([20,8])
+        out_positions = tf.cast(tf.random.uniform([20,3], 0, 10, dtype=tf.int32), tf.float32)+0.5
+
+        conv = ml3d.layers.SparseConv(filters=16, kernel_size=[3,3,3])
+        out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
+
 
     Arguments:
         filters: The number of filters/output channels.
@@ -424,7 +470,7 @@ class SparseConv(tf.keras.layers.Layer):
         Arguments:
 
           inp_features: A 2D tensor which stores a feature vector for each input
-            point.
+            point. *This argument must be given as a positional argument!*
 
           inp_positions: A 2D tensor with the 3D point positions of each input
             point. The coordinates for each point is a vector with format [x,y,z].
@@ -501,6 +547,21 @@ class SparseConv(tf.keras.layers.Layer):
 
 class SparseConvTranspose(tf.keras.layers.Layer):
     """Sparse Transposed Convolution. This layer computes a transposed convolution which is only evaluated at the specified output positions.
+
+    Example:
+      This shows a minimal example of how to use the layer::
+
+        import tensorflow as tf
+        import open3d.ml.tf as ml3d
+
+        # +0.5 to move the points to the voxel center
+        inp_positions = tf.cast(tf.random.uniform([20,3], 0, 10, dtype=tf.int32), tf.float32)+0.5
+        inp_features = tf.random.normal([20,8])
+        out_positions = tf.cast(tf.random.uniform([20,3], 0, 10, dtype=tf.int32), tf.float32)+0.5
+
+        conv = ml3d.layers.SparseConvTranspose(filters=16, kernel_size=[3,3,3])
+        out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
+
 
     Arguments:
         filters: The number of filters/output channels.
@@ -608,7 +669,7 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         Arguments:
 
           inp_features: A 2D tensor which stores a feature vector for each input
-            point.
+            point. *This argument must be given as a positional argument!*
 
           inp_positions: A 2D tensor with the 3D point positions of each input
             point. The coordinates for each point is a vector with format [x,y,z].
