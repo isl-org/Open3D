@@ -61,6 +61,25 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
+class PythonUnlocker : public Application::EnvUnlocker {
+public:
+    PythonUnlocker() { unlocker_ = nullptr; }
+    ~PythonUnlocker() {
+        if (unlocker_) {  // paranoia; this shouldn't happen
+            delete unlocker_;
+        }
+    }
+
+    void unlock() { unlocker_ = new py::gil_scoped_release(); }
+    void relock() {
+        delete unlocker_;
+        unlocker_ = nullptr;
+    }
+
+private:
+    py::gil_scoped_release *unlocker_;
+};
+
 void pybind_gui_classes(py::module &m) {
     // ---- Application ----
     py::class_<Application> application(m, "Application",
@@ -117,7 +136,8 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "run",
                     [](Application &instance) {
-                        while (instance.RunOneTick()) {
+                        PythonUnlocker unlocker;
+                        while (instance.RunOneTick(unlocker)) {
                             // Enable Ctrl-C to kill Python
                             if (PyErr_CheckSignals() != 0) {
                                 throw py::error_already_set();
@@ -131,7 +151,12 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
+            .def("run_in_thread", &Application::RunInThread,
+                 "Runs function in a separate thread. Do not call GUI "
+                 "functions on this thread, call post_to_main_thread() if "
+                 "this thread needs to change the GUI.")
             .def("post_to_main_thread", &Application::PostToMainThread,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Runs the provided function on the main thread. This can "
                  "be used to execute UI-related code at a safe point in "
                  "time. If the UI changes, you will need to manually "
