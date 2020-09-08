@@ -55,6 +55,7 @@ recursive-include open3d/_ml3d *.so
 recursive-include open3d/_ml3d *.dylib
 recursive-include open3d/_ml3d *.yml
 recursive-include open3d/_ml3d *.yaml
+recursive-include open3d/_ml3d/datasets *.txt
 
 # visualizer module
 recursive-include open3d/visualization *.py
