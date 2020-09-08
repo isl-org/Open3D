@@ -976,6 +976,7 @@ import_3rdparty_library(3rdparty_tbb
 )
 set(MKL_TARGET "3rdparty_mkl")
 add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
+add_dependencies(3rdparty_tbb ext_tbb)
 message(STATUS "STATIC_MKL_INCLUDE_DIR: ${STATIC_MKL_INCLUDE_DIR}")
 message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
 message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
