@@ -549,17 +549,18 @@ class SparseConvTranspose(torch.nn.Module):
           centered. It will be set automatically for kernels with even sizes.
     """
 
-    def __init__(self,
-                 in_channels,
-                 filters,
-                 kernel_size,
-                 activation=None,
-                 use_bias=True,
-                 kernel_initializer=lambda x: torch.nn.init.uniform_(x, -0.05, 0.05),
-                 bias_initializer=torch.nn.init.zeros_,
-                 normalize=False,
-                 offset=None,
-                 **kwargs):
+    def __init__(
+            self,
+            in_channels,
+            filters,
+            kernel_size,
+            activation=None,
+            use_bias=True,
+            kernel_initializer=lambda x: torch.nn.init.uniform_(x, -0.05, 0.05),
+            bias_initializer=torch.nn.init.zeros_,
+            normalize=False,
+            offset=None,
+            **kwargs):
         super().__init__()
 
         self.in_channels = in_channels
