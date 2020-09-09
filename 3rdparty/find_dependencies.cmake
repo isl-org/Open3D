@@ -975,6 +975,7 @@ import_3rdparty_library(3rdparty_tbb
     LIBRARIES    ${STATIC_TBB_LIBRARIES}
 )
 set(MKL_TARGET "3rdparty_mkl")
+set(TBB_TARGET "3rdparty_tbb")
 add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
 add_dependencies(3rdparty_tbb ext_tbb)
 message(STATUS "STATIC_MKL_INCLUDE_DIR: ${STATIC_MKL_INCLUDE_DIR}")
@@ -993,3 +994,4 @@ elseif(MSVC)
     target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
