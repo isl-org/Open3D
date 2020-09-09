@@ -16,8 +16,8 @@ jobs:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-          packages:
-            - cmake
+          # packages:
+          #   - cmake
       install:
         # Ubuntu dependencies
         - ./util/install_deps_ubuntu.sh assume-yes
@@ -28,19 +28,15 @@ jobs:
         - git clone https://github.com/Kitware/CMake.git
         - pushd CMake
         - git checkout v3.18.2
-        - mkdir build
-        - pushd build
-        - cmake ..
+        - ./bootstrap
         - make -j${NPROC}
         - sudo make install
-        - sudo apt-get remove cmake --assume-yes
-        - popd # build
+        - cmake --version
         - popd # CMake
         # Check versions
         - python --version
         - python3 --version
         - pip --version
-        - cmake --version
       script:
         # Build
         - mkdir build

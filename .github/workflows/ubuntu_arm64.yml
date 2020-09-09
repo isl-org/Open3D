@@ -29,10 +29,9 @@ jobs:
             --volume "${PWD}:/Open3D"
           install: |
             apt-get update -q -y
-            apt-get install -q -y git
+            apt-get install -q -y git python3 python3-dev pip3
           run: |
             uname -a
-            python --version
             python3 --version
             which pip
             which pip3
