@@ -10,7 +10,6 @@ jobs:
       os: linux
       arch: arm64
       dist: bionic
-      sudo: true
       language: python
       python: "3.6"
       addons:
@@ -25,7 +24,6 @@ jobs:
         - sudo apt-get install gfortran libblas-dev liblapack-dev liblapacke-dev --assume-yes
         # Python dependencies
         - pip install -U pytest=="6.0.1"
-        - pip install -U scipy=="1.4.1"
         # Compile and install latest CMake
         - git clone https://github.com/Kitware/CMake.git
         - pushd CMake
