@@ -28,8 +28,8 @@ jobs:
         - git clone https://github.com/Kitware/CMake.git
         - pushd CMake
         - git checkout v3.18.2
+        - mkdir build
         - pushd build
-        - cd build
         - cmake ..
         - make -j${NPROC}
         - sudo apt-get remove cmake --assume-yes
