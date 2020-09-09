@@ -29,6 +29,7 @@ jobs:
           install: |
             apt-get update -q -y
             apt-get install -q -y git
+            ./util/install_deps_ubuntu.sh assume-yes
           run: |
             uname -a
             python --version
@@ -36,4 +37,3 @@ jobs:
             which pip
             which pip3
             pip3 --version
-            ./util/install_deps_ubuntu.sh assume-yes
