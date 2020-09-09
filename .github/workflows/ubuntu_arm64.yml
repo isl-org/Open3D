@@ -1,0 +1,39 @@
+name: Ubuntu ARM64 CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
+
+jobs:
+  ubuntu-arm64:
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: uraimo/run-on-arch-action@v2.0.2
+        name: Run commands
+        id: runcmd
+        with:
+          arch: aarch64
+          distro: ubuntu18.04
+          # Not required, but speeds up builds
+          githubToken: ${{ github.token }}
+          install: |
+            apt-get update -q -y
+            apt-get install -q -y git
+          run: |
+            uname -a
+            python --version
+            python3 --version
+            which pip
+            which pip3
+            pip3 --version
+            ./util/install_deps_ubuntu.sh assume-yes
