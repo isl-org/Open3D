@@ -124,37 +124,17 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                 tbb::blocked_range<size_t>(0, num_query_points),
                 [&](const tbb::blocked_range<size_t> &r) {
                     for (size_t i = r.begin(); i != r.end(); ++i) {
-                        std::vector<size_t> single_indices(knn);
-                        std::vector<scalar_t> single_distances(knn);
-                        // search
-                        int64_t num_results =
-                                static_cast<int64_t>(holder->index_->knnSearch(
-                                        static_cast<scalar_t *>(
-                                                query_points[i].GetDataPtr()),
-                                        static_cast<size_t>(knn),
-                                        single_indices.data(),
-                                        single_distances.data()));
-                        single_indices.resize(num_results);
-                        single_distances.resize(num_results);
-                        std::vector<int64_t> single_indices_2(
-                                single_indices.begin(), single_indices.end());
+                        auto single_indices = static_cast<int64_t *>(
+                                batch_indices[i].GetDataPtr());
+                        auto single_distances = static_cast<scalar_t *>(
+                                batch_distances[i].GetDataPtr());
 
-                        // set single result to batch result
-                        Tensor single_indices_t = Tensor(
-                                single_indices_2, {num_results}, Dtype::Int64);
-                        Tensor single_distances_t =
-                                Tensor(single_distances, {num_results},
-                                       Dtype::FromType<scalar_t>());
-                        batch_indices.SetItem(
-                                {TensorKey::Index(i),
-                                 TensorKey::Slice(core::None, num_results,
-                                                  core::None)},
-                                single_indices_t);
-                        batch_distances.SetItem(
-                                {TensorKey::Index(i),
-                                 TensorKey::Slice(core::None, num_results,
-                                                  core::None)},
-                                single_distances_t);
+                        // search
+                        holder->index_->knnSearch(
+                                static_cast<scalar_t *>(
+                                        query_points[i].GetDataPtr()),
+                                static_cast<size_t>(knn), single_indices,
+                                single_distances);
                     }
                 });
         // check if the number of neighbors are same
@@ -167,13 +147,10 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                     "different. Something went wrong.");
         }
         // slice non-zero items
-        indices = batch_indices
-                          .GetItem(TensorKey::IndexTensor(batch_indices.Ge(0)))
+        indices = batch_indices.Slice(1, 0, num_neighbors)
                           .View({num_query_points, num_neighbors});
-        distances =
-                batch_distances
-                        .GetItem(TensorKey::IndexTensor(batch_distances.Ge(0)))
-                        .View({num_query_points, num_neighbors});
+        distances = batch_distances.Slice(1, 0, num_neighbors)
+                            .View({num_query_points, num_neighbors});
     });
     return std::make_pair(indices, distances);
 };
@@ -237,7 +214,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         tbb::parallel_for(
                 tbb::blocked_range<size_t>(0, num_query_points),
                 [&](const tbb::blocked_range<size_t> &r) {
-                    std::vector<std::pair<size_t, scalar_t>> ret_matches;
+                    std::vector<std::pair<int64_t, scalar_t>> ret_matches;
                     for (size_t i = r.begin(); i != r.end(); ++i) {
                         scalar_t radius = radii[i].Item<scalar_t>();
 

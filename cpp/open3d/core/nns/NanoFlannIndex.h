@@ -100,7 +100,7 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
             typename SelectNanoflannAdaptor<METRIC>::adaptor_t,
             DataAdaptor,
             -1,
-            size_t>
+            int64_t>
             KDTree_t;
 
     NanoFlannIndexHolder(size_t dataset_size,
