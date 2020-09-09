@@ -67,6 +67,13 @@ install_cuda_toolkit() {
     export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     echo PATH="$PATH"
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+    # Ensure g++ < 9 is installed for CUDA 10.1
+    cpp_version=$(c++ --version | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
+    if dpkg --compare-versions "$cpp_version" ge 9 ; then
+        $SUDO apt-get install --yes --no-install-recommends g++-8 gcc-8
+        update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-8 70 --slave /usr/bin/gcc gcc /usr/bin/gcc-8
+        update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-8 70 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+    fi
     if [[ "purge-cache" =~ ^($options)$ ]] ; then
         $SUDO apt-get clean
         $SUDO rm -rf /var/lib/apt/lists/*
