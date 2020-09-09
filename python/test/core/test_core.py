@@ -31,11 +31,7 @@ import pytest
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
-from open3d_test import list_devices, torch_available
-
-if torch_available():
-    import torch
-    import torch.utils.dlpack
+from open3d_test import list_devices
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -231,75 +227,6 @@ def test_tensor_to_numpy_scope():
 
     dst_t = get_dst_t()
     np.testing.assert_equal(dst_t, src_t)
-
-
-@pytest.mark.parametrize("device", list_devices())
-def test_tensor_to_pytorch_scope(device):
-    if not torch_available():
-        return
-
-    src_t = np.array([[10, 11, 12.], [13., 14., 15.]])
-
-    def get_dst_t():
-        o3d_t = o3d.core.Tensor(src_t, device=device)  # Copy
-        dst_t = torch.utils.dlpack.from_dlpack(o3d_t.to_dlpack())
-        return dst_t
-
-    dst_t = get_dst_t().cpu().numpy()
-    np.testing.assert_equal(dst_t, src_t)
-
-
-@pytest.mark.parametrize("device", list_devices())
-def test_tensor_from_to_pytorch(device):
-    if not torch_available():
-        return
-
-    device_id = device.get_id()
-    device_type = device.get_type()
-
-    # a, b, c share memory
-    a = torch.ones((2, 2))
-    if device_type == o3d.core.Device.DeviceType.CUDA:
-        a = a.cuda(device_id)
-    b = o3d.core.Tensor.from_dlpack(torch.utils.dlpack.to_dlpack(a))
-    c = torch.utils.dlpack.from_dlpack(b.to_dlpack())
-
-    a[0, 0] = 100
-    c[0, 1] = 200
-    r = np.array([[100., 200.], [1., 1.]])
-    np.testing.assert_equal(r, a.cpu().numpy())
-    np.testing.assert_equal(r, b.cpu().numpy())
-    np.testing.assert_equal(r, c.cpu().numpy())
-
-    # Special strides
-    np_r = np.random.randint(10, size=(10, 10)).astype(np.int32)
-    th_r = torch.Tensor(np_r)
-    th_t = th_r[1:10:2, 1:10:3].T
-    if device_type == o3d.core.Device.DeviceType.CUDA:
-        th_t = th_t.cuda(device_id)
-
-    o3_t = o3d.core.Tensor.from_dlpack(torch.utils.dlpack.to_dlpack(th_t))
-    np.testing.assert_equal(th_t.cpu().numpy(), o3_t.cpu().numpy())
-
-    th_t[0, 0] = 100
-    np.testing.assert_equal(th_t.cpu().numpy(), o3_t.cpu().numpy())
-
-
-def test_tensor_numpy_to_open3d_to_pytorch():
-    if not torch_available():
-        return
-
-    # Numpy -> Open3D -> PyTorch all share the same memory
-    a = np.ones((2, 2))
-    b = o3d.core.Tensor.from_numpy(a)
-    c = torch.utils.dlpack.from_dlpack(b.to_dlpack())
-
-    a[0, 0] = 100
-    c[0, 1] = 200
-    r = np.array([[100., 200.], [1., 1.]])
-    np.testing.assert_equal(r, a)
-    np.testing.assert_equal(r, b.cpu().numpy())
-    np.testing.assert_equal(r, c.cpu().numpy())
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -665,12 +592,6 @@ def test_advanced_index_set_mixed(device):
     o3_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = o3_fill_val
     np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = np_fill_val
     np.testing.assert_equal(o3_src.cpu().numpy(), np_src)
-
-
-@pytest.mark.parametrize("device", list_devices())
-def test_tensor_from_to_pytorch(device):
-    if not torch_available():
-        return
 
 
 @pytest.mark.parametrize("np_func_name,o3_func_name", [("sqrt", "sqrt"),
