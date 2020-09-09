@@ -58,7 +58,7 @@ install_cuda_toolkit() {
     if [[ "with-cudnn" =~ ^($options)$ ]] ; then
         echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
         $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
-        $SUDO apt-get install --yes \
+        $SUDO apt-get install --yes --no-install-recommends \
             "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
             "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
     fi

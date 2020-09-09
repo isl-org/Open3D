@@ -115,7 +115,7 @@ jobs:
     name: Clean-up container image
     runs-on: ubuntu-18.04
     needs: [skip-check, build-push-docker-image, build-install-test]
-    if: needs.skip-check.outputs.skip == 'no' || needs.build-install-test.result == 'failure'
+    if: always() && needs.skip-check.outputs.skip == 'no'
     strategy:
       fail-fast: false
       matrix:

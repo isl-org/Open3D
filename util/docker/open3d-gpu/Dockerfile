@@ -17,12 +17,13 @@ RUN /root/Open3D/util/docker/open3d-gpu/scripts/env-setup.sh
 COPY ./util/install_deps_ubuntu.sh ./util/ci_utils.sh /root/Open3D/util/
 RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes
 COPY ./util/ci_utils.sh /root/Open3D/util/
-RUN bash -c "source /root/Open3D/util/ci_utils.sh && \
+RUN bash -o errexit -c "source /root/Open3D/util/ci_utils.sh && \
         install_cuda_toolkit with-cudnn purge-cache && \
-        install_python_dependencies with-unit-test with-cuda purge-cache && \
-        echo export PATH=\$PATH >> /root/.bashrc && \
-        echo export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH >> /root/.bashrc"
+        install_python_dependencies with-unit-test with-cuda purge-cache"
+
 # Need to persist PATH for cuda, cudnn
+ENV PATH=/usr/local/cuda/bin:$PATH \
+         LD_LIBRARY_PATH=/usr/local/cuda/extras/CUPTI/lib64:/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 COPY . /root/Open3D
 WORKDIR /root/Open3D

@@ -11,7 +11,7 @@ SUDO=${SUDO:=sudo}
 $SUDO apt-get update
 $SUDO apt-get --yes install git software-properties-common
 echo "Installing Python3 and setting as default python"
-$SUDO apt-get --yes --no-install-recommends install python3 python3-pip
+$SUDO apt-get --yes --no-install-recommends install python3 python3-pip python3-setuptools
 if  ! which python || python -V 2>/dev/null | grep -q ' 2.' ; then
     echo 'Making python3 the default python'
     $SUDO ln -s /usr/bin/python3 /usr/local/bin/python
@@ -34,4 +34,5 @@ if [ -n "${NVIDIA_DRIVER_VERSION}" ] ; then
 fi
 
 # Cleanup apt cache (for docker)
+$SUDO apt-get clean
 $SUDO rm -rf /var/lib/apt/lists/*
