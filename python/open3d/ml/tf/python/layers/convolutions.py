@@ -4,6 +4,7 @@ import numpy as np
 
 __all__ = ['ContinuousConv', 'SparseConv', 'SparseConvTranspose']
 
+
 class ContinuousConv(tf.keras.layers.Layer):
     r"""Continuous Convolution.
 
