@@ -76,27 +76,100 @@ REGISTER_OP("Open3DBuildSpatialHashTable")
         .Doc(R"doc(
 Creates a spatial hash table meant as input for fixed_radius_search
 
-max_hash_table_size:
-  The maximum hash table size.
 
-points:
-  The 3D positions of the input points.
+The following example shows how **build_spatial_hash_table** and 
+**fixed_radius_search** are used together::
 
-radius:
-  A scalar with the neighborhood radius defininf the cell size of the hash table.
+  import open3d.ml.tf as ml3d
 
-points_row_splits:
-  1D vector with the row splits information if points is batched.
-  This vector is [0, num_points] if there is only 1 batch item.
+  points = [
+    [0.1,0.1,0.1], 
+    [0.5,0.5,0.5], 
+    [1.7,1.7,1.7],
+    [1.8,1.8,1.8],
+    [0.3,2.4,1.4]]
+
+  queries = [
+      [1.0,1.0,1.0],
+      [0.5,2.0,2.0],
+      [0.5,2.1,2.1],
+  ]
+
+  radius = 1.0
+
+  # build the spatial hash table for fixex_radius_search
+  table = ml3d.ops.build_spatial_hash_table(points, 
+                                            radius, 
+                                            points_row_splits=torch.LongTensor([0,5]), 
+                                            hash_table_size_factor=1/32)
+
+  # now run the fixed radius search
+  ml3d.ops.fixed_radius_search(points, 
+                               queries, 
+                               radius, 
+                               points_row_splits=torch.LongTensor([0,5]), 
+                               queries_row_splits=torch.LongTensor([0,3]), 
+                               **table._asdict())
+  # returns neighbors_index      = [1, 4, 4]
+  #         neighbors_row_splits = [0, 1, 2, 3]
+  #         neighbors_distance   = []
+
+  # or with pytorch
+  import torch
+  import open3d.ml.torch as ml3d
+
+  points = torch.Tensor([
+    [0.1,0.1,0.1], 
+    [0.5,0.5,0.5], 
+    [1.7,1.7,1.7],
+    [1.8,1.8,1.8],
+    [0.3,2.4,1.4]])
+
+  queries = torch.Tensor([
+      [1.0,1.0,1.0],
+      [0.5,2.0,2.0],
+      [0.5,2.1,2.1],
+  ])
+
+  radius = 1.0
+
+  # build the spatial hash table for fixex_radius_search
+  table = ml3d.nn.functional.build_spatial_hash_table(points, 
+                                                      radius, 
+                                                      points_row_splits=torch.LongTensor([0,5]), 
+                                                      hash_table_size_factor=1/32)
+
+  # now run the fixed radius search
+  ml3d.nn.functional.fixed_radius_search(points, 
+                                         queries, 
+                                         radius, 
+                                         points_row_splits=torch.LongTensor([0,5]), 
+                                         queries_row_splits=torch.LongTensor([0,3]), 
+                                         **table._asdict())
+  # returns neighbors_index      = [1, 4, 4]
+  #         neighbors_row_splits = [0, 1, 2, 3]
+  #         neighbors_distance   = []
+
+
+
+max_hash_table_size: The maximum hash table size.
+
+points: The 3D positions of the input points.
+
+radius: A scalar which defines the spatial cell size of the hash table.
+
+points_row_splits: 1D vector with the row splits information if points is 
+  batched. This vector is [0, num_points] if there is only 1 batch item.
 
 hash_table_size_factor:
   The size of the hash table as a factor of the number of input points.
 
 hash_table_index: Stores the values of the hash table, which are the indices of
-  the points. The start and end of each cell is defined by hash_table_cell_splits.
+  the points. The start and end of each cell is defined by 
+  **hash_table_cell_splits**.
 
-hash_table_cell_splits: Defines the start and end of each hash table cell within a hash table.
-  The size of this
+hash_table_cell_splits: Defines the start and end of each hash table cell within
+  a hash table.
 
 hash_table_splits: Defines the start and end of each hash table in the
   hash_table_cell_splits array. If the batch size is 1 then there is only one

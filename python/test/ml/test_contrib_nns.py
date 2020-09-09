@@ -1,7 +1,7 @@
 import open3d.core as o3c
 import numpy as np
 import pytest
-from open3d.pybind.ml.contrib import knn_search, radius_search
+from open3d.ml.contrib import knn_search, radius_search
 
 
 def test_knn_search():

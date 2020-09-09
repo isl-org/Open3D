@@ -361,11 +361,12 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
 }
 
 void Application::Run() {
-    while (RunOneTick())
+    EnvUnlocker noop;  // containing env is C++
+    while (RunOneTick(noop))
         ;
 }
 
-bool Application::RunOneTick() {
+bool Application::RunOneTick(EnvUnlocker &unlocker) {
     // Initialize if we have not started yet
     if (!impl_->is_running_) {
         // Verify that the resource path is valid. If it is not, display a
@@ -396,7 +397,7 @@ bool Application::RunOneTick() {
     }
 
     // Process the events that have queued up
-    auto status = ProcessQueuedEvents();
+    auto status = ProcessQueuedEvents(unlocker);
 
     // Cleanup if we are done
     if (status == RunStatus::DONE) {
@@ -416,8 +417,11 @@ bool Application::RunOneTick() {
     return impl_->is_running_;
 }
 
-Application::RunStatus Application::ProcessQueuedEvents() {
+Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
+    unlocker.unlock();  // don't want to be locked while we wait
     glfwWaitEventsTimeout(RUNLOOP_DELAY_SEC);
+    unlocker.relock();  // need to relock in case we call any callbacks to
+                        // functions in the containing (e.g. Python) environment
 
     // Handle tick messages.
     double now = Now();

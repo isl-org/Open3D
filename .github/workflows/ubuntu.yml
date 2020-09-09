@@ -1,6 +1,7 @@
 name: Ubuntu CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -13,14 +14,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        SHARED: [ON, OFF]
-        BUILD_ML_OPS: [ON, OFF]
-        BUILD_CUDA: [ON, OFF]
+        CONFIG: [ON, OFF]
     env:
-      SHARED: ${{ matrix.SHARED }}
-      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
-      BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
-      BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA }}
+      SHARED: ${{ matrix.CONFIG }}
+      BUILD_CUDA_MODULE: OFF
+      BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
+      BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
       BUILD_RPC_INTERFACE: ON
       NPROC: 2
     steps:
@@ -44,18 +43,132 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
-          python-version: 3.5
+          python-version: 3.6
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
         run: |
-          ./util/install_deps_ubuntu.sh assume-yes install-cuda
+          ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
           ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
-          sudo apt-get clean
-          sudo rm -rf /var/lib/apt/lists/*
       - name: Config and build
         run: |
           PATH=/usr/lib/ccache:$PATH
           ccache -s
           ./util/run_ci.sh
           ccache -s
+
+  build-wheel:
+    name: Build wheel
+    runs-on: Ubuntu-18.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [3.6, 3.7, 3.8]
+    env:
+      BUILD_CUDA_MODULE: ON
+      NPROC: 2
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
+          path: ~/.ccache
+          # We include the commit sha in the cache key, as new cache entries are
+          # only created if there is no existing entry for the key yet.
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          # Restore any ccache cache entry, if none for
+          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+          # Common prefix will be used so that ccache can be used across commits.
+          restore-keys: |
+            ${{ runner.os }}-ccache
+      - name: Set up Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      # Pre-installed 18.04 packages: https://git.io/JfHmW
+      - name: Install dependencies
+        run: |
+          ./util/install_deps_ubuntu.sh assume-yes
+          sudo apt-get --yes install ccache
+          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          source util/ci_utils.sh
+          echo
+          install_cuda_toolkit with-cudnn purge-cache
+          nvcc --version
+          # Export PATH and LD_LIBRARY_PATH (for CUDA) for the next step
+          echo "::set-env name=PATH::$PATH"
+          echo "::set-env name=LD_LIBRARY_PATH::$LD_LIBRARY_PATH"
+          echo
+          echo "Installing CPU versions of packages"
+          install_python_dependencies
+          echo
+          echo "using python: $(which python)"
+          python --version
+          echo -n "Using pip: "
+          python -m pip --version
+          echo "using cmake: $(which cmake)"
+          cmake --version
+
+      - name: Config and build wheel
+        run: |
+          PATH=/usr/lib/ccache:$PATH
+          ccache -s
+          source util/ci_utils.sh
+          build_wheel
+          ccache -s
+          echo "::set-env name=PIP_PKG_NAME::$(basename build/lib/python_package/pip_package/open3d*.whl)"
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d_linux_x86_64_wheels
+          path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+          if-no-files-found: error
+
+  test-wheel:
+    name: Test wheel
+    runs-on: ubuntu-18.04
+    needs: [build-wheel]
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [3.6, 3.7, 3.8]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: false
+      - name: Download wheels
+        uses: actions/download-artifact@v2
+        # See https://github.com/dawidd6/action-download-artifact for more
+        # flexible artifact download options
+        with:
+          name: open3d_linux_x86_64_wheels
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Test Python package
+        run: |
+          python -V
+          cd util
+          source ci_utils.sh
+          install_python_dependencies with-unit-test
+          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          python -m pip install ../open3d*-$pi_tag-*.whl
+          echo
+          echo "Dynamic libraries used:"
+          DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
+          find "$DLL_PATH"/{cpu,cuda}/ -type f -print -execdir ldd {} \;
+          echo
+          test_wheel
+      - name: Run Python unit tests (benchmarks)
+        run: |
+          cd util
+          source ci_utils.sh
+          echo "Running Open3D python tests..."
+          run_python_tests

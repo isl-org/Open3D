@@ -23,8 +23,14 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-if "@BUILD_GUI@" == "ON":
-    from open3d.pybind.visualization import gui
+import open3d
+if open3d.__DEVICE_API__ == 'cuda':
+    if "@BUILD_GUI@" == "ON":
+        from open3d.cuda.pybind.visualization import gui
+    from open3d.cuda.pybind.visualization import *
+else:
+    if "@BUILD_GUI@" == "ON":
+        from open3d.cpu.pybind.visualization import gui
+    from open3d.cpu.pybind.visualization import *
 
-from open3d.pybind.visualization import *
 from ._external_visualizer import *

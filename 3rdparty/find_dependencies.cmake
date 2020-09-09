@@ -846,7 +846,9 @@ endif()
 if(BUILD_GUI)
     if(BUILD_FILAMENT_FROM_SOURCE)
         message(STATUS "Building third-party library Filament from source")
-        if(MSVC OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7))
+        if(MSVC OR (CMAKE_C_COMPILER_ID MATCHES ".*Clang" AND
+            CMAKE_CXX_COMPILER_ID MATCHES ".*Clang"
+            AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7))
             set(FILAMENT_C_COMPILER "${CMAKE_C_COMPILER}")
             set(FILAMENT_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
         else()
@@ -957,7 +959,7 @@ if(BUILD_RPC_INTERFACE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MSGPACK_TARGET}")
 endif()
 
-# MKL, cuSOLVER, cuBLAS
+# MKL, TBB, cuSOLVER, cuBLAS
 # We link MKL statically. For MKL link flags, refer to:
 # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
 message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
@@ -967,8 +969,14 @@ import_3rdparty_library(3rdparty_mkl
     LIB_DIR      ${STATIC_MKL_LIB_DIR}
     LIBRARIES    ${STATIC_MKL_LIBRARIES}
 )
+import_3rdparty_library(3rdparty_tbb
+    INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
+    LIB_DIR      ${STATIC_TBB_LIB_DIR}
+    LIBRARIES    ${STATIC_TBB_LIBRARIES}
+)
 set(MKL_TARGET "3rdparty_mkl")
 add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
+add_dependencies(3rdparty_tbb ext_tbb)
 message(STATUS "STATIC_MKL_INCLUDE_DIR: ${STATIC_MKL_INCLUDE_DIR}")
 message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
 message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")

@@ -24,41 +24,8 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# Misc
-include README.rst
-include LICENSE.txt
-include requirements.txt
-
-# Compiled module
-include open3d/cpu/*.pyd
-include open3d/cuda/*.pyd
-include open3d/cpu/*.so
-include open3d/cuda/*.so
-include open3d/cpu/*.dylib
-include open3d/cuda/*.dylib
-include open3d/open3d*.so
-include open3d/open3d*.dylib
-include open3d/*depthengine*
-include open3d/*k4a*
-include open3d/*libstdc*
-
-# JS
-recursive-include open3d/static *.*
-
-# Exclude
-global-exclude *.py[co]
-
-# ml module
-recursive-include open3d/ml *.py
-recursive-include open3d/_ml3d *.py
-recursive-include open3d/_ml3d *.so
-recursive-include open3d/_ml3d *.dylib
-recursive-include open3d/_ml3d *.yml
-recursive-include open3d/_ml3d *.yaml
-recursive-include open3d/_ml3d/datasets *.txt
-
-# visualizer module
-recursive-include open3d/visualization *.py
-
-# gui
-include open3d/resources/*
+import open3d
+if open3d.__DEVICE_API__ == 'cuda':
+    from open3d.cuda.pybind.ml.contrib import *
+else:
+    from open3d.cpu.pybind.ml.contrib import *

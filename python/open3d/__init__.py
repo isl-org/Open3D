@@ -29,7 +29,7 @@ try:
     # unofficial workaround. Install the fix package with
     # `pip install open3d_azure_kinect_ubuntu1604_fix`
     import open3d_azure_kinect_ubuntu1604_fix
-except:
+except ImportError:
     pass
 
 # Workaround when multiple copies of the OpenMP runtime have been linked to
@@ -44,13 +44,31 @@ import os
 import sys
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
+__DEVICE_API__ = 'cpu'
 from open3d._build_config import _build_config
-from open3d.pybind import camera
-from open3d.pybind import geometry
-from open3d.pybind import io
-from open3d.pybind import pipelines
-from open3d.pybind import utility
-from open3d.pybind import tgeometry
+if _build_config["BUILD_CUDA_MODULE"]:
+    # Load CPU pybind dll gracefully without introducing new python variable.
+    # Do this before loading the CUDA pybind dll to correctly resolve symbols
+    from ctypes import CDLL as _CDLL
+    from pathlib import Path as _Path
+    try:  # StopIteration if cpu version not available
+        _CDLL(next((_Path(__file__).parent / 'cpu').glob('pybind*')))
+    except StopIteration:
+        pass
+    try:  # ImportError if cuda version not available
+        from open3d.cuda.pybind.core import cuda as _cuda
+        if _cuda.is_available():
+            from open3d.cuda.pybind import (camera, geometry, io, pipelines,
+                                            utility, tgeometry)
+            from open3d.cuda import pybind
+            __DEVICE_API__ = 'cuda'
+    except ImportError:
+        pass
+
+if 'pybind' not in locals():
+    from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility,
+                                   tgeometry)
+    from open3d.cpu import pybind
 
 import open3d.core
 import open3d.visualization
@@ -70,3 +88,10 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
             "dest": "open3d",
             "require": "open3d/extension",
         }]
+
+
+# OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
+# If set this will override the integrated Open3D-ML.
+if 'OPEN3D_ML_ROOT' in os.environ:
+    print('Using external Open3D-ML in {}'.format(os.environ['OPEN3D_ML_ROOT']))
+    sys.path.append(os.environ['OPEN3D_ML_ROOT'])

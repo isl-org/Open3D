@@ -419,7 +419,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
                     colorToImguiRGBA(context.theme.tree_selected_color));
         }
 
-        int flags = ImGuiTreeNodeFlags_DefaultOpen;
+        int flags = ImGuiTreeNodeFlags_DefaultOpen |
+                    ImGuiTreeNodeFlags_AllowItemOverlap;
         if (impl_->can_select_parents_) {
             flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
             flags |= ImGuiTreeNodeFlags_OpenOnArrow;
