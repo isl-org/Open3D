@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-namespace open3d {  
+namespace open3d {
 namespace core {
 template <typename Hash, typename KeyEq>
 CUDAHashmapImplContext<Hash, KeyEq>::CUDAHashmapImplContext()
