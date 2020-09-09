@@ -32,8 +32,8 @@ jobs:
         - pushd build
         - cmake ..
         - make -j${NPROC}
-        - sudo apt-get remove cmake --assume-yes
         - sudo make install
+        - sudo apt-get remove cmake --assume-yes
         - popd # build
         - popd # CMake
         # Check versions

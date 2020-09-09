@@ -24,12 +24,12 @@ jobs:
         with:
           arch: aarch64
           distro: ubuntu18.04
-          # Not required, but speeds up builds
-          githubToken: ${{ github.token }}
+          githubToken: ${{ github.token }} # Not required, but speeds up builds
+          dockerRunArgs: |
+            --volume "${PWD}:/Open3D"
           install: |
             apt-get update -q -y
             apt-get install -q -y git
-            ./util/install_deps_ubuntu.sh assume-yes
           run: |
             uname -a
             python --version
@@ -37,3 +37,8 @@ jobs:
             which pip
             which pip3
             pip3 --version
+            cd Open3D
+            git submodule update --init --recursive
+            git status
+            git branch -vv
+            ./util/install_deps_ubuntu.sh assume-yes
