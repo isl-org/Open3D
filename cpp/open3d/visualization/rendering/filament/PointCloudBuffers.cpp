@@ -263,20 +263,12 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     // from unlit materials. But our shader for normals visualizing is unlit, so
     // we need to use this workaround.
     VertexBuffer* vbuf = VertexBuffer::Builder()
-                                 .bufferCount(4)
+                                 .bufferCount(2)
                                  .vertexCount(uint32_t(n_vertices))
                                  .attribute(VertexAttribute::POSITION, 0,
                                             VertexBuffer::AttributeType::FLOAT3)
-                                 .normalized(VertexAttribute::COLOR)
-                                 .attribute(VertexAttribute::COLOR, 1,
-                                            VertexBuffer::AttributeType::FLOAT3)
-                                 .normalized(VertexAttribute::TANGENTS)
-                                 .attribute(VertexAttribute::TANGENTS, 2,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .attribute(VertexAttribute::CUSTOM0, 2,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .attribute(VertexAttribute::UV0, 3,
-                                            VertexBuffer::AttributeType::FLOAT2)
+                                 .attribute(VertexAttribute::UV0, 1,
+                                            VertexBuffer::AttributeType::FLOAT)
                                  .build(engine);
 
     VertexBufferHandle vb_handle;
@@ -290,67 +282,20 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
             points.AsTensor().GetDataPtr(), n_vertices * 3 * sizeof(float));
     vbuf->setBufferAt(engine, 0, std::move(pts_descriptor));
 
-    const size_t color_array_size = n_vertices * 3 * sizeof(float);
-    if (geometry_.HasPointColors()) {
-        VertexBuffer::BufferDescriptor color_descriptor(
-                geometry_.GetPointColors().AsTensor().GetDataPtr(),
-                color_array_size);
-        vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
-    } else {
-        float* color_array = static_cast<float*>(malloc(color_array_size));
-        for (size_t i = 0; i < n_vertices * 3; ++i) {
-            color_array[i] = 1.f;
-        }
-        VertexBuffer::BufferDescriptor color_descriptor(
-                color_array, color_array_size,
-                GeometryBuffersBuilder::DeallocateBuffer);
-        vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
-    }
-
-    const size_t normal_array_size = n_vertices * 4 * sizeof(float);
-    if (geometry_.HasPointNormals()) {
-        const auto& normals = geometry_.GetPointNormals();
-
-        // Converting normals to Filament type - quaternions
-        auto float4v_tangents =
-                static_cast<math::quatf*>(malloc(normal_array_size));
-        auto orientation = filament::geometry::SurfaceOrientation::Builder()
-                                   .vertexCount(n_vertices)
-                                   .normals(reinterpret_cast<math::float3*>(
-                                           normals.AsTensor().GetDataPtr()))
-                                   .build();
-        orientation->getQuats(float4v_tangents, n_vertices);
-        VertexBuffer::BufferDescriptor normals_descriptor(
-                float4v_tangents, normal_array_size,
-                GeometryBuffersBuilder::DeallocateBuffer);
-        vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
-    } else {
-        float* normal_array = static_cast<float*>(malloc(normal_array_size));
-        float* normal_ptr = normal_array;
-        for (size_t i = 0; i < n_vertices; ++i) {
-            *normal_ptr++ = 0.f;
-            *normal_ptr++ = 0.f;
-            *normal_ptr++ = 0.f;
-            *normal_ptr++ = 1.f;
-        }
-        VertexBuffer::BufferDescriptor normals_descriptor(
-                normal_array, normal_array_size,
-                GeometryBuffersBuilder::DeallocateBuffer);
-        vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
-    }
-
-    const size_t uv_array_size = n_vertices * 2 * sizeof(float);
-    float* uv_array = static_cast<float*>(malloc(uv_array_size));
+    const size_t uv_array_size = n_vertices * sizeof(float);
     if (geometry_.HasPointAttr("uv")) {
         float* uv_src = static_cast<float*>(
                 geometry_.GetPointAttr("uv").AsTensor().GetDataPtr());
-        memcpy(uv_array, uv_src, uv_array_size);
+        VertexBuffer::BufferDescriptor uv_descriptor(uv_src, uv_array_size);
+        vbuf->setBufferAt(engine, 1, std::move(uv_descriptor));
     } else {
+        float* uv_array = static_cast<float*>(malloc(uv_array_size));
         memset(uv_array, 0, uv_array_size);
+        VertexBuffer::BufferDescriptor uv_descriptor(
+                uv_array, uv_array_size,
+                GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, 1, std::move(uv_descriptor));
     }
-    VertexBuffer::BufferDescriptor uv_descriptor(
-            uv_array, uv_array_size, GeometryBuffersBuilder::DeallocateBuffer);
-    vbuf->setBufferAt(engine, 3, std::move(uv_descriptor));
 
     const size_t indices_byte_count = n_vertices * sizeof(IndexType);
     auto* uint_indices = static_cast<IndexType*>(malloc(indices_byte_count));
