@@ -1,3 +1,4 @@
+"""Tensorflow specific machine learning functions."""
 import os as _os
 from tensorflow import __version__ as _tf_version
 from open3d import _build_config

@@ -2,6 +2,8 @@ from open3d.ml.tf import ops, layers
 import tensorflow as tf
 import numpy as np
 
+__all__ = ['ContinuousConv', 'SparseConv', 'SparseConvTranspose']
+
 
 class ContinuousConv(tf.keras.layers.Layer):
     r"""Continuous Convolution.
