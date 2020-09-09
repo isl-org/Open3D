@@ -47,8 +47,50 @@ def test_insertion(device):
     keys = o3d.core.Tensor([100, 300, 500, 700, 900, 900], device=device)
     values = o3d.core.Tensor([1, 3, 5, 7, 9, 9], device=device)
     iterators, masks = hashmap.insert(keys, values)
-
     assert masks.to(o3d.core.Dtype.Int64).sum() == 5
+
+    keys, values = hashmap.unpack_iterators(iterators, masks)
+
+    assert keys[0] == 1
+    assert keys[1] == 3
+    assert keys[2] == 5
+    assert keys[3] == 7
+
+    assert values[0] == 100
+    assert values[1] == 300
+    assert values[2] == 500
+    assert values[3] == 700
+
+    # randomly in 4, 5
+    assert masks[4:].to(o3d.core.Dtype.Int64).sum() == 1
+    if masks[4]:
+        assert keys[4] == 9
+        assert values[4] == 900
+    elif masks[5]:
+        assert keys[5] == 9
+        assert values[5] == 900
+
+@pytest.mark.parametrize("device", list_devices())
+def test_activate(device):
+    hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
+                               device)
+    keys = o3d.core.Tensor([100, 300, 500, 700, 900, 900], device=device)
+    iterators, masks = hashmap.activate(keys)
+    assert masks.to(o3d.core.Dtype.Int64).sum() == 5
+
+    keys, _ = hashmap.unpack_iterators(iterators, masks)
+
+    assert keys[0] == 1
+    assert keys[1] == 3
+    assert keys[2] == 5
+    assert keys[3] == 7
+
+    # randomly in 4, 5
+    assert masks[4:].to(o3d.core.Dtype.Int64).sum() == 1
+    if masks[4]:
+        assert keys[4] == 9
+    elif masks[5]:
+        assert keys[5] == 9
 
 
 @pytest.mark.parametrize("device", list_devices())
