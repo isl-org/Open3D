@@ -41,7 +41,6 @@
 #pragma once
 
 #include <thrust/device_vector.h>
-#include <thrust/pair.h>
 
 #include <cassert>
 #include <memory>

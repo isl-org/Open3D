@@ -40,11 +40,8 @@
 
 #pragma once
 
-#include <thrust/device_vector.h>
-
 #include "open3d/core/hashmap/CUDA/HashmapCUDA.h"
 #include "open3d/core/hashmap/CUDA/HashmapCUDAImpl.cuh"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace core {

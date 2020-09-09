@@ -158,14 +158,14 @@ public:
                                  const void* input_values,
                                  size_t count) = 0;
 
-    virtual size_t Size() = 0;
+    virtual size_t Size() const = 0;
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
-    virtual std::vector<size_t> BucketSizes() = 0;
+    virtual std::vector<size_t> BucketSizes() const = 0;
 
     /// Return size / bucket_count.
-    virtual float LoadFactor() = 0;
+    virtual float LoadFactor() const = 0;
 
     int GetBucketCount() const { return bucket_count_; }
     int GetCapacity() const { return capacity_; }

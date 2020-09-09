@@ -44,43 +44,45 @@ public:
                size_t dsize_value,
                const Device& device);
 
-    void Rehash(size_t buckets);
+    void Rehash(size_t buckets) override;
 
     void Insert(const void* input_keys,
                 const void* input_values,
                 iterator_t* output_iterators,
                 bool* output_masks,
-                size_t count);
+                size_t count) override;
 
     void Activate(const void* input_keys,
                   iterator_t* output_iterators,
                   bool* output_masks,
-                  size_t count);
+                  size_t count) override;
 
     void Find(const void* input_keys,
               iterator_t* output_iterators,
               bool* output_masks,
-              size_t count);
+              size_t count) override;
 
-    void Erase(const void* input_keys, bool* output_masks, size_t count);
+    void Erase(const void* input_keys,
+               bool* output_masks,
+               size_t count) override;
 
-    size_t GetIterators(iterator_t* output_iterators);
+    size_t GetIterators(iterator_t* output_iterators) override;
 
     void UnpackIterators(const iterator_t* input_iterators,
                          const bool* input_masks,
                          void* output_keys,
                          void* output_values,
-                         size_t count);
+                         size_t count) override;
 
     void AssignIterators(iterator_t* input_iterators,
                          const bool* input_masks,
                          const void* input_values,
-                         size_t count);
+                         size_t count) override;
 
-    std::vector<size_t> BucketSizes();
-    float LoadFactor();
+    std::vector<size_t> BucketSizes() const override;
+    float LoadFactor() const override;
 
-    size_t Size();
+    size_t Size() const override;
 
 private:
     std::shared_ptr<std::unordered_map<void*, void*, Hash, KeyEq>> impl_;
@@ -116,7 +118,7 @@ CPUHashmap<Hash, KeyEq>::~CPUHashmap() {
 }
 
 template <typename Hash, typename KeyEq>
-size_t CPUHashmap<Hash, KeyEq>::Size() {
+size_t CPUHashmap<Hash, KeyEq>::Size() const {
     return impl_->size();
 }
 
@@ -320,7 +322,7 @@ void CPUHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
 }
 
 template <typename Hash, typename KeyEq>
-std::vector<size_t> CPUHashmap<Hash, KeyEq>::BucketSizes() {
+std::vector<size_t> CPUHashmap<Hash, KeyEq>::BucketSizes() const {
     size_t bucket_count = impl_->bucket_count();
     std::vector<size_t> ret;
     for (size_t i = 0; i < bucket_count; ++i) {
@@ -330,7 +332,7 @@ std::vector<size_t> CPUHashmap<Hash, KeyEq>::BucketSizes() {
 }
 
 template <typename Hash, typename KeyEq>
-float CPUHashmap<Hash, KeyEq>::LoadFactor() {
+float CPUHashmap<Hash, KeyEq>::LoadFactor() const {
     return impl_->load_factor();
 }
 

@@ -24,9 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-namespace open3d {  /// Kernels
+namespace open3d {  
 namespace core {
-/// Device proxy
 template <typename Hash, typename KeyEq>
 CUDAHashmapImplContext<Hash, KeyEq>::CUDAHashmapImplContext()
     : bucket_count_(0), bucket_list_head_(nullptr) {}

@@ -53,8 +53,8 @@ TEST_P(HashmapPermuteDevices, Init) {
     core::Tensor keys(keys_val, {5}, core::Dtype::Int32, device);
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
-    int max_buckets = n * 2;
-    core::Hashmap hashmap(max_buckets, core::Dtype::Int32, core::Dtype::Int32,
+    int init_capacity = n * 2;
+    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
                           device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
@@ -79,8 +79,8 @@ TEST_P(HashmapPermuteDevices, Find) {
     core::Tensor keys(keys_val, {5}, core::Dtype::Int32, device);
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
-    int max_buckets = n * 2;
-    core::Hashmap hashmap(max_buckets, core::Dtype::Int32, core::Dtype::Int32,
+    int init_capacity = n * 2;
+    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
                           device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
@@ -131,8 +131,8 @@ TEST_P(HashmapPermuteDevices, Insert) {
     core::Tensor keys(keys_val, {5}, core::Dtype::Int32, device);
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
-    int max_buckets = n * 2;
-    core::Hashmap hashmap(max_buckets, core::Dtype::Int32, core::Dtype::Int32,
+    int init_capacity = n * 2;
+    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
                           device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
@@ -198,8 +198,8 @@ TEST_P(HashmapPermuteDevices, Erase) {
     core::Tensor keys(keys_val, {5}, core::Dtype::Int32, device);
     core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
 
-    int max_buckets = n * 2;
-    core::Hashmap hashmap(max_buckets, core::Dtype::Int32, core::Dtype::Int32,
+    int init_capacity = n * 2;
+    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
                           device);
 
     core::Tensor masks({n}, core::Dtype::Bool, device);
@@ -207,7 +207,6 @@ TEST_P(HashmapPermuteDevices, Erase) {
                            core::Dtype(core::Dtype::DtypeCode::Object,
                                        sizeof(core::iterator_t), "iterator_t"),
                            device);
-    utility::LogInfo("{}", iterators.ToString());
     hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
                    static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                    static_cast<bool *>(masks.GetDataPtr()), n);

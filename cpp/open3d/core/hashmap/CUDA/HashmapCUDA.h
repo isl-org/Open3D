@@ -40,8 +40,6 @@
 
 #pragma once
 
-#include <thrust/pair.h>
-
 #include <cassert>
 #include <memory>
 
@@ -63,44 +61,46 @@ public:
                 size_t dsize_value,
                 const Device& device);
 
-    void Rehash(size_t buckets);
+    void Rehash(size_t buckets) override;
 
     void Insert(const void* input_keys,
                 const void* input_values,
                 iterator_t* output_iterators,
                 bool* output_masks,
-                size_t count);
+                size_t count) override;
 
     void Activate(const void* input_keys,
                   iterator_t* output_iterators,
                   bool* output_masks,
-                  size_t count);
+                  size_t count) override;
 
     void Find(const void* input_keys,
               iterator_t* output_iterators,
               bool* output_masks,
-              size_t count);
+              size_t count) override;
 
-    void Erase(const void* input_keys, bool* output_masks, size_t count);
+    void Erase(const void* input_keys,
+               bool* output_masks,
+               size_t count) override;
 
-    size_t GetIterators(iterator_t* output_iterators);
+    size_t GetIterators(iterator_t* output_iterators) override;
 
     void UnpackIterators(const iterator_t* input_iterators,
                          const bool* input_masks,
                          void* output_keys,
                          void* output_values,
-                         size_t count);
+                         size_t count) override;
 
     void AssignIterators(iterator_t* input_iterators,
                          const bool* input_masks,
                          const void* input_values,
-                         size_t count);
+                         size_t count) override;
 
-    std::vector<size_t> BucketSizes();
+    std::vector<size_t> BucketSizes() const override;
 
-    float LoadFactor();
+    float LoadFactor() const override;
 
-    size_t Size();
+    size_t Size() const override;
 
 protected:
     /// struct directly passed to kernels, cannot be a pointer
@@ -173,7 +173,7 @@ CUDAHashmap<Hash, KeyEq>::~CUDAHashmap() {
 }
 
 template <typename Hash, typename KeyEq>
-size_t CUDAHashmap<Hash, KeyEq>::Size() {
+size_t CUDAHashmap<Hash, KeyEq>::Size() const {
     return *thrust::device_ptr<int>(gpu_context_.mem_mgr_ctx_.heap_counter_);
 }
 
@@ -500,7 +500,7 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
 /// Bucket-related utilities
 /// Return number of elems per bucket
 template <typename Hash, typename KeyEq>
-std::vector<size_t> CUDAHashmap<Hash, KeyEq>::BucketSizes() {
+std::vector<size_t> CUDAHashmap<Hash, KeyEq>::BucketSizes() const {
     auto elems_per_bucket_buffer = static_cast<size_t*>(MemoryManager::Malloc(
             gpu_context_.bucket_count_ * sizeof(size_t), this->device_));
 
@@ -524,7 +524,7 @@ std::vector<size_t> CUDAHashmap<Hash, KeyEq>::BucketSizes() {
 
 /// Return size / bucket_count
 template <typename Hash, typename KeyEq>
-float CUDAHashmap<Hash, KeyEq>::LoadFactor() {
+float CUDAHashmap<Hash, KeyEq>::LoadFactor() const {
     auto elems_per_bucket = BucketSizes();
     int total_elems_stored = std::accumulate(elems_per_bucket.begin(),
                                              elems_per_bucket.end(), 0);

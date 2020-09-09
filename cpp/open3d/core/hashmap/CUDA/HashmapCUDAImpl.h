@@ -31,7 +31,7 @@
 
 namespace open3d {
 namespace core {
-/// Kernel proxy struct
+
 template <typename Hash, typename KeyEq>
 class CUDAHashmapImplContext {
 public:
