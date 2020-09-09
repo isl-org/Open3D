@@ -263,7 +263,7 @@ public:
     Device device_;
 
 public:
-    InternalNodeManager(Device device)
+    InternalNodeManager(const Device& device)
         : super_blocks_(nullptr), hash_coef_(0), device_(device) {
         // random coefficients for allocator's hash function
         std::mt19937 rng(time(0));

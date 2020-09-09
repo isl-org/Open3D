@@ -39,63 +39,15 @@
 
 namespace open3d {
 namespace core {
-std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
-        Device device) {
-    return CreateDefaultDeviceHashmap(init_capacity / kDefaultElemsPerBucket,
-                                      init_capacity, dsize_key, dsize_value,
-                                      device);
-}
-
-std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
-        size_t init_buckets,
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
-        Device device) {
-    static std::unordered_map<
-            Device::DeviceType,
-            std::function<std::shared_ptr<DefaultDeviceHashmap>(
-                    size_t, size_t, size_t, size_t, Device)>,
-            utility::hash_enum_class>
-            map_device_type_to_hashmap_constructor = {
-                {Device::DeviceType::CPU, CreateDefaultCPUHashmap},
-#if defined(BUILD_CUDA_MODULE)
-                {Device::DeviceType::CUDA, CreateDefaultCUDAHashmap}
-#endif
-            };
-
-    if (map_device_type_to_hashmap_constructor.find(device.GetType()) ==
-        map_device_type_to_hashmap_constructor.end()) {
-        utility::LogError("CreateDefaultDeviceHashmap: Unimplemented device");
-    }
-
-    auto constructor =
-            map_device_type_to_hashmap_constructor.at(device.GetType());
-    return constructor(init_buckets, init_capacity, dsize_key, dsize_value,
-                       device);
-}
-
-Hashmap::Hashmap(size_t init_buckets,
-                 size_t init_capacity,
-                 Dtype dtype_key,
-                 Dtype dtype_val,
-                 Device device)
-    : dtype_key_(dtype_key), dtype_val_(dtype_val) {
-    device_hashmap_ = CreateDefaultDeviceHashmap(init_buckets, init_capacity,
-                                                 dtype_key.ByteSize(),
-                                                 dtype_val.ByteSize(), device);
-}
 
 Hashmap::Hashmap(size_t init_capacity,
                  Dtype dtype_key,
                  Dtype dtype_val,
-                 Device device)
+                 const Device& device)
     : dtype_key_(dtype_key), dtype_val_(dtype_val) {
     device_hashmap_ = CreateDefaultDeviceHashmap(
-            init_capacity, dtype_key.ByteSize(), dtype_val.ByteSize(), device);
+            init_capacity / kDefaultElemsPerBucket, init_capacity,
+            dtype_key.ByteSize(), dtype_val.ByteSize(), device);
 }
 
 void Hashmap::Rehash(size_t buckets) {

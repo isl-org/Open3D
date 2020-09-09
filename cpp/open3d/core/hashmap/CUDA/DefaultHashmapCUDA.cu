@@ -34,7 +34,7 @@ std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCUDAHashmap(
         size_t init_capacity,
         size_t dsize_key,
         size_t dsize_value,
-        Device device) {
+        const Device& device) {
     return std::make_shared<CUDAHashmap<DefaultHash, DefaultKeyEq>>(
             init_buckets, init_capacity, dsize_key, dsize_value, device);
 }

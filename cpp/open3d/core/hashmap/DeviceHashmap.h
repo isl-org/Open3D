@@ -32,13 +32,18 @@
 
 namespace open3d {
 namespace core {
-constexpr size_t kDefaultElemsPerBucket = 4;
 
 struct DefaultHash {
     // Default constructor makes compiler happy. Undefined behavior, must set
     // key_size_ before calling operator().
     DefaultHash() {}
-    DefaultHash(size_t key_size) : key_size_in_int_(key_size / sizeof(int)) {}
+    DefaultHash(size_t key_size) : key_size_in_int_(key_size / sizeof(int)) {
+        if (key_size_in_int_ == 0) {
+            utility::LogError(
+                    "[DefaultHash] Only support keys whose byte size is "
+                    "multiples of sizeof(int)");
+        }
+    }
 
     uint64_t OPEN3D_HOST_DEVICE operator()(const void* key_ptr) const {
         uint64_t hash = UINT64_C(14695981039346656037);
@@ -79,16 +84,15 @@ struct DefaultKeyEq {
 };
 
 /// Base class: shared interface
-template <typename Hash = DefaultHash, typename KeyEq = DefaultKeyEq>
+template <typename Hash, typename KeyEq>
 class DeviceHashmap {
 public:
     /// Comprehensive constructor for the developer.
-    /// The developer knows all the parameter settings.
     DeviceHashmap(size_t init_buckets,
                   size_t init_capacity,
                   size_t dsize_key,
                   size_t dsize_value,
-                  Device device)
+                  const Device& device)
         : bucket_count_(init_buckets),
           capacity_(init_capacity),
           dsize_key_(dsize_key),
@@ -177,59 +181,36 @@ public:
     Device device_;
 };
 
-/// Low level factory for customized functions
-/// User-friendly interface: just roughly estimate capacity, we handle
-/// bucket_count.
-template <typename Hash, typename KeyEq>
-std::shared_ptr<DeviceHashmap<Hash, KeyEq>> CreateDeviceHashmap(
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
-        Device device);
+/// Factory functions:
+/// - Default constructor switch is in DeviceHashmap.cpp
+/// - Default CPU constructor is in CPU/DefaultHashmapCPU.cpp
+/// - Default CUDA constructor is in CUDA/DefaultHashmapCUDA.cu
 
-/// Comprehensive interface
-template <typename Hash, typename KeyEq>
-std::shared_ptr<DeviceHashmap<Hash, KeyEq>> CreateDeviceHashmap(
-        size_t init_buckets,
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
-        Device device);
-
-/// High level factory for default functions
-/// Factory interface for non-templated Default hashmap -- to be instantiated in
-/// implementations
+/// - Template constructor switch is in TemplateHashmap.h
+/// - Template CPU constructor is in CPU/HashmapCPU.hpp
+/// - Template CUDA constructor is in CUDA/HashmapCUDA.cuh
 typedef DeviceHashmap<DefaultHash, DefaultKeyEq> DefaultDeviceHashmap;
 
-/// User-friendly interface: just roughly estimate capacity, we handle
-/// bucket_count.
-std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
-        Device device);
-
-/// Comprehensive interface
 std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
         size_t init_buckets,
         size_t init_capacity,
         size_t dsize_key,
         size_t dsize_value,
-        Device device);
+        const Device& device);
 
 std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCPUHashmap(
         size_t init_buckets,
         size_t init_capacity,
         size_t dsize_key,
         size_t dsize_value,
-        Device device);
+        const Device& device);
 
 std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCUDAHashmap(
         size_t init_buckets,
         size_t init_capacity,
         size_t dsize_key,
         size_t dsize_value,
-        Device device);
+        const Device& device);
 
 }  // namespace core
 }  // namespace open3d

@@ -24,19 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "HashmapCPU.hpp"
+// High level non-templated hashmap interface for basic usages.
+
+// If BUILD_CUDA_MODULE, link DefaultHashmap.cu that contains everything, and
+// disable code inside DefaultHashmap.cpp
+// Else, link DefaultHashmap.cpp and disregard DefaultHashmap.cu
+
+#include "open3d/core/hashmap/DeviceHashmap.h"
+
+#include <unordered_map>
+
+#include "open3d/utility/Console.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace core {
 
-std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCPUHashmap(
+std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
         size_t init_buckets,
         size_t init_capacity,
         size_t dsize_key,
         size_t dsize_value,
         const Device& device) {
-    return std::make_shared<CPUHashmap<DefaultHash, DefaultKeyEq>>(
-            init_buckets, init_capacity, dsize_key, dsize_value, device);
+    static std::unordered_map<
+            Device::DeviceType,
+            std::function<std::shared_ptr<DefaultDeviceHashmap>(
+                    size_t, size_t, size_t, size_t, Device)>,
+            utility::hash_enum_class>
+            map_device_type_to_hashmap_constructor = {
+                {Device::DeviceType::CPU, CreateDefaultCPUHashmap},
+#if defined(BUILD_CUDA_MODULE)
+                {Device::DeviceType::CUDA, CreateDefaultCUDAHashmap}
+#endif
+            };
+
+    if (map_device_type_to_hashmap_constructor.find(device.GetType()) ==
+        map_device_type_to_hashmap_constructor.end()) {
+        utility::LogError("CreateDefaultDeviceHashmap: Unimplemented device");
+    }
+
+    auto constructor =
+            map_device_type_to_hashmap_constructor.at(device.GetType());
+    return constructor(init_buckets, init_capacity, dsize_key, dsize_value,
+                       device);
 }
 
 }  // namespace core

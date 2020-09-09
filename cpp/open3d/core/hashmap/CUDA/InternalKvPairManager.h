@@ -134,7 +134,7 @@ public:
     InternalKvPairManager(int max_capacity,
                           int dsize_key,
                           int dsize_value,
-                          Device device) {
+                          const Device &device) {
         device_ = device;
         max_capacity_ = max_capacity;
         dsize_key_ = dsize_key;

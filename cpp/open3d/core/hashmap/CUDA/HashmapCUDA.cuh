@@ -54,7 +54,7 @@ CUDAHashmap<Hash, KeyEq>::CUDAHashmap(size_t init_buckets,
                                       size_t init_capacity,
                                       size_t dsize_key,
                                       size_t dsize_value,
-                                      Device device)
+                                      const Device& device)
     : DeviceHashmap<Hash, KeyEq>(
               init_buckets, init_capacity, dsize_key, dsize_value, device) {
     Allocate(init_buckets, init_capacity);
@@ -463,12 +463,12 @@ float CUDAHashmap<Hash, KeyEq>::LoadFactor() {
 }
 
 template <typename Hash, typename KeyEq>
-std::shared_ptr<CUDAHashmap<Hash, KeyEq>> CreateCUDAHashmap(
+std::shared_ptr<CUDAHashmap<Hash, KeyEq>> CreateTemplateCUDAHashmap(
         size_t init_buckets,
         size_t init_capacity,
         size_t dsize_key,
         size_t dsize_value,
-        Device device) {
+        const Device& device) {
     return std::make_shared<CUDAHashmap<Hash, KeyEq>>(
             init_buckets, init_capacity, dsize_key, dsize_value, device);
 }

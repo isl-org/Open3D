@@ -32,18 +32,11 @@ namespace core {
 
 class Hashmap {
 public:
-    /// Comprehensive constructor for the developer.
-    /// The developer knows all the parameter settings.
-    Hashmap(size_t init_buckets,
-            size_t init_capacity,
-            Dtype dtype_key,
-            Dtype dtype_val,
-            Device device);
-
+    // Default constructor for common users.
     Hashmap(size_t init_capacity,
             Dtype dtype_key,
-            Dtype dsize_val,
-            Device device);
+            Dtype dtype_val,
+            const Device& device);
 
     ~Hashmap(){};
 

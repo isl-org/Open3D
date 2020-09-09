@@ -37,7 +37,7 @@ CPUHashmap<Hash, KeyEq>::CPUHashmap(size_t init_buckets,
                                     size_t init_capacity,
                                     size_t dsize_key,
                                     size_t dsize_value,
-                                    Device device)
+                                    const Device& device)
     : DeviceHashmap<Hash, KeyEq>(
               init_buckets,
               init_capacity,  /// dummy for std unordered_map,
@@ -283,11 +283,12 @@ float CPUHashmap<Hash, KeyEq>::LoadFactor() {
 }
 
 template <typename Hash, typename KeyEq>
-std::shared_ptr<CPUHashmap<Hash, KeyEq>> CreateCPUHashmap(size_t init_buckets,
-                                                          size_t init_capacity,
-                                                          size_t dsize_key,
-                                                          size_t dsize_value,
-                                                          Device device) {
+std::shared_ptr<CPUHashmap<Hash, KeyEq>> CreateTemplateCPUHashmap(
+        size_t init_buckets,
+        size_t init_capacity,
+        size_t dsize_key,
+        size_t dsize_value,
+        const Device& device) {
     return std::make_shared<CPUHashmap<Hash, KeyEq>>(
             init_buckets, init_capacity, dsize_key, dsize_value, device);
 }

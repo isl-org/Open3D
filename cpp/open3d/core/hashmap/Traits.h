@@ -45,6 +45,8 @@
 
 namespace open3d {
 
+constexpr size_t kDefaultElemsPerBucket = 4;
+
 #define MAX_KEY_BYTESIZE 32
 
 /** Built-in flags **/

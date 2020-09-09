@@ -110,7 +110,7 @@ public:
     Device device_;
 
 public:
-    InternalMemoryManager(int max_capacity, int dsize, Device device) {
+    InternalMemoryManager(int max_capacity, int dsize, const Device &device) {
         device_ = device;
         max_capacity_ = max_capacity;
         dsize_ = dsize;

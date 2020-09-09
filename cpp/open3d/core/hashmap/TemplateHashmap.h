@@ -53,32 +53,23 @@ namespace open3d {
 namespace core {
 
 template <typename Hash, typename KeyEq>
-std::shared_ptr<Hashmap<Hash, KeyEq>> CreateHashmap(size_t init_capacity,
-                                                    size_t dsize_key,
-                                                    size_t dsize_value,
-                                                    Device device) {
-    return CreateHashmap<Hash, KeyEq>(init_capacity / kDefaultElemsPerBucket,
-                                      init_capacity, dsize_key, dsize_value,
-                                      device);
-}
-
-template <typename Hash, typename KeyEq>
-std::shared_ptr<Hashmap<Hash, KeyEq>> CreateHashmap(size_t init_buckets,
-                                                    size_t init_capacity,
-                                                    size_t dsize_key,
-                                                    size_t dsize_value,
-                                                    Device device) {
+std::shared_ptr<DeviceHashmap<Hash, KeyEq>> CreateTemplateDeviceHashmap(
+        size_t init_buckets,
+        size_t init_capacity,
+        size_t dsize_key,
+        size_t dsize_value,
+        const Device &device) {
     static std::unordered_map<
             Device::DeviceType,
             std::function<std::shared_ptr<Hashmap<Hash, KeyEq>>(
                     size_t, size_t, size_t, size_t, Device)>,
             utility::hash_enum_class::hash>
-            map_device_type_to_hashmap_constructor = {
-                {Device::DeviceType::CPU, CreateCPUHashmap<Hash, KeyEq>},
+            map_device_type_to_hashmap_constructor =
+    { {Device::DeviceType::CPU, CreateTemplateCPUHashmap<Hash, KeyEq>},
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-                {Device::DeviceType::CUDA, CreateCUDAHashmap<Hash, KeyEq>}
+      {Device::DeviceType::CUDA, CreateTemplateCUDAHashmap<Hash, KeyEq>}
 #endif
-            };
+    };
 
     if (map_device_type_to_hashmap_constructor.find(device.GetType()) ==
         map_device_type_to_hashmap_constructor.end()) {
