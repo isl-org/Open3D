@@ -36,6 +36,26 @@ def list_devices():
         return [o3d.core.Device("CPU:0")]
 
 
+def list_devices_with_torch():
+    """
+    Similar to list_devices(), but take PyTorch available devices into account.
+    The returned devices are compatible on both PyTorch and Open3D.
+
+    If PyTorch is not available at all, empty list will be returned, thus the
+    test is effectively skipped.
+    """
+    if torch_available():
+        import open3d as o3d
+        import torch
+        if (o3d.core.cuda.device_count() > 0 and torch.cuda.is_available() and
+                torch.cuda.device_count() > 0):
+            return [o3d.core.Device("CPU:0"), o3d.core.Device("CUDA:0")]
+        else:
+            return [o3d.core.Device("CPU:0")]
+    else:
+        return []
+
+
 def download_fountain_dataset():
     fountain_path = os.path.join(test_data_dir, "fountain_small")
     fountain_zip_path = os.path.join(test_data_dir, "fountain.zip")

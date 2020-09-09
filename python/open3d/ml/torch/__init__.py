@@ -1,4 +1,4 @@
-"""This module loads the op library."""
+"""Torch specific machine learning functions."""
 import os as _os
 import sys as _sys
 import torch as _torch
