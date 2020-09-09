@@ -26,200 +26,197 @@
 
 #pragma once
 
-#include <mkl.h>
-
-#ifdef BUILD_CUDA_MODULE
-#include <cublas_v2.h>
-#include <cusolverDn.h>
-#include <cusolver_common.h>
-#endif
-
+#include "open3d/core/linalg/LinalgHeadersCPU.h"
+#include "open3d/core/linalg/LinalgHeadersCUDA.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
 template <typename scalar_t>
-inline MKL_INT getrf_cpu(int layout,
-                         MKL_INT m,
-                         MKL_INT n,
-                         scalar_t* A_data,
-                         MKL_INT lda,
-                         MKL_INT* ipiv_data) {
+inline OPEN3D_LINALG_INT getrf_cpu(int layout,
+                                   OPEN3D_LINALG_INT m,
+                                   OPEN3D_LINALG_INT n,
+                                   scalar_t* A_data,
+                                   OPEN3D_LINALG_INT lda,
+                                   OPEN3D_LINALG_INT* ipiv_data) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
 
 template <typename scalar_t>
-inline MKL_INT getri_cpu(int layout,
-                         MKL_INT n,
-                         scalar_t* A_data,
-                         MKL_INT lda,
-                         MKL_INT* ipiv_data) {
+inline OPEN3D_LINALG_INT getri_cpu(int layout,
+                                   OPEN3D_LINALG_INT n,
+                                   scalar_t* A_data,
+                                   OPEN3D_LINALG_INT lda,
+                                   OPEN3D_LINALG_INT* ipiv_data) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
 
 template <typename scalar_t>
-inline MKL_INT gesv_cpu(int layout,
-                        MKL_INT n,
-                        MKL_INT m,
-                        scalar_t* A_data,
-                        MKL_INT lda,
-                        MKL_INT* ipiv_data,
-                        scalar_t* B_data,
-                        MKL_INT ldb) {
+inline OPEN3D_LINALG_INT gesv_cpu(int layout,
+                                  OPEN3D_LINALG_INT n,
+                                  OPEN3D_LINALG_INT m,
+                                  scalar_t* A_data,
+                                  OPEN3D_LINALG_INT lda,
+                                  OPEN3D_LINALG_INT* ipiv_data,
+                                  scalar_t* B_data,
+                                  OPEN3D_LINALG_INT ldb) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
 
 template <typename scalar_t>
-inline MKL_INT gels_cpu(int matrix_layout,
-                        char trans,
-                        MKL_INT m,
-                        MKL_INT n,
-                        MKL_INT nrhs,
-                        scalar_t* A_data,
-                        MKL_INT lda,
-                        scalar_t* B_data,
-                        MKL_INT ldb) {
+inline OPEN3D_LINALG_INT gels_cpu(int matrix_layout,
+                                  char trans,
+                                  OPEN3D_LINALG_INT m,
+                                  OPEN3D_LINALG_INT n,
+                                  OPEN3D_LINALG_INT nrhs,
+                                  scalar_t* A_data,
+                                  OPEN3D_LINALG_INT lda,
+                                  scalar_t* B_data,
+                                  OPEN3D_LINALG_INT ldb) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
 
 template <typename scalar_t>
-inline MKL_INT gesvd_cpu(int matrix_layout,
-                         char jobu,
-                         char jobvt,
-                         MKL_INT m,
-                         MKL_INT n,
-                         scalar_t* A_data,
-                         MKL_INT lda,
-                         scalar_t* S_data,
-                         scalar_t* U_data,
-                         MKL_INT ldu,
-                         scalar_t* VT_data,
-                         MKL_INT ldvt,
-                         scalar_t* superb) {
+inline OPEN3D_LINALG_INT gesvd_cpu(int matrix_layout,
+                                   char jobu,
+                                   char jobvt,
+                                   OPEN3D_LINALG_INT m,
+                                   OPEN3D_LINALG_INT n,
+                                   scalar_t* A_data,
+                                   OPEN3D_LINALG_INT lda,
+                                   scalar_t* S_data,
+                                   scalar_t* U_data,
+                                   OPEN3D_LINALG_INT ldu,
+                                   scalar_t* VT_data,
+                                   OPEN3D_LINALG_INT ldvt,
+                                   scalar_t* superb) {
     utility::LogError("Unsupported data type.");
     return -1;
 }
 
 template <>
-inline MKL_INT getrf_cpu<float>(int layout,
-                                MKL_INT m,
-                                MKL_INT n,
-                                float* A_data,
-                                MKL_INT lda,
-                                MKL_INT* ipiv_data) {
+inline OPEN3D_LINALG_INT getrf_cpu<float>(int layout,
+                                          OPEN3D_LINALG_INT m,
+                                          OPEN3D_LINALG_INT n,
+                                          float* A_data,
+                                          OPEN3D_LINALG_INT lda,
+                                          OPEN3D_LINALG_INT* ipiv_data) {
     return LAPACKE_sgetrf(layout, m, n, A_data, lda, ipiv_data);
 }
 template <>
-inline MKL_INT getrf_cpu<double>(int layout,
-                                 MKL_INT m,
-                                 MKL_INT n,
-                                 double* A_data,
-                                 MKL_INT lda,
-                                 MKL_INT* ipiv_data) {
+inline OPEN3D_LINALG_INT getrf_cpu<double>(int layout,
+                                           OPEN3D_LINALG_INT m,
+                                           OPEN3D_LINALG_INT n,
+                                           double* A_data,
+                                           OPEN3D_LINALG_INT lda,
+                                           OPEN3D_LINALG_INT* ipiv_data) {
     return LAPACKE_dgetrf(layout, m, n, A_data, lda, ipiv_data);
 }
 
 template <>
-inline MKL_INT getri_cpu<float>(
-        int layout, MKL_INT n, float* A_data, MKL_INT lda, MKL_INT* ipiv_data) {
+inline OPEN3D_LINALG_INT getri_cpu<float>(int layout,
+                                          OPEN3D_LINALG_INT n,
+                                          float* A_data,
+                                          OPEN3D_LINALG_INT lda,
+                                          OPEN3D_LINALG_INT* ipiv_data) {
     return LAPACKE_sgetri(layout, n, A_data, lda, ipiv_data);
 }
 
 template <>
-inline MKL_INT getri_cpu<double>(int layout,
-                                 MKL_INT n,
-                                 double* A_data,
-                                 MKL_INT lda,
-                                 MKL_INT* ipiv_data) {
+inline OPEN3D_LINALG_INT getri_cpu<double>(int layout,
+                                           OPEN3D_LINALG_INT n,
+                                           double* A_data,
+                                           OPEN3D_LINALG_INT lda,
+                                           OPEN3D_LINALG_INT* ipiv_data) {
     return LAPACKE_dgetri(layout, n, A_data, lda, ipiv_data);
 }
 
 template <>
-inline MKL_INT gesv_cpu<float>(int layout,
-                               MKL_INT n,
-                               MKL_INT m,
-                               float* A_data,
-                               MKL_INT lda,
-                               MKL_INT* ipiv_data,
-                               float* B_data,
-                               MKL_INT ldb) {
+inline OPEN3D_LINALG_INT gesv_cpu<float>(int layout,
+                                         OPEN3D_LINALG_INT n,
+                                         OPEN3D_LINALG_INT m,
+                                         float* A_data,
+                                         OPEN3D_LINALG_INT lda,
+                                         OPEN3D_LINALG_INT* ipiv_data,
+                                         float* B_data,
+                                         OPEN3D_LINALG_INT ldb) {
     return LAPACKE_sgesv(layout, n, m, A_data, lda, ipiv_data, B_data, ldb);
 }
 
 template <>
-inline MKL_INT gesv_cpu<double>(int layout,
-                                MKL_INT n,
-                                MKL_INT m,
-                                double* A_data,
-                                MKL_INT lda,
-                                MKL_INT* ipiv_data,
-                                double* B_data,
-                                MKL_INT ldb) {
+inline OPEN3D_LINALG_INT gesv_cpu<double>(int layout,
+                                          OPEN3D_LINALG_INT n,
+                                          OPEN3D_LINALG_INT m,
+                                          double* A_data,
+                                          OPEN3D_LINALG_INT lda,
+                                          OPEN3D_LINALG_INT* ipiv_data,
+                                          double* B_data,
+                                          OPEN3D_LINALG_INT ldb) {
     return LAPACKE_dgesv(layout, n, m, A_data, lda, ipiv_data, B_data, ldb);
 }
 
 template <>
-inline MKL_INT gels_cpu<float>(int layout,
-                               char trans,
-                               MKL_INT m,
-                               MKL_INT n,
-                               MKL_INT nrhs,
-                               float* A_data,
-                               MKL_INT lda,
-                               float* B_data,
-                               MKL_INT ldb) {
+inline OPEN3D_LINALG_INT gels_cpu<float>(int layout,
+                                         char trans,
+                                         OPEN3D_LINALG_INT m,
+                                         OPEN3D_LINALG_INT n,
+                                         OPEN3D_LINALG_INT nrhs,
+                                         float* A_data,
+                                         OPEN3D_LINALG_INT lda,
+                                         float* B_data,
+                                         OPEN3D_LINALG_INT ldb) {
     return LAPACKE_sgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
 }
 
 template <>
-inline MKL_INT gels_cpu<double>(int layout,
-                                char trans,
-                                MKL_INT m,
-                                MKL_INT n,
-                                MKL_INT nrhs,
-                                double* A_data,
-                                MKL_INT lda,
-                                double* B_data,
-                                MKL_INT ldb) {
+inline OPEN3D_LINALG_INT gels_cpu<double>(int layout,
+                                          char trans,
+                                          OPEN3D_LINALG_INT m,
+                                          OPEN3D_LINALG_INT n,
+                                          OPEN3D_LINALG_INT nrhs,
+                                          double* A_data,
+                                          OPEN3D_LINALG_INT lda,
+                                          double* B_data,
+                                          OPEN3D_LINALG_INT ldb) {
     return LAPACKE_dgels(layout, trans, m, n, nrhs, A_data, lda, B_data, ldb);
 }
 
 template <>
-inline MKL_INT gesvd_cpu<float>(int layout,
-                                char jobu,
-                                char jobvt,
-                                MKL_INT m,
-                                MKL_INT n,
-                                float* A_data,
-                                MKL_INT lda,
-                                float* S_data,
-                                float* U_data,
-                                MKL_INT ldu,
-                                float* VT_data,
-                                MKL_INT ldvt,
-                                float* superb) {
+inline OPEN3D_LINALG_INT gesvd_cpu<float>(int layout,
+                                          char jobu,
+                                          char jobvt,
+                                          OPEN3D_LINALG_INT m,
+                                          OPEN3D_LINALG_INT n,
+                                          float* A_data,
+                                          OPEN3D_LINALG_INT lda,
+                                          float* S_data,
+                                          float* U_data,
+                                          OPEN3D_LINALG_INT ldu,
+                                          float* VT_data,
+                                          OPEN3D_LINALG_INT ldvt,
+                                          float* superb) {
     return LAPACKE_sgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data,
                           U_data, ldu, VT_data, ldvt, superb);
 }
 
 template <>
-inline MKL_INT gesvd_cpu<double>(int layout,
-                                 char jobu,
-                                 char jobvt,
-                                 MKL_INT m,
-                                 MKL_INT n,
-                                 double* A_data,
-                                 MKL_INT lda,
-                                 double* S_data,
-                                 double* U_data,
-                                 MKL_INT ldu,
-                                 double* VT_data,
-                                 MKL_INT ldvt,
-                                 double* superb) {
+inline OPEN3D_LINALG_INT gesvd_cpu<double>(int layout,
+                                           char jobu,
+                                           char jobvt,
+                                           OPEN3D_LINALG_INT m,
+                                           OPEN3D_LINALG_INT n,
+                                           double* A_data,
+                                           OPEN3D_LINALG_INT lda,
+                                           double* S_data,
+                                           double* U_data,
+                                           OPEN3D_LINALG_INT ldu,
+                                           double* VT_data,
+                                           OPEN3D_LINALG_INT ldvt,
+                                           double* superb) {
     return LAPACKE_dgesvd(layout, jobu, jobvt, m, n, A_data, lda, S_data,
                           U_data, ldu, VT_data, ldvt, superb);
 }

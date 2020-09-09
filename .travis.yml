@@ -1,0 +1,73 @@
+language: cpp
+env:
+  global:
+    - NPROC=2
+
+jobs:
+  include:
+    # Ubuntu 18.04 ARM
+    - name: Ubuntu ARM
+      os: linux
+      arch: arm64
+      dist: bionic
+      sudo: true
+      language: python
+      python: "3.6"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - cmake
+      install:
+        # Ubuntu dependencies
+        - ./util/install_deps_ubuntu.sh assume-yes
+        - sudo apt-get install gfortran libblas-dev liblapack-dev liblapacke-dev --assume-yes
+        # Python dependencies
+        - pip install -U pytest=="6.0.1"
+        - pip install -U scipy=="1.4.1"
+        # Compile and install latest CMake
+        - git clone https://github.com/Kitware/CMake.git
+        - pushd CMake
+        - git checkout v3.18.2
+        - pushd build
+        - cd build
+        - cmake ..
+        - make -j${NPROC}
+        - sudo apt-get remove cmake --assume-yes
+        - sudo make install
+        - popd # build
+        - popd # CMake
+        # Check versions
+        - python --version
+        - python3 --version
+        - pip --version
+        - cmake --version
+      script:
+        # Build
+        - mkdir build
+        - pushd build
+        - >
+          cmake
+            -DUSE_BLAS=ON
+            -DBUILD_GUI=OFF
+            -DBUILD_SHARED_LIBS=ON
+            -DCMAKE_BUILD_TYPE=Release
+            -DBUILD_CUDA_MODULE=OFF
+            -DBUILD_TENSORFLOW_OPS=OFF
+            -DBUILD_PYTORCH_OPS=OFF
+            -DBUILD_RPC_INTERFACE=ON
+            -DCMAKE_INSTALL_PREFIX="~/open3d_install"
+            -DPYTHON_EXECUTABLE="$(which python)"
+            -DBUILD_UNIT_TESTS=ON
+            -DBUILD_BENCHMARKS=ON
+            -DBUILD_EXAMPLES=ON
+            ..
+        - make -j${NPROC}
+        - make install -j${NPROC}
+        - make install-pip-package -j${NPROC}
+        # Test
+        - ./bin/tests --gtest_filter="-*Reduce*Sum*"
+        - pytest ../python/test/core --ignore ../python/test/ml_ops/
+        # Clean up
+        - popd # build
