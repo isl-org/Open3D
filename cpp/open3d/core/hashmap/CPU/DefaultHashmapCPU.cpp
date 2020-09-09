@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "HashmapCPU.hpp"
+#include "TemplateHashmapCPU.hpp"
 
 namespace open3d {
 namespace core {

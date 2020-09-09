@@ -97,8 +97,8 @@ public:
           capacity_(init_capacity),
           dsize_key_(dsize_key),
           dsize_value_(dsize_value),
-          device_(device){};
-    virtual ~DeviceHashmap(){};
+          device_(device) {}
+    virtual ~DeviceHashmap() {}
 
     /// Rehash expects extra memory space at runtime, since it consists of
     /// 1) dumping all key value pairs to a buffer
@@ -187,8 +187,8 @@ public:
 /// - Default CUDA constructor is in CUDA/DefaultHashmapCUDA.cu
 
 /// - Template constructor switch is in TemplateHashmap.h
-/// - Template CPU constructor is in CPU/HashmapCPU.hpp
-/// - Template CUDA constructor is in CUDA/HashmapCUDA.cuh
+/// - Template CPU constructor is in CPU/TemplateHashmapCPU.hpp
+/// - Template CUDA constructor is in CUDA/TemplateHashmapCUDA.cuh
 typedef DeviceHashmap<DefaultHash, DefaultKeyEq> DefaultDeviceHashmap;
 
 std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(

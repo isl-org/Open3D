@@ -104,13 +104,13 @@ void Hashmap::AssignIterators(iterator_t* input_iterators,
                                             input_values, count);
 }
 
-size_t Hashmap::Size() { return device_hashmap_->Size(); }
+size_t Hashmap::Size() const { return device_hashmap_->Size(); }
 
-std::vector<size_t> Hashmap::BucketSizes() {
+std::vector<size_t> Hashmap::BucketSizes() const {
     return device_hashmap_->BucketSizes();
 }
 
-float Hashmap::LoadFactor() { return device_hashmap_->LoadFactor(); }
+float Hashmap::LoadFactor() const { return device_hashmap_->LoadFactor(); }
 
 void Hashmap::AssertKeyDtype(const Dtype& dtype_key) const {
     if (dtype_key != dtype_key_) {

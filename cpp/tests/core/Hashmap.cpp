@@ -60,10 +60,10 @@ TEST_P(HashmapPermuteDevices, Init) {
     core::Tensor masks({n}, core::Dtype::Bool, device);
     core::Tensor iterators({n},
                            core::Dtype(core::Dtype::DtypeCode::Object,
-                                       sizeof(iterator_t), "iterator_t"),
+                                       sizeof(core::iterator_t), "iterator_t"),
                            device);
     hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
-                   static_cast<iterator_t *>(iterators.GetDataPtr()),
+                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                    static_cast<bool *>(masks.GetDataPtr()), n);
     EXPECT_EQ(masks.All(), true);
     EXPECT_EQ(hashmap.Size(), 5);
@@ -86,20 +86,20 @@ TEST_P(HashmapPermuteDevices, Find) {
     core::Tensor masks({n}, core::Dtype::Bool, device);
     core::Tensor iterators({n},
                            core::Dtype(core::Dtype::DtypeCode::Object,
-                                       sizeof(iterator_t), "iterator_t"),
+                                       sizeof(core::iterator_t), "iterator_t"),
                            device);
     hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
-                   static_cast<iterator_t *>(iterators.GetDataPtr()),
+                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                    static_cast<bool *>(masks.GetDataPtr()), n);
     hashmap.Find(keys.GetDataPtr(),
-                 static_cast<iterator_t *>(iterators.GetDataPtr()),
+                 static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                  static_cast<bool *>(masks.GetDataPtr()), n);
     EXPECT_EQ(masks.All(), true);
 
     std::vector<int> keys_query_val = {100, 500, 800, 900, 1000};
     core::Tensor keys_query(keys_query_val, {5}, core::Dtype::Int32, device);
     hashmap.Find(keys_query.GetDataPtr(),
-                 static_cast<iterator_t *>(iterators.GetDataPtr()),
+                 static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                  static_cast<bool *>(masks.GetDataPtr()), n);
     EXPECT_EQ(masks[0].Item<bool>(), true);
     EXPECT_EQ(masks[1].Item<bool>(), true);
@@ -109,10 +109,10 @@ TEST_P(HashmapPermuteDevices, Find) {
 
     core::Tensor keys_valid({5}, core::Dtype::Int32, device);
     core::Tensor values_valid({5}, core::Dtype::Int32, device);
-    hashmap.UnpackIterators(static_cast<iterator_t *>(iterators.GetDataPtr()),
-                            static_cast<bool *>(masks.GetDataPtr()),
-                            keys_valid.GetDataPtr(), values_valid.GetDataPtr(),
-                            n);
+    hashmap.UnpackIterators(
+            static_cast<core::iterator_t *>(iterators.GetDataPtr()),
+            static_cast<bool *>(masks.GetDataPtr()), keys_valid.GetDataPtr(),
+            values_valid.GetDataPtr(), n);
     EXPECT_EQ(keys_valid[0].Item<int>(), 100);
     EXPECT_EQ(keys_valid[1].Item<int>(), 500);
     EXPECT_EQ(keys_valid[3].Item<int>(), 900);
@@ -138,11 +138,11 @@ TEST_P(HashmapPermuteDevices, Insert) {
     core::Tensor masks({n}, core::Dtype::Bool, device);
     core::Tensor iterators({n},
                            core::Dtype(core::Dtype::DtypeCode::Object,
-                                       sizeof(iterator_t), "iterator_t"),
+                                       sizeof(core::iterator_t), "iterator_t"),
                            device);
 
     hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
-                   static_cast<iterator_t *>(iterators.GetDataPtr()),
+                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                    static_cast<bool *>(masks.GetDataPtr()), n);
 
     std::vector<int> keys_insert_val = {100, 500, 800, 900, 1000};
@@ -151,7 +151,7 @@ TEST_P(HashmapPermuteDevices, Insert) {
     core::Tensor values_insert(values_insert_val, {5}, core::Dtype::Int32,
                                device);
     hashmap.Insert(keys_insert.GetDataPtr(), values_insert.GetDataPtr(),
-                   static_cast<iterator_t *>(iterators.GetDataPtr()),
+                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                    static_cast<bool *>(masks.GetDataPtr()), n);
     EXPECT_EQ(hashmap.Size(), 7);
     EXPECT_EQ(masks[0].Item<bool>(), false);
@@ -161,16 +161,18 @@ TEST_P(HashmapPermuteDevices, Insert) {
     EXPECT_EQ(masks[4].Item<bool>(), true);
 
     n = hashmap.Size();
-    core::Tensor iterators_all({n},
-                               core::Dtype(core::Dtype::DtypeCode::Object,
-                                           sizeof(iterator_t), "iterator_t"),
-                               device);
+    core::Tensor iterators_all(
+            {n},
+            core::Dtype(core::Dtype::DtypeCode::Object,
+                        sizeof(core::iterator_t), "iterator_t"),
+            device);
     core::Tensor keys_all({n}, core::Dtype::Int32, device);
     core::Tensor values_all({n}, core::Dtype::Int32, device);
-    hashmap.GetIterators(static_cast<iterator_t *>(iterators_all.GetDataPtr()));
+    hashmap.GetIterators(
+            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()));
     hashmap.UnpackIterators(
-            static_cast<iterator_t *>(iterators_all.GetDataPtr()), nullptr,
-            keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
+            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()),
+            nullptr, keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
     std::unordered_map<int, int> key_value_all = {
             {100, 1}, {300, 3}, {500, 5},   {700, 7},
             {800, 8}, {900, 9}, {1000, 10},
@@ -203,11 +205,11 @@ TEST_P(HashmapPermuteDevices, Erase) {
     core::Tensor masks({n}, core::Dtype::Bool, device);
     core::Tensor iterators({n},
                            core::Dtype(core::Dtype::DtypeCode::Object,
-                                       sizeof(iterator_t), "iterator_t"),
+                                       sizeof(core::iterator_t), "iterator_t"),
                            device);
     utility::LogInfo("{}", iterators.ToString());
     hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
-                   static_cast<iterator_t *>(iterators.GetDataPtr()),
+                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                    static_cast<bool *>(masks.GetDataPtr()), n);
 
     std::vector<int> keys_erase_val = {100, 500, 800, 900, 1000};
@@ -222,18 +224,19 @@ TEST_P(HashmapPermuteDevices, Erase) {
     EXPECT_EQ(masks[4].Item<bool>(), false);
 
     n = hashmap.Size();
-    core::Tensor iterators_all({n},
-                               core::Dtype(core::Dtype::DtypeCode::Object,
-                                           sizeof(iterator_t), "iterator_t"),
-                               device);
+    core::Tensor iterators_all(
+            {n},
+            core::Dtype(core::Dtype::DtypeCode::Object,
+                        sizeof(core::iterator_t), "iterator_t"),
+            device);
     core::Tensor keys_all({n}, core::Dtype::Int32, device);
     core::Tensor values_all({n}, core::Dtype::Int32, device);
     size_t n_ = hashmap.GetIterators(
-            static_cast<iterator_t *>(iterators_all.GetDataPtr()));
+            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()));
     EXPECT_EQ(n, n_);
     hashmap.UnpackIterators(
-            static_cast<iterator_t *>(iterators_all.GetDataPtr()), nullptr,
-            keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
+            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()),
+            nullptr, keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
     std::unordered_map<int, int> key_value_all = {
             {300, 3},
             {700, 7},

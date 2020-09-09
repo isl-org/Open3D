@@ -26,12 +26,15 @@
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/core/hashmap/Traits.h"
 
 namespace open3d {
 namespace core {
 
 class Hashmap {
 public:
+    static constexpr uint32_t kDefaultElemsPerBucket = 4;
+
     // Default constructor for common users.
     Hashmap(size_t init_capacity,
             Dtype dtype_key,
@@ -47,7 +50,7 @@ public:
     /// 4) deallocate old hash table
     void Rehash(size_t buckets);
 
-    /// Parallel insert contiguous arrays of keys and values.
+    /// Parallel insert arrays of keys and values.
     /// Output iterators and masks can be nullptrs if return iterators are not
     /// to be processed.
     void Insert(const void* input_keys,
@@ -56,7 +59,7 @@ public:
                 bool* output_masks,
                 size_t count);
 
-    /// Parallel activate contiguous arrays of keys without copying values.
+    /// Parallel activate arrays of keys without copying values.
     /// Specifically useful for large value elements (e.g., a tensor), where we
     /// can do in-place management after activation.
     void Activate(const void* input_keys,
@@ -64,7 +67,7 @@ public:
                   bool* output_masks,
                   size_t count);
 
-    /// Parallel find a contiguous array of keys.
+    /// Parallel find an array of keys.
     /// Output iterators and masks CANNOT be nullptrs as we have to interpret
     /// them.
     void Find(const void* input_keys,
@@ -72,7 +75,7 @@ public:
               bool* output_masks,
               size_t count);
 
-    /// Parallel erase a contiguous array of keys.
+    /// Parallel erase an array of keys.
     /// Output masks can be a nullptr if return results are not to be processed.
     void Erase(const void* input_keys, bool* output_masks, size_t count);
 
@@ -96,20 +99,20 @@ public:
                          const void* input_values,
                          size_t count);
 
-    size_t Size();
+    size_t Size() const;
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
-    std::vector<size_t> BucketSizes();
+    std::vector<size_t> BucketSizes() const;
 
     /// Return size / bucket_count.
-    float LoadFactor();
+    float LoadFactor() const;
 
     void AssertKeyDtype(const Dtype& dtype_key) const;
     void AssertValueDtype(const Dtype& dtype_val) const;
 
-    Dtype GetKeyDtype() { return dtype_key_; }
-    Dtype GetValueDtype() { return dtype_val_; }
+    Dtype GetKeyDtype() const { return dtype_key_; }
+    Dtype GetValueDtype() const { return dtype_val_; }
 
 private:
     std::shared_ptr<DefaultDeviceHashmap> device_hashmap_;

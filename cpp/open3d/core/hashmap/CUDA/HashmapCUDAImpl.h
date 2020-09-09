@@ -26,6 +26,7 @@
 
 #include "open3d/core/hashmap/CUDA/InternalKvPairManager.h"
 #include "open3d/core/hashmap/CUDA/InternalNodeManager.h"
+#include "open3d/core/hashmap/CUDA/Macros.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 
 namespace open3d {
