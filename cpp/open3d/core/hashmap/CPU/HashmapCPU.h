@@ -258,10 +258,7 @@ void UnpackIteratorsStep(const iterator_t* input_iterators,
                     static_cast<uint8_t*>(output_keys) + dsize_key * tid;
             uint8_t* src_key_ptr =
                     static_cast<uint8_t*>(input_iterators[tid].first);
-
-            for (size_t i = 0; i < dsize_key; ++i) {
-                dst_key_ptr[i] = src_key_ptr[i];
-            }
+            std::memcpy(dst_key_ptr, src_key_ptr, dsize_key);
         }
 
         if (output_values != nullptr) {
@@ -269,10 +266,7 @@ void UnpackIteratorsStep(const iterator_t* input_iterators,
                     static_cast<uint8_t*>(output_values) + dsize_value * tid;
             uint8_t* src_value_ptr =
                     static_cast<uint8_t*>(input_iterators[tid].second);
-
-            for (size_t i = 0; i < dsize_value; ++i) {
-                dst_value_ptr[i] = src_value_ptr[i];
-            }
+            std::memcpy(dst_value_ptr, src_value_ptr, dsize_value);
         }
     }
 }
@@ -301,11 +295,7 @@ void AssignIteratorsStep(iterator_t* input_iterators,
                 static_cast<const uint8_t*>(input_values) + dsize_value * tid;
         uint8_t* dst_value_ptr =
                 static_cast<uint8_t*>(input_iterators[tid].second);
-
-        // Byte-by-byte copy, can be improved
-        for (size_t i = 0; i < dsize_value; ++i) {
-            dst_value_ptr[i] = src_value_ptr[i];
-        }
+        std::memcpy(dst_value_ptr, src_value_ptr, dsize_value);
     }
 }
 

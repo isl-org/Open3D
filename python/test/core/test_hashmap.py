@@ -37,16 +37,18 @@ from open3d_test import list_devices
 def test_creation(device):
     hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
                                device)
-    print(hashmap.size())
+    assert hashmap.size() == 0
 
 
 @pytest.mark.parametrize("device", list_devices())
 def test_insertion(device):
     hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
                                device)
-    keys = o3d.core.Tensor([100, 300, 500, 700, 900], device=device)
-    values = o3d.core.Tensor([1, 3, 5, 7, 9], device=device)
-    hashmap.insert(keys, values)
+    keys = o3d.core.Tensor([100, 300, 500, 700, 900, 900], device=device)
+    values = o3d.core.Tensor([1, 3, 5, 7, 9, 9], device=device)
+    iterators, masks = hashmap.insert(keys, values)
+
+    assert masks.to(o3d.core.Dtype.Int64).sum() == 5
 
 
 @pytest.mark.parametrize("device", list_devices())
