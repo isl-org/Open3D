@@ -109,8 +109,12 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     Tensor indices;
     Tensor distances;
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        std::vector<std::vector<size_t>> batch_indices(num_query_points);
-        std::vector<std::vector<scalar_t>> batch_distances(num_query_points);
+        Tensor batch_indices =
+                Tensor::Ones({num_query_points, knn}, Dtype::Int64);
+        Tensor batch_distances = Tensor::Ones({num_query_points, knn},
+                                              Dtype::FromType<scalar_t>());
+        batch_indices *= -1;
+        batch_distances *= -1;
 
         auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
                 holder_.get());
@@ -119,52 +123,53 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
         tbb::parallel_for(
                 tbb::blocked_range<size_t>(0, num_query_points),
                 [&](const tbb::blocked_range<size_t> &r) {
-                    std::vector<size_t> single_indices(knn);
-                    std::vector<scalar_t> single_distances(knn);
                     for (size_t i = r.begin(); i != r.end(); ++i) {
-                        size_t num_results = holder->index_->knnSearch(
-                                static_cast<scalar_t *>(
-                                        query_points[i].GetDataPtr()),
-                                static_cast<size_t>(knn), single_indices.data(),
-                                single_distances.data());
+                        std::vector<size_t> single_indices(knn);
+                        std::vector<scalar_t> single_distances(knn);
+                        // search
+                        int64_t num_results =
+                                static_cast<int64_t>(holder->index_->knnSearch(
+                                        static_cast<scalar_t *>(
+                                                query_points[i].GetDataPtr()),
+                                        static_cast<size_t>(knn),
+                                        single_indices.data(),
+                                        single_distances.data()));
                         single_indices.resize(num_results);
                         single_distances.resize(num_results);
-                        batch_indices[i] = single_indices;
-                        batch_distances[i] = single_distances;
+                        std::vector<int64_t> single_indices_2(
+                                single_indices.begin(), single_indices.end());
+
+                        // set single result to batch result
+                        Tensor single_indices_t = Tensor(
+                                single_indices_2, {num_results}, Dtype::Int64);
+                        Tensor single_distances_t =
+                                Tensor(single_distances, {num_results},
+                                       Dtype::FromType<scalar_t>());
+                        batch_indices.SetItem(
+                                {TensorKey::Index(i),
+                                 TensorKey::Slice(core::None, num_results,
+                                                  core::None)},
+                                single_indices_t);
+                        batch_distances.SetItem(
+                                {TensorKey::Index(i),
+                                 TensorKey::Slice(core::None, num_results,
+                                                  core::None)},
+                                single_distances_t);
                     }
                 });
-
         // check if the number of neighbors are same
-        if (!all_of(batch_indices.begin(), batch_indices.end(),
-                    [&](std::vector<size_t> i) {
-                        return i.size() == batch_indices[0].size();
-                    })) {
+        Tensor check_valid =
+                batch_indices.Ge(0).To(Dtype::UInt8).Sum({-1}, false);
+        if (check_valid.Ne(check_valid[0].Item<uint8_t>()).Any()) {
             utility::LogError(
                     "[NanoFlannIndex::SearchKnn] The number of neighbors are "
                     "different. Something went wrong.");
         }
-
-        // flatten
-        std::vector<int64_t> batch_indices2;
-        std::vector<scalar_t> batch_distances2;
-        for (auto i = 0; i < num_query_points; i++) {
-            batch_indices2.insert(batch_indices2.end(),
-                                  batch_indices[i].begin(),
-                                  batch_indices[i].end());
-            batch_distances2.insert(batch_distances2.end(),
-                                    batch_distances[i].begin(),
-                                    batch_distances[i].end());
-        }
-
-        // make result Tensors
-        auto num_neighbors = static_cast<int64_t>(batch_indices[0].size());
-        if (num_neighbors > 0) {
-            indices = Tensor(batch_indices2, {num_query_points, num_neighbors},
-                             Dtype::Int64);
-            distances =
-                    Tensor(batch_distances2, {num_query_points, num_neighbors},
-                           Dtype::FromType<scalar_t>());
-        }
+        // slice non-zero items
+        indices = batch_indices.GetItem(
+                TensorKey::IndexTensor(batch_indices.Ge(0)));
+        distances = batch_distances.GetItem(
+                TensorKey::IndexTensor(batch_distances.Ge(0)));
     });
     return std::make_pair(indices, distances);
 };
