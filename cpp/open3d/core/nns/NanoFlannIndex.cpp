@@ -159,17 +159,21 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                 });
         // check if the number of neighbors are same
         Tensor check_valid =
-                batch_indices.Ge(0).To(Dtype::UInt8).Sum({-1}, false);
-        if (check_valid.Ne(check_valid[0].Item<uint8_t>()).Any()) {
+                batch_indices.Ge(0).To(Dtype::Int64).Sum({-1}, false);
+        int64_t num_neighbors = check_valid[0].Item<int64_t>();
+        if (check_valid.Ne(num_neighbors).Any()) {
             utility::LogError(
                     "[NanoFlannIndex::SearchKnn] The number of neighbors are "
                     "different. Something went wrong.");
         }
         // slice non-zero items
-        indices = batch_indices.GetItem(
-                TensorKey::IndexTensor(batch_indices.Ge(0)));
-        distances = batch_distances.GetItem(
-                TensorKey::IndexTensor(batch_distances.Ge(0)));
+        indices = batch_indices
+                          .GetItem(TensorKey::IndexTensor(batch_indices.Ge(0)))
+                          .View({num_query_points, num_neighbors});
+        distances =
+                batch_distances
+                        .GetItem(TensorKey::IndexTensor(batch_distances.Ge(0)))
+                        .View({num_query_points, num_neighbors});
     });
     return std::make_pair(indices, distances);
 };
