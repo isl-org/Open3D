@@ -60,6 +60,6 @@ std::shared_ptr<CUDAHashmap<Hash, KeyEq>> CreateTemplateCUDAHashmap(
     return std::make_shared<CUDAHashmap<Hash, KeyEq>>(
             init_buckets, init_capacity, dsize_key, dsize_value, device);
 }
-  
+
 }  // namespace core
 }  // namespace open3d
