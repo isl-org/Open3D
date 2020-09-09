@@ -42,7 +42,10 @@ void pybind_rendering_classes(py::module &m) {
     py::class_<Renderer> renderer(
             m, "Renderer",
             "Renderer class that manages 3D resources. Get from gui.Window.");
-    ;
+    renderer.def("set_clear_color", &Renderer::SetClearColor,
+                 "Sets the background color for the renderer, [r, g, b, a]. "
+                 "Applies to everything being rendered, so it essentially acts "
+                 "as the background color of the window");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",

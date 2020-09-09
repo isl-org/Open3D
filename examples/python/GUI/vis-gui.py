@@ -203,6 +203,7 @@ class AppWindow:
         # 3D widget
         self._scene = gui.SceneWidget()
         self._scene.scene = rendering.Open3DScene(w.renderer)
+        self._scene.set_on_sun_direction_changed(self._on_sun_dir)
 
         # ---- Settings panel ----
         # Rather than specifying sizes in pixels, which may vary in size based
@@ -232,14 +233,24 @@ class AppWindow:
                                          gui.Margins(em, 0, 0, 0))
 
         self._arcball_button = gui.Button("Arcball")
+        self._arcball_button.horizontal_padding_em = 0.5
+        self._arcball_button.vertical_padding_em = 0
         self._arcball_button.set_on_clicked(self._set_mouse_mode_rotate)
         self._fly_button = gui.Button("Fly")
+        self._fly_button.horizontal_padding_em = 0.5
+        self._fly_button.vertical_padding_em = 0
         self._fly_button.set_on_clicked(self._set_mouse_mode_fly)
         self._model_button = gui.Button("Model")
+        self._model_button.horizontal_padding_em = 0.5
+        self._model_button.vertical_padding_em = 0
         self._model_button.set_on_clicked(self._set_mouse_mode_model)
         self._sun_button = gui.Button("Sun")
+        self._sun_button.horizontal_padding_em = 0.5
+        self._sun_button.vertical_padding_em = 0
         self._sun_button.set_on_clicked(self._set_mouse_mode_sun)
         self._ibl_button = gui.Button("Environment")
+        self._ibl_button.horizontal_padding_em = 0.5
+        self._ibl_button.vertical_padding_em = 0
         self._ibl_button.set_on_clicked(self._set_mouse_mode_ibl)
         view_ctrls.add_child(gui.Label("Mouse controls"))
         # We want two rows of buttons, so make two horizontal layouts. We also
@@ -444,7 +455,11 @@ class AppWindow:
         self._apply_settings()
 
     def _apply_settings(self):
-        self._scene.set_background_color(self.settings.bg_color)
+        bg_color = [
+            self.settings.bg_color.red, self.settings.bg_color.green,
+            self.settings.bg_color.blue, self.settings.bg_color.alpha
+        ]
+        self.window.renderer.set_clear_color(bg_color)
         self._scene.scene.show_skybox(self.settings.show_skybox)
         self._scene.scene.show_axes(self.settings.show_axes)
         if self.settings.new_ibl_name is not None:
