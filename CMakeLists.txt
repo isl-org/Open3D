@@ -177,8 +177,14 @@ endif()
 
 # Set BLAS/LAPACK library preference.
 if(("${PROCESSOR_ARCH}" STREQUAL "armv8") OR (${PROCESSOR_ARCH} STREQUAL "armv7"))
-    set(USE_BLAS ON)
-    message(STATUS "ARM CPU detected, set USE_BLAS=ON.")
+    if(NOT USE_BLAS)
+        set(USE_BLAS ON)
+        message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
+    endif()
+    if(BUILD_GUI)
+        set(BUILD_GUI OFF)
+        message(WARNING "ARM CPU detected, setting BUILD_GUI=OFF.")
+    endif()
 endif()
 
 # CMake modules
