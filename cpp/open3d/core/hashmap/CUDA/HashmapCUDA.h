@@ -40,8 +40,6 @@
 
 #pragma once
 
-// Interface for the CUDA hashmap. Separated from HashmapCUDA.cuh for brevity.
-
 #include <thrust/pair.h>
 
 #include <cassert>

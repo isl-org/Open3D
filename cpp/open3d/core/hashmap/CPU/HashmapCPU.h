@@ -26,8 +26,6 @@
 
 #pragma once
 
-// Interface for the CPU hashmap. Separated from HashmapCPU.hpp for brevity.
-
 #include <unordered_map>
 
 #include "open3d/core/hashmap/DeviceHashmap.h"
@@ -90,6 +88,7 @@ private:
     // Valid kv_pairs
     std::vector<iterator_t> kv_pairs_;
 };
+
 template <typename Hash, typename KeyEq>
 CPUHashmap<Hash, KeyEq>::CPUHashmap(size_t init_buckets,
                                     size_t init_capacity,
@@ -105,7 +104,7 @@ CPUHashmap<Hash, KeyEq>::CPUHashmap(size_t init_buckets,
               device) {
     impl_ = std::make_shared<std::unordered_map<void*, void*, Hash, KeyEq>>(
             init_buckets, Hash(dsize_key), KeyEq(dsize_key));
-};
+}
 
 template <typename Hash, typename KeyEq>
 CPUHashmap<Hash, KeyEq>::~CPUHashmap() {
@@ -114,12 +113,12 @@ CPUHashmap<Hash, KeyEq>::~CPUHashmap() {
         MemoryManager::Free(kv_pair.second, this->device_);
     }
     impl_->clear();
-};
+}
 
 template <typename Hash, typename KeyEq>
 size_t CPUHashmap<Hash, KeyEq>::Size() {
     return impl_->size();
-};
+}
 
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
@@ -248,6 +247,7 @@ void UnpackIteratorsStep(const iterator_t* input_iterators,
                          const bool* input_masks,
                          void* output_keys,
                          void* output_values,
+                         const Device& device,
                          size_t dsize_key,
                          size_t dsize_value,
                          size_t tid) {
@@ -258,7 +258,8 @@ void UnpackIteratorsStep(const iterator_t* input_iterators,
                     static_cast<uint8_t*>(output_keys) + dsize_key * tid;
             uint8_t* src_key_ptr =
                     static_cast<uint8_t*>(input_iterators[tid].first);
-            std::memcpy(dst_key_ptr, src_key_ptr, dsize_key);
+            MemoryManager::Memcpy(dst_key_ptr, device, src_key_ptr, device,
+                                  dsize_key);
         }
 
         if (output_values != nullptr) {
@@ -266,7 +267,8 @@ void UnpackIteratorsStep(const iterator_t* input_iterators,
                     static_cast<uint8_t*>(output_values) + dsize_value * tid;
             uint8_t* src_value_ptr =
                     static_cast<uint8_t*>(input_iterators[tid].second);
-            std::memcpy(dst_value_ptr, src_value_ptr, dsize_value);
+            MemoryManager::Memcpy(dst_value_ptr, device, src_value_ptr, device,
+                                  dsize_value);
         }
     }
 }
@@ -279,14 +281,15 @@ void CPUHashmap<Hash, KeyEq>::UnpackIterators(const iterator_t* input_iterators,
                                               size_t iterator_count) {
     for (size_t i = 0; i < iterator_count; ++i) {
         UnpackIteratorsStep(input_iterators, input_masks, output_keys,
-                            output_values, this->dsize_key_, this->dsize_value_,
-                            i);
+                            output_values, this->device_, this->dsize_key_,
+                            this->dsize_value_, i);
     }
 }
 
 void AssignIteratorsStep(iterator_t* input_iterators,
                          const bool* input_masks,
                          const void* input_values,
+                         const Device& device,
                          size_t dsize_value,
                          size_t tid) {
     // Valid queries
@@ -295,7 +298,8 @@ void AssignIteratorsStep(iterator_t* input_iterators,
                 static_cast<const uint8_t*>(input_values) + dsize_value * tid;
         uint8_t* dst_value_ptr =
                 static_cast<uint8_t*>(input_iterators[tid].second);
-        std::memcpy(dst_value_ptr, src_value_ptr, dsize_value);
+        MemoryManager::Memcpy(dst_value_ptr, device, src_value_ptr, device,
+                              dsize_value);
     }
 }
 
@@ -306,7 +310,7 @@ void CPUHashmap<Hash, KeyEq>::AssignIterators(iterator_t* input_iterators,
                                               size_t iterator_count) {
     for (size_t i = 0; i < iterator_count; ++i) {
         AssignIteratorsStep(input_iterators, input_masks, input_values,
-                            this->dsize_value_, i);
+                            this->device_, this->dsize_value_, i);
     }
 }
 

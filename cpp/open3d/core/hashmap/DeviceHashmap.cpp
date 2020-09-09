@@ -46,27 +46,19 @@ std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
         size_t dsize_key,
         size_t dsize_value,
         const Device& device) {
-    static std::unordered_map<
-            Device::DeviceType,
-            std::function<std::shared_ptr<DefaultDeviceHashmap>(
-                    size_t, size_t, size_t, size_t, Device)>,
-            utility::hash_enum_class>
-            map_device_type_to_hashmap_constructor = {
-                {Device::DeviceType::CPU, CreateDefaultCPUHashmap},
-#if defined(BUILD_CUDA_MODULE)
-                {Device::DeviceType::CUDA, CreateDefaultCUDAHashmap}
-#endif
-            };
-
-    if (map_device_type_to_hashmap_constructor.find(device.GetType()) ==
-        map_device_type_to_hashmap_constructor.end()) {
-        utility::LogError("CreateDefaultDeviceHashmap: Unimplemented device");
+    if (device.GetType() == Device::DeviceType::CPU) {
+        return CreateDefaultCPUHashmap(init_buckets, init_capacity, dsize_key,
+                                       dsize_value, device);
     }
-
-    auto constructor =
-            map_device_type_to_hashmap_constructor.at(device.GetType());
-    return constructor(init_buckets, init_capacity, dsize_key, dsize_value,
-                       device);
+#if defined(BUILD_CUDA_MODULE)
+    else if (device.GetType() == Device::DeviceType::CUDA) {
+        return CreateDefaultCUDAHashmap(init_buckets, init_capacity, dsize_key,
+                                        dsize_value, device);
+    }
+#endif
+    else {
+        utility::LogError("[CreateDefaultDeviceHashmap]: Unimplemented device");
+    }
 }
 
 }  // namespace core

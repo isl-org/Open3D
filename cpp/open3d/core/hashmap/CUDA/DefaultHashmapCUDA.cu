@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TemplateHashmapCUDA.cuh"
+#include "open3d/core/hashmap/CUDA/TemplateHashmapCUDA.cuh"
 
 namespace open3d {
 namespace core {
 
+/// Non-templated factory
 std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCUDAHashmap(
         size_t init_buckets,
         size_t init_capacity,

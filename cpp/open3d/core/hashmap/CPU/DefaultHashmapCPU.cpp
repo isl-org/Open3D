@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TemplateHashmapCPU.hpp"
+#include "open3d/core/hashmap/CPU/TemplateHashmapCPU.hpp"
 
 namespace open3d {
 namespace core {
 
+/// Non-templated factory
 std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCPUHashmap(
         size_t init_buckets,
         size_t init_capacity,

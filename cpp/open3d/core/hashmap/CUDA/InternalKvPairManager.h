@@ -34,7 +34,6 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/hashmap/Traits.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace core {
@@ -167,16 +166,10 @@ public:
     }
 
     ~InternalKvPairManager() {
-        utility::Timer timer;
-        timer.Start();
         MemoryManager::Free(gpu_context_.heap_counter_, device_);
         MemoryManager::Free(gpu_context_.heap_, device_);
         MemoryManager::Free(gpu_context_.keys_, device_);
         MemoryManager::Free(gpu_context_.values_, device_);
-
-        timer.Stop();
-        utility::LogInfo("[InternalKvPairManager] destructor {}",
-                         timer.GetDuration());
     }
 
     std::vector<int> DownloadHeap() {

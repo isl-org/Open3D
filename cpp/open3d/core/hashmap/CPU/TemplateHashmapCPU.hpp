@@ -26,13 +26,12 @@
 
 #pragma once
 
-// Implementation for the CPU hashmap. Separated from HashmapCPU.h for brevity.
-
 #include "open3d/core/hashmap/CPU/HashmapCPU.h"
 
 namespace open3d {
 namespace core {
 
+/// Templated factory
 template <typename Hash, typename KeyEq>
 std::shared_ptr<CPUHashmap<Hash, KeyEq>> CreateTemplateCPUHashmap(
         size_t init_buckets,
