@@ -145,11 +145,10 @@ case "$1" in
                 ;;
 
     delete-image )
-        gcloud container images untag "$DC_IMAGE_TAG"
+        gcloud container images untag "$DC_IMAGE_TAG" --quiet
         # Clean up images without tags - keep :latest
         gcloud container images list-tags "$DC_IMAGE" --filter='-tags:*' --format='get(digest)' --limit=unlimited \
             | xargs -I {arg} gcloud container images delete "${DC_IMAGE}@{arg}" --quiet
-        gcloud container images delete "$DC_IMAGE_TAG"
         ;;
 
     delete-vm )
