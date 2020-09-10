@@ -402,8 +402,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     Impl::Item *new_selection = nullptr;
 
     std::function<void(Impl::Item &)> DrawItem;
-    DrawItem = [&DrawItem, this, &frame, &context,
-                &new_selection, &result](Impl::Item &item) {
+    DrawItem = [&DrawItem, this, &frame, &context, &new_selection,
+                &result](Impl::Item &item) {
         int height = item.cell->CalcPreferredSize(context.theme).height;
 
         // ImGUI's tree doesn't seem to support selected items,
@@ -431,9 +431,9 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         }
         bool is_selectable =
                 (item.children.empty() || impl_->can_select_parents_);
-        auto DrawThis = [this, &tree_frame = frame, &context, &new_selection, &result](
-                                TreeView::Impl::Item &item, int height,
-                                bool is_selectable) {
+        auto DrawThis = [this, &tree_frame = frame, &context, &new_selection,
+                         &result](TreeView::Impl::Item &item, int height,
+                                  bool is_selectable) {
             ImGui::SameLine(0, 0);
             auto x = int(std::round(ImGui::GetCursorScreenPos().x));
             auto y = int(std::round(ImGui::GetCursorScreenPos().y));
