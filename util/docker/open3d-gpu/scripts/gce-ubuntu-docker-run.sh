@@ -47,6 +47,7 @@ VM_IMAGE=open3d-gpu-ci-base-$(date +%Y%m%d)
 # Container configuration
 REGISTRY_HOSTNAME=gcr.io
 DC_IMAGE_TAG="$REGISTRY_HOSTNAME/$GCE_PROJECT/open3d-gpu-ci-$UBUNTU_VERSION:$GITHUB_SHA"
+DC_IMAGE_LATEST_TAG="$REGISTRY_HOSTNAME/$GCE_PROJECT/open3d-gpu-ci-$UBUNTU_VERSION:latest"
 
 
 case "$1" in
@@ -59,16 +60,19 @@ case "$1" in
 
       # Build the Docker image
     docker-build )
+        docker pull "$DC_IMAGE_LATEST_TAG" || true        # Pull previous image as cache
         docker build -t "$DC_IMAGE_TAG" \
             -f util/docker/open3d-gpu/Dockerfile \
             --build-arg UBUNTU_VERSION="$UBUNTU_VERSION" \
             --build-arg NVIDIA_DRIVER_VERSION="${NVIDIA_DRIVER_VERSION}" \
             .
+        docker tag "$DC_IMAGE_TAG" "$DC_IMAGE_LATEST_TAG"
         ;;
 
       # Push the Docker image to Google Container Registry
     docker-push )
         docker push "$DC_IMAGE_TAG"
+        docker push "$DC_IMAGE_LATEST_TAG"
         ;;
 
 
