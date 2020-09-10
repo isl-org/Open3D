@@ -318,6 +318,16 @@ def test_getitem(device):
                                                                      0:-1:2])
     np.testing.assert_equal(o3_t[0, 1, :].cpu().numpy(), np_t[0, 1, :])
 
+    # Slice out-of-range
+    np.testing.assert_equal(o3_t[1:6].cpu().numpy(), np_t[1:6])
+    np.testing.assert_equal(o3_t[2:5, -10:20].cpu().numpy(), np_t[2:5, -10:20])
+    np.testing.assert_equal(o3_t[2:2, 3:3, 4:4].cpu().numpy(), np_t[2:2, 3:3,
+                                                                    4:4])
+    np.testing.assert_equal(o3_t[2:20, 3:30, 4:40].cpu().numpy(),
+                            np_t[2:20, 3:30, 4:40])
+    np.testing.assert_equal(o3_t[-2:20, -3:30, -4:40].cpu().numpy(),
+                            np_t[-2:20, -3:30, -4:40])
+
     # Slice the slice
     np.testing.assert_equal(o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].cpu().numpy(),
                             np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3])
