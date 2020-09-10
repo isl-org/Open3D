@@ -161,3 +161,13 @@ def test_radius_search():
                                 o3c.Tensor.from_numpy(query_batches),
                                 o3c.Tensor.from_numpy(dataset_batches),
                                 11.0).numpy()
+
+
+def test_specific_shapes():
+    queries = o3c.Tensor.ones((1957, 3), dtype=o3c.Dtype.Float32)
+    supports = o3c.Tensor.ones((3604, 3), dtype=o3c.Dtype.Float32)
+    q_batches = o3c.Tensor([324, 129, 1504], dtype=o3c.Dtype.Int32)
+    s_batches = o3c.Tensor([658, 179, 2767], dtype=o3c.Dtype.Int32)
+    radius = 0.1
+    indices = radius_search(queries, supports, q_batches, s_batches, radius)
+    print(indices.shape)
