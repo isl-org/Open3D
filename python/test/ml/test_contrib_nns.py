@@ -164,6 +164,9 @@ def test_radius_search():
 
 
 def test_specific_shapes():
+    # build opne3d first, assuming in the build folder
+    # $ make install-pip-package -j
+    # $ pytest ../python/test/ml/test_contrib_nns.py::test_specific_shapes -s
     queries = o3c.Tensor.ones((1957, 3), dtype=o3c.Dtype.Float32)
     supports = o3c.Tensor.ones((3604, 3), dtype=o3c.Dtype.Float32)
     q_batches = o3c.Tensor([324, 129, 1504], dtype=o3c.Dtype.Int32)
