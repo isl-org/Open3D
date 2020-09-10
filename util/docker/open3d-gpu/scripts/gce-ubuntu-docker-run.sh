@@ -15,10 +15,12 @@ set -e
 CI_CONFIG_ID=${CI_CONFIG_ID:=0}
 
 # CI configuration specification
-SHARED=( OFF ON OFF ON OFF )
-BUILD_ML_OPS=( OFF ON OFF ON ON )
-BUILD_CUDA_MODULE=( OFF OFF ON ON ON )
-BUILD_RPC_INTERFACE=( ON ON OFF OFF ON )
+SHARED=( OFF ON OFF ON OFF OFF )
+BUILD_ML_OPS=( OFF ON OFF ON ON ON )
+BUILD_CUDA_MODULE=( OFF OFF ON ON ON ON )
+BUILD_RPC_INTERFACE=( ON ON OFF OFF ON ON )
+UBUNTU_VERSION_LIST=( bionic bionic bionic bionic bionic focal )
+UBUNTU_VERSION=${UBUNTU_VERSION:-${UBUNTU_VERSION_LIST[$CI_CONFIG_ID]}}
 BUILD_TENSORFLOW_OPS=( "${BUILD_ML_OPS[@]}" )
 BUILD_PYTORCH_OPS=( "${BUILD_ML_OPS[@]}" )
 
@@ -43,11 +45,10 @@ GCE_VM_CUSTOM_IMAGE_FAMILY=ubuntu-os-docker-gpu-2004-lts
 VM_IMAGE=open3d-gpu-ci-base-$(date +%Y%m%d)
 
 # Container configuration
-CONTAINER_BASE_OS=ubuntu18.04
 REGISTRY_HOSTNAME=gcr.io
-DC_IMAGE_TAG="$REGISTRY_HOSTNAME/$GCE_PROJECT/open3d-gpu-ci-base:$GITHUB_SHA"
-CUDA_VERSION=10.1
-CUDNN="cudnn7-"             # {"", "cudnn7-", "cudnn8-"}
+DC_IMAGE="$REGISTRY_HOSTNAME/$GCE_PROJECT/open3d-gpu-ci-$UBUNTU_VERSION"
+DC_IMAGE_TAG="$DC_IMAGE:$GITHUB_SHA"
+DC_IMAGE_LATEST_TAG="$DC_IMAGE:latest"
 
 
 case "$1" in
@@ -60,16 +61,20 @@ case "$1" in
 
       # Build the Docker image
     docker-build )
+        # Pull previous image as cache: disabled due to disk space
+        # docker pull "$DC_IMAGE_LATEST_TAG" || true
         docker build -t "$DC_IMAGE_TAG" \
             -f util/docker/open3d-gpu/Dockerfile \
-            --build-arg CUDA_VERSION="$CUDA_VERSION" \
-            --build-arg CONTAINER_BASE_OS="$CONTAINER_BASE_OS" \
-            --build-arg CUDNN="$CUDNN" .
+            --build-arg UBUNTU_VERSION="$UBUNTU_VERSION" \
+            --build-arg NVIDIA_DRIVER_VERSION="${NVIDIA_DRIVER_VERSION}" \
+            .
+        docker tag "$DC_IMAGE_TAG" "$DC_IMAGE_LATEST_TAG"
         ;;
 
       # Push the Docker image to Google Container Registry
     docker-push )
         docker push "$DC_IMAGE_TAG"
+        docker push "$DC_IMAGE_LATEST_TAG"
         ;;
 
 
@@ -140,7 +145,10 @@ case "$1" in
                 ;;
 
     delete-image )
-        gcloud container images delete "$DC_IMAGE_TAG"
+        gcloud container images untag "$DC_IMAGE_TAG" --quiet
+        # Clean up images without tags - keep :latest
+        gcloud container images list-tags "$DC_IMAGE" --filter='-tags:*' --format='get(digest)' --limit=unlimited \
+            | xargs -I {arg} gcloud container images delete "${DC_IMAGE}@{arg}" --quiet
         ;;
 
     delete-vm )
