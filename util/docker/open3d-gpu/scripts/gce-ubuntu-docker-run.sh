@@ -47,8 +47,8 @@ VM_IMAGE=open3d-gpu-ci-base-$(date +%Y%m%d)
 # Container configuration
 REGISTRY_HOSTNAME=gcr.io
 DC_IMAGE="$REGISTRY_HOSTNAME/$GCE_PROJECT/open3d-gpu-ci-$UBUNTU_VERSION"
-DC_IMAGE_TAG="$DC_IMAGE_TAG:$GITHUB_SHA"
-DC_IMAGE_LATEST_TAG="$DC_IMAGE_TAG:latest"
+DC_IMAGE_TAG="$DC_IMAGE:$GITHUB_SHA"
+DC_IMAGE_LATEST_TAG="$DC_IMAGE:latest"
 
 
 case "$1" in
