@@ -208,12 +208,13 @@ private:
             filament::RenderableManager::Builder& builder,
             const Material& material);
     enum BufferReuse { kNo, kYes };
-    bool CreateAndAddFilamentEntity(const std::string& object_name,
-                                    GeometryBuffersBuilder& buffer_builder,
-                                    VertexBufferHandle vb,
-                                    IndexBufferHandle ib,
-                                    const Material& material,
-                                    BufferReuse reusing_vertex_buffer = BufferReuse::kNo);
+    bool CreateAndAddFilamentEntity(
+            const std::string& object_name,
+            GeometryBuffersBuilder& buffer_builder,
+            VertexBufferHandle vb,
+            IndexBufferHandle ib,
+            const Material& material,
+            BufferReuse reusing_vertex_buffer = BufferReuse::kNo);
 
     filament::Engine& engine_;
     FilamentResourceManager& resource_mgr_;

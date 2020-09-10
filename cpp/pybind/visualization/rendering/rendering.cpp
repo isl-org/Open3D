@@ -178,26 +178,20 @@ void pybind_rendering_classes(py::module &m) {
                  "Sets the camera with the given name as the active camera for "
                  "the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(const std::string &,
-                                  const geometry::Geometry3D &,
-                                  const Material &,
-                                  const std::string&,
-                                  size_t)) &
+                 (bool (Scene::*)(
+                         const std::string &, const geometry::Geometry3D &,
+                         const Material &, const std::string &, size_t)) &
                          Scene::AddGeometry,
                  "name"_a, "geometry"_a, "material"_a,
-                 "downsampled_name"_a = "",
-                 "downsample_threshold"_a = SIZE_MAX,
+                 "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(const std::string &,
-                                  const tgeometry::PointCloud &,
-                                  const Material &,
-                                  const std::string&,
-                                  size_t)) &
+                 (bool (Scene::*)(
+                         const std::string &, const tgeometry::PointCloud &,
+                         const Material &, const std::string &, size_t)) &
                          Scene::AddGeometry,
                  "name"_a, "geometry"_a, "material"_a,
-                 "downsampled_name"_a = "",
-                 "downsample_threshold"_a = SIZE_MAX,
+                 "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
             .def("enable_indirect_light", &Scene::EnableIndirectLight,
                  "Enables or disables indirect lighting")

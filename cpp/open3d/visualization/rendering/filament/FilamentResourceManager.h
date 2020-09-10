@@ -126,9 +126,7 @@ public:
         size_t use_count = 0;
 
         BoxedResource() {}
-        BoxedResource(std::shared_ptr<ResourceType> p)
-            : ptr(p), use_count(1)
-        {}
+        BoxedResource(std::shared_ptr<ResourceType> p) : ptr(p), use_count(1) {}
 
         std::shared_ptr<ResourceType> operator->() { return ptr; }
     };
@@ -138,8 +136,7 @@ private:
 
     template <class ResourceType>
     using ResourcesContainer =
-            std::unordered_map<REHandle_abstract,
-                               BoxedResource<ResourceType>>;
+            std::unordered_map<REHandle_abstract, BoxedResource<ResourceType>>;
 
     ResourcesContainer<filament::MaterialInstance> material_instances_;
     ResourcesContainer<filament::Material> materials_;

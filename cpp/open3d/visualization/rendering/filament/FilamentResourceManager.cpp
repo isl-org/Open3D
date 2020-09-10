@@ -81,9 +81,10 @@ std::shared_ptr<ResourceType> MakeShared(ResourceType* pointer,
 }
 
 template <class ResourceType>
-FilamentResourceManager::BoxedResource<ResourceType> BoxResource(ResourceType* pointer,
-                                                                 filament::Engine& engine) {
-    return FilamentResourceManager::BoxedResource<ResourceType>(MakeShared(pointer, engine));
+FilamentResourceManager::BoxedResource<ResourceType> BoxResource(
+        ResourceType* pointer, filament::Engine& engine) {
+    return FilamentResourceManager::BoxedResource<ResourceType>(
+            MakeShared(pointer, engine));
 }
 
 template <class Handle, class ResourceType>
@@ -758,7 +759,8 @@ void FilamentResourceManager::LoadDefaults() {
     const auto gradient_path = resource_root + "/unlitGradient.filamat";
     auto gradient_mat = LoadMaterialFromFile(gradient_path, engine_);
     gradient_mat->setDefaultParameter("pointSize", 3.f);
-    materials_[kDefaultUnlitGradientShader] = BoxResource(gradient_mat, engine_);
+    materials_[kDefaultUnlitGradientShader] =
+            BoxResource(gradient_mat, engine_);
 
     // NOTE: Legacy. Can be removed soon.
     const auto hdepth = CreateMaterial(ResourceLoadRequest(depth_path.data()));

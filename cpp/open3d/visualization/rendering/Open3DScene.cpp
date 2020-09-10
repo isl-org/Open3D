@@ -184,8 +184,8 @@ void Open3DScene::AddGeometry(
         // If the downsampled object got created, add it. It may not have been
         // created if downsampling wasn't enabled or if the object does not meet
         // the threshold.
-        if (add_downsampled_copy_for_fast_rendering
-            && scene->HasGeometry(fast_name)) {
+        if (add_downsampled_copy_for_fast_rendering &&
+            scene->HasGeometry(fast_name)) {
             info.fast_name = fast_name;
             geometries_[fast_name] = info;
         }
@@ -197,10 +197,11 @@ void Open3DScene::AddGeometry(
     RecreateAxis(scene, bounds_, false);
 }
 
-void Open3DScene::AddGeometry(const std::string& name,
-                              const tgeometry::PointCloud* geom,
-                              const Material& mat,
-                              bool add_downsampled_copy_for_fast_rendering /*= true*/) {
+void Open3DScene::AddGeometry(
+        const std::string& name,
+        const tgeometry::PointCloud* geom,
+        const Material& mat,
+        bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;
     std::string fast_name;
     if (add_downsampled_copy_for_fast_rendering) {
@@ -215,8 +216,8 @@ void Open3DScene::AddGeometry(const std::string& name,
         // If the downsampled object got created, add it. It may not have been
         // created if downsampling wasn't enabled or if the object does not meet
         // the threshold.
-        if (add_downsampled_copy_for_fast_rendering
-            && scene->HasGeometry(fast_name)) {
+        if (add_downsampled_copy_for_fast_rendering &&
+            scene->HasGeometry(fast_name)) {
             info.fast_name = fast_name;
         }
         geometries_[name] = info;

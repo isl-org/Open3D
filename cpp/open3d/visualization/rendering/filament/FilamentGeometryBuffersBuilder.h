@@ -145,7 +145,8 @@ public:
             const override;
 
     Buffers ConstructBuffers() override;
-    IndexBufferHandle ConstructDownsampledIndexBuffer(size_t max_index, size_t step);
+    IndexBufferHandle ConstructDownsampledIndexBuffer(size_t max_index,
+                                                      size_t step);
     filament::Box ComputeAABB() override;
 
 private:

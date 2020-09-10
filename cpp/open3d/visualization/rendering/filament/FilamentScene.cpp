@@ -241,13 +241,14 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
-    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
-                                              vb, ib, material);
+    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder, vb,
+                                              ib, material);
     if (success && ib_downsampled) {
-        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder,
-                                        vb, ib_downsampled, material,
+        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
+                                        ib_downsampled, material,
                                         BufferReuse::kYes)) {
-            utility::LogWarning("Internal error: could not create downsampled point cloud");
+            utility::LogWarning(
+                    "Internal error: could not create downsampled point cloud");
         }
     }
     return success;
@@ -283,18 +284,19 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
-    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
-                                              vb, ib, material);
+    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder, vb,
+                                              ib, material);
     if (success && ib_downsampled) {
-        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder,
-                                        vb, ib_downsampled, material,
+        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
+                                        ib_downsampled, material,
                                         BufferReuse::kYes)) {
             // If we failed to create a downsampled cloud, which would be
             // unlikely, create another entity with the original buffers
             // (since that succeeded).
-            utility::LogWarning("Internal error: could not create downsampled point cloud");
-            CreateAndAddFilamentEntity(downsampled_name, *buffer_builder,
-                                        vb, ib, material, BufferReuse::kYes);
+            utility::LogWarning(
+                    "Internal error: could not create downsampled point cloud");
+            CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
+                                       ib, material, BufferReuse::kYes);
         }
     }
     return success;
@@ -335,12 +337,13 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     return true;
 }
 
-bool FilamentScene::CreateAndAddFilamentEntity(const std::string& object_name,
-                                               GeometryBuffersBuilder& buffer_builder,
-                                               VertexBufferHandle vb,
-                                               IndexBufferHandle ib,
-                                               const Material& material,
-                                               BufferReuse reusing_vertex_buffer /*= kNo*/) {
+bool FilamentScene::CreateAndAddFilamentEntity(
+        const std::string& object_name,
+        GeometryBuffersBuilder& buffer_builder,
+        VertexBufferHandle vb,
+        IndexBufferHandle ib,
+        const Material& material,
+        BufferReuse reusing_vertex_buffer /*= kNo*/) {
     filament::Box aabb = buffer_builder.ComputeAABB();
 
     auto vbuf = resource_mgr_.GetVertexBuffer(vb).lock();
@@ -352,8 +355,8 @@ bool FilamentScene::CreateAndAddFilamentEntity(const std::string& object_name,
             .layerMask(FilamentView::kAllLayersMask, FilamentView::kMainLayer)
             .castShadows(true)
             .receiveShadows(true)
-            .geometry(0, buffer_builder.GetPrimitiveType(),
-                      vbuf.get(), ibuf.get());
+            .geometry(0, buffer_builder.GetPrimitiveType(), vbuf.get(),
+                      ibuf.get());
 
     auto material_instance =
             AssignMaterialToFilamentGeometry(builder, material);
