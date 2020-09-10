@@ -41,21 +41,21 @@ jobs:
         # Build
         - mkdir build
         - pushd build
-        - >
-          cmake
-            -DUSE_BLAS=ON
-            -DBUILD_GUI=OFF
-            -DBUILD_SHARED_LIBS=ON
-            -DCMAKE_BUILD_TYPE=Release
-            -DBUILD_CUDA_MODULE=OFF
-            -DBUILD_TENSORFLOW_OPS=OFF
-            -DBUILD_PYTORCH_OPS=OFF
-            -DBUILD_RPC_INTERFACE=ON
-            -DCMAKE_INSTALL_PREFIX="~/open3d_install"
-            -DPYTHON_EXECUTABLE="$(which python)"
-            -DBUILD_UNIT_TESTS=ON
-            -DBUILD_BENCHMARKS=ON
-            -DBUILD_EXAMPLES=ON
+        - |
+          cmake \
+            -DUSE_BLAS=ON \
+            -DBUILD_GUI=OFF \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_CUDA_MODULE=OFF \
+            -DBUILD_TENSORFLOW_OPS=OFF \
+            -DBUILD_PYTORCH_OPS=OFF \
+            -DBUILD_RPC_INTERFACE=ON \
+            -DCMAKE_INSTALL_PREFIX="~/open3d_install" \
+            -DPYTHON_EXECUTABLE="$(which python)" \
+            -DBUILD_UNIT_TESTS=ON \
+            -DBUILD_BENCHMARKS=ON \
+            -DBUILD_EXAMPLES=ON \
             ..
         - make -j${NPROC}
         - make install -j${NPROC}
