@@ -74,8 +74,8 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class FilamentResourceManager;
 class FilamentView;
+class GeometryBuffersBuilder;
 class Renderer;
 class View;
 
@@ -109,12 +109,17 @@ public:
     // Scene geometry
     bool AddGeometry(const std::string& object_name,
                      const geometry::Geometry3D& geometry,
-                     const Material& material) override;
+                     const Material& material,
+                     const std::string& downsampled_name = "",
+                     size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
                      const tgeometry::PointCloud& point_cloud,
-                     const Material& material) override;
+                     const Material& material,
+                     const std::string& downsampled_name = "",
+                     size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
                      const TriangleMeshModel& model) override;
+    bool HasGeometry(const std::string& object_name) const override;
     void UpdateGeometry(const std::string& object_name,
                         const tgeometry::PointCloud& point_cloud,
                         uint32_t update_flags) override;
@@ -202,6 +207,13 @@ private:
     MaterialInstanceHandle AssignMaterialToFilamentGeometry(
             filament::RenderableManager::Builder& builder,
             const Material& material);
+    enum BufferReuse { kNo, kYes };
+    bool CreateAndAddFilamentEntity(const std::string& object_name,
+                                    GeometryBuffersBuilder& buffer_builder,
+                                    VertexBufferHandle vb,
+                                    IndexBufferHandle ib,
+                                    const Material& material,
+                                    BufferReuse reusing_vertex_buffer = BufferReuse::kNo);
 
     filament::Engine& engine_;
     FilamentResourceManager& resource_mgr_;
@@ -262,7 +274,7 @@ private:
 
     std::vector<RenderableGeometry*> GetGeometry(const std::string& object_name,
                                                  bool warn_if_not_found = true);
-    bool GeometryIsModel(const std::string& object_name);
+    bool GeometryIsModel(const std::string& object_name) const;
     LightEntity* GetLightInternal(const std::string& light_name,
                                   bool warn_if_not_found = true);
     void OverrideMaterialInternal(RenderableGeometry* geom,
