@@ -1,5 +1,5 @@
-# These defaults can be changed with docker build --build-arg VAR=value
-ARG UBUNTU_VERSION=bionic
+# eg: docker build --build-arg UBUNTU_VERSION=focal
+ARG UBUNTU_VERSION
 FROM ubuntu:${UBUNTU_VERSION}
 # Persist ARG for the rest of the build
 ARG UBUNTU_VERSION
