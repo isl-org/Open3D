@@ -110,16 +110,14 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     Tensor distances;
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         Tensor batch_indices =
-                Tensor::Ones({num_query_points, knn}, Dtype::Int64);
-        Tensor batch_distances = Tensor::Ones({num_query_points, knn},
+                Tensor::Full({num_query_points, knn}, -1, Dtype::Int64);
+        Tensor batch_distances = Tensor::Full({num_query_points, knn}, -1,
                                               Dtype::FromType<scalar_t>());
-        batch_indices *= -1;
-        batch_distances *= -1;
 
         auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
                 holder_.get());
 
-        // parallel search
+        // Parallel search.
         tbb::parallel_for(
                 tbb::blocked_range<size_t>(0, num_query_points),
                 [&](const tbb::blocked_range<size_t> &r) {
@@ -137,7 +135,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                                 single_distances);
                     }
                 });
-        // check if the number of neighbors are same
+        // Check if the number of neighbors are same.
         Tensor check_valid =
                 batch_indices.Ge(0).To(Dtype::Int64).Sum({-1}, false);
         int64_t num_neighbors = check_valid[0].Item<int64_t>();
@@ -146,7 +144,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                     "[NanoFlannIndex::SearchKnn] The number of neighbors are "
                     "different. Something went wrong.");
         }
-        // slice non-zero items
+        // Slice non-zero items.
         indices = batch_indices.Slice(1, 0, num_neighbors)
                           .View({num_query_points, num_neighbors});
         distances = batch_distances.Slice(1, 0, num_neighbors)
@@ -202,7 +200,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
         nanoflann::SearchParams params;
 
-        // check if the raii has negative values;
+        // Check if the raii has negative values.
         Tensor below_zero = radii.Le<scalar_t>(0);
         if (below_zero.Any()) {
             utility::LogError(
@@ -210,7 +208,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
                     "larger than 0.");
         }
 
-        // parallel search
+        // Parallel search.
         tbb::parallel_for(
                 tbb::blocked_range<size_t>(0, num_query_points),
                 [&](const tbb::blocked_range<size_t> &r) {
@@ -235,7 +233,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
                     }
                 });
 
-        // flatten
+        // Flatten.
         std::vector<int64_t> batch_indices2;
         std::vector<scalar_t> batch_distances2;
         for (auto i = 0; i < num_query_points; i++) {
@@ -247,7 +245,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
                                     batch_distances[i].end());
             batch_nums.push_back(batch_indices[i].size());
         }
-        // make result Tensors
+        // Make result Tensors.
         int64_t total_nums = 0;
         for (auto &s : batch_nums) {
             total_nums += s;
