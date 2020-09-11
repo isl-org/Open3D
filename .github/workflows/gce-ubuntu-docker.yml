@@ -37,6 +37,13 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [skip-check]
     if: needs.skip-check.outputs.skip == 'no'
+    strategy:
+      fail-fast: false
+      matrix:
+        UBUNTU_VERSION: ['bionic', 'focal']  # These configs have bionic and focal versions
+
+    env:
+      UBUNTU_VERSION: ${{ matrix.UBUNTU_VERSION }}
 
     steps:
       - name: Checkout code
@@ -73,7 +80,7 @@ jobs:
       fail-fast: false
       max-parallel: 4     # Limit parallel runs to max GPU quota (4)
       matrix:
-        CI_CONFIG_ID: [2, 3, 4]   # See gce-ubuntu-docker-run.sh for details. These need GPU.
+        CI_CONFIG_ID: [2, 3, 4, 5]   # See gce-ubuntu-docker-run.sh for details. These need GPU.
 
     env:
       CI_CONFIG_ID: ${{ matrix.CI_CONFIG_ID }}
@@ -108,7 +115,13 @@ jobs:
     name: Clean-up container image
     runs-on: ubuntu-18.04
     needs: [skip-check, build-push-docker-image, build-install-test]
-    if: needs.skip-check.outputs.skip == 'no' && needs.build-push-docker-image.result == 'success'
+    if: always() && needs.skip-check.outputs.skip == 'no'
+    strategy:
+      fail-fast: false
+      matrix:
+        UBUNTU_VERSION: ['bionic', 'focal']  # These configs have bionic and focal versions
+    env:
+      UBUNTU_VERSION: ${{ matrix.UBUNTU_VERSION }}
 
     steps:
       - name: Checkout code

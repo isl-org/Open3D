@@ -157,7 +157,7 @@ void pybind_camera_classes(py::module &m) {
                            "List of PinholeCameraParameters objects.")
             .def("__repr__", [](const PinholeCameraTrajectory &c) {
                 return std::string("PinholeCameraTrajectory class.\n") +
-                       std::string("Access its data via camera_parameters.");
+                       std::string("Access its data via camera.parameters.");
             });
 }
 
