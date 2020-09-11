@@ -959,25 +959,29 @@ if(BUILD_RPC_INTERFACE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MSGPACK_TARGET}")
 endif()
 
-# MKL, TBB, cuSOLVER, cuBLAS
-# We link MKL statically. For MKL link flags, refer to:
-# https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
-message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
+# TBB
 include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
-import_3rdparty_library(3rdparty_mkl
-    INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
-    LIB_DIR      ${STATIC_MKL_LIB_DIR}
-    LIBRARIES    ${STATIC_MKL_LIBRARIES}
-)
 import_3rdparty_library(3rdparty_tbb
     INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
     LIB_DIR      ${STATIC_TBB_LIB_DIR}
     LIBRARIES    ${STATIC_TBB_LIBRARIES}
 )
 set(TBB_TARGET "3rdparty_tbb")
+add_dependencies(3rdparty_tbb ext_tbb)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
+
+# MKL, cuSOLVER, cuBLAS
+# We link MKL statically. For MKL link flags, refer to:
+# https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
+message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
+import_3rdparty_library(3rdparty_mkl
+    INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
+    LIB_DIR      ${STATIC_MKL_LIB_DIR}
+    LIBRARIES    ${STATIC_MKL_LIBRARIES}
+)
 set(MKL_TARGET "3rdparty_mkl")
 add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
-add_dependencies(3rdparty_tbb ext_tbb)
+
 message(STATUS "STATIC_MKL_INCLUDE_DIR: ${STATIC_MKL_INCLUDE_DIR}")
 message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
 message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
@@ -994,4 +998,3 @@ elseif(MSVC)
     target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
