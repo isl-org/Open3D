@@ -31,9 +31,8 @@ def compare_batched_results_with_sorting(actual_points,
                                          expect_labels=None):
     np.testing.assert_equal(actual_batches, expect_batches)
     assert actual_batches.ndim == 1
-    batch_cumsum = np.cumsum(actual_batches)
-    start_indices = [0] + list(batch_cumsum[:-1])
-    end_indices = batch_cumsum
+    end_indices = np.cumsum(actual_batches)
+    start_indices = [0] + list(end_indices[:-1])
     for s, e in zip(start_indices, end_indices):
         compare_results_with_sorting(actual_points=actual_points[s:e],
                                      expect_points=expect_points[s:e],
@@ -45,43 +44,6 @@ def compare_batched_results_with_sorting(actual_points,
                                      if actual_labels is not None else None,
                                      expect_labels=expect_labels[s:e]
                                      if expect_labels is not None else None)
-
-
-def assert_equal_after_dim_0_sort(x, y, sort_by=None):
-    """
-    Assert x and y are equal after sorting x and y at in dim 0 respectively.
-
-    Args:
-        x: Numpy array with ndim >= 1.
-        y: Mumpy array, y.shape == x.shape
-        sort_by: If none, x and y are sorted respectively. Otherwise,
-            we require sort_by.shape == x.shape == y.shape, and x and y will be
-            sorted according to the sort order of sort_by.
-    """
-    if x.ndim < 1:
-        raise ValueError("x.ndim < 1.")
-    if x.shape != y.shape:
-        raise ValueError("x.shape != y.shape.")
-
-    if sort_by is None:
-        x = np.sort(x, axis=0)
-        y = np.sort(y, axis=0)
-        np.testing.assert_equal(x, y)
-    else:
-        if sort_by.shape != y.shape:
-            raise ValueError("sort_by.shape != y.shape.")
-        argsort = np.argsort(sort_by, axis=0)
-        pass
-
-
-def assert_equal_1d_2d_sort_by_row(x, y):
-    if x.ndim != y.ndim:
-        raise ValueError("x.ndim != y.ndim.")
-    if x.ndim not in {1, 2}:
-        raise ValueError("x and y must be 1d or 2d.")
-    x = np.sort(x, axis=0)
-    y = np.sort(y, axis=0)
-    np.testing.assert_equal(x, y)
 
 
 def test_subsample():
