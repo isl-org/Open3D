@@ -15,6 +15,7 @@ open3d.ml.torch.nn
     RadiusSearch
     SparseConv
     SparseConvTranspose
+    VoxelPooling
 
 
 **Modules**
@@ -33,4 +34,5 @@ open3d.ml.torch.nn
     RadiusSearch <open3d.ml.torch.nn.RadiusSearch>
     SparseConv <open3d.ml.torch.nn.SparseConv>
     SparseConvTranspose <open3d.ml.torch.nn.SparseConvTranspose>
+    VoxelPooling <open3d.ml.torch.nn.VoxelPooling>
     functional <open3d.ml.torch.nn.functional>
