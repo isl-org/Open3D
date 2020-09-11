@@ -97,7 +97,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
 
 bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
-                     int quality /* = 90*/) {
+                     int quality /* = OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY*/) {
     if (!image.HasData()) {
         utility::LogWarning("Write JPG failed: image has no data.");
         return false;
@@ -107,6 +107,13 @@ bool WriteImageToJPG(const std::string &filename,
         utility::LogWarning("Write JPG failed: unsupported image data.");
         return false;
     }
+    if (quality == OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY)       // Set default quality
+        quality = 90;
+    if (quality < 0 || quality > 100) {
+        utility::LogWarning("Write JPG failed: image quality should be in the range [0,100].");
+        return false;
+    }
+
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
     FILE *file_out;
