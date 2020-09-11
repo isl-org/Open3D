@@ -221,11 +221,11 @@ const py::tuple SubsampleBatch(py::array points,
     }
 }
 
-const py::tuple Subsample(py::array points,
-                          utility::optional<py::array> features,
-                          utility::optional<py::array> classes,
-                          float sampleDl,
-                          int verbose) {
+const py::object Subsample(py::array points,
+                           utility::optional<py::array> features,
+                           utility::optional<py::array> classes,
+                           float sampleDl,
+                           int verbose) {
     std::vector<PointXYZ> original_points;
     std::vector<PointXYZ> subsampled_points;
     std::vector<float> original_features;
