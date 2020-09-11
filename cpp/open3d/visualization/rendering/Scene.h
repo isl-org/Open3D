@@ -57,10 +57,10 @@ struct Light;
 // Can have multiple views
 class Scene {
 public:
-    const uint32_t kUpdatePointsFlag = (1 << 0);
-    const uint32_t kUpdateNormalsFlag = (1 << 1);
-    const uint32_t kUpdateColorsFlag = (1 << 2);
-    const uint32_t kUpdateUv0Flag = (1 << 3);
+    static const uint32_t kUpdatePointsFlag = (1 << 0);
+    static const uint32_t kUpdateNormalsFlag = (1 << 1);
+    static const uint32_t kUpdateColorsFlag = (1 << 2);
+    static const uint32_t kUpdateUv0Flag = (1 << 3);
 
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
 

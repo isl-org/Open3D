@@ -213,7 +213,14 @@ void Open3DScene::AddGeometry(const std::string& name,
 
 void Open3DScene::RemoveGeometry(const std::string& name) {
     auto scene = renderer_.GetScene(scene_);
-    scene->RemoveGeometry(name);
+    auto g = geometries_.find(name);
+    if (g != geometries_.end()) {
+        scene->RemoveGeometry(name);
+        if (!g->second.fast_name.empty()) {
+            scene->RemoveGeometry(g->second.fast_name);
+        }
+        geometries_.erase(name);
+    }
 }
 
 void Open3DScene::ShowGeometry(const std::string& name, bool show) {
