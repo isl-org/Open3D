@@ -95,8 +95,8 @@ struct ColoredVertex {
 };
 }  // namespace
 
-IndexBufferHandle GeometryBuffersBuilder::CreateIndexBuffer(int max_index,
-                                                            int step /*= 1*/) {
+IndexBufferHandle GeometryBuffersBuilder::CreateIndexBuffer(size_t max_index,
+                                                            size_t step /*= 1*/) {
     using IndexType = GeometryBuffersBuilder::IndexType;
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();

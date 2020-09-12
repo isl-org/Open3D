@@ -106,7 +106,8 @@ protected:
 
     static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr);
 
-    static IndexBufferHandle CreateIndexBuffer(int max_index, int step = 1);
+    static IndexBufferHandle CreateIndexBuffer(size_t max_index,
+                                               size_t step = 1);
 };
 
 class TriangleMeshBuffersBuilder : public GeometryBuffersBuilder {
