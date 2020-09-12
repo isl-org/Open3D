@@ -50,8 +50,10 @@ bool ReadImage(const std::string &filename, geometry::Image &image);
 /// If the write function supports quality, the parameter will be used.
 /// Otherwise it will be ignored.
 /// \param quality: PNG: [0-9] <=2 fast write for storing intermediate data
-///                            >=3 (default) normal write for balanced speed and file size
-///                 JPEG: [0-100] Typically in [70,95]. 90 is default (good quality).
+///                            >=3 (default) normal write for balanced speed and
+///                            file size
+///                 JPEG: [0-100] Typically in [70,95]. 90 is default (good
+///                 quality).
 /// \return return true if the write function is successful, false otherwise.
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,

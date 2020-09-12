@@ -34,7 +34,9 @@ namespace open3d {
 namespace {
 using namespace io;
 
-void SetPNGImageFromImage(const geometry::Image &image, int quality, png_image &pngimage) {
+void SetPNGImageFromImage(const geometry::Image &image,
+                          int quality,
+                          png_image &pngimage) {
     pngimage.width = image.width_;
     pngimage.height = image.height_;
     pngimage.format = pngimage.flags = 0;
@@ -90,10 +92,11 @@ bool WriteImageToPNG(const std::string &filename,
         utility::LogWarning("Write PNG failed: image has no data.");
         return false;
     }
-    if (quality == OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY)       // Set default quality
+    if (quality == OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY)  // Set default quality
         quality = 6;
-    if (quality<0 || quality>9) {
-        utility::LogWarning("Write PNG failed: quality ({}) must be in the range [0,9]",
+    if (quality < 0 || quality > 9) {
+        utility::LogWarning(
+                "Write PNG failed: quality ({}) must be in the range [0,9]",
                 quality);
         return false;
     }

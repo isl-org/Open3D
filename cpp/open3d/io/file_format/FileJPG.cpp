@@ -107,10 +107,12 @@ bool WriteImageToJPG(const std::string &filename,
         utility::LogWarning("Write JPG failed: unsupported image data.");
         return false;
     }
-    if (quality == OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY)       // Set default quality
+    if (quality == OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY)  // Set default quality
         quality = 90;
     if (quality < 0 || quality > 100) {
-        utility::LogWarning("Write JPG failed: image quality should be in the range [0,100].");
+        utility::LogWarning(
+                "Write JPG failed: image quality should be in the range "
+                "[0,100].");
         return false;
     }
 
