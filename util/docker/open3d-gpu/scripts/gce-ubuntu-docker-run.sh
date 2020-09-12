@@ -62,7 +62,7 @@ case "$1" in
       # Build the Docker image
     docker-build )
         # Pull previous image as cache: disabled due to disk space
-        # docker pull "$DC_IMAGE_LATEST_TAG" || true
+        docker pull "$DC_IMAGE_LATEST_TAG" || true
         docker build -t "$DC_IMAGE_TAG" \
             -f util/docker/open3d-gpu/Dockerfile \
             --build-arg UBUNTU_VERSION="$UBUNTU_VERSION" \
