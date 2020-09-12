@@ -187,7 +187,8 @@ void pybind_rendering_classes(py::module &m) {
                  "Returns True if a geometry with the provided name exists in "
                  "the scene.")
             .def("update_geometry", &Scene::UpdateGeometry,
-                 "Updates the flagged arrays from the tgeometry.PointCloud. The "
+                 "Updates the flagged arrays from the tgeometry.PointCloud. "
+                 "The "
                  "flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
                  "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
                  "Scene.UPDATE_UV0_FLAG")
