@@ -95,7 +95,7 @@ bool WriteImageToPNG(const std::string &filename,
         utility::LogWarning("Write PNG failed: image has no data.");
         return false;
     }
-    if (quality == OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY)  // Set default quality
+    if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
         quality = 6;
     if (quality < 0 || quality > 9) {
         utility::LogWarning(

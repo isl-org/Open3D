@@ -85,7 +85,7 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
 
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,
-                int quality /* = OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY*/) {
+                int quality /* = kOpen3DImageIODefaultQuality*/) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {

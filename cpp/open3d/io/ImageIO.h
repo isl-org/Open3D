@@ -43,7 +43,7 @@ std::shared_ptr<geometry::Image> CreateImageFromFile(
 /// \return return true if the read function is successful, false otherwise.
 bool ReadImage(const std::string &filename, geometry::Image &image);
 
-#define OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY -1
+constexpr int kOpen3DImageIODefaultQuality = -1;
 
 /// The general entrance for writing an Image to a file
 /// The function calls write functions based on the extension name of filename.
@@ -57,19 +57,19 @@ bool ReadImage(const std::string &filename, geometry::Image &image);
 /// \return return true if the write function is successful, false otherwise.
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,
-                int quality = OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY);
+                int quality = kOpen3DImageIODefaultQuality);
 
 bool ReadImageFromPNG(const std::string &filename, geometry::Image &image);
 
 bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,
-                     int quality = OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY);
+                     int quality = kOpen3DImageIODefaultQuality);
 
 bool ReadImageFromJPG(const std::string &filename, geometry::Image &image);
 
 bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
-                     int quality = OPEN3D_IO_IMAGEIO_DEFAULT_QUALITY);
+                     int quality = kOpen3DImageIODefaultQuality);
 
 }  // namespace io
 }  // namespace open3d
