@@ -44,8 +44,11 @@ void SetPNGImageFromImage(const geometry::Image &image,
     if (image.bytes_per_channel_ == 2) {
         pngimage.format |= PNG_FORMAT_FLAG_LINEAR;
     }
-    if (image.num_of_channels_ == 3) {
+    if (image.num_of_channels_ >= 3) {
         pngimage.format |= PNG_FORMAT_FLAG_COLOR;
+    }
+    if (image.num_of_channels_ == 4) {
+        pngimage.format |= PNG_FORMAT_FLAG_ALPHA;
     }
     if (quality <= 2) {
         pngimage.flags |= PNG_IMAGE_FLAG_FAST;
