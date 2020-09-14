@@ -64,6 +64,8 @@ if _build_config["BUILD_CUDA_MODULE"]:
             __DEVICE_API__ = 'cuda'
     except ImportError:
         pass
+    except RuntimeError:  # no CUDA-capable device is detected
+        pass
 
 if 'pybind' not in locals():
     from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility,

@@ -17,7 +17,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$BUILD_CUDA_MODULE" == OFF ] ; then
 fi
 BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
-BUILD_WHEEL_ONLY=${BUILD_WHEEL_ONLY:=OFF}
+BUILD_WHEEL_ONLY=${BUILD_WHEEL_ONLY:-OFF}
 
 # Dependency versions
 CUDA_VERSION=("10-1" "10.1")
@@ -38,16 +38,17 @@ OPEN3D_INSTALL_DIR=~/open3d_install
 
 install_cuda_toolkit() {
 
+    SUDO=${SUDO:-sudo}
     echo "Installing CUDA ${CUDA_VERSION[1]} with apt ..."
-    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-    sudo apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
-    sudo apt-get install --yes "cuda-toolkit-${CUDA_VERSION[0]}"
+    $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+    $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
+    $SUDO apt-get install --yes "cuda-toolkit-${CUDA_VERSION[0]}"
     if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
         echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
         dpkg -L libcublas10 libcublas-dev | while read -r cufile ; do
             if [ -f "$cufile" ] && [ ! -e "${cufile/10.2/10.1}" ] ; then
                 set -x
-                sudo ln -s "$cufile" "${cufile/10.2/10.1}"
+                $SUDO ln -s "$cufile" "${cufile/10.2/10.1}"
                 set +x
             fi
         done
@@ -56,8 +57,8 @@ install_cuda_toolkit() {
     set +u  # Disable "unbound variable is error" since that gives a false alarm error below:
     if [[ "with-cudnn" =~ ^($options)$ ]] ; then
         echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
-        sudo apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
-        sudo apt-get install --yes \
+        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
+        $SUDO apt-get install --yes --no-install-recommends \
             "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
             "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
     fi
@@ -66,9 +67,16 @@ install_cuda_toolkit() {
     export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     echo PATH="$PATH"
     echo LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+    # Ensure g++ < 9 is installed for CUDA 10.1
+    cpp_version=$(c++ --version | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
+    if dpkg --compare-versions "$cpp_version" ge 9 ; then
+        $SUDO apt-get install --yes --no-install-recommends g++-8 gcc-8
+        update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-8 70 --slave /usr/bin/gcc gcc /usr/bin/gcc-8
+        update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-8 70 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+    fi
     if [[ "purge-cache" =~ ^($options)$ ]] ; then
-        sudo apt-get clean
-        sudo rm -rf /var/lib/apt/lists/*
+        $SUDO apt-get clean
+        $SUDO rm -rf /var/lib/apt/lists/*
     fi
     set -u
 }
