@@ -315,7 +315,7 @@ if(WITH_OPENMP)
 endif()
 
 # X11
-if(UNIX)
+if(UNIX AND NOT APPLE)
     find_package(X11 QUIET)
     if(X11_FOUND)
         add_library(3rdparty_x11 INTERFACE)
