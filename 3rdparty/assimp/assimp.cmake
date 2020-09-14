@@ -9,7 +9,6 @@ if(STATIC_WINDOWS_RUNTIME)
 else()
     set(ASSIMP_MSVC_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
-message(STATUS "ASSIMP_MSVC_RUNTIME ${ASSIMP_MSVC_RUNTIME}")
 
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     set(ASSIMP_BUILD_TYPE "Release")
