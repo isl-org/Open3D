@@ -44,12 +44,6 @@ set(STATIC_TBB_INCLUDE_DIR "${STATIC_MKL_INCLUDE_DIR}")
 set(STATIC_TBB_LIB_DIR "${STATIC_MKL_LIB_DIR}")
 set(STATIC_TBB_LIBRARIES tbb_static tbbmalloc_static)
 
-if (STATIC_WINDOWS_RUNTIME)
-    set(TBB_MSVC_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-else()
-    set(TBB_MSVC_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-endif()
-
 # Need to put TBB right next to MKL in the link flags. So instead of creating a
 # new tbb.cmake, it is also put here.
 ExternalProject_Add(
@@ -67,7 +61,6 @@ ExternalProject_Add(
         -DTBB_BUILD_STATIC=ON
         -DTBB_BUILD_TESTS=OFF
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        -DCMAKE_MSVC_RUNTIME_LIBRARY=${TBB_MSVC_RUNTIME}
 )
 
 if(WIN32)
