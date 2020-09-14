@@ -72,7 +72,12 @@ namespace rendering {
 
 class GeometryBuffersBuilder {
 public:
-    using Buffers = std::tuple<VertexBufferHandle, IndexBufferHandle>;
+    // Note that the downsampled index buffer may be kBadId if a downsampled
+    // buffer was not requested, failed, or cannot be created (e.g. if not
+    // a point cloud).
+    using Buffers = std::tuple<VertexBufferHandle,  // vertex buffer
+                               IndexBufferHandle,   // index buffer
+                               IndexBufferHandle>;  // downsampled buffer
     using IndexType = std::uint32_t;
 
     static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(
@@ -85,11 +90,24 @@ public:
     virtual filament::RenderableManager::PrimitiveType GetPrimitiveType()
             const = 0;
 
+    // Defaults to infinity (that is, no downsampling). If threshold is
+    // set and the number of points exceeds the threshold, ConstructBuffers()
+    // will return a downsampled index buffer. Certain builders may ignore
+    // this threshold.
+    virtual void SetDownsampleThreshold(size_t min_points) {
+        downsample_threshold_ = min_points;
+    }
+
     virtual Buffers ConstructBuffers() = 0;
     virtual filament::Box ComputeAABB() = 0;
 
 protected:
+    size_t downsample_threshold_ = SIZE_MAX;
+
     static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr);
+
+    static IndexBufferHandle CreateIndexBuffer(size_t max_index,
+                                               size_t step = 1);
 };
 
 class TriangleMeshBuffersBuilder : public GeometryBuffersBuilder {
@@ -128,6 +146,8 @@ public:
             const override;
 
     Buffers ConstructBuffers() override;
+    IndexBufferHandle ConstructDownsampledIndexBuffer(size_t max_index,
+                                                      size_t step);
     filament::Box ComputeAABB() override;
 
 private:

@@ -8,8 +8,8 @@ open3d.ml.tf
 open3d.ml.tf.layers
 open3d.ml.tf.ops
 open3d.ml.torch
-open3d.ml.torch.nn
-open3d.ml.torch.nn.functional
+open3d.ml.torch.layers
+open3d.ml.torch.ops
 open3d.pipelines
 open3d.pipelines.color_map
 open3d.pipelines.integration

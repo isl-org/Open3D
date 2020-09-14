@@ -105,6 +105,7 @@ The following example illustrates this::
   # which is the mapping 0->(0), 1->(0,2), 2->(0,1), 3->(2)
   # note that the order of the neighbors can be permuted
 
+  # or with pytorch
   import torch
   import open3d.ml.torch as ml3d
 
@@ -115,10 +116,10 @@ The following example illustrates this::
   # optional attributes for each pair
   neighbors_attributes = torch.Tensor([10, 20, 30, 40, 50, 60])
 
-  ans = ml3d.nn.functional.invert_neighbors_list(4,
-                                                 neighbors_index,
-                                                 neighbors_row_splits,
-                                                 neighbors_attributes)
+  ans = ml3d.ops.invert_neighbors_list(4,
+                                       neighbors_index,
+                                       neighbors_row_splits,
+                                       neighbors_attributes)
   # returns ans.neighbors_index      = [0, 0, 2, 0, 1, 2]
   #         ans.neighbors_row_splits = [0, 1, 3, 5, 6]
   #         ans.neighbors_attributes = [10, 20, 50, 30, 40, 60]

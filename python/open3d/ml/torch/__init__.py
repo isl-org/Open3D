@@ -48,7 +48,8 @@ for _lp in _lib_path:
 if not _loaded:
     raise _load_except
 
-from . import nn
+from . import layers
+from . import ops
 
 if _build_config['BUNDLE_OPEN3D_ML']:
     if 'OPEN3D_ML_ROOT' in _os.environ:

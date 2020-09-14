@@ -178,10 +178,20 @@ void pybind_rendering_classes(py::module &m) {
                  "Sets the camera with the given name as the active camera for "
                  "the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(const std::string &,
-                                  const geometry::Geometry3D &,
-                                  const Material &)) &
+                 (bool (Scene::*)(
+                         const std::string &, const geometry::Geometry3D &,
+                         const Material &, const std::string &, size_t)) &
                          Scene::AddGeometry,
+                 "name"_a, "geometry"_a, "material"_a,
+                 "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
+                 "Adds a Geometry with a material to the scene")
+            .def("add_geometry",
+                 (bool (Scene::*)(
+                         const std::string &, const tgeometry::PointCloud &,
+                         const Material &, const std::string &, size_t)) &
+                         Scene::AddGeometry,
+                 "name"_a, "geometry"_a, "material"_a,
+                 "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
             .def("has_geometry", &Scene::HasGeometry,
                  "Returns True if a geometry with the provided name exists in "
@@ -233,8 +243,10 @@ void pybind_rendering_classes(py::module &m) {
             .def("add_geometry",
                  py::overload_cast<const std::string &,
                                    const tgeometry::PointCloud *,
-                                   const Material &>(&Open3DScene::AddGeometry),
-                 "name"_a, "geometry"_a, "material"_a)
+                                   const Material &, bool>(
+                         &Open3DScene::AddGeometry),
+                 "name"_a, "geometry"_a, "material"_a,
+                 "add_downsampled_copy_for_fast_rendering"_a = true)
             .def("remove_geometry", &Open3DScene::RemoveGeometry,
                  "Removes the geometry with the given name")
             .def("show_geometry", &Open3DScene::ShowGeometry,

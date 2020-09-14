@@ -145,10 +145,10 @@ case where the outputs can be reshaped to a [num_queries, k] tensor::
 
   radii = torch.Tensor([1.0,1.0,1.0])
 
-  ans = ml3d.nn.functional.knn_search(points, queries, k=2, 
-                                      points_row_splits=torch.LongTensor([0,5]), 
-                                      queries_row_splits=torch.LongTensor([0,3]), 
-                                      return_distances=True)
+  ans = ml3d.ops.knn_search(points, queries, k=2, 
+                            points_row_splits=torch.LongTensor([0,5]), 
+                            queries_row_splits=torch.LongTensor([0,3]), 
+                            return_distances=True)
   # returns ans.neighbors_index      = [1, 2, 4, 2, 4, 2]
   #         ans.neighbors_row_splits = [0, 2, 4, 6]
   #         ans.neighbors_distance   = [0.75 , 1.47, 0.56, 1.62, 0.77, 1.85]

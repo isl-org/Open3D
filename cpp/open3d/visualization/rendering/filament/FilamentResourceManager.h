@@ -99,6 +99,7 @@ public:
     // know which arguments pass to CreateVB(...). Thus creation of VB is
     // managed by FilamentGeometryBuffersBuilder class
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertex_buffer);
+    void ReuseVertexBuffer(VertexBufferHandle vb);
     IndexBufferHandle CreateIndexBuffer(size_t indices_count,
                                         size_t index_stride);
 
@@ -117,13 +118,25 @@ public:
     void DestroyAll();
     void Destroy(const REHandle_abstract& id);
 
+public:
+    // Only public so that .cpp file can use this
+    template <class ResourceType>
+    struct BoxedResource {
+        std::shared_ptr<ResourceType> ptr;
+        size_t use_count = 0;
+
+        BoxedResource() {}
+        BoxedResource(std::shared_ptr<ResourceType> p) : ptr(p), use_count(1) {}
+
+        std::shared_ptr<ResourceType> operator->() { return ptr; }
+    };
+
 private:
     filament::Engine& engine_;
 
     template <class ResourceType>
     using ResourcesContainer =
-            std::unordered_map<REHandle_abstract,
-                               std::shared_ptr<ResourceType>>;
+            std::unordered_map<REHandle_abstract, BoxedResource<ResourceType>>;
 
     ResourcesContainer<filament::MaterialInstance> material_instances_;
     ResourcesContainer<filament::Material> materials_;

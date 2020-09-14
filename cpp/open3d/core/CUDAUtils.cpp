@@ -39,8 +39,12 @@ namespace cuda {
 
 int DeviceCount() {
 #ifdef BUILD_CUDA_MODULE
-    std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
-    return cuda_state->GetNumDevices();
+    try {
+        std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
+        return cuda_state->GetNumDevices();
+    } catch (const std::runtime_error& e) {  // GetInstance can throw
+        return 0;
+    }
 #else
     return 0;
 #endif
@@ -66,3 +70,8 @@ void ReleaseCache() {
 }  // namespace cuda
 }  // namespace core
 }  // namespace open3d
+
+// C interface to provide un-mangled function to Python ctypes
+extern "C" int open3d_core_cuda_device_count() {
+    return open3d::core::cuda::DeviceCount();
+}
