@@ -86,11 +86,16 @@ if (POLICY CMP0072)
         set(CMP0072_VALUE OLD)
     endif()
 endif()
+
 # Set policy for hidden symbol visibility
 if(POLICY CMP0063)
     cmake_policy(SET CMP0063 NEW)
 endif()
-# Set policy to enable MSVC_RUNTIME_LIBRARY property
+
+# Set policy to enable MSVC_RUNTIME_LIBRARY property.
+# TODO: This requires CMake 3.15+ on Winndows. At this point, we're not updating
+# cmake_minimum_required to 3.15 since it may break existing systems. As Windows
+# users can typically download the latest CMake, the impact should be minimal.
 if(POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
