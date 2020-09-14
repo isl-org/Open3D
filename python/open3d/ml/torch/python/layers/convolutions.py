@@ -1,4 +1,5 @@
 from ...python import ops
+from .neighbor_search import FixedRadiusSearch, RadiusSearch
 import open3d.ml.torch.layers as layers
 import torch
 from torch.nn.parameter import Parameter
@@ -147,12 +148,12 @@ class ContinuousConv(torch.nn.Module):
 
         self.window_function = window_function
 
-        self.fixed_radius_search = layers.FixedRadiusSearch(
+        self.fixed_radius_search = FixedRadiusSearch(
             metric=self.radius_search_metric,
             ignore_query_point=self.radius_search_ignore_query_points,
             return_distances=not self.window_function is None)
 
-        self.radius_search = layers.RadiusSearch(
+        self.radius_search = RadiusSearch(
             metric=self.radius_search_metric,
             ignore_query_point=self.radius_search_ignore_query_points,
             return_distances=not self.window_function is None,
@@ -404,8 +405,9 @@ class SparseConv(torch.nn.Module):
             self.offset = offset
         self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
 
-        self.fixed_radius_search = layers.FixedRadiusSearch(
-            metric='Linf', ignore_query_point=False, return_distances=False)
+        self.fixed_radius_search = FixedRadiusSearch(metric='Linf',
+                                                     ignore_query_point=False,
+                                                     return_distances=False)
 
         kernel_shape = (*self.kernel_size, self.in_channels, self.filters)
         self.kernel = torch.nn.Parameter(data=torch.Tensor(*kernel_shape),
