@@ -17,7 +17,6 @@ if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$BUILD_CUDA_MODULE" == OFF ] ; then
 fi
 BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
-BUILD_WHEEL_ONLY=${BUILD_WHEEL_ONLY:-OFF}
 
 # Dependency versions
 CUDA_VERSION=("10-1" "10.1")

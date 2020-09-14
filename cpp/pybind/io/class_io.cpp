@@ -138,7 +138,7 @@ void pybind_class_io(py::module &m_io) {
                 return WriteImage(filename, image, quality);
             },
             "Function to write Image to file", "filename"_a, "image"_a,
-            "quality"_a = 90);
+            "quality"_a = kOpen3DImageIODefaultQuality);
     docstring::FunctionDocInject(m_io, "write_image",
                                  map_shared_argument_docstrings);
 
