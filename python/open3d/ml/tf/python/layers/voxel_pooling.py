@@ -1,4 +1,4 @@
-from open3d.ml.tf import ops
+from ...python.ops import ops
 import tensorflow as tf
 
 __all__ = ['VoxelPooling']

@@ -1,4 +1,4 @@
-from open3d.ml.torch.nn import functional as ops
+from ...python import ops
 import torch
 
 __all__ = ['VoxelPooling']
@@ -30,7 +30,7 @@ class VoxelPooling(torch.nn.Module):
                   [1.3,3.4],
                   [2.3,1.9]])
 
-      voxel_pooling = ml3d.nn.VoxelPooling(position_fn='center', feature_fn='max')
+      voxel_pooling = ml3d.layers.VoxelPooling(position_fn='center', feature_fn='max')
 
       ans = voxel_pooling(positions, features, 1.0)
 

@@ -1,8 +1,8 @@
-open3d.ml.torch.nn.ContinuousConv
+open3d.ml.torch.layers.SparseConv
 ---------------------------------
 
-.. currentmodule:: open3d.ml.torch.nn
+.. currentmodule:: open3d.ml.torch.layers
 
 .. don't include inherited members to keep the doc short
-.. autoclass:: ContinuousConv
+.. autoclass:: SparseConv
     :members:
