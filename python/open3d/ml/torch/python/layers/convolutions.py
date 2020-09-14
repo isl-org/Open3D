@@ -1,6 +1,5 @@
 from ...python import ops
 from .neighbor_search import FixedRadiusSearch, RadiusSearch
-import open3d.ml.torch.layers as layers
 import torch
 from torch.nn.parameter import Parameter
 import numpy as np
@@ -586,8 +585,9 @@ class SparseConvTranspose(torch.nn.Module):
             self.offset = offset
         self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
 
-        self.fixed_radius_search = layers.FixedRadiusSearch(
-            metric='Linf', ignore_query_point=False, return_distances=False)
+        self.fixed_radius_search = FixedRadiusSearch(metric='Linf',
+                                                     ignore_query_point=False,
+                                                     return_distances=False)
 
         kernel_shape = (*self.kernel_size, self.in_channels, self.filters)
         self.kernel = torch.nn.Parameter(data=torch.Tensor(*kernel_shape),
