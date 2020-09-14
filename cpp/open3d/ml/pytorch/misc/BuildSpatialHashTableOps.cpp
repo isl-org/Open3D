@@ -27,7 +27,7 @@
 
 #include <vector>
 
-#include "open3d/ml/PyTorch/TorchHelper.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 template <class T>

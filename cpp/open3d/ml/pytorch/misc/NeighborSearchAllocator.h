@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "open3d/ml/PyTorch/TorchHelper.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 // These classes implement functors that can be passed to the neighbor search

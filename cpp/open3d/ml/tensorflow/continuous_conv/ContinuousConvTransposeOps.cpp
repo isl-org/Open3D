@@ -274,7 +274,8 @@ inp_neighbors_index:
 
 
 inp_neighbors_importance_sum:
-  Tensor of the same shape as 'inp_positions'. This is the sum of the values in
+  1D tensor of the same length as 'inp_positions' or zero length if 
+  neighbors_importance is empty. This is the sum of the values in
   'neighbors_importance' for each input point.
 
 

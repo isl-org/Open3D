@@ -26,7 +26,7 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/PyTorch/TorchHelper.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
 #include "torch/script.h"
 

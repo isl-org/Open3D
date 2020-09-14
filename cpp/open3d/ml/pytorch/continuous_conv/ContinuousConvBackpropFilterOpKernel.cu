@@ -27,7 +27,7 @@
 #include <vector>
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/PyTorch/TorchHelper.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/impl/continuous_conv/ContinuousConvBackpropFilter.cuh"
 #include "torch/script.h"
 
