@@ -467,7 +467,7 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
     ib_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
     ibuf->setBuffer(engine, std::move(ib_descriptor));
 
-    return std::make_tuple(vb_handle, ib_handle);
+    return std::make_tuple(vb_handle, ib_handle, IndexBufferHandle());
 }
 
 filament::Box TriangleMeshBuffersBuilder::ComputeAABB() {

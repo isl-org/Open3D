@@ -199,7 +199,7 @@ This example shows how to use this op::
   radius = 1.2
   neighbors = nsearch(inp_positions, out_positions, radius)
 
-  ml3d.nn.functional.continuous_conv(filters, 
+  ml3d.ops.continuous_conv(filters, 
                            out_positions, 
                            extents=torch.FloatTensor([[2*radius]]), 
                            offset=torch.FloatTensor([0,0,0]), 

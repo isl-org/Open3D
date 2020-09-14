@@ -55,19 +55,22 @@ if _build_config["BUILD_CUDA_MODULE"]:
         _CDLL(next((_Path(__file__).parent / 'cpu').glob('pybind*')))
     except StopIteration:
         pass
-    try:  # ImportError if cuda version not available
-        from open3d.cuda.pybind.core import cuda as _cuda
-        if _cuda.is_available():
+    try:
+        # Check CUDA availability without importing CUDA pybind symbols to
+        # prevent "symbol already registered" errors if first import fails.
+        _pybind_cuda = _CDLL(
+            next((_Path(__file__).parent / 'cuda').glob('pybind*')))
+        if _pybind_cuda.open3d_core_cuda_device_count() > 0:
             from open3d.cuda.pybind import (camera, geometry, io, pipelines,
                                             utility, tgeometry)
             from open3d.cuda import pybind
             __DEVICE_API__ = 'cuda'
-    except ImportError:
+    except OSError:  # CUDA not installed
         pass
-    except RuntimeError:  # no CUDA-capable device is detected
+    except StopIteration:  # pybind cuda library not available
         pass
 
-if 'pybind' not in locals():
+if __DEVICE_API__ == 'cpu':
     from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility,
                                    tgeometry)
     from open3d.cpu import pybind

@@ -163,18 +163,18 @@ shows a simple search with just a single batch item::
   radius = 1.0
 
   # build the spatial hash table for fixex_radius_search
-  table = ml3d.nn.functional.build_spatial_hash_table(points, 
-                                                      radius, 
-                                                      points_row_splits=torch.LongTensor([0,5]), 
-                                                      hash_table_size_factor=1/32)
+  table = ml3d.ops.build_spatial_hash_table(points, 
+                                            radius, 
+                                            points_row_splits=torch.LongTensor([0,5]), 
+                                            hash_table_size_factor=1/32)
 
   # now run the fixed radius search
-  ml3d.nn.functional.fixed_radius_search(points, 
-                                         queries, 
-                                         radius, 
-                                         points_row_splits=torch.LongTensor([0,5]), 
-                                         queries_row_splits=torch.LongTensor([0,3]), 
-                                         **table._asdict())
+  ml3d.ops.fixed_radius_search(points, 
+                               queries, 
+                               radius, 
+                               points_row_splits=torch.LongTensor([0,5]), 
+                               queries_row_splits=torch.LongTensor([0,3]), 
+                               **table._asdict())
   # returns neighbors_index      = [1, 4, 4]
   #         neighbors_row_splits = [0, 1, 2, 3]
   #         neighbors_distance   = []

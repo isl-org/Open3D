@@ -117,8 +117,8 @@ not defined as can be seen in the following example::
               [1.3,3.4],
               [2.3,1.9]])
 
-  ml3d.nn.functional.voxel_pooling(positions, features, 1.0, 
-                                   position_fn='center', feature_fn='max')
+  ml3d.ops.voxel_pooling(positions, features, 1.0, 
+                         position_fn='center', feature_fn='max')
 
   # returns the voxel centers  [[0.5, 2.5, 1.5],
   #                             [1.5, 1.5, 1.5],

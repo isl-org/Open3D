@@ -372,6 +372,9 @@ function(open3d_set_global_properties target)
     endif()
     # The SHELL: prefix requires CMake 3.12+
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>" "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_GENCODES}>")
+    # TBB static version is used
+    # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
+    target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
 endfunction()
 
 macro(add_source_group module_name)
