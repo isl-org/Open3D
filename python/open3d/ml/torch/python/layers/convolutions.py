@@ -1,5 +1,5 @@
-from open3d.ml.torch.nn import functional as ops
-from open3d.ml.torch import nn as layers
+import open3d.ml.torch.ops as ops
+import open3d.ml.torch.layers as layers
 import torch
 from torch.nn.parameter import Parameter
 import numpy as np
@@ -36,7 +36,7 @@ class ContinuousConv(torch.nn.Module):
           inp_features = torch.randn([20,8])
           out_positions = torch.randn([10,3])
 
-          conv = ml3d.nn.ContinuousConv(in_channels=8, filters=16, kernel_size=[3,3,3])
+          conv = ml3d.layers.ContinuousConv(in_channels=8, filters=16, kernel_size=[3,3,3])
           out_features = conv(inp_features, inp_positions, out_positions, extents=2.0)
 
 
@@ -343,7 +343,7 @@ class SparseConv(torch.nn.Module):
         inp_features = torch.randn([20,8])
         out_positions = torch.randint(0, 10, [20,3]).to(torch.float32)+0.5
 
-        conv = ml3d.nn.SparseConv(in_channels=8, filters=16, kernel_size=[3,3,3])
+        conv = ml3d.layers.SparseConv(in_channels=8, filters=16, kernel_size=[3,3,3])
         out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
 
 
@@ -522,7 +522,7 @@ class SparseConvTranspose(torch.nn.Module):
         inp_features = torch.randn([20,8])
         out_positions = torch.randint(0, 10, [20,3]).to(torch.float32)+0.5
 
-        conv = ml3d.nn.SparseConv(in_channels=8, filters=16, kernel_size=[3,3,3])
+        conv = ml3d.layers.SparseConv(in_channels=8, filters=16, kernel_size=[3,3,3])
         out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
 
 

@@ -142,9 +142,9 @@ shows a simple search with just a single batch item::
 
   radii = torch.Tensor([1.0,1.0,1.0])
 
-  ml3d.nn.functional.radius_search(points, queries, radii, 
-                                   points_row_splits=torch.LongTensor([0,5]), 
-                                   queries_row_splits=torch.LongTensor([0,3]))
+  ml3d.ops.radius_search(points, queries, radii, 
+                         points_row_splits=torch.LongTensor([0,5]), 
+                         queries_row_splits=torch.LongTensor([0,3]))
   # returns neighbors_index      = [1, 4, 4]
   #         neighbors_row_splits = [0, 1, 2, 3]
   #         neighbors_distance   = []

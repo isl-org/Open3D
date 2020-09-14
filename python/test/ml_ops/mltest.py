@@ -34,8 +34,8 @@ except ImportError:
 
 try:
     torch = importlib.import_module('torch')
-    ml3d_ops = importlib.import_module('open3d.ml.torch.nn.functional')
-    ml3d_layers = importlib.import_module('open3d.ml.torch.nn')
+    ml3d_ops = importlib.import_module('open3d.ml.torch.ops')
+    ml3d_layers = importlib.import_module('open3d.ml.torch.layers')
     _ml_modules['torch'] = MLModules(torch, ml3d_ops, ml3d_layers, 'cpu', 'cpu')
     if torch.cuda.is_available() and o3d._build_config['BUILD_CUDA_MODULE']:
         _ml_modules['torch_cuda'] = MLModules(torch, ml3d_ops, ml3d_layers,
