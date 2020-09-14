@@ -50,7 +50,7 @@ ExternalProject_Add(
     ext_tbb
     PREFIX tbb
     GIT_REPOSITORY https://github.com/wjakob/tbb.git
-    GIT_TAG 806df70ee69fc7b332fcf90a48651f6dbf0663ba # July 2020
+    GIT_TAG 141b0e310e1fb552bdca887542c9c1a8544d6503 # Sept 2020
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=${MKL_INSTALL_PREFIX}
