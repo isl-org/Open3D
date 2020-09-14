@@ -86,12 +86,17 @@ public:
     // Scene geometry
     virtual bool AddGeometry(const std::string& object_name,
                              const geometry::Geometry3D& geometry,
-                             const Material& material) = 0;
+                             const Material& material,
+                             const std::string& downsampled_name = "",
+                             size_t downsample_threshold = SIZE_MAX) = 0;
     virtual bool AddGeometry(const std::string& object_name,
                              const tgeometry::PointCloud& point_cloud,
-                             const Material& material) = 0;
+                             const Material& material,
+                             const std::string& downsampled_name = "",
+                             size_t downsample_threshold = SIZE_MAX) = 0;
     virtual bool AddGeometry(const std::string& object_name,
                              const TriangleMeshModel& model) = 0;
+    virtual bool HasGeometry(const std::string& object_name) const = 0;
     virtual void UpdateGeometry(const std::string& object_name,
                                 const tgeometry::PointCloud& point_cloud,
                                 uint32_t update_flags) = 0;
