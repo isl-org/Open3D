@@ -49,7 +49,7 @@ if (STATIC_WINDOWS_RUNTIME)
 else()
     set(TBB_MSVC_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
-
+message(STATUS "TBB_MSVC_RUNTIME ${TBB_MSVC_RUNTIME}")
 # Need to put TBB right next to MKL in the link flags. So instead of creating a
 # new tbb.cmake, it is also put here.
 ExternalProject_Add(
