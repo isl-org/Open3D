@@ -1,4 +1,4 @@
-import open3d.ml.torch.ops as ops
+from ...python import ops
 import open3d.ml.torch.layers as layers
 import torch
 from torch.nn.parameter import Parameter

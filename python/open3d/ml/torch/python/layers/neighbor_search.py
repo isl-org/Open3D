@@ -1,4 +1,4 @@
-import open3d.ml.torch.ops as ops
+from ...python import ops
 import torch
 
 __all__ = ['FixedRadiusSearch', 'RadiusSearch', 'KNNSearch']
