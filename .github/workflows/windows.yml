@@ -131,6 +131,12 @@ jobs:
           python -m pip install -U scipy==${{ env.SCIPY_VER }}
           $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           python -m pip install (Get-ChildItem open3d*-$pi_tag-*.whl).Name
+          echo "Dynamic libraries used:"
+          $DLL_PATH=$(python -c "import open3d; print(open3d.cpu.pybind.__file__)")
+          foreach($dll in (Get-ChildItem(Split-Path $DLL_PATH -Parent)).FullName)
+          {
+            dumpbin /DEPENDENTS $dll
+          }
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
       - name: Run Python unit tests (benchmarks)
