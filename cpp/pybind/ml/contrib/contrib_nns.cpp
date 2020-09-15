@@ -50,11 +50,10 @@ const core::Tensor KnnSearch(const core::Tensor& query_points,
                              const core::Tensor& dataset_points,
                              int knn) {
     // Check dtype.
-    if (query_points.GetDtype() != core::Dtype::Float32) {
-        utility::LogError("query_points must be of dtype Float32.");
-    }
-    if (dataset_points.GetDtype() != core::Dtype::Float32) {
-        utility::LogError("dataset_points must be of dtype Float32.");
+    if (dataset_points.GetDtype() != query_points.GetDtype()) {
+        utility::LogError("Point dtype mismatch {} != {}.",
+                          dataset_points.GetDtype().ToString(),
+                          query_points.GetDtype().ToString());
     }
 
     // Check shape.
@@ -73,13 +72,11 @@ const core::Tensor KnnSearch(const core::Tensor& query_points,
 
     // Call NNS.
     // TODO: remove dytpe convertion.
-    core::nns::NearestNeighborSearch nns(
-            dataset_points.To(core::Dtype::Float64));
+    core::nns::NearestNeighborSearch nns(dataset_points);
     nns.KnnIndex();
     core::Tensor indices;
     core::Tensor distances;
-    std::tie(indices, distances) =
-            nns.KnnSearch(query_points.To(core::Dtype::Float64), knn);
+    std::tie(indices, distances) = nns.KnnSearch(query_points, knn);
     return indices.To(core::Dtype::Int32);
 }
 
@@ -103,11 +100,10 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
                                 const core::Tensor& dataset_batches,
                                 double radius) {
     // Check dtype.
-    if (query_points.GetDtype() != core::Dtype::Float32) {
-        utility::LogError("query_points must be of dtype Float32.");
-    }
-    if (dataset_points.GetDtype() != core::Dtype::Float32) {
-        utility::LogError("dataset_points must be of dtype Float32.");
+    if (dataset_points.GetDtype() != query_points.GetDtype()) {
+        utility::LogError("Point dtype mismatch {} != {}.",
+                          dataset_points.GetDtype().ToString(),
+                          query_points.GetDtype().ToString());
     }
     if (query_batches.GetDtype() != core::Dtype::Int32) {
         utility::LogError("query_batches must be of dtype Int32.");
@@ -162,6 +158,8 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
     // Call radius search for each batch.
     std::vector<core::Tensor> batched_indices(num_batches);
     std::vector<core::Tensor> batched_num_neighbors(num_batches);
+
+// TODO: remove OPENMP block after PR#2305 get merged.
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -175,8 +173,7 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
                                         .Sum({0})
                                         .Item<int32_t>();
         core::Tensor current_query_points =
-                query_points.Slice(0, query_start_idx, query_end_idx)
-                        .To(core::Dtype::Float64);
+                query_points.Slice(0, query_start_idx, query_end_idx);
 
         int32_t dataset_start_idx =
                 dataset_batches.Slice(0, 0, batch_idx).Sum({0}).Item<int32_t>();
@@ -184,8 +181,7 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
                                           .Sum({0})
                                           .Item<int32_t>();
         core::Tensor current_dataset_points =
-                dataset_points.Slice(0, dataset_start_idx, dataset_end_idx)
-                        .To(core::Dtype::Float64);
+                dataset_points.Slice(0, dataset_start_idx, dataset_end_idx);
 
         // Call radius search.
         // TODO: remove dytpe convertion.
@@ -208,9 +204,8 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
     }
 
     // Convert to the required output format. Pad with -1.
-    core::Tensor result = core::Tensor::Ones(
-            {num_query_points, max_num_neighbors}, core::Dtype::Int64);
-    result *= -1;
+    core::Tensor result = core::Tensor::Full(
+            {num_query_points, max_num_neighbors}, -1, core::Dtype::Int64);
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
