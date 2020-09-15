@@ -58,7 +58,6 @@ else()
 endif()
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
-set(FILAMENT_SOURCE_ROOT "" CACHE PATH "Path to Filament library sources (used if BUILD_FILAMENT_FROM_SOURCE=ON)")
 
 if (PREFER_OSX_HOMEBREW)
     set(CMAKE_FIND_FRAMEWORK LAST)
