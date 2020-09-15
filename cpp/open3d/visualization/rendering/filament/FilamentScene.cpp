@@ -327,14 +327,16 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
 
     std::vector<std::string> mesh_object_names;
-    std::unordered_set<std::string> check_duplicates;
+    std::unordered_multiset<std::string> check_duplicates;
     for (const auto& mesh : model.meshes_) {
         auto& mat = model.materials_[mesh.material_idx];
         std::string derived_name(object_name + ":" + mesh.mesh_name);
-        while (check_duplicates.count(derived_name) > 0) {
-            derived_name += "D";
-        }
         check_duplicates.insert(derived_name);
+        if (check_duplicates.count(derived_name) > 1) {
+            derived_name +=
+                    std::string("_") +
+                    std::to_string(check_duplicates.count(derived_name));
+        }
         AddGeometry(derived_name, *(mesh.mesh), mat);
         mesh_object_names.push_back(derived_name);
     }
