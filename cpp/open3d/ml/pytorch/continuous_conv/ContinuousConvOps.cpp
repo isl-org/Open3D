@@ -27,13 +27,13 @@
 
 #include <vector>
 
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/pytorch/continuous_conv/ContinuousConvBackpropFilterOpKernel.h"
 #include "open3d/ml/pytorch/continuous_conv/ContinuousConvHelper.h"
 #include "open3d/ml/pytorch/continuous_conv/ContinuousConvOpKernel.h"
 #include "open3d/ml/pytorch/continuous_conv/ContinuousConvTransposeOpKernel.h"
 #include "open3d/ml/pytorch/misc/InvertNeighborsListOps.h"
 #include "open3d/ml/pytorch/misc/ReduceSubarraysSumOps.h"
-#include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;

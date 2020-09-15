@@ -27,8 +27,8 @@
 
 #include "open3d/ml/pytorch/misc/InvertNeighborsListOpKernel.h"
 
-#include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/InvertNeighborsList.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 template <class TIndex, class TAttr>

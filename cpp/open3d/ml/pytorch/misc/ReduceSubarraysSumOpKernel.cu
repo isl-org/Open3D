@@ -26,9 +26,9 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/pytorch/misc/ReduceSubarraysSumOpKernel.h"
-#include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/ReduceSubarraysSum.cuh"
+#include "open3d/ml/pytorch/TorchHelper.h"
+#include "open3d/ml/pytorch/misc/ReduceSubarraysSumOpKernel.h"
 #include "torch/script.h"
 
 template <class T>

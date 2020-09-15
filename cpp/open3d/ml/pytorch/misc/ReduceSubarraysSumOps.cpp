@@ -29,8 +29,8 @@
 
 #include <vector>
 
-#include "open3d/ml/pytorch/misc/ReduceSubarraysSumOpKernel.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
+#include "open3d/ml/pytorch/misc/ReduceSubarraysSumOpKernel.h"
 #include "torch/script.h"
 
 torch::Tensor ReduceSubarraysSum(const torch::Tensor& values,

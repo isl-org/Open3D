@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/FixedRadiusSearch.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 template <class T>

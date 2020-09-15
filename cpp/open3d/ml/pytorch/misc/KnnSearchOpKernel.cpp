@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "open3d/ml/pytorch/misc/NeighborSearchAllocator.h"
-#include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/KnnSearch.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
+#include "open3d/ml/pytorch/misc/NeighborSearchAllocator.h"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;

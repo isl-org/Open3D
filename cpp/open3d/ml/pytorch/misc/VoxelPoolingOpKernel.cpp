@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/impl/misc/VoxelPooling.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;

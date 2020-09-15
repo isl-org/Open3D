@@ -28,8 +28,8 @@
 #include <vector>
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/impl/continuous_conv/ContinuousConvTranspose.cuh"
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;

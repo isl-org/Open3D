@@ -29,8 +29,8 @@
 
 #include <vector>
 
-#include "open3d/ml/pytorch/misc/InvertNeighborsListOpKernel.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
+#include "open3d/ml/pytorch/misc/InvertNeighborsListOpKernel.h"
 #include "torch/script.h"
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
