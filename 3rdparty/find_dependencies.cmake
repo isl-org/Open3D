@@ -904,7 +904,7 @@ if(BUILD_GUI)
         find_library(CPP_LIBRARY c++)
         if(CPP_LIBRARY)
             # Ensure that libstdc++ gets linked first
-            target_link_libraries(3rdparty_filament INTERFACE -lstdc++ ${CPP_LIBRARY})
+            target_link_libraries(3rdparty_filament INTERFACE -lstdc++ -Wl,-Bstatic ${CPP_LIBRARY} -Wl,-Bdynamic)
         endif()
     endif()
     if (APPLE)
