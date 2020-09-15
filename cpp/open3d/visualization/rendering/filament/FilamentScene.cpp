@@ -32,6 +32,7 @@
 //       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
+#include <unordered_set>
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293 4305)
@@ -326,9 +327,14 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
 
     std::vector<std::string> mesh_object_names;
+    std::unordered_set<std::string> check_duplicates;
     for (const auto& mesh : model.meshes_) {
         auto& mat = model.materials_[mesh.material_idx];
         std::string derived_name(object_name + ":" + mesh.mesh_name);
+        while (check_duplicates.count(derived_name) > 0) {
+            derived_name += "D";
+        }
+        check_duplicates.insert(derived_name);
         AddGeometry(derived_name, *(mesh.mesh), mat);
         mesh_object_names.push_back(derived_name);
     }
