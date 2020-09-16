@@ -259,7 +259,13 @@ void pybind_rendering_classes(py::module &m) {
                                    "The camera object")
             .def_property_readonly("bounding_box", &Open3DScene::GetBoundingBox,
                                    "The bounding box of all the items in the "
-                                   "scene, visible and invisible");
+                                   "scene, visible and invisible")
+            .def_property("downsample_threshold",
+                          &Open3DScene::GetDownsampleThreshold,
+                          &Open3DScene::SetDownsampleThreshold,
+                          "Minimum number of points before downsampled point "
+                          "clouds are created and used when rendering speed "
+                          "is important");
 }
 
 void pybind_rendering(py::module &m) {
