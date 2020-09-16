@@ -123,7 +123,7 @@ def main():
     parser.add_argument("--tensorflow_ops_dir",
                         type=str,
                         required=True,
-                        help="This is src/Open3D/ML/TensorFlow")
+                        help="This is cpp/open3d/ml/tensorflow")
 
     args = parser.parse_args()
     print(args)

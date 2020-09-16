@@ -15,6 +15,7 @@ open3d.ml.tf.layers
     RadiusSearch
     SparseConv
     SparseConvTranspose
+    VoxelPooling
 
 
 .. toctree::
@@ -26,3 +27,5 @@ open3d.ml.tf.layers
     RadiusSearch <open3d.ml.tf.layers.RadiusSearch>
     SparseConv <open3d.ml.tf.layers.SparseConv>
     SparseConvTranspose <open3d.ml.tf.layers.SparseConvTranspose>
+    VoxelPooling <open3d.ml.tf.layers.VoxelPooling>
+

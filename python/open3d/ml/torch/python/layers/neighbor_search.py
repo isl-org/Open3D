@@ -1,4 +1,30 @@
-from open3d.ml.torch.nn import functional as ops
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2020 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+
+from ...python import ops
 import torch
 
 __all__ = ['FixedRadiusSearch', 'RadiusSearch', 'KNNSearch']
@@ -21,7 +47,7 @@ class FixedRadiusSearch(torch.nn.Module):
         queries = torch.randn([10,3])
         radius = 0.8
 
-        nsearch = ml3d.nn.FixedRadiusSearch(return_distances=True)
+        nsearch = ml3d.layers.FixedRadiusSearch(return_distances=True)
         ans = nsearch(points, queries, radius)
         # returns a tuple of neighbors_index, neighbors_row_splits, and neighbors_distance
 
@@ -149,7 +175,7 @@ class RadiusSearch(torch.nn.Module):
         queries = torch.randn([10,3])
         radii = torch.randn([10])+1.0
 
-        nsearch = ml3d.nn.RadiusSearch(return_distances=True)
+        nsearch = ml3d.layers.RadiusSearch(return_distances=True)
         ans = nsearch(points, queries, radii)
         # returns a tuple of neighbors_index, neighbors_row_splits, and neighbors_distance
 
@@ -256,7 +282,7 @@ class KNNSearch(torch.nn.Module):
         queries = torch.randn([10,3])
         k = 8
 
-        nsearch = ml3d.nn.KNNSearch(return_distances=True)
+        nsearch = ml3d.layers.KNNSearch(return_distances=True)
         ans = nsearch(points, queries, k)
         # returns a tuple of neighbors_index, neighbors_row_splits, and neighbors_distance
         # Since there are more than k points and we do not ignore any points we can
