@@ -38,10 +38,6 @@ namespace contrib {
 /// TOOD: This is a temory wrapper for 3DML repositiory use. In the future, the
 /// native Open3D Python API should be improved and used.
 ///
-/// TOOD: Currently, open3d::core::NearestNeighborSearch supports Float64
-/// and Int64 only. NearestNeighborSearch will support Float32 and Int32 in the
-/// future. For now, we do a convertion manually.
-///
 /// \param query_points Tensor of shape {n_query_points, d}, dtype Float32.
 /// \param dataset_points Tensor of shape {n_dataset_points, d}, dtype Float32.
 /// \param knn Int.
@@ -71,7 +67,6 @@ const core::Tensor KnnSearch(const core::Tensor& query_points,
     }
 
     // Call NNS.
-    // TODO: remove dytpe convertion.
     core::nns::NearestNeighborSearch nns(dataset_points);
     nns.KnnIndex();
     core::Tensor indices;
@@ -184,7 +179,6 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
                 dataset_points.Slice(0, dataset_start_idx, dataset_end_idx);
 
         // Call radius search.
-        // TODO: remove dytpe convertion.
         core::nns::NearestNeighborSearch nns(current_dataset_points);
         nns.FixedRadiusIndex();
         core::Tensor indices;
@@ -207,6 +201,7 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
     core::Tensor result = core::Tensor::Full(
             {num_query_points, max_num_neighbors}, -1, core::Dtype::Int64);
 
+// TODO: remove OPENMP block after PR#2305 get merged.
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
