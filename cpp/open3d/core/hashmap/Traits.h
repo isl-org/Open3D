@@ -46,6 +46,8 @@
 namespace open3d {
 namespace core {
 
+static constexpr uint32_t MAX_KEY_BYTESIZE = 32;
+
 typedef uint32_t ptr_t;
 struct iterator_t {
     OPEN3D_HOST_DEVICE iterator_t() : first(nullptr), second(nullptr) {}

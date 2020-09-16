@@ -34,6 +34,7 @@
 
 #include <unordered_map>
 
+#include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 

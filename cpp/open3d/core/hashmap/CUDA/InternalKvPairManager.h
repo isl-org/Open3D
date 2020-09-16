@@ -116,8 +116,6 @@ __global__ void ResetInternalKvPairManagerKernel(
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < ctx.max_capacity_) {
         ctx.heap_[i] = i;
-
-        /// Memset outside
     }
 }
 
@@ -143,14 +141,14 @@ public:
         gpu_context_.dsize_key_ = dsize_key;
         gpu_context_.dsize_value_ = dsize_value;
 
-        gpu_context_.heap_counter_ = static_cast<int *>(
-                MemoryManager::Malloc(size_t(1) * sizeof(int), device_));
-        gpu_context_.heap_ = static_cast<ptr_t *>(MemoryManager::Malloc(
-                size_t(max_capacity_) * sizeof(ptr_t), device_));
-        gpu_context_.keys_ = static_cast<uint8_t *>(MemoryManager::Malloc(
-                size_t(max_capacity_) * dsize_key_, device_));
-        gpu_context_.values_ = static_cast<uint8_t *>(MemoryManager::Malloc(
-                size_t(max_capacity_) * dsize_value_, device_));
+        gpu_context_.heap_counter_ =
+                static_cast<int *>(MemoryManager::Malloc(sizeof(int), device_));
+        gpu_context_.heap_ = static_cast<ptr_t *>(
+                MemoryManager::Malloc(max_capacity_ * sizeof(ptr_t), device_));
+        gpu_context_.keys_ = static_cast<uint8_t *>(
+                MemoryManager::Malloc(max_capacity_ * dsize_key_, device_));
+        gpu_context_.values_ = static_cast<uint8_t *>(
+                MemoryManager::Malloc(max_capacity_ * dsize_value_, device_));
 
         // TODO: auto tune
         const int blocks = (max_capacity_ + 128 - 1) / 128;
@@ -161,6 +159,7 @@ public:
         OPEN3D_CUDA_CHECK(cudaGetLastError());
 
         int heap_counter = 0;
+        cudaMemset(gpu_context_.values_, 0, max_capacity_ * dsize_value_);
         MemoryManager::Memcpy(gpu_context_.heap_counter_, device_,
                               &heap_counter, Device("CPU:0"), sizeof(int));
     }
@@ -171,6 +170,8 @@ public:
         MemoryManager::Free(gpu_context_.keys_, device_);
         MemoryManager::Free(gpu_context_.values_, device_);
     }
+
+    // void FillZero() { cudaMemset(gpu_conetxt_.values_, 0, max_capacity_ *); }
 
     std::vector<int> DownloadHeap() {
         std::vector<int> ret;

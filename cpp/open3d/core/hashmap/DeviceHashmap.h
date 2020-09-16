@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/hashmap/Traits.h"
 
@@ -34,8 +33,10 @@ namespace open3d {
 namespace core {
 
 struct DefaultHash {
-    // Default constructor makes compiler happy. Undefined behavior, must set
-    // key_size_ before calling operator().
+    // Default constructor is required, since we need a struct instead of its
+    // pointer as a member in a hash table for CUDA kernel launches.
+    // Must set key_size_ before calling operator(), otherwise the behavior will
+    // be undefined.
     DefaultHash() {}
     DefaultHash(size_t key_size) : key_size_in_int_(key_size / sizeof(int)) {
         if (key_size_in_int_ == 0) {
@@ -60,8 +61,10 @@ struct DefaultHash {
 };
 
 struct DefaultKeyEq {
-    // Default constructor makes compiler happy. Undefined behavior, must set
-    // key_size_ before calling operator().
+    // Default constructor is required, since we need a struct instead of its
+    // pointer as a member in a hash table for CUDA kernel launches.
+    // Must set key_size_ before calling operator(), otherwise the behavior will
+    // be undefined.
     DefaultKeyEq() {}
     DefaultKeyEq(size_t key_size) : key_size_in_int_(key_size / sizeof(int)) {}
 
@@ -100,16 +103,15 @@ public:
           device_(device) {}
     virtual ~DeviceHashmap() {}
 
-    /// Rehash expects extra memory space at runtime, since it consists of
+    /// Rehash expects a lot of extra memory space at runtime,
+    /// since it consists of
     /// 1) dumping all key value pairs to a buffer
-    /// 2) create a new hash table
-    /// 3) parallel insert dumped key value pairs
-    /// 4) deallocate old hash table
+    /// 2) creating a new hash table
+    /// 3) parallel inserting dumped key value pairs
+    /// 4) deallocating old hash table
     virtual void Rehash(size_t buckets) = 0;
 
     /// Parallel insert contiguous arrays of keys and values.
-    /// Output iterators and masks can be nullptrs if return iterators are not
-    /// to be processed.
     virtual void Insert(const void* input_keys,
                         const void* input_values,
                         iterator_t* output_iterators,
@@ -125,15 +127,12 @@ public:
                           size_t count) = 0;
 
     /// Parallel find a contiguous array of keys.
-    /// Output iterators and masks CANNOT be nullptrs as we have to interpret
-    /// them.
     virtual void Find(const void* input_keys,
                       iterator_t* output_iterators,
                       bool* output_masks,
                       size_t count) = 0;
 
     /// Parallel erase a contiguous array of keys.
-    /// Output masks can be a nullptr if return results are not to be processed.
     virtual void Erase(const void* input_keys,
                        bool* output_masks,
                        size_t count) = 0;
@@ -142,8 +141,6 @@ public:
     virtual size_t GetIterators(iterator_t* output_iterators) = 0;
 
     /// Parallel unpack iterators to contiguous arrays of keys and/or values.
-    /// Output keys and values can be nullptrs if they are not to be
-    /// processed/stored.
     virtual void UnpackIterators(const iterator_t* input_iterators,
                                  const bool* input_masks,
                                  void* output_keys,
@@ -151,8 +148,6 @@ public:
                                  size_t count) = 0;
 
     /// Parallel assign iterators in-place with associated values.
-    /// Note: users should manage the key-value correspondences around
-    /// iterators.
     virtual void AssignIterators(iterator_t* input_iterators,
                                  const bool* input_masks,
                                  const void* input_values,
@@ -179,6 +174,10 @@ public:
     uint32_t dsize_key_;
     uint32_t dsize_value_;
     Device device_;
+
+    float avg_capacity_bucket_ratio() {
+        return float(capacity_) / float(bucket_count_);
+    }
 };
 
 /// Factory functions:

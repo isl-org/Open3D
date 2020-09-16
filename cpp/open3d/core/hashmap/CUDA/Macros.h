@@ -46,8 +46,6 @@
 namespace open3d {
 namespace core {
 
-static constexpr uint32_t MAX_KEY_BYTESIZE = 32;
-
 /// Built-in flags
 static constexpr uint32_t BASE_UNIT_SIZE = 32;
 static constexpr uint32_t EMPTY_SLAB_PTR = 0xFFFFFFFF;

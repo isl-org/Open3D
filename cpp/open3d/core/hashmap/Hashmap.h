@@ -114,6 +114,8 @@ public:
     Dtype GetKeyDtype() const { return dtype_key_; }
     Dtype GetValueDtype() const { return dtype_val_; }
 
+    Device GetDevice() const { return device_hashmap_->GetDevice(); }
+
 private:
     std::shared_ptr<DefaultDeviceHashmap> device_hashmap_;
 
