@@ -960,7 +960,7 @@ if(BUILD_RPC_INTERFACE)
 endif()
 
 # TBB
-include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
+include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
 import_3rdparty_library(3rdparty_tbb
     INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
     LIB_DIR      ${STATIC_TBB_LIB_DIR}
@@ -1000,6 +1000,7 @@ if(USE_BLAS)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
     endif()
 else()
+    include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
     # MKL, cuSOLVER, cuBLAS
     # We link MKL statically. For MKL link flags, refer to:
     # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
