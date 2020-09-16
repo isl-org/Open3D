@@ -53,7 +53,9 @@ namespace nns {
 enum Metric { L1, L2, Linf };
 
 /// Base struct for Index holder
-struct NanoFlannIndexHolderBase {};
+struct NanoFlannIndexHolderBase {
+    virtual ~NanoFlannIndexHolderBase() {}
+};
 
 /// NanoFlann Index Holder
 template <int METRIC, class T>
