@@ -111,8 +111,8 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         Tensor batch_indices =
                 Tensor::Full({num_query_points, knn}, -1, Dtype::Int64);
-        Tensor batch_distances = Tensor::Full({num_query_points, knn}, -1,
-                                              Dtype::FromType<scalar_t>());
+        Tensor batch_distances =
+                Tensor::Full({num_query_points, knn}, -1, dtype);
 
         auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
                 holder_.get());
@@ -201,7 +201,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         nanoflann::SearchParams params;
 
         // Check if the raii has negative values.
-        Tensor below_zero = radii.Le<scalar_t>(0);
+        Tensor below_zero = radii.Le(0);
         if (below_zero.Any()) {
             utility::LogError(
                     "[NanoFlannIndex::SearchRadius] radius should be "
@@ -251,8 +251,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
             total_nums += s;
         }
         indices = Tensor(batch_indices2, {total_nums}, Dtype::Int64);
-        distances = Tensor(batch_distances2, {total_nums},
-                           Dtype::FromType<scalar_t>());
+        distances = Tensor(batch_distances2, {total_nums}, dtype);
         num_neighbors = Tensor(batch_nums, {num_query_points}, Dtype::Int64);
     });
     return std::make_tuple(indices, distances, num_neighbors);
@@ -266,7 +265,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         Tensor radii(std::vector<scalar_t>(num_query_points,
                                            static_cast<scalar_t>(radius)),
-                     {num_query_points}, Dtype::FromType<scalar_t>());
+                     {num_query_points}, dtype);
         result = SearchRadius(query_points, radii);
     });
     return result;
