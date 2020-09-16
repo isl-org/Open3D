@@ -5,38 +5,32 @@ env:
 
 jobs:
   include:
-    # Ubuntu 18.04 ARM
+    # Ubuntu 20.04 ARM, with compatible cmake version
     - name: Ubuntu ARM
       os: linux
       arch: arm64
-      dist: bionic
+      dist: focal
       language: python
       python: "3.6"
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-          # packages:
-          #   - cmake
+          packages:
+            - cmake
+            - gfortran
+            - libblas-dev
+            - liblapack-dev
+            - liblapacke-dev
       install:
         # Ubuntu dependencies
         - ./util/install_deps_ubuntu.sh assume-yes
-        - sudo apt-get install gfortran libblas-dev liblapack-dev liblapacke-dev --assume-yes
-        # Python dependencies
-        - pip install -U pytest=="6.0.1"
-        # Compile and install latest CMake
-        - git clone https://github.com/Kitware/CMake.git
-        - pushd CMake
-        - git checkout v3.18.2
-        - ./bootstrap
-        - make -j${NPROC}
-        - sudo make install
-        - cmake --version
-        - popd # CMake
         # Check versions
         - python --version
         - python3 --version
         - pip --version
+        # Python dependencies
+        - pip install -U pytest=="6.0.1"
       script:
         # Build
         - mkdir build
@@ -57,9 +51,9 @@ jobs:
             -DBUILD_BENCHMARKS=ON \
             -DBUILD_EXAMPLES=ON \
             ..
-        - make -j${NPROC}
-        - make install -j${NPROC}
-        - make install-pip-package -j${NPROC}
+        - make -j$(proc)
+        - make install -j$(proc)
+        - make install-pip-package -j$(proc)
         # Test
         - ./bin/tests --gtest_filter="-*Reduce*Sum*"
         - pytest ../python/test/core --ignore ../python/test/ml_ops/
