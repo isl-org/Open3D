@@ -97,9 +97,7 @@ private:
 // Application::OnTerminate() should work even if we've already cleaned up,
 // it will just end up being a no-op.
 bool g_installed_atexit = false;
-void cleanup_filament_atexit() {
-    Application::GetInstance().OnTerminate();
-}
+void cleanup_filament_atexit() { Application::GetInstance().OnTerminate(); }
 
 void install_cleanup_atexit() {
     if (!g_installed_atexit) {
