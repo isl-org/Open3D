@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/nns/NearestNeighborSearch.h"
+#include "open3d/utility/ParallelScan.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/ml/contrib/contrib.h"
@@ -154,29 +155,34 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
     std::vector<core::Tensor> batched_indices(num_batches);
     std::vector<core::Tensor> batched_num_neighbors(num_batches);
 
+    // Calculate prefix-sum.
+    std::vector<int32_t> query_prefix_indices(num_batches + 1, 0);
+    std::vector<int32_t> dataset_prefix_indices(num_batches + 1, 0);
+
+    const int32_t* query_batch_flat =
+            static_cast<const int32_t*>(query_batches.GetDataPtr());
+    const int32_t* dataset_batch_flat =
+            static_cast<const int32_t*>(dataset_batches.GetDataPtr());
+
+    utility::InclusivePrefixSum(query_batch_flat,
+                                query_batch_flat + num_batches,
+                                query_prefix_indices.data() + 1);
+    utility::InclusivePrefixSum(dataset_batch_flat,
+                                dataset_batch_flat + num_batches,
+                                dataset_prefix_indices.data() + 1);
+
 // TODO: remove OPENMP block after PR#2305 get merged.
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
     for (int64_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
-        // TODO: we need a prefix-sum for 1D Tensor.
-        // start_idx: inclusive
-        // end_idx: exclusive
-        int32_t query_start_idx =
-                query_batches.Slice(0, 0, batch_idx).Sum({0}).Item<int32_t>();
-        int32_t query_end_idx = query_batches.Slice(0, 0, batch_idx + 1)
-                                        .Sum({0})
-                                        .Item<int32_t>();
         core::Tensor current_query_points =
-                query_points.Slice(0, query_start_idx, query_end_idx);
+                query_points.Slice(0, query_prefix_indices[batch_idx],
+                                   query_prefix_indices[batch_idx + 1]);
 
-        int32_t dataset_start_idx =
-                dataset_batches.Slice(0, 0, batch_idx).Sum({0}).Item<int32_t>();
-        int32_t dataset_end_idx = dataset_batches.Slice(0, 0, batch_idx + 1)
-                                          .Sum({0})
-                                          .Item<int32_t>();
         core::Tensor current_dataset_points =
-                dataset_points.Slice(0, dataset_start_idx, dataset_end_idx);
+                dataset_points.Slice(0, dataset_prefix_indices[batch_idx],
+                                     dataset_prefix_indices[batch_idx + 1]);
 
         // Call radius search.
         core::nns::NearestNeighborSearch nns(current_dataset_points);
@@ -206,19 +212,11 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
 #pragma omp parallel for schedule(static)
 #endif
     for (int64_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
-        // TODO: we need a prefix-sum for 1D Tensor.
-        // start_idx: inclusive
-        // end_idx: exclusive
-        int32_t result_start_idx =
-                query_batches.Slice(0, 0, batch_idx).Sum({0}).Item<int32_t>();
-        int32_t result_end_idx = query_batches.Slice(0, 0, batch_idx + 1)
-                                         .Sum({0})
-                                         .Item<int32_t>();
+        int32_t result_start_idx = query_prefix_indices[batch_idx];
+        int32_t result_end_idx = query_prefix_indices[batch_idx + 1];
 
         core::Tensor indices = batched_indices[batch_idx].Add(
-                dataset_batches.Slice(0, 0, batch_idx)
-                        .Sum({0})
-                        .Item<int32_t>());
+                dataset_prefix_indices[batch_idx]);
         core::Tensor num_neighbors = batched_num_neighbors[batch_idx];
 
         // Sanity check.
