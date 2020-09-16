@@ -22,7 +22,7 @@ jobs:
         uses: uraimo/run-on-arch-action@v2.0.2
         with:
           arch: aarch64
-          distro: ubuntu18.04
+          distro: ubuntu20.04
           githubToken: ${{ github.token }} # Not required, but speeds up builds
           install: |
             apt-get update -q -y
