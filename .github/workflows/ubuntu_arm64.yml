@@ -62,7 +62,16 @@ jobs:
             ccache -s
             mkdir build
             cd build
-            cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_GUI=OFF -DBUILD_TENSORFLOW_OPS=OFF -DBUILD_PYTORCH_OPS=OFF -DBUILD_UNIT_TESTS=ON -DCMAKE_INSTALL_PREFIX=~/open3d_install -DPYTHON_EXECUTABLE="$(which python3)" ..
+            cmake \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DBUILD_SHARED_LIBS=ON \
+              -DBUILD_GUI=OFF \
+              -DBUILD_TENSORFLOW_OPS=OFF \
+              -DBUILD_PYTORCH_OPS=OFF \
+              -DBUILD_UNIT_TESTS=ON \
+              -DCMAKE_INSTALL_PREFIX=~/open3d_install \
+              -DPYTHON_EXECUTABLE="$(which python3)" \
+              ..
             make -j$(nproc)
             make tests -j$(nproc)
             make install-pip-package -j$(nproc)
