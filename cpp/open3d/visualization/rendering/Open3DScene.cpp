@@ -40,6 +40,7 @@ namespace rendering {
 
 const std::string kAxisObjectName("__axis__");
 const std::string kFastModelObjectSuffix("__fast__");
+const std::size_t kDownsampleThreshold = 6000000;
 
 namespace {
 std::shared_ptr<geometry::TriangleMesh> CreateAxisGeometry(double axis_length) {
@@ -169,22 +170,24 @@ void Open3DScene::AddGeometry(
         std::shared_ptr<const geometry::Geometry3D> geom,
         const Material& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
-    auto scene = renderer_.GetScene(scene_);
-    if (scene->AddGeometry(name, *geom, mat)) {
-        GeometryData info(name, "");
-        bounds_ += scene->GetGeometryBoundingBox(name);
+    size_t downsample_threshold = SIZE_MAX;
+    std::string fast_name;
+    if (add_downsampled_copy_for_fast_rendering) {
+        fast_name = name + "." + kFastModelObjectSuffix;
+        downsample_threshold = kDownsampleThreshold;
+    }
 
-        if (add_downsampled_copy_for_fast_rendering) {
-            const std::size_t kMinPointsForDecimation = 6000000;
-            auto pcd =
-                    std::dynamic_pointer_cast<const geometry::PointCloud>(geom);
-            if (pcd && pcd->points_.size() > kMinPointsForDecimation) {
-                int sample_rate = int(pcd->points_.size()) /
-                                  (kMinPointsForDecimation / 2);
-                auto small_pc = pcd->UniformDownSample(sample_rate);
-                info.fast_name = name + "." + kFastModelObjectSuffix;
-                scene->AddGeometry(info.fast_name, *small_pc, mat);
-            }
+    auto scene = renderer_.GetScene(scene_);
+    if (scene->AddGeometry(name, *geom, mat, fast_name, downsample_threshold)) {
+        bounds_ += scene->GetGeometryBoundingBox(name);
+        GeometryData info(name, "");
+        // If the downsampled object got created, add it. It may not have been
+        // created if downsampling wasn't enabled or if the object does not meet
+        // the threshold.
+        if (add_downsampled_copy_for_fast_rendering &&
+            scene->HasGeometry(fast_name)) {
+            info.fast_name = fast_name;
+            geometries_[fast_name] = info;
         }
         geometries_[name] = info;
         SetGeometryToLOD(info, lod_);
@@ -194,15 +197,29 @@ void Open3DScene::AddGeometry(
     RecreateAxis(scene, bounds_, false);
 }
 
-void Open3DScene::AddGeometry(const std::string& name,
-                              const tgeometry::PointCloud* geom,
-                              const Material& mat) {
+void Open3DScene::AddGeometry(
+        const std::string& name,
+        const tgeometry::PointCloud* geom,
+        const Material& mat,
+        bool add_downsampled_copy_for_fast_rendering /*= true*/) {
+    size_t downsample_threshold = SIZE_MAX;
+    std::string fast_name;
+    if (add_downsampled_copy_for_fast_rendering) {
+        fast_name = name + "." + kFastModelObjectSuffix;
+        downsample_threshold = kDownsampleThreshold;
+    }
+
     auto scene = renderer_.GetScene(scene_);
-    if (scene->AddGeometry(name, *geom, mat)) {
-        GeometryData info(name, "");
+    if (scene->AddGeometry(name, *geom, mat, fast_name, downsample_threshold)) {
         bounds_ += scene->GetGeometryBoundingBox(name);
-        // tgeometry::PointCloud does not have functions for decimation, so we
-        // do not compute a fast version.
+        GeometryData info(name, "");
+        // If the downsampled object got created, add it. It may not have been
+        // created if downsampling wasn't enabled or if the object does not meet
+        // the threshold.
+        if (add_downsampled_copy_for_fast_rendering &&
+            scene->HasGeometry(fast_name)) {
+            info.fast_name = fast_name;
+        }
         geometries_[name] = info;
         SetGeometryToLOD(info, lod_);
     }
@@ -213,7 +230,14 @@ void Open3DScene::AddGeometry(const std::string& name,
 
 void Open3DScene::RemoveGeometry(const std::string& name) {
     auto scene = renderer_.GetScene(scene_);
-    scene->RemoveGeometry(name);
+    auto g = geometries_.find(name);
+    if (g != geometries_.end()) {
+        scene->RemoveGeometry(name);
+        if (!g->second.fast_name.empty()) {
+            scene->RemoveGeometry(g->second.fast_name);
+        }
+        geometries_.erase(name);
+    }
 }
 
 void Open3DScene::ShowGeometry(const std::string& name, bool show) {

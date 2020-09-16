@@ -72,7 +72,8 @@ public:
     //       enough to get copied to the GPU by the render thread.
     void AddGeometry(const std::string& name,
                      const tgeometry::PointCloud* geom,
-                     const Material& mat);
+                     const Material& mat,
+                     bool add_downsampled_copy_for_fast_rendering = true);
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);

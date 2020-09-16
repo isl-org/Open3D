@@ -641,21 +641,38 @@ Tensor Tensor::Slice(int64_t dim,
                      int64_t stop,
                      int64_t step) const {
     if (shape_.size() == 0) {
-        utility::LogError("Slice cannot be applied to 0-dim Tensor");
+        utility::LogError("Slice cannot be applied to 0-dim Tensor.");
     }
     dim = shape_util::WrapDim(dim, NumDims());
     if (dim < 0 || dim >= static_cast<int64_t>(shape_.size())) {
-        utility::LogError("Dim {} is out of bound for SizeVector of length {}",
+        utility::LogError("Dim {} is out of bound for SizeVector of length {}.",
                           dim, shape_.size());
     }
-    // TODO: support negative step sizes
     if (step == 0) {
-        utility::LogError("Step size cannot be 0");
+        utility::LogError("Step size cannot be 0.");
+    } else if (step < 0) {
+        // TODO: support negative step sizes
+        utility::LogError("Step size cannot be 0.");
     }
-    start = shape_util::WrapDim(start, shape_[dim]);
-    stop = shape_util::WrapDim(stop, shape_[dim], /*inclusive=*/true);
+
+    // Wrap start. Out-of-range slice is valid and produces empty Tensor.
+    if (start < 0) {
+        start += shape_[dim];
+    }
+    if (start < 0) {
+        start = 0;
+    } else if (start >= shape_[dim]) {
+        start = shape_[dim];
+    }
+
+    // Wrap stop. Out-of-range slice is valid and produces empty Tensor.
+    if (stop < 0) {
+        stop += shape_[dim];
+    }
     if (stop < start) {
         stop = start;
+    } else if (stop >= shape_[dim]) {
+        stop = shape_[dim];
     }
 
     void* new_data_ptr = static_cast<char*>(data_ptr_) +

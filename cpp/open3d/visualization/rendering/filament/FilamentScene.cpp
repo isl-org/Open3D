@@ -32,6 +32,7 @@
 //       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
+#include <unordered_set>
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293 4305)
@@ -76,6 +77,7 @@
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
@@ -214,7 +216,9 @@ MaterialInstanceHandle FilamentScene::AssignMaterialToFilamentGeometry(
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const geometry::Geometry3D& geometry,
-                                const Material& material) {
+                                const Material& material,
+                                const std::string& downsampled_name /*= ""*/,
+                                size_t downsample_threshold /*= SIZE_MAX*/) {
     if (geometries_.count(object_name) > 0) {
         utility::LogWarning(
                 "Geometry {} has already been added to scene graph.",
@@ -230,59 +234,32 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         return false;
     }
 
-    auto buffers = geometry_buffer_builder->ConstructBuffers();
+    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
+    if (!downsampled_name.empty()) {
+        buffer_builder->SetDownsampleThreshold(downsample_threshold);
+    }
+    auto buffers = buffer_builder->ConstructBuffers();
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
-
-    filament::Box aabb = geometry_buffer_builder->ComputeAABB();
-
-    auto vbuf = resource_mgr_.GetVertexBuffer(vb).lock();
-    auto ibuf = resource_mgr_.GetIndexBuffer(ib).lock();
-
-    auto filament_entity = utils::EntityManager::get().create();
-    filament::RenderableManager::Builder builder(1);
-    builder.boundingBox(aabb)
-            .layerMask(FilamentView::kAllLayersMask, FilamentView::kMainLayer)
-            .castShadows(true)
-            .receiveShadows(true)
-            .geometry(0, geometry_buffer_builder->GetPrimitiveType(),
-                      vbuf.get(), ibuf.get());
-
-    auto material_instance =
-            AssignMaterialToFilamentGeometry(builder, material);
-
-    auto result = builder.build(engine_, filament_entity);
-    if (result == filament::RenderableManager::Builder::Success) {
-        scene_->addEntity(filament_entity);
-
-        auto giter = geometries_.emplace(std::make_pair(
-                object_name,
-                RenderableGeometry{object_name,
-                                   true,
-                                   true,
-                                   true,
-                                   {{}, material, material_instance},
-                                   filament_entity,
-                                   vb,
-                                   ib}));
-
-        SetGeometryTransform(object_name, Transform::Identity());
-        UpdateMaterialProperties(giter.first->second);
-    } else {
-        // NOTE: Is there a better way to handle builder failing? That's a
-        // sign of a major problem.
-        utility::LogWarning(
-                "Failed to build Filament resources for geometry {}",
-                object_name);
-        return false;
+    auto ib_downsampled = std::get<2>(buffers);
+    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder, vb,
+                                              ib, material);
+    if (success && ib_downsampled) {
+        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
+                                        ib_downsampled, material,
+                                        BufferReuse::kYes)) {
+            utility::LogWarning(
+                    "Internal error: could not create downsampled point cloud");
+        }
     }
-
-    return true;
+    return success;
 }
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const tgeometry::PointCloud& point_cloud,
-                                const Material& material) {
+                                const Material& material,
+                                const std::string& downsampled_name /*= ""*/,
+                                size_t downsample_threshold /*= SIZE_MAX*/) {
     // Basic sanity checks
     if (point_cloud.IsEmpty()) {
         utility::LogWarning("Point cloud for object {} is empty", object_name);
@@ -300,56 +277,30 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         return false;
     }
 
-    auto geometry_buffer_builder =
-            GeometryBuffersBuilder::GetBuilder(point_cloud);
-    auto buffers = geometry_buffer_builder->ConstructBuffers();
+    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(point_cloud);
+    if (!downsampled_name.empty()) {
+        buffer_builder->SetDownsampleThreshold(downsample_threshold);
+    }
+    auto buffers = buffer_builder->ConstructBuffers();
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
-
-    filament::Box aabb = geometry_buffer_builder->ComputeAABB();
-
-    auto vbuf = resource_mgr_.GetVertexBuffer(vb).lock();
-    auto ibuf = resource_mgr_.GetIndexBuffer(ib).lock();
-
-    auto filament_entity = utils::EntityManager::get().create();
-    filament::RenderableManager::Builder builder(1);
-    builder.boundingBox(aabb)
-            .layerMask(FilamentView::kAllLayersMask, FilamentView::kMainLayer)
-            .castShadows(true)
-            .receiveShadows(true)
-            .geometry(0, geometry_buffer_builder->GetPrimitiveType(),
-                      vbuf.get(), ibuf.get());
-
-    auto material_instance =
-            AssignMaterialToFilamentGeometry(builder, material);
-
-    auto result = builder.build(engine_, filament_entity);
-    if (result == filament::RenderableManager::Builder::Success) {
-        scene_->addEntity(filament_entity);
-
-        auto giter = geometries_.emplace(std::make_pair(
-                object_name,
-                RenderableGeometry{object_name,
-                                   true,
-                                   true,
-                                   true,
-                                   {{}, material, material_instance},
-                                   filament_entity,
-                                   vb,
-                                   ib}));
-
-        SetGeometryTransform(object_name, Transform::Identity());
-        UpdateMaterialProperties(giter.first->second);
-    } else {
-        // NOTE: Is there a better way to handle builder failing? That's a
-        // sign of a major problem.
-        utility::LogWarning(
-                "Failed to build Filament resources for geometry {}",
-                object_name);
-        return false;
+    auto ib_downsampled = std::get<2>(buffers);
+    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder, vb,
+                                              ib, material);
+    if (success && ib_downsampled) {
+        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
+                                        ib_downsampled, material,
+                                        BufferReuse::kYes)) {
+            // If we failed to create a downsampled cloud, which would be
+            // unlikely, create another entity with the original buffers
+            // (since that succeeded).
+            utility::LogWarning(
+                    "Internal error: could not create downsampled point cloud");
+            CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
+                                       ib, material, BufferReuse::kYes);
+        }
     }
-
-    return true;
+    return success;
 }
 
 #ifndef NDEBUG
@@ -376,15 +327,87 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
 
     std::vector<std::string> mesh_object_names;
+    std::unordered_multiset<std::string> check_duplicates;
     for (const auto& mesh : model.meshes_) {
         auto& mat = model.materials_[mesh.material_idx];
         std::string derived_name(object_name + ":" + mesh.mesh_name);
+        check_duplicates.insert(derived_name);
+        if (check_duplicates.count(derived_name) > 1) {
+            derived_name +=
+                    std::string("_") +
+                    std::to_string(check_duplicates.count(derived_name));
+        }
         AddGeometry(derived_name, *(mesh.mesh), mat);
         mesh_object_names.push_back(derived_name);
     }
     model_geometries_[object_name] = mesh_object_names;
 
     return true;
+}
+
+bool FilamentScene::CreateAndAddFilamentEntity(
+        const std::string& object_name,
+        GeometryBuffersBuilder& buffer_builder,
+        VertexBufferHandle vb,
+        IndexBufferHandle ib,
+        const Material& material,
+        BufferReuse reusing_vertex_buffer /*= kNo*/) {
+    filament::Box aabb = buffer_builder.ComputeAABB();
+
+    auto vbuf = resource_mgr_.GetVertexBuffer(vb).lock();
+    auto ibuf = resource_mgr_.GetIndexBuffer(ib).lock();
+
+    auto filament_entity = utils::EntityManager::get().create();
+    filament::RenderableManager::Builder builder(1);
+    builder.boundingBox(aabb)
+            .layerMask(FilamentView::kAllLayersMask, FilamentView::kMainLayer)
+            .castShadows(true)
+            .receiveShadows(true)
+            .geometry(0, buffer_builder.GetPrimitiveType(), vbuf.get(),
+                      ibuf.get());
+
+    auto material_instance =
+            AssignMaterialToFilamentGeometry(builder, material);
+
+    auto result = builder.build(engine_, filament_entity);
+    if (result == filament::RenderableManager::Builder::Success) {
+        scene_->addEntity(filament_entity);
+
+        auto giter = geometries_.emplace(std::make_pair(
+                object_name,
+                RenderableGeometry{object_name,
+                                   true,
+                                   true,
+                                   true,
+                                   {{}, material, material_instance},
+                                   filament_entity,
+                                   vb,
+                                   ib}));
+
+        SetGeometryTransform(object_name, Transform::Identity());
+        UpdateMaterialProperties(giter.first->second);
+    } else {
+        // NOTE: Is there a better way to handle builder failing? That's a
+        // sign of a major problem.
+        utility::LogWarning(
+                "Failed to build Filament resources for geometry {}",
+                object_name);
+        return false;
+    }
+
+    if (reusing_vertex_buffer == BufferReuse::kYes) {
+        resource_mgr_.ReuseVertexBuffer(vb);
+    }
+
+    return true;
+}
+
+bool FilamentScene::HasGeometry(const std::string& object_name) const {
+    if (GeometryIsModel(object_name)) {
+        return true;
+    }
+    auto geom_entry = geometries_.find(object_name);
+    return (geom_entry != geometries_.end());
 }
 
 static void deallocate_vertex_buffer(void* buffer,
@@ -1240,7 +1263,7 @@ std::vector<FilamentScene::RenderableGeometry*> FilamentScene::GetGeometry(
     return geoms;
 }
 
-bool FilamentScene::GeometryIsModel(const std::string& object_name) {
+bool FilamentScene::GeometryIsModel(const std::string& object_name) const {
     return model_geometries_.count(object_name) > 0;
 }
 
