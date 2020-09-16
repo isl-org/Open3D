@@ -56,6 +56,7 @@ jobs:
             pip3 --version || true
             pip3 install pytest=="6.0.1" -U
 
+          # Build and run Open3D tests
           run: |
             PATH=/usr/lib/ccache:$PATH
             ccache -s
@@ -64,6 +65,7 @@ jobs:
             cmake -DBUILD_SHARED_LIBS=ON -DBUILD_GUI=OFF -DBUILD_TENSORFLOW_OPS=OFF -DBUILD_PYTORCH_OPS=OFF -DBUILD_UNIT_TESTS=ON -DCMAKE_INSTALL_PREFIX=~/open3d_install -DPYTHON_EXECUTABLE="$(which python3)" ..
             make -j$(nproc)
             make tests -j$(nproc)
-            ./bin/tests --gtest_filter=-*Reduce*Sum*"
             make install-pip-package -j$(nproc)
+            ./bin/tests --gtest_filter=-*Reduce*Sum*"
+            pytest ../python/test/ --ignore ../python/test/ml_ops/
             ccache -s
