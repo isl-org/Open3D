@@ -92,7 +92,7 @@ void Hashmap::Insert(const Tensor& input_keys,
                 GetDevice().ToString(), input_values.GetDevice().ToString());
     }
 
-    int count = shape[0];
+    int64_t count = shape[0];
     Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
 
     output_iterators = Tensor({count}, dtype_it, GetDevice());
@@ -126,7 +126,7 @@ void Hashmap::Activate(const Tensor& input_keys,
                 GetDevice().ToString(), input_keys.GetDevice().ToString());
     }
 
-    int count = shape[0];
+    int64_t count = shape[0];
     Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
 
     output_iterators = Tensor({count}, dtype_it, GetDevice());
@@ -160,7 +160,7 @@ void Hashmap::Find(const Tensor& input_keys,
                 GetDevice().ToString(), input_keys.GetDevice().ToString());
     }
 
-    int count = shape[0];
+    int64_t count = shape[0];
     Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
 
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
@@ -188,7 +188,7 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
                 GetDevice().ToString(), input_keys.GetDevice().ToString());
     }
 
-    int count = shape[0];
+    int64_t count = shape[0];
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
     return Erase(input_keys.GetDataPtr(),
