@@ -385,7 +385,7 @@ void pybind_gui_classes(py::module &m) {
                      std::stringstream s;
                      s << "Rect (" << r.x << ", " << r.y << "), " << r.width
                        << " x " << r.height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_readwrite("x", &Rect::x)
             .def_readwrite("y", &Rect::y)
@@ -407,7 +407,7 @@ void pybind_gui_classes(py::module &m) {
                  [](const Size &sz) {
                      std::stringstream s;
                      s << "Size (" << sz.width << ", " << sz.height << ")";
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_readwrite("width", &Size::width)
             .def_readwrite("height", &Size::height);
@@ -422,7 +422,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "Widget (" << w.GetFrame().x << ", " << w.GetFrame().y
                        << "), " << w.GetFrame().width << " x "
                        << w.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def("add_child", &Widget::AddChild, "Adds a child widget")
             .def("get_children", &Widget::GetChildren,
@@ -451,7 +451,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "Button (" << b.GetFrame().x << ", " << b.GetFrame().y
                        << "), " << b.GetFrame().width << " x "
                        << b.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property("text", &Button::GetText, &Button::SetText,
                           "Gets/sets the button text.")
@@ -509,7 +509,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "Checkbox (" << c.GetFrame().x << ", "
                        << c.GetFrame().y << "), " << c.GetFrame().width << " x "
                        << c.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property("checked", &Checkbox::IsChecked,
                           &Checkbox::SetChecked,
@@ -530,7 +530,7 @@ void pybind_gui_classes(py::module &m) {
                        << color.GetAlpha() << "] (" << c.GetFrame().x << ", "
                        << c.GetFrame().y << "), " << c.GetFrame().width << " x "
                        << c.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property(
                     "color_value", &ColorEdit::GetValue,
@@ -589,7 +589,7 @@ void pybind_gui_classes(py::module &m) {
                 s << "ImageLabel (" << il.GetFrame().x << ", "
                   << il.GetFrame().y << "), " << il.GetFrame().width << " x "
                   << il.GetFrame().height;
-                return s.str().c_str();
+                return s.str();
             });
     // TODO: add the other functions and UIImage?
 
@@ -605,7 +605,7 @@ void pybind_gui_classes(py::module &m) {
                        << lbl.GetFrame().x << ", " << lbl.GetFrame().y << "), "
                        << lbl.GetFrame().width << " x "
                        << lbl.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property("text", &Label::GetText, &Label::SetText,
                           "The text of the label. Newlines will be treated as "
@@ -624,7 +624,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "Label (" << lv.GetFrame().x << ", "
                        << lv.GetFrame().y << "), " << lv.GetFrame().width
                        << " x " << lv.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def("set_items", &ListView::SetItems,
                  "Sets the list to display the list of items provided")
@@ -663,7 +663,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "NumberEdit [" << val << "] (" << ne.GetFrame().x
                        << ", " << ne.GetFrame().y << "), "
                        << ne.GetFrame().width << " x " << ne.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property(
                     "int_value", &NumberEdit::GetIntValue,
@@ -701,7 +701,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "ProgressBar [" << pb.GetValue() << "] ("
                        << pb.GetFrame().x << ", " << pb.GetFrame().y << "), "
                        << pb.GetFrame().width << " x " << pb.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property(
                     "value", &ProgressBar::GetValue, &ProgressBar::SetValue,
@@ -768,7 +768,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "TextEdit [" << val << "] (" << sl.GetFrame().x
                        << ", " << sl.GetFrame().y << "), "
                        << sl.GetFrame().width << " x " << sl.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property(
                     "int_value", &Slider::GetIntValue,
@@ -827,7 +827,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "TextEdit [" << val << "] (" << te.GetFrame().x
                        << ", " << te.GetFrame().y << "), "
                        << te.GetFrame().width << " x " << te.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property("text_value", &TextEdit::GetText, &TextEdit::SetText,
                           "The value of text")
@@ -852,7 +852,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "TreeView (" << tv.GetFrame().x << ", "
                        << tv.GetFrame().y << "), " << tv.GetFrame().width
                        << " x " << tv.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def("get_root_item", &TreeView::GetRootItem,
                  "Returns the root item. This item is invisible, so its child "
@@ -966,7 +966,7 @@ void pybind_gui_classes(py::module &m) {
                        << val.z() << "] (" << ve.GetFrame().x << ", "
                        << ve.GetFrame().y << "), " << ve.GetFrame().width
                        << " x " << ve.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property("vector_value", &VectorEdit::GetValue,
                           &VectorEdit::SetValue, "Returns value [x, y, z]")

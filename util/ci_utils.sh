@@ -68,6 +68,7 @@ install_cuda_toolkit() {
             "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
     fi
     CUDA_TOOLKIT_DIR=/usr/local/cuda-${CUDA_VERSION[1]}
+    [ -e /usr/local/cuda ] || $SUDO ln -s "$CUDA_TOOLKIT_DIR" /usr/local/cuda
     set +u # Disable "unbound variable is error" since that gives a false alarm error below:
     export PATH="${CUDA_TOOLKIT_DIR}/bin${PATH:+:$PATH}"
     export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
