@@ -191,14 +191,14 @@ void CUDAHashmap<Hash, KeyEq>::Insert(const void* input_keys,
 
     // Check capacity and rehash if in need
     int capacity = Size();
-    uint32_t new_capacity = capacity + count;
+    size_t new_capacity = capacity + count;
 
     if (new_capacity > this->capacity_) {
         float avg_ratio = float(this->capacity_) / float(this->bucket_count_);
-        uint32_t exp_buckets = uint32_t(std::ceil(new_capacity / avg_ratio));
+        size_t exp_buckets = size_t(std::ceil(new_capacity / avg_ratio));
 
         // At least increase by a factor of 2
-        Rehash(std::max(this->bucket_count_ * 2, exp_buckets));
+        Rehash(size_t(std::max(this->bucket_count_ * 2, exp_buckets)));
     }
 
     InsertImpl(input_keys, input_values, output_iterators, output_masks, count);
@@ -221,7 +221,7 @@ void CUDAHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
     }
     auto iterator_ptrs = static_cast<ptr_t*>(
             MemoryManager::Malloc(sizeof(ptr_t) * count, this->device_));
-    const uint32_t num_blocks = (count + BLOCKSIZE_ - 1) / BLOCKSIZE_;
+    const size_t num_blocks = (count + BLOCKSIZE_ - 1) / BLOCKSIZE_;
 
     int heap_counter =
             *thrust::device_ptr<int>(gpu_context_.mem_mgr_ctx_.heap_counter_);
@@ -258,12 +258,12 @@ void CUDAHashmap<Hash, KeyEq>::Activate(const void* input_keys,
 
     // Check capacity
     int capacity = Size();
-    uint32_t new_capacity = capacity + count;
+    size_t new_capacity = capacity + count;
     utility::LogInfo("Rehash count = {}, capacity = {}, new_capacity = {}",
                      count, this->capacity_, new_capacity);
     if (new_capacity > this->capacity_) {
         float avg_ratio = float(this->capacity_) / float(this->bucket_count_);
-        uint32_t exp_buckets = uint32_t(std::ceil(new_capacity / avg_ratio));
+        size_t exp_buckets = size_t(std::ceil(new_capacity / avg_ratio));
 
         // At least increase by a factor of 2
         Rehash(std::max(this->bucket_count_ * 2, exp_buckets));
@@ -282,7 +282,7 @@ void CUDAHashmap<Hash, KeyEq>::ActivateImpl(const void* input_keys,
                                             iterator_t* output_iterators,
                                             bool* output_masks,
                                             size_t count) {
-    const uint32_t num_blocks = (count + BLOCKSIZE_ - 1) / BLOCKSIZE_;
+    const size_t num_blocks = (count + BLOCKSIZE_ - 1) / BLOCKSIZE_;
     auto iterator_ptrs = static_cast<ptr_t*>(
             MemoryManager::Malloc(sizeof(ptr_t) * count, this->device_));
 
@@ -329,7 +329,7 @@ void CUDAHashmap<Hash, KeyEq>::FindImpl(const void* input_keys,
                                         size_t count) {
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
 
-    const uint32_t num_blocks = (count + BLOCKSIZE_ - 1) / BLOCKSIZE_;
+    const size_t num_blocks = (count + BLOCKSIZE_ - 1) / BLOCKSIZE_;
     FindKernel<<<num_blocks, BLOCKSIZE_>>>(
             gpu_context_, input_keys, output_iterators, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
@@ -365,7 +365,7 @@ void CUDAHashmap<Hash, KeyEq>::EraseImpl(const void* input_keys,
                                          bool* output_masks,
                                          size_t count) {
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
-    const uint32_t num_blocks = (count + BLOCKSIZE_ - 1) / BLOCKSIZE_;
+    const size_t num_blocks = (count + BLOCKSIZE_ - 1) / BLOCKSIZE_;
 
     auto iterator_ptrs = static_cast<ptr_t*>(
             MemoryManager::Malloc(sizeof(ptr_t) * count, this->device_));
@@ -383,13 +383,13 @@ void CUDAHashmap<Hash, KeyEq>::EraseImpl(const void* input_keys,
 
 template <typename Hash, typename KeyEq>
 size_t CUDAHashmap<Hash, KeyEq>::GetIterators(iterator_t* output_iterators) {
-    const uint32_t blocksize = 128;
-    const uint32_t num_blocks =
+    const size_t blocksize = 128;
+    const size_t num_blocks =
             (gpu_context_.bucket_count_ * WARP_SIZE + blocksize - 1) /
             blocksize;
 
-    uint32_t* iterator_count =
-            (uint32_t*)MemoryManager::Malloc(sizeof(uint32_t), this->device_);
+    uint32_t* iterator_count = static_cast<uint32_t*>(
+            MemoryManager::Malloc(sizeof(uint32_t), this->device_));
     cudaMemset(iterator_count, 0, sizeof(uint32_t));
 
     GetIteratorsKernel<<<num_blocks, blocksize>>>(
@@ -398,27 +398,9 @@ size_t CUDAHashmap<Hash, KeyEq>::GetIterators(iterator_t* output_iterators) {
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
     uint32_t ret;
-    MemoryManager::Memcpy(&ret, Device("CPU:0"), iterator_count, this->device_,
-                          sizeof(uint32_t));
-
-    // uint32_t total_count = ret;
-    // thrust::device_vector<iterator_t> all_iterators_device(
-    //         output_iterators, output_iterators + total_count);
-
-    // // 2. Verbose check: every iterator should be observable in gt// for
-    // (size_t i = 0; i < total_count; ++i) {
-    //     iterator_t iterator = all_iterators_device[i];
-    //     int64_t key0 = *(thrust::device_ptr<int64_t>(
-    //             reinterpret_cast<int64_t*>(iterator.first)));
-    //     int64_t key1 = *(thrust::device_ptr<int64_t>(
-    //             reinterpret_cast<int64_t*>(iterator.first) + 1));
-    //     int64_t key2 = *(thrust::device_ptr<int64_t>(
-    //             reinterpret_cast<int64_t*>(iterator.first) + 2));
-    //     std::cout << key0 << ", " << key1 << ", " << key2 << "->"
-    //               << iterator.second << "\n";
-    // }
-
-    return ret;
+    MemoryManager::MemcpyToHost(&ret, iterator_count, this->device_,
+                                sizeof(uint32_t));
+    return static_cast<size_t>(ret);
 }
 
 template <typename Hash, typename KeyEq>
@@ -463,7 +445,7 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
     // TODO: add a size operator instead of rough estimation
     auto output_iterators = (iterator_t*)MemoryManager::Malloc(
             sizeof(iterator_t) * this->capacity_, this->device_);
-    uint32_t iterator_count = GetIterators(output_iterators);
+    size_t iterator_count = GetIterators(output_iterators);
 
     void* output_keys;
     void* output_values;
@@ -479,7 +461,7 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
 
     float avg_ratio = float(this->capacity_) / float(this->bucket_count_);
     MemoryManager::Free(gpu_context_.bucket_list_head_, this->device_);
-    Allocate(buckets, uint32_t(std::ceil(buckets * avg_ratio)));
+    Allocate(buckets, size_t(std::ceil(buckets * avg_ratio)));
 
     /// Insert back
     if (iterator_count > 0) {
@@ -509,8 +491,8 @@ std::vector<size_t> CUDAHashmap<Hash, KeyEq>::BucketSizes() const {
             elems_per_bucket_buffer + gpu_context_.bucket_count_);
     thrust::fill(elems_per_bucket.begin(), elems_per_bucket.end(), 0);
 
-    const uint32_t blocksize = 128;
-    const uint32_t num_blocks =
+    const size_t blocksize = 128;
+    const size_t num_blocks =
             (gpu_context_.capacity_ + blocksize - 1) / blocksize;
     CountElemsPerBucketKernel<<<num_blocks, blocksize>>>(
             gpu_context_, thrust::raw_pointer_cast(elems_per_bucket.data()));

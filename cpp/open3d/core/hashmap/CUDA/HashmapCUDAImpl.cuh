@@ -643,7 +643,7 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     if (is_active && ((1 << lane_id) & PAIR_PTR_LANES_MASK)) {
         iterator_t iterator =
                 hash_ctx.mem_mgr_ctx_.extract_iterator(src_unit_data);
-        int index = atomicAdd(iterator_count, 1);
+        uint32_t index = atomicAdd(iterator_count, 1);
         iterators[index] = iterator;
     }
 
@@ -658,7 +658,7 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
         if (is_active && ((1 << lane_id) & PAIR_PTR_LANES_MASK)) {
             iterator_t iterator =
                     hash_ctx.mem_mgr_ctx_.extract_iterator(src_unit_data);
-            int index = atomicAdd(iterator_count, 1);
+            uint32_t index = atomicAdd(iterator_count, 1);
             iterators[index] = iterator;
         }
         next = __shfl_sync(ACTIVE_LANES_MASK, src_unit_data, NEXT_SLAB_PTR_LANE,

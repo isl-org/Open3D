@@ -169,10 +169,10 @@ public:
     Device GetDevice() const { return device_; }
 
 public:
-    uint32_t bucket_count_;
-    uint32_t capacity_;
-    uint32_t dsize_key_;
-    uint32_t dsize_value_;
+    size_t bucket_count_;
+    size_t capacity_;
+    size_t dsize_key_;
+    size_t dsize_value_;
     Device device_;
 
     float avg_capacity_bucket_ratio() {
