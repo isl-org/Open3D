@@ -53,6 +53,18 @@
 
 namespace open3d {
 namespace core {
+/// Internal Hashtable Node: (31 units and 1 next ptr) representation.
+/// \member kv_pair_ptrs:
+/// Each element is an internal ptr to a kv pair managed by the
+/// InternalMemoryManager. Can be converted to a real ptr.
+/// \member next_slab_ptr:
+/// An internal ptr managed by InternalNodeManager.
+class Slab {
+public:
+    ptr_t kv_pair_ptrs[WARP_WIDTH - 1];
+    ptr_t next_slab_ptr;
+};
+
 /// 32 super blocks (5 bit)
 /// 256 memory blocks (8 bit) per super block
 /// 1024 slabs (10 bit) per memory block

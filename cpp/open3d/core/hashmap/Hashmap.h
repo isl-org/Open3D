@@ -46,9 +46,9 @@ public:
 
     /// Rehash expects extra memory space at runtime, since it consists of
     /// 1) dumping all key value pairs to a buffer
-    /// 2) create a new hash table
-    /// 3) parallel insert dumped key value pairs
-    /// 4) deallocate old hash table
+    /// 2) deallocate old hash table
+    /// 3) create a new hash table
+    /// 4) parallel insert dumped key value pairs
     void Rehash(size_t buckets);
 
     /// Parallel insert arrays of keys and values.

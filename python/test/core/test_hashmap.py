@@ -70,6 +70,7 @@ def test_insertion(device):
         assert keys[5] == 9
         assert values[5] == 900
 
+
 @pytest.mark.parametrize("device", list_devices())
 def test_activate(device):
     hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,

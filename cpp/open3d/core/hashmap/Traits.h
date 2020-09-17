@@ -46,8 +46,6 @@
 namespace open3d {
 namespace core {
 
-static constexpr uint32_t MAX_KEY_BYTESIZE = 32;
-
 typedef uint32_t ptr_t;
 struct iterator_t {
     OPEN3D_HOST_DEVICE iterator_t() : first(nullptr), second(nullptr) {}
@@ -58,33 +56,19 @@ struct iterator_t {
     void* second;
 };
 
-typedef uint64_t (*hash_t)(uint8_t*, uint32_t);
-
-/// Internal Hashtable Node: (31 units and 1 next ptr) representation.
-/// \member kv_pair_ptrs:
-/// Each element is an internal ptr to a kv pair managed by the
-/// InternalMemoryManager. Can be converted to a real ptr.
-/// \member next_slab_ptr:
-/// An internal ptr managed by InternalNodeManager.
-class Slab {
-public:
-    ptr_t kv_pair_ptrs[31];
-    ptr_t next_slab_ptr;
-};
-
-template <typename Key, typename Value>
+template <typename First, typename Second>
 struct Pair {
-    Key first;
-    Value second;
+    First first;
+    Second second;
     OPEN3D_HOST_DEVICE Pair() {}
-    OPEN3D_HOST_DEVICE Pair(const Key& key, const Value& value)
-        : first(key), second(value) {}
+    OPEN3D_HOST_DEVICE Pair(const First& _first, const Second& _second)
+        : first(_first), second(_second) {}
 };
 
-template <typename Key, typename Value>
-OPEN3D_HOST_DEVICE Pair<Key, Value> make_pair(const Key& key,
-                                              const Value& value) {
-    return Pair<Key, Value>(key, value);
+template <typename First, typename Second>
+OPEN3D_HOST_DEVICE Pair<First, Second> make_pair(const First& _first,
+                                                 const Second& _second) {
+    return Pair<First, Second>(_first, _second);
 }
 
 }  // namespace core

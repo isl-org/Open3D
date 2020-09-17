@@ -101,11 +101,8 @@ TEST_P(HashmapPermuteDevices, Find) {
     hashmap.Find(keys_query.GetDataPtr(),
                  static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                  static_cast<bool *>(masks.GetDataPtr()), n);
-    EXPECT_EQ(masks[0].Item<bool>(), true);
-    EXPECT_EQ(masks[1].Item<bool>(), true);
-    EXPECT_EQ(masks[2].Item<bool>(), false);
-    EXPECT_EQ(masks[3].Item<bool>(), true);
-    EXPECT_EQ(masks[4].Item<bool>(), false);
+    EXPECT_EQ(masks.ToFlatVector<bool>(),
+              std::vector<bool>({true, true, false, true, false}));
 
     core::Tensor keys_valid({5}, core::Dtype::Int32, device);
     core::Tensor values_valid({5}, core::Dtype::Int32, device);
@@ -153,12 +150,10 @@ TEST_P(HashmapPermuteDevices, Insert) {
     hashmap.Insert(keys_insert.GetDataPtr(), values_insert.GetDataPtr(),
                    static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                    static_cast<bool *>(masks.GetDataPtr()), n);
+
     EXPECT_EQ(hashmap.Size(), 7);
-    EXPECT_EQ(masks[0].Item<bool>(), false);
-    EXPECT_EQ(masks[1].Item<bool>(), false);
-    EXPECT_EQ(masks[2].Item<bool>(), true);
-    EXPECT_EQ(masks[3].Item<bool>(), false);
-    EXPECT_EQ(masks[4].Item<bool>(), true);
+    EXPECT_EQ(masks.ToFlatVector<bool>(),
+              std::vector<bool>({false, false, true, false, true}));
 
     n = hashmap.Size();
     core::Tensor iterators_all(
@@ -216,11 +211,8 @@ TEST_P(HashmapPermuteDevices, Erase) {
     hashmap.Erase(keys_erase.GetDataPtr(),
                   static_cast<bool *>(masks.GetDataPtr()), n);
     EXPECT_EQ(hashmap.Size(), 2);
-    EXPECT_EQ(masks[0].Item<bool>(), true);
-    EXPECT_EQ(masks[1].Item<bool>(), true);
-    EXPECT_EQ(masks[2].Item<bool>(), false);
-    EXPECT_EQ(masks[3].Item<bool>(), true);
-    EXPECT_EQ(masks[4].Item<bool>(), false);
+    EXPECT_EQ(masks.ToFlatVector<bool>(),
+              std::vector<bool>({true, true, false, true, false}));
 
     n = hashmap.Size();
     core::Tensor iterators_all(
