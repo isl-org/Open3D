@@ -61,6 +61,14 @@ public:
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);
 
+    /// Sets the minimum number of points AddGeometry creates an additional
+    /// downsampled point cloud (for point clouds) which is used when rendering
+    /// speed is important.
+    void SetDownsampleThreshold(size_t n_points) {
+        downsample_threshold_ = n_points;
+    }
+    size_t GetDownsampleThreshold() const { return downsample_threshold_; }
+
     void ClearGeometry();
     /// Adds a geometry with the specified name. Default visible is true.
     void AddGeometry(const std::string& name,
@@ -120,6 +128,7 @@ private:
     LOD lod_ = LOD::HIGH_DETAIL;
     std::map<std::string, GeometryData> geometries_;  // name -> data
     geometry::AxisAlignedBoundingBox bounds_;
+    size_t downsample_threshold_ = 6000000;
 };
 
 }  // namespace rendering
