@@ -166,10 +166,8 @@ class ContinuousConv(torch.nn.Module):
         self.radius_search_metric = radius_search_metric
 
         if offset is None:
-            self.offset = torch.zeros(size=(3,), dtype=torch.float32)
-        else:
-            self.offset = offset
-        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
+            offset = torch.zeros(size=(3,), dtype=torch.float32)
+        self.register_buffer('offset', offset)
 
         self.window_function = window_function
 
@@ -423,12 +421,10 @@ class SparseConv(torch.nn.Module):
 
         if offset is None:
             if kernel_size[0] % 2:
-                self.offset = torch.zeros(size=(3,), dtype=torch.float32)
+                offset = torch.zeros(size=(3,), dtype=torch.float32)
             else:
-                self.offset = torch.full((3,), -0.5, dtype=torch.float32)
-        else:
-            self.offset = offset
-        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
+                offset = torch.full((3,), -0.5, dtype=torch.float32)
+        self.register_buffer('offset', offset)
 
         self.fixed_radius_search = FixedRadiusSearch(metric='Linf',
                                                      ignore_query_point=False,
@@ -604,12 +600,10 @@ class SparseConvTranspose(torch.nn.Module):
 
         if offset is None:
             if kernel_size[0] % 2:
-                self.offset = torch.zeros(size=(3,), dtype=torch.float32)
+                offset = torch.zeros(size=(3,), dtype=torch.float32)
             else:
-                self.offset = torch.full((3,), -0.5, dtype=torch.float32)
-        else:
-            self.offset = offset
-        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
+                offset = torch.full((3,), -0.5, dtype=torch.float32)
+        self.register_buffer('offset', offset)
 
         self.fixed_radius_search = FixedRadiusSearch(metric='Linf',
                                                      ignore_query_point=False,
