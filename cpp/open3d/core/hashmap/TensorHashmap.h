@@ -30,41 +30,41 @@
 
 namespace open3d {
 namespace core {
-class TensorHash {
+class TensorHashmap {
 public:
     /// Don't specify anything before real insertion, since many users only
     /// insert once.
-    TensorHash(Dtype key_type,
-               Dtype value_type,
-               int64_t key_dim,
-               int64_t value_dim,
-               Device device = Device("CPU:0"))
+    TensorHashmap(Dtype key_dtype,
+                  Dtype val_dtype,
+                  int64_t key_dim,
+                  int64_t val_dim,
+                  const Device& device = Device("CPU:0"))
         : hashmap_(nullptr),
-          key_type_(key_type),
-          value_type_(value_type),
+          key_dtype_(key_dtype),
+          val_dtype_(val_dtype),
           key_dim_(key_dim),
-          value_dim_(value_dim),
+          val_dim_(val_dim),
           device_(device){};
 
-    TensorHash(Tensor coords, Tensor values, bool insert = true);
+    TensorHashmap(const Tensor& coords,
+                  const Tensor& values,
+                  bool insert = true);
 
-    /// <Value, Mask>
-    std::pair<Tensor, Tensor> Query(Tensor coords);
-    /// <Key, Mask>
-    std::pair<Tensor, Tensor> Insert(Tensor coords, Tensor values);
-    /// Mask
-    Tensor Assign(Tensor coords, Tensor values);
+    std::pair<Tensor, Tensor> Find(const Tensor& coords);
+    std::pair<Tensor, Tensor> Insert(const Tensor& coords,
+                                     const Tensor& values);
+    Tensor Assign(const Tensor& coords, const Tensor& values);
 
-    static std::pair<Tensor, Tensor> Unique(const Tensor &tensor);
+    static std::pair<Tensor, Tensor> Unique(const Tensor& tensor);
 
 protected:
     std::shared_ptr<Hashmap> hashmap_;
 
-    Dtype key_type_;
-    Dtype value_type_;
+    Dtype key_dtype_;
+    Dtype val_dtype_;
 
     int64_t key_dim_;
-    int64_t value_dim_;
+    int64_t val_dim_;
 
     Device device_;
 };

@@ -64,6 +64,7 @@ set(CORE_CUDA_SRC
 set(HASHMAP_SRC
   hashmap/Hashmap.cpp
   hashmap/DeviceHashmap.cpp
+  hashmap/TensorHashmap.cpp
   hashmap/CPU/DefaultHashmapCPU.cpp
 )
 
