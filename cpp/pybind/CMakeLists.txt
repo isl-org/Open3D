@@ -102,6 +102,12 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
                       FOLDER "Python"
                       LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"
                       ARCHIVE_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}")
+# Include additional libraries that may be absent from the user system
+# eg: libc++.so and libc++abi.so (needed by filament)
+set(PYTHON_EXTRA_LIBRARIES "")
+if (BUILD_GUI)
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY} ${CPPABI_LIBRARY})
+endif()
 
 # Use `make python-package` to create the python package in the build directory
 # The python package will be created at PYTHON_PACKAGE_DIR. It contains:
@@ -186,6 +192,7 @@ add_custom_target(python-package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
+            "-DPYTHON_EXTRA_LIBRARIES=${PYTHON_EXTRA_LIBRARIES}"
             -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}

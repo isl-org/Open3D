@@ -29,6 +29,10 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
         endif()
     endforeach()
 endforeach()
+# Include additional libraries that may be abesnt from the user system
+# eg: libc++.so and libc++abi.so (needed by filament)
+file(INSTALL ${PYTHON_EXTRA_LIBRARIES} DESTINATION
+    ${PYTHON_PACKAGE_DST_DIR}/open3d FOLLOW_SYMLINK_CHAIN)
 
 # 3) Configured files and supporting files
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"

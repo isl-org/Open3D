@@ -43,14 +43,21 @@ except ImportError:
 import os
 import sys
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+from ctypes import CDLL as _CDLL
+from pathlib import Path as _Path
+
+from open3d._build_config import _build_config
+if _build_config["BUILD_GUI"]:
+    try: # Preload libc++.so and libc++abi.so (required by filament)
+        _CDLL(next((_Path(__file__).parent).glob('*c++abi*')))
+        _CDLL(next((_Path(__file__).parent).glob('*c++*')))
+    except OSError: # Not found: check system paths while loading
+        pass
 
 __DEVICE_API__ = 'cpu'
-from open3d._build_config import _build_config
 if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
     # Do this before loading the CUDA pybind dll to correctly resolve symbols
-    from ctypes import CDLL as _CDLL
-    from pathlib import Path as _Path
     try:  # StopIteration if cpu version not available
         _CDLL(next((_Path(__file__).parent / 'cpu').glob('pybind*')))
     except StopIteration:
