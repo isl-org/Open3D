@@ -246,8 +246,8 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
                                               aabb, vb, ib, material);
     if (success && ib_downsampled) {
-        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder,
-                                        aabb, vb, ib_downsampled, material,
+        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
+                                        vb, ib_downsampled, material,
                                         BufferReuse::kYes)) {
             utility::LogWarning(
                     "Internal error: could not create downsampled point cloud");
@@ -264,16 +264,16 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     // Tensor::Min() and Tensor::Max() can be very slow on certain setups,
     // in particular macOS with clang 11.0.0. This is a temporary fix.
     auto ComputeAABB = [](const tgeometry::PointCloud& cloud) -> filament::Box {
-        Eigen::Vector3f min_pt = { 1e30, 1e30, 1e30 };
-        Eigen::Vector3f max_pt = { -1e30, -1e30, -1e30 };
+        Eigen::Vector3f min_pt = {1e30, 1e30, 1e30};
+        Eigen::Vector3f max_pt = {-1e30, -1e30, -1e30};
         const auto& points = cloud.GetPoints();
         const size_t n = points.GetSize();
-        float *pts = (float*)points.AsTensor().GetDataPtr();
+        float* pts = (float*)points.AsTensor().GetDataPtr();
         for (int i = 0; i < 3 * n; i += 3) {
-            min_pt[0] = std::min(min_pt[0], pts[i    ]);
+            min_pt[0] = std::min(min_pt[0], pts[i]);
             min_pt[1] = std::min(min_pt[1], pts[i + 1]);
             min_pt[2] = std::min(min_pt[2], pts[i + 2]);
-            max_pt[0] = std::max(max_pt[0], pts[i    ]);
+            max_pt[0] = std::max(max_pt[0], pts[i]);
             max_pt[1] = std::max(max_pt[1], pts[i + 1]);
             max_pt[2] = std::max(max_pt[2], pts[i + 2]);
         }
@@ -315,8 +315,8 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
                                               aabb, vb, ib, material);
     if (success && ib_downsampled) {
-        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder,
-                                        aabb, vb, ib_downsampled, material,
+        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
+                                        vb, ib_downsampled, material,
                                         BufferReuse::kYes)) {
             // If we failed to create a downsampled cloud, which would be
             // unlikely, create another entity with the original buffers
