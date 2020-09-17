@@ -44,8 +44,12 @@ def test_creation(device):
 def test_insertion(device):
     hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
                                device)
-    keys = o3d.core.Tensor([100, 300, 500, 700, 900, 900], device=device)
-    values = o3d.core.Tensor([1, 3, 5, 7, 9, 9], device=device)
+    keys = o3d.core.Tensor([100, 300, 500, 700, 900, 900],
+                           dtype=o3d.core.Dtype.Int64,
+                           device=device)
+    values = o3d.core.Tensor([1, 3, 5, 7, 9, 9],
+                             dtype=o3d.core.Dtype.Int64,
+                             device=device)
     iterators, masks = hashmap.insert(keys, values)
     assert masks.to(o3d.core.Dtype.Int64).sum() == 5
 
@@ -75,7 +79,9 @@ def test_insertion(device):
 def test_activate(device):
     hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
                                device)
-    keys = o3d.core.Tensor([100, 300, 500, 700, 900, 900], device=device)
+    keys = o3d.core.Tensor([100, 300, 500, 700, 900, 900],
+                           dtype=o3d.core.Dtype.Int64,
+                           device=device)
     iterators, masks = hashmap.activate(keys)
     assert masks.to(o3d.core.Dtype.Int64).sum() == 5
 
@@ -98,11 +104,17 @@ def test_activate(device):
 def test_find(device):
     hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
                                device)
-    keys = o3d.core.Tensor([100, 300, 500, 700, 900], device=device)
-    values = o3d.core.Tensor([1, 3, 5, 7, 9], device=device)
+    keys = o3d.core.Tensor([100, 300, 500, 700, 900],
+                           dtype=o3d.core.Dtype.Int64,
+                           device=device)
+    values = o3d.core.Tensor([1, 3, 5, 7, 9],
+                             dtype=o3d.core.Dtype.Int64,
+                             device=device)
     hashmap.insert(keys, values)
 
-    keys = o3d.core.Tensor([100, 200, 500], device=device)
+    keys = o3d.core.Tensor([100, 200, 500],
+                           dtype=o3d.core.Dtype.Int64,
+                           device=device)
     iterators, masks = hashmap.find(keys)
     keys, values = hashmap.unpack_iterators(iterators, masks)
 
@@ -121,11 +133,17 @@ def test_find(device):
 def test_erase(device):
     hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
                                device)
-    keys = o3d.core.Tensor([100, 300, 500, 700, 900], device=device)
-    values = o3d.core.Tensor([1, 3, 5, 7, 9], device=device)
+    keys = o3d.core.Tensor([100, 300, 500, 700, 900],
+                           dtype=o3d.core.Dtype.Int64,
+                           device=device)
+    values = o3d.core.Tensor([1, 3, 5, 7, 9],
+                             dtype=o3d.core.Dtype.Int64,
+                             device=device)
     hashmap.insert(keys, values)
 
-    keys = o3d.core.Tensor([100, 200, 500], device=device)
+    keys = o3d.core.Tensor([100, 200, 500],
+                           dtype=o3d.core.Dtype.Int64,
+                           device=device)
     masks = hashmap.erase(keys)
 
     assert masks[0].item() == True
