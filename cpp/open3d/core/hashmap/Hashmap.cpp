@@ -34,6 +34,7 @@
 
 #include <unordered_map>
 
+#include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
@@ -64,12 +65,76 @@ void Hashmap::Insert(const void* input_keys,
                                    output_masks, count);
 }
 
+void Hashmap::Insert(const Tensor& input_keys,
+                     const Tensor& input_values,
+                     Tensor& output_iterators,
+                     Tensor& output_masks) {
+    AssertKeyDtype(input_keys.GetDtype());
+    AssertValueDtype(input_values.GetDtype());
+
+    SizeVector shape = input_keys.GetShape();
+    if (shape.size() == 0 || shape[0] == 0) {
+        utility::LogError("[Hashmap]: Invalid key tensor shape");
+    }
+    if (input_keys.GetDevice() != GetDevice()) {
+        utility::LogError(
+                "[Hashmap]: Incompatible key device, expected {}, but got {}",
+                GetDevice().ToString(), input_keys.GetDevice().ToString());
+    }
+
+    SizeVector val_shape = input_values.GetShape();
+    if (val_shape.size() == 0 || val_shape[0] != shape[0]) {
+        utility::LogError("[Hashmap]: Invalid value tensor shape");
+    }
+    if (input_values.GetDevice() != GetDevice()) {
+        utility::LogError(
+                "[Hashmap]: Incompatible value device, expected {}, but got {}",
+                GetDevice().ToString(), input_values.GetDevice().ToString());
+    }
+
+    int count = shape[0];
+    Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
+
+    output_iterators = Tensor({count}, dtype_it, GetDevice());
+    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
+
+    Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
+           static_cast<iterator_t*>(output_iterators.GetDataPtr()),
+           static_cast<bool*>(output_masks.GetDataPtr()), count);
+}
+
 void Hashmap::Activate(const void* input_keys,
                        iterator_t* output_iterators,
                        bool* output_masks,
                        size_t count) {
     return device_hashmap_->Activate(input_keys, output_iterators, output_masks,
                                      count);
+}
+
+void Hashmap::Activate(const Tensor& input_keys,
+                       Tensor& output_iterators,
+                       Tensor& output_masks) {
+    AssertKeyDtype(input_keys.GetDtype());
+
+    SizeVector shape = input_keys.GetShape();
+    if (shape.size() == 0 || shape[0] == 0) {
+        utility::LogError("[Hashmap]: Invalid key tensor shape");
+    }
+    if (input_keys.GetDevice() != GetDevice()) {
+        utility::LogError(
+                "[Hashmap]: Incompatible device, expected {}, but got {}",
+                GetDevice().ToString(), input_keys.GetDevice().ToString());
+    }
+
+    int count = shape[0];
+    Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
+
+    output_iterators = Tensor({count}, dtype_it, GetDevice());
+    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
+
+    return Activate(input_keys.GetDataPtr(),
+                    static_cast<iterator_t*>(output_iterators.GetDataPtr()),
+                    static_cast<bool*>(output_masks.GetDataPtr()), count);
 }
 
 void Hashmap::Find(const void* input_keys,
@@ -80,8 +145,54 @@ void Hashmap::Find(const void* input_keys,
                                  count);
 }
 
+void Hashmap::Find(const Tensor& input_keys,
+                   Tensor& output_iterators,
+                   Tensor& output_masks) {
+    AssertKeyDtype(input_keys.GetDtype());
+
+    SizeVector shape = input_keys.GetShape();
+    if (shape.size() == 0 || shape[0] == 0) {
+        utility::LogError("[Hashmap]: Invalid key tensor shape");
+    }
+    if (input_keys.GetDevice() != GetDevice()) {
+        utility::LogError(
+                "[Hashmap]: Incompatible device, expected {}, but got {}",
+                GetDevice().ToString(), input_keys.GetDevice().ToString());
+    }
+
+    int count = shape[0];
+    Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
+
+    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
+    output_iterators = Tensor({count}, dtype_it, GetDevice());
+
+    return Find(input_keys.GetDataPtr(),
+                static_cast<iterator_t*>(output_iterators.GetDataPtr()),
+                static_cast<bool*>(output_masks.GetDataPtr()), count);
+}
+
 void Hashmap::Erase(const void* input_keys, bool* output_masks, size_t count) {
     return device_hashmap_->Erase(input_keys, output_masks, count);
+}
+
+void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
+    AssertKeyDtype(input_keys.GetDtype());
+
+    SizeVector shape = input_keys.GetShape();
+    if (shape.size() == 0 || shape[0] == 0) {
+        utility::LogError("[Hashmap]: Invalid key tensor shape");
+    }
+    if (input_keys.GetDevice() != GetDevice()) {
+        utility::LogError(
+                "[Hashmap]: Incompatible device, expected {}, but got {}",
+                GetDevice().ToString(), input_keys.GetDevice().ToString());
+    }
+
+    int count = shape[0];
+    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
+
+    return Erase(input_keys.GetDataPtr(),
+                 static_cast<bool*>(output_masks.GetDataPtr()), count);
 }
 
 size_t Hashmap::GetIterators(iterator_t* output_iterators) {

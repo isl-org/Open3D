@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Dtype.h"
+#include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/core/hashmap/Traits.h"
 
@@ -59,6 +60,13 @@ public:
                 bool* output_masks,
                 size_t count);
 
+    /// Parallel insert arrays of keys and values in Tensors.
+    /// Output iterators and masks are Tensors and can be further processed
+    void Insert(const Tensor& input_keys,
+                const Tensor& input_values,
+                Tensor& output_iterators,
+                Tensor& output_masks);
+
     /// Parallel activate arrays of keys without copying values.
     /// Specifically useful for large value elements (e.g., a tensor), where we
     /// can do in-place management after activation.
@@ -66,6 +74,13 @@ public:
                   iterator_t* output_iterators,
                   bool* output_masks,
                   size_t count);
+
+    /// Parallel activate arrays of keys in Tensor.
+    /// Specifically useful for large value elements (e.g., a tensor), where we
+    /// can do in-place management after activation.
+    void Activate(const Tensor& input_keys,
+                  Tensor& output_iterators,
+                  Tensor& output_masks);
 
     /// Parallel find an array of keys.
     /// Output iterators and masks CANNOT be nullptrs as we have to interpret
@@ -75,9 +90,20 @@ public:
               bool* output_masks,
               size_t count);
 
+    /// Parallel find an array of keys in Tensor.
+    /// Output iterators is an object Tensor, masks is a bool Tensor.
+    void Find(const Tensor& input_keys,
+              Tensor& output_iterators,
+              Tensor& output_masks);
+
     /// Parallel erase an array of keys.
-    /// Output masks can be a nullptr if return results are not to be processed.
+    /// Output masks can be a nullptr if return results are not to be
+    /// processed.
     void Erase(const void* input_keys, bool* output_masks, size_t count);
+
+    /// Parallel erase an array of keys in Tensor.
+    /// Output masks is a bool Tensor.
+    void Erase(const Tensor& input_keys, Tensor& output_masks);
 
     /// Parallel collect all iterators in the hash table
     size_t GetIterators(iterator_t* output_iterators);

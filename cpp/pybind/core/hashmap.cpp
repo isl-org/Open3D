@@ -51,68 +51,26 @@ void pybind_core_hashmap(py::module& m) {
 
     hashmap.def("insert",
                 [](Hashmap& h, const Tensor& keys, const Tensor& values) {
-                    h.AssertKeyDtype(keys.GetDtype());
-                    h.AssertValueDtype(values.GetDtype());
-
-                    int count = keys.GetShape()[0];
-                    Device device = keys.GetDevice();
-
-                    Tensor masks({count}, Dtype::Bool, device);
-                    Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t),
-                                   "iterator_t");
-                    Tensor iterators({count}, dtype_it, device);
-
-                    h.Insert(keys.GetDataPtr(), values.GetDataPtr(),
-                             static_cast<iterator_t*>(iterators.GetDataPtr()),
-                             static_cast<bool*>(masks.GetDataPtr()), count);
-
+                    Tensor iterators, masks;
+                    h.Insert(keys, values, iterators, masks);
                     return py::make_tuple(iterators, masks);
                 });
 
     hashmap.def("activate", [](Hashmap& h, const Tensor& keys) {
-        h.AssertKeyDtype(keys.GetDtype());
-        int count = keys.GetShape()[0];
-        Device device = keys.GetDevice();
-
-        Tensor masks({count}, Dtype::Bool, device);
-        Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t),
-                       "iterator_t");
-        Tensor iterators({count}, dtype_it, device);
-
-        h.Activate(keys.GetDataPtr(),
-                   static_cast<iterator_t*>(iterators.GetDataPtr()),
-                   static_cast<bool*>(masks.GetDataPtr()), count);
-
+        Tensor iterators, masks;
+        h.Activate(keys, iterators, masks);
         return py::make_tuple(iterators, masks);
     });
 
     hashmap.def("find", [](Hashmap& h, const Tensor& keys) {
-        h.AssertKeyDtype(keys.GetDtype());
-        int count = keys.GetShape()[0];
-        Device device = keys.GetDevice();
-
-        Tensor masks({count}, Dtype::Bool, device);
-        Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t),
-                       "iterator_t");
-        Tensor iterators({count}, dtype_it, device);
-
-        h.Find(keys.GetDataPtr(),
-               static_cast<iterator_t*>(iterators.GetDataPtr()),
-               static_cast<bool*>(masks.GetDataPtr()), count);
-
+        Tensor iterators, masks;
+        h.Find(keys, iterators, masks);
         return py::make_tuple(iterators, masks);
     });
 
     hashmap.def("erase", [](Hashmap& h, const Tensor& keys) {
-        h.AssertKeyDtype(keys.GetDtype());
-        int count = keys.GetShape()[0];
-        Device device = keys.GetDevice();
-
-        Tensor masks({count}, Dtype::Bool, device);
-
-        h.Erase(keys.GetDataPtr(), static_cast<bool*>(masks.GetDataPtr()),
-                count);
-
+        Tensor masks;
+        h.Erase(keys, masks);
         return masks;
     });
 
