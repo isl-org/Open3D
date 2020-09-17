@@ -48,10 +48,10 @@ from pathlib import Path as _Path
 
 from open3d._build_config import _build_config
 if _build_config["BUILD_GUI"]:
-    try: # Preload libc++.so and libc++abi.so (required by filament)
+    try:  # Preload libc++.so and libc++abi.so (required by filament)
         _CDLL(next((_Path(__file__).parent).glob('*c++abi*')))
         _CDLL(next((_Path(__file__).parent).glob('*c++*')))
-    except OSError: # Not found: check system paths while loading
+    except StopIteration:  # Not found: check system paths while loading
         pass
 
 __DEVICE_API__ = 'cpu'
