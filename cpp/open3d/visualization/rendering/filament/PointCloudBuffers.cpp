@@ -96,17 +96,42 @@ struct ColoredVertex {
 }  // namespace
 
 IndexBufferHandle GeometryBuffersBuilder::CreateIndexBuffer(
-        size_t max_index, size_t step /*= 1*/) {
+        size_t max_index, size_t n_subsamples /*= SIZE_MAX*/) {
     using IndexType = GeometryBuffersBuilder::IndexType;
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();
 
-    size_t n_indices = max_index / step;
+    size_t n_indices = std::min(max_index, n_subsamples);
+    // Use double for precision, since float can only accurately represent
+    // integers up to 2^24 = 16 million, and we have buffers with more points
+    // than that.
+    double step = double(max_index) / double(n_indices);
 
     const size_t n_bytes = n_indices * sizeof(IndexType);
     auto* uint_indices = static_cast<IndexType*>(malloc(n_bytes));
-    for (size_t i = 0; i < n_indices; ++i) {
-        uint_indices[i] = IndexType(step * i);
+    if (step <= 1.0) {
+        // std::iota is about 2X faster than a loop on my machine, anyway.
+        // Since this is the common case, and is used for every entity,
+        // special-case this to make it fast.
+        std::iota(uint_indices, uint_indices + n_indices, 0);
+    } else if (std::floor(step) == step) {
+        for (size_t i = 0; i < n_indices; ++i) {
+            uint_indices[i] = IndexType(step * i);
+        }
+    } else {
+        int idx = 0;
+        uint_indices[idx++] = 0;
+        double dist = 1.0;
+        for (size_t i = 1; i < max_index; ++i) {
+            if (dist >= step) {
+                uint_indices[idx++] = i;
+                dist -= step;
+                if (idx > n_indices) {  // paranoia, should not happen
+                    break;
+                }
+            }
+            dist += 1.0;
+        }
     }
 
     auto ib_handle =
@@ -228,12 +253,12 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
     vb_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(vb_descriptor));
 
-    auto ib_handle = CreateIndexBuffer(n_vertices, 1);
+    auto ib_handle = CreateIndexBuffer(n_vertices);
 
     IndexBufferHandle downsampled_handle;
     if (n_vertices >= downsample_threshold_) {
-        size_t step = n_vertices / (downsample_threshold_ / 2);
-        downsampled_handle = CreateIndexBuffer(n_vertices, step);
+        downsampled_handle = CreateIndexBuffer(n_vertices,
+                                               downsample_threshold_);
     }
 
     return std::make_tuple(vb_handle, ib_handle, downsampled_handle);
@@ -369,12 +394,12 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
             uv_array, uv_array_size, GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 3, std::move(uv_descriptor));
 
-    auto ib_handle = CreateIndexBuffer(n_vertices, 1);
+    auto ib_handle = CreateIndexBuffer(n_vertices);
 
     IndexBufferHandle downsampled_handle;
     if (n_vertices >= downsample_threshold_) {
-        size_t step = n_vertices / (downsample_threshold_ / 2);
-        downsampled_handle = CreateIndexBuffer(n_vertices, step);
+        downsampled_handle = CreateIndexBuffer(n_vertices,
+                                               downsample_threshold_);
     }
 
     return std::make_tuple(vb_handle, ib_handle, downsampled_handle);
