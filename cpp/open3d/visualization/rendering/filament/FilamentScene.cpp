@@ -269,7 +269,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         const auto& points = cloud.GetPoints();
         const size_t n = points.GetSize();
         float* pts = (float*)points.AsTensor().GetDataPtr();
-        for (int i = 0; i < 3 * n; i += 3) {
+        for (size_t i = 0; i < 3 * n; i += 3) {
             min_pt[0] = std::min(min_pt[0], pts[i]);
             min_pt[1] = std::min(min_pt[1], pts[i + 1]);
             min_pt[2] = std::min(min_pt[2], pts[i + 2]);
