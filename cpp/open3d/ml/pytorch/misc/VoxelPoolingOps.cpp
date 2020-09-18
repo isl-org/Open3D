@@ -91,8 +91,8 @@ public:
                         "'nearest_neighbor', 'max') but got " +
                                 feature_fn_str);
         }
-        CHECK_CONTIGUOUS(positions);
-        CHECK_CONTIGUOUS(features);
+        positions = positions.contiguous();
+        features = features.contiguous();
 
         // check input shapes
         {
@@ -182,9 +182,10 @@ public:
         auto positions = saved_vars[0];
         auto features = saved_vars[1];
         auto pooled_positions = saved_vars[2];
-        auto pooled_features_gradient = grad_output[1];
-        CHECK_CONTIGUOUS(positions);
-        CHECK_CONTIGUOUS(features);
+        auto pooled_features_gradient = grad_output[1].contiguous();
+        positions = positions.contiguous();
+        features = features.contiguous();
+        pooled_positions = pooled_positions.contiguous();
 
         torch::Tensor features_backprop =
                 torch::empty(features.sizes(), features.dtype());

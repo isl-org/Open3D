@@ -28,5 +28,5 @@
 
 #include "torch/script.h"
 
-torch::Tensor ReduceSubarraysSum(const torch::Tensor& values,
-                                 const torch::Tensor& row_splits);
+torch::Tensor ReduceSubarraysSum(torch::Tensor values,
+                                 torch::Tensor row_splits);
