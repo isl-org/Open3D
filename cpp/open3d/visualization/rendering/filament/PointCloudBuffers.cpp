@@ -124,7 +124,7 @@ IndexBufferHandle GeometryBuffersBuilder::CreateIndexBuffer(
         double dist = 1.0;
         for (size_t i = 1; i < max_index; ++i) {
             if (dist >= step) {
-                uint_indices[idx++] = i;
+                uint_indices[idx++] = IndexType(i);
                 dist -= step;
                 if (idx > n_indices) {  // paranoia, should not happen
                     break;
