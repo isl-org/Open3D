@@ -264,8 +264,8 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     // Tensor::Min() and Tensor::Max() can be very slow on certain setups,
     // in particular macOS with clang 11.0.0. This is a temporary fix.
     auto ComputeAABB = [](const tgeometry::PointCloud& cloud) -> filament::Box {
-        Eigen::Vector3f min_pt = {1e30, 1e30, 1e30};
-        Eigen::Vector3f max_pt = {-1e30, -1e30, -1e30};
+        Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
+        Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
         const auto& points = cloud.GetPoints();
         const size_t n = points.GetSize();
         float* pts = (float*)points.AsTensor().GetDataPtr();
