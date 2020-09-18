@@ -119,7 +119,7 @@ IndexBufferHandle GeometryBuffersBuilder::CreateIndexBuffer(
             uint_indices[i] = IndexType(step * i);
         }
     } else {
-        int idx = 0;
+        size_t idx = 0;
         uint_indices[idx++] = 0;
         double dist = 1.0;
         for (size_t i = 1; i < max_index; ++i) {
@@ -257,8 +257,8 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 
     IndexBufferHandle downsampled_handle;
     if (n_vertices >= downsample_threshold_) {
-        downsampled_handle = CreateIndexBuffer(n_vertices,
-                                               downsample_threshold_);
+        downsampled_handle =
+                CreateIndexBuffer(n_vertices, downsample_threshold_);
     }
 
     return std::make_tuple(vb_handle, ib_handle, downsampled_handle);
@@ -398,8 +398,8 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
 
     IndexBufferHandle downsampled_handle;
     if (n_vertices >= downsample_threshold_) {
-        downsampled_handle = CreateIndexBuffer(n_vertices,
-                                               downsample_threshold_);
+        downsampled_handle =
+                CreateIndexBuffer(n_vertices, downsample_threshold_);
     }
 
     return std::make_tuple(vb_handle, ib_handle, downsampled_handle);
