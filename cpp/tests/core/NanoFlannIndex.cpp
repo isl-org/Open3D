@@ -56,26 +56,27 @@ TEST(NanoFlannIndex, SearchKnn) {
     EXPECT_THROW(index.SearchKnn(query, 0), std::runtime_error);
 
     // if k == 3
-    std::pair<core::Tensor, core::Tensor> result_3 = index.SearchKnn(query, 3);
+    core::Tensor indices;
+    core::Tensor distances;
+    std::tie(indices, distances) = index.SearchKnn(query, 3);
 
-    core::Tensor indices_3 = result_3.first.To(core::Dtype::Int32);
-    core::Tensor distances_3 = result_3.second;
-    ExpectEQ(indices_3.ToFlatVector<int>(), std::vector<int>({1, 4, 9}));
-    ExpectEQ(distances_3.ToFlatVector<double>(),
+    ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4, 9}));
+    ExpectEQ(distances.ToFlatVector<double>(),
              std::vector<double>({0.00626358, 0.00747938, 0.0108912}));
+    EXPECT_EQ(indices.GetShape(), core::SizeVector({1, 3}));
+    EXPECT_EQ(distances.GetShape(), core::SizeVector({1, 3}));
 
     // if k > size
-    std::pair<core::Tensor, core::Tensor> result_12 =
-            index.SearchKnn(query, 12);
+    std::tie(indices, distances) = index.SearchKnn(query, 12);
 
-    core::Tensor indices_12 = result_12.first.To(core::Dtype::Int32);
-    core::Tensor distances_12 = result_12.second;
-    ExpectEQ(indices_12.ToFlatVector<int>(),
-             std::vector<int>({1, 4, 9, 0, 3, 2, 5, 7, 6, 8}));
-    ExpectEQ(distances_12.ToFlatVector<double>(),
+    ExpectEQ(indices.ToFlatVector<int64_t>(),
+             std::vector<int64_t>({1, 4, 9, 0, 3, 2, 5, 7, 6, 8}));
+    ExpectEQ(distances.ToFlatVector<double>(),
              std::vector<double>({0.00626358, 0.00747938, 0.0108912, 0.0138322,
                                   0.015048, 0.018695, 0.0199108, 0.0286952,
                                   0.0362638, 0.0411266}));
+    EXPECT_EQ(indices.GetShape(), core::SizeVector({1, 10}));
+    EXPECT_EQ(distances.GetShape(), core::SizeVector({1, 10}));
 }
 
 TEST(NanoFlannIndex, SearchRadius) {

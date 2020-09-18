@@ -92,7 +92,7 @@ public:
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
     /// Int64.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
-    /// widh query_points.
+    /// with query_points.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
             const Tensor &query_points, double radius);
@@ -105,8 +105,8 @@ public:
     /// \return Tuple of Tensors, (indices,distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
     /// Int64.
-    /// - distances: Tensor of shape {total_number_of_neighbors,}, with
-    /// same dtype with query_points.
+    /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
+    /// with query_points.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> MultiRadiusSearch(
             const Tensor &query_points, const Tensor &radii);

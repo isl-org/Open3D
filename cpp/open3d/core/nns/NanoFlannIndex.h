@@ -49,7 +49,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-/// Distance metric enum
+/// Distance metric enum.
 enum Metric { L1, L2, Linf };
 
 /// Base struct for Index holder
@@ -57,7 +57,7 @@ struct NanoFlannIndexHolderBase {
     virtual ~NanoFlannIndexHolderBase() {}
 };
 
-/// NanoFlann Index Holder
+/// NanoFlann Index Holder.
 template <int METRIC, class T>
 struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
     /// This class is the Adaptor for connecting Open3D Tensor and NanoFlann.
@@ -83,7 +83,7 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
         const T *const data_ptr_;
     };
 
-    /// Adaptor Selector
+    /// Adaptor Selector.
     template <int M, typename fake = void>
     struct SelectNanoflannAdaptor {};
 
@@ -97,12 +97,12 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
         typedef nanoflann::L1_Adaptor<T, DataAdaptor, T> adaptor_t;
     };
 
-    /// typedef for KDtree
+    /// typedef for KDtree.
     typedef nanoflann::KDTreeSingleIndexAdaptor<
             typename SelectNanoflannAdaptor<METRIC>::adaptor_t,
             DataAdaptor,
             -1,
-            size_t>
+            int64_t>
             KDTree_t;
 
     NanoFlannIndexHolder(size_t dataset_size,

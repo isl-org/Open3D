@@ -40,7 +40,6 @@ namespace rendering {
 
 const std::string kAxisObjectName("__axis__");
 const std::string kFastModelObjectSuffix("__fast__");
-const std::size_t kDownsampleThreshold = 6000000;
 
 namespace {
 std::shared_ptr<geometry::TriangleMesh> CreateAxisGeometry(double axis_length) {
@@ -174,7 +173,7 @@ void Open3DScene::AddGeometry(
     std::string fast_name;
     if (add_downsampled_copy_for_fast_rendering) {
         fast_name = name + "." + kFastModelObjectSuffix;
-        downsample_threshold = kDownsampleThreshold;
+        downsample_threshold = downsample_threshold_;
     }
 
     auto scene = renderer_.GetScene(scene_);
@@ -206,7 +205,7 @@ void Open3DScene::AddGeometry(
     std::string fast_name;
     if (add_downsampled_copy_for_fast_rendering) {
         fast_name = name + "." + kFastModelObjectSuffix;
-        downsample_threshold = kDownsampleThreshold;
+        downsample_threshold = downsample_threshold_;
     }
 
     auto scene = renderer_.GetScene(scene_);
