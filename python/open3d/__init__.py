@@ -44,10 +44,12 @@ import os
 import sys
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 from ctypes import CDLL as _CDLL
+from ctypes.util import find_library as _find_library
 from pathlib import Path as _Path
 
 from open3d._build_config import _build_config
-if _build_config["BUILD_GUI"]:
+if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
+                                       _find_library('c++')):
     try:  # Preload libc++.so and libc++abi.so (required by filament)
         _CDLL(next((_Path(__file__).parent).glob('*c++abi*')))
         _CDLL(next((_Path(__file__).parent).glob('*c++*')))
