@@ -101,7 +101,9 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
         {"normals", ResourceManager::kDefaultNormalShader},
         {"depth", ResourceManager::kDefaultDepthShader},
-        {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader}};
+        {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
+        {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
+};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -668,6 +670,28 @@ void FilamentScene::UpdateDepthShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+void FilamentScene::UpdateGradientShader(GeometryMaterialInstance& geom_mi) {
+    bool isLUT =
+            (geom_mi.properties.gradient->GetMode() == Gradient::Mode::kLUT);
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("minValue", geom_mi.properties.scalar_min)
+            .SetParameter("maxValue", geom_mi.properties.scalar_max)
+            .SetParameter("isLUT", (isLUT ? 1.0f : 0.0f))
+            .SetParameter("pointSize", geom_mi.properties.point_size)
+            .SetTexture(
+                    "gradient", geom_mi.maps.gradient_texture,
+                    isLUT ? rendering::TextureSamplerParameters::Simple()
+                          : rendering::TextureSamplerParameters::LinearClamp())
+            .Finish();
+}
+
+void FilamentScene::UpdateSolidColorShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetParameter("pointSize", geom_mi.properties.point_size)
+            .Finish();
+}
+
 std::shared_ptr<geometry::Image> CombineTextures(
         std::shared_ptr<geometry::Image> ao,
         std::shared_ptr<geometry::Image> rough,
@@ -755,21 +779,6 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
     }
 }
 
-void FilamentScene::UpdateGradientShader(GeometryMaterialInstance& geom_mi) {
-    bool isLUT =
-            (geom_mi.properties.gradient->GetMode() == Gradient::Mode::kLUT);
-    renderer_.ModifyMaterial(geom_mi.mat_instance)
-            .SetParameter("minValue", geom_mi.properties.scalar_min)
-            .SetParameter("maxValue", geom_mi.properties.scalar_max)
-            .SetParameter("isLUT", (isLUT ? 1.0f : 0.0f))
-            .SetParameter("pointSize", geom_mi.properties.point_size)
-            .SetTexture(
-                    "gradient", geom_mi.maps.gradient_texture,
-                    isLUT ? rendering::TextureSamplerParameters::Simple()
-                          : rendering::TextureSamplerParameters::LinearClamp())
-            .Finish();
-}
-
 void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     auto& props = geom.mat.properties;
     auto& maps = geom.mat.maps;
@@ -828,6 +837,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateDepthShader(geom.mat);
     } else if (props.shader == "unlitGradient") {
         UpdateGradientShader(geom.mat);
+    } else if (props.shader == "unlitSolidColor") {
+        UpdateSolidColorShader(geom.mat);
     }
 }
 
@@ -863,6 +874,10 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateNormalShader(geom->mat);
         } else if (material.shader == "unlitGradient") {
             UpdateGradientShader(geom->mat);
+        } else if (material.shader == "unlitColorMap") {
+            UpdateGradientShader(geom->mat);
+        } else if (material.shader == "unlitSolidColor") {
+            UpdateSolidColorShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }
