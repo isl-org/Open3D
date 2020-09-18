@@ -97,14 +97,14 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         utility::LogError(
                 "[NearestNeighborSearch::HybridSearch] Index is not set.");
     }
-    // search knn
+    // Search knn.
     Tensor indices;
     Tensor distances;
     std::tie(indices, distances) =
             nanoflann_index_->SearchKnn(query_points, max_knn);
     SizeVector size = distances.GetShape();
 
-    // check radius
+    // Check radius.
     Tensor result_indices;
     Tensor result_distances;
     Dtype dtype = dataset_points_.GetDtype();
