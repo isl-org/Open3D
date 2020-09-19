@@ -26,6 +26,7 @@
 
 #include "open3d/geometry/IntersectionTest.h"
 
+#include <cmath>
 #include <tomasakeninemoeller/opttritri.h>
 #include <tomasakeninemoeller/tribox3.h>
 
@@ -213,6 +214,203 @@ double IntersectionTest::LineSegmentsMinimumDistance(
     Eigen::Vector3d q = (1 - t) * q0 + t * q1;
     double dist = (p - q).norm();
     return dist;
+}
+
+double IntersectionTest::LineAABBSlabParam(
+        const Eigen::ParametrizedLine<double, 3>& line,
+        const AxisAlignedBoundingBox& box,
+        double dir_x_inv, double dir_y_inv, double dir_z_inv) {
+    /* This check is based off of Tavian Barnes' branchless implementation of
+     * the slab method for determining ray/AABB intersections. It returns the
+     * distance from the line origin to the intersection point with the AABB,
+     * or NaN if there is no intersection.
+     * https://tavianator.com/2011/ray_box.html */
+
+    double t_x0 = dir_x_inv * (box.min_bound_.x() - line.origin().x());
+    double t_x1 = dir_x_inv * (box.max_bound_.x() - line.origin().x());
+    double t_min = std::min(t_x0, t_x1);
+    double t_max = std::max(t_x0, t_x1);
+
+    double t_y0 = dir_y_inv * (box.min_bound_.y() - line.origin().y());
+    double t_y1 = dir_y_inv * (box.max_bound_.y() - line.origin().y());
+    t_min = std::max(t_min, std::min(t_y0, t_y1));
+    t_max = std::min(t_max, std::max(t_y0, t_y1));
+
+    double t_z0 = dir_z_inv * (box.min_bound_.z() - line.origin().z());
+    double t_z1 = dir_z_inv * (box.max_bound_.z() - line.origin().z());
+    t_min = std::max(t_min, std::min(t_z0, t_z1));
+    t_max = std::min(t_max, std::max(t_z0, t_z1));
+
+    if (t_max >= t_min)
+        return t_min;
+    return std::nan("");
+}
+
+double IntersectionTest::LineAABBSlabParam(
+        const Eigen::ParametrizedLine<double, 3>& line,
+        const AxisAlignedBoundingBox& box) {
+    double x_inv = 1.0 / line.direction().x();
+    double y_inv = 1.0 / line.direction().y();
+    double z_inv = 1.0 / line.direction().z();
+    return LineAABBSlabParam(line, box, x_inv, y_inv, z_inv);
+}
+
+double IntersectionTest::RayAABBSlabParam(
+        const Eigen::ParametrizedLine<double, 3>& ray,
+        const AxisAlignedBoundingBox& box) {
+    double x_inv = 1.0 / ray.direction().x();
+    double y_inv = 1.0 / ray.direction().y();
+    double z_inv = 1.0 / ray.direction().z();
+    return RayAABBSlabParam(ray, box, x_inv, y_inv, z_inv);
+}
+
+double IntersectionTest::RayAABBSlabParam(
+        const Eigen::ParametrizedLine<double, 3>& ray,
+        const AxisAlignedBoundingBox& box,
+        double dir_x_inv, double dir_y_inv, double dir_z_inv) {
+    /* This check is based off of Tavian Barnes' branchless implementation of
+     * the slab method for determining ray/AABB intersections. It returns the
+     * distance from the line origin to the intersection point with the AABB,
+     * or NaN if there is no intersection.
+     * https://tavianator.com/2011/ray_box.html */
+
+    double t_x0 = dir_x_inv * (box.min_bound_.x() - ray.origin().x());
+    double t_x1 = dir_x_inv * (box.max_bound_.x() - ray.origin().x());
+    double t_min = std::min(t_x0, t_x1);
+    double t_max = std::max(t_x0, t_x1);
+
+    double t_y0 = dir_y_inv * (box.min_bound_.y() - ray.origin().y());
+    double t_y1 = dir_y_inv * (box.max_bound_.y() - ray.origin().y());
+    t_min = std::max(t_min, std::min(t_y0, t_y1));
+    t_max = std::min(t_max, std::max(t_y0, t_y1));
+
+    double t_z0 = dir_z_inv * (box.min_bound_.z() - ray.origin().z());
+    double t_z1 = dir_z_inv * (box.max_bound_.z() - ray.origin().z());
+    t_min = std::max(t_min, std::min(t_z0, t_z1));
+    t_max = std::min(t_max, std::max(t_z0, t_z1));
+
+    t_min = std::max(0., t_min);
+    if (t_max >= t_min)
+        return t_min;
+    return std::nan("");
+}
+
+double IntersectionTest::LineAABBExactParam(
+        const Eigen::ParametrizedLine<double, 3>& line,
+        const AxisAlignedBoundingBox& box) {
+    using namespace Eigen;
+    /* This is a naive, exact method of computing the intersection with a
+     * bounding box.  It is much slower than the highly optimized slab method,
+     * but will perform correctly in the one case where the slab method
+     * degenerates: when a ray lies exactly within one of the bounding planes.
+     * If your problem is structured such that the slab method is likely to
+     * encounter a degenerate scenario, AND you need an exact solution that can
+     * not allow the occasional non-intersection, AND you care about maximal
+     * performance, consider implementing a special check which takes advantage
+     * of the reduced dimensionality of your problem.
+     */
+
+    // When running the stress test in examples/LineToAABB.cpp about 1% to 2%
+    // of the randomly generated cases will fail when using this method due to
+    // the round-trip vector coming back from the ParameterizedLine's
+    // intersectionParameter method being off in the 11th or greater decimal
+    // position from the original plane point. This tolerance seems to
+    // eliminate the issue.
+    double tol = 1e-10;
+    AxisAlignedBoundingBox b_tol{box.min_bound_ - Vector3d(tol, tol, tol),
+                                 box.max_bound_ + Vector3d(tol, tol, tol)};
+
+    using plane_t = Eigen::Hyperplane<double, 3>;
+    std::array<plane_t, 6> planes {{{{-1, 0, 0}, box.min_bound_},
+                                           {{1, 0, 0}, box.max_bound_},
+                                           {{0, -1, 0}, box.min_bound_},
+                                           {{0, 1, 0}, box.max_bound_},
+                                           {{0, 0, -1}, box.min_bound_},
+                                           {{0, 0, 1}, box.max_bound_}}};
+
+    // Get the intersections
+    std::vector<double> parameters;
+    std::vector<Eigen::Vector3d> points;
+
+    for (int i = 0; i < 6; ++i) {
+        double t =  line.intersectionParameter(planes[i]);
+        if (!std::isinf(t)) {
+            parameters.push_back(t);
+            auto p = line.pointAt(t);
+            points.push_back(p);
+        }
+    }
+
+    // Find the ones which are contained
+    auto contained_indices = b_tol.GetPointIndicesWithinBoundingBox(points);
+    if (contained_indices.empty())
+        return std::nan("");
+
+    // Return the lowest parameter
+    double minimum = parameters[contained_indices[0]];
+    for (auto i : contained_indices) {
+        minimum = std::min(minimum, parameters[i]);
+    }
+    return minimum;
+}
+
+double IntersectionTest::RayAABBExactParam(
+        const Eigen::ParametrizedLine<double, 3>& ray,
+        const AxisAlignedBoundingBox& box) {
+    using namespace Eigen;
+    /* This is a naive, exact method of computing the intersection with a
+     * bounding box.  It is much slower than the highly optimized slab method,
+     * but will perform correctly in the one case where the slab method
+     * degenerates: when a ray lies exactly within one of the bounding planes.
+     * If your problem is structured such that the slab method is likely to
+     * encounter a degenerate scenario, AND you need an exact solution that can
+     * not allow the occasional non-intersection, AND you care about maximal
+     * performance, consider implementing a special check which takes advantage
+     * of the reduced dimensionality of your problem.
+     */
+
+    // When running the stress test in examples/LineToAABB.cpp about 1% to 2%
+    // of the randomly generated cases will fail when using this method due to
+    // the round-trip vector coming back from the ParameterizedLine's
+    // intersectionParameter method being off in the 11th or greater decimal
+    // position from the original plane point. This tolerance seems to
+    // eliminate the issue.
+    double tol = 1e-10;
+    AxisAlignedBoundingBox b_tol{box.min_bound_ - Vector3d(tol, tol, tol),
+            box.max_bound_ + Vector3d(tol, tol, tol)};
+
+    using plane_t = Eigen::Hyperplane<double, 3>;
+    std::array<plane_t, 6> planes {{{{-1, 0, 0}, box.min_bound_},
+                                           {{1, 0, 0}, box.max_bound_},
+                                           {{0, -1, 0}, box.min_bound_},
+                                           {{0, 1, 0}, box.max_bound_},
+                                           {{0, 0, -1}, box.min_bound_},
+                                           {{0, 0, 1}, box.max_bound_}}};
+
+    // Get the intersections
+    std::vector<double> parameters{0};
+    std::vector<Eigen::Vector3d> points{ray.origin()};
+
+    for (int i = 0; i < 6; ++i) {
+        double t =  ray.intersectionParameter(planes[i]);
+        if (!std::isinf(t) && t >= 0) {
+            parameters.push_back(t);
+            auto p = ray.pointAt(t);
+            points.push_back(p);
+        }
+    }
+
+    // Find the ones which are contained
+    auto contained_indices = b_tol.GetPointIndicesWithinBoundingBox(points);
+    if (contained_indices.empty())
+        return std::nan("");
+
+    // Return the lowest parameter
+    double minimum = parameters[contained_indices[0]];
+    for (auto i : contained_indices) {
+        minimum = std::min(minimum, parameters[i]);
+    }
+    return minimum;
 }
 
 }  // namespace geometry

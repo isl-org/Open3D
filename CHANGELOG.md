@@ -12,6 +12,7 @@
 * Corrected documentation of PointCloud.h
 * Added ISS Keypoint Detector
 * Added an RPC interface for external visualizers running in a separate process
+* Added line/ray AABB intersection tests
 
 ## 0.9.0
 
