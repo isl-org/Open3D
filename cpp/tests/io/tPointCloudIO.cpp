@@ -135,7 +135,6 @@ TEST_P(ReadWriteTPC, Basic) {
             ReadPointCloud(args.filename, pc3, {"auto", false, false, true}));
     for (const auto &attribute_max_err : args.attributes_max_errors) {
         const std::string &attribute = attribute_max_err.first;
-        const double max_error = attribute_max_err.second;
         SCOPED_TRACE(attribute);
         EXPECT_EQ(MaxDistance(pc3.GetPointAttr(attribute),
                               pc2.GetPointAttr(attribute)),
