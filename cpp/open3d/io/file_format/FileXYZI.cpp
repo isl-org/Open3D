@@ -117,7 +117,7 @@ bool WritePointCloudToXYZI(const std::string &filename,
         }
         reporter.SetTotal(points.GetShape(0));
 
-        for (size_t i = 0; i < points.GetShape(0); i++) {
+        for (int i = 0; i < points.GetShape(0); i++) {
             if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\n",
                         points[i][0].Item<double>(),
                         points[i][1].Item<double>(),
