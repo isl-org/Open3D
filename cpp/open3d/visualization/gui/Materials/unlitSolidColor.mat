@@ -1,0 +1,28 @@
+// This shader differs from defaultUnlit in that baseColor IS the color, it is
+// not modulated by the color array or by a texture. This is useful if you
+// have colors/textures in the geometry but still want to color by a solid
+// color
+material {
+    name : unlitSolidColor,
+    shadingModel : unlit,
+    doubleSided : true,
+
+    parameters : [
+        { type : float3,    name : baseColor },
+        { type : float,     name : pointSize }
+    ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        material.baseColor.rgb = materialParams.baseColor;
+    }
+}
