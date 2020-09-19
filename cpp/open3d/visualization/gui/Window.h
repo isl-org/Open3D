@@ -146,6 +146,10 @@ public:
 
     void ShowMessageBox(const char* title, const char* message);
 
+    /// This is for internal use in rare circumstances when the destructor
+    /// will not be called in a timely fashion.
+    void DestroyWindow();
+
 protected:
     /// Returns the preferred size of the window. The window is not
     /// obligated to honor this size. If all children of the window
