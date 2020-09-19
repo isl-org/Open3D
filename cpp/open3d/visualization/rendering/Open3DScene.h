@@ -61,8 +61,8 @@ public:
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);
 
-    /// Sets the minimum number of points AddGeometry creates an additional
-    /// downsampled point cloud (for point clouds) which is used when rendering
+    /// Sets the maximum number of points before AddGeometry also adds a
+    /// downsampled point cloud with number of points, used when rendering
     /// speed is important.
     void SetDownsampleThreshold(size_t n_points) {
         downsample_threshold_ = n_points;
