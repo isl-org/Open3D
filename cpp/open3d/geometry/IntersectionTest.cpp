@@ -26,9 +26,10 @@
 
 #include "open3d/geometry/IntersectionTest.h"
 
-#include <cmath>
 #include <tomasakeninemoeller/opttritri.h>
 #include <tomasakeninemoeller/tribox3.h>
+
+#include <cmath>
 
 namespace open3d {
 namespace geometry {
@@ -219,7 +220,9 @@ double IntersectionTest::LineSegmentsMinimumDistance(
 double IntersectionTest::LineAABBSlabParam(
         const Eigen::ParametrizedLine<double, 3>& line,
         const AxisAlignedBoundingBox& box,
-        double dir_x_inv, double dir_y_inv, double dir_z_inv) {
+        double dir_x_inv,
+        double dir_y_inv,
+        double dir_z_inv) {
     /* This check is based off of Tavian Barnes' branchless implementation of
      * the slab method for determining ray/AABB intersections. It returns the
      * distance from the line origin to the intersection point with the AABB,
@@ -241,8 +244,7 @@ double IntersectionTest::LineAABBSlabParam(
     t_min = std::max(t_min, std::min(t_z0, t_z1));
     t_max = std::min(t_max, std::max(t_z0, t_z1));
 
-    if (t_max >= t_min)
-        return t_min;
+    if (t_max >= t_min) return t_min;
     return std::nan("");
 }
 
@@ -267,7 +269,9 @@ double IntersectionTest::RayAABBSlabParam(
 double IntersectionTest::RayAABBSlabParam(
         const Eigen::ParametrizedLine<double, 3>& ray,
         const AxisAlignedBoundingBox& box,
-        double dir_x_inv, double dir_y_inv, double dir_z_inv) {
+        double dir_x_inv,
+        double dir_y_inv,
+        double dir_z_inv) {
     /* This check is based off of Tavian Barnes' branchless implementation of
      * the slab method for determining ray/AABB intersections. It returns the
      * distance from the line origin to the intersection point with the AABB,
@@ -290,8 +294,7 @@ double IntersectionTest::RayAABBSlabParam(
     t_max = std::min(t_max, std::max(t_z0, t_z1));
 
     t_min = std::max(0., t_min);
-    if (t_max >= t_min)
-        return t_min;
+    if (t_max >= t_min) return t_min;
     return std::nan("");
 }
 
@@ -321,19 +324,19 @@ double IntersectionTest::LineAABBExactParam(
                                  box.max_bound_ + Vector3d(tol, tol, tol)};
 
     using plane_t = Eigen::Hyperplane<double, 3>;
-    std::array<plane_t, 6> planes {{{{-1, 0, 0}, box.min_bound_},
-                                           {{1, 0, 0}, box.max_bound_},
-                                           {{0, -1, 0}, box.min_bound_},
-                                           {{0, 1, 0}, box.max_bound_},
-                                           {{0, 0, -1}, box.min_bound_},
-                                           {{0, 0, 1}, box.max_bound_}}};
+    std::array<plane_t, 6> planes{{{{-1, 0, 0}, box.min_bound_},
+                                   {{1, 0, 0}, box.max_bound_},
+                                   {{0, -1, 0}, box.min_bound_},
+                                   {{0, 1, 0}, box.max_bound_},
+                                   {{0, 0, -1}, box.min_bound_},
+                                   {{0, 0, 1}, box.max_bound_}}};
 
     // Get the intersections
     std::vector<double> parameters;
     std::vector<Eigen::Vector3d> points;
 
     for (int i = 0; i < 6; ++i) {
-        double t =  line.intersectionParameter(planes[i]);
+        double t = line.intersectionParameter(planes[i]);
         if (!std::isinf(t)) {
             parameters.push_back(t);
             auto p = line.pointAt(t);
@@ -343,8 +346,7 @@ double IntersectionTest::LineAABBExactParam(
 
     // Find the ones which are contained
     auto contained_indices = b_tol.GetPointIndicesWithinBoundingBox(points);
-    if (contained_indices.empty())
-        return std::nan("");
+    if (contained_indices.empty()) return std::nan("");
 
     // Return the lowest parameter
     double minimum = parameters[contained_indices[0]];
@@ -377,22 +379,22 @@ double IntersectionTest::RayAABBExactParam(
     // eliminate the issue.
     double tol = 1e-10;
     AxisAlignedBoundingBox b_tol{box.min_bound_ - Vector3d(tol, tol, tol),
-            box.max_bound_ + Vector3d(tol, tol, tol)};
+                                 box.max_bound_ + Vector3d(tol, tol, tol)};
 
     using plane_t = Eigen::Hyperplane<double, 3>;
-    std::array<plane_t, 6> planes {{{{-1, 0, 0}, box.min_bound_},
-                                           {{1, 0, 0}, box.max_bound_},
-                                           {{0, -1, 0}, box.min_bound_},
-                                           {{0, 1, 0}, box.max_bound_},
-                                           {{0, 0, -1}, box.min_bound_},
-                                           {{0, 0, 1}, box.max_bound_}}};
+    std::array<plane_t, 6> planes{{{{-1, 0, 0}, box.min_bound_},
+                                   {{1, 0, 0}, box.max_bound_},
+                                   {{0, -1, 0}, box.min_bound_},
+                                   {{0, 1, 0}, box.max_bound_},
+                                   {{0, 0, -1}, box.min_bound_},
+                                   {{0, 0, 1}, box.max_bound_}}};
 
     // Get the intersections
     std::vector<double> parameters{0};
     std::vector<Eigen::Vector3d> points{ray.origin()};
 
     for (int i = 0; i < 6; ++i) {
-        double t =  ray.intersectionParameter(planes[i]);
+        double t = ray.intersectionParameter(planes[i]);
         if (!std::isinf(t) && t >= 0) {
             parameters.push_back(t);
             auto p = ray.pointAt(t);
@@ -402,8 +404,7 @@ double IntersectionTest::RayAABBExactParam(
 
     // Find the ones which are contained
     auto contained_indices = b_tol.GetPointIndicesWithinBoundingBox(points);
-    if (contained_indices.empty())
-        return std::nan("");
+    if (contained_indices.empty()) return std::nan("");
 
     // Return the lowest parameter
     double minimum = parameters[contained_indices[0]];

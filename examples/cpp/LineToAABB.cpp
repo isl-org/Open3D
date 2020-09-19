@@ -24,11 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <open3d/Open3D.h>
+
+#include <chrono>
 #include <iostream>
 #include <random>
-#include <chrono>
 #include <vector>
-#include <open3d/Open3D.h>
+
 #include "open3d/geometry/IntersectionTest.h"
 
 /* This example code performs a stress test of the various line/ray
@@ -71,7 +73,7 @@ public:
     Trial(geometry::AxisAlignedBoundingBox box,
           Eigen::ParametrizedLine<double, 3> hit_line,
           Eigen::ParametrizedLine<double, 3> miss_line)
-    : box_{box}, hit_line_{hit_line}, miss_line_{miss_line} {
+        : box_{box}, hit_line_{hit_line}, miss_line_{miss_line} {
         // Precompute the direction inverses for the optimized slab method
         h_x_inv = 1.0 / hit_line_.direction().x();
         h_y_inv = 1.0 / hit_line_.direction().y();
@@ -117,8 +119,8 @@ int main() {
             failed_misses++;
         }
     }
-    auto duration = duration_cast<milliseconds>(high_resolution_clock::now()
-                                                        - start);
+    auto duration =
+            duration_cast<milliseconds>(high_resolution_clock::now() - start);
     std::cout << " * took " << static_cast<double>(duration.count()) << " ms\n";
     std::cout << " * " << failed_hits << " failed hits\n";
     std::cout << " * " << failed_misses << " failed misses\n";
@@ -135,8 +137,8 @@ int main() {
             failed_misses++;
         }
     }
-    duration = duration_cast<milliseconds>(high_resolution_clock::now()
-                                                - start);
+    duration =
+            duration_cast<milliseconds>(high_resolution_clock::now() - start);
     std::cout << " * took " << static_cast<double>(duration.count()) << " ms\n";
     std::cout << " * " << failed_hits << " failed hits\n";
     std::cout << " * " << failed_misses << " failed misses\n";
@@ -157,13 +159,11 @@ int main() {
             failed_misses++;
         }
     }
-    duration = duration_cast<milliseconds>(high_resolution_clock::now()
-                                           - start);
+    duration =
+            duration_cast<milliseconds>(high_resolution_clock::now() - start);
     std::cout << " * took " << static_cast<double>(duration.count()) << " ms\n";
     std::cout << " * " << failed_hits << " failed hits\n";
     std::cout << " * " << failed_misses << " failed misses\n";
-
-
 }
 
 std::vector<Trial> GenerateTrials() {
@@ -201,7 +201,7 @@ std::vector<Trial> GenerateTrials() {
                                         simple_dist(mt)};
         auto in_plane_shift =
                 (direction_plane.projection(center + shift_direction) - center)
-                .normalized();
+                        .normalized();
         auto miss_focus = center + (in_plane_shift * (1.5 * size.norm()));
         auto miss_start = miss_focus - (direction * size.norm());
         auto miss_end = miss_focus + (direction * size.norm());

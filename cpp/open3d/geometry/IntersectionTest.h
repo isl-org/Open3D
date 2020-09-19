@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+
 #include "BoundingVolume.h"
 
 namespace open3d {
@@ -121,10 +122,9 @@ public:
     /// is important.  In such cases if performance is important, a simple
     /// custom implementation based on the problem directionality will likely
     /// outperform even the slab method.
-    static bool LineAABBExact(
-            const Eigen::ParametrizedLine<double, 3>& line,
-            const AxisAlignedBoundingBox& box) {
-            return !std::isnan(LineAABBExactParam(line, box));
+    static bool LineAABBExact(const Eigen::ParametrizedLine<double, 3>& line,
+                              const AxisAlignedBoundingBox& box) {
+        return !std::isnan(LineAABBExactParam(line, box));
     }
 
     /// \brief Returns the lower intersection parameter for a ray with an
@@ -168,9 +168,8 @@ public:
     /// is important.  In such cases if performance is important, a simple
     /// custom implementation based on the problem directionality will likely
     /// outperform even the slab method.
-    static bool RayAABBExact(
-            const Eigen::ParametrizedLine<double, 3>& ray,
-            const AxisAlignedBoundingBox& box) {
+    static bool RayAABBExact(const Eigen::ParametrizedLine<double, 3>& ray,
+                             const AxisAlignedBoundingBox& box) {
         return !std::isnan(RayAABBExactParam(ray, box));
     }
 
@@ -230,7 +229,9 @@ public:
     static double LineAABBSlabParam(
             const Eigen::ParametrizedLine<double, 3>& line,
             const AxisAlignedBoundingBox& box,
-            double dir_x_inv, double dir_y_inv, double dir_z_inv);
+            double dir_x_inv,
+            double dir_y_inv,
+            double dir_z_inv);
 
     /// \brief Returns true if the line intersects the AABB. Uses the slab
     /// method, see warning.
@@ -273,10 +274,12 @@ public:
     /// double floating point precision will not intersect correctly by this
     /// method
     static bool LineAABBSlab(const Eigen::ParametrizedLine<double, 3>& line,
-                 const AxisAlignedBoundingBox& box,
-                 double dir_x_inv, double dir_y_inv, double dir_z_inv) {
-        return !std::isnan(LineAABBSlabParam(line, box, dir_x_inv, dir_y_inv,
-                                             dir_z_inv));
+                             const AxisAlignedBoundingBox& box,
+                             double dir_x_inv,
+                             double dir_y_inv,
+                             double dir_z_inv) {
+        return !std::isnan(
+                LineAABBSlabParam(line, box, dir_x_inv, dir_y_inv, dir_z_inv));
     }
 
     /// \brief Returns the lower intersection parameter for a ray with an
@@ -299,7 +302,7 @@ public:
     /// double floating point precision will not intersect correctly by this
     /// method
     static double RayAABBSlabParam(
-            const Eigen::ParametrizedLine<double, 3> &ray,
+            const Eigen::ParametrizedLine<double, 3>& ray,
             const AxisAlignedBoundingBox& box);
 
     /// \brief Returns the lower intersection parameter for a ray with an
@@ -331,7 +334,9 @@ public:
     static double RayAABBSlabParam(
             const Eigen::ParametrizedLine<double, 3>& ray,
             const AxisAlignedBoundingBox& box,
-            double dir_x_inv, double dir_y_inv, double dir_z_inv);
+            double dir_x_inv,
+            double dir_y_inv,
+            double dir_z_inv);
 
     /// \brief Returns true if the ray intersects the AABB. Uses the slab
     /// method, see warning.
@@ -349,7 +354,7 @@ public:
     /// double floating point precision will not intersect correctly by this
     /// method
     static bool RayAABBSlab(const Eigen::ParametrizedLine<double, 3>& ray,
-                        const AxisAlignedBoundingBox& box) {
+                            const AxisAlignedBoundingBox& box) {
         return !std::isnan(RayAABBSlabParam(ray, box));
     }
 
@@ -376,10 +381,12 @@ public:
     /// double floating point precision will not intersect correctly by this
     /// method
     static bool RayAABBSlab(const Eigen::ParametrizedLine<double, 3>& ray,
-                    const AxisAlignedBoundingBox& box,
-                    double dir_x_inv, double dir_y_inv, double dir_z_inv) {
-        return !std::isnan(RayAABBSlabParam(ray, box, dir_x_inv, dir_y_inv,
-                                            dir_z_inv));
+                            const AxisAlignedBoundingBox& box,
+                            double dir_x_inv,
+                            double dir_y_inv,
+                            double dir_z_inv) {
+        return !std::isnan(
+                RayAABBSlabParam(ray, box, dir_x_inv, dir_y_inv, dir_z_inv));
     }
 };
 
