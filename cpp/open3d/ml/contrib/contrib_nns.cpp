@@ -166,10 +166,10 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
                                 dataset_batch_flat + num_batches,
                                 dataset_prefix_indices.data() + 1);
 
-// TODO: remove OPENMP block after PR#2305 get merged.
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static)
-#endif
+    // TODO: remove OPENMP block after PR#2305 get merged.
+    //#ifdef _OPENMP
+    //#pragma omp parallel for schedule(static)
+    //#endif
     for (int64_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
         core::Tensor current_query_points =
                 query_points.Slice(0, query_prefix_indices[batch_idx],
