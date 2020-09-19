@@ -378,11 +378,19 @@ Window::Window(const std::string& title,
 }
 
 Window::~Window() {
+    impl_->active_dialog_.reset();
     impl_->children_.clear();  // needs to happen before deleting renderer
     ImGui::SetCurrentContext(impl_->imgui_.context);
     ImGui::DestroyContext();
     impl_->renderer_.reset();
+    DestroyWindow();
+}
+
+void Window::DestroyWindow() {
     glfwDestroyWindow(impl_->window_);
+    // Ensure DestroyWindow() can be called multiple times, which will
+    // happen if you call DestroyWindow() before the destructor.
+    impl_->window_ = nullptr;
 }
 
 const std::vector<std::shared_ptr<Widget>>& Window::GetChildren() const {

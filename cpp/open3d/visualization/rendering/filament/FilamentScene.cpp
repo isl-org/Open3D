@@ -32,6 +32,7 @@
 //       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
+#include <unordered_set>
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293 4305)
@@ -241,11 +242,12 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
-    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder, vb,
-                                              ib, material);
+    filament::Box aabb = buffer_builder->ComputeAABB();  // expensive
+    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
+                                              aabb, vb, ib, material);
     if (success && ib_downsampled) {
-        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
-                                        ib_downsampled, material,
+        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
+                                        vb, ib_downsampled, material,
                                         BufferReuse::kYes)) {
             utility::LogWarning(
                     "Internal error: could not create downsampled point cloud");
@@ -259,6 +261,31 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const Material& material,
                                 const std::string& downsampled_name /*= ""*/,
                                 size_t downsample_threshold /*= SIZE_MAX*/) {
+    // Tensor::Min() and Tensor::Max() can be very slow on certain setups,
+    // in particular macOS with clang 11.0.0. This is a temporary fix.
+    auto ComputeAABB = [](const tgeometry::PointCloud& cloud) -> filament::Box {
+        Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
+        Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
+        const auto& points = cloud.GetPoints();
+        const size_t n = points.GetSize();
+        float* pts = (float*)points.AsTensor().GetDataPtr();
+        for (size_t i = 0; i < 3 * n; i += 3) {
+            min_pt[0] = std::min(min_pt[0], pts[i]);
+            min_pt[1] = std::min(min_pt[1], pts[i + 1]);
+            min_pt[2] = std::min(min_pt[2], pts[i + 2]);
+            max_pt[0] = std::max(max_pt[0], pts[i]);
+            max_pt[1] = std::max(max_pt[1], pts[i + 1]);
+            max_pt[2] = std::max(max_pt[2], pts[i + 2]);
+        }
+
+        const filament::math::float3 min(min_pt.x(), min_pt.y(), min_pt.z());
+        const filament::math::float3 max(max_pt.x(), max_pt.y(), max_pt.z());
+
+        filament::Box aabb;
+        aabb.set(min, max);
+        return aabb;
+    };
+
     // Basic sanity checks
     if (point_cloud.IsEmpty()) {
         utility::LogWarning("Point cloud for object {} is empty", object_name);
@@ -284,19 +311,20 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
-    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder, vb,
-                                              ib, material);
+    filament::Box aabb = ComputeAABB(point_cloud);
+    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
+                                              aabb, vb, ib, material);
     if (success && ib_downsampled) {
-        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
-                                        ib_downsampled, material,
+        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
+                                        vb, ib_downsampled, material,
                                         BufferReuse::kYes)) {
             // If we failed to create a downsampled cloud, which would be
             // unlikely, create another entity with the original buffers
             // (since that succeeded).
             utility::LogWarning(
                     "Internal error: could not create downsampled point cloud");
-            CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
-                                       ib, material, BufferReuse::kYes);
+            CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
+                                       vb, ib, material, BufferReuse::kYes);
         }
     }
     return success;
@@ -326,9 +354,16 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
 
     std::vector<std::string> mesh_object_names;
+    std::unordered_multiset<std::string> check_duplicates;
     for (const auto& mesh : model.meshes_) {
         auto& mat = model.materials_[mesh.material_idx];
         std::string derived_name(object_name + ":" + mesh.mesh_name);
+        check_duplicates.insert(derived_name);
+        if (check_duplicates.count(derived_name) > 1) {
+            derived_name +=
+                    std::string("_") +
+                    std::to_string(check_duplicates.count(derived_name));
+        }
         AddGeometry(derived_name, *(mesh.mesh), mat);
         mesh_object_names.push_back(derived_name);
     }
@@ -340,12 +375,11 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 bool FilamentScene::CreateAndAddFilamentEntity(
         const std::string& object_name,
         GeometryBuffersBuilder& buffer_builder,
+        filament::Box& aabb,
         VertexBufferHandle vb,
         IndexBufferHandle ib,
         const Material& material,
         BufferReuse reusing_vertex_buffer /*= kNo*/) {
-    filament::Box aabb = buffer_builder.ComputeAABB();
-
     auto vbuf = resource_mgr_.GetVertexBuffer(vb).lock();
     auto ibuf = resource_mgr_.GetIndexBuffer(ib).lock();
 

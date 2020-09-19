@@ -4,11 +4,11 @@ if (BUILD_TENSORFLOW_OPS AND WIN32)
 endif ()
 
 if (BUILD_TENSORFLOW_OPS)
-    add_subdirectory(TensorFlow)
+    add_subdirectory(tensorflow)
 endif ()
 
 if (BUILD_PYTORCH_OPS)
-    add_subdirectory(PyTorch)
+    add_subdirectory(pytorch)
 endif ()
 
 add_subdirectory(contrib)

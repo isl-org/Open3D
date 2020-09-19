@@ -60,6 +60,7 @@
 
 /// @cond
 namespace filament {
+class Box;
 class Engine;
 class IndirectLight;
 class Renderer;
@@ -211,6 +212,7 @@ private:
     bool CreateAndAddFilamentEntity(
             const std::string& object_name,
             GeometryBuffersBuilder& buffer_builder,
+            filament::Box& aabb,
             VertexBufferHandle vb,
             IndexBufferHandle ib,
             const Material& material,
