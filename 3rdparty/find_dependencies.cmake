@@ -28,6 +28,7 @@ set(Open3D_3RDPARTY_HEADER_TARGETS)
 set(Open3D_3RDPARTY_PRIVATE_TARGETS)
 
 find_package(PkgConfig QUIET)
+find_package(parallelstl REQUIRED)
 
 #
 # build_3rdparty_library(name ...)
@@ -969,6 +970,7 @@ import_3rdparty_library(3rdparty_tbb
 set(TBB_TARGET "3rdparty_tbb")
 add_dependencies(3rdparty_tbb ext_tbb)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
+target_include_directories(3rdparty_tbb SYSTEM INTERFACE ${parallelstl_INCLUDE_DIR})
 
 # MKL, cuSOLVER, cuBLAS
 # We link MKL statically. For MKL link flags, refer to:
