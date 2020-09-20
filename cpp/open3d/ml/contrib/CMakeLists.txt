@@ -1,5 +1,3 @@
-find_package(parallelstl REQUIRED)
-
 set (SRC
     Cloud.cpp
     GridSubsampling.cpp
@@ -11,4 +9,3 @@ open3d_set_global_properties(ml_contrib)
 open3d_link_3rdparty_libraries(ml_contrib)
 open3d_set_open3d_lib_properties(ml_contrib)
 open3d_show_and_abort_on_warning(ml_contrib)
-target_include_directories(ml_contrib SYSTEM PRIVATE ${parallelstl_INCLUDE_DIR})
