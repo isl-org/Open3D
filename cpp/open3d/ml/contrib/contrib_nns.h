@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/nns/NearestNeighborSearch.h"
-#include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
 namespace ml {
