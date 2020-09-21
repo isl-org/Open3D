@@ -24,8 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <numeric>
+
 #include "open3d/core/nns/NearestNeighborSearch.h"
-#include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
 namespace ml {
@@ -159,17 +160,13 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
     const int32_t* dataset_batch_flat =
             static_cast<const int32_t*>(dataset_batches.GetDataPtr());
 
-    utility::InclusivePrefixSum(query_batch_flat,
-                                query_batch_flat + num_batches,
-                                query_prefix_indices.data() + 1);
-    utility::InclusivePrefixSum(dataset_batch_flat,
-                                dataset_batch_flat + num_batches,
-                                dataset_prefix_indices.data() + 1);
+    // TODO: implement Cumsum function in Tensor.
+    std::partial_sum(query_batch_flat, query_batch_flat + num_batches,
+                     query_prefix_indices.data() + 1);
+    std::partial_sum(dataset_batch_flat, dataset_batch_flat + num_batches,
+                     dataset_prefix_indices.data() + 1);
 
-    // TODO: remove OPENMP block after PR#2305 get merged.
-    //#ifdef _OPENMP
-    //#pragma omp parallel for schedule(static)
-    //#endif
+    // Parallelization is applied point-wise in NanoFlannIndex.
     for (int64_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
         core::Tensor current_query_points =
                 query_points.Slice(0, query_prefix_indices[batch_idx],
@@ -202,7 +199,6 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
     core::Tensor result = core::Tensor::Full(
             {num_query_points, max_num_neighbors}, -1, core::Dtype::Int64);
 
-// TODO: remove OPENMP block after PR#2305 get merged.
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
