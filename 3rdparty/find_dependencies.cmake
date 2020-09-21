@@ -970,11 +970,6 @@ set(TBB_TARGET "3rdparty_tbb")
 add_dependencies(3rdparty_tbb ext_tbb)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
 
-# parallelstl 
-build_3rdparty_library(3rdparty_parallelstl DIRECTORY parallelstl INCLUDE_DIRS include/ INCLUDE_ALL)
-set(PARALLELSTL_TARGET "3rdparty_parallelstl")
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PARALLELSTL_TARGET}")
-
 # MKL, cuSOLVER, cuBLAS
 # We link MKL statically. For MKL link flags, refer to:
 # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html

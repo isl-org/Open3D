@@ -25,15 +25,14 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include <cstddef>
 
-namespace tbb {
-// class split;
+#include <tbb/parallel_for.h>
 
-template <typename Value>
-class blocked_range;
-
-}  // namespace tbb
+#include "tbb/parallel_scan.h"
+#if TBB_INTERFACE_VERSION >= 10000
+#include "pstl/execution"
+#include "pstl/numeric"
+#endif
 
 namespace open3d {
 namespace utility {
@@ -47,18 +46,34 @@ class ScanSumBody {
 
 public:
     ScanSumBody(Tout* out_, const Tin* in_) : sum(0), in(in_), out(out_) {}
-    // ScanSumBody(ScanSumBody& b, tbb::split): sum(0), in(b.in), out(b.out) {}
-    Tout get_sum() const;
+    Tout get_sum() const { return sum; }
 
     template <class Tag>
-    void operator()(const tbb::blocked_range<size_t>& r, Tag);
-    void reverse_join(ScanSumBody& a);
-    void assign(ScanSumBody& b);
+    void operator()(const tbb::blocked_range<size_t>& r, Tag) {
+        Tout temp = sum;
+        for (size_t i = r.begin(); i < r.end(); ++i) {
+            temp = temp + in[i];
+            if (Tag::is_final_scan()) out[i] = temp;
+        }
+        sum = temp;
+    }
+    ScanSumBody(ScanSumBody& b, tbb::split) : sum(0), in(b.in), out(b.out) {}
+    void reverse_join(ScanSumBody& a) { sum = a.sum + sum; }
+    void assign(ScanSumBody& b) { sum = b.sum; }
 };
 }  // namespace
 
 template <class Tin, class Tout>
-void InclusivePrefixSum(const Tin* first, const Tin* last, Tout* out);
+void InclusivePrefixSum(const Tin* first, const Tin* last, Tout* out) {
+#if TBB_INTERFACE_VERSION >= 10000
+    // use parallelstl if we have TBB 2018 or later
+    std::inclusive_scan(pstl::execution::par_unseq, first, last, out);
+#else
+    ScanSumBody<Tin, Tout> body(out, first);
+    size_t n = std::distance(first, last);
+    tbb::parallel_scan(tbb::blocked_range<size_t>(0, n), body);
+#endif
+}
 
 }  // namespace utility
 }  // namespace open3d
