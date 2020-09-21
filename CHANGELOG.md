@@ -12,7 +12,7 @@
 * Corrected documentation of PointCloud.h
 * Added ISS Keypoint Detector
 * Added an RPC interface for external visualizers running in a separate process
-* Added line/ray AABB intersection tests
+* Added Line3D/Ray3D/Segment3D classes with plane, point, and AABB tests
 
 ## 0.9.0
 
