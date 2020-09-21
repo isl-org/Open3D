@@ -48,9 +48,9 @@ void RadiusSearchCPU(const torch::Tensor& points,
                      torch::Tensor& neighbors_distance);
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> MultiRadiusSearch(
-        const torch::Tensor& points,
-        const torch::Tensor& queries,
-        const torch::Tensor& radii,
+        torch::Tensor points,
+        torch::Tensor queries,
+        torch::Tensor radii,
         torch::Tensor points_row_splits,
         torch::Tensor queries_row_splits,
         const std::string& metric_str,
@@ -73,11 +73,11 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> MultiRadiusSearch(
     // ensure that these are on the cpu
     points_row_splits = points_row_splits.to(torch::kCPU);
     queries_row_splits = queries_row_splits.to(torch::kCPU);
-    CHECK_CONTIGUOUS(points);
-    CHECK_CONTIGUOUS(queries);
-    CHECK_CONTIGUOUS(radii);
-    CHECK_CONTIGUOUS(points_row_splits);
-    CHECK_CONTIGUOUS(queries_row_splits);
+    points = points.contiguous();
+    queries = queries.contiguous();
+    radii = radii.contiguous();
+    points_row_splits = points_row_splits.contiguous();
+    queries_row_splits = queries_row_splits.contiguous();
 
     // check input shapes
     using namespace open3d::ml::op_util;
