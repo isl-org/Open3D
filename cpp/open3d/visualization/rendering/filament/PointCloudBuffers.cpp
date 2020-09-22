@@ -387,6 +387,16 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
         float* uv_src = static_cast<float*>(
                 geometry_.GetPointAttr("uv").AsTensor().GetDataPtr());
         memcpy(uv_array, uv_src, uv_array_size);
+    } else if (geometry_.HasPointAttr("__visualization_scalar")) {
+        memset(uv_array, 0, uv_array_size);
+        float* src = static_cast<float*>(
+                geometry_.GetPointAttr("__visualization_scalar")
+                        .AsTensor()
+                        .GetDataPtr());
+        const size_t n = 2 * n_vertices;
+        for (size_t i = 0; i < n; i += 2) {
+            uv_array[i] = *src++;
+        }
     } else {
         memset(uv_array, 0, uv_array_size);
     }
