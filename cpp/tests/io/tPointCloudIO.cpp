@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/tPointCloudIO.h"
+#include "open3d/io/TPointCloudIO.h"
 
 #include <gtest/gtest.h>
 
@@ -48,14 +48,6 @@ using open3d::io::WritePointCloudOption;
 
 namespace {
 
-double MaxDistance(const TensorList &a, const TensorList &b) {
-    core::SizeVector allDims(a.GetElementShape().size() + 1);
-    std::iota(allDims.begin(), allDims.end(), 0);
-    // Note: cannot use ASSERT_EQ because we return non-void
-    EXPECT_EQ(a.AsTensor().GetShape(), b.AsTensor().GetShape());
-    return (a.AsTensor() - b.AsTensor()).Abs().Max(allDims).Item<double>();
-}
-
 struct TensorCtorData {
     std::vector<double> values;
     core::SizeVector size;
@@ -67,7 +59,7 @@ struct ReadWritePCArgs {
     std::string filename;
     IsAscii write_ascii;
     Compressed compressed;
-    std::unordered_map<std::string, double> attributes_max_errors;
+    std::unordered_map<std::string, double> attributes_rel_tols;
 };
 
 }  // namespace
@@ -88,7 +80,7 @@ const std::vector<ReadWritePCArgs> pcArgs({
         {"test.xyzi",
          IsAscii::ASCII,
          Compressed::UNCOMPRESSED,
-         {{"points", 1e-4}, {"intensities", 1e-4}}},  // 0
+         {{"points", 1e-5}, {"intensities", 1e-5}}},  // 0
 });
 
 class ReadWriteTPC : public testing::TestWithParam<ReadWritePCArgs> {};
@@ -117,13 +109,12 @@ TEST_P(ReadWriteTPC, Basic) {
     EXPECT_TRUE(
             ReadPointCloud(args.filename, pc2, {"auto", false, false, true}));
 
-    for (const auto &attribute_max_err : args.attributes_max_errors) {
-        const std::string &attribute = attribute_max_err.first;
-        const double max_error = attribute_max_err.second;
+    for (const auto &attribute_rel_tol : args.attributes_rel_tols) {
+        const std::string &attribute = attribute_rel_tol.first;
+        const double rel_tol = attribute_rel_tol.second;
         SCOPED_TRACE(attribute);
-        EXPECT_LT(MaxDistance(pc1.GetPointAttr(attribute),
-                              pc2.GetPointAttr(attribute)),
-                  max_error);
+        EXPECT_TRUE(pc1.GetPointAttr(attribute).AsTensor().AllClose(
+                pc2.GetPointAttr(attribute).AsTensor(), rel_tol));
     }
 
     // Loaded data when saved should be identical when reloaded
@@ -133,12 +124,11 @@ TEST_P(ReadWriteTPC, Basic) {
     tgeometry::PointCloud pc3(dtype, device);
     EXPECT_TRUE(
             ReadPointCloud(args.filename, pc3, {"auto", false, false, true}));
-    for (const auto &attribute_max_err : args.attributes_max_errors) {
-        const std::string &attribute = attribute_max_err.first;
+    for (const auto &attribute_rel_tol : args.attributes_rel_tols) {
+        const std::string &attribute = attribute_rel_tol.first;
         SCOPED_TRACE(attribute);
-        EXPECT_EQ(MaxDistance(pc3.GetPointAttr(attribute),
-                              pc2.GetPointAttr(attribute)),
-                  0);
+        EXPECT_TRUE(pc3.GetPointAttr(attribute).AsTensor().AllClose(
+                pc2.GetPointAttr(attribute).AsTensor(), 0, 0));
     }
 }
 

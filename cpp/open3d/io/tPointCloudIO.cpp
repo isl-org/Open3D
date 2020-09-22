@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/tPointCloudIO.h"
+#include "open3d/io/TPointCloudIO.h"
 
 #include <iostream>
 #include <unordered_map>
@@ -35,9 +35,7 @@
 #include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
-
-namespace {
-using namespace io;
+namespace io {
 
 static const std::unordered_map<
         std::string,
@@ -56,9 +54,6 @@ static const std::unordered_map<
         file_extension_to_pointcloud_write_function{
                 {"xyzi", WritePointCloudToXYZI},
         };
-}  // unnamed namespace
-
-namespace io {
 
 std::shared_ptr<tgeometry::PointCloud> CreatetPointCloudFromFile(
         const std::string &filename,
