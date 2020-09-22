@@ -10,6 +10,8 @@ set(KERNEL_SRC
     kernel/Reduction.cpp
     kernel/ReductionCPU.cpp
     kernel/Kernel.cpp
+    kernel/CumSum.cpp
+    kernel/CumSumCPU.cpp
 )
 
 set(KERNEL_CUDA_SRC
@@ -18,6 +20,7 @@ set(KERNEL_CUDA_SRC
     kernel/UnaryEWCUDA.cu
     kernel/BinaryEWCUDA.cu
     kernel/ReductionCUDA.cu
+    kernel/CumSumCUDA.cu
 )
 
 set(LINALG_SRC

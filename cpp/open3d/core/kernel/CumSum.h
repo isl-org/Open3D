@@ -26,18 +26,21 @@
 
 #pragma once
 
-#include "open3d/core/kernel/BinaryEW.h"
-#include "open3d/core/kernel/CumSum.h"
-#include "open3d/core/kernel/IndexGetSet.h"
-#include "open3d/core/kernel/NonZero.h"
-#include "open3d/core/kernel/Reduction.h"
-#include "open3d/core/kernel/UnaryEW.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
 
-void TestMKLIntegration();
+Tensor CumSum(const Tensor& src, const SizeVector& dims);
+
+Tensor CumSumCPU(const Tensor& src, const SizeVector& dims);
+
+#ifdef BUILD_CUDA_MODULE
+Tensor CumSumCUDA(const Tensor& src, const SizeVector& dims);
+#endif
 
 }  // namespace kernel
 }  // namespace core

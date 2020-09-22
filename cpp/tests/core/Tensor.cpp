@@ -2204,6 +2204,47 @@ TEST_P(TensorPermuteDevices, NonZeroNumpy) {
     EXPECT_EQ(results[1].GetShape(), core::SizeVector{3});
 }
 
+TEST_P(TensorPermuteDevices, CumSum) {
+    core::Device device = GetParam();
+    core::Tensor src(
+            std::vector<float>({22.f, 23.f, 20.f, 9.f,  6.f, 14.f, 18.f, 13.f,
+                                15.f, 3.f,  17.f, 0.f,  7.f, 21.f, 11.f, 1.f,
+                                4.f,  2.f,  10.f, 19.f, 5.f, 8.f,  16.f, 12.f}),
+            {2, 3, 4}, core::Dtype::Float32, device);
+    core::Tensor dst;
+
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        EXPECT_THROW(src.CumSum({0}), std::runtime_error);
+    } else {
+        dst = src.CumSum({0});
+        EXPECT_EQ(dst.GetShape(), core::SizeVector({2, 3, 4}));
+        EXPECT_EQ(dst.ToFlatVector<float>(),
+                  std::vector<float>({22.f, 23.f, 20.f, 9.f,  6.f,  14.f,
+                                      18.f, 13.f, 15.f, 3.f,  17.f, 0.f,
+                                      29.f, 44.f, 31.f, 10.f, 10.f, 16.f,
+                                      28.f, 32.f, 20.f, 11.f, 33.f, 12.}));
+
+        dst = src.CumSum({1});
+        EXPECT_EQ(dst.GetShape(), core::SizeVector({2, 3, 4}));
+        EXPECT_EQ(dst.ToFlatVector<float>(),
+                  std::vector<float>({22.f, 23.f, 20.f, 9.f,  28.f, 37.f,
+                                      38.f, 22.f, 43.f, 40.f, 55.f, 22.f,
+                                      7.f,  21.f, 11.f, 1.f,  11.f, 23.f,
+                                      21.f, 20.f, 16.f, 31.f, 37.f, 32.f}));
+
+        dst = src.CumSum({2});
+        EXPECT_EQ(dst.GetShape(), core::SizeVector({2, 3, 4}));
+        EXPECT_EQ(dst.ToFlatVector<float>(),
+                  std::vector<float>({22.f, 45.f, 65.f, 74.f, 6.f,  20.f,
+                                      38.f, 51.f, 15.f, 18.f, 35.f, 35.f,
+                                      7.f,  28.f, 39.f, 40.f, 4.f,  6.f,
+                                      16.f, 35.f, 5.f,  13.f, 29.f, 41.f}));
+
+        EXPECT_THROW(src.CumSum({3}), std::runtime_error);
+        EXPECT_THROW(src.CumSum({1, 2}), std::runtime_error);
+    }
+}
+
 TEST_P(TensorPermuteDevices, CreationEmpty) {
     core::Device device = GetParam();
 

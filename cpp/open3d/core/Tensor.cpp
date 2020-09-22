@@ -1079,6 +1079,10 @@ std::vector<Tensor> Tensor::NonZeroNumpy() const {
 
 Tensor Tensor::NonZero() const { return kernel::NonZero(*this); }
 
+Tensor Tensor::CumSum(const SizeVector& dims) const {
+    return kernel::CumSum(*this, dims);
+}
+
 bool Tensor::All() const {
     Tensor dst({}, dtype_, GetDevice());
     kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,

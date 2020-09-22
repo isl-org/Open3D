@@ -24,20 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+// #include <thrust/device_vector.h>
+// #include <thrust/execution_policy.h>
+// #include <thrust/for_each.h>
+// #include <thrust/iterator/zip_iterator.h>
 
-#include "open3d/core/kernel/BinaryEW.h"
+#include "open3d/core/Indexer.h"
+#include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/CumSum.h"
-#include "open3d/core/kernel/IndexGetSet.h"
-#include "open3d/core/kernel/NonZero.h"
-#include "open3d/core/kernel/Reduction.h"
-#include "open3d/core/kernel/UnaryEW.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
 
-void TestMKLIntegration();
+Tensor CumSumCUDA(const Tensor& src, const SizeVector& dims) {
+    utility::LogError("Not implemented.");
+    // TODO: Implement Cumulative sum with CUDA.
+}
 
 }  // namespace kernel
 }  // namespace core
