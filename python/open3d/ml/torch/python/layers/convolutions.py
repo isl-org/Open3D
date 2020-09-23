@@ -128,6 +128,10 @@ class ContinuousConv(torch.nn.Module):
           useful when using even kernel sizes that have no center element and
           input and output point sets are the same and
           'radius_search_ignore_query_points' has been set to True.
+
+        dense_kernel_initializer: Initializer for the kernel weights of the
+          linear layer used for the center if 'use_dense_layer_for_center'
+          is True.
     """
 
     def __init__(
@@ -148,6 +152,7 @@ class ContinuousConv(torch.nn.Module):
             offset=None,
             window_function=None,
             use_dense_layer_for_center=False,
+            dense_kernel_initializer=torch.nn.init.xavier_uniform_,
             **kwargs):
         super().__init__()
 
@@ -164,12 +169,11 @@ class ContinuousConv(torch.nn.Module):
         self.normalize = normalize
         self.radius_search_ignore_query_points = radius_search_ignore_query_points
         self.radius_search_metric = radius_search_metric
+        self.dense_kernel_initializer = dense_kernel_initializer
 
         if offset is None:
-            self.offset = torch.zeros(size=(3,), dtype=torch.float32)
-        else:
-            self.offset = offset
-        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
+            offset = torch.zeros(size=(3,), dtype=torch.float32)
+        self.register_buffer('offset', offset)
 
         self.window_function = window_function
 
@@ -189,6 +193,7 @@ class ContinuousConv(torch.nn.Module):
             self.dense = torch.nn.Linear(self.in_channels,
                                          self.filters,
                                          bias=False)
+            self.dense_kernel_initializer(self.dense.weight)
 
         kernel_shape = (*self.kernel_size, self.in_channels, self.filters)
         self.kernel = torch.nn.Parameter(data=torch.Tensor(*kernel_shape),
@@ -257,6 +262,9 @@ class ContinuousConv(torch.nn.Module):
 
         offset = self.offset
 
+        if isinstance(extents, float):
+            extents = torch.tensor(extents)
+
         if inp_importance is None:
             inp_importance = torch.empty((0,),
                                          dtype=torch.float32,
@@ -277,8 +285,6 @@ class ContinuousConv(torch.nn.Module):
             neighbors_row_splits = user_neighbors_row_splits
 
         else:
-            if isinstance(extents, float):
-                extents = torch.tensor(extents)
             if len(extents.shape) == 0:
                 radius = 0.5 * extents
                 self.nns = self.fixed_radius_search(
@@ -423,12 +429,10 @@ class SparseConv(torch.nn.Module):
 
         if offset is None:
             if kernel_size[0] % 2:
-                self.offset = torch.zeros(size=(3,), dtype=torch.float32)
+                offset = torch.zeros(size=(3,), dtype=torch.float32)
             else:
-                self.offset = torch.full((3,), -0.5, dtype=torch.float32)
-        else:
-            self.offset = offset
-        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
+                offset = torch.full((3,), -0.5, dtype=torch.float32)
+        self.register_buffer('offset', offset)
 
         self.fixed_radius_search = FixedRadiusSearch(metric='Linf',
                                                      ignore_query_point=False,
@@ -604,12 +608,10 @@ class SparseConvTranspose(torch.nn.Module):
 
         if offset is None:
             if kernel_size[0] % 2:
-                self.offset = torch.zeros(size=(3,), dtype=torch.float32)
+                offset = torch.zeros(size=(3,), dtype=torch.float32)
             else:
-                self.offset = torch.full((3,), -0.5, dtype=torch.float32)
-        else:
-            self.offset = offset
-        self.offset = torch.nn.Parameter(data=self.offset, requires_grad=False)
+                offset = torch.full((3,), -0.5, dtype=torch.float32)
+        self.register_buffer('offset', offset)
 
         self.fixed_radius_search = FixedRadiusSearch(metric='Linf',
                                                      ignore_query_point=False,

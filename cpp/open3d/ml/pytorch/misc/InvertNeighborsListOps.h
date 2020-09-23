@@ -30,6 +30,6 @@
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
         int64_t num_points,
-        const torch::Tensor& inp_neighbors_index,
-        const torch::Tensor& inp_neighbors_row_splits,
-        const torch::Tensor& inp_neighbors_attributes);
+        torch::Tensor inp_neighbors_index,
+        torch::Tensor inp_neighbors_row_splits,
+        torch::Tensor inp_neighbors_attributes);

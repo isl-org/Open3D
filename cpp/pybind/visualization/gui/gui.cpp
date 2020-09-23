@@ -80,6 +80,31 @@ private:
     py::gil_scoped_release *unlocker_;
 };
 
+// atexit: Filament crashes if the engine was not destroyed before exit().
+// As far as I can tell, the bluegl mutex, which is a static variable,
+// gets destroyed before the render thread gets around to calling
+// bluegl::unbind(), thus crashing. So, we need to make sure Filament gets
+// cleaned up before C++ starts cleaning up static variables. But we don't want
+// to clean up this way unless something catastrophic happens (e.g. the Python
+// interpreter is exiting due to a fatal exception). Some cases we need to
+// consider:
+//  1) exception before calling Application.instance.run()
+//  2) exception during Application.instance.run(), namely within a UI callback
+//  3) exception after Application.instance.run() successfully finishes
+// If Python is exiting normally, then Application::Run() should have already
+// cleaned up Filament. So if we still need to clean up Filament at exit(),
+// we must be panicking. It is a little difficult to check this, though, but
+// Application::OnTerminate() should work even if we've already cleaned up,
+// it will just end up being a no-op.
+bool g_installed_atexit = false;
+void cleanup_filament_atexit() { Application::GetInstance().OnTerminate(); }
+
+void install_cleanup_atexit() {
+    if (!g_installed_atexit) {
+        atexit(cleanup_filament_atexit);
+    }
+}
+
 void pybind_gui_classes(py::module &m) {
     // ---- Application ----
     py::class_<Application> application(m, "Application",
@@ -119,6 +144,7 @@ void pybind_gui_classes(py::module &m) {
                                         o3d_init_path);
                         auto resource_path = module_path + "/resources";
                         instance.Initialize(resource_path.c_str());
+                        install_cleanup_atexit();
                     },
                     "Initializes the application, using the resources included "
                     "in the wheel. One of the `initialize` functions _must_ be "
@@ -127,6 +153,7 @@ void pybind_gui_classes(py::module &m) {
                     "initialize",
                     [](Application &instance, const char *resource_dir) {
                         instance.Initialize(resource_dir);
+                        install_cleanup_atexit();
                     },
                     "Initializes the application with location of the "
                     "resources "
@@ -561,9 +588,9 @@ void pybind_gui_classes(py::module &m) {
             .def("remove_item",
                  (void (Combobox::*)(int)) & Combobox::RemoveItem,
                  "Removes the item at the index")
-            // .def_readonly("number_of_items",
-            //               &Combobox::GetNumberOfItems,
-            //               "The number of items (read-only)")
+            .def_property_readonly("number_of_items",
+                                   &Combobox::GetNumberOfItems,
+                                   "The number of items (read-only)")
             .def("get_item", &Combobox::GetItem,
                  "Returns the item at the given index")
             .def_property("selected_index", &Combobox::GetSelectedIndex,
