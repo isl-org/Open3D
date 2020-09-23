@@ -38,7 +38,7 @@
 #include "open3d/utility/ProgressReporters.h"
 
 // References for PCD file IO
-// http://pointclouds.org/documentation/tutorials/pcd_file_format.php
+// http://pointclouds.org/documentation/tutorials/pcd_file_format.html
 // https://github.com/PointCloudLibrary/pcl/blob/master/io/src/pcd_io.cpp
 // https://www.mathworks.com/matlabcentral/fileexchange/40382-matlab-to-point-cloud-library
 

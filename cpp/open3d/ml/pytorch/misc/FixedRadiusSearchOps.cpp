@@ -67,14 +67,14 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
 #endif
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
-        const torch::Tensor& points,
-        const torch::Tensor& queries,
+        torch::Tensor points,
+        torch::Tensor queries,
         double radius,
         torch::Tensor points_row_splits,
         torch::Tensor queries_row_splits,
         torch::Tensor hash_table_splits,
-        const torch::Tensor& hash_table_index,
-        const torch::Tensor& hash_table_cell_splits,
+        torch::Tensor hash_table_index,
+        torch::Tensor hash_table_cell_splits,
         const std::string& metric_str,
         const bool ignore_query_point,
         const bool return_distances) {
@@ -100,13 +100,13 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
     points_row_splits = points_row_splits.to(torch::kCPU);
     queries_row_splits = queries_row_splits.to(torch::kCPU);
     hash_table_splits = hash_table_splits.to(torch::kCPU);
-    CHECK_CONTIGUOUS(points);
-    CHECK_CONTIGUOUS(queries);
-    CHECK_CONTIGUOUS(points_row_splits);
-    CHECK_CONTIGUOUS(queries_row_splits);
-    CHECK_CONTIGUOUS(hash_table_splits);
-    CHECK_CONTIGUOUS(hash_table_index);
-    CHECK_CONTIGUOUS(hash_table_cell_splits);
+    points = points.contiguous();
+    queries = queries.contiguous();
+    points_row_splits = points_row_splits.contiguous();
+    queries_row_splits = queries_row_splits.contiguous();
+    hash_table_splits = hash_table_splits.contiguous();
+    hash_table_index = hash_table_index.contiguous();
+    hash_table_cell_splits = hash_table_cell_splits.contiguous();
 
     // check input shapes
     using namespace open3d::ml::op_util;

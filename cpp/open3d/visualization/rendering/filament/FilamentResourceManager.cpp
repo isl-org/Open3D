@@ -247,6 +247,8 @@ const MaterialHandle FilamentResourceManager::kDefaultDepthShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitSolidColorShader =
+        MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
@@ -267,6 +269,7 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultNormalShader,
         FilamentResourceManager::kDefaultDepthShader,
         FilamentResourceManager::kDefaultUnlitGradientShader,
+        FilamentResourceManager::kDefaultUnlitSolidColorShader,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
@@ -790,6 +793,12 @@ void FilamentResourceManager::LoadDefaults() {
     colormap_mat_inst->setParameter("colorMap", color_map, default_sampler);
     material_instances_[kColorMapMaterial] =
             BoxResource(colormap_mat_inst, engine_);
+
+    const auto solid_path = resource_root + "/unlitSolidColor.filamat";
+    auto solid_mat = LoadMaterialFromFile(solid_path, engine_);
+    solid_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                   {0.5f, 0.5f, 0.5f});
+    materials_[kDefaultUnlitSolidColorShader] = BoxResource(solid_mat, engine_);
 }
 
 }  // namespace rendering
