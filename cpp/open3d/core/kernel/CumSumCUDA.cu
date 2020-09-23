@@ -37,7 +37,7 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-Tensor CumSumCUDA(const Tensor& src, Tensor& dst, int64_t dim) {
+void CumSumCUDA(const Tensor& src, Tensor& dst, int64_t dim) {
     utility::LogError("Not implemented.");
     // TODO: Implement Cumulative sum with CUDA.
 }

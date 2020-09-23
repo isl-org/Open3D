@@ -1081,7 +1081,8 @@ Tensor Tensor::NonZero() const { return kernel::NonZero(*this); }
 
 Tensor Tensor::CumSum(int64_t dim) const {
     Tensor dst(GetShape(), dtype_, GetDevice());
-    return kernel::CumSum(*this, dst, dim);
+    kernel::CumSum(*this, dst, dim);
+    return dst;
 }
 
 bool Tensor::All() const {

@@ -31,18 +31,18 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-Tensor CumSumCPU(const Tensor& src, Tensor& dst, int64_t dim) {
-    // Destination Tensor.
-    dst.CopyFrom(src);
+void CumSumCPU(const Tensor& src, Tensor& dst, int64_t dim) {
+    // Copy first slice of source Tensor to destination Tensor.
+    dst.Slice(dim, 0, 1).CopyFrom(src.Slice(dim, 0, 1));
 
     int64_t num_elements = src.GetShapeRef()[dim];
 
     for (int64_t i = 1; i < num_elements; ++i) {
-        Tensor dst_slice = dst.Slice(dim, i, i + 1);
+        Tensor src_slice = src.Slice(dim, i, i + 1);
         Tensor prev_slice = dst.Slice(dim, i - 1, i);
-        dst_slice.Add_(prev_slice);
+        Tensor dst_slice = dst.Slice(dim, i, i + 1);
+        dst_slice.AsRvalue() = src_slice.Add(prev_slice);
     }
-    return dst;
 }
 
 }  // namespace kernel

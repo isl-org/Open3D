@@ -36,15 +36,15 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-Tensor CumSum(const Tensor& src, Tensor& dst, int64_t dim) {
+void CumSum(const Tensor& src, Tensor& dst, int64_t dim) {
     // Wrap dimension.
     dim = shape_util::WrapDim(dim, src.NumDims());
     Device::DeviceType device_type = src.GetDevice().GetType();
     if (device_type == Device::DeviceType::CPU) {
-        return CumSumCPU(src, dst, dim);
+        CumSumCPU(src, dst, dim);
     } else if (device_type == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        return CumSumCUDA(src, dst, dim);
+        CumSumCUDA(src, dst, dim);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

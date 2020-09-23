@@ -820,7 +820,7 @@ public:
     Tensor NonZero() const;
 
     /// Returns the cumulative sum of the tensor along the given \p dims.
-    /// \param dim dimension to do the operation over.
+    /// \param dim The dimension to do the operation over.
     Tensor CumSum(int64_t dim) const;
 
     /// Returns true if all elements in the tensor are true. Only works for
