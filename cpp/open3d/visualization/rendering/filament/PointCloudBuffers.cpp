@@ -122,7 +122,8 @@ IndexBufferHandle GeometryBuffersBuilder::CreateIndexBuffer(
         size_t idx = 0;
         uint_indices[idx++] = 0;
         double dist = 1.0;
-        for (size_t i = 1; i < max_index; ++i) {
+        size_t i;
+        for (i = 1; i < max_index; ++i) {
             if (dist >= step) {
                 uint_indices[idx++] = IndexType(i);
                 dist -= step;
@@ -131,6 +132,11 @@ IndexBufferHandle GeometryBuffersBuilder::CreateIndexBuffer(
                 }
             }
             dist += 1.0;
+        }
+        // Very occasionally floating point error leads to one fewer points
+        // being added.
+        if (i < max_index - 1) {
+            n_indices = i + 1;
         }
     }
 
