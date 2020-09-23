@@ -44,12 +44,11 @@ void CumSum(benchmark::State& state, const Device& device) {
     }
 }
 
-BENCHMARK_CAPTURE(CumSum, CPU, Device("CPU:0"))
-        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(CumSum, CPU, Device("CPU:0"))->Unit(benchmark::kMillisecond);
 
 // TODO: CUDA.
 //#ifdef BUILD_CUDA_MODULE
-//BENCHMARK_CAPTURE(CumSum, CUDA, Device("CUDA:0"))
+// BENCHMARK_CAPTURE(CumSum, CUDA, Device("CUDA:0"))
 //        ->Unit(benchmark::kMillisecond);
 //#endif
 
