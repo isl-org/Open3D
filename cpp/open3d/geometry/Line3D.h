@@ -138,7 +138,7 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// line with an axis aligned bounding box. The intersection point can be
-    /// recovered with line.PointAt(...). If the line does not intersect the
+    /// recovered with line.LinePointAt(...). If the line does not intersect the
     /// box the optional return value will be empty. Also note that if the AABB
     /// is behind the line's origin point, the value returned will still be of
     /// the lower intersection, which is the first intersection in the direction
@@ -162,7 +162,7 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// line with an axis aligned bounding box. The intersection point can be
-    /// recovered with line.PointAt(...). If the line does not intersect the
+    /// recovered with line.LinePointAt(...). If the line does not intersect the
     /// box the return value will be empty. Also note that if the AABB is behind
     /// the line's origin point, the value returned will still be of the lower
     /// intersection, which is the first intersection in the direction of the
@@ -244,7 +244,7 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// ray with an axis aligned bounding box. The intersection point can be
-    /// recovered with ray.PointAt(...). If the ray does not intersect the
+    /// recovered with ray.LinePointAt(...). If the ray does not intersect the
     /// box the optional return value will be empty. No intersection behind the
     /// ray origin will be counted, and if the ray originates from within the
     /// bounding box the parameter value will be 0.
@@ -319,11 +319,12 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// segment with an axis aligned bounding box. The intersection point can be
-    /// recovered with segment.PointAt(...). If the segment does not intersect
-    /// the box the optional return value will be empty. No intersection behind
-    /// the segment origin will be counted, and if the segment originates from
-    /// within the bounding box the parameter value will be 0. No intersection
-    /// beyond the endpoint of the segment will be considered either.
+    /// recovered with segment.LinePointAt(...). If the segment does not
+    /// intersect the box the optional return value will be empty. No
+    /// intersection behind the segment origin will be counted, and if the
+    /// segment originates from within the bounding box the parameter value will
+    /// be 0. No intersection beyond the endpoint of the segment will be
+    /// considered either.
     ///
     /// This implementation is based off of Tavian Barnes' optimized branchless
     /// slab method. https://tavianator.com/2011/segment_box.html. It runs in
@@ -343,8 +344,8 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// segment with an axis aligned bounding box. The intersection point can be
-    /// recovered with segment.PointAt(...). If the segment does not intersect
-    /// the box the return value will be empty.
+    /// recovered with segment.LinePointAt(...). If the segment does not
+    /// intersect the box the return value will be empty.
     ///
     /// This implementation is a naive exact method that considers intersections
     /// with all six bounding box planes. It is not optimized for speed and

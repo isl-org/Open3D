@@ -84,15 +84,15 @@ public:
     /// \brief Returns the lower intersection parameter for a line with an
     /// axis aligned bounding box or empty if no intersection. This method is
     /// about 20x slower than the slab method, see details to know when to use.
-    /// This function wraps the underlying implementation on the LineBase class
-    /// and is included here for API coherence, if you are testing large numbers
+    /// This function wraps the underlying implementation on the Line3D class
+    /// and is included here for API coherence; if you are testing large numbers
     /// of lines, rays, or segments use the Line3D, Ray3D, or Segment3D classes
     /// directly.
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// line with an axis aligned bounding box. The intersection point can be
-    /// recovered with line.PointAt(...). If the line does not intersect the
-    /// box the return value will be NaN. Also note that if the AABB is behind
+    /// recovered with line.LinePointAt(...). If the line does not intersect the
+    /// box the return value will be empty. Also note that if the AABB is behind
     /// the line's origin point, the value returned will still be of the lower
     /// intersection, which is the first intersection in the direction of the
     /// line, not the intersection closer to the origin.
@@ -133,15 +133,15 @@ public:
 
     /// \brief Returns the lower intersection parameter for a line with an
     /// axis aligned bounding box or no value if there is no intersection. This
-    /// function wraps the underlying implementation on the LineBase class and
-    /// is included here for API coherence, if you are testing large numbers
+    /// function wraps the underlying implementation on the Line3D class and
+    /// is included here for API coherence; if you are testing large numbers
     /// of lines, rays, or segments use the Line3D, Ray3D, or Segment3D classes
     /// directly.
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// line with an axis aligned bounding box. The intersection point can be
-    /// recovered with line.PointAt(...). If the line does not intersect the
-    /// box the return value will be NaN. Also note that if the AABB is behind
+    /// recovered with line.LinePointAt(...). If the line does not intersect the
+    /// box the return value will be empty. Also note that if the AABB is behind
     /// the line's origin point, the value returned will still be of the lower
     /// intersection, which is the first intersection in the direction of the
     /// line, not the intersection closer to the origin.
