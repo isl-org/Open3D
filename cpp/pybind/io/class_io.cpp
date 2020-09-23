@@ -37,9 +37,9 @@
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/PoseGraphIO.h"
+#include "open3d/io/TPointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/io/VoxelGridIO.h"
-#include "open3d/io/tPointCloudIO.h"
 #include "pybind/docstring.h"
 #include "pybind/io/io.h"
 

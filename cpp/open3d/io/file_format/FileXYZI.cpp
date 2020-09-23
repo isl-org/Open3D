@@ -30,7 +30,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
 #include "open3d/io/FileFormatIO.h"
-#include "open3d/io/tPointCloudIO.h"
+#include "open3d/io/TPointCloudIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/ProgressReporters.h"
