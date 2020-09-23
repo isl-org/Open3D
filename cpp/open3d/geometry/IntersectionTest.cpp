@@ -217,6 +217,5 @@ double IntersectionTest::LineSegmentsMinimumDistance(
     return dist;
 }
 
-
 }  // namespace geometry
 }  // namespace open3d

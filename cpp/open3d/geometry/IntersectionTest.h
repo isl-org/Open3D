@@ -126,8 +126,8 @@ public:
     ///     ...
     /// }
     /// \endcode
-    static utility::optional<double> LineExactAABB(const Line3D& line,
-                                            const AxisAlignedBoundingBox& box) {
+    static utility::optional<double> LineExactAABB(
+            const Line3D& line, const AxisAlignedBoundingBox& box) {
         return line.ExactAABB(box);
     }
 
@@ -174,8 +174,8 @@ public:
     /// \warning A line that lies exactly in one of the AABB's planes within the
     /// double floating point precision will not intersect correctly by this
     /// method
-    static utility::optional<double> LineSlabAABB(const Line3D& line,
-                                           const AxisAlignedBoundingBox& box) {
+    static utility::optional<double> LineSlabAABB(
+            const Line3D& line, const AxisAlignedBoundingBox& box) {
         return line.SlabAABB(box);
     }
 };
