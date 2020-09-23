@@ -820,8 +820,8 @@ public:
     Tensor NonZero() const;
 
     /// Returns the cumulative sum of the tensor along the given \p dims.
-    /// \param dims A list of dimensions to be reduced. Should be length 1.
-    Tensor CumSum(const SizeVector& dims) const;
+    /// \param dim dimension to do the operation over.
+    Tensor CumSum(int64_t dim) const;
 
     /// Returns true if all elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and

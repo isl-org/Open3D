@@ -1079,8 +1079,9 @@ std::vector<Tensor> Tensor::NonZeroNumpy() const {
 
 Tensor Tensor::NonZero() const { return kernel::NonZero(*this); }
 
-Tensor Tensor::CumSum(const SizeVector& dims) const {
-    return kernel::CumSum(*this, dims);
+Tensor Tensor::CumSum(int64_t dim) const {
+    Tensor dst(GetShape(), dtype_, GetDevice());
+    return kernel::CumSum(*this, dst, dim);
 }
 
 bool Tensor::All() const {

@@ -23,37 +23,23 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-#include "open3d/core/Dispatch.h"
-#include "open3d/core/Indexer.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/CumSum.h"
-#include "open3d/core/kernel/ParallelUtil.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
 
-Tensor CumSumCPU(const Tensor& src, const SizeVector& dims) {
-    // Check dims.
-    if (dims.size() != 1) {
-        utility::LogError("CumSum can only have 1 reduction dimension.");
-    }
-    int64_t dim = dims[0];
-    if (dim < 0 || dim >= src.NumDims()) {
-        utility::LogError("Dimension out of range.");
-    }
-
+Tensor CumSumCPU(const Tensor& src, Tensor& dst, int64_t dim) {
     // Destination Tensor.
-    Tensor dst(src.GetShape(), src.GetDtype(), src.GetDevice());
     dst.CopyFrom(src);
 
     int64_t num_elements = src.GetShapeRef()[dim];
 
-    Tensor dst_transpose = dst.Transpose(0, dim);
     for (int64_t i = 1; i < num_elements; ++i) {
-        Tensor dst_slice = dst_transpose[i];
-        Tensor prev_slice = dst_transpose[i - 1];
+        Tensor dst_slice = dst.Slice(dim, i, i + 1);
+        Tensor prev_slice = dst.Slice(dim, i - 1, i);
         dst_slice.Add_(prev_slice);
     }
     return dst;

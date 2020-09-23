@@ -34,12 +34,12 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-Tensor CumSum(const Tensor& src, const SizeVector& dims);
+Tensor CumSum(const Tensor& src, Tensor& dst, int64_t dim);
 
-Tensor CumSumCPU(const Tensor& src, const SizeVector& dims);
+Tensor CumSumCPU(const Tensor& src, Tensor& dst, int64_t dim);
 
 #ifdef BUILD_CUDA_MODULE
-Tensor CumSumCUDA(const Tensor& src, const SizeVector& dims);
+Tensor CumSumCUDA(const Tensor& src, Tensor& dst, int64_t dim);
 #endif
 
 }  // namespace kernel

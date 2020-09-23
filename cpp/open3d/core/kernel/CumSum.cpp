@@ -27,6 +27,7 @@
 #include "open3d/core/kernel/CumSum.h"
 
 #include "open3d/core/Device.h"
+#include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
@@ -35,17 +36,15 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-Tensor CumSum(const Tensor& src, const SizeVector& dims) {
-    // Check dimension.
-    if (dims.size() != 1) {
-        utility::LogError("CumSum can only have 1 reduction dimension");
-    }
+Tensor CumSum(const Tensor& src, Tensor& dst, int64_t dim) {
+    // Wrap dimension.
+    dim = shape_util::WrapDim(dim, src.NumDims());
     Device::DeviceType device_type = src.GetDevice().GetType();
     if (device_type == Device::DeviceType::CPU) {
-        return CumSumCPU(src, dims);
+        return CumSumCPU(src, dst, dim);
     } else if (device_type == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        return CumSumCUDA(src, dims);
+        return CumSumCUDA(src, dst, dim);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

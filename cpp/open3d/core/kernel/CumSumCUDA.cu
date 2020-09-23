@@ -29,7 +29,6 @@
 // #include <thrust/for_each.h>
 // #include <thrust/iterator/zip_iterator.h>
 
-#include "open3d/core/Indexer.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/CumSum.h"
 #include "open3d/utility/Console.h"
@@ -38,7 +37,7 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-Tensor CumSumCUDA(const Tensor& src, const SizeVector& dims) {
+Tensor CumSumCUDA(const Tensor& src, Tensor& dst, int64_t dim) {
     utility::LogError("Not implemented.");
     // TODO: Implement Cumulative sum with CUDA.
 }
