@@ -226,7 +226,8 @@ void Open3DScene::AddGeometry(
             info.fast_name = fast_name;
 
             auto lowq_name = name + kLowQualityModelObjectSuffix;
-            auto bbox_geom = geometry::LineSet::CreateFromAxisAlignedBoundingBox(bbox);
+            auto bbox_geom =
+                    geometry::LineSet::CreateFromAxisAlignedBoundingBox(bbox);
             Material bbox_mat;
             bbox_mat.base_color = {1.0f, 0.5f, 0.0f, 1.0f};  // orange
             bbox_mat.shader = "unlitSolidColor";
@@ -262,13 +263,13 @@ void Open3DScene::ShowGeometry(const std::string& name, bool show) {
         it->second.visible = show;
 
         int n_lowq_visible = 0;
-        for (auto &g : geometries_) {
+        for (auto& g : geometries_) {
             if (g.second.visible && !g.second.low_name.empty()) {
                 n_lowq_visible += 1;
             }
         }
         use_low_quality_if_available_ = (n_lowq_visible > 1);
-        
+
         SetGeometryToLOD(it->second, lod_);
     }
 }
