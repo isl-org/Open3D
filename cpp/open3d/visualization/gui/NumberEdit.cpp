@@ -101,7 +101,7 @@ void NumberEdit::SetDecimalPrecision(int num_digits) {
     impl_->num_decimal_digits_ = num_digits;
 }
 
-int NumberEdit::SetPreferredWidth(int width) {
+void NumberEdit::SetPreferredWidth(int width) {
     impl_->preferred_width_ = width;
 }
 

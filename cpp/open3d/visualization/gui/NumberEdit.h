@@ -53,7 +53,7 @@ public:
     int GetDecimalPrecision();
     void SetDecimalPrecision(int num_digits);
 
-    int SetPreferredWidth(int width);
+    void SetPreferredWidth(int width);
 
     void SetOnValueChanged(std::function<void(double)> on_changed);
 
