@@ -271,6 +271,9 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("argmin_", &Tensor::ArgMin);
     tensor.def("argmax_", &Tensor::ArgMax);
 
+    // Cumsum
+    tensor.def("cumsum", &Tensor::CumSum);
+
     // Comparison
     tensor.def("allclose", &Tensor::AllClose, "other"_a, "rtol"_a = 1e-5,
                "atol"_a = 1e-8);

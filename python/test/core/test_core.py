@@ -555,6 +555,20 @@ def test_reduction_argmin_argmax(dim, device):
     np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
 
 
+@pytest.mark.parametrize("dim", [0, 1, 2])
+def test_cumsum(dim):
+    # TODO: CUDA.
+    device = o3d.core.Device("CPU:0")
+    np_src = np.array(range(24))
+    np.random.shuffle(np_src)
+    np_src = np_src.reshape((2, 3, 4))
+    o3_src = o3d.core.Tensor(np_src, device=device)
+
+    np_dst = np_src.cumsum(axis=dim)
+    o3_dst = o3_src.cumsum(dim)
+    np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
+
+
 @pytest.mark.parametrize("device", list_devices())
 def test_advanced_index_get_mixed(device):
     np_src = np.array(range(24)).reshape((2, 3, 4))
