@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/PointCloudIO.h"
+#include "open3d/io/TPointCloudIO.h"
 
 #include <iostream>
 #include <unordered_map>
@@ -40,42 +40,32 @@ namespace io {
 static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &,
-                           geometry::PointCloud &,
+                           tgeometry::PointCloud &,
                            const ReadPointCloudOption &)>>
         file_extension_to_pointcloud_read_function{
-                {"xyz", ReadPointCloudFromXYZ},
-                {"xyzn", ReadPointCloudFromXYZN},
-                {"xyzrgb", ReadPointCloudFromXYZRGB},
-                {"ply", ReadPointCloudFromPLY},
-                {"pcd", ReadPointCloudFromPCD},
-                {"pts", ReadPointCloudFromPTS},
+                {"xyzi", ReadPointCloudFromXYZI},
         };
 
 static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &,
-                           const geometry::PointCloud &,
+                           const tgeometry::PointCloud &,
                            const WritePointCloudOption &)>>
         file_extension_to_pointcloud_write_function{
-                {"xyz", WritePointCloudToXYZ},
-                {"xyzn", WritePointCloudToXYZN},
-                {"xyzrgb", WritePointCloudToXYZRGB},
-                {"ply", WritePointCloudToPLY},
-                {"pcd", WritePointCloudToPCD},
-                {"pts", WritePointCloudToPTS},
+                {"xyzi", WritePointCloudToXYZI},
         };
 
-std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
+std::shared_ptr<tgeometry::PointCloud> CreatetPointCloudFromFile(
         const std::string &filename,
         const std::string &format,
         bool print_progress) {
-    auto pointcloud = std::make_shared<geometry::PointCloud>();
+    auto pointcloud = std::make_shared<tgeometry::PointCloud>();
     ReadPointCloud(filename, *pointcloud, {format, true, true, print_progress});
     return pointcloud;
 }
 
 bool ReadPointCloud(const std::string &filename,
-                    geometry::PointCloud &pointcloud,
+                    tgeometry::PointCloud &pointcloud,
                     const ReadPointCloudOption &params) {
     std::string format = params.format;
     if (format == "auto") {
@@ -87,22 +77,23 @@ bool ReadPointCloud(const std::string &filename,
     auto map_itr = file_extension_to_pointcloud_read_function.find(format);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
         utility::LogWarning(
-                "Read geometry::PointCloud failed: unknown file extension for "
+                "Read tgeometry::PointCloud failed: unknown file extension for "
                 "{} (format: {}).",
                 filename, params.format);
         return false;
     }
     bool success = map_itr->second(filename, pointcloud, params);
-    utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
-                      (int)pointcloud.points_.size());
+    utility::LogDebug("Read tgeometry::PointCloud: {:d} vertices.",
+                      (int)pointcloud.GetPoints().GetSize());
     if (params.remove_nan_points || params.remove_infinite_points) {
-        pointcloud.RemoveNonFinitePoints(params.remove_nan_points,
-                                         params.remove_infinite_points);
+        utility::LogError("Unimplemented");
+        return false;
     }
     return success;
 }
+
 bool ReadPointCloud(const std::string &filename,
-                    geometry::PointCloud &pointcloud,
+                    tgeometry::PointCloud &pointcloud,
                     const std::string &file_format,
                     bool remove_nan_points,
                     bool remove_infinite_points,
@@ -125,26 +116,27 @@ bool ReadPointCloud(const std::string &filename,
 }
 
 bool WritePointCloud(const std::string &filename,
-                     const geometry::PointCloud &pointcloud,
+                     const tgeometry::PointCloud &pointcloud,
                      const WritePointCloudOption &params) {
     std::string format =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     auto map_itr = file_extension_to_pointcloud_write_function.find(format);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
         utility::LogWarning(
-                "Write geometry::PointCloud failed: unknown file extension {} "
+                "Write tgeometry::PointCloud failed: unknown file extension {} "
                 "for file {}.",
                 format, filename);
         return false;
     }
 
     bool success = map_itr->second(filename, pointcloud, params);
-    utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
-                      (int)pointcloud.points_.size());
+    utility::LogDebug("Write tgeometry::PointCloud: {:d} vertices.",
+                      (int)pointcloud.GetPoints().GetSize());
     return success;
 }
+
 bool WritePointCloud(const std::string &filename,
-                     const geometry::PointCloud &pointcloud,
+                     const tgeometry::PointCloud &pointcloud,
                      bool write_ascii /* = false*/,
                      bool compressed /* = false*/,
                      bool print_progress) {
