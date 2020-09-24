@@ -43,7 +43,7 @@ void ParallelPrefixSum(const Tensor* src, Tensor* dst, int64_t dim, int64_t n) {
             tbb::blocked_range<size_t>(0, n), init,
             [src, dst, dim](const tbb::blocked_range<size_t>& r, Tensor sum,
                             bool is_final_scan) -> Tensor {
-                Tensor temp = sum;
+                Tensor temp = sum.Copy();
                 for (size_t i = r.begin(); i < r.end(); ++i) {
                     temp.Add_(src->Slice(dim, i, i + 1));
                     if (is_final_scan) {
