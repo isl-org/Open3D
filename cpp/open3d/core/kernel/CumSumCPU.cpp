@@ -34,40 +34,26 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-namespace {
-class ScanSumBody {
-    Tensor* out;
-    const Tensor* in;
-    int64_t dim;
-    Tensor sum;
+void ParallelPrefixSum(const Tensor* src, Tensor* dst, int64_t dim, int64_t n) {
+    Tensor init = Tensor::Zeros(
+            shape_util::ReductionShape(src->GetShape(), {dim}, true),
+            src->GetDtype(), src->GetDevice());
 
-public:
-    ScanSumBody(Tensor* out_, const Tensor* in_, int64_t dim_)
-        : out(out_), in(in_), dim(dim_) {
-        sum = Tensor::Zeros(
-                shape_util::ReductionShape(in->GetShape(), {dim}, true),
-                in->GetDtype(), in->GetDevice());
-    }
-    template <class Tag>
-    void operator()(const tbb::blocked_range<size_t>& r, Tag) {
-        Tensor temp = sum;
-        for (size_t i = r.begin(); i < r.end(); ++i) {
-            temp.Add_(in->Slice(dim, i, i + 1));
-            if (Tag::is_final_scan()) {
-                out->Slice(dim, i, i + 1).AsRvalue() = temp;
-            }
-        }
-        sum = temp;
-    }
-    ScanSumBody(ScanSumBody& b, tbb::split) : out(b.out), in(b.in), dim(b.dim) {
-        sum = Tensor::Zeros(
-                shape_util::ReductionShape(in->GetShape(), {dim}, true),
-                in->GetDtype(), in->GetDevice());
-    }
-    void reverse_join(ScanSumBody& a) { sum = a.sum.Add(sum); }
-    void assign(ScanSumBody& b) { sum = b.sum; }
+    tbb::parallel_scan(
+            tbb::blocked_range<size_t>(0, n), init,
+            [src, dst, dim](const tbb::blocked_range<size_t>& r, Tensor sum,
+                            bool is_final_scan) -> Tensor {
+                Tensor temp = sum;
+                for (size_t i = r.begin(); i < r.end(); ++i) {
+                    temp.Add_(src->Slice(dim, i, i + 1));
+                    if (is_final_scan) {
+                        dst->Slice(dim, i, i + 1).AsRvalue() = temp;
+                    }
+                }
+                return temp;
+            },
+            [](Tensor left, Tensor right) { return left.Add(right); });
 };
-}  // namespace
 
 void CumSumCPU(const Tensor& src, Tensor& dst, int64_t dim) {
     // Copy first slice of source Tensor to destination Tensor.
@@ -80,8 +66,7 @@ void CumSumCPU(const Tensor& src, Tensor& dst, int64_t dim) {
     }
 
     // Parallel scan.
-    ScanSumBody body(&dst, &src, dim);
-    tbb::parallel_scan(tbb::blocked_range<size_t>(0, num_elements), body);
+    ParallelPrefixSum(&src, &dst, dim, num_elements);
 }
 
 }  // namespace kernel
