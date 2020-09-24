@@ -719,11 +719,12 @@ void pybind_gui_classes(py::module &m) {
                  "changes widget's value")
             .def("set_preferred_width", &NumberEdit::SetPreferredWidth,
                  "Sets the preferred width of the NumberEdit")
-            .def("set_preferred_width",
-                 [](NumberEdit &ne, double width) {
-                     ne.NumberEdit::SetPreferredWidth(width);
-                 },
-                 "Sets the preferred width of the NumberEdit");
+            .def(
+                    "set_preferred_width",
+                    [](NumberEdit &ne, double width) {
+                        ne.NumberEdit::SetPreferredWidth(width);
+                    },
+                    "Sets the preferred width of the NumberEdit");
 
     // ---- ProgressBar----
     py::class_<ProgressBar, std::shared_ptr<ProgressBar>, Widget> progress(
