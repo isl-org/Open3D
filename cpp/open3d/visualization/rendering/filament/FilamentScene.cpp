@@ -514,8 +514,8 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             const size_t uv_array_size = n_vertices * 2 * sizeof(float);
             if (point_cloud.HasPointAttr("uv")) {
                 filament::VertexBuffer::BufferDescriptor uv_descriptor(
-                    point_cloud.GetPointAttr("uv").AsTensor().GetDataPtr(),
-                    uv_array_size);
+                        point_cloud.GetPointAttr("uv").AsTensor().GetDataPtr(),
+                        uv_array_size);
                 vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
             } else if (point_cloud.HasPointAttr("__visualization_scalar")) {
                 // Update in PointCloudBuffers.cpp, too:
@@ -523,15 +523,15 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                 float* uv_array = static_cast<float*>(malloc(uv_array_size));
                 memset(uv_array, 0, uv_array_size);
                 float* src = static_cast<float*>(
-                            point_cloud.GetPointAttr("__visualization_scalar")
-                                       .AsTensor()
-                                       .GetDataPtr());
+                        point_cloud.GetPointAttr("__visualization_scalar")
+                                .AsTensor()
+                                .GetDataPtr());
                 const size_t n = 2 * n_vertices;
                 for (size_t i = 0; i < n; i += 2) {
                     uv_array[i] = *src++;
                 }
                 filament::VertexBuffer::BufferDescriptor uv_descriptor(
-                            uv_array, uv_array_size, DeallocateBuffer);
+                        uv_array, uv_array_size, DeallocateBuffer);
                 vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
             }
         }
