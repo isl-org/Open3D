@@ -33,7 +33,6 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
-#include "open3d/geometry/PointCloud.h"
 #include "open3d/tgeometry/PointCloud.h"
 #include "tests/UnitTest.h"
 
@@ -76,14 +75,6 @@ const std::unordered_map<std::string, TensorCtorData> pc_data_1{
                 {"points", {{0.0, 0.0, 0.0, 1.0, 0.0, 0.0}, {2, 3}}},
                 {"intensities", {{0}, {1, 1}}},
         };
-
-enum class Compare : uint32_t {
-    // Points are always compared
-    NONE = 0,
-    NORMALS = 1 << 0,
-    COLORS = 1 << 1,
-    NORMALS_AND_COLORS = NORMALS | COLORS
-};
 
 const std::vector<ReadWritePCArgs> pcArgs({
         {"test.xyzi",

@@ -553,8 +553,6 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     return true;
 }
 
-// added by Shubham Sep 19, 2020
-// Read PLY file in a Tensor
 bool ReadTPointCloudFromPLY(const std::string &filename,
                             tgeometry::PointCloud &pointcloud,
                             const ReadPointCloudOption &params) {
