@@ -87,6 +87,10 @@
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond
 
+void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
+    free(buffer);
+}
+
 namespace defaults_mapping {
 
 using GeometryType = open3d::geometry::Geometry::GeometryType;
@@ -506,12 +510,30 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             vbuf->setBufferAt(engine_, 2, std::move(normals_descriptor));
         }
 
-        if (update_flags & kUpdateUv0Flag && point_cloud.HasPointAttr("uv")) {
+        if (update_flags & kUpdateUv0Flag) {
             const size_t uv_array_size = n_vertices * 2 * sizeof(float);
-            filament::VertexBuffer::BufferDescriptor uv_descriptor(
-                    point_cloud.GetPointAttr("uv").AsTensor().GetDataPtr(),
-                    uv_array_size);
-            vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
+            if (point_cloud.HasPointAttr("uv")) {
+                filament::VertexBuffer::BufferDescriptor uv_descriptor(
+                        point_cloud.GetPointAttr("uv").AsTensor().GetDataPtr(),
+                        uv_array_size);
+                vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
+            } else if (point_cloud.HasPointAttr("__visualization_scalar")) {
+                // Update in PointCloudBuffers.cpp, too:
+                //     TPointCloudBuffersBuilder::ConstructBuffers
+                float* uv_array = static_cast<float*>(malloc(uv_array_size));
+                memset(uv_array, 0, uv_array_size);
+                float* src = static_cast<float*>(
+                        point_cloud.GetPointAttr("__visualization_scalar")
+                                .AsTensor()
+                                .GetDataPtr());
+                const size_t n = 2 * n_vertices;
+                for (size_t i = 0; i < n; i += 2) {
+                    uv_array[i] = *src++;
+                }
+                filament::VertexBuffer::BufferDescriptor uv_descriptor(
+                        uv_array, uv_array_size, DeallocateBuffer);
+                vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
+            }
         }
     }
 }

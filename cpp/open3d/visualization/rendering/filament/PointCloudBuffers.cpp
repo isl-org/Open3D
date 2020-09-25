@@ -394,6 +394,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
                 geometry_.GetPointAttr("uv").AsTensor().GetDataPtr());
         memcpy(uv_array, uv_src, uv_array_size);
     } else if (geometry_.HasPointAttr("__visualization_scalar")) {
+        // Update in FilamentScene::UpdateGeometry(), too.
         memset(uv_array, 0, uv_array_size);
         float* src = static_cast<float*>(
                 geometry_.GetPointAttr("__visualization_scalar")
