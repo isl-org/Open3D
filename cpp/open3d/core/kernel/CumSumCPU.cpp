@@ -23,37 +23,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-#include <tbb/parallel_for.h>
 
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/CumSum.h"
 #include "open3d/utility/Console.h"
-#include "tbb/parallel_scan.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
-
-void ParallelPrefixSum(const Tensor* src, Tensor* dst, int64_t dim, int64_t n) {
-    Tensor init = Tensor::Zeros(
-            shape_util::ReductionShape(src->GetShape(), {dim}, true),
-            src->GetDtype(), src->GetDevice());
-
-    tbb::parallel_scan(
-            tbb::blocked_range<size_t>(0, n), init,
-            [src, dst, dim](const tbb::blocked_range<size_t>& r, Tensor sum,
-                            bool is_final_scan) -> Tensor {
-                Tensor temp = sum.Copy();
-                for (size_t i = r.begin(); i < r.end(); ++i) {
-                    temp.Add_(src->Slice(dim, i, i + 1));
-                    if (is_final_scan) {
-                        dst->Slice(dim, i, i + 1).AsRvalue() = temp;
-                    }
-                }
-                return temp;
-            },
-            [](Tensor left, Tensor right) { return left.Add(right); });
-};
 
 void CumSumCPU(const Tensor& src, Tensor& dst, int64_t dim) {
     // Copy first slice of source Tensor to destination Tensor.
@@ -65,8 +42,12 @@ void CumSumCPU(const Tensor& src, Tensor& dst, int64_t dim) {
         return;
     }
 
-    // Parallel scan.
-    ParallelPrefixSum(&src, &dst, dim, num_elements);
+    for (int64_t i = 1; i < num_elements; i++) {
+        Tensor src_slice = src.Slice(dim, i, i + 1);
+        Tensor prev_slice = dst.Slice(dim, i - 1, i);
+        Tensor dst_slice = dst.Slice(dim, i, i + 1);
+        dst_slice.AsRvalue() = src_slice.Add(prev_slice);
+    }
 }
 
 }  // namespace kernel
