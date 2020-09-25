@@ -1,3 +1,6 @@
+// REVIEW: can this file be deleted? Looks like it is not used. Most
+// functionalities are implemented in InternalKvPairManager.h.
+//
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
@@ -118,12 +121,12 @@ public:
         gpu_context_.max_capacity_ = max_capacity;
         gpu_context_.dsize_ = dsize_;
 
-        gpu_context_.heap_counter_ =
-                static_cast<int *>(MemoryManager::Malloc(sizeof(int), device_));
-        gpu_context_.heap_ = static_cast<ptr_t *>(
-                MemoryManager::Malloc(max_capacity_ * sizeof(ptr_t), device_));
+        gpu_context_.heap_counter_ = static_cast<int *>(
+                MemoryManager::Malloc(size_t(1) * sizeof(int), device_));
+        gpu_context_.heap_ = static_cast<ptr_t *>(MemoryManager::Malloc(
+                size_t(max_capacity_) * sizeof(ptr_t), device_));
         gpu_context_.data_ = static_cast<uint8_t *>(
-                MemoryManager::Malloc(max_capacity_ * dsize_, device_));
+                MemoryManager::Malloc(size_t(max_capacity_) * dsize_, device_));
 
         const int blocks = (max_capacity_ + 128 - 1) / 128;
         const int threads = 128;

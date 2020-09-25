@@ -60,10 +60,18 @@ CUDAHashmapImplContext<Hash, KeyEq>::ComputeBucket(const void* key) const {
 template <typename Hash, typename KeyEq>
 __device__ void CUDAHashmapImplContext<Hash, KeyEq>::WarpSyncKey(
         const void* key_ptr, uint32_t lane_id, void* ret_key_ptr) {
+    // REVIEW: can we directly use hash_fn_.key_size_in_int_? If yes, we can
+    // apply this change to the rest of this file. Same with
+    // cmp_fn_.key_size_in_int_.
+    //
+    // REVIEW: we should probably be more consistent with int v.s. int32_t v.s.
+    // size_t. Here __shfl_sync works with 32-bit, so probably we should
+    // use int32_t when we want to indicate this.
     const int chunks = dsize_key_ / sizeof(int);
 
     auto src_key_ptr = static_cast<const int*>(key_ptr);
     auto dst_key_ptr = static_cast<int*>(ret_key_ptr);
+    // REVIEW: int instead of size_t?
     for (size_t i = 0; i < chunks; ++i) {
         dst_key_ptr[i] = __shfl_sync(ACTIVE_LANES_MASK, src_key_ptr[i], lane_id,
                                      WARP_WIDTH);
@@ -129,6 +137,7 @@ __device__ Pair<ptr_t, bool> CUDAHashmapImplContext<Hash, KeyEq>::Find(
         uint8_t src_key[MAX_KEY_BYTESIZE];
         WarpSyncKey(query_key, src_lane, src_key);
 
+        // REVIEW: uint or unit?
         /* Each lane in the warp reads a uint in the slab in parallel */
         const uint32_t unit_data =
                 (curr_slab_ptr == HEAD_SLAB_PTR)
@@ -177,6 +186,7 @@ __device__ Pair<ptr_t, bool> CUDAHashmapImplContext<Hash, KeyEq>::Find(
     return make_pair(iterator, mask);
 }
 
+// REVIEW: update comments: replacePair?
 /*
  * Insert: ABORT if found
  * replacePair: REPLACE if found
@@ -208,6 +218,7 @@ __device__ bool CUDAHashmapImplContext<Hash, KeyEq>::Insert(
 
         WarpSyncKey(key, src_lane, src_key);
 
+        // REVIEW: uint or unit?
         /* Each lane in the warp reads a uint in the slab */
         uint32_t unit_data =
                 (curr_slab_ptr == HEAD_SLAB_PTR)
@@ -421,6 +432,7 @@ __global__ void InsertKernelPass0(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     if (tid < input_count) {
         /** First write ALL keys to avoid potential thread conflicts **/
         // ptr_t iterator_ptr = hash_ctx.mem_mgr_ctx_.Allocate();
+        // REVIEW: this is equivalent to extract_iterator_from_heap_index?
         ptr_t iterator_ptr =
                 hash_ctx.mem_mgr_ctx_.heap_[heap_counter_prev + tid];
         iterator_t iterator =
@@ -429,6 +441,8 @@ __global__ void InsertKernelPass0(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
         auto dst_key_ptr = static_cast<int*>(iterator.first);
         auto src_key_ptr = static_cast<const int*>(keys) +
                            tid * hash_ctx.dsize_key_ / sizeof(int);
+        // REVIEW: This happens many times, woult it help to do a macro? e.g.
+        // #define MEMCPY_AS_INTS(dst, src, num_bytes)
         for (int i = 0; i < hash_ctx.dsize_key_ / sizeof(int); ++i) {
             dst_key_ptr[i] = src_key_ptr[i];
         }
@@ -444,6 +458,8 @@ __global__ void InsertKernelPass0(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     }
 }
 
+// REVIEW: rename parameters. To be consistent with the caller, masks ->
+// output_masks.
 template <typename Hash, typename KeyEq>
 __global__ void InsertKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   const void* keys,
@@ -451,8 +467,10 @@ __global__ void InsertKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   bool* masks,
                                   size_t input_count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
+    // REVIEW: use WARP_SIZE instead of 32, or use & 0x1F to be consistent?
     uint32_t lane_id = tid % 32;
 
+    // REVIEW: tid - lane_id >= input_coun.
     if ((tid - lane_id) >= input_count) {
         return;
     }
@@ -474,6 +492,8 @@ __global__ void InsertKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
         bucket_id = hash_ctx.ComputeBucket(key);
     }
 
+    // REVIEW: maybe mention in comments the reason why `hash_ctx.Insert` has to
+    // be outside of `if (tid < input_count). Is it for warp functions to work?
     bool mask =
             hash_ctx.Insert(lane_active, lane_id, bucket_id, key, iterator_ptr);
 
@@ -491,6 +511,8 @@ __global__ void InsertKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     }
 }
 
+// REVIEW: rename parameters to be consistent with the caller, iterators ->
+// output_iterators; masks -> output_masks.
 template <typename Hash, typename KeyEq>
 __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   const void* values,
@@ -527,6 +549,8 @@ __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     }
 }
 
+// REVIEW: rename parameters to be consistent with the caller, iterators ->
+// output_iterators; masks -> output_masks.
 template <typename Hash, typename KeyEq>
 __global__ void ActivateKernelPass2(
         CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
@@ -584,6 +608,7 @@ __global__ void EraseKernelPass0(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
+    // REVIEW: if (tid - lane_id >= input_count)
     if ((tid - lane_id) >= input_count) {
         return;
     }
@@ -629,6 +654,7 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     uint32_t lane_id = threadIdx.x & 0x1F;
 
     // assigning a warp per bucket
+    // REVIEW: bucket_id seems more clear.
     uint32_t wid = tid >> 5;
     if (wid >= hash_ctx.bucket_count_) {
         return;
@@ -678,6 +704,7 @@ __global__ void CountElemsPerBucketKernel(
     uint32_t lane_id = threadIdx.x & 0x1F;
 
     // assigning a warp per bucket
+    // REVIEW: bucket_id seems more clear.
     uint32_t wid = tid >> 5;
     if (wid >= hash_ctx.bucket_count_) {
         return;

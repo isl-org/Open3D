@@ -39,6 +39,7 @@ namespace open3d {
 namespace core {
 /// Dynamic memory allocation and free are expensive on kernels.
 /// We pre-allocate a chunk of memory and manually manage them on kernels.
+// REVIEW: type T?
 /// For simplicity, we maintain a chunk per array (type T) instead of managing a
 /// universal one. This causes more redundancy but is easier to maintain.
 class InternalKvPairManagerContext {
@@ -54,6 +55,7 @@ public:
     int max_capacity_;
 
 public:
+    // REVIEW: rename @value -> values_; @heap -> heap_
     // The @value array's size is FIXED.
     // The @heap array stores the addresses of the values.
     // Only the unallocated part is maintained.
@@ -69,11 +71,14 @@ public:
     //  2                   2                    2 <-                 2    |
     //  1                   1 <-                 1                    0 <- |
     //  0 <- heap_counter   0                    0                    0
+
+    // REVIEW: Not used, remove?
     __device__ ptr_t Allocate() {
         int index = atomicAdd(heap_counter_, 1);
         return heap_[index];
     }
 
+    // REVIEW: function not used, remove?
     __device__ ptr_t SafeAllocate() {
         int index = atomicAdd(heap_counter_, 1);
         assert(index < max_capacity_);
@@ -81,10 +86,18 @@ public:
     }
 
     __device__ void Free(ptr_t ptr) {
+        // REVIEW: equivalent to
+        // ```
+        // atomicSub(heap_counter_, 1);
+        // heap_[heap_counter_] = ptr;
+        // ```
+        // ?
         int index = atomicSub(heap_counter_, 1);
+        // REVIEW: add comment on why we need to assign ptr to the heap entry.
         heap_[index - 1] = ptr;
     }
 
+    // REVIEW: function not used, remove?
     __device__ void SafeFree(ptr_t ptr) {
         int index = atomicSub(heap_counter_, 1);
         assert(index >= 1);
@@ -95,15 +108,21 @@ public:
         return iterator_t(keys_ + ptr * dsize_key_,
                           values_ + ptr * dsize_value_);
     }
+
+    // REVIEW: the const version is not used, remove?
     __device__ const iterator_t extract_iterator(ptr_t ptr) const {
         return iterator_t(keys_ + ptr * dsize_key_,
                           values_ + ptr * dsize_value_);
     }
 
+    // REVIEW: function not used, remove?
+    // Or, in the caller, like InsertKernelPass0, actually call this function.
     __device__ iterator_t extract_iterator_from_heap_index(int index) {
         ptr_t ptr = heap_[index];
         return extract_iterator(ptr);
     }
+
+    // REVIEW: function not used, remove?
     __device__ const iterator_t
     extract_iterator_from_heap_index(int index) const {
         ptr_t ptr = heap_[index];
@@ -128,11 +147,16 @@ public:
     Device device_;
 
 public:
+    // REVIEW: max_capacity -> capacity
     InternalKvPairManager(int max_capacity,
                           int dsize_key,
                           int dsize_value,
                           const Device &device) {
+        // REVIEW: use initializer list?
         device_ = device;
+        // REVIEW: why are we keeping two copies of these varaibles? One in
+        // InternalKvPairManager and one in InternalKvPairManager::gpu_context_.
+        // Can we just retrive it from the gpu_context_?
         max_capacity_ = max_capacity;
         dsize_key_ = dsize_key;
         dsize_value_ = dsize_value;
@@ -150,6 +174,7 @@ public:
         gpu_context_.values_ = static_cast<uint8_t *>(
                 MemoryManager::Malloc(max_capacity_ * dsize_value_, device_));
 
+        // REVIEW: use the global BLOCKSIZE_ for now?
         // TODO: auto tune
         const int blocks = (max_capacity_ + 128 - 1) / 128;
         const int threads = 128;
@@ -159,6 +184,7 @@ public:
         OPEN3D_CUDA_CHECK(cudaGetLastError());
 
         int heap_counter = 0;
+        // REVIEW: OPEN3D_CUDA_CHECK
         cudaMemset(gpu_context_.values_, 0, max_capacity_ * dsize_value_);
         MemoryManager::Memcpy(gpu_context_.heap_counter_, device_,
                               &heap_counter, Device("CPU:0"), sizeof(int));

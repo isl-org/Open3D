@@ -1,3 +1,6 @@
+// REVIEW: shall we remove all .cpp files from hashmap, making this a
+// header-only library?
+
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------

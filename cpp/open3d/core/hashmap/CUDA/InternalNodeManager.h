@@ -65,6 +65,7 @@ public:
     ptr_t next_slab_ptr;
 };
 
+// REVIEW: Update these to be consistent with Macros.h?
 /// 32 super blocks (5 bit)
 /// 256 memory blocks (8 bit) per super block
 /// 1024 slabs (10 bit) per memory block
@@ -81,6 +82,7 @@ public:
           memory_block_index_(0),
           super_block_index_(0) {}
 
+    // REVIEW: this is not used, consider removing?
     InternalNodeManagerContext& operator=(
             const InternalNodeManagerContext& rhs) {
         super_blocks_ = rhs.super_blocks_;
@@ -91,6 +93,8 @@ public:
         return *this;
     }
 
+    // REVIEW: Can the constructor only take (uint32_t* super_blocks, uint32_t
+    // hash_coef) and merge Setup to the constructor?
     void Setup(uint32_t* super_blocks, uint32_t hash_coef) {
         super_blocks_ = super_blocks;
         hash_coef_ = hash_coef;
@@ -127,6 +131,7 @@ public:
         int empty_lane = -1;
         uint32_t free_lane;
         uint32_t read_bitmap = memory_block_bitmap_;
+        // REVIEW: replace these 0xFFFFFFFF with values from Macros.h?
         uint32_t allocated_result = 0xFFFFFFFF;
         // works as long as <31 bit are used in the allocated_result
         // in other words, if there are 32 super blocks and at most 64k blocks
@@ -274,6 +279,8 @@ public:
     Device device_;
 
 public:
+    // REVIEW: the initialization list seems not useful, since the values are
+    // overwritten in function body, except for device_.
     InternalNodeManager(const Device& device)
         : super_blocks_(nullptr), hash_coef_(0), device_(device) {
         // random coefficients for allocator's hash function
@@ -312,6 +319,9 @@ public:
         auto slabs_per_superblock_buffer =
                 static_cast<uint32_t*>(MemoryManager::Malloc(
                         NUM_SUPER_BLOCKS_ * sizeof(uint32_t), device_));
+        // REVIEW: Is this a copy? If yes, we can let thrust manage the memory
+        // allocation directly.
+        // e.g. thrust::device_vector<uint32_t> vec(num_super_blocks, 0);
         thrust::device_vector<uint32_t> slabs_per_superblock(
                 slabs_per_superblock_buffer,
                 slabs_per_superblock_buffer + num_super_blocks);
@@ -319,17 +329,21 @@ public:
                      0);
 
         // counting total number of allocated memory units:
+        // REVIEW: replace 128 and 32 with values from Macros.h?
         int blocksize = 128;
         int num_mem_units = NUM_MEM_BLOCKS_PER_SUPER_BLOCK_ * 32;
         int num_cuda_blocks = (num_mem_units + blocksize - 1) / blocksize;
         CountSlabsPerSuperblockKernel<<<num_cuda_blocks, blocksize>>>(
                 gpu_context_,
                 thrust::raw_pointer_cast(slabs_per_superblock.data()));
-
+        // REVIEW: do we need these after kernel call?
+        // OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+        // OPEN3D_CUDA_CHECK(cudaGetLastError());
         std::vector<int> result(num_super_blocks);
         thrust::copy(slabs_per_superblock.begin(), slabs_per_superblock.end(),
                      result.begin());
         MemoryManager::Free(slabs_per_superblock_buffer, device_);
+
         return std::move(result);
     }
 };

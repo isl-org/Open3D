@@ -58,6 +58,58 @@ static constexpr uint32_t HEAD_SLAB_PTR = 0xFFFFFFFE;
 static constexpr uint32_t SEARCH_NOT_FOUND = 0xFFFFFFFF;
 
 /// Warp operations
+//
+// REVIEW:
+// Let's add comments / rename / remove some of these value-32 variables.
+// Currently they could be a bit confusing. The following comments are based on
+// my current understanding of the code, so please correct me if it is not
+// accurate.
+//
+// What the `SIZE` refers to can be confusing. It's not clear it means number of
+// elements, number of 32-bit integers, number of bytes or something else. It
+// would be nice to be more explicit.
+// - MEM_UNIT_SIZE_ == 32 means that a memory unit (a slab) has the size
+//   of "32" 32-bit integers (total 128 Bytes). This "size" refers to the
+//   size measured in the number of 32-bit integers.
+//
+// My suggestion is to standardize to the convention. Here are some example
+// ideas:
+//     - Instead of SIZE, always use BYTE_SIZE. Avoid measuring memory size with
+//       number of 32-bit integers.
+//     - SIZE or BYTE_SIZE always refer to byte size, i.e. size in bytes. So we
+//       don't measure things in number of 32-bit integers.
+//     - NUM always refer to "count". E.g. we can rename "WARP_SIZE" to
+//       "NUM_THREADS_PER_WARP".
+//
+// [List of variables with value 32]
+// - MAX_KEY_BYTESIZE         : OK.
+// - BASE_UNIT_SIZE           : ?
+// - WARP_WIDTH               : Duplicate of WARP_SIZE?
+// - NUM_SUPER_BLOCKS_        : OK.
+// - NUM_BITMAP_PER_MEM_BLOCK_: This is determined by the fact that we hard-code
+//                              NUM_MEM_UNITS_PER_BLOCK_ and we use 32-bit bit
+//                              maps. So this is NUM_MEM_UNITS_PER_BLOCK_ / 32.
+// - BITMAP_SIZE_             : It's a bit convoluted, but it should be always
+//                              the same as NUM_BITMAP_PER_MEM_BLOCK_.
+//                              - BITMAP_SIZE_ is actually "total bitmap size
+//                                per block", measured in number of intergers.
+//                              - Since each slab needs 1 bit, "total bitmap
+//                                size per block" is NUM_MEM_UNITS_PER_BLOCK_
+//                                bits.
+//                              - Since we're using 32-bit integers to store the
+//                                bit map, we need NUM_MEM_UNITS_PER_BLOCK_ / 32
+//                                integers. This means BITMAP_SIZE_ is always
+//                                numerically the same as
+//                                NUM_BITMAP_PER_MEM_BLOCK_. This equality
+//                                doesn't change even if chage the parameters,
+//                                e.g. using 4096 mem units per block,
+//                                NUM_BITMAP_PER_MEM_BLOCK_ == BITMAP_SIZE_
+//                                == 64.
+// - WARP_SIZE                : OK. Determined by the device.
+// - MEM_UNIT_SIZE_           : This is actually sizeof(Slab) measured in number
+//                              of 32-bit integers. It would be nice to somehow
+//                              unify this with the Slab struct.
+
 static constexpr uint32_t WARP_WIDTH = 32;
 static constexpr uint32_t BLOCKSIZE_ = 128;
 
@@ -74,6 +126,7 @@ static constexpr uint32_t LOG_NUM_MEM_BLOCKS_ = 2;
 static constexpr uint32_t NUM_MEM_BLOCKS_PER_SUPER_BLOCK_ = 4;
 static constexpr uint32_t NUM_MEM_UNITS_PER_BLOCK_ = 1024;
 
+// REVIEW: NUM_BITMAP_PER_MEM_BLOCK_ not used
 static constexpr uint32_t NUM_BITMAP_PER_MEM_BLOCK_ = 32;
 static constexpr uint32_t BITMAP_SIZE_ = 32;
 static constexpr uint32_t WARP_SIZE = 32;

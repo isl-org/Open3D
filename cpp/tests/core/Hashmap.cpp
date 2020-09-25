@@ -65,7 +65,7 @@ TEST_P(HashmapPermuteDevices, Init) {
     hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
                    static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                    static_cast<bool *>(masks.GetDataPtr()), n);
-    EXPECT_EQ(masks.All(), true);
+    EXPECT_TRUE(masks.All());
     EXPECT_EQ(hashmap.Size(), 5);
 }
 
@@ -94,7 +94,7 @@ TEST_P(HashmapPermuteDevices, Find) {
     hashmap.Find(keys.GetDataPtr(),
                  static_cast<core::iterator_t *>(iterators.GetDataPtr()),
                  static_cast<bool *>(masks.GetDataPtr()), n);
-    EXPECT_EQ(masks.All(), true);
+    EXPECT_TRUE(masks.All());
 
     std::vector<int> keys_query_val = {100, 500, 800, 900, 1000};
     core::Tensor keys_query(keys_query_val, {5}, core::Dtype::Int32, device);
