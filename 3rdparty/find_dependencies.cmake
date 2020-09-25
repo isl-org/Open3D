@@ -901,10 +901,14 @@ if(BUILD_GUI)
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
     target_link_libraries(3rdparty_filament INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
     if(UNIX AND NOT APPLE)
-        find_library(CPP_LIBRARY c++)
-        if(CPP_LIBRARY)
-            # Ensure that libstdc++ gets linked first
-            target_link_libraries(3rdparty_filament INTERFACE -lstdc++ ${CPP_LIBRARY})
+        find_library(CPPABI_LIBRARY libc++abi.a PATH_SUFFIXES llvm-7/lib llvm-8/lib
+            llvm-9/lib llvm-10/lib)
+        if(CPPABI_LIBRARY) # Ensure that libstdc++ gets linked first
+            get_filename_component(CPP_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
+            find_library(CPP_LIBRARY libc++.a PATH ${CPP_LIBDIR}
+                NO_DEFAULT_PATH)
+            target_link_libraries(3rdparty_filament INTERFACE -lstdc++
+                -Wl,-Bstatic ${CPP_LIBRARY} ${CPPABI_LIBRARY} -Wl,-Bdynamic)
         endif()
     endif()
     if (APPLE)
