@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/visualizer/ViewControl.h"
+
 #include "open3d/utility/Console.h"
 
 // Avoid warning caused by redefinition of APIENTRY macro
@@ -34,6 +35,7 @@
 #endif
 
 #include <GLFW/glfw3.h>
+
 #include <Eigen/Dense>
 #include <cmath>  // jspark
 

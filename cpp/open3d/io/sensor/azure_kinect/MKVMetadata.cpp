@@ -27,6 +27,7 @@
 #include "open3d/io/sensor/azure_kinect/MKVMetadata.h"
 
 #include <json/json.h>
+
 #include <unordered_map>
 
 namespace open3d {

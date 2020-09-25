@@ -77,6 +77,12 @@ public:
 
     int GetSpacing() const;
     const Margins& GetMargins() const;
+    /// Sets spacing. Need to signal a relayout after calling (unless it is
+    /// before a layout that will happen, such as before adding as a child).
+    void SetSpacing(int spacing);
+    /// Sets margins. Need to signal a relayout after calling (unless it is
+    /// before a layout that will happen, such as before adding as a child).
+    void SetMargins(const Margins& margins);
 
     Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;

@@ -45,7 +45,6 @@ Open3D: A Modern Library for 3D Data Processing
     tutorial/Advanced/index
     tutorial/ReconstructionSystem/index
     tutorial/C++/cplusplus_interface
-    tutorial/docker/index
     tutorial/reference
 
 .. _cpp_api_index:
@@ -68,6 +67,7 @@ Open3D: A Modern Library for 3D Data Processing
     python_api/open3d.core
     python_api/open3d.geometry
     python_api/open3d.io
+    python_api/open3d.ml
     python_api/open3d.pipelines
     python_api/open3d.utility
     python_api/open3d.visualization

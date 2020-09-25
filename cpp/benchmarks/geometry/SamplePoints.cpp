@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <benchmark/benchmark.h>
+
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/TriangleMeshIO.h"
-
-#include <benchmark/benchmark.h>
 
 namespace open3d {
 namespace benchmarks {

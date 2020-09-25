@@ -52,11 +52,11 @@ public:
     /// the resources. If you can provide the argc/argv arguments it is more
     /// reliable.
     void Initialize(int argc, const char *argv[]);
+    /// Initializes the application, with a specific path to the resources.
+    void Initialize(const char *resource_path);
 
-    /// Does not return until the UI is completely finished. Use this if you
-    /// just need something simple.
+    /// Does not return until the UI is completely finished.
     void Run();
-    bool RunOneTick();  // internal use
     /// Closes all the windows, which exits as a result
     void Quit();
 
@@ -115,11 +115,23 @@ public:
     /// the windows at the wrong time.
     void OnTerminate();
 
+    class EnvUnlocker {
+    public:
+        EnvUnlocker() {}
+        virtual ~EnvUnlocker() {}
+        virtual void unlock() {}
+        virtual void relock() {}
+    };
+    /// For internal use. EnvUnlocker allows an external environment to provide
+    /// a way to unlock the environment while we wait for the next event.
+    /// This is useful to release the Python GIL, for example.
+    bool RunOneTick(EnvUnlocker &unlocker);
+
 private:
     Application();
 
     enum class RunStatus { CONTINUE, DONE };
-    RunStatus ProcessQueuedEvents();
+    RunStatus ProcessQueuedEvents(EnvUnlocker &unlocker);
 
 private:
     struct Impl;

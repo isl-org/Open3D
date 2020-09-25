@@ -31,6 +31,7 @@
 #include <k4arecord/playback.h>
 #include <k4arecord/record.h>
 #include <turbojpeg.h>
+
 #include <iostream>
 
 #include "open3d/io/sensor/azure_kinect/AzureKinectSensor.h"

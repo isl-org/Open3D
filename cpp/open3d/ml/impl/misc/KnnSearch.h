@@ -27,6 +27,7 @@
 #pragma once
 
 #include <tbb/parallel_for.h>
+
 #include <mutex>
 
 #include "open3d/core/Atomic.h"
@@ -80,9 +81,6 @@ void _KnnSearchCPU(int64_t* query_neighbors_row_splits,
         int32_t i, j;
     };
     std::vector<Pair> pairs;
-
-    // do not sort search results
-    nanoflann::SearchParams search_params(32, 0, false);
 
     auto points_equal = [](const T* const p1, const T* const p2) {
         return p1[0] == p2[0] && p1[1] == p2[1] && p1[2] == p2[2];
@@ -153,7 +151,6 @@ void _KnnSearchCPU(int64_t* query_neighbors_row_splits,
     // fill output index and distance arrays
     tbb::parallel_for(tbb::blocked_range<size_t>(0, pairs.size()),
                       [&](const tbb::blocked_range<size_t>& r) {
-
                           for (size_t i = r.begin(); i != r.end(); ++i) {
                               Pair pair = pairs[i];
 

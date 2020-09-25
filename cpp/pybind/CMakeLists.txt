@@ -5,15 +5,15 @@ endif()
 # Detect whether `npm` is installed. Jupyter support will only be enabled if
 # `npm` is found.
 find_program(NPM "npm")
-if (ENABLE_JUPYTER)
+if (BUILD_JUPYTER_EXTENSION)
     if (NOT NPM)
         message(WARNING "Cannot find npm. Jupyter support will be disabled.")
-        set(ENABLE_JUPYTER OFF)
+        set(BUILD_JUPYTER_EXTENSION OFF)
     else()
         message(STATUS "npm found at: ${NPM}. Jupyter support will be enabled.")
     endif()
 endif()
-message(STATUS "ENABLE_JUPYTER is set to ${ENABLE_JUPYTER}")
+message(STATUS "BUILD_JUPYTER_EXTENSION is set to ${BUILD_JUPYTER_EXTENSION}")
 
 # We need to get python version to configure some meta files
 execute_process(
@@ -34,9 +34,22 @@ set(PACKAGE_NAME pybind)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
 
+if (NOT BUILD_GUI)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp")
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/rendering/rendering.cpp")
+endif()
+
 if (NOT BUILD_AZURE_KINECT)
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
+endif()
+
+if (NOT BUILD_RPC_INTERFACE)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/io/rpc.cpp"
+        )
 endif()
 
 # NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
@@ -67,6 +80,9 @@ open3d_set_global_properties(${PACKAGE_NAME})
 if (BUILD_AZURE_KINECT)
     target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_AZURE_KINECT)
 endif()
+if (BUILD_GUI)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_GUI)
+endif()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 if (WIN32)
@@ -78,8 +94,10 @@ if (${PYTHON_VERSION_MAJOR} EQUAL 2)
 endif ()
 
 # At `make`: open3d.so (or the equivalents) will be created at
-# PYTHON_COMPILED_MODULE_DIR. The default locaiton is `build/lib/Python`
-set(PYTHON_COMPILED_MODULE_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python")
+# PYTHON_COMPILED_MODULE_DIR. The default location is
+# `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
+set(PYTHON_COMPILED_MODULE_DIR
+    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
 set_target_properties(${PACKAGE_NAME} PROPERTIES
                       FOLDER "Python"
                       LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"
@@ -119,7 +137,7 @@ endif ()
 if ( BUILD_PYTORCH_OPS )
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
-            COMMAND ${PYTHON_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/TensorFlow"
+            COMMAND ${PYTHON_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow"
                         DEPENDS open3d_torch_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py and return_types.py" )
@@ -133,6 +151,32 @@ if ( BUILD_PYTORCH_OPS )
         OUTPUT_VARIABLE Pytorch_VERSION)
 endif ()
 
+if ( BUNDLE_OPEN3D_ML )
+
+    find_path(
+        OPEN3D_ML_ROOT
+        NAMES set_open3d_ml_root.sh
+        HINTS $ENV{OPEN3D_ML_ROOT}
+        DOC "Path to the Open3D-ML repo. This should be set if BUNDLE_OPEN3D_ML is enabled. Alternatively set an env var with the same name to populate this var."
+        REQUIRED
+        NO_DEFAULT_PATH
+    )
+
+    ExternalProject_Add(
+        open3d_ml
+        PREFIX "${CMAKE_BINARY_DIR}/open3d_ml"
+        GIT_REPOSITORY "${OPEN3D_ML_ROOT}"
+        BUILD_IN_SOURCE ON
+        # do not configure
+        CONFIGURE_COMMAND ""
+        # do not build
+        BUILD_COMMAND ""
+        # do not install
+        INSTALL_COMMAND ""
+        )
+    list(APPEND GENERATED_OUTPUTS open3d_ml )
+endif ()
+
 configure_file("_build_config.py.in"
                "${CMAKE_BINARY_DIR}/lib/_build_config.py")
 
@@ -142,9 +186,12 @@ add_custom_target(python-package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
-            -DENABLE_JUPYTER=${ENABLE_JUPYTER}
+            -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+            -DBUNDLE_OPEN3D_ML=${BUNDLE_OPEN3D_ML}
+            -DBUILD_GUI=${BUILD_GUI}
+            -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}

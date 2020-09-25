@@ -37,6 +37,11 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/Inverse.h"
+#include "open3d/core/linalg/LeastSquares.h"
+#include "open3d/core/linalg/Matmul.h"
+#include "open3d/core/linalg/SVD.h"
+#include "open3d/core/linalg/Solve.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -71,27 +76,24 @@ private:
         // Prepare dl_data_type
         DLDataType dl_data_type;
         Dtype dtype = o3d_tensor_.GetDtype();
-        switch (dtype) {
-            case Dtype::Float32:
-                dl_data_type.code = DLDataTypeCode::kDLFloat;
-                break;
-            case Dtype::Float64:
-                dl_data_type.code = DLDataTypeCode::kDLFloat;
-                break;
-            case Dtype::Int32:
-                dl_data_type.code = DLDataTypeCode::kDLInt;
-                break;
-            case Dtype::Int64:
-                dl_data_type.code = DLDataTypeCode::kDLInt;
-                break;
-            case Dtype::UInt8:
-                dl_data_type.code = DLDataTypeCode::kDLUInt;
-                break;
-            default:
-                utility::LogError("Unsupported data type");
+
+        if (dtype == Dtype::Float32) {
+            dl_data_type.code = DLDataTypeCode::kDLFloat;
+        } else if (dtype == Dtype::Float64) {
+            dl_data_type.code = DLDataTypeCode::kDLFloat;
+        } else if (dtype == Dtype::Int32) {
+            dl_data_type.code = DLDataTypeCode::kDLInt;
+        } else if (dtype == Dtype::Int64) {
+            dl_data_type.code = DLDataTypeCode::kDLInt;
+        } else if (dtype == Dtype::UInt8) {
+            dl_data_type.code = DLDataTypeCode::kDLUInt;
+        } else if (dtype == Dtype::UInt16) {
+            dl_data_type.code = DLDataTypeCode::kDLUInt;
+        } else {
+            utility::LogError("Unsupported data type");
         }
-        dl_data_type.bits =
-                static_cast<uint8_t>(DtypeUtil::ByteSize(dtype) * 8);
+
+        dl_data_type.bits = static_cast<uint8_t>(dtype.ByteSize() * 8);
         dl_data_type.lanes = 1;
 
         // Prepare dl_tensor, this uses dl_device_type, dl_context and
@@ -131,12 +133,13 @@ public:
     }
 
     static void Deleter(DLManagedTensor* arg) {
-        utility::LogInfo("Deleter called");
         delete static_cast<Open3DDLManagedTensor*>(arg->manager_ctx);
     }
 };
 
-/// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`
+// Equivalent to `Tensor& operator=(const Tensor& other) & = default;`.
+// Manual implentaiton is need to avoid MSVC bug (error C2580:  multiple
+// versions of a defaulted special member functions are not allowed.)
 Tensor& Tensor::operator=(const Tensor& other) & {
     shape_ = other.shape_;
     strides_ = other.strides_;
@@ -146,7 +149,9 @@ Tensor& Tensor::operator=(const Tensor& other) & {
     return *this;
 }
 
-/// Tensor assignment lvalue = rvalue, e.g. `tensor_a = tensor_b[0]`
+// Equivalent to `Tensor& operator=(Tensor&& other) & = default;`.
+// Manual implentaiton is need to avoid MSVC bug (error C2580:  multiple
+// versions of a defaulted special member functions are not allowed.)
 Tensor& Tensor::operator=(Tensor&& other) & {
     shape_ = other.shape_;
     strides_ = other.strides_;
@@ -184,6 +189,24 @@ Tensor Tensor::Ones(const SizeVector& shape,
                     Dtype dtype,
                     const Device& device) {
     return Full(shape, 1, dtype, device);
+}
+
+Tensor Tensor::Eye(int64_t n, Dtype dtype, const Device& device) {
+    Tensor eye = Tensor::Zeros({n, n}, dtype, device);
+    eye.AsStrided({n}, {eye.strides_[0] + eye.strides_[1]}).Fill(1);
+    return eye;
+}
+
+Tensor Tensor::Diag(const Tensor& input) {
+    const SizeVector& shape = input.GetShape();
+    if (shape.size() != 1) {
+        utility::LogError("Input tensor must be 1D, but got shape {}.",
+                          input.shape_.ToString());
+    }
+    int64_t n = shape[0];
+    Tensor diag = Tensor::Zeros({n, n}, input.GetDtype(), input.GetDevice());
+    diag.AsStrided({n}, {diag.strides_[0] + diag.strides_[1]}) = input;
+    return diag;
 }
 
 Tensor Tensor::GetItem(const TensorKey& tk) const {
@@ -339,9 +362,8 @@ void Tensor::Assign(const Tensor& other) {
     shape_ = other.shape_;
     strides_ = DefaultStrides(shape_);
     dtype_ = other.dtype_;
-    blob_ = std::make_shared<Blob>(
-            shape_.NumElements() * DtypeUtil::ByteSize(dtype_),
-            other.GetDevice());
+    blob_ = std::make_shared<Blob>(shape_.NumElements() * dtype_.ByteSize(),
+                                   other.GetDevice());
     data_ptr_ = blob_->GetDataPtr();
     kernel::Copy(other, *this);
 }
@@ -431,6 +453,12 @@ Tensor Tensor::Copy(const Device& device) const {
 Tensor Tensor::To(Dtype dtype, bool copy) const {
     if (!copy && dtype_ == dtype) {
         return *this;
+    }
+
+    // We only support scalar type conversion
+    if (dtype_.IsObject() || dtype.IsObject()) {
+        utility::LogError("Cannot cast type from {} to {}.", dtype_.ToString(),
+                          dtype.ToString());
     }
     Tensor dst_tensor(shape_, dtype, GetDevice());
     kernel::Copy(*this, dst_tensor);
@@ -550,7 +578,7 @@ std::string Tensor::ToString(bool with_suffix,
             const char* ptr = static_cast<const char*>(data_ptr_);
             rc << "[";
             std::string delim = "";
-            int64_t element_byte_size = DtypeUtil::ByteSize(dtype_);
+            int64_t element_byte_size = dtype_.ByteSize();
             for (int64_t i = 0; i < shape_.NumElements(); ++i) {
                 rc << delim << ScalarPtrToString(ptr);
                 delim = " ";
@@ -573,8 +601,7 @@ std::string Tensor::ToString(bool with_suffix,
     if (with_suffix) {
         rc << fmt::format("\nTensor[shape={}, stride={}, {}, {}, {}]",
                           shape_.ToString(), strides_.ToString(),
-                          DtypeUtil::ToString(dtype_), GetDevice().ToString(),
-                          data_ptr_);
+                          dtype_.ToString(), GetDevice().ToString(), data_ptr_);
     }
     return rc.str();
 }
@@ -597,15 +624,15 @@ Tensor Tensor::IndexExtract(int64_t dim, int64_t idx) const {
     if (shape_.size() == 0) {
         utility::LogError("Tensor has shape (), cannot be indexed.");
     }
-    dim = WrapDim(dim, NumDims());
-    idx = WrapDim(idx, shape_[dim]);
+    dim = shape_util::WrapDim(dim, NumDims());
+    idx = shape_util::WrapDim(idx, shape_[dim]);
 
     SizeVector new_shape(shape_);
     new_shape.erase(new_shape.begin() + dim);
     SizeVector new_strides(strides_);
     new_strides.erase(new_strides.begin() + dim);
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
-                         strides_[dim] * DtypeUtil::ByteSize(dtype_) * idx;
+                         strides_[dim] * dtype_.ByteSize() * idx;
     return Tensor(new_shape, new_strides, new_data_ptr, dtype_, blob_);
 }
 
@@ -614,25 +641,42 @@ Tensor Tensor::Slice(int64_t dim,
                      int64_t stop,
                      int64_t step) const {
     if (shape_.size() == 0) {
-        utility::LogError("Slice cannot be applied to 0-dim Tensor");
+        utility::LogError("Slice cannot be applied to 0-dim Tensor.");
     }
-    dim = WrapDim(dim, NumDims());
+    dim = shape_util::WrapDim(dim, NumDims());
     if (dim < 0 || dim >= static_cast<int64_t>(shape_.size())) {
-        utility::LogError("Dim {} is out of bound for SizeVector of length {}",
+        utility::LogError("Dim {} is out of bound for SizeVector of length {}.",
                           dim, shape_.size());
     }
-    // TODO: support negative step sizes
     if (step == 0) {
-        utility::LogError("Step size cannot be 0");
+        utility::LogError("Step size cannot be 0.");
+    } else if (step < 0) {
+        // TODO: support negative step sizes
+        utility::LogError("Step size cannot be 0.");
     }
-    start = WrapDim(start, shape_[dim]);
-    stop = WrapDim(stop, shape_[dim], /*inclusive=*/true);
+
+    // Wrap start. Out-of-range slice is valid and produces empty Tensor.
+    if (start < 0) {
+        start += shape_[dim];
+    }
+    if (start < 0) {
+        start = 0;
+    } else if (start >= shape_[dim]) {
+        start = shape_[dim];
+    }
+
+    // Wrap stop. Out-of-range slice is valid and produces empty Tensor.
+    if (stop < 0) {
+        stop += shape_[dim];
+    }
     if (stop < start) {
         stop = start;
+    } else if (stop >= shape_[dim]) {
+        stop = shape_[dim];
     }
 
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
-                         start * strides_[dim] * DtypeUtil::ByteSize(dtype_);
+                         start * strides_[dim] * dtype_.ByteSize();
     SizeVector new_shape = shape_;
     SizeVector new_strides = strides_;
     new_shape[dim] = (stop - start + step - 1) / step;
@@ -780,7 +824,7 @@ Tensor Tensor::Mean(const SizeVector& dims, bool keepdim) const {
     if (dtype_ != Dtype::Float32 && dtype_ != Dtype::Float64) {
         utility::LogError(
                 "Can only compute mean for Float32 or Float64, got {} instead.",
-                DtypeUtil::ToString(dtype_));
+                dtype_.ToString());
     }
 
     // Following Numpy's semantics, reduction on 0-sized Tensor will result in
@@ -1035,6 +1079,20 @@ std::vector<Tensor> Tensor::NonZeroNumpy() const {
 
 Tensor Tensor::NonZero() const { return kernel::NonZero(*this); }
 
+bool Tensor::All() const {
+    Tensor dst({}, dtype_, GetDevice());
+    kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
+                      kernel::ReductionOpCode::All);
+    return dst.Item<bool>();
+}
+
+bool Tensor::Any() const {
+    Tensor dst({}, dtype_, GetDevice());
+    kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
+                      kernel::ReductionOpCode::Any);
+    return dst.Item<bool>();
+}
+
 DLManagedTensor* Tensor::ToDLPack() const {
     return Open3DDLManagedTensor::Create(*this);
 }
@@ -1063,6 +1121,9 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
             switch (src->dl_tensor.dtype.bits) {
                 case 8:
                     dtype = Dtype::UInt8;
+                    break;
+                case 16:
+                    dtype = Dtype::UInt16;
                     break;
                 default:
                     utility::LogError("Unsupported kDLUInt bits {}",
@@ -1126,6 +1187,75 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
                   reinterpret_cast<char*>(blob->GetDataPtr()) +
                           src->dl_tensor.byte_offset,
                   dtype, blob);
+}
+
+bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
+    // TODO: support nan;
+    return IsClose(other, rtol, atol).All();
+}
+
+Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
+    if (GetDevice() != other.GetDevice()) {
+        utility::LogError("Device mismatch {} != {}.", GetDevice().ToString(),
+                          other.GetDevice().ToString());
+    }
+    if (dtype_ != other.dtype_) {
+        utility::LogError("Dtype mismatch {} != {}.", dtype_.ToString(),
+                          other.dtype_.ToString());
+    }
+    if (shape_ != other.shape_) {
+        utility::LogError("Shape mismatch {} != {}.", shape_, other.shape_);
+    }
+
+    Tensor lhs = this->To(Dtype::Float64);
+    Tensor rhs = other.To(Dtype::Float64);
+    Tensor actual_error = (lhs - rhs).Abs();
+    Tensor max_error = atol + rtol * rhs.Abs();
+    return actual_error <= max_error;
+}
+
+bool Tensor::IsSame(const Tensor& other) const {
+    return blob_ == other.blob_ && shape_ == other.shape_ &&
+           strides_ == other.strides_ && data_ptr_ == other.data_ptr_ &&
+           dtype_ == other.dtype_;
+}
+
+void Tensor::AssertShape(const SizeVector& expected_shape) const {
+    if (shape_ != expected_shape) {
+        utility::LogError(
+                "Tensor shape {} does not match expected shape {}: {}", shape_,
+                expected_shape);
+    }
+}
+
+Tensor Tensor::Matmul(const Tensor& rhs) const {
+    Tensor output;
+    core::Matmul(*this, rhs, output);
+    return output;
+}
+
+Tensor Tensor::Solve(const Tensor& rhs) const {
+    Tensor output;
+    core::Solve(*this, rhs, output);
+    return output;
+};
+
+Tensor Tensor::LeastSquares(const Tensor& rhs) const {
+    Tensor output;
+    core::LeastSquares(*this, rhs, output);
+    return output;
+};
+
+Tensor Tensor::Inverse() const {
+    Tensor output;
+    core::Inverse(*this, output);
+    return output;
+}
+
+std::tuple<Tensor, Tensor, Tensor> Tensor::SVD() const {
+    Tensor U, S, VT;
+    core::SVD(*this, U, S, VT);
+    return std::tie(U, S, VT);
 }
 
 }  // namespace core

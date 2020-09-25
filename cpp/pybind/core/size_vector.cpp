@@ -24,39 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/SizeVector.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
-#include "open3d/core/SizeVector.h"
-
 namespace open3d {
+namespace core {
 
 void pybind_core_size_vector(py::module &m) {
-    py::class_<core::SizeVector> size_vector(
+    auto size_vector = py::bind_vector<SizeVector>(
             m, "SizeVector",
-            "SizeVector is a vector of int64_t for "
-            "specifying shape, strides, etc.");
-
-    size_vector.def(py::init(
-            [](py::array_t<int64_t, py::array::c_style | py::array::forcecast>
-                       np_array) {
-                py::buffer_info info = np_array.request();
-                if (info.ndim != 1) {
-                    utility::LogError("SizeVector must be 1-D array.");
-                }
-                // The buffer is copied to avoid corruption.
-                int64_t *start = static_cast<int64_t *>(info.ptr);
-                return new core::SizeVector(start, start + info.shape[0]);
-            }));
-    size_vector.def("to_string", &core::SizeVector::ToString);
-    size_vector.def("__repr__", [](const core::SizeVector &size_vector) {
-        return size_vector.ToString();
-    });
-    size_vector.def(
-            "__eq__",
-            [](const core::SizeVector &src,
-               const core::SizeVector &dst) -> bool { return src == dst; });
+            "A vector of integers for specifying shape, strides, etc.");
 }
 
+}  // namespace core
 }  // namespace open3d

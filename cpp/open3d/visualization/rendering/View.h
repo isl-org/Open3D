@@ -73,11 +73,6 @@ public:
                              std::uint32_t w,
                              std::uint32_t h) = 0;
 
-    // With current renderer implementation,
-    // we apply changes immediately only in color mode.
-    // In other cases color will be set on mode switch
-    virtual void SetClearColor(const Eigen::Vector3f& color) = 0;
-
     virtual void SetSSAOEnabled(bool enabled) = 0;
 
     virtual Camera* GetCamera() const = 0;
