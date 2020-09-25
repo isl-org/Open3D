@@ -65,5 +65,9 @@ bool WritePointCloudToXYZI(const std::string &filename,
                            const tgeometry::PointCloud &pointcloud,
                            const WritePointCloudOption &params);
 
+bool ReadTPointCloudFromPLY(const std::string &filename,
+                            tgeometry::PointCloud &pointcloud,
+                            const ReadPointCloudOption &params);
+
 }  // namespace io
 }  // namespace open3d

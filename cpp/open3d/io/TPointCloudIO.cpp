@@ -44,6 +44,7 @@ static const std::unordered_map<
                            const ReadPointCloudOption &)>>
         file_extension_to_pointcloud_read_function{
                 {"xyzi", ReadPointCloudFromXYZI},
+                {"ply", ReadTPointCloudFromPLY},
         };
 
 static const std::unordered_map<

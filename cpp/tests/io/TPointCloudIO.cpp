@@ -33,6 +33,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
+#include "open3d/geometry/PointCloud.h"
 #include "open3d/tgeometry/PointCloud.h"
 #include "tests/UnitTest.h"
 
@@ -75,6 +76,14 @@ const std::unordered_map<std::string, TensorCtorData> pc_data_1{
                 {"points", {{0.0, 0.0, 0.0, 1.0, 0.0, 0.0}, {2, 3}}},
                 {"intensities", {{0}, {1, 1}}},
         };
+
+enum class Compare : uint32_t {
+    // Points are always compared
+    NONE = 0,
+    NORMALS = 1 << 0,
+    COLORS = 1 << 1,
+    NORMALS_AND_COLORS = NORMALS | COLORS
+};
 
 const std::vector<ReadWritePCArgs> pcArgs({
         {"test.xyzi",
@@ -149,6 +158,32 @@ TEST_P(ReadWriteTPC, WriteBadData) {
     EXPECT_FALSE(WritePointCloud(
             args.filename, pc1,
             {bool(args.write_ascii), bool(args.compressed), true}));
+}
+
+// reading binary_little_endian with colors and normals
+TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
+    tgeometry::PointCloud pcd;
+    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd,
+                       {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 196133);
+    EXPECT_EQ(pcd.GetPointNormals().GetSize(), 196133);
+    EXPECT_EQ(pcd.GetPointColors().GetSize(), 196133);
+}
+
+// reading ascii
+TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
+    tgeometry::PointCloud pcd;
+    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/test_sample_ascii.ply",
+                       pcd, {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 7);
+}
+
+// wrong file format
+TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
+    tgeometry::PointCloud pcd;
+    EXPECT_FALSE(io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) + "/test_sample_wrong_format.ply", pcd,
+            {"auto", false, false, true}));
 }
 
 }  // namespace tests

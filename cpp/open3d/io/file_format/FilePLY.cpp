@@ -29,6 +29,7 @@
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/LineSetIO.h"
 #include "open3d/io/PointCloudIO.h"
+#include "open3d/io/TPointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/io/VoxelGridIO.h"
 #include "open3d/utility/Console.h"
@@ -65,6 +66,7 @@ int ReadVertexCallback(p_ply_argument argument) {
 
     double value = ply_get_argument_value(argument);
     state_ptr->pointcloud_ptr->points_[state_ptr->vertex_index](index) = value;
+
     if (index == 2) {  // reading 'z'
         state_ptr->vertex_index++;
         if (state_ptr->vertex_index % 1000 == 0) {
@@ -85,6 +87,7 @@ int ReadNormalCallback(p_ply_argument argument) {
 
     double value = ply_get_argument_value(argument);
     state_ptr->pointcloud_ptr->normals_[state_ptr->normal_index](index) = value;
+
     if (index == 2) {  // reading 'nz'
         state_ptr->normal_index++;
     }
@@ -110,6 +113,98 @@ int ReadColorCallback(p_ply_argument argument) {
 }
 
 }  // namespace ply_pointcloud_reader
+
+namespace ply_tpointcloud_reader {
+
+struct PLYReaderState {
+    utility::CountingProgressReporter *progress_bar;
+
+    core::TensorList points;
+    core::TensorList normals;
+    core::TensorList colors;
+
+    std::vector<double> cur_points;
+    std::vector<double> cur_normals;
+    std::vector<double> cur_colors;
+
+    long vertex_index;
+    long vertex_num;
+    long normal_index;
+    long normal_num;
+    long color_index;
+    long color_num;
+};
+
+int ReadVertexCallback(p_ply_argument argument) {
+    PLYReaderState *state_ptr;
+    long index;
+    ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
+                               &index);
+    if (state_ptr->vertex_index >= state_ptr->vertex_num) {
+        return 0;  // some sanity check
+    }
+
+    double value = ply_get_argument_value(argument);
+    state_ptr->cur_points.push_back(value);
+    if (index == 2) {  // reading 'z'
+        state_ptr->points.PushBack(
+                core::Tensor(state_ptr->cur_points, {3}, core::Dtype::Float64));
+
+        state_ptr->cur_points.clear();
+        state_ptr->vertex_index++;
+        if (state_ptr->vertex_index % 1000 == 0) {
+            state_ptr->progress_bar->Update(state_ptr->vertex_index);
+        }
+    }
+    return 1;
+}
+
+int ReadNormalCallback(p_ply_argument argument) {
+    PLYReaderState *state_ptr;
+    long index;
+    ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
+                               &index);
+    if (state_ptr->normal_index >= state_ptr->normal_num) {
+        return 0;
+    }
+
+    double value = ply_get_argument_value(argument);
+    state_ptr->cur_normals.push_back(value);
+    if (index == 2) {  // reading 'nz'
+        state_ptr->normals.PushBack(core::Tensor(state_ptr->cur_normals, {3},
+                                                 core::Dtype::Float64));
+        state_ptr->cur_normals.clear();
+        state_ptr->normal_index++;
+        if (state_ptr->normal_index % 1000 == 0) {
+            state_ptr->progress_bar->Update(state_ptr->normal_index);
+        }
+    }
+    return 1;
+}
+
+int ReadColorCallback(p_ply_argument argument) {
+    PLYReaderState *state_ptr;
+    long index;
+    ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
+                               &index);
+    if (state_ptr->color_index >= state_ptr->color_num) {
+        return 0;
+    }
+
+    double value = ply_get_argument_value(argument);
+    state_ptr->cur_colors.push_back(value / 255.0);
+    if (index == 2) {  // reading 'blue'
+        state_ptr->colors.PushBack(
+                core::Tensor(state_ptr->cur_colors, {3}, core::Dtype::Float64));
+        state_ptr->cur_colors.clear();
+        state_ptr->color_index++;
+        if (state_ptr->color_index % 1000 == 0) {
+            state_ptr->progress_bar->Update(state_ptr->color_index);
+        }
+    }
+    return 1;
+}
+}  // namespace ply_tpointcloud_reader
 
 namespace ply_trianglemesh_reader {
 
@@ -452,6 +547,77 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         ply_close(ply_file);
         return false;
     }
+
+    ply_close(ply_file);
+    reporter.Finish();
+    return true;
+}
+
+// added by Shubham Sep 19, 2020
+// Read PLY file in a Tensor
+bool ReadTPointCloudFromPLY(const std::string &filename,
+                            tgeometry::PointCloud &pointcloud,
+                            const ReadPointCloudOption &params) {
+    using namespace ply_tpointcloud_reader;
+
+    p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
+    if (!ply_file) {
+        utility::LogWarning("Read PLY failed: unable to open file: {}",
+                            filename.c_str());
+        return false;
+    }
+    if (!ply_read_header(ply_file)) {
+        utility::LogWarning("Read PLY failed: unable to parse header.");
+        ply_close(ply_file);
+        return false;
+    }
+
+    PLYReaderState state;
+
+    state.vertex_num = ply_set_read_cb(ply_file, "vertex", "x",
+                                       ReadVertexCallback, &state, 0);
+    ply_set_read_cb(ply_file, "vertex", "y", ReadVertexCallback, &state, 1);
+    ply_set_read_cb(ply_file, "vertex", "z", ReadVertexCallback, &state, 2);
+
+    state.normal_num = ply_set_read_cb(ply_file, "vertex", "nx",
+                                       ReadNormalCallback, &state, 0);
+    ply_set_read_cb(ply_file, "vertex", "ny", ReadNormalCallback, &state, 1);
+    ply_set_read_cb(ply_file, "vertex", "nz", ReadNormalCallback, &state, 2);
+
+    state.color_num = ply_set_read_cb(ply_file, "vertex", "red",
+                                      ReadColorCallback, &state, 0);
+    ply_set_read_cb(ply_file, "vertex", "green", ReadColorCallback, &state, 1);
+    ply_set_read_cb(ply_file, "vertex", "blue", ReadColorCallback, &state, 2);
+
+    if (state.vertex_num <= 0) {
+        utility::LogWarning("Read PLY failed: number of vertex <= 0.");
+        ply_close(ply_file);
+        return false;
+    }
+
+    state.points = core::TensorList({3}, core::Dtype::Float64);
+    state.normals = core::TensorList({3}, core::Dtype::Float64);
+    state.colors = core::TensorList({3}, core::Dtype::Float64);
+
+    state.vertex_index = 0;
+    state.normal_index = 0;
+    state.color_index = 0;
+
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(state.vertex_num);
+    state.progress_bar = &reporter;
+
+    if (!ply_read(ply_file)) {
+        utility::LogWarning("Read PLY failed: unable to read file: {}",
+                            filename);
+        ply_close(ply_file);
+        return false;
+    }
+
+    pointcloud.Clear();
+    pointcloud.SetPoints(state.points);
+    pointcloud.SetPointNormals(state.normals);
+    pointcloud.SetPointColors(state.colors);
 
     ply_close(ply_file);
     reporter.Finish();
