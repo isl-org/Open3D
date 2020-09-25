@@ -168,7 +168,7 @@ build_wheel() {
 
     # BUILD_FILAMENT_FROM_SOURCE if Linux and old glibc (Ubuntu 18.04)
     BUILD_FILAMENT_FROM_SOURCE=OFF
-    if [ "$OSTYPE" == "linux-gnu*" ]; then
+    if [ "$OSTYPE" == "linux-gnu" ]; then
         glibc_version=$(ldd --version | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
         if dpkg --compare-versions "$glibc_version" lt 2.31; then
             BUILD_FILAMENT_FROM_SOURCE=ON
