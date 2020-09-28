@@ -71,9 +71,9 @@ install_cuda_toolkit() {
     cpp_version=$(c++ --version 2>/dev/null | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
     if dpkg --compare-versions "$cpp_version" ge-nl 9; then
         $SUDO apt-get install --yes --no-install-recommends g++-8 gcc-8
-        update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-8 70 \
+        $SUDO update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-8 70 \
             --slave /usr/bin/gcc gcc /usr/bin/gcc-8
-        update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-8 70 \
+        $SUDO update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-8 70 \
             --slave /usr/bin/g++ g++ /usr/bin/g++-8
     fi
     if [[ "purge-cache" =~ ^($options)$ ]]; then
@@ -159,6 +159,7 @@ build_all() {
 
 build_wheel() {
 
+    set -euo pipefail
     echo "Building Open3D wheel"
     echo
     echo Building with CPU only...
@@ -166,16 +167,17 @@ build_wheel() {
     cd build # PWD=Open3D/build
     cmakeOptions=()
 
-    # BUILD_FILAMENT_FROM_SOURCE if Linux and old glibc (Ubuntu 18.04)
     BUILD_FILAMENT_FROM_SOURCE=OFF
-    if [ "$OSTYPE" == "linux-gnu" ]; then
-        glibc_version=$(ldd --version | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
-        if dpkg --compare-versions "$glibc_version" lt 2.31; then
+    # BUILD_FILAMENT_FROM_SOURCE if Linux and old glibc (Ubuntu 18.04)
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        #glibc_version=$(ldd --version | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
+        #if dpkg --compare-versions "$glibc_version" lt 2.31; then
             BUILD_FILAMENT_FROM_SOURCE=ON
-        fi
+        #fi
         # Filament needs libc++ => needs clang for static linking
-        cmakeOptions=(-DCMAKE_CXX_COMPILER='clang++'
-            -DCMAKE_C_COMPILER='clang')
+        export CC=clang-7 CXX=clang++-7
+        cmakeOptions=(-DCMAKE_CXX_COMPILER='clang++-7'
+            -DCMAKE_C_COMPILER='clang-7')
     fi
 
     cmakeOptions=("${cmakeOptions[@]}"

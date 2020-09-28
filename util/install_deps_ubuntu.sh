@@ -24,6 +24,8 @@ dependencies=(
     libc++abi-7-dev
     ninja-build
     libxi-dev
+    # Build wheel
+    clang-7
     # ML deps
     libtbb-dev
     # Headless rendering deps
