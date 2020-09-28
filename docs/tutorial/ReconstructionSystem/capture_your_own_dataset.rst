@@ -20,7 +20,7 @@ The script runs with one of the following three options:
 
 In either ``record_imgs`` and ``record_rosbag`` mode, the script displays the following capturing preview.
 
-.. image:: ../../_static/ReconstructionSystem/capture_your_own_dataset/recorder.png
+.. image:: ../../_static/reconstruction_system/capture_your_own_dataset/recorder.png
     :width: 400px
 
 The left side shows color image with invalid depth region markup (in gray color), and the right side shows jet color coded depth map. Invalid depth pixels are object boundary, uncertain region, or distant region (more than 3m). Capturing frames without too many gray pixels is recommended for the good reconstruction quality.
@@ -46,7 +46,7 @@ Make a new configuration file
 
 A new configuration file is required to specify path to the new dataset. ``config/realsense.json`` is provided for this purpose.
 
-.. literalinclude:: ../../../examples/python/ReconstructionSystem/config/realsense.json
+.. literalinclude:: ../../../examples/python/reconstruction_system/config/realsense.json
    :language: json
    :lineno-start: 1
    :lines: 1-
@@ -62,5 +62,5 @@ Run the system by using the new configuration file.
 
 .. code-block:: sh
 
-    cd examples/python/ReconstructionSystem/
+    cd examples/python/reconstruction_system/
     python run_system.py config/realsense.json [--make] [--register] [--refine] [--integrate]

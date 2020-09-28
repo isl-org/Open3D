@@ -51,7 +51,7 @@ static/
 compile_commands.json
 
 # Example resources
-examples/python/ReconstructionSystem/dataset/
+examples/python/reconstruction_system/dataset/
 examples/test_data/fountain_small
 examples/test_data/Armadillo.ply
 examples/test_data/Bunny.ply

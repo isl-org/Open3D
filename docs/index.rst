@@ -34,7 +34,7 @@ Open3D: A Modern Library for 3D Data Processing
 
     tutorial/Basic/index
     tutorial/Advanced/index
-    tutorial/ReconstructionSystem/index
+    tutorial/reconstruction_system/index
     tutorial/C++/cplusplus_interface
     tutorial/reference
 

@@ -13,7 +13,7 @@ The script runs with ``python run_system.py [config] --integrate``. In ``[config
 Integrate RGBD frames
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/python/ReconstructionSystem/integrate_scene.py
+.. literalinclude:: ../../../examples/python/reconstruction_system/integrate_scene.py
    :language: python
    :lineno-start: 13
    :lines: 5,17-54
@@ -41,5 +41,5 @@ This is a printed log from the volume integration script.
 
 The following image shows the final scene reconstruction.
 
-.. image:: ../../_static/ReconstructionSystem/integrate_scene/scene.png
+.. image:: ../../_static/reconstruction_system/integrate_scene/scene.png
     :width: 500px

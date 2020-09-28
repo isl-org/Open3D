@@ -10,7 +10,7 @@ from trajectory_io import *
 import os, sys
 import json
 
-sys.path.append('../ReconstructionSystem')
+sys.path.append('../reconstruction_system')
 sys.path.append("../Utility")
 from initialize_config import *
 from file import *
