@@ -30,15 +30,6 @@ Open3D: A Modern Library for 3D Data Processing
 
 .. toctree::
     :maxdepth: 1
-    :caption: Contribute
-
-    contribute/contribute
-    contribute/contribution_recipes
-    contribute/styleguide
-
-
-.. toctree::
-    :maxdepth: 1
     :caption: Tutorial
 
     tutorial/Basic/index
@@ -46,6 +37,15 @@ Open3D: A Modern Library for 3D Data Processing
     tutorial/ReconstructionSystem/index
     tutorial/C++/cplusplus_interface
     tutorial/reference
+
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Contribute
+
+    contribute/contribute
+    contribute/contribution_recipes
+    contribute/styleguide
 
 
 .. toctree::

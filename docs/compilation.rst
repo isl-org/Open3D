@@ -1,6 +1,6 @@
 .. _compilation:
 
-Compiling from source
+Build from source
 =====================
 
 You may want to build Open3D from source if you are developing Open3D, want to
