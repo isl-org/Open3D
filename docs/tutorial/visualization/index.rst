@@ -3,9 +3,8 @@ Visualization
 
 .. toctree::
 
+    visualization
     customized_visualization
-    headless_rendering
     interactive_visualization
     non_blocking_visualization
-    visualization
-    voxelization
+    headless_rendering
