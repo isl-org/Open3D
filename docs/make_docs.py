@@ -399,6 +399,7 @@ class JupyterDocsBuilder:
             in_dir = (Path(self.current_file_dir).parent / "examples" /
                       "python" / example_dir)
             out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
+            out_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy(
                 in_dir.parent / "open3d_tutorial.py",
                 out_dir.parent / "open3d_tutorial.py",
