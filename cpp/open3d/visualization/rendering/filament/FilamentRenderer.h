@@ -66,6 +66,7 @@ public:
     void DestroyScene(const SceneHandle& id) override;
 
     virtual void SetClearColor(const Eigen::Vector4f& color) override;
+    void SetPreserveBuffer(bool preserve);
     void UpdateSwapChain() override;
 
     void BeginFrame() override;
@@ -119,6 +120,7 @@ private:
     std::unordered_set<FilamentRenderToBuffer*> buffer_renderers_;
 
     bool frame_started_ = false;
+    float clear_color_[4];
 
     void OnBufferRenderDestroyed(FilamentRenderToBuffer* render);
 };
