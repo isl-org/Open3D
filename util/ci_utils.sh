@@ -165,14 +165,14 @@ build_wheel() {
     echo Building with CPU only...
     mkdir -p build
     cd build # PWD=Open3D/build
-    cmakeOptions=()
+    cmakeOptions=("")
 
     BUILD_FILAMENT_FROM_SOURCE=OFF
     # BUILD_FILAMENT_FROM_SOURCE if Linux and old glibc (Ubuntu 18.04)
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         #glibc_version=$(ldd --version | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
         #if dpkg --compare-versions "$glibc_version" lt 2.31; then
-            BUILD_FILAMENT_FROM_SOURCE=ON
+        BUILD_FILAMENT_FROM_SOURCE=ON
         #fi
         # Filament needs libc++ => needs clang for static linking
         export CC=clang-7 CXX=clang++-7
