@@ -1014,6 +1014,8 @@ elseif(WITH_FAISS)
 endif()
 if (WITH_FAISS)
     find_package(BLAS REQUIRED)
+    message(STATUS "FAISS_INCLUDE_DIR: ${FAISS_INCLUDE_DIR}")
+    message(STATUS "FAISS_LIB_DIR: ${FAISS_LIB_DIR}")
     import_3rdparty_library(3rdparty_faiss
         INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
         LIBRARIES ${FAISS_LIBRARIES}

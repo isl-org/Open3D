@@ -33,5 +33,5 @@ else()
 endif()
 
 set(FAISS_LIBRARIES ${lib_name})
-set(FAISS_INCLUDE_DIR "${FAISS_ROOT}/include")
-set(FAISS_LIB_DIR "${FAISS_ROOT}/lib")
+set(FAISS_INCLUDE_DIR "${FAISS_ROOT}/include/")
+set(FAISS_LIB_DIR "${FAISS_ROOT}/lib/")
