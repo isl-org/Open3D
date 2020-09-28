@@ -6,9 +6,14 @@ Refine registration
 Input arguments
 ``````````````````````````````````````
 
-This script runs with ``python run_system.py [config] --refine``. In ``[config]``, ``["path_dataset"]`` should have subfolders ``fragments`` which stores fragments in ``.ply`` files and a pose graph in a ``.json`` file.
+This script runs with ``python run_system.py [config] --refine``. In ``[config]``,
+``["path_dataset"]`` should have subfolders ``fragments`` which stores fragments
+in ``.ply`` files and a pose graph in a ``.json`` file.
 
-The main function runs ``local_refinement`` and ``optimize_posegraph_for_scene``. The first function performs pairwise registration on the pairs detected by :ref:`reconstruction_system_register_fragments`. The second function performs multiway registration.
+The main function runs ``local_refinement`` and ``optimize_posegraph_for_scene``.
+The first function performs pairwise registration on the pairs detected by
+:ref:`reconstruction_system_register_fragments`. The second function performs
+multiway registration.
 
 
 Fine-grained registration
@@ -20,7 +25,9 @@ Fine-grained registration
    :lines: 5,39-90
    :linenos:
 
-Two options are given for the fine-grained registration. The ``color`` option is recommended since it uses color information to prevent drift. See [Park2017]_ for details.
+Two options are given for the fine-grained registration. The ``color`` option is
+recommended since it uses color information to prevent drift. See [Park2017]_
+for details.
 
 
 Multiway registration
@@ -34,7 +41,8 @@ Multiway registration
 
 This script uses the technique demonstrated in :ref:`/tutorial/pipelines/multiway_registration.ipynb`. Function ``update_posegraph_for_refined_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
-Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called for multiway registration.
+Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called
+for multiway registration.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/optimize_posegraph.py
    :language: python
@@ -45,7 +53,8 @@ Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called 
 Main registration loop
 ``````````````````````````````````````
 
-The function ``make_posegraph_for_refined_scene`` below calls all the functions introduced above.
+The function ``make_posegraph_for_refined_scene`` below calls all the functions
+ introduced above.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/refine_registration.py
    :language: python
@@ -77,4 +86,6 @@ The pose graph optimization outputs the following messages:
     CompensateReferencePoseGraphNode : reference : 0
 
 
-There are 14 fragments and 52 valid matching pairs between fragments. After 23 iterations, 11 edges are detected to be false positives. After they are pruned, pose graph optimization runs again to achieve tight alignment.
+There are 14 fragments and 52 valid matching pairs between fragments. After 23
+iterations, 11 edges are detected to be false positives. After they are pruned,
+pose graph optimization runs again to achieve tight alignment.
