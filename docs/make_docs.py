@@ -390,8 +390,7 @@ class JupyterDocsBuilder:
         nb_paths = []
         nb_direct_copy = ['tensor.ipynb']
         example_dirs = [
-            "geometry_basics",
-            "geometry_processing",
+            "geometry",
             "pipelines",
             "visualization",
         ]
