@@ -11,7 +11,7 @@ import os
 import sys
 
 pwd = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(pwd, '..', 'Advanced'))
+sys.path.append(os.path.join(pwd, '..', 'pipelines'))
 from trajectory_io import read_trajectory
 
 

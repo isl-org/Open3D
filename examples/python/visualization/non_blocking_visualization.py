@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Advanced/non_blocking_visualization.py
+# examples/python/visualization/non_blocking_visualization.py
 
 import open3d as o3d
 import numpy as np

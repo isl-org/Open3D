@@ -5,13 +5,13 @@ Customized visualization
 
 The usage of Open3D convenient visualization functions ``draw_geometries`` and ``draw_geometries_with_custom_animation`` is straightforward. Everything can be done with the GUI. Press :kbd:`h` inside the visualizer window to see helper information. For more details, see :any:`/tutorial/visualization/visualization.ipynb`.
 
-This tutorial focuses on more advanced functionalities to customize the behavior of the visualizer window. Please refer to examples/python/Advanced/customized_visualization.py to try the following examples.
+This tutorial focuses on more advanced functionalities to customize the behavior of the visualizer window. Please refer to examples/python/visualization/customized_visualization.py to try the following examples.
 
 
 Mimic draw_geometries() with Visualizer class
 ````````````````````````````````````````````````````
 
-.. literalinclude:: ../../../examples/python/Advanced/customized_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
    :lineno-start: 13
    :lines: 13-20
@@ -19,12 +19,12 @@ Mimic draw_geometries() with Visualizer class
 
 This function produces exactly the same functionality as the convenience function ``draw_geometries``.
 
-.. image:: ../../_static/Advanced/customized_visualization/custom.png
+.. image:: ../../_static/visualization/customized_visualization/custom.png
     :width: 400px
 
 Class ``Visualizer`` has a couple of variables such as a ``ViewControl`` and a ``RenderOption``. The following function reads a predefined ``RenderOption`` stored in a json file.
 
-.. literalinclude:: ../../../examples/python/Advanced/customized_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
    :lineno-start: 46
    :lines: 46-52
@@ -32,7 +32,7 @@ Class ``Visualizer`` has a couple of variables such as a ``ViewControl`` and a `
 
 Outputs:
 
-.. image:: ../../_static/Advanced/customized_visualization/normal.png
+.. image:: ../../_static/visualization/customized_visualization/normal.png
     :width: 400px
 
 
@@ -40,7 +40,7 @@ Change field of view
 ````````````````````````````````````
 To change field of view of the camera, it is first necessary to get an instance of the visualizer control. To modify the field of view, use ``change_field_of_view``.
 
-.. literalinclude:: ../../../examples/python/Advanced/customized_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
    :lineno-start: 23
    :lines: 23-32
@@ -54,7 +54,7 @@ The field of view (FoV) can be set to a degree in the range [5,90]. Note that ``
 
 will add the specified 90 degrees to the default 60 degrees. As it exceeds the maximum allowable FoV, the FoV is set to 90 degrees.
 
-.. image:: ../../_static/Advanced/customized_visualization/fov_90.png
+.. image:: ../../_static/visualization/customized_visualization/fov_90.png
     :width: 400px
 
 The following code
@@ -65,14 +65,14 @@ The following code
 
 will set FoV to 5 degrees, because 60 - 90 = -30 is less than 5 degrees.
 
-.. image:: ../../_static/Advanced/customized_visualization/fov_5.png
+.. image:: ../../_static/visualization/customized_visualization/fov_5.png
     :width: 400px
 
 
 Callback functions
 ````````````````````````````````````
 
-.. literalinclude:: ../../../examples/python/Advanced/customized_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
    :lineno-start: 35
    :lines: 35-43
@@ -80,10 +80,10 @@ Callback functions
 
 Function ``draw_geometries_with_animation_callback`` registers a Python callback function ``rotate_view`` as the idle function of the main loop. It rotates the view along the x-axis whenever the visualizer is idle. This defines an animation behavior.
 
-.. image:: ../../_static/Advanced/customized_visualization/rotate_small.gif
+.. image:: ../../_static/visualization/customized_visualization/rotate_small.gif
     :width: 400px
 
-.. literalinclude:: ../../../examples/python/Advanced/customized_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
    :lineno-start: 55
    :lines: 55-84
@@ -91,13 +91,13 @@ Function ``draw_geometries_with_animation_callback`` registers a Python callback
 
 Callback functions can also be registered upon key press event. This script registered four keys. For example, pressing :kbd:`k` changes the background color to black.
 
-.. image:: ../../_static/Advanced/customized_visualization/key_k.png
+.. image:: ../../_static/visualization/customized_visualization/key_k.png
     :width: 400px
 
 Capture images in a customized animation
 `````````````````````````````````````````````````
 
-.. literalinclude:: ../../../examples/python/Advanced/customized_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
    :lineno-start: 87
    :lines: 87-134
@@ -107,10 +107,10 @@ This function reads a camera trajectory, then defines an animation function ``mo
 
 The captured image sequence:
 
-.. image:: ../../_static/Advanced/customized_visualization/image_small.gif
+.. image:: ../../_static/visualization/customized_visualization/image_small.gif
     :width: 400px
 
 The captured depth sequence:
 
-.. image:: ../../_static/Advanced/customized_visualization/depth_small.gif
+.. image:: ../../_static/visualization/customized_visualization/depth_small.gif
     :width: 400px

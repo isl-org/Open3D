@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Advanced/camera_trajectory.py
+# examples/python/geometry/camera_trajectory.py
 
 import numpy as np
 import open3d as o3d

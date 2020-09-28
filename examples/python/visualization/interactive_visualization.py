@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Advanced/interactive_visualization.py
+# examples/python/visualization/interactive_visualization.py
 
 import numpy as np
 import copy

@@ -35,7 +35,7 @@ Multiway registration
    :lines: 5,62-108
    :linenos:
 
-This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. The function ``make_posegraph_for_fragment`` builds a pose graph for multiway registration of all RGBD images in this sequence. Each graph node represents an RGBD image and its pose which transforms the geometry to the global fragment space. For efficiency, only key frames are used.
+This script uses the technique demonstrated in :ref:`/tutorial/pipelines/multiway_registration.ipynb`. The function ``make_posegraph_for_fragment`` builds a pose graph for multiway registration of all RGBD images in this sequence. Each graph node represents an RGBD image and its pose which transforms the geometry to the global fragment space. For efficiency, only key frames are used.
 
 Once a pose graph is created, multiway registration is performed by calling the function ``optimize_posegraph_for_fragment``.
 
@@ -58,7 +58,7 @@ Make a fragment
    :lines: 5,111-145
    :linenos:
 
-Once the poses are estimates, :ref:`/tutorial/Advanced/rgbd_integration.ipynb` is used to reconstruct a colored fragment from each RGBD sequence.
+Once the poses are estimates, :ref:`/tutorial/pipelines/rgbd_integration.ipynb` is used to reconstruct a colored fragment from each RGBD sequence.
 
 Batch processing
 ``````````````````````````````````````

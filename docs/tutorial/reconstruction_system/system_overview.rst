@@ -6,14 +6,14 @@ System overview
 The system has 4 main steps:
 
 **Step 1**. :ref:`reconstruction_system_make_fragments`: build local geometric surfaces (referred to as
-fragments) from short subsequences of the input RGBD sequence. This part uses :ref:`/tutorial/pipelines/rgbd_odometry.ipynb`, :ref:`/tutorial/Advanced/multiway_registration.ipynb`, and :ref:`/tutorial/Advanced/rgbd_integration.ipynb`.
+fragments) from short subsequences of the input RGBD sequence. This part uses :ref:`/tutorial/pipelines/rgbd_odometry.ipynb`, :ref:`/tutorial/pipelines/multiway_registration.ipynb`, and :ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
 
-**Step 2**. :ref:`reconstruction_system_register_fragments`: the fragments are aligned in a global space to detect loop closure. This part uses :ref:`/tutorial/Advanced/global_registration.ipynb`, :ref:`/tutorial/pipelines/icp_registration.ipynb`, and :ref:`/tutorial/Advanced/multiway_registration.ipynb`.
+**Step 2**. :ref:`reconstruction_system_register_fragments`: the fragments are aligned in a global space to detect loop closure. This part uses :ref:`/tutorial/pipelines/global_registration.ipynb`, :ref:`/tutorial/pipelines/icp_registration.ipynb`, and :ref:`/tutorial/pipelines/multiway_registration.ipynb`.
 
-**Step 3**. :ref:`reconstruction_system_refine_registration`: the rough alignments are aligned more tightly. This part uses :ref:`/tutorial/pipelines/icp_registration.ipynb`, and :ref:`/tutorial/Advanced/multiway_registration.ipynb`.
+**Step 3**. :ref:`reconstruction_system_refine_registration`: the rough alignments are aligned more tightly. This part uses :ref:`/tutorial/pipelines/icp_registration.ipynb`, and :ref:`/tutorial/pipelines/multiway_registration.ipynb`.
 
 **Step 4**. :ref:`reconstruction_system_integrate_scene`: integrate RGB-D images to generate a mesh model for
-the scene. This part uses :ref:`/tutorial/Advanced/rgbd_integration.ipynb`.
+the scene. This part uses :ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
 
 .. _reconstruction_system_dataset:
 

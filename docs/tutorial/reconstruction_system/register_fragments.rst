@@ -22,7 +22,7 @@ Preprocess point cloud
    :lines: 5,18-28
    :linenos:
 
-This function downsamples a point cloud to make it sparser and regularly distributed. Normals and FPFH feature are precomputed. See :ref:`/tutorial/geometry/pointcloud.ipynb#voxel-downsampling`, :ref:`/tutorial/geometry/pointcloud.ipynb#vertex-normal-estimation`, and :ref:`/tutorial/Advanced/global_registration.ipynb#extract-geometric-feature` for more details.
+This function downsamples a point cloud to make it sparser and regularly distributed. Normals and FPFH feature are precomputed. See :ref:`/tutorial/geometry/pointcloud.ipynb#voxel-downsampling`, :ref:`/tutorial/geometry/pointcloud.ipynb#vertex-normal-estimation`, and :ref:`/tutorial/pipelines/global_registration.ipynb#extract-geometric-feature` for more details.
 
 
 Compute initial registration
@@ -48,7 +48,7 @@ Pairwise global registration
    :lines: 5,31-52
    :linenos:
 
-This function uses :ref:`/tutorial/Advanced/global_registration.ipynb#RANSAC` or :ref:`/tutorial/Advanced/global_registration.ipynb#fast-global-registration` for pairwise global registration.
+This function uses :ref:`/tutorial/pipelines/global_registration.ipynb#RANSAC` or :ref:`/tutorial/pipelines/global_registration.ipynb#fast-global-registration` for pairwise global registration.
 
 
 .. _reconstruction_system_compute_initial_registration:
@@ -62,7 +62,7 @@ Multiway registration
    :lines: 5,84-103
    :linenos:
 
-This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. The function ``update_posegraph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
+This script uses the technique demonstrated in :ref:`/tutorial/pipelines/multiway_registration.ipynb`. The function ``update_posegraph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
 Once a pose graph is built, the function ``optimize_posegraph_for_scene`` is called for multiway registration.
 

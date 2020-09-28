@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Advanced/remove_geometry.py
+# examples/python/visualization/remove_geometry.py
 
 import open3d as o3d
 import numpy as np

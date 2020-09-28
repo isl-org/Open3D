@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Advanced/color_map_optimization_for_reconstruction_system.py
+# examples/python/pipelines/color_map_optimization_for_reconstruction_system.py
 
 import argparse
 import open3d as o3d

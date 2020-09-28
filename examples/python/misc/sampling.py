@@ -8,7 +8,7 @@ import open3d as o3d
 import os, sys
 sys.path.append("../utility")
 from common import *
-sys.path.append("../Advanced")
+sys.path.append("../geometry")
 from trajectory_io import *
 from shutil import copyfile
 

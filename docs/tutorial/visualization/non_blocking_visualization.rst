@@ -37,7 +37,7 @@ This rendering loop can be readily customized. For example, a custom loop can be
 
 The full script implementing this idea is displayed below.
 
-.. literalinclude:: ../../../examples/python/Advanced/non_blocking_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/non_blocking_visualization.py
    :language: python
    :lineno-start: 5
    :lines: 5-
@@ -48,7 +48,7 @@ The following sections explain this script.
 Prepare example data
 ````````````````````````````````````````````````````
 
-.. literalinclude:: ../../../examples/python/Advanced/non_blocking_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/non_blocking_visualization.py
    :language: python
    :lineno-start: 13
    :lines: 13-23
@@ -60,7 +60,7 @@ This part reads two point clouds and downsamples them. The source point cloud is
 Initialize Visualizer class
 ````````````````````````````````````````````````````
 
-.. literalinclude:: ../../../examples/python/Advanced/non_blocking_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/non_blocking_visualization.py
    :language: python
    :lineno-start: 25
    :lines: 25-28
@@ -71,7 +71,7 @@ These lines make an instance of the visualizer class, open a visualizer window, 
 Transform geometry and visualize it
 ````````````````````````````````````````````````````
 
-.. literalinclude:: ../../../examples/python/Advanced/non_blocking_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/non_blocking_visualization.py
    :language: python
    :lineno-start: 33
    :lines: 33-44
@@ -83,5 +83,5 @@ The next part of the script is the core of this tutorial. ``update_geometry`` in
 
 The result looks like the image below.
 
-.. image:: ../../_static/Advanced/non_blocking_visualization/visualize_icp_iteration.gif
+.. image:: ../../_static/visualization/non_blocking_visualization/visualize_icp_iteration.gif
     :width: 400px

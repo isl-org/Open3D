@@ -5,7 +5,7 @@ Interactive visualization
 
 This tutorial introduces user interaction features of the visualizer window.
 
-.. literalinclude:: ../../../examples/python/Advanced/interactive_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
    :lineno-start: 5
    :lines: 5-
@@ -18,7 +18,7 @@ This script executes two applications of user interaction: ``demo_crop_geometry`
 Crop geometry
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/python/Advanced/interactive_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
    :lineno-start: 12
    :lines: 12-23
@@ -30,27 +30,27 @@ This function simply reads a point cloud and calls ``draw_geometries_with_editin
 
 Once a geometry is displayed, press ``Y`` twice to align geometry with negative direction of y-axis. After adjusting viewing orientation, press ``K`` to lock screen and to switch to the selection mode.
 
-.. image:: ../../_static/Advanced/interactive_visualization/crop_lock.png
+.. image:: ../../_static/visualization/interactive_visualization/crop_lock.png
     :width: 400px
 
 .. Tip:: The practical step for selecting area is to align the geometry with arbitrary axis using orthographic projection model. This trick makes selection easier, because it avoids self-occlusion hassle due to perspective projection.
 
 To select a region, use either ``mouse drag`` (rectangle selection) or ``ctrl + left mouse click`` (polygon selection). The below example shows a selected area using a polygon.
 
-.. image:: ../../_static/Advanced/interactive_visualization/crop_selection.png
+.. image:: ../../_static/visualization/interactive_visualization/crop_selection.png
     :width: 400px
 
 Note that the selected area is dark shaded. To keep the selected area and discard the rest, press ``C``. A dialog box appears, which can be used to save the cropped geometry. The cropping result is shown after saving.
 
-.. image:: ../../_static/Advanced/interactive_visualization/crop_save.png
+.. image:: ../../_static/visualization/interactive_visualization/crop_save.png
     :width: 200px
 
-.. image:: ../../_static/Advanced/interactive_visualization/crop_result.png
+.. image:: ../../_static/visualization/interactive_visualization/crop_result.png
     :width: 400px
 
 To finish selection mode, press ``F`` to switch to freeview mode.
 
-.. image:: ../../_static/Advanced/interactive_visualization/crop_freeview.png
+.. image:: ../../_static/visualization/interactive_visualization/crop_freeview.png
     :width: 400px
 
 .. _manual_registration:
@@ -63,7 +63,7 @@ Select correspondences
 
 The following script registers two point clouds using point-to-point ICP. It gets initial alignment via user interaction.
 
-.. literalinclude:: ../../../examples/python/Advanced/interactive_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
    :lineno-start: 51
    :lines: 51-60
@@ -71,10 +71,10 @@ The following script registers two point clouds using point-to-point ICP. It get
 
 The script reads two point clouds, and visualizes the point clouds before alignment.
 
-.. image:: ../../_static/Advanced/interactive_visualization/manual_icp_initial.png
+.. image:: ../../_static/visualization/interactive_visualization/manual_icp_initial.png
     :width: 400px
 
-.. literalinclude:: ../../../examples/python/Advanced/interactive_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
    :lineno-start: 35
    :lines: 35-48
@@ -84,7 +84,7 @@ The function ``pick_points(pcd)`` makes an instance of ``VisualizerWithEditing``
 
 To pick a vertex, press ``shift + left click`` on a window. If a vertex is selected, the visualizer window overlays a sphere on a selected vertex. For example, after picking three vertices in the source point cloud, it shows:
 
-.. image:: ../../_static/Advanced/interactive_visualization/manual_icp_source.png
+.. image:: ../../_static/visualization/interactive_visualization/manual_icp_source.png
     :width: 400px
 
 This will print:
@@ -97,7 +97,7 @@ This will print:
 
 Press ``Q`` to close the window. The next step is to pick the same correspondences in the target point cloud. The color of the sphere helps to identify the same correspondence.
 
-.. image:: ../../_static/Advanced/interactive_visualization/manual_icp_target.png
+.. image:: ../../_static/visualization/interactive_visualization/manual_icp_target.png
     :width: 400px
 
 This will print:
@@ -113,7 +113,7 @@ This will print:
 Registration using user correspondences
 =======================================
 
-.. literalinclude:: ../../../examples/python/Advanced/interactive_visualization.py
+.. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
    :lineno-start: 61
    :lines: 61-80
@@ -123,5 +123,5 @@ The later part of the demo computes an initial transformation based on the user-
 
 The registration result is as follows:
 
-.. image:: ../../_static/Advanced/interactive_visualization/manual_icp_alignment.png
+.. image:: ../../_static/visualization/interactive_visualization/manual_icp_alignment.png
     :width: 400px

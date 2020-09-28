@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Advanced/rgbd_integration_uniform.py
+# examples/python/pipelines/rgbd_integration_uniform.py
 
 import open3d as o3d
 from trajectory_io import read_trajectory
