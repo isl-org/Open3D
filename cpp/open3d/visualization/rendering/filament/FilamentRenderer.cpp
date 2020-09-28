@@ -106,8 +106,8 @@ void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
     co.clearColor.g = color.y();
     co.clearColor.b = color.z();
     co.clearColor.a = color.w();
-    co.clear = false;
-    co.discard = false;
+    co.clear = true;
+    co.discard = true;
     renderer_->setClearOptions(co);
 
     // remember clear color

@@ -66,7 +66,7 @@ public:
     void DestroyScene(const SceneHandle& id) override;
 
     virtual void SetClearColor(const Eigen::Vector4f& color) override;
-    void SetPreserveBuffer(bool preserve);
+    void SetPreserveBuffer(bool preserve) override;
     void UpdateSwapChain() override;
 
     void BeginFrame() override;
