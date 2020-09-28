@@ -142,6 +142,7 @@ void pybind_rendering_classes(py::module &m) {
                              "Describes the real-world, physically based (PBR) "
                              "material used to render a geometry");
     mat.def(py::init<>())
+            .def_readwrite("has_alpha", &Material::has_alpha)
             .def_readwrite("base_color", &Material::base_color)
             .def_readwrite("base_metallic", &Material::base_metallic)
             .def_readwrite("base_roughness", &Material::base_roughness)
