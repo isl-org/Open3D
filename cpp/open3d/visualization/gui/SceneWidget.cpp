@@ -707,11 +707,9 @@ void SceneWidget::SetRenderQuality(Quality quality) {
         if (quality == Quality::FAST) {
             view->SetSampleCount(1);
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::FAST);
-            impl_->scene_->GetScene()->SetViewActive(impl_->view_id_, true);
         } else {
             view->SetSampleCount(4);
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::HIGH_DETAIL);
-            impl_->scene_->GetScene()->SetRenderOnce(impl_->view_id_);
         }
     }
 }
