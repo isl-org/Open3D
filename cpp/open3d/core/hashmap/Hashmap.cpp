@@ -48,8 +48,8 @@ Hashmap::Hashmap(size_t init_capacity,
                  const Device& device)
     : dtype_key_(dtype_key), dtype_val_(dtype_val) {
     device_hashmap_ = CreateDefaultDeviceHashmap(
-            init_capacity / kDefaultElemsPerBucket, init_capacity,
-            dtype_key.ByteSize(), dtype_val.ByteSize(), device);
+            std::max(init_capacity / kDefaultElemsPerBucket, size_t(1)),
+            init_capacity, dtype_key.ByteSize(), dtype_val.ByteSize(), device);
 }
 
 void Hashmap::Rehash(size_t buckets) {

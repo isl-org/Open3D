@@ -151,12 +151,12 @@ void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
         // Handle memory
         if (res.second) {
             output_iterators[i] = iterator_t(dst_key, dst_value);
-            output_masks[i] = 1;
+            output_masks[i] = true;
         } else {
             MemoryManager::Free(dst_key, this->device_);
             MemoryManager::Free(dst_value, this->device_);
             output_iterators[i] = iterator_t();
-            output_masks[i] = 0;
+            output_masks[i] = false;
         }
     }
     this->capacity_ = impl_->size();
@@ -188,12 +188,12 @@ void CPUHashmap<Hash, KeyEq>::Activate(const void* input_keys,
         // Handle memory
         if (res.second) {
             output_iterators[i] = iterator_t(dst_key, dummy_value);
-            output_masks[i] = 1;
+            output_masks[i] = true;
         } else {
             MemoryManager::Free(dst_key, this->device_);
             MemoryManager::Free(dummy_value, this->device_);
             output_iterators[i] = iterator_t();
-            output_masks[i] = 0;
+            output_masks[i] = false;
         }
     }
     this->capacity_ = impl_->size();
@@ -212,10 +212,10 @@ void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
         auto iter = impl_->find(key);
         if (iter == impl_->end()) {
             output_iterators[i] = iterator_t();
-            output_masks[i] = 0;
+            output_masks[i] = false;
         } else {
             output_iterators[i] = iterator_t(iter->first, iter->second);
-            output_masks[i] = 1;
+            output_masks[i] = true;
         }
     }
 }

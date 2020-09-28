@@ -243,5 +243,59 @@ TEST_P(HashmapPermuteDevices, Erase) {
     }
 }
 
+TEST_P(HashmapPermuteDevices, Rehash) {
+    core::Device device = GetParam();
+
+    int n = 5;
+    std::vector<int> keys_val = {100, 300, 500, 700, 900};
+    std::vector<int> values_val = {1, 3, 5, 7, 9};
+
+    core::Tensor keys(keys_val, {5}, core::Dtype::Int32, device);
+    core::Tensor values(values_val, {5}, core::Dtype::Int32, device);
+
+    int init_capacity = n * 2;
+    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
+                          device);
+
+    core::Tensor masks({n}, core::Dtype::Bool, device);
+    core::Tensor iterators({n},
+                           core::Dtype(core::Dtype::DtypeCode::Object,
+                                       sizeof(core::iterator_t), "iterator_t"),
+                           device);
+
+    hashmap.Insert(keys.GetDataPtr(), values.GetDataPtr(),
+                   static_cast<core::iterator_t *>(iterators.GetDataPtr()),
+                   static_cast<bool *>(masks.GetDataPtr()), n);
+
+    hashmap.Rehash(10);
+    n = hashmap.Size();
+    EXPECT_EQ(n, 5);
+
+    core::Tensor iterators_all(
+            {n},
+            core::Dtype(core::Dtype::DtypeCode::Object,
+                        sizeof(core::iterator_t), "iterator_t"),
+            device);
+    core::Tensor keys_all({n}, core::Dtype::Int32, device);
+    core::Tensor values_all({n}, core::Dtype::Int32, device);
+    hashmap.GetIterators(
+            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()));
+    hashmap.UnpackIterators(
+            static_cast<core::iterator_t *>(iterators_all.GetDataPtr()),
+            nullptr, keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
+
+    std::unordered_map<int, int> key_value_all = {
+            {100, 1}, {300, 3}, {500, 5}, {700, 7}, {900, 9}};
+    for (int64_t i = 0; i < n; ++i) {
+        int k = keys_all[i].Item<int>();
+        int v = values_all[i].Item<int>();
+
+        auto it = key_value_all.find(k);
+        EXPECT_TRUE(it != key_value_all.end());
+        EXPECT_EQ(it->first, k);
+        EXPECT_EQ(it->second, v);
+    }
+}
+
 }  // namespace tests
 }  // namespace open3d
