@@ -32,10 +32,11 @@ Open3D: A Modern Library for 3D Data Processing
     :maxdepth: 1
     :caption: Tutorial
 
-    tutorial/Basic/index
-    tutorial/Advanced/index
+    tutorial/geometry/index
+    tutorial/pipelines/index
+    tutorial/visualization/index
     tutorial/reconstruction_system/index
-    tutorial/C++/cplusplus_interface
+    tutorial/sensor/index
     tutorial/reference
 
 
