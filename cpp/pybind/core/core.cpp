@@ -143,7 +143,9 @@ void pybind_core(py::module& m) {
 
     // opn3d::core::nns namespace.
     nns::pybind_core_nns(m_core);
+#ifdef WITH_FAISS
     nns::pybind_core_faiss(m_core);
+#endif
 }
 
 }  // namespace core
