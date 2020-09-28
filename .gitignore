@@ -57,7 +57,7 @@ examples/test_data/Armadillo.ply
 examples/test_data/Bunny.ply
 examples/test_data/eagle.ply
 examples/test_data/voxelized.ply
-examples/python/Basic/voxel_grid_test.ply
+examples/python/geometry/voxel_grid_test.ply
 examples/python/benchmark/testdata/
 examples/python/misc/test.jpg
 examples/test_data/GraphOptimization/pose_graph_example_fragment_optimized.json
@@ -69,12 +69,12 @@ examples/test_data/sync.png
 examples/python/Advanced/multiway_registration.pcd
 examples/python/Advanced/test.json
 examples/python/Advanced/viewpoint.json
-examples/python/Basic/copy_of_fragment.pcd
-examples/python/Basic/copy_of_knot.ply
-examples/python/Basic/copy_of_lena_color.jpg
-examples/python/Basic/copy_of_crate.mtl
-examples/python/Basic/copy_of_crate.png
-examples/python/Basic/copy_of_crate.obj
+examples/python/geometry/copy_of_fragment.pcd
+examples/python/geometry/copy_of_knot.ply
+examples/python/geometry/copy_of_lena_color.jpg
+examples/python/geometry/copy_of_crate.mtl
+examples/python/geometry/copy_of_crate.png
+examples/python/geometry/copy_of_crate.obj
 
 # doc
 docs/test_data

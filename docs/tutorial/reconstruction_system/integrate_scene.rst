@@ -8,7 +8,7 @@ The final step of the system is to integrate all RGBD images into a single TSDF 
 Input arguments
 ``````````````````````````````````````
 
-The script runs with ``python run_system.py [config] --integrate``. In ``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth* in which frames are synchronized and aligned. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies path to a json file that has a camera intrinsic matrix (See :ref:`/tutorial/Basic/rgbd_odometry.ipynb#read-camera-intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
+The script runs with ``python run_system.py [config] --integrate``. In ``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth* in which frames are synchronized and aligned. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies path to a json file that has a camera intrinsic matrix (See :ref:`//rgbd_odometry.ipynb#read-camera-intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
 
 Integrate RGBD frames
 ``````````````````````````````````````
