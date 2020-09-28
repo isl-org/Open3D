@@ -389,7 +389,12 @@ class JupyterDocsBuilder:
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
         nb_ignored = ['tensor.ipynb']
-        example_dirs = ["Basic", "Advanced"]
+        example_dirs = [
+            "geometry_basics",
+            "geometry_processing",
+            "pipelines",
+            "visualization",
+        ]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir).parent / "examples" /
                       "python" / example_dir)
