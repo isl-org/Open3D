@@ -15,9 +15,7 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/facebookresearch/faiss.git
     GIT_TAG 27393c436cfd621544a89711fd0694188aa90277
     PATCH_COMMAND git apply ${Open3D_3RDPARTY_DIR}/faiss/0001-Allow-selection-of-blas-library.patch
-    #SOURCE_DIR ${Open3D_3RDPARTY_DIR}/faiss/faiss
-    #BUILD_IN_SOURCE 1
-    UPDATE_COMMAND ""
+    BUILD_IN_SOURCE ON
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_INSTALL_PREFIX=${FAISS_ROOT}
