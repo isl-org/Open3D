@@ -61,6 +61,16 @@ set(CORE_CUDA_SRC
     MemoryManagerCUDASimple.cu
 )
 
+set(HASHMAP_SRC
+  hashmap/Hashmap.cpp
+  hashmap/DeviceHashmap.cpp
+  hashmap/CPU/DefaultHashmapCPU.cpp
+)
+
+set(HASHMAP_CUDA_SRC
+  hashmap/CUDA/DefaultHashmapCUDA.cu
+  )
+
 set(CORE_NNS_SRC
     nns/NanoFlannIndex.cpp
     nns/NearestNeighborSearch.cpp
@@ -74,6 +84,8 @@ if(BUILD_CUDA_MODULE)
         ${LINALG_CUDA_SRC}
         ${KERNEL_SRC}
         ${KERNEL_CUDA_SRC}
+        ${HASHMAP_SRC}
+        ${HASHMAP_CUDA_SRC}
         ${CORE_NNS_SRC}
     )
 else()
@@ -81,6 +93,7 @@ else()
         ${CORE_SRC}
         ${LINALG_SRC}
         ${KERNEL_SRC}
+        ${HASHMAP_SRC}
         ${CORE_NNS_SRC}
     )
 endif()

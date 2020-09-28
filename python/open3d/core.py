@@ -948,3 +948,37 @@ class Tensor(o3d.pybind.core.Tensor):
             return super(Tensor, self)._item_bool()
         else:
             raise TypeError("Unspported type when calling item()")
+
+
+class Hashmap(o3d.pybind.core.Hashmap):
+    """
+    Open3D Hashmap class. A Hashmap is a map from key to data wrapped by Tensors.
+    """
+
+    def __init__(self, init_capacity, dtype_key, dtype_value, device=None):
+        super(Hashmap, self).__init__(init_capacity, dtype_key, dtype_value,
+                                      device)
+
+    @cast_to_py_tensor
+    def insert(self, keys, values):
+        return super(Hashmap, self).insert(keys, values)
+
+    @cast_to_py_tensor
+    def find(self, keys):
+        return super(Hashmap, self).find(keys)
+
+    @cast_to_py_tensor
+    def activate(self, keys):
+        return super(Hashmap, self).activate(keys)
+
+    @cast_to_py_tensor
+    def erase(self, keys):
+        return super(Hashmap, self).erase(keys)
+
+    @cast_to_py_tensor
+    def unpack_iterators(self, iterators, masks):
+        return super(Hashmap, self).unpack_iterators(iterators, masks)
+
+    @cast_to_py_tensor
+    def assign_iterators(self, iterators, values, masks=Tensor([])):
+        return super(Hashmap, self).assign_iterators(iterators, values, masks)
