@@ -69,6 +69,7 @@ public:
     void SetPreserveBuffer(bool preserve) override;
     void UpdateSwapChain() override;
 
+    void EnableCaching(bool enable) override;
     void BeginFrame() override;
     void Draw() override;
     void EndFrame() override;
@@ -120,6 +121,8 @@ private:
     std::unordered_set<FilamentRenderToBuffer*> buffer_renderers_;
 
     bool frame_started_ = false;
+    bool render_caching_enabled_ = false;
+    int render_count_ = 0;
     float clear_color_[4];
 
     void OnBufferRenderDestroyed(FilamentRenderToBuffer* render);

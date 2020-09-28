@@ -160,11 +160,29 @@ void FilamentRenderer::UpdateSwapChain() {
     swap_chain_ = engine_.createSwapChain(native_win);
 }
 
+void FilamentRenderer::EnableCaching(bool enable) {
+    if (enable != render_caching_enabled_) {
+        render_caching_enabled_ = enable;
+        if (enable) {
+            render_count_ = 2;
+        }
+        SetPreserveBuffer(true);
+    }
+}
+
 void FilamentRenderer::BeginFrame() {
     // We will complete render to buffer requests first
     for (auto& br : buffer_renderers_) {
         if (br->pending_) {
             br->Render();
+        }
+    }
+
+    if (render_caching_enabled_) {
+        if (render_count_-- > 0) {
+            SetPreserveBuffer(true);
+        } else {
+            SetPreserveBuffer(false);
         }
     }
 

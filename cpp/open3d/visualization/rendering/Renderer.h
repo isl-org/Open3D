@@ -74,6 +74,7 @@ public:
     virtual void SetPreserveBuffer(bool preserve) = 0;
     virtual void UpdateSwapChain() = 0;
 
+    virtual void EnableCaching(bool enable) = 0;
     virtual void BeginFrame() = 0;
     virtual void Draw() = 0;
     virtual void EndFrame() = 0;
