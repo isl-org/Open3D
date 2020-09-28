@@ -998,3 +998,29 @@ elseif(MSVC)
     target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
+
+# Faiss
+if (WITH_FAISS AND WIN32)
+    message(STATUS "Faiss is not supported on Windows")
+    set(WITH_FAISS OFF)
+elseif(WITH_FAISS)
+    if (BUILD_FAISS_FROM_SOURCE)
+        message(STATUS "Building third-party library faiss from source")
+        include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
+    else()
+        message(STATUS "Using prebuilt third-party library faiss")
+        include(${Open3D_3RDPARTY_DIR}/faiss/faiss_download.cmake)
+    endif()
+endif()
+if (WITH_FAISS)
+    find_package(BLAS REQUIRED)
+    import_3rdparty_library(3rdparty_faiss
+        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
+        LIBRARIES ${FAISS_LIBRARIES}
+        LIB_DIR ${FAISS_LIB_DIR}
+    )
+    add_dependencies(3rdparty_faiss ext_faiss)
+    target_link_libraries(3rdparty_faiss INTERFACE ${BLAS_LIBRARIES})
+    set(FAISS_TARGET "3rdparty_faiss")
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")

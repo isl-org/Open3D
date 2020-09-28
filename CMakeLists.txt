@@ -38,6 +38,9 @@ option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
+option(WITH_FAISS                 "Enable Faiss"                             ON )
+option(BUILD_FAISS_FROM_SOURCE    "Build Faiss from source"                  ON )
+
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
 option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF)
@@ -477,6 +480,7 @@ message(STATUS "================================================================
 message(STATUS "Third-Party Dependencies:")
 set(deps
     EIGEN3
+    FAISS
     FILAMENT
     FLANN
     FMT
