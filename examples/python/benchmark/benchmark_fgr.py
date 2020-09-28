@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Benchmark/benchmark_ransac.py
+# examples/python/benchmark/benchmark_fgr.py
 
 import os
 import sys
@@ -23,8 +23,11 @@ def get_ply_path(dataset_name, id):
 
 
 def get_log_path(dataset_name):
-    return "%s/ransac_%s.log" % (dataset_path, dataset_name)
+    return "%s/fgr_%s.log" % (dataset_path, dataset_name)
 
+
+dataset_path = 'testdata'
+dataset_names = ['livingroom1', 'livingroom2', 'office1', 'office2']
 
 if __name__ == "__main__":
     # data preparation
@@ -49,23 +52,20 @@ if __name__ == "__main__":
                 target_down, target_fpfh = preprocess_point_cloud(
                     target, voxel_size)
 
-                result = execute_global_registration(source_down, target_down,
-                                                     source_fpfh, target_fpfh,
-                                                     voxel_size)
+                result = execute_fast_global_registration(
+                    source_down, target_down, source_fpfh, target_fpfh,
+                    voxel_size)
                 if (result.transformation.trace() == 4.0):
                     success = False
                 else:
                     success = True
 
-                # Note: we save inverse of result.transformation
+                # Note: we save inverse of result_ransac.transformation
                 # to comply with http://redwood-data.org/indoor/fileformat.html
-                if not success:
-                    print("No reasonable solution.")
-                else:
-                    alignment.append(
-                        CameraPose([s, t, n_ply_files],
-                                   np.linalg.inv(result.transformation)))
-                    print(np.linalg.inv(result.transformation))
+                alignment.append(
+                    CameraPose([s, t, n_ply_files],
+                               np.linalg.inv(result.transformation)))
+                print(np.linalg.inv(result.transformation))
 
                 if do_visualization:
                     draw_registration_result(source_down, target_down,

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Misc/pose_graph_optimization.py
+# examples/python/misc/pose_graph_optimization.py
 
 import open3d as o3d
 import numpy as np

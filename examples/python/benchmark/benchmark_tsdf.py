@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Benchmark/benchmark_tsdf.py
+# examples/python/benchmark/benchmark_tsdf.py
 
 import open3d as o3d
 import numpy as np

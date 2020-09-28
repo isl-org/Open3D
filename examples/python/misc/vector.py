@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Misc/vector.py
+# examples/python/misc/vector.py
 
 import copy
 import numpy as np

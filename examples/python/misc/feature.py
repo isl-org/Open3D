@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Misc/feature.py
+# examples/python/misc/feature.py
 
 import numpy as np
 import open3d as o3d

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Misc/sampling.py
+# examples/python/misc/sampling.py
 
 import open3d as o3d
 import os, sys

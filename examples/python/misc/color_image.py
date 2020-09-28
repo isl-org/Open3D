@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Misc/color_image.py
+# examples/python/misc/color_image.py
 
 import numpy as np
 import matplotlib.pyplot as plt
