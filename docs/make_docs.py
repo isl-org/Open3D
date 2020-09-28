@@ -388,7 +388,7 @@ class JupyterDocsBuilder:
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
-        nb_ignored = ['tensor.ipynb']
+        nb_direct_copy = ['tensor.ipynb']
         example_dirs = [
             "geometry_basics",
             "geometry_processing",
@@ -407,9 +407,8 @@ class JupyterDocsBuilder:
 
             if self.clean_notebooks:
                 for nb_out_path in out_dir.glob("*.ipynb"):
-                    if (nb_out_path.name not in nb_ignored):
-                        print("Delete: {}".format(nb_out_path))
-                        nb_out_path.unlink()
+                    print("Delete: {}".format(nb_out_path))
+                    nb_out_path.unlink()
 
             for nb_in_path in in_dir.glob("*.ipynb"):
                 nb_out_path = out_dir / nb_in_path.name
@@ -422,6 +421,11 @@ class JupyterDocsBuilder:
 
         # Execute Jupyter notebooks
         for nb_path in nb_paths:
+            if nb_out_path.name in nb_direct_copy:
+                print("[Processing notebook {}, directly copied]".format(
+                    nb_path.name))
+                continue
+
             print("[Processing notebook {}]".format(nb_path.name))
             with open(nb_path, encoding="utf-8") as f:
                 nb = nbformat.read(f, as_version=4)
