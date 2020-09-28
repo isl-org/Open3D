@@ -3,12 +3,18 @@
 Integrate scene
 -------------------------------------
 
-The final step of the system is to integrate all RGBD images into a single TSDF volume and extract a mesh as the result.
+The final step of the system is to integrate all RGBD images into a single TSDF
+volume and extract a mesh as the result.
 
 Input arguments
 ``````````````````````````````````````
 
-The script runs with ``python run_system.py [config] --integrate``. In ``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth* in which frames are synchronized and aligned. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies path to a json file that has a camera intrinsic matrix (See :ref:`//rgbd_odometry.ipynb#read-camera-intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
+The script runs with ``python run_system.py [config] --integrate``. In
+``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth*
+in which frames are synchronized and aligned. In ``[config]``, the optional
+argument ``["path_intrinsic"]`` specifies path to a json file that has a camera
+intrinsic matrix (See :ref:`/tutorial/pipelines/rgbd_odometry.ipynb#read-camera-intrinsic` for
+details). If it is not given, the PrimeSense factory setting is used instead.
 
 Integrate RGBD frames
 ``````````````````````````````````````
@@ -19,7 +25,11 @@ Integrate RGBD frames
    :lines: 5,17-54
    :linenos:
 
-This function first reads the alignment results from both :ref:`reconstruction_system_make_fragments` and :ref:`reconstruction_system_register_fragments`, then computes the pose of each RGBD image in the global space. After that, RGBD images are integrated using :ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
+This function first reads the alignment results from both
+:ref:`reconstruction_system_make_fragments` and
+:ref:`reconstruction_system_register_fragments`, then computes the pose of each
+RGBD image in the global space. After that, RGBD images are integrated using
+:ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
 
 
 Results
