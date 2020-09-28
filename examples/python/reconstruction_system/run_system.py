@@ -8,7 +8,7 @@ import json
 import argparse
 import time, datetime
 import sys
-sys.path.append("../Utility")
+sys.path.append("../utility")
 from file import check_folder_structure
 sys.path.append(".")
 from initialize_config import initialize_config

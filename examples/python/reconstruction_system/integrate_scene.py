@@ -8,7 +8,7 @@ import numpy as np
 import math
 import sys
 import open3d as o3d
-sys.path.append("../Utility")
+sys.path.append("../utility")
 from file import *
 sys.path.append(".")
 from make_fragments import read_rgbd_image

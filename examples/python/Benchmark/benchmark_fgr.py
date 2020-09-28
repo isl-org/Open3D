@@ -7,7 +7,7 @@
 import os
 import sys
 sys.path.append("../Advanced")
-sys.path.append("../Utility")
+sys.path.append("../utility")
 import numpy as np
 from file import *
 from visualization import *

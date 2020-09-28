@@ -9,7 +9,7 @@ import json
 import argparse
 import sys
 import open3d as o3d
-sys.path.append("../Utility")
+sys.path.append("../utility")
 from file import *
 from visualization import *
 sys.path.append(".")

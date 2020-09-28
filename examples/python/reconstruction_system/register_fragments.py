@@ -7,7 +7,7 @@
 import numpy as np
 import open3d as o3d
 import sys
-sys.path.append("../Utility")
+sys.path.append("../utility")
 from file import join, get_file_list, make_clean_folder
 from visualization import draw_registration_result
 sys.path.append(".")

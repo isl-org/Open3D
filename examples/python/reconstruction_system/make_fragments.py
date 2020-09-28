@@ -8,7 +8,7 @@ import numpy as np
 import math
 import open3d as o3d
 import sys
-sys.path.append("../Utility")
+sys.path.append("../utility")
 from file import join, make_clean_folder, get_rgbd_file_lists
 from opencv import initialize_opencv
 sys.path.append(".")

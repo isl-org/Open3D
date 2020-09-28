@@ -6,7 +6,7 @@
 
 import open3d as o3d
 import os, sys
-sys.path.append("../Utility")
+sys.path.append("../utility")
 from common import *
 sys.path.append("../Advanced")
 from trajectory_io import *

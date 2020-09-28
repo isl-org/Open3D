@@ -11,7 +11,7 @@ import os, sys
 import json
 
 sys.path.append('../reconstruction_system')
-sys.path.append("../Utility")
+sys.path.append("../utility")
 from initialize_config import *
 from file import *
 

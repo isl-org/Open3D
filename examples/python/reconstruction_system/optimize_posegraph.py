@@ -6,7 +6,7 @@
 
 import open3d as o3d
 import sys
-sys.path.append("../Utility")
+sys.path.append("../utility")
 from file import join
 
 

@@ -7,7 +7,7 @@
 import argparse
 import json
 import sys
-sys.path.append("../Utility")
+sys.path.append("../utility")
 from file import *
 sys.path.append(".")
 from initialize_config import *

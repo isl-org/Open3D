@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/Utility/opencv.py
+# examples/python/utility/opencv.py
 
 
 def initialize_opencv():
