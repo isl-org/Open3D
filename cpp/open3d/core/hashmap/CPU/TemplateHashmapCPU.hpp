@@ -31,7 +31,7 @@
 namespace open3d {
 namespace core {
 
-/// Templated factory
+/// Templated factory.
 template <typename Hash, typename KeyEq>
 std::shared_ptr<CPUHashmap<Hash, KeyEq>> CreateTemplateCPUHashmap(
         size_t init_buckets,

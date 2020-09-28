@@ -240,5 +240,6 @@ void Hashmap::AssertValueDtype(const Dtype& dtype_val) const {
                 dtype_val_.ToString(), dtype_val.ToString());
     }
 }
+
 }  // namespace core
 }  // namespace open3d

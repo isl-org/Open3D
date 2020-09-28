@@ -46,7 +46,7 @@
 namespace open3d {
 namespace core {
 
-/// Templated factory
+/// Templated factory.
 template <typename Hash, typename KeyEq>
 std::shared_ptr<CUDAHashmap<Hash, KeyEq>> CreateTemplateCUDAHashmap(
         size_t init_buckets,

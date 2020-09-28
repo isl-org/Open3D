@@ -75,7 +75,7 @@ __device__ bool CUDAHashmapImplContext<Hash, KeyEq>::Insert(
 
         WarpSyncKey(key, src_lane, src_key);
 
-        // Each lane in the warp reads a uint in the slab
+        // Each lane in the warp reads a unit in the slab
         uint32_t unit_data =
                 (curr_slab_ptr == kHeadSlabAddr)
                         ? *(get_unit_ptr_from_list_head(src_bucket, lane_id))
@@ -181,9 +181,9 @@ __device__ Pair<addr_t, bool> CUDAHashmapImplContext<Hash, KeyEq>::Find(
     addr_t iterator = kNullAddr;
     bool mask = false;
 
-    // > Loop when we have active lanes
+    // > Loop when we have active lanes.
     while ((work_queue = __ballot_sync(kSyncLanesMask, lane_active))) {
-        // 0. Restart from linked list head if the last query is finished
+        // 0. Restart from linked list head if the last query is finished.
         curr_slab_ptr =
                 (prev_work_queue != work_queue) ? kHeadSlabAddr : curr_slab_ptr;
         uint32_t src_lane = __ffs(work_queue) - 1;
@@ -193,7 +193,7 @@ __device__ Pair<addr_t, bool> CUDAHashmapImplContext<Hash, KeyEq>::Find(
         uint8_t src_key[kMaxKeyByteSize];
         WarpSyncKey(query_key, src_lane, src_key);
 
-        // Each lane in the warp reads a uint in the slab in parallel
+        // Each lane in the warp reads a unit in the slab in parallel.
         const uint32_t unit_data =
                 (curr_slab_ptr == kHeadSlabAddr)
                         ? *(get_unit_ptr_from_list_head(src_bucket, lane_id))
@@ -202,7 +202,7 @@ __device__ Pair<addr_t, bool> CUDAHashmapImplContext<Hash, KeyEq>::Find(
 
         int32_t lane_found = WarpFindKey(src_key, lane_id, unit_data);
 
-        // 1. Found in this slab, SUCCEED
+        // 1. Found in this slab, SUCCEED.
         if (lane_found >= 0) {
             // broadcast found value
             addr_t found_pair_internal_ptr = __shfl_sync(
@@ -217,19 +217,19 @@ __device__ Pair<addr_t, bool> CUDAHashmapImplContext<Hash, KeyEq>::Find(
             }
         }
 
-        // 2. Not found in this slab
+        // 2. Not found in this slab.
         else {
-            // broadcast next slab: lane 31 reads 'next'
+            // Broadcast next slab: lane 31 reads 'next'.
             addr_t next_slab_ptr = __shfl_sync(kSyncLanesMask, unit_data,
                                                kNextSlabPtrLaneId, kWarpSize);
 
-            // 2.1. Next slab is empty, ABORT
+            // 2.1. Next slab is empty, ABORT.
             if (next_slab_ptr == kEmptySlabAddr) {
                 if (lane_id == src_lane) {
                     lane_active = false;
                 }
             }
-            // 2.2. Next slab exists, RESTART
+            // 2.2. Next slab exists, RESTART.
             else {
                 curr_slab_ptr = next_slab_ptr;
             }
@@ -255,9 +255,9 @@ __device__ Pair<addr_t, bool> CUDAHashmapImplContext<Hash, KeyEq>::Erase(
     addr_t iterator_addr = 0;
     bool mask = false;
 
-    // > Loop when we have active lanes
+    // > Loop when we have active lanes.
     while ((work_queue = __ballot_sync(kSyncLanesMask, lane_active))) {
-        // 0. Restart from linked list head if last insertion is finished
+        // 0. Restart from linked list head if last insertion is finished.
         curr_slab_ptr =
                 (prev_work_queue != work_queue) ? kHeadSlabAddr : curr_slab_ptr;
         uint32_t src_lane = __ffs(work_queue) - 1;
@@ -274,7 +274,7 @@ __device__ Pair<addr_t, bool> CUDAHashmapImplContext<Hash, KeyEq>::Erase(
 
         int32_t lane_found = WarpFindKey(src_key, lane_id, unit_data);
 
-        // Branch 1: key found
+        // Branch 1: key found.
         if (lane_found >= 0) {
             if (lane_id == src_lane) {
                 uint32_t* unit_data_ptr =
@@ -323,11 +323,11 @@ template <typename Hash, typename KeyEq>
 __device__ int32_t CUDAHashmapImplContext<Hash, KeyEq>::WarpFindKey(
         const void* key_ptr, uint32_t lane_id, addr_t ptr) {
     bool is_lane_found =
-            // select key lanes
+            // Select key lanes.
             ((1 << lane_id) & kNodePtrLanesMask)
-            // validate key addrs
+            // Validate key addrs.
             && (ptr != kEmptyNodeAddr)
-            // find keys in memory heap
+            // Find keys in memory heap.
             && cmp_fn_(kv_mgr_ctx_.extract_iterator(ptr).first, key_ptr);
 
     return __ffs(__ballot_sync(kNodePtrLanesMask, is_lane_found)) - 1;
@@ -367,7 +367,7 @@ __global__ void InsertKernelPass0(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid < count) {
-        // First write ALL input_keys to avoid potential thread conflicts
+        // First write ALL input_keys to avoid potential thread conflicts.
         addr_t iterator_addr =
                 hash_ctx.kv_mgr_ctx_.heap_[heap_counter_prev + tid];
         iterator_t iterator =
@@ -400,7 +400,7 @@ __global__ void InsertKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     uint32_t bucket_id = 0;
     addr_t iterator_addr = 0;
 
-    // dummy
+    // Dummy.
     uint8_t dummy_key[kMaxKeyByteSize];
     const void* key = reinterpret_cast<const void*>(dummy_key);
 
@@ -467,18 +467,18 @@ __global__ void FindKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
-    // This warp is idle
+    // This warp is idle.
     if ((tid - lane_id) >= count) {
         return;
     }
 
-    // Initialize the memory allocator on each warp
+    // Initialize the memory allocator on each warp.
     hash_ctx.node_mgr_ctx_.Init(tid, lane_id);
 
     bool lane_active = false;
     uint32_t bucket_id = 0;
 
-    // dummy
+    // Dummy.
     uint8_t dummy_key[kMaxKeyByteSize];
     const void* key = reinterpret_cast<const void*>(dummy_key);
     Pair<addr_t, bool> result;
@@ -553,7 +553,7 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
-    // assigning a warp per bucket
+    // Assigning a warp per bucket.
     uint32_t bucket_id = tid >> 5;
     if (bucket_id >= hash_ctx.bucket_count_) {
         return;
@@ -575,7 +575,7 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     addr_t next = __shfl_sync(kSyncLanesMask, src_unit_data, kNextSlabPtrLaneId,
                               kWarpSize);
 
-    // count following nodes
+    // Count following nodes,
     while (next != kEmptySlabAddr) {
         src_unit_data = *hash_ctx.get_unit_ptr_from_list_nodes(next, lane_id);
         is_active = (src_unit_data != kEmptyNodeAddr);
@@ -598,7 +598,7 @@ __global__ void CountElemsPerBucketKernel(
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
-    // assigning a warp per bucket
+    // Assigning a warp per bucket.
     uint32_t bucket_id = tid >> 5;
     if (bucket_id >= hash_ctx.bucket_count_) {
         return;
@@ -608,7 +608,7 @@ __global__ void CountElemsPerBucketKernel(
 
     uint32_t count = 0;
 
-    // count head node
+    // Count head node.
     uint32_t src_unit_data =
             *hash_ctx.get_unit_ptr_from_list_head(bucket_id, lane_id);
     count += __popc(
@@ -616,7 +616,7 @@ __global__ void CountElemsPerBucketKernel(
     addr_t next = __shfl_sync(kSyncLanesMask, src_unit_data, kNextSlabPtrLaneId,
                               kWarpSize);
 
-    // count following nodes
+    // Count following nodes.
     while (next != kEmptySlabAddr) {
         src_unit_data = *hash_ctx.get_unit_ptr_from_list_nodes(next, lane_id);
         count += __popc(__ballot_sync(kNodePtrLanesMask,
@@ -625,7 +625,7 @@ __global__ void CountElemsPerBucketKernel(
                            kWarpSize);
     }
 
-    // write back the results:
+    // Write back the results.
     if (lane_id == 0) {
         bucket_elem_counts[bucket_id] = count;
     }
@@ -640,7 +640,7 @@ __global__ void UnpackIteratorsKernel(const iterator_t* input_iterators,
                                       size_t iterator_count) {
     size_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
-    // Valid queries
+    // Valid queries.
     if (tid < iterator_count && (input_masks == nullptr || input_masks[tid])) {
         if (output_keys != nullptr) {
             MEMCPY_AS_INTS(
@@ -665,7 +665,7 @@ __global__ void AssignIteratorsKernel(iterator_t* input_iterators,
                                       size_t iterator_count) {
     size_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
-    // Valid queries
+    // Valid queries.
     if (tid < iterator_count && (input_masks == nullptr || input_masks[tid])) {
         MEMCPY_AS_INTS(
                 static_cast<uint8_t*>(input_iterators[tid].second),

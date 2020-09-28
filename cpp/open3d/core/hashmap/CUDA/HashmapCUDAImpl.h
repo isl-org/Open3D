@@ -68,14 +68,14 @@ public:
                                    addr_t ptr);
     __device__ int32_t WarpFindEmpty(addr_t unit_data);
 
-    // Hash function
+    // Hash function.
     __device__ size_t ComputeBucket(const void* key_ptr) const;
 
-    // Node manager
+    // Node manager.
     __device__ addr_t AllocateSlab(uint32_t lane_id);
     __device__ void FreeSlab(addr_t slab_ptr);
 
-    // Helpers
+    // Helpers.
     __device__ addr_t* get_unit_ptr_from_list_nodes(addr_t slab_ptr,
                                                     uint32_t lane_id) {
         return node_mgr_ctx_.get_unit_ptr_from_slab(slab_ptr, lane_id);

@@ -121,7 +121,6 @@ protected:
     void Allocate(size_t bucket_count, size_t capacity);
 };
 
-/// Interface
 template <typename Hash, typename KeyEq>
 CUDAHashmap<Hash, KeyEq>::CUDAHashmap(size_t init_buckets,
                                       size_t init_capacity,
@@ -372,15 +371,15 @@ void CUDAHashmap<Hash, KeyEq>::Allocate(size_t bucket_count, size_t capacity) {
     this->bucket_count_ = bucket_count;
     this->capacity_ = capacity;
 
-    // Allocate buffer for key-values
+    // Allocate buffer for key-values.
     kv_mgr_ = std::make_shared<InternalKvPairManager>(
             this->capacity_, this->dsize_key_, this->dsize_value_,
             this->device_);
 
-    // Allocate buffer for linked list nodes
+    // Allocate buffer for linked list nodes.
     node_mgr_ = std::make_shared<InternalNodeManager>(this->device_);
 
-    // Allocate linked list heads
+    // Allocate linked list heads.
     gpu_context_.bucket_list_head_ = static_cast<Slab*>(MemoryManager::Malloc(
             sizeof(Slab) * this->bucket_count_, this->device_));
     OPEN3D_CUDA_CHECK(cudaMemset(gpu_context_.bucket_list_head_, 0xFF,

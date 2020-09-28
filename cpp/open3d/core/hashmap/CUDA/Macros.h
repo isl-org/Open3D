@@ -46,11 +46,12 @@
 namespace open3d {
 namespace core {
 
-/// Device-specific, safe for current NVIDIA architectures.
+// Device-specific, safe for current NVIDIA architectures.
 static constexpr uint32_t kWarpSize = 32;
 
 //////////////////////
-/// Tunable variables
+// Tunable variables
+//////////////////////
 // Hashmap
 static constexpr uint32_t kSuperBlocks = 32;
 static constexpr uint32_t kBlocksPerSuperBlock = 4;
@@ -62,7 +63,8 @@ static constexpr uint32_t kMaxKeyByteSize = 32;
 static constexpr uint32_t kThreadsPerBlock = 128;
 
 //////////////////////
-/// Combination of tunable variables
+// Combination of tunable variables
+//////////////////////
 static constexpr uint32_t kUIntsPerBlock = kSlabsPerBlock * kWarpSize;
 // We need one bitmap (32-bit) per slab (32 nodes). Number of bitmaps is equal
 // to number of slabs.
@@ -72,7 +74,8 @@ static constexpr uint32_t kUIntsPerSuperBlock =
         kBlocksPerSuperBlock * kUIntsPerBlock + kBitmapsPerSuperBlock;
 
 //////////////////////
-/// Non-tunable variables
+// Non-tunable variables
+//////////////////////
 // Mask offsets
 static constexpr uint32_t kSuperBlockMaskBits = 27;
 static constexpr uint32_t kBlockMaskBits = 10;

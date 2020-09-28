@@ -53,14 +53,15 @@
 
 namespace open3d {
 namespace core {
+
 /// Internal Hashtable Node: (31 units and 1 next ptr) representation.
+/// A slab is kWarpSize x kWarpSize bits, or kWarpSize 32-bit uints.
+///
 /// \member kv_pair_ptrs:
 /// Each element is an internal ptr to a kv pair managed by the
 /// InternalMemoryManager. Can be converted to a real ptr.
 /// \member next_slab_ptr:
 /// An internal ptr managed by InternalNodeManager.
-
-/// A slab is kWarpSize x kWarpSize bits, or kWarpSize 32-bit uints.
 class Slab {
 public:
     addr_t kv_pair_ptrs[kWarpSize - 1];
@@ -86,19 +87,19 @@ public:
                bitmap_idx;
     }
 
-    // Objective: each warp selects its own memory_block warp allocator:
+    // Objective: each warp selects its own memory_block warp allocator.
     __device__ void Init(uint32_t& tid, uint32_t& lane_id) {
-        // hashing the memory block to be used:
+        // Hashing the memory block to be used.
         createMemBlockIndex(tid >> 5);
 
-        // loading the assigned memory block:
+        // Loading the assigned memory block.
         memory_block_bitmap_ =
                 super_blocks_[super_block_index_ * kUIntsPerSuperBlock +
                               memory_block_index_ * kSlabsPerBlock + lane_id];
     }
 
     __device__ uint32_t WarpAllocate(const uint32_t& lane_id) {
-        // tries and allocate a new memory units within the memory_block memory
+        // Try and allocate a new memory units within the memory_block memory
         // block if it returns 0xFFFFFFFF, then there was not any empty memory
         // unit a new memory_block block should be chosen, and repeat again
         // allocated result:  5  bits: super_block_index
@@ -109,15 +110,15 @@ public:
         uint32_t free_lane;
         uint32_t read_bitmap = memory_block_bitmap_;
         uint32_t allocated_result = kNotFoundFlag;
-        // works as long as <31 bit are used in the allocated_result
+        // Works as long as <31 bit are used in the allocated_result
         // in other words, if there are 32 super blocks and at most 64k blocks
-        // per super block
+        // per super block.
 
         while (allocated_result == kNotFoundFlag) {
             empty_lane = __ffs(~memory_block_bitmap_) - 1;
             free_lane = __ballot_sync(kSyncLanesMask, empty_lane >= 0);
             if (free_lane == 0) {
-                // all bitmaps are full: need to be rehashed again:
+                // all bitmaps are full: need to be rehashed again.
                 updateMemBlockIndex((threadIdx.x + blockIdx.x * blockDim.x) >>
                                     5);
                 read_bitmap = memory_block_bitmap_;
@@ -132,18 +133,18 @@ public:
                         memory_block_bitmap_,
                         memory_block_bitmap_ | (1 << empty_lane));
                 if (read_bitmap == memory_block_bitmap_) {
-                    // successful attempt:
+                    // Successful attempt.
                     memory_block_bitmap_ |= (1 << empty_lane);
                     allocated_result =
                             (super_block_index_ << kSuperBlockMaskBits) |
                             (memory_block_index_ << kBlockMaskBits) |
                             (lane_id << kSlabMaskBits) | empty_lane;
                 } else {
-                    // Not successful: updating the current bitmap
+                    // Not successful: updating the current bitmap.
                     memory_block_bitmap_ = read_bitmap;
                 }
             }
-            // asking for the allocated result;
+            // Asking for the allocated result.
             allocated_result =
                     __shfl_sync(kSyncLanesMask, allocated_result, src_lane);
         }
@@ -184,14 +185,14 @@ private:
         return getMemUnitIndex(address) * kWarpSize;
     }
 
-    // called at the beginning of the kernel:
+    // Called at the beginning of the kernel.
     __device__ void createMemBlockIndex(uint32_t global_warp_id) {
         super_block_index_ = global_warp_id % kSuperBlocks;
         memory_block_index_ = (hash_coef_ * global_warp_id) >>
                               (32 - kBlocksPerSuperBlockInBits);
     }
 
-    // called when the allocator fails to find an empty unit to allocate:
+    // Called when the allocator fails to find an empty unit to allocate.
     __device__ void updateMemBlockIndex(uint32_t global_warp_id) {
         num_attempts_++;
         super_block_index_++;
@@ -199,7 +200,7 @@ private:
                 (super_block_index_ == kSuperBlocks) ? 0 : super_block_index_;
         memory_block_index_ = (hash_coef_ * (global_warp_id + num_attempts_)) >>
                               (32 - kBlocksPerSuperBlockInBits);
-        // loading the assigned memory block:
+        // Loading the assigned memory block.
         memory_block_bitmap_ =
                 *((super_blocks_ + super_block_index_ * kUIntsPerSuperBlock) +
                   memory_block_index_ * kSlabsPerBlock + (threadIdx.x & 0x1f));
@@ -221,13 +222,13 @@ private:
     }
 
 public:
-    // a pointer to each super-block
+    /// A pointer to each super-block.
     uint32_t* super_blocks_;
-    // hash_coef (register): used as (16 bits, 16 bits) for hashing
-    uint32_t hash_coef_;  // a random 32-bit
+    /// hash_coef (register): used as (16 bits, 16 bits) for hashing.
+    uint32_t hash_coef_;  // A random 32-bit.
 
 private:
-    // memory_block (16 bits + 5 bits) (memory block + super block)
+    /// memory_block (16 bits + 5 bits) (memory block + super block).
     uint32_t num_attempts_;
     uint32_t memory_block_index_;
     uint32_t memory_block_bitmap_;
@@ -239,15 +240,13 @@ __global__ void CountSlabsPerSuperblockKernel(
 
 class InternalNodeManager {
 public:
-    // REVIEW: the initialization list seems not useful, since the values are
-    // overwritten in function body, except for device_.
     InternalNodeManager(const Device& device) : device_(device) {
-        // random coefficients for allocator's hash function
+        /// Random coefficients for allocator's hash function.
         std::mt19937 rng(time(0));
         gpu_context_.hash_coef_ = rng();
 
-        // In the light version, we put num_super_blocks super blocks within
-        // a single array
+        /// In the light version, we put num_super_blocks super blocks within
+        /// a single array.
         gpu_context_.super_blocks_ =
                 static_cast<uint32_t*>(MemoryManager::Malloc(
                         kUIntsPerSuperBlock * kSuperBlocks * sizeof(uint32_t),
@@ -276,7 +275,7 @@ public:
         thrust::fill(slabs_per_superblock.begin(), slabs_per_superblock.end(),
                      0);
 
-        // counting total number of allocated memory units:
+        // Counting total number of allocated memory units.
         int num_mem_units = kBlocksPerSuperBlock * 32;
         int num_cuda_blocks =
                 (num_mem_units + kThreadsPerBlock - 1) / kThreadsPerBlock;

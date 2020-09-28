@@ -87,7 +87,7 @@ public:
 private:
     std::shared_ptr<std::unordered_map<void*, void*, Hash, KeyEq>> impl_;
 
-    // Valid kv_pairs
+    // Valid kv_pairs.
     std::vector<iterator_t> kv_pairs_;
 };
 
@@ -99,8 +99,8 @@ CPUHashmap<Hash, KeyEq>::CPUHashmap(size_t init_buckets,
                                     const Device& device)
     : DeviceHashmap<Hash, KeyEq>(
               init_buckets,
-              init_capacity,  /// dummy for std unordered_map, reserved for
-                              /// other hashmaps
+              init_capacity,  /// Dummy for std unordered_map, reserved for.
+                              /// other hashmaps.
               dsize_key,
               dsize_value,
               device) {
@@ -134,7 +134,7 @@ void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
         const uint8_t* src_value = static_cast<const uint8_t*>(input_values) +
                                    this->dsize_value_ * i;
 
-        // Manually copy before insert
+        // Manually copy before insert.
         uint8_t* dst_key = static_cast<uint8_t*>(
                 MemoryManager::Malloc(this->dsize_key_, this->device_));
         uint8_t* dst_value = static_cast<uint8_t*>(
@@ -145,10 +145,10 @@ void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
         MemoryManager::Memcpy(dst_value, this->device_, src_value,
                               this->device_, this->dsize_value_);
 
-        // Try insertion
+        // Try insertion.
         auto res = impl_->insert({dst_key, dst_value});
 
-        // Handle memory
+        // Handle memory.
         if (res.second) {
             output_iterators[i] = iterator_t(dst_key, dst_value);
             output_masks[i] = true;
@@ -182,10 +182,10 @@ void CPUHashmap<Hash, KeyEq>::Activate(const void* input_keys,
         MemoryManager::Memcpy(dst_key, this->device_, src_key, this->device_,
                               this->dsize_key_);
 
-        // Try insertion
+        // Try insertion.
         auto res = impl_->insert({dst_key, dummy_value});
 
-        // Handle memory
+        // Handle memory.
         if (res.second) {
             output_iterators[i] = iterator_t(dst_key, dummy_value);
             output_masks[i] = true;
@@ -253,7 +253,7 @@ void UnpackIteratorsStep(const iterator_t* input_iterators,
                          size_t dsize_key,
                          size_t dsize_value,
                          size_t tid) {
-    // Valid queries
+    // Valid queries.
     if (input_masks == nullptr || input_masks[tid]) {
         if (output_keys != nullptr) {
             uint8_t* dst_key_ptr =
@@ -294,7 +294,7 @@ void AssignIteratorsStep(iterator_t* input_iterators,
                          const Device& device,
                          size_t dsize_value,
                          size_t tid) {
-    // Valid queries
+    // Valid queries.
     if (input_masks == nullptr || input_masks[tid]) {
         const uint8_t* src_value_ptr =
                 static_cast<const uint8_t*>(input_values) + dsize_value * tid;

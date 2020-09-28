@@ -38,6 +38,7 @@
 
 namespace open3d {
 namespace core {
+
 /// Dynamic memory allocation and free are expensive on kernels.
 /// We pre-allocate a chunk of memory and manually manage them on kernels.
 class InternalKvPairManagerContext {
@@ -101,7 +102,6 @@ public:
     Device device_;
 
 public:
-    // REVIEW: capacity -> capacity
     InternalKvPairManager(int capacity,
                           int dsize_key,
                           int dsize_value,

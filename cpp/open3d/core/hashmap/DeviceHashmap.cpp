@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 // High level non-templated hashmap interface for basic usages.
-
+//
 // If BUILD_CUDA_MODULE, link DefaultHashmap.cu that contains everything, and
 // disable code inside DefaultHashmap.cpp
 // Else, link DefaultHashmap.cpp and disregard DefaultHashmap.cu

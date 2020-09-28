@@ -29,7 +29,7 @@
 namespace open3d {
 namespace core {
 
-/// Non-templated factory
+/// Non-templated factory.
 std::shared_ptr<DefaultDeviceHashmap> CreateDefaultCPUHashmap(
         size_t init_buckets,
         size_t init_capacity,
