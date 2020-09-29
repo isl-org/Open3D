@@ -34,7 +34,7 @@ echo "Building examples iteratively..."
 make VERBOSE=1 -j"$NPROC" build-examples-iteratively
 echo
 
-# skip unit tests and run exampes if built with CUDA, unless system contains Nvidia GPUs
+# skip unit tests and run examples if built with CUDA, unless system contains Nvidia GPUs
 if [ "$BUILD_CUDA_MODULE" == "OFF" ] || nvidia-smi -L | grep -q GPU; then
     echo "try importing Open3D python package"
     test_wheel

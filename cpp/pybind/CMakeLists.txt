@@ -244,7 +244,7 @@ add_custom_target(install-python-package
 # Use `make conda-package` to create conda package in the build directory
 # Note that we don't provide `make install-conda-package` similar to pip. This
 # is becuase:
-#     1) `make install-pip-whell` works in conda environment for local build
+#     1) `make install-pip-package` works in conda environment for local build
 #     2) `make conda-package` is mainly for internal use to distribute conda
 add_custom_target(conda-package
     COMMAND ${CMAKE_COMMAND}
