@@ -975,6 +975,7 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
 # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
 message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
 import_3rdparty_library(3rdparty_mkl
+    PUBLIC
     INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
     LIB_DIR      ${STATIC_MKL_LIB_DIR}
     LIBRARIES    ${STATIC_MKL_LIBRARIES}
@@ -997,7 +998,7 @@ if(UNIX)
 elseif(MSVC)
     target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
+list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${MKL_TARGET}")
 
 # Faiss
 if (WITH_FAISS AND WIN32)
@@ -1013,7 +1014,7 @@ elseif(WITH_FAISS)
     endif()
 endif()
 if (WITH_FAISS)
-    find_package(BLAS REQUIRED)
+    #find_package(BLAS REQUIRED)
     message(STATUS "FAISS_INCLUDE_DIR: ${FAISS_INCLUDE_DIR}")
     message(STATUS "FAISS_LIB_DIR: ${FAISS_LIB_DIR}")
     import_3rdparty_library(3rdparty_faiss
@@ -1022,7 +1023,7 @@ if (WITH_FAISS)
         LIB_DIR ${FAISS_LIB_DIR}
     )
     add_dependencies(3rdparty_faiss ext_faiss)
-    target_link_libraries(3rdparty_faiss INTERFACE ${BLAS_LIBRARIES})
+    target_link_libraries(3rdparty_faiss INTERFACE 3rdparty_mkl)
     set(FAISS_TARGET "3rdparty_faiss")
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")

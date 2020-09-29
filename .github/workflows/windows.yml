@@ -137,4 +137,4 @@ jobs:
         run: |
           echo "Running Open3D python tests..."
           echo "Testing ML and ML Ops disabled"
-          python -m pytest python/test/ --ignore python/test/ml_ops/
+          python -m pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/core/test_faiss.py
