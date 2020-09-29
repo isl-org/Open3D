@@ -701,6 +701,7 @@ void SceneWidget::SetViewControls(Controls mode) {
 }
 
 void SceneWidget::ForceRedraw() {
+    impl_->scene_->GetRenderer().EnableCaching(true);
     impl_->scene_->GetScene()->SetRenderOnce(impl_->view_id_);
 }
 
@@ -756,6 +757,7 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     }
     GetCamera()->LookAt(center, eye, up);
     impl_->controls_->SetCenterOfRotation(center);
+    ForceRedraw();
 }
 
 rendering::Camera* SceneWidget::GetCamera() const {

@@ -66,7 +66,8 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
                                    void* native_drawable,
                                    FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
-    swap_chain_ = engine_.createSwapChain(native_drawable);
+    swap_chain_ = engine_.createSwapChain(native_drawable, filament::SwapChain::CONFIG_READABLE);
+    //swap_chain_cached_ = engine_.createSwapChain(native_drawable);
     renderer_ = engine_.createRenderer();
 
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
@@ -106,8 +107,8 @@ void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
     co.clearColor.g = color.y();
     co.clearColor.b = color.z();
     co.clearColor.a = color.w();
-    co.clear = true;
-    co.discard = true;
+    co.clear = !preserve_buffer_;
+    co.discard = !preserve_buffer_;
     renderer_->setClearOptions(co);
 
     // remember clear color
@@ -123,8 +124,9 @@ void FilamentRenderer::SetPreserveBuffer(bool preserve) {
     co.clearColor.g = clear_color_[1];
     co.clearColor.b = clear_color_[2];
     co.clearColor.a = clear_color_[3];
-    co.clear = preserve;
-    co.discard = preserve;
+    preserve_buffer_ = preserve;
+    co.clear = !preserve;
+    co.discard = !preserve;
     renderer_->setClearOptions(co);
 }
 
@@ -170,7 +172,7 @@ void FilamentRenderer::EnableCaching(bool enable) {
             // render_count_ is 1 artifacts occasionally occur.
             render_count_ = 2;
         }
-        SetPreserveBuffer(true);
+        SetPreserveBuffer(false);
     }
 }
 
@@ -184,9 +186,9 @@ void FilamentRenderer::BeginFrame() {
 
     if (render_caching_enabled_) {
         if (render_count_-- > 0) {
-            SetPreserveBuffer(true);
-        } else {
             SetPreserveBuffer(false);
+        } else {
+            SetPreserveBuffer(true);
         }
     }
 
