@@ -1,13 +1,13 @@
 material {
-    name : defaultLit,
+    name : defaultLitTransparency,
     shadingModel : lit,
     doubleSided : true,
-    blending : fade,
+    blending : transparent,
     depthWrite : true,
     transparency : twoPassesOneSide,
 
     parameters : [
-        { type : float3,    name : baseColor },
+        { type : float4,    name : baseColor },
         { type : float,     name : baseMetallic },
         { type : float,     name : baseRoughness },
         { type : float,     name : reflectance },
@@ -48,9 +48,12 @@ fragment {
 
         prepareMaterial(material);
 
-        material.baseColor.rgb = getColor().rgb * materialParams.baseColor * texture(materialParams_albedo, getUV0()).rgb;
-        material.baseColor.rgb *= texture(materialParams_albedo, getUV0()).a;
-        material.baseColor.a = texture(materialParams_albedo, getUV0()).a;
+        float4 tex_color = texture(materialParams_albedo, getUV0());
+        material.baseColor.rgb = getColor().rgb * materialParams.baseColor.rgb * tex_color.rgb;
+        float combined_alpha = tex_color.a * materialParams.baseColor.a;
+        // Pre-multiply alpha
+        material.baseColor.rgb *= combined_alpha;
+        material.baseColor.a = combined_alpha;
         float3 ao_rough_metal = texture(materialParams_ao_rough_metalMap, getUV0()).rgb;
         material.metallic = materialParams.baseMetallic * ao_rough_metal.b;
         material.roughness = materialParams.baseRoughness * ao_rough_metal.g;
