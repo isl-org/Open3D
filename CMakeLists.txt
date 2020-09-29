@@ -1,6 +1,7 @@
-cmake_minimum_required(VERSION 3.12.0)
-# CMake 3.12+ is required to allow linking with OBJECT libraries
-# and to prevent erroneous -gencode option deduplication with CUDA.
+cmake_minimum_required(VERSION 3.15.0)
+# CMake 3.15+ is required to allow linking with OBJECT libraries,
+# to prevent erroneous -gencode option deduplication with CUDA,
+# and to simplify generator expressions for selecting compile flags.
 # If you're using Ubuntu 18.04 or older, we suggest you install
 # a backported CMake from https://apt.kitware.com/
 
