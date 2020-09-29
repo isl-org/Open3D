@@ -87,6 +87,10 @@
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond
 
+void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
+    free(buffer);
+}
+
 namespace defaults_mapping {
 
 using GeometryType = open3d::geometry::Geometry::GeometryType;
@@ -101,7 +105,9 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"defaultUnlit", ResourceManager::kDefaultUnlit},
         {"normals", ResourceManager::kDefaultNormalShader},
         {"depth", ResourceManager::kDefaultDepthShader},
-        {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader}};
+        {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
+        {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
+};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -188,6 +194,16 @@ void FilamentScene::SetViewActive(const ViewHandle& view_id, bool is_active) {
     }
 }
 
+void FilamentScene::SetRenderOnce(const ViewHandle& view_id) {
+    auto found = views_.find(view_id);
+    if (found != views_.end()) {
+        found->second.is_active = true;
+        // NOTE: This value should match the value of render_count_ in
+        // FilamentRenderer::EnableCaching
+        found->second.render_count = 2;
+    }
+}
+
 void FilamentScene::RemoveView(const ViewHandle& view_id) {
     views_.erase(view_id);
 }
@@ -242,11 +258,12 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
-    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder, vb,
-                                              ib, material);
+    filament::Box aabb = buffer_builder->ComputeAABB();  // expensive
+    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
+                                              aabb, vb, ib, material);
     if (success && ib_downsampled) {
-        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
-                                        ib_downsampled, material,
+        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
+                                        vb, ib_downsampled, material,
                                         BufferReuse::kYes)) {
             utility::LogWarning(
                     "Internal error: could not create downsampled point cloud");
@@ -260,6 +277,31 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const Material& material,
                                 const std::string& downsampled_name /*= ""*/,
                                 size_t downsample_threshold /*= SIZE_MAX*/) {
+    // Tensor::Min() and Tensor::Max() can be very slow on certain setups,
+    // in particular macOS with clang 11.0.0. This is a temporary fix.
+    auto ComputeAABB = [](const tgeometry::PointCloud& cloud) -> filament::Box {
+        Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
+        Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
+        const auto& points = cloud.GetPoints();
+        const size_t n = points.GetSize();
+        float* pts = (float*)points.AsTensor().GetDataPtr();
+        for (size_t i = 0; i < 3 * n; i += 3) {
+            min_pt[0] = std::min(min_pt[0], pts[i]);
+            min_pt[1] = std::min(min_pt[1], pts[i + 1]);
+            min_pt[2] = std::min(min_pt[2], pts[i + 2]);
+            max_pt[0] = std::max(max_pt[0], pts[i]);
+            max_pt[1] = std::max(max_pt[1], pts[i + 1]);
+            max_pt[2] = std::max(max_pt[2], pts[i + 2]);
+        }
+
+        const filament::math::float3 min(min_pt.x(), min_pt.y(), min_pt.z());
+        const filament::math::float3 max(max_pt.x(), max_pt.y(), max_pt.z());
+
+        filament::Box aabb;
+        aabb.set(min, max);
+        return aabb;
+    };
+
     // Basic sanity checks
     if (point_cloud.IsEmpty()) {
         utility::LogWarning("Point cloud for object {} is empty", object_name);
@@ -285,19 +327,20 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
-    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder, vb,
-                                              ib, material);
+    filament::Box aabb = ComputeAABB(point_cloud);
+    bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
+                                              aabb, vb, ib, material);
     if (success && ib_downsampled) {
-        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
-                                        ib_downsampled, material,
+        if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
+                                        vb, ib_downsampled, material,
                                         BufferReuse::kYes)) {
             // If we failed to create a downsampled cloud, which would be
             // unlikely, create another entity with the original buffers
             // (since that succeeded).
             utility::LogWarning(
                     "Internal error: could not create downsampled point cloud");
-            CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, vb,
-                                       ib, material, BufferReuse::kYes);
+            CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
+                                       vb, ib, material, BufferReuse::kYes);
         }
     }
     return success;
@@ -348,12 +391,11 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 bool FilamentScene::CreateAndAddFilamentEntity(
         const std::string& object_name,
         GeometryBuffersBuilder& buffer_builder,
+        filament::Box& aabb,
         VertexBufferHandle vb,
         IndexBufferHandle ib,
         const Material& material,
         BufferReuse reusing_vertex_buffer /*= kNo*/) {
-    filament::Box aabb = buffer_builder.ComputeAABB();
-
     auto vbuf = resource_mgr_.GetVertexBuffer(vb).lock();
     auto ibuf = resource_mgr_.GetIndexBuffer(ib).lock();
 
@@ -478,12 +520,30 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             vbuf->setBufferAt(engine_, 2, std::move(normals_descriptor));
         }
 
-        if (update_flags & kUpdateUv0Flag && point_cloud.HasPointAttr("uv")) {
+        if (update_flags & kUpdateUv0Flag) {
             const size_t uv_array_size = n_vertices * 2 * sizeof(float);
-            filament::VertexBuffer::BufferDescriptor uv_descriptor(
-                    point_cloud.GetPointAttr("uv").AsTensor().GetDataPtr(),
-                    uv_array_size);
-            vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
+            if (point_cloud.HasPointAttr("uv")) {
+                filament::VertexBuffer::BufferDescriptor uv_descriptor(
+                        point_cloud.GetPointAttr("uv").AsTensor().GetDataPtr(),
+                        uv_array_size);
+                vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
+            } else if (point_cloud.HasPointAttr("__visualization_scalar")) {
+                // Update in PointCloudBuffers.cpp, too:
+                //     TPointCloudBuffersBuilder::ConstructBuffers
+                float* uv_array = static_cast<float*>(malloc(uv_array_size));
+                memset(uv_array, 0, uv_array_size);
+                float* src = static_cast<float*>(
+                        point_cloud.GetPointAttr("__visualization_scalar")
+                                .AsTensor()
+                                .GetDataPtr());
+                const size_t n = 2 * n_vertices;
+                for (size_t i = 0; i < n; i += 2) {
+                    uv_array[i] = *src++;
+                }
+                filament::VertexBuffer::BufferDescriptor uv_descriptor(
+                        uv_array, uv_array_size, DeallocateBuffer);
+                vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
+            }
         }
     }
 }
@@ -668,6 +728,28 @@ void FilamentScene::UpdateDepthShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+void FilamentScene::UpdateGradientShader(GeometryMaterialInstance& geom_mi) {
+    bool isLUT =
+            (geom_mi.properties.gradient->GetMode() == Gradient::Mode::kLUT);
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("minValue", geom_mi.properties.scalar_min)
+            .SetParameter("maxValue", geom_mi.properties.scalar_max)
+            .SetParameter("isLUT", (isLUT ? 1.0f : 0.0f))
+            .SetParameter("pointSize", geom_mi.properties.point_size)
+            .SetTexture(
+                    "gradient", geom_mi.maps.gradient_texture,
+                    isLUT ? rendering::TextureSamplerParameters::Simple()
+                          : rendering::TextureSamplerParameters::LinearClamp())
+            .Finish();
+}
+
+void FilamentScene::UpdateSolidColorShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetParameter("pointSize", geom_mi.properties.point_size)
+            .Finish();
+}
+
 std::shared_ptr<geometry::Image> CombineTextures(
         std::shared_ptr<geometry::Image> ao,
         std::shared_ptr<geometry::Image> rough,
@@ -755,21 +837,6 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
     }
 }
 
-void FilamentScene::UpdateGradientShader(GeometryMaterialInstance& geom_mi) {
-    bool isLUT =
-            (geom_mi.properties.gradient->GetMode() == Gradient::Mode::kLUT);
-    renderer_.ModifyMaterial(geom_mi.mat_instance)
-            .SetParameter("minValue", geom_mi.properties.scalar_min)
-            .SetParameter("maxValue", geom_mi.properties.scalar_max)
-            .SetParameter("isLUT", (isLUT ? 1.0f : 0.0f))
-            .SetParameter("pointSize", geom_mi.properties.point_size)
-            .SetTexture(
-                    "gradient", geom_mi.maps.gradient_texture,
-                    isLUT ? rendering::TextureSamplerParameters::Simple()
-                          : rendering::TextureSamplerParameters::LinearClamp())
-            .Finish();
-}
-
 void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     auto& props = geom.mat.properties;
     auto& maps = geom.mat.maps;
@@ -828,6 +895,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateDepthShader(geom.mat);
     } else if (props.shader == "unlitGradient") {
         UpdateGradientShader(geom.mat);
+    } else if (props.shader == "unlitSolidColor") {
+        UpdateSolidColorShader(geom.mat);
     }
 }
 
@@ -863,6 +932,10 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateNormalShader(geom->mat);
         } else if (material.shader == "unlitGradient") {
             UpdateGradientShader(geom->mat);
+        } else if (material.shader == "unlitColorMap") {
+            UpdateGradientShader(geom->mat);
+        } else if (material.shader == "unlitSolidColor") {
+            UpdateSolidColorShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }
@@ -1306,13 +1379,18 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
 }
 
 void FilamentScene::Draw(filament::Renderer& renderer) {
-    for (const auto& pair : views_) {
+    for (auto& pair : views_) {
         auto& container = pair.second;
-        if (container.is_active) {
-            container.view->PreRender();
-            renderer.render(container.view->GetNativeView());
-            container.view->PostRender();
+        // Skip inactive views
+        if (!container.is_active) continue;
+        if (container.render_count-- == 0) {
+            container.is_active = false;
+            continue;
         }
+
+        container.view->PreRender();
+        renderer.render(container.view->GetNativeView());
+        container.view->PostRender();
     }
 }
 

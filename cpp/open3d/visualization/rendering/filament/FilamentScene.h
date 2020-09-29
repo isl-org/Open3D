@@ -60,6 +60,7 @@
 
 /// @cond
 namespace filament {
+class Box;
 class Engine;
 class IndirectLight;
 class Renderer;
@@ -98,6 +99,7 @@ public:
 
     View* GetView(const ViewHandle& view_id) const override;
     void SetViewActive(const ViewHandle& view_id, bool is_active) override;
+    void SetRenderOnce(const ViewHandle& view_id) override;
     void RemoveView(const ViewHandle& view_id) override;
 
     // Camera
@@ -211,6 +213,7 @@ private:
     bool CreateAndAddFilamentEntity(
             const std::string& object_name,
             GeometryBuffersBuilder& buffer_builder,
+            filament::Box& aabb,
             VertexBufferHandle vb,
             IndexBufferHandle ib,
             const Material& material,
@@ -270,6 +273,7 @@ private:
     struct ViewContainer {
         std::unique_ptr<FilamentView> view;
         bool is_active = true;
+        int render_count = -1;
     };
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
 
@@ -287,6 +291,7 @@ private:
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);
     void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
     void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
+    void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();

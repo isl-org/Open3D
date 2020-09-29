@@ -109,6 +109,23 @@ void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
     co.clear = true;
     co.discard = true;
     renderer_->setClearOptions(co);
+
+    // remember clear color
+    clear_color_[0] = color.x();
+    clear_color_[1] = color.y();
+    clear_color_[2] = color.z();
+    clear_color_[3] = color.w();
+}
+
+void FilamentRenderer::SetPreserveBuffer(bool preserve) {
+    filament::Renderer::ClearOptions co;
+    co.clearColor.r = clear_color_[0];
+    co.clearColor.g = clear_color_[1];
+    co.clearColor.b = clear_color_[2];
+    co.clearColor.a = clear_color_[3];
+    co.clear = preserve;
+    co.discard = preserve;
+    renderer_->setClearOptions(co);
 }
 
 void FilamentRenderer::UpdateSwapChain() {
@@ -143,11 +160,33 @@ void FilamentRenderer::UpdateSwapChain() {
     swap_chain_ = engine_.createSwapChain(native_win);
 }
 
+void FilamentRenderer::EnableCaching(bool enable) {
+    if (enable != render_caching_enabled_) {
+        render_caching_enabled_ = enable;
+        if (enable) {
+            // NOTE: Render two frames before switching swap chain to preserve
+            // contents. This ensures that the desired content is fully rendered
+            // into buffer. Ideally only a single frame is necessary but when
+            // render_count_ is 1 artifacts occasionally occur.
+            render_count_ = 2;
+        }
+        SetPreserveBuffer(true);
+    }
+}
+
 void FilamentRenderer::BeginFrame() {
     // We will complete render to buffer requests first
     for (auto& br : buffer_renderers_) {
         if (br->pending_) {
             br->Render();
+        }
+    }
+
+    if (render_caching_enabled_) {
+        if (render_count_-- > 0) {
+            SetPreserveBuffer(true);
+        } else {
+            SetPreserveBuffer(false);
         }
     }
 

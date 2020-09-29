@@ -74,6 +74,7 @@ void pybind_core_tensor(py::module& m);
 void pybind_core_tensorlist(py::module& m);
 void pybind_core_linalg(py::module& m);
 void pybind_core_kernel(py::module& m);
+void pybind_core_hashmap(py::module& m);
 void pybind_core_nn(py::module& m);
 
 }  // namespace core

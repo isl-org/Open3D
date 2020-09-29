@@ -75,6 +75,7 @@ public:
 
     virtual View* GetView(const ViewHandle& view_id) const = 0;
     virtual void SetViewActive(const ViewHandle& view_id, bool is_active) = 0;
+    virtual void SetRenderOnce(const ViewHandle& view_id) = 0;
     virtual void RemoveView(const ViewHandle& view_id) = 0;
 
     // Camera

@@ -1,6 +1,7 @@
 set (SRC
     Cloud.cpp
     GridSubsampling.cpp
+    contrib_nns.cpp
 )
 
 add_library(ml_contrib OBJECT ${SRC})

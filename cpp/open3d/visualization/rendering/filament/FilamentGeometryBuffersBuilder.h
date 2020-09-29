@@ -107,7 +107,7 @@ protected:
     static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr);
 
     static IndexBufferHandle CreateIndexBuffer(size_t max_index,
-                                               size_t step = 1);
+                                               size_t n_subsamples = SIZE_MAX);
 };
 
 class TriangleMeshBuffersBuilder : public GeometryBuffersBuilder {
@@ -146,8 +146,6 @@ public:
             const override;
 
     Buffers ConstructBuffers() override;
-    IndexBufferHandle ConstructDownsampledIndexBuffer(size_t max_index,
-                                                      size_t step);
     filament::Box ComputeAABB() override;
 
 private:

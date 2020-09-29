@@ -33,10 +33,10 @@
 #include "open3d/ml/pytorch/misc/ReduceSubarraysSumOpKernel.h"
 #include "torch/script.h"
 
-torch::Tensor ReduceSubarraysSum(const torch::Tensor& values,
-                                 const torch::Tensor& row_splits) {
-    CHECK_CONTIGUOUS(values);
-    CHECK_CONTIGUOUS(row_splits);
+torch::Tensor ReduceSubarraysSum(torch::Tensor values,
+                                 torch::Tensor row_splits) {
+    values = values.contiguous();
+    row_splits = row_splits.contiguous();
     CHECK_TYPE(row_splits, kInt64);
 
     const auto& attr_type = values.dtype();
