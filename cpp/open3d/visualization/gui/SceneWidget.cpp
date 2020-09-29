@@ -700,6 +700,10 @@ void SceneWidget::SetViewControls(Controls mode) {
     }
 }
 
+void SceneWidget::ForceRedraw() {
+    impl_->scene_->GetScene()->SetRenderOnce(impl_->view_id_);
+}
+
 void SceneWidget::SetRenderQuality(Quality quality) {
     auto currentQuality = GetRenderQuality();
     if (currentQuality != quality) {

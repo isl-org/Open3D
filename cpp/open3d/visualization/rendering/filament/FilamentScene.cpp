@@ -194,6 +194,16 @@ void FilamentScene::SetViewActive(const ViewHandle& view_id, bool is_active) {
     }
 }
 
+void FilamentScene::SetRenderOnce(const ViewHandle& view_id) {
+    auto found = views_.find(view_id);
+    if (found != views_.end()) {
+        found->second.is_active = true;
+        // NOTE: This value should match the value of render_count_ in
+        // FilamentRenderer::EnableCaching
+        found->second.render_count = 2;
+    }
+}
+
 void FilamentScene::RemoveView(const ViewHandle& view_id) {
     views_.erase(view_id);
 }
@@ -1369,13 +1379,18 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
 }
 
 void FilamentScene::Draw(filament::Renderer& renderer) {
-    for (const auto& pair : views_) {
+    for (auto& pair : views_) {
         auto& container = pair.second;
-        if (container.is_active) {
-            container.view->PreRender();
-            renderer.render(container.view->GetNativeView());
-            container.view->PostRender();
+        // Skip inactive views
+        if (!container.is_active) continue;
+        if (container.render_count-- == 0) {
+            container.is_active = false;
+            continue;
         }
+
+        container.view->PreRender();
+        renderer.render(container.view->GetNativeView());
+        container.view->PostRender();
     }
 }
 
