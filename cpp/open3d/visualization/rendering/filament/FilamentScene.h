@@ -99,6 +99,7 @@ public:
 
     View* GetView(const ViewHandle& view_id) const override;
     void SetViewActive(const ViewHandle& view_id, bool is_active) override;
+    void SetRenderOnce(const ViewHandle& view_id) override;
     void RemoveView(const ViewHandle& view_id) override;
 
     // Camera
@@ -272,6 +273,7 @@ private:
     struct ViewContainer {
         std::unique_ptr<FilamentView> view;
         bool is_active = true;
+        int render_count = -1;
     };
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
 

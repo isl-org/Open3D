@@ -816,6 +816,9 @@ void GuiVisualizer::SetGeometry(
     auto &bounds = scene3d->GetBoundingBox();
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
                                    bounds.GetCenter().cast<float>());
+
+    // Make sure scene is redrawn
+    impl_->scene_wgt_->ForceRedraw();
 }
 
 void GuiVisualizer::Layout(const gui::Theme &theme) {
