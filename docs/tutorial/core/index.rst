@@ -1,0 +1,6 @@
+Core
+====
+
+.. toctree::
+
+    tensor
