@@ -75,6 +75,3 @@ jobs:
             make -j$(nproc)
             make tests -j$(nproc)
             make install-pip-package -j$(nproc)
-            ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/
-            ccache -s
