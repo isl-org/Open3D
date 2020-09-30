@@ -163,17 +163,16 @@ void FilamentRenderer::UpdateSwapChain() {
 }
 
 void FilamentRenderer::EnableCaching(bool enable) {
-    if (enable != render_caching_enabled_) {
-        render_caching_enabled_ = enable;
-        if (enable) {
-            // NOTE: Render two frames before switching swap chain to preserve
-            // contents. This ensures that the desired content is fully rendered
-            // into buffer. Ideally only a single frame is necessary but when
-            // render_count_ is 1 artifacts occasionally occur.
-            render_count_ = 2;
-        }
-        SetPreserveBuffer(false);
+    render_caching_enabled_ = enable;
+    if(enable) {
+        // NOTE: Render two frames before switching swap chain to preserve
+        // contents. This ensures that the desired content is fully rendered
+        // into buffer. Ideally only a single frame is necessary but when
+        // render_count_ is 1 artifacts occasionally occur.
+        render_count_ = 2;
     }
+
+    SetPreserveBuffer(false);
 }
 
 void FilamentRenderer::BeginFrame() {
