@@ -121,9 +121,6 @@ Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input) {
 
 std::tuple<bool, Eigen::Matrix4d> SolveJacobianSystemAndObtainExtrinsicMatrix(
         const Eigen::Matrix6d &JTJ, const Eigen::Vector6d &JTr) {
-    std::vector<Eigen::Matrix4d, Matrix4d_allocator> output_matrix_array;
-    output_matrix_array.clear();
-
     bool solution_exist;
     Eigen::Vector6d x;
     std::tie(solution_exist, x) = SolveLinearSystemPSD(JTJ, -JTr);
@@ -131,9 +128,8 @@ std::tuple<bool, Eigen::Matrix4d> SolveJacobianSystemAndObtainExtrinsicMatrix(
     if (solution_exist) {
         Eigen::Matrix4d extrinsic = TransformVector6dToMatrix4d(x);
         return std::make_tuple(solution_exist, std::move(extrinsic));
-    } else {
-        return std::make_tuple(false, Eigen::Matrix4d::Identity());
     }
+    return std::make_tuple(false, Eigen::Matrix4d::Identity());
 }
 
 std::tuple<bool, std::vector<Eigen::Matrix4d, Matrix4d_allocator>>
