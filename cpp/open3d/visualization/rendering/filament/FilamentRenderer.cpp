@@ -66,8 +66,8 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
                                    void* native_drawable,
                                    FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
-    swap_chain_ = engine_.createSwapChain(native_drawable, filament::SwapChain::CONFIG_READABLE);
-    //swap_chain_cached_ = engine_.createSwapChain(native_drawable);
+    swap_chain_ = engine_.createSwapChain(native_drawable,
+                                          filament::SwapChain::CONFIG_READABLE);
     renderer_ = engine_.createRenderer();
 
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
