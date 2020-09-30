@@ -33,8 +33,8 @@
 #pragma once
 
 #ifdef USE_BLAS
-#define OPEN3D_LINALG_INT int64_t
-#define lapack_int int64_t
+#define OPEN3D_CPU_LINALG_INT int32_t
+#define lapack_int int32_t
 #include <cblas.h>
 #include <lapacke.h>
 #else
@@ -42,5 +42,5 @@
 static_assert(
         sizeof(MKL_INT) == 8,
         "MKL_INT must be 8 bytes: please link with MKL 64-bit int library.");
-#define OPEN3D_LINALG_INT MKL_INT
+#define OPEN3D_CPU_LINALG_INT MKL_INT
 #endif

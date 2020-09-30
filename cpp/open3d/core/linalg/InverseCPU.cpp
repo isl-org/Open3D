@@ -39,14 +39,14 @@ void InverseCPU(void* A_data,
                 const Device& device) {
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         OPEN3D_LAPACK_CHECK(
-                getrf_cpu<scalar_t>(LAPACK_COL_MAJOR, n, n,
-                                    static_cast<scalar_t*>(A_data), n,
-                                    static_cast<OPEN3D_LINALG_INT*>(ipiv_data)),
+                getrf_cpu<scalar_t>(
+                        LAPACK_COL_MAJOR, n, n, static_cast<scalar_t*>(A_data),
+                        n, static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data)),
                 "getrf failed in InverseCPU");
         OPEN3D_LAPACK_CHECK(
-                getri_cpu<scalar_t>(LAPACK_COL_MAJOR, n,
-                                    static_cast<scalar_t*>(A_data), n,
-                                    static_cast<OPEN3D_LINALG_INT*>(ipiv_data)),
+                getri_cpu<scalar_t>(
+                        LAPACK_COL_MAJOR, n, static_cast<scalar_t*>(A_data), n,
+                        static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data)),
                 "getri failed in InverseCPU");
     });
 }
