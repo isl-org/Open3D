@@ -1,5 +1,5 @@
-Core
-====
+Tensor
+======
 
 .. toctree::
 
