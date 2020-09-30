@@ -65,10 +65,14 @@ class PyAPIDocsBuilder:
     ...
     """
 
-    def __init__(self, output_dir, input_dir, module_names):
+    def __init__(self, output_dir="python_api", input_dir="python_api_in"):
+        """
+        input_dir: The input dir for custom rst files that override the
+                   generated files.
+        """
         self.output_dir = output_dir
         self.input_dir = input_dir
-        self.module_names = module_names
+        self.module_names = PyAPIDocsBuilder._get_documented_module_names()
         print("Generating *.rst Python API docs in directory: %s" %
               self.output_dir)
 
@@ -76,10 +80,29 @@ class PyAPIDocsBuilder:
         _create_or_clear_dir(self.output_dir)
 
         for module_name in self.module_names:
-            module = self._get_open3d_module(module_name)
-            self._generate_module_class_function_docs(module_name, module)
+            try:
+                module = self._try_import_module(module_name)
+                self._generate_module_class_function_docs(module_name, module)
+            except:
+                print("[Warning] Module {} cannot be imported.".format(
+                    module_name))
 
-    def _get_open3d_module(self, full_module_name):
+    @staticmethod
+    def _get_documented_module_names():
+        """Reads the modules of the python api from the index.rst"""
+        module_names = []
+        with open("documented_modules.txt", "r") as f:
+            for line in f:
+                print(line, end="")
+                m = re.match("^(open3d\..*)\s*$", line)
+                if m:
+                    module_names.append(m.group(1))
+        print("Documented modules:")
+        for module_name in module_names:
+            print("-", module_name)
+        return module_names
+
+    def _try_import_module(self, full_module_name):
         """Returns the module object for the given module path"""
         import open3d  # make sure the root module is loaded
         if open3d._build_config['BUILD_TENSORFLOW_OPS']:
@@ -88,11 +111,11 @@ class PyAPIDocsBuilder:
             import open3d.ml.torch
 
         try:
-            # try to import directly. This will work for pure python submodules
+            # Try to import directly. This will work for pure python submodules
             module = importlib.import_module(full_module_name)
             return module
         except ImportError:
-            # traverse the module hierarchy of the root module.
+            # Traverse the module hierarchy of the root module.
             # This code path is necessary for modules for which we manually
             # define a specific module path (e.g. the modules defined with
             # pybind).
@@ -253,31 +276,9 @@ class SphinxDocsBuilder:
     """
 
     def __init__(self, html_output_dir, is_release, skip_notebooks):
-        # Get the modules for which we want to build the documentation.
-        # We use the modules listed in the index.rst file here.
-        self.documented_modules = self._get_documented_module_names()
-
-        self.python_api_output_dir = "python_api"
-        # The input dir for custom rst files that override the generated files
-        self.python_api_input_dir = "python_api_in"
         self.html_output_dir = html_output_dir
         self.is_release = is_release
         self.skip_notebooks = skip_notebooks
-
-    @staticmethod
-    def _get_documented_module_names():
-        """Reads the modules of the python api from the index.rst"""
-        module_names = []
-        with open("documented_modules.txt", "r") as f:
-            for line in f:
-                print(line)
-                m = re.match("^(open3d\..*)\s*$", line)
-                if m:
-                    module_names.append(m.group(1))
-        print("Documented modules:")
-        for module_name in module_names:
-            print("-", module_name)
-        return module_names
 
     def run(self):
         self._gen_python_api_docs()
@@ -290,9 +291,7 @@ class SphinxDocsBuilder:
         """
         # self.python_api_output_dir cannot be a temp dir, since other
         # "*.rst" files reference it
-        pd = PyAPIDocsBuilder(self.python_api_output_dir,
-                              self.python_api_input_dir,
-                              self.documented_modules)
+        pd = PyAPIDocsBuilder()
         pd.generate_rst()
 
     def _run_sphinx(self):
