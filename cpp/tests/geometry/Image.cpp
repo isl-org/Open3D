@@ -252,7 +252,18 @@ void TEST_CreateFloatImage(
     EXPECT_EQ(height, float_image->height_);
     EXPECT_EQ(float_num_of_channels, float_image->num_of_channels_);
     EXPECT_EQ(int(sizeof(float)), float_image->bytes_per_channel_);
-    ExpectEQ(ref, float_image->data_);
+
+    auto Bytes2Floats = [](const std::vector<uint8_t>& bytes) {
+        if (bytes.size() % 4) {
+            utility::LogError("{} % 4 != 0.", bytes.size());
+        }
+        size_t num_elments = bytes.size() / 4;
+        std::vector<float> floats(
+                reinterpret_cast<const float*>(bytes.data()),
+                reinterpret_cast<const float*>(bytes.data()) + num_elments);
+        return floats;
+    };
+    ExpectEQ(Bytes2Floats(ref), Bytes2Floats(float_image->data_));
 }
 
 // ----------------------------------------------------------------------------

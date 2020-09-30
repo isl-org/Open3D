@@ -24,29 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LapackWrapper.h"
-#include "open3d/core/linalg/LinalgUtils.h"
-#include "open3d/core/linalg/Solve.h"
+// This file contains headers for BLAS/LAPACK implementations. Currently we
+// support int64_t interface of OpenBLAS or Intel MKL.
+//
+// For developers, please make sure that this file is not ultimately included in
+// Open3D.h.
 
-namespace open3d {
-namespace core {
+#pragma once
 
-void SolveCPU(void* A_data,
-              void* B_data,
-              void* ipiv_data,
-              int64_t n,
-              int64_t k,
-              Dtype dtype,
-              const Device& device) {
-    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        OPEN3D_LAPACK_CHECK(
-                gesv_cpu<scalar_t>(LAPACK_COL_MAJOR, n, k,
-                                   static_cast<scalar_t*>(A_data), n,
-                                   static_cast<OPEN3D_LINALG_INT*>(ipiv_data),
-                                   static_cast<scalar_t*>(B_data), n),
-                "gels failed in SolveCPU");
-    });
-}
-
-}  // namespace core
-}  // namespace open3d
+#ifdef USE_BLAS
+#define OPEN3D_LINALG_INT int64_t
+#define lapack_int int64_t
+#include <cblas.h>
+#include <lapacke.h>
+#else
+#include <mkl.h>
+static_assert(
+        sizeof(MKL_INT) == 8,
+        "MKL_INT must be 8 bytes: please link with MKL 64-bit int library.");
+#define OPEN3D_LINALG_INT MKL_INT
+#endif

@@ -108,7 +108,10 @@ def test_inverse(device, dtype):
 
     a_inv = o3d.core.inv(a)
     a_inv_numpy = np.linalg.inv(a.cpu().numpy())
-    np.testing.assert_allclose(a_inv.cpu().numpy(), a_inv_numpy, 1e-6)
+    np.testing.assert_allclose(a_inv.cpu().numpy(),
+                               a_inv_numpy,
+                               rtol=1e-5,
+                               atol=1e-5)
 
     # Non-2D
     for shape in [(), [1], (3, 4, 5)]:

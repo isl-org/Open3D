@@ -24,29 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LapackWrapper.h"
-#include "open3d/core/linalg/LinalgUtils.h"
-#include "open3d/core/linalg/Solve.h"
+// This file contains headers for BLAS/LAPACK implementations for CUDA.
+//
+// For developers, please make sure that this file is not ultimately included in
+// Open3D.h.
 
-namespace open3d {
-namespace core {
+#pragma once
 
-void SolveCPU(void* A_data,
-              void* B_data,
-              void* ipiv_data,
-              int64_t n,
-              int64_t k,
-              Dtype dtype,
-              const Device& device) {
-    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        OPEN3D_LAPACK_CHECK(
-                gesv_cpu<scalar_t>(LAPACK_COL_MAJOR, n, k,
-                                   static_cast<scalar_t*>(A_data), n,
-                                   static_cast<OPEN3D_LINALG_INT*>(ipiv_data),
-                                   static_cast<scalar_t*>(B_data), n),
-                "gels failed in SolveCPU");
-    });
-}
-
-}  // namespace core
-}  // namespace open3d
+#ifdef BUILD_CUDA_MODULE
+#include <cublas_v2.h>
+#include <cusolverDn.h>
+#include <cusolver_common.h>
+#endif
