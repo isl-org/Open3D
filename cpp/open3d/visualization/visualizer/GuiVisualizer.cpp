@@ -415,6 +415,9 @@ struct GuiVisualizer::Impl {
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
+        // Make sure scene redraws once changes have been applied
+        scene_wgt_->ForceRedraw();
+
         // Bail early if there were no material property changes
         if (!material_changed) return;
 
