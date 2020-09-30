@@ -53,8 +53,8 @@ jobs:
             apt-get install -y gfortran libblas-dev liblapack-dev liblapacke-dev
             /usr/sbin/update-ccache-symlinks
             echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc
-            virtualenv --python=$(which python) venv
-            source venv/bin/activate
+            virtualenv --python=$(which python) ${HOME}/venv
+            source ${HOME}/venv/bin/activate
             which python
             python --version
             pip install pytest=="6.0.1" -U
@@ -64,7 +64,7 @@ jobs:
           run: |
             PATH=/usr/lib/ccache:$PATH
             ccache -s
-            source venv/bin/activate
+            source ${HOME}/venv/bin/activate
             mkdir build
             cd build
             cmake \
