@@ -64,7 +64,7 @@ void Inverse(const Tensor &A, Tensor &output) {
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        Tensor ipiv = Tensor::Zeros({n}, Dtype::Int64, device);
+        Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
         // cuSolver does not support getri, so we have to provide an identity
