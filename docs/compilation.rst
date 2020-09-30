@@ -494,7 +494,8 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
           -DBUNDLE_OPEN3D_ML=ON \
           -DOPEN3D_ML_ROOT=https://github.com/intel-isl/Open3D-ML.git \
           ..
-    make -j
+    # Install the python wheel with pip
+    make -j install-pip-package 
 
 Unit test
 `````````
