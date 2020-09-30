@@ -35,7 +35,8 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 void TensorListMap::Assign(
         const std::unordered_map<std::string, core::TensorList>&
@@ -132,5 +133,6 @@ void TensorListMap::AssertTensorMapSameDevice(
     }
 }
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

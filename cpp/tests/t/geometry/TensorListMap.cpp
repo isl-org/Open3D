@@ -35,7 +35,7 @@ namespace open3d {
 namespace tests {
 
 TEST(TensorListMap, Constructor_GetPrimaryKey) {
-    tgeometry::TensorListMap tm("points");
+    t::geometry::TensorListMap tm("points");
     EXPECT_EQ(tm.GetPrimaryKey(), "points");
 }
 
@@ -43,7 +43,7 @@ TEST(TensorListMap, Assign) {
     core::Dtype dtype = core::Dtype::Float32;
     core::Device device = core::Device("CPU:0");
 
-    tgeometry::TensorListMap tm("points");
+    t::geometry::TensorListMap tm("points");
     tm["points"] = core::TensorList({3}, dtype, device);
     tm["dummy"] = core::TensorList({3}, dtype, device);
     EXPECT_TRUE(tm.Contains("points"));
@@ -71,7 +71,7 @@ TEST(TensorListMap, SynchronizedPushBack) {
     core::Dtype dtype = core::Dtype::Float32;
     core::Device device = core::Device("CPU:0");
 
-    tgeometry::TensorListMap tm(
+    t::geometry::TensorListMap tm(
             "points",
             {{"points", core::TensorList::FromTensor(
                                 core::Tensor::Ones({5, 3}, dtype, device))},
@@ -114,7 +114,7 @@ TEST(TensorListMap, IsSizeSynchronized) {
     core::Dtype dtype = core::Dtype::Float32;
     core::Device device = core::Device("CPU:0");
 
-    tgeometry::TensorListMap tm(
+    t::geometry::TensorListMap tm(
             "points",
             {{"points", core::TensorList::FromTensor(
                                 core::Tensor::Ones({5, 3}, dtype, device))},
@@ -130,7 +130,7 @@ TEST(TensorListMap, AssertSizeSynchronized) {
     core::Dtype dtype = core::Dtype::Float32;
     core::Device device = core::Device("CPU:0");
 
-    tgeometry::TensorListMap tm(
+    t::geometry::TensorListMap tm(
             "points",
             {{"points", core::TensorList::FromTensor(
                                 core::Tensor::Ones({5, 3}, dtype, device))},
@@ -146,7 +146,7 @@ TEST(TensorListMap, Contains) {
     core::Dtype dtype = core::Dtype::Float32;
     core::Device device = core::Device("CPU:0");
 
-    tgeometry::TensorListMap tm(
+    t::geometry::TensorListMap tm(
             "points",
             {{"points", core::TensorList::FromTensor(
                                 core::Tensor::Ones({5, 3}, dtype, device))},

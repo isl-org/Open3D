@@ -38,7 +38,8 @@
 #include "open3d/t/geometry/TensorListMap.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 /// \class PointCloud
 /// \brief A pointcloud contains a set of 3D points.
@@ -262,18 +263,19 @@ public:
     core::Device GetDevice() const { return device_; }
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
-    static tgeometry::PointCloud FromLegacyPointCloud(
-            const geometry::PointCloud &pcd_legacy,
+    static t::geometry::PointCloud FromLegacyPointCloud(
+            const open3d::geometry::PointCloud &pcd_legacy,
             core::Dtype dtype = core::Dtype::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D PointCloud.
-    geometry::PointCloud ToLegacyPointCloud() const;
+    open3d::geometry::PointCloud ToLegacyPointCloud() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorListMap point_attr_;
 };
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

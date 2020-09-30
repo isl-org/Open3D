@@ -30,7 +30,8 @@
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 // Geometry trampoline class.
 template <class GeometryBase = Geometry>
@@ -52,5 +53,6 @@ void pybind_geometry_class(py::module& m);
 void pybind_tensorlistmap(py::module& m);
 void pybind_pointcloud(py::module& m);
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

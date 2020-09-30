@@ -33,7 +33,8 @@
 #include "open3d/t/geometry/TensorListMap.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 /// \class TriangleMesh
 /// \brief A TriangleMesh contains vertices and triangles.
@@ -404,7 +405,7 @@ public:
     core::Device GetDevice() const { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
-    static tgeometry::TriangleMesh FromLegacyTrangleMesh(
+    static t::geometry::TriangleMesh FromLegacyTrangleMesh(
             const geometry::TriangleMesh &mesh_legacy,
             core::Dtype dtype = core::Dtype::Float32,
             const core::Device &device = core::Device("CPU:0")) {
@@ -422,5 +423,6 @@ protected:
     TensorListMap triangle_attr_;
 };
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

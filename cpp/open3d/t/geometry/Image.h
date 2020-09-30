@@ -33,7 +33,8 @@
 #include "open3d/t/geometry/Geometry.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 /// \class Image
 ///
@@ -133,5 +134,6 @@ protected:
     core::Tensor data_;
 };
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

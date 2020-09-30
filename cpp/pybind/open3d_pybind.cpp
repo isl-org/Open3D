@@ -60,7 +60,7 @@ PYBIND11_MODULE(pybind, m) {
     camera::pybind_camera(m);
     core::pybind_core(m);
     geometry::pybind_geometry(m);
-    tgeometry::pybind_geometry(m);
+    t::geometry::pybind_geometry(m);
     ml::pybind_ml(m);
     io::pybind_io(m);
     pipelines::pybind_pipelines(m);

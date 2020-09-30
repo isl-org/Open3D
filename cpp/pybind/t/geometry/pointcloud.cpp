@@ -32,7 +32,8 @@
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::unique_ptr<PointCloud>,
@@ -83,5 +84,6 @@ void pybind_pointcloud(py::module& m) {
                    "Convert to a legacy Open3D PointCloud.");
 }
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

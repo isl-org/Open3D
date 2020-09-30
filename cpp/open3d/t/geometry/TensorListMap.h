@@ -32,7 +32,8 @@
 #include "open3d/core/TensorList.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 /// Map of string to TensorList. Provides helper function to maintain a
 /// synchronized size (length) for the tensorlists.
@@ -128,5 +129,6 @@ private:
     std::string primary_key_;
 };
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

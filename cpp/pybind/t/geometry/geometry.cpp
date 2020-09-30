@@ -30,7 +30,8 @@
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 void pybind_geometry_class(py::module& m) {
     py::class_<Geometry, PyGeometry<Geometry>, std::unique_ptr<Geometry>>
@@ -52,5 +53,6 @@ void pybind_geometry(py::module& m) {
     pybind_pointcloud(m_submodule);
 }
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

@@ -45,11 +45,11 @@ INSTANTIATE_TEST_SUITE_P(
         testing::ValuesIn(TriangleMeshPermuteDevicePairs::TestCases()));
 
 TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
-    tgeometry::TriangleMesh mesh;
+    t::geometry::TriangleMesh mesh;
 
     // Inherited from Geometry3D.
     EXPECT_EQ(mesh.GetGeometryType(),
-              tgeometry::Geometry::GeometryType::TriangleMesh);
+              t::geometry::Geometry::GeometryType::TriangleMesh);
     EXPECT_EQ(mesh.Dimension(), 3);
 
     // Public members.
@@ -82,7 +82,7 @@ TEST_P(TriangleMeshPermuteDevices, ConstructFromVertices) {
             core::Tensor::Ones({3}, core::Dtype::Int64, device);
 
     // Copied, push back okay.
-    tgeometry::TriangleMesh mesh(
+    t::geometry::TriangleMesh mesh(
             core::TensorList::FromTensor(vertices, /*inplace=*/false),
             core::TensorList::FromTensor(triangles, /*inplace=*/false));
 
@@ -97,7 +97,7 @@ TEST_P(TriangleMeshPermuteDevices, ConstructFromVertices) {
     EXPECT_EQ(mesh.GetTriangles().GetSize(), 11);
 
     // Inplace tensorlist: cannot push_back.
-    mesh = tgeometry::TriangleMesh(
+    mesh = t::geometry::TriangleMesh(
             core::TensorList::FromTensor(vertices, /*inplace=*/true),
             core::TensorList::FromTensor(triangles, /*inplace=*/true));
 
@@ -123,7 +123,7 @@ TEST_P(TriangleMeshPermuteDevices, SynchronizedPushBack) {
     core::TensorList triangle_normals = core::TensorList::FromTensor(
             core::Tensor::Ones({5, 3}, core::Dtype::Float32, device) * 0.5);
 
-    tgeometry::TriangleMesh mesh(vertices, triangles);
+    t::geometry::TriangleMesh mesh(vertices, triangles);
     mesh.SetVertexColors(vertex_colors);
     mesh.SetTriangleNormals(triangle_normals);
 
@@ -166,7 +166,7 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
     auto triangle_labels = core::TensorList::FromTensor(
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3);
 
-    tgeometry::TriangleMesh mesh(vertices, triangles);
+    t::geometry::TriangleMesh mesh(vertices, triangles);
     mesh.SetVertexColors(vertex_colors);
     mesh.SetVertexAttr("labels", vertex_labels);
     mesh.SetTriangleNormals(triangle_normals);
@@ -209,8 +209,8 @@ TEST_P(TriangleMeshPermuteDevices, Setters) {
     // Setters are already tested in Getters' unit tests. Here we test that
     // mismatched device should throw an exception. This test is only effective
     // is device is a CUDA device.
-    tgeometry::TriangleMesh mesh(core::Dtype::Float32, core::Dtype::Float64,
-                                 device);
+    t::geometry::TriangleMesh mesh(core::Dtype::Float32, core::Dtype::Float64,
+                                   device);
     core::Device cpu_device = core::Device("CPU:0");
     if (cpu_device != device) {
         core::TensorList cpu_vertices = core::TensorList::FromTensor(
@@ -231,8 +231,8 @@ TEST_P(TriangleMeshPermuteDevices, Setters) {
 TEST_P(TriangleMeshPermuteDevices, Has) {
     core::Device device = GetParam();
 
-    tgeometry::TriangleMesh mesh(core::Dtype::Float32, core::Dtype::Float64,
-                                 device);
+    t::geometry::TriangleMesh mesh(core::Dtype::Float32, core::Dtype::Float64,
+                                   device);
     EXPECT_FALSE(mesh.HasVertices());
     EXPECT_FALSE(mesh.HasVertexColors());
     EXPECT_FALSE(mesh.HasVertexNormals());

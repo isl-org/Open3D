@@ -36,7 +36,8 @@
 #include "open3d/core/TensorList.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
                            core::Dtype triangle_dtype,
@@ -65,5 +66,6 @@ TriangleMesh::TriangleMesh(const core::TensorList &vertices,
     SetTriangles(triangles);
 }
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

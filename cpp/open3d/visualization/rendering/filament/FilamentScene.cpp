@@ -273,13 +273,14 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
-                                const tgeometry::PointCloud& point_cloud,
+                                const t::geometry::PointCloud& point_cloud,
                                 const Material& material,
                                 const std::string& downsampled_name /*= ""*/,
                                 size_t downsample_threshold /*= SIZE_MAX*/) {
     // Tensor::Min() and Tensor::Max() can be very slow on certain setups,
     // in particular macOS with clang 11.0.0. This is a temporary fix.
-    auto ComputeAABB = [](const tgeometry::PointCloud& cloud) -> filament::Box {
+    auto ComputeAABB =
+            [](const t::geometry::PointCloud& cloud) -> filament::Box {
         Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
         Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
         const auto& points = cloud.GetPoints();
@@ -459,7 +460,7 @@ static void deallocate_vertex_buffer(void* buffer,
 }
 
 void FilamentScene::UpdateGeometry(const std::string& object_name,
-                                   const tgeometry::PointCloud& point_cloud,
+                                   const t::geometry::PointCloud& point_cloud,
                                    uint32_t update_flags) {
     auto geoms = GetGeometry(object_name, false);
     if (!geoms.empty()) {

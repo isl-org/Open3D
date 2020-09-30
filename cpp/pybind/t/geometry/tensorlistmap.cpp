@@ -31,7 +31,8 @@
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 void pybind_tensorlistmap(py::module& m) {
     // Bind to the generic dictionary interface such that it works the same as a
@@ -58,5 +59,6 @@ void pybind_tensorlistmap(py::module& m) {
                  &TensorListMap::AssertSizeSynchronized);
 }
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

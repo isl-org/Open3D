@@ -27,7 +27,8 @@
 #pragma once
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 /// \class Geometry
 ///
@@ -98,5 +99,6 @@ private:
     int dimension_;
 };
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

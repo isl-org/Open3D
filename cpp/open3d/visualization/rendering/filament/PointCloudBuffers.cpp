@@ -287,7 +287,7 @@ filament::Box PointCloudBuffersBuilder::ComputeAABB() {
 }
 
 TPointCloudBuffersBuilder::TPointCloudBuffersBuilder(
-        const tgeometry::PointCloud& geometry)
+        const t::geometry::PointCloud& geometry)
     : geometry_(geometry) {}
 
 RenderableManager::PrimitiveType TPointCloudBuffersBuilder::GetPrimitiveType()
