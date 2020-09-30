@@ -501,7 +501,7 @@ if (BUILD_FAISS)
     message(STATUS "Building third-party library faiss from source")
     include(${Open3D_3RDPARTY_DIR}/faiss/faiss.cmake)
     import_3rdparty_library(3rdparty_faiss
-            INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libfaiss-install/include/
+            INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libfaiss-install/include/
             LIBRARIES ${FAISS_LIBRARIES}
             LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libfaiss-install/lib
     )

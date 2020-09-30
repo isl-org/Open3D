@@ -63,6 +63,7 @@ set(CORE_CUDA_SRC
 
 set(CORE_NNS_SRC
     nns/NanoFlannIndex.cpp
+    nns/KnnFaiss.cpp
     nns/NearestNeighborSearch.cpp
 )
 
