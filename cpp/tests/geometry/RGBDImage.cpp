@@ -233,9 +233,10 @@ TEST(RGBDImage, CreateFromSUNFormat) {
 }
 
 TEST(RGBDImage, CreateFromNYUFormat) {
-    // Skiped. NYU dataset is in .ppm and .pgm format and needs matplotlib's
-    // mpimg reader. Essentially, CreateFromNYUFormat is similar to other RGBD
-    // dataset loader, just with a different scaling and truncation factor.
+    GTEST_SKIP() << "NYU dataset is in .ppm and .pgm format and needs "
+                    "matplotlib's mpimg reader. CreateFromNYUFormat is similar "
+                    "to other RGBD dataset loader, just with a different "
+                    "scaling and truncation factor.";
 }
 
 template <typename T>
