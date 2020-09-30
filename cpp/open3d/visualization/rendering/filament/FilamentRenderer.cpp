@@ -164,7 +164,7 @@ void FilamentRenderer::UpdateSwapChain() {
 
 void FilamentRenderer::EnableCaching(bool enable) {
     render_caching_enabled_ = enable;
-    if(enable) {
+    if (enable) {
         // NOTE: Render two frames before switching swap chain to preserve
         // contents. This ensures that the desired content is fully rendered
         // into buffer. Ideally only a single frame is necessary but when
