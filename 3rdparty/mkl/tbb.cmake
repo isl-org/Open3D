@@ -21,9 +21,6 @@ set(STATIC_TBB_INCLUDE_DIR "${STATIC_MKL_INCLUDE_DIR}")
 set(STATIC_TBB_LIB_DIR "${STATIC_MKL_LIB_DIR}")
 set(STATIC_TBB_LIBRARIES tbb_static tbbmalloc_static)
 
-# Need to put TBB right next to MKL in the link flags. So instead of creating a
-# new tbb.cmake, it is also put here.
-#
 # To generate a new patch, go inside TBB source folder:
 # 1. Checkout to a new branch
 # 2. Make changes, commit
