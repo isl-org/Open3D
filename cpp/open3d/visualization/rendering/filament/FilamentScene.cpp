@@ -71,7 +71,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/Light.h"
 #include "open3d/visualization/rendering/Material.h"

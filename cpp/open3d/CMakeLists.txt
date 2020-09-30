@@ -17,7 +17,7 @@ configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h.in"
 add_subdirectory(camera)
 add_subdirectory(core)
 add_subdirectory(geometry)
-add_subdirectory(tgeometry)
+add_subdirectory(t/geometry)
 add_subdirectory(io)
 add_subdirectory(ml)
 add_subdirectory(pipelines)

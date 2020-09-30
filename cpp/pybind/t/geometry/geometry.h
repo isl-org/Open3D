@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "open3d/tgeometry/Geometry.h"
+#include "open3d/t/geometry/Geometry.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {

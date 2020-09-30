@@ -29,7 +29,7 @@
 #include <string>
 
 #include "open3d/io/PointCloudIO.h"
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 
 namespace open3d {
 namespace io {

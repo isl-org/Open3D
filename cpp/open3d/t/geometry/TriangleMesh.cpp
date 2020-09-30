@@ -24,48 +24,45 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/Image.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 
-#include "open3d/core/Dtype.h"
+#include <Eigen/Core>
+#include <string>
+#include <unordered_map>
+
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
+#include "open3d/core/TensorList.h"
 
 namespace open3d {
 namespace tgeometry {
 
-Image::Image(int64_t rows,
-             int64_t cols,
-             int64_t channels,
-             core::Dtype dtype,
-             const core::Device &device)
-    : Geometry(Geometry::GeometryType::Image, 2) {
-    if (rows < 0) {
-        utility::LogError("rows must be >= 0, but got {}.", rows);
-    }
-    if (cols < 0) {
-        utility::LogError("cols must be >= 0, but got {}.", cols);
-    }
-    if (channels <= 0) {
-        utility::LogError("channels must be > 0, but got {}.", channels);
-    }
-    data_ = core::Tensor({rows, cols, channels}, dtype, device);
+TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
+                           core::Dtype triangle_dtype,
+                           const core::Device &device)
+    : Geometry(Geometry::GeometryType::TriangleMesh, 3),
+      device_(device),
+      vertex_attr_(TensorListMap("vertices")),
+      triangle_attr_(TensorListMap("triangles")) {
+    SetVertices(core::TensorList({3}, vertex_dtype, device_));
+    SetTriangles(core::TensorList({3}, triangle_dtype, device_));
 }
 
-Image::Image(const core::Tensor &tensor)
-    : Geometry(Geometry::GeometryType::Image, 2) {
-    if (!tensor.IsContiguous()) {
-        utility::LogError("Input tensor must be contiguous.");
-    }
-    if (tensor.NumDims() == 2) {
-        data_ = tensor.Reshape(
-                core::shape_util::Concat(tensor.GetShape(), {1}));
-    } else if (tensor.NumDims() == 3) {
-        data_ = tensor;
-    } else {
-        utility::LogError("Input tensor must be 2-D or 3-D, but got shape {}.",
-                          tensor.GetShape().ToString());
-    }
+TriangleMesh::TriangleMesh(const core::TensorList &vertices,
+                           const core::TensorList &triangles)
+    : TriangleMesh(vertices.GetDtype(), triangles.GetDtype(), [&]() {
+          if (vertices.GetDevice() != triangles.GetDevice()) {
+              utility::LogError(
+                      "vertices' device {} does not match triangles' device "
+                      "{}.",
+                      vertices.GetDevice().ToString(),
+                      triangles.GetDevice().ToString());
+          }
+          return vertices.GetDevice();
+      }()) {
+    SetVertices(vertices);
+    SetTriangles(triangles);
 }
 
 }  // namespace tgeometry

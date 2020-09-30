@@ -46,7 +46,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"

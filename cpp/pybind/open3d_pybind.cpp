@@ -33,7 +33,7 @@
 #include "pybind/io/io.h"
 #include "pybind/ml/ml.h"
 #include "pybind/pipelines/pipelines.h"
-#include "pybind/tgeometry/geometry.h"
+#include "pybind/t/geometry/geometry.h"
 #include "pybind/utility/utility.h"
 #include "pybind/visualization/visualization.h"
 

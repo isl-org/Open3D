@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 
 #include <Eigen/Core>
 #include <string>

@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 
 #include <string>
 #include <unordered_map>
 
-#include "pybind/tgeometry/geometry.h"
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
 namespace tgeometry {

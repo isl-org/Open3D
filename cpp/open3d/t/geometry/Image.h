@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/tgeometry/Geometry.h"
+#include "open3d/t/geometry/Geometry.h"
 
 namespace open3d {
 namespace tgeometry {

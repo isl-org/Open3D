@@ -33,7 +33,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {

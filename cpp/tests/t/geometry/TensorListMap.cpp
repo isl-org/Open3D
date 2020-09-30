@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/TensorListMap.h"
+#include "open3d/t/geometry/TensorListMap.h"
 
 #include <vector>
 

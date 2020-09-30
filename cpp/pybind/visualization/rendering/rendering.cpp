@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/Gradient.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Open3DScene.h"

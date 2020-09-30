@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/Image.h"
+#include "open3d/t/geometry/Image.h"
 
 #include "core/CoreTest.h"
 #include "open3d/core/TensorList.h"
