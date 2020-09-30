@@ -46,7 +46,7 @@ void pybind_geometry_class(py::module& m) {
 }
 
 void pybind_geometry(py::module& m) {
-    py::module m_submodule = m.def_submodule("tgeometry");
+    py::module m_submodule = m.def_submodule("geometry");
 
     pybind_geometry_class(m_submodule);
     pybind_tensorlistmap(m_submodule);

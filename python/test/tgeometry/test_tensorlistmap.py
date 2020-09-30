@@ -40,7 +40,7 @@ def test_tensorlistmap(device):
     dtype = o3c.Dtype.Float32
 
     # Constructor.
-    tlm = o3d.tgeometry.TensorListMap("points")
+    tlm = o3d.t.geometry.TensorListMap("points")
 
     # Get primary key().
     assert tlm.get_primary_key() == "points"
@@ -49,7 +49,7 @@ def test_tensorlistmap(device):
     # preferrred way to construct a TensorListMap with values in python.
     points = o3c.TensorList(o3c.SizeVector([3]), dtype, device)
     colors = o3c.TensorList(o3c.SizeVector([3]), dtype, device)
-    tlm = o3d.tgeometry.TensorListMap("points")
+    tlm = o3d.t.geometry.TensorListMap("points")
     assert "points" not in tlm
     tlm["points"] = points
     assert "points" in tlm
@@ -58,7 +58,7 @@ def test_tensorlistmap(device):
     assert "colors" in tlm
 
     # Constructor with tl values.
-    tlm = o3d.tgeometry.TensorListMap("points", {
+    tlm = o3d.t.geometry.TensorListMap("points", {
         "points": points,
         "colors": colors
     })
