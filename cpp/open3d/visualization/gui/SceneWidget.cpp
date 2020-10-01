@@ -585,6 +585,7 @@ struct SceneWidget::Impl {
     double last_fast_time_ = 0.0;
     bool frame_rect_changed_ = false;
     SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
+    bool scene_caching_enabled_ = false;
 };
 
 SceneWidget::SceneWidget() : impl_(new Impl()) {}
@@ -701,7 +702,18 @@ void SceneWidget::SetViewControls(Controls mode) {
     }
 }
 
+void SceneWidget::EnableSceneCaching(bool enable) {
+    impl_->scene_caching_enabled_ = enable;
+    if (!enable) {
+        impl_->scene_->GetRenderer().EnableCaching(false);
+        impl_->scene_->GetScene()->SetViewActive(impl_->view_id_, true);
+    }
+}
+
 void SceneWidget::ForceRedraw() {
+    // ForceRedraw only applies when scene caching is enabled
+    if (!impl_->scene_caching_enabled_) return;
+
     impl_->scene_->GetRenderer().EnableCaching(true);
     impl_->scene_->GetScene()->SetRenderOnce(impl_->view_id_);
 }
