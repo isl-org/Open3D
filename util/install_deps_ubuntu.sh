@@ -28,7 +28,6 @@ dependencies=(
     libtbb-dev
     # Headless rendering deps
     libosmesa6-dev
-    libopenblas-dev
 )
 
 $SUDO apt-get update
