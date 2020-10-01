@@ -340,6 +340,9 @@ function(open3d_set_global_properties target)
     if(ENABLE_HEADLESS_RENDERING)
         target_compile_definitions(${target} PRIVATE HEADLESS_RENDERING)
     endif()
+    if(NOT WITH_OPENMP)
+        target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
+    endif()
     if(WIN32)
         target_compile_definitions(${target} PRIVATE
             WINDOWS
