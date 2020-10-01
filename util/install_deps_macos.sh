@@ -17,7 +17,7 @@ else
     fi
 fi
 
-for pkg in libusb pkg-config tbb; do
+for pkg in libusb pkg-config tbb libomp; do
     if brew list -1 | grep -q "^${pkg}\$"; then
         if [ "$1" == "skip-upgrade" ]; then
             echo "Package '$pkg' has already been installed."
@@ -33,3 +33,5 @@ for pkg in libusb pkg-config tbb; do
         HOMEBREW_NO_AUTO_UPDATE=1 brew install $pkg
     fi
 done
+echo "brew info libomp"
+brew info libomp
