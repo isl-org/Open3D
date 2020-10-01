@@ -416,7 +416,7 @@ public:
     /// the simplified mesh should have. It is not guaranteed that this number
     /// will be reached.
     std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
-            int target_number_of_triangles) const;
+            int target_number_of_triangles, float maximum_error) const;
 
     /// Function to select points from \p input TriangleMesh into
     /// output TriangleMesh

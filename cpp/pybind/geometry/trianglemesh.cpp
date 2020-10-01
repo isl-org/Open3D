@@ -265,7 +265,8 @@ void pybind_trianglemesh(py::module &m) {
                  "Function to simplify mesh using Quadric Error Metric "
                  "Decimation by "
                  "Garland and Heckbert",
-                 "target_number_of_triangles"_a)
+                 "target_number_of_triangles"_a,
+                 "maximum_error"_a=std::numeric_limits<float>::infinity())
             .def("compute_convex_hull", &TriangleMesh::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
             .def("cluster_connected_triangles",
