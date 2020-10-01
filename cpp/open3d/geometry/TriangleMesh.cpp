@@ -1188,6 +1188,36 @@ double TriangleMesh::GetSurfaceArea(std::vector<double> &triangle_areas) const {
     return surface_area;
 }
 
+double TriangleMesh::GetVolume() const {
+    if (!IsWatertight()) {
+        utility::LogError(
+                "The mesh is not watertight, and the volume cannot be "
+                "computed.");
+    }
+
+    double volume = 0;
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        double triangle_volume = GetSignedVolumeOfTriangle(tidx);
+        volume += triangle_volume;
+    }
+    return std::abs(volume);
+}
+
+double TriangleMesh::ComputeSignedVolumeOfTriangle(
+        const Eigen::Vector3d &p0,
+        const Eigen::Vector3d &p1,
+        const Eigen::Vector3d &p2) const {
+    return p0.dot(p1.cross(p2)) / 6.0;
+}
+
+double TriangleMesh::GetSignedVolumeOfTriangle(size_t triangle_idx) const {
+    const Eigen::Vector3i &triangle = triangles_[triangle_idx];
+    const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
+    const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
+    const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
+    return ComputeSignedVolumeOfTriangle(vertex0, vertex1, vertex2);
+}
+
 Eigen::Vector4d TriangleMesh::ComputeTrianglePlane(const Eigen::Vector3d &p0,
                                                    const Eigen::Vector3d &p1,
                                                    const Eigen::Vector3d &p2) {
