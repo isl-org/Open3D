@@ -724,8 +724,16 @@ void SceneWidget::SetRenderQuality(Quality quality) {
         impl_->current_render_quality_ = quality;
         if (quality == Quality::FAST) {
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::FAST);
+            if (impl_->scene_caching_enabled_) {
+                impl_->scene_->GetRenderer().EnableCaching(false);
+                impl_->scene_->GetScene()->SetViewActive(impl_->view_id_, true);
+            }
         } else {
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::HIGH_DETAIL);
+            if (impl_->scene_caching_enabled_) {
+                impl_->scene_->GetRenderer().EnableCaching(true);
+                impl_->scene_->GetScene()->SetRenderOnce(impl_->view_id_);
+            }
         }
     }
 }
