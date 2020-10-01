@@ -256,7 +256,7 @@ Case 3: When documenting pure Python code (no bindings)
 Case 4: When adding a Python tutorial
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Place your tutorial within Open3D/docs/tutorial/{Basic, Advanced}/
+* Place your tutorial within Open3D/docs/tutorial
 * There, create a new nblink file pointing to your ipynb notebook
 
   * e.g.: TutorialPointcloud.nblink
