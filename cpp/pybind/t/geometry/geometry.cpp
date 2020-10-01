@@ -24,33 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/t/geometry/Geometry.h"
 
-#include "open3d/tgeometry/Geometry.h"
-#include "pybind/open3d_pybind.h"
+#include "pybind/docstring.h"
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
-// Geometry trampoline class.
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
-public:
-    using GeometryBase::GeometryBase;
+void pybind_geometry_class(py::module& m) {
+    py::class_<Geometry, PyGeometry<Geometry>, std::unique_ptr<Geometry>>
+            geometry(m, "Geometry", "The base geometry class.");
 
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
-    }
+    geometry.def("clear", &Geometry::Clear,
+                 "Clear all elements in the geometry.")
+            .def("is_empty", &Geometry::IsEmpty,
+                 "Returns ``True`` iff the geometry is empty.");
+    docstring::ClassMethodDocInject(m, "Geometry", "clear");
+    docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
+}
 
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-    }
-};
+void pybind_geometry(py::module& m) {
+    py::module m_submodule = m.def_submodule("geometry");
 
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_tensorlistmap(py::module& m);
-void pybind_pointcloud(py::module& m);
+    pybind_geometry_class(m_submodule);
+    pybind_tensorlistmap(m_submodule);
+    pybind_pointcloud(m_submodule);
+}
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

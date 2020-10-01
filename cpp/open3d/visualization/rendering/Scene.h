@@ -40,9 +40,11 @@ class AxisAlignedBoundingBox;
 class Image;
 }  // namespace geometry
 
-namespace tgeometry {
+namespace t {
+namespace geometry {
 class PointCloud;
-}  // namespace tgeometry
+}
+}  // namespace t
 
 namespace visualization {
 namespace rendering {
@@ -91,7 +93,7 @@ public:
                              const std::string& downsampled_name = "",
                              size_t downsample_threshold = SIZE_MAX) = 0;
     virtual bool AddGeometry(const std::string& object_name,
-                             const tgeometry::PointCloud& point_cloud,
+                             const t::geometry::PointCloud& point_cloud,
                              const Material& material,
                              const std::string& downsampled_name = "",
                              size_t downsample_threshold = SIZE_MAX) = 0;
@@ -99,7 +101,7 @@ public:
                              const TriangleMeshModel& model) = 0;
     virtual bool HasGeometry(const std::string& object_name) const = 0;
     virtual void UpdateGeometry(const std::string& object_name,
-                                const tgeometry::PointCloud& point_cloud,
+                                const t::geometry::PointCloud& point_cloud,
                                 uint32_t update_flags) = 0;
     virtual void RemoveGeometry(const std::string& object_name) = 0;
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;

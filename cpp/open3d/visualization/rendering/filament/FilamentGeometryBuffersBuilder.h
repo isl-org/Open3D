@@ -34,7 +34,7 @@
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
 // 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
 //       an unsigned int.
-// 4293:  Filament's utils/algorithm.h utils::details::clz() does strange 
+// 4293:  Filament's utils/algorithm.h utils::details::clz() does strange
 //        things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
 //        32 so that x >> 32 gives a warning. (Or maybe the compiler can't
 //        determine the if statement does not run.)
@@ -63,9 +63,11 @@ class PointCloud;
 class TriangleMesh;
 }  // namespace geometry
 
-namespace tgeometry {
+namespace t {
+namespace geometry {
 class PointCloud;
-}  // namespace tgeometry
+}
+}  // namespace t
 
 namespace visualization {
 namespace rendering {
@@ -83,7 +85,7 @@ public:
     static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(
             const geometry::Geometry3D& geometry);
     static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(
-            const tgeometry::PointCloud& geometry);
+            const t::geometry::PointCloud& geometry);
 
     virtual ~GeometryBuffersBuilder() = default;
 
@@ -140,7 +142,7 @@ private:
 
 class TPointCloudBuffersBuilder : public GeometryBuffersBuilder {
 public:
-    explicit TPointCloudBuffersBuilder(const tgeometry::PointCloud& geometry);
+    explicit TPointCloudBuffersBuilder(const t::geometry::PointCloud& geometry);
 
     filament::RenderableManager::PrimitiveType GetPrimitiveType()
             const override;
@@ -149,7 +151,7 @@ public:
     filament::Box ComputeAABB() override;
 
 private:
-    const tgeometry::PointCloud& geometry_;
+    const t::geometry::PointCloud& geometry_;
 };
 
 class LineSetBuffersBuilder : public GeometryBuffersBuilder {

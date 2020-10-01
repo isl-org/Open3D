@@ -24,15 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 
 #include <string>
 #include <unordered_map>
 
-#include "pybind/tgeometry/geometry.h"
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::unique_ptr<PointCloud>,
@@ -83,5 +84,6 @@ void pybind_pointcloud(py::module& m) {
                    "Convert to a legacy Open3D PointCloud.");
 }
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

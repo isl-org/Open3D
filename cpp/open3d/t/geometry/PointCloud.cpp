@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 
 #include <Eigen/Core>
 #include <string>
@@ -36,7 +36,8 @@
 #include "open3d/core/TensorList.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 PointCloud::PointCloud(core::Dtype dtype, const core::Device &device)
     : Geometry(Geometry::GeometryType::PointCloud, 3),
@@ -100,11 +101,11 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
-tgeometry::PointCloud PointCloud::FromLegacyPointCloud(
-        const geometry::PointCloud &pcd_legacy,
+t::geometry::PointCloud PointCloud::FromLegacyPointCloud(
+        const open3d::geometry::PointCloud &pcd_legacy,
         core::Dtype dtype,
         const core::Device &device) {
-    tgeometry::PointCloud pcd(dtype, device);
+    t::geometry::PointCloud pcd(dtype, device);
     if (pcd_legacy.HasPoints()) {
         pcd.SetPoints(core::eigen_converter::EigenVector3dVectorToTensorList(
                 pcd_legacy.points_, dtype, device));
@@ -126,8 +127,8 @@ tgeometry::PointCloud PointCloud::FromLegacyPointCloud(
     return pcd;
 }
 
-geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
-    geometry::PointCloud pcd_legacy;
+open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
+    open3d::geometry::PointCloud pcd_legacy;
     if (HasPoints()) {
         const core::TensorList &points = GetPoints();
         for (int64_t i = 0; i < points.GetSize(); i++) {
@@ -152,5 +153,6 @@ geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
     return pcd_legacy;
 }
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

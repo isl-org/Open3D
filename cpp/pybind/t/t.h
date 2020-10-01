@@ -24,46 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/TriangleMesh.h"
+#pragma once
 
-#include <Eigen/Core>
-#include <string>
-#include <unordered_map>
-
-#include "open3d/core/EigenConverter.h"
-#include "open3d/core/ShapeUtil.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
 
-TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
-                           core::Dtype triangle_dtype,
-                           const core::Device &device)
-    : Geometry(Geometry::GeometryType::TriangleMesh, 3),
-      device_(device),
-      vertex_attr_(TensorListMap("vertices")),
-      triangle_attr_(TensorListMap("triangles")) {
-    SetVertices(core::TensorList({3}, vertex_dtype, device_));
-    SetTriangles(core::TensorList({3}, triangle_dtype, device_));
-}
+void pybind_t(py::module& m);
 
-TriangleMesh::TriangleMesh(const core::TensorList &vertices,
-                           const core::TensorList &triangles)
-    : TriangleMesh(vertices.GetDtype(), triangles.GetDtype(), [&]() {
-          if (vertices.GetDevice() != triangles.GetDevice()) {
-              utility::LogError(
-                      "vertices' device {} does not match triangles' device "
-                      "{}.",
-                      vertices.GetDevice().ToString(),
-                      triangles.GetDevice().ToString());
-          }
-          return vertices.GetDevice();
-      }()) {
-    SetVertices(vertices);
-    SetTriangles(triangles);
-}
-
-}  // namespace tgeometry
+}  // namespace t
 }  // namespace open3d

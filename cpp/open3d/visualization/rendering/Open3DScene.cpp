@@ -203,7 +203,7 @@ void Open3DScene::AddGeometry(
 
 void Open3DScene::AddGeometry(
         const std::string& name,
-        const tgeometry::PointCloud* geom,
+        const t::geometry::PointCloud* geom,
         const Material& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;

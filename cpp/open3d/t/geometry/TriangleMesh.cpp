@@ -24,47 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/open3d_pybind.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 
-#include "open3d/utility/Console.h"
-#include "pybind/camera/camera.h"
-#include "pybind/core/core.h"
-#include "pybind/geometry/geometry.h"
-#include "pybind/io/io.h"
-#include "pybind/ml/ml.h"
-#include "pybind/pipelines/pipelines.h"
-#include "pybind/t/t.h"
-#include "pybind/utility/utility.h"
-#include "pybind/visualization/visualization.h"
+#include <Eigen/Core>
+#include <string>
+#include <unordered_map>
+
+#include "open3d/core/EigenConverter.h"
+#include "open3d/core/ShapeUtil.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/core/TensorList.h"
 
 namespace open3d {
+namespace t {
+namespace geometry {
 
-PYBIND11_MODULE(pybind, m) {
-    open3d::utility::Logger::i().print_fcn_ = [](const std::string& msg) {
-        py::gil_scoped_acquire acquire;
-        py::print(msg);
-    };
-
-    m.doc() = "Python binding of Open3D";
-
-    // Check Open3D CXX11_ABI with
-    // import open3d as o3d; print(o3d.open3d_pybind._GLIBCXX_USE_CXX11_ABI)
-    m.add_object("_GLIBCXX_USE_CXX11_ABI",
-                 _GLIBCXX_USE_CXX11_ABI ? Py_True : Py_False);
-
-    // The binding order matters: if a class haven't been binded, binding the
-    // user of this class will result in "could not convert default argument
-    // into a Python object" error.
-    utility::pybind_utility(m);
-
-    camera::pybind_camera(m);
-    core::pybind_core(m);
-    geometry::pybind_geometry(m);
-    t::pybind_t(m);
-    ml::pybind_ml(m);
-    io::pybind_io(m);
-    pipelines::pybind_pipelines(m);
-    visualization::pybind_visualization(m);
+TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
+                           core::Dtype triangle_dtype,
+                           const core::Device &device)
+    : Geometry(Geometry::GeometryType::TriangleMesh, 3),
+      device_(device),
+      vertex_attr_(TensorListMap("vertices")),
+      triangle_attr_(TensorListMap("triangles")) {
+    SetVertices(core::TensorList({3}, vertex_dtype, device_));
+    SetTriangles(core::TensorList({3}, triangle_dtype, device_));
 }
 
+TriangleMesh::TriangleMesh(const core::TensorList &vertices,
+                           const core::TensorList &triangles)
+    : TriangleMesh(vertices.GetDtype(), triangles.GetDtype(), [&]() {
+          if (vertices.GetDevice() != triangles.GetDevice()) {
+              utility::LogError(
+                      "vertices' device {} does not match triangles' device "
+                      "{}.",
+                      vertices.GetDevice().ToString(),
+                      triangles.GetDevice().ToString());
+          }
+          return vertices.GetDevice();
+      }()) {
+    SetVertices(vertices);
+    SetTriangles(triangles);
+}
+
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

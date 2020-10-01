@@ -24,33 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/Geometry.h"
+#include "pybind/t/t.h"
 
-#include "pybind/docstring.h"
-#include "pybind/tgeometry/geometry.h"
+#include "pybind/open3d_pybind.h"
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
 
-void pybind_geometry_class(py::module& m) {
-    py::class_<Geometry, PyGeometry<Geometry>, std::unique_ptr<Geometry>>
-            geometry(m, "Geometry", "The base geometry class.");
-
-    geometry.def("clear", &Geometry::Clear,
-                 "Clear all elements in the geometry.")
-            .def("is_empty", &Geometry::IsEmpty,
-                 "Returns ``True`` iff the geometry is empty.");
-    docstring::ClassMethodDocInject(m, "Geometry", "clear");
-    docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
+void pybind_t(py::module& m) {
+    py::module m_submodule = m.def_submodule("t");
+    geometry::pybind_geometry(m_submodule);
 }
 
-void pybind_geometry(py::module& m) {
-    py::module m_submodule = m.def_submodule("tgeometry");
-
-    pybind_geometry_class(m_submodule);
-    pybind_tensorlistmap(m_submodule);
-    pybind_pointcloud(m_submodule);
-}
-
-}  // namespace tgeometry
+}  // namespace t
 }  // namespace open3d

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/Image.h"
+#include "open3d/t/geometry/Image.h"
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
@@ -32,7 +32,8 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 Image::Image(int64_t rows,
              int64_t cols,
@@ -68,5 +69,6 @@ Image::Image(const core::Tensor &tensor)
     }
 }
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

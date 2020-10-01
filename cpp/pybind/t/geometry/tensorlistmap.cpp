@@ -24,14 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/TensorListMap.h"
+#include "open3d/t/geometry/TensorListMap.h"
 
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "pybind/docstring.h"
-#include "pybind/tgeometry/geometry.h"
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 void pybind_tensorlistmap(py::module& m) {
     // Bind to the generic dictionary interface such that it works the same as a
@@ -58,5 +59,6 @@ void pybind_tensorlistmap(py::module& m) {
                  &TensorListMap::AssertSizeSynchronized);
 }
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d
