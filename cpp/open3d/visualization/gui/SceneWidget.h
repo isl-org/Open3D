@@ -96,6 +96,7 @@ public:
     };
     void GoToCameraPreset(CameraPreset preset);
 
+    void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;
