@@ -1,8 +1,16 @@
 diff --git a/faiss/CMakeLists.txt b/faiss/CMakeLists.txt
-index 51680fd..184dbaa 100644
+index 51680fd..4d93072 100644
 --- a/faiss/CMakeLists.txt
 +++ b/faiss/CMakeLists.txt
-@@ -147,16 +147,7 @@ target_compile_definitions(faiss PRIVATE FINTEGER=int)
+@@ -144,19 +144,15 @@ endif()
+ 
+ target_compile_definitions(faiss PRIVATE FINTEGER=int)
+ 
++if(APPLE)
++  set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
++  set(OpenMP_CXX_LIB_NAMES "omp")
++  set(OpenMP_omp_LIBRARY omp)
++endif()
  find_package(OpenMP REQUIRED)
  target_link_libraries(faiss PRIVATE OpenMP::OpenMP_CXX)
  
