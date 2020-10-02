@@ -758,6 +758,13 @@ rendering::Camera* SceneWidget::GetCamera() const {
     return impl_->scene_->GetCamera();
 }
 
+void SceneWidget::Layout(const Theme& theme) {
+    Super::Layout(theme);
+    // The UI may have changed size such that the scene has been exposed. Need
+    // to force a redraw in that case.
+    ForceRedraw();
+}
+
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     // If the widget has changed size we need to update the viewport and the
     // camera. We can't do it in SetFrame() because we need to know the height
