@@ -1189,6 +1189,18 @@ double TriangleMesh::GetSurfaceArea(std::vector<double> &triangle_areas) const {
 }
 
 double TriangleMesh::GetVolume() const {
+    // Computes the signed volume of the tetrahedron defined by
+    // the three triangle vertices and the origin. The sign is determined by
+    // checking if the origin is at the same side as the normal with respect to
+    // the triangle.
+    auto GetSignedVolumeOfTriangle = [&](size_t tidx) {
+        const Eigen::Vector3i &triangle = triangles_[tidx];
+        const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
+        const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
+        const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
+        return vertex0.dot(vertex1.cross(vertex2)) / 6.0;
+    };
+
     if (!IsWatertight()) {
         utility::LogError(
                 "The mesh is not watertight, and the volume cannot be "
@@ -1201,21 +1213,6 @@ double TriangleMesh::GetVolume() const {
         volume += triangle_volume;
     }
     return std::abs(volume);
-}
-
-double TriangleMesh::ComputeSignedVolumeOfTriangle(
-        const Eigen::Vector3d &p0,
-        const Eigen::Vector3d &p1,
-        const Eigen::Vector3d &p2) const {
-    return p0.dot(p1.cross(p2)) / 6.0;
-}
-
-double TriangleMesh::GetSignedVolumeOfTriangle(size_t triangle_idx) const {
-    const Eigen::Vector3i &triangle = triangles_[triangle_idx];
-    const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
-    const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
-    const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
-    return ComputeSignedVolumeOfTriangle(vertex0, vertex1, vertex2);
 }
 
 Eigen::Vector4d TriangleMesh::ComputeTrianglePlane(const Eigen::Vector3d &p0,

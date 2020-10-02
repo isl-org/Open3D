@@ -334,18 +334,6 @@ public:
     /// it is watertight.
     double GetVolume() const;
 
-    /// Function that computes the signed volume of the tetrahedron defined by
-    /// the three triangle vertices and the origin. The sign is determined by
-    /// checking if the origin is at the same side as the normal with respect to
-    /// the triangle.
-    double ComputeSignedVolumeOfTriangle(const Eigen::Vector3d &p0,
-                                         const Eigen::Vector3d &p1,
-                                         const Eigen::Vector3d &p2) const;
-
-    /// Function that computes the volume of a triangle identified by the
-    /// triangle index.
-    double GetSignedVolumeOfTriangle(size_t triangle_idx) const;
-
     /// Function that computes the plane equation from the three points.
     /// If the three points are co-linear, then this function returns the
     /// invalid plane (0, 0, 0, 0).
