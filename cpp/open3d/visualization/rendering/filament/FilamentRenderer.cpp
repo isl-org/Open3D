@@ -169,7 +169,7 @@ void FilamentRenderer::EnableCaching(bool enable) {
         // contents. This ensures that the desired content is fully rendered
         // into buffer. Ideally only a single frame is necessary but when
         // render_count_ is 1 artifacts occasionally occur.
-        render_count_ = 1;
+        render_count_ = 2;
     }
 
     SetPreserveBuffer(false);
