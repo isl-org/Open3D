@@ -76,6 +76,7 @@ protected:
             const std::vector<std::pair<std::string, gui::Menu::ItemId>>&
                     items);
 
+    void OnSubMenuVisibilityChanged() override;
     void OnMenuItemSelected(gui::Menu::ItemId item_id) override;
     void OnDragDropped(const char* path) override;
 
