@@ -166,6 +166,9 @@ protected:
     // Override to handle menu items
     virtual void OnMenuItemSelected(Menu::ItemId item_id);
 
+    // Override to be notified when submenus open or close
+    virtual void OnSubMenuVisibilityChanged();
+
     // Override to handle drag and drop on the windows.
     virtual void OnDragDropped(const char* path);
 

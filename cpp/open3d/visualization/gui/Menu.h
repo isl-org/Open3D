@@ -81,7 +81,9 @@ public:
 
     int CalcHeight(const Theme& theme) const;
 
-    ItemId DrawMenuBar(const DrawContext& context, bool is_enabled);
+    ItemId DrawMenuBar(const DrawContext& context,
+                       bool is_enabled,
+                       bool& submenu_visibility_changed);
     ItemId Draw(const DrawContext& context, const char* name, bool is_enabled);
 
 protected:

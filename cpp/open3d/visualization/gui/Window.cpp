@@ -645,6 +645,8 @@ void Window::OnMenuItemSelected(Menu::ItemId item_id) {
     }
 }
 
+void Window::OnSubMenuVisibilityChanged() {}
+
 namespace {
 enum Mode { NORMAL, DIALOG, NO_INPUT };
 
@@ -819,10 +821,15 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // shouldn't matter, as there shouldn't be anything under it)
     auto menubar = Application::GetInstance().GetMenubar();
     if (menubar) {
-        auto id = menubar->DrawMenuBar(dc, !impl_->active_dialog_);
+        bool submenu_vis_changed = false;
+        auto id = menubar->DrawMenuBar(dc, !impl_->active_dialog_,
+                                       submenu_vis_changed);
         if (id != Menu::NO_ITEM) {
             OnMenuItemSelected(id);
             needs_redraw = true;
+        }
+        if (submenu_vis_changed) {
+            OnSubMenuVisibilityChanged();
         }
     }
 
