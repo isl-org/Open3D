@@ -58,7 +58,7 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
 }
 
 std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
-        const tgeometry::PointCloud& geometry) {
+        const t::geometry::PointCloud& geometry) {
     return std::make_unique<TPointCloudBuffersBuilder>(geometry);
 }
 

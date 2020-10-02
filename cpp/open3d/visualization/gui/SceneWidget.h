@@ -82,6 +82,9 @@ public:
 
     rendering::View* GetRenderView() const;  // is nullptr if no scene
 
+    /// Forces the scene to redraw regardless of Renderer caching
+    /// settings.
+    void ForceRedraw();
     enum class Quality { FAST, BEST };
     void SetRenderQuality(Quality level);
     Quality GetRenderQuality() const;
@@ -93,6 +96,7 @@ public:
     };
     void GoToCameraPreset(CameraPreset preset);
 
+    void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;

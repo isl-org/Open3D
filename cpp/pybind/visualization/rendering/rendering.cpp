@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/Gradient.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
@@ -142,6 +142,7 @@ void pybind_rendering_classes(py::module &m) {
                              "Describes the real-world, physically based (PBR) "
                              "material used to render a geometry");
     mat.def(py::init<>())
+            .def_readwrite("has_alpha", &Material::has_alpha)
             .def_readwrite("base_color", &Material::base_color)
             .def_readwrite("base_metallic", &Material::base_metallic)
             .def_readwrite("base_roughness", &Material::base_roughness)
@@ -187,7 +188,7 @@ void pybind_rendering_classes(py::module &m) {
                  "Adds a Geometry with a material to the scene")
             .def("add_geometry",
                  (bool (Scene::*)(
-                         const std::string &, const tgeometry::PointCloud &,
+                         const std::string &, const t::geometry::PointCloud &,
                          const Material &, const std::string &, size_t)) &
                          Scene::AddGeometry,
                  "name"_a, "geometry"_a, "material"_a,
@@ -242,7 +243,7 @@ void pybind_rendering_classes(py::module &m) {
                  "add_downsampled_copy_for_fast_rendering"_a = true)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
-                                   const tgeometry::PointCloud *,
+                                   const t::geometry::PointCloud *,
                                    const Material &, bool>(
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
