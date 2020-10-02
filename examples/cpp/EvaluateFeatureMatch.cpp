@@ -232,9 +232,7 @@ int main(int argc, char *argv[]) {
     for (const auto &feature : features) {
         utility::LogInfo("Evaluate feature {}.", feature);
         std::vector<KDTreeFlannFeature> feature_trees(pcd_names.size());
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static) num_threads(16)
-#endif
         for (int i = 0; i < int(pcd_names.size()); i++) {
             feature_trees[i].LoadFromFile(pcd_dirname + "cloud_bin_" +
                                           std::to_string(i) + "." + feature);
@@ -271,10 +269,8 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static) \
         num_threads(16) private(indices, fdistance2)
-#endif
             for (int i = 0; i < int(source.points_.size()); i++) {
                 if (has_correspondence[i]) {
                     if (feature_trees[pair_ids[k].first].SearchKNN(
@@ -286,9 +282,7 @@ int main(int argc, char *argv[]) {
                                         .norm();
                         true_dis[total_point_num + i] = new_dis;
                         if (new_dis < threshold) {
-#ifdef _OPENMP
 #pragma omp atomic
-#endif
                             positive++;
                         }
                     }

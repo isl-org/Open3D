@@ -51,15 +51,11 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
 
     double error2 = 0.0;
 
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
         double error2_private = 0.0;
         CorrespondenceSet correspondence_set_private;
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
         for (int i = 0; i < (int)source.points_.size(); i++) {
             std::vector<int> indices(1);
             std::vector<double> dists(1);
@@ -71,9 +67,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                         Eigen::Vector2i(i, indices[0]));
             }
         }
-#ifdef _OPENMP
 #pragma omp critical
-#endif
         {
             for (int i = 0; i < (int)correspondence_set_private.size(); i++) {
                 result.correspondence_set_.push_back(
@@ -81,9 +75,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
             }
             error2 += error2_private;
         }
-#ifdef _OPENMP
     }
-#endif
 
     if (result.correspondence_set_.empty()) {
         result.fitness_ = 0.0;
@@ -261,18 +253,14 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     int num_similar_features = 1;
     std::vector<std::vector<int>> similar_features(source.points_.size());
 
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
         CorrespondenceSet ransac_corres(ransac_n);
         geometry::KDTreeFlann kdtree(target);
         geometry::KDTreeFlann kdtree_feature(target_feature);
         RegistrationResult result_private;
 
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
             if (!finished_validation) {
                 std::vector<double> dists(num_similar_features);
@@ -286,9 +274,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                                 Eigen::VectorXd(source_feature.data_.col(
                                         source_sample_id)),
                                 num_similar_features, indices, dists);
-#ifdef _OPENMP
 #pragma omp critical
-#endif
                         { similar_features[source_sample_id] = indices; }
                     }
                     ransac_corres[j](0) = source_sample_id;
@@ -333,9 +319,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                      this_result.inlier_rmse_ < result_private.inlier_rmse_)) {
                     result_private = this_result;
                 }
-#ifdef _OPENMP
 #pragma omp critical
-#endif
                 {
                     total_validation = total_validation + 1;
                     if (total_validation >= criteria.max_validation_)
@@ -343,9 +327,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 }
             }  // end of if statement
         }      // end of for-loop
-#ifdef _OPENMP
 #pragma omp critical
-#endif
         {
             if (result_private.fitness_ > result.fitness_ ||
                 (result_private.fitness_ == result.fitness_ &&
@@ -353,9 +335,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 result = result_private;
             }
         }
-#ifdef _OPENMP
     }
-#endif
     utility::LogDebug("total_validation : {:d}", total_validation);
     utility::LogDebug("RANSAC: Fitness {:e}, RMSE {:e}", result.fitness_,
                       result.inlier_rmse_);
@@ -381,15 +361,11 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
     // see http://redwood-data.org/indoor/registration.html
     // note: I comes first in this implementation
     Eigen::Matrix6d GTG = Eigen::Matrix6d::Zero();
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
         Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Zero();
         Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
         for (int c = 0; c < int(result.correspondence_set_.size()); c++) {
             int t = result.correspondence_set_[c](1);
             double x = target.points_[t](0);
@@ -411,13 +387,9 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
             G_r_private(5) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
-#ifdef _OPENMP
 #pragma omp critical
-#endif
         { GTG += GTG_private; }
-#ifdef _OPENMP
     }
-#endif
     return GTG;
 }
 

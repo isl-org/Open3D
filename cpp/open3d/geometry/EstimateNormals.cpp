@@ -319,9 +319,7 @@ void PointCloud::EstimateNormals(
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices;
         std::vector<double> distance2;
@@ -353,9 +351,7 @@ void PointCloud::OrientNormalsToAlignWithDirection(
                 "[OrientNormalsToAlignWithDirection] No normals in the "
                 "PointCloud. Call EstimateNormals() first.");
     }
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)points_.size(); i++) {
         auto &normal = normals_[i];
         if (normal.norm() == 0.0) {
@@ -373,9 +369,7 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
                 "[OrientNormalsTowardsCameraLocation] No normals in the "
                 "PointCloud. Call EstimateNormals() first.");
     }
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)points_.size(); i++) {
         Eigen::Vector3d orientation_reference = camera_location - points_[i];
         auto &normal = normals_[i];
