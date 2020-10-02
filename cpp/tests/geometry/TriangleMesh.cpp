@@ -1068,6 +1068,8 @@ TEST(TriangleMesh, IsSelfIntersecting) {
 
 TEST(TriangleMesh, GetVolume) {
     EXPECT_NEAR(geometry::TriangleMesh::CreateBox()->GetVolume(), 1.0, 0.01);
+    EXPECT_NEAR(geometry::TriangleMesh::CreateSphere()->GetVolume(),
+                4.0 / 3.0 * M_PI, 0.05);
 }
 
 TEST(TriangleMesh, ClusterConnectedTriangles) {
