@@ -971,6 +971,24 @@ TEST(TriangleMesh, PaintUniformColor) {
         ExpectEQ(color, tm.vertex_colors_[i]);
 }
 
+TEST(TriangleMesh, ComputeAngle) {
+    std::vector<Eigen::Vector3d> vertices = {{0, 1, 1}, {0, 2, 1}, {0, 2, 2}};
+    EXPECT_DOUBLE_EQ(geometry::TriangleMesh::ComputeAngle(
+                             vertices[0], vertices[1], vertices[2]),
+                     M_PI_2);
+    EXPECT_DOUBLE_EQ(geometry::TriangleMesh::ComputeAngle(
+                             vertices[2], vertices[1], vertices[0]),
+                     3 * M_PI_2);
+
+    vertices = {{0, 1, -1}, {0, 2, 1}, {0, 2, 2}};
+    EXPECT_DOUBLE_EQ(geometry::TriangleMesh::ComputeAngle(
+                             vertices[0], vertices[1], vertices[2]),
+                     M_PI_2);
+    EXPECT_DOUBLE_EQ(geometry::TriangleMesh::ComputeAngle(
+                             vertices[2], vertices[1], vertices[0]),
+                     3 * M_PI_2);
+}
+
 TEST(TriangleMesh, EulerPoincareCharacteristic) {
     EXPECT_EQ(geometry::TriangleMesh::CreateBox()
                               ->EulerPoincareCharacteristic() == 2,

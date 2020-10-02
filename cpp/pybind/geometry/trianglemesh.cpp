@@ -308,6 +308,9 @@ void pybind_trianglemesh(py::module &m) {
                  "max_iter"_a,
                  "energy"_a = MeshBase::DeformAsRigidAsPossibleEnergy::Spokes,
                  "smoothed_alpha"_a = 0.01)
+            .def("fill_holes", &TriangleMesh::DeformAsRigidAsPossible,
+                 "Fills in holes in the mesh to make it watertight based on "
+                 "the advancing front mesh (AFM) teqhnique.")
             .def_static(
                     "create_from_point_cloud_alpha_shape",
                     [](const PointCloud &pcd, double alpha) {
