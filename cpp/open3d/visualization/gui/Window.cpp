@@ -821,14 +821,12 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // shouldn't matter, as there shouldn't be anything under it)
     auto menubar = Application::GetInstance().GetMenubar();
     if (menubar) {
-        bool submenu_vis_changed = false;
-        auto id = menubar->DrawMenuBar(dc, !impl_->active_dialog_,
-                                       submenu_vis_changed);
+        auto id = menubar->DrawMenuBar(dc, !impl_->active_dialog_);
         if (id != Menu::NO_ITEM) {
             OnMenuItemSelected(id);
             needs_redraw = true;
         }
-        if (submenu_vis_changed) {
+        if (menubar->CheckVisibilityChange()) {
             OnSubMenuVisibilityChanged();
         }
     }

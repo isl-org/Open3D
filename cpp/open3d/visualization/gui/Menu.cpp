@@ -80,6 +80,7 @@ struct Menu::Impl {
     std::vector<MenuItem> items_;
     std::unordered_map<int, size_t> id2idx_;
     bool submenu_visible_ = false;
+    bool submenu_visibility_changed_ = false;
 
     MenuItem *FindMenuItem(ItemId item_id) {
         auto it = this->id2idx_.find(item_id);
@@ -192,9 +193,11 @@ int Menu::CalcHeight(const Theme &theme) const {
     return int(std::ceil(em + 2.0f * (padding.y + EXTRA_PADDING_Y)));
 }
 
-Menu::ItemId Menu::DrawMenuBar(const DrawContext &context,
-                               bool is_enabled,
-                               bool &submenu_visibility_changed) {
+bool Menu::CheckVisibilityChange() const {
+    return impl_->submenu_visibility_changed_;
+}
+
+Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
     ItemId activate_id = NO_ITEM;
 
     ImVec2 size;
@@ -204,7 +207,7 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext &context,
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
                         ImVec2(padding.x, padding.y + EXTRA_PADDING_Y));
 
-    submenu_visibility_changed = false;
+    impl_->submenu_visibility_changed_ = false;
     ImGui::BeginMainMenuBar();
     for (auto &item : impl_->items_) {
         if (item.submenu_) {
@@ -215,7 +218,7 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext &context,
                 activate_id = id;
             }
             if (submenu_visible != item.submenu_impl_->submenu_visible_) {
-                submenu_visibility_changed = true;
+                impl_->submenu_visibility_changed_ = true;
             }
         }
     }
