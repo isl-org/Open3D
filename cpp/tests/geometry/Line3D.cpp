@@ -70,6 +70,35 @@ std::shared_ptr<Line3D> LineFactory(lt_t type, const v_t& v0, const v_t& v1) {
 namespace open3d {
 namespace tests {
 
+// Line Transformation Tests
+// ============================================================================
+TEST(Line3D, Transform) {
+    Line3D line{{0, 1, 0}, {1, 0, 0}};
+    auto t = Eigen::Translation<double, 3>(1, 0, 0) *
+             Eigen::AngleAxis<double>(EIGEN_PI / 2., Eigen::Vector3d::UnitZ());
+    line.Transform(t);
+
+    // For some reason this does not work with ExpectEQ, even though the
+    // difference is ~1e-17 and the threshold is 1e-6
+    EXPECT_TRUE((line.Origin() - Eigen::Vector3d{0, 0, 0}).norm() < 1e-10);
+    ExpectEQ(line.Direction(), Eigen::Vector3d{0, 1, 0});
+}
+
+// Segment Transformation Tests
+// ============================================================================
+TEST(Segment3D, Transform) {
+    Segment3D seg{{0, 1, 0}, {1, 1, 0}};
+    auto t = Eigen::Translation<double, 3>(1, 0, 0) *
+             Eigen::AngleAxis<double>(EIGEN_PI / 2., Eigen::Vector3d::UnitZ());
+    seg.Transform(t);
+
+    // For some reason this does not work with ExpectEQ, even though the
+    // difference is ~1e-17 and the threshold is 1e-6
+    EXPECT_TRUE((seg.Origin() - Eigen::Vector3d{0, 0, 0}).norm() < 1e-10);
+    EXPECT_TRUE((seg.EndPoint() - Eigen::Vector3d{0, 1, 0}).norm() < 1e-10);
+    ExpectEQ(seg.Direction(), Eigen::Vector3d{0, 1, 0});
+}
+
 // Special Segment3D Tests
 // ============================================================================
 TEST(Segment3D, ConstructedNormalized) {

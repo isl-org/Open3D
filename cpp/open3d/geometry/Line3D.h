@@ -70,7 +70,8 @@ public:
     /// \brief Creates a line through two points.  The line origin will take the
     /// value of p0, and the line direction will be a normalized vector from
     /// p0 to p1
-    static Line3D Through(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1) {
+    static Line3D Through(const Eigen::Vector3d& p0,
+                          const Eigen::Vector3d& p1) {
         return {p0, (p1 - p0).normalized()};
     }
 
@@ -108,11 +109,15 @@ public:
         return std::numeric_limits<double>::infinity();
     }
 
+    /// \brief Transform the Line3D by the given matrix
+    virtual void Transform(
+            const Eigen::Transform<double, 3, Eigen::Affine>& t) {
+        transform(t);
+    }
+
     /// \brief Returns a const reference to the underlying
     /// Eigen::ParametrizedLine object
-    const Eigen::ParametrizedLine<double, 3>& Line() const {
-        return *this;
-    }
+    const Eigen::ParametrizedLine<double, 3>& Line() const { return *this; }
 
     /// \brief Calculates the intersection parameter between the line and a
     /// plane taking into account line semantics. Returns an empty result if
@@ -259,7 +264,7 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// ray with an axis aligned bounding box. The intersection point can be
-    /// recovered with ray.LinePointAt(...). If the ray does not intersect the
+    /// recovered with .Line().pointAt(...). If the ray does not intersect the
     /// box the optional return value will be empty. No intersection behind the
     /// ray origin will be counted, and if the ray originates from within the
     /// bounding box the parameter value will be 0.
@@ -296,7 +301,8 @@ public:
     /// \brief Creates a Segment3D through two points.  The origin will take the
     /// value of p0, and the endpoint be p1. The direction will be a normalized
     /// vector from p0 to p1.
-    static Segment3D Through(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1) {
+    static Segment3D Through(const Eigen::Vector3d& p0,
+                             const Eigen::Vector3d& p1) {
         return {p0, p1};
     }
 
@@ -311,6 +317,13 @@ public:
 
     /// \brief Get the end point of the segment
     const Eigen::Vector3d& EndPoint() const { return end_point_; }
+
+    /// \brief Transform the segment by the given matrix
+    void Transform(
+            const Eigen::Transform<double, 3, Eigen::Affine>& t) override {
+        transform(t);
+        end_point_ = t * end_point_;
+    }
 
     /// \brief Get an axis-aligned bounding box representing the enclosed volume
     /// of the line segment.
@@ -341,7 +354,7 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// segment with an axis aligned bounding box. The intersection point can be
-    /// recovered with segment.LinePointAt(...). If the segment does not
+    /// recovered with .Line().pointAt(...). If the segment does not
     /// intersect the box the optional return value will be empty. No
     /// intersection behind the segment origin will be counted, and if the
     /// segment originates from within the bounding box the parameter value will
@@ -366,7 +379,7 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// segment with an axis aligned bounding box. The intersection point can be
-    /// recovered with segment.LinePointAt(...). If the segment does not
+    /// recovered with .Line().pointAt(...). If the segment does not
     /// intersect the box the return value will be empty.
     ///
     /// This implementation is a naive exact method that considers intersections
