@@ -64,9 +64,7 @@ static void OptimizeImageCoorNonrigid(
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         double residual_reg = 0.0;
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int c = 0; c < n_camera; c++) {
             int nonrigidval = warping_fields[c].anchor_w_ *
                               warping_fields[c].anchor_h_ * 2;
@@ -126,9 +124,7 @@ static void OptimizeImageCoorNonrigid(
             }
             camera.parameters_[c].extrinsic_ = pose;
 
-#ifdef _OPENMP
 #pragma omp critical
-#endif
             {
                 residual += r2;
                 residual_reg += rr_reg;
@@ -161,9 +157,7 @@ static void OptimizeImageCoorRigid(
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         total_num_ = 0;
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int c = 0; c < n_camera; c++) {
             Eigen::Matrix4d pose;
             pose = camera.parameters_[c].extrinsic_;
@@ -197,9 +191,7 @@ static void OptimizeImageCoorRigid(
                                                                          JTr);
             pose = delta * pose;
             camera.parameters_[c].extrinsic_ = pose;
-#ifdef _OPENMP
 #pragma omp critical
-#endif
             {
                 residual += r2;
                 total_num_ += int(visibility_image_to_vertex[c].size());

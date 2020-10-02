@@ -134,17 +134,13 @@ static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
     std::tie(correspondence_map, depth_buffer) =
             InitializeCorrespondenceMap(depth_t.width_, depth_t.height_);
 
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
         std::shared_ptr<geometry::Image> correspondence_map_private;
         std::shared_ptr<geometry::Image> depth_buffer_private;
         std::tie(correspondence_map_private, depth_buffer_private) =
                 InitializeCorrespondenceMap(depth_t.width_, depth_t.height_);
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
         for (int v_s = 0; v_s < depth_s.height_; v_s++) {
             for (int u_s = 0; u_s < depth_s.width_; u_s++) {
                 double d_s = *depth_s.PointerAt<float>(u_s, v_s);
@@ -169,17 +165,14 @@ static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
                 }
             }
         }
-#ifdef _OPENMP
 #pragma omp critical
         {
-#endif
             MergeCorrespondenceMaps(*correspondence_map, *depth_buffer,
                                     *correspondence_map_private,
                                     *depth_buffer_private);
-#ifdef _OPENMP
+
         }  //    omp critical
     }      //    omp parallel
-#endif
 
     auto correspondence = std::make_shared<CorrespondenceSetPixelWise>();
     int correspondence_count = CountCorrespondence(*correspondence_map);
@@ -260,15 +253,11 @@ static Eigen::Matrix6d CreateInformationMatrix(
     // see http://redwood-data.org/indoor/registration.html
     // note: I comes first and q_skew is scaled by factor 2.
     Eigen::Matrix6d GTG = Eigen::Matrix6d::Identity();
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
         Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
         Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
         for (int row = 0; row < int(correspondence->size()); row++) {
             int u_t = (*correspondence)[row](2);
             int v_t = (*correspondence)[row](3);
@@ -291,13 +280,9 @@ static Eigen::Matrix6d CreateInformationMatrix(
             G_r_private(5) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
-#ifdef _OPENMP
 #pragma omp critical
-#endif
         { GTG += GTG_private; }
-#ifdef _OPENMP
     }
-#endif
     return GTG;
 }
 

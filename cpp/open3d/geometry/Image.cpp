@@ -154,12 +154,10 @@ std::shared_ptr<Image> Image::Downsample() const {
     int half_height = (int)floor((double)height_ / 2.0);
     output->Prepare(half_width, half_height, 1, 4);
 
-#ifdef _OPENMP
 #ifdef _WIN32
 #pragma omp parallel for schedule(static)
 #else
 #pragma omp parallel for collapse(2) schedule(static)
-#endif
 #endif
     for (int y = 0; y < output->height_; y++) {
         for (int x = 0; x < output->width_; x++) {
@@ -187,12 +185,10 @@ std::shared_ptr<Image> Image::FilterHorizontal(
 
     const int half_kernel_size = (int)(floor((double)kernel.size() / 2.0));
 
-#ifdef _OPENMP
 #ifdef _WIN32
 #pragma omp parallel for schedule(static)
 #else
 #pragma omp parallel for collapse(2) schedule(static)
-#endif
 #endif
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
@@ -272,12 +268,10 @@ std::shared_ptr<Image> Image::Transpose() const {
     int in_bytes_per_line = BytesPerLine();
     int bytes_per_pixel = num_of_channels_ * bytes_per_channel_;
 
-#ifdef _OPENMP
 #ifdef _WIN32
 #pragma omp parallel for schedule(static)
 #else
 #pragma omp parallel for collapse(2) schedule(static)
-#endif
 #endif
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
@@ -298,9 +292,7 @@ std::shared_ptr<Image> Image::FlipVertical() const {
     output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
 
     int bytes_per_line = BytesPerLine();
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int y = 0; y < height_; y++) {
         std::copy(data_.data() + y * bytes_per_line,
                   data_.data() + (y + 1) * bytes_per_line,
@@ -315,12 +307,10 @@ std::shared_ptr<Image> Image::FlipHorizontal() const {
 
     int bytes_per_line = BytesPerLine();
     int bytes_per_pixel = num_of_channels_ * bytes_per_channel_;
-#ifdef _OPENMP
 #ifdef _WIN32
 #pragma omp parallel for schedule(static)
 #else
 #pragma omp parallel for collapse(2) schedule(static)
-#endif
 #endif
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
@@ -342,12 +332,10 @@ std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
     }
     output->Prepare(width_, height_, 1, 1);
 
-#ifdef _OPENMP
 #ifdef _WIN32
 #pragma omp parallel for schedule(static)
 #else
 #pragma omp parallel for collapse(2) schedule(static)
-#endif
 #endif
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
@@ -382,12 +370,10 @@ std::shared_ptr<Image> Image::CreateDepthBoundaryMask(
     auto mask = std::make_shared<Image>();
     mask->Prepare(width, height, 1, 1);
 
-#ifdef _OPENMP
 #ifdef _WIN32
 #pragma omp parallel for schedule(static)
 #else
 #pragma omp parallel for collapse(2) schedule(static)
-#endif
 #endif
     for (int v = 0; v < height; v++) {
         for (int u = 0; u < width; u++) {

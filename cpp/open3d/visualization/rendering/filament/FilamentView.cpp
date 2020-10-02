@@ -92,7 +92,8 @@ FilamentView::FilamentView(filament::Engine& engine,
 
     camera_->SetProjection(90, 4.f / 3.f, 0.01, 1000,
                            Camera::FovType::Horizontal);
-
+    // Default to MSAA 4x
+    SetSampleCount(4);
     discard_buffers_ = View::TargetBuffers::All;
 }
 

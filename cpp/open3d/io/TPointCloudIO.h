@@ -29,14 +29,14 @@
 #include <string>
 
 #include "open3d/io/PointCloudIO.h"
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 
 namespace open3d {
 namespace io {
 
 /// Factory function to create a pointcloud from a file
 /// Return an empty pointcloud if fail to read the file.
-std::shared_ptr<tgeometry::PointCloud> CreatetPointCloudFromFile(
+std::shared_ptr<t::geometry::PointCloud> CreatetPointCloudFromFile(
         const std::string &filename,
         const std::string &format = "auto",
         bool print_progress = false);
@@ -46,7 +46,7 @@ std::shared_ptr<tgeometry::PointCloud> CreatetPointCloudFromFile(
 /// See \p ReadPointCloudOption for additional options you can pass.
 /// \return return true if the read function is successful, false otherwise.
 bool ReadPointCloud(const std::string &filename,
-                    tgeometry::PointCloud &pointcloud,
+                    t::geometry::PointCloud &pointcloud,
                     const ReadPointCloudOption &params = {});
 
 /// The general entrance for writing a PointCloud to a file
@@ -54,15 +54,15 @@ bool ReadPointCloud(const std::string &filename,
 /// See \p WritePointCloudOption for additional options you can pass.
 /// \return return true if the write function is successful, false otherwise.
 bool WritePointCloud(const std::string &filename,
-                     const tgeometry::PointCloud &pointcloud,
+                     const t::geometry::PointCloud &pointcloud,
                      const WritePointCloudOption &params = {});
 
 bool ReadPointCloudFromXYZI(const std::string &filename,
-                            tgeometry::PointCloud &pointcloud,
+                            t::geometry::PointCloud &pointcloud,
                             const ReadPointCloudOption &params);
 
 bool WritePointCloudToXYZI(const std::string &filename,
-                           const tgeometry::PointCloud &pointcloud,
+                           const t::geometry::PointCloud &pointcloud,
                            const WritePointCloudOption &params);
 
 }  // namespace io

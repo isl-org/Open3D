@@ -207,14 +207,14 @@ void pybind_class_io(py::module &m_io) {
     docstring::FunctionDocInject(m_io, "write_point_cloud",
                                  map_shared_argument_docstrings);
 
-    // open3d::tgeometry::PointCloud
+    // open3d::t::geometry::PointCloud
     m_io.def(
             "read_t_point_cloud",
             [](const std::string &filename, const std::string &format,
                bool remove_nan_points, bool remove_infinite_points,
                bool print_progress) {
                 py::gil_scoped_release release;
-                tgeometry::PointCloud pcd;
+                t::geometry::PointCloud pcd;
                 ReadPointCloud(filename, pcd,
                                {format, remove_nan_points,
                                 remove_infinite_points, print_progress});
@@ -229,7 +229,7 @@ void pybind_class_io(py::module &m_io) {
     m_io.def(
             "write_t_point_cloud",
             [](const std::string &filename,
-               const tgeometry::PointCloud &pointcloud, bool write_ascii,
+               const t::geometry::PointCloud &pointcloud, bool write_ascii,
                bool compressed, bool print_progress) {
                 py::gil_scoped_release release;
                 return WritePointCloud(

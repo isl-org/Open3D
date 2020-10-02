@@ -692,6 +692,8 @@ void FilamentResourceManager::LoadDefaults() {
             FilamentMaterialModifier::SamplerFromSamplerParameters(
                     TextureSamplerParameters::Pretty());
     const auto default_color = filament::math::float3{1.0f, 1.0f, 1.0f};
+    const auto default_color_alpha =
+            filament::math::float4{1.0f, 1.0f, 1.0f, 1.0f};
 
     const auto lit_path = resource_root + "/defaultLit.filamat";
     auto lit_mat = LoadMaterialFromFile(lit_path, engine_);
@@ -719,8 +721,9 @@ void FilamentResourceManager::LoadDefaults() {
     const auto lit_trans_path =
             resource_root + "/defaultLitTransparency.filamat";
     auto lit_trans_mat = LoadMaterialFromFile(lit_trans_path, engine_);
-    lit_trans_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
-                                       default_color);
+    lit_trans_mat->setDefaultParameter("baseColor",
+                                       filament::RgbaType::PREMULTIPLIED_sRGB,
+                                       default_color_alpha);
     lit_trans_mat->setDefaultParameter("baseRoughness", 0.7f);
     lit_trans_mat->setDefaultParameter("reflectance", 0.5f);
     lit_trans_mat->setDefaultParameter("baseMetallic", 0.f);

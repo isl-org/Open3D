@@ -81,6 +81,7 @@ if _build_config['BUNDLE_OPEN3D_ML']:
         from ml3d import configs
         from ml3d import datasets  # this is for convenience to have everything on the same level.
         from ml3d import utils
+        from ml3d import vis
         from ml3d.torch import dataloaders
         from ml3d.torch import models
         from ml3d.torch import modules
@@ -90,6 +91,7 @@ if _build_config['BUNDLE_OPEN3D_ML']:
         from open3d._ml3d import configs
         from open3d._ml3d import datasets  # this is for convenience to have everything on the same level.
         from open3d._ml3d import utils
+        from open3d._ml3d import vis
         from open3d._ml3d.torch import dataloaders
         from open3d._ml3d.torch import models
         from open3d._ml3d.torch import modules

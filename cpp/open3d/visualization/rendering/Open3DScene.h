@@ -38,9 +38,11 @@ namespace geometry {
 class Geometry3D;
 }  // namespace geometry
 
-namespace tgeometry {
+namespace t {
+namespace geometry {
 class PointCloud;
-}  // namespace tgeometry
+}
+}  // namespace t
 
 namespace visualization {
 namespace rendering {
@@ -79,7 +81,7 @@ public:
     //       from Python, which is using unique_ptr. The pointer must live long
     //       enough to get copied to the GPU by the render thread.
     void AddGeometry(const std::string& name,
-                     const tgeometry::PointCloud* geom,
+                     const t::geometry::PointCloud* geom,
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     void RemoveGeometry(const std::string& name);
