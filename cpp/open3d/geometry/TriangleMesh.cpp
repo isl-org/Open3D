@@ -1206,9 +1206,10 @@ double TriangleMesh::GetVolume() const {
     }
 
     double volume = 0;
-    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
-        double triangle_volume = GetSignedVolumeOfTriangle(tidx);
-        volume += triangle_volume;
+    int64_t num_triangles = triangles_.size();
+#pragma omp parallel for reduction(+ : volume)
+    for (int64_t tidx = 0; tidx < num_triangles; ++tidx) {
+        volume += GetSignedVolumeOfTriangle(tidx);
     }
     return std::abs(volume);
 }
