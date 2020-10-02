@@ -1199,6 +1199,11 @@ double TriangleMesh::GetVolume() const {
                 "The mesh is not watertight, and the volume cannot be "
                 "computed.");
     }
+    if (!IsOrientable()) {
+        utility::LogError(
+                "The mesh is not orientable, and the volume cannot be "
+                "computed.");
+    }
 
     double volume = 0;
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
