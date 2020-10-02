@@ -66,7 +66,7 @@ bool WritePointCloudToXYZI(const std::string &filename,
                            const WritePointCloudOption &params);
 
 bool ReadTPointCloudFromPLY(const std::string &filename,
-                            tgeometry::PointCloud &pointcloud,
+                            t::geometry::PointCloud &pointcloud,
                             const ReadPointCloudOption &params);
 
 }  // namespace io

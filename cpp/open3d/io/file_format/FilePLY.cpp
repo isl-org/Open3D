@@ -145,11 +145,8 @@ int ReadVertexCallback(p_ply_argument argument) {
     }
 
     double value = ply_get_argument_value(argument);
-    state_ptr->cur_points.push_back(value);
+    state_ptr->points[state_ptr->vertex_index][index] = value;
     if (index == 2) {  // reading 'z'
-        state_ptr->points.PushBack(
-                core::Tensor(state_ptr->cur_points, {3}, core::Dtype::Float64));
-
         state_ptr->cur_points.clear();
         state_ptr->vertex_index++;
         if (state_ptr->vertex_index % 1000 == 0) {
@@ -169,10 +166,8 @@ int ReadNormalCallback(p_ply_argument argument) {
     }
 
     double value = ply_get_argument_value(argument);
-    state_ptr->cur_normals.push_back(value);
+    state_ptr->normals[state_ptr->normal_index][index] = value;
     if (index == 2) {  // reading 'nz'
-        state_ptr->normals.PushBack(core::Tensor(state_ptr->cur_normals, {3},
-                                                 core::Dtype::Float64));
         state_ptr->cur_normals.clear();
         state_ptr->normal_index++;
         if (state_ptr->normal_index % 1000 == 0) {
@@ -192,10 +187,8 @@ int ReadColorCallback(p_ply_argument argument) {
     }
 
     double value = ply_get_argument_value(argument);
-    state_ptr->cur_colors.push_back(value / 255.0);
+    state_ptr->colors[state_ptr->color_index][index] = value / 255.0;
     if (index == 2) {  // reading 'blue'
-        state_ptr->colors.PushBack(
-                core::Tensor(state_ptr->cur_colors, {3}, core::Dtype::Float64));
         state_ptr->cur_colors.clear();
         state_ptr->color_index++;
         if (state_ptr->color_index % 1000 == 0) {
@@ -554,7 +547,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 }
 
 bool ReadTPointCloudFromPLY(const std::string &filename,
-                            tgeometry::PointCloud &pointcloud,
+                            t::geometry::PointCloud &pointcloud,
                             const ReadPointCloudOption &params) {
     using namespace ply_tpointcloud_reader;
 
@@ -593,9 +586,9 @@ bool ReadTPointCloudFromPLY(const std::string &filename,
         return false;
     }
 
-    state.points = core::TensorList({3}, core::Dtype::Float64);
-    state.normals = core::TensorList({3}, core::Dtype::Float64);
-    state.colors = core::TensorList({3}, core::Dtype::Float64);
+    state.points = core::TensorList(state.vertex_num, {3}, core::Dtype::Float64);
+    state.normals = core::TensorList(state.normal_num, {3}, core::Dtype::Float64);
+    state.colors = core::TensorList(state.color_num, {3}, core::Dtype::Float64);
 
     state.vertex_index = 0;
     state.normal_index = 0;
