@@ -37,6 +37,7 @@ _vimrc_local.vim
 **/package-lock.json
 *.pyc
 __pycache__
+.cache/
 ._*
 .DS_Store
 .vscode
@@ -51,30 +52,30 @@ static/
 compile_commands.json
 
 # Example resources
-examples/python/ReconstructionSystem/dataset/
+examples/python/reconstruction_system/dataset/
 examples/test_data/fountain_small
 examples/test_data/Armadillo.ply
 examples/test_data/Bunny.ply
 examples/test_data/eagle.ply
 examples/test_data/voxelized.ply
-examples/python/Basic/voxel_grid_test.ply
-examples/python/Benchmark/testdata/
-examples/python/Misc/test.jpg
+examples/python/geometry/voxel_grid_test.ply
+examples/python/benchmark/testdata/
+examples/python/misc/test.jpg
 examples/test_data/GraphOptimization/pose_graph_example_fragment_optimized.json
 examples/test_data/GraphOptimization/pose_graph_example_global_optimized.json
 examples/test_data/depth/
 examples/test_data/image/
 examples/test_data/sync.ply
 examples/test_data/sync.png
-examples/python/Advanced/multiway_registration.pcd
-examples/python/Advanced/test.json
-examples/python/Advanced/viewpoint.json
-examples/python/Basic/copy_of_fragment.pcd
-examples/python/Basic/copy_of_knot.ply
-examples/python/Basic/copy_of_lena_color.jpg
-examples/python/Basic/copy_of_crate.mtl
-examples/python/Basic/copy_of_crate.png
-examples/python/Basic/copy_of_crate.obj
+examples/python/pipelines/multiway_registration.pcd
+examples/python/geometry/test.json
+examples/python/visualization/viewpoint.json
+examples/python/geometry/copy_of_fragment.pcd
+examples/python/geometry/copy_of_knot.ply
+examples/python/geometry/copy_of_lena_color.jpg
+examples/python/geometry/copy_of_crate.mtl
+examples/python/geometry/copy_of_crate.png
+examples/python/geometry/copy_of_crate.obj
 
 # doc
 docs/test_data

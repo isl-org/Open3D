@@ -71,7 +71,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/Light.h"
 #include "open3d/visualization/rendering/Material.h"
@@ -191,6 +191,17 @@ void FilamentScene::SetViewActive(const ViewHandle& view_id, bool is_active) {
     auto found = views_.find(view_id);
     if (found != views_.end()) {
         found->second.is_active = is_active;
+        found->second.render_count = -1;
+    }
+}
+
+void FilamentScene::SetRenderOnce(const ViewHandle& view_id) {
+    auto found = views_.find(view_id);
+    if (found != views_.end()) {
+        found->second.is_active = true;
+        // NOTE: This value should match the value of render_count_ in
+        // FilamentRenderer::EnableCaching
+        found->second.render_count = 2;
     }
 }
 
@@ -263,13 +274,14 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
-                                const tgeometry::PointCloud& point_cloud,
+                                const t::geometry::PointCloud& point_cloud,
                                 const Material& material,
                                 const std::string& downsampled_name /*= ""*/,
                                 size_t downsample_threshold /*= SIZE_MAX*/) {
     // Tensor::Min() and Tensor::Max() can be very slow on certain setups,
     // in particular macOS with clang 11.0.0. This is a temporary fix.
-    auto ComputeAABB = [](const tgeometry::PointCloud& cloud) -> filament::Box {
+    auto ComputeAABB =
+            [](const t::geometry::PointCloud& cloud) -> filament::Box {
         Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
         Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
         const auto& points = cloud.GetPoints();
@@ -449,7 +461,7 @@ static void deallocate_vertex_buffer(void* buffer,
 }
 
 void FilamentScene::UpdateGeometry(const std::string& object_name,
-                                   const tgeometry::PointCloud& point_cloud,
+                                   const t::geometry::PointCloud& point_cloud,
                                    uint32_t update_flags) {
     auto geoms = GetGeometry(object_name, false);
     if (!geoms.empty()) {
@@ -1369,13 +1381,18 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
 }
 
 void FilamentScene::Draw(filament::Renderer& renderer) {
-    for (const auto& pair : views_) {
+    for (auto& pair : views_) {
         auto& container = pair.second;
-        if (container.is_active) {
-            container.view->PreRender();
-            renderer.render(container.view->GetNativeView());
-            container.view->PostRender();
+        // Skip inactive views
+        if (!container.is_active) continue;
+        if (container.render_count-- == 0) {
+            container.is_active = false;
+            continue;
         }
+
+        container.view->PreRender();
+        renderer.render(container.view->GetNativeView());
+        container.view->PostRender();
     }
 }
 

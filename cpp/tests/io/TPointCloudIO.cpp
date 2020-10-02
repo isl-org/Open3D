@@ -33,7 +33,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -90,7 +90,7 @@ TEST_P(ReadWriteTPC, Basic) {
     ReadWritePCArgs args = GetParam();
     core::Device device("CPU", 0);
     core::Dtype dtype = core::Dtype::Float64;
-    tgeometry::PointCloud pc1(dtype, device);
+    t::geometry::PointCloud pc1(dtype, device);
 
     for (const auto &attr_tensor : pc_data_1) {
         const auto &attr = attr_tensor.first;
@@ -105,7 +105,7 @@ TEST_P(ReadWriteTPC, Basic) {
     EXPECT_TRUE(WritePointCloud(
             args.filename, pc1,
             {bool(args.write_ascii), bool(args.compressed), true}));
-    tgeometry::PointCloud pc2(dtype, device);
+    t::geometry::PointCloud pc2(dtype, device);
     EXPECT_TRUE(
             ReadPointCloud(args.filename, pc2, {"auto", false, false, true}));
 
@@ -121,7 +121,7 @@ TEST_P(ReadWriteTPC, Basic) {
     EXPECT_TRUE(WritePointCloud(
             args.filename, pc2,
             {bool(args.write_ascii), bool(args.compressed), true}));
-    tgeometry::PointCloud pc3(dtype, device);
+    t::geometry::PointCloud pc3(dtype, device);
     EXPECT_TRUE(
             ReadPointCloud(args.filename, pc3, {"auto", false, false, true}));
     for (const auto &attribute_rel_tol : args.attributes_rel_tols) {
@@ -136,7 +136,7 @@ TEST_P(ReadWriteTPC, WriteBadData) {
     ReadWritePCArgs args = GetParam();
     core::Device device("CPU", 0);
     core::Dtype dtype = core::Dtype::Float64;
-    tgeometry::PointCloud pc1(dtype, device);
+    t::geometry::PointCloud pc1(dtype, device);
 
     for (const auto &attr_tensor : pc_data_bad) {
         const auto &attr = attr_tensor.first;

@@ -24,15 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 
 #include <benchmark/benchmark.h>
 
 namespace open3d {
-namespace tgeometry {
+namespace t {
+namespace geometry {
 
 void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
-    geometry::PointCloud legacy_pcd;
+    open3d::geometry::PointCloud legacy_pcd;
     size_t num_points = 1000000;  // 1M
     legacy_pcd.points_ =
             std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
@@ -40,13 +41,14 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
             std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
 
     // Warm up.
-    tgeometry::PointCloud pcd = tgeometry::PointCloud::FromLegacyPointCloud(
+    t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacyPointCloud(
             legacy_pcd, core::Dtype::Float32, device);
     (void)pcd;
 
     for (auto _ : state) {
-        tgeometry::PointCloud pcd = tgeometry::PointCloud::FromLegacyPointCloud(
-                legacy_pcd, core::Dtype::Float32, device);
+        t::geometry::PointCloud pcd =
+                t::geometry::PointCloud::FromLegacyPointCloud(
+                        legacy_pcd, core::Dtype::Float32, device);
     }
 }
 
@@ -58,5 +60,6 @@ BENCHMARK_CAPTURE(FromLegacyPointCloud, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 
-}  // namespace tgeometry
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d
