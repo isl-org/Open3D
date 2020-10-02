@@ -80,7 +80,7 @@ TEST(Segment3D, ConstructedNormalized) {
     // segments, since lines and rays are by definition infinite.
     Segment3D seg{{0, 0, 0}, {10, 0, 0}};
 
-    EXPECT_EQ(10., seg.GetLength());
+    EXPECT_EQ(10., seg.Length());
 }
 
 TEST(Segment3D, GetBoundingBox0) {

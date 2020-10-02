@@ -91,7 +91,7 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// line with an axis aligned bounding box. The intersection point can be
-    /// recovered with line.LinePointAt(...). If the line does not intersect the
+    /// recovered with .Line().pointAt(...). If the line does not intersect the
     /// box the return value will be empty. Also note that if the AABB is behind
     /// the line's origin point, the value returned will still be of the lower
     /// intersection, which is the first intersection in the direction of the
@@ -125,6 +125,14 @@ public:
     /// if (result.has_value()) {
     ///     ...
     /// }
+    ///
+    /// // Getting the intersection point
+    /// Ray3D ray{p, n};
+    /// auto result = IntersectionTest::LineSlabAABB(ray, box);
+    /// if (result.has_value()) {
+    ///     // the .Line() function retrieves the underlying Eigen object
+    ///     ray.Line().pointAt(result.value());
+    /// }
     /// \endcode
     static utility::optional<double> LineExactAABB(
             const Line3D& line, const AxisAlignedBoundingBox& box) {
@@ -140,7 +148,7 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// line with an axis aligned bounding box. The intersection point can be
-    /// recovered with line.LinePointAt(...). If the line does not intersect the
+    /// recovered with .Line().pointAt(...). If the line does not intersect the
     /// box the return value will be empty. Also note that if the AABB is behind
     /// the line's origin point, the value returned will still be of the lower
     /// intersection, which is the first intersection in the direction of the
@@ -168,6 +176,14 @@ public:
     /// auto result = IntersectionTest::LineSlabAABB(Segment3D{p0, p1}, box);
     /// if (result.has_value()) {
     ///     ...
+    /// }
+    ///
+    /// // Getting the intersection point
+    /// Ray3D ray{p, n};
+    /// auto result = IntersectionTest::LineSlabAABB(ray, box);
+    /// if (result.has_value()) {
+    ///     // the .Line() function retrieves the underlying Eigen object
+    ///     ray.Line().pointAt(result.value());
     /// }
     /// \endcode
     ///

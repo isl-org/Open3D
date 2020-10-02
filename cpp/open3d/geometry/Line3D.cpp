@@ -139,11 +139,8 @@ utility::optional<double> Line3D::SlabAABB(
     return {};
 }
 
-utility::optional<double> Line3D::LineIntersectionParameter(
+utility::optional<double> Line3D::IntersectionParameter(
         const Eigen::Hyperplane<double, 3>& plane) const {
-    // Eigen's underlying intersectionParameter contains a dot product in the
-    // denominator, so a case where the line is parallel to the plane will
-    // result in either a positive or negative infinity.
     double value = intersectionParameter(plane);
     if (std::isinf(value)) {
         return {};
@@ -191,8 +188,8 @@ utility::optional<double> Ray3D::IntersectionParameter(
         const Eigen::Hyperplane<double, 3>& plane) const {
     // On a ray, the intersection parameter cannot be negative as the ray does
     // not exist in that direction.
-    auto result = LineIntersectionParameter(plane);
-    if (result.has_value() && result.value() >= 0) {
+    auto result = Line().intersectionParameter(plane);
+    if (!std::isinf(result) && result >= 0) {
         return result;
     }
     return {};
@@ -268,9 +265,8 @@ utility::optional<double> Segment3D::IntersectionParameter(
         const Eigen::Hyperplane<double, 3>& plane) const {
     // On a segment, the intersection parameter must be between zero and the
     // length of the segment
-    auto result = LineIntersectionParameter(plane);
-    if (result.has_value() && result.value() >= 0 &&
-        result.value() <= length_) {
+    auto result = Line().intersectionParameter(plane);
+    if (!std::isinf(result) && result >= 0 && result <= length_) {
         return result;
     }
     return {};

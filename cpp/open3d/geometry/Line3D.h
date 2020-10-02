@@ -45,6 +45,7 @@ namespace geometry {
 /// Eigen::ParametrizedLine<double, 3> in order to capture the semantic
 /// differences between a "line", "ray", and "line segment" for operations in
 /// which the difference is important, such as intersection and distance tests.
+/// The underlying Eigen object can always be retrieved with the .Line() method.
 ///
 /// \details The taxonomy of the Line3D class and its derived classes, Ray3D
 /// and Segment3D, was created in order to find a compromise between the
@@ -60,12 +61,19 @@ namespace geometry {
 /// which function will be called and cannot de-virtualize the call.
 ///
 /// In such cases where performance is extremely important, avoid iterating
-/// through a list of derived objects stored as LineBase and calling virtual
+/// through a list of derived objects stored as Line3D and calling virtual
 /// functions on them so that the compiler can hopefully remove the vtable
 /// lookup, or consider a hand implementation of your problem in which you
 /// carefully account for the semantics yourself.
 class Line3D : protected Eigen::ParametrizedLine<double, 3> {
 public:
+    /// \brief Creates a line through two points.  The line origin will take the
+    /// value of p0, and the line direction will be a normalized vector from
+    /// p0 to p1
+    static Line3D Through(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1) {
+        return {p0, (p1 - p0).normalized()};
+    }
+
     /// \enum LineType
     ///
     /// \brief Specifies different semantic interpretations of 3d lines
@@ -94,29 +102,24 @@ public:
     /// \brief Gets the line's direction vector
     const Eigen::Vector3d& Direction() const { return m_direction; }
 
-    /// \brief Calculates the point at the given scalar parameter on the line.
-    /// If the direction is normalized this will be a point on the line with the
-    /// distance 'param' from the origin. This version does not account for
-    /// special semantics, it exposes the underlying Eigen::ParametrizedLine
-    /// pointAt().
-    Eigen::Vector3d LinePointAt(double param) const { return pointAt(param); }
+    /// \brief Gets the length of the line, which for lines and rays will return
+    /// positive infinity, but for segments will return a finite positive value.
+    virtual double Length() const {
+        return std::numeric_limits<double>::infinity();
+    }
 
-    /// \brief Calculates the intersection parameter between the line and a
-    /// plane. This version does not account for special semantics, it allows
-    /// intersections at any distance along the direction as if it were a
-    /// Line3D. Will return an empty result if the line is parallel to the
-    /// plane.
-    utility::optional<double> LineIntersectionParameter(
-            const Eigen::Hyperplane<double, 3>& plane) const;
+    /// \brief Returns a const reference to the underlying
+    /// Eigen::ParametrizedLine object
+    const Eigen::ParametrizedLine<double, 3>& Line() const {
+        return *this;
+    }
 
     /// \brief Calculates the intersection parameter between the line and a
     /// plane taking into account line semantics. Returns an empty result if
     /// there is no intersection. On a Line3D this returns the same result as
-    /// LineIntersectionParameter().
+    /// .Line().intersectionParameter(plane)
     virtual utility::optional<double> IntersectionParameter(
-            const Eigen::Hyperplane<double, 3>& plane) const {
-        return LineIntersectionParameter(plane);
-    }
+            const Eigen::Hyperplane<double, 3>& plane) const;
 
     /// \brief Calculates the parameter of a point projected onto the line
     /// taking into account special semantics.  On a Line3D this is the point
@@ -138,7 +141,7 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// line with an axis aligned bounding box. The intersection point can be
-    /// recovered with line.LinePointAt(...). If the line does not intersect the
+    /// recovered with .Line().pointAt(...). If the line does not intersect the
     /// box the optional return value will be empty. Also note that if the AABB
     /// is behind the line's origin point, the value returned will still be of
     /// the lower intersection, which is the first intersection in the direction
@@ -162,7 +165,7 @@ public:
     ///
     /// \details Calculates the lower intersection parameter of a parameterized
     /// line with an axis aligned bounding box. The intersection point can be
-    /// recovered with line.LinePointAt(...). If the line does not intersect the
+    /// recovered with .Line().pointAt(...). If the line does not intersect the
     /// box the return value will be empty. Also note that if the AABB is behind
     /// the line's origin point, the value returned will still be of the lower
     /// intersection, which is the first intersection in the direction of the
@@ -213,8 +216,20 @@ private:
 /// direction.
 class Ray3D : public Line3D {
 public:
+    /// \brief Creates a Ray3D through two points.  The ray origin will take the
+    /// value of p0, and the direction will be a normalized vector from p0 to p1
+    static Ray3D Through(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1) {
+        return {p0, (p1 - p0).normalized()};
+    }
+
     /// \brief Default constructor, requires point and direction
     Ray3D(const Eigen::Vector3d& origin, const Eigen::Vector3d& direction);
+
+    /// \brief Gets the length of the line, which for lines and rays will return
+    /// positive infinity, but for segments will return a finite positive value.
+    double Length() const override {
+        return std::numeric_limits<double>::infinity();
+    }
 
     /// \brief Calculates the intersection parameter between the line and a
     /// plane taking into account ray semantics. Returns an empty result if
@@ -267,7 +282,7 @@ public:
 /// \brief A segment is a semantic interpretation of Eigen::ParametrizedLine
 /// which has an origin and an endpoint and exists finitely between them.
 ///
-/// \details One of the main motivations behind this class, and the LineBase
+/// \details One of the main motivations behind this class, and the Line3D
 /// taxonomy in general, is the ambiguity of the Eigen documentation with
 /// regards to the ParametrizedLine's direction. The documentation warns that
 /// the direction vector is expected to be normalized and makes no guarantees
@@ -278,6 +293,13 @@ public:
 /// the api surface for client code.
 class Segment3D : public Line3D {
 public:
+    /// \brief Creates a Segment3D through two points.  The origin will take the
+    /// value of p0, and the endpoint be p1. The direction will be a normalized
+    /// vector from p0 to p1.
+    static Segment3D Through(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1) {
+        return {p0, p1};
+    }
+
     /// \brief Default constructor for Segment3D takes the start and end points
     /// of the segment \param start_point \param end_point
     Segment3D(const Eigen::Vector3d& start_point,
@@ -285,7 +307,7 @@ public:
 
     /// \brief Get the scalar length of the segment as the distance between the
     /// start point (origin) and the end point.
-    double GetLength() const { return length_; }
+    double Length() const override { return length_; }
 
     /// \brief Get the end point of the segment
     const Eigen::Vector3d& EndPoint() const { return end_point_; }
