@@ -266,7 +266,7 @@ void pybind_trianglemesh(py::module &m) {
                  "Decimation by "
                  "Garland and Heckbert",
                  "target_number_of_triangles"_a,
-                 "maximum_error"_a=std::numeric_limits<double>::infinity())
+                 "maximum_error"_a = std::numeric_limits<double>::infinity())
             .def("compute_convex_hull", &TriangleMesh::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
             .def("cluster_connected_triangles",
@@ -599,7 +599,7 @@ void pybind_trianglemesh(py::module &m) {
               "The number of triangles that the simplified mesh should have. "
               "It is not guaranteed that this number will be reached."},
              {"maximum_error",
-                     "The maximum error where a vertex is allowed to be merged"}});
+              "The maximum error where a vertex is allowed to be merged"}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "cluster_connected_triangles");
