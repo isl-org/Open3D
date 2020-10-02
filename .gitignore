@@ -37,6 +37,7 @@ _vimrc_local.vim
 **/package-lock.json
 *.pyc
 __pycache__
+.cache/
 ._*
 .DS_Store
 .vscode
