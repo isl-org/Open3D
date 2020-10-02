@@ -332,6 +332,8 @@ public:
 
     /// Function that computes the volume of the mesh, under the condition that
     /// it is watertight.
+    /// See Zhang and Chen, "Efficient feature extraction for 2D/3D objects in
+    /// mesh representation", 2001.
     double GetVolume() const;
 
     /// Function that computes the plane equation from the three points.
