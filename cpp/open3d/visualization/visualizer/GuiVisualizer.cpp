@@ -624,6 +624,7 @@ void GuiVisualizer::Init() {
                 lighting.sun_dir = new_dir.normalized();
                 impl_->settings_.model_.SetCustomLighting(lighting);
             });
+    impl_->scene_wgt_->EnableSceneCaching(true);
 
     // Create light
     auto &settings = impl_->settings_;
