@@ -586,8 +586,10 @@ bool ReadTPointCloudFromPLY(const std::string &filename,
         return false;
     }
 
-    state.points = core::TensorList(state.vertex_num, {3}, core::Dtype::Float64);
-    state.normals = core::TensorList(state.normal_num, {3}, core::Dtype::Float64);
+    state.points =
+            core::TensorList(state.vertex_num, {3}, core::Dtype::Float64);
+    state.normals =
+            core::TensorList(state.normal_num, {3}, core::Dtype::Float64);
     state.colors = core::TensorList(state.color_num, {3}, core::Dtype::Float64);
 
     state.vertex_index = 0;
