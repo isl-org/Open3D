@@ -123,10 +123,6 @@ struct PLYReaderState {
     core::TensorList normals;
     core::TensorList colors;
 
-    std::vector<double> cur_points;
-    std::vector<double> cur_normals;
-    std::vector<double> cur_colors;
-
     long vertex_index;
     long vertex_num;
     long normal_index;
@@ -147,7 +143,6 @@ int ReadVertexCallback(p_ply_argument argument) {
     double value = ply_get_argument_value(argument);
     state_ptr->points[state_ptr->vertex_index][index] = value;
     if (index == 2) {  // reading 'z'
-        state_ptr->cur_points.clear();
         state_ptr->vertex_index++;
         if (state_ptr->vertex_index % 1000 == 0) {
             state_ptr->progress_bar->Update(state_ptr->vertex_index);
@@ -168,7 +163,6 @@ int ReadNormalCallback(p_ply_argument argument) {
     double value = ply_get_argument_value(argument);
     state_ptr->normals[state_ptr->normal_index][index] = value;
     if (index == 2) {  // reading 'nz'
-        state_ptr->cur_normals.clear();
         state_ptr->normal_index++;
         if (state_ptr->normal_index % 1000 == 0) {
             state_ptr->progress_bar->Update(state_ptr->normal_index);
@@ -189,7 +183,6 @@ int ReadColorCallback(p_ply_argument argument) {
     double value = ply_get_argument_value(argument);
     state_ptr->colors[state_ptr->color_index][index] = value / 255.0;
     if (index == 2) {  // reading 'blue'
-        state_ptr->cur_colors.clear();
         state_ptr->color_index++;
         if (state_ptr->color_index % 1000 == 0) {
             state_ptr->progress_bar->Update(state_ptr->color_index);
