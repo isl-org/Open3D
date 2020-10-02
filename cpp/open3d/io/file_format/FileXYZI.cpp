@@ -43,7 +43,7 @@ FileGeometry ReadFileGeometryTypeXYZI(const std::string &path) {
 }
 
 bool ReadPointCloudFromXYZI(const std::string &filename,
-                            tgeometry::PointCloud &pointcloud,
+                            t::geometry::PointCloud &pointcloud,
                             const ReadPointCloudOption &params) {
     try {
         utility::filesystem::CFile file;
@@ -84,7 +84,7 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
 }
 
 bool WritePointCloudToXYZI(const std::string &filename,
-                           const tgeometry::PointCloud &pointcloud,
+                           const t::geometry::PointCloud &pointcloud,
                            const WritePointCloudOption &params) {
     if (!pointcloud.HasPointAttr("intensities")) {
         return false;

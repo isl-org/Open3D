@@ -384,6 +384,7 @@ struct GuiVisualizer::Impl {
         render_scene->SetIndirectLight(ibl_name);
         float intensity = render_scene->GetIndirectLightIntensity();
         render_scene->SetIndirectLightIntensity(intensity);
+        scene_wgt_->ForceRedraw();
 
         return true;
     }
@@ -414,6 +415,9 @@ struct GuiVisualizer::Impl {
         scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
+
+        // Make sure scene redraws once changes have been applied
+        scene_wgt_->ForceRedraw();
 
         // Bail early if there were no material property changes
         if (!material_changed) return;
@@ -620,6 +624,7 @@ void GuiVisualizer::Init() {
                 lighting.sun_dir = new_dir.normalized();
                 impl_->settings_.model_.SetCustomLighting(lighting);
             });
+    impl_->scene_wgt_->EnableSceneCaching(true);
 
     // Create light
     auto &settings = impl_->settings_;

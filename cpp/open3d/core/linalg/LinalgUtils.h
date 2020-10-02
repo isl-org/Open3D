@@ -26,18 +26,14 @@
 
 #pragma once
 
-#include <mkl.h>
-#include <open3d/core/Dtype.h>
-#include <open3d/core/MemoryManager.h>
-#include <open3d/utility/Console.h>
-
 #include <memory>
 #include <string>
 
-#ifdef BUILD_CUDA_MODULE
-#include <cublas_v2.h>
-#include <cusolverDn.h>
-#endif
+#include "open3d/core/Dtype.h"
+#include "open3d/core/MemoryManager.h"
+#include "open3d/core/linalg/LinalgHeadersCPU.h"
+#include "open3d/core/linalg/LinalgHeadersCUDA.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
@@ -55,7 +51,8 @@ namespace core {
         }                                                   \
     }()
 
-inline void OPEN3D_LAPACK_CHECK(MKL_INT info, const std::string& msg) {
+inline void OPEN3D_LAPACK_CHECK(OPEN3D_CPU_LINALG_INT info,
+                                const std::string& msg) {
     if (info < 0) {
         utility::LogError("{}: {}-th parameter is invalid.", msg, -info);
     } else if (info > 0) {
