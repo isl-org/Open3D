@@ -30,6 +30,7 @@
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/rendering/View.h"
 #include "pybind/docstring.h"
 #include "pybind/visualization/gui/gui.h"
 #include "pybind11/functional.h"
@@ -254,6 +255,12 @@ void pybind_rendering_classes(py::module &m) {
                  "Shows or hides the geometry with the given name")
             .def("update_material", &Open3DScene::UpdateMaterial,
                  "Applies the passed material to all the geometries")
+            .def("set_view_size", [](Open3DScene *scene, int width, int height) {
+                                      scene->GetView()->SetViewport(0, 0, width,
+                                                                    height);
+                                  },
+                 "Sets the view size. This should not be used except for "
+                 "rendering to an image")
             .def_property_readonly("scene", &Open3DScene::GetScene,
                                    "The low-level rendering scene object")
             .def_property_readonly("camera", &Open3DScene::GetCamera,

@@ -176,6 +176,19 @@ void pybind_gui_classes(py::module &m) {
                     "are still held by Python variables. Using them is unsafe, "
                     "even if run() is called again.")
             .def(
+                    "run_one_tick",
+                    [](Application &instance) {
+                        PythonUnlocker unlocker;
+                        auto result = instance.RunOneTick(unlocker);
+                        // Enable Ctrl-C to kill Python
+                        if (PyErr_CheckSignals() != 0) {
+                            throw py::error_already_set();
+                        }
+                        return result;
+                    },
+                    "Runs the event loop once, returns True if the app is "
+                    "still running, or False if all the windows have closed.")
+             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
             .def("run_in_thread", &Application::RunInThread,
@@ -264,7 +277,7 @@ void pybind_gui_classes(py::module &m) {
                           "Returns the title of the window")
             .def("size_to_fit", &PyWindow::SizeToFit,
                  "Sets the width and height of window to its preferred size")
-            .def_property("get_size", &PyWindow::GetSize, &PyWindow::SetSize,
+            .def_property("size", &PyWindow::GetSize, &PyWindow::SetSize,
                           "The size of the window in device pixels, including "
                           "menubar (except on macOS)")
             .def_property_readonly(

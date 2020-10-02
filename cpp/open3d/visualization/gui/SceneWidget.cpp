@@ -576,7 +576,6 @@ private:
 // ----------------------------------------------------------------------------
 struct SceneWidget::Impl {
     std::shared_ptr<rendering::Open3DScene> scene_;
-    rendering::ViewHandle view_id_;
     geometry::AxisAlignedBoundingBox bounds_;
     std::shared_ptr<Interactors> controls_;
     std::function<void(const Eigen::Vector3f&)> on_light_dir_changed_;
@@ -654,14 +653,9 @@ void SceneWidget::ShowSkybox(bool is_on) {
 }
 
 void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {
-    if (impl_->scene_) {
-        impl_->scene_->DestroyView(impl_->view_id_);
-        impl_->view_id_ = rendering::ViewHandle();
-    }
     impl_->scene_ = scene;
     if (impl_->scene_) {
-        impl_->view_id_ = impl_->scene_->CreateView();
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        auto view = impl_->scene_->GetView();
         impl_->controls_ = std::make_shared<Interactors>(impl_->scene_.get(),
                                                          view->GetCamera());
     }
@@ -673,7 +667,7 @@ std::shared_ptr<rendering::Open3DScene> SceneWidget::GetScene() const {
 
 rendering::View* SceneWidget::GetRenderView() const {
     if (impl_->scene_) {
-        return impl_->scene_->GetView(impl_->view_id_);
+        return impl_->scene_->GetView();
     } else {
         return nullptr;
     }
@@ -703,7 +697,7 @@ void SceneWidget::SetViewControls(Controls mode) {
 
 void SceneWidget::ForceRedraw() {
     impl_->scene_->GetRenderer().EnableCaching(true);
-    impl_->scene_->GetScene()->SetRenderOnce(impl_->view_id_);
+    impl_->scene_->GetScene()->SetRenderOnce(impl_->scene_->GetViewId());
 }
 
 void SceneWidget::SetRenderQuality(Quality quality) {
@@ -771,7 +765,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
 
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        auto view = impl_->scene_->GetView();
         view->SetViewport(f.x, y, f.width, f.height);
 
         auto* camera = GetCamera();
