@@ -326,14 +326,6 @@ void Open3DScene::SetLOD(LOD lod) {
         for (auto& g : geometries_) {
             SetGeometryToLOD(g.second, lod);
         }
-
-        if (lod == LOD::HIGH_DETAIL) {
-            renderer_.EnableCaching(true);
-            GetScene()->SetRenderOnce(view_);
-        } else {
-            renderer_.EnableCaching(false);
-            GetScene()->SetViewActive(view_, true);
-        }
     }
 }
 
