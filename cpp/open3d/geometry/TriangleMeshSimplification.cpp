@@ -263,7 +263,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
-        int target_number_of_triangles, float maximum_error=std::numeric_limits<float>::infinity()) const {
+        int target_number_of_triangles, double maximum_error=std::numeric_limits<double>::infinity()) const {
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[SimplifyQuadricDecimation] This mesh contains triangle uvs "
