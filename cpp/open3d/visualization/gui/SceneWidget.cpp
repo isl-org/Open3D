@@ -584,6 +584,7 @@ struct SceneWidget::Impl {
     double last_fast_time_ = 0.0;
     bool frame_rect_changed_ = false;
     SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
+    bool scene_caching_enabled_ = false;
 };
 
 SceneWidget::SceneWidget() : impl_(new Impl()) {}
@@ -695,7 +696,18 @@ void SceneWidget::SetViewControls(Controls mode) {
     }
 }
 
+void SceneWidget::EnableSceneCaching(bool enable) {
+    impl_->scene_caching_enabled_ = enable;
+    if (!enable) {
+        impl_->scene_->GetRenderer().EnableCaching(false);
+        impl_->scene_->GetScene()->SetViewActive(impl_->view_id_, true);
+    }
+}
+
 void SceneWidget::ForceRedraw() {
+    // ForceRedraw only applies when scene caching is enabled
+    if (!impl_->scene_caching_enabled_) return;
+
     impl_->scene_->GetRenderer().EnableCaching(true);
     impl_->scene_->GetScene()->SetRenderOnce(impl_->scene_->GetViewId());
 }
@@ -706,8 +718,16 @@ void SceneWidget::SetRenderQuality(Quality quality) {
         impl_->current_render_quality_ = quality;
         if (quality == Quality::FAST) {
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::FAST);
+            if (impl_->scene_caching_enabled_) {
+                impl_->scene_->GetRenderer().EnableCaching(false);
+                impl_->scene_->GetScene()->SetViewActive(impl_->view_id_, true);
+            }
         } else {
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::HIGH_DETAIL);
+            if (impl_->scene_caching_enabled_) {
+                impl_->scene_->GetRenderer().EnableCaching(true);
+                impl_->scene_->GetScene()->SetRenderOnce(impl_->view_id_);
+            }
         }
     }
 }
@@ -750,6 +770,13 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
 
 rendering::Camera* SceneWidget::GetCamera() const {
     return impl_->scene_->GetCamera();
+}
+
+void SceneWidget::Layout(const Theme& theme) {
+    Super::Layout(theme);
+    // The UI may have changed size such that the scene has been exposed. Need
+    // to force a redraw in that case.
+    ForceRedraw();
 }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {

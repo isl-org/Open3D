@@ -40,10 +40,10 @@ def test_constructor_and_accessors(device):
     dtype = o3c.Dtype.Float32
 
     # Constructor.
-    pcd = o3d.tgeometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(dtype, device)
     assert "points" in pcd.point
     assert "colors" not in pcd.point
-    assert isinstance(pcd.point, o3d.tgeometry.TensorListMap)
+    assert isinstance(pcd.point, o3d.t.geometry.TensorListMap)
     assert isinstance(pcd.point["points"], o3c.TensorList)
 
     # Assignment.
@@ -85,7 +85,7 @@ def test_from_legacy_pointcloud(device):
             [9, 10, 11],
         ]))
 
-    pcd = o3d.tgeometry.PointCloud.from_legacy_pointcloud(
+    pcd = o3d.t.geometry.PointCloud.from_legacy_pointcloud(
         legacy_pcd, dtype, device)
     assert pcd.point["points"].as_tensor().allclose(
         o3c.Tensor([
@@ -103,7 +103,7 @@ def test_from_legacy_pointcloud(device):
 def test_to_legacy_pointcloud(device):
     dtype = o3c.Dtype.Float32
 
-    pcd = o3d.tgeometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(dtype, device)
     pcd.point["points"] = o3c.TensorList.from_tensor(
         o3c.Tensor([
             [0, 1, 2],
@@ -133,7 +133,7 @@ def test_member_functions(device):
     dtype = o3c.Dtype.Float32
 
     # get_min_bound, get_max_bound, get_center.
-    pcd = o3d.tgeometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(dtype, device)
     pcd.point["points"] = o3c.TensorList.from_tensor(
         o3c.Tensor([
             [1, 10, 20],
@@ -149,7 +149,7 @@ def test_member_functions(device):
         pcd.transform(o3c.Tensor.eye(4, dtype, device))
 
     # translate.
-    pcd = o3d.tgeometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(dtype, device)
     transloation = o3c.Tensor([10, 20, 30], dtype, device)
 
     pcd.point["points"] = o3c.TensorList.from_tensor(
@@ -177,7 +177,7 @@ def test_member_functions(device):
         ], dtype, device))
 
     # scale
-    pcd = o3d.tgeometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(dtype, device)
     pcd.point["points"] = o3c.TensorList.from_tensor(
         o3c.Tensor([
             [0, 0, 0],

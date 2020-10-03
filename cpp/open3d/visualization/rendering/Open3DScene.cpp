@@ -193,7 +193,7 @@ void Open3DScene::AddGeometry(
 
 void Open3DScene::AddGeometry(
         const std::string& name,
-        const tgeometry::PointCloud* geom,
+        const t::geometry::PointCloud* geom,
         const Material& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;
@@ -315,14 +315,6 @@ void Open3DScene::SetLOD(LOD lod) {
 
         for (auto& g : geometries_) {
             SetGeometryToLOD(g.second, lod);
-        }
-
-        if (lod == LOD::HIGH_DETAIL) {
-            renderer_.EnableCaching(true);
-            GetScene()->SetRenderOnce(view_);
-        } else {
-            renderer_.EnableCaching(false);
-            GetScene()->SetViewActive(view_, true);
         }
     }
 }

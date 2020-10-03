@@ -32,6 +32,8 @@
 
 #include <unordered_map>
 
+#include "open3d/core/linalg/LinalgHeadersCPU.h"
+
 namespace open3d {
 namespace core {
 
@@ -100,7 +102,15 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        Tensor ipiv = Tensor::Empty({n}, Dtype::Int64, device);
+        Dtype ipiv_dtype;
+        if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
+            ipiv_dtype = Dtype::Int32;
+        } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
+            ipiv_dtype = Dtype::Int64;
+        } else {
+            utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
+        }
+        Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
         SolveCPU(A_data, B_data, ipiv_data, n, k, dtype, device);
