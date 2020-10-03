@@ -189,6 +189,22 @@ public:
     virtual utility::optional<double> ExactAABB(
             const AxisAlignedBoundingBox& box) const;
 
+    /// \brief Computes the two corresponding parameters of the closest distance
+    /// between two Line3D objects, including derived types Ray3D and Segment3D,
+    /// respecting the semantics of the line type.
+    std::pair<double, double> ClosestParameters(const Line3D& other) const;
+
+    /// \brief Computes the two closest points between this Line3D object and
+    /// the other, including of derived types Ray3D and Segment3D, respecting
+    /// the semantics of the line types.
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> ClosestPoints(
+            const Line3D& other) const;
+
+    /// \brief Gets the closest distance between two Line3D objects, including
+    /// derived types Ray3D and Segment3D, respecting the semantics of the line
+    /// type.
+    double DistanceTo(const Line3D& other) const;
+
 protected:
     /// \brief Internal constructor for inherited classes that allows the
     /// setting of the LineType
@@ -203,6 +219,19 @@ protected:
     /// intersection parameter is.
     std::pair<double, double> SlabAABBBase(
             const AxisAlignedBoundingBox& box) const;
+
+    /// \brief Clamps/bounds a parameter value to the closest valid place where
+    /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
+    /// a negative value will be made 0, and on a Segment3D a negative value
+    /// will be made 0 and a positive value greater than Length() will take
+    /// the value of Length()
+    virtual double ClampParameter(double parameter) const { return parameter; }
+
+    /// \brief Verifies that a given parameter value is valid for the semantics
+    /// of the line object. For lines, any parameter is valid, for rays any
+    /// positive parameter is valid, and for segments any parameter between 0
+    /// and the segment length is valid.
+    virtual bool IsValid(double parameter) const { return true; }
 
 private:
     const LineType line_type_ = LineType::Line;
@@ -280,6 +309,22 @@ public:
     /// method
     utility::optional<double> SlabAABB(
             const AxisAlignedBoundingBox& box) const override;
+
+protected:
+    /// \brief Clamps/bounds a parameter value to the closest valid place where
+    /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
+    /// a negative value will be made 0, and on a Segment3D a negative value
+    /// will be made 0 and a positive value greater than Length() will take
+    /// the value of Length()
+    double ClampParameter(double parameter) const override {
+        return std::max(parameter, 0.);
+    }
+
+    /// \brief Verifies that a given parameter value is valid for the semantics
+    /// of the line object. For lines, any parameter is valid, for rays any
+    /// positive parameter is valid, and for segments any parameter between 0
+    /// and the segment length is valid.
+    bool IsValid(double parameter) const override { return parameter >= 0; }
 };
 
 /// \class Segment3D
@@ -311,9 +356,16 @@ public:
     Segment3D(const Eigen::Vector3d& start_point,
               const Eigen::Vector3d& end_point);
 
+    /// \brief Takes a std::pair of points, the first to be used as the start
+    /// point/origin and the second to be the end point
+    explicit Segment3D(const std::pair<Eigen::Vector3d, Eigen::Vector3d>& pair);
+
     /// \brief Get the scalar length of the segment as the distance between the
     /// start point (origin) and the end point.
     double Length() const override { return length_; }
+
+    /// \brief Calculates the midpoint of the segment
+    Eigen::Vector3d MidPoint() const { return 0.5 * (origin() + end_point_); }
 
     /// \brief Get the end point of the segment
     const Eigen::Vector3d& EndPoint() const { return end_point_; }
@@ -394,6 +446,24 @@ public:
     /// likely outperform even the slab method.
     utility::optional<double> ExactAABB(
             const AxisAlignedBoundingBox& box) const override;
+
+protected:
+    /// \brief Clamps/bounds a parameter value to the closest valid place where
+    /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
+    /// a negative value will be made 0, and on a Segment3D a negative value
+    /// will be made 0 and a positive value greater than Length() will take
+    /// the value of Length()
+    double ClampParameter(double parameter) const override {
+        return std::max(std::min(parameter, length_), 0.);
+    }
+
+    /// \brief Verifies that a given parameter value is valid for the semantics
+    /// of the line object. For lines, any parameter is valid, for rays any
+    /// positive parameter is valid, and for segments any parameter between 0
+    /// and the segment length is valid.
+    bool IsValid(double parameter) const override {
+        return parameter >= 0 && parameter <= length_;
+    }
 
 private:
     Eigen::Vector3d end_point_;
