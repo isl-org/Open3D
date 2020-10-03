@@ -966,13 +966,6 @@ void GuiVisualizer::ExportCurrentImage(int width,
             });
 }
 
-void GuiVisualizer::OnSubMenuVisibilityChanged() {
-#ifndef __APPLE__
-    // Don't need this on Mac because the menu bar is OS managed
-    impl_->scene_wgt_->ForceRedraw();
-#endif
-}
-
 void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
     auto menu_id = MenuId(item_id);
     switch (menu_id) {

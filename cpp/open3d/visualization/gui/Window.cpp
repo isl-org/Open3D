@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <queue>
 #include <unordered_map>
 #include <vector>
@@ -645,8 +646,6 @@ void Window::OnMenuItemSelected(Menu::ItemId item_id) {
     }
 }
 
-void Window::OnSubMenuVisibilityChanged() {}
-
 namespace {
 enum Mode { NORMAL, DIALOG, NO_INPUT };
 
@@ -827,7 +826,14 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
             needs_redraw = true;
         }
         if (menubar->CheckVisibilityChange()) {
-            OnSubMenuVisibilityChanged();
+            std::for_each(impl_->children_.begin(), impl_->children_.end(),
+                          [](auto w) {
+                              auto sw =
+                                      std::dynamic_pointer_cast<SceneWidget>(w);
+                              if (sw) {
+                                  sw->ForceRedraw();
+                              }
+                          });
         }
     }
 
