@@ -54,6 +54,11 @@ using proj_t = std::tuple<lt_t, v_t, v_t, v_t, double>;
 // line-type, line-origin, line-dir/seg-endpoint, optional expected parameter
 using ab_t = std::tuple<lt_t, v_t, v_t, opt_d_t>;
 
+// Test data for closest parameter tests
+// line0-type, line0-origin, line0-dir/endpoint, line1-type, line1-origin,
+// line1-dir/endpoint, line0-expected, line1-expected
+using cp_t = std::tuple<lt_t, v_t, v_t, lt_t, v_t, v_t, double, double>;
+
 // Factory function to build appropriate type from enum
 std::shared_ptr<Line3D> LineFactory(lt_t type, const v_t& v0, const v_t& v1) {
     if (type == lt_t::Line) {
@@ -379,5 +384,127 @@ INSTANTIATE_TEST_CASE_P(Checks,
                                ab_t{lt_t::Segment, {1, 2, 0}, {1, 0, 0}, 1.},
                                ab_t{lt_t::Segment, {-2, 0, 1}, {0, 0, 1}, 1.}));
 
+
+// Line/Ray/Segment Closest Point Tests
+// ============================================================================
+class ClosestPointTests : public TestWithParam<cp_t> {};
+
+TEST_P(ClosestPointTests, CheckClosestPoints) {
+    auto l0_type = std::get<0>(GetParam());
+    auto l0_origin = std::get<1>(GetParam());
+    auto l0_dir = std::get<2>(GetParam());
+
+    auto l1_type = std::get<3>(GetParam());
+    auto l1_origin = std::get<4>(GetParam());
+    auto l1_dir = std::get<5>(GetParam());
+
+    double e0 = std::get<6>(GetParam());
+    double e1 = std::get<7>(GetParam());
+
+    auto l0 = LineFactory(l0_type, l0_origin, l0_dir);
+    auto l1 = LineFactory(l1_type, l1_origin, l1_dir);
+
+    auto result = l0->ClosestParameters(*l1);
+
+    EXPECT_DOUBLE_EQ(std::get<0>(result), e0);
+    EXPECT_DOUBLE_EQ(std::get<1>(result), e1);
+}
+
+INSTANTIATE_TEST_CASE_P(
+        LineTests,
+        ClosestPointTests,
+        Values(
+                // Line to line
+                cp_t(lt_t::Line, {0, -1, 0}, {0, 1, 0}, lt_t::Line, {-1, 0, 0}, {1, 0, 0}, 1, 1),
+                cp_t(lt_t::Line, {-1, 0, 0}, {1, 0, 0}, lt_t::Line, {0, -1, 0}, {0, 1, 0}, 1, 1),
+                cp_t(lt_t::Line, {0, 1, 0}, {0, 1, 0}, lt_t::Line, {1, 0, 0}, {1, 0, 0}, -1, -1),
+                cp_t(lt_t::Line, {1, 0, 0}, {1, 0, 0}, lt_t::Line, {0, 1, 0}, {0, 1, 0}, -1, -1),
+
+                // Line to line parallel
+                cp_t(lt_t::Line, {0, 0, 0}, {1, 0, 0}, lt_t::Line, {1, 0, 1}, {1, 0, 0}, 0, -1),
+                cp_t(lt_t::Line, {1, 0, 1}, {1, 0, 0}, lt_t::Line, {0, 0, 0}, {1, 0, 0}, 0, 1),
+
+                // Line to ray
+                cp_t(lt_t::Line, {0, -1, 0}, {0, 1, 0}, lt_t::Ray, {-1, 0, 0}, {1, 0, 0}, 1, 1),
+                cp_t(lt_t::Line, {-1, 0, 0}, {1, 0, 0}, lt_t::Ray, {0, -1, 0}, {0, 1, 0}, 1, 1),
+                cp_t(lt_t::Line, {0, 1, 0}, {0, 1, 0}, lt_t::Ray, {1, 0, 0}, {1, 0, 0}, -1, 0),
+                cp_t(lt_t::Line, {1, 0, 0}, {1, 0, 0}, lt_t::Ray, {0, 1, 0}, {0, 1, 0}, -1, 0),
+
+                // Line to ray parallel
+                cp_t(lt_t::Ray, {0, 0, 0}, {1, 0, 0}, lt_t::Line, {1, 0, 1}, {1, 0, 0}, 0, -1),
+                cp_t(lt_t::Line, {0, 0, 0}, {1, 0, 0}, lt_t::Ray, {1, 0, 1}, {1, 0, 0}, 1, 0),
+                cp_t(lt_t::Line, {1, 0, 1}, {1, 0, 0}, lt_t::Ray, {0, 0, 0}, {1, 0, 0}, 0, 1),
+
+                // Line to segment
+                cp_t(lt_t::Line, {0, -1, 0}, {0, 1, 0}, lt_t::Segment, {-1, 0, 0}, {1, 0, 0}, 1, 1),
+                cp_t(lt_t::Line, {-1, 0, 0}, {1, 0, 0}, lt_t::Segment, {0, -1, 0}, {0, 1, 0}, 1, 1),
+                cp_t(lt_t::Segment, {0, 1, 0}, {0, 2, 0}, lt_t::Line, {1, 0, 0}, {1, 0, 0}, 0, -1),
+                cp_t(lt_t::Segment, {0, 2, 0}, {0, 1, 0}, lt_t::Line, {1, 0, 0}, {1, 0, 0}, 1, -1),
+
+                // Line to segment parallel
+                cp_t(lt_t::Line, {0, 0, 0}, {1, 0, 0}, lt_t::Segment, {1, 0, 1}, {2, 0, 1}, 1, 0),
+                cp_t(lt_t::Line, {0, 0, 0}, {1, 0, 0}, lt_t::Segment, {2, 0, 1}, {1, 0, 1}, 1, 1),
+                cp_t(lt_t::Line, {1, 0, 1}, {1, 0, 0}, lt_t::Segment, {0, 0, 0}, {0.5, 0, 0}, -0.5, 0.5)
+        ));
+
+const double root2 = 1.41421356237309504880168;
+INSTANTIATE_TEST_CASE_P(
+        RayTests,
+        ClosestPointTests,
+        Values(
+                // Ray to ray
+                cp_t(lt_t::Ray, {0, -1, 0}, {0, 1, 0}, lt_t::Ray, {-1, 0, 0}, {1, 0, 0}, 1, 1),
+                cp_t(lt_t::Ray, {-1, 0, 0}, {1, 0, 0}, lt_t::Ray, {0, -1, 0}, {0, 1, 0}, 1, 1),
+                cp_t(lt_t::Ray, {0, 1, 0}, {0, 1, 0}, lt_t::Ray, {1, 0, 0}, {1, 0, 0}, 0, 0),
+                cp_t(lt_t::Ray, {1, 0, 0}, {1, 0, 0}, lt_t::Ray, {0, 1, 0}, {0, 1, 0}, 0, 0),
+
+                // Ray to ray out of bounds behind origin, these cases test the
+                // clamp/project/clamp/project procedure
+                cp_t(lt_t::Ray, {0, 1, 0}, {1, 0, 0}, lt_t::Ray, {2, 2, 0}, {1, 1, 0}, 2, 0),
+                cp_t(lt_t::Ray, {2, 2, 0}, {1, 1, 0}, lt_t::Ray, {0, 1, 0}, {1, 0, 0}, 0, 2),
+                cp_t(lt_t::Ray, {1.5, 1, 0}, {1, 0, 0}, lt_t::Ray, {2, 2, 0}, {1, 1, 0}, .5, 0),
+                cp_t(lt_t::Ray, {2, 2, 0}, {1, 1, 0}, lt_t::Ray, {1.5, 1, 0}, {1, 0, 0}, 0, .5),
+
+                // Ray to ray parallel
+                cp_t(lt_t::Ray, {0, 0, 0}, {1, 0, 0}, lt_t::Ray, {1, 0, 1}, {1, 0, 0}, 1, 0),
+                cp_t(lt_t::Ray, {1, 0, 1}, {1, 0, 0}, lt_t::Ray, {0, 0, 0}, {1, 0, 0}, 0, 1),
+
+                // Ray to segment
+                cp_t(lt_t::Ray, {0, -1, 0}, {0, 1, 0}, lt_t::Segment, {-1, 0, 0}, {1, 0, 0}, 1, 1),
+                cp_t(lt_t::Ray, {-1, 0, 0}, {1, 0, 0}, lt_t::Segment, {0, -1, 0}, {0, 1, 0}, 1, 1),
+                cp_t(lt_t::Ray, {0, 1, 0}, {0, 1, 0},  lt_t::Segment, {1, 0, 0}, {2, 0, 0}, 0, 0),
+                cp_t(lt_t::Ray, {1, 0, 0}, {1, 0, 0},  lt_t::Segment, {0, 1, 0}, {0, 2, 0}, 0, 0),
+
+                // Ray to ray out of bounds behind origin, these cases test the
+                // clamp/project/clamp/project procedure
+                cp_t(lt_t::Ray, {0, 1, 0}, {1, 0, 0}, lt_t::Segment, {2, 2, 0}, {3, 3, 0}, 2, 0),
+                cp_t(lt_t::Ray, {0, 1, 0}, {1, 0, 0}, lt_t::Segment, {3, 3, 0}, {2, 2, 0}, 2, root2),
+                cp_t(lt_t::Ray, {2, 2, 0}, {1, 1, 0}, lt_t::Segment, {0, 1, 0}, {0.5, 1, 0}, 0, 0.5),
+                cp_t(lt_t::Ray, {2, 2, 0}, {1, 1, 0}, lt_t::Segment, {0.5, 1, 0}, {0, 1, 0}, 0, 0)
+        ));
+
+INSTANTIATE_TEST_CASE_P(
+        SegmentTests,
+        ClosestPointTests,
+        Values(
+                // Regular segment to segment intersections
+                cp_t(lt_t::Segment, {0, -1, 0}, {0, 1, 0}, lt_t::Segment, {-1, 0, 0}, {1, 0, 0}, 1, 1),
+                cp_t(lt_t::Segment, {-1, 0, 0}, {1, 0, 0}, lt_t::Segment, {0, -1, 0}, {0, 1, 0}, 1, 1),
+
+                // Tests corresponding with special case b from "Real-Time
+                // Collision Detection" Figure 5.9b, p148
+                cp_t(lt_t::Segment, {0, 1, 0}, {3, 1, 0}, lt_t::Segment, {2, 2, 0}, {3, 3, 0}, 2, 0),
+                cp_t(lt_t::Segment, {0, 1, 0}, {3, 1, 0}, lt_t::Segment, {3, 3, 0}, {2, 2, 0}, 2, root2),
+                cp_t(lt_t::Segment,  {2, 2, 0}, {3, 3, 0}, lt_t::Segment, {0, 1, 0}, {3, 1, 0},0, 2),
+                cp_t(lt_t::Segment, {3, 3, 0}, {2, 2, 0}, lt_t::Segment, {0, 1, 0}, {3, 1, 0}, root2, 2),
+
+                // Tests corresponding with special case b from "Real-Time
+                // Collision Detection" Figure 5.9c, p148
+                cp_t(lt_t::Segment, {1.5, 1, 0}, {3, 1, 0}, lt_t::Segment, {2, 2, 0}, {3, 3, 0}, 0.5, 0),
+                cp_t(lt_t::Segment, {1.5, 1, 0}, {3, 1, 0}, lt_t::Segment, {3, 3, 0}, {2, 2, 0}, 0.5, root2),
+                cp_t(lt_t::Segment,  {2, 2, 0}, {3, 3, 0}, lt_t::Segment, {1.5, 1, 0}, {3, 1, 0},0, 0.5),
+                cp_t(lt_t::Segment, {3, 3, 0}, {2, 2, 0}, lt_t::Segment, {1.5, 1, 0}, {3, 1, 0}, root2, 0.5)
+
+));
 }  // namespace tests
 }  // namespace open3d

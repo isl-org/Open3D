@@ -150,11 +150,11 @@ utility::optional<double> Line3D::IntersectionParameter(
 }
 
 Eigen::Vector3d Line3D::Projection(const Eigen::Vector3d& point) const {
-    return projection(point);
+    return Line().pointAt(ProjectionParameter(point));
 }
 
 double Line3D::ProjectionParameter(const Eigen::Vector3d& point) const {
-    return direction().dot(point - origin());
+    return ClampParameter(direction().dot(point - origin()));
 }
 
 std::pair<double, double> Line3D::ClosestParameters(const Line3D& other) const {
@@ -222,7 +222,7 @@ std::pair<double, double> Line3D::ClosestParameters(const Line3D& other) const {
     // infinite representation and tc is the corresponding point on the other
     // line's infinite representation. If they are both valid, they can be
     // returned as-is, if not a clamp/project round-trip must be executed
-    if (IsValid(sc) && other.IsValid(tc)) {
+    if (IsParameterValid(sc) && other.IsParameterValid(tc)) {
         return {sc, tc};
     }
 
@@ -302,17 +302,6 @@ utility::optional<double> Ray3D::IntersectionParameter(
     return {};
 }
 
-double Ray3D::ProjectionParameter(const Eigen::Vector3d& point) const {
-    // On a ray, the projection parameter cannot be negative, so if the
-    // projection does lie on the negative side of the line it is moved to
-    // the origin.
-    return std::max(0., Line3D::ProjectionParameter(point));
-}
-
-Eigen::Vector3d Ray3D::Projection(const Eigen::Vector3d& point) const {
-    return pointAt(ProjectionParameter(point));
-}
-
 // Segment3D Implementations
 // ===========================================================================
 
@@ -380,16 +369,6 @@ utility::optional<double> Segment3D::IntersectionParameter(
         return result;
     }
     return {};
-}
-double Segment3D::ProjectionParameter(const Eigen::Vector3d& point) const {
-    // On a segment, the projection parameter cannot be less than zero or
-    // greater than the segment length, so any parameter that lies beyond those
-    // limits is capped by them.
-    return std::min(std::max(0., Line3D::ProjectionParameter(point)), length_);
-}
-
-Eigen::Vector3d Segment3D::Projection(const Eigen::Vector3d& point) const {
-    return pointAt(ProjectionParameter(point));
 }
 
 }  // namespace geometry

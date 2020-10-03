@@ -127,17 +127,26 @@ public:
             const Eigen::Hyperplane<double, 3>& plane) const;
 
     /// \brief Calculates the parameter of a point projected onto the line
-    /// taking into account special semantics.  On a Line3D this is the point
-    /// directly projected onto the infinite line, and represents the closest
-    /// point on the line to the test point. A negative value indicates the
-    /// projection lies behind the origin, a positive value is in front of the
-    /// origin.
-    virtual double ProjectionParameter(const Eigen::Vector3d& point) const;
+    /// taking into account special semantics.
+    ///
+    /// \details On a Line3D this is the point directly projected onto the
+    /// infinite line, and represents the closest point on the line to the test
+    /// point. A negative value indicates the projection lies behind the origin,
+    /// a positive value is in front of the origin. On a Ray3D this will be a
+    /// positive value only, since rays do not exist in the negative direction.
+    /// On a Segment3D this will be a positive value which is less than or equal
+    /// to the segment length.
+    double ProjectionParameter(const Eigen::Vector3d& point) const;
 
     /// \brief Calculates a point projected onto the line, taking into account
-    /// special semantics. On a Line3D this is the point directly projected onto
+    /// special semantics.
+    ///
+    /// \details On a Line3D this is the point directly projected onto
     /// the infinite line, and represents the closest point on the line to the
-    /// test point.
+    /// test point.  On a Ray3D this will either be a point on the ray's
+    /// positive direction or the ray origin, whichever is closer. On a
+    /// Segment3D this will be either one of the segment's endpoints or a point
+    /// between them, whichever is closest to the test point.
     virtual Eigen::Vector3d Projection(const Eigen::Vector3d& point) const;
 
     /// \brief Returns the lower intersection parameter for a line with an
@@ -205,6 +214,19 @@ public:
     /// type.
     double DistanceTo(const Line3D& other) const;
 
+    /// \brief Clamps/bounds a parameter value to the closest valid place where
+    /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
+    /// a negative value will be made 0, and on a Segment3D a negative value
+    /// will be made 0 and a positive value greater than Length() will take
+    /// the value of Length()
+    virtual double ClampParameter(double parameter) const { return parameter; }
+
+    /// \brief Verifies that a given parameter value is valid for the semantics
+    /// of the line object. For lines, any parameter is valid, for rays any
+    /// positive parameter is valid, and for segments any parameter between 0
+    /// and the segment length is valid.
+    virtual bool IsParameterValid(double parameter) const { return true; }
+
 protected:
     /// \brief Internal constructor for inherited classes that allows the
     /// setting of the LineType
@@ -219,19 +241,6 @@ protected:
     /// intersection parameter is.
     std::pair<double, double> SlabAABBBase(
             const AxisAlignedBoundingBox& box) const;
-
-    /// \brief Clamps/bounds a parameter value to the closest valid place where
-    /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
-    /// a negative value will be made 0, and on a Segment3D a negative value
-    /// will be made 0 and a positive value greater than Length() will take
-    /// the value of Length()
-    virtual double ClampParameter(double parameter) const { return parameter; }
-
-    /// \brief Verifies that a given parameter value is valid for the semantics
-    /// of the line object. For lines, any parameter is valid, for rays any
-    /// positive parameter is valid, and for segments any parameter between 0
-    /// and the segment length is valid.
-    virtual bool IsValid(double parameter) const { return true; }
 
 private:
     const LineType line_type_ = LineType::Line;
@@ -273,20 +282,6 @@ public:
     utility::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const override;
 
-    /// \brief Calculates the parameter of a point projected onto the ray
-    /// taking into account special semantics.  On a Ray3D this is the point
-    /// directly projected onto the positive infinite direction, or the ray
-    /// origin (0) if the projection is negative. This represents the
-    /// parameter of the closest point on the ray to the test point.
-    double ProjectionParameter(const Eigen::Vector3d& point) const override;
-
-    /// \brief Calculates a point projected onto the ray, taking into account
-    /// special semantics. On a Ray3D this is the point directly projected onto
-    /// the positive infinite direction, or the ray origin (0) if the projection
-    /// is negative. This represents the closest point on the ray to the test
-    /// point.
-    Eigen::Vector3d Projection(const Eigen::Vector3d& point) const override;
-
     /// \brief Returns the lower intersection parameter for a ray with an
     /// axis aligned bounding box or empty if no intersection. Uses the slab
     /// method, see warning below.
@@ -310,7 +305,6 @@ public:
     utility::optional<double> SlabAABB(
             const AxisAlignedBoundingBox& box) const override;
 
-protected:
     /// \brief Clamps/bounds a parameter value to the closest valid place where
     /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
     /// a negative value will be made 0, and on a Segment3D a negative value
@@ -324,7 +318,9 @@ protected:
     /// of the line object. For lines, any parameter is valid, for rays any
     /// positive parameter is valid, and for segments any parameter between 0
     /// and the segment length is valid.
-    bool IsValid(double parameter) const override { return parameter >= 0; }
+    bool IsParameterValid(double parameter) const override {
+        return parameter >= 0;
+    }
 };
 
 /// \class Segment3D
@@ -388,18 +384,6 @@ public:
     utility::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const override;
 
-    /// \brief Calculates the parameter of a point projected onto the segment
-    /// taking into account special semantics.  On a Segment3D this is the
-    /// parameter of the point on the segment closest to the test point: either
-    /// the origin, the endpoint, or a point between them.
-    double ProjectionParameter(const Eigen::Vector3d& point) const override;
-
-    /// \brief Calculates a point projected onto the segment, accounting for
-    /// special semantics. On a Segment3D this is the point on the segment
-    /// closest to the test point: either the origin, the endpoint, or a point
-    /// between them.
-    Eigen::Vector3d Projection(const Eigen::Vector3d& point) const override;
-
     /// \brief Returns the lower intersection parameter for a segment with an
     /// axis aligned bounding box or empty if no intersection. Uses the slab
     /// method, see warning below.
@@ -447,7 +431,6 @@ public:
     utility::optional<double> ExactAABB(
             const AxisAlignedBoundingBox& box) const override;
 
-protected:
     /// \brief Clamps/bounds a parameter value to the closest valid place where
     /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
     /// a negative value will be made 0, and on a Segment3D a negative value
@@ -461,7 +444,7 @@ protected:
     /// of the line object. For lines, any parameter is valid, for rays any
     /// positive parameter is valid, and for segments any parameter between 0
     /// and the segment length is valid.
-    bool IsValid(double parameter) const override {
+    bool IsParameterValid(double parameter) const override {
         return parameter >= 0 && parameter <= length_;
     }
 
