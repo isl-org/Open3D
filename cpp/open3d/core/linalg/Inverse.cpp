@@ -28,6 +28,8 @@
 
 #include <unordered_map>
 
+#include "open3d/core/linalg/LinalgHeadersCPU.h"
+
 namespace open3d {
 namespace core {
 
@@ -60,13 +62,11 @@ void Inverse(const Tensor &A, Tensor &output) {
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
-    // Pivot to shuffle during matrix factorization.
-    Tensor ipiv = Tensor::Zeros({n}, Dtype::Int64, device);
-
-    void *ipiv_data = ipiv.GetDataPtr();
-
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
+        Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, device);
+        void *ipiv_data = ipiv.GetDataPtr();
+
         // cuSolver does not support getri, so we have to provide an identity
         // matrix. This matrix is modified in-place as output.
         Tensor A_T = A.T().Contiguous();
@@ -81,6 +81,17 @@ void Inverse(const Tensor &A, Tensor &output) {
         utility::LogError("Unimplemented device.");
 #endif
     } else {
+        Dtype ipiv_dtype;
+        if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
+            ipiv_dtype = Dtype::Int32;
+        } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
+            ipiv_dtype = Dtype::Int64;
+        } else {
+            utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
+        }
+        Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
+        void *ipiv_data = ipiv.GetDataPtr();
+
         // LAPACKE supports getri, A is in-place modified as output.
         Tensor A_T = A.T().Copy(device);
         void *A_data = A_T.GetDataPtr();

@@ -35,9 +35,7 @@
 #include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
-
-namespace {
-using namespace io;
+namespace io {
 
 static const std::unordered_map<
         std::string,
@@ -66,9 +64,6 @@ static const std::unordered_map<
                 {"pcd", WritePointCloudToPCD},
                 {"pts", WritePointCloudToPTS},
         };
-}  // unnamed namespace
-
-namespace io {
 
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &filename,

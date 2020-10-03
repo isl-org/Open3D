@@ -46,7 +46,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -122,7 +122,8 @@ IndexBufferHandle GeometryBuffersBuilder::CreateIndexBuffer(
         size_t idx = 0;
         uint_indices[idx++] = 0;
         double dist = 1.0;
-        for (size_t i = 1; i < max_index; ++i) {
+        size_t i;
+        for (i = 1; i < max_index; ++i) {
             if (dist >= step) {
                 uint_indices[idx++] = IndexType(i);
                 dist -= step;
@@ -131,6 +132,11 @@ IndexBufferHandle GeometryBuffersBuilder::CreateIndexBuffer(
                 }
             }
             dist += 1.0;
+        }
+        // Very occasionally floating point error leads to one fewer points
+        // being added.
+        if (i < max_index - 1) {
+            n_indices = i + 1;
         }
     }
 
@@ -281,7 +287,7 @@ filament::Box PointCloudBuffersBuilder::ComputeAABB() {
 }
 
 TPointCloudBuffersBuilder::TPointCloudBuffersBuilder(
-        const tgeometry::PointCloud& geometry)
+        const t::geometry::PointCloud& geometry)
     : geometry_(geometry) {}
 
 RenderableManager::PrimitiveType TPointCloudBuffersBuilder::GetPrimitiveType()
@@ -387,6 +393,17 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
         float* uv_src = static_cast<float*>(
                 geometry_.GetPointAttr("uv").AsTensor().GetDataPtr());
         memcpy(uv_array, uv_src, uv_array_size);
+    } else if (geometry_.HasPointAttr("__visualization_scalar")) {
+        // Update in FilamentScene::UpdateGeometry(), too.
+        memset(uv_array, 0, uv_array_size);
+        float* src = static_cast<float*>(
+                geometry_.GetPointAttr("__visualization_scalar")
+                        .AsTensor()
+                        .GetDataPtr());
+        const size_t n = 2 * n_vertices;
+        for (size_t i = 0; i < n; i += 2) {
+            uv_array[i] = *src++;
+        }
     } else {
         memset(uv_array, 0, uv_array_size);
     }

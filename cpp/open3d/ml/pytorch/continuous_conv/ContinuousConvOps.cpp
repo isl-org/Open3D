@@ -72,16 +72,16 @@ public:
         CHECK_SAME_DEVICE_TYPE(filters, out_positions, inp_positions,
                                inp_features, inp_importance);
 
-        CHECK_CONTIGUOUS(filters);
-        CHECK_CONTIGUOUS(out_positions);
-        CHECK_CONTIGUOUS(extents);
-        CHECK_CONTIGUOUS(offset);
-        CHECK_CONTIGUOUS(inp_positions);
-        CHECK_CONTIGUOUS(inp_features);
-        CHECK_CONTIGUOUS(inp_importance);
-        CHECK_CONTIGUOUS(neighbors_index);
-        CHECK_CONTIGUOUS(neighbors_importance);
-        CHECK_CONTIGUOUS(neighbors_row_splits);
+        filters = filters.contiguous();
+        out_positions = out_positions.contiguous();
+        extents = extents.contiguous();
+        offset = offset.contiguous();
+        inp_positions = inp_positions.contiguous();
+        inp_features = inp_features.contiguous();
+        inp_importance = inp_importance.contiguous();
+        neighbors_index = neighbors_index.contiguous();
+        neighbors_importance = neighbors_importance.contiguous();
+        neighbors_row_splits = neighbors_row_splits.contiguous();
 
         // check input shapes
         using namespace open3d::ml::op_util;
@@ -198,8 +198,7 @@ public:
         auto device = inp_features.device();
         const auto& real_dtype = filters.dtype();
         const auto& index_dtype = neighbors_index.dtype();
-        auto out_features_gradient = grad_output[0];
-        CHECK_CONTIGUOUS(out_features_gradient);
+        auto out_features_gradient = grad_output[0].contiguous();
         CHECK_SAME_DTYPE(out_features_gradient, inp_features, filters);
         CHECK_SAME_DEVICE_TYPE(out_features_gradient, inp_features, filters);
 

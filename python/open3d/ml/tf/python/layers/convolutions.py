@@ -130,6 +130,14 @@ class ContinuousConv(tf.keras.layers.Layer):
           input and output point sets are the same and
           'radius_search_ignore_query_points' has been set to True.
 
+        dense_kernel_initializer: Initializer for the kernel weights of the
+          linear layer used for the center if 'use_dense_layer_for_center'
+          is True.
+
+        dense_kernel_regularizer: Regularizer for the kernel weights of the
+          linear layer used for the center if 'use_dense_layer_for_center'
+          is True.
+
         in_channels: This keyword argument is for compatibility with Pytorch.
           It is not used and in_channels will be inferred at the first execution
           of the layer.
@@ -153,6 +161,8 @@ class ContinuousConv(tf.keras.layers.Layer):
                  offset=None,
                  window_function=None,
                  use_dense_layer_for_center=False,
+                 dense_kernel_initializer='glorot_uniform',
+                 dense_kernel_regularizer=None,
                  in_channels=None,
                  **kwargs):
 
@@ -171,6 +181,10 @@ class ContinuousConv(tf.keras.layers.Layer):
         self.normalize = normalize
         self.radius_search_ignore_query_points = radius_search_ignore_query_points
         self.radius_search_metric = radius_search_metric
+        self.dense_kernel_initializer = initializers.get(
+            dense_kernel_initializer)
+        self.dense_kernel_regularizer = regularizers.get(
+            dense_kernel_regularizer)
 
         if offset is None:
             self.offset = tf.zeros(shape=(3,))
@@ -192,7 +206,11 @@ class ContinuousConv(tf.keras.layers.Layer):
 
         self.use_dense_layer_for_center = use_dense_layer_for_center
         if self.use_dense_layer_for_center:
-            self.dense = tf.keras.layers.Dense(self.filters, use_bias=False)
+            self.dense = tf.keras.layers.Dense(
+                self.filters,
+                kernel_initializer=dense_kernel_initializer,
+                kernel_regularizer=dense_kernel_regularizer,
+                use_bias=False)
 
         super().__init__(**kwargs)
 

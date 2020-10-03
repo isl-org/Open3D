@@ -12,7 +12,8 @@
 * Corrected documentation of PointCloud.h
 * Added ISS Keypoint Detector
 * Added an RPC interface for external visualizers running in a separate process
-* Added Line3D/Ray3D/Segment3D classes with plane, point, and AABB tests
+* Added Line3D/Ray3D/Segment3D classes with plane, point, closest-distance, and AABB tests
+* Added `maximum_error` parameter to `simplify_quadric_decimation`
 
 ## 0.9.0
 

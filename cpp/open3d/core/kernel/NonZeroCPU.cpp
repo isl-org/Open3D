@@ -60,9 +60,7 @@ Tensor NonZeroCPU(const Tensor& src) {
 
     std::vector<std::vector<int64_t>> non_zero_indices_by_dimensions(
             num_dims, std::vector<int64_t>(num_non_zeros, 0));
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int64_t i = 0; i < static_cast<int64_t>(num_non_zeros); i++) {
         int64_t non_zero_index = non_zero_indices[i];
         for (int64_t dim = num_dims - 1; dim >= 0; dim--) {
