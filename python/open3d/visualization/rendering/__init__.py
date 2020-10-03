@@ -36,7 +36,9 @@ else:
 import math
 from .. import gui
 
+
 class RenderToImage:
+
     def __init__(self, width, height):
         """Creates an object that will handle all the necessary parts of
            rendering to an image. Takes two arguments: width, height."""
@@ -52,8 +54,9 @@ class RenderToImage:
         # here.
         if self._window.content_rect.width > width:
             scaling = self._window.scaling
-            self._window.size = open3d.visualization.gui.Size(int(math.ceil(width / scaling)),
-                                          int(math.ceil(height / scaling)))
+            self._window.size = open3d.visualization.gui.Size(
+                int(math.ceil(width / scaling)),
+                int(math.ceil(height / scaling)))
 
     def set_background_color(self, color4):
         """Sets the background color. Takes one argument: [r, g, b, a]"""
@@ -80,8 +83,8 @@ class RenderToImage:
         # running a tick for everything to propagate through.
         open3d.visualization.gui.Application.instance.run_one_tick()
 
-        return open3d.visualization.gui.Application.instance.render_to_image(self._window,
-                                                         open3dscene)
+        return open3d.visualization.gui.Application.instance.render_to_image(
+            self._window, open3dscene)
 
     def done(self):
         """Cleans up the internal rendering objects. Failure to call this will

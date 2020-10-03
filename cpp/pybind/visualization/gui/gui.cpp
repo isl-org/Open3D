@@ -53,8 +53,8 @@
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
-#include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/Renderer.h"
+#include "open3d/visualization/rendering/Scene.h"
 #include "pybind/docstring.h"
 #include "pybind11/functional.h"
 
@@ -224,24 +224,27 @@ void pybind_gui_classes(py::module &m) {
                     "still running, or False if all the windows have closed.")
             .def(
                     "render_to_image",
-                    [](Application &instance, PyWindow *w, rendering::Open3DScene *scene) -> std::shared_ptr<geometry::Image> {
+                    [](Application &instance, PyWindow *w,
+                       rendering::Open3DScene *scene)
+                            -> std::shared_ptr<geometry::Image> {
                         // This function exists because Filament renders on a
                         // separate thread, so getting the pixels requires
                         // passing a callback to Filament, which it calls
-                        // whenever the GPU has finished drawing. Since we do not
-                        // know when the callback will be called, we cannot
+                        // whenever the GPU has finished drawing. Since we do
+                        // not know when the callback will be called, we cannot
                         // ensure that the GIL is unlocked, so we cannot pass
                         // a Python function (which pybind will automatically
-                        // lock the GIL before entering). Thus we need to do this
-                        // in C++.
+                        // lock the GIL before entering). Thus we need to do
+                        // this in C++.
                         std::shared_ptr<geometry::Image> img;
-                        auto callback = [&img](std::shared_ptr<geometry::Image> _img) {
-                            img = _img;
-                        };
+                        auto callback =
+                                [&img](std::shared_ptr<geometry::Image> _img) {
+                                    img = _img;
+                                };
 
                         scene->GetScene()->RenderToImage(callback);
                         w->PostRedraw();
-                        
+
                         PythonUnlocker unlocker;
                         int i = 0;
                         while (!img && instance.RunOneTick(unlocker)) {

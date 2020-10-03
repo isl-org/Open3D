@@ -4,6 +4,7 @@ import open3d as o3d
 import open3d.visualization.rendering as render
 import open3d.visualization.gui as gui
 
+
 def main():
     r = render.RenderToImage(1024, 768)
     scene = r.create_scene()
@@ -59,6 +60,7 @@ def main():
 
     scene = None  # ensure scene is freed before we cleanup rendering
     r.done()
+
 
 if __name__ == "__main__":
     main()

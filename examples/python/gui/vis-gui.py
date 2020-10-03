@@ -749,6 +749,7 @@ class AppWindow:
             quality = 100
         o3d.io.write_image(path, img, quality)
 
+
 def main():
     # We need to initalize the application, which finds the necessary shaders
     # for rendering and prepares the cross-platform window abstraction.
