@@ -174,9 +174,8 @@ public:
     virtual Transform GetIndirectLightRotation() = 0;
     virtual void ShowSkybox(bool show) = 0;
 
+    /// Size of image is the size of the window.
     virtual void RenderToImage(
-            int width,
-            int height,
             std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
 
 protected:

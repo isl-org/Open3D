@@ -81,8 +81,6 @@ ResourceLoadRequest::ResourceLoadRequest(const char* path,
       error_callback_(std::move(error_callback)) {}
 
 void Renderer::RenderToImage(
-        std::size_t width,
-        std::size_t height,
         View* view,
         Scene* scene,
         std::function<void(std::shared_ptr<geometry::Image>)> cb) {

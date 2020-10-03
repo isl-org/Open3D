@@ -215,12 +215,13 @@ void pybind_rendering_classes(py::module &m) {
             .def("enable_directional_light", &Scene::EnableDirectionalLight)
             .def("set_directional_light", &Scene::SetDirectionalLight,
                  "Sets the parameters of the directional light: direction, "
-                 "color, intensity")
-            .def("render_to_image", &Scene::RenderToImage,
-                 "Renders the scene; image will be provided via a callback "
-                 "function. The callback is necessary because rendering is "
-                 "done on a different thread. The image remains valid "
-                 "after the callback, assuming it was assigned somewhere.");
+                 "color, intensity");
+    // Note that we cannot export RenderToImage. Filament renders on a separate
+    // thread, and calls a callback when everything has finished rendering.
+    // We have no way of knowing when this callback will be called, so we have
+    // no way of ensuring that the GIL is unlocked, and pybind automatically
+    // locks the GIL before calling a Pytho function. So this needs to be done
+    // in C++ code. See Application.render_to_image(), which implements this.
     scene.attr("UPDATE_POINTS_FLAG") = py::int_(Scene::kUpdatePointsFlag);
     scene.attr("UPDATE_NORMALS_FLAG") = py::int_(Scene::kUpdateNormalsFlag);
     scene.attr("UPDATE_COLORS_FLAG") = py::int_(Scene::kUpdateColorsFlag);

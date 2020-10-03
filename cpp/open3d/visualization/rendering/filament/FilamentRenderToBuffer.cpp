@@ -165,29 +165,27 @@ void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
 void FilamentRenderToBuffer::Render() {
     bool shotDone = false;
     frame_done_ = false;
-    while (!frame_done_) {
-        if (renderer_->beginFrame(swapchain_)) {
-            renderer_->render(view_->GetNativeView());
+    if (renderer_->beginFrame(swapchain_)) {
+        renderer_->render(view_->GetNativeView());
 
-            if (!shotDone) {
-                shotDone = true;
+        if (!shotDone) {
+            shotDone = true;
 
-                using namespace filament;
-                using namespace backend;
+            using namespace filament;
+            using namespace backend;
 
-                auto user_param = new PBDParams(this, callback_);
-                PixelBufferDescriptor pd(
-                        buffer_, buffer_size_, PixelDataFormat::RGB,
-                        PixelDataType::UBYTE, ReadPixelsCallback, user_param);
+            auto user_param = new PBDParams(this, callback_);
+            PixelBufferDescriptor pd(
+                    buffer_, buffer_size_, PixelDataFormat::RGB,
+                    PixelDataType::UBYTE, ReadPixelsCallback, user_param);
 
-                auto vp = view_->GetNativeView()->getViewport();
+            auto vp = view_->GetNativeView()->getViewport();
 
-                renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,
-                                      std::move(pd));
-            }
-
-            renderer_->endFrame();
+            renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,
+                                  std::move(pd));
         }
+
+        renderer_->endFrame();
     }
 
     pending_ = false;

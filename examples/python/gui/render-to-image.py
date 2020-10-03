@@ -3,51 +3,9 @@
 import open3d as o3d
 import open3d.visualization.rendering as render
 import open3d.visualization.gui as gui
-import threading
-import time
-
-class RenderToImage:
-    def __init__(self, width, height):
-        gui.Application.instance.initialize()
-        self._width = width
-        self._height = height
-        self._window = gui.Window("Open3D.RenderToImage", width, height, 0, 0)
-        if self._window.content_rect.width > width:
-            scaling = self._window.scaling
-            self._window.size = gui.Size(int(round(width / scaling)),
-                                         int(round(height / scaling)))
-        self._image = None
-
-    def set_background_color(self, color4):
-        self._window.renderer.set_clear_color(color4)
-
-    def create_scene(self):
-        scene = render.Open3DScene(self._window.renderer)
-        scene.set_view_size(self._width, self._height)
-        return scene
-
-    def render(self, open3dscene):
-        self._image = None
-
-        # Getting the clear color actually set in Filament seems to require
-        # running a tick for everything to propagate through.
-        gui.Application.instance.run_one_tick()
-
-        open3dscene.scene.render_to_image(self._width, self._height,
-                                          self._on_image)
-        self._window.post_redraw()
-        while self._image is None:
-            gui.Application.instance.run_one_tick()
-
-        img = self._image
-        self._image = None
-        return img
-
-    def _on_image(self, image):
-        self._image = image
 
 def main():
-    r = RenderToImage(1024, 768)
+    r = render.RenderToImage(1024, 768)
     scene = r.create_scene()
     r.set_background_color([1.0, 1.0, 1.0, 1.0])
 
@@ -94,6 +52,13 @@ def main():
 
     img = r.render(scene)
     o3d.io.write_image("/tmp/test.png", img, 9)
+
+    scene.camera.look_at([0, 0, 0], [-10, 0, 0], [0, 0, 1])
+    img = r.render(scene)
+    o3d.io.write_image("/tmp/test2.png", img, 9)
+
+    scene = None  # ensure scene is freed before we cleanup rendering
+    r.done()
 
 if __name__ == "__main__":
     main()

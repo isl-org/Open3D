@@ -104,8 +104,6 @@ public:
     virtual std::shared_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
 
     void RenderToImage(
-            std::size_t width,
-            std::size_t height,
             View* view,
             Scene* scene,
             std::function<void(std::shared_ptr<geometry::Image>)> cb);
