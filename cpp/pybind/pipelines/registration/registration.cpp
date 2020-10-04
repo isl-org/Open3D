@@ -469,7 +469,6 @@ must hold true for all edges.)");
                         rr.fitness_, rr.inlier_rmse_,
                         rr.correspondence_set_.size());
             });
-
 }
 
 // Registration functions have similar arguments, sharing arg docstrings
