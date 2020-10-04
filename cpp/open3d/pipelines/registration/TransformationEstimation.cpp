@@ -112,3 +112,4 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
 
 }  // namespace registration
 }  // namespace pipelines
+}  // namespace open3d
