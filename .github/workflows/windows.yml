@@ -77,15 +77,18 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
+
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python_version }}
+
       - name: Config
         run: |
           mkdir build
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON ..
+
       - name: Build Python package
         run: |
           python -m pip install --upgrade pip==${{ env.PIP_VER }}
@@ -94,12 +97,33 @@ jobs:
           cmake --build . --config Release --target install-pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "::set-env name=PIP_PKG_NAME::$PIP_PKG_NAME"
+
       - name: Upload wheel
         uses: actions/upload-artifact@v2
         with:
           name: open3d_win_amd64_wheels
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
+
+      - name: GCloud CLI setup
+        # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        env:
+          CLOUDSDK_PYTHON: ${{env.pythonLocation}}\python.exe
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+
+      - name: Upload wheel to GCS bucket
+        if: ${{ github.ref == 'refs/heads/master' }}
+        env:
+          CLOUDSDK_PYTHON: ${{env.pythonLocation}}\python.exe
+        run: |
+          gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/master/python-wheels/
+          echo "Download the wheel at: https://storage.googleapis.com/open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}"
+
 
   test-wheel:
     name: Test wheel

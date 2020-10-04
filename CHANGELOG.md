@@ -12,6 +12,7 @@
 * Corrected documentation of PointCloud.h
 * Added ISS Keypoint Detector
 * Added an RPC interface for external visualizers running in a separate process
+* Added `maximum_error` parameter to `simplify_quadric_decimation`
 
 ## 0.9.0
 
