@@ -415,8 +415,10 @@ public:
     /// \param target_number_of_triangles defines the number of triangles that
     /// the simplified mesh should have. It is not guaranteed that this number
     /// will be reached.
+    /// \param maximum_error defines the maximum error where a vertex is allowed
+    /// to be merged
     std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
-            int target_number_of_triangles) const;
+            int target_number_of_triangles, double maximum_error) const;
 
     /// Function to select points from \p input TriangleMesh into
     /// output TriangleMesh

@@ -46,10 +46,8 @@ std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
     double r2_sum = 0.0;
     JTJ.setZero();
     JTr.setZero();
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
         MatOutType JTJ_private(6 + nonrigidval, 6 + nonrigidval);
         VecOutType JTr_private(6 + nonrigidval);
         double r2_sum_private = 0.0;
@@ -58,9 +56,8 @@ std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
         VecInTypeDouble J_r;
         VecInTypeInt pattern;
         double r;
-#ifdef _OPENMP
+
 #pragma omp for nowait
-#endif
         for (int i = 0; i < iteration_num; i++) {
             f(i, J_r, r, pattern);
             for (auto x = 0; x < J_r.size(); x++) {
@@ -73,17 +70,13 @@ std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
             }
             r2_sum_private += r * r;
         }
-#ifdef _OPENMP
 #pragma omp critical
         {
-#endif
             JTJ += JTJ_private;
             JTr += JTr_private;
             r2_sum += r2_sum_private;
-#ifdef _OPENMP
         }
     }
-#endif
     if (verbose) {
         utility::LogDebug("Residual : {:.2e} (# of elements : {:d})",
                           r2_sum / (double)iteration_num, iteration_num);
