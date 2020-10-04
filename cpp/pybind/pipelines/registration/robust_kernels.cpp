@@ -83,7 +83,10 @@ void pybind_robust_kernels(py::module &m) {
 
     // open3d.registration.L2Loss:RobustKernel
     py::class_<L2Loss, std::shared_ptr<L2Loss>, PyL2Loss, RobustKernel> l2_loss(
-            m, "L2Loss", ":math:`r` is: :math:`\rho(r) = \frac{r^2}{2}`");
+            m, "L2Loss",
+            R"(The loss p(r) for a given residual 'r' is computed as:
+math:`\rho(r) = \frac{r^2}{2}`)");
+    py::detail::bind_default_constructor<L2Loss>(l2_loss);
     py::detail::bind_copy_functions<L2Loss>(l2_loss);
     l2_loss.def("__repr__", [](const L2Loss &l2) {
         return std::string("RobustKernel::L2Loss");
@@ -91,7 +94,10 @@ void pybind_robust_kernels(py::module &m) {
 
     // open3d.registration.L1Loss:RobustKernel
     py::class_<L1Loss, std::shared_ptr<L1Loss>, PyL1Loss, RobustKernel> l1_loss(
-            m, "L1Loss", ":math:`\rho(r) = \mid r \mid`");
+            m, "L1Loss",
+            R"(The loss p(r) for a given residual 'r' is computed as:
+math:`\rho(r) = |r|`)");
+    py::detail::bind_default_constructor<L1Loss>(l1_loss);
     py::detail::bind_copy_functions<L1Loss>(l1_loss);
     l1_loss.def("__repr__", [](const L1Loss &l1) {
         return std::string("RobustKernel::L1Loss");
@@ -101,7 +107,7 @@ void pybind_robust_kernels(py::module &m) {
     py::class_<HuberLoss, std::shared_ptr<HuberLoss>, PyHuberLoss, RobustKernel>
             h_loss(m, "HuberLoss",
                    R"(The loss p(r) for a given residual 'r' is computed as:
-:math::`
+math::`
 \begin{equation}
   \begin{cases}
     \frac{r^{2}}{2}, & |r| \leq k.\\
@@ -116,7 +122,11 @@ void pybind_robust_kernels(py::module &m) {
                      return std::string("RobustKernel::HuberLoss with k=") +
                             std::to_string(rk.k_);
                  })
-            .def_readwrite("k", &HuberLoss::k_, R"(Insert here docstring)");
+            .def_readwrite(
+                    "k", &HuberLoss::k_,
+                    "``k`` Is the scaling paramter of the huber loss function. "
+                    "``k`` corresponds to 'delta' on this page: "
+                    "http://en.wikipedia.org/wiki/Huber_Loss_Function");
 
     // open3d.registration.TukeyLoss:RobustKernel
     py::class_<TukeyLoss, std::shared_ptr<TukeyLoss>, PyTukeyLoss, RobustKernel>
@@ -137,7 +147,8 @@ void pybind_robust_kernels(py::module &m) {
                      return std::string("RobustKernel::TukeyLoss with k=") +
                             std::to_string(rk.k_);
                  })
-            .def_readwrite("k", &TukeyLoss::k_, R"(Insert here docstring)");
+            .def_readwrite("k", &TukeyLoss::k_,
+                           "``k`` Is a unning constant for the loss Function");
 }
 
 }  // namespace registration
