@@ -29,7 +29,10 @@
 #include <Eigen/Core>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
+
+#include "open3d/pipelines/registration/RobustKernel.h"
 
 namespace open3d {
 
@@ -130,8 +133,13 @@ private:
 class TransformationEstimationPointToPlane : public TransformationEstimation {
 public:
     /// \brief Default Constructor.
-    TransformationEstimationPointToPlane() {}
-    ~TransformationEstimationPointToPlane() override {}
+    TransformationEstimationPointToPlane() = default;
+    ~TransformationEstimationPointToPlane() override = default;
+
+    ///
+    explicit TransformationEstimationPointToPlane(
+            std::shared_ptr<RobustKernel> kernel)
+        : kernel_(std::move(kernel)) {}
 
 public:
     TransformationEstimationType GetTransformationEstimationType()
@@ -147,6 +155,7 @@ public:
             const CorrespondenceSet &corres) const override;
 
 private:
+    std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPlane;
 };

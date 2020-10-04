@@ -29,6 +29,7 @@
 #include <Eigen/Geometry>
 
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/utility/Eigen.h"
 
 namespace open3d {
@@ -83,15 +84,17 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
         return Eigen::Matrix4d::Identity();
 
     auto compute_jacobian_and_residual = [&](int i, Eigen::Vector6d &J_r,
-                                             double &r) {
+                                             double &r, double &w) {
         const Eigen::Vector3d &vs = source.points_[corres[i][0]];
         const Eigen::Vector3d &vt = target.points_[corres[i][1]];
         const Eigen::Vector3d &nt = target.normals_[corres[i][1]];
         r = (vs - vt).dot(nt);
+        w = kernel_->Weight(r);
         J_r.block<3, 1>(0, 0) = vs.cross(nt);
         J_r.block<3, 1>(3, 0) = nt;
     };
 
+    // Weight matrix
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
     double r2;
