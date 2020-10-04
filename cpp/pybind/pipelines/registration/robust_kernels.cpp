@@ -44,7 +44,7 @@ template <class RobustKernelBase = RobustKernel>
 class PyRobustKernelT : public RobustKernelBase {
 public:
     using RobustKernelBase::RobustKernelBase;
-    RobustKernelType GetRobustKernelType() const override {
+    RobustKernelType GetKernelType() const override {
         PYBIND11_OVERLOAD_PURE(RobustKernelType, RobustKernelBase, void);
     }
     double Weight(double residual) const override {
@@ -63,13 +63,23 @@ void pybind_robust_kernels(py::module &m) {
     // open3d.registration.RobustKernel
     py::class_<RobustKernel, std::shared_ptr<RobustKernel>, PyRobustKernel> rk(
             m, "RobustKernel",
-            "Base class that models statistical robust kernels. The virtual "
-            "function Weight() must be implemented in subclasses.");
+            "Base class that models a robust kernel for outlier rejection. The "
+            "virtual function weight() must be implemented in derived classes. "
+            "This method will be only difference between different types of "
+            "kernels and can be easily extended.  The kernels implemented so "
+            "far and the notation has been inspired by the publication: "
+            "Analysis of Robust Functions for Registration Algorithms, "
+            "Philippe Babin etal. We obtain the correspondendent weights for "
+            "each residual and turn the non-linear least-square problem into a "
+            "IRSL(Iteratively Reweighted Least-Squares) problem. Changing the "
+            "weight of each residual is equivalent to changing the robust "
+            "kernel used for outlier rejection.");
     rk.def("weight", &RobustKernel::Weight, "residual"_a,
            "Obtain the correspondent weight for the given residual.");
     docstring::ClassMethodDocInject(
             m, "RobustKernel", "weight",
-            {{"residual", "residual from the optimization problem"}});
+            {{"residual",
+              "Residual value obtained during the optimization problem"}});
 
     // open3d.registration.L2Loss:RobustKernel
     py::class_<L2Loss, std::shared_ptr<L2Loss>, PyL2Loss, RobustKernel> l2_loss(
