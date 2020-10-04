@@ -83,17 +83,32 @@ void pybind_robust_kernels(py::module &m) {
 
     // open3d.registration.L2Loss:RobustKernel
     py::class_<L2Loss, std::shared_ptr<L2Loss>, PyL2Loss, RobustKernel> l2_loss(
-            m, "L2Loss", "L2Loss class");
+            m, "L2Loss", ":math:`r` is: :math:`\rho(r) = \frac{r^2}{2}`");
     py::detail::bind_copy_functions<L2Loss>(l2_loss);
+    l2_loss.def("__repr__", [](const L2Loss &l2) {
+        return std::string("RobustKernel::L2Loss");
+    });
 
     // open3d.registration.L1Loss:RobustKernel
     py::class_<L1Loss, std::shared_ptr<L1Loss>, PyL1Loss, RobustKernel> l1_loss(
-            m, "L1Loss", "L1Loss class");
+            m, "L1Loss", ":math:`\rho(r) = \mid r \mid`");
     py::detail::bind_copy_functions<L1Loss>(l1_loss);
+    l1_loss.def("__repr__", [](const L1Loss &l1) {
+        return std::string("RobustKernel::L1Loss");
+    });
 
     // open3d.registration.HuberLoss:RobustKernel
     py::class_<HuberLoss, std::shared_ptr<HuberLoss>, PyHuberLoss, RobustKernel>
-            h_loss(m, "HuberLoss", "HuberLoss class");
+            h_loss(m, "HuberLoss",
+                   R"(The loss p(r) for a given residual 'r' is computed as:
+:math::`
+\begin{equation}
+  \begin{cases}
+    \frac{r^{2}}{2}, & |r| \leq k.\\
+    k(|r|-k / 2), & \text{otherwise}.
+  \end{cases}
+\end{equation}
+`)");
     py::detail::bind_copy_functions<HuberLoss>(h_loss);
     h_loss.def(py::init([](double k) { return new HuberLoss(k); }), "k"_a)
             .def("__repr__",
@@ -105,7 +120,16 @@ void pybind_robust_kernels(py::module &m) {
 
     // open3d.registration.TukeyLoss:RobustKernel
     py::class_<TukeyLoss, std::shared_ptr<TukeyLoss>, PyTukeyLoss, RobustKernel>
-            t_loss(m, "TukeyLoss", "TukeyLoss class");
+            t_loss(m, "TukeyLoss",
+                   R"(The loss p(r) for a given residual 'r' is computed as:
+:math::`
+\begin{equation}
+  \begin{cases}
+    \frac{k^{2}\left(1-\left(1-\left(\frac{e}{k}\right)^{2}\right)^{3}\right)}{2}, & |r| \leq k.\\
+    \frac{k^{2}}{2}, & \text{otherwise}.
+  \end{cases}
+\end{equation}
+`)");
     py::detail::bind_copy_functions<TukeyLoss>(t_loss);
     t_loss.def(py::init([](double k) { return new TukeyLoss(k); }), "k"_a)
             .def("__repr__",
