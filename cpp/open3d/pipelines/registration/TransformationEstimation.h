@@ -154,8 +154,10 @@ public:
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
-private:
+public:
     std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
+
+private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPlane;
 };

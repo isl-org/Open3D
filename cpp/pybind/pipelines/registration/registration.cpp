@@ -26,11 +26,14 @@
 
 #include "open3d/pipelines/registration/Registration.h"
 
+#include <memory>
+
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
 #include "open3d/pipelines/registration/Feature.h"
+#include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Console.h"
 #include "pybind/docstring.h"
@@ -76,6 +79,25 @@ public:
                                corres, transformation);
     }
 };
+
+template <class RobustKernelBase = RobustKernel>
+class PyRobustKernelT : public RobustKernelBase {
+public:
+    using RobustKernelBase::RobustKernelBase;
+    RobustKernelType GetRobustKernelType() const override {
+        PYBIND11_OVERLOAD_PURE(RobustKernelType, RobustKernelBase, void);
+    }
+    double Weight(double residual) const override {
+        PYBIND11_OVERLOAD_PURE(double, RobustKernelBase, residual);
+    }
+};
+
+// Type aliases to improve readability
+using PyRobustKernel = PyRobustKernelT<RobustKernel>;
+using PyL2Loss = PyRobustKernelT<L2Loss>;
+using PyL1Loss = PyRobustKernelT<L1Loss>;
+using PyHuberLoss = PyRobustKernelT<HuberLoss>;
+using PyTukeyLoss = PyRobustKernelT<TukeyLoss>;
 
 void pybind_registration_classes(py::module &m) {
     // open3d.registration.ICPConvergenceCriteria
@@ -229,9 +251,19 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
             te_p2l);
     py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
             te_p2l);
-    te_p2l.def("__repr__", [](const TransformationEstimationPointToPlane &te) {
-        return std::string("TransformationEstimationPointToPlane");
-    });
+    te_p2l.def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                   return new TransformationEstimationPointToPlane(kernel);
+               }),
+               "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationPointToPlane &te) {
+                     return std::string(
+                             "TransformationEstimationPointToPlane with "
+                             "Kernel: <todo>>");
+                 })
+            .def_readwrite("kernel",
+                           &TransformationEstimationPointToPlane::kernel_,
+                           R"(Insert Here kernel docstring)");
 
     // open3d.registration.CorrespondenceChecker
     py::class_<CorrespondenceChecker,
@@ -456,6 +488,51 @@ must hold true for all edges.)");
                         rr.fitness_, rr.inlier_rmse_,
                         rr.correspondence_set_.size());
             });
+
+    // open3d.registration.RobustKernel
+    py::class_<RobustKernel, std::shared_ptr<RobustKernel>, PyRobustKernel> rk(
+            m, "RobustKernel",
+            "Base class that models statistical robust kernels. The virtual "
+            "function Weight() must be implemented in subclasses.");
+    rk.def("weight", &RobustKernel::Weight, "residual"_a,
+           "Obtain the correspondent weight for the given residual.");
+    docstring::ClassMethodDocInject(
+            m, "RobustKernel", "weight",
+            {{"residual", "residual from the optimization problem"}});
+
+    // open3d.registration.L2Loss:RobustKernel
+    py::class_<L2Loss, std::shared_ptr<L2Loss>, PyL2Loss, RobustKernel> l2_loss(
+            m, "L2Loss", "L2Loss class");
+    py::detail::bind_copy_functions<L2Loss>(l2_loss);
+
+    // open3d.registration.L1Loss:RobustKernel
+    py::class_<L1Loss, std::shared_ptr<L1Loss>, PyL1Loss, RobustKernel> l1_loss(
+            m, "L1Loss", "L1Loss class");
+    py::detail::bind_copy_functions<L1Loss>(l1_loss);
+
+    // open3d.registration.HuberLoss:RobustKernel
+    py::class_<HuberLoss, std::shared_ptr<HuberLoss>, PyHuberLoss, RobustKernel>
+            h_loss(m, "HuberLoss", "HuberLoss class");
+    py::detail::bind_copy_functions<HuberLoss>(h_loss);
+    h_loss.def(py::init([](double k) { return new HuberLoss(k); }), "k"_a)
+            .def("__repr__",
+                 [](const HuberLoss &rk) {
+                     return std::string("RobustKernel::HuberLoss with k=") +
+                            std::to_string(rk.k_);
+                 })
+            .def_readwrite("k", &HuberLoss::k_, R"(Insert here docstring)");
+
+    // open3d.registration.TukeyLoss:RobustKernel
+    py::class_<TukeyLoss, std::shared_ptr<TukeyLoss>, PyTukeyLoss, RobustKernel>
+            t_loss(m, "TukeyLoss", "TukeyLoss class");
+    py::detail::bind_copy_functions<TukeyLoss>(t_loss);
+    t_loss.def(py::init([](double k) { return new TukeyLoss(k); }), "k"_a)
+            .def("__repr__",
+                 [](const TukeyLoss &rk) {
+                     return std::string("RobustKernel::TukeyLoss with k=") +
+                            std::to_string(rk.k_);
+                 })
+            .def_readwrite("k", &TukeyLoss::k_, R"(Insert here docstring)");
 }
 
 // Registration functions have similar arguments, sharing arg docstrings

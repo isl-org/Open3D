@@ -77,8 +77,8 @@ public:
         return RobustKernelType::Huber;
     }
 
-private:
-    const double k_;
+public:
+    double k_;
 };
 
 class TukeyLoss : public RobustKernel {
@@ -91,8 +91,8 @@ public:
         return RobustKernelType::Tukey;
     }
 
-private:
-    const double k_;
+public:
+    double k_;
 };
 
 }  // namespace registration
