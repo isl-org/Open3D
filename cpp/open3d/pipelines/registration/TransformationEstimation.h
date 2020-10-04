@@ -133,8 +133,8 @@ private:
 class TransformationEstimationPointToPlane : public TransformationEstimation {
 public:
     /// \brief Default Constructor.
-    TransformationEstimationPointToPlane() = default;
-    ~TransformationEstimationPointToPlane() override = default;
+    TransformationEstimationPointToPlane() {}
+    ~TransformationEstimationPointToPlane() override {}
 
     /// \brief Constructor that takes as input a RobustKernel \params kernel Any
     /// of the implemented statistical robust kernel for outlier rejection.
