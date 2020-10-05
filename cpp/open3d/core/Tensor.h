@@ -628,6 +628,15 @@ public:
 
     /// Element-wise absolute value of a tensor, in-place.
     Tensor Abs_();
+
+    /// Element wise clipping of tensor values so that resulting values lie in
+    /// the range [\p min_val, \p max_val], returning a new tensor
+    Tensor Clip(double min_val, double max_val) const;
+
+    /// Element wise clipping of tensor values so that resulting values lie in
+    /// the range [\p min_val, \p max_val]. In-place version.
+    Tensor Clip_(double min_val, double max_val);
+
     /// Element-wise logical not of a tensor, returning a new boolean tensor.
     ///
     /// If the tensor is not boolean, 0 will be treated as False, while non-zero

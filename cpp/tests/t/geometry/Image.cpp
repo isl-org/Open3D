@@ -75,7 +75,7 @@ TEST_P(ImagePermuteDevices, Constructor) {
     EXPECT_ANY_THROW(t::geometry::Image(rows, cols, -1, dtype, device));
 
     // Check all dtypes.
-    for (const core::Dtype& dtype : std::vector<core::Dtype>{
+    for (const core::Dtype& dtype : {
                  core::Dtype::Float32,
                  core::Dtype::Float64,
                  core::Dtype::Int32,
@@ -118,6 +118,37 @@ TEST_P(ImagePermuteDevices, ConstructorFromTensor) {
     EXPECT_EQ(t_3d_sliced.GetShape(), core::SizeVector({rows, cols, 2}));
     EXPECT_FALSE(t_3d_sliced.IsContiguous());
     EXPECT_ANY_THROW(t::geometry::Image im_nc(t_3d_sliced); (void)im_nc;);
+}
+
+TEST(Image, Dilate) {
+    // reference data used to validate the filtering of an image
+    // clang-format off
+    const std::vector<uint8_t> input_data = {
+        0, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 0, 0, 0, 0, 1, 0,
+        0, 0, 1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0},
+        output_ref = {
+            1, 1, 1, 0, 0, 1, 1, 1,
+            1, 1, 1, 1, 0, 1, 1, 1,
+            1, 1, 1, 1, 0, 1, 1, 1,
+            0, 1, 1, 1, 0, 0, 0, 0};
+    // clang-format on
+
+    // test image dimensions
+    const int rows = 4;
+    const int cols = 8;
+    const int channels = 1;
+    core::Dtype dtype = core::Dtype::UInt8;
+
+    t::geometry::Image input(core::Tensor{
+            input_data, {rows, cols, channels}, dtype, core::Device("CUDA:0")});
+    auto output = image.Dilate();
+
+    EXPECT_TRUE(output.GetRows(), input.GetRows());
+    EXPECT_TRUE(output.GetCols(), input.GetCols());
+    EXPECT_TRUE(output.GetChannels(), input.GetChannels());
+    EXPECT_THAT(output.GetDataPtr(), ElementsAreArray(output_ref));
 }
 
 }  // namespace tests

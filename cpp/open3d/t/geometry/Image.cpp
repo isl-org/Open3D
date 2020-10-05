@@ -29,6 +29,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/nppImage.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -67,6 +68,21 @@ Image::Image(const core::Tensor &tensor)
         utility::LogError("Input tensor must be 2-D or 3-D, but got shape {}.",
                           tensor.GetShape().ToString());
     }
+}
+
+Image Image::Dilate(int half_kernel_size) const {
+    Image dstim;
+    dstim.data_ = core::Tensor::EmptyLike(data_);
+    // TODO: row padding for tensor?
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        npp::supported(GetDtype(), GetChannels())) {
+        npp::dilate(data_, dstim.data_, half_kernel_size);
+    } else {
+        utility::LogError("Not implemented");
+    }
+    if (!dstim.data_.IsContiguous())
+        utility::LogError("Logic error: Output image is not contiguous!");
+    return dstim;
 }
 
 }  // namespace geometry

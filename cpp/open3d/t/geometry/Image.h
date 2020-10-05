@@ -29,7 +29,9 @@
 #include <memory>
 #include <vector>
 
+#include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/kernel/UnaryEW.h"
 #include "open3d/t/geometry/Geometry.h"
 
 namespace open3d {
@@ -42,6 +44,36 @@ namespace geometry {
 /// dtype and device.
 class Image : public Geometry {
 public:
+    /// \enum ColorToIntensityConversionType
+    ///
+    /// \brief Specifies whether R, G, B channels have the same weight when
+    /// converting to intensity. Only used for Image with 3 channels.
+    ///
+    /// When `Weighted` is used R, G, B channels are weighted according to the
+    /// Digital ITU BT.601 standard: I = 0.299 * R + 0.587 * G + 0.114 * B.
+    enum class ColorConversionType {
+        /// R, G, B channels have equal weights.
+        RGBToGrayEqual,
+        /// Weighted R, G, B channels: I = 0.299 * R + 0.587 * G + 0.114 * B.
+        RGBToGrayWeighted,
+    };
+
+    /// \enum FilterType
+    ///
+    /// \brief Specifies the Image filter type.
+    enum class FilterType {
+        /// Gaussian filter of size 3 x 3.
+        Gaussian3,
+        /// Gaussian filter of size 5 x 5.
+        Gaussian5,
+        /// Gaussian filter of size 7 x 7.
+        Gaussian7,
+        /// Sobel filter along X-axis.
+        Sobel3Dx,
+        /// Sobel filter along Y-axis.
+        Sobel3Dy
+    };
+
     /// \brief Constructor for image.
     ///
     /// Row-major storage is used, similar to OpenCV. Use (row, col, channel)
@@ -128,9 +160,47 @@ public:
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
+    /// Returns an Image with the specified \p dtype.
+    /// \param dtype The targeted dtype to convert to.
+    /// \param alpha Optional scale value. This is 1./255 for UInt8 ->
+    /// Float{32,64} and 1. otherwise
+    /// \param beta Optional shift value. Default 0.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor already have the targeted dtype.
+    //
+    // Use Tensor::To and Tensor operators
+    Image ConvertTo(core::Dtype,
+                    double scale = 1.0,
+                    double offset = 0.0,
+                    bool copy = false);
+
+    Image ConvertColor(Image::ColorConversionType cctype);
+
+    /// Function to linearly transform pixel intensities
+    /// image_new = scale * image + offset.
+    Image LinearTransform(double scale = 1.0, double offset = 0.0);
+
+    Image FlipVertical() const;
+    Image FilterHorizontal() const;
+    Image Transpose() const;
+
+    /// Filter image with pre-defined filtering type.
+    Image FilterFixed(Image::FilterType type) const;
+
+    /// Filter image with arbitrary dx, dy separable filters.
+    Image FilterSeparable(const std::vector<double> &dx,
+                          const std::vector<double> &dy) const;
+
+    /// Function to 2x image downsample using simple 2x2 averaging.
+    Image Downsample() const;
+
+    /// Function to dilate 8bit mask map.
+    Image Dilate(int half_kernel_size = 1) const;
+
 protected:
-    /// Internal data of the Image, represented as a 3D tensor of shape {rols,
-    /// cols, channels}. Image properties can be obtained from the tensor.
+    /// Internal data of the Image, represented as a contiguous 3D tensor of
+    /// shape {rols, cols, channels}. Image properties can be obtained from the
+    /// tensor.
     core::Tensor data_;
 };
 
