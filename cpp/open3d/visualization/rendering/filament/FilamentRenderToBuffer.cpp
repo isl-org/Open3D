@@ -171,9 +171,9 @@ void FilamentRenderToBuffer::Render() {
         using namespace backend;
 
         auto user_param = new PBDParams(this, callback_);
-        PixelBufferDescriptor pd(buffer_, buffer_size_,
-                                 PixelDataFormat::RGB, PixelDataType::UBYTE,
-                                 ReadPixelsCallback, user_param);
+        PixelBufferDescriptor pd(buffer_, buffer_size_, PixelDataFormat::RGB,
+                                 PixelDataType::UBYTE, ReadPixelsCallback,
+                                 user_param);
 
         auto vp = view_->GetNativeView()->getViewport();
 
