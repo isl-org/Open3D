@@ -41,7 +41,6 @@ option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
 option(WITH_FAISS                 "Enable Faiss"                             ON )
-option(BUILD_FAISS_FROM_SOURCE    "Build Faiss from source"                  ON )
 
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)

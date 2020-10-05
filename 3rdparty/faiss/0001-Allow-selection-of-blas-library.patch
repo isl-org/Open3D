@@ -1,5 +1,5 @@
 diff --git a/faiss/CMakeLists.txt b/faiss/CMakeLists.txt
-index 51680fd..184dbaa 100644
+index 51680fd..6fa00ba 100644
 --- a/faiss/CMakeLists.txt
 +++ b/faiss/CMakeLists.txt
 @@ -147,16 +147,7 @@ target_compile_definitions(faiss PRIVATE FINTEGER=int)
@@ -16,7 +16,7 @@ index 51680fd..184dbaa 100644
 -  find_package(LAPACK REQUIRED)
 -  target_link_libraries(faiss PRIVATE ${LAPACK_LIBRARIES})
 -endif()
-+target_link_libraries(faiss PRIVATE ${FAISS_BLAS_LIBRARIES})
++target_link_libraries(faiss PRIVATE ${FAISS_BLAS_TARGET})
  
  install(TARGETS faiss
    EXPORT faiss-targets

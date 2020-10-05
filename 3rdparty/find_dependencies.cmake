@@ -989,6 +989,7 @@ if(USE_BLAS)
         message(STATUS "Building OpenBLAS with LAPACK from source")
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         import_3rdparty_library(3rdparty_openblas
+            PUBLIC
             INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
             LIB_DIR ${OPENBLAS_LIB_DIR}
             LIBRARIES ${OPENBLAS_LIBRARIES}
@@ -1001,8 +1002,9 @@ if(USE_BLAS)
                                 ${CUDA_cusolver_LIBRARY}
                                 ${CUDA_CUBLAS_LIBRARIES})
         endif()
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
+        list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${OPENBLAS_TARGET}")
     endif()
+    set(FAISS_BLAS_TARGET ${OPENBLAS_TARGET})
 else()
     include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
     # MKL, cuSOLVER, cuBLAS
@@ -1034,6 +1036,7 @@ else()
         target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
     endif()
     list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${MKL_TARGET}")
+    set(FAISS_BLAS_TARGET ${MKL_TARGET})
 endif()
 
 # Faiss
@@ -1041,13 +1044,8 @@ if (WITH_FAISS AND WIN32)
     message(STATUS "Faiss is not supported on Windows")
     set(WITH_FAISS OFF)
 elseif(WITH_FAISS)
-    if (BUILD_FAISS_FROM_SOURCE)
-        message(STATUS "Building third-party library faiss from source")
-        include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
-    else()
-        message(STATUS "Using prebuilt third-party library faiss")
-        include(${Open3D_3RDPARTY_DIR}/faiss/faiss_download.cmake)
-    endif()
+    message(STATUS "Building third-party library faiss from source")
+    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
 endif()
 if (WITH_FAISS)
     message(STATUS "FAISS_INCLUDE_DIR: ${FAISS_INCLUDE_DIR}")
@@ -1057,8 +1055,9 @@ if (WITH_FAISS)
         LIBRARIES ${FAISS_LIBRARIES}
         LIB_DIR ${FAISS_LIB_DIR}
     )
+    message(STATUS "FAISS_BLAS_TARGET: ${FAISS_BLAS_TARGET}")
     add_dependencies(3rdparty_faiss ext_faiss)
-    target_link_libraries(3rdparty_faiss INTERFACE 3rdparty_mkl)
+    target_link_libraries(3rdparty_faiss INTERFACE ${FAISS_BLAS_TARGET})
     set(FAISS_TARGET "3rdparty_faiss")
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
