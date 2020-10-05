@@ -722,7 +722,7 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "set_preferred_width",
                     [](NumberEdit &ne, double width) {
-                        ne.NumberEdit::SetPreferredWidth(width);
+                        ne.NumberEdit::SetPreferredWidth(int(width));
                     },
                     "Sets the preferred width of the NumberEdit");
 
