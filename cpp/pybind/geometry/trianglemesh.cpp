@@ -265,7 +265,8 @@ void pybind_trianglemesh(py::module &m) {
                  "Function to simplify mesh using Quadric Error Metric "
                  "Decimation by "
                  "Garland and Heckbert",
-                 "target_number_of_triangles"_a)
+                 "target_number_of_triangles"_a,
+                 "maximum_error"_a = std::numeric_limits<double>::infinity())
             .def("compute_convex_hull", &TriangleMesh::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
             .def("cluster_connected_triangles",
@@ -596,7 +597,9 @@ void pybind_trianglemesh(py::module &m) {
             m, "TriangleMesh", "simplify_quadric_decimation",
             {{"target_number_of_triangles",
               "The number of triangles that the simplified mesh should have. "
-              "It is not guaranteed that this number will be reached."}});
+              "It is not guaranteed that this number will be reached."},
+             {"maximum_error",
+              "The maximum error where a vertex is allowed to be merged"}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "cluster_connected_triangles");

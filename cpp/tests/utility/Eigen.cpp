@@ -184,9 +184,6 @@ TEST(Eigen, ComputeJTJandJTr) {
     ref_JTr << 0.477778, -0.262092, -0.162745, -0.545752, -0.643791, -0.883007;
 
     auto testFunction = [&](int i, Eigen::Vector6d &J_r, double &r) {
-#ifdef _OPENMP
-#pragma omp critical
-#endif
         {
             std::vector<double> v(6);
             Rand(v, -1.0, 1.0, i);
@@ -227,9 +224,6 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
             [&](int i,
                 std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
                 std::vector<double> &r) {
-#ifdef _OPENMP
-#pragma omp critical
-#endif
                 {
                     size_t size = 10;
 

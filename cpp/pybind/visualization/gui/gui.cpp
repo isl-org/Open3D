@@ -758,6 +758,12 @@ void pybind_gui_classes(py::module &m) {
             .def_property(
                     "scene", &SceneWidget::GetScene, &SceneWidget::SetScene,
                     "The rendering.Open3DScene that the SceneWidget renders")
+            .def("enable_scene_caching", &SceneWidget::EnableSceneCaching,
+                 "Enable/Disable caching of scene content when the view or "
+                 "model is not changing. Scene caching can help improve UI "
+                 "responsiveness for large models and point clouds")
+            .def("force_redraw", &SceneWidget::ForceRedraw,
+                 "Ensures scene redraws even when scene caching is enabled.")
             .def("set_view_controls", &SceneWidget::SetViewControls,
                  "Sets mouse interaction, e.g. ROTATE_OBJ")
             .def("setup_camera", &SceneWidget::SetupCamera,
