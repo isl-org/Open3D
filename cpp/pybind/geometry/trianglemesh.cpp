@@ -602,7 +602,8 @@ void pybind_trianglemesh(py::module &m) {
              {"maximum_error",
               "The maximum error where a vertex is allowed to be merged"},
              {"boundary_weight",
-                     "A weight applied to edge vertices used to preserve boundaries"}});
+              "A weight applied to edge vertices used to preserve "
+              "boundaries"}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "cluster_connected_triangles");
