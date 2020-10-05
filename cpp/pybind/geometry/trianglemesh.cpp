@@ -235,7 +235,7 @@ void pybind_trianglemesh(py::module &m) {
             .def("get_volume",
                  (double (TriangleMesh::*)() const) & TriangleMesh::GetVolume,
                  "Function that computes the volume of the mesh, under the "
-                 "condition that it is watertight.")
+                 "condition that it is watertight and orientable.")
             .def("sample_points_uniformly",
                  &TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",

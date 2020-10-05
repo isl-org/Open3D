@@ -331,7 +331,7 @@ public:
     double GetSurfaceArea(std::vector<double> &triangle_areas) const;
 
     /// Function that computes the volume of the mesh, under the condition that
-    /// it is watertight.
+    /// it is watertight and orientable.
     /// See Zhang and Chen, "Efficient feature extraction for 2D/3D objects in
     /// mesh representation", 2001.
     double GetVolume() const;
