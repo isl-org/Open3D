@@ -21,7 +21,7 @@ requirements:
         - widgetsnbextension
         - notebook
         - numpy
-        - llvm-openmp # [osx]
+        - intel-openmp # [osx]
 
 test:
     script:
