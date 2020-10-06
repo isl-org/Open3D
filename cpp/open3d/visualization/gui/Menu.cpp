@@ -79,6 +79,8 @@ struct Menu::Impl {
 
     std::vector<MenuItem> items_;
     std::unordered_map<int, size_t> id2idx_;
+    bool submenu_visible_ = false;
+    bool submenu_visibility_changed_ = false;
 
     MenuItem *FindMenuItem(ItemId item_id) {
         auto it = this->id2idx_.find(item_id);
@@ -191,6 +193,10 @@ int Menu::CalcHeight(const Theme &theme) const {
     return int(std::ceil(em + 2.0f * (padding.y + EXTRA_PADDING_Y)));
 }
 
+bool Menu::CheckVisibilityChange() const {
+    return impl_->submenu_visibility_changed_;
+}
+
 Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
     ItemId activate_id = NO_ITEM;
 
@@ -201,13 +207,18 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
                         ImVec2(padding.x, padding.y + EXTRA_PADDING_Y));
 
+    impl_->submenu_visibility_changed_ = false;
     ImGui::BeginMainMenuBar();
     for (auto &item : impl_->items_) {
         if (item.submenu_) {
+            bool submenu_visible = item.submenu_impl_->submenu_visible_;
             auto id = item.submenu_->Draw(context, item.name_.c_str(),
                                           is_enabled);
             if (id >= 0) {
                 activate_id = id;
+            }
+            if (submenu_visible != item.submenu_impl_->submenu_visible_) {
+                impl_->submenu_visibility_changed_ = true;
             }
         }
     }
@@ -267,6 +278,8 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
                                float(context.theme.default_margin)));
 
     if (ImGui::BeginMenu(name, is_enabled)) {
+        impl_->submenu_visible_ = true;
+
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
             auto &item = impl_->items_[i];
             if (item.is_separator_) {
@@ -296,6 +309,8 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
             }
         }
         ImGui::EndMenu();
+    } else {
+        impl_->submenu_visible_ = false;
     }
 
     ImGui::PopStyleVar(3);
