@@ -232,6 +232,10 @@ void pybind_trianglemesh(py::module &m) {
                          TriangleMesh::GetSurfaceArea,
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.")
+            .def("get_volume",
+                 (double (TriangleMesh::*)() const) & TriangleMesh::GetVolume,
+                 "Function that computes the volume of the mesh, under the "
+                 "condition that it is watertight and orientable.")
             .def("sample_points_uniformly",
                  &TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
