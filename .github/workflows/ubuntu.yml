@@ -100,8 +100,8 @@ jobs:
           install_cuda_toolkit with-cudnn purge-cache
           nvcc --version
           # Export PATH and LD_LIBRARY_PATH (for CUDA) for the next step
-          echo "::set-env name=PATH::$PATH"
-          echo "::set-env name=LD_LIBRARY_PATH::$LD_LIBRARY_PATH"
+          echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
           echo
           echo "Installing CPU versions of packages"
           install_python_dependencies
@@ -120,7 +120,7 @@ jobs:
           source util/ci_utils.sh
           build_wheel
           ccache -s
-          echo "::set-env name=PIP_PKG_NAME::$(basename build/lib/python_package/pip_package/open3d*.whl)"
+          echo "PIP_PKG_NAME=$(basename build/lib/python_package/pip_package/open3d*.whl)" >> $GITHUB_ENV
 
       - name: Upload wheel
         uses: actions/upload-artifact@v2

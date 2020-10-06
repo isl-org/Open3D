@@ -96,7 +96,7 @@ jobs:
           cd build
           cmake --build . --config Release --target install-pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
-          echo "::set-env name=PIP_PKG_NAME::$PIP_PKG_NAME"
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Upload wheel
         uses: actions/upload-artifact@v2
