@@ -158,7 +158,10 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
 )");
     py::detail::bind_default_constructor<L2Loss>(l2_loss);
     py::detail::bind_copy_functions<L2Loss>(l2_loss);
-    l2_loss.def("__repr__", []() { return "RobustKernel::L2Loss"; });
+    l2_loss.def("__repr__", [](const L2Loss &rk) {
+        (void)rk;
+        return "RobustKernel::L2Loss";
+    });
 
     // open3d.registration.L1Loss:RobustKernel
     py::class_<L1Loss, std::shared_ptr<L1Loss>, PyL1Loss, RobustKernel> l1_loss(
@@ -174,7 +177,10 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
 )");
     py::detail::bind_default_constructor<L1Loss>(l1_loss);
     py::detail::bind_copy_functions<L1Loss>(l1_loss);
-    l1_loss.def("__repr__", []() { return "RobustKernel::L1Loss"; });
+    l1_loss.def("__repr__", [](const L1Loss &rk) {
+        (void)rk;
+        return "RobustKernel::L1Loss";
+    });
 
     // open3d.registration.HuberLoss
     py::class_<HuberLoss, std::shared_ptr<HuberLoss>, PyHuberLoss, RobustKernel>
