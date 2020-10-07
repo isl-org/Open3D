@@ -6,7 +6,7 @@ ExternalProject_Add(
     ext_filament
     PREFIX filament
     GIT_REPOSITORY https://github.com/google/filament.git
-    GIT_TAG v1.8.1
+    GIT_TAG v1.9.3
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=Release
