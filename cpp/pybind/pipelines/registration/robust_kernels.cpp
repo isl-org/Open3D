@@ -65,23 +65,78 @@ void pybind_robust_kernels(py::module &m) {
     // open3d.registration.RobustKernel
     py::class_<RobustKernel, std::shared_ptr<RobustKernel>, PyRobustKernel> rk(
             m, "RobustKernel",
-            "Base class that models a robust kernel for outlier rejection. The "
-            "virtual function ``weight()`` must be implemented in derived "
-            "classes."
-            "This method will be only difference between different types of "
-            "kernels and can be easily extended.  The kernels implemented so "
-            "far and the notation has been inspired by the publication: "
-            "Analysis of Robust Functions for Registration Algorithms, "
-            "Philippe Babin etal. We obtain the correspondendent weights for "
-            "each residual and turn the non-linear least-square problem into a "
-            "IRSL(Iteratively Reweighted Least-Squares) problem. Changing the "
-            "weight of each residual is equivalent to changing the robust "
-            "kernel used for outlier rejection. The different loss functions "
-            "will only impact in the weight for each residual during the "
-            "optimization step. For more information please see also: "
-            "“Adaptive Robust Kernels for Non-Linear Least Squares Problems”, "
-            "N. Chebrolu etal. Therefore, the only impact of the choice on the "
-            "kernel is thorugh its first order derivate.");
+            R"(
+Base class that models a robust kernel for outlier rejection. The virtual
+function ``weight()`` must be implemented in derived classes.
+
+The main idea of a robust loss is to downweight large residuals that are
+assumed to be caused from outliers such that their influence on the solution
+is reduced. This is achieved by optimizing:
+
+.. math::
+  \def\argmin{\mathop{\rm argmin}}
+  \begin{equation}
+    \label{eq:robust_loss}
+    x^{*} = \argmin_{x} \sum_{i=1}^{N} \rho({r_i(x)})
+  \end{equation}
+  :label: optim
+
+where :math:`\rho(r)` is also called the robust loss or kernel and
+:math:`r_i(x)` is the residual.
+
+Several robust kernels have been proposed to deal with different kinds of
+outliers such as Huber, Cauchy, and others.
+
+The optimization problem in :eq:`optim` can be solved using the iteratively
+reweighted least squares (IRLS) approach, which solves a sequence of weighted
+least squares problems. We can see the relation between the least squares
+optimization in stanad non-linear least squares and robust loss optimization
+by comparing the respective gradients which go to zero at the optimum
+(illustrated only for the :math:`i^\mathrm{th}` residual):
+
+.. math::
+  \begin{eqnarray}
+    \frac{1}{2}\frac{\partial (w_i r^2_i(x))}{\partial{x}}
+    &=&
+    w_i r_i(x) \frac{\partial r_i(x)}{\partial{x}} \\
+    \label{eq:gradient_ls}
+    \frac{\partial(\rho(r_i(x)))}{\partial{x}}
+    &=&
+    \rho'(r_i(x)) \frac{\partial r_i(x)}{\partial{x}}.
+  \end{eqnarray}
+
+By setting the weight :math:`w_i= \frac{1}{r_i(x)}\rho'(r_i(x))`, we
+can solve the robust loss optimization problem by using the existing techniques
+for weighted least-squares. This scheme allows standard solvers using
+Gauss-Newton and Levenberg-Marquardt algorithms to optimize for robust losses
+and is the one implemented in Open3D.
+
+Then we minimize the objective function using Gauss-Newton and determine
+increments by iteratively solving:
+
+.. math::
+  \newcommand{\mat}[1]{\mathbf{#1}}
+  \newcommand{\veca}[1]{\vec{#1}}		%% vector with an arrow above
+  \renewcommand{\vec}[1]{\mathbf{#1}}	%% vectors are bold
+  \begin{align}
+   \left(\mat{J}^\top \mat{W} \mat{J}\right)^{-1}\mat{J}^\top\mat{W}\vec{r},
+  \end{align}
+
+where :math:`\mat{W} \in \mathbb{R}^{n\times n}` is a diagonal matrix containing
+weights :math:`w_i` for each residual :math:`r_i`
+
+The different loss functions will only impact in the weight for each residual
+during the optimization step.
+Therefore, the only impact of the choice on the kernel is thorugh its first
+order derivate.
+
+The kernels implemented so far, and the notation has been inspired by the
+publication: **"Analysis of Robust Functions for Registration Algorithms"**, by
+Philippe Babin et al.
+
+For more information please also see: **“Adaptive Robust Kernels for
+Non-Linear Least Squares Problems”**, by Nived Chebrolu et al.
+)");
     rk.def("weight", &RobustKernel::Weight, "residual"_a,
            "Obtain the weight for the given residual according to the "
            "robust kernel model.");
@@ -92,7 +147,8 @@ void pybind_robust_kernels(py::module &m) {
     // open3d.registration.L2Loss
     py::class_<L2Loss, std::shared_ptr<L2Loss>, PyL2Loss, RobustKernel> l2_loss(
             m, "L2Loss",
-            R"(The loss :math:`\rho(r)` for a given residual ``r`` is given by:
+            R"(
+The loss :math:`\rho(r)` for a given residual ``r`` is given by:
 
 .. math:: \rho(r) = \frac{r^2}{2}
 
@@ -107,7 +163,8 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
     // open3d.registration.L1Loss:RobustKernel
     py::class_<L1Loss, std::shared_ptr<L1Loss>, PyL1Loss, RobustKernel> l1_loss(
             m, "L1Loss",
-            R"(The loss :math:`\rho(r)` for a given residual ``r`` is given by:
+            R"(
+The loss :math:`\rho(r)` for a given residual ``r`` is given by:
 
 .. math:: \rho(r) = |r|
 
@@ -160,7 +217,8 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
     py::class_<CauchyLoss, std::shared_ptr<CauchyLoss>, PyCauchyLoss,
                RobustKernel>
             c_loss(m, "CauchyLoss",
-                   R"(The loss :math:`\rho(r)` for a given residual ``r`` is:
+                   R"(
+The loss :math:`\rho(r)` for a given residual ``r`` is:
 
 .. math::
   \begin{equation}
@@ -173,7 +231,7 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
 .. math::
   \begin{equation}
     w(r)=
-    \frac{k}{\left(k + r^2\right)^2}
+    \frac{1}{1 + \left(\frac{r}{k}\right)^2}
   \end{equation}
 )");
     py::detail::bind_copy_functions<CauchyLoss>(c_loss);
@@ -191,7 +249,8 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
     // open3d.registration.GMLoss
     py::class_<GMLoss, std::shared_ptr<GMLoss>, PyGMLoss, RobustKernel> gm_loss(
             m, "GMLoss",
-            R"(The loss :math:`\rho(r)` for a given residual ``r`` is:
+            R"(
+The loss :math:`\rho(r)` for a given residual ``r`` is:
 
 .. math::
   \begin{equation}
@@ -220,7 +279,8 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
     // open3d.registration.TukeyLoss:RobustKernel
     py::class_<TukeyLoss, std::shared_ptr<TukeyLoss>, PyTukeyLoss, RobustKernel>
             t_loss(m, "TukeyLoss",
-                   R"(The loss :math:`\rho(r)` for a given residual ``r`` is:
+                   R"(
+The loss :math:`\rho(r)` for a given residual ``r`` is:
 
 .. math::
   \begin{equation}
