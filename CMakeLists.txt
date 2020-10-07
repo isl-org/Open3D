@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15.0)
+cmake_minimum_required(VERSION 3.18.0)
 # CMake 3.15+ is required to allow linking with OBJECT libraries,
 # to prevent erroneous -gencode option deduplication with CUDA,
 # and to simplify generator expressions for selecting compile flags.
