@@ -73,9 +73,16 @@ void pybind_robust_kernels(py::module &m) {
             "each residual and turn the non-linear least-square problem into a "
             "IRSL(Iteratively Reweighted Least-Squares) problem. Changing the "
             "weight of each residual is equivalent to changing the robust "
-            "kernel used for outlier rejection.");
+            "kernel used for outlier rejection. The different loss functions "
+            "will only impact in the weight for each residual during the "
+            "optimization step. For more information please see also: "
+            "“Adaptive Robust Kernels for Non-Linear Least Squares Problems”, "
+            "N. Chebrolu etal. Therefore, the only impact of the choice on the "
+            "kernel is thorugh its first order derivate.");
     rk.def("weight", &RobustKernel::Weight, "residual"_a,
-           "Obtain the correspondent weight for the given residual.");
+           "Obtain the weight for the given residual according to the "
+           "robust kernel model. This method must be implemented in the "
+           "derived classes that model the different robust kernels.");
     docstring::ClassMethodDocInject(
             m, "RobustKernel", "weight",
             {{"residual",
@@ -88,9 +95,7 @@ void pybind_robust_kernels(py::module &m) {
 math:`\rho(r) = \frac{r^2}{2}`)");
     py::detail::bind_default_constructor<L2Loss>(l2_loss);
     py::detail::bind_copy_functions<L2Loss>(l2_loss);
-    l2_loss.def("__repr__", [](const L2Loss &l2) {
-        return std::string("RobustKernel::L2Loss");
-    });
+    l2_loss.def("__repr__", []() { return "RobustKernel::L2Loss"; });
 
     // open3d.registration.L1Loss:RobustKernel
     py::class_<L1Loss, std::shared_ptr<L1Loss>, PyL1Loss, RobustKernel> l1_loss(
@@ -99,9 +104,7 @@ math:`\rho(r) = \frac{r^2}{2}`)");
 math:`\rho(r) = |r|`)");
     py::detail::bind_default_constructor<L1Loss>(l1_loss);
     py::detail::bind_copy_functions<L1Loss>(l1_loss);
-    l1_loss.def("__repr__", [](const L1Loss &l1) {
-        return std::string("RobustKernel::L1Loss");
-    });
+    l1_loss.def("__repr__", []() { return "RobustKernel::L1Loss"; });
 
     // open3d.registration.HuberLoss:RobustKernel
     py::class_<HuberLoss, std::shared_ptr<HuberLoss>, PyHuberLoss, RobustKernel>
@@ -122,11 +125,11 @@ math::`
                      return std::string("RobustKernel::HuberLoss with k=") +
                             std::to_string(rk.k_);
                  })
-            .def_readwrite(
-                    "k", &HuberLoss::k_,
-                    "``k`` Is the scaling paramter of the huber loss function. "
-                    "``k`` corresponds to 'delta' on this page: "
-                    "http://en.wikipedia.org/wiki/Huber_Loss_Function");
+            .def_readwrite("k", &HuberLoss::k_,
+                           "``k`` Is the scaling paramter of the huber loss "
+                           "function. "
+                           "``k`` corresponds to 'delta' on this page: "
+                           "http://en.wikipedia.org/wiki/Huber_Loss_Function");
 
     // open3d.registration.TukeyLoss:RobustKernel
     py::class_<TukeyLoss, std::shared_ptr<TukeyLoss>, PyTukeyLoss, RobustKernel>
@@ -143,13 +146,14 @@ math::`
     py::detail::bind_copy_functions<TukeyLoss>(t_loss);
     t_loss.def(py::init([](double k) { return new TukeyLoss(k); }), "k"_a)
             .def("__repr__",
-                 [](const TukeyLoss &rk) {
+                 [](const TukeyLoss &tk) {
                      return std::string("RobustKernel::TukeyLoss with k=") +
-                            std::to_string(rk.k_);
+                            std::to_string(tk.k_);
                  })
             .def_readwrite("k", &TukeyLoss::k_,
-                           "``k`` Is a unning constant for the loss Function");
-}
+                           "``k`` Is a tunning constant for the loss "
+                           "Function");
+}  // namespace pipelines
 
 }  // namespace registration
 }  // namespace pipelines
