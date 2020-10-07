@@ -35,33 +35,45 @@ namespace pipelines {
 namespace registration {
 
 enum class RobustKernelType {
-    Unspecified = 0,
-    L2 = 1,
-    L1 = 2,
-    Huber = 3,
-    Tukey = 4,
+    Unspecified,
+    L2,
+    L1,
+    Huber,
+    Cauchy,
+    Tukey,
 };
 
 /// \class RobustKernel
 ///
 /// Base class that models a robust kernel for outlier rejection. The virtual
-/// function Weight() must be implemented in derived classes. This method will
-/// be only difference between different types of kernels and can be easily
-/// extended.
+/// function Weight(double residual); must be implemented in derived classes.
+/// This method will be only difference between different types of kernels and
+/// can be easily extended.
 ///
 /// The kernels implemented so far and the notation has been inspired by the
-/// publication: Analysis of Robust Functions for Registration Algorithms,
+/// publication: "Analysis of Robust Functions for Registration Algorithms",
 /// Philippe Babin etal.
 ///
 /// We obtain the correspondendent weights for each residual and turn the
 /// non-linear least-square problem into a IRSL(Iteratively Reweighted
 /// Least-Squares) problem. Changing the weight of each residual is equivalent
 /// to changing the robust kernel used for outlier rejection.
+///
+/// The different loss functions will only impact in the weight for each
+/// residual during the optimization step. For more information please see also:
+/// “Adaptive Robust Kernels for Non-Linear Least Squares Problems”, N.
+/// Chebrolu etal.
+/// The weight w(r) for a given residual `r` and a given loss function `p(r)` is
+/// computed as follow:
+///     w(r) = (1 / r) * (dp(r) / dr) , for all r
+//  Therefore, the only impact of the choice on the kernel is thorugh its first
+//  order derivate.
 class RobustKernel {
 public:
     virtual ~RobustKernel() = default;
     /// Obtain the weight for the given residual according to the robust kernel
-    /// model.
+    /// model. This method must be implemented in the derived classes that model
+    /// the different robust kernels.
     ///
     /// \param residual Residual value obtained during the optimization step.
     virtual double Weight(double /*residual*/) const = 0;
@@ -74,10 +86,14 @@ public:
 ///
 /// Classical loss function used for outlier rejection.
 ///
-/// The loss p(r) for a given residual 'r' is computed as follows:
-///   p(r) = r^2 / 2
+/// The loss p(r) for a given residual 'r' is computed as follow:
+///    p(r) = r^2 / 2
 class L2Loss : public RobustKernel {
 public:
+    /// The weight w(r) for a given residual 'r' is computed as follow:
+    ///   w(r) = 1.0, for all r
+    ///
+    /// \param residual [ingored]
     double Weight(double residual) const override;
     inline RobustKernelType GetKernelType() const override { return type_; }
 
@@ -89,10 +105,14 @@ private:
 ///
 /// L1 loss function used for outlier rejection.
 ///
-/// The loss p(r) for a given residual 'r' is computed as follows:
+/// The loss p(r) for a given residual 'r' is computed as follow:
 //    p(r) = abs(r)
 class L1Loss : public RobustKernel {
 public:
+    /// The weight w(r) for a given residual 'r' is computed as follow:
+    ///   w(r) = 1.0 / abs(r), for all r
+    ///
+    /// \param residual Residual value obtained during the optimization step.
     double Weight(double residual) const override;
     inline RobustKernelType GetKernelType() const override { return type_; }
 
@@ -104,9 +124,9 @@ private:
 ///
 /// HuberLoss loss function used for outlier rejection.
 ///
-/// The loss p(r) for a given residual 'r' is computed as follows:
-///   p(r) = r^2                for abs(r) <= k,
-///   p(r) = k^2(abs(r) - k/2)  for abs(r) > k
+/// The loss p(r) for a given residual 'r' is computed as follow:
+///   p(r) = r^2                   for abs(r) <= k,
+///   p(r) = k^2 * (abs(r) - k/2)  for abs(r) > k
 ///
 /// For more information: http://en.wikipedia.org/wiki/Huber_Loss_Function
 class HuberLoss : public RobustKernel {
@@ -118,11 +138,10 @@ public:
     /// http://en.wikipedia.org/wiki/Huber_Loss_Function
     explicit HuberLoss(double k) : k_(k) {}
 
-    /// Obtain the weight for the given residual according to the robust kernel
-    /// model.
-    /// The loss p(r) for a given residual 'r' is computed as follows:
-    ///   p(r) = r^2                for abs(r) <= k,
-    ///   p(r) = k^2(abs(r) - k/2)  for abs(r) > k
+    /// The weight w(r) for a given residual 'r' is computed as follow:
+    ///   w(r) = 1.0         for abs(r) <= k,
+    ///   w(r) = k / abs(r)  for abs(r) > k
+    /// Where k Is the scaling paramter of the loss function.
     ///
     /// \param residual Residual value obtained during the optimization step.
     double Weight(double residual) const override;
@@ -140,8 +159,8 @@ private:
 ///
 /// CauchyLoss loss function used for outlier rejection.
 ///
-/// The loss p(r) for a given residual 'r' is computed as follows:
-///   p(r) = (k^2/2) log(1 + (r/k)^2) for all r
+/// The loss p(r) for a given residual 'r' is computed as follow:
+///   p(r) = (k^2 / 2) * log(1 + (r / k)^2), for all r
 class CauchyLoss : public RobustKernel {
 public:
     /// \brief Parametrized Constructor.
@@ -149,10 +168,9 @@ public:
     /// \param k Is the scaling paramter of the cauchy loss function.
     explicit CauchyLoss(double k) : k_(k) {}
 
-    /// Obtain the weight for the given residual according to the robust kernel
-    /// model.
-    /// The weight w(r) for a given residual 'r' is computed as follows:
-    ///   w(r) = 1/(1 + (r/k)^2)
+    /// The weight w(r) for a given residual 'r' is computed as follow:
+    ///   w(r) = 1 / (1 + (r / k)^2)
+    /// Where k Is the scaling paramter of the loss function.
     ///
     /// \param residual Residual value obtained during the optimization step.
     double Weight(double residual) const override;
@@ -163,14 +181,15 @@ public:
     double k_;
 
 private:
-    const RobustKernelType type_ = RobustKernelType::Huber;
+    const RobustKernelType type_ = RobustKernelType::Cauchy;
 };
+
 /// \class TukeyLoss
 ///
 /// This is the so called Tukey loss function which aggressively attempts to
 /// suppress large errors.
 ///
-/// The loss p(r) for a given residual 'r' is computed as follows:
+/// The loss p(r) for a given residual 'r' is computed as follow:
 ///
 ///   p(r) = k^2 * (1 - (1 - r / k^2)^3 ) / 2   for abs(r) <= k,
 ///   p(r) = k^2 / 2                            for abs(r) >  k.
@@ -183,13 +202,10 @@ public:
     explicit TukeyLoss(double k) : k_(k) {}
 
 public:
-    /// Obtain the weight for the given residual according to the robust kernel
-    /// model.
-    /// The loss p(r) for a given residual 'r' is computed as follows:
-    ///
-    ///   p(r) = k^2 * (1 - (1 - r / k^2)^3 ) / 2   for abs(r) <= k,
-    ///   p(r) = k^2 / 2                            for abs(r) >  k.
-    ///
+    /// The weight w(r) for a given residual 'r' is computed as follow:
+    ///   p(r) = (1 - (r / k)^2 )^2  for abs(r) <= k,
+    ///   p(r) = 0.0                 for abs(r) >  k.
+    /// Where k Is the scaling paramter of the loss function.
     ///
     /// \param residual Residual value obtained during the optimization step.
     double Weight(double residual) const override;
