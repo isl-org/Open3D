@@ -27,6 +27,7 @@
 #include "open3d/pipelines/registration/Registration.h"
 
 #include <memory>
+#include <utility>
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
@@ -233,14 +234,13 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
     py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
             te_p2l);
     te_p2l.def(py::init([](std::shared_ptr<RobustKernel> kernel) {
-                   return new TransformationEstimationPointToPlane(kernel);
+                   return new TransformationEstimationPointToPlane(
+                           std::move(kernel));
                }),
                "kernel"_a)
             .def("__repr__",
                  [](const TransformationEstimationPointToPlane &te) {
-                     return std::string(
-                             "TransformationEstimationPointToPlane with "
-                             "Kernel: <todo>>");
+                     return std::string("TransformationEstimationPointToPlane");
                  })
             .def_readwrite("kernel",
                            &TransformationEstimationPointToPlane::kernel_,
