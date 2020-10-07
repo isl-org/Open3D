@@ -742,13 +742,17 @@ class AppWindow:
             self._scene.setup_camera(60, bounds, bounds.get_center())
 
     def export_image(self, path, width, height):
-        img = gui.Application.instance.render_to_image(self.window,
-                                                       self._scene.scene)
-        quality = 9  # png
-        if path.endswith(".jpg"):
-            quality = 100
-        o3d.io.write_image(path, img, quality)
+        img = None
 
+        def on_image(image):
+            img = image
+
+            quality = 9  # png
+            if path.endswith(".jpg"):
+                quality = 100
+            o3d.io.write_image(path, img, quality)
+
+        self._scene.scene.scene.render_to_image(on_image)
 
 def main():
     # We need to initalize the application, which finds the necessary shaders

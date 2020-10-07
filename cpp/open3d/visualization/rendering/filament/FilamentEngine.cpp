@@ -26,6 +26,18 @@
 
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068)
+#endif  // _MSC_VER
+
+#include <filament/Engine.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
+
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -38,11 +50,10 @@ namespace {
 static std::shared_ptr<EngineInstance> g_instance = nullptr;
 }  // namespace
 
-filament::backend::Backend EngineInstance::backend_ =
-        filament::backend::Backend::DEFAULT;
+EngineInstance::RenderingType EngineInstance::type_ = RenderingType::kDefault;
 
-void EngineInstance::SelectBackend(const filament::backend::Backend backend) {
-    backend_ = backend;
+void EngineInstance::SelectBackend(RenderingType type) {
+    type_ = type;
 }
 
 filament::Engine& EngineInstance::GetInstance() { return *Get().engine_; }
@@ -70,7 +81,23 @@ EngineInstance& EngineInstance::Get() {
 void EngineInstance::DestroyInstance() { g_instance.reset(); }
 
 EngineInstance::EngineInstance() {
-    engine_ = filament::Engine::create(backend_);
+    filament::backend::Backend backend = filament::backend::Backend::DEFAULT;
+    switch (type_) {
+        case RenderingType::kDefault:
+            backend = filament::backend::Backend::DEFAULT;
+            break;
+        case RenderingType::kOpenGL:
+            backend = filament::backend::Backend::OPENGL;
+            break;
+        case RenderingType::kVulkan:
+            backend = filament::backend::Backend::VULKAN;
+            break;
+        case RenderingType::kMetal:
+            backend = filament::backend::Backend::METAL;
+            break;
+    }
+
+    engine_ = filament::Engine::create(backend);
     resource_manager_ = new FilamentResourceManager(*engine_);
 }
 

@@ -29,6 +29,7 @@
 #include "open3d/geometry/Image.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
+#include "open3d/visualization/rendering/View.h"
 
 namespace open3d {
 namespace visualization {
@@ -84,10 +85,9 @@ void Renderer::RenderToImage(
         View* view,
         Scene* scene,
         std::function<void(std::shared_ptr<geometry::Image>)> cb) {
+    auto vp = view->GetViewport();
     auto render = CreateBufferRenderer();
-    render->CopySettings(view);
-    render->RequestFrame(
-            scene,
+    render->Configure(view, scene, vp[2], vp[3],
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
             [render, cb](const RenderToBuffer::Buffer& buffer) mutable {

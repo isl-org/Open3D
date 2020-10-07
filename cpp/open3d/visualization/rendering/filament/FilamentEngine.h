@@ -26,17 +26,9 @@
 
 #pragma once
 
-// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4068)
-#endif  // _MSC_VER
-
-#include <filament/Engine.h>
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif  // _MSC_VER
+namespace filament {
+class Engine;
+}
 
 namespace open3d {
 namespace visualization {
@@ -46,10 +38,17 @@ class FilamentResourceManager;
 
 class EngineInstance {
 public:
+    enum class RenderingType {
+        kDefault,
+        kOpenGL,
+        kVulkan,
+        kMetal
+    };
+
     // Selects backend to use.
     // Should be called before instance usage.
     // If not called, platform available default backend will be used.
-    static void SelectBackend(filament::backend::Backend backend);
+    static void SelectBackend(RenderingType type);
 
     static filament::Engine& GetInstance();
     static FilamentResourceManager& GetResourceManager();
@@ -66,7 +65,7 @@ private:
 
     EngineInstance();
 
-    static filament::backend::Backend backend_;
+    static RenderingType type_;
     filament::Engine* engine_;
     FilamentResourceManager* resource_manager_;
 };

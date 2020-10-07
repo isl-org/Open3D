@@ -50,7 +50,10 @@
 #include "open3d/visualization/gui/Task.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Window.h"
+#include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/rendering/View.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 
 namespace {
 
@@ -244,7 +247,7 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.dialog_border_radius = 10;
 
     visualization::rendering::EngineInstance::SelectBackend(
-            filament::backend::Backend::OPENGL);
+            visualization::rendering::EngineInstance::RenderingType::kOpenGL);
 
     // Init GLFW here so that we can create windows before running
     impl_->InitGLFW();
@@ -387,7 +390,8 @@ void Application::Run() {
         ;
 }
 
-bool Application::RunOneTick(EnvUnlocker &unlocker) {
+bool Application::RunOneTick(EnvUnlocker &unlocker,
+                             bool cleanup_if_no_windows /*=true*/) {
     // Initialize if we have not started yet
     if (!impl_->is_running_) {
         // Verify that the resource path is valid. If it is not, display a
@@ -421,7 +425,7 @@ bool Application::RunOneTick(EnvUnlocker &unlocker) {
     auto status = ProcessQueuedEvents(unlocker);
 
     // Cleanup if we are done
-    if (status == RunStatus::DONE) {
+    if (status == RunStatus::DONE && cleanup_if_no_windows) {
         // Clear all the running tasks. The destructor will wait for them to
         // finish.
         for (auto it = impl_->running_tasks_.begin();
@@ -503,6 +507,40 @@ const char *Application::GetResourcePath() const {
 }
 
 const Theme &Application::GetTheme() const { return impl_->theme_; }
+
+std::shared_ptr<geometry::Image> Application::RenderToImage(
+                                                   EnvUnlocker &unlocker,
+                                                   rendering::View* view,
+                                                   rendering::Scene* scene,
+                                                   int width, int height) {
+    std::shared_ptr<geometry::Image> img;
+    auto callback = [&img](std::shared_ptr<geometry::Image> _img) {
+                        img = _img;
+                    };
+
+    auto render = std::make_shared<rendering::FilamentRenderToBuffer>(rendering::EngineInstance::GetInstance());
+    render->Configure(view, scene, width, height,
+                      // the shared_ptr (render) is const unless the lambda
+                      // is made mutable
+                      [render, callback](const rendering::RenderToBuffer::Buffer& buffer) mutable {
+                          auto image = std::make_shared<geometry::Image>();
+                          image->width_ = int(buffer.width);
+                          image->height_ = int(buffer.height);
+                          image->num_of_channels_ = 3;
+                          image->bytes_per_channel_ = 1;
+                          image->data_ = std::vector<uint8_t>(buffer.bytes,
+                                                    buffer.bytes + buffer.size);
+                             callback(image);
+                             render = nullptr;
+                      });
+    render->Render();
+
+    while (!img && RunOneTick(unlocker, false)) {
+        render->RenderTick();
+    }
+
+    return img;
+}
 
 }  // namespace gui
 }  // namespace visualization

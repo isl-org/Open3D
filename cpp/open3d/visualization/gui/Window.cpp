@@ -149,7 +149,8 @@ void ChangeAllRenderQuality(
 
 }  // namespace
 
-const int Window::FLAG_TOPMOST = (1 << 0);
+const int Window::FLAG_HIDDEN = (1 << 0);
+const int Window::FLAG_TOPMOST = (1 << 1);
 
 struct Window::Impl {
     GLFWwindow* window_ = nullptr;
@@ -227,7 +228,8 @@ Window::Window(const std::string& title,
 #if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
 #endif
-    bool visible = (impl_->wants_auto_size_ || impl_->wants_auto_center_);
+    bool visible = (!(flags & FLAG_HIDDEN) &&
+                    (impl_->wants_auto_size_ || impl_->wants_auto_center_));
     glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FLOATING,
                    ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));

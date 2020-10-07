@@ -58,6 +58,9 @@
 #include "pybind/docstring.h"
 #include "pybind11/functional.h"
 
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
+
 namespace open3d {
 namespace visualization {
 namespace gui {
@@ -222,53 +225,19 @@ void pybind_gui_classes(py::module &m) {
                     },
                     "Runs the event loop once, returns True if the app is "
                     "still running, or False if all the windows have closed.")
-            .def(
-                    "render_to_image",
-                    [](Application &instance, PyWindow *w,
-                       rendering::Open3DScene *scene)
-                            -> std::shared_ptr<geometry::Image> {
-                        // This function exists because Filament renders on a
-                        // separate thread, so getting the pixels requires
-                        // passing a callback to Filament, which it calls
-                        // whenever the GPU has finished drawing. Since we do
-                        // not know when the callback will be called, we cannot
-                        // ensure that the GIL is unlocked, so we cannot pass
-                        // a Python function (which pybind will automatically
-                        // lock the GIL before entering). Thus we need to do
-                        // this in C++.
-                        std::shared_ptr<geometry::Image> img;
-                        auto callback =
-                                [&img](std::shared_ptr<geometry::Image> _img) {
-                                    img = _img;
-                                };
-
-                        scene->GetScene()->RenderToImage(callback);
-                        w->PostRedraw();
-
-                        PythonUnlocker unlocker;
-                        int i = 0;
-                        while (!img && instance.RunOneTick(unlocker)) {
-                            // Enable Ctrl-C to kill Python
-                            if (PyErr_CheckSignals() != 0) {
-                                throw py::error_already_set();
-                            }
-                            // We need to keep redrawing or Filament won't get
-                            // around to reading our pixels. But don't do it
-                            // every tick.
-                            i += 1;
-                            if (!img && i >= 2) {
-                                w->PostRedraw();
-                                i = 0;
-                            }
-                        }
-                        return img;
-                    },
-                    "Renders a scene to an image and returns the image. If you "
-                    "are rendering without a visible window you should use "
-                    "open3d.visualization.rendering.RenderToImage instead")
-            .def(
-                    "quit", [](Application &instance) { instance.Quit(); },
-                    "Closes all the windows, exiting as a result")
+            .def("render_to_image",
+                 [](Application &instance, rendering::Open3DScene *scene,
+                    int width, int height) {
+                     PythonUnlocker unlocker;
+                     return instance.RenderToImage(unlocker, scene->GetView(),
+                                                   scene->GetScene(),
+                                                   width, height);
+                 },
+                 "Renders a scene to an image and returns the image. If you "
+                 "are rendering without a visible window you should use "
+                 "open3d.visualization.rendering.RenderToImage instead")
+            .def("quit", [](Application &instance) { instance.Quit(); },
+                 "Closes all the windows, exiting as a result")
             .def("run_in_thread", &Application::RunInThread,
                  "Runs function in a separate thread. Do not call GUI "
                  "functions on this thread, call post_to_main_thread() if "

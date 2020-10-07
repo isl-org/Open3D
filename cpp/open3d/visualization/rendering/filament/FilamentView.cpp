@@ -163,6 +163,11 @@ void FilamentView::SetViewport(std::int32_t x,
     view_->setViewport({x, y, w, h});
 }
 
+std::array<int, 4> FilamentView::GetViewport() const {
+    auto vp = view_->getViewport();
+    return { vp.left, vp.bottom, int(vp.width), int(vp.height) };
+}
+
 void FilamentView::SetSSAOEnabled(const bool enabled) {
     const auto option = enabled ? filament::View::AmbientOcclusion::SSAO
                                 : filament::View::AmbientOcclusion::NONE;

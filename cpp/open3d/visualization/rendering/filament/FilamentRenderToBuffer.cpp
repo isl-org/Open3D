@@ -89,6 +89,35 @@ FilamentRenderToBuffer::~FilamentRenderToBuffer() {
     }
 }
 
+void FilamentRenderToBuffer::Configure(const View* view, Scene* scene,
+                                       int width, int height,
+                                       BufferReadyCallback cb) {
+    if (!scene) {
+        utility::LogDebug(
+                "No Scene object was provided for rendering into buffer");
+        cb({0, 0, nullptr, 0});
+        return;
+    }
+
+    if (pending_) {
+        utility::LogWarning(
+                "Render to buffer can process only one request at time");
+        cb({0, 0, nullptr, 0});
+        return;
+    }
+
+    pending_ = true;
+
+    if (buffer_ == nullptr) {
+        buffer_ = static_cast<std::uint8_t*>(malloc(buffer_size_));
+    }
+
+    callback_ = cb;
+
+    CopySettings(view);
+    SetDimensions(width, height);
+}
+
 void FilamentRenderToBuffer::SetDimensions(const std::uint32_t width,
                                            const std::uint32_t height) {
     if (swapchain_) {
@@ -119,36 +148,17 @@ void FilamentRenderToBuffer::CopySettings(const View* view) {
         auto vp = view_->GetNativeView()->getViewport();
         SetDimensions(vp.width, vp.height);
     }
+    filament::Renderer::ClearOptions opt;
+    opt.clearColor = {1.0f, 1.0f, 1.0f, 1.0f};
+    opt.clear = true;
+    opt.discard = true;
+    renderer_->setClearOptions(opt);
 }
 
 View& FilamentRenderToBuffer::GetView() { return *view_; }
 
 using PBDParams = std::tuple<FilamentRenderToBuffer*,
                              FilamentRenderToBuffer::BufferReadyCallback>;
-void FilamentRenderToBuffer::RequestFrame(Scene* scene,
-                                          BufferReadyCallback callback) {
-    if (!scene) {
-        utility::LogDebug(
-                "No Scene object was provided for rendering into buffer");
-        callback({0, 0, nullptr, 0});
-        return;
-    }
-
-    if (pending_) {
-        utility::LogWarning(
-                "Render to buffer can process only one request at time");
-        callback({0, 0, nullptr, 0});
-        return;
-    }
-
-    pending_ = true;
-
-    if (buffer_ == nullptr) {
-        buffer_ = static_cast<std::uint8_t*>(malloc(buffer_size_));
-    }
-
-    callback_ = callback;
-}
 
 void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
     auto params = static_cast<PBDParams*>(user);
@@ -184,6 +194,12 @@ void FilamentRenderToBuffer::Render() {
     }
 
     pending_ = false;
+}
+
+void FilamentRenderToBuffer::RenderTick() {
+    if (renderer_->beginFrame(swapchain_)) {
+        renderer_->endFrame();
+    }
 }
 
 }  // namespace rendering

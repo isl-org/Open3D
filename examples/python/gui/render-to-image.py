@@ -6,9 +6,10 @@ import open3d.visualization.gui as gui
 
 
 def main():
-    r = render.RenderToImage(1024, 768)
-    scene = r.create_scene()
-    r.set_background_color([1.0, 1.0, 1.0, 1.0])
+    gui.Application.instance.initialize()
+    r = render.OffscreenRenderer(640, 480)
+    r.set_clear_color([1.0, 1.0, 1.0, 1.0])
+    scene = render.Open3DScene(r)
 
     yellow = render.Material()
     yellow.base_color = [1.0, 0.75, 0.0, 1.0]
@@ -51,16 +52,12 @@ def main():
     scene.scene.enable_directional_light(True)
     scene.show_axes(True)
 
-    img = r.render(scene)
+    img = gui.Application.instance.render_to_image(scene, 640, 480)
     o3d.io.write_image("/tmp/test.png", img, 9)
 
     scene.camera.look_at([0, 0, 0], [-10, 0, 0], [0, 0, 1])
-    img = r.render(scene)
+    img = gui.Application.instance.render_to_image(scene, 640, 480)
     o3d.io.write_image("/tmp/test2.png", img, 9)
-
-    scene = None  # ensure scene is freed before we cleanup rendering
-    r.done()
-
 
 if __name__ == "__main__":
     main()

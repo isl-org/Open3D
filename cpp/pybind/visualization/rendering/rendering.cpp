@@ -31,6 +31,8 @@
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "pybind/docstring.h"
 #include "pybind/visualization/gui/gui.h"
 #include "pybind11/functional.h"
@@ -38,6 +40,15 @@
 namespace open3d {
 namespace visualization {
 namespace rendering {
+
+class PyOffscreenRenderer : public FilamentRenderer {
+public:
+    PyOffscreenRenderer(int width, int height)
+        : FilamentRenderer(EngineInstance::GetInstance(),
+                           width, height,
+                           EngineInstance::GetResourceManager())
+    {}
+};
 
 void pybind_rendering_classes(py::module &m) {
     py::class_<Renderer> renderer(
@@ -47,6 +58,18 @@ void pybind_rendering_classes(py::module &m) {
                  "Sets the background color for the renderer, [r, g, b, a]. "
                  "Applies to everything being rendered, so it essentially acts "
                  "as the background color of the window");
+
+    // It would be nice to have this inherit from Renderer, but the problem is
+    // that Python needs to own this class and Python needs to not own Renderer,
+    // and pybind does not let us mix the two styls of ownership.
+    py::class_<PyOffscreenRenderer, std::shared_ptr<PyOffscreenRenderer>> offscreen(m, "OffscreenRenderer", "Renderer instance that can be used for rendering to an image");
+    offscreen.def(py::init([](int w, int h) {
+                      return std::make_shared<PyOffscreenRenderer>(w, h);
+                  }))
+             .def("set_clear_color", &Renderer::SetClearColor,
+                  "Sets the background color for the renderer, [r, g, b, a]. "
+                  "Applies to everything being rendered, so it essentially acts "
+                  "as the background color of the window");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
@@ -215,13 +238,12 @@ void pybind_rendering_classes(py::module &m) {
             .def("enable_directional_light", &Scene::EnableDirectionalLight)
             .def("set_directional_light", &Scene::SetDirectionalLight,
                  "Sets the parameters of the directional light: direction, "
-                 "color, intensity");
-    // Note that we cannot export RenderToImage. Filament renders on a separate
-    // thread, and calls a callback when everything has finished rendering.
-    // We have no way of knowing when this callback will be called, so we have
-    // no way of ensuring that the GIL is unlocked, and pybind automatically
-    // locks the GIL before calling a Pytho function. So this needs to be done
-    // in C++ code. See Application.render_to_image(), which implements this.
+                 "color, intensity")
+            .def("render_to_image", &Scene::RenderToImage,
+                 "Renders the scene to an image. This can only be used in a "
+                 "GUI app. To render without a window, use "
+                 "Application.render_to_image");
+
     scene.attr("UPDATE_POINTS_FLAG") = py::int_(Scene::kUpdatePointsFlag);
     scene.attr("UPDATE_NORMALS_FLAG") = py::int_(Scene::kUpdateNormalsFlag);
     scene.attr("UPDATE_COLORS_FLAG") = py::int_(Scene::kUpdateColorsFlag);
@@ -231,6 +253,7 @@ void pybind_rendering_classes(py::module &m) {
     py::class_<Open3DScene, std::shared_ptr<Open3DScene>> o3dscene(
             m, "Open3DScene", "High-level scene for rending");
     o3dscene.def(py::init<Renderer &>())
+            .def(py::init<PyOffscreenRenderer &>())
             .def("show_skybox", &Open3DScene::ShowSkybox,
                  "Toggles display of the skybox")
             .def("show_axes", &Open3DScene::ShowAxes,

@@ -72,6 +72,7 @@ public:
                              std::int32_t y,
                              std::uint32_t w,
                              std::uint32_t h) = 0;
+    virtual std::array<int, 4> GetViewport() const = 0;
 
     virtual void SetSSAOEnabled(bool enabled) = 0;
 
