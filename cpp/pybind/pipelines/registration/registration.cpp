@@ -244,7 +244,7 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                  })
             .def_readwrite("kernel",
                            &TransformationEstimationPointToPlane::kernel_,
-                           R"(Insert Here kernel docstring)");
+                           "Robust Kernel used in the Optimization");
 
     // open3d.registration.CorrespondenceChecker
     py::class_<CorrespondenceChecker,
