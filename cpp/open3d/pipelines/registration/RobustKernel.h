@@ -34,16 +34,6 @@ namespace open3d {
 namespace pipelines {
 namespace registration {
 
-enum class RobustKernelType {
-    Unspecified,
-    L2,
-    L1,
-    Huber,
-    Cauchy,
-    GM,
-    Tukey,
-};
-
 /// \class RobustKernel
 ///
 /// Base class that models a robust kernel for outlier rejection. The virtual
@@ -78,9 +68,6 @@ public:
     ///
     /// \param residual Residual value obtained during the optimization step.
     virtual double Weight(double /*residual*/) const = 0;
-
-    /// Obtain the type of robust kernel in use.
-    virtual inline RobustKernelType GetKernelType() const = 0;
 };
 
 /// \class L2Loss
@@ -96,10 +83,6 @@ public:
     ///
     /// \param residual [ingored]
     double Weight(double residual) const override;
-    inline RobustKernelType GetKernelType() const override { return type_; }
-
-private:
-    const RobustKernelType type_ = RobustKernelType::L2;
 };
 
 /// \class L1Loss
@@ -115,10 +98,6 @@ public:
     ///
     /// \param residual Residual value obtained during the optimization step.
     double Weight(double residual) const override;
-    inline RobustKernelType GetKernelType() const override { return type_; }
-
-private:
-    const RobustKernelType type_ = RobustKernelType::L1;
 };
 
 /// \class HuberLoss
@@ -146,14 +125,10 @@ public:
     ///
     /// \param residual Residual value obtained during the optimization step.
     double Weight(double residual) const override;
-    inline RobustKernelType GetKernelType() const override { return type_; }
 
 public:
     /// Scaling paramter.
     double k_;
-
-private:
-    const RobustKernelType type_ = RobustKernelType::Huber;
 };
 
 /// \class CauchyLoss
@@ -175,14 +150,10 @@ public:
     ///
     /// \param residual Residual value obtained during the optimization step.
     double Weight(double residual) const override;
-    inline RobustKernelType GetKernelType() const override { return type_; }
 
 public:
     /// Scaling paramter.
     double k_;
-
-private:
-    const RobustKernelType type_ = RobustKernelType::Cauchy;
 };
 
 /// \class GMLoss
@@ -204,14 +175,10 @@ public:
     ///
     /// \param residual Residual value obtained during the optimization step.
     double Weight(double residual) const override;
-    inline RobustKernelType GetKernelType() const override { return type_; }
 
 public:
     /// Scaling paramter.
     double k_;
-
-private:
-    const RobustKernelType type_ = RobustKernelType::GM;
 };
 
 /// \class TukeyLoss
@@ -239,13 +206,9 @@ public:
     ///
     /// \param residual Residual value obtained during the optimization step.
     double Weight(double residual) const override;
-    inline RobustKernelType GetKernelType() const override { return type_; }
 
 public:
     double k_;
-
-private:
-    const RobustKernelType type_ = RobustKernelType::Tukey;
 };
 
 }  // namespace registration

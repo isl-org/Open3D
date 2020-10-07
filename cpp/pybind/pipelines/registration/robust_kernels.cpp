@@ -47,9 +47,6 @@ template <class RobustKernelBase = RobustKernel>
 class PyRobustKernelT : public RobustKernelBase {
 public:
     using RobustKernelBase::RobustKernelBase;
-    RobustKernelType GetKernelType() const override {
-        PYBIND11_OVERLOAD_PURE(RobustKernelType, RobustKernelBase, void);
-    }
     double Weight(double residual) const override {
         PYBIND11_OVERLOAD_PURE(double, RobustKernelBase, residual);
     }
@@ -63,15 +60,6 @@ using PyHuberLoss = PyRobustKernelT<HuberLoss>;
 using PyTukeyLoss = PyRobustKernelT<TukeyLoss>;
 
 void pybind_robust_kernels(py::module &m) {
-    // open3d.registration.RobustKernelType
-    py::enum_<RobustKernelType>(m, "RobustKernelType", py::arithmetic())
-            .value("L2", RobustKernelType::L2)
-            .value("L1", RobustKernelType::L1)
-            .value("Huber", RobustKernelType::Huber)
-            .value("Cauchy", RobustKernelType::Cauchy)
-            .value("GM", RobustKernelType::GM)
-            .value("Tukey", RobustKernelType::Tukey);
-
     // open3d.registration.RobustKernel
     py::class_<RobustKernel, std::shared_ptr<RobustKernel>, PyRobustKernel> rk(
             m, "RobustKernel",
