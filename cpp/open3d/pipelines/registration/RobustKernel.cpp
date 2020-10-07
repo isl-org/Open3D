@@ -54,6 +54,10 @@ double CauchyLoss::Weight(double residual) const {
     return 1.0 / (1 + std::pow(residual / k_, 2.0));
 }
 
+double GMLoss::Weight(double residual) const {
+    return k_ / std::pow(k_ + std::pow(residual, 2.0), 2.0);
+}
+
 double TukeyLoss::Weight(double residual) const {
     const double e = std::abs(residual);
     if (e > k_) {

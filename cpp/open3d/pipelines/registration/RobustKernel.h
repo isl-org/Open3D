@@ -40,6 +40,7 @@ enum class RobustKernelType {
     L1,
     Huber,
     Cauchy,
+    GM,
     Tukey,
 };
 
@@ -165,7 +166,7 @@ class CauchyLoss : public RobustKernel {
 public:
     /// \brief Parametrized Constructor.
     ///
-    /// \param k Is the scaling paramter of the cauchy loss function.
+    /// \param k Is the scaling paramter of the loss function.
     explicit CauchyLoss(double k) : k_(k) {}
 
     /// The weight w(r) for a given residual 'r' is computed as follow:
@@ -182,6 +183,35 @@ public:
 
 private:
     const RobustKernelType type_ = RobustKernelType::Cauchy;
+};
+
+/// \class GMLoss
+///
+/// German-McClure loss function used for outlier rejection.
+///
+/// The loss p(r) for a given residual 'r' is computed as follow:
+///   p(r) = (r^2 / 2) / (1 + (r / k)^2), for all r
+class GMLoss : public RobustKernel {
+public:
+    /// \brief Parametrized Constructor.
+    ///
+    /// \param k Is the scaling paramter of the loss function.
+    explicit GMLoss(double k) : k_(k) {}
+
+    /// The weight w(r) for a given residual 'r' is computed as follow:
+    ///   w(r) = k / (k + r^2)^2, for all r
+    /// Where k Is the scaling paramter of the loss function.
+    ///
+    /// \param residual Residual value obtained during the optimization step.
+    double Weight(double residual) const override;
+    inline RobustKernelType GetKernelType() const override { return type_; }
+
+public:
+    /// Scaling paramter.
+    double k_;
+
+private:
+    const RobustKernelType type_ = RobustKernelType::GM;
 };
 
 /// \class TukeyLoss
