@@ -67,8 +67,8 @@ enum class RobustKernelType {
 /// The weight w(r) for a given residual `r` and a given loss function `p(r)` is
 /// computed as follow:
 ///     w(r) = (1 / r) * (dp(r) / dr) , for all r
-//  Therefore, the only impact of the choice on the kernel is thorugh its first
-//  order derivate.
+/// Therefore, the only impact of the choice on the kernel is thorugh its first
+/// order derivate.
 class RobustKernel {
 public:
     virtual ~RobustKernel() = default;

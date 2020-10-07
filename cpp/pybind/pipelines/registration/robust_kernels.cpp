@@ -29,6 +29,9 @@
 // Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
 // ----------------------------------------------------------------------------
 
+#include <pybind11/attr.h>
+#include <pybind11/pybind11.h>
+
 #include <memory>
 
 #include "open3d/pipelines/registration/RobustKernel.h"
@@ -60,6 +63,15 @@ using PyHuberLoss = PyRobustKernelT<HuberLoss>;
 using PyTukeyLoss = PyRobustKernelT<TukeyLoss>;
 
 void pybind_robust_kernels(py::module &m) {
+    // open3d.registration.RobustKernelType
+    py::enum_<RobustKernelType>(m, "RobustKernelType", py::arithmetic())
+            .value("L2", RobustKernelType::L2)
+            .value("L1", RobustKernelType::L1)
+            .value("Huber", RobustKernelType::Huber)
+            .value("Cauchy", RobustKernelType::Cauchy)
+            .value("GM", RobustKernelType::GM)
+            .value("Tukey", RobustKernelType::Tukey);
+
     // open3d.registration.RobustKernel
     py::class_<RobustKernel, std::shared_ptr<RobustKernel>, PyRobustKernel> rk(
             m, "RobustKernel",
