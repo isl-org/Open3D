@@ -94,6 +94,8 @@ public:
     /// \brief Default user constructor
     Line3D(const Eigen::Vector3d& origin, const Eigen::Vector3d& direction);
 
+    virtual ~Line3D() = default;
+
     /// \brief Gets the semantic type of the line
     LineType GetLineType() const { return line_type_; }
 
