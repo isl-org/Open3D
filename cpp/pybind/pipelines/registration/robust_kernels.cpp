@@ -57,6 +57,8 @@ using PyRobustKernel = PyRobustKernelT<RobustKernel>;
 using PyL2Loss = PyRobustKernelT<L2Loss>;
 using PyL1Loss = PyRobustKernelT<L1Loss>;
 using PyHuberLoss = PyRobustKernelT<HuberLoss>;
+using PyCauchyLoss = PyRobustKernelT<CauchyLoss>;
+using PyGMLoss = PyRobustKernelT<GMLoss>;
 using PyTukeyLoss = PyRobustKernelT<TukeyLoss>;
 
 void pybind_robust_kernels(py::module &m) {
@@ -88,11 +90,13 @@ void pybind_robust_kernels(py::module &m) {
             {{"residual",
               "Residual value obtained during the optimization problem"}});
 
-    // open3d.registration.L2Loss:RobustKernel
+    // open3d.registration.L2Loss
     py::class_<L2Loss, std::shared_ptr<L2Loss>, PyL2Loss, RobustKernel> l2_loss(
             m, "L2Loss",
-            R"(The loss p(r) for a given residual 'r' is computed as:
-math:`\rho(r) = \frac{r^2}{2}`)");
+            R"(The loss math:`\rho(r)` for a given residual 'r' is:
+math:`\rho(r) = \frac{r^2}{2}`
+The weight math:`w(r)` for a given residual `r` is given by: math:`w(r) = 1.0`
+)");
     py::detail::bind_default_constructor<L2Loss>(l2_loss);
     py::detail::bind_copy_functions<L2Loss>(l2_loss);
     l2_loss.def("__repr__", []() { return "RobustKernel::L2Loss"; });
@@ -100,24 +104,35 @@ math:`\rho(r) = \frac{r^2}{2}`)");
     // open3d.registration.L1Loss:RobustKernel
     py::class_<L1Loss, std::shared_ptr<L1Loss>, PyL1Loss, RobustKernel> l1_loss(
             m, "L1Loss",
-            R"(The loss p(r) for a given residual 'r' is computed as:
-math:`\rho(r) = |r|`)");
+            R"(The loss math:`\rho(r)` for a given residual 'r' is:
+math:`\rho(r) = |r|`
+
+The weight math:`w(r)` for a given residual `r` is given by:
+math:`w(r) = 1.0 / |r|`)");
     py::detail::bind_default_constructor<L1Loss>(l1_loss);
     py::detail::bind_copy_functions<L1Loss>(l1_loss);
     l1_loss.def("__repr__", []() { return "RobustKernel::L1Loss"; });
 
-    // open3d.registration.HuberLoss:RobustKernel
+    // open3d.registration.HuberLoss
     py::class_<HuberLoss, std::shared_ptr<HuberLoss>, PyHuberLoss, RobustKernel>
             h_loss(m, "HuberLoss",
-                   R"(The loss p(r) for a given residual 'r' is computed as:
+                   R"(The loss math:`\rho(r)` for a given residual 'r' is:
 math::`
 \begin{equation}
   \begin{cases}
     \frac{r^{2}}{2}, & |r| \leq k.\\
     k(|r|-k / 2), & \text{otherwise}.
   \end{cases}
-\end{equation}
-`)");
+\end{equation}`
+
+The weight math:`w(r)` for a given residual `r` is given by:
+math::`
+\begin{equation}
+  \begin{cases}
+    1,              & |r| \leq k.       \\
+    \frac{k}{|r|} , & \text{otherwise}.
+  \end{cases}
+\end{equation}`)");
     py::detail::bind_copy_functions<HuberLoss>(h_loss);
     h_loss.def(py::init(
                        [](double k) { return std::make_shared<HuberLoss>(k); }),
@@ -128,23 +143,85 @@ math::`
                             std::to_string(rk.k_);
                  })
             .def_readwrite("k", &HuberLoss::k_,
-                           "``k`` Is the scaling paramter of the huber loss "
-                           "function. "
+                           "``k`` Is the scaling paramter of the loss "
                            "``k`` corresponds to 'delta' on this page: "
                            "http://en.wikipedia.org/wiki/Huber_Loss_Function");
+
+    // open3d.registration.CauchyLoss
+    py::class_<CauchyLoss, std::shared_ptr<CauchyLoss>, PyCauchyLoss,
+               RobustKernel>
+            c_loss(m, "CauchyLoss",
+                   R"(The loss math:`\rho(r)` for a given residual 'r' is:
+math::`
+\begin{equation}
+  \frac{k^2}{2} \log\left(1 + \left(\frac{r}{k}\right)^2\right)
+\end{equation}`
+
+The weight math:`w(r)` for a given residual `r` is given by:
+
+math::`
+\begin{equation}
+  \frac{k}{\left(k + r^2\right)^2}
+\end{equation}`)");
+    py::detail::bind_copy_functions<CauchyLoss>(c_loss);
+    c_loss.def(py::init([](double k) {
+                   return std::make_shared<CauchyLoss>(k);
+               }),
+               "k"_a)
+            .def("__repr__",
+                 [](const CauchyLoss &rk) {
+                     return std::string("RobustKernel::CauchyLoss with k=") +
+                            std::to_string(rk.k_);
+                 })
+            .def_readwrite("k", &CauchyLoss::k_,
+                           "``k`` Is the scaling paramter of the loss.");
+
+    // open3d.registration.GMLoss
+    py::class_<GMLoss, std::shared_ptr<GMLoss>, PyGMLoss, RobustKernel> gm_loss(
+            m, "GMLoss",
+            R"(The loss math:`\rho(r)` for a given residual 'r' is:
+math::`
+\begin{equation}
+  \frac{r^2/ 2}{k + r^2}
+\end{equation}`
+
+The weight math:`w(r)` for a given residual `r` is given by:
+
+math::`
+\begin{equation}
+  \frac{k}{\left(k + r^2\right)^2}
+\end{equation}`)");
+    py::detail::bind_copy_functions<GMLoss>(gm_loss);
+    gm_loss.def(py::init([](double k) { return std::make_shared<GMLoss>(k); }),
+                "k"_a)
+            .def("__repr__",
+                 [](const GMLoss &rk) {
+                     return std::string("RobustKernel::GMLoss with k=") +
+                            std::to_string(rk.k_);
+                 })
+            .def_readwrite("k", &GMLoss::k_,
+                           "``k`` Is the scaling paramter of the loss.");
 
     // open3d.registration.TukeyLoss:RobustKernel
     py::class_<TukeyLoss, std::shared_ptr<TukeyLoss>, PyTukeyLoss, RobustKernel>
             t_loss(m, "TukeyLoss",
-                   R"(The loss p(r) for a given residual 'r' is computed as:
+                   R"(The loss math:`\rho(r)` for a given residual 'r' is:
 :math::`
 \begin{equation}
   \begin{cases}
-    \frac{k^{2}\left(1-\left(1-\left(\frac{e}{k}\right)^{2}\right)^{3}\right)}{2}, & |r| \leq k.\\
-    \frac{k^{2}}{2}, & \text{otherwise}.
+    \frac{k^2\left(1-\left(1-\left(\frac{e}{k}\right)^2\right)^3\right)}{2}, & |r| \leq k.       \\
+    \frac{k^2}{2},                                                           & \text{otherwise}.
   \end{cases}
-\end{equation}
-`)");
+\end{equation}`
+
+The weight math:`w(r)` for a given residual `r` is given by:
+math::`
+\begin{equation}
+  \begin{cases}
+    \left(1 - \left(\frac{r}{k}\right)^2\right)^2, & |r| \leq k.       \\
+    0 ,                                            & \text{otherwise}.
+  \end{cases}
+\end{equation}`)");
     py::detail::bind_copy_functions<TukeyLoss>(t_loss);
     t_loss.def(py::init(
                        [](double k) { return std::make_shared<TukeyLoss>(k); }),
@@ -155,8 +232,7 @@ math::`
                             std::to_string(tk.k_);
                  })
             .def_readwrite("k", &TukeyLoss::k_,
-                           "``k`` Is a tunning constant for the loss "
-                           "Function");
+                           "``k`` Is a tunning constant for the loss.");
 }  // namespace pipelines
 
 }  // namespace registration
