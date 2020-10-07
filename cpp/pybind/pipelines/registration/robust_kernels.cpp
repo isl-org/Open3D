@@ -119,7 +119,9 @@ math::`
 \end{equation}
 `)");
     py::detail::bind_copy_functions<HuberLoss>(h_loss);
-    h_loss.def(py::init([](double k) { return new HuberLoss(k); }), "k"_a)
+    h_loss.def(py::init(
+                       [](double k) { return std::make_shared<HuberLoss>(k); }),
+               "k"_a)
             .def("__repr__",
                  [](const HuberLoss &rk) {
                      return std::string("RobustKernel::HuberLoss with k=") +
@@ -144,7 +146,9 @@ math::`
 \end{equation}
 `)");
     py::detail::bind_copy_functions<TukeyLoss>(t_loss);
-    t_loss.def(py::init([](double k) { return new TukeyLoss(k); }), "k"_a)
+    t_loss.def(py::init(
+                       [](double k) { return std::make_shared<TukeyLoss>(k); }),
+               "k"_a)
             .def("__repr__",
                  [](const TukeyLoss &tk) {
                      return std::string("RobustKernel::TukeyLoss with k=") +
