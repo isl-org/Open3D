@@ -136,6 +136,35 @@ private:
     const RobustKernelType type_ = RobustKernelType::Huber;
 };
 
+/// \class CauchyLoss
+///
+/// CauchyLoss loss function used for outlier rejection.
+///
+/// The loss p(r) for a given residual 'r' is computed as follows:
+///   p(r) = (k^2/2) log(1 + (r/k)^2) for all r
+class CauchyLoss : public RobustKernel {
+public:
+    /// \brief Parametrized Constructor.
+    ///
+    /// \param k Is the scaling paramter of the cauchy loss function.
+    explicit CauchyLoss(double k) : k_(k) {}
+
+    /// Obtain the weight for the given residual according to the robust kernel
+    /// model.
+    /// The weight w(r) for a given residual 'r' is computed as follows:
+    ///   w(r) = 1/(1 + (r/k)^2)
+    ///
+    /// \param residual Residual value obtained during the optimization step.
+    double Weight(double residual) const override;
+    inline RobustKernelType GetKernelType() const override { return type_; }
+
+public:
+    /// Scaling paramter.
+    double k_;
+
+private:
+    const RobustKernelType type_ = RobustKernelType::Huber;
+};
 /// \class TukeyLoss
 ///
 /// This is the so called Tukey loss function which aggressively attempts to
