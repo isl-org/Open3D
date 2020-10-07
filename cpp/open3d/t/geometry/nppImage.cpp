@@ -32,7 +32,7 @@
 
 #ifdef BUILD_CUDA_MODULE
 
-#include "nppi.h"
+#include <nppi.h>
 
 namespace open3d {
 namespace t {
@@ -110,7 +110,9 @@ namespace npp {
 
 void dilate(const core::Tensor &srcim,
             core::Tensor &dstim,
-            int half_kernel_size) {}
+            int half_kernel_size) {
+    utility::LogError("NPP not available since Open3D was built without CUDA");
+}
 
 }  // namespace npp
 }  // namespace geometry

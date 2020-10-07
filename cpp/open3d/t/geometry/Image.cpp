@@ -77,7 +77,11 @@ Image Image::Dilate(int half_kernel_size) const {
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
         npp::supported(GetDtype(), GetChannels())) {
         npp::dilate(data_, dstim.data_, half_kernel_size);
+    /* } else if (data_.GetDevice().GetType() == core::Device::DeviceType::CPU && */
+    /*     ipp::supported(GetDtype(), GetChannels())) { */
+    /*     ipp::dilate(data_, dstim.data_, half_kernel_size); */
     } else {
+    /*     call to core::kernel::UnaryWindowOp(); */
         utility::LogError("Not implemented");
     }
     if (!dstim.data_.IsContiguous())

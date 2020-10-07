@@ -41,7 +41,7 @@ inline bool supported(core::Dtype dtype, size_t channels) {
     return std::find(supported_dtypes.begin(), supported_dtypes.end(), dtype) !=
                    supported_dtypes.end() &&
            std::find(supported_channels.begin(), supported_channels.end(),
-                     dtype) != supported_channels.end();
+                     channels) != supported_channels.end();
 }
 
 void dilate(const open3d::core::Tensor &srcim,

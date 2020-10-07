@@ -26,6 +26,8 @@
 
 #include "open3d/t/geometry/Image.h"
 
+#include <gmock/gmock.h>
+
 #include "core/CoreTest.h"
 #include "open3d/core/TensorList.h"
 #include "tests/UnitTest.h"
@@ -121,6 +123,8 @@ TEST_P(ImagePermuteDevices, ConstructorFromTensor) {
 }
 
 TEST(Image, Dilate) {
+    using ::testing::ElementsAreArray;
+
     // reference data used to validate the filtering of an image
     // clang-format off
     const std::vector<uint8_t> input_data = {
@@ -143,12 +147,13 @@ TEST(Image, Dilate) {
 
     t::geometry::Image input(core::Tensor{
             input_data, {rows, cols, channels}, dtype, core::Device("CUDA:0")});
-    auto output = image.Dilate();
+    auto output = input.Dilate();
 
-    EXPECT_TRUE(output.GetRows(), input.GetRows());
-    EXPECT_TRUE(output.GetCols(), input.GetCols());
-    EXPECT_TRUE(output.GetChannels(), input.GetChannels());
-    EXPECT_THAT(output.GetDataPtr(), ElementsAreArray(output_ref));
+    EXPECT_EQ(output.GetRows(), input.GetRows());
+    EXPECT_EQ(output.GetCols(), input.GetCols());
+    EXPECT_EQ(output.GetChannels(), input.GetChannels());
+    EXPECT_THAT(output.AsTensor().ToFlatVector<uint8_t>(),
+                ElementsAreArray(output_ref));
 }
 
 }  // namespace tests
