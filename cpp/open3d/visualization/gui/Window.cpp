@@ -601,11 +601,22 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     dlg->Layout(GetTheme());
 }
 
+void Window::ForceRedrawSceneWidget() {
+    std::for_each(impl_->children_.begin(), impl_->children_.end(), [](auto w) {
+        auto sw = std::dynamic_pointer_cast<SceneWidget>(w);
+        if (sw) {
+            sw->ForceRedraw();
+        }
+    });
+}
+
 void Window::CloseDialog() {
     if (impl_->focus_widget_ == impl_->active_dialog_.get()) {
         SetFocusWidget(nullptr);
     }
     impl_->active_dialog_.reset();
+
+    ForceRedrawSceneWidget();
     // The dialog might not be closing from within a draw call, such as when
     // a native file dialog closes, so we need to post a redraw, just in case.
     // If it is from within a draw call, then any redraw request from that will
@@ -826,14 +837,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
             needs_redraw = true;
         }
         if (menubar->CheckVisibilityChange()) {
-            std::for_each(impl_->children_.begin(), impl_->children_.end(),
-                          [](auto w) {
-                              auto sw =
-                                      std::dynamic_pointer_cast<SceneWidget>(w);
-                              if (sw) {
-                                  sw->ForceRedraw();
-                              }
-                          });
+            ForceRedrawSceneWidget();
         }
     }
 

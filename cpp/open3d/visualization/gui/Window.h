@@ -175,6 +175,7 @@ private:
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw();
     Widget::DrawResult DrawOnce(bool is_layout_pass);
+    void ForceRedrawSceneWidget();
     void OnResize();
     void OnMouseEvent(const MouseEvent& e);
     void OnKeyEvent(const KeyEvent& e);
