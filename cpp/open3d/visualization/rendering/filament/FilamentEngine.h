@@ -38,12 +38,7 @@ class FilamentResourceManager;
 
 class EngineInstance {
 public:
-    enum class RenderingType {
-        kDefault,
-        kOpenGL,
-        kVulkan,
-        kMetal
-    };
+    enum class RenderingType { kDefault, kOpenGL, kVulkan, kMetal };
 
     // Selects backend to use.
     // Should be called before instance usage.

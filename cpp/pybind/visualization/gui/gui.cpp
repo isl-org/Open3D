@@ -55,11 +55,10 @@
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
-#include "pybind/docstring.h"
-#include "pybind11/functional.h"
-
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
+#include "pybind/docstring.h"
+#include "pybind11/functional.h"
 
 namespace open3d {
 namespace visualization {
@@ -225,19 +224,21 @@ void pybind_gui_classes(py::module &m) {
                     },
                     "Runs the event loop once, returns True if the app is "
                     "still running, or False if all the windows have closed.")
-            .def("render_to_image",
-                 [](Application &instance, rendering::Open3DScene *scene,
-                    int width, int height) {
-                     PythonUnlocker unlocker;
-                     return instance.RenderToImage(unlocker, scene->GetView(),
-                                                   scene->GetScene(),
-                                                   width, height);
-                 },
-                 "Renders a scene to an image and returns the image. If you "
-                 "are rendering without a visible window you should use "
-                 "open3d.visualization.rendering.RenderToImage instead")
-            .def("quit", [](Application &instance) { instance.Quit(); },
-                 "Closes all the windows, exiting as a result")
+            .def(
+                    "render_to_image",
+                    [](Application &instance, rendering::Open3DScene *scene,
+                       int width, int height) {
+                        PythonUnlocker unlocker;
+                        return instance.RenderToImage(
+                                unlocker, scene->GetView(), scene->GetScene(),
+                                width, height);
+                    },
+                    "Renders a scene to an image and returns the image. If you "
+                    "are rendering without a visible window you should use "
+                    "open3d.visualization.rendering.RenderToImage instead")
+            .def(
+                    "quit", [](Application &instance) { instance.Quit(); },
+                    "Closes all the windows, exiting as a result")
             .def("run_in_thread", &Application::RunInThread,
                  "Runs function in a separate thread. Do not call GUI "
                  "functions on this thread, call post_to_main_thread() if "

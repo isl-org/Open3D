@@ -87,7 +87,8 @@ void Renderer::RenderToImage(
         std::function<void(std::shared_ptr<geometry::Image>)> cb) {
     auto vp = view->GetViewport();
     auto render = CreateBufferRenderer();
-    render->Configure(view, scene, vp[2], vp[3],
+    render->Configure(
+            view, scene, vp[2], vp[3],
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
             [render, cb](const RenderToBuffer::Buffer& buffer) mutable {

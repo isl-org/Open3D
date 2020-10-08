@@ -54,7 +54,10 @@ public:
     FilamentRenderToBuffer(filament::Engine& engine, FilamentRenderer& parent);
     ~FilamentRenderToBuffer() override;
 
-    void Configure(const View* view, Scene* scene, int width, int height,
+    void Configure(const View* view,
+                   Scene* scene,
+                   int width,
+                   int height,
                    BufferReadyCallback cb) override;
     void SetDimensions(std::uint32_t width, std::uint32_t height) override;
     View& GetView() override;

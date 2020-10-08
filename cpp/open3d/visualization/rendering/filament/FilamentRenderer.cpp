@@ -76,7 +76,8 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
 }
 
 FilamentRenderer::FilamentRenderer(filament::Engine& engine,
-                                   int width, int height,
+                                   int width,
+                                   int height,
                                    FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
     swap_chain_ = engine_.createSwapChain(width, height,

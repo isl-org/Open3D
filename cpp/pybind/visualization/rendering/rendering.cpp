@@ -45,20 +45,20 @@ class PyOffscreenRenderer : public FilamentRenderer {
 public:
     PyOffscreenRenderer(int width, int height)
         : FilamentRenderer(EngineInstance::GetInstance(),
-                           width, height,
-                           EngineInstance::GetResourceManager())
-    {
+                           width,
+                           height,
+                           EngineInstance::GetResourceManager()) {
         scene_ = new Open3DScene(*this);
     }
 
     ~PyOffscreenRenderer() { delete scene_; }
 
-    Open3DScene* GetScene() { return scene_; }
+    Open3DScene *GetScene() { return scene_; }
 
 private:
     // The offscreen renderer owns the scene so that it can clean it up
     // in the right order (otherwise we will crash).
-    Open3DScene* scene_;
+    Open3DScene *scene_;
 };
 
 void pybind_rendering_classes(py::module &m) {
@@ -73,18 +73,24 @@ void pybind_rendering_classes(py::module &m) {
     // It would be nice to have this inherit from Renderer, but the problem is
     // that Python needs to own this class and Python needs to not own Renderer,
     // and pybind does not let us mix the two styls of ownership.
-    py::class_<PyOffscreenRenderer, std::shared_ptr<PyOffscreenRenderer>> offscreen(m, "OffscreenRenderer", "Renderer instance that can be used for rendering to an image");
-    offscreen.def(py::init([](int w, int h) {
-                      return std::make_shared<PyOffscreenRenderer>(w, h);
-                  }))
-             .def("set_clear_color", &Renderer::SetClearColor,
-                  "Sets the background color for the renderer, [r, g, b, a]. "
-                  "Applies to everything being rendered, so it essentially acts "
-                  "as the background color of the window")
-             .def_property_readonly("scene", &PyOffscreenRenderer::GetScene,
-                  "Returns the Open3DScene for this renderer. This scene is "
-                  "destroyed when the renderer is destroyed and should not be "
-                  "accessed after that point.");
+    py::class_<PyOffscreenRenderer, std::shared_ptr<PyOffscreenRenderer>>
+            offscreen(m, "OffscreenRenderer",
+                      "Renderer instance that can be used for rendering to an "
+                      "image");
+    offscreen
+            .def(py::init([](int w, int h) {
+                return std::make_shared<PyOffscreenRenderer>(w, h);
+            }))
+            .def("set_clear_color", &Renderer::SetClearColor,
+                 "Sets the background color for the renderer, [r, g, b, a]. "
+                 "Applies to everything being rendered, so it essentially acts "
+                 "as the background color of the window")
+            .def_property_readonly(
+                    "scene", &PyOffscreenRenderer::GetScene,
+                    "Returns the Open3DScene for this renderer. This scene is "
+                    "destroyed when the renderer is destroyed and should not "
+                    "be "
+                    "accessed after that point.");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",

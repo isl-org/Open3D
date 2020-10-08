@@ -59,5 +59,6 @@ def main():
     img = gui.Application.instance.render_to_image(scene, 640, 480)
     o3d.io.write_image("/tmp/test2.png", img, 9)
 
+
 if __name__ == "__main__":
     main()

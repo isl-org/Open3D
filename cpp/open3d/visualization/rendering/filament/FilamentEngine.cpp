@@ -52,9 +52,7 @@ static std::shared_ptr<EngineInstance> g_instance = nullptr;
 
 EngineInstance::RenderingType EngineInstance::type_ = RenderingType::kDefault;
 
-void EngineInstance::SelectBackend(RenderingType type) {
-    type_ = type;
-}
+void EngineInstance::SelectBackend(RenderingType type) { type_ = type; }
 
 filament::Engine& EngineInstance::GetInstance() { return *Get().engine_; }
 

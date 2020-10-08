@@ -89,8 +89,10 @@ FilamentRenderToBuffer::~FilamentRenderToBuffer() {
     }
 }
 
-void FilamentRenderToBuffer::Configure(const View* view, Scene* scene,
-                                       int width, int height,
+void FilamentRenderToBuffer::Configure(const View* view,
+                                       Scene* scene,
+                                       int width,
+                                       int height,
                                        BufferReadyCallback cb) {
     if (!scene) {
         utility::LogDebug(

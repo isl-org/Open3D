@@ -165,7 +165,7 @@ void FilamentView::SetViewport(std::int32_t x,
 
 std::array<int, 4> FilamentView::GetViewport() const {
     auto vp = view_->getViewport();
-    return { vp.left, vp.bottom, int(vp.width), int(vp.height) };
+    return {vp.left, vp.bottom, int(vp.width), int(vp.height)};
 }
 
 void FilamentView::SetSSAOEnabled(const bool enabled) {

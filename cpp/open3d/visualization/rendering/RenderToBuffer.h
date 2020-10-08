@@ -52,8 +52,10 @@ public:
 
     // BufferReadyCallback does not need to free Buffer::bytes.
     // It should also not cache the pointer.
-    virtual void Configure(const View* view, Scene* scene,
-                           int width, int height,
+    virtual void Configure(const View* view,
+                           Scene* scene,
+                           int width,
+                           int height,
                            BufferReadyCallback cb) = 0;
     virtual void SetDimensions(std::uint32_t width, std::uint32_t height) = 0;
     virtual View& GetView() = 0;

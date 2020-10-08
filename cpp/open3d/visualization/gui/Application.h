@@ -42,7 +42,7 @@ namespace visualization {
 namespace rendering {
 class View;
 class Scene;
-}
+}  // namespace rendering
 
 namespace gui {
 
@@ -136,15 +136,16 @@ public:
     /// For internal use. EnvUnlocker allows an external environment to provide
     /// a way to unlock the environment while we wait for the next event.
     /// This is useful to release the Python GIL, for example.
-    bool RunOneTick(EnvUnlocker &unlocker, bool cleanup_if_no_windows=true);
+    bool RunOneTick(EnvUnlocker &unlocker, bool cleanup_if_no_windows = true);
 
     /// Returns the scene rendered to an image. This MUST NOT be called while
     /// in Run(). It is intended for use when no windows are shown. If you
     /// need to render from a GUI, use Scene::RenderToImage().
     std::shared_ptr<geometry::Image> RenderToImage(EnvUnlocker &unlocker,
-                                                   rendering::View* view,
-                                                   rendering::Scene* scene,
-                                                   int width, int height);
+                                                   rendering::View *view,
+                                                   rendering::Scene *scene,
+                                                   int width,
+                                                   int height);
 
 private:
     Application();
