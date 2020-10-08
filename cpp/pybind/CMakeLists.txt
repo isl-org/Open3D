@@ -106,7 +106,7 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 # eg: libc++.so and libc++abi.so (needed by filament) for Linux.
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
 set(PYTHON_EXTRA_LIBRARIES "")
-if (BUILD_GUI AND $<PLATFORM_ID:Linux>)
+if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
 endif()
 
