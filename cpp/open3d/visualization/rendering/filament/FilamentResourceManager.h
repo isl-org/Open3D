@@ -94,6 +94,7 @@ public:
                                       size_t dimension);
 
     IndirectLightHandle CreateIndirectLight(const ResourceLoadRequest& request);
+    SkyboxHandle UpdateColorSkybox(SkyboxHandle handle, const Eigen::Vector3f& color);
     SkyboxHandle CreateSkybox(const ResourceLoadRequest& request);
 
     // Since rendering uses not all Open3D geometry/filament features, we don't

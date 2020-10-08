@@ -173,6 +173,7 @@ public:
     virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
     virtual Transform GetIndirectLightRotation() = 0;
     virtual void ShowSkybox(bool show) = 0;
+    virtual void SetBackgroundColor(const Eigen::Vector4f& color) = 0;
 
     virtual void RenderToImage(
             int width,

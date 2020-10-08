@@ -442,6 +442,29 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
     return handle;
 }
 
+SkyboxHandle FilamentResourceManager::UpdateColorSkybox(
+        SkyboxHandle handle, const Eigen::Vector3f& color) {
+    auto wskybox = GetSkybox(handle);
+    filament::math::float4 fcolor;
+    fcolor.r = color.x();
+    fcolor.g = color.y();
+    fcolor.b = color.z();
+    fcolor.a = 1.0f;
+    if (auto skybox = wskybox.lock()) {
+        // Update the color of skybox
+        skybox->setColor(fcolor);
+    } else {
+        // Skybox hasn't been created yet so create it
+        auto filament_skybox =
+                filament::Skybox::Builder().showSun(false).color(fcolor).build(
+                        engine_);
+        handle = RegisterResource<SkyboxHandle>(engine_, filament_skybox,
+                                                skyboxes_);
+    }
+
+    return handle;
+}
+
 SkyboxHandle FilamentResourceManager::CreateSkybox(
         const ResourceLoadRequest& request) {
     SkyboxHandle handle;
