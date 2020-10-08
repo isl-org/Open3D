@@ -955,6 +955,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
 void GuiVisualizer::ExportCurrentImage(int width,
                                        int height,
                                        const std::string &path) {
+    impl_->scene_wgt_->EnableSceneCaching(false);
     impl_->scene_wgt_->GetScene()->GetScene()->RenderToImage(
             width, height,
             [this, path](std::shared_ptr<geometry::Image> image) mutable {
@@ -964,6 +965,7 @@ void GuiVisualizer::ExportCurrentImage(int width,
                                       path + ".")
                                              .c_str());
                 }
+                impl_->scene_wgt_->EnableSceneCaching(true);
             });
 }
 
