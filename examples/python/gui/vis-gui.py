@@ -459,7 +459,7 @@ class AppWindow:
             self.settings.bg_color.red, self.settings.bg_color.green,
             self.settings.bg_color.blue, self.settings.bg_color.alpha
         ]
-        self.window.renderer.set_clear_color(bg_color)
+        self._scene.scene.set_background_color(bg_color)
         self._scene.scene.show_skybox(self.settings.show_skybox)
         self._scene.scene.show_axes(self.settings.show_axes)
         if self.settings.new_ibl_name is not None:
