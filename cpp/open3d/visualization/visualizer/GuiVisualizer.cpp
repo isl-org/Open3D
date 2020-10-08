@@ -403,7 +403,8 @@ struct GuiVisualizer::Impl {
 
     void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
         auto bcolor = settings_.model_.GetBackgroundColor();
-        renderer.SetClearColor({bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
+        scene_wgt_->GetScene()->GetScene()->SetBackgroundColor(
+                {bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
 
         if (settings_.model_.GetShowSkybox()) {
             scene_wgt_->GetScene()->ShowSkybox(true);
