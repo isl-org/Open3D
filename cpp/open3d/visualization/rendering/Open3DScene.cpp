@@ -153,6 +153,11 @@ void Open3DScene::ShowAxes(bool enable) {
     scene->ShowGeometry(kAxisObjectName, enable);
 }
 
+void Open3DScene::SetBackgroundColor(const Eigen::Vector4f& color) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->SetBackgroundColor(color);
+}
+
 void Open3DScene::ClearGeometry() {
     auto scene = renderer_.GetScene(scene_);
     for (auto& g : geometries_) {

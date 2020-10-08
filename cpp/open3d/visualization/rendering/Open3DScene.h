@@ -62,6 +62,7 @@ public:
 
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);
+    void SetBackgroundColor(const Eigen::Vector4f& color);
 
     /// Sets the maximum number of points before AddGeometry also adds a
     /// downsampled point cloud with number of points, used when rendering
