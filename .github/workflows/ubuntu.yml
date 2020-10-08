@@ -120,7 +120,8 @@ jobs:
           source util/ci_utils.sh
           build_wheel
           ccache -s
-          echo "PIP_PKG_NAME=$(basename build/lib/python_package/pip_package/open3d*.whl)" >> $GITHUB_ENV
+          PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel
         uses: actions/upload-artifact@v2
@@ -142,11 +143,12 @@ jobs:
         env:
           python_version: ${{ matrix.python_version }}
         run: |
-          set -euo pipefail   # stop on failure
-          PREV_VER_WHEEL=$(gsutil ls gs://open3d-releases/master/python-wheels/open3d-\*cp${python_version/./}\*linux\*.whl)
-          gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/master/python-wheels/
+          set -xeuo pipefail   # stop on failure
+          PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
+          PREV_VER_WHEEL="$(gsutil ls gs://open3d-releases/master/python-wheels/open3d\*${PYTAG}${PYTAG}\*linux\*.whl)"
+          gsutil cp "build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}" gs://open3d-releases/master/python-wheels/
           # Public read access
-          gsutil acl ch -u AllUsers:R gs://open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}
+          gsutil acl ch -u AllUsers:R "gs://open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}"
           echo "Download the wheel at: https://storage.googleapis.com/open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}"
           gsutil rm $PREV_VER_WHEEL
 

@@ -123,7 +123,8 @@ jobs:
           CLOUDSDK_PYTHON: ${{env.pythonLocation}}\python.exe
         run: |
           $ErrorActionPreference = "Stop"
-          $PREV_VER_WHEEL=$(gsutil ls gs://open3d-releases/master/python-wheels/open3d-*cp$($python_version -replace '\.', '')*win*.whl)
+          $PYTAG="-cp$(${{ env.python_version }} -replace '\.', '')"
+          $PREV_VER_WHEEL=$(gsutil ls gs://open3d-releases/master/python-wheels/open3d\*$PYTAG$PYTAG*win*.whl)
           gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/master/python-wheels/
           # Public read access
           gsutil acl ch -u AllUsers:R gs://open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}

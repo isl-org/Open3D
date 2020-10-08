@@ -113,7 +113,8 @@ jobs:
           source util/ci_utils.sh
           build_wheel
           ccache -s
-          echo "PIP_PKG_NAME=$(basename build/lib/python_package/pip_package/open3d*.whl)" >> $GITHUB_ENV
+          PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel
         uses: actions/upload-artifact@v2
@@ -131,12 +132,13 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' }}
+        # if: ${{ github.ref == 'refs/heads/master' }}
         env:
           python_version: ${{ matrix.python_version }}
         run: |
           set -euo pipefail   # stop on failure
-          PREV_VER_WHEEL=$(gsutil ls gs://open3d-releases/master/python-wheels/open3d-\*cp${python_version/./}\*macosx\*.whl)
+          PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
+          PREV_VER_WHEEL="$(gsutil ls gs://open3d-releases/master/python-wheels/open3d\*${PYTAG}${PYTAG}\*macosx\*.whl)"
           gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/master/python-wheels/
           # Public read access
           gsutil acl ch -u AllUsers:R gs://open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}
