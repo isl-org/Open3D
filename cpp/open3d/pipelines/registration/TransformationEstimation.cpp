@@ -29,7 +29,6 @@
 #include <Eigen/Geometry>
 
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/utility/Eigen.h"
 
 namespace open3d {
