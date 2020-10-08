@@ -10,10 +10,11 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=Release
-        -DCCACHE_PROGRAM=OFF  # enables ccache, "launch-cxx" is not working.
+        -DCCACHE_PROGRAM=OFF  # Enables ccache, "launch-cxx" is not working.
         -DFILAMENT_ENABLE_JAVA=OFF
         -DCMAKE_C_COMPILER=${FILAMENT_C_COMPILER}
         -DCMAKE_CXX_COMPILER=${FILAMENT_CXX_COMPILER}
+        -DCMAKE_CXX_FLAGS="-fno-builtin"  # Issue Open3D#1909, filament#2146
         -DCMAKE_INSTALL_PREFIX=${FILAMENT_ROOT}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DUSE_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}
