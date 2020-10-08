@@ -157,8 +157,7 @@ FilamentScene::FilamentScene(filament::Engine& engine,
     CreateSunDirectionalLight();
 
     // Create initial color skybox...
-    auto skybox_handle =
-            resource_mgr_.UpdateColorSkybox(SkyboxHandle(), {1.0f, 1.0f, 1.0f});
+    auto skybox_handle = resource_mgr_.CreateColorSkybox({1.0f, 1.0f, 1.0f});
     auto wskybox = resource_mgr_.GetSkybox(skybox_handle);
     if (auto skybox = wskybox.lock()) {
         color_skybox_ = wskybox;
