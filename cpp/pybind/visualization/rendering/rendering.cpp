@@ -47,7 +47,18 @@ public:
         : FilamentRenderer(EngineInstance::GetInstance(),
                            width, height,
                            EngineInstance::GetResourceManager())
-    {}
+    {
+        scene_ = new Open3DScene(*this);
+    }
+
+    ~PyOffscreenRenderer() { delete scene_; }
+
+    Open3DScene* GetScene() { return scene_; }
+
+private:
+    // The offscreen renderer owns the scene so that it can clean it up
+    // in the right order (otherwise we will crash).
+    Open3DScene* scene_;
 };
 
 void pybind_rendering_classes(py::module &m) {
@@ -69,7 +80,11 @@ void pybind_rendering_classes(py::module &m) {
              .def("set_clear_color", &Renderer::SetClearColor,
                   "Sets the background color for the renderer, [r, g, b, a]. "
                   "Applies to everything being rendered, so it essentially acts "
-                  "as the background color of the window");
+                  "as the background color of the window")
+             .def_property_readonly("scene", &PyOffscreenRenderer::GetScene,
+                  "Returns the Open3DScene for this renderer. This scene is "
+                  "destroyed when the renderer is destroyed and should not be "
+                  "accessed after that point.");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
@@ -253,7 +268,6 @@ void pybind_rendering_classes(py::module &m) {
     py::class_<Open3DScene, std::shared_ptr<Open3DScene>> o3dscene(
             m, "Open3DScene", "High-level scene for rending");
     o3dscene.def(py::init<Renderer &>())
-            .def(py::init<PyOffscreenRenderer &>())
             .def("show_skybox", &Open3DScene::ShowSkybox,
                  "Toggles display of the skybox")
             .def("show_axes", &Open3DScene::ShowAxes,

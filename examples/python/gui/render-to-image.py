@@ -9,7 +9,7 @@ def main():
     gui.Application.instance.initialize()
     r = render.OffscreenRenderer(640, 480)
     r.set_clear_color([1.0, 1.0, 1.0, 1.0])
-    scene = render.Open3DScene(r)
+    scene = r.scene
 
     yellow = render.Material()
     yellow.base_color = [1.0, 0.75, 0.0, 1.0]
