@@ -76,10 +76,9 @@ is reduced. This is achieved by optimizing:
 .. math::
   \def\argmin{\mathop{\rm argmin}}
   \begin{equation}
-    \label{eq:robust_loss}
     x^{*} = \argmin_{x} \sum_{i=1}^{N} \rho({r_i(x)})
   \end{equation}
-  :label: optim
+  :label: robust_loss
 
 where :math:`\rho(r)` is also called the robust loss or kernel and
 :math:`r_i(x)` is the residual.
@@ -87,12 +86,12 @@ where :math:`\rho(r)` is also called the robust loss or kernel and
 Several robust kernels have been proposed to deal with different kinds of
 outliers such as Huber, Cauchy, and others.
 
-The optimization problem in :eq:`optim` can be solved using the iteratively
-reweighted least squares (IRLS) approach, which solves a sequence of weighted
-least squares problems. We can see the relation between the least squares
-optimization in stanad non-linear least squares and robust loss optimization
-by comparing the respective gradients which go to zero at the optimum
-(illustrated only for the :math:`i^\mathrm{th}` residual):
+The optimization problem in :eq:`robust_loss` can be solved using the
+iteratively reweighted least squares (IRLS) approach, which solves a sequence
+of weighted least squares problems. We can see the relation between the least
+squares optimization in stanad non-linear least squares and robust loss
+optimization by comparing the respective gradients which go to zero at the
+optimum (illustrated only for the :math:`i^\mathrm{th}` residual):
 
 .. math::
   \begin{eqnarray}
@@ -116,8 +115,8 @@ increments by iteratively solving:
 
 .. math::
   \newcommand{\mat}[1]{\mathbf{#1}}
-  \newcommand{\veca}[1]{\vec{#1}}		%% vector with an arrow above
-  \renewcommand{\vec}[1]{\mathbf{#1}}	%% vectors are bold
+  \newcommand{\veca}[1]{\vec{#1}}
+  \renewcommand{\vec}[1]{\mathbf{#1}}
   \begin{align}
    \left(\mat{J}^\top \mat{W} \mat{J}\right)^{-1}\mat{J}^\top\mat{W}\vec{r},
   \end{align}
