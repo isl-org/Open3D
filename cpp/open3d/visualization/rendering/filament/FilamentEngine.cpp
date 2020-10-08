@@ -40,6 +40,7 @@
 
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 
+#include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 
 namespace open3d {
@@ -51,8 +52,19 @@ static std::shared_ptr<EngineInstance> g_instance = nullptr;
 }  // namespace
 
 EngineInstance::RenderingType EngineInstance::type_ = RenderingType::kDefault;
+std::string EngineInstance::resource_path_ = "";
 
 void EngineInstance::SelectBackend(RenderingType type) { type_ = type; }
+
+void EngineInstance::SetResourcePath(const std::string& resource_path) {
+    resource_path_ = resource_path;
+    if (!utility::filesystem::DirectoryExists(resource_path_)) {
+        utility::LogError(
+                ("Can't find resource directory: " + resource_path_).c_str());
+    }
+}
+
+const std::string& EngineInstance::GetResourcePath() { return resource_path_; }
 
 filament::Engine& EngineInstance::GetInstance() { return *Get().engine_; }
 

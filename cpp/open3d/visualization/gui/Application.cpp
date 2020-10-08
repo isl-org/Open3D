@@ -114,7 +114,7 @@ namespace visualization {
 namespace gui {
 
 struct Application::Impl {
-    std::string resource_path_;
+    bool is_initialized_ = false;
     Theme theme_;
     double last_time_ = 0.0;
     bool is_GLFW_initalized_ = false;
@@ -272,21 +272,20 @@ void Application::Initialize(int argc, const char *argv[]) {
 }
 
 void Application::Initialize(const char *resource_path) {
-    impl_->resource_path_ = resource_path;
-    if (!utility::filesystem::DirectoryExists(impl_->resource_path_)) {
-        utility::LogError(
-                ("Can't find resource directory: " + impl_->resource_path_)
-                        .c_str());
+    if (impl_->is_initialized_) {
+        return;
     }
-    if (!utility::filesystem::FileExists(impl_->resource_path_ +
-                                         "/ui_blit.filamat")) {
-        utility::LogError(
-                ("Resource directory does not have Open3D resources: " +
-                 impl_->resource_path_)
-                        .c_str());
+
+    rendering::EngineInstance::SetResourcePath(resource_path);
+    std::string uiblit_path = std::string(resource_path) + "/ui_blit.filamat";
+    if (!utility::filesystem::FileExists(uiblit_path)) {
+        utility::LogError("Resource directory does not have Open3D resources: {}", resource_path);
     }
-    impl_->theme_.font_path =
-            impl_->resource_path_ + "/" + impl_->theme_.font_path;
+
+    impl_->theme_.font_path = std::string(resource_path) +
+                              std::string("/") +
+                              impl_->theme_.font_path;
+    impl_->is_initialized_ = true;
 }
 
 double Application::Now() const { return glfwGetTime(); }
@@ -397,15 +396,16 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
         // Verify that the resource path is valid. If it is not, display a
         // message box (std::cerr may not be visible to the user, if we were run
         // as app).
-        if (impl_->resource_path_.empty()) {
+        if (!impl_->is_initialized_) {
             ShowNativeAlert(
                     "Internal error: Application::Initialize() was not called");
             return false;
         }
-        if (!utility::filesystem::DirectoryExists(impl_->resource_path_)) {
+        auto resource_path = rendering::EngineInstance::GetResourcePath();
+        if (!utility::filesystem::DirectoryExists(resource_path)) {
             std::stringstream err;
             err << "Could not find resource directory:\n'"
-                << impl_->resource_path_ << "' does not exist";
+                << resource_path << "' does not exist";
             ShowNativeAlert(err.str().c_str());
             return false;
         }
@@ -503,7 +503,7 @@ void Application::PostToMainThread(Window *window, std::function<void()> f) {
 }
 
 const char *Application::GetResourcePath() const {
-    return impl_->resource_path_.c_str();
+    return rendering::EngineInstance::GetResourcePath().c_str();
 }
 
 const Theme &Application::GetTheme() const { return impl_->theme_; }

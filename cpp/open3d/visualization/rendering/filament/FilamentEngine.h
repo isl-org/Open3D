@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace filament {
 class Engine;
 }
@@ -45,6 +47,11 @@ public:
     // If not called, platform available default backend will be used.
     static void SelectBackend(RenderingType type);
 
+    // Specifies path to load shaders and skyboxes from. Must be called before
+    // instance usage, or default path will be used.
+    static void SetResourcePath(const std::string& resource_path);
+    static const std::string& GetResourcePath();
+
     static filament::Engine& GetInstance();
     static FilamentResourceManager& GetResourceManager();
 
@@ -61,6 +68,7 @@ private:
     EngineInstance();
 
     static RenderingType type_;
+    static std::string resource_path_;
     filament::Engine* engine_;
     FilamentResourceManager* resource_manager_;
 };

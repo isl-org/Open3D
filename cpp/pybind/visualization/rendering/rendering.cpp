@@ -41,21 +41,26 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class PyOffscreenRenderer : public FilamentRenderer {
+class PyOffscreenRenderer {
 public:
-    PyOffscreenRenderer(int width, int height)
-        : FilamentRenderer(EngineInstance::GetInstance(),
-                           width,
-                           height,
-                           EngineInstance::GetResourceManager()) {
-        scene_ = new Open3DScene(*this);
+    PyOffscreenRenderer(int width, int height) {
+        gui::InitializeForPython();
+        renderer_ = new FilamentRenderer(EngineInstance::GetInstance(),
+                                         width,
+                                         height,
+                                         EngineInstance::GetResourceManager());
+        scene_ = new Open3DScene(*renderer_);
     }
 
-    ~PyOffscreenRenderer() { delete scene_; }
+    ~PyOffscreenRenderer() {
+        delete scene_;
+        delete renderer_;
+    }
 
     Open3DScene *GetScene() { return scene_; }
 
 private:
+    FilamentRenderer *renderer_;
     // The offscreen renderer owns the scene so that it can clean it up
     // in the right order (otherwise we will crash).
     Open3DScene *scene_;
@@ -81,10 +86,6 @@ void pybind_rendering_classes(py::module &m) {
             .def(py::init([](int w, int h) {
                 return std::make_shared<PyOffscreenRenderer>(w, h);
             }))
-            .def("set_clear_color", &Renderer::SetClearColor,
-                 "Sets the background color for the renderer, [r, g, b, a]. "
-                 "Applies to everything being rendered, so it essentially acts "
-                 "as the background color of the window")
             .def_property_readonly(
                     "scene", &PyOffscreenRenderer::GetScene,
                     "Returns the Open3DScene for this renderer. This scene is "

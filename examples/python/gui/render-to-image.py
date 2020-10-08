@@ -6,9 +6,7 @@ import open3d.visualization.gui as gui
 
 
 def main():
-    gui.Application.instance.initialize()
     render = rendering.OffscreenRenderer(640, 480)
-    render.set_clear_color([1.0, 1.0, 1.0, 1.0])
 
     yellow = rendering.Material()
     yellow.base_color = [1.0, 0.75, 0.0, 1.0]

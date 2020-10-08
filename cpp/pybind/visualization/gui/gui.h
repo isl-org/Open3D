@@ -32,6 +32,8 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
+void InitializeForPython(std::string resource_path = "");
+
 void pybind_gui(py::module &m);
 
 }  // namespace gui
