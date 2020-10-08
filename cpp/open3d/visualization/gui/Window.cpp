@@ -601,6 +601,14 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     dlg->Layout(GetTheme());
 }
 
+// When scene caching is enabled on a SceneWidget the SceneWidget only redraws
+// when something in the scene has changed (e.g., camera change, material
+// change). However, the SceneWidget also needs to redraw if any part of it
+// becomes uncovered. Unfortunately, we do not have 'Expose' events to use for
+// that purpose. So, we manually force the redraw by calling
+// ForceRedrawSceneWidget when an event occurs that we know will expose the
+// SceneWidget. For example, submenu's of a menu bar opening/closing and dialog
+// boxes closing.
 void Window::ForceRedrawSceneWidget() {
     std::for_each(impl_->children_.begin(), impl_->children_.end(), [](auto w) {
         auto sw = std::dynamic_pointer_cast<SceneWidget>(w);
