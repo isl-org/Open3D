@@ -132,6 +132,8 @@ jobs:
 
       - name: Upload wheel to GCS bucket
         if: ${{ github.ref == 'refs/heads/master' }}
+        env:
+          python_version: ${{ matrix.python_version }}
         run: |
           set -euo pipefail   # stop on failure
           PREV_VER_WHEEL=$(gsutil ls gs://open3d-releases/master/python-wheels/open3d-\*cp${python_version/./}\*macosx\*.whl)
