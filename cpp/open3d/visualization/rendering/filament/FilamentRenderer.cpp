@@ -107,7 +107,7 @@ void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
     co.clearColor.g = color.y();
     co.clearColor.b = color.z();
     co.clearColor.a = color.w();
-    co.clear = !preserve_buffer_;
+    co.clear = false;
     co.discard = !preserve_buffer_;
     renderer_->setClearOptions(co);
 
@@ -125,7 +125,7 @@ void FilamentRenderer::SetPreserveBuffer(bool preserve) {
     co.clearColor.b = clear_color_[2];
     co.clearColor.a = clear_color_[3];
     preserve_buffer_ = preserve;
-    co.clear = !preserve;
+    co.clear = false;
     co.discard = !preserve;
     renderer_->setClearOptions(co);
 }
