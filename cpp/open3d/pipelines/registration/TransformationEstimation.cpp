@@ -94,7 +94,6 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
         J_r.block<3, 1>(3, 0) = nt;
     };
 
-    // Weight matrix
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
     double r2;
