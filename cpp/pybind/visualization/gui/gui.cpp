@@ -716,7 +716,15 @@ void pybind_gui_classes(py::module &m) {
                  "Sets the minimum and maximum values for the number")
             .def("set_on_value_changed", &NumberEdit::SetOnValueChanged,
                  "Sets f(new_value) which is called with a Float when user "
-                 "changes widget's value");
+                 "changes widget's value")
+            .def("set_preferred_width", &NumberEdit::SetPreferredWidth,
+                 "Sets the preferred width of the NumberEdit")
+            .def(
+                    "set_preferred_width",
+                    [](NumberEdit &ne, double width) {
+                        ne.NumberEdit::SetPreferredWidth(int(width));
+                    },
+                    "Sets the preferred width of the NumberEdit");
 
     // ---- ProgressBar----
     py::class_<ProgressBar, std::shared_ptr<ProgressBar>, Widget> progress(
@@ -758,6 +766,12 @@ void pybind_gui_classes(py::module &m) {
             .def_property(
                     "scene", &SceneWidget::GetScene, &SceneWidget::SetScene,
                     "The rendering.Open3DScene that the SceneWidget renders")
+            .def("enable_scene_caching", &SceneWidget::EnableSceneCaching,
+                 "Enable/Disable caching of scene content when the view or "
+                 "model is not changing. Scene caching can help improve UI "
+                 "responsiveness for large models and point clouds")
+            .def("force_redraw", &SceneWidget::ForceRedraw,
+                 "Ensures scene redraws even when scene caching is enabled.")
             .def("set_view_controls", &SceneWidget::SetViewControls,
                  "Sets mouse interaction, e.g. ROTATE_OBJ")
             .def("setup_camera", &SceneWidget::SetupCamera,

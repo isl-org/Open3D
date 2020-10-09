@@ -82,6 +82,10 @@ public:
 
     rendering::View* GetRenderView() const;  // is nullptr if no scene
 
+    /// Enable (or disable) caching of scene to improve UI responsiveness when
+    /// dealing with large scenes (especially point clouds)
+    void EnableSceneCaching(bool enable);
+
     /// Forces the scene to redraw regardless of Renderer caching
     /// settings.
     void ForceRedraw();
