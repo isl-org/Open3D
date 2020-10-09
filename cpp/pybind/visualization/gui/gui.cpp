@@ -150,8 +150,8 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
         // resources included in the wheel.
         py::object o3d = py::module::import("open3d");
         auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
-        auto module_path = utility::filesystem::GetFileParentDirectory(
-                                        o3d_init_path);
+        auto module_path =
+                utility::filesystem::GetFileParentDirectory(o3d_init_path);
         resource_path = module_path + "/resources";
     }
     Application::GetInstance().Initialize(resource_path.c_str());
@@ -183,9 +183,7 @@ void pybind_gui_classes(py::module &m) {
                     "Gets the Application singleton (read-only)")
             .def(
                     "initialize",
-                    [](Application &instance) {
-                        InitializeForPython();
-                    },
+                    [](Application &instance) { InitializeForPython(); },
                     "Initializes the application, using the resources included "
                     "in the wheel. One of the `initialize` functions _must_ be "
                     "called prior to using anything in the gui module")

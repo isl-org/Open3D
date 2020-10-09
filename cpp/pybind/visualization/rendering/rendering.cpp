@@ -45,8 +45,7 @@ class PyOffscreenRenderer {
 public:
     PyOffscreenRenderer(int width, int height) {
         gui::InitializeForPython();
-        renderer_ = new FilamentRenderer(EngineInstance::GetInstance(),
-                                         width,
+        renderer_ = new FilamentRenderer(EngineInstance::GetInstance(), width,
                                          height,
                                          EngineInstance::GetResourceManager());
         scene_ = new Open3DScene(*renderer_);
