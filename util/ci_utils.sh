@@ -226,6 +226,7 @@ build_wheel() {
     echo
     echo "Packaging Open3D wheel..."
     make VERBOSE=1 -j"$NPROC" pip-package
+    cd .. # PWD=Open3D
 }
 
 install_wheel() {

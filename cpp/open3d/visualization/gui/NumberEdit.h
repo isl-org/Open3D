@@ -53,6 +53,8 @@ public:
     int GetDecimalPrecision();
     void SetDecimalPrecision(int num_digits);
 
+    void SetPreferredWidth(int width);
+
     void SetOnValueChanged(std::function<void(double)> on_changed);
 
     Size CalcPreferredSize(const Theme& theme) const override;
