@@ -75,14 +75,10 @@ FilamentView::FilamentView(filament::Engine& engine,
                            FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
     view_ = engine_.createView();
-    filament::View::AmbientOcclusionOptions ao_opts;
-    ao_opts.quality = filament::View::QualityLevel::MEDIUM;
-    ao_opts.upsampling = filament::View::QualityLevel::MEDIUM;
-    ao_opts.enabled = true;
     view_->setSampleCount(4);
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
     view_->setPostProcessingEnabled(true);
-    view_->setAmbientOcclusionOptions(ao_opts);
+    view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
     color_grading_ =
             filament::ColorGrading::Builder()
