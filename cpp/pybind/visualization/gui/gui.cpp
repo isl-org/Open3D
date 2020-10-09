@@ -716,7 +716,15 @@ void pybind_gui_classes(py::module &m) {
                  "Sets the minimum and maximum values for the number")
             .def("set_on_value_changed", &NumberEdit::SetOnValueChanged,
                  "Sets f(new_value) which is called with a Float when user "
-                 "changes widget's value");
+                 "changes widget's value")
+            .def("set_preferred_width", &NumberEdit::SetPreferredWidth,
+                 "Sets the preferred width of the NumberEdit")
+            .def(
+                    "set_preferred_width",
+                    [](NumberEdit &ne, double width) {
+                        ne.NumberEdit::SetPreferredWidth(int(width));
+                    },
+                    "Sets the preferred width of the NumberEdit");
 
     // ---- ProgressBar----
     py::class_<ProgressBar, std::shared_ptr<ProgressBar>, Widget> progress(
