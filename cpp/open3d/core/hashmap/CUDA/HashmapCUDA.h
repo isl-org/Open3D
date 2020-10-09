@@ -107,7 +107,7 @@ protected:
     /// pointer.
     CUDAHashmapImplContext<Hash, KeyEq> gpu_context_;
 
-    std::shared_ptr<InternalKvPairManager> kv_mgr_;
+    std::shared_ptr<KvPairs> kv_mgr_;
     std::shared_ptr<InternalNodeManager> node_mgr_;
 
     /// Rehash, Insert, Activate all call InsertImpl. It will be clean to
@@ -372,9 +372,8 @@ void CUDAHashmap<Hash, KeyEq>::Allocate(size_t bucket_count, size_t capacity) {
     this->capacity_ = capacity;
 
     // Allocate buffer for key-values.
-    kv_mgr_ = std::make_shared<InternalKvPairManager>(
-            this->capacity_, this->dsize_key_, this->dsize_value_,
-            this->device_);
+    kv_mgr_ = std::make_shared<KvPairs>(this->capacity_, this->dsize_key_,
+                                        this->dsize_value_, this->device_);
 
     // Allocate buffer for linked list nodes.
     node_mgr_ = std::make_shared<InternalNodeManager>(this->device_);
@@ -387,7 +386,7 @@ void CUDAHashmap<Hash, KeyEq>::Allocate(size_t bucket_count, size_t capacity) {
 
     gpu_context_.Setup(this->bucket_count_, this->capacity_, this->dsize_key_,
                        this->dsize_value_, node_mgr_->gpu_context_,
-                       kv_mgr_->gpu_context_);
+                       kv_mgr_->context_);
 }
 
 }  // namespace core
