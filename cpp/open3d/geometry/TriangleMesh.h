@@ -423,8 +423,12 @@ public:
     /// will be reached.
     /// \param maximum_error defines the maximum error where a vertex is allowed
     /// to be merged
+    /// \param boundary_weight a weight applied to edge vertices used to
+    /// preserve boundaries
     std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
-            int target_number_of_triangles, double maximum_error) const;
+            int target_number_of_triangles,
+            double maximum_error,
+            double boundary_weight) const;
 
     /// Function to select points from \p input TriangleMesh into
     /// output TriangleMesh
