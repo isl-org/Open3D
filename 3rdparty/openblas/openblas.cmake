@@ -2,14 +2,10 @@ include(ExternalProject)
 
 set(OPENBLAS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/openblas)
 
-if("${PROCESSOR_ARCH}" STREQUAL "x86_64")
-    set(OPENBLAS_TARGET "NEHALEM")
-elseif("${PROCESSOR_ARCH}" STREQUAL "armv8")
+if(LINUX_AARCH64)
     set(OPENBLAS_TARGET "ARMV8")
-elseif(${PROCESSOR_ARCH} STREQUAL "armv7")
-    set(OPENBLAS_TARGET "ARMV7")
 else()
-    message(FATAL_ERROR "Unable to select OPENBLAS_TARGET.")
+    set(OPENBLAS_TARGET "NEHALEM")
 endif()
 
 set(OPENBLAS_INCLUDE_DIR "${OPENBLAS_INSTALL_PREFIX}/include/") # The "/"" is critical, see import_3rdparty_library.
