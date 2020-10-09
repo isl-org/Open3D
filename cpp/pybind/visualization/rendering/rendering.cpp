@@ -43,13 +43,13 @@ namespace rendering {
 
 class PyOffscreenRenderer {
 public:
-    PyOffscreenRenderer(int width, int height,
-                        const std::string& resource_path) {
+    PyOffscreenRenderer(int width,
+                        int height,
+                        const std::string &resource_path) {
         gui::InitializeForPython(resource_path);
         width_ = width;
         height_ = height;
-        renderer_ = new FilamentRenderer(EngineInstance::GetInstance(),
-                                         width,
+        renderer_ = new FilamentRenderer(EngineInstance::GetInstance(), width,
                                          height,
                                          EngineInstance::GetResourceManager());
         scene_ = new Open3DScene(*renderer_);
@@ -92,14 +92,14 @@ void pybind_rendering_classes(py::module &m) {
                       "Renderer instance that can be used for rendering to an "
                       "image");
     offscreen
-            .def(py::init([](int w, int h, const std::string& resource_path) {
+            .def(py::init([](int w, int h, const std::string &resource_path) {
                      return std::make_shared<PyOffscreenRenderer>(
-                                                         w, h, resource_path);
+                             w, h, resource_path);
                  }),
-                "width"_a, "height"_a, "resource_path"_a = "",
-                "Takes width, height and an optional resource_path. If "
-                "unspecified, resource_path will use the resource path from "
-                "the installed Open3D library.")
+                 "width"_a, "height"_a, "resource_path"_a = "",
+                 "Takes width, height and an optional resource_path. If "
+                 "unspecified, resource_path will use the resource path from "
+                 "the installed Open3D library.")
             .def_property_readonly(
                     "scene", &PyOffscreenRenderer::GetScene,
                     "Returns the Open3DScene for this renderer. This scene is "

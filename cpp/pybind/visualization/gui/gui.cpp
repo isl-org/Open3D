@@ -159,11 +159,10 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
 }
 
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
-            rendering::Open3DScene *scene, int width, int height) {
+        rendering::Open3DScene *scene, int width, int height) {
     PythonUnlocker unlocker;
-    return Application::GetInstance().RenderToImage(unlocker, scene->GetView(),
-                                                    scene->GetScene(),
-                                                    width, height);
+    return Application::GetInstance().RenderToImage(
+            unlocker, scene->GetView(), scene->GetScene(), width, height);
 }
 
 void pybind_gui_classes(py::module &m) {
