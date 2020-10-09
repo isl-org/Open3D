@@ -158,6 +158,14 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
     install_cleanup_atexit();
 }
 
+std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
+            rendering::Open3DScene *scene, int width, int height) {
+    PythonUnlocker unlocker;
+    return Application::GetInstance().RenderToImage(unlocker, scene->GetView(),
+                                                    scene->GetScene(),
+                                                    width, height);
+}
+
 void pybind_gui_classes(py::module &m) {
     // ---- Application ----
     py::class_<Application> application(m, "Application",
@@ -231,10 +239,7 @@ void pybind_gui_classes(py::module &m) {
                     "render_to_image",
                     [](Application &instance, rendering::Open3DScene *scene,
                        int width, int height) {
-                        PythonUnlocker unlocker;
-                        return instance.RenderToImage(
-                                unlocker, scene->GetView(), scene->GetScene(),
-                                width, height);
+                        return RenderToImageWithoutWindow(scene, width, height);
                     },
                     "Renders a scene to an image and returns the image. If you "
                     "are rendering without a visible window you should use "

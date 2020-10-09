@@ -43,8 +43,11 @@ namespace rendering {
 
 class PyOffscreenRenderer {
 public:
-    PyOffscreenRenderer(int width, int height) {
-        gui::InitializeForPython();
+    PyOffscreenRenderer(int width, int height,
+                        const std::string& resource_path) {
+        gui::InitializeForPython(resource_path);
+        width_ = width;
+        height_ = height;
         renderer_ = new FilamentRenderer(EngineInstance::GetInstance(),
                                          width,
                                          height,
@@ -59,7 +62,13 @@ public:
 
     Open3DScene *GetScene() { return scene_; }
 
+    std::shared_ptr<geometry::Image> RenderToImage() {
+        return gui::RenderToImageWithoutWindow(scene_, width_, height_);
+    }
+
 private:
+    int width_;
+    int height_;
     FilamentRenderer *renderer_;
     // The offscreen renderer owns the scene so that it can clean it up
     // in the right order (otherwise we will crash).
@@ -83,15 +92,22 @@ void pybind_rendering_classes(py::module &m) {
                       "Renderer instance that can be used for rendering to an "
                       "image");
     offscreen
-            .def(py::init([](int w, int h) {
-                return std::make_shared<PyOffscreenRenderer>(w, h);
-            }))
+            .def(py::init([](int w, int h, const std::string& resource_path) {
+                     return std::make_shared<PyOffscreenRenderer>(
+                                                         w, h, resource_path);
+                 }),
+                "width"_a, "height"_a, "resource_path"_a = "",
+                "Takes width, height and an optional resource_path. If "
+                "unspecified, resource_path will use the resource path from "
+                "the installed Open3D library.")
             .def_property_readonly(
                     "scene", &PyOffscreenRenderer::GetScene,
                     "Returns the Open3DScene for this renderer. This scene is "
                     "destroyed when the renderer is destroyed and should not "
-                    "be "
-                    "accessed after that point.");
+                    "be accessed after that point.")
+            .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
+                 "Renders scene to an image, blocking until the image is "
+                 "returned");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",

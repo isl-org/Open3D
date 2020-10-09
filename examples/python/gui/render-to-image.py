@@ -49,11 +49,11 @@ def main():
     render.scene.scene.enable_directional_light(True)
     render.scene.show_axes(True)
 
-    img = gui.Application.instance.render_to_image(render.scene, 640, 480)
+    img = render.render_to_image()
     o3d.io.write_image("/tmp/test.png", img, 9)
 
     render.scene.camera.look_at([0, 0, 0], [-10, 0, 0], [0, 0, 1])
-    img = gui.Application.instance.render_to_image(render.scene, 640, 480)
+    img = render.render_to_image()
     o3d.io.write_image("/tmp/test2.png", img, 9)
 
 
