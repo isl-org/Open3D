@@ -3,4 +3,3 @@ widgetsnbextension
 notebook
 numpy
 matplotlib
-intel-openmp; platform_system == "Darwin"
