@@ -42,6 +42,9 @@ include open3d/*depthengine*
 include open3d/*k4a*
 include open3d/*libstdc*
 
+# Extra shared libraries
+include open3d/*.so*
+
 # JS
 recursive-include open3d/static *.*
 
