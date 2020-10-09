@@ -14,7 +14,6 @@ Open3D Python packages are distributed via
 
 Supported Python versions:
 
-* 3.5
 * 3.6
 * 3.7
 * 3.8
@@ -48,6 +47,31 @@ permission issues. For example:
     pip install --user open3d
     # or
     python3 -m pip install --user open3d
+
+Development version (pip)
+-------------------------
+
+To test the latest features in Open3D, download and install the development
+version (``HEAD`` of ``master`` branch):
+
+:Linux: `Python 3.6 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-linux_x86_64.whl>`__
+        `Python 3.7 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-linux_x86_64.whl>`__
+        `Python 3.8 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-linux_x86_64.whl>`__
+
+:MacOS: `Python 3.6 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-macosx_10_14_x86_64.whl>`__
+        `Python 3.7 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_14_x86_64.whl>`__
+        `Python 3.8 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_10_14_x86_64.whl>`__
+
+:Windows: `Python 3.6 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-win_amd64.whl>`__
+        `Python 3.7 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-win_amd64.whl>`__
+        `Python 3.8 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
+
+For example, to install the latest development version on Linux for Python 3.8:
+
+.. code-block:: bash
+
+    pip install --user --pre https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-linux_x86_64.whl
+
 
 Conda
 -----
