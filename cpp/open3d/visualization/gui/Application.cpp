@@ -279,11 +279,12 @@ void Application::Initialize(const char *resource_path) {
     rendering::EngineInstance::SetResourcePath(resource_path);
     std::string uiblit_path = std::string(resource_path) + "/ui_blit.filamat";
     if (!utility::filesystem::FileExists(uiblit_path)) {
-        utility::LogError("Resource directory does not have Open3D resources: {}", resource_path);
+        utility::LogError(
+                "Resource directory does not have Open3D resources: {}",
+                resource_path);
     }
 
-    impl_->theme_.font_path = std::string(resource_path) +
-                              std::string("/") +
+    impl_->theme_.font_path = std::string(resource_path) + std::string("/") +
                               impl_->theme_.font_path;
     impl_->is_initialized_ = true;
 }
@@ -404,8 +405,8 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
         auto resource_path = rendering::EngineInstance::GetResourcePath();
         if (!utility::filesystem::DirectoryExists(resource_path)) {
             std::stringstream err;
-            err << "Could not find resource directory:\n'"
-                << resource_path << "' does not exist";
+            err << "Could not find resource directory:\n'" << resource_path
+                << "' does not exist";
             ShowNativeAlert(err.str().c_str());
             return false;
         }
