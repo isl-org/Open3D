@@ -25,9 +25,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-aarch64-ccache-${{ github.sha }}
+          key: ${{ runner.os }}-openblas-x86_64-ccache-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-aarch64-ccache
+            ${{ runner.os }}-openblas-x86_64-ccache
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
@@ -82,9 +82,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-aarch64-ccache-${{ github.sha }}
+          key: ${{ runner.os }}-openblas-aarch64-ccache-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-aarch64-ccache
+            ${{ runner.os }}-openblas-aarch64-ccache
       - name: Build on ARM Container
         uses: uraimo/run-on-arch-action@v2.0.2
         with:
