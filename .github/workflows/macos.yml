@@ -124,6 +124,7 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
+        # if: ${{ github.ref == 'refs/heads/master' }}
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
@@ -136,14 +137,14 @@ jobs:
         env:
           python_version: ${{ matrix.python_version }}
         run: |
-          set -euo pipefail   # stop on failure
+          set -u   # No unbound variables
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
           PREV_VER_WHEEL="$(gsutil ls gs://open3d-releases/master/python-wheels/open3d\*${PYTAG}${PYTAG}\*macosx\*.whl)"
           gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/master/python-wheels/
           # Public read access
           gsutil acl ch -u AllUsers:R gs://open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}
           echo "Download the wheel at: https://storage.googleapis.com/open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}"
-          gsutil rm $PREV_VER_WHEEL
+          gsutil rm $PREV_VER_WHEEL || true
 
 
   test-wheel:
