@@ -1147,41 +1147,19 @@ TriangleMesh::GetEdgeToVerticesMap() const {
 double TriangleMesh::ComputeAngle(const Eigen::Vector3d &p0,
                                   const Eigen::Vector3d &p1,
                                   const Eigen::Vector3d &p2) {
-    const Eigen::Vector3d v1 = p0 - p1;
-    const Eigen::Vector3d v2 = p2 - p1;
-    double angle = std::acos(v1.dot(v2));
+    const auto v1 = p0 - p1;
+    const auto v2 = p2 - p1;
+    double angle = std::atan2(v1.cross(v2).norm(), v1.dot(v2));
 
-    // Project vectors to the plane defined by the three vertices
-    const Eigen::Vector3d z = v1.cross(v2).normalized();
-    const Eigen::Vector3d x = v1.cross(z).normalized();
-    const Eigen::Vector3d y = z.cross(x).normalized();
+    const auto v3 = p2 - p0;
+    const Eigen::Vector3d p = {1, 1, 1};
+    const auto plane_normal = v3.cross(p);
+    double d = -plane_normal.dot(p0);
+    double convex = (plane_normal.dot(p1) + d) > 0 ? true : false;
 
-    const Eigen::Vector3d v1_reversed = p2 - p0;
-    const Eigen::Vector3d z_reversed = v1_reversed.cross(v2).normalized();
-
-    std::cout << "Dot Product: " << z_reversed.dot(z) << std::endl;
-
-    const Eigen::Vector2d p0_projected = Eigen::Vector2d(p0.dot(x), p0.dot(y));
-    const Eigen::Vector2d p1_projected = Eigen::Vector2d(p1.dot(x), p1.dot(y));
-    const Eigen::Vector2d p2_projected = Eigen::Vector2d(p2.dot(x), p2.dot(y));
-
-    std::cout << p0_projected.transpose() << std::endl;
-    std::cout << p1_projected.transpose() << std::endl;
-    std::cout << p2_projected.transpose() << std::endl;
-
-    const Eigen::Vector2d v1_projected = p0_projected - p1_projected;
-    const Eigen::Vector2d v2_projected = p2_projected - p1_projected;
-
-    std::cout << v1_projected.transpose() << std::endl;
-    std::cout << v2_projected.transpose() << std::endl;
-
-    std::cout << std::endl;
-
-    const bool convex = true;
     if (!convex) {
         angle += M_PI;
     }
-
     return angle;
 }
 
