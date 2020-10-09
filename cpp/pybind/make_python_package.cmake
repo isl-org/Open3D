@@ -11,7 +11,7 @@ file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/open3d)
 # 1) Pure-python code and misc files, copied from ${PYTHON_PACKAGE_SRC_DIR}
 file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
      DESTINATION ${PYTHON_PACKAGE_DST_DIR}
-)
+     )
 
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 #    Optionally other modules e.g. open3d_tf_ops.so may be included.
@@ -28,6 +28,15 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
                 FILES_MATCHING PATTERN "${COMPILED_MODULE_NAME}")
         endif()
     endforeach()
+endforeach()
+# Include additional libraries that may be absent from the user system
+# eg: libc++.so and libc++abi.so (needed by filament)
+# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filname
+foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
+    get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
+    get_filename_component(SO_VER_NAME ${PYTHON_EXTRA_LIB_REAL} NAME)
+    string(REGEX REPLACE "\\.so\\.1\\..*" ".so.1" SO_1_NAME ${SO_VER_NAME})
+    configure_file(${PYTHON_EXTRA_LIB_REAL} ${PYTHON_PACKAGE_DST_DIR}/open3d/${SO_1_NAME} COPYONLY)
 endforeach()
 
 # 3) Configured files and supporting files
