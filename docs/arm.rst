@@ -4,7 +4,7 @@ ARM Support
 ===========
 
 Open3D provides experimental support for 64-bit ARM architecture (``arm64``
-or ``aarch64``) on Linux. Open3D needs to be compiled for source to run on ARM.
+or ``aarch64``) on Linux. Open3D needs to be compiled from source to run on ARM.
 
 System requirements
 -------------------
@@ -13,7 +13,7 @@ System requirements
   ``uname -p`` and it should show ``aarch64``.
 * Full OpenGL (not OpenGL ES) is needed for Open3D GUI. If OpenGL is not
   available, the Open3D GUI will compile but it won't run. In this case, we
-  recommend setting ``-DBUILD_GUI=OFF``.
+  recommend setting ``-DBUILD_GUI=OFF`` during the ``cmake`` configuration step.
 
 
 Building Open3D on ARM64
@@ -70,7 +70,7 @@ Build
     cd build
 
     # Configure
-    # > Set -DBUILD_CUDA_MODULE=ON is CUDA available (e.g. on Nvidia Jetson)
+    # > Set -DBUILD_CUDA_MODULE=ON if CUDA is available (e.g. on Nvidia Jetson)
     # > Set -DBUILD_GUI=ON if OpenGL is available (e.g. on Nvidia Jetson)
     # > We don't support TensorFlow and PyTorch on ARM officially
     cmake \
