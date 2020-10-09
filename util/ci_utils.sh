@@ -61,11 +61,24 @@ install_cuda_toolkit() {
     fi
     options="$(echo "$@" | tr ' ' '|')"
     if [[ "with-cudnn" =~ ^($options)$ ]]; then
-        echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
-        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
-        $SUDO apt-get install --yes --no-install-recommends \
-            "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
-            "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
+        # The repository method can cause "File has unexpected size" error so
+        # we use a tar file copy approach instead. The scripts are taken from
+        # CentOS 6 nvidia-docker scripts. The CUDA version and CUDNN version
+        # should be the same as the repository method. Ref:
+        # https://gitlab.com/nvidia/container-images/cuda/-/blob/2d67fde701915bd88a15038895203c894b36d3dd/dist/10.1/centos6-x86_64/devel/cudnn7/Dockerfile#L9
+        $SUDO apt-get install --yes --no-install-recommends curl
+        CUDNN_DOWNLOAD_SUM=7eaec8039a2c30ab0bc758d303588767693def6bf49b22485a2c00bf2e136cb3
+        curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.6.5/cudnn-10.1-linux-x64-v7.6.5.32.tgz -O
+        echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.1-linux-x64-v7.6.5.32.tgz" | sha256sum -c -
+        $SUDO tar --no-same-owner -xzf cudnn-10.1-linux-x64-v7.6.5.32.tgz -C /usr/local
+        rm cudnn-10.1-linux-x64-v7.6.5.32.tgz
+        $SUDO ldconfig
+        # We may revisit the repository approach in the future.
+        # echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
+        # $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
+        # $SUDO apt-get install --yes --no-install-recommends \
+        #     "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
+        #     "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
     fi
     CUDA_TOOLKIT_DIR=/usr/local/cuda-${CUDA_VERSION[1]}
     [ -e /usr/local/cuda ] || $SUDO ln -s "$CUDA_TOOLKIT_DIR" /usr/local/cuda
@@ -213,6 +226,7 @@ build_wheel() {
     echo
     echo "Packaging Open3D wheel..."
     make VERBOSE=1 -j"$NPROC" pip-package
+    cd .. # PWD=Open3D
 }
 
 install_wheel() {

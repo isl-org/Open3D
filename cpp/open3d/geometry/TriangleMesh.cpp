@@ -1181,6 +1181,39 @@ double TriangleMesh::GetSurfaceArea(std::vector<double> &triangle_areas) const {
     return surface_area;
 }
 
+double TriangleMesh::GetVolume() const {
+    // Computes the signed volume of the tetrahedron defined by
+    // the three triangle vertices and the origin. The sign is determined by
+    // checking if the origin is at the same side as the normal with respect to
+    // the triangle.
+    auto GetSignedVolumeOfTriangle = [&](size_t tidx) {
+        const Eigen::Vector3i &triangle = triangles_[tidx];
+        const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
+        const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
+        const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
+        return vertex0.dot(vertex1.cross(vertex2)) / 6.0;
+    };
+
+    if (!IsWatertight()) {
+        utility::LogError(
+                "The mesh is not watertight, and the volume cannot be "
+                "computed.");
+    }
+    if (!IsOrientable()) {
+        utility::LogError(
+                "The mesh is not orientable, and the volume cannot be "
+                "computed.");
+    }
+
+    double volume = 0;
+    int64_t num_triangles = triangles_.size();
+#pragma omp parallel for reduction(+ : volume)
+    for (int64_t tidx = 0; tidx < num_triangles; ++tidx) {
+        volume += GetSignedVolumeOfTriangle(tidx);
+    }
+    return std::abs(volume);
+}
+
 Eigen::Vector4d TriangleMesh::ComputeTrianglePlane(const Eigen::Vector3d &p0,
                                                    const Eigen::Vector3d &p1,
                                                    const Eigen::Vector3d &p2) {
