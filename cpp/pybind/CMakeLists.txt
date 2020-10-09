@@ -102,6 +102,13 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
                       FOLDER "Python"
                       LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"
                       ARCHIVE_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}")
+# Include additional libraries that may be absent from the user system
+# eg: libc++.so and libc++abi.so (needed by filament) for Linux.
+# libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
+set(PYTHON_EXTRA_LIBRARIES "")
+if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+endif()
 
 # Use `make python-package` to create the python package in the build directory
 # The python package will be created at PYTHON_PACKAGE_DIR. It contains:
@@ -186,6 +193,7 @@ add_custom_target(python-package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
+            "-DPYTHON_EXTRA_LIBRARIES=${PYTHON_EXTRA_LIBRARIES}"
             -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
@@ -237,7 +245,7 @@ add_custom_target(install-python-package
 # Use `make conda-package` to create conda package in the build directory
 # Note that we don't provide `make install-conda-package` similar to pip. This
 # is becuase:
-#     1) `make install-pip-whell` works in conda environment for local build
+#     1) `make install-pip-package` works in conda environment for local build
 #     2) `make conda-package` is mainly for internal use to distribute conda
 add_custom_target(conda-package
     COMMAND ${CMAKE_COMMAND}

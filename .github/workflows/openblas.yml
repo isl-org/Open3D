@@ -54,7 +54,8 @@ jobs:
               -DUSE_BLAS=ON \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_GUI=OFF \
+              -DBUILD_GUI=ON \
+              -DBUILD_FILAMENT_FROM_SOURCE=ON \
               -DBUILD_TENSORFLOW_OPS=OFF \
               -DBUILD_PYTORCH_OPS=OFF \
               -DBUILD_UNIT_TESTS=ON \
