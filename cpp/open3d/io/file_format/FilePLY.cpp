@@ -592,7 +592,7 @@ bool ReadTPointCloudFromPLY(const std::string &filename,
     }
 
     // add rest of the properties
-    for (int i = 0; i < state.properties.size(); i++) {
+    for (size_t i = 0; i < state.properties.size(); i++) {
         pointcloud.SetPointAttr(state.property_name[i],
                                 state.properties[state.property_name[i]]);
     }
