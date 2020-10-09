@@ -118,75 +118,28 @@ namespace ply_tpointcloud_reader {
 
 struct PLYReaderState {
     utility::CountingProgressReporter *progress_bar;
-
-    core::TensorList points;
-    core::TensorList normals;
-    core::TensorList colors;
-
-    long vertex_index;
-    long vertex_num;
-    long normal_index;
-    long normal_num;
-    long color_index;
-    long color_num;
+    std::unordered_map<std::string, core::TensorList> properties;
+    std::vector<const char *> property_name;
+    std::vector<long> property_index;
+    std::vector<long> property_num;
 };
 
-int ReadVertexCallback(p_ply_argument argument) {
+int ReadPropertyCallback(p_ply_argument argument) {
     PLYReaderState *state_ptr;
-    long index;
+    long id;
     ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
-                               &index);
-    if (state_ptr->vertex_index >= state_ptr->vertex_num) {
-        return 0;  // some sanity check
-    }
-
-    double value = ply_get_argument_value(argument);
-    state_ptr->points[state_ptr->vertex_index][index] = value;
-    if (index == 2) {  // reading 'z'
-        state_ptr->vertex_index++;
-        if (state_ptr->vertex_index % 1000 == 0) {
-            state_ptr->progress_bar->Update(state_ptr->vertex_index);
-        }
-    }
-    return 1;
-}
-
-int ReadNormalCallback(p_ply_argument argument) {
-    PLYReaderState *state_ptr;
-    long index;
-    ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
-                               &index);
-    if (state_ptr->normal_index >= state_ptr->normal_num) {
+                               &id);
+    if (state_ptr->property_index[id] >= state_ptr->property_num[id]) {
         return 0;
     }
 
     double value = ply_get_argument_value(argument);
-    state_ptr->normals[state_ptr->normal_index][index] = value;
-    if (index == 2) {  // reading 'nz'
-        state_ptr->normal_index++;
-        if (state_ptr->normal_index % 1000 == 0) {
-            state_ptr->progress_bar->Update(state_ptr->normal_index);
-        }
-    }
-    return 1;
-}
 
-int ReadColorCallback(p_ply_argument argument) {
-    PLYReaderState *state_ptr;
-    long index;
-    ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
-                               &index);
-    if (state_ptr->color_index >= state_ptr->color_num) {
-        return 0;
-    }
-
-    double value = ply_get_argument_value(argument);
-    state_ptr->colors[state_ptr->color_index][index] = value / 255.0;
-    if (index == 2) {  // reading 'blue'
-        state_ptr->color_index++;
-        if (state_ptr->color_index % 1000 == 0) {
-            state_ptr->progress_bar->Update(state_ptr->color_index);
-        }
+    state_ptr->properties[state_ptr->property_name[id]]
+                         [state_ptr->property_index[id]][0] = value;
+    state_ptr->property_index[id]++;
+    if (state_ptr->property_index[id] % 1000 == 0) {
+        state_ptr->progress_bar->Update(state_ptr->property_index[id]);
     }
     return 1;
 }
@@ -557,40 +510,32 @@ bool ReadTPointCloudFromPLY(const std::string &filename,
     }
 
     PLYReaderState state;
+    p_ply_property property = NULL;
+    e_ply_type type, length_type, value_type;
+    long property_id = 0;
 
-    state.vertex_num = ply_set_read_cb(ply_file, "vertex", "x",
-                                       ReadVertexCallback, &state, 0);
-    ply_set_read_cb(ply_file, "vertex", "y", ReadVertexCallback, &state, 1);
-    ply_set_read_cb(ply_file, "vertex", "z", ReadVertexCallback, &state, 2);
+    // get first ply element; assuming it will be vertex
+    p_ply_element element = ply_get_next_element(ply_file, NULL);
+    property = ply_get_next_property(element, NULL);
 
-    state.normal_num = ply_set_read_cb(ply_file, "vertex", "nx",
-                                       ReadNormalCallback, &state, 0);
-    ply_set_read_cb(ply_file, "vertex", "ny", ReadNormalCallback, &state, 1);
-    ply_set_read_cb(ply_file, "vertex", "nz", ReadNormalCallback, &state, 2);
+    while (property) {
+        state.property_name.push_back("");
+        ply_get_property_info(property, &state.property_name[property_id],
+                              &type, &length_type, &value_type);
+        state.property_num.push_back(ply_set_read_cb(
+                ply_file, "vertex", state.property_name[property_id],
+                ReadPropertyCallback, &state, property_id));
 
-    state.color_num = ply_set_read_cb(ply_file, "vertex", "red",
-                                      ReadColorCallback, &state, 0);
-    ply_set_read_cb(ply_file, "vertex", "green", ReadColorCallback, &state, 1);
-    ply_set_read_cb(ply_file, "vertex", "blue", ReadColorCallback, &state, 2);
-
-    if (state.vertex_num <= 0) {
-        utility::LogWarning("Read PLY failed: number of vertex <= 0.");
-        ply_close(ply_file);
-        return false;
+        state.property_index.push_back(0);
+        state.properties[state.property_name[property_id]] = core::TensorList(
+                state.property_num[property_id], {1}, core::Dtype::Float64);
+        // get next property
+        property = ply_get_next_property(element, property);
+        property_id++;
     }
 
-    state.points =
-            core::TensorList(state.vertex_num, {3}, core::Dtype::Float64);
-    state.normals =
-            core::TensorList(state.normal_num, {3}, core::Dtype::Float64);
-    state.colors = core::TensorList(state.color_num, {3}, core::Dtype::Float64);
-
-    state.vertex_index = 0;
-    state.normal_index = 0;
-    state.color_index = 0;
-
     utility::CountingProgressReporter reporter(params.update_progress);
-    reporter.SetTotal(state.vertex_num);
+    reporter.SetTotal(state.property_num[0]);
     state.progress_bar = &reporter;
 
     if (!ply_read(ply_file)) {
@@ -601,12 +546,60 @@ bool ReadTPointCloudFromPLY(const std::string &filename,
     }
 
     pointcloud.Clear();
-    pointcloud.SetPoints(state.points);
-    pointcloud.SetPointNormals(state.normals);
-    pointcloud.SetPointColors(state.colors);
+
+    // add base elements
+    if (state.properties.find("x") != state.properties.end()) {
+        core::TensorList points = core::TensorList(
+                state.property_num[property_id - 1], {3}, core::Dtype::Float64);
+        points.AsTensor().Slice(1, 0, 1) =
+                state.properties["x"].AsTensor().Slice(1, 0, 1);
+        points.AsTensor().Slice(1, 1, 2) =
+                state.properties["y"].AsTensor().Slice(1, 0, 1);
+        points.AsTensor().Slice(1, 2, 3) =
+                state.properties["z"].AsTensor().Slice(1, 0, 1);
+        state.properties.erase("x");
+        state.properties.erase("y");
+        state.properties.erase("z");
+        pointcloud.SetPoints(points);
+    }
+    if (state.properties.find("nx") != state.properties.end()) {
+        core::TensorList normals = core::TensorList(
+                state.property_num[property_id - 1], {3}, core::Dtype::Float64);
+        normals.AsTensor().Slice(1, 0, 1) =
+                state.properties["nx"].AsTensor().Slice(1, 0, 1);
+        normals.AsTensor().Slice(1, 1, 2) =
+                state.properties["ny"].AsTensor().Slice(1, 0, 1);
+        normals.AsTensor().Slice(1, 2, 3) =
+                state.properties["nz"].AsTensor().Slice(1, 0, 1);
+        state.properties.erase("nx");
+        state.properties.erase("ny");
+        state.properties.erase("nz");
+        pointcloud.SetPointNormals(normals);
+    }
+    if (state.properties.find("red") != state.properties.end()) {
+        core::TensorList colors = core::TensorList(
+                state.property_num[property_id - 1], {3}, core::Dtype::Float64);
+        colors.AsTensor().Slice(1, 0, 1) =
+                state.properties["red"].AsTensor().Slice(1, 0, 1);
+        colors.AsTensor().Slice(1, 1, 2) =
+                state.properties["green"].AsTensor().Slice(1, 0, 1);
+        colors.AsTensor().Slice(1, 2, 3) =
+                state.properties["blue"].AsTensor().Slice(1, 0, 1);
+        state.properties.erase("red");
+        state.properties.erase("green");
+        state.properties.erase("blue");
+        pointcloud.SetPointColors(colors);
+    }
+
+    // add rest of the properties
+    for (int i = 0; i < state.properties.size(); i++) {
+        pointcloud.SetPointAttr(state.property_name[i],
+                                state.properties[state.property_name[i]]);
+    }
 
     ply_close(ply_file);
     reporter.Finish();
+
     return true;
 }
 

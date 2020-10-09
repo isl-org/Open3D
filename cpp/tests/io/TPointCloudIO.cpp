@@ -159,6 +159,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
     EXPECT_EQ(pcd.GetPoints().GetSize(), 196133);
     EXPECT_EQ(pcd.GetPointNormals().GetSize(), 196133);
     EXPECT_EQ(pcd.GetPointColors().GetSize(), 196133);
+    EXPECT_EQ(pcd.GetPointAttr("curvature").GetSize(), 196133);
 }
 
 // reading ascii
@@ -175,6 +176,14 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
     EXPECT_FALSE(io::ReadPointCloud(
             std::string(TEST_DATA_DIR) + "/test_sample_wrong_format.ply", pcd,
             {"auto", false, false, true}));
+}
+
+// custom attributes check
+TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
+    t::geometry::PointCloud pcd;
+    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/test_sample_custom.ply",
+                       pcd, {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPointAttr("intensity").GetSize(), 7);
 }
 
 }  // namespace tests
