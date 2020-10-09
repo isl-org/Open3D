@@ -137,7 +137,7 @@ jobs:
             cmake \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_GUI=OFF \
+              -DBUILD_GUI=ON \
               -DCMAKE_C_COMPILER=gcc \
               -DCMAKE_CXX_COMPILER=g++ \
               -DBUILD_TENSORFLOW_OPS=OFF \
