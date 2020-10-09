@@ -138,8 +138,8 @@ jobs:
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
               -DBUILD_GUI=ON \
-              -DCMAKE_C_COMPILER=clang \
-              -DCMAKE_CXX_COMPILER=clang++ \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
               -DBUILD_TENSORFLOW_OPS=OFF \
               -DBUILD_PYTORCH_OPS=OFF \
               -DBUILD_UNIT_TESTS=ON \
