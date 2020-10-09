@@ -2,11 +2,17 @@ include(ExternalProject)
 
 set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
 
+if(LINUX_AARCH64)
+    set(FILAMENT_GIT_TAG "d72d3533e66b7e6c10e27e4bb720317c23f7de6f") # 2020-Oct-05
+else()
+    set(FILAMENT_GIT_TAG "v1.9.3")
+endif()
+
 ExternalProject_Add(
     ext_filament
     PREFIX filament
     GIT_REPOSITORY https://github.com/google/filament.git
-    GIT_TAG v1.9.3
+    GIT_TAG ${FILAMENT_GIT_TAG}
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=Release
