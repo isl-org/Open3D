@@ -869,8 +869,8 @@ if(BUILD_GUI)
             endif()
             # If the default version is not sufficient, look for some specific versions
             if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
-                find_program(CLANG_VERSIONED_CC NAMES clang-10 clang-9 clang-8 clang-7)
-                find_program(CLANG_VERSIONED_CXX NAMES clang++-10 clang++-9 clang++-8 clang++-7)
+                find_program(CLANG_VERSIONED_CC NAMES clang-11 clang-10 clang-9 clang-8 clang-7)
+                find_program(CLANG_VERSIONED_CXX NAMES clang++11 clang++-10 clang++-9 clang++-8 clang++-7)
                 if (CLANG_VERSIONED_CC AND CLANG_VERSIONED_CXX)
                     set(FILAMENT_C_COMPILER "${CLANG_VERSIONED_CC}")
                     set(FILAMENT_CXX_COMPILER "${CLANG_VERSIONED_CXX}")
@@ -901,11 +901,14 @@ if(BUILD_GUI)
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
     target_link_libraries(3rdparty_filament INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
     if(UNIX AND NOT APPLE)
-        find_library(CPP_LIBRARY c++)
-        if(CPP_LIBRARY)
-            # Ensure that libstdc++ gets linked first
-            target_link_libraries(3rdparty_filament INTERFACE -lstdc++ ${CPP_LIBRARY})
-        endif()
+        find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+            llvm-11/lib llvm-10/lib llvm-9/lib llvm-8/lib llvm-7/lib
+            REQUIRED)
+        get_filename_component(CPP_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
+        find_library(CPP_LIBRARY c++ PATHS ${CPP_LIBDIR} REQUIRED)
+        # Ensure that libstdc++ gets linked first
+        target_link_libraries(3rdparty_filament INTERFACE -lstdc++
+            ${CPP_LIBRARY} ${CPPABI_LIBRARY})
     endif()
     if (APPLE)
         find_library(CORE_VIDEO CoreVideo)
