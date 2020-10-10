@@ -151,5 +151,5 @@ jobs:
             make tests -j$(nproc)
             make install-pip-package -j$(nproc)
             ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/
+            pytest ../python/test/ --ignore ../python/test/ml_ops/ --ignore ../python/test/test_color_map.py
             ccache -s
