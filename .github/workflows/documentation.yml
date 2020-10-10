@@ -75,7 +75,7 @@ jobs:
           sudo apt-get install --yes ghostscript
           sudo apt-get install --yes pandoc
           sudo apt-get install --yes ccache
-          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
           # Install Python dependencies for building docs
           which python
           python -V

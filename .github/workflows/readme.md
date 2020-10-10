@@ -159,3 +159,26 @@ used for running CI.
     with name `GCE_SA_KEY_GPU_CI`
 
 2.  Also add secret `GCE_PROJECT: open3d-dev`
+
+## C. Ccache strategy
+
+- Typically, a build generates ~500MB cache. A build with Filament compiled from
+  source generates ~600MB cache.
+- Typically, regular X86 Ubuntu and macOS builds take about 40 mins without
+  caching.
+- The bottleneck of the CI is in the ARM build since it runs on a simulator.
+  When building Filament from source, the build time can exceed GitHub's 6-hour
+  limit if caching is not properly activated. With proper caching and good cache
+  hit rate, the ARM build job can run within 1 hour.
+- **The priority is to prevent the ARM cache from being evicted.** This is
+  especially important, when multiple commits are submitted to CI within a short
+  period. In this case, the fast-building jobs will finish, and each commit will
+  generate a cache entry. When the caches add up, they may exceed GitHub's 5GB
+  total cache size limit, thus the ARM cache, being the oldest one, may be
+  evicted.
+- Therefore, we explicitly control the cache size of other build jobs to be
+  **100MB**. These will lead to a 20% (100/500) cache hit rate even under the
+  ideal scenario. However, this is acceptable since the GPU CIs on Google Cloud
+  take 30-40 as well.
+- We also keep the cache size for ARM builds relatively small -- at **700MB**,
+  it is roughly just enough to save one version of the cache.
