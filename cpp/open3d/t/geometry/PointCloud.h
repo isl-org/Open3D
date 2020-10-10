@@ -263,7 +263,7 @@ public:
     core::Device GetDevice() const { return device_; }
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
-    static t::geometry::PointCloud FromLegacyPointCloud(
+    static geometry::PointCloud FromLegacyPointCloud(
             const open3d::geometry::PointCloud &pcd_legacy,
             core::Dtype dtype = core::Dtype::Float32,
             const core::Device &device = core::Device("CPU:0"));

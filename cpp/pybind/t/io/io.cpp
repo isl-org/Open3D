@@ -24,20 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/t/t.h"
-
 #include "pybind/open3d_pybind.h"
-#include "pybind/t/geometry/geometry.h"
-#include "pybind/t/io/io.h"
 
 namespace open3d {
 namespace t {
+namespace io {
 
-void pybind_t(py::module& m) {
-    py::module m_submodule = m.def_submodule("t");
-    geometry::pybind_geometry(m_submodule);
-    io::pybind_io(m_submodule);
+void pybind_io(py::module& m) {
+    py::module m_submodule = m.def_submodule("io");
+    void pybind_class_io(py::module & m);
 }
 
+}  // namespace io
 }  // namespace t
 }  // namespace open3d
