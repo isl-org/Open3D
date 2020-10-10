@@ -159,3 +159,26 @@ used for running CI.
     with name `GCE_SA_KEY_GPU_CI`
 
 2.  Also add secret `GCE_PROJECT: open3d-dev`
+
+
+## C. Development wheels for user testing
+
+### Google Cloud storage
+
+Follow instructions in A. Documentation deployment to setup a Google cloud
+bucket with:
+
+-  Project: open3d-dev
+-  Service account: open3d-ci-sa-gpu
+-  Bucket name: open3d-ci-sa-gpu
+-  Public read permissions
+-  One week object lifecycle
+
+```bash
+gsutil mb -p open3d-dev -c STANDARD -l US -b on gs://open3d-releases-master
+gsutil acl ch -u AllUsers:R gs://open3d-releases-master
+gsutil lifecycle set gcs.lifecycle.json gs:/open3d-releases-master
+gsutil iam ch \
+    serviceAccount:open3d-ci-sa-gpu@open3d-dev.iam.gserviceaccount.com:objectAdmin \
+    gs://open3d-releases-master
+```
