@@ -1305,6 +1305,11 @@ void FilamentScene::SetBackgroundColor(const Eigen::Vector4f& color) {
         fcolor.b = color.z();
         fcolor.a = color.w();
         skybox->setColor(fcolor);
+        if (!skybox_enabled_) {
+            if (auto skybox = color_skybox_.lock()) {
+                scene_->setSkybox(skybox.get());
+            }
+        }
     }
 }
 
