@@ -41,7 +41,7 @@ namespace core {
 
 /// Dynamic memory allocation and free are expensive on kernels.
 /// We pre-allocate a chunk of memory and manually manage them on kernels.
-class KvPairsContext {
+class CUDAKvPairsContext {
 public:
     uint8_t *keys_;     /* [N] * sizeof(Key) */
     uint8_t *values_;   /* [N] * sizeof(Value) */
@@ -88,7 +88,7 @@ public:
     }
 };
 
-__global__ void ResetKvPairsKernel(KvPairsContext ctx) {
+__global__ void ResetKvPairsKernel(CUDAKvPairsContext ctx) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < ctx.capacity_) {
         ctx.heap_[i] = i;
@@ -97,7 +97,7 @@ __global__ void ResetKvPairsKernel(KvPairsContext ctx) {
 
 class KvPairs {
 public:
-    KvPairsContext context_;
+    CUDAKvPairsContext context_;
     Device device_;
 
 public:
