@@ -405,7 +405,7 @@ public:
     core::Device GetDevice() const { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
-    static t::geometry::TriangleMesh FromLegacyTrangleMesh(
+    static geometry::TriangleMesh FromLegacyTrangleMesh(
             const geometry::TriangleMesh &mesh_legacy,
             core::Dtype dtype = core::Dtype::Float32,
             const core::Device &device = core::Device("CPU:0")) {
