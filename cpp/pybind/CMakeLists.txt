@@ -205,7 +205,7 @@ add_custom_target(python-package
             -DPROJECT_DOCS=${PROJECT_DOCS}
             -DPROJECT_CODE=${PROJECT_CODE}
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
-            -DPROJECT_VERSION=${PROJECT_VERSION}
+            -DPROJECT_VERSION=${OPEN3D_VERSION_FULL}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
