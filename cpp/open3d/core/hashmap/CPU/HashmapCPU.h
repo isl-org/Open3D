@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <tbb/concurrent_unordered_map.h>
+
 #include <unordered_map>
 
 #include "open3d/core/hashmap/CPU/KvPairsCPU.hpp"
@@ -37,13 +39,13 @@ namespace core {
 template <typename Hash, typename KeyEq>
 class CPUHashmap : public DeviceHashmap<Hash, KeyEq> {
 public:
-    ~CPUHashmap();
-
     CPUHashmap(size_t init_buckets,
                size_t init_capacity,
                size_t dsize_key,
                size_t dsize_value,
                const Device& device);
+
+    ~CPUHashmap();
 
     void Rehash(size_t buckets) override;
 
@@ -86,7 +88,8 @@ public:
     size_t Size() const override;
 
 protected:
-    std::shared_ptr<std::unordered_map<void*, addr_t, Hash, KeyEq>> impl_;
+    std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
+            impl_;
     std::shared_ptr<CPUKvPairs> kv_pairs_;
 
     void InsertImpl(const void* input_keys,
@@ -109,7 +112,8 @@ CPUHashmap<Hash, KeyEq>::CPUHashmap(size_t init_buckets,
               dsize_key,
               dsize_value,
               device) {
-    impl_ = std::make_shared<std::unordered_map<void*, addr_t, Hash, KeyEq>>(
+    impl_ = std::make_shared<
+            tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>(
             init_buckets, Hash(this->dsize_key_), KeyEq(this->dsize_key_));
     kv_pairs_ = std::make_shared<CPUKvPairs>(this->capacity_, this->dsize_key_,
                                              this->dsize_value_, this->device_);
@@ -166,6 +170,7 @@ void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
                                    bool* output_masks,
                                    size_t count) {
     auto kv_pairs_ctx = kv_pairs_->GetContext();
+#pragma omp parallel for
     for (size_t i = 0; i < count; ++i) {
         uint8_t* key = const_cast<uint8_t*>(
                 static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
@@ -175,7 +180,7 @@ void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
             output_iterators[i] = iterator_t();
             output_masks[i] = false;
         } else {
-            output_iterators[i] = kv_pairs_ctx.extract_iterator(iter->second);
+            output_iterators[i] = kv_pairs_ctx->extract_iterator(iter->second);
             output_masks[i] = true;
         }
     }
@@ -194,12 +199,12 @@ void CPUHashmap<Hash, KeyEq>::Erase(const void* input_keys,
         if (iter == impl_->end()) {
             output_masks[i] = false;
         } else {
-            kv_pairs_ctx.Free(iter->second);
-            impl_->erase(iter);
+            kv_pairs_ctx->Free(iter->second);
+            impl_->unsafe_erase(iter);
             output_masks[i] = true;
         }
     }
-    this->bucket_count_ = impl_->bucket_count();
+    this->bucket_count_ = impl_->unsafe_bucket_count();
 }
 
 template <typename Hash, typename KeyEq>
@@ -209,7 +214,7 @@ size_t CPUHashmap<Hash, KeyEq>::GetIterators(iterator_t* output_iterators) {
     size_t count = impl_->size();
     size_t i = 0;
     for (auto iter = impl_->begin(); iter != impl_->end(); ++iter, ++i) {
-        output_iterators[i] = kv_pairs_ctx.extract_iterator(iter->second);
+        output_iterators[i] = kv_pairs_ctx->extract_iterator(iter->second);
     }
 
     return count;
@@ -251,6 +256,7 @@ void CPUHashmap<Hash, KeyEq>::UnpackIterators(const iterator_t* input_iterators,
                                               void* output_keys,
                                               void* output_values,
                                               size_t iterator_count) {
+#pragma omp parallel for
     for (size_t i = 0; i < iterator_count; ++i) {
         UnpackIteratorsStep(input_iterators, input_masks, output_keys,
                             output_values, this->device_, this->dsize_key_,
@@ -280,6 +286,7 @@ void CPUHashmap<Hash, KeyEq>::AssignIterators(iterator_t* input_iterators,
                                               const bool* input_masks,
                                               const void* input_values,
                                               size_t iterator_count) {
+#pragma omp parallel for
     for (size_t i = 0; i < iterator_count; ++i) {
         AssignIteratorsStep(input_iterators, input_masks, input_values,
                             this->device_, this->dsize_value_, i);
@@ -314,7 +321,8 @@ void CPUHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
             float(this->capacity_) / float(this->bucket_count_);
 
     this->capacity_ = size_t(std::ceil(buckets * avg_capacity_per_bucket));
-    impl_ = std::make_shared<std::unordered_map<void*, addr_t, Hash, KeyEq>>(
+    impl_ = std::make_shared<
+            tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>(
             buckets, Hash(this->dsize_key_), KeyEq(this->dsize_key_));
     kv_pairs_ = std::make_shared<CPUKvPairs>(this->capacity_, this->dsize_key_,
                                              this->dsize_value_, this->device_);
@@ -330,15 +338,15 @@ void CPUHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
     }
 
     impl_->rehash(buckets);
-    this->bucket_count_ = impl_->bucket_count();
+    this->bucket_count_ = impl_->unsafe_bucket_count();
 }
 
 template <typename Hash, typename KeyEq>
 std::vector<size_t> CPUHashmap<Hash, KeyEq>::BucketSizes() const {
-    size_t bucket_count = impl_->bucket_count();
+    size_t bucket_count = impl_->unsafe_bucket_count();
     std::vector<size_t> ret;
     for (size_t i = 0; i < bucket_count; ++i) {
-        ret.push_back(impl_->bucket_size(i));
+        ret.push_back(impl_->unsafe_bucket_size(i));
     }
     return ret;
 }
@@ -355,13 +363,15 @@ void CPUHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
                                          bool* output_masks,
                                          size_t count) {
     auto kv_pairs_ctx = kv_pairs_->GetContext();
+    std::vector<addr_t> output_addrs(count);
+
+#pragma omp parallel for
     for (size_t i = 0; i < count; ++i) {
         const uint8_t* src_key =
                 static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
 
-        // Manually copy before insert.
-        addr_t dst_kv_addr = kv_pairs_ctx.Allocate();
-        iterator_t dst_kv_iter = kv_pairs_ctx.extract_iterator(dst_kv_addr);
+        addr_t dst_kv_addr = kv_pairs_ctx->Allocate();
+        iterator_t dst_kv_iter = kv_pairs_ctx->extract_iterator(dst_kv_addr);
 
         uint8_t* dst_key = static_cast<uint8_t*>(dst_kv_iter.first);
         uint8_t* dst_value = static_cast<uint8_t*>(dst_kv_iter.second);
@@ -379,17 +389,20 @@ void CPUHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
         // Try insertion.
         auto res = impl_->insert({dst_key, dst_kv_addr});
 
-        // Handle memory.
-        if (res.second) {
-            output_iterators[i] = dst_kv_iter;
-            output_masks[i] = true;
-        } else {
-            kv_pairs_ctx.Free(dst_kv_addr);
+        output_masks[i] = res.second;
+        output_addrs[i] = dst_kv_addr;
+        output_iterators[i] = dst_kv_iter;
+    }
+
+#pragma omp parallel for
+    for (size_t i = 0; i < count; ++i) {
+        if (!output_masks[i]) {
+            kv_pairs_ctx->Free(output_addrs[i]);
             output_iterators[i] = iterator_t();
-            output_masks[i] = false;
         }
     }
-    this->bucket_count_ = impl_->bucket_count();
+
+    this->bucket_count_ = impl_->unsafe_bucket_count();
 }
 
 }  // namespace core
