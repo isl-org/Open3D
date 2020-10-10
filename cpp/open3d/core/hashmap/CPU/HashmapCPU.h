@@ -28,6 +28,7 @@
 
 #include <unordered_map>
 
+#include "open3d/core/hashmap/CPU/KvPairsCPU.hpp"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/core/hashmap/Traits.h"
 
@@ -84,11 +85,15 @@ public:
 
     size_t Size() const override;
 
-private:
-    std::shared_ptr<std::unordered_map<void*, void*, Hash, KeyEq>> impl_;
+protected:
+    std::shared_ptr<std::unordered_map<void*, addr_t, Hash, KeyEq>> impl_;
+    std::shared_ptr<CPUKvPairs> kv_pairs_;
 
-    // Valid kv_pairs.
-    std::vector<iterator_t> kv_pairs_;
+    void InsertImpl(const void* input_keys,
+                    const void* input_values,
+                    iterator_t* output_iterators,
+                    bool* output_masks,
+                    size_t count);
 };
 
 template <typename Hash, typename KeyEq>
@@ -104,16 +109,14 @@ CPUHashmap<Hash, KeyEq>::CPUHashmap(size_t init_buckets,
               dsize_key,
               dsize_value,
               device) {
-    impl_ = std::make_shared<std::unordered_map<void*, void*, Hash, KeyEq>>(
-            init_buckets, Hash(dsize_key), KeyEq(dsize_key));
+    impl_ = std::make_shared<std::unordered_map<void*, addr_t, Hash, KeyEq>>(
+            init_buckets, Hash(this->dsize_key_), KeyEq(this->dsize_key_));
+    kv_pairs_ = std::make_shared<CPUKvPairs>(this->capacity_, this->dsize_key_,
+                                             this->dsize_value_, this->device_);
 }
 
 template <typename Hash, typename KeyEq>
 CPUHashmap<Hash, KeyEq>::~CPUHashmap() {
-    for (auto kv_pair : kv_pairs_) {
-        MemoryManager::Free(kv_pair.first, this->device_);
-        MemoryManager::Free(kv_pair.second, this->device_);
-    }
     impl_->clear();
 }
 
@@ -128,39 +131,16 @@ void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
                                      iterator_t* output_iterators,
                                      bool* output_masks,
                                      size_t count) {
-    for (size_t i = 0; i < count; ++i) {
-        const uint8_t* src_key =
-                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
-        const uint8_t* src_value = static_cast<const uint8_t*>(input_values) +
-                                   this->dsize_value_ * i;
-
-        // Manually copy before insert.
-        uint8_t* dst_key = static_cast<uint8_t*>(
-                MemoryManager::Malloc(this->dsize_key_, this->device_));
-        uint8_t* dst_value = static_cast<uint8_t*>(
-                MemoryManager::Malloc(this->dsize_value_, this->device_));
-
-        MemoryManager::Memcpy(dst_key, this->device_, src_key, this->device_,
-                              this->dsize_key_);
-        MemoryManager::Memcpy(dst_value, this->device_, src_value,
-                              this->device_, this->dsize_value_);
-
-        // Try insertion.
-        auto res = impl_->insert({dst_key, dst_value});
-
-        // Handle memory.
-        if (res.second) {
-            output_iterators[i] = iterator_t(dst_key, dst_value);
-            output_masks[i] = true;
-        } else {
-            MemoryManager::Free(dst_key, this->device_);
-            MemoryManager::Free(dst_value, this->device_);
-            output_iterators[i] = iterator_t();
-            output_masks[i] = false;
-        }
+    size_t new_size = Size() + count;
+    if (new_size > this->capacity_) {
+        float avg_capacity_per_bucket =
+                float(this->capacity_) / float(this->bucket_count_);
+        size_t expected_buckets =
+                std::max(this->bucket_count_ * 2,
+                         size_t(std::ceil(new_size / avg_capacity_per_bucket)));
+        Rehash(expected_buckets);
     }
-    this->capacity_ = impl_->size();
-    this->bucket_count_ = impl_->bucket_count();
+    InsertImpl(input_keys, input_values, output_iterators, output_masks, count);
 }
 
 template <typename Hash, typename KeyEq>
@@ -168,36 +148,16 @@ void CPUHashmap<Hash, KeyEq>::Activate(const void* input_keys,
                                        iterator_t* output_iterators,
                                        bool* output_masks,
                                        size_t count) {
-    for (size_t i = 0; i < count; ++i) {
-        const uint8_t* src_key =
-                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
-
-        // Manually copy before insert
-        uint8_t* dst_key = static_cast<uint8_t*>(
-                MemoryManager::Malloc(this->dsize_key_, this->device_));
-        uint8_t* dummy_value = static_cast<uint8_t*>(
-                MemoryManager::Malloc(this->dsize_value_, this->device_));
-        memset(dummy_value, 0, this->dsize_value_);
-
-        MemoryManager::Memcpy(dst_key, this->device_, src_key, this->device_,
-                              this->dsize_key_);
-
-        // Try insertion.
-        auto res = impl_->insert({dst_key, dummy_value});
-
-        // Handle memory.
-        if (res.second) {
-            output_iterators[i] = iterator_t(dst_key, dummy_value);
-            output_masks[i] = true;
-        } else {
-            MemoryManager::Free(dst_key, this->device_);
-            MemoryManager::Free(dummy_value, this->device_);
-            output_iterators[i] = iterator_t();
-            output_masks[i] = false;
-        }
+    size_t new_size = Size() + count;
+    if (new_size > this->capacity_) {
+        float avg_capacity_per_bucket =
+                float(this->capacity_) / float(this->bucket_count_);
+        size_t expected_buckets =
+                std::max(this->bucket_count_ * 2,
+                         size_t(std::ceil(new_size / avg_capacity_per_bucket)));
+        Rehash(expected_buckets);
     }
-    this->capacity_ = impl_->size();
-    this->bucket_count_ = impl_->bucket_count();
+    InsertImpl(input_keys, nullptr, output_iterators, output_masks, count);
 }
 
 template <typename Hash, typename KeyEq>
@@ -205,6 +165,7 @@ void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
                                    iterator_t* output_iterators,
                                    bool* output_masks,
                                    size_t count) {
+    auto kv_pairs_ctx = kv_pairs_->GetContext();
     for (size_t i = 0; i < count; ++i) {
         uint8_t* key = const_cast<uint8_t*>(
                 static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
@@ -214,7 +175,7 @@ void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
             output_iterators[i] = iterator_t();
             output_masks[i] = false;
         } else {
-            output_iterators[i] = iterator_t(iter->first, iter->second);
+            output_iterators[i] = kv_pairs_ctx.extract_iterator(iter->second);
             output_masks[i] = true;
         }
     }
@@ -224,22 +185,31 @@ template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Erase(const void* input_keys,
                                     bool* output_masks,
                                     size_t count) {
+    auto kv_pairs_ctx = kv_pairs_->GetContext();
     for (size_t i = 0; i < count; ++i) {
         uint8_t* key = const_cast<uint8_t*>(
                 static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
 
-        size_t erased = impl_->erase(key);
-        output_masks[i] = erased > 0;
+        auto iter = impl_->find(key);
+        if (iter == impl_->end()) {
+            output_masks[i] = false;
+        } else {
+            kv_pairs_ctx.Free(iter->second);
+            impl_->erase(iter);
+            output_masks[i] = true;
+        }
     }
+    this->bucket_count_ = impl_->bucket_count();
 }
 
 template <typename Hash, typename KeyEq>
 size_t CPUHashmap<Hash, KeyEq>::GetIterators(iterator_t* output_iterators) {
-    size_t count = impl_->size();
+    auto kv_pairs_ctx = kv_pairs_->GetContext();
 
+    size_t count = impl_->size();
     size_t i = 0;
     for (auto iter = impl_->begin(); iter != impl_->end(); ++iter, ++i) {
-        output_iterators[i] = iterator_t(iter->first, iter->second);
+        output_iterators[i] = kv_pairs_ctx.extract_iterator(iter->second);
     }
 
     return count;
@@ -318,7 +288,49 @@ void CPUHashmap<Hash, KeyEq>::AssignIterators(iterator_t* input_iterators,
 
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Rehash(size_t buckets) {
+    size_t iterator_count = Size();
+
+    void* output_keys = nullptr;
+    void* output_values = nullptr;
+    iterator_t* output_iterators = nullptr;
+    bool* output_masks = nullptr;
+
+    if (iterator_count > 0) {
+        output_keys = MemoryManager::Malloc(this->dsize_key_ * iterator_count,
+                                            this->device_);
+        output_values = MemoryManager::Malloc(
+                this->dsize_value_ * iterator_count, this->device_);
+        output_iterators = static_cast<iterator_t*>(MemoryManager::Malloc(
+                sizeof(iterator_t) * iterator_count, this->device_));
+        output_masks = static_cast<bool*>(MemoryManager::Malloc(
+                sizeof(bool) * iterator_count, this->device_));
+
+        GetIterators(output_iterators);
+        UnpackIterators(output_iterators, /* masks = */ nullptr, output_keys,
+                        output_values, iterator_count);
+    }
+
+    float avg_capacity_per_bucket =
+            float(this->capacity_) / float(this->bucket_count_);
+
+    this->capacity_ = size_t(std::ceil(buckets * avg_capacity_per_bucket));
+    impl_ = std::make_shared<std::unordered_map<void*, addr_t, Hash, KeyEq>>(
+            buckets, Hash(this->dsize_key_), KeyEq(this->dsize_key_));
+    kv_pairs_ = std::make_shared<CPUKvPairs>(this->capacity_, this->dsize_key_,
+                                             this->dsize_value_, this->device_);
+
+    if (iterator_count > 0) {
+        InsertImpl(output_keys, output_values, output_iterators, output_masks,
+                   iterator_count);
+
+        MemoryManager::Free(output_keys, this->device_);
+        MemoryManager::Free(output_values, this->device_);
+        MemoryManager::Free(output_masks, this->device_);
+        MemoryManager::Free(output_iterators, this->device_);
+    }
+
     impl_->rehash(buckets);
+    this->bucket_count_ = impl_->bucket_count();
 }
 
 template <typename Hash, typename KeyEq>
@@ -334,6 +346,50 @@ std::vector<size_t> CPUHashmap<Hash, KeyEq>::BucketSizes() const {
 template <typename Hash, typename KeyEq>
 float CPUHashmap<Hash, KeyEq>::LoadFactor() const {
     return impl_->load_factor();
+}
+
+template <typename Hash, typename KeyEq>
+void CPUHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
+                                         const void* input_values,
+                                         iterator_t* output_iterators,
+                                         bool* output_masks,
+                                         size_t count) {
+    auto kv_pairs_ctx = kv_pairs_->GetContext();
+    for (size_t i = 0; i < count; ++i) {
+        const uint8_t* src_key =
+                static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
+
+        // Manually copy before insert.
+        addr_t dst_kv_addr = kv_pairs_ctx.Allocate();
+        iterator_t dst_kv_iter = kv_pairs_ctx.extract_iterator(dst_kv_addr);
+
+        uint8_t* dst_key = static_cast<uint8_t*>(dst_kv_iter.first);
+        uint8_t* dst_value = static_cast<uint8_t*>(dst_kv_iter.second);
+        std::memcpy(dst_key, src_key, this->dsize_key_);
+
+        if (input_values != nullptr) {
+            const uint8_t* src_value =
+                    static_cast<const uint8_t*>(input_values) +
+                    this->dsize_value_ * i;
+            std::memcpy(dst_value, src_value, this->dsize_value_);
+        } else {
+            std::memset(dst_value, 0, this->dsize_value_);
+        }
+
+        // Try insertion.
+        auto res = impl_->insert({dst_key, dst_kv_addr});
+
+        // Handle memory.
+        if (res.second) {
+            output_iterators[i] = dst_kv_iter;
+            output_masks[i] = true;
+        } else {
+            kv_pairs_ctx.Free(dst_kv_addr);
+            output_iterators[i] = iterator_t();
+            output_masks[i] = false;
+        }
+    }
+    this->bucket_count_ = impl_->bucket_count();
 }
 
 }  // namespace core

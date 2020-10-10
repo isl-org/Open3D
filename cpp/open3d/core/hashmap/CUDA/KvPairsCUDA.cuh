@@ -96,9 +96,9 @@ __global__ void ResetKvPairsKernel(CUDAKvPairsContext ctx) {
     }
 }
 
-class KvPairsCUDA : public KvPairs {
+class CUDAKvPairs : public KvPairs {
 public:
-    KvPairsCUDA(size_t capacity,
+    CUDAKvPairs(size_t capacity,
                 size_t dsize_key,
                 size_t dsize_value,
                 const Device &device)
@@ -119,7 +119,7 @@ public:
         ResetHeap();
     }
 
-    ~KvPairsCUDA() override {
+    ~CUDAKvPairs() override {
         MemoryManager::Free(context_.heap_counter_, device_);
         MemoryManager::Free(context_.heap_, device_);
         MemoryManager::Free(context_.keys_, device_);
