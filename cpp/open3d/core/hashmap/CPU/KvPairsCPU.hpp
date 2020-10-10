@@ -75,7 +75,7 @@ public:
 
     addr_t Allocate() { return heap_[(*heap_counter_)++]; }
 
-    void Free(addr_t ptr) { heap_[(*heap_counter_)--] = ptr; }
+    void Free(addr_t ptr) { heap_[--(*heap_counter_)] = ptr; }
 
     iterator_t extract_iterator(addr_t ptr) {
         return iterator_t(keys_ + ptr * dsize_key_,
