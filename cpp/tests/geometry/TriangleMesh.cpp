@@ -1453,6 +1453,30 @@ TEST(TriangleMesh, DeformAsRigidAsPossible) {
     ExpectMeshEQ(*mesh_deform, mesh_gt, 1e-5);
 }
 
+TEST(TriangleMesh, FillHoles) {
+    geometry::TriangleMesh mesh;
+    mesh.vertices_ = {{0, 0, 0},      {1, 0, 0},   {1, 1, 0},  {0, 1, 0},
+                      {0.5, 0.5, -1}, {0.5, 0, 1}, {0.5, 1, 1}};
+    mesh.triangles_ = {{0, 4, 1}, {1, 4, 2}, {2, 4, 3},
+                       {3, 4, 0}, {0, 1, 5}, {2, 3, 6}};
+    auto filled_mesh = mesh.FillHoles();
+    EXPECT_TRUE(filled_mesh->IsWatertight());
+
+    mesh.vertices_ = {{0, 0, 0},      {1, 0, 0},   {1, 1, 0},   {0, 1, 0},
+                      {0.5, 0.5, -1}, {0.5, 0, 1}, {0.5, 1, 1}, {0.5, 0.5, 2}};
+    mesh.triangles_ = {{0, 4, 1}, {1, 4, 2}, {2, 4, 3}, {3, 4, 0},
+                       {0, 1, 5}, {2, 3, 6}, {1, 2, 7}, {3, 0, 5}};
+    filled_mesh = mesh.FillHoles();
+    EXPECT_TRUE(filled_mesh->IsWatertight());
+
+    mesh.vertices_ = {{0, 0, 0},      {1, 0, 0},   {1, 1, 0},   {0, 1, 0},
+                      {0.5, 0.5, -1}, {0.5, 0, 1}, {0.5, 1, 1}, {0.5, 0.5, 0}};
+    mesh.triangles_ = {{0, 4, 1}, {1, 4, 2}, {2, 4, 3}, {3, 4, 7},
+                       {7, 4, 0}, {2, 3, 6}, {0, 1, 5}};
+    filled_mesh = mesh.FillHoles();
+    EXPECT_TRUE(filled_mesh->IsWatertight());
+}
+
 TEST(TriangleMesh, SelectByIndex) {
     std::vector<Eigen::Vector3d> ref_vertices = {
             {360.784314, 717.647059, 800.000000},
