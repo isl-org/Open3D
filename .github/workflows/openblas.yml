@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
             sudo apt-get --yes install ccache
-            ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+            ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
             sudo apt-get update -q -y
             sudo apt-get install -y apt-utils build-essential git cmake
             sudo apt-get install -y python3-dev
@@ -119,6 +119,7 @@ jobs:
             update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
             update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
             /usr/sbin/update-ccache-symlinks
+            ccache -M 700M  # See .github/workflows/readme.md for ccache strategy.
             echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc
             virtualenv --python=$(which python) ${HOME}/venv
             source ${HOME}/venv/bin/activate
