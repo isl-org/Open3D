@@ -361,7 +361,7 @@ Tensor CUDAHashmap<Hash, KeyEq>::GetValueBlobAsTensor(const SizeVector& shape,
         this->capacity_ * this->dsize_value_) {
         utility::LogError(
                 "[CUDAHashmap] Tensor shape and dtype mismatch with value blob "
-                "size");
+                "size: {} vs {}");
     }
     return Tensor(shape, Tensor::DefaultStrides(shape),
                   kv_pairs_->GetValueBlob()->GetDataPtr(), dtype,

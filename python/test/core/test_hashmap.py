@@ -149,3 +149,30 @@ def test_erase(device):
     assert masks[0].item() == True
     assert masks[1].item() == False
     assert masks[2].item() == True
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_tensorwrapper(device):
+    hashmap = o3d.core.Hashmap(10, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
+                               device)
+    keys = o3d.core.Tensor([100, 300, 500, 700, 900],
+                           dtype=o3d.core.Dtype.Int64,
+                           device=device)
+    values = o3d.core.Tensor([1, 3, 5, 7, 9],
+                             dtype=o3d.core.Dtype.Int64,
+                             device=device)
+    hashmap.insert(keys, values)
+
+    key_tensor = hashmap.get_key_blob_as_tensor((hashmap.capacity(),),
+                                                o3d.core.Dtype.Int64)
+    value_tensor = hashmap.get_value_blob_as_tensor((hashmap.capacity(),),
+                                                    o3d.core.Dtype.Int64)
+
+    keys = o3d.core.Tensor([100, 200, 500],
+                           dtype=o3d.core.Dtype.Int64,
+                           device=device)
+    masks = hashmap.erase(keys)
+
+    assert masks[0].item() == True
+    assert masks[1].item() == False
+    assert masks[2].item() == True

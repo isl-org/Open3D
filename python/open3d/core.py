@@ -982,3 +982,15 @@ class Hashmap(o3d.pybind.core.Hashmap):
     @cast_to_py_tensor
     def assign_iterators(self, iterators, values, masks=Tensor([])):
         return super(Hashmap, self).assign_iterators(iterators, values, masks)
+
+    @cast_to_py_tensor
+    def get_key_blob_as_tensor(self, shape, dtype):
+        if not isinstance(shape, SizeVector):
+            shape = SizeVector(shape)
+        return super(Hashmap, self).get_key_blob_as_tensor(shape, dtype)
+
+    @cast_to_py_tensor
+    def get_value_blob_as_tensor(self, shape, dtype):
+        if not isinstance(shape, SizeVector):
+            shape = SizeVector(shape)
+        return super(Hashmap, self).get_value_blob_as_tensor(shape, dtype)
