@@ -166,10 +166,10 @@ public:
     virtual Tensor GetValueBlobAsTensor(const SizeVector& shape,
                                         Dtype dtype) = 0;
 
-    int GetBucketCount() const { return bucket_count_; }
-    int GetCapacity() const { return capacity_; }
-    int GetKeyBytesize() const { return dsize_key_; }
-    int GetValueBytesize() const { return dsize_value_; }
+    int64_t GetBucketCount() const { return bucket_count_; }
+    int64_t GetCapacity() const { return capacity_; }
+    int64_t GetKeyBytesize() const { return dsize_key_; }
+    int64_t GetValueBytesize() const { return dsize_value_; }
     Device GetDevice() const { return device_; }
 
 public:
