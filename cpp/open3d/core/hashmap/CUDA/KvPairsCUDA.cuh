@@ -49,7 +49,6 @@ public:
     addr_t *heap_;      /* [N] */
     int *heap_counter_; /* [1] */
 
-public:
     int dsize_key_;
     int dsize_value_;
     int capacity_;
@@ -103,18 +102,16 @@ public:
                 size_t dsize_value,
                 const Device &device)
         : KvPairs(capacity, dsize_key, dsize_value, device) {
-        context_.capacity_ = capacity;
-        context_.dsize_key_ = dsize_key;
-        context_.dsize_value_ = dsize_value;
-
         context_.heap_counter_ =
                 static_cast<int *>(MemoryManager::Malloc(sizeof(int), device_));
         context_.heap_ = static_cast<addr_t *>(
                 MemoryManager::Malloc(capacity * sizeof(addr_t), device_));
-        context_.keys_ = static_cast<uint8_t *>(
-                MemoryManager::Malloc(capacity * dsize_key, device_));
-        context_.values_ = static_cast<uint8_t *>(
-                MemoryManager::Malloc(capacity * dsize_value, device_));
+
+        context_.capacity_ = capacity;
+        context_.dsize_key_ = dsize_key;
+        context_.dsize_value_ = dsize_value;
+        context_.keys_ = static_cast<uint8_t *>(key_blob_->GetDataPtr());
+        context_.values_ = static_cast<uint8_t *>(val_blob_->GetDataPtr());
 
         ResetHeap();
     }
@@ -122,8 +119,6 @@ public:
     ~CUDAKvPairs() override {
         MemoryManager::Free(context_.heap_counter_, device_);
         MemoryManager::Free(context_.heap_, device_);
-        MemoryManager::Free(context_.keys_, device_);
-        MemoryManager::Free(context_.values_, device_);
     }
 
     void ResetHeap() override {
@@ -139,9 +134,6 @@ public:
         MemoryManager::Memcpy(context_.heap_counter_, device_, &heap_counter,
                               Device("CPU:0"), sizeof(int));
     }
-
-    void *GetKeyBufferPtr() override { return context_.keys_; }
-    void *GetValueBufferPtr() override { return context_.values_; }
 
     int heap_counter() override {
         int heap_counter;

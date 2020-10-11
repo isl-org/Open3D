@@ -33,6 +33,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/CUDA/Macros.h"
 #include "open3d/core/hashmap/Traits.h"
 
@@ -48,19 +49,42 @@ public:
         : capacity_(capacity),
           dsize_key_(dsize_key),
           dsize_val_(dsize_value),
-          device_(device) {}
+          device_(device) {
+        key_blob_ = std::make_shared<Blob>(capacity_ * dsize_key_, device_);
+        val_blob_ = std::make_shared<Blob>(capacity_ * dsize_val_, device_);
+    }
     virtual ~KvPairs() {}
 
     virtual void ResetHeap() = 0;
-    virtual void* GetKeyBufferPtr() = 0;
-    virtual void* GetValueBufferPtr() = 0;
-
     virtual int heap_counter() = 0;
+
+    Tensor KeyBlobAsTensor(const SizeVector& shape, Dtype dtype) {
+        if (dtype.ByteSize() * shape.NumElements() != capacity_ * dsize_key_) {
+            utility::LogError(
+                    "[KvPairs] Tensor shape and dtype mismatch with key blob "
+                    "size");
+        }
+        return Tensor(shape, Tensor::DefaultStrides(shape),
+                      key_blob_->GetDataPtr(), dtype, key_blob_);
+    }
+
+    Tensor ValueBlobAsTensor(const SizeVector& shape, Dtype dtype) {
+        if (dtype.ByteSize() * shape.NumElements() != capacity_ * dsize_val_) {
+            utility::LogError(
+                    "[KvPairs] Tensor shape and dtype mismatch with value blob "
+                    "size");
+        }
+        return Tensor(shape, Tensor::DefaultStrides(shape),
+                      val_blob_->GetDataPtr(), dtype, val_blob_);
+    }
 
 protected:
     size_t capacity_;
     size_t dsize_key_;
     size_t dsize_val_;
+
+    std::shared_ptr<Blob> key_blob_;
+    std::shared_ptr<Blob> val_blob_;
 
     Device device_;
 };

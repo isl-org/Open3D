@@ -47,7 +47,7 @@ class CPUKvPairsContext {
 public:
     uint8_t *keys_;                 /* [N] * sizeof(Key) */
     uint8_t *values_;               /* [N] * sizeof(Value) */
-    addr_t *heap_;                  /* [N] */
+    std::vector<addr_t> heap_;      /* [N] */
     std::atomic<int> heap_counter_; /* [1] */
 
 public:
@@ -97,21 +97,14 @@ public:
         context_->dsize_key_ = dsize_key;
         context_->dsize_value_ = dsize_value;
 
-        context_->heap_ = static_cast<addr_t *>(
-                MemoryManager::Malloc(capacity * sizeof(addr_t), device_));
-        context_->keys_ = static_cast<uint8_t *>(
-                MemoryManager::Malloc(capacity * dsize_key, device_));
-        context_->values_ = static_cast<uint8_t *>(
-                MemoryManager::Malloc(capacity * dsize_value, device_));
+        context_->heap_ = std::vector<addr_t>(capacity_);
+        context_->keys_ = static_cast<uint8_t *>(key_blob_->GetDataPtr());
+        context_->values_ = static_cast<uint8_t *>(val_blob_->GetDataPtr());
 
         ResetHeap();
     }
 
-    ~CPUKvPairs() override {
-        MemoryManager::Free(context_->heap_, device_);
-        MemoryManager::Free(context_->keys_, device_);
-        MemoryManager::Free(context_->values_, device_);
-    }
+    ~CPUKvPairs() override {}
 
     void ResetHeap() override {
         for (int i = 0; i < context_->capacity_; ++i) {
@@ -121,9 +114,6 @@ public:
         context_->heap_counter_ = 0;
         std::memset(context_->values_, 0, capacity_ * dsize_val_);
     }
-
-    void *GetKeyBufferPtr() override { return context_->keys_; }
-    void *GetValueBufferPtr() override { return context_->values_; }
 
     int heap_counter() override { return context_->heap_counter_.load(); }
 

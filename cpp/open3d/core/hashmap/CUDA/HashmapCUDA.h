@@ -359,7 +359,7 @@ void CUDAHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
             gpu_context_, input_keys, iterator_addrs, output_masks, count);
     InsertKernelPass2<<<num_blocks, kThreadsPerBlock>>>(
             gpu_context_, input_values, iterator_addrs, output_iterators,
-            output_masks, count);
+            p output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
