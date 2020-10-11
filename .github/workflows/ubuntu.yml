@@ -49,7 +49,7 @@ jobs:
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
-          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
           PATH=/usr/lib/ccache:$PATH
@@ -94,7 +94,7 @@ jobs:
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
-          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
           source util/ci_utils.sh
           echo
           install_cuda_toolkit with-cudnn purge-cache
