@@ -904,6 +904,7 @@ if(BUILD_GUI)
             set(FILAMENT_RUNTIME_VER "md$<$<CONFIG:DEBUG>:d>")
         endif()
     endif()
+    # As of Filament 1.8.1+aarch64_patch, the lib is always in x86_64.
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
         LIB_DIR ${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_RUNTIME_VER}

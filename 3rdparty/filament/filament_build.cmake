@@ -35,7 +35,6 @@ set(filament_LIBRARIES
     filameshio
     filament
     filamat_lite
-    filamat
     filaflat
     filabridge
     geometry
