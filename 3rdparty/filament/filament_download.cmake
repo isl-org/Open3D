@@ -48,7 +48,18 @@ endif()
 
 message(STATUS "Filament is located at ${FILAMENT_ROOT}")
 
-set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)
-if (UNIX OR WIN32)
-    set(filament_LIBRARIES ${filament_LIBRARIES} bluevk)
-endif()
+set(filament_LIBRARIES
+    filameshio
+    filament
+    filamat_lite
+    filaflat
+    filabridge
+    geometry
+    backend
+    bluegl
+    ibl
+    image
+    meshoptimizer
+    smol-v
+    utils
+)
