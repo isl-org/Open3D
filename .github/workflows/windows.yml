@@ -96,7 +96,7 @@ jobs:
           cd build
           cmake --build . --config Release --target install-pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
-          echo "::set-env name=PIP_PKG_NAME::$PIP_PKG_NAME"
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Upload wheel
         uses: actions/upload-artifact@v2
@@ -106,6 +106,7 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
+        # if: ${{ github.ref == 'refs/heads/master' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         env:
@@ -117,12 +118,24 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' }}
+        # if: ${{ github.ref == 'refs/heads/master' }}
         env:
+          python_version: ${{ matrix.python_version }}
           CLOUDSDK_PYTHON: ${{env.pythonLocation}}\python.exe
         run: |
+          $PYTAG="-cp$(${{ env.python_version }} -replace '\.', '')"
+          $PREV_VER_WHEEL=$(gsutil ls gs://open3d-releases/master/python-wheels/open3d*$PYTAG$PYTAG*win*.whl)
           gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/master/python-wheels/
-          echo "Download the wheel at: https://storage.googleapis.com/open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}"
+          if ($LastExitCode -eq 0)  { # Public read access
+            gsutil acl ch -u AllUsers:R gs://open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}
+          }
+          if ($LastExitCode -eq 0) {
+            echo "Download the wheel at: https://storage.googleapis.com/open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}"
+            gsutil rm $PREV_VER_WHEEL
+            Exit 0    # Success even if removing previous wheel failed
+          } else {
+            throw "Wheel upload failed"
+          }
 
 
   test-wheel:

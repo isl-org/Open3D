@@ -25,9 +25,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-aarch64-ccache-${{ github.sha }}
+          key: ${{ runner.os }}-openblas-x86_64-ccache-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-aarch64-ccache
+            ${{ runner.os }}-openblas-x86_64-ccache
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
             sudo apt-get --yes install ccache
-            ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+            ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
             sudo apt-get update -q -y
             sudo apt-get install -y apt-utils build-essential git cmake
             sudo apt-get install -y python3-dev
@@ -55,6 +55,8 @@ jobs:
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
               -DBUILD_GUI=ON \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
               -DBUILD_FILAMENT_FROM_SOURCE=ON \
               -DBUILD_TENSORFLOW_OPS=OFF \
               -DBUILD_PYTORCH_OPS=OFF \
@@ -82,9 +84,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-aarch64-ccache-${{ github.sha }}
+          key: ${{ runner.os }}-openblas-aarch64-ccache-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-aarch64-ccache
+            ${{ runner.os }}-openblas-aarch64-ccache
       - name: Build on ARM Container
         uses: uraimo/run-on-arch-action@v2.0.2
         with:
@@ -110,7 +112,14 @@ jobs:
             apt-get install -y python3 python3-dev python3-pip python3-virtualenv
             apt-get install -y xorg-dev libglu1-mesa-dev ccache
             apt-get install -y libblas-dev liblapack-dev liblapacke-dev
+            apt-get install -y libsdl2-dev libc++-7-dev libc++abi-7-dev libxi-dev
+            apt-get install -y clang-7
+            update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100
+            update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100
+            update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
+            update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
             /usr/sbin/update-ccache-symlinks
+            ccache -M 700M  # See .github/workflows/readme.md for ccache strategy.
             echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc
             virtualenv --python=$(which python) ${HOME}/venv
             source ${HOME}/venv/bin/activate
@@ -129,7 +138,9 @@ jobs:
             cmake \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_GUI=OFF \
+              -DBUILD_GUI=ON \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
               -DBUILD_TENSORFLOW_OPS=OFF \
               -DBUILD_PYTORCH_OPS=OFF \
               -DBUILD_UNIT_TESTS=ON \
@@ -140,5 +151,5 @@ jobs:
             make tests -j$(nproc)
             make install-pip-package -j$(nproc)
             ./bin/tests --gtest_filter="-*Reduce*Sum*"
-            pytest ../python/test/ --ignore ../python/test/ml_ops/
+            pytest ../python/test/ --ignore ../python/test/ml_ops/ --ignore ../python/test/test_color_map.py
             ccache -s

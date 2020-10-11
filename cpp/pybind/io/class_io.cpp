@@ -37,7 +37,6 @@
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/PoseGraphIO.h"
-#include "open3d/io/TPointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/io/VoxelGridIO.h"
 #include "pybind/docstring.h"
@@ -204,41 +203,6 @@ void pybind_class_io(py::module &m_io) {
             "Function to write PointCloud to file", "filename"_a,
             "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false,
             "print_progress"_a = false);
-    docstring::FunctionDocInject(m_io, "write_point_cloud",
-                                 map_shared_argument_docstrings);
-
-    // open3d::t::geometry::PointCloud
-    m_io.def(
-            "read_t_point_cloud",
-            [](const std::string &filename, const std::string &format,
-               bool remove_nan_points, bool remove_infinite_points,
-               bool print_progress) {
-                py::gil_scoped_release release;
-                t::geometry::PointCloud pcd;
-                ReadPointCloud(filename, pcd,
-                               {format, remove_nan_points,
-                                remove_infinite_points, print_progress});
-                return pcd;
-            },
-            "Function to read PointCloud with tensor attributes from file",
-            "filename"_a, "format"_a = "auto", "remove_nan_points"_a = false,
-            "remove_infinite_points"_a = false, "print_progress"_a = false);
-    docstring::FunctionDocInject(m_io, "read_point_cloud",
-                                 map_shared_argument_docstrings);
-
-    m_io.def(
-            "write_t_point_cloud",
-            [](const std::string &filename,
-               const t::geometry::PointCloud &pointcloud, bool write_ascii,
-               bool compressed, bool print_progress) {
-                py::gil_scoped_release release;
-                return WritePointCloud(
-                        filename, pointcloud,
-                        {write_ascii, compressed, print_progress});
-            },
-            "Function to write PointCloud with tensor attributes to file",
-            "filename"_a, "pointcloud"_a, "write_ascii"_a = true,
-            "compressed"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",
                                  map_shared_argument_docstrings);
 
