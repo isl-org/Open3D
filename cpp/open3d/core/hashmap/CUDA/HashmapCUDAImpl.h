@@ -37,10 +37,10 @@ class CUDAHashmapImplContext {
 public:
     CUDAHashmapImplContext();
 
-    __host__ void Setup(size_t init_buckets,
-                        size_t init_capacity,
-                        size_t dsize_key,
-                        size_t dsize_value,
+    __host__ void Setup(int64_t init_buckets,
+                        int64_t init_capacity,
+                        int64_t dsize_key,
+                        int64_t dsize_value,
                         const InternalNodeManagerContext& node_mgr_ctx,
                         const CUDAKvPairsContext& kv_mgr_ctx);
 
@@ -69,7 +69,7 @@ public:
     __device__ int32_t WarpFindEmpty(addr_t unit_data);
 
     // Hash function.
-    __device__ size_t ComputeBucket(const void* key_ptr) const;
+    __device__ int64_t ComputeBucket(const void* key_ptr) const;
 
     // Node manager.
     __device__ addr_t AllocateSlab(uint32_t lane_id);
@@ -90,10 +90,10 @@ public:
     Hash hash_fn_;
     KeyEq cmp_fn_;
 
-    size_t bucket_count_;
-    size_t capacity_;
-    size_t dsize_key_;
-    size_t dsize_value_;
+    int64_t bucket_count_;
+    int64_t capacity_;
+    int64_t dsize_key_;
+    int64_t dsize_value_;
 
     Slab* bucket_list_head_;
     InternalNodeManagerContext node_mgr_ctx_;
@@ -106,14 +106,14 @@ __global__ void InsertKernelPass0(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   const void* input_keys,
                                   addr_t* output_iterator_addrs,
                                   int heap_counter_prev,
-                                  size_t count);
+                                  int64_t count);
 
 template <typename Hash, typename KeyEq>
 __global__ void InsertKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   const void* input_keys,
                                   addr_t* input_iterator_addrs,
                                   bool* output_masks,
-                                  size_t count);
+                                  int64_t count);
 
 template <typename Hash, typename KeyEq>
 __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
@@ -121,27 +121,27 @@ __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   addr_t* input_iterator_addrs,
                                   iterator_t* output_iterators,
                                   bool* output_masks,
-                                  size_t count);
+                                  int64_t count);
 
 template <typename Hash, typename KeyEq>
 __global__ void FindKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                            const void* input_keys,
                            iterator_t* output_iterators,
                            bool* output_masks,
-                           size_t count);
+                           int64_t count);
 
 template <typename Hash, typename KeyEq>
 __global__ void EraseKernelPass0(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                  const void* input_keys,
                                  addr_t* output_iterator_addrs,
                                  bool* output_masks,
-                                 size_t count);
+                                 int64_t count);
 
 template <typename Hash, typename KeyEq>
 __global__ void EraseKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                  addr_t* input_iterator_addrs,
                                  bool* output_masks,
-                                 size_t count);
+                                 int64_t count);
 
 template <typename Hash, typename KeyEq>
 __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
@@ -151,21 +151,21 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
 template <typename Hash, typename KeyEq>
 __global__ void CountElemsPerBucketKernel(
         CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
-        size_t* bucket_elem_counts);
+        int64_t* bucket_elem_counts);
 
 __global__ void UnpackIteratorsKernel(const iterator_t* input_iterators,
                                       const bool* input_masks,
                                       void* output_keys,
                                       void* output_values,
-                                      size_t dsize_key,
-                                      size_t dsize_value,
-                                      size_t iterator_count);
+                                      int64_t dsize_key,
+                                      int64_t dsize_value,
+                                      int64_t iterator_count);
 
 __global__ void AssignIteratorsKernel(iterator_t* input_iterators,
                                       const bool* input_masks,
                                       const void* input_values,
-                                      size_t dsize_value,
-                                      size_t iterator_count);
+                                      int64_t dsize_value,
+                                      int64_t iterator_count);
 
 }  // namespace core
 }  // namespace open3d

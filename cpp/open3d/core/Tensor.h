@@ -935,7 +935,8 @@ public:
     inline int64_t GetStride(int64_t dim) const {
         return strides_[shape_util::WrapDim(dim, NumDims())];
     }
-    p inline void* GetDataPtr() { return data_ptr_; }
+
+    inline void* GetDataPtr() { return data_ptr_; }
 
     inline const void* GetDataPtr() const { return data_ptr_; }
 

@@ -37,7 +37,7 @@ public:
     static constexpr uint32_t kDefaultElemsPerBucket = 4;
 
     // Default constructor for common users.
-    Hashmap(size_t init_capacity,
+    Hashmap(int64_t init_capacity,
             Dtype dtype_key,
             Dtype dtype_val,
             const Device& device);
@@ -49,7 +49,7 @@ public:
     /// 2) deallocate old hash table
     /// 3) create a new hash table
     /// 4) parallel insert dumped key value pairs
-    void Rehash(size_t buckets);
+    void Rehash(int64_t buckets);
 
     /// Parallel insert arrays of keys and values.
     /// Output iterators and masks can be nullptrs if return iterators are not
@@ -58,7 +58,7 @@ public:
                 const void* input_values,
                 iterator_t* output_iterators,
                 bool* output_masks,
-                size_t count);
+                int64_t count);
 
     /// Parallel insert arrays of keys and values in Tensors.
     /// Output iterators and masks are Tensors and can be further processed
@@ -73,7 +73,7 @@ public:
     void Activate(const void* input_keys,
                   iterator_t* output_iterators,
                   bool* output_masks,
-                  size_t count);
+                  int64_t count);
 
     /// Parallel activate arrays of keys in Tensor.
     /// Specifically useful for large value elements (e.g., a tensor), where we
@@ -88,7 +88,7 @@ public:
     void Find(const void* input_keys,
               iterator_t* output_iterators,
               bool* output_masks,
-              size_t count);
+              int64_t count);
 
     /// Parallel find an array of keys in Tensor.
     /// Output iterators is an object Tensor, masks is a bool Tensor.
@@ -99,14 +99,14 @@ public:
     /// Parallel erase an array of keys.
     /// Output masks can be a nullptr if return results are not to be
     /// processed.
-    void Erase(const void* input_keys, bool* output_masks, size_t count);
+    void Erase(const void* input_keys, bool* output_masks, int64_t count);
 
     /// Parallel erase an array of keys in Tensor.
     /// Output masks is a bool Tensor.
     void Erase(const Tensor& input_keys, Tensor& output_masks);
 
     /// Parallel collect all iterators in the hash table
-    size_t GetIterators(iterator_t* output_iterators);
+    int64_t GetIterators(iterator_t* output_iterators);
 
     /// Parallel unpack iterators to contiguous arrays of keys and/or
     /// values. Output keys and values can be nullptrs if they are not
@@ -115,7 +115,7 @@ public:
                          const bool* input_masks,
                          void* output_keys,
                          void* output_values,
-                         size_t count);
+                         int64_t count);
 
     /// Parallel assign iterators in-place with associated values.
     /// Note: users should manage the key-value correspondences around
@@ -123,13 +123,13 @@ public:
     void AssignIterators(iterator_t* input_iterators,
                          const bool* input_masks,
                          const void* input_values,
-                         size_t count);
+                         int64_t count);
 
-    size_t Size() const;
+    int64_t Size() const;
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
-    std::vector<size_t> BucketSizes() const;
+    std::vector<int64_t> BucketSizes() const;
 
     /// Return size / bucket_count.
     float LoadFactor() const;
@@ -141,6 +141,14 @@ public:
     Dtype GetValueDtype() const { return dtype_val_; }
 
     Device GetDevice() const { return device_hashmap_->GetDevice(); }
+
+    Tensor GetKeyBlobAsTensor(const SizeVector& shape, Dtype dtype) {
+        return device_hashmap_->GetKeyBlobAsTensor(shape, dtype);
+    }
+
+    Tensor GetValueBlobAsTensor(const SizeVector& shape, Dtype dtype) {
+        return device_hashmap_->GetValueBlobAsTensor(shape, dtype);
+    }
 
 private:
     std::shared_ptr<DefaultDeviceHashmap> device_hashmap_;

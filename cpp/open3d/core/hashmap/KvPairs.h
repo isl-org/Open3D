@@ -42,9 +42,9 @@ namespace core {
 
 class KvPairs {
 public:
-    KvPairs(size_t capacity,
-            size_t dsize_key,
-            size_t dsize_value,
+    KvPairs(int64_t capacity,
+            int64_t dsize_key,
+            int64_t dsize_value,
             const Device& device)
         : capacity_(capacity),
           dsize_key_(dsize_key),
@@ -58,30 +58,13 @@ public:
     virtual void ResetHeap() = 0;
     virtual int heap_counter() = 0;
 
-    Tensor KeyBlobAsTensor(const SizeVector& shape, Dtype dtype) {
-        if (dtype.ByteSize() * shape.NumElements() != capacity_ * dsize_key_) {
-            utility::LogError(
-                    "[KvPairs] Tensor shape and dtype mismatch with key blob "
-                    "size");
-        }
-        return Tensor(shape, Tensor::DefaultStrides(shape),
-                      key_blob_->GetDataPtr(), dtype, key_blob_);
-    }
-
-    Tensor ValueBlobAsTensor(const SizeVector& shape, Dtype dtype) {
-        if (dtype.ByteSize() * shape.NumElements() != capacity_ * dsize_val_) {
-            utility::LogError(
-                    "[KvPairs] Tensor shape and dtype mismatch with value blob "
-                    "size");
-        }
-        return Tensor(shape, Tensor::DefaultStrides(shape),
-                      val_blob_->GetDataPtr(), dtype, val_blob_);
-    }
+    std::shared_ptr<Blob> GetKeyBlob() { return key_blob_; }
+    std::shared_ptr<Blob> GetValueBlob() { return val_blob_; }
 
 protected:
-    size_t capacity_;
-    size_t dsize_key_;
-    size_t dsize_val_;
+    int64_t capacity_;
+    int64_t dsize_key_;
+    int64_t dsize_val_;
 
     std::shared_ptr<Blob> key_blob_;
     std::shared_ptr<Blob> val_blob_;

@@ -86,9 +86,9 @@ public:
 
 class CPUKvPairs : public KvPairs {
 public:
-    CPUKvPairs(size_t capacity,
-               size_t dsize_key,
-               size_t dsize_value,
+    CPUKvPairs(int64_t capacity,
+               int64_t dsize_key,
+               int64_t dsize_value,
                const Device &device)
         : KvPairs(capacity, dsize_key, dsize_value, device) {
         context_ = std::make_shared<CPUKvPairsContext>();

@@ -32,10 +32,10 @@ CUDAHashmapImplContext<Hash, KeyEq>::CUDAHashmapImplContext()
 
 template <typename Hash, typename KeyEq>
 void CUDAHashmapImplContext<Hash, KeyEq>::Setup(
-        size_t init_buckets,
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
+        int64_t init_buckets,
+        int64_t init_capacity,
+        int64_t dsize_key,
+        int64_t dsize_value,
         const InternalNodeManagerContext& allocator_ctx,
         const CUDAKvPairsContext& pair_allocator_ctx) {
     bucket_count_ = init_buckets;
@@ -341,7 +341,7 @@ CUDAHashmapImplContext<Hash, KeyEq>::WarpFindEmpty(addr_t ptr) {
 }
 
 template <typename Hash, typename KeyEq>
-__device__ size_t
+__device__ int64_t
 CUDAHashmapImplContext<Hash, KeyEq>::ComputeBucket(const void* key) const {
     return hash_fn_(key) % bucket_count_;
 }
@@ -363,7 +363,7 @@ __global__ void InsertKernelPass0(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   const void* input_keys,
                                   addr_t* output_iterator_addrs,
                                   int heap_counter_prev,
-                                  size_t count) {
+                                  int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid < count) {
@@ -386,7 +386,7 @@ __global__ void InsertKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   const void* input_keys,
                                   addr_t* input_iterator_addrs,
                                   bool* output_masks,
-                                  size_t count) {
+                                  int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = tid & 0x1F;
 
@@ -427,7 +427,7 @@ __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   addr_t* input_iterator_addrs,
                                   iterator_t* output_iterators,
                                   bool* output_masks,
-                                  size_t count) {
+                                  int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid < count) {
@@ -463,7 +463,7 @@ __global__ void FindKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                            const void* input_keys,
                            iterator_t* output_iterators,
                            bool* output_masks,
-                           size_t count) {
+                           int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
@@ -504,7 +504,7 @@ __global__ void EraseKernelPass0(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                  const void* input_keys,
                                  addr_t* output_iterator_addrs,
                                  bool* masks,
-                                 size_t count) {
+                                 int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
@@ -539,7 +539,7 @@ template <typename Hash, typename KeyEq>
 __global__ void EraseKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                  addr_t* input_iterator_addrs,
                                  bool* output_masks,
-                                 size_t count) {
+                                 int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid < count && output_masks[tid]) {
         hash_ctx.kv_mgr_ctx_.Free(input_iterator_addrs[tid]);
@@ -594,7 +594,7 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
 template <typename Hash, typename KeyEq>
 __global__ void CountElemsPerBucketKernel(
         CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
-        size_t* bucket_elem_counts) {
+        int64_t* bucket_elem_counts) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
@@ -635,10 +635,10 @@ __global__ void UnpackIteratorsKernel(const iterator_t* input_iterators,
                                       const bool* input_masks,
                                       void* output_keys,
                                       void* output_values,
-                                      size_t dsize_key,
-                                      size_t dsize_value,
-                                      size_t iterator_count) {
-    size_t tid = threadIdx.x + blockIdx.x * blockDim.x;
+                                      int64_t dsize_key,
+                                      int64_t dsize_value,
+                                      int64_t iterator_count) {
+    int64_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     // Valid queries.
     if (tid < iterator_count && (input_masks == nullptr || input_masks[tid])) {
@@ -661,9 +661,9 @@ __global__ void UnpackIteratorsKernel(const iterator_t* input_iterators,
 __global__ void AssignIteratorsKernel(iterator_t* input_iterators,
                                       const bool* input_masks,
                                       const void* input_values,
-                                      size_t dsize_value,
-                                      size_t iterator_count) {
-    size_t tid = threadIdx.x + blockIdx.x * blockDim.x;
+                                      int64_t dsize_value,
+                                      int64_t iterator_count) {
+    int64_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     // Valid queries.
     if (tid < iterator_count && (input_masks == nullptr || input_masks[tid])) {

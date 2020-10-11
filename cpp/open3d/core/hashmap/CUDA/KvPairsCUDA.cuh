@@ -97,9 +97,9 @@ __global__ void ResetKvPairsKernel(CUDAKvPairsContext ctx) {
 
 class CUDAKvPairs : public KvPairs {
 public:
-    CUDAKvPairs(size_t capacity,
-                size_t dsize_key,
-                size_t dsize_value,
+    CUDAKvPairs(int64_t capacity,
+                int64_t dsize_key,
+                int64_t dsize_value,
                 const Device &device)
         : KvPairs(capacity, dsize_key, dsize_value, device) {
         context_.heap_counter_ =
