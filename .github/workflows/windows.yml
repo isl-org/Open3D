@@ -118,7 +118,7 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' }}
+        # if: ${{ github.ref == 'refs/heads/master' }}
         env:
           python_version: ${{ matrix.python_version }}
           CLOUDSDK_PYTHON: ${{env.pythonLocation}}\python.exe

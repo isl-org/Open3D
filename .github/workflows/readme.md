@@ -195,11 +195,11 @@ used for running CI.
 Follow instructions in A. Documentation deployment to setup a Google cloud
 bucket with:
 
--  Project: open3d-dev
--  Service account: open3d-ci-sa-gpu
--  Bucket name: open3d-ci-sa-gpu
--  Public read permissions
--  One week object lifecycle
+-   Project: open3d-dev
+-   Service account: open3d-ci-sa-gpu
+-   Bucket name: open3d-ci-sa-gpu
+-   Public read permissions
+-   One week object lifecycle
 
 ```bash
 gsutil mb -p open3d-dev -c STANDARD -l US -b on gs://open3d-releases-master

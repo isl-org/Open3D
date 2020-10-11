@@ -131,7 +131,7 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
+        # if: ${{ github.ref == 'refs/heads/master' }}
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
