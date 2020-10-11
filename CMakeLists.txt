@@ -14,7 +14,7 @@ option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
-option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON)
+option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
@@ -47,6 +47,7 @@ option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF
 option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                    OFF)
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
+option(DEVELOPER_BUILD  "Add -dev+commit_hash to the project version number" ON )
 
 # In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
 # first try to look for the required files in THIRD_PARTY_DOWNLOAD_DIR, before
@@ -130,66 +131,51 @@ endif()
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
-    if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH|TWEAK) +([^ ]+)$")
+    if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH) +([^ ]+)$")
         set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
     endif()
 endforeach()
+set(OPEN3D_VERSION_DEVHASH "")
+if(DEVELOPER_BUILD)
+    execute_process(COMMAND git log --pretty=format:%h -n 1
+        OUTPUT_VARIABLE GIT_REV ERROR_QUIET)
+    if (GIT_REV)
+        set(OPEN3D_VERSION_DEVHASH "+${GIT_REV}")
+    endif()
+endif()
 string(CONCAT OPEN3D_VERSION
     "${OPEN3D_VERSION_MAJOR}"
     ".${OPEN3D_VERSION_MINOR}"
     ".${OPEN3D_VERSION_PATCH}"
-    ".${OPEN3D_VERSION_TWEAK}"
 )
+set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst @ONLY)
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${PROJECT_VERSION}")
 
-# Detect process or architecture.
-# Ref: https://stackoverflow.com/a/12024211/1255535
-set(detect_arch_code "
-#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || \
-        defined(_M_X64)
-#define PROCESSOR_ARCH \"x86_64\"
-#elif defined(__ARMv8_A__) || defined(__ARM64_ARCH_8__) || \
-        defined(__aarch64__) || defined(__ARMv8__) || defined(_M_ARM64)
-#define PROCESSOR_ARCH \"armv8\"
-#elif defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__) ||    \
-        defined(__ARM_ARCH_7R__) || defined(__ARM_ARCH_7M__) || \
-        defined(__ARM_ARCH_7EM__)
-#define PROCESSOR_ARCH \"armv7\"
-#else
-#define PROCESSOR_ARCH \"unknown\"
-#endif
-
-#include <iostream>
-int main() {
-    std::cout << PROCESSOR_ARCH;
-    return 0;
-}
-")
-file(WRITE "${CMAKE_BINARY_DIR}/detect_arch.cpp" "${detect_arch_code}")
-try_run(
-    dummy_run_result                       # <runResultVar>
-    dummy_compile_result                   # <compileResultVar>
-    "${CMAKE_BINARY_DIR}/bin"              # <bindir>
-    "${CMAKE_BINARY_DIR}/detect_arch.cpp"  # <srcfile>
-    RUN_OUTPUT_VARIABLE PROCESSOR_ARCH
-)
-if("${PROCESSOR_ARCH}" STREQUAL "unknown")
-    message(FATAL_ERROR "Unsupported processor architecture.")
-else()
-    message(STATUS "Detected processor architecture: ${PROCESSOR_ARCH}.")
+if(UNIX AND NOT APPLE)
+    execute_process(COMMAND uname -p
+        OUTPUT_VARIABLE PROCESSOR_ARCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        set(LINUX_AARCH64 TRUE)
+    endif()
 endif()
 
 # Set BLAS/LAPACK library preference.
-if(("${PROCESSOR_ARCH}" STREQUAL "armv8") OR (${PROCESSOR_ARCH} STREQUAL "armv7"))
+if(LINUX_AARCH64)
     if(NOT USE_BLAS)
         set(USE_BLAS ON)
         message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
     endif()
-    if(BUILD_GUI)
-        set(BUILD_GUI OFF)
-        message(WARNING "ARM CPU detected, setting BUILD_GUI=OFF.")
+    if(BUILD_GUI AND (NOT BUILD_FILAMENT_FROM_SOURCE))
+        set(BUILD_FILAMENT_FROM_SOURCE ON)
+        message(WARNING "ARM CPU detected, setting BUILD_FILAMENT_FROM_SOURCE=ON.")
     endif()
 endif()
 

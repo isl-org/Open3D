@@ -49,7 +49,7 @@ jobs:
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
-          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
           PATH=/usr/lib/ccache:$PATH
@@ -94,14 +94,14 @@ jobs:
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
-          ccache -M 2G  # GitHub's total cache limit is 5GB for all OSes.
+          ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
           source util/ci_utils.sh
           echo
           install_cuda_toolkit with-cudnn purge-cache
           nvcc --version
           # Export PATH and LD_LIBRARY_PATH (for CUDA) for the next step
-          echo "::set-env name=PATH::$PATH"
-          echo "::set-env name=LD_LIBRARY_PATH::$LD_LIBRARY_PATH"
+          echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
           echo
           echo "Installing CPU versions of packages"
           install_python_dependencies
@@ -120,7 +120,8 @@ jobs:
           source util/ci_utils.sh
           build_wheel
           ccache -s
-          echo "::set-env name=PIP_PKG_NAME::$(basename build/lib/python_package/pip_package/open3d*.whl)"
+          PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel
         uses: actions/upload-artifact@v2
@@ -130,6 +131,7 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
+        # if: ${{ github.ref == 'refs/heads/master' }}
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
@@ -138,10 +140,18 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' }}
+        # if: ${{ github.ref == 'refs/heads/master' }}
+        env:
+          python_version: ${{ matrix.python_version }}
         run: |
-          gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/master/python-wheels/
+          set -u   # No unbound variables
+          PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
+          PREV_VER_WHEEL="$(gsutil ls gs://open3d-releases/master/python-wheels/open3d\*${PYTAG}${PYTAG}\*linux\*.whl)"
+          gsutil cp "build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}" gs://open3d-releases/master/python-wheels/
+          # Public read access
+          gsutil acl ch -u AllUsers:R "gs://open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}"
           echo "Download the wheel at: https://storage.googleapis.com/open3d-releases/master/python-wheels/${{ env.PIP_PKG_NAME }}"
+          gsutil rm $PREV_VER_WHEEL || true
 
 
   test-wheel:
