@@ -124,7 +124,7 @@ public:
         auto het_mesh = HalfEdgeTriangleMesh::CreateFromTriangleMesh(*mesh_);
 
         if (het_mesh->IsEmpty()) {
-            utility::LogWarning("The mesh is non-manifold\n");
+            utility::LogError("The mesh is non-manifold\n");
             return;
         }
 

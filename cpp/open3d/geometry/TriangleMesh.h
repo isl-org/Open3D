@@ -524,7 +524,9 @@ public:
             double smoothed_alpha = 0.01) const;
 
     /// \brief This function fills in holes in the mesh to make it watertight
-    /// based on the advancing front mesh (AFM) teqhnique.
+    /// based on the advancing front mesh (AFM) technique. See Zhao, Gao and
+    /// Lin, "A robust hole-filling algorithm for triangular mesh", 2007.
+    /// \return A watertight TriangleMesh.
     std::shared_ptr<TriangleMesh> FillHoles();
 
     /// \brief Alpha shapes are a generalization of the convex hull. With
