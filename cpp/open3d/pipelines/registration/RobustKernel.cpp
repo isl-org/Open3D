@@ -30,7 +30,12 @@
 
 #include "open3d/pipelines/registration/RobustKernel.h"
 
+#include <algorithm>
 #include <cmath>
+
+namespace {
+double inline square(double x) { return x * x; }
+}  // namespace
 
 namespace open3d {
 namespace pipelines {
@@ -44,26 +49,20 @@ double L1Loss::Weight(double residual) const {
 
 double HuberLoss::Weight(double residual) const {
     const double e = std::abs(residual);
-    if (e > k_) {
-        return k_ / e;
-    }
-    return 1.0;
+    return k_ / std::max(e, k_);
 }
 
 double CauchyLoss::Weight(double residual) const {
-    return 1.0 / (1 + std::pow(residual / k_, 2.0));
+    return 1.0 / (1 + square(residual / k_));
 }
 
 double GMLoss::Weight(double residual) const {
-    return k_ / std::pow(k_ + std::pow(residual, 2.0), 2.0);
+    return k_ / square(k_ + square(residual));
 }
 
 double TukeyLoss::Weight(double residual) const {
     const double e = std::abs(residual);
-    if (e > k_) {
-        return 0.0;
-    }
-    return std::pow((1.0 - std::pow(e / k_, 2.0)), 2.0);
+    return square(1.0 - square(std::min(1.0, e / k_)));
 }
 
 }  // namespace registration
