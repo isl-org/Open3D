@@ -52,6 +52,7 @@ class Window {
     friend class Renderer;
 
 public:
+    static const int FLAG_HIDDEN;
     static const int FLAG_TOPMOST;
 
     /// Creates a Window that is auto-sized and centered. Window creation is

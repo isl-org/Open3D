@@ -196,9 +196,7 @@ public:
     Transform GetIndirectLightRotation() override;
     void ShowSkybox(bool show) override;
 
-    void RenderToImage(int width,
-                       int height,
-                       std::function<void(std::shared_ptr<geometry::Image>)>
+    void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
 
     void Draw(filament::Renderer& renderer);
