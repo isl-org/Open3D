@@ -100,9 +100,7 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
     }
 
     std::vector<double> third_eigen_values(points.size());
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static) shared(third_eigen_values)
-#endif
     for (int i = 0; i < (int)points.size(); i++) {
         std::vector<int> indices;
         std::vector<double> dist;
@@ -129,9 +127,7 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
 
     std::vector<size_t> kp_indices;
     kp_indices.reserve(points.size());
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static) shared(kp_indices)
-#endif
     for (int i = 0; i < (int)points.size(); i++) {
         if (third_eigen_values[i] > 0.0) {
             std::vector<int> nn_indices;

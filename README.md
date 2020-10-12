@@ -64,6 +64,7 @@ versions or operating systems, please
     ```bash
     $ pip install open3d
     ```
+    To test the latest features in Open3D, download and install the [development version](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip)
 
 * To install Open3D with Conda:
 
