@@ -92,11 +92,14 @@ Build
     make tests -j$(nproc)
     ./bin/tests --gtest_filter="-*Reduce*Sum*"
 
+    # Install C++ package (optional)
+    make install
+
     # Install Open3D python package (optional)
     make install-pip-package -j$(nproc)
     python -c "import open3d; print(open3d)"
 
-    # Run Open3D GUI (available on when -DBUILD_GUI=ON)
+    # Run Open3D GUI (optional, available on when -DBUILD_GUI=ON)
     ./bin/Open3D/Open3D
 
 
@@ -105,7 +108,8 @@ Nvidia Jetson
 
 Nvidia Jetson computers with 64-bit processor and OS are supported. You can
 compile Open3D with ``-DBUILD_CUDA_MODULE=ON`` and ``-DBUILD_GUI=ON`` and
-the Open3D GUI app should be functional.
+the Open3D GUI app should be functional. We support CUDA v10.x, but other
+versions should work as well.
 
 
 Raspberry Pi 4
