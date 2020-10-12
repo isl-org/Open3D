@@ -33,5 +33,3 @@ for pkg in libusb pkg-config tbb; do
         HOMEBREW_NO_AUTO_UPDATE=1 brew install $pkg
     fi
 done
-echo "brew info libomp"
-brew info libomp
