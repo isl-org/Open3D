@@ -459,7 +459,7 @@ class AppWindow:
             self.settings.bg_color.red, self.settings.bg_color.green,
             self.settings.bg_color.blue, self.settings.bg_color.alpha
         ]
-        self.window.renderer.set_clear_color(bg_color)
+        self._scene.scene.set_background_color(bg_color)
         self._scene.scene.show_skybox(self.settings.show_skybox)
         self._scene.scene.show_axes(self.settings.show_axes)
         if self.settings.new_ibl_name is not None:
@@ -742,11 +742,17 @@ class AppWindow:
             self._scene.setup_camera(60, bounds, bounds.get_center())
 
     def export_image(self, path, width, height):
+        img = None
 
-        def _on_image(image):
-            o3d.io.write_image(path, image, 100)
+        def on_image(image):
+            img = image
 
-        self._scene.scene.scene.render_to_image(width, height, _on_image)
+            quality = 9  # png
+            if path.endswith(".jpg"):
+                quality = 100
+            o3d.io.write_image(path, img, quality)
+
+        self._scene.scene.scene.render_to_image(on_image)
 
 
 def main():

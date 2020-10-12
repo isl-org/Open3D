@@ -52,6 +52,7 @@ class Window {
     friend class Renderer;
 
 public:
+    static const int FLAG_HIDDEN;
     static const int FLAG_TOPMOST;
 
     /// Creates a Window that is auto-sized and centered. Window creation is
@@ -175,6 +176,7 @@ private:
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw();
     Widget::DrawResult DrawOnce(bool is_layout_pass);
+    void ForceRedrawSceneWidget();
     void OnResize();
     void OnMouseEvent(const MouseEvent& e);
     void OnKeyEvent(const KeyEvent& e);
