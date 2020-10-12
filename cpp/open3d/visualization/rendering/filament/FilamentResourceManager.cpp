@@ -443,6 +443,20 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
     return handle;
 }
 
+SkyboxHandle FilamentResourceManager::CreateColorSkybox(
+        const Eigen::Vector3f& color) {
+    filament::math::float4 fcolor;
+    fcolor.r = color.x();
+    fcolor.g = color.y();
+    fcolor.b = color.z();
+    fcolor.a = 1.0f;
+    auto skybox =
+            filament::Skybox::Builder().showSun(false).color(fcolor).build(
+                    engine_);
+    auto handle = RegisterResource<SkyboxHandle>(engine_, skybox, skyboxes_);
+    return handle;
+}
+
 SkyboxHandle FilamentResourceManager::CreateSkybox(
         const ResourceLoadRequest& request) {
     SkyboxHandle handle;

@@ -295,6 +295,8 @@ void pybind_rendering_classes(py::module &m) {
                  "Toggles display of the skybox")
             .def("show_axes", &Open3DScene::ShowAxes,
                  "Toggles display of xyz axes")
+            .def("set_background_color", &Open3DScene::SetBackgroundColor,
+                 "Sets the background color of the scene, [r, g, b, a].")
             .def("clear_geometry", &Open3DScene::ClearGeometry)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
