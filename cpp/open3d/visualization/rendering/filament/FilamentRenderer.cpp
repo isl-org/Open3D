@@ -26,6 +26,8 @@
 
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
+#include <utils/Entity.h>
+
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
 // 4146: Filament's utils/algorithm.h utils::details::ctz() tries to negate
 //       an unsigned int.
@@ -67,6 +69,18 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
                                    FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
     swap_chain_ = engine_.createSwapChain(native_drawable,
+                                          filament::SwapChain::CONFIG_READABLE);
+    renderer_ = engine_.createRenderer();
+
+    materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
+}
+
+FilamentRenderer::FilamentRenderer(filament::Engine& engine,
+                                   int width,
+                                   int height,
+                                   FilamentResourceManager& resource_mgr)
+    : engine_(engine), resource_mgr_(resource_mgr) {
+    swap_chain_ = engine_.createSwapChain(width, height,
                                           filament::SwapChain::CONFIG_READABLE);
     renderer_ = engine_.createRenderer();
 

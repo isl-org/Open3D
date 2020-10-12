@@ -30,21 +30,22 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
 #include "open3d/io/FileFormatIO.h"
-#include "open3d/io/TPointCloudIO.h"
+#include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
+namespace t {
 namespace io {
 
-FileGeometry ReadFileGeometryTypeXYZI(const std::string &path) {
-    return CONTAINS_POINTS;
+open3d::io::FileGeometry ReadFileGeometryTypeXYZI(const std::string &path) {
+    return open3d::io::CONTAINS_POINTS;
 }
 
 bool ReadPointCloudFromXYZI(const std::string &filename,
-                            t::geometry::PointCloud &pointcloud,
-                            const ReadPointCloudOption &params) {
+                            geometry::PointCloud &pointcloud,
+                            const open3d::io::ReadPointCloudOption &params) {
     try {
         utility::filesystem::CFile file;
         if (!file.Open(filename, "r")) {
@@ -84,8 +85,8 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
 }
 
 bool WritePointCloudToXYZI(const std::string &filename,
-                           const t::geometry::PointCloud &pointcloud,
-                           const WritePointCloudOption &params) {
+                           const geometry::PointCloud &pointcloud,
+                           const open3d::io::WritePointCloudOption &params) {
     if (!pointcloud.HasPointAttr("intensities")) {
         return false;
     }
@@ -141,4 +142,5 @@ bool WritePointCloudToXYZI(const std::string &filename,
 }
 
 }  // namespace io
+}  // namespace t
 }  // namespace open3d

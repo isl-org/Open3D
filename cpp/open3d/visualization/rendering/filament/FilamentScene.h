@@ -197,9 +197,7 @@ public:
     void ShowSkybox(bool show) override;
     void SetBackgroundColor(const Eigen::Vector4f& color) override;
 
-    void RenderToImage(int width,
-                       int height,
-                       std::function<void(std::shared_ptr<geometry::Image>)>
+    void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
 
     void Draw(filament::Renderer& renderer);

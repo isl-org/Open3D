@@ -56,9 +56,8 @@ public:
     Open3DScene(Renderer& renderer);
     ~Open3DScene();
 
-    ViewHandle CreateView();
-    void DestroyView(ViewHandle view);
-    View* GetView(ViewHandle view) const;
+    View* GetView() const;
+    ViewHandle GetViewId() const { return view_; }
 
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);

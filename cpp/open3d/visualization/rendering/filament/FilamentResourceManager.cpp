@@ -60,6 +60,7 @@
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 
 namespace open3d {
@@ -686,8 +687,7 @@ filament::Texture* FilamentResourceManager::LoadFilledTexture(
 
 void FilamentResourceManager::LoadDefaults() {
     // FIXME: Move to precompiled resource blobs
-    const std::string resource_root =
-            gui::Application::GetInstance().GetResourcePath();
+    const std::string& resource_root = EngineInstance::GetResourcePath();
 
     const auto texture_path = resource_root + "/defaultTexture.png";
     auto texture_img = io::CreateImageFromFile(texture_path);
