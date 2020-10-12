@@ -116,6 +116,7 @@ void RecreateAxis(Scene* scene,
 Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
+    view_ = scene->AddView(0, 0, 1, 1);
 
     RecreateAxis(scene, bounds_, false);
 }
@@ -124,23 +125,12 @@ Open3DScene::~Open3DScene() {
     ClearGeometry();
     auto scene = renderer_.GetScene(scene_);
     scene->RemoveGeometry(kAxisObjectName);
+    scene->RemoveView(view_);
 }
 
-ViewHandle Open3DScene::CreateView() {
+View* Open3DScene::GetView() const {
     auto scene = renderer_.GetScene(scene_);
-    view_ = scene->AddView(0, 0, 1, 1);
-
-    return view_;
-}
-
-void Open3DScene::DestroyView(ViewHandle view) {
-    auto scene = renderer_.GetScene(scene_);
-    scene->RemoveView(view);
-}
-
-View* Open3DScene::GetView(ViewHandle view) const {
-    auto scene = renderer_.GetScene(scene_);
-    return scene->GetView(view);
+    return scene->GetView(view_);
 }
 
 void Open3DScene::ShowSkybox(bool enable) {

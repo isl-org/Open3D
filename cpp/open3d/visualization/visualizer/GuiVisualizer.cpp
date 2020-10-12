@@ -952,12 +952,9 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
     });
 }
 
-void GuiVisualizer::ExportCurrentImage(int width,
-                                       int height,
-                                       const std::string &path) {
+void GuiVisualizer::ExportCurrentImage(const std::string &path) {
     impl_->scene_wgt_->EnableSceneCaching(false);
     impl_->scene_wgt_->GetScene()->GetScene()->RenderToImage(
-            width, height,
             [this, path](std::shared_ptr<geometry::Image> image) mutable {
                 if (!io::WriteImage(path, *image)) {
                     this->ShowMessageBox(
@@ -1011,8 +1008,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
             dlg->SetOnCancel([this]() { this->CloseDialog(); });
             dlg->SetOnDone([this](const char *path) {
                 this->CloseDialog();
-                auto r = GetContentRect();
-                this->ExportCurrentImage(r.width, r.height, path);
+                this->ExportCurrentImage(path);
             });
             ShowDialog(dlg);
             break;

@@ -880,6 +880,17 @@ if(BUILD_GUI)
                 endif()
             endif()
         endif()
+        # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
+        # libraries are located at /usr/lib/llvm-{version}/lib, and the default
+        # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
+        # /usr/lib/aarch64-linux-gnu.
+        # For aarch64, the symbolic link path may not work for CMake's
+        # find_library. Therefore, when compiling Filament from source, we
+        # explicitly find the corresponidng path based on the clang version.
+        execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
+        if(clang_version MATCHES "clang version ([0-9]+)")
+            set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+        endif()
         include(${Open3D_3RDPARTY_DIR}/filament/filament_build.cmake)
     else()
         message(STATUS "Using prebuilt third-party library Filament")
@@ -901,14 +912,28 @@ if(BUILD_GUI)
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
     target_link_libraries(3rdparty_filament INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
     if(UNIX AND NOT APPLE)
-        find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
-            llvm-11/lib llvm-10/lib llvm-9/lib llvm-8/lib llvm-7/lib
-            REQUIRED)
-        get_filename_component(CPP_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
-        find_library(CPP_LIBRARY c++ PATHS ${CPP_LIBDIR} REQUIRED)
+        # Find CLANG_LIBDIR if it is not defined. Mutiple paths will be searched.
+        if (NOT CLANG_LIBDIR)
+            find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+                         llvm-11/lib llvm-10/lib llvm-9/lib llvm-8/lib llvm-7/lib
+                         REQUIRED)
+            get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
+        endif()
+        # Find clang libraries at the exact path ${CLANG_LIBDIR}.
+        find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+        find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+        if(CPP_LIBRARY-NOTFOUND)
+            message(FATAL_ERROR "CPP_LIBRARY-NOTFOUND")
+        endif()
+        if(CPPABI_LIBRARY-NOTFOUND)
+            message(FATAL_ERROR "CPPABI_LIBRARY-NOTFOUND")
+        endif()
         # Ensure that libstdc++ gets linked first
         target_link_libraries(3rdparty_filament INTERFACE -lstdc++
-            ${CPP_LIBRARY} ${CPPABI_LIBRARY})
+                              ${CPP_LIBRARY} ${CPPABI_LIBRARY})
+        message(STATUS "CLANG_LIBDIR: ${CLANG_LIBDIR}")
+        message(STATUS "CPP_LIBRARY: ${CPP_LIBRARY}")
+        message(STATUS "CPPABI_LIBRARY: ${CPPABI_LIBRARY}")
     endif()
     if (APPLE)
         find_library(CORE_VIDEO CoreVideo)

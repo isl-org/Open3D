@@ -1332,11 +1332,9 @@ void ReadPixelsCallback(void* buffer, size_t buffer_size, void* user) {
 }
 
 void FilamentScene::RenderToImage(
-        int width,
-        int height,
         std::function<void(std::shared_ptr<geometry::Image>)> callback) {
     auto view = views_.begin()->second.view.get();
-    renderer_.RenderToImage(width, height, view, this, callback);
+    renderer_.RenderToImage(view, this, callback);
 }
 
 std::vector<FilamentScene::RenderableGeometry*> FilamentScene::GetGeometry(

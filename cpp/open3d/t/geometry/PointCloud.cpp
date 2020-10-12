@@ -101,11 +101,11 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
-t::geometry::PointCloud PointCloud::FromLegacyPointCloud(
+geometry::PointCloud PointCloud::FromLegacyPointCloud(
         const open3d::geometry::PointCloud &pcd_legacy,
         core::Dtype dtype,
         const core::Device &device) {
-    t::geometry::PointCloud pcd(dtype, device);
+    geometry::PointCloud pcd(dtype, device);
     if (pcd_legacy.HasPoints()) {
         pcd.SetPoints(core::eigen_converter::EigenVector3dVectorToTensorList(
                 pcd_legacy.points_, dtype, device));
