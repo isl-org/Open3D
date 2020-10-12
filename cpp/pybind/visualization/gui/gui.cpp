@@ -54,6 +54,9 @@
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
+#include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "pybind/docstring.h"
 #include "pybind11/functional.h"
 
@@ -78,6 +81,39 @@ public:
 
 private:
     py::gil_scoped_release *unlocker_;
+};
+
+class PyWindow : public Window {
+    using Super = Window;
+
+public:
+    explicit PyWindow(const std::string &title, int flags = 0)
+        : Super(title, flags) {}
+    PyWindow(const std::string &title, int width, int height, int flags = 0)
+        : Super(title, width, height, flags) {}
+    PyWindow(const std::string &title,
+             int x,
+             int y,
+             int width,
+             int height,
+             int flags = 0)
+        : Super(title, x, y, width, height, flags) {}
+
+    std::function<void(const Theme)> on_layout_;
+
+protected:
+    void Layout(const Theme &theme) {
+        if (on_layout_) {
+            // the Python callback sizes the children
+            on_layout_(theme);
+            // and then we need to layout the children
+            for (auto child : GetChildren()) {
+                child->Layout(theme);
+            }
+        } else {
+            Super::Layout(theme);
+        }
+    }
 };
 
 // atexit: Filament crashes if the engine was not destroyed before exit().
@@ -105,6 +141,30 @@ void install_cleanup_atexit() {
     }
 }
 
+void InitializeForPython(std::string resource_path /*= ""*/) {
+    if (resource_path.empty()) {
+        // We need to find the resources directory. Fortunately,
+        // Python knows where the module lives (open3d.__file__
+        // is the path to
+        // __init__.py), so we can use that to find the
+        // resources included in the wheel.
+        py::object o3d = py::module::import("open3d");
+        auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
+        auto module_path =
+                utility::filesystem::GetFileParentDirectory(o3d_init_path);
+        resource_path = module_path + "/resources";
+    }
+    Application::GetInstance().Initialize(resource_path.c_str());
+    install_cleanup_atexit();
+}
+
+std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
+        rendering::Open3DScene *scene, int width, int height) {
+    PythonUnlocker unlocker;
+    return Application::GetInstance().RenderToImage(
+            unlocker, scene->GetView(), scene->GetScene(), width, height);
+}
+
 void pybind_gui_classes(py::module &m) {
     // ---- Application ----
     py::class_<Application> application(m, "Application",
@@ -130,30 +190,14 @@ void pybind_gui_classes(py::module &m) {
                     "Gets the Application singleton (read-only)")
             .def(
                     "initialize",
-                    [](Application &instance) {
-                        // We need to find the resources directory. Fortunately,
-                        // Python knows where the module lives (open3d.__file__
-                        // is the path to
-                        // __init__.py), so we can use that to find the
-                        // resources included in the wheel.
-                        py::object o3d = py::module::import("open3d");
-                        auto o3d_init_path =
-                                o3d.attr("__file__").cast<std::string>();
-                        auto module_path =
-                                utility::filesystem::GetFileParentDirectory(
-                                        o3d_init_path);
-                        auto resource_path = module_path + "/resources";
-                        instance.Initialize(resource_path.c_str());
-                        install_cleanup_atexit();
-                    },
+                    [](Application &instance) { InitializeForPython(); },
                     "Initializes the application, using the resources included "
                     "in the wheel. One of the `initialize` functions _must_ be "
                     "called prior to using anything in the gui module")
             .def(
                     "initialize",
                     [](Application &instance, const char *resource_dir) {
-                        instance.Initialize(resource_dir);
-                        install_cleanup_atexit();
+                        InitializeForPython(resource_dir);
                     },
                     "Initializes the application with location of the "
                     "resources "
@@ -175,6 +219,28 @@ void pybind_gui_classes(py::module &m) {
                     "widgets should be considered uninitialized, even if they "
                     "are still held by Python variables. Using them is unsafe, "
                     "even if run() is called again.")
+            .def(
+                    "run_one_tick",
+                    [](Application &instance) {
+                        PythonUnlocker unlocker;
+                        auto result = instance.RunOneTick(unlocker);
+                        // Enable Ctrl-C to kill Python
+                        if (PyErr_CheckSignals() != 0) {
+                            throw py::error_already_set();
+                        }
+                        return result;
+                    },
+                    "Runs the event loop once, returns True if the app is "
+                    "still running, or False if all the windows have closed.")
+            .def(
+                    "render_to_image",
+                    [](Application &instance, rendering::Open3DScene *scene,
+                       int width, int height) {
+                        return RenderToImageWithoutWindow(scene, width, height);
+                    },
+                    "Renders a scene to an image and returns the image. If you "
+                    "are rendering without a visible window you should use "
+                    "open3d.visualization.rendering.RenderToImage instead")
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
@@ -202,39 +268,6 @@ void pybind_gui_classes(py::module &m) {
                                    "resources directory");
 
     // ---- Window ----
-    class PyWindow : public Window {
-        using Super = Window;
-
-    public:
-        explicit PyWindow(const std::string &title, int flags = 0)
-            : Super(title, flags) {}
-        PyWindow(const std::string &title, int width, int height, int flags = 0)
-            : Super(title, width, height, flags) {}
-        PyWindow(const std::string &title,
-                 int x,
-                 int y,
-                 int width,
-                 int height,
-                 int flags = 0)
-            : Super(title, x, y, width, height, flags) {}
-
-        std::function<void(const Theme)> on_layout_;
-
-    protected:
-        void Layout(const Theme &theme) {
-            if (on_layout_) {
-                // the Python callback sizes the children
-                on_layout_(theme);
-                // and then we need to layout the children
-                for (auto child : GetChildren()) {
-                    child->Layout(theme);
-                }
-            } else {
-                Super::Layout(theme);
-            }
-        }
-    };
-
     // Pybind appears to need to know about the base class. It doesn't have
     // to be named the same as the C++ class, though.
     py::class_<Window, std::shared_ptr<Window>> window_base(
@@ -264,7 +297,7 @@ void pybind_gui_classes(py::module &m) {
                           "Returns the title of the window")
             .def("size_to_fit", &PyWindow::SizeToFit,
                  "Sets the width and height of window to its preferred size")
-            .def_property("get_size", &PyWindow::GetSize, &PyWindow::SetSize,
+            .def_property("size", &PyWindow::GetSize, &PyWindow::SetSize,
                           "The size of the window in device pixels, including "
                           "menubar (except on macOS)")
             .def_property_readonly(
