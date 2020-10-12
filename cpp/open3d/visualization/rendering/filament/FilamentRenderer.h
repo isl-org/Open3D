@@ -26,8 +26,6 @@
 
 #pragma once
 
-#include <utils/Entity.h>
-
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -59,6 +57,11 @@ public:
     FilamentRenderer(filament::Engine& engine,
                      void* native_drawable,
                      FilamentResourceManager& resource_mgr);
+    // This will create an offscreen renderer
+    explicit FilamentRenderer(filament::Engine& engine,
+                              int width,
+                              int height,
+                              FilamentResourceManager& resource_mgr);
     ~FilamentRenderer() override;
 
     SceneHandle CreateScene() override;

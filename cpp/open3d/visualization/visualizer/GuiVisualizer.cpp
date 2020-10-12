@@ -403,7 +403,8 @@ struct GuiVisualizer::Impl {
 
     void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
         auto bcolor = settings_.model_.GetBackgroundColor();
-        renderer.SetClearColor({bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
+        scene_wgt_->GetScene()->SetBackgroundColor(
+                {bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
 
         if (settings_.model_.GetShowSkybox()) {
             scene_wgt_->GetScene()->ShowSkybox(true);
@@ -951,11 +952,9 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
     });
 }
 
-void GuiVisualizer::ExportCurrentImage(int width,
-                                       int height,
-                                       const std::string &path) {
+void GuiVisualizer::ExportCurrentImage(const std::string &path) {
+    impl_->scene_wgt_->EnableSceneCaching(false);
     impl_->scene_wgt_->GetScene()->GetScene()->RenderToImage(
-            width, height,
             [this, path](std::shared_ptr<geometry::Image> image) mutable {
                 if (!io::WriteImage(path, *image)) {
                     this->ShowMessageBox(
@@ -963,6 +962,7 @@ void GuiVisualizer::ExportCurrentImage(int width,
                                       path + ".")
                                              .c_str());
                 }
+                impl_->scene_wgt_->EnableSceneCaching(true);
             });
 }
 
@@ -1008,8 +1008,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
             dlg->SetOnCancel([this]() { this->CloseDialog(); });
             dlg->SetOnDone([this](const char *path) {
                 this->CloseDialog();
-                auto r = GetContentRect();
-                this->ExportCurrentImage(r.width, r.height, path);
+                this->ExportCurrentImage(path);
             });
             ShowDialog(dlg);
             break;
