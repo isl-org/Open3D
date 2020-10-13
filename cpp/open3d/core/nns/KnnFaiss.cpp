@@ -77,7 +77,7 @@ bool KnnFaiss::SetTensorData(const Tensor &tensor) {
         utility::LogError(
                 "[KnnFaiss::SetTensorData] GPU Tensor is not supported when "
                 "BUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
-                "BUILD_CUDA_MODULE=ON.")
+                "BUILD_CUDA_MODULE=ON.");
 #endif
     } else {
         index.reset(new faiss::IndexFlatL2(dimension_));
