@@ -301,7 +301,7 @@ private:
 
     std::string ibl_name_;
     bool ibl_enabled_ = false;
-    bool skybox_enabled_ = true;
+    bool skybox_enabled_ = false;
     std::weak_ptr<filament::IndirectLight> indirect_light_;
     std::weak_ptr<filament::Skybox> skybox_;
     std::weak_ptr<filament::Skybox> color_skybox_;
