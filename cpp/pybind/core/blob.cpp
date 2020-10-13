@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/Blob.h"
+
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
-#include "open3d/core/Blob.h"
-
 namespace open3d {
+namespace core {
 
-void pybind_core_blob(py::module &m) {
-    py::class_<core::Blob, std::shared_ptr<core::Blob>> blob(m, "Blob");
-}
+void pybind_core_blob(py::module &m) { py::class_<Blob> blob(m, "Blob"); }
 
+}  // namespace core
 }  // namespace open3d

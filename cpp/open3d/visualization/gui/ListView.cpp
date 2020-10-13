@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/ListView.h"
 
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -89,18 +90,18 @@ Size ListView::CalcPreferredSize(const Theme &theme) const {
     ImVec2 size(0, 0);
 
     for (auto &item : impl_->items_) {
-        auto item_size = font->CalcTextSizeA(theme.font_size, Widget::DIM_GROW,
-                                             0.0, item.c_str());
+        auto item_size = font->CalcTextSizeA(
+                float(theme.font_size), Widget::DIM_GROW, 0.0, item.c_str());
         size.x = std::max(size.x, item_size.x);
         size.y += ImGui::GetFrameHeight();
     }
-    return Size(std::ceil(size.x + 2.0f * padding.x), Widget::DIM_GROW);
+    return Size(int(std::ceil(size.x + 2.0f * padding.x)), Widget::DIM_GROW);
 }
 
 Widget::DrawResult ListView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
-    ImGui::PushItemWidth(frame.width);
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::PushItemWidth(float(frame.width));
 
     ImGui::PushStyleColor(ImGuiCol_FrameBg,
                           colorToImgui(context.theme.list_background_color));
@@ -118,8 +119,8 @@ Widget::DrawResult ListView::Draw(const DrawContext &context) {
     auto new_selected_idx = impl_->selected_index_;
     bool is_double_click = false;
     DrawImGuiPushEnabledState();
-    if (ImGui::ListBoxHeader(impl_->imgui_id_.c_str(), impl_->items_.size(),
-                             height_in_items)) {
+    if (ImGui::ListBoxHeader(impl_->imgui_id_.c_str(),
+                             int(impl_->items_.size()), height_in_items)) {
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
             bool is_selected = (int(i) == impl_->selected_index_);
             // ImGUI's list wants to hover over items, which is not done by
@@ -139,7 +140,7 @@ Widget::DrawResult ListView::Draw(const DrawContext &context) {
             if (ImGui::Selectable(impl_->items_[i].c_str(), &is_selected,
                                   ImGuiSelectableFlags_AllowDoubleClick)) {
                 if (is_selected) {
-                    new_selected_idx = i;
+                    new_selected_idx = int(i);
                 }
                 // Dear ImGUI seems to have a bug where it registers a
                 // double-click as long as you haven't moved the mouse,

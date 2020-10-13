@@ -30,13 +30,12 @@
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
-
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
 namespace pybind_utils {
 
-core::Dtype ArrayFormatToDtype(const std::string& format);
+core::Dtype ArrayFormatToDtype(const std::string& format, size_t byte_size);
 
 std::string DtypeToArrayFormat(const core::Dtype& dtype);
 

@@ -24,18 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <mkl.h>
+#include "open3d/core/kernel/Kernel.h"
+
 #include <cmath>
 #include <vector>
 
-#include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
 
-void TestMKLIntegration() {
+void TestLinalgIntegration() {
     // Blas
     std::vector<double> A{1.0, 2.0, 1.0, -3.0, 4.0, -1.0};
     std::vector<double> B{1.0, 2.0, 1.0, -3.0, 4.0, -1.0};

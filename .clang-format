@@ -2,8 +2,7 @@ BasedOnStyle: Google
 IndentWidth: 4
 ColumnLimit: 80
 UseTab: Never
-Language: Cpp
-Standard: Cpp11
+Standard: c++14
 ContinuationIndentWidth: 8
 AccessModifierOffset: -4
 BinPackParameters: false

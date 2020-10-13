@@ -24,12 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/TriangleMesh.h"
-
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <algorithm>
 
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -113,9 +112,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             std::swap(Rs, Rs_old);
         }
 
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int i = 0; i < int(vertices_.size()); ++i) {
             // Update rotations
             Eigen::Matrix3d S = Eigen::Matrix3d::Zero();
@@ -151,9 +148,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             }
         }
 
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int i = 0; i < int(vertices_.size()); ++i) {
             // Update Positions
             Eigen::Vector3d bi(0, 0, 0);
@@ -170,9 +165,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             b[1](i) = bi(1);
             b[2](i) = bi(2);
         }
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int comp = 0; comp < 3; ++comp) {
             Eigen::VectorXd p_prime = solver.solve(b[comp]);
             if (solver.info() != Eigen::Success) {

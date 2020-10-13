@@ -81,9 +81,7 @@ int main(int argc, char *argv[]) {
     std::vector<bool> remove_vertex_mask(mesh->vertices_.size(), false);
     utility::ConsoleProgressBar progress_bar(mesh->vertices_.size(),
                                              "Prune vetices: ");
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)mesh->vertices_.size(); i++) {
         std::vector<int> indices(1);
         std::vector<double> dists(1);
@@ -91,9 +89,7 @@ int main(int argc, char *argv[]) {
         if (k == 0 || dists[0] > distance * distance) {
             remove_vertex_mask[i] = true;
         }
-#ifdef _OPENMP
 #pragma omp critical
-#endif
         { ++progress_bar; }
     }
 

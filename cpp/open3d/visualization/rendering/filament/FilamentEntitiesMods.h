@@ -61,9 +61,11 @@ public:
     MaterialModifier& SetParameter(const char* parameter,
                                    const Eigen::Vector3f& value) override;
     MaterialModifier& SetColor(const char* parameter,
-                               const Eigen::Vector3f& value) override;
+                               const Eigen::Vector3f& value,
+                               bool srgb) override;
     MaterialModifier& SetColor(const char* parameter,
-                               const Eigen::Vector4f& value) override;
+                               const Eigen::Vector4f& value,
+                               bool srgb) override;
 
     MaterialModifier& SetTexture(
             const char* parameter,

@@ -25,10 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #include "pybind/utility/utility.h"
+
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
+namespace utility {
 
 void pybind_utility(py::module &m) {
     py::module m_submodule = m.def_submodule("utility");
@@ -36,4 +38,5 @@ void pybind_utility(py::module &m) {
     pybind_eigen(m_submodule);
 }
 
+}  // namespace utility
 }  // namespace open3d

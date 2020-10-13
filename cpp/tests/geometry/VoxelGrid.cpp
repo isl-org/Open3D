@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/VoxelGrid.h"
+
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/utility/DrawGeometry.h"

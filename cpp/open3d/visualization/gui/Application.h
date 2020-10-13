@@ -32,7 +32,18 @@
 #include "open3d/visualization/gui/Menu.h"
 
 namespace open3d {
+
+namespace geometry {
+class Image;
+}
+
 namespace visualization {
+
+namespace rendering {
+class View;
+class Scene;
+}  // namespace rendering
+
 namespace gui {
 
 struct Theme;
@@ -55,10 +66,8 @@ public:
     /// Initializes the application, with a specific path to the resources.
     void Initialize(const char *resource_path);
 
-    /// Does not return until the UI is completely finished. Use this if you
-    /// just need something simple.
+    /// Does not return until the UI is completely finished.
     void Run();
-    bool RunOneTick();  // internal use
     /// Closes all the windows, which exits as a result
     void Quit();
 
@@ -117,11 +126,32 @@ public:
     /// the windows at the wrong time.
     void OnTerminate();
 
+    class EnvUnlocker {
+    public:
+        EnvUnlocker() {}
+        virtual ~EnvUnlocker() {}
+        virtual void unlock() {}
+        virtual void relock() {}
+    };
+    /// For internal use. EnvUnlocker allows an external environment to provide
+    /// a way to unlock the environment while we wait for the next event.
+    /// This is useful to release the Python GIL, for example.
+    bool RunOneTick(EnvUnlocker &unlocker, bool cleanup_if_no_windows = true);
+
+    /// Returns the scene rendered to an image. This MUST NOT be called while
+    /// in Run(). It is intended for use when no windows are shown. If you
+    /// need to render from a GUI, use Scene::RenderToImage().
+    std::shared_ptr<geometry::Image> RenderToImage(EnvUnlocker &unlocker,
+                                                   rendering::View *view,
+                                                   rendering::Scene *scene,
+                                                   int width,
+                                                   int height);
+
 private:
     Application();
 
     enum class RunStatus { CONTINUE, DONE };
-    RunStatus ProcessQueuedEvents();
+    RunStatus ProcessQueuedEvents(EnvUnlocker &unlocker);
 
 private:
     struct Impl;

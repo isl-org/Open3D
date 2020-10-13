@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/ColorEdit.h"
 
 #include <imgui.h>
+
 #include <cmath>
 #include <sstream>
 
@@ -71,16 +72,16 @@ Size ColorEdit::CalcPreferredSize(const Theme& theme) const {
     auto line_height = ImGui::GetTextLineHeight();
     auto height = line_height + 2.0 * ImGui::GetStyle().FramePadding.y;
 
-    return Size(Widget::DIM_GROW, std::ceil(height));
+    return Size(Widget::DIM_GROW, int(std::ceil(height)));
 }
 
 ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     auto new_value = impl_->value_;
     DrawImGuiPushEnabledState();
-    ImGui::PushItemWidth(GetFrame().width);
+    ImGui::PushItemWidth(float(GetFrame().width));
     ImGui::ColorEdit3(impl_->id_.c_str(), new_value.GetMutablePointer());
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();

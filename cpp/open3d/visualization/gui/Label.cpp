@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/Label.h"
 
 #include <imgui.h>
+
 #include <algorithm>
 #include <cmath>
 #include <string>
@@ -80,25 +81,27 @@ Size Label::CalcPreferredSize(const Theme& theme) const {
     auto* font = ImGui::GetFont();
 
     if (impl_->is_single_line) {
-        auto size = font->CalcTextSizeA(theme.font_size, 10000, 0.0,
+        auto size = font->CalcTextSizeA(float(theme.font_size), 10000, 0.0,
                                         impl_->text_.c_str());
-        return Size(std::ceil(size.x + 2.0f * padding.x),
-                    std::ceil(em + 2.0f * padding.y));
+        return Size(int(std::ceil(size.x + 2.0f * padding.x)),
+                    int(std::ceil(em + 2.0f * padding.y)));
     } else {
         ImVec2 size(0, 0);
         size_t line_start = 0;
         auto line_end = impl_->text_.find('\n');
-        float wrap_width = PREFERRED_WRAP_WIDTH_EM * em;
+        float wrap_width = float(PREFERRED_WRAP_WIDTH_EM * em);
         float spacing = ImGui::GetTextLineHeightWithSpacing() -
                         ImGui::GetTextLineHeight();
         do {
             ImVec2 sz;
             if (line_end == std::string::npos) {
-                sz = font->CalcTextSizeA(theme.font_size, FLT_MAX, wrap_width,
+                sz = font->CalcTextSizeA(float(theme.font_size), FLT_MAX,
+                                         wrap_width,
                                          impl_->text_.c_str() + line_start);
                 line_start = line_end;
             } else {
-                sz = font->CalcTextSizeA(theme.font_size, FLT_MAX, wrap_width,
+                sz = font->CalcTextSizeA(float(theme.font_size), FLT_MAX,
+                                         wrap_width,
                                          impl_->text_.c_str() + line_start,
                                          impl_->text_.c_str() + line_end);
                 line_start = line_end + 1;
@@ -108,15 +111,16 @@ Size Label::CalcPreferredSize(const Theme& theme) const {
             size.y += sz.y + spacing;
         } while (line_start != std::string::npos);
 
-        return Size(std::ceil(size.x) + std::ceil(2.0f * padding.x),
-                    std::ceil(size.y - spacing) + std::ceil(2.0f * padding.y));
+        return Size(int(std::ceil(size.x)) + int(std::ceil(2.0f * padding.x)),
+                    int(std::ceil(size.y - spacing)) +
+                            int(std::ceil(2.0f * padding.y)));
     }
 }
 
 Widget::DrawResult Label::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
-    ImGui::PushItemWidth(frame.width);
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::PushItemWidth(float(frame.width));
     bool is_default_color = (impl_->color_ == DEFAULT_COLOR);
     if (!is_default_color) {
         ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(impl_->color_));

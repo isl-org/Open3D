@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include "FileDialog.h"
-
 #include <string>
 #include <vector>
+
+#include "FileDialog.h"
 
 struct GLFWwindow;
 
@@ -31,10 +31,13 @@ namespace visualization {
 namespace gui {
 
 void* GetNativeDrawable(GLFWwindow* glfw_window);
+// Note that Windows cannot post an expose event so it must draw immediately.
+// Therefore this function cannot be called while drawing.
 void PostNativeExposeEvent(GLFWwindow* glfw_window);
 void ShowNativeAlert(const char* message);
 
 #ifdef __APPLE__
+void MacTransformIntoApp();
 void SetNativeMenubar(void* menubar);
 #endif  // __APPLE_
 

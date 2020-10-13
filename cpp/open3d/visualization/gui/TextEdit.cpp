@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/TextEdit.h"
 
 #include <imgui.h>
+
 #include <cmath>
 #include <sstream>
 #include <string>
@@ -97,12 +98,12 @@ bool TextEdit::ValidateNewText(const char *text) { return true; }
 Size TextEdit::CalcPreferredSize(const Theme &theme) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
-    return Size(Widget::DIM_GROW, std::ceil(em + 2.0f * padding.y));
+    return Size(Widget::DIM_GROW, int(std::ceil(em + 2.0f * padding.y)));
 }
 
 Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text editing
@@ -123,7 +124,7 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     }
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
-    ImGui::PushItemWidth(GetFrame().width);
+    ImGui::PushItemWidth(float(GetFrame().width));
     if (ImGui::InputTextWithHint(impl_->id_.c_str(),
                                  impl_->placeholder_.c_str(),
                                  const_cast<char *>(impl_->text_.c_str()),

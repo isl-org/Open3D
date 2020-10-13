@@ -65,9 +65,14 @@ class PyAPIDocsBuilder:
     ...
     """
 
-    def __init__(self, output_dir, module_names):
+    def __init__(self, output_dir="python_api", input_dir="python_api_in"):
+        """
+        input_dir: The input dir for custom rst files that override the
+                   generated files.
+        """
         self.output_dir = output_dir
-        self.module_names = module_names
+        self.input_dir = input_dir
+        self.module_names = PyAPIDocsBuilder._get_documented_module_names()
         print("Generating *.rst Python API docs in directory: %s" %
               self.output_dir)
 
@@ -75,20 +80,42 @@ class PyAPIDocsBuilder:
         _create_or_clear_dir(self.output_dir)
 
         for module_name in self.module_names:
-            module = self._get_open3d_module(module_name)
-            self._generate_module_class_function_docs(module_name, module,
-                                                      self.output_dir)
+            try:
+                module = self._try_import_module(module_name)
+                self._generate_module_class_function_docs(module_name, module)
+            except:
+                print("[Warning] Module {} cannot be imported.".format(
+                    module_name))
 
-    def _get_open3d_module(self, full_module_name):
+    @staticmethod
+    def _get_documented_module_names():
+        """Reads the modules of the python api from the index.rst"""
+        module_names = []
+        with open("documented_modules.txt", "r") as f:
+            for line in f:
+                print(line, end="")
+                m = re.match("^(open3d\..*)\s*$", line)
+                if m:
+                    module_names.append(m.group(1))
+        print("Documented modules:")
+        for module_name in module_names:
+            print("-", module_name)
+        return module_names
+
+    def _try_import_module(self, full_module_name):
         """Returns the module object for the given module path"""
         import open3d  # make sure the root module is loaded
+        if open3d._build_config['BUILD_TENSORFLOW_OPS']:
+            import open3d.ml.tf
+        if open3d._build_config['BUILD_PYTORCH_OPS']:
+            import open3d.ml.torch
 
         try:
-            # try to import directly. This will work for pure python submodules
+            # Try to import directly. This will work for pure python submodules
             module = importlib.import_module(full_module_name)
             return module
         except ImportError:
-            # traverse the module hierarchy of the root module.
+            # Traverse the module hierarchy of the root module.
             # This code path is necessary for modules for which we manually
             # define a specific module path (e.g. the modules defined with
             # pybind).
@@ -176,8 +203,7 @@ class PyAPIDocsBuilder:
         with open(sub_module_doc_path, "w") as f:
             f.write(out_string)
 
-    def _generate_module_class_function_docs(self, full_module_name, module,
-                                             output_dir):
+    def _generate_module_class_function_docs(self, full_module_name, module):
         print("Generating docs for submodule: %s" % full_module_name)
 
         # Class docs
@@ -188,18 +214,26 @@ class PyAPIDocsBuilder:
         ]
         for class_name in class_names:
             file_name = "%s.%s.rst" % (full_module_name, class_name)
-            output_path = os.path.join(output_dir, file_name)
+            output_path = os.path.join(self.output_dir, file_name)
+            input_path = os.path.join(self.input_dir, file_name)
+            if os.path.isfile(input_path):
+                shutil.copyfile(input_path, output_path)
+                continue
             self._generate_class_doc(full_module_name, class_name, output_path)
 
         # Function docs
         function_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isbuiltin(obj[1])
+            if inspect.isroutine(obj[1])
         ]
         for function_name in function_names:
             file_name = "%s.%s.rst" % (full_module_name, function_name)
-            output_path = os.path.join(output_dir, file_name)
+            output_path = os.path.join(self.output_dir, file_name)
+            input_path = os.path.join(self.input_dir, file_name)
+            if os.path.isfile(input_path):
+                shutil.copyfile(input_path, output_path)
+                continue
             self._generate_function_doc(full_module_name, function_name,
                                         output_path)
 
@@ -216,8 +250,12 @@ class PyAPIDocsBuilder:
         ]
 
         # Path
-        sub_module_doc_path = os.path.join(output_dir,
+        sub_module_doc_path = os.path.join(self.output_dir,
                                            full_module_name + ".rst")
+        input_path = os.path.join(self.input_dir, full_module_name + ".rst")
+        if os.path.isfile(input_path):
+            shutil.copyfile(input_path, sub_module_doc_path)
+            return
         self._generate_module_doc(
             full_module_name,
             class_names,
@@ -238,31 +276,9 @@ class SphinxDocsBuilder:
     """
 
     def __init__(self, html_output_dir, is_release, skip_notebooks):
-        # Get the modules for which we want to build the documentation.
-        # We use the modules listed in the index.rst file here.
-        self.documented_modules = self._get_documented_module_names()
-
-        # self.documented_modules = "open3d.pybind"  # Points to the open3d.so
-        # self.c_module_relative = "open3d"  # The relative module reference to open3d.so
-        self.python_api_output_dir = "python_api"
         self.html_output_dir = html_output_dir
         self.is_release = is_release
         self.skip_notebooks = skip_notebooks
-
-    @staticmethod
-    def _get_documented_module_names():
-        """Reads the modules of the python api from the index.rst"""
-        module_names = []
-        with open("documented_modules.txt", "r") as f:
-            for line in f:
-                print(line)
-                m = re.match("^(open3d\..*)\s*$", line)
-                if m:
-                    module_names.append(m.group(1))
-        print("Documented modules:")
-        for module_name in module_names:
-            print("-", module_name)
-        return module_names
 
     def run(self):
         self._gen_python_api_docs()
@@ -275,8 +291,7 @@ class SphinxDocsBuilder:
         """
         # self.python_api_output_dir cannot be a temp dir, since other
         # "*.rst" files reference it
-        pd = PyAPIDocsBuilder(self.python_api_output_dir,
-                              self.documented_modules)
+        pd = PyAPIDocsBuilder()
         pd.generate_rst()
 
     def _run_sphinx(self):
@@ -372,12 +387,18 @@ class JupyterDocsBuilder:
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
-        nb_ignored = ['tensor.ipynb']
-        example_dirs = ["Basic", "Advanced"]
+        nb_direct_copy = ['tensor.ipynb']
+        example_dirs = [
+            "geometry",
+            "core",
+            "pipelines",
+            "visualization",
+        ]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir).parent / "examples" /
                       "python" / example_dir)
             out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
+            out_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy(
                 in_dir.parent / "open3d_tutorial.py",
                 out_dir.parent / "open3d_tutorial.py",
@@ -385,9 +406,8 @@ class JupyterDocsBuilder:
 
             if self.clean_notebooks:
                 for nb_out_path in out_dir.glob("*.ipynb"):
-                    if (nb_out_path.name not in nb_ignored):
-                        print("Delete: {}".format(nb_out_path))
-                        nb_out_path.unlink()
+                    print("Delete: {}".format(nb_out_path))
+                    nb_out_path.unlink()
 
             for nb_in_path in in_dir.glob("*.ipynb"):
                 nb_out_path = out_dir / nb_in_path.name
@@ -400,6 +420,11 @@ class JupyterDocsBuilder:
 
         # Execute Jupyter notebooks
         for nb_path in nb_paths:
+            if nb_out_path.name in nb_direct_copy:
+                print("[Processing notebook {}, directly copied]".format(
+                    nb_path.name))
+                continue
+
             print("[Processing notebook {}]".format(nb_path.name))
             with open(nb_path, encoding="utf-8") as f:
                 nb = nbformat.read(f, as_version=4)

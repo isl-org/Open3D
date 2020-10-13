@@ -29,6 +29,7 @@
 #include <k4a/k4a.h>
 #include <k4arecord/record.h>
 #include <turbojpeg.h>
+
 #include <memory>
 
 #include "open3d/geometry/RGBDImage.h"
@@ -173,12 +174,10 @@ void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
                 "dimensions.");
     }
 
-#ifdef _OPENMP
 #ifdef _WIN32
 #pragma omp parallel for schedule(static)
 #else
 #pragma omp parallel for collapse(3) schedule(static)
-#endif
 #endif
     for (int v = 0; v < bgra.height_; ++v) {
         for (int u = 0; u < bgra.width_; ++u) {

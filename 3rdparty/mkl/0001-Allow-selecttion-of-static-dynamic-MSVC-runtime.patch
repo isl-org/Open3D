@@ -1,0 +1,32 @@
+From 92e3a4717f888c9e97e22f9e7e83fc15c8aa15ae Mon Sep 17 00:00:00 2001
+From: Yixing Lao <yixing.lao@gmail.com>
+Date: Mon, 14 Sep 2020 03:30:00 -0700
+Subject: [PATCH] Allow selecttion of static/dynamic MSVC runtime
+
+---
+ CMakeLists.txt | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e05f27a..5a0c680 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,15 @@
+ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+ 
++##### begin open3d patch
++if(POLICY CMP0091)
++    cmake_policy(SET CMP0091 NEW)
++endif()
++option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
++if(STATIC_WINDOWS_RUNTIME)
++    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
++endif()
++##### end open3d patch
++
+ if (POLICY CMP0048)
+   # cmake warns if loaded from a min-3.0-required parent dir, so silence the warning:
+   cmake_policy(SET CMP0048 NEW)
+-- 
+2.27.0.windows.1
+

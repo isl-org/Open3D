@@ -3,6 +3,13 @@ open3d.camera
 open3d.core
 open3d.geometry
 open3d.io
+open3d.ml
+open3d.ml.tf
+open3d.ml.tf.layers
+open3d.ml.tf.ops
+open3d.ml.torch
+open3d.ml.torch.layers
+open3d.ml.torch.ops
 open3d.pipelines
 open3d.pipelines.color_map
 open3d.pipelines.integration

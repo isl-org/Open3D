@@ -31,12 +31,18 @@
 #include <unordered_map>
 
 #include "open3d/geometry/Image.h"
+#include "open3d/visualization/rendering/Gradient.h"
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
 struct Material {
+    std::string name;
+
+    // Rendering attributes
+    bool has_alpha = false;
+
     // PBR Material properties and maps
     Eigen::Vector4f base_color = Eigen::Vector4f(1.f, 1.f, 1.f, 1.f);
     float base_metallic = 0.f;
@@ -57,6 +63,16 @@ struct Material {
     std::shared_ptr<geometry::Image> clearcoat_img;
     std::shared_ptr<geometry::Image> clearcoat_roughness_img;
     std::shared_ptr<geometry::Image> anisotropy_img;
+
+    // Combined images
+    std::shared_ptr<geometry::Image> ao_rough_metal_img;
+
+    // Colormap (incompatible with other settings except point_size)
+    // Values for 'value' must be in [0, 1] and the vector must be sorted
+    // by increasing value. 'shader' must be "unlitGradient".
+    std::shared_ptr<Gradient> gradient;
+    float scalar_min = 0.0f;
+    float scalar_max = 1.0f;
 
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;

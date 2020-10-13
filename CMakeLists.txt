@@ -1,50 +1,71 @@
-cmake_minimum_required(VERSION 3.12.0)
-# CMake 3.12+ is required to allow linking with OBJECT libraries
-# and to prevent erroneous -gencode option deduplication with CUDA.
-# If you're using Ubuntu 18.04 or older, we suggest you install
-# a backported CMake from https://apt.kitware.com/
+
+if (WIN32)
+    cmake_minimum_required(VERSION 3.18)
+else()
+    # If you're using Ubuntu 18.04 or older, we suggest you install the latest
+    # CMake from the official repository https://apt.kitware.com/.
+    # CMake 3.15+ is required to allow linking with OBJECT libraries,
+    # to prevent erroneous -gencode option deduplication with CUDA,
+    # and to simplify generator expressions for selecting compile flags.
+    cmake_minimum_required(VERSION 3.15)
+endif()
 
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 
-# Config options
-option(BUILD_SHARED_LIBS         "Build shared libraries"                   OFF)
-option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
-option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
-option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
-option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
-option(BUILD_GOOGLETEST          "Build googletest framework from source"   ON)
-option(BUILD_BENCHMARKS          "Build the micro benchmarks"               OFF)
-option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
-option(BUILD_FILAMENT            "Build filament from source"               OFF)
-option(BUILD_FLANN               "Use the flann that comes with Open3D"     ON)
-option(BUILD_FMT                 "Build fmtlib from source"                 ON)
-option(BUILD_GLEW                "Build glew from source"                   OFF)
-option(BUILD_GLFW                "Build glfw from source"                   OFF)
-option(BUILD_IMGUI               "Build Dear ImGui from source"             ON)
-option(BUILD_LIBLZF              "Build liblzf from source"                 ON)
-option(BUILD_PNG                 "Build png from source"                    OFF)
-option(BUILD_ZLIB                "Build zlib from source"                   OFF)
-option(BUILD_JPEG                "Build jpeg-turbo from source"             OFF)
-option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
-option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
-option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
-option(BUILD_AZURE_KINECT        "Build support for Azure Kinect sensor"    OFF)
-option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
-option(BUILD_TINYGLTF            "Build TinyGLTF from source"               ON)
-option(BUILD_TINYOBJLOADER       "Build tinyobjloader from source"          ON)
-option(BUILD_QHULL               "Build qhull from source"                  ON)
-option(BUILD_CUDA_MODULE         "Build the CUDA module"                    OFF)
-option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
-option(BUILD_PYTORCH_OPS         "Build ops for Pytorch"                    OFF)
-option(ENABLE_GUI                "Builds new GUI"                           ON)
-option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
-option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
-option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
-option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
-option(PREFER_OSX_HOMEBREW       "Prefer Homebrew libs over frameworks"     ON)
+# Open3D build options
+option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
+option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
+option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF)
+option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
+option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
+option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
+option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
+option(BUILD_GUI                  "Builds new GUI"                           ON )
+option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
+option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
+option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
+option(STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON )
+option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
+option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
+# 3rd-party build options
+option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"           OFF)
+option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
+option(USE_SYSTEM_FLANN           "Use system pre-installed flann"           OFF)
+option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
+option(USE_SYSTEM_GLEW            "Use system pre-installed glew"            OFF)
+option(USE_SYSTEM_GLFW            "Use system pre-installed glfw"            OFF)
+option(USE_SYSTEM_GOOGLETEST      "Use system pre-installed googletest"      OFF)
+option(USE_SYSTEM_IMGUI           "Use system pre-installed imgui"           OFF)
+option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF)
+option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
+option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
+option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
+option(USE_SYSTEM_QHULL           "Use system pre-installed qhull"           OFF)
+option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
+option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
+option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
+option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
+# Sensor options
+option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
+option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF)
+# ML library options
+option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                 OFF)
+option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                    OFF)
+option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
+option(DEVELOPER_BUILD  "Add -dev+commit_hash to the project version number" ON )
 
-set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT=OFF)")
-set(FILAMENT_SOURCE_ROOT "" CACHE PATH "Path to Filament library sources (used if BUILD_FILAMENT=ON)")
+# In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
+# first try to look for the required files in THIRD_PARTY_DOWNLOAD_DIR, before
+# downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
+# are prepared manually by the user. This is only supported by limited 3rd party
+# libraries.
+if(THIRD_PARTY_DOWNLOAD_DIR)
+    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to ${THIRD_PARTY_DOWNLOAD_DIR}.")
+else()
+    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
+endif()
+
+set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 
 if (PREFER_OSX_HOMEBREW)
     set(CMAKE_FIND_FRAMEWORK LAST)
@@ -67,16 +88,21 @@ endif()
 if (POLICY CMP0072)
     cmake_policy(SET CMP0072 NEW)
     set(CMP0072_VALUE NEW)
-    if (BUILD_GLFW)
+    if (NOT USE_SYSTEM_GLFW)
         cmake_policy(SET CMP0072 OLD)
         set(CMP0072_VALUE OLD)
     endif()
 endif()
+
 # Set policy for hidden symbol visibility
 if(POLICY CMP0063)
     cmake_policy(SET CMP0063 NEW)
 endif()
-# Set policy to enable MSVC_RUNTIME_LIBRARY property
+
+# Set policy to enable MSVC_RUNTIME_LIBRARY property.
+# TODO: This requires CMake 3.15+ on Winndows. At this point, we're not updating
+# cmake_minimum_required to 3.15 since it may break existing systems. As Windows
+# users can typically download the latest CMake, the impact should be minimal.
 if(POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
@@ -90,36 +116,73 @@ if (APPLE AND ENABLE_HEADLESS_RENDERING)
     message(STATUS "Headless rendering is not supported on Mac OS")
     set(ENABLE_HEADLESS_RENDERING OFF)
 endif()
-if(ENABLE_HEADLESS_RENDERING AND ENABLE_GUI)
+if(ENABLE_HEADLESS_RENDERING AND BUILD_GUI)
     message(STATUS "Headless rendering disables the Open3D GUI")
-    set(ENABLE_GUI OFF)
+    set(BUILD_GUI OFF)
 endif()
-if(ENABLE_HEADLESS_RENDERING AND (NOT BUILD_GLEW OR NOT BUILD_GLFW))
+if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
     message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
-    set(BUILD_GLEW ON)
-    set(BUILD_GLFW ON)
+    set(USE_SYSTEM_GLEW OFF)
+    set(USE_SYSTEM_GLFW OFF)
 endif()
-if(ENABLE_GUI AND WIN32)
-    message(STATUS "New GUI is currently unsupported on Windows")
-    set(ENABLE_GUI OFF)
+if(BUILD_RPC_INTERFACE AND WIN32)
+    message(STATUS "The RPC interface is currently unsupported on Windows.")
+    set(BUILD_RPC_INTERFACE OFF)
+endif()
+if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
+    message(SEND_ERROR "3DML depends on Tensorflow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
 endif()
 
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
-    if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH|TWEAK) +([^ ]+)$")
+    if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH) +([^ ]+)$")
         set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
     endif()
 endforeach()
+set(OPEN3D_VERSION_DEVHASH "")
+if(DEVELOPER_BUILD)
+    execute_process(COMMAND git log --pretty=format:%h -n 1
+        OUTPUT_VARIABLE GIT_REV ERROR_QUIET)
+    if (GIT_REV)
+        set(OPEN3D_VERSION_DEVHASH "+${GIT_REV}")
+    endif()
+endif()
 string(CONCAT OPEN3D_VERSION
     "${OPEN3D_VERSION_MAJOR}"
     ".${OPEN3D_VERSION_MINOR}"
     ".${OPEN3D_VERSION_PATCH}"
-    ".${OPEN3D_VERSION_TWEAK}"
 )
+set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst @ONLY)
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${PROJECT_VERSION}")
+
+if(UNIX AND NOT APPLE)
+    execute_process(COMMAND uname -p
+        OUTPUT_VARIABLE PROCESSOR_ARCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        set(LINUX_AARCH64 TRUE)
+    endif()
+endif()
+
+# Set BLAS/LAPACK library preference.
+if(LINUX_AARCH64)
+    if(NOT USE_BLAS)
+        set(USE_BLAS ON)
+        message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
+    endif()
+    if(BUILD_GUI AND (NOT BUILD_FILAMENT_FROM_SOURCE))
+        set(BUILD_FILAMENT_FROM_SOURCE ON)
+        message(WARNING "ARM CPU detected, setting BUILD_FILAMENT_FROM_SOURCE=ON.")
+    endif()
+endif()
 
 # CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
@@ -184,6 +247,12 @@ if (BUILD_CUDA_MODULE)
         find_package(CUDA REQUIRED) # required for cuda_select_nvcc_arch_flags
         message(STATUS "Building CUDA enabled")
         enable_language(CUDA)
+        # TODO: when CMake minimum version is 3.18+, switch to the NEW behavior
+        # of CMP0104 and replease CUDA_GENCODES with CUDA_ARCHITECTURES target
+        # properties. See https://cmake.org/cmake/help/v3.18/policy/CMP0104.html.
+        if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18.0")
+            cmake_policy(SET CMP0104 OLD)
+        endif()
         # Get gencode flags
         if("${CUDA_ARCH}" STREQUAL "User")
             cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
@@ -213,9 +282,7 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 # OS specific settings
-if(ENABLE_GUI AND WIN32)
-    # Filament links normally only against static runtime
-    set(STATIC_WINDOWS_RUNTIME ON)
+if(BUILD_GUI AND WIN32)
     if(NOT COMMAND target_link_options)  # CMake 3.13+ required
         # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
         # Filament needs to link through bluegl.lib.
@@ -285,13 +352,29 @@ function(open3d_set_global_properties target)
         set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
     # Tell CMake we want a compiler that supports C++14 features
-    target_compile_features(${target} PUBLIC cxx_variadic_templates cxx_constexpr cxx_override cxx_static_assert cxx_trailing_return_types cxx_return_type_deduction)
+    target_compile_features(${target} PUBLIC
+        cxx_variadic_templates
+        cxx_constexpr
+        cxx_override
+        cxx_static_assert
+        cxx_trailing_return_types
+        cxx_return_type_deduction
+    )
     target_include_directories(${target} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp>
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
     )
     if(BUILD_CUDA_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
+        if(BUILD_CACHED_CUDA_MANAGER)
+            target_compile_definitions(${target} PRIVATE BUILD_CACHED_CUDA_MANAGER)
+        endif()
+    endif()
+    if(USE_BLAS)
+        target_compile_definitions(${target} PRIVATE USE_BLAS)
+    endif()
+    if(BUILD_RPC_INTERFACE)
+        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE)
     endif()
     if(GLIBCXX_USE_CXX11_ABI)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
@@ -300,6 +383,9 @@ function(open3d_set_global_properties target)
     endif()
     if(ENABLE_HEADLESS_RENDERING)
         target_compile_definitions(${target} PRIVATE HEADLESS_RENDERING)
+    endif()
+    if(NOT WITH_OPENMP)
+        target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
     endif()
     if(WIN32)
         target_compile_definitions(${target} PRIVATE
@@ -317,13 +403,16 @@ function(open3d_set_global_properties target)
             # Option 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
             target_compile_options(${target} PRIVATE /MP)
-            if(COMMAND target_link_options)
-                if(ENABLE_GUI)
+            if(COMMAND target_link_options) # target_link_options add in 3.13
+                if(BUILD_GUI)
                     # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
                     # Filament needs to link through bluegl.lib.
                     # See https://github.com/google/filament/issues/652
                     target_link_options(${target} PRIVATE /force:multiple)
                 endif()
+                # The examples' .pdb files use up a lot of space and cause us to run
+                # out of space on Github Actions. Compressing gives us another couple of GB.
+                target_link_options(${target} PRIVATE /pdbcompress)
             endif()
         endif()
     elseif(APPLE)
@@ -335,6 +424,9 @@ function(open3d_set_global_properties target)
     endif()
     # The SHELL: prefix requires CMake 3.12+
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>" "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_GENCODES}>")
+    # TBB static version is used
+    # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
+    target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
 endfunction()
 
 macro(add_source_group module_name)
@@ -362,14 +454,14 @@ export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
 # `make check-style` checks style for c++/cuda/python/ipynb files
 add_custom_target(check-style
     COMMAND ${PYTHON_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_style.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py
     COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
 )
 
 # `make apply-style` applies style for c++/cuda/python/ipynb files
 add_custom_target(apply-style
     COMMAND ${PYTHON_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_style.py --do_apply_style
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --do_apply_style
     COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
 )
 
@@ -379,7 +471,7 @@ add_custom_target(check-cpp-style
     COMMAND ${CMAKE_COMMAND}
     -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     -DDO_APPLY_STYLE=OFF
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_cpp_style.cmake
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
 )
 
 # `make apply-cpp-style` applies style for c++/cuda files.
@@ -388,7 +480,7 @@ add_custom_target(apply-cpp-style
     COMMAND ${CMAKE_COMMAND}
     -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     -DDO_APPLY_STYLE=ON
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check_cpp_style.cmake
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
 )
 
 function(open3d_aligned_print first second)
@@ -407,17 +499,22 @@ open3d_aligned_print("OpenMP" "${WITH_OPENMP}")
 open3d_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
 open3d_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
 open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
-open3d_aligned_print("Build GUI" "${ENABLE_GUI}")
+open3d_aligned_print("Build GUI" "${BUILD_GUI}")
 open3d_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
+if(WIN32)
+    open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
+endif()
 open3d_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
 open3d_aligned_print("Build Examples" "${BUILD_CPP_EXAMPLES}")
 open3d_aligned_print("Build Python Module" "${BUILD_PYTHON_MODULE}")
 if(BUILD_PYTHON_MODULE)
-    open3d_aligned_print("- with Jupyter Notebook Support" "${ENABLE_JUPYTER}")
+    open3d_aligned_print("- with Jupyter Notebook Support" "${BUILD_JUPYTER_EXTENSION}")
 endif()
 open3d_aligned_print("Build Tensorflow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build Pytorch Ops" "${BUILD_PYTORCH_OPS}")
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
+open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
+open3d_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
 if(GLIBCXX_USE_CXX11_ABI)
     set(usage "1")
 else()
@@ -426,9 +523,30 @@ endif()
 open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
 message(STATUS "========================================================================")
 message(STATUS "Third-Party Dependencies:")
-foreach(dep IN ITEMS EIGEN3 FILAMENT FLANN FMT GLEW GLFW GOOGLETEST IMGUI JPEG JSONCPP LIBLZF OPENGL PNG PYBIND11 QHULL LIBREALSENSE TINYFILEDIALOGS TINYGLTF TINYOBJLOADER)
+set(deps
+    EIGEN3
+    FILAMENT
+    FLANN
+    FMT
+    GLEW
+    GLFW
+    GOOGLETEST
+    IMGUI
+    JPEG
+    JSONCPP
+    LIBLZF
+    OPENGL
+    PNG
+    PYBIND11
+    QHULL
+    LIBREALSENSE
+    TINYFILEDIALOGS
+    TINYGLTF
+    TINYOBJLOADER
+)
+foreach(dep IN ITEMS ${deps})
     if(${dep}_TARGET)
-        if(BUILD_${dep})
+        if(NOT USE_SYSTEM_${dep})
             set(usage "yes (build from source)")
         else()
             set(usage "yes")

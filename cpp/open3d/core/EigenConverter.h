@@ -31,6 +31,7 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorList.h"
 
 namespace open3d {
 namespace core {
@@ -41,6 +42,11 @@ Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
 core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
                                    core::Dtype dtype,
                                    const core::Device &device);
+
+core::TensorList EigenVector3dVectorToTensorList(
+        const std::vector<Eigen::Vector3d> &values,
+        core::Dtype dtype,
+        const core::Device &device);
 
 }  // namespace eigen_converter
 }  // namespace core

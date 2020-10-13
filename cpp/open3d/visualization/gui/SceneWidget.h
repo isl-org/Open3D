@@ -58,7 +58,6 @@ public:
     ~SceneWidget() override;
 
     void SetFrame(const Rect& f) override;
-    void SetBackgroundColor(const Color& color);
 
     enum Controls { ROTATE_CAMERA, FLY, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL };
     void SetViewControls(Controls mode);
@@ -83,6 +82,13 @@ public:
 
     rendering::View* GetRenderView() const;  // is nullptr if no scene
 
+    /// Enable (or disable) caching of scene to improve UI responsiveness when
+    /// dealing with large scenes (especially point clouds)
+    void EnableSceneCaching(bool enable);
+
+    /// Forces the scene to redraw regardless of Renderer caching
+    /// settings.
+    void ForceRedraw();
     enum class Quality { FAST, BEST };
     void SetRenderQuality(Quality level);
     Quality GetRenderQuality() const;
@@ -94,6 +100,7 @@ public:
     };
     void GoToCameraPreset(CameraPreset preset);
 
+    void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;

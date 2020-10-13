@@ -10,6 +10,11 @@
 * Added option BUILD_BENCHMARKS for building microbenchmarks
 * Extend Python API of UniformTSDFVolume to allow setting the origin
 * Corrected documentation of PointCloud.h
+* Added ISS Keypoint Detector
+* Added an RPC interface for external visualizers running in a separate process
+* Added `maximum_error` and `boundary_weight` parameter to `simplify_quadric_decimation`
+* Added Line3D/Ray3D/Segment3D classes with plane, point, closest-distance, and AABB tests
+
 ## 0.9.0
 
 * Version bump to 0.9.0

@@ -26,9 +26,6 @@
 
 #include "pybind/visualization/gui/gui.h"
 
-#include "pybind/docstring.h"
-#include "pybind11/functional.h"
-
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
@@ -47,6 +44,7 @@
 #include "open3d/visualization/gui/ProgressBar.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Slider.h"
+#include "open3d/visualization/gui/StackedWidget.h"
 #include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/TextEdit.h"
 #include "open3d/visualization/gui/Theme.h"
@@ -56,11 +54,116 @@
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
-
-using namespace open3d::visualization::gui;
-using namespace open3d::visualization::rendering;
+#include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
+#include "pybind/docstring.h"
+#include "pybind11/functional.h"
 
 namespace open3d {
+namespace visualization {
+namespace gui {
+
+class PythonUnlocker : public Application::EnvUnlocker {
+public:
+    PythonUnlocker() { unlocker_ = nullptr; }
+    ~PythonUnlocker() {
+        if (unlocker_) {  // paranoia; this shouldn't happen
+            delete unlocker_;
+        }
+    }
+
+    void unlock() { unlocker_ = new py::gil_scoped_release(); }
+    void relock() {
+        delete unlocker_;
+        unlocker_ = nullptr;
+    }
+
+private:
+    py::gil_scoped_release *unlocker_;
+};
+
+class PyWindow : public Window {
+    using Super = Window;
+
+public:
+    explicit PyWindow(const std::string &title, int flags = 0)
+        : Super(title, flags) {}
+    PyWindow(const std::string &title, int width, int height, int flags = 0)
+        : Super(title, width, height, flags) {}
+    PyWindow(const std::string &title,
+             int x,
+             int y,
+             int width,
+             int height,
+             int flags = 0)
+        : Super(title, x, y, width, height, flags) {}
+
+    std::function<void(const Theme)> on_layout_;
+
+protected:
+    void Layout(const Theme &theme) {
+        if (on_layout_) {
+            // the Python callback sizes the children
+            on_layout_(theme);
+            // and then we need to layout the children
+            for (auto child : GetChildren()) {
+                child->Layout(theme);
+            }
+        } else {
+            Super::Layout(theme);
+        }
+    }
+};
+
+// atexit: Filament crashes if the engine was not destroyed before exit().
+// As far as I can tell, the bluegl mutex, which is a static variable,
+// gets destroyed before the render thread gets around to calling
+// bluegl::unbind(), thus crashing. So, we need to make sure Filament gets
+// cleaned up before C++ starts cleaning up static variables. But we don't want
+// to clean up this way unless something catastrophic happens (e.g. the Python
+// interpreter is exiting due to a fatal exception). Some cases we need to
+// consider:
+//  1) exception before calling Application.instance.run()
+//  2) exception during Application.instance.run(), namely within a UI callback
+//  3) exception after Application.instance.run() successfully finishes
+// If Python is exiting normally, then Application::Run() should have already
+// cleaned up Filament. So if we still need to clean up Filament at exit(),
+// we must be panicking. It is a little difficult to check this, though, but
+// Application::OnTerminate() should work even if we've already cleaned up,
+// it will just end up being a no-op.
+bool g_installed_atexit = false;
+void cleanup_filament_atexit() { Application::GetInstance().OnTerminate(); }
+
+void install_cleanup_atexit() {
+    if (!g_installed_atexit) {
+        atexit(cleanup_filament_atexit);
+    }
+}
+
+void InitializeForPython(std::string resource_path /*= ""*/) {
+    if (resource_path.empty()) {
+        // We need to find the resources directory. Fortunately,
+        // Python knows where the module lives (open3d.__file__
+        // is the path to
+        // __init__.py), so we can use that to find the
+        // resources included in the wheel.
+        py::object o3d = py::module::import("open3d");
+        auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
+        auto module_path =
+                utility::filesystem::GetFileParentDirectory(o3d_init_path);
+        resource_path = module_path + "/resources";
+    }
+    Application::GetInstance().Initialize(resource_path.c_str());
+    install_cleanup_atexit();
+}
+
+std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
+        rendering::Open3DScene *scene, int width, int height) {
+    PythonUnlocker unlocker;
+    return Application::GetInstance().RenderToImage(
+            unlocker, scene->GetView(), scene->GetScene(), width, height);
+}
 
 void pybind_gui_classes(py::module &m) {
     // ---- Application ----
@@ -85,44 +188,72 @@ void pybind_gui_classes(py::module &m) {
                     },
                     py::return_value_policy::reference,
                     "Gets the Application singleton (read-only)")
-            .def("initialize",
-                 [](Application &instance) {
-                     // We need to find the resources directory. Fortunately,
-                     // Python knows where the module lives (open3d.__file__ is
-                     // the path to
-                     // __init__.py), so we can use that to find the resources
-                     // included in the wheel.
-                     py::object o3d = py::module::import("open3d");
-                     auto o3d_init_path =
-                             o3d.attr("__file__").cast<std::string>();
-                     auto module_path =
-                             utility::filesystem::GetFileParentDirectory(
-                                     o3d_init_path);
-                     auto resource_path = module_path + "/resources";
-                     instance.Initialize(resource_path.c_str());
-                 },
-                 "Initializes the application, using the resources included "
-                 "in the wheel. One of the `initialize` functions _must_ be "
-                 "called prior to using anything in the gui module")
-            .def("initialize",
-                 [](Application &instance, const char *resource_dir) {
-                     instance.Initialize(resource_dir);
-                 },
-                 "Initializes the application with location of the resources "
-                 "provided by the caller. One of the `initialize` functions "
-                 "_must_ be called prior to using anything in the gui module")
-            .def("run",
-                 [](Application &instance) {
-                     while (instance.RunOneTick()) {
-                         // Enable Ctrl-C to kill Python
-                         if (PyErr_CheckSignals() != 0) {
-                             throw py::error_already_set();
-                         }
-                     }
-                 },
-                 "Runs the event loop")
-            .def("quit", [](Application &instance) { instance.Quit(); },
-                 "Closes all the windows, exiting as a result")
+            .def(
+                    "initialize",
+                    [](Application &instance) { InitializeForPython(); },
+                    "Initializes the application, using the resources included "
+                    "in the wheel. One of the `initialize` functions _must_ be "
+                    "called prior to using anything in the gui module")
+            .def(
+                    "initialize",
+                    [](Application &instance, const char *resource_dir) {
+                        InitializeForPython(resource_dir);
+                    },
+                    "Initializes the application with location of the "
+                    "resources "
+                    "provided by the caller. One of the `initialize` functions "
+                    "_must_ be called prior to using anything in the gui "
+                    "module")
+            .def(
+                    "run",
+                    [](Application &instance) {
+                        PythonUnlocker unlocker;
+                        while (instance.RunOneTick(unlocker)) {
+                            // Enable Ctrl-C to kill Python
+                            if (PyErr_CheckSignals() != 0) {
+                                throw py::error_already_set();
+                            }
+                        }
+                    },
+                    "Runs the event loop. After this finishes, all windows and "
+                    "widgets should be considered uninitialized, even if they "
+                    "are still held by Python variables. Using them is unsafe, "
+                    "even if run() is called again.")
+            .def(
+                    "run_one_tick",
+                    [](Application &instance) {
+                        PythonUnlocker unlocker;
+                        auto result = instance.RunOneTick(unlocker);
+                        // Enable Ctrl-C to kill Python
+                        if (PyErr_CheckSignals() != 0) {
+                            throw py::error_already_set();
+                        }
+                        return result;
+                    },
+                    "Runs the event loop once, returns True if the app is "
+                    "still running, or False if all the windows have closed.")
+            .def(
+                    "render_to_image",
+                    [](Application &instance, rendering::Open3DScene *scene,
+                       int width, int height) {
+                        return RenderToImageWithoutWindow(scene, width, height);
+                    },
+                    "Renders a scene to an image and returns the image. If you "
+                    "are rendering without a visible window you should use "
+                    "open3d.visualization.rendering.RenderToImage instead")
+            .def(
+                    "quit", [](Application &instance) { instance.Quit(); },
+                    "Closes all the windows, exiting as a result")
+            .def("run_in_thread", &Application::RunInThread,
+                 "Runs function in a separate thread. Do not call GUI "
+                 "functions on this thread, call post_to_main_thread() if "
+                 "this thread needs to change the GUI.")
+            .def("post_to_main_thread", &Application::PostToMainThread,
+                 py::call_guard<py::gil_scoped_release>(),
+                 "Runs the provided function on the main thread. This can "
+                 "be used to execute UI-related code at a safe point in "
+                 "time. If the UI changes, you will need to manually "
+                 "request a redraw of the window with w.post_redraw()")
             .def_property("menubar", &Application::GetMenubar,
                           &Application::SetMenubar,
                           "The Menu for the application (initially None)")
@@ -137,39 +268,6 @@ void pybind_gui_classes(py::module &m) {
                                    "resources directory");
 
     // ---- Window ----
-    class PyWindow : public Window {
-        using Super = Window;
-
-    public:
-        explicit PyWindow(const std::string &title, int flags = 0)
-            : Super(title, flags) {}
-        PyWindow(const std::string &title, int width, int height, int flags = 0)
-            : Super(title, width, height, flags) {}
-        PyWindow(const std::string &title,
-                 int x,
-                 int y,
-                 int width,
-                 int height,
-                 int flags = 0)
-            : Super(title, x, y, width, height, flags) {}
-
-        std::function<void(const Theme)> on_layout_;
-
-    protected:
-        void Layout(const Theme &theme) {
-            if (on_layout_) {
-                // the Python callback sizes the children
-                on_layout_(theme);
-                // and then we need to layout the children
-                for (auto child : GetChildren()) {
-                    child->Layout(theme);
-                }
-            } else {
-                Super::Layout(theme);
-            }
-        }
-    };
-
     // Pybind appears to need to know about the base class. It doesn't have
     // to be named the same as the C++ class, though.
     py::class_<Window, std::shared_ptr<Window>> window_base(
@@ -199,7 +297,7 @@ void pybind_gui_classes(py::module &m) {
                           "Returns the title of the window")
             .def("size_to_fit", &PyWindow::SizeToFit,
                  "Sets the width and height of window to its preferred size")
-            .def_property("get_size", &PyWindow::GetSize, &PyWindow::SetSize,
+            .def_property("size", &PyWindow::GetSize, &PyWindow::SetSize,
                           "The size of the window in device pixels, including "
                           "menubar (except on macOS)")
             .def_property_readonly(
@@ -228,12 +326,18 @@ void pybind_gui_classes(py::module &m) {
             .def("set_on_menu_item_activated",
                  &PyWindow::SetOnMenuItemActivated,
                  "Sets callback function for menu item:  callback()")
-            .def("set_on_layout",
-                 [](PyWindow *w, std::function<void(const Theme &)> f) {
-                     w->on_layout_ = f;
-                 },
-                 "Sets a callback function that manually sets the frames of "
-                 "children of the window")
+            .def("set_on_tick_event", &PyWindow::SetOnTickEvent,
+                 "Sets callback for tick event. Callback takes no arguments "
+                 "and must return True if a redraw is needed (that is, if "
+                 "any widget has changed in any fashion) or False if nothing "
+                 "has changed")
+            .def(
+                    "set_on_layout",
+                    [](PyWindow *w, std::function<void(const Theme &)> f) {
+                        w->on_layout_ = f;
+                    },
+                    "Sets a callback function that manually sets the frames of "
+                    "children of the window")
             .def_property_readonly("theme", &PyWindow::GetTheme,
                                    "Get's window's theme info")
             .def("show_dialog", &PyWindow::ShowDialog, "Displays the dialog")
@@ -250,34 +354,38 @@ void pybind_gui_classes(py::module &m) {
     py::class_<Menu, std::shared_ptr<Menu>> menu(
             m, "Menu", "A menu, possibly a menu tree");
     menu.def(py::init<>())
-            .def("add_item",
-                 [](std::shared_ptr<Menu> menu, const char *text, int item_id) {
-                     menu->AddItem(text, item_id);
-                 },
-                 "Adds a menu item with id to the menu")
-            .def("add_menu",
-                 [](std::shared_ptr<Menu> menu, const char *text,
-                    std::shared_ptr<Menu> submenu) {
-                     menu->AddMenu(text, submenu);
-                 },
-                 "Adds a submenu to the menu")
+            .def(
+                    "add_item",
+                    [](std::shared_ptr<Menu> menu, const char *text,
+                       int item_id) { menu->AddItem(text, item_id); },
+                    "Adds a menu item with id to the menu")
+            .def(
+                    "add_menu",
+                    [](std::shared_ptr<Menu> menu, const char *text,
+                       std::shared_ptr<Menu> submenu) {
+                        menu->AddMenu(text, submenu);
+                    },
+                    "Adds a submenu to the menu")
             .def("add_separator", &Menu::AddSeparator,
                  "Adds a separator to the menu")
-            .def("set_enabled",
-                 [](std::shared_ptr<Menu> menu, int item_id, bool enabled) {
-                     menu->SetEnabled(item_id, enabled);
-                 },
-                 "Sets menu item enabled or disabled")
-            .def("is_checked",
-                 [](std::shared_ptr<Menu> menu, int item_id) -> bool {
-                     return menu->IsChecked(item_id);
-                 },
-                 "Returns True if menu item is checked")
-            .def("set_checked",
-                 [](std::shared_ptr<Menu> menu, int item_id, bool checked) {
-                     menu->SetChecked(item_id, checked);
-                 },
-                 "Sets menu item (un)checked");
+            .def(
+                    "set_enabled",
+                    [](std::shared_ptr<Menu> menu, int item_id, bool enabled) {
+                        menu->SetEnabled(item_id, enabled);
+                    },
+                    "Sets menu item enabled or disabled")
+            .def(
+                    "is_checked",
+                    [](std::shared_ptr<Menu> menu, int item_id) -> bool {
+                        return menu->IsChecked(item_id);
+                    },
+                    "Returns True if menu item is checked")
+            .def(
+                    "set_checked",
+                    [](std::shared_ptr<Menu> menu, int item_id, bool checked) {
+                        menu->SetChecked(item_id, checked);
+                    },
+                    "Sets menu item (un)checked");
 
     // ---- Color ----
     py::class_<Color, std::shared_ptr<Color>> color(
@@ -332,6 +440,13 @@ void pybind_gui_classes(py::module &m) {
                 return Rect(int(std::round(x)), int(std::round(y)),
                             int(std::round(w)), int(std::round(h)));
             }))
+            .def("__repr__",
+                 [](const Rect &r) {
+                     std::stringstream s;
+                     s << "Rect (" << r.x << ", " << r.y << "), " << r.width
+                       << " x " << r.height;
+                     return s.str();
+                 })
             .def_readwrite("x", &Rect::x)
             .def_readwrite("y", &Rect::y)
             .def_readwrite("width", &Rect::width)
@@ -348,6 +463,12 @@ void pybind_gui_classes(py::module &m) {
             .def(py::init([](float w, float h) {
                 return Size(int(std::round(w)), int(std::round(h)));
             }))
+            .def("__repr__",
+                 [](const Size &sz) {
+                     std::stringstream s;
+                     s << "Size (" << sz.width << ", " << sz.height << ")";
+                     return s.str();
+                 })
             .def_readwrite("width", &Size::width)
             .def_readwrite("height", &Size::height);
 
@@ -361,7 +482,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "Widget (" << w.GetFrame().x << ", " << w.GetFrame().y
                        << "), " << w.GetFrame().width << " x "
                        << w.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def("add_child", &Widget::AddChild, "Adds a child widget")
             .def("get_children", &Widget::GetChildren,
@@ -390,8 +511,10 @@ void pybind_gui_classes(py::module &m) {
                      s << "Button (" << b.GetFrame().x << ", " << b.GetFrame().y
                        << "), " << b.GetFrame().width << " x "
                        << b.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
+            .def_property("text", &Button::GetText, &Button::SetText,
+                          "Gets/sets the button text.")
             .def_property(
                     "toggleable", &Button::GetIsToggleable,
                     &Button::SetToggleable,
@@ -404,33 +527,34 @@ void pybind_gui_classes(py::module &m) {
             // and float and int are different types. Fortunately, we want
             // a float, which is easily castable from int. So we can pass
             // a py::object and cast it ourselves.
-            .def_property("horizontal_padding_em",
-                          &Button::GetHorizontalPaddingEm,
-                          [](std::shared_ptr<Button> b, const py::object &em) {
-                              auto vert = b->GetVerticalPaddingEm();
-                              try {
-                                  b->SetPaddingEm(em.cast<float>(), vert);
-                              } catch (const py::cast_error &e) {
-                                  py::print(
-                                          "open3d.visualization.gui.Button."
-                                          "horizontal_padding_em can only be "
-                                          "assigned a numeric type");
-                              }
-                          },
-                          "Horizontal padding in em units")
-            .def_property("vertical_padding_em", &Button::GetVerticalPaddingEm,
-                          [](std::shared_ptr<Button> b, const py::object &em) {
-                              auto horiz = b->GetHorizontalPaddingEm();
-                              try {
-                                  b->SetPaddingEm(horiz, em.cast<float>());
-                              } catch (const py::cast_error &e) {
-                                  py::print(
-                                          "open3d.visualization.gui.Button."
-                                          "vertical_padding_em can only be "
-                                          "assigned a numeric type");
-                              }
-                          },
-                          "Vertical padding in em units")
+            .def_property(
+                    "horizontal_padding_em", &Button::GetHorizontalPaddingEm,
+                    [](std::shared_ptr<Button> b, const py::object &em) {
+                        auto vert = b->GetVerticalPaddingEm();
+                        try {
+                            b->SetPaddingEm(em.cast<float>(), vert);
+                        } catch (const py::cast_error &) {
+                            py::print(
+                                    "open3d.visualization.gui.Button."
+                                    "horizontal_padding_em can only be "
+                                    "assigned a numeric type");
+                        }
+                    },
+                    "Horizontal padding in em units")
+            .def_property(
+                    "vertical_padding_em", &Button::GetVerticalPaddingEm,
+                    [](std::shared_ptr<Button> b, const py::object &em) {
+                        auto horiz = b->GetHorizontalPaddingEm();
+                        try {
+                            b->SetPaddingEm(horiz, em.cast<float>());
+                        } catch (const py::cast_error &) {
+                            py::print(
+                                    "open3d.visualization.gui.Button."
+                                    "vertical_padding_em can only be "
+                                    "assigned a numeric type");
+                        }
+                    },
+                    "Vertical padding in em units")
             .def("set_on_clicked", &Button::SetOnClicked,
                  "Calls passed function when button is pressed");
 
@@ -445,7 +569,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "Checkbox (" << c.GetFrame().x << ", "
                        << c.GetFrame().y << "), " << c.GetFrame().width << " x "
                        << c.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property("checked", &Checkbox::IsChecked,
                           &Checkbox::SetChecked,
@@ -466,7 +590,7 @@ void pybind_gui_classes(py::module &m) {
                        << color.GetAlpha() << "] (" << c.GetFrame().x << ", "
                        << c.GetFrame().y << "), " << c.GetFrame().width << " x "
                        << c.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property(
                     "color_value", &ColorEdit::GetValue,
@@ -497,9 +621,9 @@ void pybind_gui_classes(py::module &m) {
             .def("remove_item",
                  (void (Combobox::*)(int)) & Combobox::RemoveItem,
                  "Removes the item at the index")
-            // .def_readonly("number_of_items",
-            //               &Combobox::GetNumberOfItems,
-            //               "The number of items (read-only)")
+            .def_property_readonly("number_of_items",
+                                   &Combobox::GetNumberOfItems,
+                                   "The number of items (read-only)")
             .def("get_item", &Combobox::GetItem,
                  "Returns the item at the given index")
             .def_property("selected_index", &Combobox::GetSelectedIndex,
@@ -525,7 +649,7 @@ void pybind_gui_classes(py::module &m) {
                 s << "ImageLabel (" << il.GetFrame().x << ", "
                   << il.GetFrame().y << "), " << il.GetFrame().width << " x "
                   << il.GetFrame().height;
-                return s.str().c_str();
+                return s.str();
             });
     // TODO: add the other functions and UIImage?
 
@@ -541,7 +665,7 @@ void pybind_gui_classes(py::module &m) {
                        << lbl.GetFrame().x << ", " << lbl.GetFrame().y << "), "
                        << lbl.GetFrame().width << " x "
                        << lbl.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property("text", &Label::GetText, &Label::SetText,
                           "The text of the label. Newlines will be treated as "
@@ -560,7 +684,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "Label (" << lv.GetFrame().x << ", "
                        << lv.GetFrame().y << "), " << lv.GetFrame().width
                        << " x " << lv.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def("set_items", &ListView::SetItems,
                  "Sets the list to display the list of items provided")
@@ -599,13 +723,14 @@ void pybind_gui_classes(py::module &m) {
                      s << "NumberEdit [" << val << "] (" << ne.GetFrame().x
                        << ", " << ne.GetFrame().y << "), "
                        << ne.GetFrame().width << " x " << ne.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
-            .def_property("int_value", &NumberEdit::GetIntValue,
-                          [](std::shared_ptr<NumberEdit> ne, int val) {
-                              ne->SetValue(double(val));
-                          },
-                          "Current value (int)")
+            .def_property(
+                    "int_value", &NumberEdit::GetIntValue,
+                    [](std::shared_ptr<NumberEdit> ne, int val) {
+                        ne->SetValue(double(val));
+                    },
+                    "Current value (int)")
             .def_property("double_value", &NumberEdit::GetDoubleValue,
                           &NumberEdit::SetValue, "Current value (double)")
             .def("set_value", &NumberEdit::SetValue, "Sets value")
@@ -624,7 +749,15 @@ void pybind_gui_classes(py::module &m) {
                  "Sets the minimum and maximum values for the number")
             .def("set_on_value_changed", &NumberEdit::SetOnValueChanged,
                  "Sets f(new_value) which is called with a Float when user "
-                 "changes widget's value");
+                 "changes widget's value")
+            .def("set_preferred_width", &NumberEdit::SetPreferredWidth,
+                 "Sets the preferred width of the NumberEdit")
+            .def(
+                    "set_preferred_width",
+                    [](NumberEdit &ne, double width) {
+                        ne.NumberEdit::SetPreferredWidth(int(width));
+                    },
+                    "Sets the preferred width of the NumberEdit");
 
     // ---- ProgressBar----
     py::class_<ProgressBar, std::shared_ptr<ProgressBar>, Widget> progress(
@@ -636,7 +769,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "ProgressBar [" << pb.GetValue() << "] ("
                        << pb.GetFrame().x << ", " << pb.GetFrame().y << "), "
                        << pb.GetFrame().width << " x " << pb.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property(
                     "value", &ProgressBar::GetValue, &ProgressBar::SetValue,
@@ -666,14 +799,23 @@ void pybind_gui_classes(py::module &m) {
             .def_property(
                     "scene", &SceneWidget::GetScene, &SceneWidget::SetScene,
                     "The rendering.Open3DScene that the SceneWidget renders")
-            .def("set_background_color", &SceneWidget::SetBackgroundColor,
-                 "Sets the background color of the widget")
+            .def("enable_scene_caching", &SceneWidget::EnableSceneCaching,
+                 "Enable/Disable caching of scene content when the view or "
+                 "model is not changing. Scene caching can help improve UI "
+                 "responsiveness for large models and point clouds")
+            .def("force_redraw", &SceneWidget::ForceRedraw,
+                 "Ensures scene redraws even when scene caching is enabled.")
             .def("set_view_controls", &SceneWidget::SetViewControls,
                  "Sets mouse interaction, e.g. ROTATE_OBJ")
             .def("setup_camera", &SceneWidget::SetupCamera,
                  "Configure the camera: setup_camera(field_of_view, "
                  "model_bounds, "
-                 "center_of_rotation)");
+                 "center_of_rotation)")
+            .def("set_on_sun_direction_changed",
+                 &SceneWidget::SetOnSunDirectionChanged,
+                 "Callback when user changes sun direction (only called in "
+                 "ROTATE_SUN control mode). Called with one argument, the "
+                 "[i, j, k] vector of the new sun direction");
 
     // ---- Slider ----
     py::class_<Slider, std::shared_ptr<Slider>, Widget> slider(
@@ -700,13 +842,14 @@ void pybind_gui_classes(py::module &m) {
                      s << "TextEdit [" << val << "] (" << sl.GetFrame().x
                        << ", " << sl.GetFrame().y << "), "
                        << sl.GetFrame().width << " x " << sl.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
-            .def_property("int_value", &Slider::GetIntValue,
-                          [](std::shared_ptr<Slider> ne, int val) {
-                              ne->SetValue(double(val));
-                          },
-                          "Slider value (int)")
+            .def_property(
+                    "int_value", &Slider::GetIntValue,
+                    [](std::shared_ptr<Slider> ne, int val) {
+                        ne->SetValue(double(val));
+                    },
+                    "Slider value (int)")
             .def_property("double_value", &Slider::GetDoubleValue,
                           &Slider::SetValue, "Slider value (double)")
             .def_property_readonly("get_minimum_value",
@@ -723,6 +866,14 @@ void pybind_gui_classes(py::module &m) {
                  "Sets f(new_value) which is called with a Float when user "
                  "changes widget's value");
 
+    // ---- StackedWidget ----
+    py::class_<StackedWidget, std::shared_ptr<StackedWidget>, Widget> stacked(
+            m, "StackedWidget", "Like a TabControl but without the tabs");
+    stacked.def(py::init<>())
+            .def_property("selected_index", &StackedWidget::GetSelectedIndex,
+                          &StackedWidget::SetSelectedIndex,
+                          "Selects the index of the child to display");
+
     // ---- TabControl ----
     py::class_<TabControl, std::shared_ptr<TabControl>, Widget> tabctrl(
             m, "TabControl", "Tab control");
@@ -730,7 +881,12 @@ void pybind_gui_classes(py::module &m) {
             .def("add_tab", &TabControl::AddTab,
                  "Adds a tab. The first parameter is the title of the tab, and "
                  "the second parameter is a widget--normally this is a "
-                 "layout.");
+                 "layout.")
+            .def("set_on_selected_tab_changed",
+                 &TabControl::SetOnSelectedTabChanged,
+                 "Calls the provided callback function with the index of the "
+                 "currently selected tab whenever the user clicks on a "
+                 "different tab");
 
     // ---- TextEdit ----
     py::class_<TextEdit, std::shared_ptr<TextEdit>, Widget> textedit(
@@ -745,7 +901,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "TextEdit [" << val << "] (" << te.GetFrame().x
                        << ", " << te.GetFrame().y << "), "
                        << te.GetFrame().width << " x " << te.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property("text_value", &TextEdit::GetText, &TextEdit::SetText,
                           "The value of text")
@@ -770,7 +926,7 @@ void pybind_gui_classes(py::module &m) {
                      s << "TreeView (" << tv.GetFrame().x << ", "
                        << tv.GetFrame().y << "), " << tv.GetFrame().width
                        << " x " << tv.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def("get_root_item", &TreeView::GetRootItem,
                  "Returns the root item. This item is invisible, so its child "
@@ -804,22 +960,73 @@ void pybind_gui_classes(py::module &m) {
                Widget>
             checkable_cell(m, "CheckableTextTreeCell",
                            "TreeView cell with a checkbox and text");
-    checkable_cell.def(py::init<>([](const char *text, bool checked,
-                                     std::function<void(bool)> on_toggled) {
-        return std::make_shared<CheckableTextTreeCell>(text, checked,
-                                                       on_toggled);
-    }));
+    checkable_cell
+            .def(py::init<>([](const char *text, bool checked,
+                               std::function<void(bool)> on_toggled) {
+                     return std::make_shared<CheckableTextTreeCell>(
+                             text, checked, on_toggled);
+                 }),
+                 "Creates a TreeView cell with a checkbox and text. "
+                 "CheckableTextTreeCell(text, is_checked, on_toggled): "
+                 "on_toggled takes a boolean and returns None")
+            .def_property_readonly("checkbox",
+                                   &CheckableTextTreeCell::GetCheckbox,
+                                   "Returns the checkbox widget "
+                                   "(property is read-only)")
+            .def_property_readonly("label", &CheckableTextTreeCell::GetLabel,
+                                   "Returns the label widget "
+                                   "(property is read-only)");
 
     py::class_<LUTTreeCell, std::shared_ptr<LUTTreeCell>, Widget> lut_cell(
             m, "LUTTreeCell",
             "TreeView cell with checkbox, text, and color edit");
-    lut_cell.def(
-            py::init<>([](const char *text, bool checked, const Color &color,
-                          std::function<void(bool)> on_enabled,
-                          std::function<void(const Color &)> on_color) {
-                return std::make_shared<LUTTreeCell>(text, checked, color,
-                                                     on_enabled, on_color);
-            }));
+    lut_cell.def(py::init<>([](const char *text, bool checked,
+                               const Color &color,
+                               std::function<void(bool)> on_enabled,
+                               std::function<void(const Color &)> on_color) {
+                     return std::make_shared<LUTTreeCell>(text, checked, color,
+                                                          on_enabled, on_color);
+                 }),
+                 "Creates a TreeView cell with a checkbox, text, and "
+                 "a color editor. LUTTreeCell(text, is_checked, color, "
+                 "on_enabled, on_color): on_enabled is called when the "
+                 "checkbox toggles, and takes a boolean and returns None"
+                 "; on_color is called when the user changes the color "
+                 "and it takes a gui.Color and returns None.")
+            .def_property_readonly("checkbox", &LUTTreeCell::GetCheckbox,
+                                   "Returns the checkbox widget "
+                                   "(property is read-only)")
+            .def_property_readonly("label", &LUTTreeCell::GetLabel,
+                                   "Returns the label widget "
+                                   "(property is read-only)")
+            .def_property_readonly("color_edit", &LUTTreeCell::GetColorEdit,
+                                   "Returns the ColorEdit widget "
+                                   "(property is read-only)");
+
+    py::class_<ColormapTreeCell, std::shared_ptr<ColormapTreeCell>, Widget>
+            colormap_cell(m, "ColormapTreeCell",
+                          "TreeView cell with a number edit and color edit");
+    colormap_cell
+            .def(py::init<>([](float value, const Color &color,
+                               std::function<void(double)> on_value_changed,
+                               std::function<void(const Color &)>
+                                       on_color_changed) {
+                     return std::make_shared<ColormapTreeCell>(
+                             value, color, on_value_changed, on_color_changed);
+                 }),
+                 "Creates a TreeView cell with a number and a color edit. "
+                 "ColormapTreeCell(value, color, on_value_changed, "
+                 "on_color_changed): on_value_changed takes a double "
+                 "and returns None; on_color_changed takes a "
+                 "gui.Color and returns None")
+            .def_property_readonly("number_edit",
+                                   &ColormapTreeCell::GetNumberEdit,
+                                   "Returns the NumberEdit widget "
+                                   "(property is read-only)")
+            .def_property_readonly("color_edit",
+                                   &ColormapTreeCell::GetColorEdit,
+                                   "Returns the ColorEdit widget "
+                                   "(property is read-only)");
 
     // ---- VectorEdit ----
     py::class_<VectorEdit, std::shared_ptr<VectorEdit>, Widget> vectoredit(
@@ -833,14 +1040,13 @@ void pybind_gui_classes(py::module &m) {
                        << val.z() << "] (" << ve.GetFrame().x << ", "
                        << ve.GetFrame().y << "), " << ve.GetFrame().width
                        << " x " << ve.GetFrame().height;
-                     return s.str().c_str();
+                     return s.str();
                  })
             .def_property("vector_value", &VectorEdit::GetValue,
                           &VectorEdit::SetValue, "Returns value [x, y, z]")
             .def("set_on_value_changed", &VectorEdit::SetOnValueChanged,
-                 "Sets f([x, y, z]) which is called whenever the user changes "
-                 "the "
-                 "value of a component");
+                 "Sets f([x, y, z]) which is called whenever the user "
+                 "changes the value of a component");
 
     // ---- Margins ----
     py::class_<Margins, std::shared_ptr<Margins>> margins(
@@ -884,11 +1090,12 @@ void pybind_gui_classes(py::module &m) {
             //        0, Margins(), {}); }))
             .def("add_fixed", &Layout1D::AddFixed,
                  "Adds a fixed amount of empty space to the layout")
-            .def("add_fixed",
-                 [](std::shared_ptr<Layout1D> layout, float px) {
-                     layout->AddFixed(int(std::round(px)));
-                 },
-                 "Adds a fixed amount of empty space to the layout")
+            .def(
+                    "add_fixed",
+                    [](std::shared_ptr<Layout1D> layout, float px) {
+                        layout->AddFixed(int(std::round(px)));
+                    },
+                    "Adds a fixed amount of empty space to the layout")
             .def("add_stretch", &Layout1D::AddStretch,
                  "Adds empty space to the layout that will take up as much "
                  "extra space as there is available in the layout");
@@ -1041,4 +1248,6 @@ void pybind_gui(py::module &m) {
     pybind_gui_classes(m_gui);
 }
 
+}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

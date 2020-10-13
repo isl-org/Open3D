@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/utility/Eigen.h"
+
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -182,10 +183,7 @@ TEST(Eigen, ComputeJTJandJTr) {
     Eigen::Vector6d ref_JTr;
     ref_JTr << 0.477778, -0.262092, -0.162745, -0.545752, -0.643791, -0.883007;
 
-    auto testFunction = [&](int i, Eigen::Vector6d &J_r, double &r) {
-#ifdef _OPENMP
-#pragma omp critical
-#endif
+    auto testFunction = [&](int i, Eigen::Vector6d &J_r, double &r, double &w) {
         {
             std::vector<double> v(6);
             Rand(v, -1.0, 1.0, i);
@@ -193,6 +191,7 @@ TEST(Eigen, ComputeJTJandJTr) {
             for (int k = 0; k < 6; k++) J_r(k) = v[k];
 
             r = (double)(i % 6) / 6;
+            w = 1.0;
         }
     };
 
@@ -226,9 +225,6 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
             [&](int i,
                 std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
                 std::vector<double> &r) {
-#ifdef _OPENMP
-#pragma omp critical
-#endif
                 {
                     size_t size = 10;
 

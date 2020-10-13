@@ -26,6 +26,18 @@
 
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: PixelBufferDescriptor assert unsigned is positive before subtracting
+//       but MSVC can't figure that out.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293)
+#endif  // _MSC_VER
+
 #include <filament/Engine.h>
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
@@ -34,6 +46,10 @@
 #include <filament/Texture.h>
 #include <filament/View.h>
 #include <filament/Viewport.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -73,8 +89,39 @@ FilamentRenderToBuffer::~FilamentRenderToBuffer() {
     }
 }
 
-void FilamentRenderToBuffer::SetDimensions(const std::size_t width,
-                                           const std::size_t height) {
+void FilamentRenderToBuffer::Configure(const View* view,
+                                       Scene* scene,
+                                       int width,
+                                       int height,
+                                       BufferReadyCallback cb) {
+    if (!scene) {
+        utility::LogDebug(
+                "No Scene object was provided for rendering into buffer");
+        cb({0, 0, nullptr, 0});
+        return;
+    }
+
+    if (pending_) {
+        utility::LogWarning(
+                "Render to buffer can process only one request at time");
+        cb({0, 0, nullptr, 0});
+        return;
+    }
+
+    pending_ = true;
+
+    if (buffer_ == nullptr) {
+        buffer_ = static_cast<std::uint8_t*>(malloc(buffer_size_));
+    }
+
+    callback_ = cb;
+
+    CopySettings(view);
+    SetDimensions(width, height);
+}
+
+void FilamentRenderToBuffer::SetDimensions(const std::uint32_t width,
+                                           const std::uint32_t height) {
     if (swapchain_) {
         engine_.destroy(swapchain_);
     }
@@ -103,36 +150,17 @@ void FilamentRenderToBuffer::CopySettings(const View* view) {
         auto vp = view_->GetNativeView()->getViewport();
         SetDimensions(vp.width, vp.height);
     }
+    filament::Renderer::ClearOptions opt;
+    opt.clearColor = {1.0f, 1.0f, 1.0f, 1.0f};
+    opt.clear = true;
+    opt.discard = true;
+    renderer_->setClearOptions(opt);
 }
 
 View& FilamentRenderToBuffer::GetView() { return *view_; }
 
 using PBDParams = std::tuple<FilamentRenderToBuffer*,
                              FilamentRenderToBuffer::BufferReadyCallback>;
-void FilamentRenderToBuffer::RequestFrame(Scene* scene,
-                                          BufferReadyCallback callback) {
-    if (!scene) {
-        utility::LogDebug(
-                "No Scene object was provided for rendering into buffer");
-        callback({0, 0, nullptr, 0});
-        return;
-    }
-
-    if (pending_) {
-        utility::LogWarning(
-                "Render to buffer can process only one request at time");
-        callback({0, 0, nullptr, 0});
-        return;
-    }
-
-    pending_ = true;
-
-    if (buffer_ == nullptr) {
-        buffer_ = static_cast<std::uint8_t*>(malloc(buffer_size_));
-    }
-
-    callback_ = callback;
-}
 
 void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
     auto params = static_cast<PBDParams*>(user);
@@ -147,34 +175,33 @@ void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
 }
 
 void FilamentRenderToBuffer::Render() {
-    bool shotDone = false;
     frame_done_ = false;
-    while (!frame_done_) {
-        if (renderer_->beginFrame(swapchain_)) {
-            renderer_->render(view_->GetNativeView());
+    if (renderer_->beginFrame(swapchain_)) {
+        renderer_->render(view_->GetNativeView());
 
-            if (!shotDone) {
-                shotDone = true;
+        using namespace filament;
+        using namespace backend;
 
-                using namespace filament;
-                using namespace backend;
+        auto user_param = new PBDParams(this, callback_);
+        PixelBufferDescriptor pd(buffer_, buffer_size_, PixelDataFormat::RGB,
+                                 PixelDataType::UBYTE, ReadPixelsCallback,
+                                 user_param);
 
-                auto user_param = new PBDParams(this, callback_);
-                PixelBufferDescriptor pd(
-                        buffer_, buffer_size_, PixelDataFormat::RGB,
-                        PixelDataType::UBYTE, ReadPixelsCallback, user_param);
+        auto vp = view_->GetNativeView()->getViewport();
 
-                auto vp = view_->GetNativeView()->getViewport();
+        renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,
+                              std::move(pd));
 
-                renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,
-                                      std::move(pd));
-            }
-
-            renderer_->endFrame();
-        }
+        renderer_->endFrame();
     }
 
     pending_ = false;
+}
+
+void FilamentRenderToBuffer::RenderTick() {
+    if (renderer_->beginFrame(swapchain_)) {
+        renderer_->endFrame();
+    }
 }
 
 }  // namespace rendering

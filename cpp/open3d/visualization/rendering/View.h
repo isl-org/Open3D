@@ -72,11 +72,7 @@ public:
                              std::int32_t y,
                              std::uint32_t w,
                              std::uint32_t h) = 0;
-
-    // With current renderer implementation,
-    // we apply changes immediately only in color mode.
-    // In other cases color will be set on mode switch
-    virtual void SetClearColor(const Eigen::Vector3f& color) = 0;
+    virtual std::array<int, 4> GetViewport() const = 0;
 
     virtual void SetSSAOEnabled(bool enabled) = 0;
 

@@ -24,14 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/Reduction.h"
-
 #include <limits>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/ParallelUtil.h"
+#include "open3d/core/kernel/Reduction.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -137,9 +136,7 @@ private:
                 (num_workloads + num_threads - 1) / num_threads;
         std::vector<scalar_t> thread_results(num_threads, identity);
 
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
             int64_t start = thread_idx * workload_per_thread;
             int64_t end = std::min(start + workload_per_thread, num_workloads);
@@ -185,9 +182,7 @@ private:
                     "LaunchReductionKernelTwoPass instead.");
         }
 
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int64_t i = 0; i < indexer_shape[best_dim]; ++i) {
             Indexer sub_indexer(indexer);
             sub_indexer.ShrinkDim(best_dim, i, 1);
@@ -213,9 +208,7 @@ public:
         // sub-iteration.
         int64_t num_output_elements = indexer_.NumOutputElements();
 
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int64_t output_idx = 0; output_idx < num_output_elements;
              output_idx++) {
             // sub_indexer.NumWorkloads() == ipo.

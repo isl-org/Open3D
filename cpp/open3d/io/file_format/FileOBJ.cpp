@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <tiny_obj_loader.h>
+
 #include <fstream>
 #include <numeric>
 #include <vector>
@@ -33,8 +35,6 @@
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
-
-#include <tiny_obj_loader.h>
 
 namespace open3d {
 namespace io {
@@ -248,12 +248,18 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     file << "# number of vertices: " << mesh.vertices_.size() << std::endl;
     file << "# number of triangles: " << mesh.triangles_.size() << std::endl;
 
-    // always write material filename in obj file, regardless of uvs or textures
-    file << "mtllib " << object_name << ".mtl" << std::endl;
-
     utility::ConsoleProgressBar progress_bar(
             mesh.vertices_.size() + mesh.triangles_.size(),
             "Writing OBJ: ", print_progress);
+
+    // we are less strict and allows writing to uvs without known material
+    // potentially this will be useful for exporting conformal map generation
+    write_triangle_uvs = write_triangle_uvs && mesh.HasTriangleUvs();
+
+    // write material filename only when uvs is written or has textures
+    if (write_triangle_uvs) {
+        file << "mtllib " << object_name << ".mtl" << std::endl;
+    }
 
     write_vertex_normals = write_vertex_normals && mesh.HasVertexNormals();
     write_vertex_colors = write_vertex_colors && mesh.HasVertexColors();
@@ -274,10 +280,6 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
 
         ++progress_bar;
     }
-
-    // we are less strict and allows writing to uvs without known material
-    // potentially this will be useful for exporting conformal map generation
-    write_triangle_uvs = write_triangle_uvs && mesh.HasTriangleUvs();
 
     // we don't compress uvs into vertex-wise representation.
     // loose triangle-wise representation is provided
@@ -310,8 +312,11 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     for (auto it = material_id_faces_map.begin();
          it != material_id_faces_map.end(); ++it) {
         // write the mtl name
-        std::string mtl_name = object_name + "_" + std::to_string(it->first);
-        file << "usemtl " << mtl_name << std::endl;
+        if (write_triangle_uvs) {
+            std::string mtl_name =
+                    object_name + "_" + std::to_string(it->first);
+            file << "usemtl " << mtl_name << std::endl;
+        }
 
         // write the corresponding faces
         for (auto tidx : it->second) {
@@ -344,29 +349,31 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     //////
 
     //////
-    // start to write to mtl and texture
-    std::string parent_dir =
-            utility::filesystem::GetFileParentDirectory(filename);
-    std::string mtl_filename = parent_dir + object_name + ".mtl";
+    // write mtl file when uvs are written
+    if (write_triangle_uvs) {
+        // start to write to mtl and texture
+        std::string parent_dir =
+                utility::filesystem::GetFileParentDirectory(filename);
+        std::string mtl_filename = parent_dir + object_name + ".mtl";
 
-    // write headers
-    std::ofstream mtl_file(mtl_filename.c_str(), std::ios::out);
-    if (!mtl_file) {
-        utility::LogWarning(
-                "Write OBJ successful, but failed to write material file.");
-        return true;
-    }
-    mtl_file << "# Created by Open3D " << std::endl;
-    mtl_file << "# object name: " << object_name << std::endl;
+        // write headers
+        std::ofstream mtl_file(mtl_filename.c_str(), std::ios::out);
+        if (!mtl_file) {
+            utility::LogWarning(
+                    "Write OBJ successful, but failed to write material file.");
+            return true;
+        }
+        mtl_file << "# Created by Open3D " << std::endl;
+        mtl_file << "# object name: " << object_name << std::endl;
 
-    // write textures (if existing)
-    for (size_t i = 0; i < mesh.textures_.size(); ++i) {
-        std::string mtl_name = object_name + "_" + std::to_string(i);
-        mtl_file << "newmtl " << mtl_name << std::endl;
-        mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
-        mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
-        mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
-        if (write_triangle_uvs && mesh.HasTextures()) {
+        // write textures (if existing)
+        for (size_t i = 0; i < mesh.textures_.size(); ++i) {
+            std::string mtl_name = object_name + "_" + std::to_string(i);
+            mtl_file << "newmtl " << mtl_name << std::endl;
+            mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
+            mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
+            mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
+
             std::string tex_filename = parent_dir + mtl_name + ".png";
             if (!io::WriteImage(tex_filename,
                                 *mesh.textures_[i].FlipVertical())) {
@@ -377,15 +384,15 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
             }
             mtl_file << "map_Kd " << mtl_name << ".png\n";
         }
-    }
 
-    // write the default material
-    if (!mesh.HasTextures()) {
-        std::string mtl_name = object_name + "_0";
-        mtl_file << "newmtl " << mtl_name << std::endl;
-        mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
-        mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
-        mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
+        // write the default material
+        if (!mesh.HasTextures()) {
+            std::string mtl_name = object_name + "_0";
+            mtl_file << "newmtl " << mtl_name << std::endl;
+            mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
+            mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
+            mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
+        }
     }
 
     return true;

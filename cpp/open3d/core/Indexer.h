@@ -26,14 +26,14 @@
 
 #pragma once
 
+#include <sstream>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
-
-#include <sstream>
 
 namespace open3d {
 namespace core {
@@ -137,7 +137,7 @@ struct TensorRef {
         }
         data_ptr_ = const_cast<void*>(t.GetDataPtr());
         ndims_ = t.NumDims();
-        dtype_byte_size_ = DtypeUtil::ByteSize(t.GetDtype());
+        dtype_byte_size_ = t.GetDtype().ByteSize();
         for (int64_t i = 0; i < ndims_; ++i) {
             shape_[i] = t.GetShape(i);
             byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;

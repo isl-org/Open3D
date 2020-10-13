@@ -70,9 +70,7 @@ CreateVertexAndImageVisibility(
     std::vector<std::vector<int>> visibility_vertex_to_image;
     visibility_vertex_to_image.resize(n_vertex);
 
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int camera_id = 0; camera_id < int(n_camera); camera_id++) {
         for (int vertex_id = 0; vertex_id < int(n_vertex); vertex_id++) {
             Eigen::Vector3d X = mesh.vertices_[vertex_id];
@@ -104,9 +102,7 @@ CreateVertexAndImageVisibility(
                 continue;
             }
             visibility_image_to_vertex[camera_id].push_back(vertex_id);
-#ifdef _OPENMP
 #pragma omp critical
-#endif
             { visibility_vertex_to_image[vertex_id].push_back(camera_id); }
         }
     }
@@ -187,9 +183,7 @@ void SetProxyIntensityForVertex(
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < int(n_vertex); i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
@@ -222,9 +216,7 @@ void SetProxyIntensityForVertex(
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < int(n_vertex); i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
@@ -259,9 +251,7 @@ void SetGeometryColorAverage(
     mesh.vertex_colors_.resize(n_vertex);
     std::vector<size_t> valid_vertices;
     std::vector<size_t> invalid_vertices;
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
@@ -287,9 +277,7 @@ void SetGeometryColorAverage(
                 sum += 1.0;
             }
         }
-#ifdef _OPENMP
 #pragma omp critical
-#endif
         {
             if (sum > 0.0) {
                 mesh.vertex_colors_[i] /= sum;
@@ -303,9 +291,7 @@ void SetGeometryColorAverage(
         std::shared_ptr<geometry::TriangleMesh> valid_mesh =
                 mesh.SelectByIndex(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int i = 0; i < (int)invalid_vertices.size(); ++i) {
             size_t invalid_vertex = invalid_vertices[i];
             std::vector<int> indices;  // indices to valid_mesh
@@ -337,9 +323,7 @@ void SetGeometryColorAverage(
     mesh.vertex_colors_.resize(n_vertex);
     std::vector<size_t> valid_vertices;
     std::vector<size_t> invalid_vertices;
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
     for (int i = 0; i < (int)n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
@@ -365,9 +349,7 @@ void SetGeometryColorAverage(
                 sum += 1.0;
             }
         }
-#ifdef _OPENMP
 #pragma omp critical
-#endif
         {
             if (sum > 0.0) {
                 mesh.vertex_colors_[i] /= sum;
@@ -381,9 +363,7 @@ void SetGeometryColorAverage(
         std::shared_ptr<geometry::TriangleMesh> valid_mesh =
                 mesh.SelectByIndex(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int i = 0; i < (int)invalid_vertices.size(); ++i) {
             size_t invalid_vertex = invalid_vertices[i];
             std::vector<int> indices;  // indices to valid_mesh

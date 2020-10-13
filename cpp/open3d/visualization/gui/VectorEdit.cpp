@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 
 #include <imgui.h>
+
 #include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
@@ -72,12 +73,12 @@ void VectorEdit::SetOnValueChanged(
 Size VectorEdit::CalcPreferredSize(const Theme& theme) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
-    return Size(Widget::DIM_GROW, std::ceil(em + 2.0f * padding.y));
+    return Size(Widget::DIM_GROW, int(std::ceil(em + 2.0f * padding.y)));
 }
 
 Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(frame.x, frame.y));
+    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text editing
@@ -94,7 +95,7 @@ Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
-    ImGui::PushItemWidth(GetFrame().width);
+    ImGui::PushItemWidth(float(GetFrame().width));
     if (ImGui::InputFloat3(impl_->id_.c_str(), impl_->value_.data(), 3)) {
         result = Widget::DrawResult::REDRAW;
     }

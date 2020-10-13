@@ -1,6 +1,6 @@
 .. _compilation:
 
-Compiling from source
+Build from source
 =====================
 
 You may want to build Open3D from source if you are developing Open3D, want to
@@ -58,7 +58,7 @@ compilation time. Otherwise, the dependencies can also be build from source, see
 
 .. code-block:: bash
 
-    util/scripts/install-deps-ubuntu.sh
+    util/install_deps_ubuntu.sh
 
 .. _compilation_ubuntu_python_binding:
 
@@ -132,7 +132,6 @@ To check the installation:
 If Python binding is not needed, it can be turned off by setting the following
 compilation options to ``OFF``:
 
-- ``BUILD_PYBIND11``
 - ``BUILD_PYTHON_MODULE``
 
 .. _compilation_ubuntu_config:
@@ -291,7 +290,7 @@ The MacOS compilation steps are mostly identical with :ref:`compilation_ubuntu`.
 1. Install dependencies (optional)
 ``````````````````````````````````
 
-Run ``util/scripts/install-deps-osx.sh``. We use `homebrew <https://brew.sh/>`_
+Run ``util/install_deps_macos.sh``. We use `homebrew <https://brew.sh/>`_
 to manage dependencies. Follow the instructions from the script.
 
 2. Setup Python binding environments
@@ -441,25 +440,13 @@ it is ``OFF``, CMake will try to find system installed libraries and use it.
 If CMake fails to find the dependent library, it falls back to compiling the
 library from source code.
 
-.. tip:: On Ubuntu and MacOS it is recommended to link Open3D to system installed
-    libraries. The dependencies can be installed via scripts
-    ``util/scripts/install-deps-ubuntu.sh`` and
-    ``util/scripts/install-deps-osx.sh``. On Windows, it is recommended to
-    compile everything from source since Windows lacks a package management
-    software.
-
-The following is an example of forcing building dependencies from source code:
-
-.. code-block:: bash
-
-    cmake -DBUILD_EIGEN3=ON  \
-          -DBUILD_FLANN=ON   \
-          -DBUILD_GLEW=ON    \
-          -DBUILD_GLFW=ON    \
-          -DBUILD_PNG=ON     \
-          ..
-
-.. note:: Enabling these build options may increase the compilation time.
+.. tip:: Besides essential system libraries (installed via
+    ``util/install-deps-ubuntu.sh`` and
+    ``util/install-deps-osx.sh``), it is recommended to compile Open3D
+    with 3rd-party libraries that comes with Open3D's build system for maximum
+    compatibility. On Ubuntu and macOS, it is also possible to force Open3D to
+    use pre-installed 3rd-party libraries by setting
+    ``-DUSE_SYSTEM_XXX=ON``, e.g. ``-DUSE_SYSTEM_EIGEN3=ON``.
 
 OpenMP
 ``````
@@ -482,6 +469,33 @@ directory, run
 .. note:: This workaround has some compatibility issues with the source code of
     GLFW included in ``3rdparty``.
     Make sure Open3D is linked against GLFW installed on the OS.
+
+ML Module
+`````````
+
+The ML module consists of primitives like operators and layers as well as high
+level code for models and pipelines. To build the operators and layers, set 
+`BUILD_PYTORCH_OPS=ON` and/or `BUILD_TENSORFLOW_OPS=ON`.  Don't forget to also
+enable `BUILD_CUDA_MODULE=ON` for GPU support. To include the models and
+pipelines form Open3D-ML in the python package, set `BUNDLE_OPEN3D_ML=ON` and
+`OPEN3D_ML_ROOT` to the Open3D-ML repository. You can directly download
+Open3D-ML from GitHub during the build with
+`OPEN3D_ML_ROOT=https://github.com/intel-isl/Open3D-ML.git`.
+
+The following example shows the command for building the ops with GPU support
+for all supported ML frameworks and bundling the high level Open3D-ML code.
+
+.. code-block:: bash
+
+    # In the build directory
+    cmake -DBUILD_CUDA_MODULE=ON \
+          -DBUILD_PYTORCH_OPS=ON \
+          -DBUILD_TENSORFLOW_OPS=ON \
+          -DBUNDLE_OPEN3D_ML=ON \
+          -DOPEN3D_ML_ROOT=https://github.com/intel-isl/Open3D-ML.git \
+          ..
+    # Install the python wheel with pip
+    make -j install-pip-package 
 
 Unit test
 `````````
