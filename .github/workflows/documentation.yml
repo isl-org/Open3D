@@ -16,7 +16,7 @@ jobs:
     # Build headless and docs
     runs-on: ubuntu-18.04
     env:
-      OPEN3D_ML_ROOT: ${{ join([github.workspace, 'Open3D-ML'], '/') }}
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout Open3D source code
         uses: actions/checkout@v2
