@@ -173,10 +173,10 @@ public:
     virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
     virtual Transform GetIndirectLightRotation() = 0;
     virtual void ShowSkybox(bool show) = 0;
+    virtual void SetBackgroundColor(const Eigen::Vector4f& color) = 0;
 
+    /// Size of image is the size of the window.
     virtual void RenderToImage(
-            int width,
-            int height,
             std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
 
 protected:

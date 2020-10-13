@@ -29,6 +29,8 @@
 #include <tomasakeninemoeller/opttritri.h>
 #include <tomasakeninemoeller/tribox3.h>
 
+#include <cmath>
+
 namespace open3d {
 namespace geometry {
 

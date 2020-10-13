@@ -195,10 +195,9 @@ public:
     void SetIndirectLightRotation(const Transform& rotation) override;
     Transform GetIndirectLightRotation() override;
     void ShowSkybox(bool show) override;
+    void SetBackgroundColor(const Eigen::Vector4f& color) override;
 
-    void RenderToImage(int width,
-                       int height,
-                       std::function<void(std::shared_ptr<geometry::Image>)>
+    void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
 
     void Draw(filament::Renderer& renderer);
@@ -302,9 +301,10 @@ private:
 
     std::string ibl_name_;
     bool ibl_enabled_ = false;
-    bool skybox_enabled_ = false;
+    bool skybox_enabled_ = true;
     std::weak_ptr<filament::IndirectLight> indirect_light_;
     std::weak_ptr<filament::Skybox> skybox_;
+    std::weak_ptr<filament::Skybox> color_skybox_;
     LightEntity sun_;
 };
 
