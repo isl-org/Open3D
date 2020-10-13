@@ -42,16 +42,21 @@ bool NearestNeighborSearch::SetIndex() {
 bool NearestNeighborSearch::KnnIndex() {
     if (dataset_points_.GetBlob()->GetDevice().GetType() ==
         Device::DeviceType::CUDA) {
+#ifdef WITH_FAISS
         if (dataset_points_.GetDtype() != Dtype::Float32) {
             utility::LogError(
-                    "[NearestNeighborSearch::KnnSearch] For GPU knn index, "
+                    "[NearestNeighborSearch::KnnIndex] For GPU knn index, "
                     "dataset_points_ type must be Float32.");
         }
         faiss_index_.reset(new KnnFaiss());
         return faiss_index_->SetTensorData(dataset_points_);
+#else
+        utility::LogError(
+                "[NearestNeighborSearch::KnnIndex] Currently, Faiss is "
+                "disabled. Please recompile Open3D with WITH_FAISS=ON.");
+#endif
     } else {
-        nanoflann_index_.reset(new NanoFlannIndex());
-        return nanoflann_index_->SetTensorData(dataset_points_);
+        return SetIndex();
     }
 };
 bool NearestNeighborSearch::MultiRadiusIndex() { return SetIndex(); };
@@ -60,6 +65,7 @@ bool NearestNeighborSearch::HybridIndex() { return SetIndex(); };
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
+#ifdef WITH_FAISS
     if (faiss_index_) {
         if (query_points.GetDtype() != Dtype::Float32) {
             utility::LogError(
@@ -67,7 +73,9 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
                     "query_points_ type must be Float32.");
         }
         return faiss_index_->SearchKnn(query_points, knn);
-    } else if (nanoflann_index_) {
+    }
+#endif
+    if (nanoflann_index_) {
         return nanoflann_index_->SearchKnn(query_points, knn);
     } else {
         utility::LogError(

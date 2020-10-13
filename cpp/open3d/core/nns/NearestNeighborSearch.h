@@ -29,7 +29,9 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#ifdef WITH_FAISS
 #include "open3d/core/nns/KnnFaiss.h"
+#endif
 #include "open3d/core/nns/NanoFlannIndex.h"
 
 namespace open3d {
@@ -132,7 +134,9 @@ private:
 
 protected:
     std::unique_ptr<NanoFlannIndex> nanoflann_index_;
+#ifdef WITH_FAISS
     std::unique_ptr<KnnFaiss> faiss_index_;
+#endif
     const Tensor dataset_points_;
 };
 }  // namespace nns

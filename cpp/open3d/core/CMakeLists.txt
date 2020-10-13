@@ -76,7 +76,7 @@ set(CORE_NNS_SRC
     nns/NearestNeighborSearch.cpp
 )
 
-if (NOT WIN32)
+if (WITH_FAISS)
     list(APPEND CORE_NNS_SRC nns/KnnFaiss.cpp)
 endif()
 
