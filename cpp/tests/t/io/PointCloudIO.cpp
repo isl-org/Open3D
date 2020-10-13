@@ -147,8 +147,8 @@ TEST_P(ReadWriteTPC, WriteBadData) {
 // reading binary_little_endian with colors and normals
 TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
     t::geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd,
-                       {"auto", false, false, true});
+    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd,
+                          {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPoints().GetSize(), 196133);
     EXPECT_EQ(pcd.GetPointNormals().GetSize(), 196133);
     EXPECT_EQ(pcd.GetPointColors().GetSize(), 196133);
@@ -158,15 +158,15 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
 // reading ascii
 TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
     t::geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/test_sample_ascii.ply",
-                       pcd, {"auto", false, false, true});
+    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/test_sample_ascii.ply",
+                          pcd, {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPoints().GetSize(), 7);
 }
 
 // wrong file format
 TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
     t::geometry::PointCloud pcd;
-    EXPECT_FALSE(io::ReadPointCloud(
+    EXPECT_FALSE(t::io::ReadPointCloud(
             std::string(TEST_DATA_DIR) + "/test_sample_wrong_format.ply", pcd,
             {"auto", false, false, true}));
 }
@@ -174,8 +174,9 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
 // custom attributes check
 TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
     t::geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/test_sample_custom.ply",
-                       pcd, {"auto", false, false, true});
+    t::io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) + "/test_sample_custom.ply", pcd,
+            {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPointAttr("intensity").GetSize(), 7);
 }
 

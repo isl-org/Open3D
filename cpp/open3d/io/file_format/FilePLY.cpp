@@ -29,9 +29,9 @@
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/LineSetIO.h"
 #include "open3d/io/PointCloudIO.h"
-#include "open3d/io/TPointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/io/VoxelGridIO.h"
+#include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/ProgressReporters.h"
 
@@ -113,37 +113,6 @@ int ReadColorCallback(p_ply_argument argument) {
 }
 
 }  // namespace ply_pointcloud_reader
-
-namespace ply_tpointcloud_reader {
-
-struct PLYReaderState {
-    utility::CountingProgressReporter *progress_bar;
-    std::unordered_map<std::string, core::TensorList> properties;
-    std::vector<const char *> property_name;
-    std::vector<long> property_index;
-    std::vector<long> property_num;
-};
-
-int ReadPropertyCallback(p_ply_argument argument) {
-    PLYReaderState *state_ptr;
-    long id;
-    ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
-                               &id);
-    if (state_ptr->property_index[id] >= state_ptr->property_num[id]) {
-        return 0;
-    }
-
-    double value = ply_get_argument_value(argument);
-
-    state_ptr->properties[state_ptr->property_name[id]]
-                         [state_ptr->property_index[id]][0] = value;
-    state_ptr->property_index[id]++;
-    if (state_ptr->property_index[id] % 1000 == 0) {
-        state_ptr->progress_bar->Update(state_ptr->property_index[id]);
-    }
-    return 1;
-}
-}  // namespace ply_tpointcloud_reader
 
 namespace ply_trianglemesh_reader {
 
@@ -489,117 +458,6 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     ply_close(ply_file);
     reporter.Finish();
-    return true;
-}
-
-bool ReadTPointCloudFromPLY(const std::string &filename,
-                            t::geometry::PointCloud &pointcloud,
-                            const ReadPointCloudOption &params) {
-    using namespace ply_tpointcloud_reader;
-
-    p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
-    if (!ply_file) {
-        utility::LogWarning("Read PLY failed: unable to open file: {}",
-                            filename.c_str());
-        return false;
-    }
-    if (!ply_read_header(ply_file)) {
-        utility::LogWarning("Read PLY failed: unable to parse header.");
-        ply_close(ply_file);
-        return false;
-    }
-
-    PLYReaderState state;
-    p_ply_property property = NULL;
-    e_ply_type type, length_type, value_type;
-    long property_id = 0;
-
-    // get first ply element; assuming it will be vertex
-    p_ply_element element = ply_get_next_element(ply_file, NULL);
-    property = ply_get_next_property(element, NULL);
-
-    while (property) {
-        state.property_name.push_back("");
-        ply_get_property_info(property, &state.property_name[property_id],
-                              &type, &length_type, &value_type);
-        state.property_num.push_back(ply_set_read_cb(
-                ply_file, "vertex", state.property_name[property_id],
-                ReadPropertyCallback, &state, property_id));
-
-        state.property_index.push_back(0);
-        state.properties[state.property_name[property_id]] = core::TensorList(
-                state.property_num[property_id], {1}, core::Dtype::Float64);
-        // get next property
-        property = ply_get_next_property(element, property);
-        property_id++;
-    }
-
-    utility::CountingProgressReporter reporter(params.update_progress);
-    reporter.SetTotal(state.property_num[0]);
-    state.progress_bar = &reporter;
-
-    if (!ply_read(ply_file)) {
-        utility::LogWarning("Read PLY failed: unable to read file: {}",
-                            filename);
-        ply_close(ply_file);
-        return false;
-    }
-
-    pointcloud.Clear();
-
-    // add base elements
-    if (state.properties.find("x") != state.properties.end()) {
-        core::TensorList points = core::TensorList(
-                state.property_num[property_id - 1], {3}, core::Dtype::Float64);
-        points.AsTensor().Slice(1, 0, 1) =
-                state.properties["x"].AsTensor().Slice(1, 0, 1);
-        points.AsTensor().Slice(1, 1, 2) =
-                state.properties["y"].AsTensor().Slice(1, 0, 1);
-        points.AsTensor().Slice(1, 2, 3) =
-                state.properties["z"].AsTensor().Slice(1, 0, 1);
-        state.properties.erase("x");
-        state.properties.erase("y");
-        state.properties.erase("z");
-        pointcloud.SetPoints(points);
-    }
-    if (state.properties.find("nx") != state.properties.end()) {
-        core::TensorList normals = core::TensorList(
-                state.property_num[property_id - 1], {3}, core::Dtype::Float64);
-        normals.AsTensor().Slice(1, 0, 1) =
-                state.properties["nx"].AsTensor().Slice(1, 0, 1);
-        normals.AsTensor().Slice(1, 1, 2) =
-                state.properties["ny"].AsTensor().Slice(1, 0, 1);
-        normals.AsTensor().Slice(1, 2, 3) =
-                state.properties["nz"].AsTensor().Slice(1, 0, 1);
-        state.properties.erase("nx");
-        state.properties.erase("ny");
-        state.properties.erase("nz");
-        pointcloud.SetPointNormals(normals);
-    }
-    if (state.properties.find("red") != state.properties.end()) {
-        core::TensorList colors = core::TensorList(
-                state.property_num[property_id - 1], {3}, core::Dtype::Float64);
-        colors.AsTensor().Slice(1, 0, 1) =
-                state.properties["red"].AsTensor().Slice(1, 0, 1);
-        colors.AsTensor().Slice(1, 1, 2) =
-                state.properties["green"].AsTensor().Slice(1, 0, 1);
-        colors.AsTensor().Slice(1, 2, 3) =
-                state.properties["blue"].AsTensor().Slice(1, 0, 1);
-        state.properties.erase("red");
-        state.properties.erase("green");
-        state.properties.erase("blue");
-        pointcloud.SetPointColors(colors);
-    }
-
-    // add rest of the properties
-    for (size_t i = 0; i < state.properties.size(); i++) {
-        pointcloud.SetPointAttr(state.property_name[i],
-                                state.properties[state.property_name[i]]);
-    }
-
-    ply_close(ply_file);
-    reporter.Finish();
-
     return true;
 }
 
@@ -1147,4 +1005,154 @@ bool WriteVoxelGridToPLY(const std::string &filename,
 }
 
 }  // namespace io
+
+namespace t {
+namespace io {
+
+namespace ply_pointcloud_reader {
+
+struct PLYReaderState {
+    utility::CountingProgressReporter *progress_bar;
+    std::unordered_map<std::string, core::TensorList> properties;
+    std::vector<const char *> property_name;
+    std::vector<long> property_index;
+    std::vector<long> property_num;
+};
+
+int ReadPropertyCallback(p_ply_argument argument) {
+    PLYReaderState *state_ptr;
+    long id;
+    ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
+                               &id);
+    if (state_ptr->property_index[id] >= state_ptr->property_num[id]) {
+        return 0;
+    }
+
+    double value = ply_get_argument_value(argument);
+
+    state_ptr->properties[state_ptr->property_name[id]]
+                         [state_ptr->property_index[id]][0] = value;
+    state_ptr->property_index[id]++;
+    if (state_ptr->property_index[id] % 1000 == 0) {
+        state_ptr->progress_bar->Update(state_ptr->property_index[id]);
+    }
+    return 1;
+}
+}  // namespace ply_pointcloud_reader
+
+bool ReadPointCloudFromPLY(const std::string &filename,
+                           geometry::PointCloud &pointcloud,
+                           const open3d::io::ReadPointCloudOption &params) {
+    using namespace ply_pointcloud_reader;
+
+    p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
+    if (!ply_file) {
+        utility::LogWarning("Read PLY failed: unable to open file: {}",
+                            filename.c_str());
+        return false;
+    }
+    if (!ply_read_header(ply_file)) {
+        utility::LogWarning("Read PLY failed: unable to parse header.");
+        ply_close(ply_file);
+        return false;
+    }
+
+    PLYReaderState state;
+    p_ply_property property = NULL;
+    e_ply_type type, length_type, value_type;
+    long property_id = 0;
+
+    // get first ply element; assuming it will be vertex
+    p_ply_element element = ply_get_next_element(ply_file, NULL);
+    property = ply_get_next_property(element, NULL);
+
+    while (property) {
+        state.property_name.push_back("");
+        ply_get_property_info(property, &state.property_name[property_id],
+                              &type, &length_type, &value_type);
+        state.property_num.push_back(ply_set_read_cb(
+                ply_file, "vertex", state.property_name[property_id],
+                ReadPropertyCallback, &state, property_id));
+
+        state.property_index.push_back(0);
+        state.properties[state.property_name[property_id]] = core::TensorList(
+                state.property_num[property_id], {1}, core::Dtype::Float64);
+        // get next property
+        property = ply_get_next_property(element, property);
+        property_id++;
+    }
+
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(state.property_num[0]);
+    state.progress_bar = &reporter;
+
+    if (!ply_read(ply_file)) {
+        utility::LogWarning("Read PLY failed: unable to read file: {}",
+                            filename);
+        ply_close(ply_file);
+        return false;
+    }
+
+    pointcloud.Clear();
+
+    // add base elements
+    if (state.properties.find("x") != state.properties.end()) {
+        core::TensorList points = core::TensorList(
+                state.property_num[property_id - 1], {3}, core::Dtype::Float64);
+        points.AsTensor().Slice(1, 0, 1) =
+                state.properties["x"].AsTensor().Slice(1, 0, 1);
+        points.AsTensor().Slice(1, 1, 2) =
+                state.properties["y"].AsTensor().Slice(1, 0, 1);
+        points.AsTensor().Slice(1, 2, 3) =
+                state.properties["z"].AsTensor().Slice(1, 0, 1);
+        state.properties.erase("x");
+        state.properties.erase("y");
+        state.properties.erase("z");
+        pointcloud.SetPoints(points);
+    }
+    if (state.properties.find("nx") != state.properties.end()) {
+        core::TensorList normals = core::TensorList(
+                state.property_num[property_id - 1], {3}, core::Dtype::Float64);
+        normals.AsTensor().Slice(1, 0, 1) =
+                state.properties["nx"].AsTensor().Slice(1, 0, 1);
+        normals.AsTensor().Slice(1, 1, 2) =
+                state.properties["ny"].AsTensor().Slice(1, 0, 1);
+        normals.AsTensor().Slice(1, 2, 3) =
+                state.properties["nz"].AsTensor().Slice(1, 0, 1);
+        state.properties.erase("nx");
+        state.properties.erase("ny");
+        state.properties.erase("nz");
+        pointcloud.SetPointNormals(normals);
+    }
+    if (state.properties.find("red") != state.properties.end()) {
+        core::TensorList colors = core::TensorList(
+                state.property_num[property_id - 1], {3}, core::Dtype::Float64);
+        colors.AsTensor().Slice(1, 0, 1) =
+                state.properties["red"].AsTensor().Slice(1, 0, 1);
+        colors.AsTensor().Slice(1, 1, 2) =
+                state.properties["green"].AsTensor().Slice(1, 0, 1);
+        colors.AsTensor().Slice(1, 2, 3) =
+                state.properties["blue"].AsTensor().Slice(1, 0, 1);
+        state.properties.erase("red");
+        state.properties.erase("green");
+        state.properties.erase("blue");
+        pointcloud.SetPointColors(colors);
+    }
+
+    // add rest of the properties
+    for (size_t i = 0; i < state.properties.size(); i++) {
+        pointcloud.SetPointAttr(state.property_name[i],
+                                state.properties[state.property_name[i]]);
+    }
+
+    ply_close(ply_file);
+    reporter.Finish();
+
+    return true;
+}
+
+}  // namespace io
+
+}  // namespace t
+
 }  // namespace open3d

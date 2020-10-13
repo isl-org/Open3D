@@ -45,7 +45,7 @@ static const std::unordered_map<
                            const open3d::io::ReadPointCloudOption &)>>
         file_extension_to_pointcloud_read_function{
                 {"xyzi", ReadPointCloudFromXYZI},
-                {"ply", ReadTPointCloudFromPLY},
+                {"ply", ReadPointCloudFromPLY},
         };
 
 static const std::unordered_map<
