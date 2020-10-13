@@ -84,7 +84,7 @@ public:
     TensorList(const std::vector<Tensor>& tensors)
         : TensorList(tensors.begin(), tensors.end()) {}
 
-    /// Constructs a tensorlist with spefified size
+    /// Constructs a tensorlist with specified size
     ///
     /// \param size of the tensorlist
     /// \param element_shape Shape of the contained tensors, e.g. {3,}. 0-sized
