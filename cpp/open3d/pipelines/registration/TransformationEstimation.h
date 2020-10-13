@@ -50,6 +50,7 @@ enum class TransformationEstimationType {
     PointToPoint = 1,
     PointToPlane = 2,
     ColoredICP = 3,
+    GeneralizedICP = 4,
 };
 
 /// \class TransformationEstimation
@@ -162,6 +163,52 @@ public:
 private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPlane;
+};
+
+class TransformationEstimationForGeneralizedICP
+    : public TransformationEstimation {
+public:
+    /// \brief Default Constructor.
+    TransformationEstimationForGeneralizedICP() {}
+    ~TransformationEstimationForGeneralizedICP(() override {}
+
+    /// \brief Constructor that takes as input a RobustKernel \params kernel Any
+    /// of the implemented statistical robust kernel for outlier rejection.
+    explicit TransformationEstimationForGeneralizedICP((
+            std::shared_ptr<RobustKernel> kernel)
+        : kernel_(std::move(kernel)) {}
+
+public:
+    using Matrix4dVector =
+            std::vector<Eigen::Matrix4d, utility::Matrix4d_allocator>;
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       const CorrespondenceSet &corres) const override;
+
+    Eigen::Matrix4d ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const CorrespondenceSet &corres) const override = 0;
+
+    Eigen::Matrix4d ComputeTransformation(
+            const geometry::PointCloud &source,
+            const Matrix4dVector source_cov,
+            const geometry::PointCloud &target,
+            const Matrix4dVector target_cov,
+            const CorrespondenceSet &corres) const;
+
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return type_;
+    };
+
+public:
+    /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
+    std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
+
+private:
+    const TransformationEstimationType type_ =
+            TransformationEstimationType::GeneralizedICP;
 };
 
 }  // namespace registration
