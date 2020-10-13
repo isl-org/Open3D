@@ -341,20 +341,6 @@ void pybind_eigen(py::module &m) {
             }),
             py::none(), py::none(), "");
 
-    auto longvector = pybind_eigen_vector_of_scalar<long>(m, "LongVector");
-    longvector.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert int64 numpy array of shape ``(n,)`` to Open3D format.)";
-            }),
-            py::none(), py::none(), "");
-
-    auto floatvector = pybind_eigen_vector_of_scalar<float>(m, "FloatVector");
-    floatvector.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert float32 numpy array of shape ``(n,)`` to Open3D format.)";
-            }),
-            py::none(), py::none(), "");
-
     auto vector3dvector = pybind_eigen_vector_of_vector<Eigen::Vector3d>(
             m, "Vector3dVector", "std::vector<Eigen::Vector3d>",
             py::py_array_to_vectors_double<Eigen::Vector3d>);

@@ -52,6 +52,3 @@
 [submodule "3rdparty/benchmark"]
 	path = 3rdparty/benchmark
 	url = https://github.com/google/benchmark.git
-[submodule "3rdparty/faiss/faiss"]
-	path = 3rdparty/faiss/faiss
-	url = https://github.com/facebookresearch/faiss.git
