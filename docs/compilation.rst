@@ -49,12 +49,8 @@ Ubuntu
 
 .. _compilation_ubuntu_dependencies:
 
-1. Install dependencies (optional)
-``````````````````````````````````
-
-Optionally, dependencies can be installed prior to building Open3D to reduce
-compilation time. Otherwise, the dependencies can also be build from source, see
-:ref:`compilation_options_dependencies`.
+1. Install dependencies
+```````````````````````
 
 .. code-block:: bash
 
@@ -65,17 +61,8 @@ compilation time. Otherwise, the dependencies can also be build from source, see
 2. Setup Python binding environments
 ````````````````````````````````````
 
-This step is only required if Python support for Open3D is needed.
-We use `pybind11 <https://github.com/pybind/pybind11>`_ for the Python
-binding. Please refer to
-`pybind11 document page <http://pybind11.readthedocs.io/en/stable/faq.html>`_
-when running into Python binding issues.
-
-2.1 Select the right Python executable
-::::::::::::::::::::::::::::::::::::::
-
-All we need to do in this step is to ensure that the default Python in the
-current ``PATH`` is the desired one. Specifically,
+Ensure that the default Python in the current ``PATH`` is the desired one.
+Specifically,
 
 - For pip virtualenv, activate it by ``source path_to_my_env/bin/activate``.
 - For Conda virtualenv, activate it by ``conda activate my_env``.
@@ -89,50 +76,11 @@ Finally, check
     which python
     python -V
 
-to make sure that the desired Python binary is used. During the CMake config
-step (when running ``cmake ..``), check the printed message indicating
-``Found PythonInterp``. E.g. the line may look like this:
+Alternatively, you can also set CMake flag ``-DPYTHON_EXECUTABLE=/path/to/python``
+to specify the python executable.
 
-.. code-block:: bash
-
-    -- Found PythonInterp: /your/path/to/bin/python3.6 (found version "3.6.6")
-
-Alternatively, CMake flag ``-DPYTHON_EXECUTABLE=/path/to/my/python``
-can be set to force CMake to use the specified Python executable.
-
-2.2 Jupyter visualization widgets support (experimental)
-::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-Since version ``0.4.0``, we added experimental support for Jupyter
-visualization. To enable Jupyter visualization support, install
-`npm <https://nodejs.org/en/download/package-manager/>`_. If ``npm`` is not
-installed, Jupyter visualization support will not be enabled, however the rest of
-the Python bindings will still work.
-
-To check the installation:
-
-.. code-block:: bash
-
-    node -v
-    npm -v
-
-.. tip:: We recommended using modern versions of ``node`` and ``npm``. Warning
-    message will be printed if the ``node`` or ``npm`` versions are too old for
-    the node packages that the Jupyter visualizer depends on.
-    Please refer to
-    `the official documentation <https://nodejs.org/en/download/package-manager/>`_
-    on how to upgrade to the latest version.
-
-.. warning:: Jupyter notebook visualization with OpenGL is still experimental
-    Expect to see bugs and missing features.
-
-2.3 Disable Python binding
-::::::::::::::::::::::::::
-
-If Python binding is not needed, it can be turned off by setting the following
-compilation options to ``OFF``:
-
-- ``BUILD_PYTHON_MODULE``
+If Python binding is not needed, it can be turned off by setting
+``-DBUILD_PYTHON_MODULE=OFF``.
 
 .. _compilation_ubuntu_config:
 
@@ -148,54 +96,6 @@ The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
 Open3D to a user location. In the absence of this argument Open3D will be
 installed to a system location (sudo required). For more customizations of the
 build, please see :ref:`compilation_options`.
-
-.. note::
-    Importing Python libraries compiled with different CXX ABI may cause segfaults
-    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
-    and TensorFlow Python releases use the older CXX ABI; while when they are
-    compiled from source, newer ABI is enabled by default.
-
-    When releasing Open3D as a Python package, we set
-    ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
-    in order to ensure compatibility with PyTorch and TensorFlow Python releases.
-
-    If you build PyTorch or TensorFlow from source or if you run into ABI
-    compatibility issues with them, please:
-
-    1. Check PyTorch and TensorFlow ABI with
-
-       .. code-block:: bash
-
-           python -c "import torch; print(torch._C._GLIBCXX_USE_CXX11_ABI)"
-           python -c "import tensorflow; print(tensorflow.__cxx11_abi_flag__)"
-
-    2. Configure Open3D to compile all dependencies from source
-       with the corresponding ABI version obtained from step 1.
-
-    After installation of the Python package, you can check Open3D ABI version
-    with:
-
-    .. code-block:: bash
-
-        python -c "import open3d; print(open3d.open3d_pybind._GLIBCXX_USE_CXX11_ABI)"
-
-    To build Open3D with CUDA support, configure with:
-
-    .. code-block:: bash
-
-        cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
-
-    Please note that CUDA support is work in progress and experimental. For building
-    Open3D with CUDA support, ensure that CUDA is properly installed by running following commands:
-
-    .. code-block:: bash
-
-        nvidia-smi      # Prints CUDA-enabled GPU information
-        nvcc -V         # Prints compiler version
-
-    If you see an output similar to ``command not found``, you can install CUDA toolkit
-    by following the `official
-    documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
 
 .. _compilation_ubuntu_build:
 
@@ -218,14 +118,10 @@ build, please see :ref:`compilation_options`.
 5.1 Install Open3D Python package
 :::::::::::::::::::::::::::::::::
 
-Inside the activated virtualenv (shall be activated before ``cmake``),
-run
+Inside the activated virtualenv (shall be activated before ``cmake``), run
 
 .. code-block:: bash
 
-    # 1) Create Python package
-    # 2) Create pip wheel
-    # 3) Install Open3D pip wheel the current virtualenv
     make install-pip-package
 
 The above command is **compatible with both pip and Conda virtualenvs**. To
@@ -235,7 +131,7 @@ uninstall, run
 
     pip uninstall open3d
 
-If more fine-grained controls, here is a list of all related build targets:
+For more fine-grained controls, you can also run:
 
 .. code-block:: bash
 
@@ -287,8 +183,8 @@ MacOS
 
 The MacOS compilation steps are mostly identical with :ref:`compilation_ubuntu`.
 
-1. Install dependencies (optional)
-``````````````````````````````````
+1. Install dependencies
+```````````````````````
 
 Run ``util/install_deps_macos.sh``. We use `homebrew <https://brew.sh/>`_
 to manage dependencies. Follow the instructions from the script.
@@ -428,26 +324,6 @@ Compilation Options
 This page shows advanced options to customize the Open3D build. For quick
 start, see :ref:`compilation`.
 
-.. _compilation_options_dependencies:
-
-Dependencies
-````````````
-
-For each dependent library, there is a corresponding CMake build option
-``BUILD_<LIBRARY_NAME>``. If the option is ``ON``, the dependent library is
-forced to be compiled from the source code included in ``3rdparty`` folder. If
-it is ``OFF``, CMake will try to find system installed libraries and use it.
-If CMake fails to find the dependent library, it falls back to compiling the
-library from source code.
-
-.. tip:: Besides essential system libraries (installed via
-    ``util/install-deps-ubuntu.sh`` and
-    ``util/install-deps-osx.sh``), it is recommended to compile Open3D
-    with 3rd-party libraries that comes with Open3D's build system for maximum
-    compatibility. On Ubuntu and macOS, it is also possible to force Open3D to
-    use pre-installed 3rd-party libraries by setting
-    ``-DUSE_SYSTEM_XXX=ON``, e.g. ``-DUSE_SYSTEM_EIGEN3=ON``.
-
 OpenMP
 ``````
 
@@ -474,13 +350,13 @@ ML Module
 `````````
 
 The ML module consists of primitives like operators and layers as well as high
-level code for models and pipelines. To build the operators and layers, set 
-`BUILD_PYTORCH_OPS=ON` and/or `BUILD_TENSORFLOW_OPS=ON`.  Don't forget to also
-enable `BUILD_CUDA_MODULE=ON` for GPU support. To include the models and
-pipelines form Open3D-ML in the python package, set `BUNDLE_OPEN3D_ML=ON` and
-`OPEN3D_ML_ROOT` to the Open3D-ML repository. You can directly download
+level code for models and pipelines. To build the operators and layers, set
+``BUILD_PYTORCH_OPS=ON`` and/or ``BUILD_TENSORFLOW_OPS=ON``.  Don't forget to also
+enable ``BUILD_CUDA_MODULE=ON`` for GPU support. To include the models and
+pipelines form Open3D-ML in the python package, set ``BUNDLE_OPEN3D_ML=ON`` and
+``OPEN3D_ML_ROOT`` to the Open3D-ML repository. You can directly download
 Open3D-ML from GitHub during the build with
-`OPEN3D_ML_ROOT=https://github.com/intel-isl/Open3D-ML.git`.
+``OPEN3D_ML_ROOT=https://github.com/intel-isl/Open3D-ML.git``.
 
 The following example shows the command for building the ops with GPU support
 for all supported ML frameworks and bundling the high level Open3D-ML code.
@@ -495,7 +371,56 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
           -DOPEN3D_ML_ROOT=https://github.com/intel-isl/Open3D-ML.git \
           ..
     # Install the python wheel with pip
-    make -j install-pip-package 
+    make -j install-pip-package
+
+.. note::
+    Importing Python libraries compiled with different CXX ABI may cause segfaults
+    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
+    and TensorFlow Python releases use the older CXX ABI; while when they are
+    compiled from source, newer ABI is enabled by default.
+
+    When releasing Open3D as a Python package, we set
+    ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
+    in order to ensure compatibility with PyTorch and TensorFlow Python releases.
+
+    If you build PyTorch or TensorFlow from source or if you run into ABI
+    compatibility issues with them, please:
+
+    1. Check PyTorch and TensorFlow ABI with
+
+       .. code-block:: bash
+
+           python -c "import torch; print(torch._C._GLIBCXX_USE_CXX11_ABI)"
+           python -c "import tensorflow; print(tensorflow.__cxx11_abi_flag__)"
+
+    2. Configure Open3D to compile all dependencies from source
+       with the corresponding ABI version obtained from step 1.
+
+    After installation of the Python package, you can check Open3D ABI version
+    with:
+
+    .. code-block:: bash
+
+        python -c "import open3d; print(open3d.open3d_pybind._GLIBCXX_USE_CXX11_ABI)"
+
+    To build Open3D with CUDA support, configure with:
+
+    .. code-block:: bash
+
+        cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
+
+    Please note that CUDA support is work in progress and experimental. For building
+    Open3D with CUDA support, ensure that CUDA is properly installed by running following commands:
+
+    .. code-block:: bash
+
+        nvidia-smi      # Prints CUDA-enabled GPU information
+        nvcc -V         # Prints compiler version
+
+    If you see an output similar to ``command not found``, you can install CUDA toolkit
+    by following the `official
+    documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
+
 
 Unit test
 `````````
