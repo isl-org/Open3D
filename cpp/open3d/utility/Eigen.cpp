@@ -163,7 +163,7 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
 
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(int, VecType &, double &)> f,
+        std::function<void(int, VecType &, double &, double &)> f,
         int iteration_num,
         bool verbose /*=true*/) {
     MatType JTJ;
@@ -180,11 +180,12 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         JTr_private.setZero();
         VecType J_r;
         double r;
+        double w = 0.0;
 #pragma omp for nowait
         for (int i = 0; i < iteration_num; i++) {
-            f(i, J_r, r);
-            JTJ_private.noalias() += J_r * J_r.transpose();
-            JTr_private.noalias() += J_r * r;
+            f(i, J_r, r, w);
+            JTJ_private.noalias() += J_r * w * J_r.transpose();
+            JTr_private.noalias() += J_r * w * r;
             r2_sum_private += r * r;
         }
 #pragma omp critical
@@ -248,7 +249,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
 
 // clang-format off
 template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
-        std::function<void(int, Eigen::Vector6d &, double &)> f,
+        std::function<void(int, Eigen::Vector6d &, double &, double &)> f,
         int iteration_num, bool verbose);
 
 template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
