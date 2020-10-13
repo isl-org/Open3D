@@ -90,8 +90,8 @@ bool KnnFaiss::SetTensorData(const Tensor &tensor) {
 std::pair<Tensor, Tensor> KnnFaiss::SearchKnn(const Tensor &query,
                                               int knn) const {
     SizeVector size = query.GetShape();
-    size_t query_dim = size[1];
-    size_t query_size = size[0];
+    int64_t query_dim = size[1];
+    int64_t query_size = size[0];
     knn = std::min(knn, (int)dataset_size_);
 
     if (query.GetDtype() != Dtype::Float32) {
@@ -113,16 +113,16 @@ std::pair<Tensor, Tensor> KnnFaiss::SearchKnn(const Tensor &query,
 
     float *_data_ptr = static_cast<float *>(query.GetBlob()->GetDataPtr());
 
-    std::vector<long> indices;
+    std::vector<int64_t> indices;
     std::vector<float> distance2;
     indices.resize(knn * query_size);
     distance2.resize(knn * query_size);
     index->search(query_size, _data_ptr, knn, distance2.data(), indices.data());
 
-    Tensor result_indices_(indices, {(long int)query_size, knn}, Dtype::Int64,
+    Tensor result_indices_(indices, {query_size, knn}, Dtype::Int64,
                            query.GetBlob()->GetDevice());
-    Tensor result_distance2_(distance2, {(long int)query_size, knn},
-                             Dtype::Float32, query.GetBlob()->GetDevice());
+    Tensor result_distance2_(distance2, {query_size, knn}, Dtype::Float32,
+                             query.GetBlob()->GetDevice());
     std::pair<Tensor, Tensor> result_pair_(result_indices_, result_distance2_);
     return result_pair_;
 }
@@ -131,8 +131,8 @@ std::pair<Tensor, Tensor> KnnFaiss::SearchHybrid(const Tensor &query,
                                                  float radius,
                                                  int max_knn) const {
     SizeVector size = query.GetShape();
-    size_t query_dim = size[1];
-    size_t query_size = size[0];
+    int64_t query_dim = size[1];
+    int64_t query_size = size[0];
 
     if (query.GetDtype() != Dtype::Float32) {
         utility::LogError(
@@ -174,10 +174,10 @@ std::pair<Tensor, Tensor> KnnFaiss::SearchHybrid(const Tensor &query,
         }
     }
 
-    Tensor result_indices_(indices, {(long int)query_size, max_knn},
-                           Dtype::Int64, query.GetBlob()->GetDevice());
-    Tensor result_distance2_(distance2, {(long int)query_size, max_knn},
-                             Dtype::Float32, query.GetBlob()->GetDevice());
+    Tensor result_indices_(indices, {query_size, max_knn}, Dtype::Int64,
+                           query.GetBlob()->GetDevice());
+    Tensor result_distance2_(distance2, {query_size, max_knn}, Dtype::Float32,
+                             query.GetBlob()->GetDevice());
     std::pair<Tensor, Tensor> result_pair_(result_indices_, result_distance2_);
     return result_pair_;
 }
