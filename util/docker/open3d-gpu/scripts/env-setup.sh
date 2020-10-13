@@ -7,12 +7,13 @@ set -eo pipefail
 
 # Use SUDO=command to run in docker (user is root, sudo is not installed)
 SUDO=${SUDO:=sudo}
+UBUNTU_VERSION=${UBUNTU_VERSION:="$(lsb_release -cs)"}
 
 $SUDO apt-get update
 $SUDO apt-get --yes install git software-properties-common
 echo "Installing Python3 and setting as default python"
 $SUDO apt-get --yes --no-install-recommends install python3 python3-pip python3-setuptools
-if  ! which python || python -V 2>/dev/null | grep -q ' 2.' ; then
+if ! which python || python -V 2>/dev/null | grep -q ' 2.'; then
     echo 'Making python3 the default python'
     $SUDO ln -s /usr/bin/python3 /usr/local/bin/python
     $SUDO ln -s /usr/bin/python3-config /usr/local/bin/python-config
@@ -20,7 +21,7 @@ if  ! which python || python -V 2>/dev/null | grep -q ' 2.' ; then
 fi
 
 # cmake not installed or too old
-if ! which cmake || cmake -P CMakeLists.txt 2>&1 | grep -q "or higher is required"  ; then
+if ! which cmake || cmake -P CMakeLists.txt 2>&1 | grep -q "or higher is required"; then
     echo "Installing backported cmake from https://apt.kitware.com/ for Ubuntu $UBUNTU_VERSION"
     $SUDO apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
     $SUDO apt-add-repository --yes \
@@ -28,7 +29,7 @@ if ! which cmake || cmake -P CMakeLists.txt 2>&1 | grep -q "or higher is require
     $SUDO apt-get --yes --no-install-recommends install cmake
 fi
 
-if [ -n "${NVIDIA_DRIVER_VERSION}" ] ; then
+if [ -n "${NVIDIA_DRIVER_VERSION}" ]; then
     echo "Installing NVIDIA drivers."
     $SUDO apt-get --yes --no-install-recommends install "nvidia-driver-${NVIDIA_DRIVER_VERSION}"
 fi

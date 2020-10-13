@@ -24,10 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "open3d/core/linalg/LAPACK.h"
+#include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 #include "open3d/core/linalg/Solve.h"
 
@@ -43,10 +40,10 @@ void SolveCPU(void* A_data,
               const Device& device) {
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         OPEN3D_LAPACK_CHECK(
-                gesv_cpu<scalar_t>(LAPACK_COL_MAJOR, n, k,
-                                   static_cast<scalar_t*>(A_data), n,
-                                   static_cast<MKL_INT*>(ipiv_data),
-                                   static_cast<scalar_t*>(B_data), n),
+                gesv_cpu<scalar_t>(
+                        LAPACK_COL_MAJOR, n, k, static_cast<scalar_t*>(A_data),
+                        n, static_cast<OPEN3D_CPU_LINALG_INT*>(ipiv_data),
+                        static_cast<scalar_t*>(B_data), n),
                 "gels failed in SolveCPU");
     });
 }

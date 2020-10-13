@@ -71,7 +71,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/rendering/Light.h"
 #include "open3d/visualization/rendering/Material.h"
@@ -86,6 +86,10 @@
 
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond
+
+void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
+    free(buffer);
+}
 
 namespace defaults_mapping {
 
@@ -187,6 +191,17 @@ void FilamentScene::SetViewActive(const ViewHandle& view_id, bool is_active) {
     auto found = views_.find(view_id);
     if (found != views_.end()) {
         found->second.is_active = is_active;
+        found->second.render_count = -1;
+    }
+}
+
+void FilamentScene::SetRenderOnce(const ViewHandle& view_id) {
+    auto found = views_.find(view_id);
+    if (found != views_.end()) {
+        found->second.is_active = true;
+        // NOTE: This value should match the value of render_count_ in
+        // FilamentRenderer::EnableCaching
+        found->second.render_count = 2;
     }
 }
 
@@ -259,13 +274,14 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
-                                const tgeometry::PointCloud& point_cloud,
+                                const t::geometry::PointCloud& point_cloud,
                                 const Material& material,
                                 const std::string& downsampled_name /*= ""*/,
                                 size_t downsample_threshold /*= SIZE_MAX*/) {
     // Tensor::Min() and Tensor::Max() can be very slow on certain setups,
     // in particular macOS with clang 11.0.0. This is a temporary fix.
-    auto ComputeAABB = [](const tgeometry::PointCloud& cloud) -> filament::Box {
+    auto ComputeAABB =
+            [](const t::geometry::PointCloud& cloud) -> filament::Box {
         Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
         Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
         const auto& points = cloud.GetPoints();
@@ -445,7 +461,7 @@ static void deallocate_vertex_buffer(void* buffer,
 }
 
 void FilamentScene::UpdateGeometry(const std::string& object_name,
-                                   const tgeometry::PointCloud& point_cloud,
+                                   const t::geometry::PointCloud& point_cloud,
                                    uint32_t update_flags) {
     auto geoms = GetGeometry(object_name, false);
     if (!geoms.empty()) {
@@ -506,12 +522,30 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             vbuf->setBufferAt(engine_, 2, std::move(normals_descriptor));
         }
 
-        if (update_flags & kUpdateUv0Flag && point_cloud.HasPointAttr("uv")) {
+        if (update_flags & kUpdateUv0Flag) {
             const size_t uv_array_size = n_vertices * 2 * sizeof(float);
-            filament::VertexBuffer::BufferDescriptor uv_descriptor(
-                    point_cloud.GetPointAttr("uv").AsTensor().GetDataPtr(),
-                    uv_array_size);
-            vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
+            if (point_cloud.HasPointAttr("uv")) {
+                filament::VertexBuffer::BufferDescriptor uv_descriptor(
+                        point_cloud.GetPointAttr("uv").AsTensor().GetDataPtr(),
+                        uv_array_size);
+                vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
+            } else if (point_cloud.HasPointAttr("__visualization_scalar")) {
+                // Update in PointCloudBuffers.cpp, too:
+                //     TPointCloudBuffersBuilder::ConstructBuffers
+                float* uv_array = static_cast<float*>(malloc(uv_array_size));
+                memset(uv_array, 0, uv_array_size);
+                float* src = static_cast<float*>(
+                        point_cloud.GetPointAttr("__visualization_scalar")
+                                .AsTensor()
+                                .GetDataPtr());
+                const size_t n = 2 * n_vertices;
+                for (size_t i = 0; i < n; i += 2) {
+                    uv_array[i] = *src++;
+                }
+                filament::VertexBuffer::BufferDescriptor uv_descriptor(
+                        uv_array, uv_array_size, DeallocateBuffer);
+                vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
+            }
         }
     }
 }
@@ -1347,13 +1381,18 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
 }
 
 void FilamentScene::Draw(filament::Renderer& renderer) {
-    for (const auto& pair : views_) {
+    for (auto& pair : views_) {
         auto& container = pair.second;
-        if (container.is_active) {
-            container.view->PreRender();
-            renderer.render(container.view->GetNativeView());
-            container.view->PostRender();
+        // Skip inactive views
+        if (!container.is_active) continue;
+        if (container.render_count-- == 0) {
+            container.is_active = false;
+            continue;
         }
+
+        container.view->PreRender();
+        renderer.render(container.view->GetNativeView());
+        container.view->PostRender();
     }
 }
 

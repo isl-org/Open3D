@@ -99,6 +99,7 @@ public:
 
     View* GetView(const ViewHandle& view_id) const override;
     void SetViewActive(const ViewHandle& view_id, bool is_active) override;
+    void SetRenderOnce(const ViewHandle& view_id) override;
     void RemoveView(const ViewHandle& view_id) override;
 
     // Camera
@@ -114,7 +115,7 @@ public:
                      const std::string& downsampled_name = "",
                      size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
-                     const tgeometry::PointCloud& point_cloud,
+                     const t::geometry::PointCloud& point_cloud,
                      const Material& material,
                      const std::string& downsampled_name = "",
                      size_t downsample_threshold = SIZE_MAX) override;
@@ -122,7 +123,7 @@ public:
                      const TriangleMeshModel& model) override;
     bool HasGeometry(const std::string& object_name) const override;
     void UpdateGeometry(const std::string& object_name,
-                        const tgeometry::PointCloud& point_cloud,
+                        const t::geometry::PointCloud& point_cloud,
                         uint32_t update_flags) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
@@ -272,6 +273,7 @@ private:
     struct ViewContainer {
         std::unique_ptr<FilamentView> view;
         bool is_active = true;
+        int render_count = -1;
     };
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
 

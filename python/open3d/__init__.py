@@ -43,14 +43,23 @@ except ImportError:
 import os
 import sys
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+from ctypes import CDLL as _CDLL
+from ctypes.util import find_library as _find_library
+from pathlib import Path as _Path
+
+from open3d._build_config import _build_config
+if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
+                                       _find_library('c++')):
+    try:  # Preload libc++.so and libc++abi.so (required by filament)
+        _CDLL(next((_Path(__file__).parent).glob('*c++abi*')))
+        _CDLL(next((_Path(__file__).parent).glob('*c++*')))
+    except StopIteration:  # Not found: check system paths while loading
+        pass
 
 __DEVICE_API__ = 'cpu'
-from open3d._build_config import _build_config
 if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
     # Do this before loading the CUDA pybind dll to correctly resolve symbols
-    from ctypes import CDLL as _CDLL
-    from pathlib import Path as _Path
     try:  # StopIteration if cpu version not available
         _CDLL(next((_Path(__file__).parent / 'cpu').glob('pybind*')))
     except StopIteration:
@@ -62,7 +71,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
             next((_Path(__file__).parent / 'cuda').glob('pybind*')))
         if _pybind_cuda.open3d_core_cuda_device_count() > 0:
             from open3d.cuda.pybind import (camera, geometry, io, pipelines,
-                                            utility, tgeometry)
+                                            utility, t)
             from open3d.cuda import pybind
             __DEVICE_API__ = 'cuda'
     except OSError:  # CUDA not installed
@@ -71,8 +80,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
         pass
 
 if __DEVICE_API__ == 'cpu':
-    from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility,
-                                   tgeometry)
+    from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility, t)
     from open3d.cpu import pybind
 
 import open3d.core

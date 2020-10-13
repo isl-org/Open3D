@@ -46,7 +46,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/tgeometry/PointCloud.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -287,7 +287,7 @@ filament::Box PointCloudBuffersBuilder::ComputeAABB() {
 }
 
 TPointCloudBuffersBuilder::TPointCloudBuffersBuilder(
-        const tgeometry::PointCloud& geometry)
+        const t::geometry::PointCloud& geometry)
     : geometry_(geometry) {}
 
 RenderableManager::PrimitiveType TPointCloudBuffersBuilder::GetPrimitiveType()
@@ -394,6 +394,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
                 geometry_.GetPointAttr("uv").AsTensor().GetDataPtr());
         memcpy(uv_array, uv_src, uv_array_size);
     } else if (geometry_.HasPointAttr("__visualization_scalar")) {
+        // Update in FilamentScene::UpdateGeometry(), too.
         memset(uv_array, 0, uv_array_size);
         float* src = static_cast<float*>(
                 geometry_.GetPointAttr("__visualization_scalar")

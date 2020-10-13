@@ -28,6 +28,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
+#include "pybind/core/nns/faiss.h"
 #include "pybind/core/nns/nearest_neighbor_search.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"
@@ -138,9 +139,13 @@ void pybind_core(py::module& m) {
     pybind_core_tensorlist(m_core);
     pybind_core_linalg(m_core);
     pybind_core_kernel(m_core);
+    pybind_core_hashmap(m_core);
 
     // opn3d::core::nns namespace.
     nns::pybind_core_nns(m_core);
+#ifdef WITH_FAISS
+    nns::pybind_core_faiss(m_core);
+#endif
 }
 
 }  // namespace core

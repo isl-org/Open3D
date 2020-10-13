@@ -66,7 +66,8 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
                                    void* native_drawable,
                                    FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
-    swap_chain_ = engine_.createSwapChain(native_drawable);
+    swap_chain_ = engine_.createSwapChain(native_drawable,
+                                          filament::SwapChain::CONFIG_READABLE);
     renderer_ = engine_.createRenderer();
 
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
@@ -106,8 +107,26 @@ void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
     co.clearColor.g = color.y();
     co.clearColor.b = color.z();
     co.clearColor.a = color.w();
-    co.clear = true;
-    co.discard = true;
+    co.clear = !preserve_buffer_;
+    co.discard = !preserve_buffer_;
+    renderer_->setClearOptions(co);
+
+    // remember clear color
+    clear_color_[0] = color.x();
+    clear_color_[1] = color.y();
+    clear_color_[2] = color.z();
+    clear_color_[3] = color.w();
+}
+
+void FilamentRenderer::SetPreserveBuffer(bool preserve) {
+    filament::Renderer::ClearOptions co;
+    co.clearColor.r = clear_color_[0];
+    co.clearColor.g = clear_color_[1];
+    co.clearColor.b = clear_color_[2];
+    co.clearColor.a = clear_color_[3];
+    preserve_buffer_ = preserve;
+    co.clear = !preserve;
+    co.discard = !preserve;
     renderer_->setClearOptions(co);
 }
 
@@ -143,11 +162,32 @@ void FilamentRenderer::UpdateSwapChain() {
     swap_chain_ = engine_.createSwapChain(native_win);
 }
 
+void FilamentRenderer::EnableCaching(bool enable) {
+    render_caching_enabled_ = enable;
+    if (enable) {
+        // NOTE: Render two frames before switching swap chain to preserve
+        // contents. This ensures that the desired content is fully rendered
+        // into buffer. Ideally only a single frame is necessary but when
+        // render_count_ is 1 artifacts occasionally occur.
+        render_count_ = 2;
+    }
+
+    SetPreserveBuffer(false);
+}
+
 void FilamentRenderer::BeginFrame() {
     // We will complete render to buffer requests first
     for (auto& br : buffer_renderers_) {
         if (br->pending_) {
             br->Render();
+        }
+    }
+
+    if (render_caching_enabled_) {
+        if (render_count_-- > 0) {
+            SetPreserveBuffer(false);
+        } else {
+            SetPreserveBuffer(true);
         }
     }
 
