@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/TPointCloudIO.h"
+#include "open3d/t/io/PointCloudIO.h"
 
 #include <gtest/gtest.h>
 
@@ -38,13 +38,6 @@
 
 namespace open3d {
 namespace tests {
-
-using open3d::core::Tensor;
-using open3d::core::TensorList;
-using open3d::io::ReadPointCloud;
-using open3d::io::ReadPointCloudOption;
-using open3d::io::WritePointCloud;
-using open3d::io::WritePointCloudOption;
 
 namespace {
 
@@ -96,18 +89,18 @@ TEST_P(ReadWriteTPC, Basic) {
         const auto &attr = attr_tensor.first;
         const auto &tensor = attr_tensor.second;
         pc1.SetPointAttr(attr,
-                         TensorList::FromTensor(
+                         core::TensorList::FromTensor(
                                  {tensor.values, tensor.size, dtype, device}));
     }
 
     // we loose some precision when saving generated data
     // test writing if we have point, normal, and colors in pc
-    EXPECT_TRUE(WritePointCloud(
+    EXPECT_TRUE(t::io::WritePointCloud(
             args.filename, pc1,
             {bool(args.write_ascii), bool(args.compressed), true}));
     t::geometry::PointCloud pc2(dtype, device);
-    EXPECT_TRUE(
-            ReadPointCloud(args.filename, pc2, {"auto", false, false, true}));
+    EXPECT_TRUE(t::io::ReadPointCloud(args.filename, pc2,
+                                      {"auto", false, false, true}));
 
     for (const auto &attribute_rel_tol : args.attributes_rel_tols) {
         const std::string &attribute = attribute_rel_tol.first;
@@ -118,12 +111,12 @@ TEST_P(ReadWriteTPC, Basic) {
     }
 
     // Loaded data when saved should be identical when reloaded
-    EXPECT_TRUE(WritePointCloud(
+    EXPECT_TRUE(t::io::WritePointCloud(
             args.filename, pc2,
             {bool(args.write_ascii), bool(args.compressed), true}));
     t::geometry::PointCloud pc3(dtype, device);
-    EXPECT_TRUE(
-            ReadPointCloud(args.filename, pc3, {"auto", false, false, true}));
+    EXPECT_TRUE(t::io::ReadPointCloud(args.filename, pc3,
+                                      {"auto", false, false, true}));
     for (const auto &attribute_rel_tol : args.attributes_rel_tols) {
         const std::string &attribute = attribute_rel_tol.first;
         SCOPED_TRACE(attribute);
@@ -142,11 +135,11 @@ TEST_P(ReadWriteTPC, WriteBadData) {
         const auto &attr = attr_tensor.first;
         const auto &tensor = attr_tensor.second;
         pc1.SetPointAttr(attr,
-                         TensorList::FromTensor(
+                         core::TensorList::FromTensor(
                                  {tensor.values, tensor.size, dtype, device}));
     }
 
-    EXPECT_FALSE(WritePointCloud(
+    EXPECT_FALSE(t::io::WritePointCloud(
             args.filename, pc1,
             {bool(args.write_ascii), bool(args.compressed), true}));
 }

@@ -56,12 +56,12 @@ public:
     Open3DScene(Renderer& renderer);
     ~Open3DScene();
 
-    ViewHandle CreateView();
-    void DestroyView(ViewHandle view);
-    View* GetView(ViewHandle view) const;
+    View* GetView() const;
+    ViewHandle GetViewId() const { return view_; }
 
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);
+    void SetBackgroundColor(const Eigen::Vector4f& color);
 
     /// Sets the maximum number of points before AddGeometry also adds a
     /// downsampled point cloud with number of points, used when rendering
