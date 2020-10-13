@@ -48,10 +48,9 @@ TEST_P(NNSPermuteDevices, KnnSearch) {
     // Set up nns.
     int size = 10;
     core::Device device = GetParam();
-    std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
-                               0.2, 0.0, 0.1, 0.0, 0.0, 0.1, 0.1, 0.0,
-                               0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
-                               0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
+    std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
+                              0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
+                              0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
     core::Tensor ref(points, {size, 3}, core::Dtype::Float32, device);
     core::nns::NearestNeighborSearch nns(ref);
     nns.KnnIndex();
@@ -82,12 +81,12 @@ TEST_P(NNSPermuteDevices, KnnSearch) {
              std::vector<int64_t>({1, 4, 9, 0, 3, 2, 5, 7, 6, 8}));
     ExpectEQ(distances.ToFlatVector<float>(),
              std::vector<float>({0.00626358, 0.00747938, 0.0108912, 0.0138322,
-                                  0.015048, 0.018695, 0.0199108, 0.0286952,
-                                  0.0362638, 0.0411266}));
+                                 0.015048, 0.018695, 0.0199108, 0.0286952,
+                                 0.0362638, 0.0411266}));
 
     // Multiple points.
     query = core::Tensor(std::vector<float>({0.064705, 0.043921, 0.087843,
-                                              0.064705, 0.043921, 0.087843}),
+                                             0.064705, 0.043921, 0.087843}),
                          {2, 3}, core::Dtype::Float32);
     result = nns.KnnSearch(query, 3);
     indices = result.first;
@@ -96,7 +95,7 @@ TEST_P(NNSPermuteDevices, KnnSearch) {
              std::vector<int64_t>({1, 4, 9, 1, 4, 9}));
     ExpectEQ(distances.ToFlatVector<float>(),
              std::vector<float>({0.00626358, 0.00747938, 0.0108912, 0.00626358,
-                                  0.00747938, 0.0108912}));
+                                 0.00747938, 0.0108912}));
 }
 
 TEST(NearestNeighborSearch, FixedRadiusSearch) {

@@ -40,16 +40,18 @@ bool NearestNeighborSearch::SetIndex() {
     return nanoflann_index_->SetTensorData(dataset_points_);
 };
 bool NearestNeighborSearch::KnnIndex() {
-    if (dataset_points_.GetBlob()->GetDevice().GetType() == Device::DeviceType::CUDA) {
+    if (dataset_points_.GetBlob()->GetDevice().GetType() ==
+        Device::DeviceType::CUDA) {
         if (dataset_points_.GetDtype() != Dtype::Float32) {
             utility::LogError(
-                    "[NearestNeighborSearch::KnnSearch] For GPU knn index, dataset_points_ type must be Float32.");
+                    "[NearestNeighborSearch::KnnSearch] For GPU knn index, "
+                    "dataset_points_ type must be Float32.");
         }
         faiss_index_.reset(new KnnFaiss());
         return faiss_index_->SetTensorData(dataset_points_);
     } else {
         nanoflann_index_.reset(new NanoFlannIndex());
-        return nanoflann_index_->SetTensorData(dataset_points_);   
+        return nanoflann_index_->SetTensorData(dataset_points_);
     }
 };
 bool NearestNeighborSearch::MultiRadiusIndex() { return SetIndex(); };
@@ -58,17 +60,16 @@ bool NearestNeighborSearch::HybridIndex() { return SetIndex(); };
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
-    if (faiss_index_){
+    if (faiss_index_) {
         if (query_points.GetDtype() != Dtype::Float32) {
             utility::LogError(
-                    "[NearestNeighborSearch::KnnSearch] For GPU knn search, query_points_ type must be Float32.");
+                    "[NearestNeighborSearch::KnnSearch] For GPU knn search, "
+                    "query_points_ type must be Float32.");
         }
         return faiss_index_->SearchKnn(query_points, knn);
-    }
-    else if (nanoflann_index_) {
+    } else if (nanoflann_index_) {
         return nanoflann_index_->SearchKnn(query_points, knn);
-    }
-    else {
+    } else {
         utility::LogError(
                 "[NearestNeighborSearch::KnnSearch] Index is not set.");
     }

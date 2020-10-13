@@ -73,12 +73,11 @@ set(HASHMAP_CUDA_SRC
 
 set(CORE_NNS_SRC
     nns/NanoFlannIndex.cpp
-    nns/KnnFaiss.cpp
     nns/NearestNeighborSearch.cpp
 )
 
 if (NOT WIN32)
-    list(APPEND CORE_NNS_SRC nns/FaissIndex.cpp)
+    list(APPEND CORE_NNS_SRC nns/KnnFaiss.cpp)
 endif()
 
 if(BUILD_CUDA_MODULE)
