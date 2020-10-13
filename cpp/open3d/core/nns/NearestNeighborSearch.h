@@ -30,6 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/NanoFlannIndex.h"
+#include "open3d/core/nns/KnnFaiss.h"
 
 namespace open3d {
 namespace core {
@@ -45,9 +46,7 @@ public:
     /// \param dataset_points Dataset points for constructing search index. Must
     /// be 2D, with shape {n, d}.
     NearestNeighborSearch(const Tensor &dataset_points)
-        : dataset_points_(dataset_points) {
-        AssertNotCUDA(dataset_points);
-    };
+        : dataset_points_(dataset_points) {};
 
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
@@ -133,6 +132,7 @@ private:
 
 protected:
     std::unique_ptr<NanoFlannIndex> nanoflann_index_;
+    std::unique_ptr<KnnFaiss> faiss_index_;
     const Tensor dataset_points_;
 };
 }  // namespace nns

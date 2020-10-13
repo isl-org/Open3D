@@ -34,23 +34,30 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Helper.h"
 #include "tests/UnitTest.h"
+#include "tests/core/CoreTest.h"
 
 namespace open3d {
 namespace tests {
 
-TEST(NearestNeighborSearch, KnnSearch) {
+class NNSPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(NearestNeighborSearch,
+                         NNSPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
+
+TEST_P(NNSPermuteDevices, KnnSearch) {
     // Set up nns.
     int size = 10;
-    std::vector<double> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
+    core::Device device = GetParam();
+    std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
                                0.2, 0.0, 0.1, 0.0, 0.0, 0.1, 0.1, 0.0,
                                0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
                                0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
+    core::Tensor ref(points, {size, 3}, core::Dtype::Float32, device);
     core::nns::NearestNeighborSearch nns(ref);
     nns.KnnIndex();
 
-    core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Dtype::Float64);
+    core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
+                       {1, 3}, core::Dtype::Float32);
     std::pair<core::Tensor, core::Tensor> result;
     core::Tensor indices;
     core::Tensor distances;
@@ -64,8 +71,8 @@ TEST(NearestNeighborSearch, KnnSearch) {
     indices = result.first;
     distances = result.second;
     ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4, 9}));
-    ExpectEQ(distances.ToFlatVector<double>(),
-             std::vector<double>({0.00626358, 0.00747938, 0.0108912}));
+    ExpectEQ(distances.ToFlatVector<float>(),
+             std::vector<float>({0.00626358, 0.00747938, 0.0108912}));
 
     // If k > size.result.
     result = nns.KnnSearch(query, 12);
@@ -73,22 +80,22 @@ TEST(NearestNeighborSearch, KnnSearch) {
     distances = result.second;
     ExpectEQ(indices.ToFlatVector<int64_t>(),
              std::vector<int64_t>({1, 4, 9, 0, 3, 2, 5, 7, 6, 8}));
-    ExpectEQ(distances.ToFlatVector<double>(),
-             std::vector<double>({0.00626358, 0.00747938, 0.0108912, 0.0138322,
+    ExpectEQ(distances.ToFlatVector<float>(),
+             std::vector<float>({0.00626358, 0.00747938, 0.0108912, 0.0138322,
                                   0.015048, 0.018695, 0.0199108, 0.0286952,
                                   0.0362638, 0.0411266}));
 
     // Multiple points.
-    query = core::Tensor(std::vector<double>({0.064705, 0.043921, 0.087843,
+    query = core::Tensor(std::vector<float>({0.064705, 0.043921, 0.087843,
                                               0.064705, 0.043921, 0.087843}),
-                         {2, 3}, core::Dtype::Float64);
+                         {2, 3}, core::Dtype::Float32);
     result = nns.KnnSearch(query, 3);
     indices = result.first;
     distances = result.second;
     ExpectEQ(indices.ToFlatVector<int64_t>(),
              std::vector<int64_t>({1, 4, 9, 1, 4, 9}));
-    ExpectEQ(distances.ToFlatVector<double>(),
-             std::vector<double>({0.00626358, 0.00747938, 0.0108912, 0.00626358,
+    ExpectEQ(distances.ToFlatVector<float>(),
+             std::vector<float>({0.00626358, 0.00747938, 0.0108912, 0.00626358,
                                   0.00747938, 0.0108912}));
 }
 

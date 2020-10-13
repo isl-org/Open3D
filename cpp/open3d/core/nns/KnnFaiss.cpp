@@ -31,7 +31,6 @@
 #include "open3d/core/nns/KnnFaiss.h"
 
 #include <faiss/IndexFlat.h>
-#include <faiss/gpu/GpuCloner.h>
 #include <faiss/gpu/GpuIndexFlat.h>
 #include <faiss/gpu/StandardGpuResources.h>
 

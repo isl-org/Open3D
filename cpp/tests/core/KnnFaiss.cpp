@@ -35,6 +35,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Helper.h"
 #include "tests/UnitTest.h"
+#include "tests/core/CoreTest.h"
 
 using namespace open3d;
 using namespace std;
@@ -42,11 +43,15 @@ using namespace std;
 namespace open3d {
 namespace tests {
 
-TEST(KnnFaiss, KnnSearch) {
-    // KnnSearch test assumes system has at least one GPU device.
+class FaissPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(KnnFaiss,
+                         FaissPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
+
+TEST_P(FaissPermuteDevices, KnnSearch) {
     // Set up faiss index.
     int size = 10;
-    core::Device device("CUDA:0");
+    core::Device device = GetParam();
     std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
                               0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
                               0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
@@ -96,15 +101,14 @@ TEST(KnnFaiss, KnnSearch) {
                                  0.00747938, 0.0108912}));
 }
 
-TEST(KnnFaiss, HybridSearch) {
-    // HybridSearch test assumes system has at least one GPU device.
-    // Set up nns.
+TEST_P(FaissPermuteDevices, HybridSearch) {
+    // Set up faiss index.
     int size = 10;
-
+    core::Device device = GetParam();
     std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
                               0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
                               0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Dtype::Float32);
+    core::Tensor ref(points, {size, 3}, core::Dtype::Float32, device);
     core::nns::KnnFaiss faiss_index(ref);
 
     core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),

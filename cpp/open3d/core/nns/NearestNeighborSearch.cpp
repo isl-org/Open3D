@@ -39,19 +39,31 @@ bool NearestNeighborSearch::SetIndex() {
     nanoflann_index_.reset(new NanoFlannIndex());
     return nanoflann_index_->SetTensorData(dataset_points_);
 };
-bool NearestNeighborSearch::KnnIndex() { return SetIndex(); };
+bool NearestNeighborSearch::KnnIndex() {
+    if (dataset_points_.GetBlob()->GetDevice().GetType() == Device::DeviceType::CUDA) {
+        faiss_index_.reset(new KnnFaiss());
+        return faiss_index_->SetTensorData(dataset_points_);
+    } else {
+        nanoflann_index_.reset(new NanoFlannIndex());
+        return nanoflann_index_->SetTensorData(dataset_points_);   
+    }
+};
 bool NearestNeighborSearch::MultiRadiusIndex() { return SetIndex(); };
 bool NearestNeighborSearch::FixedRadiusIndex() { return SetIndex(); }
 bool NearestNeighborSearch::HybridIndex() { return SetIndex(); };
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
-    AssertNotCUDA(query_points);
-    if (!nanoflann_index_) {
+    if (faiss_index_){
+        return faiss_index_->SearchKnn(query_points, knn);
+    }
+    else if (nanoflann_index_) {
+        return nanoflann_index_->SearchKnn(query_points, knn);
+    }
+    else {
         utility::LogError(
                 "[NearestNeighborSearch::KnnSearch] Index is not set.");
     }
-    return nanoflann_index_->SearchKnn(query_points, knn);
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
