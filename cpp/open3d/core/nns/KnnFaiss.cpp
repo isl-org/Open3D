@@ -159,7 +159,7 @@ std::pair<Tensor, Tensor> KnnFaiss::SearchHybrid(const Tensor &query,
 
     float *_data_ptr = static_cast<float *>(query.GetBlob()->GetDataPtr());
 
-    std::vector<long> indices;
+    std::vector<int64_t> indices;
     std::vector<float> distance2;
     indices.resize(max_knn * query_size);
     distance2.resize(max_knn * query_size);

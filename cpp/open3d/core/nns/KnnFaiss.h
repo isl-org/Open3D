@@ -92,8 +92,8 @@ protected:
 #ifdef BUILD_CUDA_MODULE
     std::unique_ptr<faiss::gpu::StandardGpuResources> res;
 #endif
-    size_t dimension_ = 0;
-    size_t dataset_size_ = 0;
+    int64_t dimension_ = 0;
+    int64_t dataset_size_ = 0;
 };
 
 }  // namespace nns
