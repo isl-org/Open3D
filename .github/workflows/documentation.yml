@@ -2,6 +2,11 @@ name: Documentation build
 
 on:
   workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release documentation'
+        required: false
+        default: 'ON'
   push:
     branches:
       - master
@@ -17,6 +22,7 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
       - name: Checkout Open3D source code
         uses: actions/checkout@v2
@@ -120,7 +126,12 @@ jobs:
           bin/GLInfo
           python -c "from open3d import *; import open3d; print(open3d)"
           cd ../docs # To Open3D/docs
-          python make_docs.py --clean_notebooks --execute_notebooks=always --sphinx --doxygen
+          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+            python make_docs.py --clean_notebooks --execute_notebooks=always --sphinx --doxygen
+          else
+            echo "Building docs for a new Open3D release"
+            python make_docs.py --is_release --clean_notebooks --execute_notebooks=always --sphinx --doxygen
+          fi
           cd ../build
           echo
           echo "Build with BUILD_GUI=ON for visualization.{gui,rendering} documentation"
@@ -139,7 +150,12 @@ jobs:
           make install-pip-package -j$NPROC
           make -j$NPROC
           cd ../docs # To Open3D/docs
-          python make_docs.py --execute_notebooks=never --sphinx --doxygen
+          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+            python make_docs.py --execute_notebooks=never --sphinx --doxygen
+          else
+            echo "Building docs for a new Open3D release"
+            python make_docs.py --is_release --execute_notebooks=never --sphinx --doxygen
+          fi
           ccache -s
 
       - name: Upload docs
