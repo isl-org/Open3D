@@ -97,18 +97,17 @@ jobs:
         run: |
           PATH=/usr/lib/ccache:$PATH
           ccache -s
-          echo NPROC=$(nproc)
-          if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
-            echo "Open3D-ML available at ${OPEN3D_ROOT_DIR}."
-          else
-            echo "Error: Open3D-ML not available at ${OPEN3D_ROOT_DIR}."
-            exit 1
-          fi
+          NPROC=$(nproc)
+          echo NPROC=$NPROC
           mkdir build
           cd build
+          echo
+          echo "Build with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
+          echo
           cmake \
                 -DENABLE_HEADLESS_RENDERING=ON \
-                -DBUILD_GUI=ON \
+                -DBUILD_GUI=OFF \
+                -DCMAKE_BUILD_TYPE=Release \
                 -DBUILD_JUPYTER_EXTENSION=ON \
                 -DWITH_OPENMP=ON \
                 -DBUILD_AZURE_KINECT=ON \
@@ -117,11 +116,30 @@ jobs:
                 -DBUNDLE_OPEN3D_ML=ON \
                 ..
           make install-pip-package -j$NPROC
-          make -j$(nproc)
+          make -j$NPROC
           bin/GLInfo
           python -c "from open3d import *; import open3d; print(open3d)"
-          cd .. # Back to Open3D/
-          ./util/make_documentation.sh
+          cd ../docs # To Open3D/docs
+          python make_docs.py --clean_notebooks --execute_notebooks=always --sphinx --doxygen
+          cd ../build
+          echo
+          echo "Build with BUILD_GUI=ON for visualization.{gui,rendering} documentation"
+          echo
+          cmake \
+                -DENABLE_HEADLESS_RENDERING=OFF \
+                -DBUILD_GUI=ON \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_JUPYTER_EXTENSION=ON \
+                -DWITH_OPENMP=ON \
+                -DBUILD_AZURE_KINECT=ON \
+                -DBUILD_TENSORFLOW_OPS=ON \
+                -DBUILD_PYTORCH_OPS=ON \
+                -DBUNDLE_OPEN3D_ML=ON \
+                ..
+          make install-pip-package -j$NPROC
+          make -j$NPROC
+          cd ../docs # To Open3D/docs
+          python make_docs.py --execute_notebooks=never --sphinx --doxygen
           ccache -s
 
       - name: Upload docs
