@@ -208,12 +208,14 @@ jobs:
             python --version
             pip install pytest=="6.0.1" -U
             pip install wheel=="0.35.1" -U
+            pip install cmake=="3.18.2" -U
 
           # Build and run Open3D tests
           run: |
             PATH=/usr/lib/ccache:$PATH
             ccache -s
             source ${HOME}/venv/bin/activate
+            which cmake
             mkdir build
             cd build
             cmake \
