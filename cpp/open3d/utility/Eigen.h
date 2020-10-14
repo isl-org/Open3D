@@ -138,5 +138,11 @@ template <typename IdxType>
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
         const std::vector<Eigen::Vector3d> &points,
         const std::vector<IdxType> &indices);
+
+/// Function to compute the left angle of three counter-clockwise ordered
+/// vertices.
+double ComputeAngle(const Eigen::Vector3d &p0,
+                    const Eigen::Vector3d &p1,
+                    const Eigen::Vector3d &p2);
 }  // namespace utility
 }  // namespace open3d

@@ -298,12 +298,6 @@ public:
                        utility::hash_eigen<Eigen::Vector2i>>
     GetEdgeToVerticesMap() const;
 
-    /// Function that computes the left angle of three counter-clockwise ordered
-    /// vertices.
-    static double ComputeAngle(const Eigen::Vector3d &p0,
-                               const Eigen::Vector3d &p1,
-                               const Eigen::Vector3d &p2);
-
     /// Function that computes the area of a mesh triangle
     static double ComputeTriangleArea(const Eigen::Vector3d &p0,
                                       const Eigen::Vector3d &p1,

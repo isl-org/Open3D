@@ -30,6 +30,7 @@
 #include "open3d/geometry/HalfEdgeTriangleMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Eigen.h"
 
 namespace open3d {
 namespace geometry {
@@ -81,9 +82,9 @@ public:
             return 2 * M_PI;
         }
 
-        return TriangleMesh::ComputeAngle(mesh_->vertices_[vidx0],
-                                          mesh_->vertices_[vidx1],
-                                          mesh_->vertices_[vidx2]);
+        return utility::ComputeAngle(mesh_->vertices_[vidx0],
+                                     mesh_->vertices_[vidx1],
+                                     mesh_->vertices_[vidx2]);
     }
 
     void ComputeAnglesForNeighbors(std::vector<double> &angles,

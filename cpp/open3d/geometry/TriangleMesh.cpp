@@ -1144,25 +1144,6 @@ TriangleMesh::GetEdgeToVerticesMap() const {
     return trias_per_edge;
 }
 
-double TriangleMesh::ComputeAngle(const Eigen::Vector3d &p0,
-                                  const Eigen::Vector3d &p1,
-                                  const Eigen::Vector3d &p2) {
-    const auto v1 = p0 - p1;
-    const auto v2 = p2 - p1;
-    double angle = std::atan2(v1.cross(v2).norm(), v1.dot(v2));
-
-    const auto v3 = p2 - p0;
-    const Eigen::Vector3d p = {1, 1, 1};
-    const auto plane_normal = v3.cross(p);
-    double d = -plane_normal.dot(p0);
-    double convex = (plane_normal.dot(p1) + d) > 0 ? true : false;
-
-    if (!convex) {
-        angle += M_PI;
-    }
-    return angle;
-}
-
 double TriangleMesh::ComputeTriangleArea(const Eigen::Vector3d &p0,
                                          const Eigen::Vector3d &p1,
                                          const Eigen::Vector3d &p2) {
