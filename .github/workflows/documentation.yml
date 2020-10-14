@@ -2,6 +2,11 @@ name: Documentation build
 
 on:
   workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release documentation'
+        required: false
+        default: 'ON'
   push:
     branches:
       - master
@@ -9,21 +14,27 @@ on:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
 env:
-  SHARED: OFF
-  BUILD_TENSORFLOW_OPS: ON
-  BUILD_CUDA_MODULE: OFF
-  NPROC: 2
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   headless-docs:
     # Build headless and docs
     runs-on: ubuntu-18.04
+    env:
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
-      - name: Checkout source code
+      - name: Checkout Open3D source code
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: intel-isl/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
       - name: Setup cache
         uses: actions/cache@v2
         with:
@@ -86,29 +97,73 @@ jobs:
           # dependencies for building the ml ops
           python -m pip install -U -q "yapf==0.30.0" "tensorflow==2.3.0"
           python -m pip install -U -q "torch==1.6.0+cpu" -f https://download.pytorch.org/whl/torch_stable.html
+          # Open3D-ML dependencies
+          python -m pip install -r ${OPEN3D_ML_ROOT}/requirements.txt
       - name: Build docs
         run: |
           PATH=/usr/lib/ccache:$PATH
           ccache -s
-          nproc
+          NPROC=$(nproc)
+          echo NPROC=$NPROC
           mkdir build
           cd build
+          echo
+          echo "Build with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
+          echo
           cmake \
                 -DENABLE_HEADLESS_RENDERING=ON \
                 -DBUILD_GUI=OFF \
+                -DCMAKE_BUILD_TYPE=Release \
                 -DBUILD_JUPYTER_EXTENSION=ON \
                 -DWITH_OPENMP=ON \
                 -DBUILD_AZURE_KINECT=ON \
                 -DBUILD_TENSORFLOW_OPS=ON \
                 -DBUILD_PYTORCH_OPS=ON \
+                -DBUNDLE_OPEN3D_ML=ON \
                 ..
           make install-pip-package -j$NPROC
           make -j$NPROC
           bin/GLInfo
           python -c "from open3d import *; import open3d; print(open3d)"
-          cd .. # Back to Open3D/
-          ./util/make_documentation.sh
+          cd ../docs # To Open3D/docs
+          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+            python make_docs.py --clean_notebooks --execute_notebooks=always --sphinx --doxygen
+          else
+            echo "Building docs for a new Open3D release"
+            python make_docs.py --is_release --clean_notebooks --execute_notebooks=always --sphinx --doxygen
+          fi
+          cd ../build
+          echo
+          echo "Build with BUILD_GUI=ON for visualization.{gui,rendering} documentation"
+          echo
+          cmake \
+                -DENABLE_HEADLESS_RENDERING=OFF \
+                -DBUILD_GUI=ON \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_JUPYTER_EXTENSION=ON \
+                -DWITH_OPENMP=ON \
+                -DBUILD_AZURE_KINECT=ON \
+                -DBUILD_TENSORFLOW_OPS=ON \
+                -DBUILD_PYTORCH_OPS=ON \
+                -DBUNDLE_OPEN3D_ML=ON \
+                ..
+          make install-pip-package -j$NPROC
+          make -j$NPROC
+          cd ../docs # To Open3D/docs
+          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+            python make_docs.py --execute_notebooks=never --sphinx --doxygen
+          else
+            echo "Building docs for a new Open3D release"
+            python make_docs.py --is_release --execute_notebooks=never --sphinx --doxygen
+          fi
           ccache -s
+
+      - name: Upload docs
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d_docs
+          path: docs/_out/html
+          if-no-files-found: error
 
       - name: Deploy docs
         if: ${{ github.ref == 'refs/heads/master' }}
