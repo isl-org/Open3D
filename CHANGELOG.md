@@ -13,6 +13,7 @@
 * Added ISS Keypoint Detector
 * Added an RPC interface for external visualizers running in a separate process
 * Added `maximum_error` and `boundary_weight` parameter to `simplify_quadric_decimation`
+* Added Line3D/Ray3D/Segment3D classes with plane, point, closest-distance, and AABB tests
 
 ## 0.9.0
 

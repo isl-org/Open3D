@@ -26,11 +26,15 @@
 
 #include "open3d/pipelines/registration/Registration.h"
 
+#include <memory>
+#include <utility>
+
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
 #include "open3d/pipelines/registration/Feature.h"
+#include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Console.h"
 #include "pybind/docstring.h"
@@ -229,9 +233,18 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
             te_p2l);
     py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
             te_p2l);
-    te_p2l.def("__repr__", [](const TransformationEstimationPointToPlane &te) {
-        return std::string("TransformationEstimationPointToPlane");
-    });
+    te_p2l.def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                   return new TransformationEstimationPointToPlane(
+                           std::move(kernel));
+               }),
+               "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationPointToPlane &te) {
+                     return std::string("TransformationEstimationPointToPlane");
+                 })
+            .def_readwrite("kernel",
+                           &TransformationEstimationPointToPlane::kernel_,
+                           "Robust Kernel used in the Optimization");
 
     // open3d.registration.CorrespondenceChecker
     py::class_<CorrespondenceChecker,
@@ -573,6 +586,7 @@ void pybind_registration(py::module &m) {
     pybind_feature_methods(m_submodule);
     pybind_global_optimization(m_submodule);
     pybind_global_optimization_methods(m_submodule);
+    pybind_robust_kernels(m_submodule);
 }
 
 }  // namespace registration
