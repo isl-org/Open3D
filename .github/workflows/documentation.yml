@@ -27,7 +27,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: intel-isl/Open3D-ML
-          ref: master
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
@@ -93,7 +92,7 @@ jobs:
           python -m pip install -U -q "yapf==0.30.0" "tensorflow==2.3.0"
           python -m pip install -U -q "torch==1.6.0+cpu" -f https://download.pytorch.org/whl/torch_stable.html
           # Open3D-ML dependencies
-          python -m pip install -U -r ${OPEN3D_ML_ROOT}/requirements.txt
+          python -m pip install -r ${OPEN3D_ML_ROOT}/requirements.txt
       - name: Build docs
         run: |
           PATH=/usr/lib/ccache:$PATH
