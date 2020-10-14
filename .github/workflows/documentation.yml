@@ -27,6 +27,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: intel-isl/Open3D-ML
+          ref: master
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
