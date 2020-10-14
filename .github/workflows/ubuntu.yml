@@ -2,6 +2,12 @@ name: Ubuntu CI
 
 on:
   workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release wheels'
+        required: false
+        default: 'ON'
+
   push:
     branches:
       - master
@@ -68,6 +74,7 @@ jobs:
       BUILD_CUDA_MODULE: ON
       NPROC: 2
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -194,7 +201,6 @@ jobs:
           cd util
           source ci_utils.sh
           install_python_dependencies with-unit-test
-          python -m pip install -r "$OPEN3D_ML_ROOT/requirements.txt"
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           python -m pip install ../open3d*-$pi_tag-*.whl
           echo
@@ -202,6 +208,7 @@ jobs:
           DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
           find "$DLL_PATH"/{cpu,cuda}/ -type f -print -execdir ldd {} \;
           echo
+          python -m pip install -r "$OPEN3D_ML_ROOT/requirements.txt"
           test_wheel
       - name: Run Python unit tests (benchmarks)
         run: |

@@ -181,19 +181,8 @@ build_all() {
 build_wheel() {
 
     echo "Building Open3D wheel"
-    echo
-    echo Building with CPU only...
-    mkdir -p build
-    cd build # PWD=Open3D/build
 
-    # BUILD_FILAMENT_FROM_SOURCE if Linux and old glibc (Ubuntu 18.04)
     BUILD_FILAMENT_FROM_SOURCE=OFF
-    #if [[ "$OSTYPE" == linux-gnu* ]]; then
-    #    glibc_version=$(ldd --version | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
-    #    if dpkg --compare-versions "$glibc_version" lt 2.31; then
-    #        BUILD_FILAMENT_FROM_SOURCE=ON
-    #    fi
-    #fi
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
@@ -201,9 +190,19 @@ build_wheel() {
     else
         BUNDLE_OPEN3D_ML=OFF
     fi
+    if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+        DEVELOPER_BUILD="ON"
+    else
+        echo "Building for a new Open3D release"
+    fi
     set -u
 
+    echo
+    echo Building with CPU only...
+    mkdir -p build
+    cd build # PWD=Open3D/build
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF
+        -DDEVELOPER_BUILD="$DEVELOPER_BUILD"
         -DBUILD_TENSORFLOW_OPS=ON
         -DBUILD_PYTORCH_OPS=ON
         -DBUILD_RPC_INTERFACE=ON
