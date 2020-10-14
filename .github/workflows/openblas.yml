@@ -215,10 +215,10 @@ jobs:
             PATH=/usr/lib/ccache:$PATH
             ccache -s
             source ${HOME}/venv/bin/activate
-            which cmake
+            CMAKE=$(which cmake)
             mkdir build
             cd build
-            cmake \
+            $CMAKE \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
               -DBUILD_GUI=ON \
