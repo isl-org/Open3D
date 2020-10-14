@@ -26,6 +26,7 @@ Open3D: A Modern Library for 3D Data Processing
     compilation
     cpp_project
     builddocs
+    arm
 
 
 .. toctree::

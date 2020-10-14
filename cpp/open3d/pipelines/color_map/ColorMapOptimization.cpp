@@ -169,7 +169,9 @@ static void OptimizeImageCoorRigid(
             intr.block<3, 3>(0, 0) = intrinsic;
             intr(3, 3) = 1.0;
 
-            auto f_lambda = [&](int i, Eigen::Vector6d& J_r, double& r) {
+            auto f_lambda = [&](int i, Eigen::Vector6d& J_r, double& r,
+                                double& w) {
+                w = 1.0;
                 jac.ComputeJacobianAndResidualRigid(
                         i, J_r, r, mesh, proxy_intensity, images_gray[c],
                         images_dx[c], images_dy[c], intr, extrinsic,

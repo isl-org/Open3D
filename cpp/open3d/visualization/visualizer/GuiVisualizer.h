@@ -66,7 +66,7 @@ public:
     /// Loads asynchronously, will return immediately.
     void LoadGeometry(const std::string& path);
 
-    void ExportCurrentImage(int width, int height, const std::string& path);
+    void ExportCurrentImage(const std::string& path);
 
     void Layout(const gui::Theme& theme) override;
 

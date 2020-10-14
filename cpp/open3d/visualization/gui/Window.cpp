@@ -150,7 +150,8 @@ void ChangeAllRenderQuality(
 
 }  // namespace
 
-const int Window::FLAG_TOPMOST = (1 << 0);
+const int Window::FLAG_HIDDEN = (1 << 0);
+const int Window::FLAG_TOPMOST = (1 << 1);
 
 struct Window::Impl {
     GLFWwindow* window_ = nullptr;
@@ -228,7 +229,8 @@ Window::Window(const std::string& title,
 #if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
 #endif
-    bool visible = (impl_->wants_auto_size_ || impl_->wants_auto_center_);
+    bool visible = (!(flags & FLAG_HIDDEN) &&
+                    (impl_->wants_auto_size_ || impl_->wants_auto_center_));
     glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FLOATING,
                    ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
@@ -601,11 +603,30 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     dlg->Layout(GetTheme());
 }
 
+// When scene caching is enabled on a SceneWidget the SceneWidget only redraws
+// when something in the scene has changed (e.g., camera change, material
+// change). However, the SceneWidget also needs to redraw if any part of it
+// becomes uncovered. Unfortunately, we do not have 'Expose' events to use for
+// that purpose. So, we manually force the redraw by calling
+// ForceRedrawSceneWidget when an event occurs that we know will expose the
+// SceneWidget. For example, submenu's of a menu bar opening/closing and dialog
+// boxes closing.
+void Window::ForceRedrawSceneWidget() {
+    std::for_each(impl_->children_.begin(), impl_->children_.end(), [](auto w) {
+        auto sw = std::dynamic_pointer_cast<SceneWidget>(w);
+        if (sw) {
+            sw->ForceRedraw();
+        }
+    });
+}
+
 void Window::CloseDialog() {
     if (impl_->focus_widget_ == impl_->active_dialog_.get()) {
         SetFocusWidget(nullptr);
     }
     impl_->active_dialog_.reset();
+
+    ForceRedrawSceneWidget();
     // The dialog might not be closing from within a draw call, such as when
     // a native file dialog closes, so we need to post a redraw, just in case.
     // If it is from within a draw call, then any redraw request from that will
@@ -826,14 +847,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
             needs_redraw = true;
         }
         if (menubar->CheckVisibilityChange()) {
-            std::for_each(impl_->children_.begin(), impl_->children_.end(),
-                          [](auto w) {
-                              auto sw =
-                                      std::dynamic_pointer_cast<SceneWidget>(w);
-                              if (sw) {
-                                  sw->ForceRedraw();
-                              }
-                          });
+            ForceRedrawSceneWidget();
         }
     }
 

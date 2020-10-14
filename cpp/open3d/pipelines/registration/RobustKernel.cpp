@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,62 +23,48 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+// @author Ignacio Vizzo     [ivizzo@uni-bonn.de]
+//
+// Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
+// ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/pipelines/registration/RobustKernel.h"
 
-#include <Eigen/Geometry>
+#include <algorithm>
+#include <cmath>
+
+namespace {
+double inline square(double x) { return x * x; }
+}  // namespace
 
 namespace open3d {
-namespace visualization {
-namespace rendering {
+namespace pipelines {
+namespace registration {
 
-class Scene;
-class Camera;
+double L2Loss::Weight(double /*residual*/) const { return 1.0; }
 
-class View {
-public:
-    enum class TargetBuffers : std::uint8_t {
-        None = 0u,
-        Color = 1u,
-        Depth = 2u,
-        Stencil = 4u,
+double L1Loss::Weight(double residual) const {
+    return 1.0 / std::abs(residual);
+}
 
-        ColorAndDepth = Color | Depth,
-        ColorAndStencil = Color | Stencil,
-        DepthAndStencil = Depth | Stencil,
-        All = Color | Depth | Stencil
-    };
+double HuberLoss::Weight(double residual) const {
+    const double e = std::abs(residual);
+    return k_ / std::max(e, k_);
+}
 
-    enum class Mode : std::uint8_t {
-        Color = 0u,
-        Depth,
-        Normals,
-        // This three modes always stay at end
-        ColorMapX,
-        ColorMapY,
-        ColorMapZ
-    };
+double CauchyLoss::Weight(double residual) const {
+    return 1.0 / (1 + square(residual / k_));
+}
 
-    virtual ~View() {}
+double GMLoss::Weight(double residual) const {
+    return k_ / square(k_ + square(residual));
+}
 
-    virtual void SetDiscardBuffers(const TargetBuffers& buffers) = 0;
-    virtual Mode GetMode() const = 0;
-    virtual void SetMode(Mode mode) = 0;
+double TukeyLoss::Weight(double residual) const {
+    const double e = std::abs(residual);
+    return square(1.0 - square(std::min(1.0, e / k_)));
+}
 
-    virtual void SetSampleCount(int n) = 0;
-    virtual int GetSampleCount() const = 0;
-
-    virtual void SetViewport(std::int32_t x,
-                             std::int32_t y,
-                             std::uint32_t w,
-                             std::uint32_t h) = 0;
-    virtual std::array<int, 4> GetViewport() const = 0;
-
-    virtual void SetSSAOEnabled(bool enabled) = 0;
-
-    virtual Camera* GetCamera() const = 0;
-};
-
-}  // namespace rendering
-}  // namespace visualization
+}  // namespace registration
+}  // namespace pipelines
 }  // namespace open3d
