@@ -72,11 +72,19 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.6, 3.7, 3.8]
+    env:
+      OPEN3D_ML_ROOT: ${{ github.workspace }}\Open3D-ML
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: intel-isl/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Set up Python version
         uses: actions/setup-python@v2
@@ -87,7 +95,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DBUNDLE_OPEN3D_ML=ON ..
 
       - name: Build Python package
         run: |

@@ -68,11 +68,19 @@ jobs:
     env:
       BUILD_CUDA_MODULE: OFF
       NPROC: 2
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: intel-isl/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
       - name: Setup cache
         uses: actions/cache@v2
         with:

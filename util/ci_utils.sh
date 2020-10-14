@@ -194,6 +194,14 @@ build_wheel() {
     #        BUILD_FILAMENT_FROM_SOURCE=ON
     #    fi
     #fi
+    set +u
+    if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
+        echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
+        BUNDLE_OPEN3D_ML=ON
+    else
+        BUNDLE_OPEN3D_ML=OFF
+    fi
+    set -u
 
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF
         -DBUILD_TENSORFLOW_OPS=ON
@@ -206,6 +214,7 @@ build_wheel() {
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_UNIT_TESTS=OFF
         -DBUILD_BENCHMARKS=OFF
+        -DBUNDLE_OPEN3D_ML="$BUNDLE_OPEN3D_ML"
     )
     cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
     echo
