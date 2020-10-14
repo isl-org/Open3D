@@ -165,11 +165,19 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.6, 3.7, 3.8]
+    env:
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
           submodules: false
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: intel-isl/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
       - name: Download wheels
         uses: actions/download-artifact@v2
         # See https://github.com/dawidd6/action-download-artifact for more
@@ -186,6 +194,7 @@ jobs:
           cd util
           source ci_utils.sh
           install_python_dependencies with-unit-test
+          python -m pip install -r "$OPEN3D_ML_ROOT/requirements.txt"
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           python -m pip install ../open3d*-$pi_tag-*.whl
           echo
