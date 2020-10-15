@@ -11,8 +11,7 @@ class ExampleWindow:
     MENU_QUIT = 3
 
     def __init__(self):
-        self.window = gui.Application.instance.create_window("Test")
-#        self.window = gui.Application.instance.create_window("Test", 400, 768)
+        self.window = gui.Application.instance.create_window("Test", 400, 768)
 #        self.window = gui.Application.instance.create_window("Test", 400, 768,
 #                                                             x=50, y=100)
         w = self.window  # for more concise code
