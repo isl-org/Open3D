@@ -12,8 +12,8 @@ class ExampleWindow:
 
     def __init__(self):
         self.window = gui.Application.instance.create_window("Test", 400, 768)
-#        self.window = gui.Application.instance.create_window("Test", 400, 768,
-#                                                             x=50, y=100)
+        # self.window = gui.Application.instance.create_window("Test", 400, 768,
+        #                                                        x=50, y=100)
         w = self.window  # for more concise code
 
         # Rather than specifying sizes in pixels, which may vary in size based
