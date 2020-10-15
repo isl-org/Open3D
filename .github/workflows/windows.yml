@@ -36,7 +36,7 @@ jobs:
         with:
           submodules: true
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: conda-incubator/setup-miniconda@v1
         with:
           python-version: 3.6
       - name: Config
@@ -87,7 +87,7 @@ jobs:
           submodules: true
 
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: conda-incubator/setup-miniconda@v1
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -163,7 +163,7 @@ jobs:
         with:
           name: open3d_win_amd64_wheels
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: conda-incubator/setup-miniconda@v1
         with:
           python-version: ${{ matrix.python_version }}
       - name: Test Python package

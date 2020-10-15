@@ -48,7 +48,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: conda-incubator/setup-miniconda@v1
         with:
           python-version: 3.6
       - name: Install dependencies
@@ -102,7 +102,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: conda-incubator/setup-miniconda@v1
         with:
           python-version: ${{ matrix.python_version }}
       - name: Install dependencies
@@ -186,7 +186,7 @@ jobs:
           name: open3d_macosx_x86_64_wheels
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: conda-incubator/setup-miniconda@v1
         with:
           python-version: ${{ matrix.python_version }}
       - name: Test Python package

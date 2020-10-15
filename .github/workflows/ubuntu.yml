@@ -47,7 +47,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: conda-incubator/setup-miniconda@v1
         with:
           python-version: 3.6
       # Pre-installed 18.04 packages: https://git.io/JfHmW
@@ -101,7 +101,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: conda-incubator/setup-miniconda@v1
         with:
           python-version: ${{ matrix.python_version }}
       # Pre-installed 18.04 packages: https://git.io/JfHmW
@@ -192,7 +192,7 @@ jobs:
         with:
           name: open3d_linux_x86_64_wheels
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: conda-incubator/setup-miniconda@v1
         with:
           python-version: ${{ matrix.python_version }}
       - name: Test Python package

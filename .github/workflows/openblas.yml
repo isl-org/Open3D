@@ -29,7 +29,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-openblas-x86_64-ccache
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: conda-incubator/setup-miniconda@v1
         with:
             python-version: 3.6
       - name: Install dependencies
