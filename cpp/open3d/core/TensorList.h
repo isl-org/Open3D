@@ -86,7 +86,7 @@ public:
 
     /// Constructs a tensorlist with specified size
     ///
-    /// \param size of the tensorlist
+    /// \param size Size of the tensorlist
     /// \param element_shape Shape of the contained tensors, e.g. {3,}. 0-sized
     /// and scalar element_shape are allowed.
     /// \param dtype Data type of the contained tensors. e.g. Dtype::Float32.
