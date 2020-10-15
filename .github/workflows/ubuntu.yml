@@ -51,6 +51,7 @@ jobs:
         with:
           auto-update-conda: false
           python-version: "3.6"
+          activate-environment: foo
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
         run: |
