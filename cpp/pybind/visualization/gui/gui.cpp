@@ -60,6 +60,39 @@
 #include "pybind/docstring.h"
 #include "pybind11/functional.h"
 
+// We cannot give out a shared_ptr to objects like Window which reference
+// Filament objects, because we cannot guarantee that the Python script is
+// not holding on to a reference when we cleanup Filament. The Open3D library
+// will clear its shared_ptrs expecting the dependent object(s) to clean up,
+// but they won't because Python still has a shared_ptr, leading to a crash
+// when the variable goes of scope on the Python side.
+// The following would crash gui.Window's holder is std::shared_ptr:
+//   import open3d.visualization.gui as gui
+//   def main():
+//       gui.Application.instance.initialize()
+//       w = gui.Application.instance.create_window("Crash", 640, 480)
+//       gui.Application.instance.run()
+//   if __name__ == "__main__":
+//       main()
+// However, if remove the 'w = ' part, it would not crash.
+template<typename T>
+class UnownedPointer {
+public:
+    UnownedPointer() : ptr_(nullptr) {}
+    explicit UnownedPointer(T* p) : ptr_(p) {}
+    ~UnownedPointer() {}  // don't delete!
+
+    T* get() { return ptr_; }
+    T& operator*() { return *ptr_; }
+    T* operator->() { return ptr_; }
+    void reset() { ptr_ = nullptr; }  // don't delete!
+
+private:
+    T *ptr_;
+};
+PYBIND11_DECLARE_HOLDER_TYPE(T, UnownedPointer<T>);
+
+
 namespace open3d {
 namespace visualization {
 namespace gui {
@@ -204,6 +237,23 @@ void pybind_gui_classes(py::module &m) {
                     "provided by the caller. One of the `initialize` functions "
                     "_must_ be called prior to using anything in the gui "
                     "module")
+            .def("create_window",
+                 [](Application &instance, const std::string &title,
+                    int width, int height, int x, int y, int flags) {
+                     std::shared_ptr<PyWindow> w;
+                     if (x < 0 && y < 0 && width < 0 && height < 0) {
+                         w.reset(new PyWindow(title, flags));
+                     } else if (x < 0 && y < 0) {
+                         w.reset(new PyWindow(title, width, height, flags));
+                     } else {
+                         w.reset(new PyWindow(title, x, y, width, height,
+                                              flags));
+                     }
+                     instance.AddWindow(w);
+                     return w.get();
+                 },
+                 "title"_a = std::string(), "width"_a = -1, "height"_a = -1,
+                 "x"_a = -1, "y"_a = -1, "flags"_a = 0)
             .def(
                     "run",
                     [](Application &instance) {
@@ -257,11 +307,7 @@ void pybind_gui_classes(py::module &m) {
             .def_property("menubar", &Application::GetMenubar,
                           &Application::SetMenubar,
                           "The Menu for the application (initially None)")
-            .def("add_window", &Application::AddWindow,
-                 "Adds the window to the application")
-            .def("remove_window", &Application::AddWindow,
-                 "Removes the window from the application, closing it. If "
-                 "there are no open windows left the event loop will exit.")
+            // Note: we cannot export AddWindow and RemoveWindow
             .def_property_readonly("resource_path",
                                    &Application::GetResourcePath,
                                    "Returns a string with the path to the "
@@ -269,24 +315,13 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Window ----
     // Pybind appears to need to know about the base class. It doesn't have
-    // to be named the same as the C++ class, though.
-    py::class_<Window, std::shared_ptr<Window>> window_base(
+    // to be named the same as the C++ class, though. The holder object cannot
+    // be a shared_ptr or we can crash (see comment for UnownedPointer).
+    py::class_<Window, UnownedPointer<Window>> window_base(
             m, "WindowBase", "Application window");
-    py::class_<PyWindow, std::shared_ptr<PyWindow>, Window> window(
+    py::class_<PyWindow, UnownedPointer<PyWindow>, Window> window(
             m, "Window", "Application window");
-    window.def(py::init([](const std::string &title, int width, int height,
-                           int x, int y, int flags) {
-                   if (x < 0 && y < 0 && width < 0 && height < 0) {
-                       return new PyWindow(title, flags);
-                   } else if (x < 0 && y < 0) {
-                       return new PyWindow(title, width, height, flags);
-                   } else {
-                       return new PyWindow(title, x, y, width, height, flags);
-                   }
-               }),
-               "title"_a = std::string(), "width"_a = -1, "height"_a = -1,
-               "x"_a = -1, "y"_a = -1, "flags"_a = 0)
-            .def("__repr__",
+    window.def("__repr__",
                  [](const PyWindow &w) { return "Application window"; })
             .def("add_child", &PyWindow::AddChild,
                  "Adds a widget to the window")

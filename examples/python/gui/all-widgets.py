@@ -11,9 +11,10 @@ class ExampleWindow:
     MENU_QUIT = 3
 
     def __init__(self):
-        self.window = gui.Window("Test")
-        # self.window = gui.Window("Test", 640, 480)
-        # self.window = gui.Window("Test", 640, 480, x=50, y=100)
+        self.window = gui.Application.instance.create_window("Test")
+#        self.window = gui.Application.instance.create_window("Test", 400, 768)
+#        self.window = gui.Application.instance.create_window("Test", 400, 768,
+#                                                             x=50, y=100)
         w = self.window  # for more concise code
 
         # Rather than specifying sizes in pixels, which may vary in size based
@@ -383,7 +384,6 @@ def main():
     gui.Application.instance.initialize()
 
     w = ExampleWindow()
-    gui.Application.instance.add_window(w.window)  # make the window visible
 
     # Run the event loop. This will not return until the last window is closed.
     gui.Application.instance.run()
