@@ -109,60 +109,50 @@ jobs:
           echo NPROC=$NPROC
           mkdir build
           cd build
-          echo
-          echo "Build with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
-          echo
           if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
             DEVELOPER_BUILD=ON
+            DOC_ARGS=""
+          else
+            DOC_ARGS="--is_release"
+            echo "Building docs for a new Open3D release"
+          echo
+          echo "Building Open3D with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
+          echo
           fi
-          cmake \
+          cmakeOptions=(-DDEVELOPER_BUILD="$DEVELOPER_BUILD"
+                -DCMAKE_BUILD_TYPE=Release
+                -DBUILD_JUPYTER_EXTENSION=ON
+                -DWITH_OPENMP=ON
+                -DBUILD_AZURE_KINECT=ON
+                -DBUILD_TENSORFLOW_OPS=ON
+                -DBUILD_PYTORCH_OPS=ON
+                -DBUILD_RPC_INTERFACE=ON
+                -DBUNDLE_OPEN3D_ML=ON
+          )
+          cmake "${cmakeOptions[@]}" \
                 -DENABLE_HEADLESS_RENDERING=ON \
                 -DBUILD_GUI=OFF \
-                -DDEVELOPER_BUILD="$DEVELOPER_BUILD" \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DBUILD_JUPYTER_EXTENSION=ON \
-                -DWITH_OPENMP=ON \
-                -DBUILD_AZURE_KINECT=ON \
-                -DBUILD_TENSORFLOW_OPS=ON \
-                -DBUILD_PYTORCH_OPS=ON \
-                -DBUNDLE_OPEN3D_ML=ON \
                 ..
           make install-pip-package -j$NPROC
           make -j$NPROC
           bin/GLInfo
           python -c "from open3d import *; import open3d; print(open3d)"
           cd ../docs # To Open3D/docs
-          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then
-            python make_docs.py --clean_notebooks --execute_notebooks=always --sphinx --doxygen
-          else
-            echo "Building docs for a new Open3D release"
-            python make_docs.py --is_release --clean_notebooks --execute_notebooks=always --sphinx --doxygen
-          fi
+          python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --pyapi_rst=never
           cd ../build
           echo
-          echo "Build with BUILD_GUI=ON for visualization.{gui,rendering} documentation"
+          echo "Building Open3D with BUILD_GUI=ON for visualization.{gui,rendering} documentation"
           echo
-          cmake \
+          cmake "${cmakeOptions[@]}" \
                 -DENABLE_HEADLESS_RENDERING=OFF \
                 -DBUILD_GUI=ON \
-                -DDEVELOPER_BUILD="$DEVELOPER_BUILD" \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DBUILD_JUPYTER_EXTENSION=ON \
-                -DWITH_OPENMP=ON \
-                -DBUILD_AZURE_KINECT=ON \
-                -DBUILD_TENSORFLOW_OPS=ON \
-                -DBUILD_PYTORCH_OPS=ON \
-                -DBUNDLE_OPEN3D_ML=ON \
                 ..
           make install-pip-package -j$NPROC
           make -j$NPROC
+          bin/GLInfo || true  # Expect failure since HEADLESS_RENDERING=OFF
+          python -c "from open3d import *; import open3d; print(open3d)"
           cd ../docs # To Open3D/docs
-          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
-            python make_docs.py --execute_notebooks=never --sphinx --doxygen
-          else
-            echo "Building docs for a new Open3D release"
-            python make_docs.py --is_release --execute_notebooks=never --sphinx --doxygen
-          fi
+          python make_docs.py $DOC_ARGS  --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen
           ccache -s
 
       - name: Upload docs
