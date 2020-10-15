@@ -68,6 +68,7 @@ Open3D: A Modern Library for 3D Data Processing
     python_api/open3d.core
     python_api/open3d.geometry
     python_api/open3d.io
+    python_api/open3d.t
     python_api/open3d.ml
     python_api/open3d.pipelines
     python_api/open3d.utility

@@ -1,6 +1,6 @@
 .. _arm:
 
-ARM Support
+ARM support
 ===========
 
 Open3D provides experimental support for 64-bit ARM architecture (``arm64``
