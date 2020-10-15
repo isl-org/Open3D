@@ -303,7 +303,7 @@ class SphinxDocsBuilder:
         if self.is_release:
             version_list = [
                 line.rstrip("\n").split(" ")[1]
-                for line in open("../src/Open3D/version.txt")
+                for line in open("../cpp/open3d/version.txt")
             ]
             release_version = ".".join(version_list[:3])
             print("Building docs for release:", release_version)
