@@ -7,6 +7,7 @@ on:
         description: 'Set to OFF for Release documentation'
         required: false
         default: 'ON'
+
   push:
     branches:
       - master
@@ -110,9 +111,13 @@ jobs:
           echo
           echo "Build with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
           echo
+          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+            DEVELOPER_BUILD=ON
+          fi
           cmake \
                 -DENABLE_HEADLESS_RENDERING=ON \
                 -DBUILD_GUI=OFF \
+                -DDEVELOPER_BUILD="$DEVELOPER_BUILD" \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DBUILD_JUPYTER_EXTENSION=ON \
                 -DWITH_OPENMP=ON \
@@ -126,7 +131,7 @@ jobs:
           bin/GLInfo
           python -c "from open3d import *; import open3d; print(open3d)"
           cd ../docs # To Open3D/docs
-          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then
             python make_docs.py --clean_notebooks --execute_notebooks=always --sphinx --doxygen
           else
             echo "Building docs for a new Open3D release"
@@ -139,6 +144,7 @@ jobs:
           cmake \
                 -DENABLE_HEADLESS_RENDERING=OFF \
                 -DBUILD_GUI=ON \
+                -DDEVELOPER_BUILD="$DEVELOPER_BUILD" \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DBUILD_JUPYTER_EXTENSION=ON \
                 -DWITH_OPENMP=ON \
