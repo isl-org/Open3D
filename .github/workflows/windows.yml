@@ -38,6 +38,7 @@ jobs:
       - name: Set up Python version
         uses: conda-incubator/setup-miniconda@v1
         with:
+          auto-update-conda: false
           python-version: 3.6
       - name: Config
         run: |
@@ -89,6 +90,7 @@ jobs:
       - name: Set up Python version
         uses: conda-incubator/setup-miniconda@v1
         with:
+          auto-update-conda: false
           python-version: ${{ matrix.python_version }}
 
       - name: Config
@@ -165,6 +167,7 @@ jobs:
       - name: Set up Python
         uses: conda-incubator/setup-miniconda@v1
         with:
+          auto-update-conda: false
           python-version: ${{ matrix.python_version }}
       - name: Test Python package
         run: |

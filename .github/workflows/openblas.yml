@@ -31,6 +31,7 @@ jobs:
       - name: Set up Python version
         uses: conda-incubator/setup-miniconda@v1
         with:
+            auto-update-conda: false
             python-version: 3.6
       - name: Install dependencies
         run: |
