@@ -253,7 +253,11 @@ void pybind_gui_classes(py::module &m) {
                         return w.get();
                     },
                     "title"_a = std::string(), "width"_a = -1, "height"_a = -1,
-                    "x"_a = -1, "y"_a = -1, "flags"_a = 0)
+                    "x"_a = -1, "y"_a = -1, "flags"_a = 0,
+                    "Creates a window and adds it to the application. "
+                    "To programmatically destroy the window do window.close()."
+                    "Usage: create_window(title, width, height, x, y, flags). "
+                    "x, y, and flags are optional.")
             .def(
                     "run",
                     [](Application &instance) {
@@ -320,7 +324,9 @@ void pybind_gui_classes(py::module &m) {
     py::class_<Window, UnownedPointer<Window>> window_base(
             m, "WindowBase", "Application window");
     py::class_<PyWindow, UnownedPointer<PyWindow>, Window> window(
-            m, "Window", "Application window");
+            m, "Window",
+            "Application window. Create with "
+            "Application.instance.create_window().");
     window.def("__repr__",
                [](const PyWindow &w) { return "Application window"; })
             .def("add_child", &PyWindow::AddChild,
