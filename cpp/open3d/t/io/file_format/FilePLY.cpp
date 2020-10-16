@@ -49,7 +49,7 @@ struct PLYReaderState {
     std::vector<int64_t> attribute_num;
 };
 
-int ReadPropertyCallback(p_ply_argument argument) {
+int ReadAttributeCallback(p_ply_argument argument) {
     PLYReaderState *state_ptr;
     long id;
     ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
@@ -69,14 +69,16 @@ int ReadPropertyCallback(p_ply_argument argument) {
     return 1;
 }
 
-bool ConcatColumns(core::TensorList a,
-                   core::TensorList b,
-                   core::TensorList c,
+bool ConcatColumns(const core::TensorList &a,
+                   const core::TensorList &b,
+                   const core::TensorList &c,
                    core::TensorList &combined) {
-    if (!(a.GetSize() == b.GetSize()) || !(a.GetSize() == c.GetSize()))
+    if (a.GetSize() != b.GetSize() || a.GetSize() != c.GetSize()) {
         return false;
-    if (!(a.GetDtype() == b.GetDtype()) || !(a.GetDtype() == c.GetDtype()))
+    }
+    if (a.GetDtype() != b.GetDtype() || a.GetDtype() != c.GetDtype()) {
         return false;
+    }
 
     combined = core::TensorList(a.GetSize(), {3}, a.GetDtype());
 
@@ -87,7 +89,7 @@ bool ConcatColumns(core::TensorList a,
     return true;
 }
 
-core::Dtype getDtype(e_ply_type type) {
+core::Dtype GetDtype(e_ply_type type) {
     // PLY_LIST attribute is not supported.
     // Currently, we are not doing datatype conversions, so some of the ply
     // datatypes are not included.
@@ -124,7 +126,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
     if (!ply_file) {
-        utility::LogWarning("Read PLY failed: unable to open file: {}",
+        utility::LogWarning("Read PLY failed: unable to open file: {}.",
                             filename.c_str());
         return false;
     }
@@ -135,36 +137,36 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     }
 
     PLYReaderState state;
-    p_ply_property property = NULL;
+    p_ply_property attribute = NULL;
     e_ply_type type, length_type, value_type;
-    long property_id = 0;
-    const char *property_nm;
+    int64_t attribute_id = 0;
+    const char *attribute_num;
 
     // Get first ply element; assuming it will be vertex.
     p_ply_element element = ply_get_next_element(ply_file, NULL);
-    property = ply_get_next_property(element, NULL);
+    attribute = ply_get_next_property(element, NULL);
 
-    while (property) {
-        ply_get_property_info(property, &property_nm, &type, &length_type,
+    while (attribute) {
+        ply_get_property_info(attribute, &attribute_num, &type, &length_type,
                               &value_type);
 
-        if (getDtype(type) == core::Dtype::Undefined) {
-            utility::LogWarning("Read PLY failed: unsupported datatype");
+        if (GetDtype(type) == core::Dtype::Undefined) {
+            utility::LogWarning("Read PLY failed: unsupported datatype.");
             ply_close(ply_file);
             return false;
         }
 
-        state.attribute_name.push_back(property_nm);
+        state.attribute_name.push_back(attribute_num);
         state.attribute_num.push_back(ply_set_read_cb(
-                ply_file, "vertex", state.attribute_name[property_id].c_str(),
-                ReadPropertyCallback, &state, property_id));
+                ply_file, "vertex", state.attribute_name[attribute_id].c_str(),
+                ReadAttributeCallback, &state, attribute_id));
 
         state.attribute_index.push_back(0);
-        state.attributes[state.attribute_name[property_id]] = core::TensorList(
-                state.attribute_num[property_id], {1}, getDtype(type));
+        state.attributes[state.attribute_name[attribute_id]] = core::TensorList(
+                state.attribute_num[attribute_id], {1}, GetDtype(type));
         // Get next property.
-        property = ply_get_next_property(element, property);
-        property_id++;
+        attribute = ply_get_next_property(element, attribute);
+        attribute_id++;
     }
 
     utility::CountingProgressReporter reporter(params.update_progress);
@@ -172,7 +174,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     state.progress_bar = &reporter;
 
     if (!ply_read(ply_file)) {
-        utility::LogWarning("Read PLY failed: unable to read file: {}",
+        utility::LogWarning("Read PLY failed: unable to read file: {}.",
                             filename);
         ply_close(ply_file);
         return false;
@@ -225,7 +227,5 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 }
 
 }  // namespace io
-
 }  // namespace t
-
 }  // namespace open3d

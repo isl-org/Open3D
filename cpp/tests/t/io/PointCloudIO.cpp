@@ -182,5 +182,4 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
 }
 
 }  // namespace tests
-
 }  // namespace open3d
