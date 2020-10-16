@@ -37,6 +37,8 @@ the open-source community.
 * Surface alignment
 * 3D visualization
 * Physically based rendering (PBR)
+* 3D machine learning support with PyTorch and Tensorflow
+* GPU acceleration for core 3D operations
 * Available in C++ and Python
 
 For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
@@ -44,7 +46,7 @@ For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 ## Python quick start
 
 Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.14+ and
-Windows 10 (64-bit) with Python 3.5, 3.6, 3.7 and 3.8.
+Windows 10 (64-bit) with Python 3.6, 3.7 and 3.8.
 
 ```bash
 # Install Open3D stable release with pip
