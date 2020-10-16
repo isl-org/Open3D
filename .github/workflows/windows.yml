@@ -41,16 +41,19 @@ jobs:
           auto-update-conda: false
           python-version: 3.6
       - name: Config
+        shell: pwsh
         run: |
           mkdir build
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} ..
       - name: Build
+        shell: pwsh
         run: |
           cd build
           cmake --build . --parallel 2 --config ${{ matrix.CONFIG }} --target INSTALL
           cmake --build . --parallel 2 --config ${{ matrix.CONFIG }} --target build-examples-iteratively
       - name: Linking to Open3D
+        shell: pwsh
         run: |
           cd docs\_static\C++
           mkdir build
@@ -58,12 +61,14 @@ jobs:
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} ..
           cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
       - name: Install Python package
+        shell: pwsh
         run: |
           python -m pip install --upgrade pip==${{ env.PIP_VER }}
           python -m pip install -U wheel==${{ env.WHEEL_VER }}
           cd build
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
+        shell: pwsh
         # If SHARED == ON, Open3D.dll needs to be copied, which is not recommended for python.
         if: ${{ matrix.SHARED == 'OFF' }}
         run: |
@@ -94,6 +99,7 @@ jobs:
           python-version: ${{ matrix.python_version }}
 
       - name: Config
+        shell: pwsh
         run: |
           mkdir build
           cd build
@@ -103,6 +109,7 @@ jobs:
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DDEVELOPER_BUILD="$DEVELOPER_BUILD" ..
 
       - name: Build Python package
+        shell: pwsh
         run: |
           python -m pip install --upgrade pip==${{ env.PIP_VER }}
           python -m pip install -U wheel==${{ env.WHEEL_VER }}
@@ -117,6 +124,7 @@ jobs:
           }
 
       - name: Upload wheel
+        shell: pwsh
         uses: actions/upload-artifact@v2
         with:
           name: open3d_win_amd64_wheels
@@ -126,6 +134,7 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
+        shell: pwsh
         if: ${{ github.ref == 'refs/heads/master' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
@@ -138,6 +147,7 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
+        shell: pwsh
         if: ${{ github.ref == 'refs/heads/master' }}
         env:
           python_version: ${{ matrix.python_version }}
@@ -177,6 +187,7 @@ jobs:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
       - name: Test Python package
+        shell: pwsh
         run: |
           python -V
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
@@ -186,6 +197,7 @@ jobs:
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
       - name: Run Python unit tests (benchmarks)
+        shell: pwsh
         run: |
           echo "Running Open3D python tests..."
           echo "Testing ML and ML Ops disabled"

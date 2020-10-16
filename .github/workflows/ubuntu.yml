@@ -54,11 +54,13 @@ jobs:
           activate-environment: foo
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
+        shell: bash -l {0}
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
           ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
+        shell: bash -l {0}
         run: |
           PATH=/usr/lib/ccache:$PATH
           ccache -s
@@ -109,6 +111,7 @@ jobs:
           python-version: ${{ matrix.python_version }}
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
+        shell: bash -l {0}
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
           sudo apt-get --yes install ccache
@@ -132,6 +135,7 @@ jobs:
           cmake --version
 
       - name: Config and build wheel
+        shell: bash -l {0}
         run: |
           PATH=/usr/lib/ccache:$PATH
           ccache -s
@@ -146,6 +150,7 @@ jobs:
           fi
 
       - name: Upload wheel
+        shell: bash -l {0}
         uses: actions/upload-artifact@v2
         with:
           name: open3d_linux_x86_64_wheels
@@ -155,6 +160,7 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
+        shell: bash -l {0}
         if: ${{ github.ref == 'refs/heads/master' }}
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
@@ -164,6 +170,7 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
+        shell: bash -l {0}
         if: ${{ github.ref == 'refs/heads/master' }}
         env:
           python_version: ${{ matrix.python_version }}
@@ -206,6 +213,7 @@ jobs:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
       - name: Test Python package
+        shell: bash -l {0}
         run: |
           python -V
           cd util
@@ -221,6 +229,7 @@ jobs:
           echo
           test_wheel
       - name: Run Python unit tests (benchmarks)
+        shell: bash -l {0}
         run: |
           cd util
           source ci_utils.sh
