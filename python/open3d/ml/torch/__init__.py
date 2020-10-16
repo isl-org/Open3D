@@ -52,7 +52,7 @@ _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
 _lib_arch = (
     'cuda',
     'cpu') if _build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available(
-    ) and _torch.version.cuda == '10.1' else ('cpu',)
+    ) and _torch.version.cuda == _build_config["CUDA_VERSION"] else ('cpu',)
 _lib_path.extend([
     _os.path.join(_package_root, la,
                   'open3d_torch_ops' + _lib_suffix + _lib_ext)
