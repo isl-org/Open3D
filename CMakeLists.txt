@@ -160,7 +160,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
     ${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst @ONLY)
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
-message(STATUS "Open3D ${PROJECT_VERSION}")
+message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
 if(UNIX AND NOT APPLE)
     execute_process(COMMAND uname -p

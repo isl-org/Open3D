@@ -98,14 +98,14 @@ jobs:
           if ($DEVELOPER_BUILD -ne "OFF") {
             $DEVELOPER_BUILD="ON"
           }
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DDEVELOPER_BUILD=$DEVELOPER_BUILD ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DDEVELOPER_BUILD="$DEVELOPER_BUILD" ..
 
       - name: Build Python package
         run: |
           python -m pip install --upgrade pip==${{ env.PIP_VER }}
           python -m pip install -U wheel==${{ env.WHEEL_VER }}
           cd build
-          cmake --build . --config Release --target install-pip-package
+          cmake --build . --parallel 2 --config Release --target install-pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
