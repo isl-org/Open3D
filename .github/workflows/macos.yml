@@ -52,6 +52,7 @@ jobs:
         with:
           python-version: 3.6
       - name: Install dependencies
+        shell: bash -l {0}
         run: |
           which python
           python --version

@@ -53,8 +53,8 @@ jobs:
           python-version: 3.6
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
+        shell: bash -l {0}
         run: |
-          shell: bash -l {0}
           which python
           python --version
           which conda
