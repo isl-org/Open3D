@@ -49,10 +49,12 @@ jobs:
       - name: Set up Python version
         uses: conda-incubator/setup-miniconda@v1
         with:
+          auto-update-conda: true
           python-version: 3.6
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
         run: |
+          shell: bash -l {0}
           which python
           python --version
           which conda
