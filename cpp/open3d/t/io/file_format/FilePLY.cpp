@@ -87,6 +87,49 @@ bool ConcatColumns(core::TensorList a,
     return true;
 }
 
+core::Dtype getDtype(e_ply_type type) {
+    if (type == PLY_INT8) {
+        return core::Dtype::Int32;
+    } else if (type == PLY_UINT8) {
+        return core::Dtype::UInt8;
+    }
+    if (type == PLY_INT16) {
+        return core::Dtype::Int32;
+    } else if (type == PLY_UINT16) {
+        return core::Dtype::UInt16;
+    } else if (type == PLY_INT32) {
+        return core::Dtype::Int32;
+    } else if (type == PLY_UIN32) {
+        return core::Dtype::Int64;
+    }
+    if (type == PLY_FLOAT32) {
+        return core::Dtype::Float32;
+    } else if (type == PLY_FLOAT64) {
+        return core::Dtype::Float64;
+    } else if (type == PLY_CHAR) {
+        return core::Dtype::Int32;
+    }
+    if (type == PLY_UCHAR) {
+        return core::Dtype::UInt8;
+    } else if (type == PLY_SHORT) {
+        return core::Dtype::Int32;
+    } else if (type == PLY_USHORT) {
+        return core::Dtype::Int64;
+    } else if (type == PLY_INT) {
+        return core::Dtype::Int32;
+    } else if (type == PLY_UINT) {
+        return core::Dtype::Int64;
+    } else if (type == PLY_FLOAT) {
+        return core::Dtype::Float32;
+    } else if (type == PLY_DOUBLE) {
+        return core::Dtype::Float64;
+    }
+
+    // PLY_LIST attribute is not supported.
+
+    return core::Dtype::Undefined;
+}
+
 }  // namespace ply_pointcloud_reader
 
 bool ReadPointCloudFromPLY(const std::string &filename,
@@ -120,11 +163,8 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         ply_get_property_info(property, &property_nm, &type, &length_type,
                               &value_type);
 
-        // Check if type is supported by TensorList
-
-        if (!DtypeInTensorlist(type)) {
-            utility::LogWarning("Read PLY failed: unsupported datatype: {}",
-                                type);
+        if (getDtype(type) == core::Dtype::Undefined) {
+            utility::LogWarning("Read PLY failed: unsupported datatype");
             ply_close(ply_file);
             return false;
         }
@@ -136,7 +176,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
         state.attribute_index.push_back(0);
         state.attributes[state.attribute_name[property_id]] = core::TensorList(
-                state.attribute_num[property_id], {1}, core::Dtype::Float64);
+                state.attribute_num[property_id], {1}, getDtype(type));
         // Get next property.
         property = ply_get_next_property(element, property);
         property_id++;
