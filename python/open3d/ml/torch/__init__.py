@@ -49,7 +49,10 @@ _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
-_lib_arch = ('cuda', 'cpu') if _build_config["BUILD_CUDA_MODULE"] else ('cpu',)
+_lib_arch = (
+    'cuda', 'cpu'
+) if _build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available() else (
+    'cpu',)
 _lib_path.extend([
     _os.path.join(_package_root, la,
                   'open3d_torch_ops' + _lib_suffix + _lib_ext)
