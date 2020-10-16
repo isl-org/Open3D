@@ -7,12 +7,12 @@
 <h4>
     <a href="http://www.open3d.org">Homepage</a> |
     <a href="http://www.open3d.org/docs">Docs</a> |
-    <a href="https://github.com/intel-isl/Open3D-ML">Open3D-ML</a> |
-    <a href="https://github.com/intel-isl/Open3D/releases">Viewer</a> |
     <a href="http://www.open3d.org/docs/release/getting_started.html">Quick Start</a> |
     <a href="http://www.open3d.org/docs/release/compilation.html">Compile</a> |
     <a href="http://www.open3d.org/docs/release/index.html#python-api-index">Python</a> |
     <a href="http://www.open3d.org/docs/release/cpp_api.html">C++</a> |
+    <a href="https://github.com/intel-isl/Open3D-ML">Open3D-ML</a> |
+    <a href="https://github.com/intel-isl/Open3D/releases">Viewer</a> |
     <a href="http://www.open3d.org/docs/release/contribute/contribute.html">Contribute</a> |
     <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a> |
     <a href="https://forum.open3d.org">Forum</a>
