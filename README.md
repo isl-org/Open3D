@@ -59,8 +59,7 @@ $ python -c "import open3d as o3d; print(o3d)"
 ```
 
 To test the latest features in Open3D, download and install the
-[development version](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip)
-
+[development version](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip).
 
 To compile Open3D from source, see
 [compiling from source](http://www.open3d.org/docs/release/compilation.html).
