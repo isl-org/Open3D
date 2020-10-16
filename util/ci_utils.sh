@@ -234,10 +234,8 @@ build_wheel() {
     echo
     echo "Packaging Open3D wheel..."
     make VERBOSE=1 -j"$NPROC" pip-package
-    if [[ "$DEVELOPER_BUILD" == "OFF" ]]; then
-        echo "Building conda package"
-        make VERBOSE=1 -j"$NPROC" conda-package
-    fi
+    echo "Packaging Open3D conda package..."
+    make VERBOSE=1 -j"$NPROC" conda-package
     cd .. # PWD=Open3D
 }
 
