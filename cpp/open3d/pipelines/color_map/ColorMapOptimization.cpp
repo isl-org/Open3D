@@ -171,9 +171,8 @@ static void OptimizeImageCoorRigid(
 
             auto f_lambda = [&](int i, Eigen::Vector6d& J_r, double& r,
                                 double& w) {
-                w = 1.0;
                 jac.ComputeJacobianAndResidualRigid(
-                        i, J_r, r, mesh, proxy_intensity, images_gray[c],
+                        i, J_r, r, w, mesh, proxy_intensity, images_gray[c],
                         images_dx[c], images_dy[c], intr, extrinsic,
                         visibility_image_to_vertex[c],
                         option.image_boundary_margin_);

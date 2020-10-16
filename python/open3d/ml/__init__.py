@@ -24,8 +24,22 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import os as _os
 import open3d as _open3d
 if _open3d.__DEVICE_API__ == 'cuda':
     from open3d.cuda.pybind.ml import *
 else:
     from open3d.cpu.pybind.ml import *
+
+if _open3d._build_config['BUNDLE_OPEN3D_ML']:
+    if 'OPEN3D_ML_ROOT' in _os.environ:
+        from ml3d import configs
+        from ml3d import datasets
+        from ml3d import utils
+        from ml3d import vis
+    else:
+        # import from the bundled ml3d module.
+        from open3d._ml3d import configs
+        from open3d._ml3d import datasets
+        from open3d._ml3d import utils
+        from open3d._ml3d import vis

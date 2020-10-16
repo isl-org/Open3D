@@ -2,6 +2,12 @@ name: Ubuntu CI
 
 on:
   workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release wheels'
+        required: false
+        default: 'ON'
+
   push:
     branches:
       - master
@@ -67,11 +73,20 @@ jobs:
     env:
       BUILD_CUDA_MODULE: ON
       NPROC: 2
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: intel-isl/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
       - name: Setup cache
         uses: actions/cache@v2
         with:
@@ -157,11 +172,19 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.6, 3.7, 3.8]
+    env:
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
           submodules: false
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: intel-isl/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
       - name: Download wheels
         uses: actions/download-artifact@v2
         # See https://github.com/dawidd6/action-download-artifact for more
@@ -181,9 +204,10 @@ jobs:
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           python -m pip install ../open3d*-$pi_tag-*.whl
           echo
-          echo "Dynamic libraries used:"
-          DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
-          find "$DLL_PATH"/{cpu,cuda}/ -type f -print -execdir ldd {} \;
+          # echo "Dynamic libraries used:"
+          # DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
+          # find "$DLL_PATH"/{cpu,cuda}/ -type f -print -execdir ldd {} \;
+          python -m pip install -r "$OPEN3D_ML_ROOT/requirements.txt"
           echo
           test_wheel
       - name: Run Python unit tests (benchmarks)
