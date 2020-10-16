@@ -160,7 +160,8 @@ struct Application::Impl {
 
         // Initialize rendering
         visualization::rendering::EngineInstance::SelectBackend(
-            visualization::rendering::EngineInstance::RenderingType::kOpenGL);
+                visualization::rendering::EngineInstance::RenderingType::
+                        kOpenGL);
     }
 
     void CleanupAfterRunning() {
@@ -431,7 +432,7 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
             // Clear all the running tasks. The destructor will wait for them to
             // finish.
             for (auto it = impl_->running_tasks_.begin();
-                     it != impl_->running_tasks_.end(); ++it) {
+                 it != impl_->running_tasks_.end(); ++it) {
                 auto current = it;
                 ++it;
                 impl_->running_tasks_.erase(current);  // calls join()
