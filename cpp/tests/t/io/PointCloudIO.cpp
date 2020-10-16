@@ -153,6 +153,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
     EXPECT_EQ(pcd.GetPointNormals().GetSize(), 196133);
     EXPECT_EQ(pcd.GetPointColors().GetSize(), 196133);
     EXPECT_EQ(pcd.GetPointAttr("curvature").GetSize(), 196133);
+    EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
 }
 
 // Reading ascii.
