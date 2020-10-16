@@ -94,14 +94,11 @@ jobs:
 
       - name: Config
         run: |
-          Set-PSDebug -Trace 2
           mkdir build
           cd build
-          echo ${env:DEVELOPER_BUILD}
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
-          echo ${env:DEVELOPER_BUILD}
           cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" ..
 
       - name: Build Python package
