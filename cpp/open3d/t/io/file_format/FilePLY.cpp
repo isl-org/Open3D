@@ -88,44 +88,29 @@ bool ConcatColumns(core::TensorList a,
 }
 
 core::Dtype getDtype(e_ply_type type) {
-    if (type == PLY_INT8) {
-        return core::Dtype::Int32;
-    } else if (type == PLY_UINT8) {
+    // PLY_LIST attribute is not supported.
+    // Corrently, we are not doing datatype conversions, so some of the ply
+    // datatypes are not included.
+
+    if (type == PLY_UINT8) {
         return core::Dtype::UInt8;
-    }
-    if (type == PLY_INT16) {
-        return core::Dtype::Int32;
     } else if (type == PLY_UINT16) {
         return core::Dtype::UInt16;
     } else if (type == PLY_INT32) {
         return core::Dtype::Int32;
-    } else if (type == PLY_UIN32) {
-        return core::Dtype::Int64;
-    }
-    if (type == PLY_FLOAT32) {
+    } else if (type == PLY_FLOAT32) {
         return core::Dtype::Float32;
     } else if (type == PLY_FLOAT64) {
         return core::Dtype::Float64;
-    } else if (type == PLY_CHAR) {
-        return core::Dtype::Int32;
-    }
-    if (type == PLY_UCHAR) {
+    } else if (type == PLY_UCHAR) {
         return core::Dtype::UInt8;
-    } else if (type == PLY_SHORT) {
-        return core::Dtype::Int32;
-    } else if (type == PLY_USHORT) {
-        return core::Dtype::Int64;
     } else if (type == PLY_INT) {
         return core::Dtype::Int32;
-    } else if (type == PLY_UINT) {
-        return core::Dtype::Int64;
     } else if (type == PLY_FLOAT) {
         return core::Dtype::Float32;
     } else if (type == PLY_DOUBLE) {
         return core::Dtype::Float64;
     }
-
-    // PLY_LIST attribute is not supported.
 
     return core::Dtype::Undefined;
 }
