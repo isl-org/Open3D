@@ -144,10 +144,8 @@ jobs:
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
-          if [[ ${{ env.DEVELOPER_BUILD }} == OFF ]]; then
-            CONDA_PKG_NAME="$(basename build/lib/python_package/conda_package/open3d*.tar.bz2)"
-            echo "CONDA_PKG_NAME=$CONDA_PKG_NAME" >> $GITHUB_ENV
-          fi
+          CONDA_PKG_NAME="$(basename build/lib/python_package/conda_package/open3d*.tar.bz2)"
+          echo "CONDA_PKG_NAME=$CONDA_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel
         uses: actions/upload-artifact@v2
