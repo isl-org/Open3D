@@ -152,7 +152,7 @@ jobs:
           bin/GLInfo || true  # Expect failure since HEADLESS_RENDERING=OFF
           python -c "from open3d import *; import open3d; print(open3d)"
           cd ../docs # To Open3D/docs
-          python make_docs.py $DOC_ARGS  --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen
+          python make_docs.py $DOC_ARGS --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen
           ccache -s
 
       - name: Upload docs

@@ -469,8 +469,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--pyapi_rst",
-        default="auto",
-        choices=("auto", "always", "never"),
+        default="always",
+        choices=("always", "never"),
         help="Build Python API documentation in reST format.",
     )
     parser.add_argument(
@@ -516,6 +516,7 @@ if __name__ == "__main__":
         jdb = JupyterDocsBuilder(pwd, args.clean_notebooks,
                                  args.execute_notebooks)
         jdb.run()
+
     # Sphinx is hard-coded to build with the "html" option
     # To customize build, run sphinx-build manually
     if args.sphinx:
