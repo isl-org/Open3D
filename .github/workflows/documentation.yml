@@ -49,13 +49,14 @@ jobs:
           # Common prefix will be used so that ccache can be used across commits.
           restore-keys: |
             ${{ runner.os }}-ccache
+
       - name: Set up Python version
         uses: conda-incubator/setup-miniconda@v1
         with:
           auto-update-conda: false
           python-version: 3.6
+
       - name: GCloud CLI setup
-        shell: bash -l {0}
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
@@ -103,6 +104,7 @@ jobs:
           python -m pip install -U -q "torch==1.6.0+cpu" -f https://download.pytorch.org/whl/torch_stable.html
           # Open3D-ML dependencies
           python -m pip install -r ${OPEN3D_ML_ROOT}/requirements.txt
+
       - name: Build docs
         shell: bash -l {0}
         run: |
@@ -159,7 +161,6 @@ jobs:
           ccache -s
 
       - name: Upload docs
-        shell: bash -l {0}
         uses: actions/upload-artifact@v2
         with:
           name: open3d_docs
@@ -167,7 +168,6 @@ jobs:
           if-no-files-found: error
 
       - name: Deploy docs
-        shell: bash -l {0}
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
           # Compress and upload the docs, only for master branch
