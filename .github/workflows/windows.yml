@@ -124,7 +124,6 @@ jobs:
           }
 
       - name: Upload wheel
-        shell: pwsh
         uses: actions/upload-artifact@v2
         with:
           name: open3d_win_amd64_wheels
@@ -134,7 +133,6 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
-        shell: pwsh
         if: ${{ github.ref == 'refs/heads/master' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
@@ -147,7 +145,6 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
-        shell: pwsh
         if: ${{ github.ref == 'refs/heads/master' }}
         env:
           python_version: ${{ matrix.python_version }}

@@ -142,7 +142,6 @@ jobs:
           fi
 
       - name: Upload wheel
-        shell: bash -l {0}
         uses: actions/upload-artifact@v2
         with:
           name: open3d_macosx_x86_64_wheels
@@ -152,7 +151,6 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
-        shell: bash -l {0}
         if: ${{ github.ref == 'refs/heads/master' }}
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
@@ -162,7 +160,6 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
-        shell: bash -l {0}
         if: ${{ github.ref == 'refs/heads/master' }}
         env:
           python_version: ${{ matrix.python_version }}
