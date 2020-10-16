@@ -89,7 +89,7 @@ bool ConcatColumns(core::TensorList a,
 
 core::Dtype getDtype(e_ply_type type) {
     // PLY_LIST attribute is not supported.
-    // Corrently, we are not doing datatype conversions, so some of the ply
+    // Currently, we are not doing datatype conversions, so some of the ply
     // datatypes are not included.
 
     if (type == PLY_UINT8) {
