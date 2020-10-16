@@ -34,6 +34,7 @@ jobs:
             auto-update-conda: false
             python-version: 3.6
       - name: Install dependencies
+        shell: bash -l {0}
         run: |
             sudo apt-get --yes install ccache
             ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
@@ -46,6 +47,7 @@ jobs:
             python -m pip install -U scipy==1.4.1
             python -m pip install -U wheel==0.35.1
       - name: Build and test
+        shell: bash -l {0}
         run: |
             PATH=/usr/lib/ccache:$PATH
             ccache -s
