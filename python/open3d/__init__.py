@@ -108,3 +108,4 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
 if 'OPEN3D_ML_ROOT' in os.environ:
     print('Using external Open3D-ML in {}'.format(os.environ['OPEN3D_ML_ROOT']))
     sys.path.append(os.environ['OPEN3D_ML_ROOT'])
+import open3d.ml

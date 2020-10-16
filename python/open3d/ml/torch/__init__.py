@@ -76,26 +76,16 @@ if not _loaded:
 from . import layers
 from . import ops
 
-if _build_config['BUNDLE_OPEN3D_ML']:
-    if 'OPEN3D_ML_ROOT' in _os.environ:
-        from ml3d import configs
-        from ml3d import datasets  # this is for convenience to have everything on the same level.
-        from ml3d import utils
-        from ml3d import vis
-        from ml3d.torch import dataloaders
-        from ml3d.torch import models
-        from ml3d.torch import modules
-        from ml3d.torch import pipelines
-    else:
-        # import from the bundled ml3d module.
-        from open3d._ml3d import configs
-        from open3d._ml3d import datasets  # this is for convenience to have everything on the same level.
-        from open3d._ml3d import utils
-        from open3d._ml3d import vis
-        from open3d._ml3d.torch import dataloaders
-        from open3d._ml3d.torch import models
-        from open3d._ml3d.torch import modules
-        from open3d._ml3d.torch import pipelines
+# put framework independent modules here for convenience
+from . import configs
+from . import datasets
+from . import vis
+
+# framework specific modules from open3d-ml
+from . import models
+from . import modules
+from . import pipelines
+from . import dataloaders
 
 # put contrib at the same level
 from open3d.ml import contrib
