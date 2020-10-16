@@ -31,8 +31,12 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <memory>
 
+#include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/Registration.h"
+#include "open3d/pipelines/registration/RobustKernel.h"
+#include "open3d/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
 
@@ -43,6 +47,48 @@ class PointCloud;
 namespace pipelines {
 namespace registration {
 class RegistrationResult;
+
+class TransformationEstimationForGeneralizedICP
+    : public TransformationEstimation {
+public:
+    /// \brief Default Constructor.
+    TransformationEstimationForGeneralizedICP() = default;
+    ~TransformationEstimationForGeneralizedICP() override = default;
+
+    /// \brief Constructor that takes as input a RobustKernel \params kernel Any
+    /// of the implemented statistical robust kernel for outlier rejection.
+    explicit TransformationEstimationForGeneralizedICP(
+            std::shared_ptr<RobustKernel> kernel)
+        : kernel_(std::move(kernel)) {}
+
+public:
+    using Matrix4dVector =
+            std::vector<Eigen::Matrix4d, utility::Matrix4d_allocator>;
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       const CorrespondenceSet &corres) const override;
+
+    Eigen::Matrix4d ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const CorrespondenceSet &corres) const override;
+
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return type_;
+    };
+
+public:
+    /// epsilon <-- add comment
+    double epsilon_ = 0.01;
+
+    /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
+    std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
+
+private:
+    const TransformationEstimationType type_ =
+            TransformationEstimationType::GeneralizedICP;
+};
 
 /// \brief Function for Colored ICP registration.
 ///
@@ -62,8 +108,9 @@ RegistrationResult RegistrationGeneralizedICP(
         const geometry::PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
-        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
-        double epsilon = 0.01);
+        const TransformationEstimationForGeneralizedICP &estimation =
+                TransformationEstimationForGeneralizedICP(),
+        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
 }  // namespace registration
 }  // namespace pipelines

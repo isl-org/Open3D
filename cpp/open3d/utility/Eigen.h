@@ -58,6 +58,9 @@ using Vector4i_allocator = Eigen::aligned_allocator<Eigen::Vector4i>;
 using Vector4d_allocator = Eigen::aligned_allocator<Eigen::Vector4d>;
 using Vector6d_allocator = Eigen::aligned_allocator<Eigen::Vector6d>;
 
+/// Genretate a skew-symmetric matrix from a vector 3x1.
+Eigen::Matrix3d SkewMatrix(const Eigen::Vector3d &vec);
+
 /// Function to transform 6D motion vector to 4D motion matrix
 /// Reference:
 /// https://eigen.tuxfamily.org/dox/group__TutorialGeometry.html#TutorialGeoTransform

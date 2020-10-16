@@ -43,14 +43,22 @@ namespace open3d {
 
 namespace {
 
-Eigen::Matrix4d GetEpsilonCovariance(double e) {
-    Eigen::Matrix4d C;
-    return C;
+class PointCloudWithCovariance : public geometry::PointCloud {
+public:
+    std::vector<Eigen::Matrix3d> covariances_;
+};
+
+std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
+        const geometry::PointCloud &pcd,
+        const geometry::KDTreeSearchParamHybrid &search_param) {
+    utility::LogDebug("InitializePointCloudForGeneralizedICP");
+    (void)search_param;
+    auto output = std::make_shared<PointCloudWithCovariance>();
+    output->points_ = pcd.points_;
+    output->normals_ = pcd.normals_;
+    return output;
 }
 
-Eigen::Matrix4d GetCovarianceMatrixAroundNormal(const Eigen::Vector3d &n) {
-    return Eigen::Matrix4d::Identity();
-}
 }  // namespace
 
 namespace pipelines {
@@ -59,45 +67,57 @@ namespace registration {
 Eigen::Matrix4d
 TransformationEstimationForGeneralizedICP::ComputeTransformation(
         const geometry::PointCloud &source,
-        const Matrix4dVector source_cov,
         const geometry::PointCloud &target,
-        const Matrix4dVector target_cov,
         const CorrespondenceSet &corres) const {
     if (corres.empty() || !target.HasNormals() || !source.HasNormals() ||
         !target.HasColors() || !source.HasColors()) {
         return Eigen::Matrix4d::Identity();
     }
 
-    const auto &target_c = (const PointCloudForColoredICP &)target;
-    auto compute_jacobian_and_residual = [&](int i, Eigen::Vector6d &J_r,
-                                             double &r, double &w) {
-        const Eigen::Vector3d &vs = source.points_[corres[i][0]];
-        const Eigen::Vector3d &ns = source.normals_[corres[i][1]];
-        const Eigen::Matrix4d Cs = GetCovarianceMatrixAroundNormal(ns);
-        const Eigen::Vector3d &vt = target.points_[corres[i][1]];
-        const Eigen::Vector3d &nt = target.normals_[corres[i][1]];
-        const Eigen::Matrix4d Ct = GetCovarianceMatrixAroundNormal(nt);
-        const Eigen::Vector3d d = vs - vt;  // T already applied to vs
-        const Eigen::Matrix4d M = Ct + T * Cs * T.transpose();
-        // residual = mahalanobis distance
-        // resiudal is scalar value, should be vector?
-        // Eigen::Vector4d r = M * d;
-        r = d.transpose().dot(M * d);
-        w = kernel_->Weight(r);
+    const auto &source_c = (const PointCloudWithCovariance &)source;
+    const auto &target_c = (const PointCloudWithCovariance &)target;
 
-        // Plug jacbians in here
-        J_r.block<3, 1>(0, 0) = vs.cross(nt);
-        J_r.block<3, 1>(3, 0) = nt;
-    };
+    auto compute_jacobian_and_residual =
+            [&](int i,
+                std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
+                std::vector<double> &r, std::vector<double> &w) {
+                const Eigen::Vector3d &vs = source_c.points_[corres[i][0]];
+                const Eigen::Matrix3d &Cs = source_c.covariances_[corres[i][1]];
+                const Eigen::Vector3d &vt = target_c.points_[corres[i][1]];
+                const Eigen::Matrix3d &Ct = target_c.covariances_[corres[i][1]];
+                (void)Cs;
+                (void)Ct;
+                const Eigen::Vector3d d = vs - vt;  // T already applied to vs
+
+                // Number of rows == 3
+                J_r.resize(3);
+                r.reserve(3);
+                w.reserve(3);
+
+                // const Eigen::Matrix4d M = Ct + T * Cs * T.transpose();
+                const Eigen::Matrix3d M = Eigen::Matrix3d::Identity();
+
+                Eigen::Matrix<double, 3, 6> dtdx0;
+                dtdx0.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
+                dtdx0.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
+                Eigen::Matrix<double, 3, 6> J_r_ = M * dtdx0;
+
+                // un-roll Matrix-vector multiplication r = M * d
+                for (size_t i = 0; i < 3; ++i) {
+                    r[i] = M.row(i).dot(d);
+                    w[i] = kernel_->Weight(r[i]);
+                    J_r[i] = J_r_.row(i);
+                }
+            };
 
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
-    double r2;
+    double r2 = -1.0;
     std::tie(JTJ, JTr, r2) =
             utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
                     compute_jacobian_and_residual, (int)corres.size());
 
-    bool is_success;
+    bool is_success = false;
     Eigen::Matrix4d extrinsic;
     std::tie(is_success, extrinsic) =
             utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
@@ -108,50 +128,23 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
 RegistrationResult RegistrationGeneralizedICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        double max_correspondence_distance,
+        double max_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
-        const TransformationEstimationForGeneralizedICP &estimation,
-        const ICPConvergenceCriteria &criteria /* = ICPConvergenceCriteria()*/,
-        double epsilon /* = 0.01*/) {
-    if (max_correspondence_distance <= 0.0) {
-        utility::LogError("Invalid max_correspondence_distance.");
-    }
-    if (!target.HasNormals() || !source.HasNormals()) {
+        const TransformationEstimationForGeneralizedICP
+                &estimation /* = TransformationEstimationForGeneralizedICP()*/,
+        const ICPConvergenceCriteria
+                &criteria /* = ICPConvergenceCriteria()*/) {
+    if (!source.HasNormals() && (!target.HasNormals())) {
         utility::LogError(
-                "Generalized ICP require pre-computed normal vectors for "
-                "source and target PointCloud.");
+                "GeneralizedICP require pre-computed normal vectors for target "
+                "and source PointClouds.");
     }
-
-    Eigen::Matrix4d transformation = init;
-    geometry::KDTreeFlann kdtree;
-    kdtree.SetGeometry(target);
-    geometry::PointCloud pcd = source;
-    if (!init.isIdentity()) {
-        pcd.Transform(init);
-    }
-    RegistrationResult result;
-    result = GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
-    for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
-                          result.fitness_, result.inlier_rmse_);
-        Eigen::Matrix4d update = estimation.ComputeTransformation(
-                pcd, source_cov, target, target_cov,
-                result.correspondence_set_);
-        transformation = update * transformation;
-        pcd.Transform(update);
-        RegistrationResult backup = result;
-        result = GetRegistrationResultAndCorrespondences(
-                pcd, target, kdtree, max_correspondence_distance,
-                transformation);
-        if (std::abs(backup.fitness_ - result.fitness_) <
-                    criteria.relative_fitness_ &&
-            std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
-                    criteria.relative_rmse_) {
-            break;
-        }
-    }
-    return result;
+    auto search_param =
+            geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30);
+    auto source_c = InitializePointCloudForGeneralizedICP(target, search_param);
+    auto target_c = InitializePointCloudForGeneralizedICP(source, search_param);
+    return RegistrationICP(*source_c, *target_c, max_distance, init, estimation,
+                           criteria);
 }
 
 }  // namespace registration
