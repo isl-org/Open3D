@@ -157,7 +157,7 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
     auto compute_jacobian_and_residual =
             [&](int i,
                 std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
-                std::vector<double> &r) {
+                std::vector<double> &r, std::vector<double> &w) {
                 size_t cs = corres[i][0];
                 size_t ct = corres[i][1];
                 const Eigen::Vector3d &vs = source.points_[cs];
@@ -166,10 +166,12 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 
                 J_r.resize(2);
                 r.resize(2);
+                w.resize(2);
 
                 J_r[0].block<3, 1>(0, 0) = sqrt_lambda_geometric * vs.cross(nt);
                 J_r[0].block<3, 1>(3, 0) = sqrt_lambda_geometric * nt;
                 r[0] = sqrt_lambda_geometric * (vs - vt).dot(nt);
+                w[0] = 1.0;
 
                 // project vs into vt's tangential plane
                 Eigen::Vector3d vs_proj = vs - (vs - vt).dot(nt) * nt;
@@ -194,6 +196,7 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
                         sqrt_lambda_photometric * vs.cross(ditM);
                 J_r[1].block<3, 1>(3, 0) = sqrt_lambda_photometric * ditM;
                 r[1] = sqrt_lambda_photometric * (is - is0_proj);
+                w[0] = 1.0;
             };
 
     Eigen::Matrix6d JTJ;

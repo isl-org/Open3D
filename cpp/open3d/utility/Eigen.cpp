@@ -207,6 +207,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         std::function<
                 void(int,
                      std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
+                     std::vector<double> &,
                      std::vector<double> &)> f,
         int iteration_num,
         bool verbose /*=true*/) {
@@ -223,13 +224,14 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         JTJ_private.setZero();
         JTr_private.setZero();
         std::vector<double> r;
+        std::vector<double> w;
         std::vector<VecType, Eigen::aligned_allocator<VecType>> J_r;
 #pragma omp for nowait
         for (int i = 0; i < iteration_num; i++) {
-            f(i, J_r, r);
+            f(i, J_r, r, w);
             for (int j = 0; j < (int)r.size(); j++) {
-                JTJ_private.noalias() += J_r[j] * J_r[j].transpose();
-                JTr_private.noalias() += J_r[j] * r[j];
+                JTJ_private.noalias() += J_r[j] * w[j] * J_r[j].transpose();
+                JTr_private.noalias() += J_r[j] * w[j] * r[j];
                 r2_sum_private += r[j] * r[j];
             }
         }
@@ -255,6 +257,7 @@ template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
 template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
         std::function<void(int,
                            std::vector<Eigen::Vector6d, Vector6d_allocator> &,
+                           std::vector<double> &,
                            std::vector<double> &)> f,
         int iteration_num, bool verbose);
 // clang-format on
