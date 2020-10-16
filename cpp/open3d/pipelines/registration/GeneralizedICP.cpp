@@ -40,9 +40,21 @@
 #include "open3d/utility/Eigen.h"
 
 namespace open3d {
+
+namespace {
+
+Eigen::Matrix4d GetEpsilonCovariance(double e) {
+    Eigen::Matrix4d C;
+    return C;
+}
+
+Eigen::Matrix4d GetCovarianceMatrixAroundNormal(const Eigen::Vector3d &n) {
+    return Eigen::Matrix4d::Identity();
+}
+}  // namespace
+
 namespace pipelines {
 namespace registration {
-
 
 Eigen::Matrix4d
 TransformationEstimationForGeneralizedICP::ComputeTransformation(
@@ -60,10 +72,20 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
     auto compute_jacobian_and_residual = [&](int i, Eigen::Vector6d &J_r,
                                              double &r, double &w) {
         const Eigen::Vector3d &vs = source.points_[corres[i][0]];
+        const Eigen::Vector3d &ns = source.normals_[corres[i][1]];
+        const Eigen::Matrix4d Cs = GetCovarianceMatrixAroundNormal(ns);
         const Eigen::Vector3d &vt = target.points_[corres[i][1]];
         const Eigen::Vector3d &nt = target.normals_[corres[i][1]];
-        r = (vs - vt).dot(nt);
+        const Eigen::Matrix4d Ct = GetCovarianceMatrixAroundNormal(nt);
+        const Eigen::Vector3d d = vs - vt;  // T already applied to vs
+        const Eigen::Matrix4d M = Ct + T * Cs * T.transpose();
+        // residual = mahalanobis distance
+        // resiudal is scalar value, should be vector?
+        // Eigen::Vector4d r = M * d;
+        r = d.transpose().dot(M * d);
         w = kernel_->Weight(r);
+
+        // Plug jacbians in here
         J_r.block<3, 1>(0, 0) = vs.cross(nt);
         J_r.block<3, 1>(3, 0) = nt;
     };
