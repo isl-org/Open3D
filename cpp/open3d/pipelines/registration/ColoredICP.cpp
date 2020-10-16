@@ -45,115 +45,14 @@ public:
     std::vector<Eigen::Vector3d> color_gradient_;
 };
 
-class TransformationEstimationForColoredICP : public TransformationEstimation {
-public:
-    TransformationEstimationType GetTransformationEstimationType()
-            const override {
-        return type_;
-    };
-    explicit TransformationEstimationForColoredICP(
-            double lambda_geometric = 0.968,
-            std::shared_ptr<RobustKernel> kernel = std::make_shared<L2Loss>())
-        : lambda_geometric_(lambda_geometric), kernel_(std::move(kernel)) {
-        if (lambda_geometric_ < 0 || lambda_geometric_ > 1.0) {
-            lambda_geometric_ = 0.968;
-        }
-    }
-
-    ~TransformationEstimationForColoredICP() override {}
-
-public:
-    double ComputeRMSE(const geometry::PointCloud &source,
-                       const geometry::PointCloud &target,
-                       const CorrespondenceSet &corres) const override;
-    Eigen::Matrix4d ComputeTransformation(
-            const geometry::PointCloud &source,
-            const geometry::PointCloud &target,
-            const CorrespondenceSet &corres) const override;
-
-public:
-    double lambda_geometric_;
-    /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
-    std::shared_ptr<RobustKernel> kernel_;
-
-private:
-    const TransformationEstimationType type_ =
-            TransformationEstimationType::ColoredICP;
-};
-
-static std::shared_ptr<PointCloudForColoredICP>
-InitializePointCloudForColoredICP(
-        const geometry::PointCloud &target,
-        const geometry::KDTreeSearchParamHybrid &search_param) {
-    utility::LogDebug("InitializePointCloudForColoredICP");
-
-    geometry::KDTreeFlann tree;
-    tree.SetGeometry(target);
-
-    auto output = std::make_shared<PointCloudForColoredICP>();
-    output->colors_ = target.colors_;
-    output->normals_ = target.normals_;
-    output->points_ = target.points_;
-
-    size_t n_points = output->points_.size();
-    output->color_gradient_.resize(n_points, Eigen::Vector3d::Zero());
-
-    for (size_t k = 0; k < n_points; k++) {
-        const Eigen::Vector3d &vt = output->points_[k];
-        const Eigen::Vector3d &nt = output->normals_[k];
-        double it = (output->colors_[k](0) + output->colors_[k](1) +
-                     output->colors_[k](2)) /
-                    3.0;
-
-        std::vector<int> point_idx;
-        std::vector<double> point_squared_distance;
-
-        if (tree.SearchHybrid(vt, search_param.radius_, search_param.max_nn_,
-                              point_idx, point_squared_distance) >= 4) {
-            // approximate image gradient of vt's tangential plane
-            size_t nn = point_idx.size();
-            Eigen::MatrixXd A(nn, 3);
-            Eigen::MatrixXd b(nn, 1);
-            A.setZero();
-            b.setZero();
-            for (size_t i = 1; i < nn; i++) {
-                int P_adj_idx = point_idx[i];
-                Eigen::Vector3d vt_adj = output->points_[P_adj_idx];
-                Eigen::Vector3d vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
-                double it_adj = (output->colors_[P_adj_idx](0) +
-                                 output->colors_[P_adj_idx](1) +
-                                 output->colors_[P_adj_idx](2)) /
-                                3.0;
-                A(i - 1, 0) = (vt_proj(0) - vt(0));
-                A(i - 1, 1) = (vt_proj(1) - vt(1));
-                A(i - 1, 2) = (vt_proj(2) - vt(2));
-                b(i - 1, 0) = (it_adj - it);
-            }
-            // adds orthogonal constraint
-            A(nn - 1, 0) = (nn - 1) * nt(0);
-            A(nn - 1, 1) = (nn - 1) * nt(1);
-            A(nn - 1, 2) = (nn - 1) * nt(2);
-            b(nn - 1, 0) = 0;
-            // solving linear equation
-            bool is_success;
-            Eigen::MatrixXd x;
-            std::tie(is_success, x) = utility::SolveLinearSystemPSD(
-                    A.transpose() * A, A.transpose() * b);
-            if (is_success) {
-                output->color_gradient_[k] = x;
-            }
-        }
-    }
-    return output;
-}
-
 Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty() || !target.HasNormals() || !target.HasColors() ||
-        !source.HasColors())
+        !source.HasColors()) {
         return Eigen::Matrix4d::Identity();
+    }
 
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);
     double lambda_photometric = 1.0 - lambda_geometric_;
@@ -254,18 +153,84 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
     return residual;
 };
 
+static std::shared_ptr<PointCloudForColoredICP>
+InitializePointCloudForColoredICP(
+        const geometry::PointCloud &target,
+        const geometry::KDTreeSearchParamHybrid &search_param) {
+    utility::LogDebug("InitializePointCloudForColoredICP");
+
+    geometry::KDTreeFlann tree;
+    tree.SetGeometry(target);
+
+    auto output = std::make_shared<PointCloudForColoredICP>();
+    output->colors_ = target.colors_;
+    output->normals_ = target.normals_;
+    output->points_ = target.points_;
+
+    size_t n_points = output->points_.size();
+    output->color_gradient_.resize(n_points, Eigen::Vector3d::Zero());
+
+    for (size_t k = 0; k < n_points; k++) {
+        const Eigen::Vector3d &vt = output->points_[k];
+        const Eigen::Vector3d &nt = output->normals_[k];
+        double it = (output->colors_[k](0) + output->colors_[k](1) +
+                     output->colors_[k](2)) /
+                    3.0;
+
+        std::vector<int> point_idx;
+        std::vector<double> point_squared_distance;
+
+        if (tree.SearchHybrid(vt, search_param.radius_, search_param.max_nn_,
+                              point_idx, point_squared_distance) >= 4) {
+            // approximate image gradient of vt's tangential plane
+            size_t nn = point_idx.size();
+            Eigen::MatrixXd A(nn, 3);
+            Eigen::MatrixXd b(nn, 1);
+            A.setZero();
+            b.setZero();
+            for (size_t i = 1; i < nn; i++) {
+                int P_adj_idx = point_idx[i];
+                Eigen::Vector3d vt_adj = output->points_[P_adj_idx];
+                Eigen::Vector3d vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
+                double it_adj = (output->colors_[P_adj_idx](0) +
+                                 output->colors_[P_adj_idx](1) +
+                                 output->colors_[P_adj_idx](2)) /
+                                3.0;
+                A(i - 1, 0) = (vt_proj(0) - vt(0));
+                A(i - 1, 1) = (vt_proj(1) - vt(1));
+                A(i - 1, 2) = (vt_proj(2) - vt(2));
+                b(i - 1, 0) = (it_adj - it);
+            }
+            // adds orthogonal constraint
+            A(nn - 1, 0) = (nn - 1) * nt(0);
+            A(nn - 1, 1) = (nn - 1) * nt(1);
+            A(nn - 1, 2) = (nn - 1) * nt(2);
+            b(nn - 1, 0) = 0;
+            // solving linear equation
+            bool is_success = false;
+            Eigen::MatrixXd x;
+            std::tie(is_success, x) = utility::SolveLinearSystemPSD(
+                    A.transpose() * A, A.transpose() * b);
+            if (is_success) {
+                output->color_gradient_[k] = x;
+            }
+        }
+    }
+    return output;
+}
 RegistrationResult RegistrationColoredICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
-        const ICPConvergenceCriteria &criteria /* = ICPConvergenceCriteria()*/,
-        double lambda_geometric /* = 0.968*/) {
+        const TransformationEstimationForColoredICP &estimation
+        /*TransformationEstimationForColoredICP()*/,
+        const ICPConvergenceCriteria
+                &criteria /* = ICPConvergenceCriteria()*/) {
     auto target_c = InitializePointCloudForColoredICP(
             target, geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30));
-    return RegistrationICP(
-            source, *target_c, max_distance, init,
-            TransformationEstimationForColoredICP(lambda_geometric), criteria);
+    return RegistrationICP(source, *target_c, max_distance, init, estimation,
+                           criteria);
 }
 
 }  // namespace registration
