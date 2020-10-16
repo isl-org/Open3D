@@ -215,11 +215,8 @@ Finally, verify the Python installation with:
 
 .. _compilation_options:
 
-Compilation Options
+Compilation options
 -------------------
-
-This page shows advanced options to customize the Open3D build. For quick
-start, see :ref:`compilation`.
 
 OpenMP
 ``````
