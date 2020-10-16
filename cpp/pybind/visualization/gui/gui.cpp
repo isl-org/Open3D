@@ -92,12 +92,11 @@ private:
 };
 PYBIND11_DECLARE_HOLDER_TYPE(T, UnownedPointer<T>);
 
-
 namespace open3d {
 namespace visualization {
 namespace gui {
 
-template<typename T>
+template <typename T>
 std::shared_ptr<T> TakeOwnership(UnownedPointer<T> x) {
     return std::shared_ptr<T>(x.get());
 }
@@ -346,11 +345,12 @@ void pybind_gui_classes(py::module &m) {
             "Application.instance.create_window().");
     window.def("__repr__",
                [](const PyWindow &w) { return "Application window"; })
-            .def("add_child", 
-                 [](PyWindow &w, UnownedPointer<Widget> widget) {
-                     w.AddChild(TakeOwnership<Widget>(widget));
-                 },
-                 "Adds a widget to the window")
+            .def(
+                    "add_child",
+                    [](PyWindow &w, UnownedPointer<Widget> widget) {
+                        w.AddChild(TakeOwnership<Widget>(widget));
+                    },
+                    "Adds a widget to the window")
             .def_property("os_frame", &PyWindow::GetOSFrame,
                           &PyWindow::SetOSFrame,
                           "Window rect in OS coords, not device pixels")
@@ -401,10 +401,12 @@ void pybind_gui_classes(py::module &m) {
                     "children of the window")
             .def_property_readonly("theme", &PyWindow::GetTheme,
                                    "Get's window's theme info")
-            .def("show_dialog",
-                 [](PyWindow &w, UnownedPointer<Dialog> dlg) {
-                     w.ShowDialog(TakeOwnership<Dialog>(dlg));
-                 }, "Displays the dialog")
+            .def(
+                    "show_dialog",
+                    [](PyWindow &w, UnownedPointer<Dialog> dlg) {
+                        w.ShowDialog(TakeOwnership<Dialog>(dlg));
+                    },
+                    "Displays the dialog")
             .def("close_dialog", &PyWindow::CloseDialog,
                  "Closes the current dialog")
             .def("show_message_box", &PyWindow::ShowMessageBox,
@@ -415,8 +417,8 @@ void pybind_gui_classes(py::module &m) {
                     "Gets the rendering.Renderer object for the Window");
 
     // ---- Menu ----
-    py::class_<Menu, UnownedPointer<Menu>> menu(
-            m, "Menu", "A menu, possibly a menu tree");
+    py::class_<Menu, UnownedPointer<Menu>> menu(m, "Menu",
+                                                "A menu, possibly a menu tree");
     menu.def(py::init<>())
             .def(
                     "add_item",
@@ -554,11 +556,12 @@ void pybind_gui_classes(py::module &m) {
                        << w.GetFrame().height;
                      return s.str();
                  })
-            .def("add_child",
-                 [](Widget &w, UnownedPointer<Widget> child) {
-                     w.AddChild(TakeOwnership<Widget>(child));
-                 },
-                 "Adds a child widget")
+            .def(
+                    "add_child",
+                    [](Widget &w, UnownedPointer<Widget> child) {
+                        w.AddChild(TakeOwnership<Widget>(child));
+                    },
+                    "Adds a child widget")
             .def("get_children", &Widget::GetChildren,
                  "Returns the array of children. Do not modify.")
             .def_property("frame", &Widget::GetFrame, &Widget::SetFrame,
@@ -952,14 +955,16 @@ void pybind_gui_classes(py::module &m) {
     py::class_<TabControl, UnownedPointer<TabControl>, Widget> tabctrl(
             m, "TabControl", "Tab control");
     tabctrl.def(py::init<>())
-            .def("add_tab",
-                 [](TabControl &tabs, const char* name,
-                    UnownedPointer<Widget> panel) {
-                     tabs.AddTab(name, TakeOwnership<Widget>(panel));
-                 },
-                 "Adds a tab. The first parameter is the title of the tab, and "
-                 "the second parameter is a widget--normally this is a "
-                 "layout.")
+            .def(
+                    "add_tab",
+                    [](TabControl &tabs, const char *name,
+                       UnownedPointer<Widget> panel) {
+                        tabs.AddTab(name, TakeOwnership<Widget>(panel));
+                    },
+                    "Adds a tab. The first parameter is the title of the tab, "
+                    "and "
+                    "the second parameter is a widget--normally this is a "
+                    "layout.")
             .def("set_on_selected_tab_changed",
                  &TabControl::SetOnSelectedTabChanged,
                  "Calls the provided callback function with the index of the "
@@ -1010,12 +1015,14 @@ void pybind_gui_classes(py::module &m) {
                  "Returns the root item. This item is invisible, so its child "
                  "are "
                  "the top-level items")
-            .def("add_item",
-                 [](TreeView &tree, TreeView::ItemId parent_id,
-                    UnownedPointer<Widget> item) {
-                     return tree.AddItem(parent_id, TakeOwnership<Widget>(item));
-                 },
-                 "Adds a child item to the parent. add_item(parent, widget)")
+            .def(
+                    "add_item",
+                    [](TreeView &tree, TreeView::ItemId parent_id,
+                       UnownedPointer<Widget> item) {
+                        return tree.AddItem(parent_id,
+                                            TakeOwnership<Widget>(item));
+                    },
+                    "Adds a child item to the parent. add_item(parent, widget)")
             .def("add_text_item", &TreeView::AddTextItem,
                  "Adds a child item to the parent. add_text_item(parent, text)")
             .def("remove_item", &TreeView::RemoveItem,
@@ -1045,8 +1052,8 @@ void pybind_gui_classes(py::module &m) {
     checkable_cell
             .def(py::init<>([](const char *text, bool checked,
                                std::function<void(bool)> on_toggled) {
-                     return new CheckableTextTreeCell(
-                             text, checked, on_toggled);
+                     return new CheckableTextTreeCell(text, checked,
+                                                      on_toggled);
                  }),
                  "Creates a TreeView cell with a checkbox and text. "
                  "CheckableTextTreeCell(text, is_checked, on_toggled): "
@@ -1066,8 +1073,8 @@ void pybind_gui_classes(py::module &m) {
                                const Color &color,
                                std::function<void(bool)> on_enabled,
                                std::function<void(const Color &)> on_color) {
-                     return new LUTTreeCell(text, checked, color,
-                                            on_enabled, on_color);
+                     return new LUTTreeCell(text, checked, color, on_enabled,
+                                            on_color);
                  }),
                  "Creates a TreeView cell with a checkbox, text, and "
                  "a color editor. LUTTreeCell(text, is_checked, color, "
@@ -1093,8 +1100,8 @@ void pybind_gui_classes(py::module &m) {
                                std::function<void(double)> on_value_changed,
                                std::function<void(const Color &)>
                                        on_color_changed) {
-                     return new ColormapTreeCell(
-                             value, color, on_value_changed, on_color_changed);
+                     return new ColormapTreeCell(value, color, on_value_changed,
+                                                 on_color_changed);
                  }),
                  "Creates a TreeView cell with a number and a color edit. "
                  "ColormapTreeCell(value, color, on_value_changed, "
@@ -1131,8 +1138,8 @@ void pybind_gui_classes(py::module &m) {
                  "changes the value of a component");
 
     // ---- Margins ----
-    py::class_<Margins, UnownedPointer<Margins>> margins(
-            m, "Margins", "Margins for layouts");
+    py::class_<Margins, UnownedPointer<Margins>> margins(m, "Margins",
+                                                         "Margins for layouts");
     margins.def(py::init([](int left, int top, int right, int bottom) {
                     return new Margins(left, top, right, bottom);
                 }),
@@ -1183,8 +1190,8 @@ void pybind_gui_classes(py::module &m) {
                  "extra space as there is available in the layout");
 
     // ---- Vert ----
-    py::class_<Vert, UnownedPointer<Vert>, Layout1D> vlayout(
-            m, "Vert", "Vertical layout");
+    py::class_<Vert, UnownedPointer<Vert>, Layout1D> vlayout(m, "Vert",
+                                                             "Vertical layout");
     vlayout.def(py::init([](int spacing, const Margins &margins) {
                     return new Vert(spacing, margins);
                 }),
@@ -1258,7 +1265,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- VGrid ----
     py::class_<VGrid, UnownedPointer<VGrid>, Widget> vgrid(m, "VGrid",
-                                                            "Gride layout");
+                                                           "Grid layout");
     vgrid.def(py::init([](int n_cols, int spacing, const Margins &margins) {
                   return new VGrid(n_cols, spacing, margins);
               }),
@@ -1290,7 +1297,7 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Dialog ----
     py::class_<Dialog, UnownedPointer<Dialog>, Widget> dialog(m, "Dialog",
-                                                               "Dialog");
+                                                              "Dialog");
     dialog.def(py::init<const char *>(),
                "Creates a dialog with the given title");
 
