@@ -25,7 +25,10 @@
 # ----------------------------------------------------------------------------
 
 import os as _os
-if 'OPEN3D_ML_ROOT' in _os.environ:
-    from ml3d.tf.modules.metrics import *
-else:
-    from open3d._ml3d.tf.modules.metrics import *
+from open3d import _build_config
+
+if _build_config['BUNDLE_OPEN3D_ML']:
+    if 'OPEN3D_ML_ROOT' in _os.environ:
+        from ml3d.tf.modules.metrics import *
+    else:
+        from open3d._ml3d.tf.modules.metrics import *
