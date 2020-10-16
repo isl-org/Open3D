@@ -59,14 +59,14 @@ $ python -c "import open3d as o3d; print(o3d)"
 ```
 
 To get the latest features in Open3D, install the
-[development pip](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip).
+[development pip package](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip).
 To compile Open3D from source, refer to
 [compiling from source](http://www.open3d.org/docs/release/compilation.html).
 
 ## C++ quick start
 
 Please refer to [compiling from source](http://www.open3d.org/docs/release/compilation.html)
-and [Open3D C++ interface](http://www.open3d.org/docs/release/tutorial/C++/cplusplus_interface.html).
+and [Open3D C++ interface](http://www.open3d.org/docs/release/cpp_api.html).
 
 ## Open3D-Viewer app
 
