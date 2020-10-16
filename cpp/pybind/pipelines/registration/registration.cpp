@@ -283,9 +283,9 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                             std::to_string(te.lambda_geometric_);
                  })
             .def_readwrite(
-                    "lambda_generic",
+                    "lambda_geometric",
                     &TransformationEstimationForColoredICP::lambda_geometric_,
-                    "lambda_generic")
+                    "lambda_geometric")
             .def_readwrite("kernel",
                            &TransformationEstimationForColoredICP::kernel_,
                            "Robust Kernel used in the Optimization");
