@@ -32,6 +32,7 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
 
@@ -50,11 +51,15 @@ public:
             const override {
         return type_;
     };
-    TransformationEstimationForColoredICP(double lambda_geometric = 0.968)
-        : lambda_geometric_(lambda_geometric) {
-        if (lambda_geometric_ < 0 || lambda_geometric_ > 1.0)
+    explicit TransformationEstimationForColoredICP(
+            double lambda_geometric = 0.968,
+            std::shared_ptr<RobustKernel> kernel = std::make_shared<L2Loss>())
+        : lambda_geometric_(lambda_geometric), kernel_(std::move(kernel)) {
+        if (lambda_geometric_ < 0 || lambda_geometric_ > 1.0) {
             lambda_geometric_ = 0.968;
+        }
     }
+
     ~TransformationEstimationForColoredICP() override {}
 
 public:
@@ -68,6 +73,8 @@ public:
 
 public:
     double lambda_geometric_;
+    /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
+    std::shared_ptr<RobustKernel> kernel_;
 
 private:
     const TransformationEstimationType type_ =
@@ -157,7 +164,7 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
     auto compute_jacobian_and_residual =
             [&](int i,
                 std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
-                std::vector<double> &r) {
+                std::vector<double> &r, std::vector<double> &w) {
                 size_t cs = corres[i][0];
                 size_t ct = corres[i][1];
                 const Eigen::Vector3d &vs = source.points_[cs];
@@ -166,10 +173,12 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 
                 J_r.resize(2);
                 r.resize(2);
+                w.resize(2);
 
                 J_r[0].block<3, 1>(0, 0) = sqrt_lambda_geometric * vs.cross(nt);
                 J_r[0].block<3, 1>(3, 0) = sqrt_lambda_geometric * nt;
                 r[0] = sqrt_lambda_geometric * (vs - vt).dot(nt);
+                w[0] = kernel_->Weight(r[0]);
 
                 // project vs into vt's tangential plane
                 Eigen::Vector3d vs_proj = vs - (vs - vt).dot(nt) * nt;
@@ -194,6 +203,7 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
                         sqrt_lambda_photometric * vs.cross(ditM);
                 J_r[1].block<3, 1>(3, 0) = sqrt_lambda_photometric * ditM;
                 r[1] = sqrt_lambda_photometric * (is - is0_proj);
+                w[1] = kernel_->Weight(r[1]);
             };
 
     Eigen::Matrix6d JTJ;
