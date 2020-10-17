@@ -133,9 +133,16 @@ public:
         virtual void unlock() {}
         virtual void relock() {}
     };
-    /// For internal use. EnvUnlocker allows an external environment to provide
+    /// For internal use. Returns true if the run loop has not finished, and
+    /// false if the last window has closed or Quit() has been called.
+    /// EnvUnlocker allows an external environment to provide
     /// a way to unlock the environment while we wait for the next event.
-    /// This is useful to release the Python GIL, for example.
+    /// This is useful to release the Python GIL, for example. Callers of
+    /// of Open3D's GUI from languages such as scripting languages which do
+    /// not expect the author to need to clean up after themselves may want to
+    /// write their own Run() function that calls RunOneTick() with
+    /// cleanup_if_no_windows=false and schedule a call to OnTerminate() with
+    /// atexit().
     bool RunOneTick(EnvUnlocker &unlocker, bool cleanup_if_no_windows = true);
 
     /// Returns the scene rendered to an image. This MUST NOT be called while

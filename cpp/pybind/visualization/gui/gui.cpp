@@ -258,11 +258,21 @@ void pybind_gui_classes(py::module &m) {
                     "To programmatically destroy the window do window.close()."
                     "Usage: create_window(title, width, height, x, y, flags). "
                     "x, y, and flags are optional.")
+            // We need to tell RunOneTick() not to cleanup. Run() and
+            // RunOneTick() assume a C++ desktop application approach of
+            // init -> run -> cleanup. More problematic for us is that Filament
+            // crashes if we don't cleanup. Also, we don't want to force Python
+            // script writers to remember to cleanup; this is Python, not C++
+            // where you expect to need to thinking about cleanup up after
+            // yourself. So as a Python-script-app, the cleanup happens atexit.
+            // (Init is still required of the script writer.) This means that
+            // run() should NOT cleanup, as it might be called several times
+            // to run a UI to visualize the result of a computation.
             .def(
                     "run",
                     [](Application &instance) {
                         PythonUnlocker unlocker;
-                        while (instance.RunOneTick(unlocker)) {
+                        while (instance.RunOneTick(unlocker, false)) {
                             // Enable Ctrl-C to kill Python
                             if (PyErr_CheckSignals() != 0) {
                                 throw py::error_already_set();
@@ -277,7 +287,7 @@ void pybind_gui_classes(py::module &m) {
                     "run_one_tick",
                     [](Application &instance) {
                         PythonUnlocker unlocker;
-                        auto result = instance.RunOneTick(unlocker);
+                        auto result = instance.RunOneTick(unlocker, false);
                         // Enable Ctrl-C to kill Python
                         if (PyErr_CheckSignals() != 0) {
                             throw py::error_already_set();
@@ -285,7 +295,8 @@ void pybind_gui_classes(py::module &m) {
                         return result;
                     },
                     "Runs the event loop once, returns True if the app is "
-                    "still running, or False if all the windows have closed.")
+                    "still running, or False if all the windows have closed "
+                    "or quit() has been called.")
             .def(
                     "render_to_image",
                     [](Application &instance, rendering::Open3DScene *scene,
