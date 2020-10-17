@@ -462,7 +462,14 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
 
     // Run any posted functions
     {
+        // The only other place posted_lock_ is used is PostToMainThread.
+        // If pybind is posting a Python function, it acquires posted_lock_, then
+        // locks the GIL. Since we are locked at this point, we (can) deadlock.
+        // (So far only observed on macOS, within about 10 runs)
+        unlocker.unlock();
         std::lock_guard<std::mutex> lock(impl_->posted_lock_);
+        unlocker.relock();
+
         for (auto &p : impl_->posted_) {
             void *old = nullptr;
             if (p.window) {
