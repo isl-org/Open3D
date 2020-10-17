@@ -209,7 +209,6 @@ class ExampleWindow:
         vgrid.add_child(gui.Label("Cars"))
         vgrid.add_child(gui.Label("5 (87% certainty)"))
         collapse.add_child(vgrid)
-        collapse.add_child(vgrid)
 
         # Create a tab control. This is really a set of N layouts on top of each
         # other, but with only one selected.
