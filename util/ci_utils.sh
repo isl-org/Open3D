@@ -256,6 +256,12 @@ test_wheel() {
         python -c \
             "import open3d.ml.tf.ops; print('Tensorflow Ops library loaded:', open3d.ml.tf.ops)"
     fi
+    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] && [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+        echo "importing in the reversed order"
+        python -c "import tensorflow as tf; import open3d.ml.torch as o3d"
+        echo "importing in the normal order"
+        python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
+    fi
 }
 
 # Use: run_unit_tests

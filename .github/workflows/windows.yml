@@ -19,6 +19,7 @@ env:
   WHEEL_VER: "0.35.1"
   PYTEST_VER: "6.0.1"
   SCIPY_VER: "1.4.1"       # Needed by Tensorflow 2.3.0
+  NPROC: 2
 
 jobs:
   windows:
@@ -50,8 +51,8 @@ jobs:
         shell: pwsh
         run: |
           cd build
-          cmake --build . --parallel 2 --config ${{ matrix.CONFIG }} --target INSTALL
-          cmake --build . --parallel 2 --config ${{ matrix.CONFIG }} --target build-examples-iteratively
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} --target INSTALL
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} --target build-examples-iteratively
       - name: Linking to Open3D
         shell: pwsh
         run: |
@@ -103,10 +104,10 @@ jobs:
         run: |
           mkdir build
           cd build
-          if ($DEVELOPER_BUILD -ne "OFF") {
-            $DEVELOPER_BUILD="ON"
+          if (${env:DEVELOPER_BUILD} -ne "OFF") {
+            ${env:DEVELOPER_BUILD}="ON"
           }
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DDEVELOPER_BUILD="$DEVELOPER_BUILD" ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" ..
 
       - name: Build Python package
         shell: pwsh
@@ -114,7 +115,7 @@ jobs:
           python -m pip install --upgrade pip==${{ env.PIP_VER }}
           python -m pip install -U wheel==${{ env.WHEEL_VER }}
           cd build
-          cmake --build . --parallel 2 --config Release --target install-pip-package
+          cmake --build . --parallel ${{ env.NPROC }} --config Release --target install-pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           cmake --build . --config Release --target conda-package

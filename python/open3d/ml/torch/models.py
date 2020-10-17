@@ -29,6 +29,6 @@ from open3d import _build_config
 
 if _build_config['BUNDLE_OPEN3D_ML']:
     if 'OPEN3D_ML_ROOT' in _os.environ:
-        from ml3d.datasets import *
+        from ml3d.torch.models import *
     else:
-        from open3d._ml3d.datasets import *
+        from open3d._ml3d.torch.models import *
