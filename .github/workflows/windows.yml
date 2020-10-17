@@ -118,6 +118,7 @@ jobs:
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target install-pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          conda install conda-build -y
           cmake --build . --config Release --target conda-package
           $CONDA_PKG_NAME=(Get-ChildItem lib/python_package/conda_package/open3d*.tar.bz2).Name
           echo "CONDA_PKG_NAME=$CONDA_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
