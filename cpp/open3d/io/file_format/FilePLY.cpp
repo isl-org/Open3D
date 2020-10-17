@@ -65,7 +65,6 @@ int ReadVertexCallback(p_ply_argument argument) {
 
     double value = ply_get_argument_value(argument);
     state_ptr->pointcloud_ptr->points_[state_ptr->vertex_index](index) = value;
-
     if (index == 2) {  // reading 'z'
         state_ptr->vertex_index++;
         if (state_ptr->vertex_index % 1000 == 0) {
@@ -86,7 +85,6 @@ int ReadNormalCallback(p_ply_argument argument) {
 
     double value = ply_get_argument_value(argument);
     state_ptr->pointcloud_ptr->normals_[state_ptr->normal_index](index) = value;
-
     if (index == 2) {  // reading 'nz'
         state_ptr->normal_index++;
     }

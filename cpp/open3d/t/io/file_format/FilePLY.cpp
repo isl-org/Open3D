@@ -73,10 +73,10 @@ bool ConcatColumns(const core::TensorList &a,
                    const core::TensorList &b,
                    const core::TensorList &c,
                    core::TensorList &combined) {
-    if (a.GetSize() != b.GetSize() || a.GetSize() != c.GetSize()) {
+    if ((a.GetSize() != b.GetSize()) || (a.GetSize() != c.GetSize())) {
         return false;
     }
-    if (a.GetDtype() != b.GetDtype() || a.GetDtype() != c.GetDtype()) {
+    if ((a.GetDtype() != b.GetDtype()) || (a.GetDtype() != c.GetDtype())) {
         return false;
     }
 
