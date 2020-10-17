@@ -8,6 +8,7 @@ property float z
 property float nx
 property float ny
 property float nz
+property int8 intensity
 end_header
-0 0 -1 3.69549e-06 0 -4.16078 
-0.7236 -0.52572 -0.447215 -2.18747 -1.86078 
+0 0 -1 3.69549e-06 0 -4.16078 100
+0.7236 -0.52572 -0.447215 -2.18747 -1.86078 -1.20846 128

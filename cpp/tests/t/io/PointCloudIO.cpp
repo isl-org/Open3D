@@ -164,7 +164,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
     EXPECT_EQ(pcd.GetPoints().GetSize(), 7);
 }
 
-// Rrong file format.
+// Unsupported datatype error.
 TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
     t::geometry::PointCloud pcd;
     EXPECT_FALSE(t::io::ReadPointCloud(
