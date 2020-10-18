@@ -124,7 +124,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
                            const open3d::io::ReadPointCloudOption &params) {
     using namespace ply_pointcloud_reader;
 
-    p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
+    p_ply ply_file = ply_open(filename.c_str(), nullptr, 0, nullptr);
     if (!ply_file) {
         utility::LogWarning("Read PLY failed: unable to open file: {}.",
                             filename.c_str());
@@ -137,14 +137,14 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     }
 
     PLYReaderState state;
-    p_ply_property attribute = NULL;
+    p_ply_property attribute = nullptr;
     e_ply_type type, length_type, value_type;
     int64_t attribute_id = 0;
     const char *attribute_num;
 
     // Get first ply element; assuming it will be vertex.
-    p_ply_element element = ply_get_next_element(ply_file, NULL);
-    attribute = ply_get_next_property(element, NULL);
+    p_ply_element element = ply_get_next_element(ply_file, nullptr);
+    attribute = ply_get_next_property(element, nullptr);
 
     while (attribute) {
         ply_get_property_info(attribute, &attribute_num, &type, &length_type,
