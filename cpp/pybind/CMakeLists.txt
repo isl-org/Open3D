@@ -247,12 +247,14 @@ add_custom_target(install-python-package
 # is becuase:
 #     1) `make install-pip-package` works in conda environment for local build
 #     2) `make conda-package` is mainly for internal use to distribute conda
+find_program(CONDA_BUILD "conda-build")
+if (CONDA_BUILD)
+    message(FATAL_ERROR "$conda-build found at {CONDA_BUILD}.")
+else()
+    message(FATAL_ERROR "conda-build not found. Run `conda install conda-build`.")
+endif()
 add_custom_target(conda-package
-    find_program(CONDA_BUILD "conda-build")
-    if (NOT CONDA_BUILD)
-        message(FATAL_ERROR "conda-build not found.")
-    endif()
-    COMMAND conda-build conda_meta --output-folder conda_package
+    COMMAND ${CONDA_BUILD} conda_meta --output-folder conda_package
     COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
