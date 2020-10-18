@@ -224,7 +224,7 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
     auto testFunction =
             [&](int i,
                 std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
-                std::vector<double> &r) {
+                std::vector<double> &r, std::vector<double> &w) {
                 {
                     size_t size = 10;
 
@@ -238,6 +238,7 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
                         for (int k = 0; k < 6; k++) J_r[s](k) = v[k];
 
                         r[s] = (double)((i * s) % 6) / 6;
+                        w[s] = 1.0;
                     }
                 }
             };
