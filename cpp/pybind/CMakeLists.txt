@@ -249,7 +249,7 @@ add_custom_target(install-python-package
 #     2) `make conda-package` is mainly for internal use to distribute conda
 find_program(CONDA_BUILD "conda-build")
 if (CONDA_BUILD)
-    message(FATAL_ERROR "$conda-build found at {CONDA_BUILD}.")
+    message(STATUS "$conda-build found at ${CONDA_BUILD}.")
 else()
     message(FATAL_ERROR "conda-build not found. Run `conda install conda-build`.")
 endif()
