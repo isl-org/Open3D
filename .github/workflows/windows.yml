@@ -22,15 +22,6 @@ env:
   NPROC: 2
 
 jobs:
-  windows:
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        SHARED: [ON, OFF]
-        STATIC_RUNTIME: [ON, OFF]
-        CONFIG: [Release, Debug]
-
   build-wheel:
     name: Build wheel
     runs-on: windows-latest
