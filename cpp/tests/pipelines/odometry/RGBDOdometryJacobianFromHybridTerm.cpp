@@ -115,10 +115,11 @@ TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual) {
     for (int row = 0; row < rows; row++) {
         std::vector<Eigen::Vector6d, utility::Vector6d_allocator> J_r;
         std::vector<double> r;
+        std::vector<double> w;
 
         jacobian_method.ComputeJacobianAndResidual(
-                row, J_r, r, source, target, *source_xyz, target_dx, target_dy,
-                intrinsic, extrinsic, corresps);
+                row, J_r, r, w, source, target, *source_xyz, target_dx,
+                target_dy, intrinsic, extrinsic, corresps);
 
         EXPECT_NEAR(ref_r[2 * row + 0], r[0], THRESHOLD_1E_6);
         EXPECT_NEAR(ref_r[2 * row + 1], r[1], THRESHOLD_1E_6);
