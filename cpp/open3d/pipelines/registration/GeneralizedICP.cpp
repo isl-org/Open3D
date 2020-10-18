@@ -97,16 +97,15 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 // const Eigen::Matrix4d M = Ct + T * Cs * T.transpose();
                 const Eigen::Matrix3d M = Eigen::Matrix3d::Identity();
 
-                Eigen::Matrix<double, 3, 6> dtdx0;
-                dtdx0.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
-                dtdx0.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
-                Eigen::Matrix<double, 3, 6> J_r_ = M * dtdx0;
+                Eigen::Matrix<double, 3, 6> J;
+                J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
+                J.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
+                J = M * J;
 
-                // un-roll Matrix-vector multiplication r = M * d
                 for (size_t i = 0; i < 3; ++i) {
                     r[i] = M.row(i).dot(d);
                     w[i] = kernel_->Weight(r[i]);
-                    J_r[i] = J_r_.row(i);
+                    J_r[i] = J.row(i);
                 }
             };
 
