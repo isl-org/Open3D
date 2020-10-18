@@ -30,6 +30,7 @@
 #include <utility>
 
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/pipelines/registration/GeneralizedICP.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
@@ -288,6 +289,33 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                     "lambda_geometric")
             .def_readwrite("kernel",
                            &TransformationEstimationForColoredICP::kernel_,
+                           "Robust Kernel used in the Optimization");
+
+    // open3d.registration.TransformationEstimationForGeneralizedICP:
+    // TransformationEstimation
+    py::class_<TransformationEstimationForGeneralizedICP,
+               PyTransformationEstimation<
+                       TransformationEstimationForGeneralizedICP>,
+               TransformationEstimation>
+            te_gicp(m, "TransformationEstimationForGeneralizedICP",
+                    "Class to estimate a transformation for point to plane "
+                    "distance.");
+    py::detail::bind_default_constructor<
+            TransformationEstimationForGeneralizedICP>(te_gicp);
+    py::detail::bind_copy_functions<TransformationEstimationForGeneralizedICP>(
+            te_gicp);
+    te_gicp.def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                    return new TransformationEstimationForGeneralizedICP(
+                            std::move(kernel));
+                }),
+                "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationForGeneralizedICP &te) {
+                     return std::string(
+                             "TransformationEstimationForGeneralizedICP");
+                 })
+            .def_readwrite("kernel",
+                           &TransformationEstimationForGeneralizedICP::kernel_,
                            "Robust Kernel used in the Optimization");
 
     // open3d.registration.CorrespondenceChecker
@@ -577,6 +605,15 @@ void pybind_registration_methods(py::module &m) {
           "estimation_method"_a = TransformationEstimationForColoredICP(),
           "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_colored_icp",
+                                 map_shared_argument_docstrings);
+
+    m.def("registration_generalized_icp", &RegistrationGeneralizedICP,
+          "Function for Generalized ICP registration", "source"_a, "target"_a,
+          "max_correspondence_distance"_a,
+          "init"_a = Eigen::Matrix4d::Identity(),
+          "estimation_method"_a = TransformationEstimationForGeneralizedICP(),
+          "criteria"_a = ICPConvergenceCriteria());
+    docstring::FunctionDocInject(m, "registration_generalized_icp",
                                  map_shared_argument_docstrings);
 
     m.def("registration_ransac_based_on_correspondence",
