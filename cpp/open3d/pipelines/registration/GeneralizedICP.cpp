@@ -64,6 +64,18 @@ std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
 namespace pipelines {
 namespace registration {
 
+double TransformationEstimationForGeneralizedICP::ComputeRMSE(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres) const {
+    if (corres.empty()) return 0.0;
+    double err = 0.0;
+    for (const auto &c : corres) {
+        err += (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
+    }
+    return std::sqrt(err / (double)corres.size());
+}
+
 Eigen::Matrix4d
 TransformationEstimationForGeneralizedICP::ComputeTransformation(
         const geometry::PointCloud &source,
