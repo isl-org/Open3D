@@ -74,10 +74,6 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                             bool write_triangle_uvs,
                             bool print_progress);
 
-bool ReadTriangleMeshFromSTL(const std::string &filename,
-                             geometry::TriangleMesh &mesh,
-                             bool print_progress);
-
 bool WriteTriangleMeshToSTL(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             bool write_ascii,
