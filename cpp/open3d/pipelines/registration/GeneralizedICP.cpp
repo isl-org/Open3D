@@ -201,18 +201,19 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 const Eigen::Vector3d d = vs - vt;
                 const Eigen::Matrix3d &R = T.block<3, 3>(0, 0);
                 const Eigen::Matrix3d M = Ct + R * Cs * R.transpose();
+                const Eigen::Matrix3d W = M.inverse();
 
                 Eigen::Matrix<double, 3, 6> J;
                 J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
                 J.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
-                J = M * J;
+                J = W * J;
 
                 constexpr int n_rows = 3;
                 J_r.resize(n_rows);
                 r.resize(n_rows);
                 w.resize(n_rows);
                 for (size_t i = 0; i < n_rows; ++i) {
-                    r[i] = M.row(i).dot(d);
+                    r[i] = W.row(i).dot(d);
                     w[i] = kernel_->Weight(r[i]);
                     J_r[i] = J.row(i);
                 }
