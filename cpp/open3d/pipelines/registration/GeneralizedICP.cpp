@@ -32,6 +32,7 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include <unsupported/Eigen/MatrixFunctions>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
@@ -201,7 +202,7 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 const Eigen::Vector3d d = vs - vt;
                 const Eigen::Matrix3d &R = T.block<3, 3>(0, 0);
                 const Eigen::Matrix3d M = Ct + R * Cs * R.transpose();
-                const Eigen::Matrix3d W = M.inverse();
+                const Eigen::Matrix3d W = M.inverse().sqrt();
 
                 Eigen::Matrix<double, 3, 6> J;
                 J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
