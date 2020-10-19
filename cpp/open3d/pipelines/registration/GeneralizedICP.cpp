@@ -184,9 +184,8 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 const Eigen::Vector3d &vt = target_c.points_[corres[i][1]];
                 const Eigen::Matrix3d &Ct = target_c.covariances_[corres[i][1]];
                 const Eigen::Vector3d d = vs - vt;
-                // const Eigen::Matrix3d M = Ct + T * Cs * T.transpose();
-                (void)Cs;
-                const Eigen::Matrix3d M = Ct;
+                const Eigen::Matrix3d &R = T.block<3, 3>(0, 0);
+                const Eigen::Matrix3d M = Ct + R * Cs * R.transpose();
 
                 Eigen::Matrix<double, 3, 6> J;
                 J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
@@ -239,15 +238,13 @@ RegistrationResult RegistrationGeneralizedICP(
 
     const int n_neighbors = 20;
     auto search_param = geometry::KDTreeSearchParamKNN(n_neighbors);
-    auto source_c =
-            *InitializePointCloudForGeneralizedICP(source, search_param);
+    auto pcd = *InitializePointCloudForGeneralizedICP(source, search_param);
     auto target_c =
             *InitializePointCloudForGeneralizedICP(target, search_param);
 
     Eigen::Matrix4d transformation = init;
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target_c);
-    geometry::PointCloud pcd = source_c;
     if (!init.isIdentity()) {
         pcd.Transform(init);
     }
