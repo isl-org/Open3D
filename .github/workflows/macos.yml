@@ -55,7 +55,7 @@ jobs:
         run: |
           ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
-          ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
@@ -160,9 +160,9 @@ jobs:
           python_version: ${{ matrix.python_version }}
         run: |
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
-          gsutil cp "build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}" gs://open3d-releases-master/python-wheels/
+          gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
           echo "Download the wheel at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
-          gsutil cp "build/lib/python_package/conda_package/osx-64/${{ env.CONDA_PKG_NAME }}" gs://open3d-releases-master/conda_package/osx-64/
+          gsutil cp build/lib/python_package/conda_package/osx-64/${{ env.CONDA_PKG_NAME }} gs://open3d-releases-master/conda_package/osx-64/
           echo "Download the wheel at: https://storage.googleapis.com/open3d-releases-master/conda_package/osx-64/${{ env.CONDA_PKG_NAME }}"
 
   test-wheel:
