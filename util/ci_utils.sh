@@ -31,6 +31,7 @@ PIP_VER="20.2.2"
 WHEEL_VER="0.35.1"
 PYTEST_VER="6.0.1"
 SCIPY_VER="1.4.1" # Needed by Tensorflow 2.3.0
+CONDA_BUILD_VER="3.20.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 
@@ -122,6 +123,9 @@ install_python_dependencies() {
         TF_ARCH_DISABLE_NAME=tensorflow-gpu
         TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
     fi
+
+    echo "Installing conda dependencies"
+    conda install conda-build="$CONDA_BUILD_VER" -y
 
     echo
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
