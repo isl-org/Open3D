@@ -88,7 +88,14 @@ Download Open3D Viewer from the
 
 Open3D-ML is an extension of Open3D for 3D machine learning tasks. It builds on
 top of the Open3D core library and extends it with machine learning tools for
-3D data processing.
+3D data processing. To try it out, install Open3D with PyTorch or Tensorflow:
+
+```bash
+# For use with PyTorch
+pip install open3d[ml-torch] -f https://download.pytorch.org/whl/torch_stable.html
+# For use with Tensorflow
+pip install open3d[ml-tensorflow]
+```
 
 Check it out at [Open3D-ML](https://github.com/intel-isl/Open3D-ML).
 

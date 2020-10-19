@@ -51,6 +51,33 @@ with open('requirements.txt', 'r') as f:
     lines = f.readlines()
 install_requires = [line.strip() for line in lines if line]
 
+# Read requirements for ML
+extras_require = {}
+if '@BUNDLE_OPEN3D_ML@' == 'ON':
+    with open('@OPEN3D_ML_ROOT@/requirements.txt', 'r') as f:
+        extras_require["ml"] = [line.strip() for line in f.readlines() if line]
+        extras_require["ml-torch"] = extras_require["ml"]
+    with open('@OPEN3D_ML_ROOT@/requirements-torch.txt', 'r') as f:
+        extras_require[
+            'ml-torch:platform_system != "Linux" or platform_machine !='
+            ' "x86_64"'] = ([
+                line.strip()
+                for line in f.readlines()
+                if line and not line.lstrip().startswith('-f ')
+            ])
+    with open('@OPEN3D_ML_ROOT@/requirements-torch-cuda.txt', 'r') as f:
+        extras_require[
+            'ml-torch:platform_system == "Linux" and platform_machine =='
+            ' "x86_64"'] = ([
+                line.strip()
+                for line in f.readlines()
+                if line and not line.lstrip().startswith('-f ')
+            ])
+    with open('@OPEN3D_ML_ROOT@/requirements-tensorflow.txt', 'r') as f:
+        extras_require["ml-tensorflow"] = (
+            extras_require["ml"] +
+            [line.strip() for line in f.readlines() if line])
+
 # Data files for packaging
 data_files = [
     ('share/jupyter/nbextensions/open3d', glob.glob('open3d/static/*')),
@@ -96,11 +123,13 @@ setup(
     ],
     cmdclass=cmdclass,
     install_requires=install_requires,
+    extras_require=extras_require,
     include_package_data=True,
     data_files=data_files,
     keywords="3D reconstruction point cloud mesh RGB-D visualization",
     license="MIT",
     long_description=open('README.rst').read(),
+    long_description_content_type='text/x-rst',
     # Name of the package on PyPI
     name="@PYPI_PACKAGE_NAME@",
     packages=[
