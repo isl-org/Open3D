@@ -31,6 +31,7 @@
 #include "open3d/pipelines/registration/GeneralizedICP.h"
 
 #include <Eigen/Dense>
+#include <iostream>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
@@ -89,7 +90,7 @@ std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
 }
 
 RegistrationResult GetRegistrationResultAndCorrespondences(
-        const geometry::PointCloud &source,
+        const PointCloudWithCovariance &source,
         const geometry::PointCloud &target,
         const geometry::KDTreeFlann &target_kdtree,
         double max_correspondence_distance,
@@ -143,12 +144,29 @@ double TransformationEstimationForGeneralizedICP::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
+    return ComputeRMSE(source, target, corres, Eigen::Matrix4d::Identity());
+}
+
+double TransformationEstimationForGeneralizedICP::ComputeRMSE(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres,
+        const Eigen::Matrix4d &T) const {
     if (corres.empty()) {
         return 0.0;
     }
     double err = 0.0;
+    const auto &source_c = (const PointCloudWithCovariance &)source;
+    const auto &target_c = (const PointCloudWithCovariance &)target;
     for (const auto &c : corres) {
-        err += (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
+        const Eigen::Vector3d &vs = source_c.points_[c[0]];
+        const Eigen::Matrix3d &Cs = source_c.covariances_[c[1]];
+        const Eigen::Vector3d &vt = target_c.points_[c[1]];
+        const Eigen::Matrix3d &Ct = target_c.covariances_[c[1]];
+        const Eigen::Vector3d d = vs - vt;
+        const Eigen::Matrix3d &R = T.block<3, 3>(0, 0);
+        const Eigen::Matrix3d M = Ct + R * Cs * R.transpose();
+        err += d.transpose() * M * d;
     }
     return std::sqrt(err / (double)corres.size());
 }
@@ -186,6 +204,7 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 const Eigen::Vector3d d = vs - vt;
                 const Eigen::Matrix3d &R = T.block<3, 3>(0, 0);
                 const Eigen::Matrix3d M = Ct + R * Cs * R.transpose();
+                /* std::cout << "M  = \n" << M; */
 
                 Eigen::Matrix<double, 3, 6> J;
                 J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
@@ -218,6 +237,47 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 }
 
+RegistrationResult PrivateRegistrationICP(
+        const PointCloudWithCovariance &source,
+        const geometry::PointCloud &target,
+        double max_correspondence_distance,
+        const Eigen::Matrix4d &init,
+        const TransformationEstimationForGeneralizedICP &estimation,
+        const ICPConvergenceCriteria &criteria) {
+    Eigen::Matrix4d transformation = init;
+    geometry::KDTreeFlann kdtree;
+    kdtree.SetGeometry(target);
+    PointCloudWithCovariance pcd = source;
+    if (!init.isIdentity()) {
+        pcd.Transform(init);
+    }
+    RegistrationResult result;
+    result = GetRegistrationResultAndCorrespondences(
+            pcd, target, kdtree, max_correspondence_distance, transformation);
+    for (int i = 0; i < criteria.max_iteration_; i++) {
+        utility::LogDebug(
+                "GICP Iteration #{:d}: Correspondences {:d}, Fitness {:.4f}, "
+                "RMSE {:.4f}",
+                i, result.correspondence_set_.size(), result.fitness_,
+                result.inlier_rmse_);
+        Eigen::Matrix4d update = estimation.ComputeTransformation(
+                pcd, target, result.correspondence_set_, transformation);
+        transformation = update * transformation;
+        pcd.Transform(update);
+        RegistrationResult backup = result;
+        result = GetRegistrationResultAndCorrespondences(
+                pcd, target, kdtree, max_correspondence_distance,
+                transformation);
+        if (std::abs(backup.fitness_ - result.fitness_) <
+                    criteria.relative_fitness_ &&
+            std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
+                    criteria.relative_rmse_) {
+            break;
+        }
+    }
+    return result;
+}
+
 RegistrationResult RegistrationGeneralizedICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -238,43 +298,12 @@ RegistrationResult RegistrationGeneralizedICP(
 
     const int n_neighbors = 20;
     auto search_param = geometry::KDTreeSearchParamKNN(n_neighbors);
-    auto pcd = *InitializePointCloudForGeneralizedICP(source, search_param);
-    auto target_c =
-            *InitializePointCloudForGeneralizedICP(target, search_param);
-
-    Eigen::Matrix4d transformation = init;
-    geometry::KDTreeFlann kdtree;
-    kdtree.SetGeometry(target_c);
-    if (!init.isIdentity()) {
-        pcd.Transform(init);
-    }
-    RegistrationResult result;
-    result = GetRegistrationResultAndCorrespondences(
-            pcd, target_c, kdtree, max_correspondence_distance, transformation);
-    for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::LogDebug(
-                "GICP Iteration #{:d}: Correspondences {:d}, Fitness {:.4f}, "
-                "RMSE {:.4f}",
-                i, result.correspondence_set_.size(), result.fitness_,
-                result.inlier_rmse_);
-        Eigen::Matrix4d update = estimation.ComputeTransformation(
-                pcd, target_c, result.correspondence_set_, transformation);
-        transformation = update * transformation;
-        pcd.Transform(update);
-        RegistrationResult backup = result;
-        result = GetRegistrationResultAndCorrespondences(
-                pcd, target_c, kdtree, max_correspondence_distance,
-                transformation);
-        if (std::abs(backup.fitness_ - result.fitness_) <
-                    criteria.relative_fitness_ &&
-            std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
-                    criteria.relative_rmse_) {
-            break;
-        }
-    }
-    return result;
+    auto source_c = InitializePointCloudForGeneralizedICP(source, search_param);
+    auto target_c = InitializePointCloudForGeneralizedICP(target, search_param);
+    return PrivateRegistrationICP(*source_c, *target_c,
+                                  max_correspondence_distance, init, estimation,
+                                  criteria);
 }
-
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace open3d
