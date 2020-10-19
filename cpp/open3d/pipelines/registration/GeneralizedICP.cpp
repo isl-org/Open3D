@@ -52,6 +52,11 @@ inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
     const Eigen::Vector3d e1{1, 0, 0};
     const Eigen::Vector3d v = e1.cross(x);
     const double c = e1.dot(x);
+    if (c < -0.99) {
+        // Then means that x and e1 are in the same direction
+        return Eigen::Matrix3d::Identity();
+    }
+
     const Eigen::Matrix3d sv = utility::SkewMatrix(v);
     const double factor = 1 / (1 + c);
     return Eigen::Matrix3d::Identity() + sv + (sv * sv) * factor;
@@ -196,7 +201,6 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 const Eigen::Vector3d d = vs - vt;
                 const Eigen::Matrix3d &R = T.block<3, 3>(0, 0);
                 const Eigen::Matrix3d M = Ct + R * Cs * R.transpose();
-                /* std::cout << "M  = \n" << M; */
 
                 Eigen::Matrix<double, 3, 6> J;
                 J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
