@@ -150,7 +150,7 @@ double TransformationEstimationForGeneralizedICP::ComputeRMSE(
     const auto &target_c = (const PointCloudWithCovariance &)target;
     for (const auto &c : corres) {
         const Eigen::Vector3d &vs = source_c.points_[c[0]];
-        const Eigen::Matrix3d &Cs = source_c.covariances_[c[1]];
+        const Eigen::Matrix3d &Cs = source_c.covariances_[c[0]];
         const Eigen::Vector3d &vt = target_c.points_[c[1]];
         const Eigen::Matrix3d &Ct = target_c.covariances_[c[1]];
         const Eigen::Vector3d d = vs - vt;
@@ -187,8 +187,10 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
             [&](int i,
                 std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
                 std::vector<double> &r, std::vector<double> &w) {
+                // source
                 const Eigen::Vector3d &vs = source_c.points_[corres[i][0]];
-                const Eigen::Matrix3d &Cs = source_c.covariances_[corres[i][1]];
+                const Eigen::Matrix3d &Cs = source_c.covariances_[corres[i][0]];
+                // target
                 const Eigen::Vector3d &vt = target_c.points_[corres[i][1]];
                 const Eigen::Matrix3d &Ct = target_c.covariances_[corres[i][1]];
                 const Eigen::Vector3d d = vs - vt;
