@@ -182,7 +182,7 @@ build_all() {
     echo
 }
 
-build_wheel() {
+build_pip_conda_package() {
 
     echo "Building Open3D wheel"
 
