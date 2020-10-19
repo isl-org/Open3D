@@ -194,9 +194,8 @@ jobs:
           name: open3d_macosx_x86_64_wheels
 
       - name: Set up Python
-        uses: conda-incubator/setup-miniconda@v1
+        uses: actions/setup-python@v2
         with:
-          auto-update-conda: false
           python-version: ${{ matrix.python_version }}
 
       - name: Test Python package
@@ -214,7 +213,6 @@ jobs:
           python -m pip install -r "$OPEN3D_ML_ROOT/requirements.txt"
           echo
           test_wheel
-
       - name: Run Python unit tests (benchmarks)
         run: |
           cd util

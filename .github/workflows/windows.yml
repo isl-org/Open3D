@@ -171,16 +171,19 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: false
+
       - name: Download wheels
         uses: actions/download-artifact@v2
         # See https://github.com/dawidd6/action-download-artifact for more
         # flexible artifact download options
         with:
           name: open3d_win_amd64_wheels
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python_version }}
+
       - name: Test Python package
         run: |
           python -V
@@ -190,6 +193,7 @@ jobs:
           python -m pip install (Get-ChildItem open3d*-$pi_tag-*.whl).Name
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+
       - name: Run Python unit tests (benchmarks)
         run: |
           echo "Running Open3D python tests..."
