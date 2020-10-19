@@ -83,6 +83,7 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
     J_r[0](5) = c2;
     r.resize(1);
     r[0] = diff;
+    w.resize(1);
     w[0] = 1.0;
 }
 
@@ -136,6 +137,7 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
 
     J_r.resize(2);
     r.resize(2);
+    w.resize(2);
     J_r[0](0) = sqrt_lambda_img * (-p3d_trans(2) * c1 + p3d_trans(1) * c2);
     J_r[0](1) = sqrt_lambda_img * (p3d_trans(2) * c0 - p3d_trans(0) * c2);
     J_r[0](2) = sqrt_lambda_img * (-p3d_trans(1) * c0 + p3d_trans(0) * c1);
@@ -156,7 +158,7 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
     J_r[1](5) = sqrt_lamba_dep * (d2 - 1.0f);
     double r_geo = sqrt_lamba_dep * diff_geo;
     r[1] = r_geo;
-    w[0] = 1.0;
+    w[1] = 1.0;
 }
 
 }  // namespace odometry
