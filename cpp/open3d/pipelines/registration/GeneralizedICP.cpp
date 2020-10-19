@@ -97,14 +97,14 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 const Eigen::Matrix3d &Ct = target_c.covariances_[corres[i][1]];
                 (void)Cs;
                 (void)Ct;
-                const Eigen::Vector3d d = vt - vs;
+                const Eigen::Vector3d d = vs - vt;
 
                 // const Eigen::Matrix3d M = Ct + T * Cs * T.transpose();
                 const auto M = Eigen::Matrix3d::Identity();
 
                 Eigen::Matrix<double, 3, 6> J;
-                J.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
-                J.block<3, 3>(0, 3) = -utility::SkewMatrix(vs);
+                J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
+                J.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
                 J = M * J;
 
                 constexpr int n_rows = 3;
@@ -136,7 +136,7 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
 RegistrationResult RegistrationGeneralizedICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        double max_distance,
+        double max_correspondence_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
         const TransformationEstimationForGeneralizedICP
                 &estimation /* = TransformationEstimationForGeneralizedICP()*/,
@@ -147,12 +147,12 @@ RegistrationResult RegistrationGeneralizedICP(
                 "GeneralizedICP require pre-computed normal vectors for target "
                 "and source PointClouds.");
     }
-    auto search_param =
-            geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30);
-    auto source_c = InitializePointCloudForGeneralizedICP(target, search_param);
-    auto target_c = InitializePointCloudForGeneralizedICP(source, search_param);
-    return RegistrationICP(*source_c, *target_c, max_distance, init, estimation,
-                           criteria);
+    auto search_param = geometry::KDTreeSearchParamHybrid(
+            max_correspondence_distance * 2.0, 30);
+    auto source_c = InitializePointCloudForGeneralizedICP(source, search_param);
+    auto target_c = InitializePointCloudForGeneralizedICP(target, search_param);
+    return RegistrationICP(*source_c, *target_c, max_correspondence_distance,
+                           init, estimation, criteria);
 }
 
 }  // namespace registration
