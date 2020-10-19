@@ -40,6 +40,8 @@
 #include "open3d/utility/Eigen.h"
 
 namespace open3d {
+namespace pipelines {
+namespace registration {
 
 namespace {
 
@@ -60,15 +62,13 @@ std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
 }
 
 }  // namespace
-
-namespace pipelines {
-namespace registration {
-
 double TransformationEstimationForGeneralizedICP::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty()) return 0.0;
+    if (corres.empty()) {
+        return 0.0;
+    }
     double err = 0.0;
     for (const auto &c : corres) {
         err += (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
@@ -81,8 +81,7 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || !target.HasNormals() || !source.HasNormals() ||
-        !target.HasColors() || !source.HasColors()) {
+    if (corres.empty() || !target.HasNormals() || !source.HasNormals()) {
         return Eigen::Matrix4d::Identity();
     }
 
@@ -101,20 +100,20 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 (void)Ct;
                 const Eigen::Vector3d d = vs - vt;  // T already applied to vs
 
-                // Number of rows == 3
-                J_r.resize(3);
-                r.reserve(3);
-                w.reserve(3);
+                constexpr int n_rows = 3;
+                J_r.resize(n_rows);
+                r.reserve(n_rows);
+                w.reserve(n_rows);
 
                 // const Eigen::Matrix4d M = Ct + T * Cs * T.transpose();
                 const Eigen::Matrix3d M = Eigen::Matrix3d::Identity();
 
-                Eigen::Matrix<double, 3, 6> J;
+                Eigen::Matrix<double, n_rows, 6> J;
                 J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
                 J.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
                 J = M * J;
 
-                for (size_t i = 0; i < 3; ++i) {
+                for (size_t i = 0; i < n_rows; ++i) {
                     r[i] = M.row(i).dot(d);
                     w[i] = kernel_->Weight(r[i]);
                     J_r[i] = J.row(i);
@@ -145,7 +144,7 @@ RegistrationResult RegistrationGeneralizedICP(
                 &estimation /* = TransformationEstimationForGeneralizedICP()*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
-    if (!source.HasNormals() && (!target.HasNormals())) {
+    if (!source.HasNormals() || !target.HasNormals()) {
         utility::LogError(
                 "GeneralizedICP require pre-computed normal vectors for target "
                 "and source PointClouds.");
