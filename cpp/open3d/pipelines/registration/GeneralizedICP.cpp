@@ -35,6 +35,7 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/pipelines/registration/Registration.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
 
@@ -87,7 +88,57 @@ std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
     return output;
 }
 
+RegistrationResult GetRegistrationResultAndCorrespondences(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const geometry::KDTreeFlann &target_kdtree,
+        double max_correspondence_distance,
+        const Eigen::Matrix4d &transformation) {
+    RegistrationResult result(transformation);
+    if (max_correspondence_distance <= 0.0) {
+        return result;
+    }
+
+    double error2 = 0.0;
+
+#pragma omp parallel
+    {
+        double error2_private = 0.0;
+        CorrespondenceSet correspondence_set_private;
+#pragma omp for nowait
+        for (int i = 0; i < (int)source.points_.size(); i++) {
+            std::vector<int> indices(1);
+            std::vector<double> dists(1);
+            const auto &point = source.points_[i];
+            if (target_kdtree.SearchHybrid(point, max_correspondence_distance,
+                                           1, indices, dists) > 0) {
+                error2_private += dists[0];
+                correspondence_set_private.push_back(
+                        Eigen::Vector2i(i, indices[0]));
+            }
+        }
+#pragma omp critical
+        {
+            for (int i = 0; i < (int)correspondence_set_private.size(); i++) {
+                result.correspondence_set_.push_back(
+                        correspondence_set_private[i]);
+            }
+            error2 += error2_private;
+        }
+    }
+
+    if (result.correspondence_set_.empty()) {
+        result.fitness_ = 0.0;
+        result.inlier_rmse_ = 0.0;
+    } else {
+        size_t corres_number = result.correspondence_set_.size();
+        result.fitness_ = (double)corres_number / (double)source.points_.size();
+        result.inlier_rmse_ = std::sqrt(error2 / (double)corres_number);
+    }
+    return result;
+}
 }  // namespace
+
 double TransformationEstimationForGeneralizedICP::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -107,6 +158,16 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
+    return ComputeTransformation(source, target, corres,
+                                 Eigen::Matrix4d::Identity());
+}
+
+Eigen::Matrix4d
+TransformationEstimationForGeneralizedICP::ComputeTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres,
+        const Eigen::Matrix4d &T) const {
     if (corres.empty() || !target.HasNormals() || !source.HasNormals()) {
         return Eigen::Matrix4d::Identity();
     }
@@ -124,7 +185,7 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 const Eigen::Matrix3d &Ct = target_c.covariances_[corres[i][1]];
                 const Eigen::Vector3d d = vs - vt;
                 // const Eigen::Matrix3d M = Ct + T * Cs * T.transpose();
-                (void) Cs;
+                (void)Cs;
                 const Eigen::Matrix3d M = Ct;
 
                 Eigen::Matrix<double, 3, 6> J;
@@ -167,17 +228,54 @@ RegistrationResult RegistrationGeneralizedICP(
                 &estimation /* = TransformationEstimationForGeneralizedICP()*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
+    if (max_correspondence_distance <= 0.0) {
+        utility::LogError("Invalid max_correspondence_distance.");
+    }
     if (!source.HasNormals() || !target.HasNormals()) {
         utility::LogError(
                 "GeneralizedICP require pre-computed normal vectors for target "
                 "and source PointClouds.");
     }
+
     const int n_neighbors = 20;
     auto search_param = geometry::KDTreeSearchParamKNN(n_neighbors);
-    auto source_c = InitializePointCloudForGeneralizedICP(source, search_param);
-    auto target_c = InitializePointCloudForGeneralizedICP(target, search_param);
-    return RegistrationICP(*source_c, *target_c, max_correspondence_distance,
-                           init, estimation, criteria);
+    auto source_c =
+            *InitializePointCloudForGeneralizedICP(source, search_param);
+    auto target_c =
+            *InitializePointCloudForGeneralizedICP(target, search_param);
+
+    Eigen::Matrix4d transformation = init;
+    geometry::KDTreeFlann kdtree;
+    kdtree.SetGeometry(target_c);
+    geometry::PointCloud pcd = source_c;
+    if (!init.isIdentity()) {
+        pcd.Transform(init);
+    }
+    RegistrationResult result;
+    result = GetRegistrationResultAndCorrespondences(
+            pcd, target_c, kdtree, max_correspondence_distance, transformation);
+    for (int i = 0; i < criteria.max_iteration_; i++) {
+        utility::LogDebug(
+                "GICP Iteration #{:d}: Correspondences {:d}, Fitness {:.4f}, "
+                "RMSE {:.4f}",
+                i, result.correspondence_set_.size(), result.fitness_,
+                result.inlier_rmse_);
+        Eigen::Matrix4d update = estimation.ComputeTransformation(
+                pcd, target_c, result.correspondence_set_, transformation);
+        transformation = update * transformation;
+        pcd.Transform(update);
+        RegistrationResult backup = result;
+        result = GetRegistrationResultAndCorrespondences(
+                pcd, target_c, kdtree, max_correspondence_distance,
+                transformation);
+        if (std::abs(backup.fitness_ - result.fitness_) <
+                    criteria.relative_fitness_ &&
+            std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
+                    criteria.relative_rmse_) {
+            break;
+        }
+    }
+    return result;
 }
 
 }  // namespace registration

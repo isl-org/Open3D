@@ -73,6 +73,11 @@ public:
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
+    Eigen::Matrix4d ComputeTransformation(const geometry::PointCloud &source,
+                                          const geometry::PointCloud &target,
+                                          const CorrespondenceSet &corres,
+                                          const Eigen::Matrix4d &T) const;
+
     TransformationEstimationType GetTransformationEstimationType()
             const override {
         return type_;
