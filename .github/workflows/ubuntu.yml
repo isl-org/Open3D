@@ -136,6 +136,7 @@ jobs:
           PATH=/usr/lib/ccache:$PATH
           ccache -s
           source util/ci_utils.sh
+          conda install conda-build=3.20.0 -y
           build_pip_conda_package
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
