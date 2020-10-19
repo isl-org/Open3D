@@ -232,10 +232,8 @@ build_wheel() {
         cmake -DBUILD_CUDA_MODULE=ON -DCUDA_ARCH=BasicPTX "${cmakeOptions[@]}" ..
     fi
     echo
-    echo "Packaging Open3D wheel..."
-    make VERBOSE=1 -j"$NPROC" pip-package
-    echo "Packaging Open3D conda package..."
-    make VERBOSE=1 -j"$NPROC" conda-package
+    echo "Packaging Open3D wheel and conda package..."
+    make VERBOSE=1 -j"$NPROC" pip-conda-package
     cd .. # PWD=Open3D
 }
 
