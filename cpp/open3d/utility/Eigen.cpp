@@ -390,6 +390,5 @@ Eigen::Matrix3d SkewMatrix(const Eigen::Vector3d &vec) {
     return skew;
 }
 
-
 }  // namespace utility
 }  // namespace open3d

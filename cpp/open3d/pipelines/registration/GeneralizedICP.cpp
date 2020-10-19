@@ -97,21 +97,20 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 const Eigen::Matrix3d &Ct = target_c.covariances_[corres[i][1]];
                 (void)Cs;
                 (void)Ct;
-                const Eigen::Vector3d d = vs - vt;  // T already applied to vs
+                const Eigen::Vector3d d = vt - vs;
+
+                // const Eigen::Matrix3d M = Ct + T * Cs * T.transpose();
+                const auto M = Eigen::Matrix3d::Identity();
+
+                Eigen::Matrix<double, 3, 6> J;
+                J.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
+                J.block<3, 3>(0, 3) = -utility::SkewMatrix(vs);
+                J = M * J;
 
                 constexpr int n_rows = 3;
                 J_r.resize(n_rows);
-                r.reserve(n_rows);
-                w.reserve(n_rows);
-
-                // const Eigen::Matrix4d M = Ct + T * Cs * T.transpose();
-                const Eigen::Matrix3d M = Eigen::Matrix3d::Identity();
-
-                Eigen::Matrix<double, n_rows, 6> J;
-                J.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
-                J.block<3, 3>(0, 3) = -utility::SkewMatrix(vt);
-                J = M * J;
-
+                r.resize(n_rows);
+                w.resize(n_rows);
                 for (size_t i = 0; i < n_rows; ++i) {
                     r[i] = M.row(i).dot(d);
                     w[i] = kernel_->Weight(r[i]);
