@@ -69,24 +69,26 @@ int ReadAttributeCallback(p_ply_argument argument) {
     return 1;
 }
 
-bool ConcatColumns(const core::TensorList &a,
-                   const core::TensorList &b,
-                   const core::TensorList &c,
-                   core::TensorList &combined) {
+core::TensorList ConcatColumns(const core::TensorList &a,
+                               const core::TensorList &b,
+                               const core::TensorList &c) {
+    core::TensorList combined;
+
     if ((a.GetSize() != b.GetSize()) || (a.GetSize() != c.GetSize())) {
-        return false;
+        utility::LogError(
+                "Read PLY failed: size mismatch in point attributes.");
     }
     if ((a.GetDtype() != b.GetDtype()) || (a.GetDtype() != c.GetDtype())) {
-        return false;
+        utility::LogError(
+                "Read PLY failed: datatype mismatch in point attributes.");
     }
 
     combined = core::TensorList(a.GetSize(), {3}, a.GetDtype());
-
     combined.AsTensor().Slice(1, 0, 1) = a.AsTensor();
     combined.AsTensor().Slice(1, 1, 2) = b.AsTensor();
     combined.AsTensor().Slice(1, 2, 3) = c.AsTensor();
 
-    return true;
+    return combined;
 }
 
 core::Dtype GetDtype(e_ply_type type) {
@@ -183,30 +185,39 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     pointcloud.Clear();
 
     // Add base attributes.
-    if (state.attributes.find("x") != state.attributes.end()) {
-        core::TensorList points;
-        if (ConcatColumns(state.attributes["x"], state.attributes["y"],
-                          state.attributes["z"], points)) {
+    if (state.attributes.find("x") != state.attributes.end() &&
+        state.attributes.find("y") != state.attributes.end() &&
+        state.attributes.find("z") != state.attributes.end()) {
+        core::TensorList points =
+                ConcatColumns(state.attributes["x"], state.attributes["y"],
+                              state.attributes["z"]);
+        if (points.GetSize() > 0) {
             state.attributes.erase("x");
             state.attributes.erase("y");
             state.attributes.erase("z");
             pointcloud.SetPoints(points);
         }
     }
-    if (state.attributes.find("nx") != state.attributes.end()) {
-        core::TensorList normals;
-        if (ConcatColumns(state.attributes["nx"], state.attributes["ny"],
-                          state.attributes["nz"], normals)) {
+    if (state.attributes.find("nx") != state.attributes.end() &&
+        state.attributes.find("ny") != state.attributes.end() &&
+        state.attributes.find("nz") != state.attributes.end()) {
+        core::TensorList normals =
+                ConcatColumns(state.attributes["nx"], state.attributes["ny"],
+                              state.attributes["nz"]);
+        if (normals.GetSize() > 0) {
             state.attributes.erase("nx");
             state.attributes.erase("ny");
             state.attributes.erase("nz");
             pointcloud.SetPointNormals(normals);
         }
     }
-    if (state.attributes.find("red") != state.attributes.end()) {
-        core::TensorList colors;
-        if (ConcatColumns(state.attributes["red"], state.attributes["green"],
-                          state.attributes["blue"], colors)) {
+    if (state.attributes.find("red") != state.attributes.end() &&
+        state.attributes.find("green") != state.attributes.end() &&
+        state.attributes.find("blue") != state.attributes.end()) {
+        core::TensorList colors = ConcatColumns(state.attributes["red"],
+                                                state.attributes["green"],
+                                                state.attributes["blue"]);
+        if (colors.GetSize() > 0) {
             state.attributes.erase("red");
             state.attributes.erase("green");
             state.attributes.erase("blue");

@@ -178,6 +178,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
     t::io::ReadPointCloud(
             std::string(TEST_DATA_DIR) + "/test_sample_custom.ply", pcd,
             {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 7);
     EXPECT_EQ(pcd.GetPointAttr("intensity").GetSize(), 7);
 }
 
