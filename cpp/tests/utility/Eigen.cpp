@@ -230,6 +230,7 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
 
                     J_r.resize(size);
                     r.resize(size);
+                    w.resize(size);
 
                     std::vector<double> v(6);
                     for (size_t s = 0; s < size; s++) {
