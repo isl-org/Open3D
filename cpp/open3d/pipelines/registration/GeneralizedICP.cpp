@@ -46,45 +46,35 @@ namespace registration {
 
 namespace {
 
+/// Obatin the Rotation matrix that transform the basis vector e1 onto the
+/// input vector x.
+inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
+    const Eigen::Vector3d e1{1, 0, 0};
+    const Eigen::Vector3d v = e1.cross(x);
+    const double c = e1.dot(x);
+    const Eigen::Matrix3d sv = utility::SkewMatrix(v);
+    const double factor = 1 / (1 + c);
+    return Eigen::Matrix3d::Identity() + sv + (sv * sv) * factor;
+}
+
 class PointCloudWithCovariance : public geometry::PointCloud {
 public:
     std::vector<Eigen::Matrix3d> covariances_;
 };
 
 std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
-        const geometry::PointCloud &pcd,
-        const geometry::KDTreeSearchParamKNN &search_param) {
+        const geometry::PointCloud &pcd) {
     utility::LogDebug("InitializePointCloudForGeneralizedICP");
     auto output = std::make_shared<PointCloudWithCovariance>();
     output->points_ = pcd.points_;
     output->normals_ = pcd.normals_;
     output->covariances_.resize(output->points_.size());
 
-    /// TODO: This literally duplicates the normal estimation. For now, just for
-    /// the sake of experimenation, re-compute the covariance matrix at each
-    /// point using just the 20 neighbors. As defined in the original papaer
-    geometry::KDTreeFlann kdtree;
-    kdtree.SetGeometry(*output);
+    const Eigen::Matrix3d C = Eigen::Vector3d(1, 1, 1e-3).asDiagonal();
 #pragma omp parallel for
     for (int i = 0; i < (int)output->points_.size(); i++) {
-        auto &cov = output->covariances_[i];
-        cov.setZero();
-
-        Eigen::Vector3d mean;
-        Eigen::Matrix3d covariance;
-        std::vector<int> indices;
-        std::vector<double> distance2;
-
-        if (kdtree.Search(output->points_[i], search_param, indices,
-                          distance2) >= 3) {
-            std::tie(mean, covariance) =
-                    utility::ComputeMeanAndCovariance(output->points_, indices);
-            Eigen::JacobiSVD<Eigen::Matrix3d> svd(
-                    covariance, Eigen::ComputeFullU | Eigen::ComputeFullV);
-            Eigen::Vector3d values{1, 1, 1e-3};
-            cov = svd.matrixU() * values.asDiagonal() *
-                  svd.matrixV().transpose();
-        }
+        const auto Rx = GetRotationFromE1ToX(output->normals_[i]);
+        output->covariances_[i] = Rx * C * Rx.transpose();
     }
     return output;
 }
@@ -296,10 +286,8 @@ RegistrationResult RegistrationGeneralizedICP(
                 "and source PointClouds.");
     }
 
-    const int n_neighbors = 20;
-    auto search_param = geometry::KDTreeSearchParamKNN(n_neighbors);
-    auto source_c = InitializePointCloudForGeneralizedICP(source, search_param);
-    auto target_c = InitializePointCloudForGeneralizedICP(target, search_param);
+    auto source_c = InitializePointCloudForGeneralizedICP(source);
+    auto target_c = InitializePointCloudForGeneralizedICP(target);
     return PrivateRegistrationICP(*source_c, *target_c,
                                   max_correspondence_distance, init, estimation,
                                   criteria);
