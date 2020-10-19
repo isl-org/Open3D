@@ -75,12 +75,11 @@ core::TensorList ConcatColumns(const core::TensorList &a,
     core::TensorList combined;
 
     if ((a.GetSize() != b.GetSize()) || (a.GetSize() != c.GetSize())) {
-        utility::LogError(
-                "Read PLY failed: size mismatch in point attributes.");
+        utility::LogError("Read PLY failed: size mismatch in base attributes.");
     }
     if ((a.GetDtype() != b.GetDtype()) || (a.GetDtype() != c.GetDtype())) {
         utility::LogError(
-                "Read PLY failed: datatype mismatch in point attributes.");
+                "Read PLY failed: datatype mismatch in base attributes.");
     }
 
     combined = core::TensorList(a.GetSize(), {3}, a.GetDtype());
