@@ -31,7 +31,6 @@
 #include "open3d/pipelines/registration/GeneralizedICP.h"
 
 #include <Eigen/Dense>
-#include <iostream>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
@@ -109,8 +108,8 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 const Eigen::Matrix3d M = Eigen::Matrix3d::Identity();
 
                 Eigen::Matrix<double, n_rows, 6> J;
-                J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
-                J.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
+                J.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
+                J.block<3, 3>(0, 3) = -utility::SkewMatrix(vt);
                 J = M * J;
 
                 for (size_t i = 0; i < n_rows; ++i) {
