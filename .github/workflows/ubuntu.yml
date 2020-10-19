@@ -154,7 +154,6 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
@@ -163,7 +162,6 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' }}
         env:
           python_version: ${{ matrix.python_version }}
         run: |

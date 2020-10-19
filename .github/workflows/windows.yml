@@ -127,7 +127,6 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         env:
@@ -139,7 +138,6 @@ jobs:
           export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' }}
         env:
           python_version: ${{ matrix.python_version }}
           CLOUDSDK_PYTHON: ${{env.pythonLocation}}\python.exe
