@@ -213,7 +213,7 @@ jobs:
           source ci_utils.sh
           install_python_dependencies with-unit-test
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          python -m pip install ../open3d*-$pi_tag-*.whl
+          python -m pip install ../pip_package/open3d*-$pi_tag-*.whl
           echo
           # echo "Dynamic libraries used:"
           # DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..

@@ -190,7 +190,9 @@ jobs:
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }}
           $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          python -m pip install (Get-ChildItem open3d*-$pi_tag-*.whl).Name
+          $PIP_PKG_NAME=(Get-ChildItem pip_package/open3d*-$pi_tag-*.whl).Name
+          echo $PIP_PKG_NAME
+          python -m pip install pip_package/$PIP_PKG_NAME
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 
