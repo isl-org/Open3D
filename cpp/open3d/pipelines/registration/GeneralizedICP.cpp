@@ -51,12 +51,39 @@ public:
 
 std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
         const geometry::PointCloud &pcd,
-        const geometry::KDTreeSearchParamHybrid &search_param) {
+        const geometry::KDTreeSearchParamKNN &search_param) {
     utility::LogDebug("InitializePointCloudForGeneralizedICP");
-    (void)search_param;
     auto output = std::make_shared<PointCloudWithCovariance>();
     output->points_ = pcd.points_;
     output->normals_ = pcd.normals_;
+    output->covariances_.resize(output->points_.size());
+
+    /// TODO: This literally duplicates the normal estimation. For now, just for
+    /// the sake of experimenation, re-compute the covariance matrix at each
+    /// point using just the 20 neighbors. As defined in the original papaer
+    geometry::KDTreeFlann kdtree;
+    kdtree.SetGeometry(*output);
+#pragma omp parallel for
+    for (int i = 0; i < (int)output->points_.size(); i++) {
+        auto &cov = output->covariances_[i];
+        cov.setZero();
+
+        Eigen::Vector3d mean;
+        Eigen::Matrix3d covariance;
+        std::vector<int> indices;
+        std::vector<double> distance2;
+
+        if (kdtree.Search(output->points_[i], search_param, indices,
+                          distance2) >= 3) {
+            std::tie(mean, covariance) =
+                    utility::ComputeMeanAndCovariance(output->points_, indices);
+            Eigen::JacobiSVD<Eigen::Matrix3d> svd(
+                    covariance, Eigen::ComputeFullU | Eigen::ComputeFullV);
+            Eigen::Vector3d values{1, 1, 1e-3};
+            cov = svd.matrixU() * values.asDiagonal() *
+                  svd.matrixV().transpose();
+        }
+    }
     return output;
 }
 
@@ -95,12 +122,10 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
                 const Eigen::Matrix3d &Cs = source_c.covariances_[corres[i][1]];
                 const Eigen::Vector3d &vt = target_c.points_[corres[i][1]];
                 const Eigen::Matrix3d &Ct = target_c.covariances_[corres[i][1]];
-                (void)Cs;
-                (void)Ct;
                 const Eigen::Vector3d d = vs - vt;
-
                 // const Eigen::Matrix3d M = Ct + T * Cs * T.transpose();
-                const auto M = Eigen::Matrix3d::Identity();
+                (void) Cs;
+                const Eigen::Matrix3d M = Ct;
 
                 Eigen::Matrix<double, 3, 6> J;
                 J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
@@ -147,8 +172,8 @@ RegistrationResult RegistrationGeneralizedICP(
                 "GeneralizedICP require pre-computed normal vectors for target "
                 "and source PointClouds.");
     }
-    auto search_param = geometry::KDTreeSearchParamHybrid(
-            max_correspondence_distance * 2.0, 30);
+    const int n_neighbors = 20;
+    auto search_param = geometry::KDTreeSearchParamKNN(n_neighbors);
     auto source_c = InitializePointCloudForGeneralizedICP(source, search_param);
     auto target_c = InitializePointCloudForGeneralizedICP(target, search_param);
     return RegistrationICP(*source_c, *target_c, max_correspondence_distance,
