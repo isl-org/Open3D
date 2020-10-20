@@ -77,7 +77,7 @@ std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
     output->normals_ = pcd.normals_;
     output->covariances_.resize(output->points_.size());
 
-    const double epsilon = 1e3;
+    const double epsilon = 1e-3;
     const Eigen::Matrix3d C = Eigen::Vector3d(epsilon, 1, 1).asDiagonal();
 #pragma omp parallel for
     for (int i = 0; i < (int)output->normals_.size(); i++) {
