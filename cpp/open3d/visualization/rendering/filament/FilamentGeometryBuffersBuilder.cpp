@@ -35,10 +35,10 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class TemporaryLineSetBuilder: public LineSetBuffersBuilder {
+class TemporaryLineSetBuilder : public LineSetBuffersBuilder {
 public:
     explicit TemporaryLineSetBuilder(std::shared_ptr<geometry::LineSet> lines)
-    : LineSetBuffersBuilder(*lines), lines_(lines)
+        : LineSetBuffersBuilder(*lines), lines_(lines) {}
     {
         lines_->PaintUniformColor({1.0, 1.0, 1.0});
     }
@@ -65,12 +65,15 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
                     static_cast<const geometry::LineSet&>(geometry));
         case GT::OrientedBoundingBox:
             return std::make_unique<TemporaryLineSetBuilder>(
-                geometry::LineSet::CreateFromOrientedBoundingBox(
-                   static_cast<const geometry::OrientedBoundingBox&>(geometry)));
+                    geometry::LineSet::CreateFromOrientedBoundingBox(
+                            static_cast<const geometry::OrientedBoundingBox&>(
+                                    geometry)));
         case GT::AxisAlignedBoundingBox:
             return std::make_unique<TemporaryLineSetBuilder>(
-                geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-                static_cast<const geometry::AxisAlignedBoundingBox&>(geometry)));
+                    geometry::LineSet::CreateFromAxisAlignedBoundingBox(
+                            static_cast<
+                                    const geometry::AxisAlignedBoundingBox&>(
+                                    geometry)));
         default:
             break;
     }
