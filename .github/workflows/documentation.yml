@@ -7,12 +7,11 @@ on:
         description: 'Set to OFF for Release documentation'
         required: false
         default: 'ON'
-
   push:
     branches:
       - master
   pull_request:
-    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+    types: [opened, reopened, synchronize]
 
 env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
@@ -87,7 +86,7 @@ jobs:
           sudo apt-get install --yes ghostscript
           sudo apt-get install --yes pandoc
           sudo apt-get install --yes ccache
-          ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
           # Install Python dependencies for building docs
           which python
           python -V

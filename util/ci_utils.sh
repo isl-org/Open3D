@@ -178,8 +178,12 @@ build_all() {
     echo
 }
 
-build_wheel() {
-
+build_pip_conda_package() {
+    # Usage:
+    #   build_pip_conda_package            # Default, build both pip and conda
+    #   build_pip_conda_package both       # Build both pip and conda
+    #   build_pip_conda_package pip        # Build pip only
+    #   build_pip_conda_package conda      # Build conda only
     echo "Building Open3D wheel"
 
     BUILD_FILAMENT_FROM_SOURCE=OFF
@@ -232,8 +236,18 @@ build_wheel() {
         cmake -DBUILD_CUDA_MODULE=ON -DCUDA_ARCH=BasicPTX "${cmakeOptions[@]}" ..
     fi
     echo
-    echo "Packaging Open3D wheel..."
-    make VERBOSE=1 -j"$NPROC" pip-package
+
+    options="$(echo "$@" | tr ' ' '|')"
+    if [[ "pip" =~ ^($options)$ ]]; then
+        echo "Packaging Open3D pip package..."
+        make VERBOSE=1 -j"$NPROC" pip-package
+    elif [[ "conda" =~ ^($options)$ ]]; then
+        echo "Packaging Open3D conda package..."
+        make VERBOSE=1 -j"$NPROC" conda-package
+    else
+        echo "Packaging Open3D pip and conda package..."
+        make VERBOSE=1 -j"$NPROC" pip-conda-package
+    fi
     cd .. # PWD=Open3D
 }
 
@@ -253,6 +267,12 @@ test_wheel() {
     if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
         python -c \
             "import open3d.ml.tf.ops; print('Tensorflow Ops library loaded:', open3d.ml.tf.ops)"
+    fi
+    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] && [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+        echo "importing in the reversed order"
+        python -c "import tensorflow as tf; import open3d.ml.torch as o3d"
+        echo "importing in the normal order"
+        python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
     fi
 }
 

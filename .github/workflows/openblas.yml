@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
             sudo apt-get --yes install ccache
-            ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
+            ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
             sudo apt-get update -q -y
             sudo apt-get install -y apt-utils build-essential git cmake
             sudo apt-get install -y python3-dev
