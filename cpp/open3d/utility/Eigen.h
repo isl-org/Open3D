@@ -113,6 +113,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         std::function<
                 void(int,
                      std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
+                     std::vector<double> &,
                      std::vector<double> &)> f,
         int iteration_num,
         bool verbose = true);
