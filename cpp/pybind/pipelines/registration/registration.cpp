@@ -30,11 +30,11 @@
 #include <utility>
 
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/pipelines/registration/GeneralizedICP.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
 #include "open3d/pipelines/registration/Feature.h"
+#include "open3d/pipelines/registration/GeneralizedICP.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Console.h"
