@@ -22,15 +22,15 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 CUDA_VERSION=("10-1" "10.1")
 CUDNN_MAJOR_VERSION=7
 CUDNN_VERSION="7.6.5.32-1+cuda10.1"
-TENSORFLOW_VER="2.3.0"
+TENSORFLOW_VER="2.3.1"
 TORCH_CUDA_GLNX_VER="1.6.0+cu101"
 TORCH_CPU_GLNX_VER="1.6.0+cpu"
 TORCH_MACOS_VER="1.6.0"
 YAPF_VER="0.30.0"
-PIP_VER="20.2.2"
+PIP_VER="20.2.3"
 WHEEL_VER="0.35.1"
 PYTEST_VER="6.0.1"
-SCIPY_VER="1.4.1" # Needed by Tensorflow 2.3.0
+SCIPY_VER="1.4.1"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 
@@ -188,6 +188,7 @@ build_wheel() {
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
         BUNDLE_OPEN3D_ML=ON
     else
+        echo "Open3D-ML not available."
         BUNDLE_OPEN3D_ML=OFF
     fi
     if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field

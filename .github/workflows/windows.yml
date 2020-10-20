@@ -18,7 +18,7 @@ env:
   PIP_VER: "20.2.2"
   WHEEL_VER: "0.35.1"
   PYTEST_VER: "6.0.1"
-  SCIPY_VER: "1.4.1"       # Needed by Tensorflow 2.3.0
+  SCIPY_VER: "1.4.1"
   NPROC: 2
 
 jobs:
