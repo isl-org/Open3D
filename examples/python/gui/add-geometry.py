@@ -10,6 +10,7 @@ import time
 
 isMacOS = (platform.system() == "Darwin")
 
+
 # This example shows two methods of adding geometry to an existing scene.
 # 1) add via a UI callback (in this case a menu, but a button would be similar,
 #    you would call `button.set_on_clicked(self.on_menu_sphere_)` when
@@ -33,9 +34,10 @@ class SpheresApp:
         self.scene = gui.SceneWidget()
         self.scene.scene = rendering.Open3DScene(self.window.renderer)
         self.scene.scene.set_background_color([1, 1, 1, 1])
-        self.scene.scene.scene.set_directional_light([-1, -1, -1], # direction
-                                                     [1, 1, 1],    # color
-                                                     100000)       # intensity
+        self.scene.scene.scene.set_directional_light(
+            [-1, -1, -1],  # direction
+            [1, 1, 1],  # color
+            100000)  # intensity
         self.scene.scene.scene.enable_directional_light(True)
         bbox = o3d.geometry.AxisAlignedBoundingBox([-10, -10, -10],
                                                    [10, 10, 10])
@@ -78,17 +80,21 @@ class SpheresApp:
         self.window.set_on_menu_item_activated(SpheresApp.MENU_QUIT,
                                                self._on_menu_quit)
 
-
     def add_sphere(self):
         self._id += 1
         mat = rendering.Material()
-        mat.base_color = [random.random(), random.random(), random.random(), 1.0]
+        mat.base_color = [
+            random.random(),
+            random.random(),
+            random.random(), 1.0
+        ]
         mat.shader = "defaultLit"
         sphere = o3d.geometry.TriangleMesh.create_sphere(0.5)
         sphere.compute_vertex_normals()
-        sphere.translate([10.0 * random.uniform(-1.0, 1.0),
-                          10.0 * random.uniform(-1.0, 1.0),
-                          10.0 * random.uniform(-1.0, 1.0)])
+        sphere.translate([
+            10.0 * random.uniform(-1.0, 1.0), 10.0 * random.uniform(-1.0, 1.0),
+            10.0 * random.uniform(-1.0, 1.0)
+        ])
         self.scene.scene.add_geometry("sphere" + str(self._id), sphere, mat)
 
     def _on_menu_sphere(self):
@@ -103,18 +109,21 @@ class SpheresApp:
             for _ in range(0, 20):
                 # We can only modify GUI objects on the main thread, so we
                 # need to post the function to call to the main thread.
-                gui.Application.instance.post_to_main_thread(self.window,
-                                                             self.add_sphere)
+                gui.Application.instance.post_to_main_thread(
+                    self.window, self.add_sphere)
                 time.sleep(1)
+
         threading.Thread(target=thread_main).start()
 
     def _on_menu_quit(self):
         gui.Application.instance.quit()
 
+
 def main():
     gui.Application.instance.initialize()
     SpheresApp()
     gui.Application.instance.run()
+
 
 if __name__ == "__main__":
     main()
