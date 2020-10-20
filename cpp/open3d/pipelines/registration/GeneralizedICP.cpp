@@ -118,7 +118,7 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
         return Eigen::Matrix4d::Identity();
     }
 
-    const auto &source_c = (const PointCloudWithCovariance &)source;
+    const auto &source_c = *InitializePointCloudForGeneralizedICP(source);
     const auto &target_c = (const PointCloudWithCovariance &)target;
 
     auto compute_jacobian_and_residual =
@@ -182,9 +182,8 @@ RegistrationResult RegistrationGeneralizedICP(
                 "and source PointClouds.");
     }
 
-    auto source_c = InitializePointCloudForGeneralizedICP(source);
     auto target_c = InitializePointCloudForGeneralizedICP(target);
-    return RegistrationICP(*source_c, *target_c, max_correspondence_distance,
+    return RegistrationICP(source, *target_c, max_correspondence_distance,
                            init, estimation, criteria);
 }
 
