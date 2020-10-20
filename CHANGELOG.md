@@ -21,6 +21,7 @@
 * Ubuntu 20.04 (Focal) support.
 * Added Line3D/Ray3D/Segment3D classes with plane, point, closest-distance, and AABB tests
 * Add Open3D-ML to Open3D wheel
+* Add Generalized ICP implementation.
 
 ## 0.9.0
 
