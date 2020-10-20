@@ -84,70 +84,12 @@ std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
     }
     return output;
 }
-
-RegistrationResult GetRegistrationResultAndCorrespondences(
-        const PointCloudWithCovariance &source,
-        const geometry::PointCloud &target,
-        const geometry::KDTreeFlann &target_kdtree,
-        double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation) {
-    RegistrationResult result(transformation);
-    if (max_correspondence_distance <= 0.0) {
-        return result;
-    }
-
-    double error2 = 0.0;
-
-#pragma omp parallel
-    {
-        double error2_private = 0.0;
-        CorrespondenceSet correspondence_set_private;
-#pragma omp for nowait
-        for (int i = 0; i < (int)source.points_.size(); i++) {
-            std::vector<int> indices(1);
-            std::vector<double> dists(1);
-            const auto &point = source.points_[i];
-            if (target_kdtree.SearchHybrid(point, max_correspondence_distance,
-                                           1, indices, dists) > 0) {
-                error2_private += dists[0];
-                correspondence_set_private.push_back(
-                        Eigen::Vector2i(i, indices[0]));
-            }
-        }
-#pragma omp critical
-        {
-            for (int i = 0; i < (int)correspondence_set_private.size(); i++) {
-                result.correspondence_set_.push_back(
-                        correspondence_set_private[i]);
-            }
-            error2 += error2_private;
-        }
-    }
-
-    if (result.correspondence_set_.empty()) {
-        result.fitness_ = 0.0;
-        result.inlier_rmse_ = 0.0;
-    } else {
-        size_t corres_number = result.correspondence_set_.size();
-        result.fitness_ = (double)corres_number / (double)source.points_.size();
-        result.inlier_rmse_ = std::sqrt(error2 / (double)corres_number);
-    }
-    return result;
-}
 }  // namespace
 
 double TransformationEstimationForGeneralizedICP::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    return ComputeRMSE(source, target, corres, Eigen::Matrix4d::Identity());
-}
-
-double TransformationEstimationForGeneralizedICP::ComputeRMSE(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const CorrespondenceSet &corres,
-        const Eigen::Matrix4d &T) const {
     if (corres.empty()) {
         return 0.0;
     }
@@ -160,9 +102,9 @@ double TransformationEstimationForGeneralizedICP::ComputeRMSE(
         const Eigen::Vector3d &vt = target_c.points_[c[1]];
         const Eigen::Matrix3d &Ct = target_c.covariances_[c[1]];
         const Eigen::Vector3d d = vs - vt;
-        const Eigen::Matrix3d &R = T.block<3, 3>(0, 0);
-        const Eigen::Matrix3d M = Ct + R * Cs * R.transpose();
-        err += d.transpose() * M * d;
+        const Eigen::Matrix3d M = Ct + Cs;
+        const Eigen::Matrix3d W = M.inverse();
+        err += d.transpose() * W * d;
     }
     return std::sqrt(err / (double)corres.size());
 }
@@ -172,16 +114,6 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    return ComputeTransformation(source, target, corres,
-                                 Eigen::Matrix4d::Identity());
-}
-
-Eigen::Matrix4d
-TransformationEstimationForGeneralizedICP::ComputeTransformation(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const CorrespondenceSet &corres,
-        const Eigen::Matrix4d &T) const {
     if (corres.empty() || !target.HasNormals() || !source.HasNormals()) {
         return Eigen::Matrix4d::Identity();
     }
@@ -193,15 +125,12 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
             [&](int i,
                 std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
                 std::vector<double> &r, std::vector<double> &w) {
-                // source
                 const Eigen::Vector3d &vs = source_c.points_[corres[i][0]];
                 const Eigen::Matrix3d &Cs = source_c.covariances_[corres[i][0]];
-                // target
                 const Eigen::Vector3d &vt = target_c.points_[corres[i][1]];
                 const Eigen::Matrix3d &Ct = target_c.covariances_[corres[i][1]];
                 const Eigen::Vector3d d = vs - vt;
-                const Eigen::Matrix3d &R = T.block<3, 3>(0, 0);
-                const Eigen::Matrix3d M = Ct + R * Cs * R.transpose();
+                const Eigen::Matrix3d M = Ct + Cs;
                 const Eigen::Matrix3d W = M.inverse().sqrt();
 
                 Eigen::Matrix<double, 3, 6> J;
@@ -235,47 +164,6 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 }
 
-RegistrationResult PrivateRegistrationICP(
-        const PointCloudWithCovariance &source,
-        const geometry::PointCloud &target,
-        double max_correspondence_distance,
-        const Eigen::Matrix4d &init,
-        const TransformationEstimationForGeneralizedICP &estimation,
-        const ICPConvergenceCriteria &criteria) {
-    Eigen::Matrix4d transformation = init;
-    geometry::KDTreeFlann kdtree;
-    kdtree.SetGeometry(target);
-    PointCloudWithCovariance pcd = source;
-    if (!init.isIdentity()) {
-        pcd.Transform(init);
-    }
-    RegistrationResult result;
-    result = GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
-    for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::LogDebug(
-                "GICP Iteration #{:d}: Correspondences {:d}, Fitness {:.4f}, "
-                "RMSE {:.4f}",
-                i, result.correspondence_set_.size(), result.fitness_,
-                result.inlier_rmse_);
-        Eigen::Matrix4d update = estimation.ComputeTransformation(
-                pcd, target, result.correspondence_set_, transformation);
-        transformation = update * transformation;
-        pcd.Transform(update);
-        RegistrationResult backup = result;
-        result = GetRegistrationResultAndCorrespondences(
-                pcd, target, kdtree, max_correspondence_distance,
-                transformation);
-        if (std::abs(backup.fitness_ - result.fitness_) <
-                    criteria.relative_fitness_ &&
-            std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
-                    criteria.relative_rmse_) {
-            break;
-        }
-    }
-    return result;
-}
-
 RegistrationResult RegistrationGeneralizedICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -296,10 +184,10 @@ RegistrationResult RegistrationGeneralizedICP(
 
     auto source_c = InitializePointCloudForGeneralizedICP(source);
     auto target_c = InitializePointCloudForGeneralizedICP(target);
-    return PrivateRegistrationICP(*source_c, *target_c,
-                                  max_correspondence_distance, init, estimation,
-                                  criteria);
+    return RegistrationICP(*source_c, *target_c, max_correspondence_distance,
+                           init, estimation, criteria);
 }
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace open3d
