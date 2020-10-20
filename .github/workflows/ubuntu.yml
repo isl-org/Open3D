@@ -209,7 +209,6 @@ jobs:
           # echo "Dynamic libraries used:"
           # DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
           # find "$DLL_PATH"/{cpu,cuda}/ -type f -print -execdir ldd {} \;
-          python -m pip install -r "$OPEN3D_ML_ROOT/requirements.txt"
           echo
           test_wheel
       - name: Run Python unit tests (benchmarks)
