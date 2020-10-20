@@ -151,13 +151,13 @@ jobs:
           $PYTAG="-cp$(${{ env.python_version }} -replace '\.', '')"
           gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
           if ($LastExitCode -eq 0) {
-            echo "Download the wheel at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
+            echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
           } else {
             throw "Wheel upload failed"
           }
           gsutil cp build/lib/python_package/conda_package/win-64/${{ env.CONDA_PKG_NAME }} gs://open3d-releases-master/conda_package/win-64/
           if ($LastExitCode -eq 0) {
-            echo "Download the wheel at: https://storage.googleapis.com/open3d-releases-master/conda_package/win-64/${{ env.PIP_PKG_NAME }}"
+            echo "Download conda package at: https://storage.googleapis.com/open3d-releases-master/conda_package/win-64/${{ env.CONDA_PKG_NAME }}"
           } else {
             throw "Wheel upload failed"
           }

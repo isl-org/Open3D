@@ -254,7 +254,7 @@ add_custom_target(conda-package
     DEPENDS python-package
 )
 
-# Make pip and conda package in one command. The python-pacakge target clears
+# Make pip and conda package in one command. The python-package target clears
 # the ${PYTHON_PACKAGE_DST_DIR}, so if we make pip and conda package one-by-one,
 # the previous one will be deleted.
 add_custom_target(pip-conda-package

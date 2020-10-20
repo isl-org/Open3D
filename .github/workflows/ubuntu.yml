@@ -171,9 +171,9 @@ jobs:
         run: |
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
           gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
-          echo "Download the wheel at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
+          echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
           gsutil cp build/lib/python_package/conda_package/linux-64/${{ env.CONDA_PKG_NAME }} gs://open3d-releases-master/conda_package/linux-64/
-          echo "Download the wheel at: https://storage.googleapis.com/open3d-releases-master/conda_package/linux-64/${{ env.CONDA_PKG_NAME }}"
+          echo "Download conda package at: https://storage.googleapis.com/open3d-releases-master/conda_package/linux-64/${{ env.CONDA_PKG_NAME }}"
 
   test-wheel:
     name: Test wheel
