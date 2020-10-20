@@ -228,7 +228,8 @@ std::tuple<vbdata, ibdata> CreateColoredBuffers(
     ibdata index_data;
 
     vertex_data.vertices_count = geometry.vertices_.size();
-    vertex_data.byte_count = vertex_data.vertices_count * sizeof(TexturedVertex);
+    vertex_data.byte_count =
+            vertex_data.vertices_count * sizeof(TexturedVertex);
     vertex_data.bytes_to_copy = vertex_data.byte_count;
     vertex_data.bytes = malloc(vertex_data.byte_count);
 
