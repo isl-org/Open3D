@@ -39,7 +39,9 @@ class TemporaryLineSetBuilder: public LineSetBuffersBuilder {
 public:
     explicit TemporaryLineSetBuilder(std::shared_ptr<geometry::LineSet> lines)
     : LineSetBuffersBuilder(*lines), lines_(lines)
-    {}
+    {
+        lines_->PaintUniformColor({1.0, 1.0, 1.0});
+    }
 
 private:
     std::shared_ptr<geometry::LineSet> lines_;
