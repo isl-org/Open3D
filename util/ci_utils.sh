@@ -186,6 +186,10 @@ build_wheel() {
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
+        pushd ${OPEN3D_ML_ROOT}
+        # the build system of the main repo expects a master branch. make sure master exists
+        git checkout -b master || true
+        popd
         BUNDLE_OPEN3D_ML=ON
     else
         echo "Open3D-ML not available."
