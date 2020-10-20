@@ -31,13 +31,10 @@
 #include "open3d/pipelines/registration/GeneralizedICP.h"
 
 #include <Eigen/Dense>
-#include <iostream>
 #include <unsupported/Eigen/MatrixFunctions>
 
-#include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/pipelines/registration/Registration.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
 
@@ -68,6 +65,10 @@ public:
     std::vector<Eigen::Matrix3d> covariances_;
 };
 
+/// Compute the covariance matrix according to the original paper. Instead of
+/// doing (again) the SVD decomposition, re-use the normals given in the
+/// PointCloud. This also opens the oportunity to get the normal estimation from
+/// somewhere else
 std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
         const geometry::PointCloud &pcd) {
     utility::LogDebug("InitializePointCloudForGeneralizedICP");
@@ -76,7 +77,8 @@ std::shared_ptr<PointCloudWithCovariance> InitializePointCloudForGeneralizedICP(
     output->normals_ = pcd.normals_;
     output->covariances_.resize(output->points_.size());
 
-    const Eigen::Matrix3d C = Eigen::Vector3d(1e-3, 1, 1).asDiagonal();
+    const double epsilon = 1e3;
+    const Eigen::Matrix3d C = Eigen::Vector3d(epsilon, 1, 1).asDiagonal();
 #pragma omp parallel for
     for (int i = 0; i < (int)output->normals_.size(); i++) {
         const auto Rx = GetRotationFromE1ToX(output->normals_[i]);
@@ -94,8 +96,9 @@ double TransformationEstimationForGeneralizedICP::ComputeRMSE(
         return 0.0;
     }
     double err = 0.0;
-    const auto &source_c = (const PointCloudWithCovariance &)source;
-    const auto &target_c = (const PointCloudWithCovariance &)target;
+    // Compute covariances
+    const auto &source_c = *InitializePointCloudForGeneralizedICP(source);
+    const auto &target_c = *InitializePointCloudForGeneralizedICP(target);
     for (const auto &c : corres) {
         const Eigen::Vector3d &vs = source_c.points_[c[0]];
         const Eigen::Matrix3d &Cs = source_c.covariances_[c[0]];
@@ -103,7 +106,7 @@ double TransformationEstimationForGeneralizedICP::ComputeRMSE(
         const Eigen::Matrix3d &Ct = target_c.covariances_[c[1]];
         const Eigen::Vector3d d = vs - vt;
         const Eigen::Matrix3d M = Ct + Cs;
-        const Eigen::Matrix3d W = M.inverse();
+        const Eigen::Matrix3d W = M.inverse().sqrt();
         err += d.transpose() * W * d;
     }
     return std::sqrt(err / (double)corres.size());
@@ -118,6 +121,11 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
         return Eigen::Matrix4d::Identity();
     }
 
+    /// We need to re-compute the covariances for the source cloud because this
+    /// cloud usually comes from the registration::RegistrationICP where we copy
+    /// the real input source into a new geometry::PointCloud, amd thus, we
+    /// loose the covariance information there. This does not hold true for the
+    /// target.
     const auto &source_c = *InitializePointCloudForGeneralizedICP(source);
     const auto &target_c = (const PointCloudWithCovariance &)target;
 
@@ -182,9 +190,10 @@ RegistrationResult RegistrationGeneralizedICP(
                 "and source PointClouds.");
     }
 
+    // Compute the covariance matrix using normal information for target cloud.
     auto target_c = InitializePointCloudForGeneralizedICP(target);
-    return RegistrationICP(source, *target_c, max_correspondence_distance,
-                           init, estimation, criteria);
+    return RegistrationICP(source, *target_c, max_correspondence_distance, init,
+                           estimation, criteria);
 }
 
 }  // namespace registration

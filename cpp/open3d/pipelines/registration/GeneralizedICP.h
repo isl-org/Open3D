@@ -79,9 +79,6 @@ public:
     };
 
 public:
-    /// epsilon <-- add comment
-    double epsilon_ = 0.01;
-
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
     std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
 
@@ -90,11 +87,11 @@ private:
             TransformationEstimationType::GeneralizedICP;
 };
 
-/// \brief Function for Colored ICP registration.
+/// \brief Function for Generalized ICP registration.
 ///
 /// This is implementation of following paper
-/// J. Park, Q.-Y. Zhou, V. Koltun,
-/// Colored Point Cloud Registration Revisited, ICCV 2017.
+//  A. Segal, D .Haehnel, S. Thrun
+/// Generalized-ICP, RSS 2009.
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
@@ -102,7 +99,6 @@ private:
 /// \param init Initial transformation estimation.
 /// Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
 /// [0., 0., 0., 1.]]). \param criteria  Convergence criteria. \param
-/// lambda_geometric  lambda_geometric value.
 RegistrationResult RegistrationGeneralizedICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
