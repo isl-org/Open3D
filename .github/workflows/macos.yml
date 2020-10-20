@@ -14,6 +14,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
+env:
+  NPROC: 2
+  CONDA_BUILD_VER: 3.20.0
+
 jobs:
   MacOS:
     runs-on: macos-10.15
@@ -23,7 +27,6 @@ jobs:
         BUILD_ML_OPS: [ON, OFF]
     env:
       SHARED: OFF
-      NPROC: 2
       BUILD_CUDA_MODULE: OFF
       BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
       BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
@@ -72,7 +75,6 @@ jobs:
         python_version: [3.6, 3.7, 3.8]
     env:
       BUILD_CUDA_MODULE: OFF
-      NPROC: 2
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
@@ -128,7 +130,7 @@ jobs:
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           source util/ci_utils.sh
-          conda install conda-build=3.20.0 -y
+          conda install conda-build=${{ env.CONDA_BUILD_VER }} -y
           build_pip_conda_package
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"

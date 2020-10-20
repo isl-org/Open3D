@@ -20,6 +20,7 @@ env:
   PYTEST_VER: "6.0.1"
   SCIPY_VER: "1.4.1"       # Needed by Tensorflow 2.3.0
   NPROC: 2
+  CONDA_BUILD_VER: 3.20.0
 
 jobs:
   windows:
@@ -109,7 +110,7 @@ jobs:
           python -m pip install --upgrade pip==${{ env.PIP_VER }}
           python -m pip install -U wheel==${{ env.WHEEL_VER }}
           cd build
-          conda install conda-build=3.20.0 -y
+          conda install conda-build=${{ env.CONDA_BUILD_VER }} -y
           conda-build --version
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-conda-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
