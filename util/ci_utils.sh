@@ -253,13 +253,14 @@ test_wheel() {
     python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 
     pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+    wheel_path=$(ls -1 ../open3d*-"$pi_tag"-*.whl)
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
-        python -m pip install ../open3d*-$pi_tag-*.whl'[ml-torch]'
+        python -m pip install "$wheel_path[ml-torch]"
         python -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
-        python -m pip install ../open3d*-$pi_tag-*.whl'[ml-tensorflow]'
+        python -m pip install "$wheel_path[ml-tensorflow]"
         python -c \
             "import open3d.ml.tf.ops; print('Tensorflow Ops library loaded:', open3d.ml.tf.ops)"
     fi
