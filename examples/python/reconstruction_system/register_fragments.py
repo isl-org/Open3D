@@ -21,7 +21,7 @@ def preprocess_point_cloud(pcd, config):
     pcd_down.estimate_normals(
         o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0,
                                              max_nn=30))
-    pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
+    pcd_fpfh = o3d.registration.compute_fpfh_feature(
         pcd_down,
         o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 5.0,
                                              max_nn=100))
@@ -31,25 +31,25 @@ def preprocess_point_cloud(pcd, config):
 def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
     distance_threshold = config["voxel_size"] * 1.4
     if config["global_registration"] == "fgr":
-        result = o3d.pipelines.registration.registration_fast_based_on_feature_matching(
+        result = o3d.registration.registration_fast_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh,
-            o3d.pipelines.registration.FastGlobalRegistrationOption(
+            o3d.registration.FastGlobalRegistrationOption(
                 maximum_correspondence_distance=distance_threshold))
     if config["global_registration"] == "ransac":
-        result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
+        result = o3d.registration.registration_ransac_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh, distance_threshold,
-            o3d.pipelines.registration.TransformationEstimationPointToPoint(
+            o3d.registration.TransformationEstimationPointToPoint(
                 False), 4,
             [
-                o3d.pipelines.registration.
+                o3d.registration.
                 CorrespondenceCheckerBasedOnEdgeLength(0.9),
-                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
+                o3d.registration.CorrespondenceCheckerBasedOnDistance(
                     distance_threshold)
             ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 500))
+            o3d.registration.RANSACConvergenceCriteria(4000000, 500))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4), np.zeros((6, 6)))
-    information = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
+    information = o3d.registration.get_information_matrix_from_point_clouds(
         source, target, distance_threshold, result.transformation)
     if information[5, 5] / min(len(source.points), len(target.points)) < 0.3:
         return (False, np.identity(4), np.zeros((6, 6)))
@@ -91,16 +91,16 @@ def update_posegraph_for_scene(s, t, transformation, information, odometry,
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
         pose_graph.nodes.append(
-            o3d.pipelines.registration.PoseGraphNode(odometry_inv))
+            o3d.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
-            o3d.pipelines.registration.PoseGraphEdge(s,
+            o3d.registration.PoseGraphEdge(s,
                                                      t,
                                                      transformation,
                                                      information,
                                                      uncertain=False))
     else:  # loop closure case
         pose_graph.edges.append(
-            o3d.pipelines.registration.PoseGraphEdge(s,
+            o3d.registration.PoseGraphEdge(s,
                                                      t,
                                                      transformation,
                                                      information,
@@ -139,9 +139,9 @@ class matching_result:
 
 
 def make_posegraph_for_scene(ply_file_names, config):
-    pose_graph = o3d.pipelines.registration.PoseGraph()
+    pose_graph = o3d.registration.PoseGraph()
     odometry = np.identity(4)
-    pose_graph.nodes.append(o3d.pipelines.registration.PoseGraphNode(odometry))
+    pose_graph.nodes.append(o3d.registration.PoseGraphNode(odometry))
 
     n_files = len(ply_file_names)
     matching_results = {}
@@ -149,7 +149,7 @@ def make_posegraph_for_scene(ply_file_names, config):
         for t in range(s + 1, n_files):
             matching_results[s * n_files + t] = matching_result(s, t)
 
-    if config["python_multi_threading"].lower() == "true":
+    if str(config["python_multi_threading"]).lower() == "true":
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess
