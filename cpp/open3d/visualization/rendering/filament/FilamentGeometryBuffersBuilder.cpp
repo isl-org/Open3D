@@ -38,9 +38,8 @@ namespace rendering {
 class TemporaryLineSetBuilder : public LineSetBuffersBuilder {
 public:
     explicit TemporaryLineSetBuilder(std::shared_ptr<geometry::LineSet> lines)
-        : LineSetBuffersBuilder(*lines), lines_(lines) {
-        lines_->PaintUniformColor({1.0, 1.0, 1.0});
-    }
+        : LineSetBuffersBuilder(*lines), lines_(lines)
+    {}
 
 private:
     std::shared_ptr<geometry::LineSet> lines_;
@@ -62,17 +61,20 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
         case GT::LineSet:
             return std::make_unique<LineSetBuffersBuilder>(
                     static_cast<const geometry::LineSet&>(geometry));
-        case GT::OrientedBoundingBox:
-            return std::make_unique<TemporaryLineSetBuilder>(
-                    geometry::LineSet::CreateFromOrientedBoundingBox(
-                            static_cast<const geometry::OrientedBoundingBox&>(
-                                    geometry)));
-        case GT::AxisAlignedBoundingBox:
-            return std::make_unique<TemporaryLineSetBuilder>(
-                    geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-                            static_cast<
-                                    const geometry::AxisAlignedBoundingBox&>(
-                                    geometry)));
+        case GT::OrientedBoundingBox: {
+            auto obb = static_cast<const geometry::OrientedBoundingBox&>(
+                                                                    geometry);
+            auto lines = geometry::LineSet::CreateFromOrientedBoundingBox(obb);
+            lines->PaintUniformColor(obb.color_);
+            return std::make_unique<TemporaryLineSetBuilder>(lines);
+        }
+        case GT::AxisAlignedBoundingBox: {
+            auto aabb = static_cast<const geometry::AxisAlignedBoundingBox&>(
+                                                                    geometry);
+            auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(aabb);
+            lines->PaintUniformColor(aabb.color_);
+            return std::make_unique<TemporaryLineSetBuilder>(lines);
+        }
         default:
             break;
     }
