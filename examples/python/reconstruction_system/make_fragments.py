@@ -86,10 +86,10 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files,
                         trans_odometry_inv))
                 pose_graph.edges.append(
                     o3d.registration.PoseGraphEdge(s - sid,
-                                                             t - sid,
-                                                             trans,
-                                                             info,
-                                                             uncertain=False))
+                                                   t - sid,
+                                                   trans,
+                                                   info,
+                                                   uncertain=False))
 
             # keyframe loop closure
             if s % config['n_keyframes_per_n_frame'] == 0 \

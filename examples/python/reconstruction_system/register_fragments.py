@@ -94,17 +94,17 @@ def update_posegraph_for_scene(s, t, transformation, information, odometry,
             o3d.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
             o3d.registration.PoseGraphEdge(s,
-                                                     t,
-                                                     transformation,
-                                                     information,
-                                                     uncertain=False))
+                                           t,
+                                           transformation,
+                                           information,
+                                           uncertain=False))
     else:  # loop closure case
         pose_graph.edges.append(
             o3d.registration.PoseGraphEdge(s,
-                                                     t,
-                                                     transformation,
-                                                     information,
-                                                     uncertain=True))
+                                           t,
+                                           transformation,
+                                           information,
+                                           uncertain=True))
     return (odometry, pose_graph)
 
 

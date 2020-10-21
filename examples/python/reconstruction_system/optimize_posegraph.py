@@ -25,7 +25,7 @@ def run_posegraph_optimization(pose_graph_name, pose_graph_optimized_name,
         reference_node=0)
     pose_graph = o3d.io.read_pose_graph(pose_graph_name)
     o3d.registration.global_optimization(pose_graph, method, criteria,
-                                                   option)
+                                         option)
     o3d.io.write_pose_graph(pose_graph_optimized_name, pose_graph)
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Error)
 
