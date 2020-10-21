@@ -66,7 +66,6 @@ size_t FaissIndex::GetDatasetSize() const {
 Dtype FaissIndex::GetDtype() const { return dataset_points_.GetDtype(); }
 
 bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
-    SizeVector shape = dataset_points.GetShape();
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
                 "[FaissIndex::SetTensorData] dataset_points must be "
