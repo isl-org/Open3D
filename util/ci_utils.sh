@@ -31,6 +31,7 @@ PIP_VER="20.2.3"
 WHEEL_VER="0.35.1"
 PYTEST_VER="6.0.1"
 SCIPY_VER="1.4.1"
+CONDA_BUILD_VER="3.20.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 
@@ -106,9 +107,12 @@ install_cuda_toolkit() {
 install_python_dependencies() {
 
     echo "Installing Python dependencies"
+    options="$(echo "$@" | tr ' ' '|')"
+    if [[ "with-conda" =~ ^($options)$ ]]; then
+        conda install conda-build="$CONDA_BUILD_VER" -y
+    fi
     python -m pip install --upgrade pip=="$PIP_VER"
     python -m pip install -U wheel=="$WHEEL_VER"
-    options="$(echo "$@" | tr ' ' '|')"
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
         python -m pip install -U pytest=="$PYTEST_VER"
         python -m pip install -U scipy=="$SCIPY_VER"
@@ -190,10 +194,8 @@ build_pip_conda_package() {
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
-        pushd ${OPEN3D_ML_ROOT}
         # the build system of the main repo expects a master branch. make sure master exists
-        git checkout -b master || true
-        popd
+        git -C "${OPEN3D_ML_ROOT}" checkout -b master || true
         BUNDLE_OPEN3D_ML=ON
     else
         echo "Open3D-ML not available."
@@ -256,25 +258,32 @@ build_pip_conda_package() {
     cd .. # PWD=Open3D
 }
 
-install_wheel() {
-    echo
-    echo "Installing Open3D wheel..."
-    python -m pip install open3d -f lib/python_package/pip_package/
-}
-
+# Test wheel in blank virtual environment
+# Usage: test_wheel wheel_path
 test_wheel() {
+    wheel_path="$1"
+    python -m venv open3d_test.venv
+    source open3d_test.venv/bin/activate
+    echo "Installing Open3D wheel $wheel_path in virtual environment..."
+    python -m pip install "$wheel_path"
     python -c "import open3d; print('Installed:', open3d)"
     python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
-
-    pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-    wheel_path=$(ls -1 ../open3d*-"$pi_tag"-*.whl)
+    echo
+    # echo "Dynamic libraries used:"
+    # DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
+    # if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    #     find "$DLL_PATH"/{cpu,cuda}/ -type f -print -execdir ldd {} \;
+    # elif [[ "$OSTYPE" == "darwin"* ]]; then
+    #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
+    # fi
+    echo
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
-        python -m pip install "$wheel_path[ml-torch]"
+        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
         python -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
-        python -m pip install "$wheel_path[ml-tensorflow]"
+        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
         python -c \
             "import open3d.ml.tf.ops; print('Tensorflow Ops library loaded:', open3d.ml.tf.ops)"
     fi
@@ -284,6 +293,21 @@ test_wheel() {
         echo "importing in the normal order"
         python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
     fi
+    deactivate
+}
+
+# Run in virtual environment
+run_python_tests() {
+    source open3d_test.venv/bin/activate
+    python -m pip install -U pytest=="$PYTEST_VER"
+    python -m pip install -U scipy=="$SCIPY_VER"
+    pytest_args=(../python/test/)
+    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
+        echo Testing ML Ops disabled
+        pytest_args+=(--ignore ../python/test/ml_ops/)
+    fi
+    python -m pytest "${pytest_args[@]}"
+    deactivate
 }
 
 # Use: run_unit_tests
@@ -292,15 +316,6 @@ run_cpp_unit_tests() {
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     ./bin/tests "$unitTestFlags"
     echo
-}
-
-run_python_tests() {
-    pytest_args=(../python/test/)
-    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-        echo Testing ML Ops disabled
-        pytest_args+=(--ignore ../python/test/ml_ops/)
-    fi
-    python -m pytest "${pytest_args[@]}"
 }
 
 # test_cpp_example runExample

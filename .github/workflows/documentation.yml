@@ -33,7 +33,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: intel-isl/Open3D-ML
-          ref: 'refs/heads/ssheorey/wheel-extras'  # REMOVE BEFORE MERGE TO MASTER
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache

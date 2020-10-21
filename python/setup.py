@@ -50,33 +50,10 @@ cmdclass = {'bdist_wheel': bdist_wheel} if bdist_wheel is not None else dict()
 with open('requirements.txt', 'r') as f:
     lines = f.readlines()
 install_requires = [line.strip() for line in lines if line]
-
 # Read requirements for ML
-extras_require = {}
 if '@BUNDLE_OPEN3D_ML@' == 'ON':
     with open('@OPEN3D_ML_ROOT@/requirements.txt', 'r') as f:
-        extras_require["ml"] = [line.strip() for line in f.readlines() if line]
-        extras_require["ml-torch"] = extras_require["ml"]
-    with open('@OPEN3D_ML_ROOT@/requirements-torch.txt', 'r') as f:
-        extras_require[
-            'ml-torch:platform_system != "Linux" or platform_machine !='
-            ' "x86_64"'] = ([
-                line.strip()
-                for line in f.readlines()
-                if line and not line.lstrip().startswith('-f ')
-            ])
-    with open('@OPEN3D_ML_ROOT@/requirements-torch-cuda.txt', 'r') as f:
-        extras_require[
-            'ml-torch:platform_system == "Linux" and platform_machine =='
-            ' "x86_64"'] = ([
-                line.strip()
-                for line in f.readlines()
-                if line and not line.lstrip().startswith('-f ')
-            ])
-    with open('@OPEN3D_ML_ROOT@/requirements-tensorflow.txt', 'r') as f:
-        extras_require["ml-tensorflow"] = (
-            extras_require["ml"] +
-            [line.strip() for line in f.readlines() if line])
+        install_requires += [line.strip() for line in lines if line]
 
 # Data files for packaging
 data_files = [
@@ -123,7 +100,6 @@ setup(
     ],
     cmdclass=cmdclass,
     install_requires=install_requires,
-    extras_require=extras_require,
     include_package_data=True,
     data_files=data_files,
     keywords="3D reconstruction point cloud mesh RGB-D visualization",

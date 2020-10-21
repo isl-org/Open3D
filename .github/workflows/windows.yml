@@ -191,17 +191,24 @@ jobs:
       - name: Test Python package
         run: |
           python -V
+          python -m venv open3d_test_venv
+          open3d_test_venv\Scripts\Activate.ps1
+
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }}
           $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          $PIP_PKG_NAME=(Get-ChildItem pip_package/open3d*-$pi_tag-*.whl).Name
-          echo $PIP_PKG_NAME
-          python -m pip install pip_package/$PIP_PKG_NAME
+          $PIP_PKG_NAME=(Get-ChildItem open3d_win_amd64_wheels/open3d*-$pi_tag-*.whl).Name
+          echo "Installing Open3D wheel open3d_win_amd64_wheels/$PIP_PKG_NAME in virtual environment..."
+          python -m pip install open3d_win_amd64_wheels/$PIP_PKG_NAME
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 
+          deactivate
+
       - name: Run Python unit tests (benchmarks)
         run: |
+          open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
           echo "Testing ML and ML Ops disabled"
           python -m pytest python/test/ --ignore python/test/ml_ops/
+          deactivate
