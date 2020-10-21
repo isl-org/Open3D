@@ -56,7 +56,7 @@ class SpheresApp:
             debug_menu.add_item("Add Random Spheres", SpheresApp.MENU_RANDOM)
             if not isMacOS:
                 debug_menu.add_separator()
-                debug_menu.add_item("Quit", AppWindow.MENU_QUIT)
+                debug_menu.add_item("Quit", SpheresApp.MENU_QUIT)
 
             menu = gui.Menu()
             if isMacOS:
