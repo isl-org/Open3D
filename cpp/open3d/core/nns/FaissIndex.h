@@ -41,20 +41,20 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-/// \class KnnFaiss
+/// \class FaissIndex
 ///
 /// \brief Faiss for nearest neighbor search.
-class KnnFaiss {
+class FaissIndex {
 public:
     /// \brief Default Constructor.
-    KnnFaiss();
+    FaissIndex();
     /// \brief Parameterized Constructor.
     ///
     /// \param tensor Provides tensor from which Faiss Index is constructed.
-    KnnFaiss(const Tensor &tensor);
-    ~KnnFaiss();
-    KnnFaiss(const KnnFaiss &) = delete;
-    KnnFaiss &operator=(const KnnFaiss &) = delete;
+    FaissIndex(const Tensor &dataset_points);
+    ~FaissIndex();
+    FaissIndex(const FaissIndex &) = delete;
+    FaissIndex &operator=(const FaissIndex &) = delete;
 
 public:
     /// Sets the data for the Faiss Index from a tensor.
@@ -62,7 +62,7 @@ public:
     /// \param data Data points for Faiss Index Construction. Must be
     /// Float32 type and 2D, with shape {n, d}
     /// \return Returns true if the construction success, otherwise false.
-    bool SetTensorData(const Tensor &data);
+    bool SetTensorData(const Tensor &dataset_points);
 
     /// Perform K nearest neighbor search.
     ///
@@ -87,13 +87,24 @@ public:
                                            float radius,
                                            int max_knn) const;
 
+    /// Get dimension of the dataset points.
+    /// \return dimension of dataset points.
+    int GetDimension() const;
+
+    /// Get size of the dataset points.
+    /// \return number of points in dataset.
+    size_t GetDatasetSize() const;
+
+    /// Get dtype of the dataset points.
+    /// \return dtype of dataset points.
+    Dtype GetDtype() const;
+
 protected:
     std::unique_ptr<faiss::Index> index;
 #ifdef BUILD_CUDA_MODULE
     std::unique_ptr<faiss::gpu::StandardGpuResources> res;
 #endif
-    int64_t dimension_ = 0;
-    int64_t dataset_size_ = 0;
+    Tensor dataset_points_;
 };
 
 }  // namespace nns

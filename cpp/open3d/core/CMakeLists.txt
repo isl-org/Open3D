@@ -77,7 +77,7 @@ set(CORE_NNS_SRC
 )
 
 if (WITH_FAISS)
-    list(APPEND CORE_NNS_SRC nns/KnnFaiss.cpp)
+    list(APPEND CORE_NNS_SRC nns/FaissIndex.cpp)
 endif()
 
 if(BUILD_CUDA_MODULE)

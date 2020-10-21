@@ -30,7 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 #ifdef WITH_FAISS
-#include "open3d/core/nns/KnnFaiss.h"
+#include "open3d/core/nns/FaissIndex.h"
 #endif
 #include "open3d/core/nns/NanoFlannIndex.h"
 
@@ -135,7 +135,7 @@ private:
 protected:
     std::unique_ptr<NanoFlannIndex> nanoflann_index_;
 #ifdef WITH_FAISS
-    std::unique_ptr<KnnFaiss> faiss_index_;
+    std::unique_ptr<FaissIndex> faiss_index_;
 #endif
     const Tensor dataset_points_;
 };

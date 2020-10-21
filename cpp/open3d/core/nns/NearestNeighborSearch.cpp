@@ -48,7 +48,7 @@ bool NearestNeighborSearch::KnnIndex() {
                     "[NearestNeighborSearch::KnnIndex] For GPU knn index, "
                     "dataset_points_ type must be Float32.");
         }
-        faiss_index_.reset(new KnnFaiss());
+        faiss_index_.reset(new FaissIndex());
         return faiss_index_->SetTensorData(dataset_points_);
 #else
         utility::LogError(
