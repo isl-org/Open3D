@@ -213,7 +213,7 @@ jobs:
           python -V
           source ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel open3d_linux_x86_64_wheels/open3d*-"$pi_tag"-*.whl
+          test_wheel pip_package/open3d*-"$pi_tag"-*.whl
 
       - name: Run Python unit tests (benchmarks)
         run: |

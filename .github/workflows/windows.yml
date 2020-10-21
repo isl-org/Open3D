@@ -197,7 +197,7 @@ jobs:
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }}
           $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          $PIP_PKG_NAME=(Get-ChildItem open3d_win_amd64_wheels/open3d*-$pi_tag-*.whl).Name
+          $PIP_PKG_NAME=(Get-ChildItem pip-package\open3d*-$pi_tag-*.whl).Name
           echo "Installing Open3D wheel open3d_win_amd64_wheels/$PIP_PKG_NAME in virtual environment..."
           python -m pip install open3d_win_amd64_wheels/$PIP_PKG_NAME
           python -c "import open3d; print('Imported:', open3d)"
