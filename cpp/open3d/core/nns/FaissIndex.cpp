@@ -122,7 +122,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
                 "[FaissIndex::SearchKnn] query must be 2D matrix, "
                 "with shape (n_query_points, d).");
     }
-    if (query_points.NumDims() != GetDimension()) {
+    if (query_points.GetShape()[1] != GetDimension()) {
         utility::LogError(
                 "[FaissIndex::SearchKnn] query has different "
                 "dimension with the dataset dimension.");
@@ -165,7 +165,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
                 "[FaissIndex::SearchHybrid] query must be 2D matrix, "
                 "with shape (n_query_points, d).");
     }
-    if (query_points.NumDims() != GetDimension()) {
+    if (query_points.GetShape()[1] != GetDimension()) {
         utility::LogError(
                 "[FaissIndex::SearchHybrid] query has different "
                 "dimension with the dataset dimension.");
