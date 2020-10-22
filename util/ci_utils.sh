@@ -35,6 +35,7 @@ SCIPY_VER="1.4.1"
 CONDA_BUILD_VER="3.20.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
+OPEN3D_SOURCE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. >/dev/null 2>&1 && pwd )"
 
 install_cuda_toolkit() {
 
@@ -304,10 +305,10 @@ run_python_tests() {
     source open3d_test.venv/bin/activate
     python -m pip install -U pytest=="$PYTEST_VER"
     python -m pip install -U scipy=="$SCIPY_VER"
-    pytest_args=(../python/test/)
+    pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
     if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
         echo Testing ML Ops disabled
-        pytest_args+=(--ignore ../python/test/ml_ops/)
+        pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
     python -m pytest "${pytest_args[@]}"
     deactivate
