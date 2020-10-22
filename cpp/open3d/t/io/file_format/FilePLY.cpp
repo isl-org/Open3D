@@ -90,6 +90,48 @@ core::TensorList ConcatColumns(const core::TensorList &a,
     return combined;
 }
 
+// Some of these datatypes are supported by TensorList but are added here just
+// for completeness.
+std::string GetDtypeString(e_ply_type type) {
+    if (type == PLY_UINT8) {
+        return "int8";
+    } else if (type == PLY_UINT8) {
+        return "uint8";
+    } else if (type == PLY_INT16) {
+        return "int16";
+    } else if (type == PLY_UINT16) {
+        return "uint16";
+    } else if (type == PLY_INT32) {
+        return "int32";
+    } else if (type == PLY_UIN32) {
+        return "uint32";
+    } else if (type == PLY_FLOAT32) {
+        return "float32";
+    } else if (type == PLY_FLOAT64) {
+        return "float64";
+    } else if (type == PLY_CHAR) {
+        return "char";
+    } else if (type == PLY_UCHAR) {
+        return "uchar";
+    } else if (type == PLY_SHORT) {
+        return "short";
+    } else if (type == PLY_USHORT) {
+        return "ushort";
+    } else if (type == PLY_INT) {
+        return "int";
+    } else if (type == PLY_UINT) {
+        return "uint";
+    } else if (type == PLY_FLOAT) {
+        return "float";
+    } else if (type == PLY_DOUBLE) {
+        return "double";
+    } else if (type == PLY_LIST) {
+        return "list";
+    }
+
+    return "unknown";
+}
+
 core::Dtype GetDtype(e_ply_type type) {
     // PLY_LIST attribute is not supported.
     // Currently, we are not doing datatype conversions, so some of the ply
@@ -154,8 +196,8 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         if (GetDtype(type) == core::Dtype::Undefined) {
             utility::LogWarning(
                     "Read PLY warning: skipping property \"{}\", unsupported "
-                    "datatype.",
-                    attribute_nm);
+                    "datatype \"{}\".",
+                    attribute_nm, GetDtypeString(type));
             attribute = ply_get_next_property(element, attribute);
             continue;
         }
