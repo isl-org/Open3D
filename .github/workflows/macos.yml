@@ -210,7 +210,6 @@ jobs:
 
       - name: Run Python unit tests (benchmarks)
         run: |
-          cd util
-          source ci_utils.sh
+          source util/ci_utils.sh
           echo "Running Open3D python tests..."
           run_python_tests

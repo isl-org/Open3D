@@ -48,12 +48,11 @@ cmdclass = {'bdist_wheel': bdist_wheel} if bdist_wheel is not None else dict()
 
 # Read requirements.txt
 with open('requirements.txt', 'r') as f:
-    lines = f.readlines()
-install_requires = [line.strip() for line in lines if line]
+    install_requires = [line.strip() for line in f.readlines() if line]
 # Read requirements for ML
 if '@BUNDLE_OPEN3D_ML@' == 'ON':
     with open('@OPEN3D_ML_ROOT@/requirements.txt', 'r') as f:
-        install_requires += [line.strip() for line in lines if line]
+        install_requires += [line.strip() for line in f.readlines() if line]
 
 # Data files for packaging
 data_files = [
