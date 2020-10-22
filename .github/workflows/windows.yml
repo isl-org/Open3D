@@ -61,7 +61,7 @@ jobs:
           cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
       - name: Install Python package
         run: |
-          python -m pip install --upgrade pip==${{ env.$PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
+          python -m pip install --upgrade pip==${{ env.PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
           cd build
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
@@ -107,7 +107,7 @@ jobs:
       - name: Build Python package
         shell: pwsh
         run: |
-          python -m pip install --upgrade pip==${{ env.$PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
+          python -m pip install --upgrade pip==${{ env.PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
           cd build
           conda install conda-build=${{ env.CONDA_BUILD_VER }} -y
           conda-build --version
@@ -193,7 +193,7 @@ jobs:
           python -m venv open3d_test_venv
           open3d_test_venv\Scripts\Activate.ps1
 
-          python -m pip install --upgrade pip==${{ env.$PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
+          python -m pip install --upgrade pip==${{ env.PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }}
           $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
