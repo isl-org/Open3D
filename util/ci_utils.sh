@@ -234,7 +234,7 @@ build_pip_conda_package() {
 
     if [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
-        echo Installing CUDA versions of Tensorflow and PyTorch...
+        echo Installing CUDA versions of TensorFlow and PyTorch...
         install_python_dependencies with-cuda purge-cache
         echo
         echo Building with CUDA...
@@ -289,7 +289,7 @@ test_wheel() {
     if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
         python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
         python -c \
-            "import open3d.ml.tf.ops; print('Tensorflow Ops library loaded:', open3d.ml.tf.ops)"
+            "import open3d.ml.tf.ops; print('TensorFlow Ops library loaded:', open3d.ml.tf.ops)"
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] && [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         echo "importing in the reversed order"

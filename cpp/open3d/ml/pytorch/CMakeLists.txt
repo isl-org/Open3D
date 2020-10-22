@@ -1,10 +1,10 @@
-message(STATUS "Building Pytorch ops")
+message(STATUS "Building PyTorch ops")
 
 if(BUILD_CUDA_MODULE)
-    message(STATUS "Building Pytorch ops with CUDA")
+    message(STATUS "Building PyTorch ops with CUDA")
 endif()
 
-find_package(Pytorch REQUIRED)
+find_package(PyTorch REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(parallelstl REQUIRED)
 if(BUILD_CUDA_MODULE)

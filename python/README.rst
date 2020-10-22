@@ -28,7 +28,7 @@ Core features
 * Surface alignment
 * 3D visualization
 * Physically based rendering (PBR)
-* 3D machine learning support with PyTorch and Tensorflow
+* 3D machine learning support with PyTorch and TensorFlow
 * GPU acceleration for core 3D operations
 * Available in C++ and Python
 
