@@ -141,23 +141,27 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     p_ply_property attribute = nullptr;
     e_ply_type type, length_type, value_type;
     int64_t attribute_id = 0;
-    const char *attribute_num;
+    const char *attribute_nm;
 
     // Get first ply element; assuming it will be vertex.
     p_ply_element element = ply_get_next_element(ply_file, nullptr);
     attribute = ply_get_next_property(element, nullptr);
 
     while (attribute) {
-        ply_get_property_info(attribute, &attribute_num, &type, &length_type,
+        ply_get_property_info(attribute, &attribute_nm, &type, &length_type,
                               &value_type);
 
+        std::string temp = attribute_nm;
         if (GetDtype(type) == core::Dtype::Undefined) {
-            utility::LogWarning("Read PLY failed: unsupported datatype.");
-            ply_close(ply_file);
-            return false;
+            utility::LogWarning(
+                    "Read PLY warning: skipping property \"{}\", unsupported "
+                    "datatype.",
+                    attribute_nm);
+            attribute = ply_get_next_property(element, attribute);
+            continue;
         }
 
-        state.attribute_name.push_back(attribute_num);
+        state.attribute_name.push_back(attribute_nm);
         state.attribute_num.push_back(ply_set_read_cb(
                 ply_file, "vertex", state.attribute_name[attribute_id].c_str(),
                 ReadAttributeCallback, &state, attribute_id));
@@ -225,9 +229,9 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     }
 
     // Add rest of the attributes.
-    for (size_t i = 0; i < state.attributes.size(); i++) {
-        pointcloud.SetPointAttr(state.attribute_name[i],
-                                state.attributes[state.attribute_name[i]]);
+    std::unordered_map<std::string, core::TensorList>::iterator itr;
+    for (itr = state.attributes.begin(); itr != state.attributes.end(); itr++) {
+        pointcloud.SetPointAttr(itr->first, itr->second);
     }
 
     ply_close(ply_file);

@@ -154,6 +154,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
     EXPECT_EQ(pcd.GetPointColors().GetSize(), 196133);
     EXPECT_EQ(pcd.GetPointAttr("curvature").GetSize(), 196133);
     EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
+    EXPECT_FALSE(pcd.HasPointAttr("x"));
 }
 
 // Reading ascii.
@@ -164,12 +165,13 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
     EXPECT_EQ(pcd.GetPoints().GetSize(), 7);
 }
 
-// Unsupported datatype error.
+// Skip unsupported datatype.
 TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
     t::geometry::PointCloud pcd;
-    EXPECT_FALSE(t::io::ReadPointCloud(
+    t::io::ReadPointCloud(
             std::string(TEST_DATA_DIR) + "/test_sample_wrong_format.ply", pcd,
-            {"auto", false, false, true}));
+            {"auto", false, false, true});
+    EXPECT_FALSE(pcd.HasPointAttr("intensity"));
 }
 
 // Custom attributes check.
