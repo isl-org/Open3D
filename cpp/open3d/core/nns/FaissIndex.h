@@ -66,24 +66,24 @@ public:
 
     /// Perform K nearest neighbor search.
     ///
-    /// \param query Query points. Must be Float32 type and 2D, with shape {n,
+    /// \param query_points Query points. Must be Float32 type and 2D, with shape {n,
     /// d}.
     /// \param knn Number of nearest neighbor to search.
     /// \return Pair of Tensors: (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distances: Tensor of shape {n, knn}, with dtype Float32.
-    std::pair<Tensor, Tensor> SearchKnn(const Tensor &query, int knn) const;
+    std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points, int knn) const;
 
     /// Perform hybrid search.
     ///
-    /// \param query Query points. Must be Float32 type and 2D, with shape {n,
+    /// \param query_points Query points. Must be Float32 type and 2D, with shape {n,
     /// d}.
     /// \param radius Radius.
-    /// \param max_knn Maximum number of neighbor to search per query.
+    /// \param max_knn Maximum number of neighbor to search per query point.
     /// \return Pair of Tensors, (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distances: Tensor of shape {n, knn}, with dtype Float32.
-    std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query,
+    std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
                                            float radius,
                                            int max_knn) const;
 
