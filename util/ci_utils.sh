@@ -27,8 +27,9 @@ TORCH_CUDA_GLNX_VER="1.6.0+cu101"
 TORCH_CPU_GLNX_VER="1.6.0+cpu"
 TORCH_MACOS_VER="1.6.0"
 YAPF_VER="0.30.0"
-PIP_VER="20.2.3"
+PIP_VER="20.2.4"
 WHEEL_VER="0.35.1"
+STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
 SCIPY_VER="1.4.1"
 CONDA_BUILD_VER="3.20.0"
@@ -111,8 +112,8 @@ install_python_dependencies() {
     if [[ "with-conda" =~ ^($options)$ ]]; then
         conda install conda-build="$CONDA_BUILD_VER" -y
     fi
-    python -m pip install --upgrade pip=="$PIP_VER"
-    python -m pip install -U wheel=="$WHEEL_VER"
+    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
+        setuptools=="$STOOLS_VER"
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
         python -m pip install -U pytest=="$PYTEST_VER"
         python -m pip install -U scipy=="$SCIPY_VER"
@@ -264,6 +265,8 @@ test_wheel() {
     wheel_path="$1"
     python -m venv open3d_test.venv
     source open3d_test.venv/bin/activate
+    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
+        setuptools=="$STOOLS_VER"
     echo "Installing Open3D wheel $wheel_path in virtual environment..."
     python -m pip install "$wheel_path"
     python -c "import open3d; print('Installed:', open3d)"

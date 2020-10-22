@@ -15,12 +15,13 @@ on:
     types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
 
 env:
-  PIP_VER: "20.2.2"
+  PIP_VER: "20.2.4"
   WHEEL_VER: "0.35.1"
+  STOOLS_VER: "50.3.2"
   PYTEST_VER: "6.0.1"
   SCIPY_VER: "1.4.1"
   NPROC: 2
-  CONDA_BUILD_VER: 3.20.0
+  CONDA_BUILD_VER: "3.20.0"
 
 jobs:
   windows:
@@ -60,8 +61,7 @@ jobs:
           cmake --build . --config ${{ matrix.CONFIG }} && .\${{ matrix.CONFIG }}\TestVisualizer.exe
       - name: Install Python package
         run: |
-          python -m pip install --upgrade pip==${{ env.PIP_VER }}
-          python -m pip install -U wheel==${{ env.WHEEL_VER }}
+          python -m pip install --upgrade pip==${{ env.$PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
           cd build
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
@@ -107,8 +107,7 @@ jobs:
       - name: Build Python package
         shell: pwsh
         run: |
-          python -m pip install --upgrade pip==${{ env.PIP_VER }}
-          python -m pip install -U wheel==${{ env.WHEEL_VER }}
+          python -m pip install --upgrade pip==${{ env.$PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
           cd build
           conda install conda-build=${{ env.CONDA_BUILD_VER }} -y
           conda-build --version
@@ -194,12 +193,13 @@ jobs:
           python -m venv open3d_test_venv
           open3d_test_venv\Scripts\Activate.ps1
 
+          python -m pip install --upgrade pip==${{ env.$PIP_VER }} wheel==${{ env.WHEEL_VER }} setuptools==${{ env.STOOLS_VER }}
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }}
           $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          $PIP_PKG_NAME=(Get-ChildItem pip-package\open3d*-$pi_tag-*.whl).Name
-          echo "Installing Open3D wheel open3d_win_amd64_wheels/$PIP_PKG_NAME in virtual environment..."
-          python -m pip install open3d_win_amd64_wheels/$PIP_PKG_NAME
+          $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$pi_tag-*.whl).Name
+          echo "Installing Open3D wheel pip_package\$PIP_PKG_NAME in virtual environment..."
+          python -m pip install "pip_package\$PIP_PKG_NAME"
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 
