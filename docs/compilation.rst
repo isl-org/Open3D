@@ -169,7 +169,7 @@ Instead of ``which``, check the Python path with ``where python``.
 
 .. code-block:: bat
 
-    cmake --build --config Release --target ALL_BUILD
+    cmake --build . --config Release --target ALL_BUILD
 
 Alternatively, you can open the ``Open3D.sln`` project with Visual Studio and
 build the same target.
