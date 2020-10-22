@@ -43,7 +43,7 @@ namespace ply_pointcloud_reader {
 
 struct PLYReaderState {
     utility::CountingProgressReporter *progress_bar;
-    std::unordered_map<std::string, core::TensorList> attributes;
+    std::unordered_map<std::string, core::Tensor> attributes;
     std::vector<std::string> attribute_name;
     std::vector<int64_t> attribute_index;
     std::vector<int64_t> attribute_num;
@@ -59,22 +59,27 @@ int ReadAttributeCallback(p_ply_argument argument) {
     }
 
     double value = ply_get_argument_value(argument);
-
-    state_ptr->attributes[state_ptr->attribute_name[id]]
-                         [state_ptr->attribute_index[id]][0] = value;
+    double *a_ptr = static_cast<double *>(
+            state_ptr
+                    ->attributes[state_ptr->attribute_name[id]]
+                                [state_ptr->attribute_index[id]]
+                    .GetDataPtr());
+    a_ptr[0] = value;
     state_ptr->attribute_index[id]++;
+
     if (state_ptr->attribute_index[id] % 1000 == 0) {
         state_ptr->progress_bar->Update(state_ptr->attribute_index[id]);
     }
     return 1;
 }
 
-core::TensorList ConcatColumns(const core::TensorList &a,
-                               const core::TensorList &b,
-                               const core::TensorList &c) {
+core::TensorList ConcatColumns(const core::Tensor &a,
+                               const core::Tensor &b,
+                               const core::Tensor &c) {
     core::TensorList combined;
 
-    if ((a.GetSize() != b.GetSize()) || (a.GetSize() != c.GetSize())) {
+    if ((a.GetShape()[0] != b.GetShape()[0]) ||
+        (a.GetShape()[0] != c.GetShape()[0])) {
         utility::LogError("Read PLY failed: size mismatch in base attributes.");
     }
     if ((a.GetDtype() != b.GetDtype()) || (a.GetDtype() != c.GetDtype())) {
@@ -82,10 +87,10 @@ core::TensorList ConcatColumns(const core::TensorList &a,
                 "Read PLY failed: datatype mismatch in base attributes.");
     }
 
-    combined = core::TensorList(a.GetSize(), {3}, a.GetDtype());
-    combined.AsTensor().Slice(1, 0, 1) = a.AsTensor();
-    combined.AsTensor().Slice(1, 1, 2) = b.AsTensor();
-    combined.AsTensor().Slice(1, 2, 3) = c.AsTensor();
+    combined = core::TensorList(a.GetShape()[0], {3}, a.GetDtype());
+    combined.AsTensor().Slice(1, 0, 1) = a;
+    combined.AsTensor().Slice(1, 1, 2) = b;
+    combined.AsTensor().Slice(1, 2, 3) = c;
 
     return combined;
 }
@@ -184,6 +189,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     e_ply_type type, length_type, value_type;
     int64_t attribute_id = 0;
     const char *attribute_nm;
+    std::vector<core::Dtype> attribute_dtype;
 
     // Get first ply element; assuming it will be vertex.
     p_ply_element element = ply_get_next_element(ply_file, nullptr);
@@ -202,14 +208,16 @@ bool ReadPointCloudFromPLY(const std::string &filename,
             continue;
         }
 
+        attribute_dtype.push_back(GetDtype(type));
         state.attribute_name.push_back(attribute_nm);
         state.attribute_num.push_back(
                 ply_set_read_cb(ply_file, "vertex", attribute_nm,
                                 ReadAttributeCallback, &state, attribute_id));
 
         state.attribute_index.push_back(0);
-        state.attributes[attribute_nm] = core::TensorList(
-                state.attribute_num[attribute_id], {1}, GetDtype(type));
+
+        state.attributes[attribute_nm] = core::Tensor(
+                {state.attribute_num[attribute_id], 1}, core::Dtype::Float64);
         // Get next property.
         attribute = ply_get_next_property(element, attribute);
         attribute_id++;
@@ -228,6 +236,13 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     pointcloud.Clear();
 
+    // Convert Dtype.
+    for (size_t i = 0; i < attribute_dtype.size(); i++) {
+        state.attributes[state.attribute_name[i]] =
+                state.attributes[state.attribute_name[i]].To(
+                        attribute_dtype[i]);
+    }
+
     // Add base attributes.
     if (state.attributes.find("x") != state.attributes.end() &&
         state.attributes.find("y") != state.attributes.end() &&
@@ -242,6 +257,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
             pointcloud.SetPoints(points);
         }
     }
+
     if (state.attributes.find("nx") != state.attributes.end() &&
         state.attributes.find("ny") != state.attributes.end() &&
         state.attributes.find("nz") != state.attributes.end()) {
@@ -270,11 +286,11 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     }
 
     // Add rest of the attributes.
-    std::unordered_map<std::string, core::TensorList>::iterator itr;
+    std::unordered_map<std::string, core::Tensor>::iterator itr;
     for (itr = state.attributes.begin(); itr != state.attributes.end(); itr++) {
-        pointcloud.SetPointAttr(itr->first, itr->second);
+        pointcloud.SetPointAttr(itr->first,
+                                core::TensorList::FromTensor(itr->second));
     }
-
     ply_close(ply_file);
     reporter.Finish();
 

@@ -147,6 +147,7 @@ TEST_P(ReadWriteTPC, WriteBadData) {
 // Reading binary_little_endian with colors and normals.
 TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
     t::geometry::PointCloud pcd;
+
     t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd,
                           {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPoints().GetSize(), 196133);
@@ -160,6 +161,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
 // Reading ascii.
 TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
     t::geometry::PointCloud pcd;
+
     t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/test_sample_ascii.ply",
                           pcd, {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPoints().GetSize(), 7);
