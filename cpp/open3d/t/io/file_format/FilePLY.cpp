@@ -151,7 +151,6 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         ply_get_property_info(attribute, &attribute_nm, &type, &length_type,
                               &value_type);
 
-        std::string temp = attribute_nm;
         if (GetDtype(type) == core::Dtype::Undefined) {
             utility::LogWarning(
                     "Read PLY warning: skipping property \"{}\", unsupported "
@@ -162,12 +161,12 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         }
 
         state.attribute_name.push_back(attribute_nm);
-        state.attribute_num.push_back(ply_set_read_cb(
-                ply_file, "vertex", state.attribute_name[attribute_id].c_str(),
-                ReadAttributeCallback, &state, attribute_id));
+        state.attribute_num.push_back(
+                ply_set_read_cb(ply_file, "vertex", attribute_nm,
+                                ReadAttributeCallback, &state, attribute_id));
 
         state.attribute_index.push_back(0);
-        state.attributes[state.attribute_name[attribute_id]] = core::TensorList(
+        state.attributes[attribute_nm] = core::TensorList(
                 state.attribute_num[attribute_id], {1}, GetDtype(type));
         // Get next property.
         attribute = ply_get_next_property(element, attribute);
