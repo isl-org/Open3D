@@ -49,6 +49,7 @@ struct PLYReaderState {
     std::vector<int64_t> attribute_num;
 };
 
+template <typename T>
 int ReadAttributeCallback(p_ply_argument argument) {
     PLYReaderState *state_ptr;
     long id;
@@ -59,7 +60,7 @@ int ReadAttributeCallback(p_ply_argument argument) {
     }
 
     double value = ply_get_argument_value(argument);
-    double *a_ptr = static_cast<double *>(
+    T *a_ptr = static_cast<T *>(
             state_ptr
                     ->attributes[state_ptr->attribute_name[id]]
                                 [state_ptr->attribute_index[id]]
@@ -189,7 +190,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     e_ply_type type, length_type, value_type;
     int64_t attribute_id = 0;
     const char *attribute_nm;
-    std::vector<core::Dtype> attribute_dtype;
+    int64_t temp_num = 0;
 
     // Get first ply element; assuming it will be vertex.
     p_ply_element element = ply_get_next_element(ply_file, nullptr);
@@ -208,16 +209,19 @@ bool ReadPointCloudFromPLY(const std::string &filename,
             continue;
         }
 
-        attribute_dtype.push_back(GetDtype(type));
         state.attribute_name.push_back(attribute_nm);
-        state.attribute_num.push_back(
-                ply_set_read_cb(ply_file, "vertex", attribute_nm,
-                                ReadAttributeCallback, &state, attribute_id));
+
+        DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(type), [&]() {
+            temp_num = ply_set_read_cb(ply_file, "vertex", attribute_nm,
+                                       ReadAttributeCallback<scalar_t>, &state,
+                                       attribute_id);
+        });
+        state.attribute_num.push_back(temp_num);
 
         state.attribute_index.push_back(0);
 
         state.attributes[attribute_nm] = core::Tensor(
-                {state.attribute_num[attribute_id], 1}, core::Dtype::Float64);
+                {state.attribute_num[attribute_id], 1}, GetDtype(type));
         // Get next property.
         attribute = ply_get_next_property(element, attribute);
         attribute_id++;
@@ -235,13 +239,6 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     }
 
     pointcloud.Clear();
-
-    // Convert Dtype.
-    for (size_t i = 0; i < attribute_dtype.size(); i++) {
-        state.attributes[state.attribute_name[i]] =
-                state.attributes[state.attribute_name[i]].To(
-                        attribute_dtype[i]);
-    }
 
     // Add base attributes.
     if (state.attributes.find("x") != state.attributes.end() &&
