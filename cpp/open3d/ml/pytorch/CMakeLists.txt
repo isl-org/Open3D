@@ -1,7 +1,7 @@
-message(STATUS "Building Pytorch ops")
+message(STATUS "Building PyTorch ops")
 
 if(BUILD_CUDA_MODULE)
-    message(STATUS "Building Pytorch ops with CUDA")
+    message(STATUS "Building PyTorch ops with CUDA")
 endif()
 
 find_package(Pytorch REQUIRED)

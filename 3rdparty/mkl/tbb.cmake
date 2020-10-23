@@ -16,7 +16,7 @@ set(MKL_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/mkl_install)
 set(STATIC_MKL_INCLUDE_DIR "${MKL_INSTALL_PREFIX}/include/")
 set(STATIC_MKL_LIB_DIR "${MKL_INSTALL_PREFIX}/lib")
 
-# TBB variables exported for PyTorch Ops and Tensorflow Ops
+# TBB variables exported for PyTorch Ops and TensorFlow Ops
 set(STATIC_TBB_INCLUDE_DIR "${STATIC_MKL_INCLUDE_DIR}")
 set(STATIC_TBB_LIB_DIR "${STATIC_MKL_LIB_DIR}")
 set(STATIC_TBB_LIBRARIES tbb_static tbbmalloc_static)

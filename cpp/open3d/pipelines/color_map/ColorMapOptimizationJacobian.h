@@ -53,6 +53,7 @@ public:
             int row,
             Eigen::Vector6d& J_r,
             double& r,
+            double& w,
             const geometry::TriangleMesh& mesh,
             const std::vector<double>& proxy_intensity,
             const std::shared_ptr<geometry::Image>& images_gray,

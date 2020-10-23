@@ -117,7 +117,7 @@ struct Application::Impl {
     bool is_initialized_ = false;
     Theme theme_;
     double last_time_ = 0.0;
-    bool is_GLFW_initalized_ = false;
+    bool is_GLFW_initialized_ = false;
     bool is_running_ = false;
     bool should_quit_ = false;
 
@@ -138,7 +138,7 @@ struct Application::Impl {
     // ----
 
     void InitGLFW() {
-        if (this->is_GLFW_initalized_) {
+        if (is_GLFW_initialized_) {
             return;
         }
 
@@ -150,7 +150,7 @@ struct Application::Impl {
         glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
 #endif
         glfwInit();
-        this->is_GLFW_initalized_ = true;
+        is_GLFW_initialized_ = true;
     }
 
     void PrepareForRunning() {
@@ -158,8 +158,10 @@ struct Application::Impl {
         // (but unlikely) that the run loop finished and is starting again.
         InitGLFW();
 
-        // We don't need to initialize rendering, it will happen automatically
-        // at the appropriate time.
+        // Initialize rendering
+        visualization::rendering::EngineInstance::SelectBackend(
+                visualization::rendering::EngineInstance::RenderingType::
+                        kOpenGL);
     }
 
     void CleanupAfterRunning() {
@@ -174,7 +176,7 @@ struct Application::Impl {
         visualization::rendering::EngineInstance::DestroyInstance();
 
         glfwTerminate();
-        is_GLFW_initalized_ = false;
+        is_GLFW_initialized_ = false;
     }
 };
 
@@ -245,12 +247,6 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.tab_active_color = impl_->theme_.button_active_color;
     impl_->theme_.dialog_border_width = 1;
     impl_->theme_.dialog_border_radius = 10;
-
-    visualization::rendering::EngineInstance::SelectBackend(
-            visualization::rendering::EngineInstance::RenderingType::kOpenGL);
-
-    // Init GLFW here so that we can create windows before running
-    impl_->InitGLFW();
 }
 
 Application::~Application() {}
@@ -272,6 +268,11 @@ void Application::Initialize(int argc, const char *argv[]) {
 }
 
 void Application::Initialize(const char *resource_path) {
+    // Prepare for running so that we can create windows. Note that although
+    // Application may be initialized, GLFW/Filament may not be, if we finished
+    // Run() and are calling again.
+    impl_->PrepareForRunning();
+
     if (impl_->is_initialized_) {
         return;
     }
@@ -426,21 +427,26 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
     auto status = ProcessQueuedEvents(unlocker);
 
     // Cleanup if we are done
-    if (status == RunStatus::DONE && cleanup_if_no_windows) {
-        // Clear all the running tasks. The destructor will wait for them to
-        // finish.
-        for (auto it = impl_->running_tasks_.begin();
-             it != impl_->running_tasks_.end(); ++it) {
-            auto current = it;
-            ++it;
-            impl_->running_tasks_.erase(current);  // calls join()
-        }
+    if (status == RunStatus::DONE) {
+        if (cleanup_if_no_windows) {
+            // Clear all the running tasks. The destructor will wait for them to
+            // finish.
+            for (auto it = impl_->running_tasks_.begin();
+                 it != impl_->running_tasks_.end(); ++it) {
+                auto current = it;
+                ++it;
+                impl_->running_tasks_.erase(current);  // calls join()
+            }
 
-        impl_->is_running_ = false;
-        impl_->CleanupAfterRunning();
+            impl_->is_running_ = false;
+            impl_->CleanupAfterRunning();
+        } else {
+            // reset, otherwise we will be done next time, too.
+            impl_->should_quit_ = false;
+        }
     }
 
-    return impl_->is_running_;
+    return (status == RunStatus::CONTINUE);
 }
 
 Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
@@ -462,7 +468,14 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
 
     // Run any posted functions
     {
+        // The only other place posted_lock_ is used is PostToMainThread.
+        // If pybind is posting a Python function, it acquires posted_lock_,
+        // then locks the GIL. Since we are locked at this point, we (can)
+        // deadlock. (So far only observed on macOS, within about 10 runs)
+        unlocker.unlock();
         std::lock_guard<std::mutex> lock(impl_->posted_lock_);
+        unlocker.relock();
+
         for (auto &p : impl_->posted_) {
             void *old = nullptr;
             if (p.window) {

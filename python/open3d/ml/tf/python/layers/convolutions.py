@@ -138,7 +138,7 @@ class ContinuousConv(tf.keras.layers.Layer):
           linear layer used for the center if 'use_dense_layer_for_center'
           is True.
 
-        in_channels: This keyword argument is for compatibility with Pytorch.
+        in_channels: This keyword argument is for compatibility with PyTorch.
           It is not used and in_channels will be inferred at the first execution
           of the layer.
     """
@@ -435,7 +435,7 @@ class SparseConv(tf.keras.layers.Layer):
           The shape is [3]. This can be used to control how the filters are
           centered. It will be set automatically for kernels with even sizes.
 
-        in_channels: This keyword argument is for compatibility with Pytorch.
+        in_channels: This keyword argument is for compatibility with PyTorch.
           It is not used and in_channels will be inferred at the first execution
           of the layer.
     """
@@ -635,7 +635,7 @@ class SparseConvTranspose(tf.keras.layers.Layer):
           The shape is [3]. This can be used to control how the filters are
           centered. It will be set automatically for kernels with even sizes.
 
-        in_channels: This keyword argument is for compatibility with Pytorch.
+        in_channels: This keyword argument is for compatibility with PyTorch.
           It is not used and in_channels will be inferred at the first execution
           of the layer.
     """
