@@ -162,14 +162,14 @@ Instead of ``which``, check the Python path with ``where python``.
 
     :: Specify the generator based on your Visual Studio version
     :: If CMAKE_INSTALL_PREFIX is a system folder, admin access is needed for installation
-    cmake -G "Visual Studio 16 2019 Win64" -DCMAKE_INSTALL_PREFIX="<open3d_install_directory>" ..
+    cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="<open3d_install_directory>" ..
 
 3. Build
 ````````
 
 .. code-block:: bat
 
-    cmake --build --config Release --target ALL_BUILD
+    cmake --build . --config Release --target ALL_BUILD
 
 Alternatively, you can open the ``Open3D.sln`` project with Visual Studio and
 build the same target.
