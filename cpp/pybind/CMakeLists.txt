@@ -198,6 +198,7 @@ add_custom_target(python-package
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
             -DBUNDLE_OPEN3D_ML=${BUNDLE_OPEN3D_ML}
+            -DOPEN3D_ML_ROOT=${OPEN3D_ML_ROOT}
             -DBUILD_GUI=${BUILD_GUI}
             -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
