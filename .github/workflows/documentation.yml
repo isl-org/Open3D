@@ -6,7 +6,7 @@ on:
       developer_build:
         description: 'Set to OFF for Release documentation'
         required: false
-        default: 'OFF'
+        default: 'ON'
   push:
     branches:
       - master
@@ -112,17 +112,12 @@ jobs:
           echo NPROC=$NPROC
           mkdir build
           cd build
-          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
-            DEVELOPER_BUILD=ON
-            DOC_ARGS=""
-          else
-            DOC_ARGS="--is_release"
-            echo "Building docs for a new Open3D release"
-          echo
+        DOC_ARGS="--is_release"
+        echo "Building docs for a new Open3D release"
           echo "Building Open3D with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
           echo
           fi
-          cmakeOptions=(-DDEVELOPER_BUILD="$DEVELOPER_BUILD"
+          cmakeOptions=(-DDEVELOPER_BUILD=OFF
                 -DCMAKE_BUILD_TYPE=Release
                 -DBUILD_JUPYTER_EXTENSION=ON
                 -DWITH_OPENMP=ON
@@ -166,7 +161,6 @@ jobs:
           if-no-files-found: error
 
       - name: Deploy docs
-        if: ${{ github.ref == 'refs/heads/master' }}
         run: |
           # Compress and upload the docs, only for master branch
           docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
