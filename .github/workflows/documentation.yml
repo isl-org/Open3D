@@ -112,8 +112,8 @@ jobs:
           echo NPROC=$NPROC
           mkdir build
           cd build
-        DOC_ARGS="--is_release"
-        echo "Building docs for a new Open3D release"
+          DOC_ARGS="--is_release"
+          echo "Building docs for a new Open3D release"
           echo "Building Open3D with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
           echo
           fi
