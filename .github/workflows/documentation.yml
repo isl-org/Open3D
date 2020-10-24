@@ -116,7 +116,6 @@ jobs:
           echo "Building docs for a new Open3D release"
           echo "Building Open3D with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
           echo
-          fi
           cmakeOptions=(-DDEVELOPER_BUILD=OFF
                 -DCMAKE_BUILD_TYPE=Release
                 -DBUILD_JUPYTER_EXTENSION=ON
