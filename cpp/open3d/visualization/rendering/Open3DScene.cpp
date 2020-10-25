@@ -117,6 +117,7 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
+    scene->SetBackgroundColor({1.0f, 1.0f, 1.0f, 1.0f});
 
     RecreateAxis(scene, bounds_, false);
 }

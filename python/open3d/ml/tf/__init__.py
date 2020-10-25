@@ -23,19 +23,19 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-"""Tensorflow specific machine learning functions."""
+"""TensorFlow specific machine learning functions."""
 import os as _os
 from tensorflow import __version__ as _tf_version
 from open3d import _build_config
 
 if not _build_config["Tensorflow_VERSION"]:
-    raise Exception('Open3D was not built with Tensorflow support!')
+    raise Exception('Open3D was not built with TensorFlow support!')
 
 _o3d_tf_version = _build_config["Tensorflow_VERSION"].split('.')
 if _tf_version.split('.')[:2] != _o3d_tf_version[:2]:
     _o3d_tf_version[2] = '*'  # Any patch level is OK
     match_tf_ver = '.'.join(_o3d_tf_version)
-    raise Exception('Version mismatch: Open3D needs Tensorflow version {}, but'
+    raise Exception('Version mismatch: Open3D needs TensorFlow version {}, but'
                     ' version {} is installed!'.format(match_tf_ver,
                                                        _tf_version))
 

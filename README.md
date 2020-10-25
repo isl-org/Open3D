@@ -37,7 +37,7 @@ the open-source community.
 * Surface alignment
 * 3D visualization
 * Physically based rendering (PBR)
-* 3D machine learning support with PyTorch and Tensorflow
+* 3D machine learning support with PyTorch and TensorFlow
 * GPU acceleration for core 3D operations
 * Available in C++ and Python
 
@@ -72,27 +72,20 @@ and [Open3D C++ interface](http://www.open3d.org/docs/release/cpp_api.html).
 
 ## Open3D-Viewer app
 
-<img align="left" width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D/master/docs/_static/open3d_viewer.png">
+<img width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D/master/docs/_static/open3d_viewer.png">
 
 Open3D-Viewer is a standalone 3D viewer app available on Ubuntu and macOS.
-Please stay tuned for Windows.
-
-Download Open3D Viewer from the
+Please stay tuned for Windows. Download Open3D Viewer from the
 [release page](https://github.com/intel-isl/Open3D/releases).
-
-<br clear="left"/>
 
 ## Open3D-ML
 
-<img align="left" width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D-ML/master/docs/images/getting_started_ml_visualizer.gif">
+<img width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D-ML/master/docs/images/getting_started_ml_visualizer.gif">
 
 Open3D-ML is an extension of Open3D for 3D machine learning tasks. It builds on
 top of the Open3D core library and extends it with machine learning tools for
-3D data processing.
-
-Check it out at [Open3D-ML](https://github.com/intel-isl/Open3D-ML).
-
-<br clear="left"/>
+3D data processing. To try it out, install Open3D with PyTorch or TensorFlow and check out
+[Open3D-ML](https://github.com/intel-isl/Open3D-ML).
 
 ## Communication channels
 
