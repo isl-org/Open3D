@@ -284,6 +284,8 @@ protected:
     unsigned int render_rgb_tex_;
     unsigned int render_depth_stencil_rbo_;
 
+    
+
     // view control
     std::unique_ptr<ViewControl> view_control_ptr_;
 

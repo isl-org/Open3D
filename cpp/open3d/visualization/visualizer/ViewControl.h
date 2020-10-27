@@ -75,6 +75,7 @@ public:
     void SetFront(const Eigen::Vector3d &front);
     void SetZoom(const double zoom);
 
+
     /// Function to get equivalent pinhole camera parameters (does not support
     /// orthogonal since it is not a real camera view).
     ///
@@ -125,6 +126,10 @@ public:
                            double y,
                            double xo = 0.0,
                            double yo = 0.0);
+
+    virtual void CameraLocalTranslate(double forward, double right, double up);
+    virtual void CameraLocalRotate(double x, double y, double xo = 0.0, double yo = 0.0);
+    virtual void ResetCameraLocalRotate();
 
     // Function to process rolling
     /// \param x is the distances the mouse cursor has moved.
@@ -183,6 +188,7 @@ public:
     /// bounding box size.
     void UnsetConstantZFar() { constant_z_far_ = -1; }
 
+
 protected:
     int window_width_ = 0;
     int window_height_ = 0;
@@ -205,6 +211,14 @@ protected:
     gl_util::GLMatrix4f view_matrix_;
     gl_util::GLMatrix4f model_matrix_;
     gl_util::GLMatrix4f MVP_matrix_;
+
+    Eigen::Vector3d start_local_rotate_up_;
+    Eigen::Vector3d start_local_rotate_right_;
+    Eigen::Vector3d start_local_rotate_front_;
+    Eigen::Vector3d start_local_rotate_eye_;
+    Eigen::Vector3d start_local_rotate_lookat_;
+    double local_rotate_up_accum_;
+    double local_rotate_right_accum_;
 };
 
 }  // namespace visualization

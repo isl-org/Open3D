@@ -256,7 +256,6 @@ void ViewControl::Reset() {
 void ViewControl::SetProjectionParameters() {
     front_ = front_.normalized();
     right_ = up_.cross(front_).normalized();
-    up_ = front_.cross(right_).normalized();  // todo: required?
     if (GetProjectionType() == ProjectionType::Perspective) {
         view_ratio_ = zoom_ * bounding_box_.GetMaxExtent();
         distance_ = view_ratio_ / std::tan(field_of_view_ * 0.5 / 180.0 * M_PI);
@@ -312,6 +311,42 @@ void ViewControl::Translate(double x,
     eye_ += shift;
     lookat_ += shift;
     SetProjectionParameters();
+}
+
+void ViewControl::CameraLocalTranslate(double forward, double right, double up) {
+    lookat_ += (-forward) * front_.normalized() + right * right_.normalized() + up * up_.normalized();
+    SetProjectionParameters();
+}
+
+void ViewControl::CameraLocalRotate(double x,
+                                    double y,
+                                    double xo /* = 0.0*/,
+                                    double yo /* = 0.0*/) {
+
+    const double kDegreesPerUnit = 10;
+    double x_shift = (-x) / window_height_ * view_ratio_ * 2.0;
+    double y_shift = y / window_height_ * view_ratio_ * 2.0;
+
+    local_rotate_up_accum_ += y_shift;
+    local_rotate_right_accum_ += x_shift;
+
+    auto m = Eigen::AngleAxisd(-kDegreesPerUnit * local_rotate_up_accum_ * M_PI / 180, start_local_rotate_right_) *
+            Eigen::AngleAxisd(kDegreesPerUnit * local_rotate_right_accum_ * M_PI / 180, start_local_rotate_up_);
+
+    front_ = m * start_local_rotate_front_;
+    lookat_ = eye_ + m * (start_local_rotate_lookat_ - eye_);
+
+    SetProjectionParameters();
+}
+
+void ViewControl::ResetCameraLocalRotate() {
+    start_local_rotate_up_ = up_;
+    start_local_rotate_right_ = right_;
+    start_local_rotate_eye_ = eye_;
+    start_local_rotate_lookat_ = lookat_;
+    start_local_rotate_front_ = front_;
+    local_rotate_up_accum_ = 0;
+    local_rotate_right_accum_ = 0;
 }
 
 void ViewControl::Roll(double x) {
