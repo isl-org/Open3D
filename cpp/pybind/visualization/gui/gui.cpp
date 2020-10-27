@@ -60,9 +60,46 @@
 #include "pybind/docstring.h"
 #include "pybind11/functional.h"
 
+// We cannot give out a shared_ptr to objects like Window which reference
+// Filament objects, because we cannot guarantee that the Python script is
+// not holding on to a reference when we cleanup Filament. The Open3D library
+// will clear its shared_ptrs expecting the dependent object(s) to clean up,
+// but they won't because Python still has a shared_ptr, leading to a crash
+// when the variable goes of scope on the Python side.
+// The following would crash gui.Window's holder is std::shared_ptr:
+//   import open3d.visualization.gui as gui
+//   def main():
+//       gui.Application.instance.initialize()
+//       w = gui.Application.instance.create_window("Crash", 640, 480)
+//       gui.Application.instance.run()
+//   if __name__ == "__main__":
+//       main()
+// However, if remove the 'w = ' part, it would not crash.
+template <typename T>
+class UnownedPointer {
+public:
+    UnownedPointer() : ptr_(nullptr) {}
+    explicit UnownedPointer(T *p) : ptr_(p) {}
+    ~UnownedPointer() {}  // don't delete!
+
+    T *get() { return ptr_; }
+    T &operator*() { return *ptr_; }
+    T *operator->() { return ptr_; }
+    void reset() { ptr_ = nullptr; }  // don't delete!
+
+private:
+    T *ptr_;
+};
+PYBIND11_DECLARE_HOLDER_TYPE(T, UnownedPointer<T>);
+
 namespace open3d {
 namespace visualization {
 namespace gui {
+
+template <typename T>
+std::shared_ptr<T> TakeOwnership(UnownedPointer<T> x) {
+    return std::shared_ptr<T>(x.get());
+}
 
 class PythonUnlocker : public Application::EnvUnlocker {
 public:
@@ -205,10 +242,42 @@ void pybind_gui_classes(py::module &m) {
                     "_must_ be called prior to using anything in the gui "
                     "module")
             .def(
+                    "create_window",
+                    [](Application &instance, const std::string &title,
+                       int width, int height, int x, int y, int flags) {
+                        std::shared_ptr<PyWindow> w;
+                        if (x < 0 && y < 0 && width < 0 && height < 0) {
+                            w.reset(new PyWindow(title, flags));
+                        } else if (x < 0 && y < 0) {
+                            w.reset(new PyWindow(title, width, height, flags));
+                        } else {
+                            w.reset(new PyWindow(title, x, y, width, height,
+                                                 flags));
+                        }
+                        instance.AddWindow(w);
+                        return w.get();
+                    },
+                    "title"_a = std::string(), "width"_a = -1, "height"_a = -1,
+                    "x"_a = -1, "y"_a = -1, "flags"_a = 0,
+                    "Creates a window and adds it to the application. "
+                    "To programmatically destroy the window do window.close()."
+                    "Usage: create_window(title, width, height, x, y, flags). "
+                    "x, y, and flags are optional.")
+            // We need to tell RunOneTick() not to cleanup. Run() and
+            // RunOneTick() assume a C++ desktop application approach of
+            // init -> run -> cleanup. More problematic for us is that Filament
+            // crashes if we don't cleanup. Also, we don't want to force Python
+            // script writers to remember to cleanup; this is Python, not C++
+            // where you expect to need to thinking about cleanup up after
+            // yourself. So as a Python-script-app, the cleanup happens atexit.
+            // (Init is still required of the script writer.) This means that
+            // run() should NOT cleanup, as it might be called several times
+            // to run a UI to visualize the result of a computation.
+            .def(
                     "run",
                     [](Application &instance) {
                         PythonUnlocker unlocker;
-                        while (instance.RunOneTick(unlocker)) {
+                        while (instance.RunOneTick(unlocker, false)) {
                             // Enable Ctrl-C to kill Python
                             if (PyErr_CheckSignals() != 0) {
                                 throw py::error_already_set();
@@ -223,7 +292,7 @@ void pybind_gui_classes(py::module &m) {
                     "run_one_tick",
                     [](Application &instance) {
                         PythonUnlocker unlocker;
-                        auto result = instance.RunOneTick(unlocker);
+                        auto result = instance.RunOneTick(unlocker, false);
                         // Enable Ctrl-C to kill Python
                         if (PyErr_CheckSignals() != 0) {
                             throw py::error_already_set();
@@ -231,7 +300,8 @@ void pybind_gui_classes(py::module &m) {
                         return result;
                     },
                     "Runs the event loop once, returns True if the app is "
-                    "still running, or False if all the windows have closed.")
+                    "still running, or False if all the windows have closed "
+                    "or quit() has been called.")
             .def(
                     "render_to_image",
                     [](Application &instance, rendering::Open3DScene *scene,
@@ -257,11 +327,7 @@ void pybind_gui_classes(py::module &m) {
             .def_property("menubar", &Application::GetMenubar,
                           &Application::SetMenubar,
                           "The Menu for the application (initially None)")
-            .def("add_window", &Application::AddWindow,
-                 "Adds the window to the application")
-            .def("remove_window", &Application::AddWindow,
-                 "Removes the window from the application, closing it. If "
-                 "there are no open windows left the event loop will exit.")
+            // Note: we cannot export AddWindow and RemoveWindow
             .def_property_readonly("resource_path",
                                    &Application::GetResourcePath,
                                    "Returns a string with the path to the "
@@ -269,27 +335,22 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Window ----
     // Pybind appears to need to know about the base class. It doesn't have
-    // to be named the same as the C++ class, though.
-    py::class_<Window, std::shared_ptr<Window>> window_base(
+    // to be named the same as the C++ class, though. The holder object cannot
+    // be a shared_ptr or we can crash (see comment for UnownedPointer).
+    py::class_<Window, UnownedPointer<Window>> window_base(
             m, "WindowBase", "Application window");
-    py::class_<PyWindow, std::shared_ptr<PyWindow>, Window> window(
-            m, "Window", "Application window");
-    window.def(py::init([](const std::string &title, int width, int height,
-                           int x, int y, int flags) {
-                   if (x < 0 && y < 0 && width < 0 && height < 0) {
-                       return new PyWindow(title, flags);
-                   } else if (x < 0 && y < 0) {
-                       return new PyWindow(title, width, height, flags);
-                   } else {
-                       return new PyWindow(title, x, y, width, height, flags);
-                   }
-               }),
-               "title"_a = std::string(), "width"_a = -1, "height"_a = -1,
-               "x"_a = -1, "y"_a = -1, "flags"_a = 0)
-            .def("__repr__",
-                 [](const PyWindow &w) { return "Application window"; })
-            .def("add_child", &PyWindow::AddChild,
-                 "Adds a widget to the window")
+    py::class_<PyWindow, UnownedPointer<PyWindow>, Window> window(
+            m, "Window",
+            "Application window. Create with "
+            "Application.instance.create_window().");
+    window.def("__repr__",
+               [](const PyWindow &w) { return "Application window"; })
+            .def(
+                    "add_child",
+                    [](PyWindow &w, UnownedPointer<Widget> widget) {
+                        w.AddChild(TakeOwnership<Widget>(widget));
+                    },
+                    "Adds a widget to the window")
             .def_property("os_frame", &PyWindow::GetOSFrame,
                           &PyWindow::SetOSFrame,
                           "Window rect in OS coords, not device pixels")
@@ -340,7 +401,12 @@ void pybind_gui_classes(py::module &m) {
                     "children of the window")
             .def_property_readonly("theme", &PyWindow::GetTheme,
                                    "Get's window's theme info")
-            .def("show_dialog", &PyWindow::ShowDialog, "Displays the dialog")
+            .def(
+                    "show_dialog",
+                    [](PyWindow &w, UnownedPointer<Dialog> dlg) {
+                        w.ShowDialog(TakeOwnership<Dialog>(dlg));
+                    },
+                    "Displays the dialog")
             .def("close_dialog", &PyWindow::CloseDialog,
                  "Closes the current dialog")
             .def("show_message_box", &PyWindow::ShowMessageBox,
@@ -351,45 +417,44 @@ void pybind_gui_classes(py::module &m) {
                     "Gets the rendering.Renderer object for the Window");
 
     // ---- Menu ----
-    py::class_<Menu, std::shared_ptr<Menu>> menu(
-            m, "Menu", "A menu, possibly a menu tree");
+    py::class_<Menu, UnownedPointer<Menu>> menu(m, "Menu",
+                                                "A menu, possibly a menu tree");
     menu.def(py::init<>())
             .def(
                     "add_item",
-                    [](std::shared_ptr<Menu> menu, const char *text,
+                    [](UnownedPointer<Menu> menu, const char *text,
                        int item_id) { menu->AddItem(text, item_id); },
                     "Adds a menu item with id to the menu")
             .def(
                     "add_menu",
-                    [](std::shared_ptr<Menu> menu, const char *text,
-                       std::shared_ptr<Menu> submenu) {
-                        menu->AddMenu(text, submenu);
+                    [](UnownedPointer<Menu> menu, const char *text,
+                       UnownedPointer<Menu> submenu) {
+                        menu->AddMenu(text, TakeOwnership<Menu>(submenu));
                     },
                     "Adds a submenu to the menu")
             .def("add_separator", &Menu::AddSeparator,
                  "Adds a separator to the menu")
             .def(
                     "set_enabled",
-                    [](std::shared_ptr<Menu> menu, int item_id, bool enabled) {
+                    [](UnownedPointer<Menu> menu, int item_id, bool enabled) {
                         menu->SetEnabled(item_id, enabled);
                     },
                     "Sets menu item enabled or disabled")
             .def(
                     "is_checked",
-                    [](std::shared_ptr<Menu> menu, int item_id) -> bool {
+                    [](UnownedPointer<Menu> menu, int item_id) -> bool {
                         return menu->IsChecked(item_id);
                     },
                     "Returns True if menu item is checked")
             .def(
                     "set_checked",
-                    [](std::shared_ptr<Menu> menu, int item_id, bool checked) {
+                    [](UnownedPointer<Menu> menu, int item_id, bool checked) {
                         menu->SetChecked(item_id, checked);
                     },
                     "Sets menu item (un)checked");
 
     // ---- Color ----
-    py::class_<Color, std::shared_ptr<Color>> color(
-            m, "Color", "Stores color for gui classes");
+    py::class_<Color> color(m, "Color", "Stores color for gui classes");
     color.def(py::init([](float r, float g, float b, float a) {
                   return new Color(r, g, b, a);
               }),
@@ -417,10 +482,9 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- Theme ----
     // Note: no constructor because themes are created by Open3D
-    py::class_<Theme, std::shared_ptr<Theme>> theme(m, "Theme",
-                                                    "Theme parameters such as "
-                                                    "colors used for drawing "
-                                                    "widgets (read-only)");
+    py::class_<Theme> theme(m, "Theme",
+                            "Theme parameters such as colors used for drawing "
+                            "widgets (read-only)");
     theme.def_readonly("font_size", &Theme::font_size,
                        "Font size (which is also the conventional size of the "
                        "em unit) (read-only)")
@@ -473,8 +537,16 @@ void pybind_gui_classes(py::module &m) {
             .def_readwrite("height", &Size::height);
 
     // ---- Widget ----
-    py::class_<Widget, std::shared_ptr<Widget>> widget(m, "Widget",
-                                                       "Base widget class");
+    // The holder for Widget and all derived classes is UnownedPointer because
+    // a Widget may own Filament resources, so we cannot have Python holding
+    // on to a shared_ptr after we cleanup Filament. The object is initially
+    // "leaked" (as in, Python will not clean it up), but it will be claimed
+    // by the object it is added to. There are two consequences to this:
+    //  1) adding an object to multiple objects will cause multiple shared_ptrs
+    //     to think they own it, leading to a double-free and crash, and
+    //  2) if the object is never added, the memory will be leaked.
+    py::class_<Widget, UnownedPointer<Widget>> widget(m, "Widget",
+                                                      "Base widget class");
     widget.def(py::init<>())
             .def("__repr__",
                  [](const Widget &w) {
@@ -484,7 +556,12 @@ void pybind_gui_classes(py::module &m) {
                        << w.GetFrame().height;
                      return s.str();
                  })
-            .def("add_child", &Widget::AddChild, "Adds a child widget")
+            .def(
+                    "add_child",
+                    [](Widget &w, UnownedPointer<Widget> child) {
+                        w.AddChild(TakeOwnership<Widget>(child));
+                    },
+                    "Adds a child widget")
             .def("get_children", &Widget::GetChildren,
                  "Returns the array of children. Do not modify.")
             .def_property("frame", &Widget::GetFrame, &Widget::SetFrame,
@@ -502,8 +579,8 @@ void pybind_gui_classes(py::module &m) {
                  "properly");
 
     // ---- Button ----
-    py::class_<Button, std::shared_ptr<Button>, Widget> button(m, "Button",
-                                                               "Button");
+    py::class_<Button, UnownedPointer<Button>, Widget> button(m, "Button",
+                                                              "Button");
     button.def(py::init<const char *>(), "Creates a button with the given text")
             .def("__repr__",
                  [](const Button &b) {
@@ -529,7 +606,7 @@ void pybind_gui_classes(py::module &m) {
             // a py::object and cast it ourselves.
             .def_property(
                     "horizontal_padding_em", &Button::GetHorizontalPaddingEm,
-                    [](std::shared_ptr<Button> b, const py::object &em) {
+                    [](UnownedPointer<Button> b, const py::object &em) {
                         auto vert = b->GetVerticalPaddingEm();
                         try {
                             b->SetPaddingEm(em.cast<float>(), vert);
@@ -543,7 +620,7 @@ void pybind_gui_classes(py::module &m) {
                     "Horizontal padding in em units")
             .def_property(
                     "vertical_padding_em", &Button::GetVerticalPaddingEm,
-                    [](std::shared_ptr<Button> b, const py::object &em) {
+                    [](UnownedPointer<Button> b, const py::object &em) {
                         auto horiz = b->GetHorizontalPaddingEm();
                         try {
                             b->SetPaddingEm(horiz, em.cast<float>());
@@ -559,7 +636,7 @@ void pybind_gui_classes(py::module &m) {
                  "Calls passed function when button is pressed");
 
     // ---- Checkbox ----
-    py::class_<Checkbox, std::shared_ptr<Checkbox>, Widget> checkbox(
+    py::class_<Checkbox, UnownedPointer<Checkbox>, Widget> checkbox(
             m, "Checkbox", "Checkbox");
     checkbox.def(py::init<const char *>(),
                  "Creates a checkbox with the given text")
@@ -578,7 +655,7 @@ void pybind_gui_classes(py::module &m) {
                  "Calls passed function when checkbox changes state");
 
     // ---- ColorEdit ----
-    py::class_<ColorEdit, std::shared_ptr<ColorEdit>, Widget> coloredit(
+    py::class_<ColorEdit, UnownedPointer<ColorEdit>, Widget> coloredit(
             m, "ColorEdit", "Color picker");
     coloredit.def(py::init<>())
             .def("__repr__",
@@ -600,7 +677,7 @@ void pybind_gui_classes(py::module &m) {
                  "Calls f(Color) when color changes by user input");
 
     // ---- Combobox ----
-    py::class_<Combobox, std::shared_ptr<Combobox>, Widget> combobox(
+    py::class_<Combobox, UnownedPointer<Combobox>, Widget> combobox(
             m, "Combobox", "Exclusive selection from a pull-down menu");
     combobox.def(py::init<>(),
                  "Creates an empty combobox. Use add_item() to add items")
@@ -638,7 +715,7 @@ void pybind_gui_classes(py::module &m) {
                  "respectively");
 
     // ---- ImageLabel ----
-    py::class_<ImageLabel, std::shared_ptr<ImageLabel>, Widget> imagelabel(
+    py::class_<ImageLabel, UnownedPointer<ImageLabel>, Widget> imagelabel(
             m, "ImageLabel", "Displays a bitmap");
     imagelabel
             .def(py::init<>(
@@ -654,8 +731,8 @@ void pybind_gui_classes(py::module &m) {
     // TODO: add the other functions and UIImage?
 
     // ---- Label ----
-    py::class_<Label, std::shared_ptr<Label>, Widget> label(m, "Label",
-                                                            "Displays text");
+    py::class_<Label, UnownedPointer<Label>, Widget> label(m, "Label",
+                                                           "Displays text");
     label.def(py::init([](const char *title = "") { return new Label(title); }),
               "Creates a Label with the given text")
             .def("__repr__",
@@ -675,7 +752,7 @@ void pybind_gui_classes(py::module &m) {
                           "The color of the text (gui.Color)");
 
     // ---- ListView ----
-    py::class_<ListView, std::shared_ptr<ListView>, Widget> listview(
+    py::class_<ListView, UnownedPointer<ListView>, Widget> listview(
             m, "ListView", "Displays a list of text");
     listview.def(py::init<>(), "Creates an empty list")
             .def("__repr__",
@@ -699,7 +776,7 @@ void pybind_gui_classes(py::module &m) {
                  "selection");
 
     // ---- NumberEdit ----
-    py::class_<NumberEdit, std::shared_ptr<NumberEdit>, Widget> numedit(
+    py::class_<NumberEdit, UnownedPointer<NumberEdit>, Widget> numedit(
             m, "NumberEdit", "Allows the user to enter a number.");
     py::enum_<NumberEdit::Type> numedit_type(numedit, "Type", py::arithmetic());
     // Trick to write docs without listing the members in the enum class again.
@@ -727,7 +804,7 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def_property(
                     "int_value", &NumberEdit::GetIntValue,
-                    [](std::shared_ptr<NumberEdit> ne, int val) {
+                    [](UnownedPointer<NumberEdit> ne, int val) {
                         ne->SetValue(double(val));
                     },
                     "Current value (int)")
@@ -760,7 +837,7 @@ void pybind_gui_classes(py::module &m) {
                     "Sets the preferred width of the NumberEdit");
 
     // ---- ProgressBar----
-    py::class_<ProgressBar, std::shared_ptr<ProgressBar>, Widget> progress(
+    py::class_<ProgressBar, UnownedPointer<ProgressBar>, Widget> progress(
             m, "ProgressBar", "Displays a progress bar");
     progress.def(py::init<>())
             .def("__repr__",
@@ -776,7 +853,7 @@ void pybind_gui_classes(py::module &m) {
                     "The value of the progress bar, ranges from 0.0 to 1.0");
 
     // ---- SceneWidget ----
-    py::class_<SceneWidget, std::shared_ptr<SceneWidget>, Widget> scene(
+    py::class_<SceneWidget, UnownedPointer<SceneWidget>, Widget> scene(
             m, "SceneWidget", "Displays 3D content");
     py::enum_<SceneWidget::Controls> scene_ctrl(scene, "Controls",
                                                 py::arithmetic());
@@ -818,7 +895,7 @@ void pybind_gui_classes(py::module &m) {
                  "[i, j, k] vector of the new sun direction");
 
     // ---- Slider ----
-    py::class_<Slider, std::shared_ptr<Slider>, Widget> slider(
+    py::class_<Slider, UnownedPointer<Slider>, Widget> slider(
             m, "Slider", "A slider widget for visually selecting numbers");
     py::enum_<Slider::Type> slider_type(slider, "Type", py::arithmetic());
     // Trick to write docs without listing the members in the enum class again.
@@ -846,7 +923,7 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def_property(
                     "int_value", &Slider::GetIntValue,
-                    [](std::shared_ptr<Slider> ne, int val) {
+                    [](UnownedPointer<Slider> ne, int val) {
                         ne->SetValue(double(val));
                     },
                     "Slider value (int)")
@@ -867,7 +944,7 @@ void pybind_gui_classes(py::module &m) {
                  "changes widget's value");
 
     // ---- StackedWidget ----
-    py::class_<StackedWidget, std::shared_ptr<StackedWidget>, Widget> stacked(
+    py::class_<StackedWidget, UnownedPointer<StackedWidget>, Widget> stacked(
             m, "StackedWidget", "Like a TabControl but without the tabs");
     stacked.def(py::init<>())
             .def_property("selected_index", &StackedWidget::GetSelectedIndex,
@@ -875,13 +952,19 @@ void pybind_gui_classes(py::module &m) {
                           "Selects the index of the child to display");
 
     // ---- TabControl ----
-    py::class_<TabControl, std::shared_ptr<TabControl>, Widget> tabctrl(
+    py::class_<TabControl, UnownedPointer<TabControl>, Widget> tabctrl(
             m, "TabControl", "Tab control");
     tabctrl.def(py::init<>())
-            .def("add_tab", &TabControl::AddTab,
-                 "Adds a tab. The first parameter is the title of the tab, and "
-                 "the second parameter is a widget--normally this is a "
-                 "layout.")
+            .def(
+                    "add_tab",
+                    [](TabControl &tabs, const char *name,
+                       UnownedPointer<Widget> panel) {
+                        tabs.AddTab(name, TakeOwnership<Widget>(panel));
+                    },
+                    "Adds a tab. The first parameter is the title of the tab, "
+                    "and "
+                    "the second parameter is a widget--normally this is a "
+                    "layout.")
             .def("set_on_selected_tab_changed",
                  &TabControl::SetOnSelectedTabChanged,
                  "Calls the provided callback function with the index of the "
@@ -889,7 +972,7 @@ void pybind_gui_classes(py::module &m) {
                  "different tab");
 
     // ---- TextEdit ----
-    py::class_<TextEdit, std::shared_ptr<TextEdit>, Widget> textedit(
+    py::class_<TextEdit, UnownedPointer<TextEdit>, Widget> textedit(
             m, "TextEdit", "Allows the user to enter or modify text");
     textedit.def(py::init<>(),
                  "Creates a TextEdit widget with an initial value of an empty "
@@ -917,7 +1000,7 @@ void pybind_gui_classes(py::module &m) {
                  "user completes text editing");
 
     // ---- TreeView ----
-    py::class_<TreeView, std::shared_ptr<TreeView>, Widget> treeview(
+    py::class_<TreeView, UnownedPointer<TreeView>, Widget> treeview(
             m, "TreeView", "Hierarchical list");
     treeview.def(py::init<>(), "Creates an empty TreeView widget")
             .def("__repr__",
@@ -932,10 +1015,16 @@ void pybind_gui_classes(py::module &m) {
                  "Returns the root item. This item is invisible, so its child "
                  "are "
                  "the top-level items")
-            .def("add_item", &TreeView::AddItem,
-                 "Adds a child item to the parent. add_item(parent, widget)")
+            .def(
+                    "add_item",
+                    [](TreeView &tree, TreeView::ItemId parent_id,
+                       UnownedPointer<Widget> item) {
+                        return tree.AddItem(parent_id,
+                                            TakeOwnership<Widget>(item));
+                    },
+                    "Adds a child item to the parent. add_item(parent, widget)")
             .def("add_text_item", &TreeView::AddTextItem,
-                 "Adds a child item to the parent. add_item(parent, text)")
+                 "Adds a child item to the parent. add_text_item(parent, text)")
             .def("remove_item", &TreeView::RemoveItem,
                  "Removes an item and all its children (if any)")
             .def("clear", &TreeView::Clear, "Removes all items")
@@ -956,15 +1045,15 @@ void pybind_gui_classes(py::module &m) {
                  "changes the selection.");
 
     // ---- TreeView cells ----
-    py::class_<CheckableTextTreeCell, std::shared_ptr<CheckableTextTreeCell>,
+    py::class_<CheckableTextTreeCell, UnownedPointer<CheckableTextTreeCell>,
                Widget>
             checkable_cell(m, "CheckableTextTreeCell",
                            "TreeView cell with a checkbox and text");
     checkable_cell
             .def(py::init<>([](const char *text, bool checked,
                                std::function<void(bool)> on_toggled) {
-                     return std::make_shared<CheckableTextTreeCell>(
-                             text, checked, on_toggled);
+                     return new CheckableTextTreeCell(text, checked,
+                                                      on_toggled);
                  }),
                  "Creates a TreeView cell with a checkbox and text. "
                  "CheckableTextTreeCell(text, is_checked, on_toggled): "
@@ -977,15 +1066,15 @@ void pybind_gui_classes(py::module &m) {
                                    "Returns the label widget "
                                    "(property is read-only)");
 
-    py::class_<LUTTreeCell, std::shared_ptr<LUTTreeCell>, Widget> lut_cell(
+    py::class_<LUTTreeCell, UnownedPointer<LUTTreeCell>, Widget> lut_cell(
             m, "LUTTreeCell",
             "TreeView cell with checkbox, text, and color edit");
     lut_cell.def(py::init<>([](const char *text, bool checked,
                                const Color &color,
                                std::function<void(bool)> on_enabled,
                                std::function<void(const Color &)> on_color) {
-                     return std::make_shared<LUTTreeCell>(text, checked, color,
-                                                          on_enabled, on_color);
+                     return new LUTTreeCell(text, checked, color, on_enabled,
+                                            on_color);
                  }),
                  "Creates a TreeView cell with a checkbox, text, and "
                  "a color editor. LUTTreeCell(text, is_checked, color, "
@@ -1003,7 +1092,7 @@ void pybind_gui_classes(py::module &m) {
                                    "Returns the ColorEdit widget "
                                    "(property is read-only)");
 
-    py::class_<ColormapTreeCell, std::shared_ptr<ColormapTreeCell>, Widget>
+    py::class_<ColormapTreeCell, UnownedPointer<ColormapTreeCell>, Widget>
             colormap_cell(m, "ColormapTreeCell",
                           "TreeView cell with a number edit and color edit");
     colormap_cell
@@ -1011,8 +1100,8 @@ void pybind_gui_classes(py::module &m) {
                                std::function<void(double)> on_value_changed,
                                std::function<void(const Color &)>
                                        on_color_changed) {
-                     return std::make_shared<ColormapTreeCell>(
-                             value, color, on_value_changed, on_color_changed);
+                     return new ColormapTreeCell(value, color, on_value_changed,
+                                                 on_color_changed);
                  }),
                  "Creates a TreeView cell with a number and a color edit. "
                  "ColormapTreeCell(value, color, on_value_changed, "
@@ -1029,7 +1118,7 @@ void pybind_gui_classes(py::module &m) {
                                    "(property is read-only)");
 
     // ---- VectorEdit ----
-    py::class_<VectorEdit, std::shared_ptr<VectorEdit>, Widget> vectoredit(
+    py::class_<VectorEdit, UnownedPointer<VectorEdit>, Widget> vectoredit(
             m, "VectorEdit", "Allows the user to edit a 3-space vector");
     vectoredit.def(py::init<>())
             .def("__repr__",
@@ -1049,8 +1138,8 @@ void pybind_gui_classes(py::module &m) {
                  "changes the value of a component");
 
     // ---- Margins ----
-    py::class_<Margins, std::shared_ptr<Margins>> margins(
-            m, "Margins", "Margins for layouts");
+    py::class_<Margins, UnownedPointer<Margins>> margins(m, "Margins",
+                                                         "Margins for layouts");
     margins.def(py::init([](int left, int top, int right, int bottom) {
                     return new Margins(left, top, right, bottom);
                 }),
@@ -1082,7 +1171,7 @@ void pybind_gui_classes(py::module &m) {
             .def("get_vert", &Margins::GetVert);
 
     // ---- Layout1D ----
-    py::class_<Layout1D, std::shared_ptr<Layout1D>, Widget> layout1d(
+    py::class_<Layout1D, UnownedPointer<Layout1D>, Widget> layout1d(
             m, "Layout1D", "Layout base class");
     layout1d
             // TODO: write the proper constructor
@@ -1092,7 +1181,7 @@ void pybind_gui_classes(py::module &m) {
                  "Adds a fixed amount of empty space to the layout")
             .def(
                     "add_fixed",
-                    [](std::shared_ptr<Layout1D> layout, float px) {
+                    [](UnownedPointer<Layout1D> layout, float px) {
                         layout->AddFixed(int(std::round(px)));
                     },
                     "Adds a fixed amount of empty space to the layout")
@@ -1101,8 +1190,8 @@ void pybind_gui_classes(py::module &m) {
                  "extra space as there is available in the layout");
 
     // ---- Vert ----
-    py::class_<Vert, std::shared_ptr<Vert>, Layout1D> vlayout(
-            m, "Vert", "Vertical layout");
+    py::class_<Vert, UnownedPointer<Vert>, Layout1D> vlayout(m, "Vert",
+                                                             "Vertical layout");
     vlayout.def(py::init([](int spacing, const Margins &margins) {
                     return new Vert(spacing, margins);
                 }),
@@ -1121,7 +1210,7 @@ void pybind_gui_classes(py::module &m) {
                  "is the margins. Both default to 0.");
 
     // ---- CollapsableVert ----
-    py::class_<CollapsableVert, std::shared_ptr<CollapsableVert>, Vert>
+    py::class_<CollapsableVert, UnownedPointer<CollapsableVert>, Vert>
             collapsable(m, "CollapsableVert",
                         "Vertical layout with title, whose contents are "
                         "collapsable");
@@ -1153,7 +1242,7 @@ void pybind_gui_classes(py::module &m) {
                  "window is visible");
 
     // ---- Horiz ----
-    py::class_<Horiz, std::shared_ptr<Horiz>, Layout1D> hlayout(
+    py::class_<Horiz, UnownedPointer<Horiz>, Layout1D> hlayout(
             m, "Horiz", "Horizontal layout");
     hlayout.def(py::init([](int spacing, const Margins &margins) {
                     return new Horiz(spacing, margins);
@@ -1175,8 +1264,8 @@ void pybind_gui_classes(py::module &m) {
                  "is the margins. Both default to 0.");
 
     // ---- VGrid ----
-    py::class_<VGrid, std::shared_ptr<VGrid>, Widget> vgrid(m, "VGrid",
-                                                            "Gride layout");
+    py::class_<VGrid, UnownedPointer<VGrid>, Widget> vgrid(m, "VGrid",
+                                                           "Grid layout");
     vgrid.def(py::init([](int n_cols, int spacing, const Margins &margins) {
                   return new VGrid(n_cols, spacing, margins);
               }),
@@ -1207,13 +1296,13 @@ void pybind_gui_classes(py::module &m) {
                                    "Returns the margins");
 
     // ---- Dialog ----
-    py::class_<Dialog, std::shared_ptr<Dialog>, Widget> dialog(m, "Dialog",
-                                                               "Dialog");
+    py::class_<Dialog, UnownedPointer<Dialog>, Widget> dialog(m, "Dialog",
+                                                              "Dialog");
     dialog.def(py::init<const char *>(),
                "Creates a dialog with the given title");
 
     // ---- FileDialog ----
-    py::class_<FileDialog, std::shared_ptr<FileDialog>, Dialog> filedlg(
+    py::class_<FileDialog, UnownedPointer<FileDialog>, Dialog> filedlg(
             m, "FileDialog", "File picker dialog");
     py::enum_<FileDialog::Mode> filedlg_mode(filedlg, "Mode", py::arithmetic());
     // Trick to write docs without listing the members in the enum class again.

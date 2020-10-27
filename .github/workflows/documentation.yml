@@ -2,28 +2,39 @@ name: Documentation build
 
 on:
   workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release documentation'
+        required: false
+        default: 'ON'
   push:
     branches:
       - master
   pull_request:
-    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+    types: [opened, reopened, synchronize]
 
 env:
-  SHARED: OFF
-  BUILD_TENSORFLOW_OPS: ON
-  BUILD_CUDA_MODULE: OFF
-  NPROC: 2
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   headless-docs:
     # Build headless and docs
     runs-on: ubuntu-18.04
+    env:
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
-      - name: Checkout source code
+      - name: Checkout Open3D source code
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: intel-isl/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
       - name: Setup cache
         uses: actions/cache@v2
         with:
@@ -75,7 +86,7 @@ jobs:
           sudo apt-get install --yes ghostscript
           sudo apt-get install --yes pandoc
           sudo apt-get install --yes ccache
-          ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
           # Install Python dependencies for building docs
           which python
           python -V
@@ -84,31 +95,75 @@ jobs:
           # https://github.com/sphinx-doc/sphinx/issues/7420
           python -m pip install -U -q git+https://github.com/intel-isl/m2r@dev#egg=m2r
           # dependencies for building the ml ops
-          python -m pip install -U -q "yapf==0.30.0" "tensorflow==2.3.0"
-          python -m pip install -U -q "torch==1.6.0+cpu" -f https://download.pytorch.org/whl/torch_stable.html
+          python -m pip install -U -q "yapf==0.30.0"
+          # Open3D-ML dependencies
+          python -m pip install -r ${OPEN3D_ML_ROOT}/requirements.txt
+          python -m pip install -r ${OPEN3D_ML_ROOT}/requirements-torch.txt
+          python -m pip install -r ${OPEN3D_ML_ROOT}/requirements-tensorflow.txt
+          # the build system of the main repo expects a master branch. make sure master exists
+          pushd ${OPEN3D_ML_ROOT}
+          git checkout -b master || true
+          popd
       - name: Build docs
         run: |
           PATH=/usr/lib/ccache:$PATH
           ccache -s
-          nproc
+          NPROC=$(nproc)
+          echo NPROC=$NPROC
           mkdir build
           cd build
-          cmake \
+          if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+            DEVELOPER_BUILD=ON
+            DOC_ARGS=""
+          else
+            DOC_ARGS="--is_release"
+            echo "Building docs for a new Open3D release"
+          echo
+          echo "Building Open3D with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
+          echo
+          fi
+          cmakeOptions=(-DDEVELOPER_BUILD="$DEVELOPER_BUILD"
+                -DCMAKE_BUILD_TYPE=Release
+                -DBUILD_JUPYTER_EXTENSION=ON
+                -DWITH_OPENMP=ON
+                -DBUILD_AZURE_KINECT=ON
+                -DBUILD_TENSORFLOW_OPS=ON
+                -DBUILD_PYTORCH_OPS=ON
+                -DBUILD_RPC_INTERFACE=ON
+                -DBUNDLE_OPEN3D_ML=ON
+          )
+          cmake "${cmakeOptions[@]}" \
                 -DENABLE_HEADLESS_RENDERING=ON \
                 -DBUILD_GUI=OFF \
-                -DBUILD_JUPYTER_EXTENSION=ON \
-                -DWITH_OPENMP=ON \
-                -DBUILD_AZURE_KINECT=ON \
-                -DBUILD_TENSORFLOW_OPS=ON \
-                -DBUILD_PYTORCH_OPS=ON \
                 ..
           make install-pip-package -j$NPROC
           make -j$NPROC
           bin/GLInfo
           python -c "from open3d import *; import open3d; print(open3d)"
-          cd .. # Back to Open3D/
-          ./util/make_documentation.sh
+          cd ../docs # To Open3D/docs
+          python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --pyapi_rst=never
+          cd ../build
+          echo
+          echo "Building Open3D with BUILD_GUI=ON for visualization.{gui,rendering} documentation"
+          echo
+          cmake "${cmakeOptions[@]}" \
+                -DENABLE_HEADLESS_RENDERING=OFF \
+                -DBUILD_GUI=ON \
+                ..
+          make install-pip-package -j$NPROC
+          make -j$NPROC
+          bin/GLInfo || true  # Expect failure since HEADLESS_RENDERING=OFF
+          python -c "from open3d import *; import open3d; print(open3d)"
+          cd ../docs # To Open3D/docs
+          python make_docs.py $DOC_ARGS --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen
           ccache -s
+
+      - name: Upload docs
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d_docs
+          path: docs/_out/html
+          if-no-files-found: error
 
       - name: Deploy docs
         if: ${{ github.ref == 'refs/heads/master' }}

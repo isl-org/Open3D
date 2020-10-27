@@ -197,7 +197,8 @@ class AppWindow:
         resource_path = gui.Application.instance.resource_path
         self.settings.new_ibl_name = resource_path + "/" + AppWindow.DEFAULT_IBL
 
-        self.window = gui.Window("Open3D", width, height)
+        self.window = gui.Application.instance.create_window(
+            "Open3D", width, height)
         w = self.window  # to make the code more concise
 
         # 3D widget
@@ -761,9 +762,6 @@ def main():
     gui.Application.instance.initialize()
 
     w = AppWindow(1024, 768)
-
-    # Add the window to the applicaiton, which will make it visible
-    gui.Application.instance.add_window(w.window)
 
     if len(sys.argv) > 1:
         path = sys.argv[1]

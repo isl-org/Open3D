@@ -26,6 +26,7 @@
 
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 
+#include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
@@ -33,6 +34,15 @@
 namespace open3d {
 namespace visualization {
 namespace rendering {
+
+class TemporaryLineSetBuilder : public LineSetBuffersBuilder {
+public:
+    explicit TemporaryLineSetBuilder(std::shared_ptr<geometry::LineSet> lines)
+        : LineSetBuffersBuilder(*lines), lines_(lines) {}
+
+private:
+    std::shared_ptr<geometry::LineSet> lines_;
+};
 
 std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
         const geometry::Geometry3D& geometry) {
@@ -50,6 +60,21 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
         case GT::LineSet:
             return std::make_unique<LineSetBuffersBuilder>(
                     static_cast<const geometry::LineSet&>(geometry));
+        case GT::OrientedBoundingBox: {
+            auto obb =
+                    static_cast<const geometry::OrientedBoundingBox&>(geometry);
+            auto lines = geometry::LineSet::CreateFromOrientedBoundingBox(obb);
+            lines->PaintUniformColor(obb.color_);
+            return std::make_unique<TemporaryLineSetBuilder>(lines);
+        }
+        case GT::AxisAlignedBoundingBox: {
+            auto aabb = static_cast<const geometry::AxisAlignedBoundingBox&>(
+                    geometry);
+            auto lines =
+                    geometry::LineSet::CreateFromAxisAlignedBoundingBox(aabb);
+            lines->PaintUniformColor(aabb.color_);
+            return std::make_unique<TemporaryLineSetBuilder>(lines);
+        }
         default:
             break;
     }

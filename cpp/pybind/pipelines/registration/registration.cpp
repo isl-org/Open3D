@@ -246,6 +246,50 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                            &TransformationEstimationPointToPlane::kernel_,
                            "Robust Kernel used in the Optimization");
 
+    // open3d.registration.TransformationEstimationForColoredICP :
+    py::class_<
+            TransformationEstimationForColoredICP,
+            PyTransformationEstimation<TransformationEstimationForColoredICP>,
+            TransformationEstimation>
+            te_col(m, "TransformationEstimationForColoredICP",
+                   "Class to estimate a transformation between two point "
+                   "clouds using color information");
+    py::detail::bind_default_constructor<TransformationEstimationForColoredICP>(
+            te_col);
+    py::detail::bind_copy_functions<TransformationEstimationForColoredICP>(
+            te_col);
+    te_col.def(py::init([](double lambda_geometric,
+                           std::shared_ptr<RobustKernel> kernel) {
+                   return new TransformationEstimationForColoredICP(
+                           lambda_geometric, std::move(kernel));
+               }),
+               "lambda_geometric"_a, "kernel"_a)
+            .def(py::init([](double lambda_geometric) {
+                     return new TransformationEstimationForColoredICP(
+                             lambda_geometric);
+                 }),
+                 "lambda_geometric"_a)
+            .def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                     auto te = TransformationEstimationForColoredICP();
+                     te.kernel_ = std::move(kernel);
+                     return te;
+                 }),
+                 "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationForColoredICP &te) {
+                     return std::string(
+                                    "TransformationEstimationForColoredICP "
+                                    "with lambda_geometric:") +
+                            std::to_string(te.lambda_geometric_);
+                 })
+            .def_readwrite(
+                    "lambda_geometric",
+                    &TransformationEstimationForColoredICP::lambda_geometric_,
+                    "lambda_geometric")
+            .def_readwrite("kernel",
+                           &TransformationEstimationForColoredICP::kernel_,
+                           "Robust Kernel used in the Optimization");
+
     // open3d.registration.CorrespondenceChecker
     py::class_<CorrespondenceChecker,
                PyCorrespondenceChecker<CorrespondenceChecker>>
@@ -492,9 +536,12 @@ static const std::unordered_map<std::string, std::string>
                  "(``"
                  "TransformationEstimationPointToPoint``, "
                  "``"
-                 "TransformationEstimationPointToPlane``)"},
+                 "TransformationEstimationPointToPlane``, "
+                 "``"
+                 "TransformationEstimationForColoredICP``)"},
                 {"init", "Initial transformation estimation"},
                 {"lambda_geometric", "lambda_geometric value"},
+                {"kernel", "Robust Kernel used in the Optimization"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},
                 {"option", "Registration option"},
@@ -527,8 +574,8 @@ void pybind_registration_methods(py::module &m) {
           "Function for Colored ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
           "init"_a = Eigen::Matrix4d::Identity(),
-          "criteria"_a = ICPConvergenceCriteria(),
-          "lambda_geometric"_a = 0.968);
+          "estimation_method"_a = TransformationEstimationForColoredICP(),
+          "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_colored_icp",
                                  map_shared_argument_docstrings);
 
