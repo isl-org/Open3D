@@ -166,9 +166,9 @@ static core::Dtype GetDtype(e_ply_type type) {
         return core::Dtype::Float32;
     } else if (type == PLY_DOUBLE) {
         return core::Dtype::Float64;
+    } else {
+        return core::Dtype::Undefined;
     }
-
-    return core::Dtype::Undefined;
 }
 
 bool ReadPointCloudFromPLY(const std::string &filename,
@@ -201,7 +201,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         }
     }
 
-    // If no vertex element, return
+    // No element with name "vertex".
     if (!element) {
         utility::LogWarning("Read PLY failed: no vertex attribute.");
         return false;
