@@ -1,0 +1,14 @@
+ply
+format ascii 1.0
+comment VCGLIB generated
+element vertex 2
+property float x
+property float y
+property float z
+property char intensity
+property float nx
+property float ny
+property float nz
+end_header
+0 0 -1 100 0.003695 0 -4.16078
+0.7236 -0.52572 -0.447215 127 -2.18747 -1.86078 -1.20846
