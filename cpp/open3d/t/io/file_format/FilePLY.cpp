@@ -104,7 +104,7 @@ static core::TensorList ConcatColumns(const core::Tensor &a,
 // Some of these datatypes are supported by TensorList but are added here just
 // for completeness.
 static std::string GetDtypeString(e_ply_type type) {
-    if (type == PLY_UINT8) {
+    if (type == PLY_INT8) {
         return "int8";
     } else if (type == PLY_UINT8) {
         return "uint8";

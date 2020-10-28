@@ -91,7 +91,7 @@ public:
     /// and scalar element_shape are allowed.
     /// \param dtype Data type of the contained tensors. e.g. Dtype::Float32.
     /// \param device Device of the contained tensors. e.g. Device("CPU:0").
-    TensorList(int32_t size,
+    TensorList(int64_t size,
                const SizeVector& element_shape,
                Dtype dtype,
                const Device& device = Device("CPU:0"))
