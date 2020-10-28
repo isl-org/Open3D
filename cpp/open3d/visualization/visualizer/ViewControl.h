@@ -75,7 +75,6 @@ public:
     void SetFront(const Eigen::Vector3d &front);
     void SetZoom(const double zoom);
 
-
     /// Function to get equivalent pinhole camera parameters (does not support
     /// orthogonal since it is not a real camera view).
     ///
@@ -128,7 +127,10 @@ public:
                            double yo = 0.0);
 
     virtual void CameraLocalTranslate(double forward, double right, double up);
-    virtual void CameraLocalRotate(double x, double y, double xo = 0.0, double yo = 0.0);
+    virtual void CameraLocalRotate(double x,
+                                   double y,
+                                   double xo = 0.0,
+                                   double yo = 0.0);
     virtual void ResetCameraLocalRotate();
 
     // Function to process rolling
@@ -187,7 +189,6 @@ public:
     /// z-plane of the visualizer is dynamically set dependent on zoom and
     /// bounding box size.
     void UnsetConstantZFar() { constant_z_far_ = -1; }
-
 
 protected:
     int window_width_ = 0;
