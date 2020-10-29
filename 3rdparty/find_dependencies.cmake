@@ -1015,12 +1015,13 @@ if(USE_BLAS)
     else()
         # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
         message(STATUS "Building OpenBLAS with LAPACK from source")
+        set(BLAS_BUILD_FROM_SOURCE ON)
+
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         import_3rdparty_library(3rdparty_openblas
-            PUBLIC
             INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
-            LIB_DIR ${OPENBLAS_LIB_DIR}
-            LIBRARIES ${OPENBLAS_LIBRARIES}
+            LIB_DIR      ${OPENBLAS_LIB_DIR}
+            LIBRARIES    ${OPENBLAS_LIBRARIES}
         )
         set(OPENBLAS_TARGET "3rdparty_openblas")
         add_dependencies(3rdparty_openblas ext_openblas)
@@ -1030,9 +1031,8 @@ if(USE_BLAS)
                                 ${CUDA_cusolver_LIBRARY}
                                 ${CUDA_CUBLAS_LIBRARIES})
         endif()
-        list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${OPENBLAS_TARGET}")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
     endif()
-    set(FAISS_BLAS_TARGET ${OPENBLAS_TARGET})
 else()
     include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
     # MKL, cuSOLVER, cuBLAS
@@ -1040,7 +1040,6 @@ else()
     # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
     message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
     import_3rdparty_library(3rdparty_mkl
-        PUBLIC
         INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
         LIB_DIR      ${STATIC_MKL_LIB_DIR}
         LIBRARIES    ${STATIC_MKL_LIBRARIES}
@@ -1063,8 +1062,7 @@ else()
     elseif(MSVC)
         target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
     endif()
-    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${MKL_TARGET}")
-    set(FAISS_BLAS_TARGET ${MKL_TARGET})
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
 
 # Faiss
@@ -1078,13 +1076,23 @@ endif()
 if (WITH_FAISS)
     message(STATUS "FAISS_INCLUDE_DIR: ${FAISS_INCLUDE_DIR}")
     message(STATUS "FAISS_LIB_DIR: ${FAISS_LIB_DIR}")
+    if (USE_BLAS)
+        if (BLAS_BUILD_FROM_SOURCE)
+            set(FAISS_EXTRA_DEPENDENCIES 3rdparty_openblas)
+        endif()
+    else()
+        set(FAISS_EXTRA_LIBRARIES ${STATIC_MKL_LIBRARIES})
+        set(FAISS_EXTRA_DEPENDENCIES 3rdparty_mkl)
+    endif()
     import_3rdparty_library(3rdparty_faiss
         INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
-        LIBRARIES ${FAISS_LIBRARIES}
+        LIBRARIES ${FAISS_LIBRARIES} ${FAISS_EXTRA_LIBRARIES}
         LIB_DIR ${FAISS_LIB_DIR}
     )
-    message(STATUS "FAISS_BLAS_TARGET: ${FAISS_BLAS_TARGET}")
     add_dependencies(3rdparty_faiss ext_faiss)
+    if (FAISS_EXTRA_DEPENDENCIES)
+        add_dependencies(ext_faiss ${FAISS_EXTRA_DEPENDENCIES})
+    endif()
     set(FAISS_TARGET "3rdparty_faiss")
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
