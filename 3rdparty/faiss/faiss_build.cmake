@@ -1,8 +1,5 @@
 include(ExternalProject)
 
-include(GNUInstallDirs)
-set(LIBDIR ${CMAKE_INSTALL_LIBDIR})
-
 # MKL_INSTALL_PREFIX contains MKL-TBB or BLAS static library.
 # Faiss depends on MKL-TBB or BLAS. We put them in the same directory so that
 # FAISS_LIBRARIES can refer to libraries in the same directory.
