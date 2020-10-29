@@ -1094,6 +1094,7 @@ if (WITH_FAISS)
         add_dependencies(ext_faiss ${FAISS_EXTRA_DEPENDENCIES})
     endif()
     set(FAISS_TARGET "3rdparty_faiss")
+    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
 
