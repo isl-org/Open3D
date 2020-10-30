@@ -144,6 +144,47 @@ TEST_P(ReadWriteTPC, WriteBadData) {
             {bool(args.write_ascii), bool(args.compressed), true}));
 }
 
-}  // namespace tests
+// Reading binary_little_endian with colors and normals.
+TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
+    t::geometry::PointCloud pcd;
 
+    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd,
+                          {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 196133);
+    EXPECT_EQ(pcd.GetPointNormals().GetSize(), 196133);
+    EXPECT_EQ(pcd.GetPointColors().GetSize(), 196133);
+    EXPECT_EQ(pcd.GetPointAttr("curvature").GetSize(), 196133);
+    EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
+    EXPECT_FALSE(pcd.HasPointAttr("x"));
+}
+
+// Reading ascii.
+TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
+    t::geometry::PointCloud pcd;
+
+    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/test_sample_ascii.ply",
+                          pcd, {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 7);
+}
+
+// Skip unsupported datatype.
+TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) + "/test_sample_wrong_format.ply", pcd,
+            {"auto", false, false, true});
+    EXPECT_FALSE(pcd.HasPointAttr("intensity"));
+}
+
+// Custom attributes check.
+TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) + "/test_sample_custom.ply", pcd,
+            {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPoints().GetSize(), 7);
+    EXPECT_EQ(pcd.GetPointAttr("intensity").GetSize(), 7);
+}
+
+}  // namespace tests
 }  // namespace open3d

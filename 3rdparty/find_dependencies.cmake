@@ -1015,12 +1015,14 @@ if(USE_BLAS)
     else()
         # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
         message(STATUS "Building OpenBLAS with LAPACK from source")
+        set(BLAS_BUILD_FROM_SOURCE ON)
+
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         import_3rdparty_library(3rdparty_openblas
             PUBLIC
             INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
-            LIB_DIR ${OPENBLAS_LIB_DIR}
-            LIBRARIES ${OPENBLAS_LIBRARIES}
+            LIB_DIR      ${OPENBLAS_LIB_DIR}
+            LIBRARIES    ${OPENBLAS_LIBRARIES}
         )
         set(OPENBLAS_TARGET "3rdparty_openblas")
         add_dependencies(3rdparty_openblas ext_openblas)
@@ -1078,14 +1080,25 @@ endif()
 if (WITH_FAISS)
     message(STATUS "FAISS_INCLUDE_DIR: ${FAISS_INCLUDE_DIR}")
     message(STATUS "FAISS_LIB_DIR: ${FAISS_LIB_DIR}")
+    if (USE_BLAS)
+        if (BLAS_BUILD_FROM_SOURCE)
+            set(FAISS_EXTRA_DEPENDENCIES 3rdparty_openblas)
+        endif()
+    else()
+        set(FAISS_EXTRA_LIBRARIES ${STATIC_MKL_LIBRARIES})
+        set(FAISS_EXTRA_DEPENDENCIES 3rdparty_mkl)
+    endif()
     import_3rdparty_library(3rdparty_faiss
         INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
-        LIBRARIES ${FAISS_LIBRARIES}
+        LIBRARIES ${FAISS_LIBRARIES} ${FAISS_EXTRA_LIBRARIES}
         LIB_DIR ${FAISS_LIB_DIR}
     )
-    message(STATUS "FAISS_BLAS_TARGET: ${FAISS_BLAS_TARGET}")
     add_dependencies(3rdparty_faiss ext_faiss)
+    if (FAISS_EXTRA_DEPENDENCIES)
+        add_dependencies(ext_faiss ${FAISS_EXTRA_DEPENDENCIES})
+    endif()
     set(FAISS_TARGET "3rdparty_faiss")
+    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
 

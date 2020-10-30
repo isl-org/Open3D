@@ -133,8 +133,8 @@ The kernels implemented so far, and the notation has been inspired by the
 publication: **"Analysis of Robust Functions for Registration Algorithms"**, by
 Philippe Babin et al.
 
-For more information please also see: **“Adaptive Robust Kernels for
-Non-Linear Least Squares Problems”**, by Nived Chebrolu et al.
+For more information please also see: **"Adaptive Robust Kernels for
+Non-Linear Least Squares Problems"**, by Nived Chebrolu et al.
 )");
     rk.def("weight", &RobustKernel::Weight, "residual"_a,
            "Obtain the weight for the given residual according to the "

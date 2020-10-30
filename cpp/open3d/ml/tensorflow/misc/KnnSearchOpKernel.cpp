@@ -145,7 +145,7 @@ public:
             // combine results
             int64_t neighbors_index_size = 0;
             int64_t neighbors_distance_size = 0;
-            for (const auto a : output_allocators) {
+            for (const auto& a : output_allocators) {
                 neighbors_index_size += a.index.size();
                 neighbors_distance_size += a.distance.size();
             }

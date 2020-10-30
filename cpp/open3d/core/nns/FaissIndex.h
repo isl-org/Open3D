@@ -30,6 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 
+// Forward declarations.
 namespace faiss {
 struct Index;
 namespace gpu {
