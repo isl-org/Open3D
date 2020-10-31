@@ -1019,7 +1019,6 @@ if(USE_BLAS)
 
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         import_3rdparty_library(3rdparty_openblas
-            PUBLIC
             INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
             LIB_DIR      ${OPENBLAS_LIB_DIR}
             LIBRARIES    ${OPENBLAS_LIBRARIES}
@@ -1032,9 +1031,8 @@ if(USE_BLAS)
                                 ${CUDA_cusolver_LIBRARY}
                                 ${CUDA_CUBLAS_LIBRARIES})
         endif()
-        list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${OPENBLAS_TARGET}")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
     endif()
-    set(FAISS_BLAS_TARGET ${OPENBLAS_TARGET})
 else()
     include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
     # MKL, cuSOLVER, cuBLAS
@@ -1042,7 +1040,6 @@ else()
     # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
     message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
     import_3rdparty_library(3rdparty_mkl
-        PUBLIC
         INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
         LIB_DIR      ${STATIC_MKL_LIB_DIR}
         LIBRARIES    ${STATIC_MKL_LIBRARIES}
@@ -1065,8 +1062,7 @@ else()
     elseif(MSVC)
         target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
     endif()
-    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${MKL_TARGET}")
-    set(FAISS_BLAS_TARGET ${MKL_TARGET})
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
 
 # Faiss
