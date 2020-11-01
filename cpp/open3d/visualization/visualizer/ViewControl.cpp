@@ -188,6 +188,34 @@ bool ViewControl::ConvertToPinholeCameraParameters(
     return true;
 }
 
+bool ViewControl::ConvertFromArbitraryPinholeCameraParameters(
+        const camera::PinholeCameraParameters &parameters) {
+    auto intrinsic = parameters.intrinsic_;
+    auto extrinsic = parameters.extrinsic_;
+
+    double tan_half_fov =
+            (double)window_height_ / (intrinsic.intrinsic_matrix_(1, 1) * 2.0);
+    double fov_rad = std::atan(tan_half_fov) * 2.0;
+    field_of_view_ = fov_rad * 180.0 / M_PI;
+
+    right_ = extrinsic.block<1, 3>(0, 0).transpose();
+    up_ = -extrinsic.block<1, 3>(1, 0).transpose();
+    front_ = -extrinsic.block<1, 3>(2, 0).transpose();
+    eye_ = extrinsic.block<3, 3>(0, 0).inverse() *
+           (extrinsic.block<3, 1>(0, 3) * -1.0);
+
+    auto bb_center = bounding_box_.GetCenter();
+    double ideal_distance = std::abs((eye_ - bb_center).dot(front_));
+    double ideal_zoom = ideal_distance *
+                        std::tan(field_of_view_ * 0.5 / 180.0 * M_PI) /
+                        bounding_box_.GetMaxExtent();
+    zoom_ = ideal_zoom;
+    view_ratio_ = zoom_ * bounding_box_.GetMaxExtent();
+    distance_ = view_ratio_ / std::tan(field_of_view_ * 0.5 / 180.0 * M_PI);
+    lookat_ = eye_ - front_ * distance_;
+    return true;
+}
+
 bool ViewControl::ConvertFromPinholeCameraParameters(
         const camera::PinholeCameraParameters &parameters) {
     auto intrinsic = parameters.intrinsic_;

@@ -81,6 +81,17 @@ public:
     /// \param parameters The pinhole camera parameter to convert to.
     bool ConvertToPinholeCameraParameters(
             camera::PinholeCameraParameters &parameters);
+
+    /// Function to get view controller from arbitrary pinhole camera
+    /// parameters. In this function, it is responsibility of the users to
+    /// verify the validity of the parameters, in contrast to
+    /// ConvertFromPinholeCameraParameters() function. This can be useful to
+    /// render images or depthmaps without any restriction in FOV, zoom, etc.
+    ///
+    /// \param parameters The pinhole camera parameter to convert from.
+    bool ConvertFromArbitraryPinholeCameraParameters(
+            const camera::PinholeCameraParameters &parameters);
+
     /// Function to get view controller from pinhole camera parameters.
     ///
     /// \param parameters The pinhole camera parameter to convert from.
