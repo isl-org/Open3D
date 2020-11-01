@@ -28,6 +28,7 @@
 
 #include "pybind/open3d_pybind.h"
 #include "pybind/t/geometry/geometry.h"
+#include "pybind/t/io/io.h"
 
 namespace open3d {
 namespace t {
@@ -35,6 +36,7 @@ namespace t {
 void pybind_t(py::module& m) {
     py::module m_submodule = m.def_submodule("t");
     geometry::pybind_geometry(m_submodule);
+    io::pybind_io(m_submodule);
 }
 
 }  // namespace t

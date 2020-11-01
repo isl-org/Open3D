@@ -79,6 +79,7 @@ def multiscale_icp(source,
                 result_icp = o3d.pipelines.registration.registration_colored_icp(
                     source_down, target_down, voxel_size[scale],
                     current_transformation,
+                    TransformationEstimationForColoredICP(),
                     o3d.pipelines.registration.ICPConvergenceCriteria(
                         relative_fitness=1e-6,
                         relative_rmse=1e-6,

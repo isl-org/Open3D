@@ -51,8 +51,8 @@ from open3d._build_config import _build_config
 if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
                                        _find_library('c++')):
     try:  # Preload libc++.so and libc++abi.so (required by filament)
-        _CDLL(next((_Path(__file__).parent).glob('*c++abi*')))
-        _CDLL(next((_Path(__file__).parent).glob('*c++*')))
+        _CDLL(next((_Path(__file__).parent).glob('*c++abi.*')))
+        _CDLL(next((_Path(__file__).parent).glob('*c++.*')))
     except StopIteration:  # Not found: check system paths while loading
         pass
 
@@ -108,3 +108,4 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
 if 'OPEN3D_ML_ROOT' in os.environ:
     print('Using external Open3D-ML in {}'.format(os.environ['OPEN3D_ML_ROOT']))
     sys.path.append(os.environ['OPEN3D_ML_ROOT'])
+import open3d.ml

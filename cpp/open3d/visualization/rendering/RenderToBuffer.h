@@ -50,12 +50,17 @@ public:
 
     virtual ~RenderToBuffer() = default;
 
-    virtual void SetDimensions(std::uint32_t width, std::uint32_t height) = 0;
-    virtual void CopySettings(const View* view) = 0;
-    virtual View& GetView() = 0;
     // BufferReadyCallback does not need to free Buffer::bytes.
     // It should also not cache the pointer.
-    virtual void RequestFrame(Scene* scene, BufferReadyCallback cb) = 0;
+    virtual void Configure(const View* view,
+                           Scene* scene,
+                           int width,
+                           int height,
+                           BufferReadyCallback cb) = 0;
+    virtual void SetDimensions(std::uint32_t width, std::uint32_t height) = 0;
+    virtual View& GetView() = 0;
+
+    virtual void Render() = 0;
 };
 
 }  // namespace rendering

@@ -29,7 +29,10 @@
 #include <Eigen/Core>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
+
+#include "open3d/pipelines/registration/RobustKernel.h"
 
 namespace open3d {
 
@@ -133,6 +136,12 @@ public:
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
 
+    /// \brief Constructor that takes as input a RobustKernel \params kernel Any
+    /// of the implemented statistical robust kernel for outlier rejection.
+    explicit TransformationEstimationPointToPlane(
+            std::shared_ptr<RobustKernel> kernel)
+        : kernel_(std::move(kernel)) {}
+
 public:
     TransformationEstimationType GetTransformationEstimationType()
             const override {
@@ -145,6 +154,10 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
+
+public:
+    /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
+    std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
 
 private:
     const TransformationEstimationType type_ =

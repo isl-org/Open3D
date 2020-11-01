@@ -45,6 +45,7 @@ public:
             int row,
             std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
+            std::vector<double> &w,
             const geometry::RGBDImage &source,
             const geometry::RGBDImage &target,
             const geometry::Image &source_xyz,

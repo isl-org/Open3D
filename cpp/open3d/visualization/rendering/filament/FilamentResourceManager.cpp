@@ -60,6 +60,7 @@
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 
 namespace open3d {
@@ -442,6 +443,20 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
     return handle;
 }
 
+SkyboxHandle FilamentResourceManager::CreateColorSkybox(
+        const Eigen::Vector3f& color) {
+    filament::math::float4 fcolor;
+    fcolor.r = color.x();
+    fcolor.g = color.y();
+    fcolor.b = color.z();
+    fcolor.a = 1.0f;
+    auto skybox =
+            filament::Skybox::Builder().showSun(false).color(fcolor).build(
+                    engine_);
+    auto handle = RegisterResource<SkyboxHandle>(engine_, skybox, skyboxes_);
+    return handle;
+}
+
 SkyboxHandle FilamentResourceManager::CreateSkybox(
         const ResourceLoadRequest& request) {
     SkyboxHandle handle;
@@ -672,8 +687,7 @@ filament::Texture* FilamentResourceManager::LoadFilledTexture(
 
 void FilamentResourceManager::LoadDefaults() {
     // FIXME: Move to precompiled resource blobs
-    const std::string resource_root =
-            gui::Application::GetInstance().GetResourcePath();
+    const std::string& resource_root = EngineInstance::GetResourcePath();
 
     const auto texture_path = resource_root + "/defaultTexture.png";
     auto texture_img = io::CreateImageFromFile(texture_path);

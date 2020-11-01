@@ -26,6 +26,8 @@ Open3D: A Modern Library for 3D Data Processing
     compilation
     cpp_project
     builddocs
+    open3d_ml
+    arm
 
 
 .. toctree::
@@ -67,6 +69,7 @@ Open3D: A Modern Library for 3D Data Processing
     python_api/open3d.core
     python_api/open3d.geometry
     python_api/open3d.io
+    python_api/open3d.t
     python_api/open3d.ml
     python_api/open3d.pipelines
     python_api/open3d.utility

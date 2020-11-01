@@ -880,6 +880,17 @@ if(BUILD_GUI)
                 endif()
             endif()
         endif()
+        # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
+        # libraries are located at /usr/lib/llvm-{version}/lib, and the default
+        # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
+        # /usr/lib/aarch64-linux-gnu.
+        # For aarch64, the symbolic link path may not work for CMake's
+        # find_library. Therefore, when compiling Filament from source, we
+        # explicitly find the corresponidng path based on the clang version.
+        execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
+        if(clang_version MATCHES "clang version ([0-9]+)")
+            set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+        endif()
         include(${Open3D_3RDPARTY_DIR}/filament/filament_build.cmake)
     else()
         message(STATUS "Using prebuilt third-party library Filament")
@@ -901,14 +912,28 @@ if(BUILD_GUI)
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
     target_link_libraries(3rdparty_filament INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
     if(UNIX AND NOT APPLE)
-        find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
-            llvm-11/lib llvm-10/lib llvm-9/lib llvm-8/lib llvm-7/lib
-            REQUIRED)
-        get_filename_component(CPP_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
-        find_library(CPP_LIBRARY c++ PATHS ${CPP_LIBDIR} REQUIRED)
+        # Find CLANG_LIBDIR if it is not defined. Mutiple paths will be searched.
+        if (NOT CLANG_LIBDIR)
+            find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+                         llvm-11/lib llvm-10/lib llvm-9/lib llvm-8/lib llvm-7/lib
+                         REQUIRED)
+            get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
+        endif()
+        # Find clang libraries at the exact path ${CLANG_LIBDIR}.
+        find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+        find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+        if(CPP_LIBRARY-NOTFOUND)
+            message(FATAL_ERROR "CPP_LIBRARY-NOTFOUND")
+        endif()
+        if(CPPABI_LIBRARY-NOTFOUND)
+            message(FATAL_ERROR "CPPABI_LIBRARY-NOTFOUND")
+        endif()
         # Ensure that libstdc++ gets linked first
         target_link_libraries(3rdparty_filament INTERFACE -lstdc++
-            ${CPP_LIBRARY} ${CPPABI_LIBRARY})
+                              ${CPP_LIBRARY} ${CPPABI_LIBRARY})
+        message(STATUS "CLANG_LIBDIR: ${CLANG_LIBDIR}")
+        message(STATUS "CPP_LIBRARY: ${CPP_LIBRARY}")
+        message(STATUS "CPPABI_LIBRARY: ${CPPABI_LIBRARY}")
     endif()
     if (APPLE)
         find_library(CORE_VIDEO CoreVideo)
@@ -990,11 +1015,13 @@ if(USE_BLAS)
     else()
         # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
         message(STATUS "Building OpenBLAS with LAPACK from source")
+        set(BLAS_BUILD_FROM_SOURCE ON)
+
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         import_3rdparty_library(3rdparty_openblas
             INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
-            LIB_DIR ${OPENBLAS_LIB_DIR}
-            LIBRARIES ${OPENBLAS_LIBRARIES}
+            LIB_DIR      ${OPENBLAS_LIB_DIR}
+            LIBRARIES    ${OPENBLAS_LIBRARIES}
         )
         set(OPENBLAS_TARGET "3rdparty_openblas")
         add_dependencies(3rdparty_openblas ext_openblas)
@@ -1037,3 +1064,37 @@ else()
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
+
+# Faiss
+if (WITH_FAISS AND WIN32)
+    message(STATUS "Faiss is not supported on Windows")
+    set(WITH_FAISS OFF)
+elseif(WITH_FAISS)
+    message(STATUS "Building third-party library faiss from source")
+    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
+endif()
+if (WITH_FAISS)
+    message(STATUS "FAISS_INCLUDE_DIR: ${FAISS_INCLUDE_DIR}")
+    message(STATUS "FAISS_LIB_DIR: ${FAISS_LIB_DIR}")
+    if (USE_BLAS)
+        if (BLAS_BUILD_FROM_SOURCE)
+            set(FAISS_EXTRA_DEPENDENCIES 3rdparty_openblas)
+        endif()
+    else()
+        set(FAISS_EXTRA_LIBRARIES ${STATIC_MKL_LIBRARIES})
+        set(FAISS_EXTRA_DEPENDENCIES 3rdparty_mkl)
+    endif()
+    import_3rdparty_library(3rdparty_faiss
+        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
+        LIBRARIES ${FAISS_LIBRARIES} ${FAISS_EXTRA_LIBRARIES}
+        LIB_DIR ${FAISS_LIB_DIR}
+    )
+    add_dependencies(3rdparty_faiss ext_faiss)
+    if (FAISS_EXTRA_DEPENDENCIES)
+        add_dependencies(ext_faiss ${FAISS_EXTRA_DEPENDENCIES})
+    endif()
+    set(FAISS_TARGET "3rdparty_faiss")
+    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
+

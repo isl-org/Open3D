@@ -155,6 +155,13 @@ FilamentScene::FilamentScene(filament::Engine& engine,
     : Scene(renderer), engine_(engine), resource_mgr_(resource_mgr) {
     scene_ = engine_.createScene();
     CreateSunDirectionalLight();
+
+    // Create initial color skybox...
+    auto skybox_handle = resource_mgr_.CreateColorSkybox({1.0f, 1.0f, 1.0f});
+    auto wskybox = resource_mgr_.GetSkybox(skybox_handle);
+    if (auto skybox = wskybox.lock()) {
+        color_skybox_ = wskybox;
+    }
 }
 
 FilamentScene::~FilamentScene() {}
@@ -1218,7 +1225,11 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
     auto wskybox = resource_mgr_.GetSkybox(sky);
     if (auto skybox = wskybox.lock()) {
         skybox_ = wskybox;
-        if (skybox_enabled_) scene_->setSkybox(skybox.get());
+        if (skybox_enabled_) {
+            scene_->setSkybox(skybox.get());
+        } else {
+            scene_->setSkybox(color_skybox_.lock().get());
+        }
     }
 
     return true;
@@ -1276,9 +1287,29 @@ void FilamentScene::ShowSkybox(bool show) {
                 scene_->setSkybox(skybox.get());
             }
         } else {
-            scene_->setSkybox(nullptr);
+            if (auto skybox = color_skybox_.lock()) {
+                scene_->setSkybox(skybox.get());
+            } else {
+                scene_->setSkybox(nullptr);
+            }
         }
         skybox_enabled_ = show;
+    }
+}
+
+void FilamentScene::SetBackgroundColor(const Eigen::Vector4f& color) {
+    if (auto skybox = color_skybox_.lock()) {
+        filament::math::float4 fcolor;
+        fcolor.r = color.x();
+        fcolor.g = color.y();
+        fcolor.b = color.z();
+        fcolor.a = color.w();
+        skybox->setColor(fcolor);
+        if (!skybox_enabled_) {
+            if (auto skybox = color_skybox_.lock()) {
+                scene_->setSkybox(skybox.get());
+            }
+        }
     }
 }
 
@@ -1301,11 +1332,9 @@ void ReadPixelsCallback(void* buffer, size_t buffer_size, void* user) {
 }
 
 void FilamentScene::RenderToImage(
-        int width,
-        int height,
         std::function<void(std::shared_ptr<geometry::Image>)> callback) {
     auto view = views_.begin()->second.view.get();
-    renderer_.RenderToImage(width, height, view, this, callback);
+    renderer_.RenderToImage(view, this, callback);
 }
 
 std::vector<FilamentScene::RenderableGeometry*> FilamentScene::GetGeometry(

@@ -22,10 +22,6 @@ requirements:
         - notebook
         - numpy
 
-test:
-    script:
-        - test_import.py
-
 about:
     home: @PROJECT_HOME@
     license: MIT
