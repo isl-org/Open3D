@@ -111,9 +111,10 @@ void pybind_viewcontrol(py::module &m) {
                  "Set the zoom of the visualizer", "zoom"_a);
     docstring::ClassMethodDocInject(m, "ViewControl", "change_field_of_view",
                                     map_view_control_docstrings);
-    docstring::ClassMethodDocInject(m, "ViewControl",
-                                    "convert_from_arbitrary_pinhole_camera_parameters",
-                                    map_view_control_docstrings);
+    docstring::ClassMethodDocInject(
+            m, "ViewControl",
+            "convert_from_arbitrary_pinhole_camera_parameters",
+            map_view_control_docstrings);
     docstring::ClassMethodDocInject(m, "ViewControl",
                                     "convert_from_pinhole_camera_parameters",
                                     map_view_control_docstrings);
