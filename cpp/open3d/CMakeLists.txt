@@ -64,7 +64,7 @@ open3d_link_3rdparty_libraries(${PROJECT_NAME})
 if(X11_TARGET)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${X11_TARGET})
 endif()
-if(UNIX)
+if(UNIX AND NOT APPLE)
     # Required for headless which is supported only on Linux
     target_link_libraries(${PROJECT_NAME} PRIVATE EGL)
 endif()
