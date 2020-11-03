@@ -29,6 +29,7 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "open3d/io/PointCloudIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
@@ -45,6 +46,7 @@ static const std::unordered_map<
                            const open3d::io::ReadPointCloudOption &)>>
         file_extension_to_pointcloud_read_function{
                 {"xyzi", ReadPointCloudFromXYZI},
+                {"ply", ReadPointCloudFromPLY},
         };
 
 static const std::unordered_map<
@@ -75,21 +77,25 @@ bool ReadPointCloud(const std::string &filename,
 
     utility::LogDebug("Format {} File {}", params.format, filename);
 
+    bool success = false;
     auto map_itr = file_extension_to_pointcloud_read_function.find(format);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-        utility::LogWarning(
-                "Read geometry::PointCloud failed: unknown file extension "
-                "for "
-                "{} (format: {}).",
-                filename, params.format);
-        return false;
-    }
-    bool success = map_itr->second(filename, pointcloud, params);
-    utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
-                      (int)pointcloud.GetPoints().GetSize());
-    if (params.remove_nan_points || params.remove_infinite_points) {
-        utility::LogError("Unimplemented");
-        return false;
+        open3d::geometry::PointCloud legacy_pointcloud;
+        success =
+                open3d::io::ReadPointCloud(filename, legacy_pointcloud, params);
+        if (!success) return false;
+        pointcloud = geometry::PointCloud::FromLegacyPointCloud(
+                legacy_pointcloud, core::Dtype::Float64);
+    } else {
+        success = map_itr->second(filename, pointcloud, params);
+        utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
+                          (int)pointcloud.GetPoints().GetSize());
+        if (params.remove_nan_points || params.remove_infinite_points) {
+            utility::LogError(
+                    "remove_nan_points and remove_infinite_points options are "
+                    "unimplemented.");
+            return false;
+        }
     }
     return success;
 }
@@ -124,12 +130,8 @@ bool WritePointCloud(const std::string &filename,
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     auto map_itr = file_extension_to_pointcloud_write_function.find(format);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
-        utility::LogWarning(
-                "Write geometry::PointCloud failed: unknown file extension "
-                "{} "
-                "for file {}.",
-                format, filename);
-        return false;
+        return open3d::io::WritePointCloud(
+                filename, pointcloud.ToLegacyPointCloud(), params);
     }
 
     bool success = map_itr->second(filename, pointcloud, params);

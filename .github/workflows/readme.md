@@ -162,23 +162,47 @@ used for running CI.
 
 ## C. Ccache strategy
 
-- Typically, a build generates ~500MB cache. A build with Filament compiled from
-  source generates ~600MB cache.
-- Typically, regular X86 Ubuntu and macOS builds take about 40 mins without
-  caching.
-- The bottleneck of the CI is in the ARM build since it runs on a simulator.
-  When building Filament from source, the build time can exceed GitHub's 6-hour
-  limit if caching is not properly activated. With proper caching and good cache
-  hit rate, the ARM build job can run within 1 hour.
-- **The priority is to prevent the ARM cache from being evicted.** This is
-  especially important, when multiple commits are submitted to CI within a short
-  period. In this case, the fast-building jobs will finish, and each commit will
-  generate a cache entry. When the caches add up, they may exceed GitHub's 5GB
-  total cache size limit, thus the ARM cache, being the oldest one, may be
-  evicted.
-- Therefore, we explicitly control the cache size of other build jobs to be
-  **100MB**. These will lead to a 20% (100/500) cache hit rate even under the
-  ideal scenario. However, this is acceptable since the GPU CIs on Google Cloud
-  take 30-40 as well.
-- We also keep the cache size for ARM builds relatively small -- at **700MB**,
-  it is roughly just enough to save one version of the cache.
+-   Typically, a build generates ~500MB cache. A build with Filament compiled from
+    source generates ~600MB cache.
+
+-   Typically, regular X86 Ubuntu and macOS builds take about 40 mins without
+    caching.
+
+-   The bottleneck of the CI is in the ARM build since it runs on a simulator.
+    When building Filament from source, the build time can exceed GitHub's 6-hour
+    limit if caching is not properly activated. With proper caching and good cache
+    hit rate, the ARM build job can run within 1 hour.
+
+-   **The priority is to prevent the ARM cache from being evicted.** This is
+    especially important, when multiple commits are submitted to CI within a short
+    period. In this case, the fast-building jobs will finish, and each commit will
+    generate a cache entry. When the caches add up, they may exceed GitHub's 5GB
+    total cache size limit, thus the ARM cache, being the oldest one, may be
+    evicted.
+
+-   We explicitly control the cache size of other build jobs to be **500MB**.
+
+-   We also keep the cache size for ARM builds relatively small -- at **700MB**,
+    it is roughly just enough to save one version of the cache.
+
+## D. Development wheels for user testing
+
+### Google Cloud storage
+
+Follow instructions in A. Documentation deployment to setup a Google cloud
+bucket with:
+
+-   Project: open3d-dev
+-   Service account: open3d-ci-sa-gpu
+-   Bucket name: open3d-ci-sa-gpu
+-   Public read permissions
+-   One week object lifecycle
+
+```bash
+gsutil mb -p open3d-dev -c STANDARD -l US -b on gs://open3d-releases-master
+gsutil acl ch -u AllUsers:R gs://open3d-releases-master
+gsutil lifecycle set gcs.lifecycle.json gs:/open3d-releases-master
+gsutil iam ch \
+    serviceAccount:open3d-ci-sa-gpu@open3d-dev.iam.gserviceaccount.com:objectAdmin \
+    gs://open3d-releases-master
+```

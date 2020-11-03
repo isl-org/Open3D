@@ -22,17 +22,20 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 CUDA_VERSION=("10-1" "10.1")
 CUDNN_MAJOR_VERSION=7
 CUDNN_VERSION="7.6.5.32-1+cuda10.1"
-TENSORFLOW_VER="2.3.0"
+TENSORFLOW_VER="2.3.1"
 TORCH_CUDA_GLNX_VER="1.6.0+cu101"
 TORCH_CPU_GLNX_VER="1.6.0+cpu"
 TORCH_MACOS_VER="1.6.0"
 YAPF_VER="0.30.0"
-PIP_VER="20.2.2"
+PIP_VER="20.2.4"
 WHEEL_VER="0.35.1"
+STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
-SCIPY_VER="1.4.1" # Needed by Tensorflow 2.3.0
+SCIPY_VER="1.4.1"
+CONDA_BUILD_VER="3.20.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
+OPEN3D_SOURCE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. >/dev/null 2>&1 && pwd )"
 
 install_cuda_toolkit() {
 
@@ -106,9 +109,12 @@ install_cuda_toolkit() {
 install_python_dependencies() {
 
     echo "Installing Python dependencies"
-    python -m pip install --upgrade pip=="$PIP_VER"
-    python -m pip install -U wheel=="$WHEEL_VER"
     options="$(echo "$@" | tr ' ' '|')"
+    if [[ "with-conda" =~ ^($options)$ ]]; then
+        conda install conda-build="$CONDA_BUILD_VER" -y
+    fi
+    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
+        setuptools=="$STOOLS_VER"
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
         python -m pip install -U pytest=="$PYTEST_VER"
         python -m pip install -U scipy=="$SCIPY_VER"
@@ -178,24 +184,38 @@ build_all() {
     echo
 }
 
-build_wheel() {
-
+build_pip_conda_package() {
+    # Usage:
+    #   build_pip_conda_package            # Default, build both pip and conda
+    #   build_pip_conda_package both       # Build both pip and conda
+    #   build_pip_conda_package pip        # Build pip only
+    #   build_pip_conda_package conda      # Build conda only
     echo "Building Open3D wheel"
+
+    BUILD_FILAMENT_FROM_SOURCE=OFF
+    set +u
+    if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
+        echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
+        # the build system of the main repo expects a master branch. make sure master exists
+        git -C "${OPEN3D_ML_ROOT}" checkout -b master || true
+        BUNDLE_OPEN3D_ML=ON
+    else
+        echo "Open3D-ML not available."
+        BUNDLE_OPEN3D_ML=OFF
+    fi
+    if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+        DEVELOPER_BUILD="ON"
+    else
+        echo "Building for a new Open3D release"
+    fi
+    set -u
+
     echo
     echo Building with CPU only...
     mkdir -p build
     cd build # PWD=Open3D/build
-
-    # BUILD_FILAMENT_FROM_SOURCE if Linux and old glibc (Ubuntu 18.04)
-    BUILD_FILAMENT_FROM_SOURCE=OFF
-    #if [[ "$OSTYPE" == linux-gnu* ]]; then
-    #    glibc_version=$(ldd --version | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
-    #    if dpkg --compare-versions "$glibc_version" lt 2.31; then
-    #        BUILD_FILAMENT_FROM_SOURCE=ON
-    #    fi
-    #fi
-
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF
+        -DDEVELOPER_BUILD="$DEVELOPER_BUILD"
         -DBUILD_TENSORFLOW_OPS=ON
         -DBUILD_PYTORCH_OPS=ON
         -DBUILD_RPC_INTERFACE=ON
@@ -206,6 +226,7 @@ build_wheel() {
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_UNIT_TESTS=OFF
         -DBUILD_BENCHMARKS=OFF
+        -DBUNDLE_OPEN3D_ML="$BUNDLE_OPEN3D_ML"
     )
     cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
     echo
@@ -213,7 +234,7 @@ build_wheel() {
 
     if [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
-        echo Installing CUDA versions of Tensorflow and PyTorch...
+        echo Installing CUDA versions of TensorFlow and PyTorch...
         install_python_dependencies with-cuda purge-cache
         echo
         echo Building with CUDA...
@@ -224,28 +245,73 @@ build_wheel() {
         cmake -DBUILD_CUDA_MODULE=ON -DCUDA_ARCH=BasicPTX "${cmakeOptions[@]}" ..
     fi
     echo
-    echo "Packaging Open3D wheel..."
-    make VERBOSE=1 -j"$NPROC" pip-package
+
+    options="$(echo "$@" | tr ' ' '|')"
+    if [[ "pip" =~ ^($options)$ ]]; then
+        echo "Packaging Open3D pip package..."
+        make VERBOSE=1 -j"$NPROC" pip-package
+    elif [[ "conda" =~ ^($options)$ ]]; then
+        echo "Packaging Open3D conda package..."
+        make VERBOSE=1 -j"$NPROC" conda-package
+    else
+        echo "Packaging Open3D pip and conda package..."
+        make VERBOSE=1 -j"$NPROC" pip-conda-package
+    fi
     cd .. # PWD=Open3D
 }
 
-install_wheel() {
-    echo
-    echo "Installing Open3D wheel..."
-    python -m pip install open3d -f lib/python_package/pip_package/
-}
-
+# Test wheel in blank virtual environment
+# Usage: test_wheel wheel_path
 test_wheel() {
+    wheel_path="$1"
+    python -m venv open3d_test.venv
+    source open3d_test.venv/bin/activate
+    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
+        setuptools=="$STOOLS_VER"
+    echo "Installing Open3D wheel $wheel_path in virtual environment..."
+    python -m pip install "$wheel_path"
     python -c "import open3d; print('Installed:', open3d)"
     python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+    echo
+    # echo "Dynamic libraries used:"
+    # DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
+    # if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    #     find "$DLL_PATH"/{cpu,cuda}/ -type f -print -execdir ldd {} \;
+    # elif [[ "$OSTYPE" == "darwin"* ]]; then
+    #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
+    # fi
+    echo
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
+        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
         python -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
+        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
         python -c \
-            "import open3d.ml.tf.ops; print('Tensorflow Ops library loaded:', open3d.ml.tf.ops)"
+            "import open3d.ml.tf.ops; print('TensorFlow Ops library loaded:', open3d.ml.tf.ops)"
     fi
+    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] && [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+        echo "importing in the reversed order"
+        python -c "import tensorflow as tf; import open3d.ml.torch as o3d"
+        echo "importing in the normal order"
+        python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
+    fi
+    deactivate
+}
+
+# Run in virtual environment
+run_python_tests() {
+    source open3d_test.venv/bin/activate
+    python -m pip install -U pytest=="$PYTEST_VER"
+    python -m pip install -U scipy=="$SCIPY_VER"
+    pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
+    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
+        echo Testing ML Ops disabled
+        pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
+    fi
+    python -m pytest "${pytest_args[@]}"
+    deactivate
 }
 
 # Use: run_unit_tests
@@ -254,15 +320,6 @@ run_cpp_unit_tests() {
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     ./bin/tests "$unitTestFlags"
     echo
-}
-
-run_python_tests() {
-    pytest_args=(../python/test/)
-    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-        echo Testing ML Ops disabled
-        pytest_args+=(--ignore ../python/test/ml_ops/)
-    fi
-    python -m pytest "${pytest_args[@]}"
 }
 
 # test_cpp_example runExample

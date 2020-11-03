@@ -54,23 +54,23 @@ Development version (pip)
 To test the latest features in Open3D, download and install the development
 version (``HEAD`` of ``master`` branch):
 
-:Linux: `Python 3.6 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-linux_x86_64.whl>`__
-        `Python 3.7 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-linux_x86_64.whl>`__
-        `Python 3.8 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-linux_x86_64.whl>`__
+:Linux: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-linux_x86_64.whl>`__
+        `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-linux_x86_64.whl>`__
+        `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-linux_x86_64.whl>`__
 
-:MacOS: `Python 3.6 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-macosx_10_14_x86_64.whl>`__
-        `Python 3.7 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_14_x86_64.whl>`__
-        `Python 3.8 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_10_14_x86_64.whl>`__
+:MacOS: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-macosx_10_9_x86_64.whl>`__
+        `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_9_x86_64.whl>`__
+        `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_10_9_x86_64.whl>`__
 
-:Windows: `Python 3.6 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-win_amd64.whl>`__
-        `Python 3.7 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-win_amd64.whl>`__
-        `Python 3.8 <https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
+:Windows: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-win_amd64.whl>`__
+        `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-win_amd64.whl>`__
+        `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
 
-For example, to install the latest development version on Linux for Python 3.8:
+Please use these links from the `latest version of this page <http://www.open3d.org/docs/latest/getting_started.html>`__ only. For example, to install the latest development version on Linux for Python 3.8:
 
 .. code-block:: bash
 
-    pip install --user --pre https://storage.googleapis.com/open3d-releases/master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-linux_x86_64.whl
+    pip install --user --pre https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-linux_x86_64.whl
 
 
 Conda

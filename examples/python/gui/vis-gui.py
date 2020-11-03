@@ -197,7 +197,8 @@ class AppWindow:
         resource_path = gui.Application.instance.resource_path
         self.settings.new_ibl_name = resource_path + "/" + AppWindow.DEFAULT_IBL
 
-        self.window = gui.Window("Open3D", width, height)
+        self.window = gui.Application.instance.create_window(
+            "Open3D", width, height)
         w = self.window  # to make the code more concise
 
         # 3D widget
@@ -459,7 +460,7 @@ class AppWindow:
             self.settings.bg_color.red, self.settings.bg_color.green,
             self.settings.bg_color.blue, self.settings.bg_color.alpha
         ]
-        self.window.renderer.set_clear_color(bg_color)
+        self._scene.scene.set_background_color(bg_color)
         self._scene.scene.show_skybox(self.settings.show_skybox)
         self._scene.scene.show_axes(self.settings.show_axes)
         if self.settings.new_ibl_name is not None:
@@ -742,11 +743,17 @@ class AppWindow:
             self._scene.setup_camera(60, bounds, bounds.get_center())
 
     def export_image(self, path, width, height):
+        img = None
 
-        def _on_image(image):
-            o3d.io.write_image(path, image, 100)
+        def on_image(image):
+            img = image
 
-        self._scene.scene.scene.render_to_image(width, height, _on_image)
+            quality = 9  # png
+            if path.endswith(".jpg"):
+                quality = 100
+            o3d.io.write_image(path, img, quality)
+
+        self._scene.scene.scene.render_to_image(on_image)
 
 
 def main():
@@ -755,9 +762,6 @@ def main():
     gui.Application.instance.initialize()
 
     w = AppWindow(1024, 768)
-
-    # Add the window to the applicaiton, which will make it visible
-    gui.Application.instance.add_window(w.window)
 
     if len(sys.argv) > 1:
         path = sys.argv[1]

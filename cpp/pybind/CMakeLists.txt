@@ -52,6 +52,11 @@ if (NOT BUILD_RPC_INTERFACE)
         )
 endif()
 
+if (NOT WITH_FAISS)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/core/nns/faiss.cpp")
+endif()
+
 # NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
 if ( CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0.0" )
     pybind11_add_module(${PACKAGE_NAME} NO_EXTRAS
@@ -82,6 +87,9 @@ if (BUILD_AZURE_KINECT)
 endif()
 if (BUILD_GUI)
     target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_GUI)
+endif()
+if (WITH_FAISS)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE WITH_FAISS)
 endif()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
@@ -198,6 +206,7 @@ add_custom_target(python-package
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
             -DBUNDLE_OPEN3D_ML=${BUNDLE_OPEN3D_ML}
+            -DOPEN3D_ML_ROOT=${OPEN3D_ML_ROOT}
             -DBUILD_GUI=${BUILD_GUI}
             -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
@@ -248,13 +257,19 @@ add_custom_target(install-python-package
 #     1) `make install-pip-package` works in conda environment for local build
 #     2) `make conda-package` is mainly for internal use to distribute conda
 add_custom_target(conda-package
-    COMMAND ${CMAKE_COMMAND}
-            -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
-            -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
-            -P ${CMAKE_CURRENT_SOURCE_DIR}/check_and_install_conda_deps.cmake
-    # If we put the following `conda-build` in check_and_install_conda_deps.cmake, it
-    # causes broken pipe problem while running conda build. So we put it here.
     COMMAND conda-build conda_meta --output-folder conda_package
+    COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
+    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
+    DEPENDS python-package
+)
+
+# Make pip and conda package in one command. The python-package target clears
+# the ${PYTHON_PACKAGE_DST_DIR}, so if we make pip and conda package one-by-one,
+# the previous one will be deleted.
+add_custom_target(pip-conda-package
+    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
+    COMMAND conda-build conda_meta --output-folder conda_package
+    COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
     COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package

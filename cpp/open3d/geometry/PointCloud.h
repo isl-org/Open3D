@@ -123,7 +123,7 @@ public:
     /// \brief Function to select points from \p input pointcloud into
     /// \p output pointcloud.
     ///
-    /// Points with indices in \param indices are selected.
+    /// Points with indices in \p indices are selected.
     ///
     /// \param indices Indices of points to be selected.
     /// \param invert Set to `True` to invert the selection of indices.

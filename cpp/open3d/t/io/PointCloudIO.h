@@ -35,6 +35,9 @@ namespace open3d {
 namespace t {
 namespace io {
 
+using open3d::io::ReadPointCloudOption;
+using open3d::io::WritePointCloudOption;
+
 /// Factory function to create a pointcloud from a file
 /// Return an empty pointcloud if fail to read the file.
 std::shared_ptr<geometry::PointCloud> CreatetPointCloudFromFile(
@@ -48,7 +51,7 @@ std::shared_ptr<geometry::PointCloud> CreatetPointCloudFromFile(
 /// \return return true if the read function is successful, false otherwise.
 bool ReadPointCloud(const std::string &filename,
                     geometry::PointCloud &pointcloud,
-                    const open3d::io::ReadPointCloudOption &params = {});
+                    const ReadPointCloudOption &params = {});
 
 /// The general entrance for writing a PointCloud to a file
 /// The function calls write functions based on the extension name of filename.
@@ -56,15 +59,19 @@ bool ReadPointCloud(const std::string &filename,
 /// \return return true if the write function is successful, false otherwise.
 bool WritePointCloud(const std::string &filename,
                      const geometry::PointCloud &pointcloud,
-                     const open3d::io::WritePointCloudOption &params = {});
+                     const WritePointCloudOption &params = {});
 
 bool ReadPointCloudFromXYZI(const std::string &filename,
                             geometry::PointCloud &pointcloud,
-                            const open3d::io::ReadPointCloudOption &params);
+                            const ReadPointCloudOption &params);
 
 bool WritePointCloudToXYZI(const std::string &filename,
                            const geometry::PointCloud &pointcloud,
-                           const open3d::io::WritePointCloudOption &params);
+                           const WritePointCloudOption &params);
+
+bool ReadPointCloudFromPLY(const std::string &filename,
+                           geometry::PointCloud &pointcloud,
+                           const ReadPointCloudOption &params);
 
 }  // namespace io
 }  // namespace t

@@ -92,8 +92,7 @@ FilamentView::FilamentView(filament::Engine& engine,
 
     camera_->SetProjection(90, 4.f / 3.f, 0.01, 1000,
                            Camera::FovType::Horizontal);
-    // Default to MSAA 4x
-    SetSampleCount(4);
+
     discard_buffers_ = View::TargetBuffers::All;
 }
 
@@ -161,6 +160,11 @@ void FilamentView::SetViewport(std::int32_t x,
                                std::uint32_t w,
                                std::uint32_t h) {
     view_->setViewport({x, y, w, h});
+}
+
+std::array<int, 4> FilamentView::GetViewport() const {
+    auto vp = view_->getViewport();
+    return {vp.left, vp.bottom, int(vp.width), int(vp.height)};
 }
 
 void FilamentView::SetSSAOEnabled(const bool enabled) {

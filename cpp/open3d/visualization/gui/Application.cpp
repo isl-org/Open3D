@@ -50,7 +50,10 @@
 #include "open3d/visualization/gui/Task.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Window.h"
+#include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/rendering/View.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 
 namespace {
 
@@ -111,10 +114,10 @@ namespace visualization {
 namespace gui {
 
 struct Application::Impl {
-    std::string resource_path_;
+    bool is_initialized_ = false;
     Theme theme_;
     double last_time_ = 0.0;
-    bool is_GLFW_initalized_ = false;
+    bool is_GLFW_initialized_ = false;
     bool is_running_ = false;
     bool should_quit_ = false;
 
@@ -135,7 +138,7 @@ struct Application::Impl {
     // ----
 
     void InitGLFW() {
-        if (this->is_GLFW_initalized_) {
+        if (is_GLFW_initialized_) {
             return;
         }
 
@@ -147,7 +150,7 @@ struct Application::Impl {
         glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
 #endif
         glfwInit();
-        this->is_GLFW_initalized_ = true;
+        is_GLFW_initialized_ = true;
     }
 
     void PrepareForRunning() {
@@ -155,8 +158,10 @@ struct Application::Impl {
         // (but unlikely) that the run loop finished and is starting again.
         InitGLFW();
 
-        // We don't need to initialize rendering, it will happen automatically
-        // at the appropriate time.
+        // Initialize rendering
+        visualization::rendering::EngineInstance::SelectBackend(
+                visualization::rendering::EngineInstance::RenderingType::
+                        kOpenGL);
     }
 
     void CleanupAfterRunning() {
@@ -171,7 +176,7 @@ struct Application::Impl {
         visualization::rendering::EngineInstance::DestroyInstance();
 
         glfwTerminate();
-        is_GLFW_initalized_ = false;
+        is_GLFW_initialized_ = false;
     }
 };
 
@@ -242,12 +247,6 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.tab_active_color = impl_->theme_.button_active_color;
     impl_->theme_.dialog_border_width = 1;
     impl_->theme_.dialog_border_radius = 10;
-
-    visualization::rendering::EngineInstance::SelectBackend(
-            filament::backend::Backend::OPENGL);
-
-    // Init GLFW here so that we can create windows before running
-    impl_->InitGLFW();
 }
 
 Application::~Application() {}
@@ -269,21 +268,26 @@ void Application::Initialize(int argc, const char *argv[]) {
 }
 
 void Application::Initialize(const char *resource_path) {
-    impl_->resource_path_ = resource_path;
-    if (!utility::filesystem::DirectoryExists(impl_->resource_path_)) {
-        utility::LogError(
-                ("Can't find resource directory: " + impl_->resource_path_)
-                        .c_str());
+    // Prepare for running so that we can create windows. Note that although
+    // Application may be initialized, GLFW/Filament may not be, if we finished
+    // Run() and are calling again.
+    impl_->PrepareForRunning();
+
+    if (impl_->is_initialized_) {
+        return;
     }
-    if (!utility::filesystem::FileExists(impl_->resource_path_ +
-                                         "/ui_blit.filamat")) {
+
+    rendering::EngineInstance::SetResourcePath(resource_path);
+    std::string uiblit_path = std::string(resource_path) + "/ui_blit.filamat";
+    if (!utility::filesystem::FileExists(uiblit_path)) {
         utility::LogError(
-                ("Resource directory does not have Open3D resources: " +
-                 impl_->resource_path_)
-                        .c_str());
+                "Resource directory does not have Open3D resources: {}",
+                resource_path);
     }
-    impl_->theme_.font_path =
-            impl_->resource_path_ + "/" + impl_->theme_.font_path;
+
+    impl_->theme_.font_path = std::string(resource_path) + std::string("/") +
+                              impl_->theme_.font_path;
+    impl_->is_initialized_ = true;
 }
 
 double Application::Now() const { return glfwGetTime(); }
@@ -387,21 +391,23 @@ void Application::Run() {
         ;
 }
 
-bool Application::RunOneTick(EnvUnlocker &unlocker) {
+bool Application::RunOneTick(EnvUnlocker &unlocker,
+                             bool cleanup_if_no_windows /*=true*/) {
     // Initialize if we have not started yet
     if (!impl_->is_running_) {
         // Verify that the resource path is valid. If it is not, display a
         // message box (std::cerr may not be visible to the user, if we were run
         // as app).
-        if (impl_->resource_path_.empty()) {
+        if (!impl_->is_initialized_) {
             ShowNativeAlert(
                     "Internal error: Application::Initialize() was not called");
             return false;
         }
-        if (!utility::filesystem::DirectoryExists(impl_->resource_path_)) {
+        auto resource_path = rendering::EngineInstance::GetResourcePath();
+        if (!utility::filesystem::DirectoryExists(resource_path)) {
             std::stringstream err;
-            err << "Could not find resource directory:\n'"
-                << impl_->resource_path_ << "' does not exist";
+            err << "Could not find resource directory:\n'" << resource_path
+                << "' does not exist";
             ShowNativeAlert(err.str().c_str());
             return false;
         }
@@ -422,20 +428,25 @@ bool Application::RunOneTick(EnvUnlocker &unlocker) {
 
     // Cleanup if we are done
     if (status == RunStatus::DONE) {
-        // Clear all the running tasks. The destructor will wait for them to
-        // finish.
-        for (auto it = impl_->running_tasks_.begin();
-             it != impl_->running_tasks_.end(); ++it) {
-            auto current = it;
-            ++it;
-            impl_->running_tasks_.erase(current);  // calls join()
-        }
+        if (cleanup_if_no_windows) {
+            // Clear all the running tasks. The destructor will wait for them to
+            // finish.
+            for (auto it = impl_->running_tasks_.begin();
+                 it != impl_->running_tasks_.end(); ++it) {
+                auto current = it;
+                ++it;
+                impl_->running_tasks_.erase(current);  // calls join()
+            }
 
-        impl_->is_running_ = false;
-        impl_->CleanupAfterRunning();
+            impl_->is_running_ = false;
+            impl_->CleanupAfterRunning();
+        } else {
+            // reset, otherwise we will be done next time, too.
+            impl_->should_quit_ = false;
+        }
     }
 
-    return impl_->is_running_;
+    return (status == RunStatus::CONTINUE);
 }
 
 Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
@@ -457,7 +468,14 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
 
     // Run any posted functions
     {
+        // The only other place posted_lock_ is used is PostToMainThread.
+        // If pybind is posting a Python function, it acquires posted_lock_,
+        // then locks the GIL. Since we are locked at this point, we (can)
+        // deadlock. (So far only observed on macOS, within about 10 runs)
+        unlocker.unlock();
         std::lock_guard<std::mutex> lock(impl_->posted_lock_);
+        unlocker.relock();
+
         for (auto &p : impl_->posted_) {
             void *old = nullptr;
             if (p.window) {
@@ -499,10 +517,48 @@ void Application::PostToMainThread(Window *window, std::function<void()> f) {
 }
 
 const char *Application::GetResourcePath() const {
-    return impl_->resource_path_.c_str();
+    return rendering::EngineInstance::GetResourcePath().c_str();
 }
 
 const Theme &Application::GetTheme() const { return impl_->theme_; }
+
+std::shared_ptr<geometry::Image> Application::RenderToImage(
+        EnvUnlocker &unlocker,
+        rendering::View *view,
+        rendering::Scene *scene,
+        int width,
+        int height) {
+    std::shared_ptr<geometry::Image> img;
+    auto callback = [&img](std::shared_ptr<geometry::Image> _img) {
+        img = _img;
+    };
+
+    auto render = std::make_shared<rendering::FilamentRenderToBuffer>(
+            rendering::EngineInstance::GetInstance());
+    render->Configure(
+            view, scene, width, height,
+            // the shared_ptr (render) is const unless the lambda
+            // is made mutable
+            [render, callback](
+                    const rendering::RenderToBuffer::Buffer &buffer) mutable {
+                auto image = std::make_shared<geometry::Image>();
+                image->width_ = int(buffer.width);
+                image->height_ = int(buffer.height);
+                image->num_of_channels_ = 3;
+                image->bytes_per_channel_ = 1;
+                image->data_ = std::vector<uint8_t>(buffer.bytes,
+                                                    buffer.bytes + buffer.size);
+                callback(image);
+                render = nullptr;
+            });
+    render->Render();
+
+    while (!img && RunOneTick(unlocker, false)) {
+        render->RenderTick();
+    }
+
+    return img;
+}
 
 }  // namespace gui
 }  // namespace visualization
