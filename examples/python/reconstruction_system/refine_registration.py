@@ -147,7 +147,7 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
         matching_results[s * n_files + t] = \
                 matching_result(s, t, edge.transformation)
 
-    if config["python_multi_threading"].lower() == "true":
+    if config["python_multi_threading"] == True:
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess

@@ -174,7 +174,7 @@ def run(config):
     n_fragments = int(math.ceil(float(n_files) / \
             config['n_frames_per_fragment']))
 
-    if config["python_multi_threading"].lower() == "true":
+    if config["python_multi_threading"] == True:
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess
