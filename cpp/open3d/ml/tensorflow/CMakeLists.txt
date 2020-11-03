@@ -1,8 +1,8 @@
-message(STATUS "Building Tensorflow ops")
+message(STATUS "Building TensorFlow ops")
 
 get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
 if(BUILD_CUDA_MODULE)
-    message(STATUS "Building Tensorflow ops with CUDA")
+    message(STATUS "Building TensorFlow ops with CUDA")
 endif()
 
 find_package(Tensorflow REQUIRED)
@@ -105,7 +105,7 @@ target_compile_definitions(open3d_tf_ops PRIVATE "${open3d_tf_ops_DEFINITIONS}")
 
 # Silence warnings caused by tensorflow's Eigen. Travis has a different version
 # of protobuf in /usr/local/include TBB is in /usr/local/include, so it needs to
-# be after Tensorflow
+# be after TensorFlow
 target_include_directories(open3d_tf_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
     ${Tensorflow_INCLUDE_DIR}

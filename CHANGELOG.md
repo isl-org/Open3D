@@ -1,5 +1,6 @@
 ## Master
 
+* Fixes bug for preloading libc++ and libc++abi in Python
 * Added GUI widgets and model-viewing app
 * Fixes travis for race-condition on macOS
 * Fixes appveyor configuration and to build all branches

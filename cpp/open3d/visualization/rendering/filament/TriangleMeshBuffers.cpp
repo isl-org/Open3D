@@ -228,14 +228,15 @@ std::tuple<vbdata, ibdata> CreateColoredBuffers(
     ibdata index_data;
 
     vertex_data.vertices_count = geometry.vertices_.size();
-    vertex_data.byte_count = vertex_data.vertices_count * sizeof(ColoredVertex);
+    vertex_data.byte_count =
+            vertex_data.vertices_count * sizeof(TexturedVertex);
     vertex_data.bytes_to_copy = vertex_data.byte_count;
     vertex_data.bytes = malloc(vertex_data.byte_count);
 
-    const ColoredVertex kDefault;
-    auto colored_vertices = static_cast<ColoredVertex*>(vertex_data.bytes);
+    const TexturedVertex kDefault;
+    auto vertices = static_cast<TexturedVertex*>(vertex_data.bytes);
     for (size_t i = 0; i < vertex_data.vertices_count; ++i) {
-        ColoredVertex& element = colored_vertices[i];
+        TexturedVertex& element = vertices[i];
 
         SetVertexPosition(element, geometry.vertices_[i]);
         if (tangents != nullptr) {
@@ -406,15 +407,15 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
         orientation->getQuats(float4v_tangents, n_vertices);
     } else {
         utility::LogWarning(
-                "Trying to create mesh without vertex normals. Shading would "
-                "not work correctly. Consider to generate vertex normals "
+                "Trying to create mesh without vertex normals. Shading will"
+                "not work correctly. Consider generating vertex normals "
                 "first.");
     }
 
     // NOTE: Both default lit and unlit material shaders require per-vertex
     // colors so we unconditionally assume the triangle mesh has color.
     const bool has_colors = true;
-    const bool has_uvs = geometry_.HasTriangleUvs();
+    bool has_uvs = geometry_.HasTriangleUvs();
 
     // We take ownership of vbdata.bytes and ibdata.bytes here.
     std::tuple<vbdata, ibdata> buffers_data;
@@ -424,7 +425,8 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
         stride = sizeof(TexturedVertex);
     } else if (has_colors) {
         buffers_data = CreateColoredBuffers(float4v_tangents, geometry_);
-        stride = sizeof(ColoredVertex);
+        stride = sizeof(TexturedVertex);
+        has_uvs = true;
     } else {
         buffers_data = CreatePlainBuffers(float4v_tangents, geometry_);
     }

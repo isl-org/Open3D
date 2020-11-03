@@ -76,8 +76,7 @@ docker-push)
     docker push "$DC_IMAGE_LATEST_TAG"
     ;;
 
-\
-    create-base-vm-image)
+create-base-vm-image)
     gcloud compute instances create "$VM_IMAGE" \
         --zone="${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
         --service-account="$GCE_GPU_CI_SA" \

@@ -363,7 +363,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
                 Eigen::Vector3d vmid = (v0 + v1) / 2;
                 double cost0 = Qbar.Eval(v0);
                 double cost1 = Qbar.Eval(v1);
-                double costmid = Qbar.Eval(vbar);
+                double costmid = Qbar.Eval(vmid);
                 cost = std::min(cost0, std::min(cost1, costmid));
                 if (cost == costmid) {
                     vbar = vmid;
