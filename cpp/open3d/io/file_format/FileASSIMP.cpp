@@ -176,6 +176,7 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
                     face.mIndices[1] + static_cast<int>(current_vidx),
                     face.mIndices[2] + static_cast<int>(current_vidx));
             mesh.triangles_.push_back(facet);
+            mesh.triangle_material_ids_.push_back(assimp_mesh->mMaterialIndex);
         }
 
         if (assimp_mesh->mNormals) {
@@ -210,51 +211,54 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         current_vidx += assimp_mesh->mNumVertices;
     }
 
-    if (scene->mNumMaterials > 1) {
-        utility::LogWarning(
-                "{} has {} materials but only a single material per object is "
-                "currently supported",
-                filename, scene->mNumMaterials);
+    // Now load the materials
+    for (size_t i = 0; i < scene->mNumMaterials; ++i) {
+        auto* mat = scene->mMaterials[i];
+
+        // create material structure to match this name
+        auto& mesh_material =
+                mesh.materials_[std::string(mat->GetName().C_Str())];
+
+        using MaterialParameter =
+                geometry::TriangleMesh::Material::MaterialParameter;
+
+        // Retrieve base material properties
+        aiColor3D color(1.f, 1.f, 1.f);
+
+        mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+        mesh_material.baseColor =
+                MaterialParameter::CreateRGB(color.r, color.g, color.b);
+        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
+                 mesh_material.baseMetallic);
+        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
+                 mesh_material.baseRoughness);
+        // NOTE: We prefer sheen to reflectivity so the following code works
+        // since if sheen is not present it won't modify baseReflectance
+        mat->Get(AI_MATKEY_REFLECTIVITY, mesh_material.baseReflectance);
+        mat->Get(AI_MATKEY_SHEEN, mesh_material.baseReflectance);
+
+        mat->Get(AI_MATKEY_CLEARCOAT_THICKNESS, mesh_material.baseClearCoat);
+        mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS,
+                 mesh_material.baseClearCoatRoughness);
+        mat->Get(AI_MATKEY_ANISOTROPY, mesh_material.baseAnisotropy);
+
+        // Retrieve textures
+        TextureImages maps;
+        LoadTextures(filename, mat, maps);
+        mesh_material.albedo = maps.albedo;
+        mesh_material.normalMap = maps.normal;
+        mesh_material.ambientOcclusion = maps.ao;
+        mesh_material.metallic = maps.metallic;
+        mesh_material.roughness = maps.roughness;
+        mesh_material.reflectance = maps.reflectance;
+
+        // For legacy visualization support
+        if (mesh_material.albedo) {
+            mesh.textures_.push_back(*mesh_material.albedo->FlipVertical());
+        } else {
+            mesh.textures_.push_back(geometry::Image());
+        }
     }
-
-    // Load material data
-    auto* mat = scene->mMaterials[0];
-
-    // create material structure to match this name
-    auto& mesh_material = mesh.materials_[std::string(mat->GetName().C_Str())];
-
-    using MaterialParameter =
-            geometry::TriangleMesh::Material::MaterialParameter;
-
-    // Retrieve base material properties
-    aiColor3D color(1.f, 1.f, 1.f);
-
-    mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-    mesh_material.baseColor =
-            MaterialParameter::CreateRGB(color.r, color.g, color.b);
-    mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
-             mesh_material.baseMetallic);
-    mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
-             mesh_material.baseRoughness);
-    // NOTE: We prefer sheen to reflectivity so the following code works since
-    // if sheen is not present it won't modify baseReflectance
-    mat->Get(AI_MATKEY_REFLECTIVITY, mesh_material.baseReflectance);
-    mat->Get(AI_MATKEY_SHEEN, mesh_material.baseReflectance);
-
-    mat->Get(AI_MATKEY_CLEARCOAT_THICKNESS, mesh_material.baseClearCoat);
-    mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS,
-             mesh_material.baseClearCoatRoughness);
-    mat->Get(AI_MATKEY_ANISOTROPY, mesh_material.baseAnisotropy);
-
-    // Retrieve textures
-    TextureImages maps;
-    LoadTextures(filename, mat, maps);
-    mesh_material.albedo = maps.albedo;
-    mesh_material.normalMap = maps.normal;
-    mesh_material.ambientOcclusion = maps.ao;
-    mesh_material.metallic = maps.metallic;
-    mesh_material.roughness = maps.roughness;
-    mesh_material.reflectance = maps.reflectance;
 
     return true;
 }
