@@ -25,9 +25,10 @@
 // ----------------------------------------------------------------------------
 //
 
+#include "open3d/ml/pytorch/misc/RaggedToDenseOpKernel.h"
+
 #include "open3d/ml/impl/misc/RaggedToDense.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
-#include "open3d/ml/pytorch/misc/RaggedToDenseOpKernel.h"
 #include "torch/script.h"
 
 template <class T>
