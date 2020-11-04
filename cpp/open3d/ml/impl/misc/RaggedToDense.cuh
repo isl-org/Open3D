@@ -26,13 +26,53 @@
 
 #pragma once
 
-#include <tbb/parallel_for.h>
+#include <cub/cub.cuh>
+
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace ml {
 namespace impl {
 
+namespace {
+
+/// Kernel for RaggedToDenseCUDA
+template <class T>
+__global__ void RaggedToDenseCUDAKernel(
+        const T* const __restrict__ values,
+        const int64_t* const __restrict__ row_splits,
+        const size_t row_splits_size,
+        const size_t out_col_size,
+        const T* const __restrict__ default_value,
+        const size_t default_value_size,
+        T* __restrict__ out_values) {
+    const int i = blockDim.x * blockIdx.x + threadIdx.x;
+    if (i >= row_splits_size) return;
+
+    const int64_t start = row_splits[i];
+    const int64_t end = min(int64_t(out_col_size) + start, row_splits[i + 1]);
+
+    T* out_ptr = out_values + i * out_col_size * default_value_size;
+
+    for (int64_t inp_idx = start * default_value_size;
+         inp_idx < end * default_value_size; ++inp_idx, ++out_ptr) {
+        *out_ptr = values[inp_idx];
+    }
+
+    // fill remaining columns with the default value
+    out_ptr = out_values + i * out_col_size * default_value_size;
+    out_ptr = out_ptr + (end - start) * default_value_size;
+    for (int64_t j = end - start; j < out_col_size;
+         ++j, out_ptr += default_value_size) {
+        for (int64_t k = 0; k < default_value_size; ++k) {
+            out_ptr[k] = default_value[k];
+        }
+    }
+}
+}  // namespace
+
 /// Creates a dense tensor from a ragged tensor.
+/// All pointer arguments point to device memory unless stated otherwise.
 ///
 /// Example where each value has size 2:
 ///  values = [[0,0],[1,1],[2,2],[3,3],[4,4]]
@@ -66,36 +106,24 @@ namespace impl {
 ///        be [row_splits_size-1, out_col_size, default_value_size].
 ///
 template <class T>
-void RaggedToDenseCPU(const T* const values,
-                      const int64_t* const row_splits,
-                      const size_t row_splits_size,
-                      const size_t out_col_size,
-                      const T* const default_value,
-                      const size_t default_value_size,
-                      T* out_values) {
-    tbb::parallel_for(
-            tbb::blocked_range<size_t>(0, row_splits_size - 1),
-            [&](const tbb::blocked_range<size_t>& r) {
-                for (int64_t i = r.begin(); i != r.end(); ++i) {
-                    const int64_t start = row_splits[i];
-                    const int64_t end = std::min(int64_t(out_col_size) + start,
-                                                 row_splits[i + 1]);
+void RaggedToDenseCUDA(const cudaStream_t& stream,
+                       const T* const values,
+                       const int64_t* const row_splits,
+                       const size_t row_splits_size,
+                       const size_t out_col_size,
+                       const T* const default_value,
+                       const size_t default_value_size,
+                       T* out_values) {
+    using namespace open3d::utility;
+    const int BLOCKSIZE = 128;
+    dim3 block(BLOCKSIZE, 1, 1);
+    dim3 grid(DivUp(row_splits_size - 1, block.x));
 
-                    T* out_ptr =
-                            out_values + i * out_col_size * default_value_size;
-
-                    std::copy(values + start * default_value_size,
-                              values + end * default_value_size, out_ptr);
-
-                    // fill remaining columns with the default value
-                    out_ptr = out_ptr + (end - start) * default_value_size;
-                    for (int64_t j = end - start; j < out_col_size;
-                         ++j, out_ptr += default_value_size) {
-                        std::copy(default_value,
-                                  default_value + default_value_size, out_ptr);
-                    }
-                }
-            });
+    if (grid.x) {
+        RaggedToDenseCUDAKernel<T><<<grid, block, 0, stream>>>(
+                values, row_splits, row_splits_size, out_col_size,
+                default_value, default_value_size, out_values);
+    }
 }
 
 }  // namespace impl

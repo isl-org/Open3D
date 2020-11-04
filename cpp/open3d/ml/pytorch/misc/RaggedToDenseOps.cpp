@@ -80,14 +80,20 @@ torch::Tensor RaggedToDense(torch::Tensor values,
     if (values.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
         // pass to cuda function
-        // CALL(int32_t, RaggedToDenseCUDA)
-        // CALL(int64_t, RaggedToDenseCUDA)
-        // CALL(float, RaggedToDenseCUDA)
-        // CALL(double, RaggedToDenseCUDA)
+        CALL(uint8_t, RaggedToDenseCUDA)
+        CALL(int8_t, RaggedToDenseCUDA)
+        CALL(int16_t, RaggedToDenseCUDA)
+        CALL(int32_t, RaggedToDenseCUDA)
+        CALL(int64_t, RaggedToDenseCUDA)
+        CALL(float, RaggedToDenseCUDA)
+        CALL(double, RaggedToDenseCUDA)
 #else
         TORCH_CHECK(false, "RaggedToDense was not compiled with CUDA support")
 #endif
     } else {
+        CALL(uint8_t, RaggedToDenseCPU)
+        CALL(int8_t, RaggedToDenseCPU)
+        CALL(int16_t, RaggedToDenseCPU)
         CALL(int32_t, RaggedToDenseCPU)
         CALL(int64_t, RaggedToDenseCPU)
         CALL(float, RaggedToDenseCPU)

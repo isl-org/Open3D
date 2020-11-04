@@ -47,6 +47,7 @@ set(TORCH_OPS_CUDA_SOURCES
     "misc/InvertNeighborsListOpKernel.cu"
     "misc/ReduceSubarraysSumOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+    "misc/RaggedToDenseOpKernel.cu"
 )
 
 if(BUILD_CUDA_MODULE)
