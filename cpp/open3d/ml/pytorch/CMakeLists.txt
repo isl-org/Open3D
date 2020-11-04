@@ -33,6 +33,8 @@ set(TORCH_OPS_SOURCES
     "misc/ReduceSubarraysSumOpKernel.cpp"
     "misc/VoxelPoolingOps.cpp"
     "misc/FixedRadiusSearchOpKernel.cpp"
+    "misc/RaggedToDenseOps.cpp"
+    "misc/RaggedToDenseOpKernel.cpp"
 )
 
 set(TORCH_OPS_CUDA_SOURCES
