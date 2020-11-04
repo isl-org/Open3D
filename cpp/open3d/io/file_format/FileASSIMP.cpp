@@ -256,7 +256,7 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         if (mesh_material.albedo) {
             mesh.textures_.push_back(*mesh_material.albedo->FlipVertical());
         } else {
-            mesh.textures_.push_back(*mesh_material.albedo);
+            mesh.textures_.push_back(geometry::Image());
         }
     }
 
