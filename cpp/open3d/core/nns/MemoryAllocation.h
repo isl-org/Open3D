@@ -33,8 +33,8 @@
 #include <vector>
 
 namespace open3d {
-namespace ml {
-namespace impl {
+namespace core {
+namespace nns {
 
 /// A class for managing memory segments within a memory allocation.
 class MemoryAllocation {
@@ -203,6 +203,6 @@ private:
     std::vector<std::pair<void*, size_t>> _free_segments;
 };
 
-}  // namespace impl
-}  // namespace ml
+}  // namespace nns
+}  // namespace core
 }  // namespace open3d

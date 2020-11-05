@@ -28,6 +28,7 @@
 
 #include <vector>
 
+#include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
@@ -46,10 +47,10 @@ public:
     ///
     /// \param tensor Provides a set of data points as Tensor for KDTree
     /// construction.
-    FixedRadiusIndex(const Tensor &dataset_points);
+    FixedRadiusIndex(const Tensor& dataset_points, double radius);
     ~FixedRadiusIndex();
-    FixedRadiusIndex(const FixedRadiusIndex &) = delete;
-    FixedRadiusIndex &operator=(const FixedRadiusIndex &) = delete;
+    FixedRadiusIndex(const FixedRadiusIndex&) = delete;
+    FixedRadiusIndex& operator=(const FixedRadiusIndex&) = delete;
 
 public:
     /// Set the data for the spatial hash map from a Tensor.
@@ -57,21 +58,7 @@ public:
     /// \param dataset_points Dataset points for spatial hash map construction.
     /// Must be 2D, with shape {n, d}.
     /// \return Returns true if the construction success, otherwise false.
-    bool SetTensorData(const Tensor &dataset_points);
-
-
-    /// Perform radius search with multiple radii.
-    ///
-    /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points.
-    /// \param radii list of radius. Must be 1D, with shape {n, }.
-    /// \return Tuple of Tensors: (indices, distances, num_neighbors):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
-    /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
-    /// dataset_points.
-    /// - num_neighbors: Tensor of shape {n,}, dtype Int64.
-    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
-                                                    const Tensor &radii);
+    bool SetTensorData(const Tensor& dataset_points, double radius);
 
     /// Perform radius search.
     ///
@@ -83,7 +70,7 @@ public:
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
     /// - num_neighbors: Tensor of shape {n}, dtype Int64.
-    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor& query_points,
                                                     double radius);
 
     /// Get dimension of the dataset points.
@@ -98,9 +85,50 @@ public:
     /// \return dtype of dataset points.
     Dtype GetDtype() const;
 
+    const double hash_table_size_factor = 1 / 32;
+    const int64_t max_hash_tabls_size = 10000;
+
 protected:
     Tensor dataset_points_;
+    std::vector<int64_t> points_row_splits_;
+    std::vector<uint32_t> hash_table_splits_;
+    std::vector<uint32_t> out_hash_table_splits_;
+    Tensor hash_table_cell_splits_;
+    Tensor hash_table_index_;
     // std::unique_ptr<NanoFlannIndexHolderBase> holder_;
+};
+
+template <class T>
+class NeighborSearchAllocator {
+public:
+    NeighborSearchAllocator(Device device) : device_(device) {}
+
+    void AllocIndices(int32_t** ptr, size_t num) {
+        neighbors_index = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
+        *ptr = static_cast<int32_t>(neighbors_index.GetDataPtr());
+    }
+
+    void AllocDistances(T** ptr, size_t num) {
+        neighbors_distance =
+                Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
+        *ptr = static_cast<T>(neighbors_distance.GetDataPtr());
+    }
+
+    const int32_t* IndicesPtr() const {
+        return static_cast<int32_t>(neighbors_index.GetDataPtr());
+    }
+
+    const T* DistancesPtr() const {
+        return static_cast<T>(neighbors_distance.GetDataPtr());
+    }
+
+    const Tensor& NeighborsIndex() const { return neighbors_index; }
+    const Tensor& NeighborsDistance() const { return neighbors_distance; }
+
+private:
+    Tensor neighbors_index;
+    Tensor neighbors_distance;
+    Device device_;
 };
 }  // namespace nns
 }  // namespace core

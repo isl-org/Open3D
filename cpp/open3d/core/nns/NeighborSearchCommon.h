@@ -29,8 +29,8 @@
 #include "open3d/utility/MiniVec.h"
 
 namespace open3d {
-namespace ml {
-namespace impl {
+namespace core {
+namespace nns {
 
 /// Supported metrics
 enum Metric { L1, L2, Linf };
@@ -66,6 +66,6 @@ HOST_DEVICE inline utility::MiniVec<int, 3> ComputeVoxelIndex(
 }
 #undef HOST_DEVICE
 
-}  // namespace impl
-}  // namespace ml
+}  // namespace nns
+}  // namespace core
 }  // namespace open3d

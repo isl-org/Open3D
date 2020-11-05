@@ -28,17 +28,17 @@
 
 #include <cub/cub.cuh>
 
+#include "open3d/core/nns/FixedRadiusSearch.h"
 #include "open3d/core/nns/MemoryAllocation.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
-#include "open3d/core/nns/FixedRadiusSearch.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/MiniVec.h"
 
 using namespace open3d::utility;
 
 namespace open3d {
-namespace ml {
-namespace impl {
+namespace core {
+namespace nns {
 
 namespace {
 
@@ -578,10 +578,8 @@ void WriteNeighborsIndicesAndDistances(
 ///        array must be equal to the number of points.
 ///
 template <class TReal, class TIndex>
-void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
-                               void* temp,
+void BuildSpatialHashTableCUDA(void* temp,
                                size_t& temp_size,
-                               int texture_alignment,
                                const size_t num_points,
                                const TReal* const points,
                                const TReal radius,
@@ -592,6 +590,8 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
                                TIndex* hash_table_cell_splits,
                                TIndex* hash_table_index) {
     const bool get_temp_size = !temp;
+    const cudaStream_t stream = 0;
+    int texture_alignment = 1;
 
     if (get_temp_size) {
         temp = (char*)1;  // worst case pointer alignment
@@ -765,10 +765,8 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
 ///         In this case ptr does not need to be set.
 ///
 template <class T, class OUTPUT_ALLOCATOR>
-void FixedRadiusSearchCUDA(const cudaStream_t& stream,
-                           void* temp,
+void FixedRadiusSearchCUDA(void* temp,
                            size_t& temp_size,
-                           int texture_alignment,
                            int64_t* query_neighbors_row_splits,
                            size_t num_points,
                            const T* const points,
@@ -783,11 +781,13 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
                            size_t hash_table_cell_splits_size,
                            const uint32_t* const hash_table_cell_splits,
                            const uint32_t* const hash_table_index,
-                           const Metric metric,
-                           const bool ignore_query_point,
-                           const bool return_distances,
                            OUTPUT_ALLOCATOR& output_allocator) {
     const bool get_temp_size = !temp;
+    const cudaStream_t stream = 0;
+    int texture_alignment = 1;
+    const Metric metric = Metric::L2;
+    const bool ignore_query_point = false;
+    const bool return_distances = true;
 
     if (get_temp_size) {
         temp = (char*)1;  // worst case pointer alignment
@@ -906,6 +906,6 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
     }
 }
 
-}  // namespace impl
-}  // namespace ml
+}  // namespace nns
+}  // namespace core
 }  // namespace open3d
