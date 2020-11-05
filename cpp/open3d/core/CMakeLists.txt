@@ -80,6 +80,9 @@ if (NOT WIN32)
     list(APPEND CORE_NNS_SRC nns/FaissIndex.cpp)
 endif()
 
+if (BUILD_CUDA_MODULE)
+    list(APPEND CORE_NNS_SRC nns/FixedRadiusIndex.cpp)
+endif()
 if(BUILD_CUDA_MODULE)
     set(ALL_CORE_SRC
         ${CORE_SRC}
@@ -111,4 +114,6 @@ open3d_show_and_abort_on_warning(core)
 
 if(BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    find_package(CUB REQUIRED)
+    target_include_directories(core SYSTEM PRIVATE ${CUB_INCLUDE_DIR})
 endif()
