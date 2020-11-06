@@ -66,12 +66,9 @@ void pybind_viewcontrol(py::module &m) {
                     },
                     "Function to convert ViewControl to "
                     "camera::PinholeCameraParameters")
-            .def("convert_from_arbitrary_pinhole_camera_parameters",
-                 &ViewControl::ConvertFromArbitraryPinholeCameraParameters,
-                 "parameter"_a)
             .def("convert_from_pinhole_camera_parameters",
                  &ViewControl::ConvertFromPinholeCameraParameters,
-                 "parameter"_a)
+                 "parameter"_a, "allow_arbitrary"_a = false)
             .def("scale", &ViewControl::Scale, "Function to process scaling",
                  "scale"_a)
             .def("rotate", &ViewControl::Rotate, "Function to process rotation",
@@ -111,10 +108,6 @@ void pybind_viewcontrol(py::module &m) {
                  "Set the zoom of the visualizer", "zoom"_a);
     docstring::ClassMethodDocInject(m, "ViewControl", "change_field_of_view",
                                     map_view_control_docstrings);
-    docstring::ClassMethodDocInject(
-            m, "ViewControl",
-            "convert_from_arbitrary_pinhole_camera_parameters",
-            map_view_control_docstrings);
     docstring::ClassMethodDocInject(m, "ViewControl",
                                     "convert_from_pinhole_camera_parameters",
                                     map_view_control_docstrings);
