@@ -63,6 +63,16 @@ public:
     void ShowAxes(bool enable);
     void SetBackgroundColor(const Eigen::Vector4f& color);
 
+    enum class LightingProfile {
+        HARD_SHADOWS,
+        DARK_SHADOWS,
+        MED_SHADOWS,
+        SOFT_SHADOWS,
+        NO_SHADOWS
+    };
+
+    void SetLighting(LightingProfile profile, const Eigen::Vector3f& sun_dir);
+    
     /// Sets the maximum number of points before AddGeometry also adds a
     /// downsampled point cloud with number of points, used when rendering
     /// speed is important.

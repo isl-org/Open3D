@@ -1186,6 +1186,13 @@ void FilamentScene::EnableDirectionalLightShadows(bool enable) {
     // TODO: Research. Not previously implemented
 }
 
+float FilamentScene::GetDirectionalLightIntensity() {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    return light_mgr.getIntensity(inst);
+}
+
 void FilamentScene::SetDirectionalLightDirection(
         const Eigen::Vector3f& direction) {
     auto& light_mgr = engine_.getLightManager();

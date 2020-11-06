@@ -112,25 +112,17 @@ void pybind_rendering_classes(py::module &m) {
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
                                                     "Camera object");
-    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    fov_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Camera field of view types.";
-            }),
-            py::none(), py::none(), "");
+    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic(),
+                                        "Enum class for Camera field of view "
+                                        "types.");
     fov_type.value("Vertical", Camera::FovType::Vertical)
             .value("Horizontal", Camera::FovType::Horizontal)
             .export_values();
 
     py::enum_<Camera::Projection> proj_type(cam, "Projection",
-                                            py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    proj_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Camera field of view types.";
-            }),
-            py::none(), py::none(), "");
+                                            py::arithmetic(),
+                                            "Enum class for Camera projection "
+                                            "types.");
     proj_type.value("Perspective", Camera::Projection::Perspective)
             .value("Ortho", Camera::Projection::Ortho)
             .export_values();
@@ -261,8 +253,7 @@ void pybind_rendering_classes(py::module &m) {
                  "the scene.")
             .def("update_geometry", &Scene::UpdateGeometry,
                  "Updates the flagged arrays from the tgeometry.PointCloud. "
-                 "The "
-                 "flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
+                 "The flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
                  "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
                  "Scene.UPDATE_UV0_FLAG")
             .def("enable_indirect_light", &Scene::EnableIndirectLight,
@@ -290,6 +281,16 @@ void pybind_rendering_classes(py::module &m) {
     // ---- Open3DScene ----
     py::class_<Open3DScene, std::shared_ptr<Open3DScene>> o3dscene(
             m, "Open3DScene", "High-level scene for rending");
+    py::enum_<Open3DScene::LightingProfile> lighting(o3dscene, "LightingProfile",
+                                                     py::arithmetic(),
+                                                     "Enum for conveniently setting lighting");
+    lighting.value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
+            .value("DARK_SHADOWS", Open3DScene::LightingProfile::DARK_SHADOWS)
+            .value("MED_SHADOWS", Open3DScene::LightingProfile::MED_SHADOWS)
+            .value("SOFT_SHADOWS", Open3DScene::LightingProfile::SOFT_SHADOWS)
+            .value("NO_SHADOWS", Open3DScene::LightingProfile::NO_SHADOWS)
+            .export_values();
+
     o3dscene.def(py::init<Renderer &>())
             .def("show_skybox", &Open3DScene::ShowSkybox,
                  "Toggles display of the skybox")
@@ -297,6 +298,11 @@ void pybind_rendering_classes(py::module &m) {
                  "Toggles display of xyz axes")
             .def("set_background_color", &Open3DScene::SetBackgroundColor,
                  "Sets the background color of the scene, [r, g, b, a].")
+            .def("set_lighting", &Open3DScene::SetLighting,
+                 "Sets a simple lighting model. set_lighting(profile, "
+                 "sun_dir). The default value is "
+                 "set_lighting(Open3DScene.LightingProfile.MED_SHADOWS, "
+                 "(0.577, -0.577, -0.577))")
             .def("clear_geometry", &Open3DScene::ClearGeometry)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
@@ -318,13 +324,12 @@ void pybind_rendering_classes(py::module &m) {
                  "Shows or hides the geometry with the given name")
             .def("update_material", &Open3DScene::UpdateMaterial,
                  "Applies the passed material to all the geometries")
-            .def(
-                    "set_view_size",
-                    [](Open3DScene *scene, int width, int height) {
-                        scene->GetView()->SetViewport(0, 0, width, height);
-                    },
-                    "Sets the view size. This should not be used except for "
-                    "rendering to an image")
+            .def("set_view_size",
+                 [](Open3DScene *scene, int width, int height) {
+                     scene->GetView()->SetViewport(0, 0, width, height);
+                 },
+                 "Sets the view size. This should not be used except for "
+                 "rendering to an image")
             .def_property_readonly("scene", &Open3DScene::GetScene,
                                    "The low-level rendering scene object")
             .def_property_readonly("camera", &Open3DScene::GetCamera,

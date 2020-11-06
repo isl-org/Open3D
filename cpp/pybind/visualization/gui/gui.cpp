@@ -59,38 +59,7 @@
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "pybind/docstring.h"
 #include "pybind11/functional.h"
-
-// We cannot give out a shared_ptr to objects like Window which reference
-// Filament objects, because we cannot guarantee that the Python script is
-// not holding on to a reference when we cleanup Filament. The Open3D library
-// will clear its shared_ptrs expecting the dependent object(s) to clean up,
-// but they won't because Python still has a shared_ptr, leading to a crash
-// when the variable goes of scope on the Python side.
-// The following would crash gui.Window's holder is std::shared_ptr:
-//   import open3d.visualization.gui as gui
-//   def main():
-//       gui.Application.instance.initialize()
-//       w = gui.Application.instance.create_window("Crash", 640, 480)
-//       gui.Application.instance.run()
-//   if __name__ == "__main__":
-//       main()
-// However, if remove the 'w = ' part, it would not crash.
-template <typename T>
-class UnownedPointer {
-public:
-    UnownedPointer() : ptr_(nullptr) {}
-    explicit UnownedPointer(T *p) : ptr_(p) {}
-    ~UnownedPointer() {}  // don't delete!
-
-    T *get() { return ptr_; }
-    T &operator*() { return *ptr_; }
-    T *operator->() { return ptr_; }
-    void reset() { ptr_ = nullptr; }  // don't delete!
-
-private:
-    T *ptr_;
-};
-PYBIND11_DECLARE_HOLDER_TYPE(T, UnownedPointer<T>);
+#include "pybind/visualization/visualization.h"
 
 namespace open3d {
 namespace visualization {
@@ -314,6 +283,10 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
+            .def("add_window", &Application::AddWindow,
+                 "Adds a window to the application. This is only necessary when "
+                 "creating object that is a Window directly, rather than with "
+                 "create_window")
             .def("run_in_thread", &Application::RunInThread,
                  "Runs function in a separate thread. Do not call GUI "
                  "functions on this thread, call post_to_main_thread() if "

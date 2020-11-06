@@ -183,6 +183,7 @@ public:
                              float intensity) override;
     void EnableDirectionalLight(bool enable) override;
     void EnableDirectionalLightShadows(bool enable) override;
+    float GetDirectionalLightIntensity() override;
     void SetDirectionalLightDirection(
             const Eigen::Vector3f& direction) override;
     Eigen::Vector3f GetDirectionalLightDirection() override;
