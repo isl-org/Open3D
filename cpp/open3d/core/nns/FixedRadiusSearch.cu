@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-
 #include <cub/cub.cuh>
 
 #include "open3d/core/nns/FixedRadiusSearch.h"
@@ -763,7 +762,7 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
 ///
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T>
 void FixedRadiusSearchCUDA(void* temp,
                            size_t& temp_size,
                            int64_t* query_neighbors_row_splits,
@@ -780,7 +779,7 @@ void FixedRadiusSearchCUDA(void* temp,
                            size_t hash_table_cell_splits_size,
                            const uint32_t* const hash_table_cell_splits,
                            const uint32_t* const hash_table_index,
-                           OUTPUT_ALLOCATOR& output_allocator) {
+                           NeighborSearchAllocator<T>& output_allocator) {
     const bool get_temp_size = !temp;
     const cudaStream_t stream = 0;
     int texture_alignment = 1;
@@ -905,6 +904,69 @@ void FixedRadiusSearchCUDA(void* temp,
     }
 }
 
+template void BuildSpatialHashTableCUDA(
+        void* temp,
+        size_t& temp_size,
+        const size_t num_points,
+        const float* const points,
+        const float radius,
+        const size_t points_row_splits_size,
+        const int64_t* points_row_splits,
+        const uint32_t* hash_table_splits,
+        const size_t hash_table_cell_splits_size,
+        uint32_t* hash_table_cell_splits,
+        uint32_t* hash_table_index);
+
+template void BuildSpatialHashTableCUDA(
+        void* temp,
+        size_t& temp_size,
+        const size_t num_points,
+        const double* const points,
+        const double radius,
+        const size_t points_row_splits_size,
+        const int64_t* points_row_splits,
+        const uint32_t* hash_table_splits,
+        const size_t hash_table_cell_splits_size,
+        uint32_t* hash_table_cell_splits,
+        uint32_t* hash_table_index);
+
+template void FixedRadiusSearchCUDA(
+        void* temp,
+        size_t& temp_size,
+        int64_t* query_neighbors_row_splits,
+        size_t num_points,
+        const float* const points,
+        size_t num_queries,
+        const float* const queries,
+        const float radius,
+        const size_t points_row_splits_size,
+        const int64_t* const points_row_splits,
+        const size_t queries_row_splits_size,
+        const int64_t* const queries_row_splits,
+        const uint32_t* const hash_table_splits,
+        size_t hash_table_cell_splits_size,
+        const uint32_t* const hash_table_cell_splits,
+        const uint32_t* const hash_table_index,
+        NeighborSearchAllocator<float>& output_allocator);
+
+template void FixedRadiusSearchCUDA(
+        void* temp,
+        size_t& temp_size,
+        int64_t* query_neighbors_row_splits,
+        size_t num_points,
+        const double* const points,
+        size_t num_queries,
+        const double* const queries,
+        const double radius,
+        const size_t points_row_splits_size,
+        const int64_t* const points_row_splits,
+        const size_t queries_row_splits_size,
+        const int64_t* const queries_row_splits,
+        const uint32_t* const hash_table_splits,
+        size_t hash_table_cell_splits_size,
+        const uint32_t* const hash_table_cell_splits,
+        const uint32_t* const hash_table_index,
+        NeighborSearchAllocator<double>& output_allocator);
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

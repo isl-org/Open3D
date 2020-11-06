@@ -95,7 +95,6 @@ protected:
     std::vector<uint32_t> out_hash_table_splits_;
     Tensor hash_table_cell_splits_;
     Tensor hash_table_index_;
-    // std::unique_ptr<NanoFlannIndexHolderBase> holder_;
 };
 
 template <class T>
@@ -104,22 +103,22 @@ public:
     NeighborSearchAllocator(Device device) : device_(device) {}
 
     void AllocIndices(int32_t** ptr, size_t num) {
-        neighbors_index = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
-        *ptr = static_cast<int32_t>(neighbors_index.GetDataPtr());
+        neighbors_index = Tensor::Empty({int64_t(num)}, Dtype::Int32, device_);
+        *ptr = static_cast<int32_t*>(neighbors_index.GetDataPtr());
     }
 
     void AllocDistances(T** ptr, size_t num) {
         neighbors_distance =
                 Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
-        *ptr = static_cast<T>(neighbors_distance.GetDataPtr());
+        *ptr = static_cast<T*>(neighbors_distance.GetDataPtr());
     }
 
     const int32_t* IndicesPtr() const {
-        return static_cast<int32_t>(neighbors_index.GetDataPtr());
+        return static_cast<int32_t*>(neighbors_index.GetDataPtr());
     }
 
     const T* DistancesPtr() const {
-        return static_cast<T>(neighbors_distance.GetDataPtr());
+        return static_cast<T*>(neighbors_distance.GetDataPtr());
     }
 
     const Tensor& NeighborsIndex() const { return neighbors_index; }

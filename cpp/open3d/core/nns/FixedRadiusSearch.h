@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 
 using namespace open3d::utility;
@@ -184,7 +185,7 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
 ///
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T>
 void FixedRadiusSearchCUDA(void* temp,
                            size_t& temp_size,
                            int64_t* query_neighbors_row_splits,
@@ -201,7 +202,7 @@ void FixedRadiusSearchCUDA(void* temp,
                            size_t hash_table_cell_splits_size,
                            const uint32_t* const hash_table_cell_splits,
                            const uint32_t* const hash_table_index,
-                           OUTPUT_ALLOCATOR& output_allocator);
+                           NeighborSearchAllocator<T>& output_allocator);
 
 }  // namespace nns
 }  // namespace core
