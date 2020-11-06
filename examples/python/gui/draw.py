@@ -206,14 +206,14 @@ def remove():
                       ("Remove Bounds", remove_bbox)])
 
 def main():
-#    nothing()
-#    single_object()
-#    multi_objects()
+    nothing()
+    single_object()
+    multi_objects()
     # actions_layout()
     actions()
-#    time_animation()
-#    groups()
-#    remove()
+    time_animation()
+    groups()
+    # remove()
 
 if __name__ == "__main__":
     main()
