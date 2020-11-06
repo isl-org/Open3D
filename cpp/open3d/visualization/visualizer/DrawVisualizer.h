@@ -151,12 +151,7 @@ public:
     rendering::Open3DScene* GetScene() const;
 
 protected:
-    void Layout(const gui::Theme& theme) override;
-
-    void OnAbout();
-    void OnExportRGB();
-    void OnClose();
-    void OnToggleSettings();
+    void Layout(const gui::Theme& theme);
 
 private:
     struct Impl;

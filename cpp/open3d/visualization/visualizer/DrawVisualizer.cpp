@@ -32,6 +32,8 @@
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/LineSet.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
@@ -282,17 +284,18 @@ static const std::vector<LightingProfile> gLightingProfiles = {
 
 
 struct DrawVisualizer::Impl {
-    Window *window_;
     std::set<std::string> added_names_;
     std::set<std::string> added_groups_;
     std::vector<DrawObject> objects_;
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
 
-    std::shared_ptr<SceneWidget> scene_;
     double min_time_ = 0.0;
     double max_time_ = 0.0;
     double next_animation_tick_clock_time_ = 0.0;
+
+    Window *window_ = nullptr;
+    SceneWidget *scene_ = nullptr;
 
     struct {
         // We only keep pointers here because that way we don't have to release
@@ -341,56 +344,29 @@ struct DrawVisualizer::Impl {
         ButtonList* actions;
     } settings;
 
-    std::string UniquifyName(const std::string& name) {
-        if (added_names_.find(name) == added_names_.end()) {
-            return name;
-        }
+    void Construct(DrawVisualizer *w) {
+        if (window_) { return; }
 
-        int n = 0;
-        std::string unique;
-        do {
-            n += 1;
-            std::stringstream s;
-            s << name << "_" << n;
-            unique = s.str();
-        } while (added_names_.find(unique) != added_names_.end());
+        window_ = w;
+        scene_ = new SceneWidget();
+        scene_->SetScene(std::make_shared<Open3DScene>(w->GetRenderer()));
+        scene_->EnableSceneCaching(true);  // smoother UI with large geometry
+        w->AddChild(GiveOwnership(scene_));
 
-        return unique;
+        auto o3dscene = scene_->GetScene();
+        o3dscene->SetBackgroundColor(ui_state_.bg_color);
+
+        MakeSettingsUI();
+        SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
+        SetLightingProfile(gLightingProfiles[2]);  // med shadows
     }
 
-    Eigen::Vector4f CalcDefaultUnlitColor() {
-        float luminosity = 0.21 * ui_state_.bg_color.x() +
-                           0.72 * ui_state_.bg_color.y() +
-                           0.07 * ui_state_.bg_color.z();
-        if (luminosity >= 0.5) {
-            return {0.0f, 0.0f, 0.0f, 1.0f};
-        } else {
-            return {1.0f, 1.0f, 1.0f, 1.0f};
-        }
-    }
-
-    std::vector<std::string> GetListOfIBLs() {
-        std::vector<std::string> ibls;
-        std::vector<std::string> resource_files;
-        std::string resource_path = Application::GetInstance().GetResourcePath();
-        utility::filesystem::ListFilesInDirectory(resource_path, resource_files);
-        std::sort(resource_files.begin(), resource_files.end());
-        for (auto &f : resource_files) {
-            if (f.find("_ibl.ktx") == f.size() - 8) {
-                auto name = utility::filesystem::GetFileNameWithoutDirectory(f);
-                name = name.substr(0, name.size() - 8);
-                ibls.push_back(name);
-            }
-        }
-        return ibls;
-    }
-
-    void MakeSettingsUI(DrawVisualizer *w) {
-        auto em = w->GetTheme().font_size;
+    void MakeSettingsUI() {
+        auto em = window_->GetTheme().font_size;
         auto v_spacing = 0.25 * em;
 
         settings.panel = new Vert(0.5 * em);
-        w->AddChild(GiveOwnership(settings.panel));
+        window_->AddChild(GiveOwnership(settings.panel));
 
         Margins margins(em, 0, 0.5 * em, 0);
 
@@ -435,7 +411,7 @@ struct DrawVisualizer::Impl {
         settings.mouse_panel->AddFixed(0.5 * em);
 
         auto *reset = new SmallButton("Reset Camera");
-        reset->SetOnClicked([w]() { w->ResetCamera(); });
+        reset->SetOnClicked([this]() { this->ResetCamera(); });
 
         h = new Horiz(0.25 * em);
         h->AddStretch();
@@ -676,53 +652,167 @@ struct DrawVisualizer::Impl {
         settings.actions_panel->AddChild(GiveOwnership(settings.actions ));
     }
 
-    void AddGroup(const std::string& group) {
-#if GROUPS_USE_TREE
-        if (added_groups_.find(group) == added_groups_.end()) {
-            added_groups_.insert(group);
-            ui_state_.enabled_groups.insert(group);
+    void AddGeometry(const std::string& name,
+                     std::shared_ptr<geometry::Geometry3D> geom,
+                     std::shared_ptr<t::geometry::Geometry> tgeom,
+                     rendering::Material *material /*= nullptr*/,
+                     const std::string& group /*= ""*/,
+                     double time /*= 0.0*/,
+                     bool is_visible /*= true*/) {
+        std::string group_name = group;
+        if (group_name == "") {
+            group_name = "default";
         }
-        if (added_groups_.size() == 2) {
+        bool is_default_color;
+        Material mat;
+        if (material) {
+            mat = *material;
+            is_default_color = false;
+        } else {
+            bool has_colors = false;
+            bool has_normals = false;
+
+            auto cloud = std::dynamic_pointer_cast<geometry::PointCloud>(geom);
+            auto lines = std::dynamic_pointer_cast<geometry::LineSet>(geom);
+            auto obb = std::dynamic_pointer_cast<geometry::OrientedBoundingBox>(geom);
+            auto aabb = std::dynamic_pointer_cast<geometry::AxisAlignedBoundingBox>(geom);
+            auto mesh = std::dynamic_pointer_cast<geometry::MeshBase>(geom);
+
+            auto t_cloud = std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
+            auto t_mesh = std::dynamic_pointer_cast<t::geometry::TriangleMesh>(tgeom);
+
+            if (cloud) {
+                has_colors = !cloud->colors_.empty();
+            } else if (t_cloud) {
+                has_colors = t_cloud->HasPointColors();
+            } else if (lines) {
+                has_colors = !lines->colors_.empty();
+            } else if (obb) {
+                has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
+            } else if (aabb) {
+                has_colors = (aabb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
+            } else if (mesh) {
+                has_normals = !mesh->vertex_normals_.empty();
+                has_colors = true;  // always want base_color as white
+            } else if (t_mesh) {
+                has_normals = !t_mesh->HasVertexNormals();
+                has_colors = true;  // always want base_color as white
+            }
+
+            mat.base_color = CalcDefaultUnlitColor();
+            mat.shader = kShaderUnlit;
+            is_default_color = true;
+            if (has_colors) {
+                mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
+                is_default_color = false;
+            }
+            if (has_normals) {
+                mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
+                mat.shader = kShaderLit;
+                is_default_color = false;
+            }
+            mat.point_size = 2.0f * window_->GetScaling();
+        }
+    
+        // We assume that the caller isn't setting a group or time (and in any
+        // case we don't know beforehand what they will do). So if they do,
+        // we need to update the geometry tree accordingly. This needs to happen
+        // before we add the object to the list, otherwise when we regenerate the
+        // object will already be added in the list and then get added again
+        // below.
+        AddGroup(group_name);  // regenerates if necessary
+        bool update_for_time = (min_time_ == max_time_ && time != max_time_);
+        min_time_ = std::min(min_time_, time);
+        max_time_ = std::max(max_time_, time);
+        if (time != 0.0) {
+            UpdateTimeUIRange();
+            settings.time_panel->SetVisible(true);
+        }
+        if (update_for_time) {
             UpdateObjectTree();
         }
-#else
-        if (added_groups_.find(group) == added_groups_.end()) {
-            added_groups_.insert(group);
-            ui_state_.enabled_groups.insert(group);
+        // Auto-open the settings panel if we set anything fancy that would imply
+        // using the UI.
+        if (can_auto_show_settings_
+            && (added_groups_.size() == 2 || update_for_time)) {
+            ShowSettings(true);
+        }
 
-            auto cell = std::make_shared<CheckableTextTreeCell>(
-                            group.c_str(), true,
-                            [this, group](bool is_on) {
-                this->EnableGroup(group, is_on); 
-            });
-            auto root = settings.groups->GetRootItem();
-            settings.groups->AddItem(root, cell);
-        }
-        if (added_groups_.size() >= 2) {
-            settings.groups_panel->SetVisible(true);
-        }
-#endif // GROUPS_USE_TREE
+        objects_.push_back({name, geom, tgeom, mat, group_name, time,
+                            is_visible, is_default_color});
+        AddObjectToTree(objects_.back());
+
+        auto scene = scene_->GetScene();
+        scene->AddGeometry(name, geom, mat);
+        UpdateGeometryVisibility(objects_.back());
+
+        scene_->ForceRedraw();
     }
 
-    void EnableGroup(const std::string& group, bool enable) {
-#if GROUPS_USE_TREE
-        auto group_it = settings.group2itemid.find(group);
-        if (group_it != settings.group2itemid.end()) {
-            auto cell = settings.geometries->GetItem(group_it->second);
-            auto group_cell = std::dynamic_pointer_cast<CheckableTextTreeCell>(cell);
-            if (group_cell) {
-                group_cell->GetCheckbox()->SetChecked(enable);
+    void RemoveGeometry(const std::string& name) {
+        std::string group;
+        for (size_t i = 0; i < objects_.size(); ++i) {
+            if (objects_[i].name == name) {
+                group = objects_[i].group;
+                objects_.erase(objects_.begin() + i);
+                break;
             }
         }
-#endif // GROUPS_USE_TREE
-        if (enable) {
-            ui_state_.enabled_groups.insert(group);
-        } else {
-            ui_state_.enabled_groups.erase(group);
+
+        // Need to check group membership in case this was the last item in its
+        // group. As long as we're doing that, recompute the min/max time, too.
+        std::set<std::string> groups;
+        min_time_ = max_time_ = 0.0;
+        for (size_t i = 0; i < objects_.size(); ++i) {
+            auto &o = objects_[i];
+            min_time_ = std::min(min_time_, o.time);
+            max_time_ = std::max(max_time_, o.time);
+            groups.insert(o.group);
         }
+        if (min_time_ == max_time_) {
+            SetAnimating(false);
+        }
+        UpdateTimeUIRange();
+
+        added_groups_ = groups;
+        std::set<std::string> enabled;
+        for (auto &g : ui_state_.enabled_groups) {  // remove deleted groups
+            if (groups.find(g) != groups.end()) {
+                enabled.insert(g);
+            }
+        }
+        ui_state_.enabled_groups = enabled;
+        UpdateObjectTree();
+        scene_->GetScene()->RemoveGeometry(name);
+        scene_->ForceRedraw();
+    }
+
+    void ShowGeometry(const std::string& name, bool show) {
         for (auto &o : objects_) {
-            UpdateGeometryVisibility(o);
+            if (o.name == name) {
+                if (show != o.is_visible) {
+                    o.is_visible = show;
+                    UpdateObjectTree();
+                    UpdateGeometryVisibility(o);
+                }
+                break;
+            }
         }
+    }
+
+    DrawVisualizer::DrawObject GetGeometry(const std::string& name) const {
+        for (auto &o : objects_) {
+            if (o.name == name) {
+                return o;
+            }
+        }
+        return DrawObject();
+    }
+
+    void ResetCamera() {
+        auto scene = scene_->GetScene();
+        scene_->SetupCamera(60.0, scene->GetBoundingBox(), {0.0f, 0.0f, 0.0f});
+        scene_->ForceRedraw();
     }
 
     void SetBackgroundColor(const Eigen::Vector4f& bg_color) {
@@ -924,6 +1014,55 @@ struct DrawVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
+    void AddGroup(const std::string& group) {
+#if GROUPS_USE_TREE
+        if (added_groups_.find(group) == added_groups_.end()) {
+            added_groups_.insert(group);
+            ui_state_.enabled_groups.insert(group);
+        }
+        if (added_groups_.size() == 2) {
+            UpdateObjectTree();
+        }
+#else
+        if (added_groups_.find(group) == added_groups_.end()) {
+            added_groups_.insert(group);
+            ui_state_.enabled_groups.insert(group);
+
+            auto cell = std::make_shared<CheckableTextTreeCell>(
+                            group.c_str(), true,
+                            [this, group](bool is_on) {
+                this->EnableGroup(group, is_on); 
+            });
+            auto root = settings.groups->GetRootItem();
+            settings.groups->AddItem(root, cell);
+        }
+        if (added_groups_.size() >= 2) {
+            settings.groups_panel->SetVisible(true);
+        }
+#endif // GROUPS_USE_TREE
+    }
+
+    void EnableGroup(const std::string& group, bool enable) {
+#if GROUPS_USE_TREE
+        auto group_it = settings.group2itemid.find(group);
+        if (group_it != settings.group2itemid.end()) {
+            auto cell = settings.geometries->GetItem(group_it->second);
+            auto group_cell = std::dynamic_pointer_cast<CheckableTextTreeCell>(cell);
+            if (group_cell) {
+                group_cell->GetCheckbox()->SetChecked(enable);
+            }
+        }
+#endif // GROUPS_USE_TREE
+        if (enable) {
+            ui_state_.enabled_groups.insert(group);
+        } else {
+            ui_state_.enabled_groups.erase(group);
+        }
+        for (auto &o : objects_) {
+            UpdateGeometryVisibility(o);
+        }
+    }
+
     void AddObjectToTree(const DrawObject& o) {
         TreeView::ItemId parent = settings.geometries->GetRootItem();
 #if GROUPS_USE_TREE
@@ -1014,22 +1153,140 @@ struct DrawVisualizer::Impl {
     void UpdateAnimationTickClockTime(double now) {
         next_animation_tick_clock_time_ = now + ui_state_.frame_delay;
     }
+
+    void ExportCurrentImage(const std::string &path) {
+        scene_->EnableSceneCaching(false);
+        scene_->GetScene()->GetScene()->RenderToImage(
+            [this, path](std::shared_ptr<geometry::Image> image) mutable {
+                if (!io::WriteImage(path, *image)) {
+                    this->window_->ShowMessageBox(
+                            "Error", (std::string("Could not write image to ") +
+                                      path + ".")
+                                             .c_str());
+                }
+                scene_->EnableSceneCaching(true);
+            });
+}
+
+    void OnAbout() {
+        auto &theme = window_->GetTheme();
+        auto dlg = std::make_shared<gui::Dialog>("About");
+
+        auto title = std::make_shared<gui::Label>(
+            (std::string("Open3D ") + OPEN3D_VERSION).c_str());
+        auto text = std::make_shared<gui::Label>(
+            "The MIT License (MIT)\n"
+            "Copyright (c) 2018 - 2020 www.open3d.org\n\n"
+
+            "Permission is hereby granted, free of charge, to any person "
+            "obtaining a copy of this software and associated documentation "
+            "files (the \"Software\"), to deal in the Software without "
+            "restriction, including without limitation the rights to use, "
+            "copy, modify, merge, publish, distribute, sublicense, and/or "
+            "sell copies of the Software, and to permit persons to whom "
+            "the Software is furnished to do so, subject to the following "
+            "conditions:\n\n"
+
+            "The above copyright notice and this permission notice shall be "
+            "included in all copies or substantial portions of the "
+            "Software.\n\n"
+
+            "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, "
+            "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES "
+            "OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND "
+            "NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT "
+            "HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, "
+            "WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING "
+            "FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR "
+            "OTHER DEALINGS IN THE SOFTWARE.");
+        auto ok = std::make_shared<gui::Button>("OK");
+        ok->SetOnClicked([this]() { this->window_->CloseDialog(); });
+
+        gui::Margins margins(theme.font_size);
+        auto layout = std::make_shared<gui::Vert>(0, margins);
+        layout->AddChild(gui::Horiz::MakeCentered(title));
+        layout->AddFixed(theme.font_size);
+        layout->AddChild(text);
+        layout->AddFixed(theme.font_size);
+        layout->AddChild(gui::Horiz::MakeCentered(ok));
+        dlg->AddChild(layout);
+
+        window_->ShowDialog(dlg);
+    }
+
+    void OnExportRGB() {
+        auto dlg = std::make_shared<gui::FileDialog>(
+                    gui::FileDialog::Mode::SAVE, "Save File",
+                    window_->GetTheme());
+        dlg->AddFilter(".png", "PNG images (.png)");
+        dlg->AddFilter("", "All files");
+        dlg->SetOnCancel([this]() { this->window_->CloseDialog(); });
+        dlg->SetOnDone([this](const char *path) {
+                           this->window_->CloseDialog();
+                           this->ExportCurrentImage(path);
+                       });
+        window_->ShowDialog(dlg);
+    }
+
+    void OnClose() { window_->Close(); }
+
+    void OnToggleSettings() {
+        bool is_checked = !ui_state_.show_settings;
+        ui_state_.show_settings = is_checked;
+        settings.panel->SetVisible(is_checked);
+        Application::GetInstance().GetMenubar()->SetChecked(MENU_SETTINGS,
+                                                            is_checked);
+        window_->SetNeedsLayout();
+    }
+
+    std::string UniquifyName(const std::string& name) {
+        if (added_names_.find(name) == added_names_.end()) {
+            return name;
+        }
+
+        int n = 0;
+        std::string unique;
+        do {
+            n += 1;
+            std::stringstream s;
+            s << name << "_" << n;
+            unique = s.str();
+        } while (added_names_.find(unique) != added_names_.end());
+
+        return unique;
+    }
+
+    Eigen::Vector4f CalcDefaultUnlitColor() {
+        float luminosity = 0.21 * ui_state_.bg_color.x() +
+                           0.72 * ui_state_.bg_color.y() +
+                           0.07 * ui_state_.bg_color.z();
+        if (luminosity >= 0.5) {
+            return {0.0f, 0.0f, 0.0f, 1.0f};
+        } else {
+            return {1.0f, 1.0f, 1.0f, 1.0f};
+        }
+    }
+
+    std::vector<std::string> GetListOfIBLs() {
+        std::vector<std::string> ibls;
+        std::vector<std::string> resource_files;
+        std::string resource_path = Application::GetInstance().GetResourcePath();
+        utility::filesystem::ListFilesInDirectory(resource_path, resource_files);
+        std::sort(resource_files.begin(), resource_files.end());
+        for (auto &f : resource_files) {
+            if (f.find("_ibl.ktx") == f.size() - 8) {
+                auto name = utility::filesystem::GetFileNameWithoutDirectory(f);
+                name = name.substr(0, name.size() - 8);
+                ibls.push_back(name);
+            }
+        }
+        return ibls;
+    }
 };
 
 DrawVisualizer::DrawVisualizer(const std::string& title, int width, int height)
     : Window(title, width, height), impl_(new DrawVisualizer::Impl()) {
-    impl_->window_ = this;
-    impl_->scene_ = std::make_shared<SceneWidget>();
-    impl_->scene_->SetScene(std::make_shared<Open3DScene>(GetRenderer()));
-    impl_->scene_->EnableSceneCaching(true);  // smoother UI with large geometry
-    AddChild(impl_->scene_);
-
-    auto scene = impl_->scene_->GetScene();
-    scene->SetBackgroundColor(impl_->ui_state_.bg_color);
-
-    impl_->MakeSettingsUI(this);
-    impl_->SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
-    impl_->SetLightingProfile(gLightingProfiles[2]);  // med shadows
+    impl_->Construct(this);
 
     if (!Application::GetInstance().GetMenubar()) {
         auto menu = std::make_shared<Menu>();
@@ -1061,19 +1318,17 @@ DrawVisualizer::DrawVisualizer(const std::string& title, int width, int height)
         Application::GetInstance().SetMenubar(menu);
     }
 
-    SetOnMenuItemActivated(MENU_ABOUT, [this]() { this->OnAbout(); });
-    SetOnMenuItemActivated(MENU_EXPORT_RGB, [this]() { this->OnExportRGB(); });
-    SetOnMenuItemActivated(MENU_CLOSE, [this]() { this->OnClose(); });
+    SetOnMenuItemActivated(MENU_ABOUT, [this]() { this->impl_->OnAbout(); });
+    SetOnMenuItemActivated(MENU_EXPORT_RGB, [this]() { this->impl_->OnExportRGB(); });
+    SetOnMenuItemActivated(MENU_CLOSE, [this]() { this->impl_->OnClose(); });
     SetOnMenuItemActivated(MENU_SETTINGS,
-                           [this]() { this->OnToggleSettings(); });
+                           [this]() { this->impl_->OnToggleSettings(); });
 
     impl_->ui_state_.show_settings = true;  // opposite, we will toggle
-    OnToggleSettings();  // must do this after menu is created
+    impl_->OnToggleSettings();  // must do this after menu is created
 }
 
-DrawVisualizer::~DrawVisualizer() {
-    impl_->scene_ = nullptr;
-}
+DrawVisualizer::~DrawVisualizer() {}
 
 Open3DScene* DrawVisualizer::GetScene() const {
     return impl_->scene_->GetScene().get();
@@ -1117,86 +1372,7 @@ void DrawVisualizer::AddGeometry(const std::string& name,
                                  const std::string& group /*= ""*/,
                                  double time /*= 0.0*/,
                                  bool is_visible /*= true*/) {
-    std::string group_name = group;
-    if (group_name == "") {
-        group_name = "default";
-    }
-    bool is_default_color;
-    Material mat;
-    if (material) {
-        mat = *material;
-        is_default_color = false;
-    } else {
-        bool has_colors = false;
-        bool has_normals = false;
-
-        auto cloud = std::dynamic_pointer_cast<geometry::PointCloud>(geom);
-        auto lines = std::dynamic_pointer_cast<geometry::LineSet>(geom);
-        auto obb = std::dynamic_pointer_cast<geometry::OrientedBoundingBox>(geom);
-        auto aabb = std::dynamic_pointer_cast<geometry::AxisAlignedBoundingBox>(geom);
-        auto mesh = std::dynamic_pointer_cast<geometry::MeshBase>(geom);
-
-        if (cloud) {
-            has_colors = !cloud->colors_.empty();
-            mat.point_size = 5;
-        } else if (lines) {
-            has_colors = !lines->colors_.empty();
-        } else if (obb) {
-            has_colors = true;
-        } else if (aabb) {
-            has_colors = true;
-        } else if (mesh) {
-            has_normals = !mesh->vertex_normals_.empty();
-            has_colors = true;  // always want base_color as white
-        }
-
-        mat.base_color = impl_->CalcDefaultUnlitColor();
-        mat.shader = kShaderUnlit;
-        is_default_color = true;
-        if (has_colors) {
-            mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
-            is_default_color = false;
-        }
-        if (has_normals) {
-            mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
-            mat.shader = kShaderLit;
-            is_default_color = false;
-        }
-        mat.point_size = 2.0f * GetScaling();
-    }
-
-    // We assume that the caller isn't setting a group or time (and in any
-    // case we don't know beforehand what they will do). So if they do,
-    // we need to update the geometry tree accordingly. This needs to happen
-    // before we add the object to the list, otherwise when we regenerate the
-    // object will already be added in the list and then get added again below.
-    impl_->AddGroup(group_name);  // regenerates if necessary
-    bool update_for_time = (impl_->min_time_ == impl_->max_time_ && time != impl_->max_time_);
-    impl_->min_time_ = std::min(impl_->min_time_, time);
-    impl_->max_time_ = std::max(impl_->max_time_, time);
-    if (time != 0.0) {
-        impl_->UpdateTimeUIRange();
-        impl_->settings.time_panel->SetVisible(true);
-    }
-    if (update_for_time) {
-        impl_->UpdateObjectTree();
-    }
-    // Auto-open the settings panel if we set anything fancy that would imply
-    // using the UI.
-    if (impl_->can_auto_show_settings_
-        && (impl_->added_groups_.size() == 2 || update_for_time)) {
-        ShowSettings(true);
-    }
-
-    impl_->objects_.push_back({name, geom, nullptr, mat, group_name, time,
-                               is_visible, is_default_color});
-    impl_->AddObjectToTree(impl_->objects_.back());
-
-    auto scene = impl_->scene_->GetScene();
-    scene->AddGeometry(name, geom, mat);
-    impl_->UpdateGeometryVisibility(impl_->objects_.back());
-
-    impl_->scene_->ForceRedraw();
+    impl_->AddGeometry(name, geom, nullptr, material, group, time, is_visible);
 }
                      
 void DrawVisualizer::AddGeometry(const std::string& name,
@@ -1205,93 +1381,19 @@ void DrawVisualizer::AddGeometry(const std::string& name,
                                  const std::string& group /*= ""*/,
                                  double time /*= 0.0*/,
                                  bool is_visible /*= true*/) {
-    utility::LogWarning("t::geometry is not supported yet");
-/*
-    Material mat;
-    if (material) {
-        mat = *material;
-    } else {
-        mat.shader = kShaderUnlit;
-
-        auto mesh = std::dynamic_pointer_cast<geometry::TriangleMesh>(tgeom);
-        if (mesh) {
-            if (mesh->GetVertexNormals().GetSize() == 0 && mesh->GetTriangleNormals().GetSize() == 0) {
-                mat.shader = kShaderUnlit;
-            } else {
-                mat.shader = kShaderLit;
-            }
-        }
-    }
-
-    impl_->min_time_ = std::min(impl_->min_time_, time);
-    impl_->max_time_ = std::max(impl_->max_time, time);
-
-    auto scene = impl_->scene_->GetScene();
-    scene->AddGeometry(name, geom, mat);
-    scene->ShowGeometry(name, is_visible);
-    impl_->scene_->ForceRedraw();
-    Update();
-*/
+    impl_->AddGeometry(name, nullptr, tgeom, material, group, time, is_visible);
 }
 
 void DrawVisualizer::RemoveGeometry(const std::string& name) {
-    std::string group;
-    for (size_t i = 0; i < impl_->objects_.size(); ++i) {
-        if (impl_->objects_[i].name == name) {
-            group = impl_->objects_[i].group;
-            impl_->objects_.erase(impl_->objects_.begin() + i);
-            break;
-        }
-    }
-
-    // Need to check group membership in case this was the last item in its
-    // group. As long as we're doing that, recompute the min/max time, too.
-    std::set<std::string> groups;
-    impl_->min_time_ = impl_->max_time_ = 0.0;
-    for (size_t i = 0; i < impl_->objects_.size(); ++i) {
-        auto &o = impl_->objects_[i];
-        impl_->min_time_ = std::min(impl_->min_time_, o.time);
-        impl_->max_time_ = std::max(impl_->max_time_, o.time);
-        groups.insert(o.group);
-    }
-    if (impl_->min_time_ == impl_->max_time_) {
-        impl_->SetAnimating(false);
-    }
-    impl_->UpdateTimeUIRange();
-
-    impl_->added_groups_ = groups;
-    std::set<std::string> enabled;
-    for (auto &g : impl_->ui_state_.enabled_groups) {  // remove deleted groups
-        if (groups.find(g) != groups.end()) {
-            enabled.insert(g);
-        }
-    }
-    impl_->ui_state_.enabled_groups = enabled;
-    impl_->UpdateObjectTree();
-    impl_->scene_->GetScene()->RemoveGeometry(name);
-    impl_->scene_->ForceRedraw();
+    return impl_->RemoveGeometry(name);
 }
 
 void DrawVisualizer::ShowGeometry(const std::string& name, bool show) {
-    for (auto &o : impl_->objects_) {
-        if (o.name == name) {
-            if (show != o.is_visible) {
-                o.is_visible = show;
-                impl_->UpdateObjectTree();
-                impl_->UpdateGeometryVisibility(o);
-            }
-            break;
-        }
-    }
+    return impl_->ShowGeometry(name, show);
 }
 
 DrawVisualizer::DrawObject DrawVisualizer::GetGeometry(const std::string& name) const {
-    for (auto &o : impl_->objects_) {
-        if (o.name == name) {
-            return o;
-        }
-    }
-    return DrawObject();
+    return impl_->GetGeometry(name);
 }
 
 void DrawVisualizer::ShowSettings(bool show) { impl_->ShowSettings(show); }
@@ -1324,9 +1426,7 @@ double DrawVisualizer::GetCurrentTime() const {
     return impl_->ui_state_.current_time;
 }
 
-void DrawVisualizer::SetCurrentTime(double t) {
-    impl_->SetCurrentTime(t);
-}
+void DrawVisualizer::SetCurrentTime(double t) { impl_->SetCurrentTime(t); }
 
 bool DrawVisualizer::GetIsAnimating() const {
     return impl_->ui_state_.is_animating;
@@ -1336,29 +1436,14 @@ void DrawVisualizer::SetAnimating(bool is_animating) {
     impl_->SetAnimating(is_animating);
 }
 
-void DrawVisualizer::ResetCamera() {
-    auto scene = impl_->scene_->GetScene();
-    impl_->scene_->SetupCamera(60.0, scene->GetBoundingBox(),
-                               {0.0f, 0.0f, 0.0f});
-    impl_->scene_->ForceRedraw();
-}
+    void DrawVisualizer::ResetCamera() { return impl_->ResetCamera(); }
 
 DrawVisualizer::UIState DrawVisualizer::GetUIState() const {
     return impl_->ui_state_;
 }
 
 void DrawVisualizer::ExportCurrentImage(const std::string &path) {
-    impl_->scene_->EnableSceneCaching(false);
-    impl_->scene_->GetScene()->GetScene()->RenderToImage(
-            [this, path](std::shared_ptr<geometry::Image> image) mutable {
-                if (!io::WriteImage(path, *image)) {
-                    this->ShowMessageBox(
-                            "Error", (std::string("Could not write image to ") +
-                                      path + ".")
-                                             .c_str());
-                }
-                impl_->scene_->EnableSceneCaching(true);
-            });
+    impl_->ExportCurrentImage(path);
 }
 
 void DrawVisualizer::Layout(const Theme& theme) {
@@ -1385,78 +1470,6 @@ void DrawVisualizer::Layout(const Theme& theme) {
     }
 
     Super::Layout(theme);
-}
-
-void DrawVisualizer::OnAbout() {
-    auto &theme = GetTheme();
-    auto dlg = std::make_shared<gui::Dialog>("About");
-
-    auto title = std::make_shared<gui::Label>(
-            (std::string("Open3D ") + OPEN3D_VERSION).c_str());
-    auto text = std::make_shared<gui::Label>(
-            "The MIT License (MIT)\n"
-            "Copyright (c) 2018 - 2020 www.open3d.org\n\n"
-
-            "Permission is hereby granted, free of charge, to any person "
-            "obtaining a copy of this software and associated documentation "
-            "files (the \"Software\"), to deal in the Software without "
-            "restriction, including without limitation the rights to use, "
-            "copy, modify, merge, publish, distribute, sublicense, and/or "
-            "sell copies of the Software, and to permit persons to whom "
-            "the Software is furnished to do so, subject to the following "
-            "conditions:\n\n"
-
-            "The above copyright notice and this permission notice shall be "
-            "included in all copies or substantial portions of the "
-            "Software.\n\n"
-
-            "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, "
-            "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES "
-            "OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND "
-            "NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT "
-            "HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, "
-            "WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING "
-            "FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR "
-            "OTHER DEALINGS IN THE SOFTWARE.");
-    auto ok = std::make_shared<gui::Button>("OK");
-    ok->SetOnClicked([this]() { this->CloseDialog(); });
-
-    gui::Margins margins(theme.font_size);
-    auto layout = std::make_shared<gui::Vert>(0, margins);
-    layout->AddChild(gui::Horiz::MakeCentered(title));
-    layout->AddFixed(theme.font_size);
-    layout->AddChild(text);
-    layout->AddFixed(theme.font_size);
-    layout->AddChild(gui::Horiz::MakeCentered(ok));
-    dlg->AddChild(layout);
-
-    this->ShowDialog(dlg);
-}
-
-void DrawVisualizer::OnExportRGB() {
-    auto dlg = std::make_shared<gui::FileDialog>(
-                    gui::FileDialog::Mode::SAVE, "Save File", GetTheme());
-    dlg->AddFilter(".png", "PNG images (.png)");
-    dlg->AddFilter("", "All files");
-    dlg->SetOnCancel([this]() { this->CloseDialog(); });
-    dlg->SetOnDone([this](const char *path) {
-        this->CloseDialog();
-        this->ExportCurrentImage(path);
-    });
-    ShowDialog(dlg);
-}
-
-void DrawVisualizer::OnClose() {
-    this->Close();
-}
-
-void DrawVisualizer::OnToggleSettings() {
-    bool is_checked = !impl_->ui_state_.show_settings;
-    impl_->ui_state_.show_settings = is_checked;
-    impl_->settings.panel->SetVisible(is_checked);
-    Application::GetInstance().GetMenubar()->SetChecked(MENU_SETTINGS,
-                                                        is_checked);
-    SetNeedsLayout();
 }
 
 }  // namespace visualizer

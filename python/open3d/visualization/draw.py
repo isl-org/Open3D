@@ -1,5 +1,3 @@
-from .. import geometry as o3d_geometry
-from .. import t as o3d_t
 from . import gui
 from . import DrawVisualizer
 
@@ -32,7 +30,7 @@ def draw(geometry=None,
         for g in geometry:
             add(g, n)
             n += 1
-    elif isinstance(geometry, o3d_geometry.Geometry3D) or isinstance(geometry, o3d_t.geometry.Geometry):
+    elif geometry is not None:
         add(geometry, n)
 
     w.reset_camera()
