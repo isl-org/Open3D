@@ -27,11 +27,11 @@
 #pragma once
 
 #include <memory>
-#include <string>
 #include <set>
+#include <string>
 
-#include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/gui/Window.h"
+#include "open3d/visualization/rendering/Material.h"
 
 namespace open3d {
 
@@ -55,6 +55,7 @@ namespace visualizer {
 
 class DrawVisualizer : public gui::Window {
     using Super = gui::Window;
+
 public:
     enum class Shader { STANDARD, NORMALS, DEPTH };
 
@@ -89,8 +90,8 @@ public:
         Eigen::Vector3f sun_dir = {0.577f, -0.577f, -0.577f};
         Eigen::Vector3f sun_color = {1.0f, 1.0f, 1.0f};
 
-        double current_time = 0.0;  // seconds
-        double time_step = 1.0;  // seconds
+        double current_time = 0.0;   // seconds
+        double time_step = 1.0;      // seconds
         double frame_delay = 0.100;  // seconds
     };
 
@@ -100,7 +101,7 @@ public:
     void AddAction(const std::string& name,
                    std::function<void(DrawVisualizer&)> callback);
     void AddMenuAction(const std::string& name,
-                   std::function<void(DrawVisualizer&)> callback);
+                       std::function<void(DrawVisualizer&)> callback);
 
     void SetBackgroundColor(const Eigen::Vector4f& bg_color);
 
@@ -108,14 +109,14 @@ public:
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<geometry::Geometry3D> geom,
-                     rendering::Material *material = nullptr,
+                     rendering::Material* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
-                     
+
     void AddGeometry(const std::string& name,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
-                     rendering::Material *material = nullptr,
+                     rendering::Material* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
@@ -145,7 +146,7 @@ public:
     bool GetIsAnimating() const;
     void SetAnimating(bool is_animating);
 
-    void ExportCurrentImage(const std::string &path);
+    void ExportCurrentImage(const std::string& path);
 
     UIState GetUIState() const;
     rendering::Open3DScene* GetScene() const;

@@ -58,8 +58,8 @@
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "pybind/docstring.h"
-#include "pybind11/functional.h"
 #include "pybind/visualization/visualization.h"
+#include "pybind11/functional.h"
 
 namespace open3d {
 namespace visualization {
@@ -284,7 +284,8 @@ void pybind_gui_classes(py::module &m) {
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
             .def("add_window", &Application::AddWindow,
-                 "Adds a window to the application. This is only necessary when "
+                 "Adds a window to the application. This is only necessary "
+                 "when "
                  "creating object that is a Window directly, rather than with "
                  "create_window")
             .def("run_in_thread", &Application::RunInThread,

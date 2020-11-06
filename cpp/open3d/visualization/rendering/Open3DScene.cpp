@@ -31,10 +31,10 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
-#include "open3d/visualization/gui/Application.h"
 
 namespace open3d {
 namespace visualization {
@@ -169,7 +169,7 @@ void Open3DScene::SetLighting(LightingProfile profile,
     // background is clearly visible even when the highlight is next to the
     // background. Increasing the intensities much more make the highlight's
     // white too similar to the background's white.
-    switch(profile) {
+    switch (profile) {
         case LightingProfile::HARD_SHADOWS:
             scene->EnableIndirectLight(false);
             scene->EnableDirectionalLight(true);

@@ -72,7 +72,7 @@ public:
     };
 
     void SetLighting(LightingProfile profile, const Eigen::Vector3f& sun_dir);
-    
+
     /// Sets the maximum number of points before AddGeometry also adds a
     /// downsampled point cloud with number of points, used when rendering
     /// speed is important.

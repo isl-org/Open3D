@@ -1,6 +1,7 @@
 from . import gui
 from . import DrawVisualizer
 
+
 def draw(geometry=None,
          title="Open3D",
          width=1024,
@@ -24,7 +25,7 @@ def draw(geometry=None,
             w.add_geometry(g)
         else:
             w.add_geometry("Object " + str(n), g)
-        
+
     n = 1
     if isinstance(geometry, list):
         for g in geometry:

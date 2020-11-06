@@ -119,8 +119,7 @@ void pybind_rendering_classes(py::module &m) {
             .value("Horizontal", Camera::FovType::Horizontal)
             .export_values();
 
-    py::enum_<Camera::Projection> proj_type(cam, "Projection",
-                                            py::arithmetic(),
+    py::enum_<Camera::Projection> proj_type(cam, "Projection", py::arithmetic(),
                                             "Enum class for Camera projection "
                                             "types.");
     proj_type.value("Perspective", Camera::Projection::Perspective)
@@ -281,9 +280,9 @@ void pybind_rendering_classes(py::module &m) {
     // ---- Open3DScene ----
     py::class_<Open3DScene, std::shared_ptr<Open3DScene>> o3dscene(
             m, "Open3DScene", "High-level scene for rending");
-    py::enum_<Open3DScene::LightingProfile> lighting(o3dscene, "LightingProfile",
-                                                     py::arithmetic(),
-                                                     "Enum for conveniently setting lighting");
+    py::enum_<Open3DScene::LightingProfile> lighting(
+            o3dscene, "LightingProfile", py::arithmetic(),
+            "Enum for conveniently setting lighting");
     lighting.value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
             .value("DARK_SHADOWS", Open3DScene::LightingProfile::DARK_SHADOWS)
             .value("MED_SHADOWS", Open3DScene::LightingProfile::MED_SHADOWS)
@@ -324,12 +323,13 @@ void pybind_rendering_classes(py::module &m) {
                  "Shows or hides the geometry with the given name")
             .def("update_material", &Open3DScene::UpdateMaterial,
                  "Applies the passed material to all the geometries")
-            .def("set_view_size",
-                 [](Open3DScene *scene, int width, int height) {
-                     scene->GetView()->SetViewport(0, 0, width, height);
-                 },
-                 "Sets the view size. This should not be used except for "
-                 "rendering to an image")
+            .def(
+                    "set_view_size",
+                    [](Open3DScene *scene, int width, int height) {
+                        scene->GetView()->SetViewport(0, 0, width, height);
+                    },
+                    "Sets the view size. This should not be used except for "
+                    "rendering to an image")
             .def_property_readonly("scene", &Open3DScene::GetScene,
                                    "The low-level rendering scene object")
             .def_property_readonly("camera", &Open3DScene::GetCamera,
