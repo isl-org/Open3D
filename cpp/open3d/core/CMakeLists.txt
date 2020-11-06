@@ -82,6 +82,7 @@ endif()
 
 if (BUILD_CUDA_MODULE)
     list(APPEND CORE_NNS_SRC nns/FixedRadiusIndex.cpp)
+    list(APPEND CORE_NNS_SRC nns/FixedRadiusSearch.cu)
 endif()
 if(BUILD_CUDA_MODULE)
     set(ALL_CORE_SRC
