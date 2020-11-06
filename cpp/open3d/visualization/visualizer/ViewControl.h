@@ -90,7 +90,7 @@ public:
     /// in window size, FOV and zoom.
     bool ConvertFromPinholeCameraParameters(
             const camera::PinholeCameraParameters &parameters,
-            bool allow_arbitrary=false);
+            bool allow_arbitrary = false);
 
     ProjectionType GetProjectionType() const;
     void SetProjectionParameters();

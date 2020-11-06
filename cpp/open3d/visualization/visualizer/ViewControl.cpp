@@ -194,12 +194,12 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
     auto intrinsic = parameters.intrinsic_;
     auto extrinsic = parameters.extrinsic_;
     if (!allow_arbitrary && (window_height_ <= 0 || window_width_ <= 0 ||
-        window_height_ != intrinsic.height_ ||
-        window_width_ != intrinsic.width_ ||
-        intrinsic.intrinsic_matrix_(0, 2) !=
-                (double)window_width_ / 2.0 - 0.5 ||
-        intrinsic.intrinsic_matrix_(1, 2) !=
-                (double)window_height_ / 2.0 - 0.5)) {
+                             window_height_ != intrinsic.height_ ||
+                             window_width_ != intrinsic.width_ ||
+                             intrinsic.intrinsic_matrix_(0, 2) !=
+                                     (double)window_width_ / 2.0 - 0.5 ||
+                             intrinsic.intrinsic_matrix_(1, 2) !=
+                                     (double)window_height_ / 2.0 - 0.5)) {
         utility::LogWarning(
                 "[ViewControl] ConvertFromPinholeCameraParameters() failed "
                 "because window height and width do not match.");
@@ -211,9 +211,8 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
     double old_fov = field_of_view_;
     field_of_view_ = fov_rad * 180.0 / M_PI;
     if (!allow_arbitrary) {
-        field_of_view_ =
-                std::max(std::min(field_of_view_, FIELD_OF_VIEW_MAX),
-                         FIELD_OF_VIEW_MIN);
+        field_of_view_ = std::max(std::min(field_of_view_, FIELD_OF_VIEW_MAX),
+                                  FIELD_OF_VIEW_MIN);
         if (GetProjectionType() == ProjectionType::Orthogonal) {
             field_of_view_ = old_fov;
             utility::LogWarning(
