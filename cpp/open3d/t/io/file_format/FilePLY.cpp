@@ -310,22 +310,22 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     return true;
 }
 
-static e_ply_type GetPlyType(core::Dtype dType) {
-    if (dType == core::Dtype::UInt8) {
+static e_ply_type GetPlyType(core::Dtype d_type) {
+    if (d_type == core::Dtype::UInt8) {
         return PLY_UINT8;
-    } else if (dType == core::Dtype::UInt16) {
+    } else if (d_type == core::Dtype::UInt16) {
         return PLY_UINT16;
-    } else if (dType == core::Dtype::Int32) {
+    } else if (d_type == core::Dtype::Int32) {
         return PLY_INT32;
-    } else if (dType == core::Dtype::Float32) {
+    } else if (d_type == core::Dtype::Float32) {
         return PLY_FLOAT32;
-    } else if (dType == core::Dtype::Float64) {
+    } else if (d_type == core::Dtype::Float64) {
         return PLY_FLOAT64;
-    } else if (dType == core::Dtype::UInt8) {
+    } else if (d_type == core::Dtype::UInt8) {
         return PLY_UCHAR;
-    } else if (dType == core::Dtype::Int32) {
+    } else if (d_type == core::Dtype::Int32) {
         return PLY_INT32;
-    } else if (dType == core::Dtype::Float32) {
+    } else if (d_type == core::Dtype::Float32) {
         return PLY_FLOAT;
     } else {
         return PLY_DOUBLE;
@@ -356,11 +356,11 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    geometry::TensorListMap tMap = pointcloud.GetPointAttrMap();
+    geometry::TensorListMap tl_map = pointcloud.GetPointAttrMap();
     long size = static_cast<long>(pointcloud.GetPoints().GetSize());
 
     // Make sure all the attribtes have same size.
-    for (auto const &it : tMap) {
+    for (auto const &it : tl_map) {
         if (it.second.GetSize() != size) {
             utility::LogWarning(
                     "Write PLY failed: Points ({}) and {} ({}) have "
@@ -401,7 +401,7 @@ bool WritePointCloudToPLY(const std::string &filename,
     }
 
     e_ply_type attributeType;
-    for (auto const &it : tMap) {
+    for (auto const &it : tl_map) {
         if (it.first != "points" && it.first != "colors" &&
             it.first != "normals") {
             attributeType = GetPlyType(it.second.GetDtype());
@@ -457,7 +457,7 @@ bool WritePointCloudToPLY(const std::string &filename,
                     });
         }
 
-        for (auto const &it : tMap) {
+        for (auto const &it : tl_map) {
             if (it.first != "points" && it.first != "colors" &&
                 it.first != "normals") {
                 DISPATCH_DTYPE_TO_TEMPLATE(it.second.GetDtype(), [&]() {
