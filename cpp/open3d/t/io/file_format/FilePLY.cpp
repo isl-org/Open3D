@@ -419,7 +419,7 @@ bool WritePointCloudToPLY(const std::string &filename,
     utility::CountingProgressReporter reporter(params.update_progress);
     reporter.SetTotal(pointcloud.GetPoints().GetSize());
 
-    for (size_t i = 0; i < pointcloud.GetPoints().GetSize(); i++) {
+    for (int64_t i = 0; i < pointcloud.GetPoints().GetSize(); i++) {
         DISPATCH_DTYPE_TO_TEMPLATE(pointcloud.GetPoints().GetDtype(), [&]() {
             ply_write(ply_file,
                       GetValue<scalar_t>(pointcloud.GetPoints()[i], 0));
