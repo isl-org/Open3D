@@ -30,6 +30,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
 #include "open3d/io/FileFormatIO.h"
+#include "open3d/t/geometry/TensorListMap.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
@@ -298,12 +299,180 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     // Add rest of the attributes.
     for (auto const &it : state.name_to_attr_state_) {
-        pointcloud.SetPointAttr(it.second->name_,
-                                core::TensorList::FromTensor(it.second->data_));
+        core::TensorList newAttr = core::TensorList(
+                it.second->size_, {1}, it.second->data_.GetDtype());
+        newAttr.AsTensor().IndexExtract(1, 0) = it.second->data_;
+        pointcloud.SetPointAttr(it.second->name_, newAttr);
     }
     ply_close(ply_file);
     reporter.Finish();
 
+    return true;
+}
+
+static e_ply_type GetPlyType(core::Dtype dType) {
+    if (dType == core::Dtype::UInt8) {
+        return PLY_UINT8;
+    } else if (dType == core::Dtype::UInt16) {
+        return PLY_UINT16;
+    } else if (dType == core::Dtype::Int32) {
+        return PLY_INT32;
+    } else if (dType == core::Dtype::Float32) {
+        return PLY_FLOAT32;
+    } else if (dType == core::Dtype::Float64) {
+        return PLY_FLOAT64;
+    } else if (dType == core::Dtype::UInt8) {
+        return PLY_UCHAR;
+    } else if (dType == core::Dtype::Int32) {
+        return PLY_INT32;
+    } else if (dType == core::Dtype::Float32) {
+        return PLY_FLOAT;
+    } else {
+        return PLY_DOUBLE;
+    }
+}
+
+template <typename T>
+static double GetValue(core::Tensor t_attr, int pos) {
+    T *data_ptr = static_cast<T *>(t_attr.GetDataPtr());
+    return (double)data_ptr[pos];
+}
+
+bool WritePointCloudToPLY(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const open3d::io::WritePointCloudOption &params) {
+    if (pointcloud.IsEmpty()) {
+        utility::LogWarning("Write PLY failed: point cloud has 0 points.");
+        return false;
+    }
+
+    p_ply ply_file =
+            ply_create(filename.c_str(),
+                       bool(params.write_ascii) ? PLY_ASCII : PLY_LITTLE_ENDIAN,
+                       NULL, 0, NULL);
+    if (!ply_file) {
+        utility::LogWarning("Write PLY failed: unable to open file: {}.",
+                            filename);
+        return false;
+    }
+
+    geometry::TensorListMap tMap = pointcloud.GetPointAttrMap();
+    long size = static_cast<long>(pointcloud.GetPoints().GetSize());
+
+    // Make sure all the attribtes have same size.
+    for (auto const &it : tMap) {
+        if (it.second.GetSize() != size) {
+            utility::LogWarning(
+                    "Write PLY failed: Points ({}) and {} ({}) have "
+                    "different lengths.",
+                    size, it.first, it.second.GetSize());
+            return false;
+        }
+    }
+
+    ply_add_comment(ply_file, "Created by Open3D");
+    ply_add_element(ply_file, "vertex", size);
+
+    e_ply_type pointType = GetPlyType(pointcloud.GetPoints().GetDtype());
+    ply_add_property(ply_file, "x", pointType, pointType, pointType);
+    ply_add_property(ply_file, "y", pointType, pointType, pointType);
+    ply_add_property(ply_file, "z", pointType, pointType, pointType);
+
+    if (pointcloud.HasPointNormals()) {
+        e_ply_type pointNormalsType =
+                GetPlyType(pointcloud.GetPointNormals().GetDtype());
+        ply_add_property(ply_file, "nx", pointNormalsType, pointNormalsType,
+                         pointNormalsType);
+        ply_add_property(ply_file, "ny", pointNormalsType, pointNormalsType,
+                         pointNormalsType);
+        ply_add_property(ply_file, "nz", pointNormalsType, pointNormalsType,
+                         pointNormalsType);
+    }
+
+    if (pointcloud.HasPointColors()) {
+        e_ply_type pointColorType =
+                GetPlyType(pointcloud.GetPointColors().GetDtype());
+        ply_add_property(ply_file, "red", pointColorType, pointColorType,
+                         pointColorType);
+        ply_add_property(ply_file, "green", pointColorType, pointColorType,
+                         pointColorType);
+        ply_add_property(ply_file, "blue", pointColorType, pointColorType,
+                         pointColorType);
+    }
+
+    e_ply_type attributeType;
+    for (auto const &it : tMap) {
+        if (it.first != "points" && it.first != "colors" &&
+            it.first != "normals") {
+            attributeType = GetPlyType(it.second.GetDtype());
+            ply_add_property(ply_file, it.first.c_str(), attributeType,
+                             attributeType, attributeType);
+        }
+    }
+
+    if (!ply_write_header(ply_file)) {
+        utility::LogWarning("Write PLY failed: unable to write header.");
+        ply_close(ply_file);
+        return false;
+    }
+
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(pointcloud.GetPoints().GetSize());
+
+    for (size_t i = 0; i < pointcloud.GetPoints().GetSize(); i++) {
+        DISPATCH_DTYPE_TO_TEMPLATE(pointcloud.GetPoints().GetDtype(), [&]() {
+            ply_write(ply_file,
+                      GetValue<scalar_t>(pointcloud.GetPoints()[i], 0));
+            ply_write(ply_file,
+                      GetValue<scalar_t>(pointcloud.GetPoints()[i], 1));
+            ply_write(ply_file,
+                      GetValue<scalar_t>(pointcloud.GetPoints()[i], 2));
+        });
+        if (pointcloud.HasPointNormals()) {
+            DISPATCH_DTYPE_TO_TEMPLATE(
+                    pointcloud.GetPointNormals().GetDtype(), [&]() {
+                        ply_write(ply_file,
+                                  GetValue<scalar_t>(
+                                          pointcloud.GetPointNormals()[i], 0));
+                        ply_write(ply_file,
+                                  GetValue<scalar_t>(
+                                          pointcloud.GetPointNormals()[i], 1));
+                        ply_write(ply_file,
+                                  GetValue<scalar_t>(
+                                          pointcloud.GetPointNormals()[i], 2));
+                    });
+        }
+        if (pointcloud.HasPointColors()) {
+            DISPATCH_DTYPE_TO_TEMPLATE(
+                    pointcloud.GetPointColors().GetDtype(), [&]() {
+                        ply_write(ply_file,
+                                  GetValue<scalar_t>(
+                                          pointcloud.GetPointColors()[i], 0));
+                        ply_write(ply_file,
+                                  GetValue<scalar_t>(
+                                          pointcloud.GetPointColors()[i], 1));
+                        ply_write(ply_file,
+                                  GetValue<scalar_t>(
+                                          pointcloud.GetPointColors()[i], 2));
+                    });
+        }
+
+        for (auto const &it : tMap) {
+            if (it.first != "points" && it.first != "colors" &&
+                it.first != "normals") {
+                DISPATCH_DTYPE_TO_TEMPLATE(it.second.GetDtype(), [&]() {
+                    ply_write(ply_file, GetValue<scalar_t>(it.second[i], 0));
+                });
+            }
+        }
+
+        if (i % 1000 == 0) {
+            reporter.Update(i);
+        }
+    }
+
+    reporter.Finish();
+    ply_close(ply_file);
     return true;
 }
 

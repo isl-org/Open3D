@@ -74,6 +74,11 @@ const std::vector<ReadWritePCArgs> pcArgs({
          IsAscii::ASCII,
          Compressed::UNCOMPRESSED,
          {{"points", 1e-5}, {"intensities", 1e-5}}},  // 0
+
+        {"test.ply",
+         IsAscii::ASCII,
+         Compressed::UNCOMPRESSED,
+         {{"points", 1e-5}, {"intensities", 1e-5}}},  // 1
 });
 
 class ReadWriteTPC : public testing::TestWithParam<ReadWritePCArgs> {};
