@@ -73,6 +73,10 @@ bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const ReadPointCloudOption &params);
 
+bool WritePointCloudToPLY(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const WritePointCloudOption &params);
+
 }  // namespace io
 }  // namespace t
 }  // namespace open3d
