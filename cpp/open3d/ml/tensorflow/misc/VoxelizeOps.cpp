@@ -75,57 +75,33 @@ REGISTER_OP("Open3DVoxelize")
         })
         .Doc(R"doc(
 Voxelization for point clouds.
-Spatial pooling for point clouds by combining points that fall into the same voxel bin.
 
-The voxel grid used for pooling is always aligned to the origin (0,0,0) to 
-simplify building voxel grid hierarchies. The order of the returned voxels is
-not defined as can be seen in the following example::
+The function returns the integer coordinates of the voxels that contain
+points and a compact list of the indices that associate the voxels to the
+points.
+
+Minimal example::
 
   import open3d.ml.tf as ml3d
 
-  positions = [
+  points = [
       [0.1,0.1,0.1], 
       [0.5,0.5,0.5], 
       [1.7,1.7,1.7],
       [1.8,1.8,1.8],
-      [0.3,2.4,1.4]]
+      [9.3,9.4,9.4]]
 
-  features = [[1.0,2.0],
-              [1.1,2.3],
-              [4.2,0.1],
-              [1.3,3.4],
-              [2.3,1.9]]
+  ml3d.ops.voxelize(points, 
+                    voxel_size=[1.0,1.0,1.0], 
+                    points_range_min=[0,0,0], 
+                    points_range_max=[2,2,2])
 
-  ml3d.ops.voxel_pooling(positions, features, 1.0, 
-                         position_fn='center', feature_fn='max')
-
-  # or with pytorch
-  import torch
-  import open3d.ml.torch as ml3d
-
-  positions = torch.Tensor([
-      [0.1,0.1,0.1], 
-      [0.5,0.5,0.5], 
-      [1.7,1.7,1.7],
-      [1.8,1.8,1.8],
-      [0.3,2.4,1.4]])
-
-  features = torch.Tensor([
-              [1.0,2.0],
-              [1.1,2.3],
-              [4.2,0.1],
-              [1.3,3.4],
-              [2.3,1.9]])
-
-  ml3d.ops.voxel_pooling(positions, features, 1.0, 
-                         position_fn='center', feature_fn='max')
-
-  # returns the voxel centers  [[0.5, 2.5, 1.5],
-  #                             [1.5, 1.5, 1.5],
-  #                             [0.5, 0.5, 0.5]]
-  # and the max pooled features for each voxel [[2.3, 1.9],
-  #                                             [4.2, 3.4],
-  #                                             [1.1, 2.3]]
+  # returns the voxel coordinates  [[0, 0, 0],
+  #                                 [1, 1, 1]]
+  #
+  #         the point indices      [0, 1, 2, 3]
+  #
+  #         and the point row splits [0, 2, 4] 
 
 points: The point positions with shape [N,D] with N as the number of points and
   D as the number of dimensions, which must be 0 < D < 9.

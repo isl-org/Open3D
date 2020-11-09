@@ -163,8 +163,8 @@ void VoxelizeCPU(size_t num_points,
         while (hashes_indices[i].first == -1) {
             ++i;
         }
-        for (;
-             i < hashes_indices.size() && out_voxel_row_splits_idx < num_voxels;
+        for (; i < hashes_indices.size() &&
+               out_voxel_row_splits_idx <= num_voxels;
              ++i) {
             if (i == 0 ||
                 hashes_indices[i - 1].first != hashes_indices[i].first) {
