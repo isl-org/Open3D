@@ -97,6 +97,8 @@ void EngineInstance::DestroyInstance() { g_instance.reset(); }
 /// rendering
 extern "C" filament::backend::Platform* CreateEGLHeadlessPlatform();
 
+
+
 EngineInstance::EngineInstance() {
     filament::backend::Backend backend = filament::backend::Backend::DEFAULT;
     switch (type_) {
@@ -116,7 +118,11 @@ EngineInstance::EngineInstance() {
 
     filament::backend::Platform* custom_platform = nullptr;
     if (is_headless_) {
+#ifdef __linux__
         custom_platform = CreateEGLHeadlessPlatform();
+#else
+        utility::LogError("EGL Headless is not supported on this platform");
+#endif
     }
 
     engine_ = filament::Engine::create(backend, custom_platform);
