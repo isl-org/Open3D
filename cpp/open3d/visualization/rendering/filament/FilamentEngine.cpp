@@ -97,8 +97,6 @@ void EngineInstance::DestroyInstance() { g_instance.reset(); }
 /// rendering
 extern "C" filament::backend::Platform* CreateEGLHeadlessPlatform();
 
-
-
 EngineInstance::EngineInstance() {
     filament::backend::Backend backend = filament::backend::Backend::DEFAULT;
     switch (type_) {
