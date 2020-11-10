@@ -3,13 +3,13 @@ include(ExternalProject)
 set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
 
 set(FILAMENT_GIT_REPOSITORY "https://github.com/errissa/filament.git")
-#set(FILAMENT_GIT_TAG "main")
+set(FILAMENT_GIT_TAG "main")
 
 ExternalProject_Add(
     ext_filament
     PREFIX filament
     GIT_REPOSITORY ${FILAMENT_GIT_REPOSITORY}
-#    GIT_TAG ${FILAMENT_GIT_TAG}
+    GIT_TAG ${FILAMENT_GIT_TAG}
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=Release
