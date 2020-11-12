@@ -29,6 +29,8 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_sort.h>
 
+#include <vector>
+
 #include "open3d/core/Atomic.h"
 #include "open3d/utility/MiniVec.h"
 #include "open3d/utility/ParallelScan.h"
