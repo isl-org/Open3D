@@ -87,7 +87,7 @@ def assert_equal_voxel_dicts(out, ref):
 iteration = 0
 
 
-@mltest.parametrize.ml_tf_only
+@mltest.parametrize.ml
 @point_dtypes
 @pytest.mark.parametrize('point_range_max', ([11, 11, 11], [2, 2, 2]))
 @pytest.mark.parametrize('max_voxels', [1000, 2, 1, 0])
@@ -145,7 +145,7 @@ def test_voxelize_simple(ml, point_dtype, point_range_max, max_voxels,
     assert_equal_voxel_dicts(voxels, ref=voxels_reference)
 
 
-@mltest.parametrize.ml_tf_only
+@mltest.parametrize.ml
 @point_dtypes
 @ndims
 @pytest.mark.parametrize('max_voxels', [10000, 16, 1, 0])
