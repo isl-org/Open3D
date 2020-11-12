@@ -25,9 +25,10 @@
 // ----------------------------------------------------------------------------
 //
 
+#include "open3d/ml/pytorch/misc/VoxelizeOpKernel.h"
+
 #include "open3d/ml/impl/misc/Voxelize.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
-#include "open3d/ml/pytorch/misc/VoxelizeOpKernel.h"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;
