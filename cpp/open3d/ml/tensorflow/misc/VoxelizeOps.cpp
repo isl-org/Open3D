@@ -103,6 +103,29 @@ Minimal example::
   #
   #         and the point row splits [0, 2, 4] 
 
+  # or with pytorch
+  import torch
+  import open3d.ml.torch as ml3d
+
+  points = torch.Tensor([
+      [0.1,0.1,0.1], 
+      [0.5,0.5,0.5], 
+      [1.7,1.7,1.7],
+      [1.8,1.8,1.8],
+      [9.3,9.4,9.4]])
+
+  ml3d.ops.voxelize(points, 
+                    voxel_size=torch.Tensor([1.0,1.0,1.0]), 
+                    points_range_min=torch.Tensor([0,0,0]), 
+                    points_range_max=torch.Tensor([2,2,2]))
+
+  # returns the voxel coordinates  [[0, 0, 0],
+  #                                 [1, 1, 1]]
+  #
+  #         the point indices      [0, 1, 2, 3]
+  #
+  #         and the point row splits [0, 2, 4] 
+
 points: The point positions with shape [N,D] with N as the number of points and
   D as the number of dimensions, which must be 0 < D < 9.
 
