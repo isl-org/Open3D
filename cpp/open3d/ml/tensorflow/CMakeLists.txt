@@ -57,6 +57,7 @@ set(TF_OPS_CUDA_SOURCES
     "misc/BuildSpatialHashTableOpKernel.cu"
     "misc/InvertNeighborsListOpKernel.cu"
     "misc/ReduceSubarraysSumOpKernel.cu"
+    "misc/VoxelizeOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
 )
 
