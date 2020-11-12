@@ -29,8 +29,6 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_sort.h>
 
-#include <mutex>
-
 #include "open3d/core/Atomic.h"
 #include "open3d/utility/MiniVec.h"
 #include "open3d/utility/ParallelScan.h"
@@ -105,6 +103,7 @@ void VoxelizeCPU(size_t num_points,
             strides[i] *= extents[j];
         }
     }
+    const int64_t invalid_hash = strides[NDIM - 1] * extents[NDIM - 1];
 
     auto CoordFn = [&](const Vec_t& point) {
         auto coords = ((point - points_range_min_vec) * inv_voxel_size)
@@ -119,7 +118,7 @@ void VoxelizeCPU(size_t num_points,
             int64_t linear_idx = coords.dot(strides);
             return linear_idx;
         }
-        return int64_t(-1);
+        return invalid_hash;
     };
 
     std::vector<std::pair<int64_t, int64_t>> hashes_indices(num_points);
@@ -133,10 +132,7 @@ void VoxelizeCPU(size_t num_points,
                       });
     tbb::parallel_sort(hashes_indices);
 
-    uint64_t num_voxels = 0;
-    if (hashes_indices[0].first != -1) {
-        num_voxels = 1;
-    }
+    uint64_t num_voxels = 1;
     tbb::parallel_for(tbb::blocked_range<int64_t>(1, hashes_indices.size()),
                       [&](const tbb::blocked_range<int64_t>& r) {
                           for (int64_t i = r.begin(); i != r.end(); ++i) {
@@ -146,6 +142,9 @@ void VoxelizeCPU(size_t num_points,
                               }
                           }
                       });
+    if (invalid_hash == hashes_indices.back().first) {
+        --num_voxels;
+    }
     num_voxels = std::min(int64_t(num_voxels), max_voxels);
 
     int32_t* out_voxel_coords = nullptr;
@@ -156,33 +155,28 @@ void VoxelizeCPU(size_t num_points,
 
     std::vector<int64_t> tmp_point_indices;
     {
-        size_t out_voxel_row_splits_idx = 0;
-        int64_t points_per_voxel = 0;
-        size_t i = 0;
-
-        while (hashes_indices[i].first == -1) {
-            ++i;
-        }
-        for (; i < hashes_indices.size() &&
-               out_voxel_row_splits_idx <= num_voxels;
-             ++i) {
-            if (i == 0 ||
-                hashes_indices[i - 1].first != hashes_indices[i].first) {
-                out_voxel_row_splits[out_voxel_row_splits_idx] =
-                        tmp_point_indices.size();
-
-                auto coord = CoordFn(
-                        Vec_t(points + hashes_indices[i].second * NDIM));
-                for (int d = 0; d < NDIM; ++d) {
-                    out_voxel_coords[out_voxel_row_splits_idx * NDIM + d] =
-                            coord[d];
-                }
-                ++out_voxel_row_splits_idx;
-                points_per_voxel = 0;
+        int64_t hash_i = 0;  // index into the vector hashes_indices
+        for (int64_t voxel_i = 0; voxel_i < num_voxels; ++voxel_i) {
+            // compute voxel coord and the prefix sum value
+            auto coord = CoordFn(
+                    Vec_t(points + hashes_indices[hash_i].second * NDIM));
+            for (int d = 0; d < NDIM; ++d) {
+                out_voxel_coords[voxel_i * NDIM + d] = coord[d];
             }
-            if (points_per_voxel < max_points_per_voxel) {
-                tmp_point_indices.push_back(hashes_indices[i].second);
-                ++points_per_voxel;
+            out_voxel_row_splits[voxel_i] = tmp_point_indices.size();
+
+            // add up to max_points_per_voxel indices for this voxel
+            int64_t points_per_voxel = 0;
+            const int64_t current_hash = hashes_indices[hash_i].first;
+            for (; hash_i < hashes_indices.size(); ++hash_i) {
+                if (current_hash != hashes_indices[hash_i].first) {
+                    // new voxel starts -> break
+                    break;
+                }
+                if (points_per_voxel < max_points_per_voxel) {
+                    tmp_point_indices.push_back(hashes_indices[hash_i].second);
+                    ++points_per_voxel;
+                }
             }
         }
         out_voxel_row_splits[num_voxels] = tmp_point_indices.size();
