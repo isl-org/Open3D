@@ -369,6 +369,8 @@ public:
     std::vector<Eigen::Vector3d> normals_;
     /// RGB colors of points.
     std::vector<Eigen::Vector3d> colors_;
+    /// Covariance Matrix for each point
+    std::vector<Eigen::Matrix3d> covariances_;
 };
 
 }  // namespace geometry
