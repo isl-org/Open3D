@@ -33,19 +33,14 @@
 #include <Eigen/Core>
 #include <memory>
 
-#include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
-
-namespace geometry {
-class PointCloud;
-}
-
 namespace pipelines {
 namespace registration {
+
 class RegistrationResult;
 
 class TransformationEstimationForGeneralizedICP

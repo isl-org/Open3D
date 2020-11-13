@@ -66,7 +66,7 @@ inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
 std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
         const geometry::PointCloud &pcd) {
     auto output = std::make_shared<geometry::PointCloud>(pcd);
-    if (!output->covariances_.empty()) {
+    if (!output->HasCovariances()) {
         utility::LogDebug("GeneralizedICP: Using pre-computed Covariances.");
         return output;
     }
