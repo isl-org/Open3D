@@ -142,6 +142,10 @@ void pybind_pointcloud(py::module &m) {
                  "distance to "
                  "the target point cloud.",
                  "target"_a)
+            .def("estimate_covariances", &PointCloud::EstimateCovariances,
+                 "Function to compute the covariance matrices for each point "
+                 "in the point cloud",
+                 "search_param"_a = KDTreeSearchParamKNN())
             .def("compute_mean_and_covariance",
                  &PointCloud::ComputeMeanAndCovariance,
                  "Function to compute the mean and covariance matrix of a "
@@ -285,6 +289,10 @@ void pybind_pointcloud(py::module &m) {
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_point_cloud_distance",
                                     {{"target", "The target point cloud."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "estimate_covariances",
+            {{"search_param",
+              "The KDTree search parameters for neighborhood search."}});
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_mean_and_covariance");
     docstring::ClassMethodDocInject(m, "PointCloud",
