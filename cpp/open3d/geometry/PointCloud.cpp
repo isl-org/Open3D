@@ -70,6 +70,7 @@ OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
 PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
     TransformPoints(transformation, points_);
     TransformNormals(transformation, normals_);
+    TransformCovariances(transformation, covariances_);
     return *this;
 }
 
@@ -89,6 +90,7 @@ PointCloud &PointCloud::Rotate(const Eigen::Matrix3d &R,
                                const Eigen::Vector3d &center) {
     RotatePoints(R, points_, center);
     RotateNormals(R, normals_);
+    RotateCovariances(R, covariances_);
     return *this;
 }
 
