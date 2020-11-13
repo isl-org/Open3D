@@ -44,7 +44,7 @@ namespace registration {
 
 namespace {
 
-/// Obatin the Rotation matrix that transform the basis vector e1 onto the
+/// Obtain the Rotation matrix that transform the basis vector e1 onto the
 /// input vector x.
 inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
     const Eigen::Vector3d e1{1, 0, 0};
@@ -62,8 +62,7 @@ inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
 
 /// Compute the covariance matrix according to the original paper. Instead of
 /// doing (again) the SVD decomposition, re-use the normals given in the
-/// PointCloud. This also opens the oportunity to get the normal estimation from
-/// somewhere else
+/// PointCloud.e
 std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
         const geometry::PointCloud &pcd) {
     auto output = std::make_shared<geometry::PointCloud>(pcd);
@@ -176,10 +175,10 @@ RegistrationResult RegistrationGeneralizedICP(
     if (max_correspondence_distance <= 0.0) {
         utility::LogError("Invalid max_correspondence_distance.");
     }
-    auto source_c = InitializePointCloudForGeneralizedICP(source);
-    auto target_c = InitializePointCloudForGeneralizedICP(target);
-    return RegistrationICP(*source_c, *target_c, max_correspondence_distance,
-                           init, estimation, criteria);
+    return RegistrationICP(*InitializePointCloudForGeneralizedICP(source),
+                           *InitializePointCloudForGeneralizedICP(target),
+                           max_correspondence_distance, init, estimation,
+                           criteria);
 }
 
 }  // namespace registration
