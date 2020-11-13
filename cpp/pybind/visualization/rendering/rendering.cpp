@@ -35,6 +35,7 @@
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "pybind/docstring.h"
 #include "pybind/visualization/gui/gui.h"
+#include "pybind/visualization/visualization.h"
 #include "pybind11/functional.h"
 
 namespace open3d {
@@ -232,7 +233,7 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("shader", &Material::shader);
 
     // ---- Scene ----
-    py::class_<Scene, std::shared_ptr<Scene>> scene(
+    py::class_<Scene, UnownedPointer<Scene>> scene(
             m, "Scene", "Low-level rendering scene");
     scene.def("add_camera", &Scene::AddCamera, "Adds a camera to the scene")
             .def("remove_camera", &Scene::RemoveCamera,
@@ -288,7 +289,7 @@ void pybind_rendering_classes(py::module &m) {
     scene.attr("UPDATE_UV0_FLAG") = py::int_(Scene::kUpdateUv0Flag);
 
     // ---- Open3DScene ----
-    py::class_<Open3DScene, std::shared_ptr<Open3DScene>> o3dscene(
+    py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
             m, "Open3DScene", "High-level scene for rending");
     o3dscene.def(py::init<Renderer &>())
             .def("show_skybox", &Open3DScene::ShowSkybox,
