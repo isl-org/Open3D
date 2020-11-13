@@ -130,6 +130,7 @@ private:
 
     LOD lod_ = LOD::HIGH_DETAIL;
     bool use_low_quality_if_available_ = false;
+    bool axis_dirty_ = true;
     std::map<std::string, GeometryData> geometries_;  // name -> data
     geometry::AxisAlignedBoundingBox bounds_;
     size_t downsample_threshold_ = 6000000;
