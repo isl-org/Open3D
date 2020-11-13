@@ -64,12 +64,22 @@ inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
 /// doing (again) the SVD decomposition, re-use the normals given in the
 /// PointCloud. This also opens the oportunity to get the normal estimation from
 /// somewhere else
-std::shared_ptr<PointCloud> InitializePointCloudForGeneralizedICP(
+std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
         const geometry::PointCloud &pcd) {
-    utility::LogDebug("InitializePointCloudForGeneralizedICP");
-    auto output = std::make_shared<PointCloud>(pcd); // copy pcd to output
-    output->covariances_.resize(output->points_.size());
+    auto output = std::make_shared<geometry::PointCloud>(pcd);
+    if (!output->covariances_.empty()) {
+        utility::LogDebug("GeneralizedICP: Using pre-computed Covariances.");
+        return output;
+    }
 
+    if (!output->HasNormals()) {
+        // Compute normals the same way is done in the original GICP paper.
+        utility::LogDebug("GeneralizedICP Computing normals");
+        output->EstimateNormals(open3d::geometry::KDTreeSearchParamKNN(20));
+    }
+
+    utility::LogDebug("GeneralizedICP: Computing covariances.");
+    output->covariances_.resize(output->points_.size());
     const double epsilon = 1e-3;
     const Eigen::Matrix3d C = Eigen::Vector3d(epsilon, 1, 1).asDiagonal();
 #pragma omp parallel for
@@ -92,8 +102,8 @@ double TransformationEstimationForGeneralizedICP::ComputeRMSE(
     for (const auto &c : corres) {
         const Eigen::Vector3d &vs = source.points_[c[0]];
         const Eigen::Matrix3d &Cs = source.covariances_[c[0]];
-        const Eigen::Vector3d &vt = target_c.points_[c[1]];
-        const Eigen::Matrix3d &Ct = target_c.covariances_[c[1]];
+        const Eigen::Vector3d &vt = target.points_[c[1]];
+        const Eigen::Matrix3d &Ct = target.covariances_[c[1]];
         const Eigen::Vector3d d = vs - vt;
         const Eigen::Matrix3d M = Ct + Cs;
         const Eigen::Matrix3d W = M.inverse().sqrt();
@@ -166,20 +176,8 @@ RegistrationResult RegistrationGeneralizedICP(
     if (max_correspondence_distance <= 0.0) {
         utility::LogError("Invalid max_correspondence_distance.");
     }
-
-    // Compute the covariance matrices using normal information for both clouds.
-    if (source.covariances_.empty() || target.covariances_.empty()) {
-        utility::LogDebug(
-                "GeneralizedICP: No covariance information provided, computing "
-                "covariance matrices from normals");
-        if (!source.HasNormals() || !target.HasNormals()) {
-            utility::LogError(
-                    "GeneralizedICP require pre-computed normal vectors for "
-                    "target and source PointClouds.");
-        }
-        auto source_c = InitializePointCloudForGeneralizedICP(source);
-        auto target_c = InitializePointCloudForGeneralizedICP(target);
-    }
+    auto source_c = InitializePointCloudForGeneralizedICP(source);
+    auto target_c = InitializePointCloudForGeneralizedICP(target);
     return RegistrationICP(*source_c, *target_c, max_correspondence_distance,
                            init, estimation, criteria);
 }
