@@ -26,8 +26,6 @@
 
 #include "open3d/geometry/Geometry3D.h"
 
-#include <Eigen/src/Core/Matrix.h>
-
 #include <Eigen/Dense>
 #include <numeric>
 

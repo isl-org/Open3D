@@ -215,13 +215,6 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
 namespace {
 class AccumulatedPoint {
 public:
-    AccumulatedPoint()
-        : num_of_points_(0),
-          point_(0.0, 0.0, 0.0),
-          normal_(0.0, 0.0, 0.0),
-          color_(0.0, 0.0, 0.0) {}
-
-public:
     void AddPoint(const PointCloud &cloud, int index) {
         point_ += cloud.points_[index];
         if (cloud.HasNormals()) {
@@ -233,6 +226,9 @@ public:
         }
         if (cloud.HasColors()) {
             color_ += cloud.colors_[index];
+        }
+        if (cloud.HasCovariances()) {
+            covariance_ += cloud.covariances_[index];
         }
         num_of_points_++;
     }
@@ -250,11 +246,16 @@ public:
         return color_ / double(num_of_points_);
     }
 
+    Eigen::Matrix3d GetAverageCovariance() const {
+        return covariance_ / double(num_of_points_);
+    }
+
 public:
-    int num_of_points_;
-    Eigen::Vector3d point_;
-    Eigen::Vector3d normal_;
-    Eigen::Vector3d color_;
+    int num_of_points_ = 0;
+    Eigen::Vector3d point_ = Eigen::Vector3d::Identity();
+    Eigen::Vector3d normal_ = Eigen::Vector3d::Identity();
+    Eigen::Vector3d color_ = Eigen::Vector3d::Identity();
+    Eigen::Matrix3d covariance_ = Eigen::Matrix3d::Identity();
 };
 
 class point_cubic_id {
@@ -288,7 +289,10 @@ public:
                 color_ += cloud.colors_[index];
             }
         }
-        point_cubic_id new_id;
+        if (cloud.HasCovariances()) {
+            covariance_ += cloud.covariances_[index];
+        }
+        point_cubic_id new_id{};
         new_id.point_id = index;
         new_id.cubic_id = cubic_index;
         original_id.push_back(new_id);
@@ -344,13 +348,18 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     }
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
-    for (auto accpoint : voxelindex_to_accpoint) {
+    bool has_covariances = HasCovariances();
+    for (const auto &accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
         if (has_normals) {
             output->normals_.push_back(accpoint.second.GetAverageNormal());
         }
         if (has_colors) {
             output->colors_.push_back(accpoint.second.GetAverageColor());
+        }
+        if (has_covariances) {
+            output->covariances_.emplace_back(
+                    accpoint.second.GetAverageCovariance());
         }
     }
     utility::LogDebug(
@@ -399,6 +408,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     }
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
+    bool has_covariances = HasCovariances();
     int cnt = 0;
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
     cubic_id.setConstant(-1);
@@ -415,6 +425,10 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
             } else {
                 output->colors_.push_back(accpoint.second.GetAverageColor());
             }
+        }
+        if (has_covariances) {
+            output->covariances_.emplace_back(
+                    accpoint.second.GetAverageCovariance());
         }
         auto original_id = accpoint.second.GetOriginalID();
         for (int i = 0; i < (int)original_id.size(); i++) {
