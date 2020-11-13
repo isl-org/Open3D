@@ -43,6 +43,7 @@ PointCloud &PointCloud::Clear() {
     points_.clear();
     normals_.clear();
     colors_.clear();
+    covariances_.clear();
     return *this;
 }
 
@@ -112,6 +113,13 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
     } else {
         colors_.clear();
     }
+    if ((!HasPoints() || HasCovariances()) && cloud.HasCovariances()) {
+        covariances_.resize(new_vert_num);
+        for (size_t i = 0; i < add_vert_num; i++)
+            covariances_[old_vert_num + i] = cloud.covariances_[i];
+    } else {
+        covariances_.clear();
+    }
     points_.resize(new_vert_num);
     for (size_t i = 0; i < add_vert_num; i++)
         points_[old_vert_num + i] = cloud.points_[i];
@@ -147,6 +155,7 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
                                               bool remove_infinite) {
     bool has_normal = HasNormals();
     bool has_color = HasColors();
+    bool has_covariance = HasCovariances();
     size_t old_point_num = points_.size();
     size_t k = 0;                                 // new index
     for (size_t i = 0; i < old_point_num; i++) {  // old index
@@ -160,12 +169,14 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
             points_[k] = points_[i];
             if (has_normal) normals_[k] = normals_[i];
             if (has_color) colors_[k] = colors_[i];
+            if (has_covariance) covariances_[k] = covariances_[i];
             k++;
         }
     }
     points_.resize(k);
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
+    if (has_covariance) covariances_.resize(k);
     utility::LogDebug(
             "[RemoveNonFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
@@ -177,6 +188,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
     auto output = std::make_shared<PointCloud>();
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
+    bool has_covariance = HasCovariances();
 
     std::vector<bool> mask = std::vector<bool>(points_.size(), invert);
     for (size_t i : indices) {
@@ -188,6 +200,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
             output->points_.push_back(points_[i]);
             if (has_normals) output->normals_.push_back(normals_[i]);
             if (has_colors) output->colors_.push_back(colors_[i]);
+            if (has_covariance) output->covariances_.push_back(covariances_[i]);
         }
     }
     utility::LogDebug(

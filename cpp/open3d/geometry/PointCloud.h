@@ -94,6 +94,11 @@ public:
         return points_.size() > 0 && colors_.size() == points_.size();
     }
 
+    /// Returns 'true' if the point cloud contains per-point covariance matrix.
+    bool HasCovariances() const {
+        return !points_.empty() && covariances_.size() == points_.size();
+    }
+
     /// Normalize point normals to length 1.
     PointCloud &NormalizeNormals() {
         for (size_t i = 0; i < normals_.size(); i++) {
