@@ -74,8 +74,8 @@ void pybind_pointcloud(py::module &m) {
                  "indices"_a, "invert"_a = false)
             .def("voxel_down_sample", &PointCloud::VoxelDownSample,
                  "Function to downsample input pointcloud into output "
-                 "pointcloud with "
-                 "a voxel. Normals and colors are averaged if they exist.",
+                 "pointcloud with a voxel. Normals, colors and covariances are "
+                 "averaged if they exist.",
                  "voxel_size"_a)
             .def("voxel_down_sample_and_trace",
                  &PointCloud::VoxelDownSampleAndTrace,
@@ -213,7 +213,11 @@ void pybind_pointcloud(py::module &m) {
                     "colors", &PointCloud::colors_,
                     "``float64`` array of shape ``(num_points, 3)``, "
                     "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
-                    "data: RGB colors of points.");
+                    "data: RGB colors of points.")
+            .def_readwrite("covariances", &PointCloud::covariances_,
+                           "``float64`` array of shape ``(num_points, 3x3)``, "
+                           "use ``numpy.asarray()`` to access data: Points "
+                           "covariances.");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_points");
@@ -260,7 +264,7 @@ void pybind_pointcloud(py::module &m) {
             {{"search_param",
               "The KDTree search parameters for neighborhood search."},
              {"fast_normal_computation",
-              "If true, the normal estiamtion uses a non-iterative method to "
+              "If true, the normal estimation uses a non-iterative method to "
               "extract the eigenvector from the covariance matrix. This is "
               "faster, but is not as numerical stable."}});
     docstring::ClassMethodDocInject(
