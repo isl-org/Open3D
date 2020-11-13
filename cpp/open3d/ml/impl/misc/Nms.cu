@@ -141,6 +141,7 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
     int64_t *sort_indices = nullptr;
     CHECK_ERROR(cudaMalloc((void **)&sort_indices, N * sizeof(int64_t)));
     SortIndices(scores_copy, sort_indices, N, true);
+    CHECK_ERROR(cudaFree(scores_copy));
 
     // Allocate masks on device.
     uint64_t *mask_ptr = nullptr;
