@@ -63,6 +63,8 @@ void pybind_pointcloud(py::module &m) {
                  "Returns ``True`` if the point cloud contains point normals.")
             .def("has_colors", &PointCloud::HasColors,
                  "Returns ``True`` if the point cloud contains point colors.")
+            .def("has_covariances", &PointCloud::HasCovariances,
+                 "Returns ``True`` if the point cloud contains covariances.")
             .def("normalize_normals", &PointCloud::NormalizeNormals,
                  "Normalize point normals to length 1.")
             .def("paint_uniform_color", &PointCloud::PaintUniformColor,
@@ -215,7 +217,7 @@ void pybind_pointcloud(py::module &m) {
                     "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                     "data: RGB colors of points.")
             .def_readwrite("covariances", &PointCloud::covariances_,
-                           "``float64`` array of shape ``(num_points, 3x3)``, "
+                           "``float64`` array of shape ``(num_points, 3, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
                            "covariances.");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
