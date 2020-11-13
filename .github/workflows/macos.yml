@@ -16,7 +16,6 @@ on:
 
 env:
   NPROC: 2
-  CONDA_BUILD_VER: 3.20.0
 
 jobs:
   MacOS:
@@ -115,8 +114,10 @@ jobs:
           ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
           echo
           source util/ci_utils.sh
-          install_python_dependencies
+          install_python_dependencies with-conda
           echo
+          echo -n "Using conda"
+          conda info
           echo "Using python: $(which python)"
           python --version
           echo -n "Using pip: "
@@ -124,13 +125,12 @@ jobs:
           echo "Using cmake: $(which cmake)"
           cmake --version
 
-      - name: Config and build
+      - name: Config and build wheel
         shell: bash -l {0}
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           source util/ci_utils.sh
-          conda install conda-build=${{ env.CONDA_BUILD_VER }} -y
           build_pip_conda_package
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
@@ -204,22 +204,12 @@ jobs:
       - name: Test Python package
         run: |
           python -V
-          cd util
-          source ci_utils.sh
-          install_python_dependencies with-unit-test
+          source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          python -m pip install ../pip_package/open3d*-$pi_tag-*.whl
-          echo
-          # echo "Dynamic libraries used:"
-          # DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
-          # find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
-          python -m pip install -r "$OPEN3D_ML_ROOT/requirements.txt"
-          echo
-          test_wheel
+          test_wheel pip_package/open3d*-"$pi_tag"-*.whl
 
       - name: Run Python unit tests (benchmarks)
         run: |
-          cd util
-          source ci_utils.sh
-          echo "running Open3D python tests..."
+          source util/ci_utils.sh
+          echo "Running Open3D python tests..."
           run_python_tests

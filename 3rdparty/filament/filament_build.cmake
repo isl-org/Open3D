@@ -2,13 +2,8 @@ include(ExternalProject)
 
 set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
 
-if(LINUX_AARCH64)
-    set(FILAMENT_GIT_REPOSITORY "https://github.com/intel-isl/filament.git")
-    set(FILAMENT_GIT_TAG "v1.8.1-arm64")
-else()
-    set(FILAMENT_GIT_REPOSITORY "https://github.com/google/filament.git")
-    set(FILAMENT_GIT_TAG "v1.8.1")
-endif()
+set(FILAMENT_GIT_REPOSITORY "https://github.com/google/filament.git")
+set(FILAMENT_GIT_TAG "v1.9.5")
 
 ExternalProject_Add(
     ext_filament

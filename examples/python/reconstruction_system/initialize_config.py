@@ -25,7 +25,7 @@ def initialize_config(config):
     set_default_value(config, "tsdf_cubic_size", 3.0)
     set_default_value(config, "icp_method", "color")
     set_default_value(config, "global_registration", "ransac")
-    set_default_value(config, "python_multi_threading", "true")
+    set_default_value(config, "python_multi_threading", True)
 
     set_default_value(config, "folder_fragment", "fragments/")
     set_default_value(config, "template_fragment_posegraph",
