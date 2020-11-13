@@ -312,8 +312,15 @@ void pybind_rendering_classes(py::module &m) {
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
+            .def("has_geometry", &Open3DScene::HasGeometry,
+                 "has_geometry(name): returns True if the geometry has been "
+                 "added to the scene, False otherwise")
             .def("remove_geometry", &Open3DScene::RemoveGeometry,
                  "Removes the geometry with the given name")
+            .def("modify_geometry_material",
+                 &Open3DScene::ModifyGeometryMaterial,
+                 "modify_geometry_material(name, material). Modifies the "
+                 "material of the specified geometry")
             .def("show_geometry", &Open3DScene::ShowGeometry,
                  "Shows or hides the geometry with the given name")
             .def("update_material", &Open3DScene::UpdateMaterial,
