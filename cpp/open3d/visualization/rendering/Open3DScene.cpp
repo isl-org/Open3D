@@ -238,6 +238,11 @@ void Open3DScene::AddGeometry(
     RecreateAxis(scene, bounds_, false);
 }
 
+bool Open3DScene::HasGeometry(const std::string& name) const {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->HasGeometry(name);
+}
+
 void Open3DScene::RemoveGeometry(const std::string& name) {
     auto scene = renderer_.GetScene(scene_);
     auto g = geometries_.find(name);
@@ -250,6 +255,19 @@ void Open3DScene::RemoveGeometry(const std::string& name) {
             scene->RemoveGeometry(g->second.low_name);
         }
         geometries_.erase(name);
+    }
+}
+
+void Open3DScene::ModifyGeometryMaterial(const std::string& name,
+                                         const Material& mat) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->OverrideMaterial(name, mat);
+    auto it = geometries_.find(name);
+    if (it != geometries_.end()) {
+        if (!it->second.fast_name.empty()) {
+            scene->OverrideMaterial(it->second.fast_name, mat);
+        }
+        // Don't want to override low_name, as that is a bounding box.
     }
 }
 
