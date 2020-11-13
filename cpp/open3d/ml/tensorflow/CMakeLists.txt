@@ -37,6 +37,8 @@ set(TF_OPS_SOURCES
     "misc/FixedRadiusSearchOpKernel.cpp"
     "misc/KnnSearchOps.cpp"
     "misc/VoxelPoolingOpKernel.cpp"
+    "misc/NmsOpKernel.cpp"
+    "misc/NmsOps.cpp"
     "tf_neighbors/tf_batch_neighbors.cpp"
     "tf_neighbors/tf_neighbors.cpp"
     "tf_subsampling/tf_batch_subsampling.cpp"
@@ -44,6 +46,7 @@ set(TF_OPS_SOURCES
     "../contrib/Cloud.cpp"
     "../contrib/GridSubsampling.cpp"
     "../contrib/neighbors.cpp"
+    "../impl/misc/Nms.cpp"
 )
 
 set(TF_OPS_CUDA_SOURCES
@@ -55,7 +58,9 @@ set(TF_OPS_CUDA_SOURCES
     "misc/BuildSpatialHashTableOpKernel.cu"
     "misc/InvertNeighborsListOpKernel.cu"
     "misc/ReduceSubarraysSumOpKernel.cu"
+    "misc/NmsOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+    "../impl/misc/Nms.cu"
 )
 
 if(BUILD_CUDA_MODULE)
@@ -72,7 +77,7 @@ endif()
 add_library(open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES})
 # do not use open3d_set_global_properties(open3d_tf_ops) here because some
 # options are not compatible for tf op libraries
-open3d_show_and_abort_on_warning(open3d_tf_ops)
+# open3d_show_and_abort_on_warning(open3d_tf_ops)
 
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TF_OPS_DIR open3d_tf_ops LIBRARY_OUTPUT_DIRECTORY)
@@ -111,6 +116,7 @@ target_include_directories(open3d_tf_ops SYSTEM PRIVATE
     ${Tensorflow_INCLUDE_DIR}
     ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
+    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
 target_link_libraries(open3d_tf_ops PRIVATE
