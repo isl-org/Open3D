@@ -60,7 +60,6 @@ private:
 };
 PYBIND11_DECLARE_HOLDER_TYPE(T, UnownedPointer<T>);
 
-
 namespace open3d {
 namespace visualization {
 
