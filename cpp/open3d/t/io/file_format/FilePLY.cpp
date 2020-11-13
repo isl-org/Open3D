@@ -310,22 +310,22 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     return true;
 }
 
-static e_ply_type GetPlyType(core::Dtype d_type) {
-    if (d_type == core::Dtype::UInt8) {
+static e_ply_type GetPlyType(const core::Dtype &dtype) {
+    if (dtype == core::Dtype::UInt8) {
         return PLY_UINT8;
-    } else if (d_type == core::Dtype::UInt16) {
+    } else if (dtype == core::Dtype::UInt16) {
         return PLY_UINT16;
-    } else if (d_type == core::Dtype::Int32) {
+    } else if (dtype == core::Dtype::Int32) {
         return PLY_INT32;
-    } else if (d_type == core::Dtype::Float32) {
+    } else if (dtype == core::Dtype::Float32) {
         return PLY_FLOAT32;
-    } else if (d_type == core::Dtype::Float64) {
+    } else if (dtype == core::Dtype::Float64) {
         return PLY_FLOAT64;
-    } else if (d_type == core::Dtype::UInt8) {
+    } else if (dtype == core::Dtype::UInt8) {
         return PLY_UCHAR;
-    } else if (d_type == core::Dtype::Int32) {
+    } else if (dtype == core::Dtype::Int32) {
         return PLY_INT32;
-    } else if (d_type == core::Dtype::Float32) {
+    } else if (dtype == core::Dtype::Float32) {
         return PLY_FLOAT;
     } else {
         return PLY_DOUBLE;
@@ -333,9 +333,8 @@ static e_ply_type GetPlyType(core::Dtype d_type) {
 }
 
 template <typename T>
-static double GetValue(core::Tensor t_attr, int pos) {
-    T *data_ptr = static_cast<T *>(t_attr.GetDataPtr());
-    return (double)data_ptr[pos];
+static T *GetValue(core::Tensor t_attr, int pos) {
+    return static_cast<T *>(t_attr.GetDataPtr());
 }
 
 bool WritePointCloudToPLY(const std::string &filename,
@@ -344,6 +343,22 @@ bool WritePointCloudToPLY(const std::string &filename,
     if (pointcloud.IsEmpty()) {
         utility::LogWarning("Write PLY failed: point cloud has 0 points.");
         return false;
+    }
+
+    geometry::TensorListMap tl_map = pointcloud.GetPointAttrMap();
+    long num_points = static_cast<long>(pointcloud.GetPoints().GetSize());
+
+    // Make sure all the attribtes have same size.
+    if (!tl_map.IsSizeSynchronized()) {
+        for (auto const &it : tl_map) {
+            if (it.second.GetSize() != num_points) {
+                utility::LogWarning(
+                        "Write PLY failed: Points ({}) and {} ({}) have "
+                        "different lengths.",
+                        num_points, it.first, it.second.GetSize());
+                return false;
+            }
+        }
     }
 
     p_ply ply_file =
@@ -356,22 +371,8 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    geometry::TensorListMap tl_map = pointcloud.GetPointAttrMap();
-    long size = static_cast<long>(pointcloud.GetPoints().GetSize());
-
-    // Make sure all the attribtes have same size.
-    for (auto const &it : tl_map) {
-        if (it.second.GetSize() != size) {
-            utility::LogWarning(
-                    "Write PLY failed: Points ({}) and {} ({}) have "
-                    "different lengths.",
-                    size, it.first, it.second.GetSize());
-            return false;
-        }
-    }
-
     ply_add_comment(ply_file, "Created by Open3D");
-    ply_add_element(ply_file, "vertex", size);
+    ply_add_element(ply_file, "vertex", num_points);
 
     e_ply_type pointType = GetPlyType(pointcloud.GetPoints().GetDtype());
     ply_add_property(ply_file, "x", pointType, pointType, pointType);
@@ -417,43 +418,34 @@ bool WritePointCloudToPLY(const std::string &filename,
     }
 
     utility::CountingProgressReporter reporter(params.update_progress);
-    reporter.SetTotal(pointcloud.GetPoints().GetSize());
+    reporter.SetTotal(num_points);
 
-    for (int64_t i = 0; i < pointcloud.GetPoints().GetSize(); i++) {
+    for (int64_t i = 0; i < num_points; i++) {
         DISPATCH_DTYPE_TO_TEMPLATE(pointcloud.GetPoints().GetDtype(), [&]() {
-            ply_write(ply_file,
-                      GetValue<scalar_t>(pointcloud.GetPoints()[i], 0));
-            ply_write(ply_file,
-                      GetValue<scalar_t>(pointcloud.GetPoints()[i], 1));
-            ply_write(ply_file,
-                      GetValue<scalar_t>(pointcloud.GetPoints()[i], 2));
+            scalar_t *data_ptr =
+                    GetValue<scalar_t>(pointcloud.GetPoints()[i], 0);
+            ply_write(ply_file, double(data_ptr[0]));
+            ply_write(ply_file, double(data_ptr[1]));
+            ply_write(ply_file, double(data_ptr[2]));
         });
         if (pointcloud.HasPointNormals()) {
             DISPATCH_DTYPE_TO_TEMPLATE(
                     pointcloud.GetPointNormals().GetDtype(), [&]() {
-                        ply_write(ply_file,
-                                  GetValue<scalar_t>(
-                                          pointcloud.GetPointNormals()[i], 0));
-                        ply_write(ply_file,
-                                  GetValue<scalar_t>(
-                                          pointcloud.GetPointNormals()[i], 1));
-                        ply_write(ply_file,
-                                  GetValue<scalar_t>(
-                                          pointcloud.GetPointNormals()[i], 2));
+                        scalar_t *data_ptr = GetValue<scalar_t>(
+                                pointcloud.GetPointNormals()[i], 0);
+                        ply_write(ply_file, double(data_ptr[0]));
+                        ply_write(ply_file, double(data_ptr[1]));
+                        ply_write(ply_file, double(data_ptr[2]));
                     });
         }
         if (pointcloud.HasPointColors()) {
             DISPATCH_DTYPE_TO_TEMPLATE(
                     pointcloud.GetPointColors().GetDtype(), [&]() {
-                        ply_write(ply_file,
-                                  GetValue<scalar_t>(
-                                          pointcloud.GetPointColors()[i], 0));
-                        ply_write(ply_file,
-                                  GetValue<scalar_t>(
-                                          pointcloud.GetPointColors()[i], 1));
-                        ply_write(ply_file,
-                                  GetValue<scalar_t>(
-                                          pointcloud.GetPointColors()[i], 2));
+                        scalar_t *data_ptr = GetValue<scalar_t>(
+                                pointcloud.GetPointColors()[i], 0);
+                        ply_write(ply_file, double(data_ptr[0]));
+                        ply_write(ply_file, double(data_ptr[1]));
+                        ply_write(ply_file, double(data_ptr[2]));
                     });
         }
 
@@ -461,7 +453,8 @@ bool WritePointCloudToPLY(const std::string &filename,
             if (it.first != "points" && it.first != "colors" &&
                 it.first != "normals") {
                 DISPATCH_DTYPE_TO_TEMPLATE(it.second.GetDtype(), [&]() {
-                    ply_write(ply_file, GetValue<scalar_t>(it.second[i], 0));
+                    scalar_t *data_ptr = GetValue<scalar_t>(it.second[i], 0);
+                    ply_write(ply_file, double(data_ptr[0]));
                 });
             }
         }
