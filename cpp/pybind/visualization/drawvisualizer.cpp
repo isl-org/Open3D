@@ -85,13 +85,9 @@ void pybind_drawvisualizer(py::module& m) {
                 "width"_a = 1024, "height"_a = 768,
                 "Creates a DrawVisualizer object")
             .def("add_action", &DrawVisualizer::AddAction,
-                 "Adds a button to the custom actions section of the UI. "
+                 "Adds a button to the custom actions section of the UI "
+                 "and a corresponding menu item in the \"Actions\" menu. "
                  "add_action(name, callback). The callback will be given "
-                 "one parameter, the DrawVisualizer instance, and does not "
-                 "return any value.")
-            .def("add_menu_action", &DrawVisualizer::AddMenuAction,
-                 "Adds a menu item to the \"Actions\" Menu. "
-                 "add_menu_action(name, callback). The callback will be given "
                  "one parameter, the DrawVisualizer instance, and does not "
                  "return any value.")
             .def("add_geometry",

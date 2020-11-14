@@ -100,8 +100,6 @@ public:
 
     void AddAction(const std::string& name,
                    std::function<void(DrawVisualizer&)> callback);
-    void AddMenuAction(const std::string& name,
-                       std::function<void(DrawVisualizer&)> callback);
 
     void SetBackgroundColor(const Eigen::Vector4f& bg_color);
 

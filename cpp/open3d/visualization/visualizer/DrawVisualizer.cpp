@@ -1310,35 +1310,37 @@ DrawVisualizer::DrawVisualizer(const std::string &title, int width, int height)
     : Window(title, width, height), impl_(new DrawVisualizer::Impl()) {
     impl_->Construct(this);
 
-    if (!Application::GetInstance().GetMenubar()) {
-        auto menu = std::make_shared<Menu>();
+    // Create the app menu. We will take over the existing menubar (if any)
+    // since a) we need to cache a pointer, and b) we should be the only
+    // window, since the whole point of this class is to have an easy way to
+    // visualize something with a blocking call to draw().
+    auto menu = std::make_shared<Menu>();
 #if defined(__APPLE__)
-        // The first menu item to be added on macOS becomes the application
-        // menu (no matter its name)
-        auto app_menu = std::make_shared<Menu>();
-        app_menu->AddItem("About", MENU_ABOUT);
-        menu->AddMenu("Open3D", app_menu);
+    // The first menu item to be added on macOS becomes the application
+    // menu (no matter its name)
+    auto app_menu = std::make_shared<Menu>();
+    app_menu->AddItem("About", MENU_ABOUT);
+    menu->AddMenu("Open3D", app_menu);
 #endif  // __APPLE__
-        auto file_menu = std::make_shared<Menu>();
-        file_menu->AddItem("Export Current Image...", MENU_EXPORT_RGB);
-        file_menu->AddSeparator();
-        file_menu->AddItem("Close Window", MENU_CLOSE, KeyName::KEY_W);
-        menu->AddMenu("File", file_menu);
+    auto file_menu = std::make_shared<Menu>();
+    file_menu->AddItem("Export Current Image...", MENU_EXPORT_RGB);
+    file_menu->AddSeparator();
+    file_menu->AddItem("Close Window", MENU_CLOSE, KeyName::KEY_W);
+    menu->AddMenu("File", file_menu);
 
-        auto actions_menu = std::make_shared<Menu>();
-        actions_menu->AddItem("Show Settings", MENU_SETTINGS);
-        actions_menu->SetChecked(MENU_SETTINGS, false);
-        menu->AddMenu("Actions", actions_menu);
-        impl_->settings.actions_menu = actions_menu.get();
+    auto actions_menu = std::make_shared<Menu>();
+    actions_menu->AddItem("Show Settings", MENU_SETTINGS);
+    actions_menu->SetChecked(MENU_SETTINGS, false);
+    menu->AddMenu("Actions", actions_menu);
+    impl_->settings.actions_menu = actions_menu.get();
 
 #if !defined(__APPLE__)
-        auto help_menu = std::make_shared<Menu>();
-        help_menu->AddItem("About", MENU_ABOUT);
-        menu->AddMenu("Help", help_menu);
+    auto help_menu = std::make_shared<Menu>();
+    help_menu->AddItem("About", MENU_ABOUT);
+    menu->AddMenu("Help", help_menu);
 #endif  // !__APPLE__
 
-        Application::GetInstance().SetMenubar(menu);
-    }
+    Application::GetInstance().SetMenubar(menu);
 
     SetOnMenuItemActivated(MENU_ABOUT, [this]() { this->impl_->OnAbout(); });
     SetOnMenuItemActivated(MENU_EXPORT_RGB,
@@ -1359,6 +1361,7 @@ Open3DScene *DrawVisualizer::GetScene() const {
 
 void DrawVisualizer::AddAction(const std::string &name,
                                std::function<void(DrawVisualizer &)> callback) {
+    // Add button to the "Custom Actions" segment in the UI
     SmallButton *button = new SmallButton(name.c_str());
     button->SetOnClicked([this, callback]() { callback(*this); });
     impl_->settings.actions->AddChild(GiveOwnership(button));
@@ -1371,11 +1374,8 @@ void DrawVisualizer::AddAction(const std::string &name,
         impl_->settings.actions->size() == 1) {
         ShowSettings(true);
     }
-}
 
-void DrawVisualizer::AddMenuAction(
-        const std::string &name,
-        std::function<void(DrawVisualizer &)> callback) {
+    // Add menu item
     if (impl_->settings.menuid2action.empty()) {
         impl_->settings.actions_menu->AddSeparator();
     }
