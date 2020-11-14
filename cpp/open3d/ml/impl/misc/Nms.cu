@@ -99,7 +99,7 @@ __global__ void NmsKernel(const float *boxes,
     __shared__ float block_boxes[NMS_BLOCK_SIZE * 5];
     if (threadIdx.x < col_size) {
         float *dst = block_boxes + threadIdx.x * 5;
-        const int src_idx = NMS_BLOCK_SIZE * block_row_idx + threadIdx.x;
+        const int src_idx = NMS_BLOCK_SIZE * block_col_idx + threadIdx.x;
         const float *src = boxes + sort_indices[src_idx] * 5;
         dst[0] = src[0];
         dst[1] = src[1];
