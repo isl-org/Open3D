@@ -94,6 +94,11 @@ public:
         return points_.size() > 0 && colors_.size() == points_.size();
     }
 
+    /// Returns 'true' if the point cloud contains per-point covariance matrix.
+    bool HasCovariances() const {
+        return !points_.empty() && covariances_.size() == points_.size();
+    }
+
     /// Normalize point normals to length 1.
     PointCloud &NormalizeNormals() {
         for (size_t i = 0; i < normals_.size(); i++) {
@@ -203,7 +208,7 @@ public:
     /// exist.
     ///
     /// \param search_param The KDTree search parameters for neighborhood
-    /// search. \param fast_normal_computation If true, the normal estiamtion
+    /// search. \param fast_normal_computation If true, the normal estimation
     /// uses a non-iterative method to extract the eigenvector from the
     /// covariance matrix. This is faster, but is not as numerical stable.
     void EstimateNormals(
@@ -241,6 +246,15 @@ public:
     ///
     /// \param target The target point cloud.
     std::vector<double> ComputePointCloudDistance(const PointCloud &target);
+
+    /// \brief Function to compute the covariance matrices for each point of a
+    /// point cloud.
+    ///
+    ///
+    /// \param search_param The KDTree search parameters for neighborhood
+    /// search.
+    void EstimateCovariances(
+            const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
     /// Function to compute the mean and covariance matrix
     /// of a point cloud.

@@ -113,6 +113,12 @@ void Geometry3D::TransformNormals(const Eigen::Matrix4d& transformation,
     }
 }
 
+void Geometry3D::TransformCovariances(
+        const Eigen::Matrix4d& transformation,
+        std::vector<Eigen::Matrix3d>& covariances) const {
+    RotateCovariances(transformation.block<3, 3>(0, 0), covariances);
+}
+
 void Geometry3D::TranslatePoints(const Eigen::Vector3d& translation,
                                  std::vector<Eigen::Vector3d>& points,
                                  bool relative) const {
@@ -145,6 +151,17 @@ void Geometry3D::RotateNormals(const Eigen::Matrix3d& R,
                                std::vector<Eigen::Vector3d>& normals) const {
     for (auto& normal : normals) {
         normal = R * normal;
+    }
+}
+
+/// The only part that affects the covariance is the rotation part. For more
+/// information on variance propagation please visit:
+/// https://en.wikipedia.org/wiki/Propagation_of_uncertainty
+void Geometry3D::RotateCovariances(
+        const Eigen::Matrix3d& R,
+        std::vector<Eigen::Matrix3d>& covariances) const {
+    for (auto& covariance : covariances) {
+        covariance = R * covariance * R.transpose();
     }
 }
 

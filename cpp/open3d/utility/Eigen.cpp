@@ -303,6 +303,9 @@ Eigen::Vector3d ColorToDouble(const Eigen::Vector3uint8 &rgb) {
 template <typename IdxType>
 Eigen::Matrix3d ComputeCovariance(const std::vector<Eigen::Vector3d> &points,
                                   const std::vector<IdxType> &indices) {
+    if (indices.empty()) {
+        return Eigen::Matrix3d::Zero();
+    }
     Eigen::Matrix3d covariance;
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
