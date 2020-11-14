@@ -66,25 +66,26 @@ inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
 std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
         const geometry::PointCloud &pcd) {
     auto output = std::make_shared<geometry::PointCloud>(pcd);
-    if (!output->HasCovariances()) {
-        utility::LogDebug("GeneralizedICP: Using pre-computed Covariances.");
+    if (output->HasCovariances()) {
+        utility::LogDebug("GeneralizedICP: Using pre-computed covariances.");
         return output;
     }
 
-    if (!output->HasNormals()) {
-        // Compute normals the same way is done in the original GICP paper.
-        utility::LogDebug("GeneralizedICP Computing normals");
-        output->EstimateNormals(open3d::geometry::KDTreeSearchParamKNN(20));
-    }
-
-    utility::LogDebug("GeneralizedICP: Computing covariances.");
-    output->covariances_.resize(output->points_.size());
-    const double epsilon = 1e-3;
-    const Eigen::Matrix3d C = Eigen::Vector3d(epsilon, 1, 1).asDiagonal();
+    // Compute covariances the same way is done in the original GICP paper.
+    if (output->HasNormals()) {
+        utility::LogDebug("GeneralizedICP: Computing covariances from normals");
+        output->covariances_.resize(output->points_.size());
+        const double epsilon = 1e-3;
+        const Eigen::Matrix3d C = Eigen::Vector3d(epsilon, 1, 1).asDiagonal();
 #pragma omp parallel for
-    for (int i = 0; i < (int)output->normals_.size(); i++) {
-        const auto Rx = GetRotationFromE1ToX(output->normals_[i]);
-        output->covariances_[i] = Rx * C * Rx.transpose();
+        for (int i = 0; i < (int)output->normals_.size(); i++) {
+            const auto Rx = GetRotationFromE1ToX(output->normals_[i]);
+            output->covariances_[i] = Rx * C * Rx.transpose();
+        }
+    } else {
+        utility::LogDebug("GeneralizedICP: Computing covariances from points.");
+        output->EstimateCovariances(open3d::geometry::KDTreeSearchParamKNN(20));
+        // Perform SVD
     }
     return output;
 }
