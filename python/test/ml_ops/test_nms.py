@@ -25,14 +25,10 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import open3d.ml.torch
 import numpy as np
-import pytest
 import mltest
-import torch
-import time
 
-# skip all tests if the ml ops were not built
+# Skip all tests if the ml ops were not built.
 pytestmark = mltest.default_marks
 
 
