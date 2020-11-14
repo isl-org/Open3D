@@ -1,3 +1,38 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2019 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+//
+// Reference:
+// https://github.com/open-mmlab/OpenPCDet/blob/master/pcdet/ops/iou3d_nms/src/iou3d_nms_kernel.cu
+//
+// Reference:
+// https://github.com/open-mmlab/mmdetection3d/blob/master/mmdet3d/ops/iou3d/src/iou3d_kernel.cu
+// 3D IoU Calculation and Rotated NMS(modified from 2D NMS written by others)
+// Written by Shaoshuai Shi
+// All Rights Reserved 2019-2020.
+
 #include "open3d/ml/impl/misc/Nms.h"
 
 #include <iostream>
@@ -12,29 +47,33 @@ namespace ml {
 namespace impl {
 
 template <typename T>
-static std::vector<int64_t> SortIndexes(const T *v,
+static std::vector<int64_t> SortIndexes(const T *values,
                                         int64_t num,
                                         bool descending = false) {
     std::vector<int64_t> indices(num);
     std::iota(indices.begin(), indices.end(), 0);
     if (descending) {
         std::stable_sort(indices.begin(), indices.end(),
-                         [&v](int64_t i, int64_t j) { return v[i] > v[j]; });
+                         [&values](int64_t i, int64_t j) {
+                             return values[i] > values[j];
+                         });
     } else {
         std::stable_sort(indices.begin(), indices.end(),
-                         [&v](int64_t i, int64_t j) { return v[i] < v[j]; });
+                         [&values](int64_t i, int64_t j) {
+                             return values[i] < values[j];
+                         });
     }
     return indices;
 }
 
-static void AllPairsIoUCPU(const float *boxes,
-                           const float *scores,
-                           const int64_t *sort_indices,
-                           uint64_t *mask,
-                           int N,
-                           double nms_overlap_thresh) {
-    const int num_block_cols = DIVUP(N, NMS_BLOCK_SIZE);
-    const int num_block_rows = DIVUP(N, NMS_BLOCK_SIZE);
+static void AllPairsIoU(const float *boxes,
+                        const float *scores,
+                        const int64_t *sort_indices,
+                        uint64_t *mask,
+                        int n,
+                        double nms_overlap_thresh) {
+    const int num_block_cols = DIVUP(n, NMS_BLOCK_SIZE);
+    const int num_block_rows = DIVUP(n, NMS_BLOCK_SIZE);
 
     // We need the concept of "block" since the mask is a uint64_t binary bit
     // map, and the block size is exactly 64x64. This is also consistent with
@@ -45,17 +84,16 @@ static void AllPairsIoUCPU(const float *boxes,
              ++block_row_idx) {
             // Local block row size.
             const int row_size =
-                    fminf(N - block_row_idx * NMS_BLOCK_SIZE, NMS_BLOCK_SIZE);
+                    fminf(n - block_row_idx * NMS_BLOCK_SIZE, NMS_BLOCK_SIZE);
             // Local block col size.
             const int col_size =
-                    fminf(N - block_col_idx * NMS_BLOCK_SIZE, NMS_BLOCK_SIZE);
+                    fminf(n - block_col_idx * NMS_BLOCK_SIZE, NMS_BLOCK_SIZE);
 
-            // Comparing src and dst. In one block, the following src and dst
-            // indices are compared:
+            // Comparing src and dst. With all blocks, all src and dst indices
+            // are compared. In one block, the following src and dst indices are
+            // compared:
             // - src: BS * block_row_idx : BS * block_row_idx + row_size
             // - dst: BS * block_col_idx : BS * block_col_idx + col_size
-            //
-            // With all blocks, all src and dst indices are compared.
             //
             // Result:
             // mask[i, j] is a 64-bit integer where mask[i, j][k] (k counted
@@ -70,8 +108,8 @@ static void AllPairsIoUCPU(const float *boxes,
                     // Unlike the CUDA impl, both src_idx and dst_idx here are
                     // indexes to the global memory. Thus we need to compute the
                     // local index for dst_idx.
-                    if (iou_bev(boxes + sort_indices[src_idx] * 5,
-                                boxes + sort_indices[dst_idx] * 5) >
+                    if (IouBev(boxes + sort_indices[src_idx] * 5,
+                               boxes + sort_indices[dst_idx] * 5) >
                         nms_overlap_thresh) {
                         t |= 1ULL << (dst_idx - NMS_BLOCK_SIZE * block_col_idx);
                     }
@@ -82,41 +120,33 @@ static void AllPairsIoUCPU(const float *boxes,
     }
 }
 
-// [inputs]
-// boxes             : (N, 5) float32
-// scores            : (N,) float32
-// nms_overlap_thresh: double
-//
-// [return]
-// keep_indices      : (M,) int64, the selected box indices
 std::vector<int64_t> NmsCPUKernel(const float *boxes,
                                   const float *scores,
-                                  int N,
+                                  int n,
                                   double nms_overlap_thresh) {
-    std::vector<int64_t> sort_indices = SortIndexes(scores, N, true);
+    std::vector<int64_t> sort_indices = SortIndexes(scores, n, true);
 
-    const int num_block_cols = DIVUP(N, NMS_BLOCK_SIZE);
+    const int num_block_cols = DIVUP(n, NMS_BLOCK_SIZE);
 
     // Call kernel. Results will be saved in masks.
-    // boxes: (N, 5)
-    // mask:  (N, N/BS)
-    std::vector<uint64_t> mask_vec(N * num_block_cols);
+    // boxes: (n, 5)
+    // mask:  (n, n/BS)
+    std::vector<uint64_t> mask_vec(n * num_block_cols);
     uint64_t *mask = mask_vec.data();
-    AllPairsIoUCPU(boxes, scores, sort_indices.data(), mask, N,
-                   nms_overlap_thresh);
+    AllPairsIoU(boxes, scores, sort_indices.data(), mask, n,
+                nms_overlap_thresh);
 
-    // Write to keep.
-    // remv_cpu has N bits in total. If the bit is 1, the corresponding
-    // box will be removed.
+    // Write to keep. remv_cpu has n bits in total. If the bit is 1, the
+    // corresponding box will be removed.
     std::vector<uint64_t> remv_cpu(num_block_cols, 0);
     std::vector<int64_t> keep_indices;
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < n; i++) {
         int block_col_idx = i / NMS_BLOCK_SIZE;
         int inner_block_col_idx = i % NMS_BLOCK_SIZE;  // threadIdx.x
 
         // Querying the i-th bit in remv_cpu, counted from the right.
-        // - remv_cpu[block_col_idx]: the block bitmap containing the query
-        // - 1ULL << inner_block_col_idx: the one-hot bitmap to extract i
+        // - remv_cpu[block_col_idx]: the block bitmap containing the query.
+        // - 1ULL << inner_block_col_idx: the one-hot bitmap to extract i.
         if (!(remv_cpu[block_col_idx] & (1ULL << inner_block_col_idx))) {
             // Keep the i-th box.
             keep_indices.push_back(sort_indices[i]);
