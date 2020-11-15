@@ -575,12 +575,8 @@ void PointCloud::EstimateCovariances(
         Eigen::Matrix3d covariance;
         if (kdtree.Search(points_[i], search_param, indices, distance2) >= 3) {
             covariance = utility::ComputeCovariance(points_, indices);
-            if (covariance.norm() == 0.0) {
-                if (has_covariance) {
-                    covariance = covariances_[i];
-                } else {
-                    covariance = Eigen::Matrix3d::Identity();
-                }
+            if (has_covariance && !covariance.isIdentity(1e-4) ) {
+                covariance = covariances_[i];
             }
             covariances_[i] = covariance;
         } else {
