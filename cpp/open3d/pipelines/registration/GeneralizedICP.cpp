@@ -87,7 +87,6 @@ std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
         output->EstimateCovariances(open3d::geometry::KDTreeSearchParamKNN(20));
 #pragma omp parallel for
         for (int i = 0; i < (int)output->normals_.size(); i++) {
-            const auto Rx = GetRotationFromE1ToX(output->normals_[i]);
             Eigen::JacobiSVD<Eigen::Matrix3d> svd(
                     output->covariances_[i],
                     Eigen::ComputeFullU | Eigen::ComputeFullV);
