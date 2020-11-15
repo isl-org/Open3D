@@ -579,12 +579,12 @@ void PointCloud::EstimateCovariances(
                 if (has_covariance) {
                     covariance = covariances_[i];
                 } else {
-                    covariance = Eigen::Matrix3d::Zero();
+                    covariance = Eigen::Matrix3d::Identity();
                 }
             }
             covariances_[i] = covariance;
         } else {
-            covariances_[i] = Eigen::Matrix3d::Zero();
+            covariances_[i] = Eigen::Matrix3d::Identity();
         }
     }
 }

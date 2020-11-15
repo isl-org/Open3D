@@ -304,7 +304,7 @@ template <typename IdxType>
 Eigen::Matrix3d ComputeCovariance(const std::vector<Eigen::Vector3d> &points,
                                   const std::vector<IdxType> &indices) {
     if (indices.empty()) {
-        return Eigen::Matrix3d::Zero();
+        return Eigen::Matrix3d::Identity();
     }
     Eigen::Matrix3d covariance;
     Eigen::Matrix<double, 9, 1> cumulants;

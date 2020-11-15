@@ -224,9 +224,6 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &covariance) {
 
 Eigen::Vector3d ComputeNormal(const Eigen::Matrix3d &covariance,
                               bool fast_normal_computation) {
-    if (covariance.norm() == 0.0) {
-        return Eigen::Vector3d::Zero();
-    }
     if (fast_normal_computation) {
         return FastEigen3x3(covariance);
     }
