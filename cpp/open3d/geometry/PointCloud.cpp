@@ -252,10 +252,10 @@ public:
 
 public:
     int num_of_points_ = 0;
-    Eigen::Vector3d point_ = Eigen::Vector3d::Identity();
-    Eigen::Vector3d normal_ = Eigen::Vector3d::Identity();
-    Eigen::Vector3d color_ = Eigen::Vector3d::Identity();
-    Eigen::Matrix3d covariance_ = Eigen::Matrix3d::Identity();
+    Eigen::Vector3d point_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d normal_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d color_ = Eigen::Vector3d::Zero();
+    Eigen::Matrix3d covariance_ = Eigen::Matrix3d::Zero();
 };
 
 class point_cubic_id {
