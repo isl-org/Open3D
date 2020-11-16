@@ -224,9 +224,6 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &covariance) {
 
 Eigen::Vector3d ComputeNormal(const Eigen::Matrix3d &covariance,
                               bool fast_normal_computation) {
-    if (covariance.norm() == 0.0) {
-        return Eigen::Vector3d::Zero();
-    }
     if (fast_normal_computation) {
         return FastEigen3x3(covariance);
     }
@@ -313,7 +310,10 @@ void PointCloud::EstimateNormals(
     if (!has_normal) {
         normals_.resize(points_.size());
     }
-    if (!HasCovariances()) {
+    bool has_covariance = HasCovariances();
+    if (!has_covariance) {
+        // Use the PointCloud::covariances_ as buffer to carry on the normal
+        // computation. Clear it later.
         EstimateCovariances(search_param);
     }
 #pragma omp parallel for schedule(static)
@@ -330,6 +330,9 @@ void PointCloud::EstimateNormals(
             normal *= -1.0;
         }
         normals_[i] = normal;
+    }
+    if (!has_covariance) {
+        covariances_.clear();
     }
 }
 
