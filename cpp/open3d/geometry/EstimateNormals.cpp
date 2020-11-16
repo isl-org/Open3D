@@ -310,7 +310,10 @@ void PointCloud::EstimateNormals(
     if (!has_normal) {
         normals_.resize(points_.size());
     }
-    if (!HasCovariances()) {
+    bool has_covariance = HasCovariances();
+    if (!has_covariance) {
+        // Use the PointCloud::covariances_ as buffer to carry on the normal
+        // computation. Clear it later.
         EstimateCovariances(search_param);
     }
 #pragma omp parallel for schedule(static)
@@ -327,6 +330,9 @@ void PointCloud::EstimateNormals(
             normal *= -1.0;
         }
         normals_[i] = normal;
+    }
+    if (!has_covariance) {
+        covariances_.clear();
     }
 }
 
