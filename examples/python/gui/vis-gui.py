@@ -23,7 +23,7 @@ class Settings:
     LIGHTING_PROFILES = {
         DEFAULT_PROFILE_NAME: {
             "ibl_intensity": 45000,
-            "ibl_intensity": 45000,
+            "sun_intensity": 45000,
             "sun_dir": [0.577, -0.577, -0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -31,7 +31,7 @@ class Settings:
         },
         "Bright day with sun at -Y": {
             "ibl_intensity": 45000,
-            "ibl_intensity": 45000,
+            "sun_intensity": 45000,
             "sun_dir": [0.577, 0.577, 0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -39,7 +39,7 @@ class Settings:
         },
         "Bright day with sun at +Z": {
             "ibl_intensity": 45000,
-            "ibl_intensity": 45000,
+            "sun_intensity": 45000,
             "sun_dir": [0.577, 0.577, -0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -47,7 +47,7 @@ class Settings:
         },
         "Less Bright day with sun at +Y": {
             "ibl_intensity": 35000,
-            "ibl_intensity": 50000,
+            "sun_intensity": 50000,
             "sun_dir": [0.577, -0.577, -0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -55,7 +55,7 @@ class Settings:
         },
         "Less Bright day with sun at -Y": {
             "ibl_intensity": 35000,
-            "ibl_intensity": 50000,
+            "sun_intensity": 50000,
             "sun_dir": [0.577, 0.577, 0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -63,7 +63,7 @@ class Settings:
         },
         "Less Bright day with sun at +Z": {
             "ibl_intensity": 35000,
-            "ibl_intensity": 50000,
+            "sun_intensity": 50000,
             "sun_dir": [0.577, 0.577, -0.577],
             # "ibl_rotation":
             "use_ibl": True,
@@ -71,7 +71,7 @@ class Settings:
         },
         POINT_CLOUD_PROFILE_NAME: {
             "ibl_intensity": 60000,
-            "ibl_intensity": 50000,
+            "sun_intensity": 50000,
             "use_ibl": True,
             "use_sun": False,
             # "ibl_rotation":
@@ -717,14 +717,12 @@ class AppWindow:
                 mesh.triangle_uvs = o3d.utility.Vector2dVector(uv)
         else:
             print("[Info]", path, "appears to be a point cloud")
-            mesh = None
 
         if geometry is None:
-            ioProgressAmount = 0.5
             cloud = None
             try:
                 cloud = o3d.io.read_point_cloud(path)
-            except:
+            except Exception:
                 pass
             if cloud is not None:
                 print("[Info] Successfully read", path)
@@ -734,16 +732,17 @@ class AppWindow:
                 geometry = cloud
             else:
                 print("[WARNING] Failed to read points", path)
-                cloud = None
 
         if geometry is not None:
-            self._scene.scene.add_geometry("__model__", geometry,
-                                           self.settings.material)
-            bounds = geometry.get_axis_aligned_bounding_box()
-            self._scene.setup_camera(60, bounds, bounds.get_center())
+            try:
+                self._scene.scene.add_geometry("__model__", geometry,
+                                               self.settings.material)
+                bounds = geometry.get_axis_aligned_bounding_box()
+                self._scene.setup_camera(60, bounds, bounds.get_center())
+            except Exception as e:
+                print(e)
 
     def export_image(self, path, width, height):
-        img = None
 
         def on_image(image):
             img = image
