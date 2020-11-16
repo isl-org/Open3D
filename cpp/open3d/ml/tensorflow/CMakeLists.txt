@@ -37,6 +37,8 @@ set(TF_OPS_SOURCES
     "misc/FixedRadiusSearchOpKernel.cpp"
     "misc/KnnSearchOps.cpp"
     "misc/VoxelPoolingOpKernel.cpp"
+    "misc/VoxelizeOpKernel.cpp"
+    "misc/VoxelizeOps.cpp"
     "tf_neighbors/tf_batch_neighbors.cpp"
     "tf_neighbors/tf_neighbors.cpp"
     "tf_subsampling/tf_batch_subsampling.cpp"
@@ -55,6 +57,7 @@ set(TF_OPS_CUDA_SOURCES
     "misc/BuildSpatialHashTableOpKernel.cu"
     "misc/InvertNeighborsListOpKernel.cu"
     "misc/ReduceSubarraysSumOpKernel.cu"
+    "misc/VoxelizeOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
 )
 

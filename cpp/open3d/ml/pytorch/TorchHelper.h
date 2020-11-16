@@ -125,9 +125,9 @@ inline bool SameDeviceType(std::initializer_list<torch::Tensor> tensors) {
 // convenience function to check if all tensors have the same dtype
 inline bool SameDtype(std::initializer_list<torch::Tensor> tensors) {
     if (tensors.size()) {
-        auto device_type = tensors.begin()->dtype();
+        auto dtype = tensors.begin()->dtype();
         for (auto t : tensors) {
-            if (device_type != t.dtype()) {
+            if (dtype != t.dtype()) {
                 return false;
             }
         }
