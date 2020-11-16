@@ -569,13 +569,12 @@ void PointCloud::EstimateCovariances(
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
 #pragma omp parallel for schedule(static)
-    for (int i = 0; i < (int)covariances_.size(); i++) {
+    for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices;
         std::vector<double> distance2;
-        Eigen::Matrix3d covariance;
         if (kdtree.Search(points_[i], search_param, indices, distance2) >= 3) {
-            covariance = utility::ComputeCovariance(points_, indices);
-            if (has_covariance && !covariance.isIdentity(1e-4) ) {
+            auto covariance = utility::ComputeCovariance(points_, indices);
+            if (has_covariance && !covariance.isIdentity(1e-4)) {
                 covariance = covariances_[i];
             }
             covariances_[i] = covariance;
