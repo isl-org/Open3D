@@ -62,10 +62,11 @@ int main(int argc, char *argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc != 3 && argc != 4 && argc != 5) {
+    if (argc < 3 || argc > 7) {
         utility::LogInfo(
-                "Usage : RegistrationRANSAC [path_to_first_point_cloud] "
-                "[path_to_second_point_cloud] --correspondence --visualize");
+                "Usage : RegistrationRANSAC path_to_first_point_cloud "
+                "path_to_second_point_cloud [--method=feature_matching] "
+                "[--mutual_filter] [--visualize]");
         return 1;
     }
 
@@ -74,11 +75,26 @@ int main(int argc, char *argv[]) {
         visualize = true;
     }
 
-    bool correspondence = false;
-    if (utility::ProgramOptionExists(argc, argv, "--correspondence")) {
-        correspondence = true;
+    std::string method;
+    const std::string kMethodFeature = "feature_matching";
+    const std::string kMethodCorres = "correspondence";
+    if (utility::ProgramOptionExists(argc, argv, "--method")) {
+        method = utility::GetProgramOptionAsString(argc, argv, "--method");
+    } else {
+        method = "feature_matching";
+    }
+    if (method != kMethodFeature && method != kMethodCorres) {
+        utility::LogInfo(
+                "--method must be \'feature_matching\' or \'correspondence\'");
+        return 1;
     }
 
+    bool mutual_filter;
+    if (utility::ProgramOptionExists(argc, argv, "--mutual_filter")) {
+        mutual_filter = true;
+    }
+
+    // Prepare input
     std::shared_ptr<geometry::PointCloud> source, target;
     std::shared_ptr<pipelines::registration::Feature> source_fpfh, target_fpfh;
     std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1]);
@@ -86,6 +102,7 @@ int main(int argc, char *argv[]) {
 
     pipelines::registration::RegistrationResult registration_result;
 
+    // Prepare checkers
     std::vector<std::reference_wrapper<
             const pipelines::registration::CorrespondenceChecker>>
             correspondence_checker;
@@ -102,7 +119,7 @@ int main(int argc, char *argv[]) {
     correspondence_checker.push_back(correspondence_checker_distance);
     correspondence_checker.push_back(correspondence_checker_normal);
 
-    if (!correspondence) {
+    if (method == kMethodFeature) {
         registration_result = pipelines::registration::
                 RegistrationRANSACBasedOnFeatureMatching(
                         *source, *target, *source_fpfh, *target_fpfh, 0.075,
@@ -111,11 +128,14 @@ int main(int argc, char *argv[]) {
                         3, correspondence_checker,
                         pipelines::registration::RANSACConvergenceCriteria(
                                 100000, 0.999));
-    } else {
+    } else if (method == kMethodCorres) {
         // Use mutual filter by default
         int nPti = int(source->points_.size());
         int nPtj = int(target->points_.size());
+
         geometry::KDTreeFlann feature_tree_i(*source_fpfh);
+        geometry::KDTreeFlann feature_tree_j(*target_fpfh);
+
         pipelines::registration::CorrespondenceSet corres_ji;
         std::vector<int> i_to_j(nPti, -1);
 
@@ -130,16 +150,43 @@ int main(int argc, char *argv[]) {
             corres_ji.push_back(Eigen::Vector2i(i, j));
         }
 
-        utility::LogDebug("points are remained: {:d}", (int)corres_ji.size());
+        if (mutual_filter) {
+            pipelines::registration::CorrespondenceSet mutual;
+            for (auto &corres : corres_ji) {
+                int j = corres(1);
+                int j2i = corres(0);
 
-        registration_result = pipelines::registration::
-                RegistrationRANSACBasedOnCorrespondence(
-                        *source, *target, corres_ji, 0.075,
-                        pipelines::registration::
-                                TransformationEstimationPointToPoint(false),
-                        3, correspondence_checker,
-                        pipelines::registration::RANSACConvergenceCriteria(
-                                100000, 0.999));
+                std::vector<int> corres_tmp(1);
+                std::vector<double> dist_tmp(1);
+                feature_tree_j.SearchKNN(
+                        Eigen::VectorXd(source_fpfh->data_.col(j2i)), 1,
+                        corres_tmp, dist_tmp);
+                int i2j = corres_tmp[0];
+                if (i2j == j) {
+                    mutual.push_back(corres);
+                }
+            }
+
+            utility::LogDebug("{:d} points remain", mutual.size());
+            registration_result = pipelines::registration::
+                    RegistrationRANSACBasedOnCorrespondence(
+                            *source, *target, mutual, 0.075,
+                            pipelines::registration::
+                                    TransformationEstimationPointToPoint(false),
+                            3, correspondence_checker,
+                            pipelines::registration::RANSACConvergenceCriteria(
+                                    100000, 0.999));
+        } else {
+            utility::LogDebug("{:d} points remain", corres_ji.size());
+            registration_result = pipelines::registration::
+                    RegistrationRANSACBasedOnCorrespondence(
+                            *source, *target, corres_ji, 0.075,
+                            pipelines::registration::
+                                    TransformationEstimationPointToPoint(false),
+                            3, correspondence_checker,
+                            pipelines::registration::RANSACConvergenceCriteria(
+                                    100000, 0.999));
+        }
     }
 
     if (visualize) {
