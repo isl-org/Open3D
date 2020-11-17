@@ -41,8 +41,7 @@
 #include <numeric>
 
 #include "open3d/ml/impl/misc/NmsImpl.h"
-
-#define DIVUP(m, n) ((m) / (n) + ((m) % (n) > 0))
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace ml {
@@ -74,8 +73,8 @@ static void AllPairsIoU(const float *boxes,
                         uint64_t *mask,
                         int n,
                         double nms_overlap_thresh) {
-    const int num_block_cols = DIVUP(n, NMS_BLOCK_SIZE);
-    const int num_block_rows = DIVUP(n, NMS_BLOCK_SIZE);
+    const int num_block_cols = utility::DivUp(n, NMS_BLOCK_SIZE);
+    const int num_block_rows = utility::DivUp(n, NMS_BLOCK_SIZE);
 
     // We need the concept of "block" since the mask is a uint64_t binary bit
     // map, and the block size is exactly 64x64. This is also consistent with
@@ -142,7 +141,7 @@ std::vector<int64_t> NmsCPUKernel(const float *boxes,
                                   double nms_overlap_thresh) {
     std::vector<int64_t> sort_indices = SortIndexes(scores, n, true);
 
-    const int num_block_cols = DIVUP(n, NMS_BLOCK_SIZE);
+    const int num_block_cols = utility::DivUp(n, NMS_BLOCK_SIZE);
 
     // Call kernel. Results will be saved in masks.
     // boxes: (n, 5)

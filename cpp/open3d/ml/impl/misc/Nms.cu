@@ -41,8 +41,7 @@
 #include "open3d/ml/Helper.h"
 #include "open3d/ml/impl/misc/Nms.h"
 #include "open3d/ml/impl/misc/NmsImpl.h"
-
-#define DIVUP(m, n) ((m) / (n) + ((m) % (n) > 0))
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace ml {
@@ -75,7 +74,8 @@ __global__ void NmsKernel(const float *boxes,
                           const int64_t *sort_indices,
                           uint64_t *mask,
                           const int n,
-                          const double nms_overlap_thresh) {
+                          const double nms_overlap_thresh,
+                          const int num_block_cols) {
     // Row-wise block index.
     const int block_row_idx = blockIdx.y;
     // Column-wise block index.
@@ -87,9 +87,6 @@ __global__ void NmsKernel(const float *boxes,
     // Local block col size.
     const int col_size =
             fminf(n - block_col_idx * NMS_BLOCK_SIZE, NMS_BLOCK_SIZE);
-
-    // Cololum-wise number of blocks.
-    const int num_block_cols = DIVUP(n, NMS_BLOCK_SIZE);
 
     // Fill local block_boxes by fetching the global box memory.
     // block_boxes = boxes[NBS*block_col_idx : NBS*block_col_idx+col_size, :].
@@ -141,7 +138,8 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
                                    const float *scores,
                                    int n,
                                    double nms_overlap_thresh) {
-    const int num_block_cols = DIVUP(n, NMS_BLOCK_SIZE);
+    // Cololum-wise number of blocks.
+    const int num_block_cols = utility::DivUp(n, NMS_BLOCK_SIZE);
 
     // Compute sort indices.
     float *scores_copy = nullptr;
@@ -160,10 +158,11 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
                                     n * num_block_cols * sizeof(uint64_t)));
 
     // Launch kernel.
-    dim3 blocks(DIVUP(n, NMS_BLOCK_SIZE), DIVUP(n, NMS_BLOCK_SIZE));
+    dim3 blocks(utility::DivUp(n, NMS_BLOCK_SIZE),
+                utility::DivUp(n, NMS_BLOCK_SIZE));
     dim3 threads(NMS_BLOCK_SIZE);
     NmsKernel<<<blocks, threads>>>(boxes, sort_indices, mask_ptr, n,
-                                   nms_overlap_thresh);
+                                   nms_overlap_thresh, num_block_cols);
 
     // Copy cuda masks to cpu.
     std::vector<uint64_t> mask_vec(n * num_block_cols);
