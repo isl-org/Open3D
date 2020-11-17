@@ -132,7 +132,7 @@ create-vm)
     done
     sleep 30 # wait for instance ssh service startup
     export GCE_ZID
-    echo "GCE_ZID=$GCE_ZID" >>$GITHUB_ENV         # Export environment variable for next step
+    echo "GCE_ZID=$GCE_ZID" >>"$GITHUB_ENV"       # Export environment variable for next step
     exit $((GCE_ZID >= ${#GCE_INSTANCE_ZONE[@]})) # 0 => success
     ;;
 
