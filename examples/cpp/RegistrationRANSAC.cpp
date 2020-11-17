@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
                             TransformationEstimationPointToPoint(false),
                     4, correspondence_checker,
                     pipelines::registration::RANSACConvergenceCriteria(4000000,
-                                                                       1000));
+                                                                       0.999));
 
     if (visualize)
         VisualizeRegistration(*source, *target,

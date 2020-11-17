@@ -27,6 +27,7 @@
 #include "open3d/pipelines/registration/Registration.h"
 
 #include <cstdlib>
+#include <limits>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
@@ -205,9 +206,9 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
     CorrespondenceSet ransac_corres(ransac_n);
     RegistrationResult result;
 
-    for (int itr = 0;
-         itr < criteria.max_iteration_ && itr < criteria.max_validation_;
-         itr++) {
+    int max_est_iter = std::numeric_limits<int>::max();
+    int itr = 0;
+    for (; itr < criteria.max_iteration_ && itr < max_est_iter; itr++) {
         for (int j = 0; j < ransac_n; j++) {
             ransac_corres[j] = corres[utility::UniformRandInt(
                     0, static_cast<int>(corres.size()) - 1)];
@@ -223,10 +224,14 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
             (this_result.fitness_ == result.fitness_ &&
              this_result.inlier_rmse_ < result.inlier_rmse_)) {
             result = this_result;
+            max_est_iter = static_cast<int>(std::ceil(
+                    std::log(1.0 - criteria.confidence_) /
+                    std::log(1.0 - std::pow(this_result.fitness_, ransac_n))));
         }
     }
-    utility::LogDebug("RANSAC: Fitness {:e}, RMSE {:e}", result.fitness_,
-                      result.inlier_rmse_);
+    utility::LogDebug(
+            "RANSAC exits at {}-th iteration: Fitness {:e}, RMSE {:e}", itr,
+            result.fitness_, result.inlier_rmse_);
     return result;
 }
 
@@ -248,21 +253,19 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     }
 
     RegistrationResult result;
-    int total_validation = 0;
-    bool finished_validation = false;
     int num_similar_features = 1;
     std::vector<std::vector<int>> similar_features(source.points_.size());
+    int max_est_iter = std::numeric_limits<int>::max();
 
 #pragma omp parallel
     {
         CorrespondenceSet ransac_corres(ransac_n);
         geometry::KDTreeFlann kdtree(target);
         geometry::KDTreeFlann kdtree_feature(target_feature);
-        RegistrationResult result_private;
 
 #pragma omp for nowait
-        for (int itr = 0; itr < criteria.max_iteration_; itr++) {
-            if (!finished_validation) {
+        for (int itr = 0; itr < criteria.max_iteration_; ++itr) {
+            if (itr < max_est_iter) {
                 std::vector<double> dists(num_similar_features);
                 Eigen::Matrix4d transformation;
                 for (int j = 0; j < ransac_n; j++) {
@@ -287,19 +290,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                                         0, num_similar_features - 1)];
                     }
                 }
+
                 bool check = true;
-                for (const auto &checker : checkers) {
-                    if (!checker.get().require_pointcloud_alignment_ &&
-                        !checker.get().Check(source, target, ransac_corres,
-                                             transformation)) {
-                        check = false;
-                        break;
-                    }
-                }
-                if (!check) continue;
-                transformation = estimation.ComputeTransformation(
-                        source, target, ransac_corres);
-                check = true;
                 for (const auto &checker : checkers) {
                     if (checker.get().require_pointcloud_alignment_ &&
                         !checker.get().Check(source, target, ransac_corres,
@@ -314,29 +306,23 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 auto this_result = GetRegistrationResultAndCorrespondences(
                         pcd, target, kdtree, max_correspondence_distance,
                         transformation);
-                if (this_result.fitness_ > result_private.fitness_ ||
-                    (this_result.fitness_ == result_private.fitness_ &&
-                     this_result.inlier_rmse_ < result_private.inlier_rmse_)) {
-                    result_private = this_result;
-                }
+
 #pragma omp critical
                 {
-                    total_validation = total_validation + 1;
-                    if (total_validation >= criteria.max_validation_)
-                        finished_validation = true;
+                    if (this_result.fitness_ > result.fitness_ ||
+                        (this_result.fitness_ == result.fitness_ &&
+                         this_result.inlier_rmse_ < result.inlier_rmse_)) {
+                        result = this_result;
+                        max_est_iter = static_cast<int>(std::ceil(
+                                std::log(1.0 - criteria.confidence_) /
+                                std::log(1.0 -
+                                         std::pow(result.fitness_, ransac_n))));
+                    }
                 }
-            }  // end of if statement
-        }      // end of for-loop
-#pragma omp critical
-        {
-            if (result_private.fitness_ > result.fitness_ ||
-                (result_private.fitness_ == result.fitness_ &&
-                 result_private.inlier_rmse_ < result.inlier_rmse_)) {
-                result = result_private;
-            }
-        }
-    }
-    utility::LogDebug("total_validation : {:d}", total_validation);
+            }  // if
+        }      // for
+    }          // omp parallel
+    utility::LogDebug("total_validation : {:d}", max_est_iter);
     utility::LogDebug("RANSAC: Fitness {:e}, RMSE {:e}", result.fitness_,
                       result.inlier_rmse_);
     return result;

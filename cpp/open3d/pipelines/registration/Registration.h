@@ -96,15 +96,15 @@ public:
     /// \param max_validation Maximum times the validation has been run before
     /// the iteration stops.
     RANSACConvergenceCriteria(int max_iteration = 1000,
-                              int max_validation = 1000)
-        : max_iteration_(max_iteration), max_validation_(max_validation) {}
+                              double confidence = 0.999)
+        : max_iteration_(max_iteration), confidence_(confidence) {}
+
     ~RANSACConvergenceCriteria() {}
 
 public:
     /// Maximum iteration before iteration stops.
     int max_iteration_;
-    /// Maximum times the validation has been run before the iteration stops.
-    int max_validation_;
+    double confidence_;
 };
 
 /// \class RegistrationResult
