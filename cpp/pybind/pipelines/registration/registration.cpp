@@ -584,7 +584,10 @@ void pybind_registration_methods(py::module &m) {
           "correspondences",
           "source"_a, "target"_a, "corres"_a, "max_correspondence_distance"_a,
           "estimation_method"_a = TransformationEstimationPointToPoint(false),
-          "ransac_n"_a = 6, "criteria"_a = RANSACConvergenceCriteria());
+          "ransac_n"_a = 3,
+          "checkers"_a = std::vector<
+                  std::reference_wrapper<const CorrespondenceChecker>>(),
+          "criteria"_a = RANSACConvergenceCriteria(100000, 0.999));
     docstring::FunctionDocInject(m,
                                  "registration_ransac_based_on_correspondence",
                                  map_shared_argument_docstrings);
@@ -595,7 +598,7 @@ void pybind_registration_methods(py::module &m) {
           "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
           "max_correspondence_distance"_a,
           "estimation_method"_a = TransformationEstimationPointToPoint(false),
-          "ransac_n"_a = 4,
+          "ransac_n"_a = 3,
           "checkers"_a = std::vector<
                   std::reference_wrapper<const CorrespondenceChecker>>(),
           "criteria"_a = RANSACConvergenceCriteria(100000, 0.999));

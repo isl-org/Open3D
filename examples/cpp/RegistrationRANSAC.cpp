@@ -62,21 +62,29 @@ int main(int argc, char *argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc != 3 && argc != 4) {
+    if (argc != 3 && argc != 4 && argc != 5) {
         utility::LogInfo(
                 "Usage : RegistrationRANSAC [path_to_first_point_cloud] "
-                "[path_to_second_point_cloud] --visualize");
+                "[path_to_second_point_cloud] --correspondence --visualize");
         return 1;
     }
 
     bool visualize = false;
-    if (utility::ProgramOptionExists(argc, argv, "--visualize"))
+    if (utility::ProgramOptionExists(argc, argv, "--visualize")) {
         visualize = true;
+    }
+
+    bool correspondence = false;
+    if (utility::ProgramOptionExists(argc, argv, "--correspondence")) {
+        correspondence = true;
+    }
 
     std::shared_ptr<geometry::PointCloud> source, target;
     std::shared_ptr<pipelines::registration::Feature> source_fpfh, target_fpfh;
     std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1]);
     std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);
+
+    pipelines::registration::RegistrationResult registration_result;
 
     std::vector<std::reference_wrapper<
             const pipelines::registration::CorrespondenceChecker>>
@@ -90,22 +98,54 @@ int main(int argc, char *argv[]) {
     auto correspondence_checker_normal =
             pipelines::registration::CorrespondenceCheckerBasedOnNormal(
                     0.52359878);
-
     correspondence_checker.push_back(correspondence_checker_edge_length);
     correspondence_checker.push_back(correspondence_checker_distance);
     correspondence_checker.push_back(correspondence_checker_normal);
-    auto registration_result =
-            pipelines::registration::RegistrationRANSACBasedOnFeatureMatching(
-                    *source, *target, *source_fpfh, *target_fpfh, 0.075,
-                    pipelines::registration::
-                            TransformationEstimationPointToPoint(false),
-                    3, correspondence_checker,
-                    pipelines::registration::RANSACConvergenceCriteria(4000000,
-                                                                       0.999));
 
-    if (visualize)
+    if (!correspondence) {
+        registration_result = pipelines::registration::
+                RegistrationRANSACBasedOnFeatureMatching(
+                        *source, *target, *source_fpfh, *target_fpfh, 0.075,
+                        pipelines::registration::
+                                TransformationEstimationPointToPoint(false),
+                        3, correspondence_checker,
+                        pipelines::registration::RANSACConvergenceCriteria(
+                                100000, 0.999));
+    } else {
+        // Use mutual filter by default
+        int nPti = int(source->points_.size());
+        int nPtj = int(target->points_.size());
+        geometry::KDTreeFlann feature_tree_i(*source_fpfh);
+        pipelines::registration::CorrespondenceSet corres_ji;
+        std::vector<int> i_to_j(nPti, -1);
+
+        // Buffer all correspondences
+        for (int j = 0; j < nPtj; j++) {
+            std::vector<int> corres_tmp(1);
+            std::vector<double> dist_tmp(1);
+
+            feature_tree_i.SearchKNN(Eigen::VectorXd(target_fpfh->data_.col(j)),
+                                     1, corres_tmp, dist_tmp);
+            int i = corres_tmp[0];
+            corres_ji.push_back(Eigen::Vector2i(i, j));
+        }
+
+        utility::LogDebug("points are remained: {:d}", (int)corres_ji.size());
+
+        registration_result = pipelines::registration::
+                RegistrationRANSACBasedOnCorrespondence(
+                        *source, *target, corres_ji, 0.075,
+                        pipelines::registration::
+                                TransformationEstimationPointToPoint(false),
+                        3, correspondence_checker,
+                        pipelines::registration::RANSACConvergenceCriteria(
+                                100000, 0.999));
+    }
+
+    if (visualize) {
         VisualizeRegistration(*source, *target,
                               registration_result.transformation_);
+    }
 
     return 0;
 }

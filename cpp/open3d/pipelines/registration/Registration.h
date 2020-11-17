@@ -183,7 +183,9 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         double max_correspondence_distance,
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(false),
-        int ransac_n = 6,
+        int ransac_n = 3,
+        const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
+                &checkers = {},
         const RANSACConvergenceCriteria &criteria =
                 RANSACConvergenceCriteria());
 
@@ -204,7 +206,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         double max_correspondence_distance,
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(false),
-        int ransac_n = 4,
+        int ransac_n = 3,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers = {},
         const RANSACConvergenceCriteria &criteria =
