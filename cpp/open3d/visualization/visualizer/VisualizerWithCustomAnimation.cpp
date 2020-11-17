@@ -109,58 +109,61 @@ void VisualizerWithCustomAnimation::Play(
                     recording_image_basedir_);
         }
     }
-    RegisterAnimationCallback([this, recording, recording_depth, close_window_when_animation_ends, recording_trajectory, trajectory_ptr, &progress_bar](Visualizer *vis) {
-        // The lambda function captures no references to avoid dangling
-        // references
-        auto &view_control =
-                (ViewControlWithCustomAnimation &)(*view_control_ptr_);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        recording_file_index_++;
-        if (recording) {
-            if (recording_trajectory) {
-                auto parameter = camera::PinholeCameraParameters();
-                view_control.ConvertToPinholeCameraParameters(parameter);
-                trajectory_ptr->parameters_.push_back(parameter);
-            }
-            std::string buffer;
-            if (recording_depth) {
-                buffer = fmt::format(recording_depth_filename_format_.c_str(),
-                                     recording_file_index_);
-                CaptureDepthImage(
-                        recording_depth_basedir_ + std::string(buffer), false);
-            } else {
-                buffer = fmt::format(recording_image_filename_format_.c_str(),
-                                     recording_file_index_);
-                CaptureScreenImage(
-                        recording_image_basedir_ + std::string(buffer), false);
-            }
-        }
-        view_control.Step(1.0);
-        ++progress_bar;
-        if (view_control.IsPlayingEnd(recording_file_index_)) {
-            view_control.SetAnimationMode(
-                    ViewControlWithCustomAnimation::AnimationMode::FreeMode);
-            RegisterAnimationCallback(nullptr);
-            if (recording && recording_trajectory) {
+    RegisterAnimationCallback(
+        [this, recording, recording_depth, close_window_when_animation_ends, 
+         recording_trajectory, trajectory_ptr, &progress_bar](Visualizer *vis) {
+            // The lambda function captures no references to avoid dangling
+            // references
+            auto &view_control =
+                    (ViewControlWithCustomAnimation &)(*view_control_ptr_);
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            recording_file_index_++;
+            if (recording) {
+                if (recording_trajectory) {
+                    auto parameter = camera::PinholeCameraParameters();
+                    view_control.ConvertToPinholeCameraParameters(parameter);
+                    trajectory_ptr->parameters_.push_back(parameter);
+                }
+                std::string buffer;
                 if (recording_depth) {
-                    io::WriteIJsonConvertible(
-                            recording_depth_basedir_ +
-                                    recording_depth_trajectory_filename_,
-                            *trajectory_ptr);
+                    buffer = fmt::format(recording_depth_filename_format_.c_str(),
+                                         recording_file_index_);
+                    CaptureDepthImage(
+                            recording_depth_basedir_ + std::string(buffer), false);
                 } else {
-                    io::WriteIJsonConvertible(
-                            recording_image_basedir_ +
-                                    recording_image_trajectory_filename_,
-                            *trajectory_ptr);
+                    buffer = fmt::format(recording_image_filename_format_.c_str(),
+                                         recording_file_index_);
+                    CaptureScreenImage(
+                            recording_image_basedir_ + std::string(buffer), false);
                 }
             }
-            if (close_window_when_animation_ends) {
-                Close();
+            view_control.Step(1.0);
+            ++progress_bar;
+            if (view_control.IsPlayingEnd(recording_file_index_)) {
+                view_control.SetAnimationMode(
+                        ViewControlWithCustomAnimation::AnimationMode::FreeMode);
+                RegisterAnimationCallback(nullptr);
+                if (recording && recording_trajectory) {
+                    if (recording_depth) {
+                        io::WriteIJsonConvertible(
+                                recording_depth_basedir_ +
+                                        recording_depth_trajectory_filename_,
+                                *trajectory_ptr);
+                    } else {
+                        io::WriteIJsonConvertible(
+                                recording_image_basedir_ +
+                                        recording_image_trajectory_filename_,
+                                *trajectory_ptr);
+                    }
+                }
+                if (close_window_when_animation_ends) {
+                    Close();
+                }
             }
+            UpdateWindowTitle();
+            return false;
         }
-        UpdateWindowTitle();
-        return false;
-    });
+    );
 }
 
 bool VisualizerWithCustomAnimation::InitViewControl() {
