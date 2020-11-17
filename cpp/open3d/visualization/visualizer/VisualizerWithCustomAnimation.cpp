@@ -110,7 +110,7 @@ void VisualizerWithCustomAnimation::Play(
         }
     }
     RegisterAnimationCallback(
-        [this, recording, recording_depth, close_window_when_animation_ends, 
+        [this, recording, recording_depth, close_window_when_animation_ends,
          recording_trajectory, trajectory_ptr, &progress_bar](Visualizer *vis) {
             // The lambda function captures no references to avoid dangling
             // references
@@ -126,15 +126,19 @@ void VisualizerWithCustomAnimation::Play(
                 }
                 std::string buffer;
                 if (recording_depth) {
-                    buffer = fmt::format(recording_depth_filename_format_.c_str(),
-                                         recording_file_index_);
+                    buffer = fmt::format(
+                        recording_depth_filename_format_.c_str(),
+                        recording_file_index_);
                     CaptureDepthImage(
-                            recording_depth_basedir_ + std::string(buffer), false);
+                            recording_depth_basedir_ + std::string(buffer),
+                            false);
                 } else {
-                    buffer = fmt::format(recording_image_filename_format_.c_str(),
-                                         recording_file_index_);
+                    buffer = fmt::format(
+                        recording_image_filename_format_.c_str(),
+                        recording_file_index_);
                     CaptureScreenImage(
-                            recording_image_basedir_ + std::string(buffer), false);
+                            recording_image_basedir_ + std::string(buffer),
+                            false);
                 }
             }
             view_control.Step(1.0);
