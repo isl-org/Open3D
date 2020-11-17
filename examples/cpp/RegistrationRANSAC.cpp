@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
                     *source, *target, *source_fpfh, *target_fpfh, 0.075,
                     pipelines::registration::
                             TransformationEstimationPointToPoint(false),
-                    4, correspondence_checker,
+                    3, correspondence_checker,
                     pipelines::registration::RANSACConvergenceCriteria(4000000,
                                                                        0.999));
 
