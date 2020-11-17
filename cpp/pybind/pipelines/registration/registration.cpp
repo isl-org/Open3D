@@ -596,7 +596,7 @@ void pybind_registration_methods(py::module &m) {
           &RegistrationRANSACBasedOnFeatureMatching,
           "Function for global RANSAC registration based on feature matching",
           "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
-          "max_correspondence_distance"_a,
+          "mutual_filter"_a, "max_correspondence_distance"_a,
           "estimation_method"_a = TransformationEstimationPointToPoint(false),
           "ransac_n"_a = 3,
           "checkers"_a = std::vector<

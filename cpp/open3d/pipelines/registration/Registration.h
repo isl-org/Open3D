@@ -203,6 +203,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const geometry::PointCloud &target,
         const Feature &source_feature,
         const Feature &target_feature,
+        bool mutual_filter,
         double max_correspondence_distance,
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(false),

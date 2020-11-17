@@ -122,7 +122,8 @@ int main(int argc, char *argv[]) {
     if (method == kMethodFeature) {
         registration_result = pipelines::registration::
                 RegistrationRANSACBasedOnFeatureMatching(
-                        *source, *target, *source_fpfh, *target_fpfh, 0.075,
+                        *source, *target, *source_fpfh, *target_fpfh,
+                        mutual_filter, 0.075,
                         pipelines::registration::
                                 TransformationEstimationPointToPoint(false),
                         3, correspondence_checker,
