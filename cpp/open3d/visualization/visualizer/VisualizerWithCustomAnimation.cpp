@@ -109,7 +109,7 @@ void VisualizerWithCustomAnimation::Play(
                     recording_image_basedir_);
         }
     }
-    RegisterAnimationCallback([=, &progress_bar](Visualizer *vis) {
+    RegisterAnimationCallback([=, this, &progress_bar](Visualizer *vis) {
         // The lambda function captures no references to avoid dangling
         // references
         auto &view_control =
