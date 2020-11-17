@@ -89,7 +89,7 @@ jobs:
           submodules: true
 
       - name: Set up Python version
-        uses: conda-incubator/setup-miniconda@v1
+        uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
