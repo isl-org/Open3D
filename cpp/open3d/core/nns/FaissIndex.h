@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/nns/NNSIndex.h"
 
 // Forward declarations.
 namespace faiss {
@@ -45,7 +46,7 @@ namespace nns {
 /// \class FaissIndex
 ///
 /// \brief Faiss for nearest neighbor search.
-class FaissIndex {
+class FaissIndex : public NNSIndex {
 public:
     /// \brief Default Constructor.
     FaissIndex();
@@ -87,24 +88,11 @@ public:
                                            float radius,
                                            int max_knn) const;
 
-    /// Get dimension of the dataset points.
-    /// \return dimension of dataset points.
-    int GetDimension() const;
-
-    /// Get size of the dataset points.
-    /// \return number of points in dataset.
-    size_t GetDatasetSize() const;
-
-    /// Get dtype of the dataset points.
-    /// \return dtype of dataset points.
-    Dtype GetDtype() const;
-
 protected:
     std::unique_ptr<faiss::Index> index;
 #ifdef BUILD_CUDA_MODULE
     std::unique_ptr<faiss::gpu::StandardGpuResources> res;
 #endif
-    Tensor dataset_points_;
 };
 
 }  // namespace nns

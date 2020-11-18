@@ -45,17 +45,17 @@ NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
 
 NanoFlannIndex::~NanoFlannIndex(){};
 
-int NanoFlannIndex::GetDimension() const {
-    SizeVector shape = dataset_points_.GetShape();
-    return static_cast<int>(shape[1]);
-}
+// int NanoFlannIndex::GetDimension() const {
+//    SizeVector shape = dataset_points_.GetShape();
+//    return static_cast<int>(shape[1]);
+//}
 
-size_t NanoFlannIndex::GetDatasetSize() const {
-    SizeVector shape = dataset_points_.GetShape();
-    return static_cast<size_t>(shape[0]);
-}
+// size_t NanoFlannIndex::GetDatasetSize() const {
+//    SizeVector shape = dataset_points_.GetShape();
+//    return static_cast<size_t>(shape[0]);
+//}
 
-Dtype NanoFlannIndex::GetDtype() const { return dataset_points_.GetDtype(); }
+// Dtype NanoFlannIndex::GetDtype() const { return dataset_points_.GetDtype(); }
 
 bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
     SizeVector shape = dataset_points.GetShape();

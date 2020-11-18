@@ -72,6 +72,7 @@ set(HASHMAP_CUDA_SRC
   )
 
 set(CORE_NNS_SRC
+    nns/NNSIndex.cpp
     nns/NanoFlannIndex.cpp
     nns/NearestNeighborSearch.cpp
 )

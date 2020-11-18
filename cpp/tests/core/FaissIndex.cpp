@@ -101,7 +101,8 @@ TEST_P(FaissPermuteDevices, KnnSearch) {
                                  0.00747938, 0.0108912}));
 
     // Fails on double type.
-    EXPECT_THROW(faiss_index.SetTensorData(ref.To(core::Dtype::Float64)), std::runtime_error);
+    EXPECT_THROW(faiss_index.SetTensorData(ref.To(core::Dtype::Float64)),
+                 std::runtime_error);
 }
 
 TEST_P(FaissPermuteDevices, HybridSearch) {
@@ -126,7 +127,8 @@ TEST_P(FaissPermuteDevices, HybridSearch) {
     ExpectEQ(distainces.ToFlatVector<float>(),
              std::vector<float>({0.00626358}));
     // Fails on double type.
-    EXPECT_THROW(faiss_index.SetTensorData(ref.To(core::Dtype::Float64)), std::runtime_error);
+    EXPECT_THROW(faiss_index.SetTensorData(ref.To(core::Dtype::Float64)),
+                 std::runtime_error);
 }
 
 }  // namespace tests

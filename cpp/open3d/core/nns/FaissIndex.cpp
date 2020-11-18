@@ -53,18 +53,6 @@ FaissIndex::FaissIndex(const Tensor &dataset_points) {
 
 FaissIndex::~FaissIndex() {}
 
-int FaissIndex::GetDimension() const {
-    SizeVector shape = dataset_points_.GetShape();
-    return static_cast<int>(shape[1]);
-}
-
-size_t FaissIndex::GetDatasetSize() const {
-    SizeVector shape = dataset_points_.GetShape();
-    return static_cast<size_t>(shape[0]);
-}
-
-Dtype FaissIndex::GetDtype() const { return dataset_points_.GetDtype(); }
-
 bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
     if (dataset_points.NumDims() != 2) {
         utility::LogError(

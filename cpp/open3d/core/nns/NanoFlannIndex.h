@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/nns/NNSIndex.h"
 
 // Forward declarations.
 namespace nanoflann {
@@ -120,7 +121,7 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
 /// \class NanoFlann
 ///
 /// \brief KDTree with NanoFlann for nearest neighbor search.
-class NanoFlannIndex {
+class NanoFlannIndex : public NNSIndex {
 public:
     /// \brief Default Constructor.
     NanoFlannIndex();
@@ -178,20 +179,20 @@ public:
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
                                                     double radius);
 
-    /// Get dimension of the dataset points.
-    /// \return dimension of dataset points.
-    int GetDimension() const;
+    ///// Get dimension of the dataset points.
+    ///// \return dimension of dataset points.
+    // int GetDimension() const;
 
-    /// Get size of the dataset points.
-    /// \return number of points in dataset.
-    size_t GetDatasetSize() const;
+    ///// Get size of the dataset points.
+    ///// \return number of points in dataset.
+    // size_t GetDatasetSize() const;
 
-    /// Get dtype of the dataset points.
-    /// \return dtype of dataset points.
-    Dtype GetDtype() const;
+    ///// Get dtype of the dataset points.
+    ///// \return dtype of dataset points.
+    // Dtype GetDtype() const;
 
 protected:
-    Tensor dataset_points_;
+    // Tensor dataset_points_;
     std::unique_ptr<NanoFlannIndexHolderBase> holder_;
 };
 }  // namespace nns
