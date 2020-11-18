@@ -105,6 +105,7 @@ public:
 public:
     /// Maximum iteration before iteration stops.
     int max_iteration_;
+    /// Desired probability of success.
     double confidence_;
 };
 
@@ -171,7 +172,7 @@ RegistrationResult RegistrationICP(
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
-/// \param corres
+/// \param corres Correspondence indices between source and target point clouds.
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance.
 /// \param estimation Estimation method.
