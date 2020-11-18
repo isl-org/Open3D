@@ -539,12 +539,36 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TRITRIINTERSECT_TARGET}")
 
 # RealSense
 if (BUILD_LIBREALSENSE)
-    message(STATUS "Building third-party library librealsense from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/librealsense)
-    import_3rdparty_library(3rdparty_realsense INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/librealsense/include/ LIBRARIES ${REALSENSE_LIBRARY})
-    add_dependencies(3rdparty_realsense ${REALSENSE_LIBRARY})
-    set(LIBREALSENSE_TARGET "3rdparty_realsense")
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
+    if (USE_SYSTEM_LIBREALSENSE)
+        find_package(realsense2 CONFIG QUIET)
+        if (TARGET realsense2::realsense2)
+            message(STATUS "Using installed third-party library realsense2")
+            if(NOT BUILD_SHARED_LIBS)
+                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "realsense2")
+            endif()
+            set(LIBREALSENSE_TARGET realsense2::realsense2)
+            add_library(3rdparty_realsense INTERFACE)   # dummy
+        else()
+            message(STATUS "Unable to find installed third-party library realsense2")
+            set(USE_SYSTEM_LIBREALSENSE OFF)
+        endif()
+    endif ()
+    if (NOT USE_SYSTEM_LIBREALSENSE)
+        message(STATUS "Building third-party library realsense2 from source")
+        include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
+        import_3rdparty_library(3rdparty_realsense
+            INCLUDE_DIRS ${realsense2_INCLUDE_DIR}
+            LIB_DIR ${realsense2_LIBRARY_DIR}
+            LIBRARIES ${REALSENSE_LIBRARY})
+        target_link_libraries(3rdparty_realsense INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+        add_dependencies(3rdparty_realsense ext_librealsense)
+        set(LIBREALSENSE_TARGET 3rdparty_realsense)
+    endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${LIBREALSENSE_TARGET})
+    # Conditionally include header files in Open3D.h
+    set(BUILD_LIBREALSENSE_COMMENT "")
+else ()
+    set(BUILD_LIBREALSENSE_COMMENT "//")
 endif ()
 
 # PNG
@@ -1097,4 +1121,3 @@ if (WITH_FAISS)
     target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
-

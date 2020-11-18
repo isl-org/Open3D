@@ -7,7 +7,7 @@ set -eo pipefail
 
 # Use SUDO=command to run in docker (user is root, sudo is not installed)
 SUDO=${SUDO:=sudo}
-UBUNTU_VERSION=${UBUNTU_VERSION:="$(lsb_release -cs)"}
+UBUNTU_VERSION=${UBUNTU_VERSION:="$(lsb_release -cs)"} # Empty in macOS
 
 $SUDO apt-get update
 $SUDO apt-get --yes install git software-properties-common

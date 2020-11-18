@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 # The following environment variables are required:
+SUDO=${SUDO:=sudo}
+UBUNTU_VERSION=${UBUNTU_VERSION:="$(lsb_release -cs 2>/dev/null || true)"} # Empty in macOS
+
 SHARED=${SHARED:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
@@ -35,7 +38,7 @@ SCIPY_VER="1.4.1"
 CONDA_BUILD_VER="3.20.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
-OPEN3D_SOURCE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. >/dev/null 2>&1 && pwd )"
+OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 install_cuda_toolkit() {
 
@@ -151,6 +154,30 @@ install_python_dependencies() {
     if [[ "purge-cache" =~ ^($options)$ ]]; then
         echo "Purge pip cache"
         python -m pip cache purge 2>/dev/null || true
+    fi
+}
+
+install_librealsense2() {
+
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo Installing librealsense
+        echo Reference: https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
+        $SUDO apt-key adv --keyserver keys.gnupg.net --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE ||
+            $SUDO apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE
+
+        $SUDO apt-add-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo ${UBUNTU_VERSION} main" -u
+        $SUDO apt-get install --yes --no-install-recommends librealsense2-dkms librealsense2-udev-rules librealsense2-dev
+        $SUDO apt-get install --yes --no-install-recommends librealsense2-utils
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        #echo Installing librealsense dependencies
+        #echo Reference: https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_osx.md
+        #brew install libusb pkg-config
+        #brew cask install apenngrace/vulkan/vulkan-sdk
+        # Can install directly
+        brew install librealsense
+    else
+        echo "Unsupported OS $OSTYPE"
+        exit 1
     fi
 }
 

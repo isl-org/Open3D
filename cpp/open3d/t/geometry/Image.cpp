@@ -40,7 +40,7 @@ Image::Image(int64_t rows,
              int64_t channels,
              core::Dtype dtype,
              const core::Device &device)
-    : Geometry(Geometry::GeometryType::Image, 2) {
+    : Geometry2D(Geometry::GeometryType::Image) {
     if (rows < 0) {
         utility::LogError("rows must be >= 0, but got {}.", rows);
     }
@@ -54,7 +54,7 @@ Image::Image(int64_t rows,
 }
 
 Image::Image(const core::Tensor &tensor)
-    : Geometry(Geometry::GeometryType::Image, 2) {
+    : Geometry2D(Geometry::GeometryType::Image) {
     if (!tensor.IsContiguous()) {
         utility::LogError("Input tensor must be contiguous.");
     }
@@ -67,6 +67,24 @@ Image::Image(const core::Tensor &tensor)
         utility::LogError("Input tensor must be 2-D or 3-D, but got shape {}.",
                           tensor.GetShape().ToString());
     }
+}
+
+open3d::geometry::Image Image::ToLegacyImage() const {
+    open3d::geometry::Image image_legacy;
+    size_t elem_sz = data_.GetDtype().ByteSize();
+    image_legacy.Prepare(GetCols(), GetRows(), GetChannels(), elem_sz);
+    if (data_.IsContiguous()) {
+        memcpy(image_legacy.data_.data(), data_.GetDataPtr(),
+               image_legacy.data_.size());
+    } else {
+        for (int64_t i = 0, i_leg = 0; i < GetRows(); ++i)
+            for (int64_t j = 0; i < GetCols(); ++j)
+                for (int64_t k = 0; i < GetChannels(); ++k, i_leg += elem_sz)
+                    // image_legacy is contiguous
+                    memcpy(&image_legacy.data_[i_leg],
+                           data_[i][j][k].GetDataPtr(), elem_sz);
+    }
+    return image_legacy;
 }
 
 }  // namespace geometry

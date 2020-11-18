@@ -30,7 +30,8 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/t/geometry/Geometry.h"
+#include "open3d/geometry/Image.h"
+#include "open3d/t/geometry/Geometry2D.h"
 
 namespace open3d {
 namespace t {
@@ -40,7 +41,7 @@ namespace geometry {
 ///
 /// \brief The Image class stores image with customizable rols, cols, channels,
 /// dtype and device.
-class Image : public Geometry {
+class Image : public Geometry2D {
 public:
     /// \brief Constructor for image.
     ///
@@ -127,6 +128,18 @@ public:
 
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
+
+    core::Tensor GetMinBound() const override {
+        return core::Tensor::Zeros({2}, core::Dtype::Int64);
+    };
+
+    core::Tensor GetMaxBound() const override {
+        return core::Tensor(std::vector<int64_t>{GetCols(), GetRows()}, {2},
+                            core::Dtype::Int64);
+    };
+
+    /// Convert to legacy Image type.
+    open3d::geometry::Image ToLegacyImage() const;
 
 protected:
     /// Internal data of the Image, represented as a 3D tensor of shape {rols,
