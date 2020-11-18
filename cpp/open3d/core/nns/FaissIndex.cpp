@@ -70,7 +70,6 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
         utility::LogError(
                 "[FaissIndex::SetTensorData] dataset_points must be "
                 "2D matrix, with shape {n_dataset_points, d}.");
-        return false;
     }
     dataset_points_ = dataset_points.Contiguous();
     size_t dataset_size = GetDatasetSize();
@@ -80,12 +79,10 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
     if (dtype != Dtype::Float32) {
         utility::LogError(
                 "[FaissIndex::SetTensorData] Data type must be Float32.");
-        return false;
     }
     if (dimension == 0 || dataset_size == 0) {
         utility::LogWarning(
                 "[FaissIndex::SetTensorData] Failed due to no data.");
-        return false;
     }
 
     if (dataset_points_.GetBlob()->GetDevice().GetType() ==
@@ -148,8 +145,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
                            query_points.GetBlob()->GetDevice());
     Tensor result_distance2_(distance2, {query_size, knn}, Dtype::Float32,
                              query_points.GetBlob()->GetDevice());
-    std::pair<Tensor, Tensor> result_pair_(result_indices_, result_distance2_);
-    return result_pair_;
+    return std::make_pair(result_indices_, result_distance2_);
 }
 
 std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
@@ -191,8 +187,8 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
     index->search(query_size, _data_ptr, max_knn, distance2.data(),
                   indices.data());
 
-    unsigned int upper_ = max_knn * query_size;
-    for (unsigned int i = 0; i < upper_; i++) {
+    int64_t upper_ = max_knn * query_size;
+    for (int64_t i = 0; i < upper_; i++) {
         if (distance2[i] > radius) {
             distance2[i] = 0;
             indices[i] = -1;
@@ -203,8 +199,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
                            query_points.GetBlob()->GetDevice());
     Tensor result_distance2_(distance2, {query_size, max_knn}, Dtype::Float32,
                              query_points.GetBlob()->GetDevice());
-    std::pair<Tensor, Tensor> result_pair_(result_indices_, result_distance2_);
-    return result_pair_;
+    return std::make_pair(result_indices_, result_distance2_);
 }
 
 }  // namespace nns

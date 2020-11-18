@@ -63,7 +63,6 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
         utility::LogError(
                 "[NanoFlannIndex::SetTensorData] dataset_points must be "
                 "2D matrix, with shape {n_dataset_points, d}.");
-        return false;
     }
     dataset_points_ = dataset_points.Contiguous();
     size_t dataset_size = GetDatasetSize();
