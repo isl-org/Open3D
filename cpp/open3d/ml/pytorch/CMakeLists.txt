@@ -33,6 +33,10 @@ set(TORCH_OPS_SOURCES
     "misc/ReduceSubarraysSumOpKernel.cpp"
     "misc/VoxelPoolingOps.cpp"
     "misc/FixedRadiusSearchOpKernel.cpp"
+    "misc/RaggedToDenseOps.cpp"
+    "misc/RaggedToDenseOpKernel.cpp"
+    "misc/VoxelizeOps.cpp"
+    "misc/VoxelizeOpKernel.cpp"
     "misc/NmsOps.cpp"
     "../impl/misc/Nms.cpp"
 )
@@ -46,6 +50,8 @@ set(TORCH_OPS_CUDA_SOURCES
     "misc/BuildSpatialHashTableOpKernel.cu"
     "misc/InvertNeighborsListOpKernel.cu"
     "misc/ReduceSubarraysSumOpKernel.cu"
+    "misc/RaggedToDenseOpKernel.cu"
+    "misc/VoxelizeOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
     "../impl/misc/Nms.cu"
 )

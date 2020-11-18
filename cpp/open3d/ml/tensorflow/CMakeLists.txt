@@ -37,6 +37,8 @@ set(TF_OPS_SOURCES
     "misc/FixedRadiusSearchOpKernel.cpp"
     "misc/KnnSearchOps.cpp"
     "misc/VoxelPoolingOpKernel.cpp"
+    "misc/VoxelizeOpKernel.cpp"
+    "misc/VoxelizeOps.cpp"
     "misc/NmsOpKernel.cpp"
     "misc/NmsOps.cpp"
     "tf_neighbors/tf_batch_neighbors.cpp"
@@ -58,6 +60,7 @@ set(TF_OPS_CUDA_SOURCES
     "misc/BuildSpatialHashTableOpKernel.cu"
     "misc/InvertNeighborsListOpKernel.cu"
     "misc/ReduceSubarraysSumOpKernel.cu"
+    "misc/VoxelizeOpKernel.cu"
     "misc/NmsOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
     "../impl/misc/Nms.cu"
@@ -77,7 +80,7 @@ endif()
 add_library(open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES})
 # do not use open3d_set_global_properties(open3d_tf_ops) here because some
 # options are not compatible for tf op libraries
-# open3d_show_and_abort_on_warning(open3d_tf_ops)
+open3d_show_and_abort_on_warning(open3d_tf_ops)
 
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TF_OPS_DIR open3d_tf_ops LIBRARY_OUTPUT_DIRECTORY)
