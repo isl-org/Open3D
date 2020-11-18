@@ -138,6 +138,10 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
                                    const float *scores,
                                    int n,
                                    double nms_overlap_thresh) {
+    if (n == 0) {
+        return {};
+    }
+
     // Cololum-wise number of blocks.
     const int num_block_cols = utility::DivUp(n, NMS_BLOCK_SIZE);
 

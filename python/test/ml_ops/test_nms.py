@@ -55,3 +55,22 @@ def test_nms(ml):
 
     np.testing.assert_equal(keep_indices, keep_indices_ref)
     assert keep_indices.dtype == keep_indices_ref.dtype
+
+
+@mltest.parametrize.ml
+def test_nms_empty(ml):
+    boxes = np.zeros((0, 5), dtype=np.float32)
+    scores = np.array([], dtype=np.float32)
+    nms_overlap_thresh = 0.7
+    keep_indices_ref = np.array([]).astype(np.int64)
+
+    keep_indices = mltest.run_op(ml,
+                                 ml.device,
+                                 True,
+                                 ml.ops.nms,
+                                 boxes,
+                                 scores,
+                                 nms_overlap_thresh=nms_overlap_thresh)
+
+    np.testing.assert_equal(keep_indices, keep_indices_ref)
+    assert keep_indices.dtype == keep_indices_ref.dtype
