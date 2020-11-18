@@ -93,9 +93,10 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param max_iteration Maximum iteration before iteration stops.
-    /// \param max_validation Maximum times the validation has been run before
-    /// the iteration stops.
-    RANSACConvergenceCriteria(int max_iteration = 1000,
+    /// \param confidence Desired probability of success. Used for estimating
+    /// early termination by k = log(1 - confidence)/log(1 -
+    /// inlier_ratio^{ransac_n}).
+    RANSACConvergenceCriteria(int max_iteration = 100000,
                               double confidence = 0.999)
         : max_iteration_(max_iteration), confidence_(confidence) {}
 
@@ -170,11 +171,12 @@ RegistrationResult RegistrationICP(
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
-/// \param corres Checker class to check if two point clouds can be aligned.
+/// \param corres
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance.
 /// \param estimation Estimation method.
 /// \param ransac_n Fit ransac with `ransac_n` correspondences.
+/// \param checkers Correspondence checker.
 /// \param criteria Convergence criteria.
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const geometry::PointCloud &source,
@@ -195,9 +197,13 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 /// \param target The target point cloud.
 /// \param source_feature Source point cloud feature.
 /// \param target_feature Target point cloud feature.
+/// \param mutual_filter Enables mutual filter such that the correspondence of
+/// the source point's correspondence is itself.
 /// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance. \param ransac_n Fit ransac with `ransac_n` correspondences. \param
-/// checkers Correspondence checker. \param criteria Convergence criteria.
+/// distance.
+/// \param ransac_n Fit ransac with `ransac_n` correspondences.
+/// \param checkers Correspondence checker.
+/// \param criteria Convergence criteria.
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

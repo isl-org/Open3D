@@ -39,14 +39,14 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
         result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh, distance_threshold,
             o3d.pipelines.registration.TransformationEstimationPointToPoint(
-                False), 4,
+                False), 3,
             [
                 o3d.pipelines.registration.
                 CorrespondenceCheckerBasedOnEdgeLength(0.9),
                 o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
                     distance_threshold)
             ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 500))
+            o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.99))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4), np.zeros((6, 6)))
     information = o3d.pipelines.registration.get_information_matrix_from_point_clouds(

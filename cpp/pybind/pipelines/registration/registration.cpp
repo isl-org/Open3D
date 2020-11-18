@@ -138,7 +138,7 @@ void pybind_registration_classes(py::module &m) {
                      return new RANSACConvergenceCriteria(max_iteration,
                                                           confidence);
                  }),
-                 "max_iteration"_a = 1000, "confidence"_a = 0.999)
+                 "max_iteration"_a = 100000, "confidence"_a = 0.999)
             .def_readwrite("max_iteration",
                            &RANSACConvergenceCriteria::max_iteration_,
                            "Maximum iteration before iteration stops.")
@@ -526,6 +526,10 @@ static const std::unordered_map<std::string, std::string>
                  "CorrespondenceCheckerBasedOnDistance``, "
                  "``"
                  "CorrespondenceCheckerBasedOnNormal``)"},
+                {"confidence",
+                 "Desired probability of success for RANSAC. Used for "
+                 "estimating early termination by k = log(1 - "
+                 "confidence)/log(1 - inlier_ratio^{ransac_n}"},
                 {"corres",
                  "o3d.utility.Vector2iVector that stores indices of "
                  "corresponding point or feature arrays."},
@@ -543,6 +547,9 @@ static const std::unordered_map<std::string, std::string>
                 {"kernel", "Robust Kernel used in the Optimization"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},
+                {"mutual_filter",
+                 "Enables mutual filter such that the correspondence of the "
+                 "source point's correspondence is itself."},
                 {"option", "Registration option"},
                 {"ransac_n", "Fit ransac with ``ransac_n`` correspondences"},
                 {"source_feature", "Source point cloud feature."},
