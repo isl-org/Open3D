@@ -94,9 +94,11 @@ public:
                      const t::geometry::PointCloud* geom,
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
+    bool HasGeometry(const std::string& name) const;
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
+    void ModifyGeometryMaterial(const std::string& name, const Material& mat);
     void AddModel(const std::string& name, const TriangleMeshModel& model);
 
     /// Updates all geometries to use this material
@@ -140,6 +142,7 @@ private:
 
     LOD lod_ = LOD::HIGH_DETAIL;
     bool use_low_quality_if_available_ = false;
+    bool axis_dirty_ = true;
     std::map<std::string, GeometryData> geometries_;  // name -> data
     geometry::AxisAlignedBoundingBox bounds_;
     size_t downsample_threshold_ = 6000000;

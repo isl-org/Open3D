@@ -65,11 +65,6 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-template <typename T>
-std::shared_ptr<T> TakeOwnership(UnownedPointer<T> x) {
-    return std::shared_ptr<T>(x.get());
-}
-
 class PythonUnlocker : public Application::EnvUnlocker {
 public:
     PythonUnlocker() { unlocker_ = nullptr; }
