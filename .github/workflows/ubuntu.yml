@@ -102,7 +102,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: conda-incubator/setup-miniconda@v1
+        uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
@@ -157,7 +157,7 @@ jobs:
 
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
