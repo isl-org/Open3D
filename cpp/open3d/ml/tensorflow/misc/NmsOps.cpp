@@ -73,6 +73,7 @@ indices.
   scores = np.array([3, 1.1, 5, 2, 1, 0], dtype=np.float32)
   nms_overlap_thresh = 0.7
   keep_indices = ml3d.ops.nms(boxes, scores, nms_overlap_thresh)
+  print(keep_indices)
 
   # PyTorch example.
   import torch
