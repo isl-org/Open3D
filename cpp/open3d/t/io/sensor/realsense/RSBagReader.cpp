@@ -119,6 +119,14 @@ Json::Value RSBagReader::GetMetadataJson() {
         utility::LogError("Only 8 bit unsigned int color is supported!");
     }
     channels_color_ = format_channels.at(rs_color.format());
+    value["color_fps"] = rs_color.fps();
+    value["depth_fps"] = rs_depth.fps();
+    if (value["color_fps"] != value["depth_fps"]) {
+        utility::LogError(
+                "Different frame rates for color ({} fps) and depth ({} fps) "
+                "streams is not supported.",
+                value["color_fps"], value["depth_fps"]);
+    }
     value["stream_length_usec"] =
             std::chrono::duration_cast<std::chrono::microseconds>(
                     rs_device.get_duration())

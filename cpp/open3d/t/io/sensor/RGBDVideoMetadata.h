@@ -29,8 +29,6 @@
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/utility/IJsonConvertible.h"
 
-enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
-
 namespace open3d {
 
 namespace camera {
@@ -39,6 +37,8 @@ class PinholeCameraIntrinsic;
 
 namespace t {
 namespace io {
+
+enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
 
 /// class RGBDVideoMetadata
 ///
