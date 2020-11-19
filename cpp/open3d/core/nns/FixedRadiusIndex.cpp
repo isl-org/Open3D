@@ -168,6 +168,9 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                 (uint32_t *)static_cast<int32_t *>(
                         hash_table_index_.GetDataPtr()),
                 output_allocator);
+
+        neighbors_index = output_allocator.NeighborsIndex();
+        neighbors_distance = output_allocator.NeighborsDistance();
     });
 
     return std::make_tuple(neighbors_index, neighbors_distance,

@@ -114,7 +114,7 @@ public:
     }
 
     const int32_t* IndicesPtr() const {
-        return static_cast<int32_t*>(neighbors_index.GetDataPtr());
+        return static_cast<const int32_t*>(neighbors_index.GetDataPtr());
     }
 
     const T* DistancesPtr() const {

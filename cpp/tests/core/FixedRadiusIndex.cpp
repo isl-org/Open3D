@@ -41,19 +41,18 @@ namespace tests {
 TEST(FixedRadiusIndex, SearchRadius) {
     core::Device device = core::Device("CUDA:0");
     std::vector<int> ref_indices = {1, 4};
-    std::vector<double> ref_distance = {0.00626358, 0.00747938};
+    std::vector<float> ref_distance = {0.00626358, 0.00747938};
 
     int size = 10;
-    std::vector<double> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
-                               0.2, 0.0, 0.1, 0.0, 0.0, 0.1, 0.1, 0.0,
-                               0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
-                               0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Dtype::Float64, device);
-    double radius = 0.1;
+    std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
+                              0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
+                              0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
+    core::Tensor ref(points, {size, 3}, core::Dtype::Float32, device);
+    float radius = 0.1;
     core::nns::FixedRadiusIndex index(ref, radius);
 
-    core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Dtype::Float64, device);
+    core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
+                       {1, 3}, core::Dtype::Float32, device);
 
     // if radius <= 0
     // EXPECT_THROW(index.SearchRadius(query, -1.0), std::runtime_error);
@@ -65,8 +64,8 @@ TEST(FixedRadiusIndex, SearchRadius) {
     core::Tensor indices = std::get<0>(result).To(core::Dtype::Int32);
     core::Tensor distances = std::get<1>(result);
     ExpectEQ(indices.ToFlatVector<int>(), std::vector<int>({1, 4}));
-    ExpectEQ(distances.ToFlatVector<double>(),
-             std::vector<double>({0.00626358, 0.00747938}));
+    ExpectEQ(distances.ToFlatVector<float>(),
+             std::vector<float>({0.00626358, 0.00747938}));
 }
 
 }  // namespace tests
