@@ -53,7 +53,9 @@ struct MiniVec {
     }
 
     FN_SPECIFIERS const T operator[](size_t i) const { return arr[i]; }
+
     FN_SPECIFIERS T& operator[](size_t i) { return arr[i]; }
+
     template <class T2>
     FN_SPECIFIERS MiniVec<T2, N> cast() const {
         MiniVec<T2, N> a;
