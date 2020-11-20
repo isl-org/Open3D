@@ -102,7 +102,7 @@ jobs:
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" ..
+          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release -DBUILD_AZURE_KINECT=ON -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=OFF -DSTATIC_WINDOWS_RUNTIME=ON -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" ..
 
       - name: Build Python package
         shell: pwsh
