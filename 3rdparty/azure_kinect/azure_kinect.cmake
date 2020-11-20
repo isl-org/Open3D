@@ -20,7 +20,7 @@ endif()
 set(BUILD_AZURE_KINECT_COMMENT "")
 
 # Export the following variables:
-# - k4a_INCLUDE_DIRS
+# - K4A_INCLUDE_DIR
 if (WIN32)
     # This works even when the user does not have k4a libraries installed
     # in `Program Files`. We only need the headers.
@@ -41,11 +41,11 @@ else()
     find_package(k4a QUIET)
     find_package(k4arecord QUIET)
     if (k4a_FOUND)
-        get_target_property(k4a_INCLUDE_DIRS k4a::k4a INTERFACE_INCLUDE_DIRECTORIES)
+        get_target_property(K4A_INCLUDE_DIR k4a::k4a INTERFACE_INCLUDE_DIRECTORIES)
     endif()
 
     if (k4a_FOUND)
-        message(STATUS "k4a_INCLUDE_DIRS: ${k4a_INCLUDE_DIRS}")
+        message(STATUS "K4A_INCLUDE_DIR: ${K4A_INCLUDE_DIR}")
     else()
         message(FATAL_ERROR "Kinect SDK NOT found. Please install according \
                 to https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md")
