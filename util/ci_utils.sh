@@ -224,8 +224,6 @@ build_pip_conda_package() {
     else
         echo "Building for a new Open3D release"
     fi
-    set -u
-
     if [[ "build_azure_kinect" =~ ^($options)$ ]]; then
         echo "Azure Kinect enabled in Python wheel."
         BUILD_AZURE_KINECT=ON
@@ -233,6 +231,7 @@ build_pip_conda_package() {
         echo "Azure Kinect disabled in Python wheel."
         BUILD_AZURE_KINECT=OFF
     fi
+    set -u
 
     echo
     echo Building with CPU only...
