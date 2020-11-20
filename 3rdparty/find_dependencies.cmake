@@ -739,7 +739,7 @@ set(BUILD_AZURE_KINECT_COMMENT "//") # Set include header files in Open3D.h
 if (BUILD_AZURE_KINECT)
     include(${Open3D_3RDPARTY_DIR}/azure_kinect/azure_kinect.cmake)
     import_3rdparty_library(3rdparty_k4a
-        INCLUDE_DIRS ${K4A_INCLUDE_DIR}
+        INCLUDE_DIRS ${K4A_INCLUDE_DIR}/
     )
     if (WIN32)
         add_dependencies(3rdparty_k4a ext_k4a)
