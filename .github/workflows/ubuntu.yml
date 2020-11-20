@@ -124,7 +124,7 @@ jobs:
           echo "Installing CPU versions of packages"
           install_python_dependencies with-conda
           # Install Azure Kinect dependencies
-          install_azure_kinect_dependencies()
+          install_azure_kinect_dependencies
           echo
           echo -n "Using conda"
           conda info
