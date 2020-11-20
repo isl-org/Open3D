@@ -34,7 +34,7 @@ if (WIN32)
         INSTALL_COMMAND ""
     )
     ExternalProject_Get_Property(ext_k4a SOURCE_DIR)
-    set(K4A_INCLUDE_DIR ${SOURCE_DIR}/build/native/include/)
+    set(K4A_INCLUDE_DIR ${SOURCE_DIR}/build/native/include)
 else()
     # Try to find system-wide installed K4a.
     # The property names are tested with k4a 1.4.1, future versions might work.
