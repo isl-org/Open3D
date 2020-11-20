@@ -200,7 +200,8 @@ void ComputePointIndexTable(
 }
 
 /// Kernel for CountNeighbors
-template <int METRIC, bool IGNORE_QUERY_POINT, class T>
+// template <int METRIC, bool IGNORE_QUERY_POINT, class T>
+template <int METRIC, class T>
 __global__ void CountNeighborsKernel(
         uint32_t* __restrict__ neighbors_count,
         const uint32_t* const __restrict__ point_index_table,
@@ -258,9 +259,9 @@ __global__ void CountNeighborsKernel(
             uint32_t idx = point_index_table[j];
 
             Vec3<T> p(&points[idx * 3 + 0]);
-            if (IGNORE_QUERY_POINT) {
-                if (query_pos == p) continue;
-            }
+            // if (IGNORE_QUERY_POINT) {
+            //    if (query_pos == p) continue;
+            //}
 
             T dist;
             if (NeighborTest<METRIC>(p, query_pos, &dist, threshold)) ++count;
@@ -315,8 +316,8 @@ void CountNeighbors(const cudaStream_t& stream,
                     size_t num_points,
                     const T inv_voxel_size,
                     const T radius,
-                    const Metric metric,
-                    const bool ignore_query_point) {
+                    const Metric metric) {
+    // const bool ignore_query_point) {
     const T threshold = (metric == L2 ? radius * radius : radius);
 
     const int BLOCKSIZE = 64;
@@ -330,14 +331,10 @@ void CountNeighbors(const cudaStream_t& stream,
             hash_table_cell_splits_size - 1, query_points, num_queries, \
             points, num_points, inv_voxel_size, radius, threshold
 
-#define CALL_TEMPLATE(METRIC)                                    \
-    if (METRIC == metric) {                                      \
-        if (ignore_query_point)                                  \
-            CountNeighborsKernel<METRIC, true, T>                \
-                    <<<grid, block, 0, stream>>>(FN_PARAMETERS); \
-        else                                                     \
-            CountNeighborsKernel<METRIC, false, T>               \
-                    <<<grid, block, 0, stream>>>(FN_PARAMETERS); \
+#define CALL_TEMPLATE(METRIC)                                \
+    if (METRIC == metric) {                                  \
+        CountNeighborsKernel<METRIC, T>                      \
+                <<<grid, block, 0, stream>>>(FN_PARAMETERS); \
     }
 
         CALL_TEMPLATE(L1)
@@ -350,7 +347,9 @@ void CountNeighbors(const cudaStream_t& stream,
 }
 
 /// Kernel for WriteNeighborsIndicesAndDistances
-template <class T, int METRIC, bool IGNORE_QUERY_POINT, bool RETURN_DISTANCES>
+template <class T, int METRIC, bool RETURN_DISTANCES>
+// template <class T, int METRIC, bool IGNORE_QUERY_POINT, bool
+// RETURN_DISTANCES>
 __global__ void WriteNeighborsIndicesAndDistancesKernel(
         int32_t* __restrict__ indices,
         T* __restrict__ distances,
@@ -409,9 +408,9 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
             uint32_t idx = point_index_table[j];
 
             Vec3<T> p(&points[idx * 3 + 0]);
-            if (IGNORE_QUERY_POINT) {
-                if (query_pos == p) continue;
-            }
+            // if (IGNORE_QUERY_POINT) {
+            //    if (query_pos == p) continue;
+            //}
 
             T dist;
             if (NeighborTest<METRIC>(p, query_pos, &dist, threshold)) {
@@ -484,7 +483,7 @@ void WriteNeighborsIndicesAndDistances(
         const T inv_voxel_size,
         const T radius,
         const Metric metric,
-        const bool ignore_query_point,
+        // const bool ignore_query_point,
         const bool return_distances) {
     const T threshold = (metric == L2 ? radius * radius : radius);
 
@@ -500,19 +499,15 @@ void WriteNeighborsIndicesAndDistances(
             query_points, num_queries, points, num_points, inv_voxel_size, \
             radius, threshold
 
-#define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)            \
-    if (METRIC == metric && IGNORE_QUERY_POINT == ignore_query_point &&        \
-        RETURN_DISTANCES == return_distances) {                                \
-        WriteNeighborsIndicesAndDistancesKernel<T, METRIC, IGNORE_QUERY_POINT, \
-                                                RETURN_DISTANCES>              \
-                <<<grid, block, 0, stream>>>(FN_PARAMETERS);                   \
+#define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                              \
+    if (METRIC == metric && RETURN_DISTANCES == return_distances) {          \
+        WriteNeighborsIndicesAndDistancesKernel<T, METRIC, RETURN_DISTANCES> \
+                <<<grid, block, 0, stream>>>(FN_PARAMETERS);                 \
     }
 
-#define CALL_TEMPLATE2(METRIC)         \
-    CALL_TEMPLATE(METRIC, true, true)  \
-    CALL_TEMPLATE(METRIC, true, false) \
-    CALL_TEMPLATE(METRIC, false, true) \
-    CALL_TEMPLATE(METRIC, false, false)
+#define CALL_TEMPLATE2(METRIC)  \
+    CALL_TEMPLATE(METRIC, true) \
+    CALL_TEMPLATE(METRIC, false)
 
 #define CALL_TEMPLATE3 \
     CALL_TEMPLATE2(L1) \
@@ -784,7 +779,7 @@ void FixedRadiusSearchCUDA(void* temp,
     const cudaStream_t stream = 0;
     int texture_alignment = 1;
     const Metric metric = Metric::L2;
-    const bool ignore_query_point = false;
+    // const bool ignore_query_point = false;
     const bool return_distances = true;
 
     if (get_temp_size) {
@@ -829,8 +824,8 @@ void FixedRadiusSearchCUDA(void* temp,
                     stream, query_neighbors_count.first + queries_start_idx,
                     hash_table_index, hash_table_cell_splits + first_cell_idx,
                     hash_table_size + 1, queries_i, num_queries_i, points,
-                    num_points, inv_voxel_size, radius, metric,
-                    ignore_query_point);
+                    num_points, inv_voxel_size, radius, metric);
+            // ignore_query_point);
         }
     }
 
@@ -899,7 +894,8 @@ void FixedRadiusSearchCUDA(void* temp,
                     hash_table_index, hash_table_cell_splits + first_cell_idx,
                     hash_table_size + 1, queries_i, num_queries_i, points,
                     num_points, inv_voxel_size, radius, metric,
-                    ignore_query_point, return_distances);
+                    // ignore_query_point, return_distances);
+                    return_distances);
         }
     }
 }
