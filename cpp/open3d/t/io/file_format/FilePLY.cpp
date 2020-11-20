@@ -299,10 +299,10 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     // Add rest of the attributes.
     for (auto const &it : state.name_to_attr_state_) {
-        core::TensorList newAttr = core::TensorList(
-                it.second->size_, {1}, it.second->data_.GetDtype());
-        newAttr.AsTensor().IndexExtract(1, 0) = it.second->data_;
-        pointcloud.SetPointAttr(it.second->name_, newAttr);
+        pointcloud.SetPointAttr(
+                it.second->name_,
+                core::TensorList::FromTensor(
+                        it.second->data_.Reshape({element_size, 1})));
     }
     ply_close(ply_file);
     reporter.Finish();
@@ -333,8 +333,8 @@ static e_ply_type GetPlyType(const core::Dtype &dtype) {
 }
 
 template <typename T>
-static T *GetValue(core::Tensor t_attr, int pos) {
-    return static_cast<T *>(t_attr.GetDataPtr());
+static const T *GetValue(core::Tensor t_attr, int pos) {
+    return static_cast<const T *>(t_attr.GetDataPtr());
 }
 
 bool WritePointCloudToPLY(const std::string &filename,
@@ -345,7 +345,7 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    geometry::TensorListMap tl_map = pointcloud.GetPointAttrMap();
+    geometry::TensorListMap tl_map = pointcloud.GetPointAttr();
     long num_points = static_cast<long>(pointcloud.GetPoints().GetSize());
 
     // Make sure all the attribtes have same size.
@@ -422,7 +422,7 @@ bool WritePointCloudToPLY(const std::string &filename,
 
     for (int64_t i = 0; i < num_points; i++) {
         DISPATCH_DTYPE_TO_TEMPLATE(pointcloud.GetPoints().GetDtype(), [&]() {
-            scalar_t *data_ptr =
+            const scalar_t *data_ptr =
                     GetValue<scalar_t>(pointcloud.GetPoints()[i], 0);
             ply_write(ply_file, double(data_ptr[0]));
             ply_write(ply_file, double(data_ptr[1]));
@@ -431,7 +431,7 @@ bool WritePointCloudToPLY(const std::string &filename,
         if (pointcloud.HasPointNormals()) {
             DISPATCH_DTYPE_TO_TEMPLATE(
                     pointcloud.GetPointNormals().GetDtype(), [&]() {
-                        scalar_t *data_ptr = GetValue<scalar_t>(
+                        const scalar_t *data_ptr = GetValue<scalar_t>(
                                 pointcloud.GetPointNormals()[i], 0);
                         ply_write(ply_file, double(data_ptr[0]));
                         ply_write(ply_file, double(data_ptr[1]));
@@ -441,7 +441,7 @@ bool WritePointCloudToPLY(const std::string &filename,
         if (pointcloud.HasPointColors()) {
             DISPATCH_DTYPE_TO_TEMPLATE(
                     pointcloud.GetPointColors().GetDtype(), [&]() {
-                        scalar_t *data_ptr = GetValue<scalar_t>(
+                        const scalar_t *data_ptr = GetValue<scalar_t>(
                                 pointcloud.GetPointColors()[i], 0);
                         ply_write(ply_file, double(data_ptr[0]));
                         ply_write(ply_file, double(data_ptr[1]));
@@ -453,7 +453,8 @@ bool WritePointCloudToPLY(const std::string &filename,
             if (it.first != "points" && it.first != "colors" &&
                 it.first != "normals") {
                 DISPATCH_DTYPE_TO_TEMPLATE(it.second.GetDtype(), [&]() {
-                    scalar_t *data_ptr = GetValue<scalar_t>(it.second[i], 0);
+                    const scalar_t *data_ptr =
+                            GetValue<scalar_t>(it.second[i], 0);
                     ply_write(ply_file, double(data_ptr[0]));
                 });
             }
