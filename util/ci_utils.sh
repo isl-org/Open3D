@@ -157,17 +157,17 @@ install_python_dependencies() {
 install_azure_kinect_dependencies() {
 
     echo "Installing Azure Kinect dependencies"
-    curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-    sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
+
+    SUDO=${SUDO:-sudo}
+    curl https://packages.microsoft.com/keys/microsoft.asc | $SUDO apt-key add -
+    $SUDO apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
 
     # Accept EULA using a workaround
     # https://github.com/microsoft/Azure-Kinect-Sensor-SDK/issues/1190#issuecomment-618473882
-    echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' \
-    | sudo debconf-set-selections
-    echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' \
-    | sudo debconf-set-selections
+    echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' | $SUDO debconf-set-selections
+    echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' | $SUDO debconf-set-selections
 
-    sudo apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
+    $SUDO apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
 }
 
 build_all() {
