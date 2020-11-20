@@ -121,6 +121,10 @@ public:
             const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity())
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
     ~RegistrationResult() {}
+    bool IsBetterRANSACThan(const RegistrationResult &other) const {
+        return fitness_ > other.fitness_ || (fitness_ == other.fitness_ &&
+                                             inlier_rmse_ < other.inlier_rmse_);
+    }
 
 public:
     /// The estimated transformation matrix.
@@ -129,8 +133,10 @@ public:
     CorrespondenceSet correspondence_set_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
-    /// The overlapping area (# of inlier correspondences / # of points in
-    /// target). Higher is better.
+    /// For ICP: the overlapping area (# of inlier correspondences / # of points
+    /// in target). Higher is better.
+    /// For RANSAC: inlier ratio (# of inlier correspondences / # of
+    /// all correspondences)
     double fitness_;
 };
 

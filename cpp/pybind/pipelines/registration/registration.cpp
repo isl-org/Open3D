@@ -529,7 +529,7 @@ static const std::unordered_map<std::string, std::string>
                 {"confidence",
                  "Desired probability of success for RANSAC. Used for "
                  "estimating early termination by k = log(1 - "
-                 "confidence)/log(1 - inlier_ratio^{ransac_n}"},
+                 "confidence)/log(1 - inlier_ratio^{ransac_n}."},
                 {"corres",
                  "o3d.utility.Vector2iVector that stores indices of "
                  "corresponding point or feature arrays."},

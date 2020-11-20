@@ -26,9 +26,6 @@
 
 #include "open3d/pipelines/registration/Registration.h"
 
-#include <cstdlib>
-#include <limits>
-
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
@@ -243,9 +240,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                         pcd, target, corres, max_correspondence_distance,
                         transformation);
 
-                if (result.fitness_ > best_result_local.fitness_ ||
-                    (result.fitness_ == best_result_local.fitness_ &&
-                     result.inlier_rmse_ < best_result_local.inlier_rmse_)) {
+                if (result.IsBetterRANSACThan(best_result_local)) {
                     best_result_local = result;
 
                     // Update exit condition if necessary
@@ -261,12 +256,9 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         }      // for loop
 #pragma omp critical
         {
-            if (best_result_local.fitness_ > best_result.fitness_ ||
-                (best_result_local.fitness_ == best_result.fitness_ &&
-                 best_result_local.inlier_rmse_ < best_result.inlier_rmse_)) {
+            if (best_result_local.IsBetterRANSACThan(best_result)) {
                 best_result = best_result_local;
             }
-
             if (exit_itr_local > exit_itr) {
                 exit_itr = exit_itr_local;
             }
@@ -303,7 +295,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     geometry::KDTreeFlann kdtree_target(target_feature);
     pipelines::registration::CorrespondenceSet corres_ij(num_src_pts);
 
-#pragma omp for nowait
+#pragma omp parallel for
     for (int i = 0; i < num_src_pts; i++) {
         std::vector<int> corres_tmp(1);
         std::vector<double> dist_tmp(1);
@@ -318,7 +310,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     if (mutual_filter) {
         geometry::KDTreeFlann kdtree_source(source_feature);
         pipelines::registration::CorrespondenceSet corres_ji(num_tgt_pts);
-#pragma omp for nowait
+
+#pragma omp parallel for
         for (int j = 0; j < num_tgt_pts; ++j) {
             std::vector<int> corres_tmp(1);
             std::vector<double> dist_tmp(1);
@@ -337,7 +330,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
             }
         }
 
-        if (corres_mutual.size() >= 10) {
+        // Empirically mutual correspondence set should not be too small
+        if (int(corres_mutual.size()) >= ransac_n * 3) {
             utility::LogDebug("{:d} correspondences remain after mutual filter",
                               corres_mutual.size());
             return RegistrationRANSACBasedOnCorrespondence(

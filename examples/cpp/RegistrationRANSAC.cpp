@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
         visualize = true;
     }
 
-    std::string method;
+    std::string method = "";
     const std::string kMethodFeature = "feature_matching";
     const std::string kMethodCorres = "correspondence";
     if (utility::ProgramOptionExists(argc, argv, "--method")) {
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    bool mutual_filter;
+    bool mutual_filter = false;
     if (utility::ProgramOptionExists(argc, argv, "--mutual_filter")) {
         mutual_filter = true;
     }
