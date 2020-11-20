@@ -64,17 +64,10 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          # Install Kinect k4a package
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-          sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
-          # Accept EULA using a temporary workaround
-          # https://github.com/microsoft/Azure-Kinect-Sensor-SDK/issues/1190#issuecomment-618473882
-          echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' \
-            | sudo debconf-set-selections
-          echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' \
-            | sudo debconf-set-selections
-          sudo apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
-          # Install ubuntu dependencie
+          source util/ci_utils.sh
+          # Install Azure Kinect dependencies
+          install_azure_kinect_dependencies()
+          # Install ubuntu dependencies
           # Update cmake needed in Ubuntu 18.04
           sudo apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
           sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
