@@ -58,11 +58,15 @@ public:
         depth_.Clear();
     };
 
+    /// Clear stored data
     RGBDImage &Clear() override;
+    /// Is any data stored?
     bool IsEmpty() const override;
+    /// Compute min 2D coordinates for the data (always {0,0})
     core::Tensor GetMinBound() const override {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);
     };
+    /// Compute max 2D coordinates for the data
     core::Tensor GetMaxBound() const override {
         return core::Tensor(
                 std::vector<int64_t>{color_.GetCols() + depth_.GetCols(),
@@ -70,6 +74,7 @@ public:
                 {2}, core::Dtype::Int64);
     };
 
+    /// Convert to the legacy RGBDImage format
     open3d::geometry::RGBDImage ToLegacyRGBDImage() const {
         return open3d::geometry::RGBDImage(color_.ToLegacyImage(),
                                            depth_.ToLegacyImage());

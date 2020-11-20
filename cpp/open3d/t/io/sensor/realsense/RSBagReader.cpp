@@ -46,7 +46,7 @@ bool RSBagReader::Open(const std::string &filename) {
     }
     try {
         rs2::config cfg;
-        cfg.enable_device_from_file(filename);
+        cfg.enable_device_from_file(filename, false);  // Do not loop playback
         pipe_.start(cfg);  // File will be opened in read mode at this point
         utility::LogInfo("File {} opened", filename);
     } catch (const rs2::error &e) {
@@ -67,6 +67,9 @@ void RSBagReader::Close() {
 
 Json::Value RSBagReader::GetMetadataJson() {
     using namespace std::literals::string_literals;
+    // Names for common RealSense pixel formats. See
+    // https://intelrealsense.github.io/librealsense/doxygen/rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7
+    // for format documentation
     static const std::unordered_map<rs2_format, std::string> format_name = {
             {RS2_FORMAT_Z16, "Z16"s},     {RS2_FORMAT_YUYV, "YUYV"s},
             {RS2_FORMAT_RGB8, "RGB8"s},   {RS2_FORMAT_BGR8, "BGR8"s},
@@ -94,8 +97,9 @@ Json::Value RSBagReader::GetMetadataJson() {
 
     const auto profile = pipe_.get_active_profile();
     const auto rs_device = profile.get_device().as<rs2::playback>();
-    const auto rs_depth = profile.get_stream(rs2_stream::RS2_STREAM_DEPTH);
-    const auto rs_color = profile.get_stream(rs2_stream::RS2_STREAM_COLOR)
+    const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH)
+                                  .as<rs2::video_stream_profile>();
+    const auto rs_color = profile.get_stream(RS2_STREAM_COLOR)
                                   .as<rs2::video_stream_profile>();
 
     rs2_intrinsics rgb_intr = rs_color.get_intrinsics();
@@ -105,9 +109,8 @@ Json::Value RSBagReader::GetMetadataJson() {
     // TODO: Add support for distortion
     pinhole_camera.ConvertToJsonValue(value);
 
-    value["model"] = rs_device.get_info(rs2_camera_info::RS2_CAMERA_INFO_NAME);
-    value["serial_number"] =
-            rs_device.get_info(rs2_camera_info::RS2_CAMERA_INFO_SERIAL_NUMBER);
+    value["model"] = rs_device.get_info(RS2_CAMERA_INFO_NAME);
+    value["serial_number"] = rs_device.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
     value["depth_format"] = format_name.at(rs_depth.format());
     dt_depth_ = format_dtype.at(rs_depth.format());
     if (dt_depth_ != core::Dtype::UInt16) {
@@ -131,9 +134,6 @@ Json::Value RSBagReader::GetMetadataJson() {
             std::chrono::duration_cast<std::chrono::microseconds>(
                     rs_device.get_duration())
                     .count();
-
-    // For internal usages
-    /* transformation_ = k4a_plugin::k4a_transformation_create(&calibration); */
 
     return value;
 }
@@ -170,21 +170,21 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
         frames_ = align_to_color_.process(frames_);
         const auto &color_frame = frames_.get_color_frame();
         // Copy frame data to Tensors
-        o3d_rgb_image = core::Tensor(
+        current_frame_.color_ = core::Tensor(
                 static_cast<const uint8_t *>(color_frame.get_data()),
                 {color_frame.get_height(), color_frame.get_width(),
                  channels_color_},
                 dt_color_);
         const auto &depth_frame = frames_.get_depth_frame();
-        o3d_depth_image = core::Tensor(
+        current_frame_.depth_ = core::Tensor(
                 static_cast<const uint16_t *>(depth_frame.get_data()),
                 {depth_frame.get_height(), depth_frame.get_width()}, dt_depth_);
-        return t::geometry::RGBDImage(o3d_rgb_image, o3d_depth_image);
     } else {
         utility::LogInfo("EOF reached");
         is_eof_ = true;
-        return t::geometry::RGBDImage();
+        current_frame_.Clear();
     }
+    return current_frame_;
 }
 
 }  // namespace io

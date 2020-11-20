@@ -34,8 +34,6 @@
 #include "open3d/visualization/utility/SelectionPolygon.h"
 #include "open3d/visualization/visualizer/RenderOptionWithEditing.h"
 
-#include <typeinfo>
-
 namespace open3d {
 namespace visualization {
 
@@ -323,7 +321,6 @@ bool ImageRenderer::UpdateGeometry() {
 
 bool RGBDImageRenderer::Render(const RenderOption &option,
                                const ViewControl &view) {
-    utility::LogInfo("geometry_ptr_ has type {}", typeid(geometry_ptr_).name());
     if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
     return rgbd_image_shader_.Render(*geometry_ptr_, option, view);
 }

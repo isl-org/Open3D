@@ -48,7 +48,8 @@ void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
     writer->write(value, &out);
 }
 
-Json::Value GenerateDatasetConfig(const std::string &output_path) {
+Json::Value GenerateDatasetConfig(const std::string &output_path,
+                                  const std::string &bagfile) {
     Json::Value value;
 
     utility::LogInfo("Writing to config.json");
@@ -65,17 +66,7 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
         value["path_intrinsic"] = pwd + "/" + output_path + "/intrinsic.json";
     }
 
-    value["name"] = "RealSense Record";
-    value["max_depth"] = 3.0;
-    value["voxel_size"] = 0.05;
-    value["max_depth_diff"] = 0.07;
-    value["preference_loop_closure_odometry"] = 0.1;
-    value["preference_loop_closure_registration"] = 5.0;
-    value["tsdf_cubic_size"] = 3.0;
-    value["icp_method"] = "color";
-    value["global_registration"] = "ransac";
-    value["python_multi_threading"] = true;
-
+    value["rs_bag_file"] = bagfile;
     return value;
 }
 
@@ -164,14 +155,14 @@ int main(int argc, char **argv) {
                 fmt::format("{}/intrinsic.json", output_path),
                 bag_reader.GetMetadata());
         WriteJsonToFile(fmt::format("{}/config.json", output_path),
-                        GenerateDatasetConfig(output_path));
+                        GenerateDatasetConfig(output_path, bag_filename));
     }
     while (!bag_reader.IsEOF() && !flag_exit) {
-        if (flag_play) {
-            using legacyRGBDImage = open3d::geometry::RGBDImage;
-            legacyRGBDImage im_rgbd =
-                    bag_reader.NextFrame().ToLegacyRGBDImage();
+        using legacyRGBDImage = open3d::geometry::RGBDImage;
+        legacyRGBDImage im_rgbd;
 
+        if (flag_play) {
+            im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
             // create shared_ptr with no-op deleter for stack RGBDImage
             auto ptr_im_rgbd = std::shared_ptr<legacyRGBDImage>(
                     &im_rgbd, [](legacyRGBDImage *) {});
@@ -185,7 +176,7 @@ int main(int argc, char **argv) {
 
             if (write_image) {
                 auto color_file =
-                        fmt::format("{0}/color/{1:05d}.jpg", output_path, idx);
+                        fmt::format("{0}/color/{1:05d}.png", output_path, idx);
                 utility::LogInfo("Writing to {}", color_file);
                 io::WriteImage(color_file, im_rgbd.color_);
 

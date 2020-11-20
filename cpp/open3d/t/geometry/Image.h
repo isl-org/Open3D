@@ -129,10 +129,12 @@ public:
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
+    /// Compute min 2D coordinates always {0, 0} for the data
     core::Tensor GetMinBound() const override {
         return core::Tensor::Zeros({2}, core::Dtype::Int64);
     };
 
+    /// Compute max 2D coordinates {cols, rows} for the data
     core::Tensor GetMaxBound() const override {
         return core::Tensor(std::vector<int64_t>{GetCols(), GetRows()}, {2},
                             core::Dtype::Int64);
