@@ -79,7 +79,7 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
 };
 
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
-                                                    int knn) {
+                                                    int knn) const {
     // Check dtype.
     if (query_points.GetDtype() != GetDtype()) {
         utility::LogError(
@@ -153,7 +153,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
 };
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
-        const Tensor &query_points, const Tensor &radii) {
+        const Tensor &query_points, const Tensor &radii) const {
     // Check dtype.
     if (query_points.GetDtype() != GetDtype()) {
         utility::LogError(
@@ -257,7 +257,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 };
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
-        const Tensor &query_points, double radius) {
+        const Tensor &query_points, double radius) const {
     int64_t num_query_points = query_points.GetShape()[0];
     Dtype dtype = GetDtype();
     std::tuple<Tensor, Tensor, Tensor> result;

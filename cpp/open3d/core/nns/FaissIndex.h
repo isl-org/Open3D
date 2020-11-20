@@ -30,6 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/NNSIndex.h"
+#include "open3d/utility/Console.h"
 
 // Forward declarations.
 namespace faiss {
@@ -59,34 +60,27 @@ public:
     FaissIndex &operator=(const FaissIndex &) = delete;
 
 public:
-    /// Sets the data for the Faiss Index from a tensor.
-    ///
-    /// \param data Data points for Faiss Index Construction. Must be
-    /// Float32 type and 2D, with shape {n, d}
-    /// \return Returns true if the construction success, otherwise false.
-    bool SetTensorData(const Tensor &dataset_points);
+    // dataset_points must be float32.
+    bool SetTensorData(const Tensor &dataset_points) override;
 
-    /// Perform K nearest neighbor search.
-    ///
-    /// \param query_points Query points. Must be Float32 type and 2D, with
-    /// shape {n, d}. \param knn Number of nearest neighbor to search. \return
-    /// Pair of Tensors: (indices, distances):
-    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distances: Tensor of shape {n, knn}, with dtype Float32.
+    // query_points must be float32.
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
-                                        int knn) const;
+                                        int knn) const override;
 
-    /// Perform hybrid search.
-    ///
-    /// \param query_points Query points. Must be Float32 type and 2D, with
-    /// shape {n, d}. \param radius Radius. \param max_knn Maximum number of
-    /// neighbor to search per query point. \return Pair of Tensors, (indices,
-    /// distances):
-    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distances: Tensor of shape {n, knn}, with dtype Float32.
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor &query_points, const Tensor &radii) const override {
+        utility::LogError("NanoFlannIndex::SearchHybrid not implemented.");
+    }
+
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor &query_points, double radius) const override {
+        utility::LogError("NanoFlannIndex::SearchHybrid not implemented.");
+    }
+
+    // query_points must be float32.
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
                                            float radius,
-                                           int max_knn) const;
+                                           int max_knn) const override;
 
 protected:
     std::unique_ptr<faiss::Index> index;

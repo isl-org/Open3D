@@ -30,6 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/NNSIndex.h"
+#include "open3d/utility/Console.h"
 
 // Forward declarations.
 namespace nanoflann {
@@ -136,60 +137,22 @@ public:
     NanoFlannIndex &operator=(const NanoFlannIndex &) = delete;
 
 public:
-    /// Set the data for the KDTree from a Tensor.
-    ///
-    /// \param dataset_points Dataset points for KDTree construction. Must be
-    /// 2D, with shape {n, d}.
-    /// \return Returns true if the construction success, otherwise false.
-    bool SetTensorData(const Tensor &dataset_points);
+    bool SetTensorData(const Tensor &dataset_points) override;
 
-    /// Perform K nearest neighbor search.
-    ///
-    /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points.
-    /// \param knn Number of nearest neighbor to search.
-    /// \return Pair of Tensors: (indices, distances):
-    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distainces: Tensor of shape {n, knn}, same dtype with dataset_points.
-    std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points, int knn);
+    std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
+                                        int knn) const override;
 
-    /// Perform radius search with multiple radii.
-    ///
-    /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points.
-    /// \param radii list of radius. Must be 1D, with shape {n, }.
-    /// \return Tuple of Tensors: (indices, distances, num_neighbors):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
-    /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
-    /// dataset_points.
-    /// - num_neighbors: Tensor of shape {n,}, dtype Int64.
-    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
-                                                    const Tensor &radii);
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor &query_points, const Tensor &radii) const override;
 
-    /// Perform radius search.
-    ///
-    /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points.
-    /// \param radius Radius.
-    /// \return Tuple of Tensors, (indices, distances, num_neighbors):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
-    /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
-    /// dataset_points.
-    /// - num_neighbors: Tensor of shape {n}, dtype Int64.
-    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
-                                                    double radius);
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor &query_points, double radius) const override;
 
-    ///// Get dimension of the dataset points.
-    ///// \return dimension of dataset points.
-    // int GetDimension() const;
-
-    ///// Get size of the dataset points.
-    ///// \return number of points in dataset.
-    // size_t GetDatasetSize() const;
-
-    ///// Get dtype of the dataset points.
-    ///// \return dtype of dataset points.
-    // Dtype GetDtype() const;
+    std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
+                                           float radius,
+                                           int max_knn) const override {
+        utility::LogError("NanoFlannIndex::SearchHybrid not implemented.");
+    }
 
 protected:
     // Tensor dataset_points_;

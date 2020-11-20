@@ -33,10 +33,6 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-NNSIndex::NNSIndex(){};
-
-NNSIndex::~NNSIndex(){};
-
 int NNSIndex::GetDimension() const {
     SizeVector shape = dataset_points_.GetShape();
     return static_cast<int>(shape[1]);
