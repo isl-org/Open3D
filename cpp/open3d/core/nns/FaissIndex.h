@@ -69,12 +69,12 @@ public:
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor &query_points, const Tensor &radii) const override {
-        utility::LogError("NanoFlannIndex::SearchHybrid not implemented.");
+        utility::LogError("FaissIndex::SearchHybrid not implemented.");
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor &query_points, double radius) const override {
-        utility::LogError("NanoFlannIndex::SearchHybrid not implemented.");
+        utility::LogError("FaissIndex::SearchHybrid not implemented.");
     }
 
     // query_points must be float32.
