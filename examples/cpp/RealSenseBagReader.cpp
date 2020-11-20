@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
 
             if (write_image) {
                 auto color_file =
-                        fmt::format("{0}/color/{1:05d}.png", output_path, idx);
+                        fmt::format("{0}/color/{1:05d}.jpg", output_path, idx);
                 utility::LogInfo("Writing to {}", color_file);
                 io::WriteImage(color_file, im_rgbd.color_);
 

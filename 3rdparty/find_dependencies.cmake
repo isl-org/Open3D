@@ -283,6 +283,9 @@ function(set_local_or_remote_url URL)
     endif()
 endfunction()
 
+include(ProcessorCount)
+ProcessorCount(NPROC)
+
 # Threads
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
@@ -537,7 +540,9 @@ build_3rdparty_library(3rdparty_tritriintersect DIRECTORY tomasakeninemoeller IN
 set(TRITRIINTERSECT_TARGET "3rdparty_tritriintersect")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TRITRIINTERSECT_TARGET}")
 
-# RealSense
+# librealsense SDK: Integrated into Open3D build using method from
+# https://crascit.com/2015/07/25/cmake-gtest/ but with find_package() instead of
+# add_subdirectory() to keep build config separate
 if (BUILD_LIBREALSENSE)
     if (USE_SYSTEM_LIBREALSENSE)
         find_package(realsense2 CONFIG QUIET)
@@ -546,8 +551,6 @@ if (BUILD_LIBREALSENSE)
             if(NOT BUILD_SHARED_LIBS)
                 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "realsense2")
             endif()
-            set(LIBREALSENSE_TARGET realsense2::realsense2)
-            add_library(3rdparty_realsense INTERFACE)   # dummy
         else()
             message(STATUS "Unable to find installed third-party library realsense2")
             set(USE_SYSTEM_LIBREALSENSE OFF)
@@ -555,15 +558,16 @@ if (BUILD_LIBREALSENSE)
     endif ()
     if (NOT USE_SYSTEM_LIBREALSENSE)
         message(STATUS "Building third-party library realsense2 from source")
-        include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
-        import_3rdparty_library(3rdparty_realsense
-            INCLUDE_DIRS ${realsense2_INCLUDE_DIR}
-            LIB_DIR ${realsense2_LIBRARY_DIR}
-            LIBRARIES ${REALSENSE_LIBRARY})
-        target_link_libraries(3rdparty_realsense INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
-        add_dependencies(3rdparty_realsense ext_librealsense)
-        set(LIBREALSENSE_TARGET 3rdparty_realsense)
+        configure_file(3rdparty/librealsense/CMakeLists.txt.in
+            3rdparty/librealsense/CMakeLists.txt @ONLY)
+        execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/3rdparty/librealsense")
+        execute_process(COMMAND "${CMAKE_COMMAND}" --build . --parallel ${NPROC} --config Release
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/3rdparty/librealsense")
+        find_package(realsense2 CONFIG QUIET REQUIRED
+            PATHS "${CMAKE_BINARY_DIR}/3rdparty/librealsense" NO_DEFAULT_PATH)
     endif()
+    set(LIBREALSENSE_TARGET realsense2::realsense2)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${LIBREALSENSE_TARGET})
     # Conditionally include header files in Open3D.h
     set(BUILD_LIBREALSENSE_COMMENT "")
