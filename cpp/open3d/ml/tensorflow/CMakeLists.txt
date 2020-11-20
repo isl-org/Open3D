@@ -39,6 +39,8 @@ set(TF_OPS_SOURCES
     "misc/VoxelPoolingOpKernel.cpp"
     "misc/VoxelizeOpKernel.cpp"
     "misc/VoxelizeOps.cpp"
+    "misc/NmsOpKernel.cpp"
+    "misc/NmsOps.cpp"
     "tf_neighbors/tf_batch_neighbors.cpp"
     "tf_neighbors/tf_neighbors.cpp"
     "tf_subsampling/tf_batch_subsampling.cpp"
@@ -46,6 +48,7 @@ set(TF_OPS_SOURCES
     "../contrib/Cloud.cpp"
     "../contrib/GridSubsampling.cpp"
     "../contrib/neighbors.cpp"
+    "../impl/misc/Nms.cpp"
 )
 
 set(TF_OPS_CUDA_SOURCES
@@ -58,7 +61,9 @@ set(TF_OPS_CUDA_SOURCES
     "misc/InvertNeighborsListOpKernel.cu"
     "misc/ReduceSubarraysSumOpKernel.cu"
     "misc/VoxelizeOpKernel.cu"
+    "misc/NmsOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+    "../impl/misc/Nms.cu"
 )
 
 if(BUILD_CUDA_MODULE)
@@ -114,6 +119,7 @@ target_include_directories(open3d_tf_ops SYSTEM PRIVATE
     ${Tensorflow_INCLUDE_DIR}
     ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
+    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
 target_link_libraries(open3d_tf_ops PRIVATE
