@@ -169,11 +169,6 @@ install_librealsense2() {
         $SUDO apt-get install --yes --no-install-recommends librealsense2-dkms librealsense2-udev-rules librealsense2-dev
         $SUDO apt-get install --yes --no-install-recommends librealsense2-utils
     elif [[ "$OSTYPE" == "darwin"* ]]; then
-        #echo Installing librealsense dependencies
-        #echo Reference: https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_osx.md
-        #brew install libusb pkg-config
-        #brew cask install apenngrace/vulkan/vulkan-sdk
-        # Can install directly
         brew install librealsense
     else
         echo "Unsupported OS $OSTYPE"
@@ -188,6 +183,7 @@ build_all() {
 
     cmakeOptions=(-DBUILD_SHARED_LIBS="$SHARED"
         -DCMAKE_BUILD_TYPE=Release
+        -DBUILD_LIBREALSENSE=ON
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
         -DCUDA_ARCH=BasicPTX
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"

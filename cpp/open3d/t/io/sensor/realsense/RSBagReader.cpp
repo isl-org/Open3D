@@ -109,7 +109,7 @@ Json::Value RSBagReader::GetMetadataJson() {
     // TODO: Add support for distortion
     pinhole_camera.ConvertToJsonValue(value);
 
-    value["model"] = rs_device.get_info(RS2_CAMERA_INFO_NAME);
+    value["device_name"] = rs_device.get_info(RS2_CAMERA_INFO_NAME);
     value["serial_number"] = rs_device.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
     value["depth_format"] = format_name.at(rs_depth.format());
     dt_depth_ = format_dtype.at(rs_depth.format());
@@ -122,13 +122,12 @@ Json::Value RSBagReader::GetMetadataJson() {
         utility::LogError("Only 8 bit unsigned int color is supported!");
     }
     channels_color_ = format_channels.at(rs_color.format());
-    value["color_fps"] = rs_color.fps();
-    value["depth_fps"] = rs_depth.fps();
-    if (value["color_fps"] != value["depth_fps"]) {
+    value["fps"] = rs_color.fps();
+    if (value["fps"] != rs_depth.fps()) {
         utility::LogError(
                 "Different frame rates for color ({} fps) and depth ({} fps) "
                 "streams is not supported.",
-                value["color_fps"], value["depth_fps"]);
+                value["fps"], rs_depth.fps());
     }
     value["stream_length_usec"] =
             std::chrono::duration_cast<std::chrono::microseconds>(
@@ -165,8 +164,7 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().");
     }
-    t::geometry::Image o3d_rgb_image, o3d_depth_image;
-    if (pipe_.poll_for_frames(&frames_)) {
+    if (pipe_.try_wait_for_frames(&frames_)) {
         frames_ = align_to_color_.process(frames_);
         const auto &color_frame = frames_.get_color_frame();
         // Copy frame data to Tensors

@@ -34,6 +34,7 @@
 #include "open3d/Open3D.h"
 
 using namespace open3d;
+namespace sc = std::chrono;
 
 void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
     std::ofstream out(filename);
@@ -150,18 +151,36 @@ int main(int argc, char **argv) {
 
     bool is_geometry_added = false;
     int idx = 0;
+    const auto bag_metadata = bag_reader.GetMetadata();
+    utility::LogInfo("Recorded with device {}", bag_metadata.device_name_);
+    utility::LogInfo("    Serial number: {}", bag_metadata.serial_number_);
+    utility::LogInfo("Video resolution: {}x{}", bag_metadata.width_,
+                     bag_metadata.height_);
+    utility::LogInfo("      frame rate: {}", bag_metadata.fps_);
+    utility::LogInfo("      duration: {:.6f}s",
+                     double(bag_metadata.stream_length_usec_) * 1e-6);
+    utility::LogInfo("      color pixel format: {}",
+                     bag_metadata.color_format_);
+    utility::LogInfo("      depth pixel format: {}",
+                     bag_metadata.depth_format_);
+
     if (write_image) {
         io::WriteIJsonConvertibleToJSON(
-                fmt::format("{}/intrinsic.json", output_path),
-                bag_reader.GetMetadata());
+                fmt::format("{}/intrinsic.json", output_path), bag_metadata);
         WriteJsonToFile(fmt::format("{}/config.json", output_path),
                         GenerateDatasetConfig(output_path, bag_filename));
     }
+    const auto frame_interval = sc::duration<double>(1. / bag_metadata.fps_);
+
+    auto last_frame_time =
+            std::chrono::high_resolution_clock::now() - frame_interval;
     while (!bag_reader.IsEOF() && !flag_exit) {
         using legacyRGBDImage = open3d::geometry::RGBDImage;
         legacyRGBDImage im_rgbd;
 
         if (flag_play) {
+            std::this_thread::sleep_until(last_frame_time + frame_interval);
+            last_frame_time = std::chrono::high_resolution_clock::now();
             im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
             // create shared_ptr with no-op deleter for stack RGBDImage
             auto ptr_im_rgbd = std::shared_ptr<legacyRGBDImage>(

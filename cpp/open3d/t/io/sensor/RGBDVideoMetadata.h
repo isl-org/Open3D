@@ -54,14 +54,23 @@ public:
     /// We assume depth image is always warped to the color image system.
     camera::PinholeCameraIntrinsic intrinsics_;
 
+    /// Capture device name
+    std::string device_name_ = "";
+    /// Capture device serial number
     std::string serial_number_ = "";
     /// Length of the video (usec).
     uint64_t stream_length_usec_ = 0;
-    /// Width of the video.
+    /// Width of the video frame
     int width_;
-    /// Height of the video.
+    /// Height of the video frame
     int height_;
+    /// Frame rate
+    //
+    /// We assume both color and depth streams have the same frame rate
+    double fps_;
+    /// Pixel format for color data
     std::string color_format_;
+    /// Pixel format for depth data
     std::string depth_format_;
 };
 

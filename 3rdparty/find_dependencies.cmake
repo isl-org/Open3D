@@ -544,7 +544,7 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TRITRIINTERSECT_TARGET}")
 # https://crascit.com/2015/07/25/cmake-gtest/ but with find_package() instead of
 # add_subdirectory() to keep build config separate
 if (BUILD_LIBREALSENSE)
-    if (USE_SYSTEM_LIBREALSENSE)
+    if (USE_SYSTEM_LIBREALSENSE)    # Requires libusb-1.0 shared library
         find_package(realsense2 CONFIG QUIET)
         if (TARGET realsense2::realsense2)
             message(STATUS "Using installed third-party library realsense2")

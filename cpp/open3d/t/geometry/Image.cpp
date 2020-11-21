@@ -72,7 +72,8 @@ Image::Image(const core::Tensor &tensor)
 open3d::geometry::Image Image::ToLegacyImage() const {
     open3d::geometry::Image image_legacy;
     size_t elem_sz = data_.GetDtype().ByteSize();
-    image_legacy.Prepare(GetCols(), GetRows(), GetChannels(), elem_sz);
+    image_legacy.Prepare((int)GetCols(), (int)GetRows(), (int)GetChannels(),
+                         (int)elem_sz);
     if (data_.IsContiguous()) {
         memcpy(image_legacy.data_.data(), data_.GetDataPtr(),
                image_legacy.data_.size());
