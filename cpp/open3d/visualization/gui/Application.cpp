@@ -107,6 +107,43 @@ std::string FindResourcePath(int argc, const char *argv[]) {
     return resource_path;
 }
 
+std::string FindFontPath(const char *font) {
+    if (open3d::utility::filesystem::FileExists(font)) {
+        return font;
+    }
+
+    std::string home;
+    char *raw_home = getenv("HOME");
+    if (raw_home) {  // std::string(nullptr) is undefined
+        home = raw_home;
+    }
+    std::vector<std::string> system_font_paths = {
+#ifdef __APPLE__
+        "/System/Library/Fonts",
+        "/Library/Fonts",
+        home + "/Library/Fonts"
+#elif _WIN32
+        "c:/Windows/Fonts"
+#else
+        "/usr/share/fonts/truetype",
+        "/usr/share/fonts",
+        home + "/.fonts"
+        home + "/.fonts/truetype"
+#endif  // __APPLE__
+    };
+
+    std::vector<std::string> font_ext = { ".ttf", ".ttc", ".otf" };
+    for (auto &font_path : system_font_paths) {
+        for (auto &ext : font_ext) {
+            std::string candidate = font_path + "/" + font + ext;
+            if (open3d::utility::filesystem::FileExists(candidate)) {
+                return candidate;
+            }
+        }
+    }
+    return "";
+}
+
 }  // namespace
 
 namespace open3d {
@@ -115,6 +152,7 @@ namespace gui {
 
 struct Application::Impl {
     bool is_initialized_ = false;
+    std::vector<Application::UserFontInfo> fonts_;
     Theme theme_;
     double last_time_ = 0.0;
     bool is_GLFW_initialized_ = false;
@@ -288,6 +326,27 @@ void Application::Initialize(const char *resource_path) {
     impl_->theme_.font_path = std::string(resource_path) + std::string("/") +
                               impl_->theme_.font_path;
     impl_->is_initialized_ = true;
+}
+
+void Application::SetFontForLanguage(const char *font, const char *lang_code) {
+    auto font_path = FindFontPath(font);
+    if (font_path.empty()) {
+        utility::LogWarning("Could not find font '{}'", font);
+    }
+    impl_->fonts_.push_back({font_path, lang_code, {}});
+}
+
+void Application::SetFontForCodePoints(const char *font,
+                                       const std::vector<uint32_t>& code_points){
+    auto font_path = FindFontPath(font);
+    if (font_path.empty()) {
+        utility::LogWarning("Could not find font '{}'", font);
+    }
+    impl_->fonts_.push_back({font_path, "", code_points});
+}
+
+const std::vector<Application::UserFontInfo>& Application::GetUserFontInfo() const {
+    return impl_->fonts_;
 }
 
 double Application::Now() const { return glfwGetTime(); }

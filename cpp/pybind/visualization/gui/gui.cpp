@@ -206,6 +206,28 @@ void pybind_gui_classes(py::module &m) {
                     "_must_ be called prior to using anything in the gui "
                     "module")
             .def(
+                    "set_font_for_language", &Application::SetFontForLanguage,
+                    "set_font_for_language(font, language_code). The font can "
+                    "the path to a TrueType or OpenType font or it can be the "
+                    "name of the font, in which case the font will be located "
+                    "from the system directories. The language code must be "
+                    "two-letter, lowercase ISO 639-1 codes. Support is "
+                    "available for 'en' (English), 'ja' (Japanese), 'ko' "
+                    "(Korean), 'th' (Thai), 'vi' (Vietnamese), 'zh' (common "
+                    "Chinese characters), 'zh_all' (all Chinese characters; "
+                    "this creates a very large bitmap for each window). All "
+                    "other codes are assumed to by Cyrillic. Note that 'ja', "
+                    "'zh' will create a 50 MB bitmap, and 'zh_all' creates a "
+                    "200 MB bitmap")
+
+            .def(
+                    "set_font_for_code_points",
+                    &Application::SetFontForCodePoints,
+                    "set_font_for_code_points(font, [unicode_code_points])."
+                    "The font can the path to a TrueType or OpenType font or "
+                    "it can be the name of the font, in which case the font "
+                    "will be located from the system directories.")
+            .def(
                     "create_window",
                     [](Application &instance, const std::string &title,
                        int width, int height, int x, int y, int flags) {
