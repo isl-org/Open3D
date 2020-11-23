@@ -200,7 +200,6 @@ void ComputePointIndexTable(
 }
 
 /// Kernel for CountNeighbors
-// template <int METRIC, bool IGNORE_QUERY_POINT, class T>
 template <int METRIC, class T>
 __global__ void CountNeighborsKernel(
         uint32_t* __restrict__ neighbors_count,
@@ -259,9 +258,6 @@ __global__ void CountNeighborsKernel(
             uint32_t idx = point_index_table[j];
 
             Vec3<T> p(&points[idx * 3 + 0]);
-            // if (IGNORE_QUERY_POINT) {
-            //    if (query_pos == p) continue;
-            //}
 
             T dist;
             if (NeighborTest<METRIC>(p, query_pos, &dist, threshold)) ++count;
@@ -348,8 +344,6 @@ void CountNeighbors(const cudaStream_t& stream,
 
 /// Kernel for WriteNeighborsIndicesAndDistances
 template <class T, int METRIC, bool RETURN_DISTANCES>
-// template <class T, int METRIC, bool IGNORE_QUERY_POINT, bool
-// RETURN_DISTANCES>
 __global__ void WriteNeighborsIndicesAndDistancesKernel(
         int32_t* __restrict__ indices,
         T* __restrict__ distances,
@@ -408,9 +402,6 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
             uint32_t idx = point_index_table[j];
 
             Vec3<T> p(&points[idx * 3 + 0]);
-            // if (IGNORE_QUERY_POINT) {
-            //    if (query_pos == p) continue;
-            //}
 
             T dist;
             if (NeighborTest<METRIC>(p, query_pos, &dist, threshold)) {
@@ -483,7 +474,6 @@ void WriteNeighborsIndicesAndDistances(
         const T inv_voxel_size,
         const T radius,
         const Metric metric,
-        // const bool ignore_query_point,
         const bool return_distances) {
     const T threshold = (metric == L2 ? radius * radius : radius);
 
@@ -779,7 +769,6 @@ void FixedRadiusSearchCUDA(void* temp,
     const cudaStream_t stream = 0;
     int texture_alignment = 1;
     const Metric metric = Metric::L2;
-    // const bool ignore_query_point = false;
     const bool return_distances = true;
 
     if (get_temp_size) {
@@ -825,7 +814,6 @@ void FixedRadiusSearchCUDA(void* temp,
                     hash_table_index, hash_table_cell_splits + first_cell_idx,
                     hash_table_size + 1, queries_i, num_queries_i, points,
                     num_points, inv_voxel_size, radius, metric);
-            // ignore_query_point);
         }
     }
 
@@ -894,7 +882,6 @@ void FixedRadiusSearchCUDA(void* temp,
                     hash_table_index, hash_table_cell_splits + first_cell_idx,
                     hash_table_size + 1, queries_i, num_queries_i, points,
                     num_points, inv_voxel_size, radius, metric,
-                    // ignore_query_point, return_distances);
                     return_distances);
         }
     }
