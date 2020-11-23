@@ -26,6 +26,19 @@
 
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 
+// 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4146: PixelBufferDescriptor assert unsigned is positive before subtracting
+//       but MSVC can't figure that out.
+// 4293: Filament's utils/algorithm.h utils::details::clz() does strange
+//       things with MSVC. Somehow sizeof(unsigned int) > 4, but its size is
+//       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
+//       determine the if statement does not run.)
+// 4305: LightManager.h needs to specify some constants as floats
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068 4146 4293 4305)
+#endif  // _MSC_VER
+
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
 #include <filament/IndirectLight.h>
@@ -39,10 +52,15 @@
 #include <image/KtxBundle.h>
 #include <image/KtxUtility.h>
 
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
+
 #include "open3d/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 
 namespace open3d {
@@ -63,6 +81,13 @@ std::shared_ptr<ResourceType> MakeShared(ResourceType* pointer,
             pointer, [&engine](ResourceType* p) { engine.destroy(p); }));
 }
 
+template <class ResourceType>
+FilamentResourceManager::BoxedResource<ResourceType> BoxResource(
+        ResourceType* pointer, filament::Engine& engine) {
+    return FilamentResourceManager::BoxedResource<ResourceType>(
+            MakeShared(pointer, engine));
+}
+
 template <class Handle, class ResourceType>
 Handle RegisterResource(filament::Engine& engine,
                         ResourceType* resource,
@@ -73,8 +98,7 @@ Handle RegisterResource(filament::Engine& engine,
     }
 
     auto new_handle = Handle::Next();
-    container[new_handle] = std::move(MakeShared(resource, engine));
-
+    container[new_handle] = std::move(BoxResource(resource, engine));
     return new_handle;
 }
 
@@ -84,7 +108,7 @@ std::weak_ptr<ResourceType> FindResource(
         ResourcesContainer<ResourceType>& container) {
     auto found = container.find(id);
     if (found != container.end()) {
-        return found->second;
+        return found->second.ptr;
     }
 
     utility::LogWarning("Resource {} not found.", id);
@@ -100,12 +124,18 @@ void DestroyResource(const REHandle_abstract& id,
         return;
     }
 
-    container.erase(found);
+    found->second.use_count -= 1;
+    if (found->second.use_count == 0) {
+        container.erase(found);
+    } else if (found->second.use_count < 0) {
+        utility::LogError("Negative use count for resource ({})!", id);
+        return;
+    }
 }
 
 // Image data that is retained by renderer thread,
 // will be freed on PixelBufferDescriptor callback
-std::unordered_map<std::uint32_t, std::shared_ptr<geometry::Image>>
+std::unordered_map<std::intptr_t, std::shared_ptr<geometry::Image>>
         pending_images;
 
 std::intptr_t RetainImageForLoading(
@@ -136,7 +166,13 @@ filament::Material* LoadMaterialFromFile(const std::string& path,
     std::vector<char> material_data;
     std::string error_str;
 
-    if (utility::filesystem::FReadToBuffer(path, material_data, &error_str)) {
+    std::string platform_path = path;
+#ifdef _WIN32
+    std::replace(platform_path.begin(), platform_path.end(), '/', '\\');
+#endif  // _WIN32
+    utility::LogDebug("LoadMaterialFromFile(): {}", platform_path);
+    if (utility::filesystem::FReadToBuffer(platform_path, material_data,
+                                           &error_str)) {
         using namespace filament;
         return Material::Builder()
                 .package(material_data.data(), material_data.size())
@@ -144,7 +180,7 @@ filament::Material* LoadMaterialFromFile(const std::string& path,
     }
 
     utility::LogDebug("Failed to load default material from {}. Error: {}",
-                      path, error_str);
+                      platform_path, error_str);
 
     return nullptr;
 }
@@ -202,11 +238,17 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image, bool srgb) {
 
 const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultLitWithTransparency =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlit =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultNormalShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultDepthShader =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitSolidColorShader =
         MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
@@ -223,9 +265,12 @@ const TextureHandle FilamentResourceManager::kDefaultNormalMap =
 
 static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultLit,
+        FilamentResourceManager::kDefaultLitWithTransparency,
         FilamentResourceManager::kDefaultUnlit,
         FilamentResourceManager::kDefaultNormalShader,
         FilamentResourceManager::kDefaultDepthShader,
+        FilamentResourceManager::kDefaultUnlitGradientShader,
+        FilamentResourceManager::kDefaultUnlitSolidColorShader,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
@@ -295,50 +340,6 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
     return {};
 }
 
-MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
-        const geometry::TriangleMesh::Material& descriptor) {
-    MaterialInstanceHandle handle;
-    auto pbr_ref = materials_[kDefaultLit];
-    auto material_instance = pbr_ref->createInstance();
-    handle = RegisterResource<MaterialInstanceHandle>(
-            engine_, material_instance, material_instances_);
-
-    static const auto sampler =
-            FilamentMaterialModifier::SamplerFromSamplerParameters(
-                    TextureSamplerParameters::Pretty());
-
-    auto base_color = filament::math::float3{descriptor.baseColor.r(),
-                                             descriptor.baseColor.g(),
-                                             descriptor.baseColor.b()};
-    material_instance->setParameter("baseColor", filament::RgbType::sRGB,
-                                    base_color);
-
-#define TRY_ASSIGN_MAP(map, srgb)                                 \
-    {                                                             \
-        if (descriptor.map && descriptor.map->HasData()) {        \
-            auto hmaptex = CreateTexture(descriptor.map, srgb);   \
-            if (hmaptex) {                                        \
-                material_instance->setParameter(                  \
-                        #map, textures_[hmaptex].get(), sampler); \
-                dependencies_[handle].insert(hmaptex);            \
-            }                                                     \
-        }                                                         \
-    }
-
-    material_instance->setParameter("baseRoughness", descriptor.baseRoughness);
-    material_instance->setParameter("baseMetallic", descriptor.baseMetallic);
-
-    TRY_ASSIGN_MAP(albedo, true);
-    TRY_ASSIGN_MAP(normalMap, false);
-    TRY_ASSIGN_MAP(ambientOcclusion, false);
-    TRY_ASSIGN_MAP(metallic, false);
-    TRY_ASSIGN_MAP(roughness, false);
-
-#undef TRY_ASSIGN_MAP
-
-    return handle;
-}
-
 TextureHandle FilamentResourceManager::CreateTexture(const char* path,
                                                      bool srgb) {
     std::shared_ptr<geometry::Image> img;
@@ -401,7 +402,7 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
             // will be destroyed later by image::ktx::createTexture
             auto* ibl_ktx = new image::KtxBundle(
                     reinterpret_cast<std::uint8_t*>(ibl_data.data()),
-                    ibl_data.size());
+                    std::uint32_t(ibl_data.size()));
             auto* ibl_texture =
                     image::ktx::createTexture(&engine_, ibl_ktx, false);
 
@@ -442,6 +443,20 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
     return handle;
 }
 
+SkyboxHandle FilamentResourceManager::CreateColorSkybox(
+        const Eigen::Vector3f& color) {
+    filament::math::float4 fcolor;
+    fcolor.r = color.x();
+    fcolor.g = color.y();
+    fcolor.b = color.z();
+    fcolor.a = 1.0f;
+    auto skybox =
+            filament::Skybox::Builder().showSun(false).color(fcolor).build(
+                    engine_);
+    auto handle = RegisterResource<SkyboxHandle>(engine_, skybox, skyboxes_);
+    return handle;
+}
+
 SkyboxHandle FilamentResourceManager::CreateSkybox(
         const ResourceLoadRequest& request) {
     SkyboxHandle handle;
@@ -456,7 +471,7 @@ SkyboxHandle FilamentResourceManager::CreateSkybox(
             // will be destroyed later by image::ktx::createTexture
             auto* sky_ktx = new image::KtxBundle(
                     reinterpret_cast<std::uint8_t*>(sky_data.data()),
-                    sky_data.size());
+                    std::uint32_t(sky_data.size()));
             auto* sky_texture =
                     image::ktx::createTexture(&engine_, sky_ktx, false);
 
@@ -493,6 +508,15 @@ VertexBufferHandle FilamentResourceManager::AddVertexBuffer(
                                                 vertex_buffers_);
 }
 
+void FilamentResourceManager::ReuseVertexBuffer(VertexBufferHandle vb) {
+    auto found = vertex_buffers_.find(vb);
+    if (found != vertex_buffers_.end()) {
+        found->second.use_count += 1;
+    } else {
+        utility::LogError("Reusing non-existant vertex buffer");
+    }
+}
+
 IndexBufferHandle FilamentResourceManager::CreateIndexBuffer(
         size_t indices_count, size_t index_stride) {
     using namespace filament;
@@ -502,7 +526,7 @@ IndexBufferHandle FilamentResourceManager::CreateIndexBuffer(
                     .bufferType(index_stride == 2
                                         ? IndexBuffer::IndexType::USHORT
                                         : IndexBuffer::IndexType::UINT)
-                    .indexCount(indices_count)
+                    .indexCount(std::uint32_t(indices_count))
                     .build(engine_);
 
     IndexBufferHandle handle;
@@ -607,12 +631,20 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
     }
 }
 
+inline uint8_t maxLevelCount(uint32_t width, uint32_t height) {
+    auto maxdim = std::max(width, height);
+    uint8_t levels = static_cast<uint8_t>(std::ilogbf(float(maxdim)));
+    return std::max(1, levels + 1);
+}
+
 filament::Texture* FilamentResourceManager::LoadTextureFromImage(
         const std::shared_ptr<geometry::Image>& image, bool srgb) {
     using namespace filament;
 
     auto retained_img_id = RetainImageForLoading(image);
     auto texture_settings = GetSettingsFromImage(*image, srgb);
+    auto levels = maxLevelCount(texture_settings.texel_width,
+                                texture_settings.texel_height);
 
     Texture::PixelBufferDescriptor pb(
             image->data_.data(), image->data_.size(),
@@ -621,20 +653,20 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     auto texture = Texture::Builder()
                            .width(texture_settings.texel_width)
                            .height(texture_settings.texel_height)
-                           .levels((uint8_t)1)
+                           .levels(levels)
                            .format(texture_settings.format)
                            .sampler(Texture::Sampler::SAMPLER_2D)
                            .build(engine_);
 
     texture->setImage(engine_, 0, std::move(pb));
-
+    texture->generateMipmaps(engine_);
     return texture;
 }
 
 filament::Texture* FilamentResourceManager::LoadFilledTexture(
         const Eigen::Vector3f& color, size_t dimension) {
     auto image = std::make_shared<geometry::Image>();
-    image->Prepare(dimension, dimension, 3, 1);
+    image->Prepare(int(dimension), int(dimension), 3, 1);
 
     struct RGB {
         std::uint8_t r, g, b;
@@ -655,26 +687,27 @@ filament::Texture* FilamentResourceManager::LoadFilledTexture(
 
 void FilamentResourceManager::LoadDefaults() {
     // FIXME: Move to precompiled resource blobs
-    const std::string resource_root =
-            gui::Application::GetInstance().GetResourcePath();
+    const std::string& resource_root = EngineInstance::GetResourcePath();
 
     const auto texture_path = resource_root + "/defaultTexture.png";
     auto texture_img = io::CreateImageFromFile(texture_path);
     auto texture = LoadTextureFromImage(texture_img, false);
-    textures_[kDefaultTexture] = MakeShared(texture, engine_);
+    textures_[kDefaultTexture] = BoxResource(texture, engine_);
 
     const auto colormap_path = resource_root + "/defaultGradient.png";
     auto colormap_img = io::CreateImageFromFile(colormap_path);
     auto color_map = LoadTextureFromImage(colormap_img, false);
-    textures_[kDefaultColorMap] = MakeShared(color_map, engine_);
+    textures_[kDefaultColorMap] = BoxResource(color_map, engine_);
 
     auto normal_map = LoadFilledTexture(Eigen::Vector3f(0.5, 0.5, 1.f), 1);
-    textures_[kDefaultNormalMap] = MakeShared(normal_map, engine_);
+    textures_[kDefaultNormalMap] = BoxResource(normal_map, engine_);
 
     const auto default_sampler =
             FilamentMaterialModifier::SamplerFromSamplerParameters(
                     TextureSamplerParameters::Pretty());
     const auto default_color = filament::math::float3{1.0f, 1.0f, 1.0f};
+    const auto default_color_alpha =
+            filament::math::float4{1.0f, 1.0f, 1.0f, 1.0f};
 
     const auto lit_path = resource_root + "/defaultLit.filamat";
     auto lit_mat = LoadMaterialFromFile(lit_path, engine_);
@@ -688,11 +721,8 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("anisotropy", 0.f);
     lit_mat->setDefaultParameter("pointSize", 3.f);
     lit_mat->setDefaultParameter("albedo", texture, default_sampler);
-    lit_mat->setDefaultParameter("metallicMap", texture, default_sampler);
-    lit_mat->setDefaultParameter("roughnessMap", texture, default_sampler);
+    lit_mat->setDefaultParameter("ao_rough_metalMap", texture, default_sampler);
     lit_mat->setDefaultParameter("normalMap", normal_map, default_sampler);
-    lit_mat->setDefaultParameter("ambientOcclusionMap", texture,
-                                 default_sampler);
     lit_mat->setDefaultParameter("reflectanceMap", texture, default_sampler);
     // NOTE: Disabled to avoid Filament warning until shader is reworked to
     // reduce sampler usage.
@@ -700,7 +730,38 @@ void FilamentResourceManager::LoadDefaults() {
     // lit_mat->setDefaultParameter("clearCoatRoughnessMap", texture,
     //                              default_sampler);
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
-    materials_[kDefaultLit] = MakeShared(lit_mat, engine_);
+    materials_[kDefaultLit] = BoxResource(lit_mat, engine_);
+
+    const auto lit_trans_path =
+            resource_root + "/defaultLitTransparency.filamat";
+    auto lit_trans_mat = LoadMaterialFromFile(lit_trans_path, engine_);
+    lit_trans_mat->setDefaultParameter("baseColor",
+                                       filament::RgbaType::PREMULTIPLIED_sRGB,
+                                       default_color_alpha);
+    lit_trans_mat->setDefaultParameter("baseRoughness", 0.7f);
+    lit_trans_mat->setDefaultParameter("reflectance", 0.5f);
+    lit_trans_mat->setDefaultParameter("baseMetallic", 0.f);
+    lit_trans_mat->setDefaultParameter("clearCoat", 0.f);
+    lit_trans_mat->setDefaultParameter("clearCoatRoughness", 0.f);
+    lit_trans_mat->setDefaultParameter("anisotropy", 0.f);
+    lit_trans_mat->setDefaultParameter("pointSize", 3.f);
+    lit_trans_mat->setDefaultParameter("albedo", texture, default_sampler);
+    lit_trans_mat->setDefaultParameter("ao_rough_metalMap", texture,
+                                       default_sampler);
+    lit_trans_mat->setDefaultParameter("normalMap", normal_map,
+                                       default_sampler);
+    lit_trans_mat->setDefaultParameter("reflectanceMap", texture,
+                                       default_sampler);
+    // NOTE: Disabled to avoid Filament warning until shader is reworked to
+    // reduce sampler usage.
+    // lit_trans_mat->setDefaultParameter("clearCoatMap", texture,
+    // default_sampler);
+    // lit_trans_mat->setDefaultParameter("clearCoatRoughnessMap", texture,
+    //                              default_sampler);
+    lit_trans_mat->setDefaultParameter("anisotropyMap", texture,
+                                       default_sampler);
+    materials_[kDefaultLitWithTransparency] =
+            BoxResource(lit_trans_mat, engine_);
 
     const auto unlit_path = resource_root + "/defaultUnlit.filamat";
     auto unlit_mat = LoadMaterialFromFile(unlit_path, engine_);
@@ -708,32 +769,38 @@ void FilamentResourceManager::LoadDefaults() {
                                    default_color);
     unlit_mat->setDefaultParameter("pointSize", 3.f);
     unlit_mat->setDefaultParameter("albedo", texture, default_sampler);
-    materials_[kDefaultUnlit] = MakeShared(unlit_mat, engine_);
+    materials_[kDefaultUnlit] = BoxResource(unlit_mat, engine_);
 
     const auto depth_path = resource_root + "/depth.filamat";
     auto depth_mat = LoadMaterialFromFile(depth_path, engine_);
     depth_mat->setDefaultParameter("pointSize", 3.f);
-    materials_[kDefaultDepthShader] = MakeShared(depth_mat, engine_);
+    materials_[kDefaultDepthShader] = BoxResource(depth_mat, engine_);
+
+    const auto gradient_path = resource_root + "/unlitGradient.filamat";
+    auto gradient_mat = LoadMaterialFromFile(gradient_path, engine_);
+    gradient_mat->setDefaultParameter("pointSize", 3.f);
+    materials_[kDefaultUnlitGradientShader] =
+            BoxResource(gradient_mat, engine_);
 
     // NOTE: Legacy. Can be removed soon.
     const auto hdepth = CreateMaterial(ResourceLoadRequest(depth_path.data()));
     auto depth_mat_inst = materials_[hdepth];
     depth_mat_inst->setDefaultParameter("pointSize", 3.f);
     material_instances_[kDepthMaterial] =
-            MakeShared(depth_mat_inst->createInstance(), engine_);
+            BoxResource(depth_mat_inst->createInstance(), engine_);
 
     const auto normals_path = resource_root + "/normals.filamat";
     auto normals_mat = LoadMaterialFromFile(normals_path, engine_);
     normals_mat->setDefaultParameter("pointSize", 3.f);
-    materials_[kDefaultNormalShader] = MakeShared(normals_mat, engine_);
+    materials_[kDefaultNormalShader] = BoxResource(normals_mat, engine_);
 
-    // NOTE: Leacy. Can be removed soon.
+    // NOTE: Legacy. Can be removed soon.
     const auto hnormals =
             CreateMaterial(ResourceLoadRequest(normals_path.data()));
     auto normals_mat_inst = materials_[hnormals];
     normals_mat_inst->setDefaultParameter("pointSize", 3.f);
     material_instances_[kNormalsMaterial] =
-            MakeShared(normals_mat_inst->createInstance(), engine_);
+            BoxResource(normals_mat_inst->createInstance(), engine_);
 
     const auto colormap_map_path = resource_root + "/colorMap.filamat";
     const auto hcolormap_mat =
@@ -742,7 +809,13 @@ void FilamentResourceManager::LoadDefaults() {
     auto colormap_mat_inst = colormap_mat->createInstance();
     colormap_mat_inst->setParameter("colorMap", color_map, default_sampler);
     material_instances_[kColorMapMaterial] =
-            MakeShared(colormap_mat_inst, engine_);
+            BoxResource(colormap_mat_inst, engine_);
+
+    const auto solid_path = resource_root + "/unlitSolidColor.filamat";
+    auto solid_mat = LoadMaterialFromFile(solid_path, engine_);
+    solid_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                   {0.5f, 0.5f, 0.5f});
+    materials_[kDefaultUnlitSolidColorShader] = BoxResource(solid_mat, engine_);
 }
 
 }  // namespace rendering

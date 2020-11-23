@@ -65,6 +65,9 @@ int Run(int argc, const char *argv[]) {
         vis->LoadGeometry(path);
     }
     gui::Application::GetInstance().AddWindow(vis);
+    // when Run() ends, Filament will be stopped, so we can't be holding on
+    // to any GUI objects.
+    vis.reset();
 
     app.Run();
 

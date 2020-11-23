@@ -231,7 +231,7 @@ public:
         bool redraw = false;
         if (!keys_down_.empty()) {
             auto& bounds = camera_controls_->GetBoundingBox();
-            const float dist = 0.0025f * bounds.GetExtent().norm();
+            const float dist = float(0.0025 * bounds.GetExtent().norm());
             const float angle_rad = 0.0075f;
 
             auto HasKey = [this](uint32_t key) -> bool {
@@ -368,7 +368,7 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                interactor_->Dolly(2.0 * e.wheel.dy,
+                interactor_->Dolly(2 * e.wheel.dy,
                                    e.wheel.isTrackpad
                                            ? rendering::MatrixInteractorLogic::
                                                      DragType::TWO_FINGER
@@ -404,38 +404,14 @@ public:
                                    rendering::Camera* camera)
         : RotationInteractor(),
           rotation_(new rendering::ModelInteractorLogic(
-                  scene->GetScene(), camera, MIN_FAR_PLANE)) {
-        //          scene_(scene) {
+                  scene, camera, MIN_FAR_PLANE)) {
         SetInteractor(rotation_.get());
     }
 
-    void Mouse(const MouseEvent& e) override {
-        // We need to make sure rotation_ gets the geometry handles it
-        // needs to rotate. We can't just cache this in the constructor,
-        // because the caller may have given us an empty scene which it
-        // later fills. (Also, just in case the scene geometry is updated,
-        // if we all users to load a second model.) We need to make sure
-        // that all levels of detail are updated. The handles might be
-        // the same, but it turns that works out fine because rotation_
-        // calculates the new matrix from the matrix at mouse down, so
-        // the calculation is not cumulative if there are multiple copies
-        // of the object, merely duplicated.
-        if (e.type == MouseEvent::BUTTON_DOWN) {
-            // TODO: Make sure this works with new Scene graph
-            // std::vector<rendering::GeometryHandle> geometries =
-            //         scene_->GetModel();
-            // for (auto& fast :
-            //      scene_->GetModel(rendering::Open3DScene::LOD::FAST)) {
-            //     geometries.push_back(fast);
-            // }
-            // rotation_->SetModel(scene_->GetAxis(), geometries);
-        }
-        Super::Mouse(e);
-    }
+    void Mouse(const MouseEvent& e) override { Super::Mouse(e); }
 
 private:
     std::unique_ptr<rendering::ModelInteractorLogic> rotation_;
-    // rendering::Open3DScene* scene_;
 };
 
 class RotateCameraInteractor : public RotationInteractor {
@@ -600,7 +576,6 @@ private:
 // ----------------------------------------------------------------------------
 struct SceneWidget::Impl {
     std::shared_ptr<rendering::Open3DScene> scene_;
-    rendering::ViewHandle view_id_;
     geometry::AxisAlignedBoundingBox bounds_;
     std::shared_ptr<Interactors> controls_;
     std::function<void(const Eigen::Vector3f&)> on_light_dir_changed_;
@@ -608,6 +583,8 @@ struct SceneWidget::Impl {
     int buttons_down_ = 0;
     double last_fast_time_ = 0.0;
     bool frame_rect_changed_ = false;
+    SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
+    bool scene_caching_enabled_ = false;
 };
 
 SceneWidget::SceneWidget() : impl_(new Impl()) {}
@@ -677,14 +654,9 @@ void SceneWidget::ShowSkybox(bool is_on) {
 }
 
 void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {
-    if (impl_->scene_) {
-        impl_->scene_->DestroyView(impl_->view_id_);
-        impl_->view_id_ = rendering::ViewHandle();
-    }
     impl_->scene_ = scene;
     if (impl_->scene_) {
-        impl_->view_id_ = impl_->scene_->CreateView();
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        auto view = impl_->scene_->GetView();
         impl_->controls_ = std::make_shared<Interactors>(impl_->scene_.get(),
                                                          view->GetCamera());
     }
@@ -696,7 +668,7 @@ std::shared_ptr<rendering::Open3DScene> SceneWidget::GetScene() const {
 
 rendering::View* SceneWidget::GetRenderView() const {
     if (impl_->scene_) {
-        return impl_->scene_->GetView(impl_->view_id_);
+        return impl_->scene_->GetView();
     } else {
         return nullptr;
     }
@@ -724,27 +696,47 @@ void SceneWidget::SetViewControls(Controls mode) {
     }
 }
 
+void SceneWidget::EnableSceneCaching(bool enable) {
+    impl_->scene_caching_enabled_ = enable;
+    if (!enable) {
+        impl_->scene_->GetRenderer().EnableCaching(false);
+        impl_->scene_->GetScene()->SetViewActive(impl_->scene_->GetViewId(),
+                                                 true);
+    }
+}
+
+void SceneWidget::ForceRedraw() {
+    // ForceRedraw only applies when scene caching is enabled
+    if (!impl_->scene_caching_enabled_) return;
+
+    impl_->scene_->GetRenderer().EnableCaching(true);
+    impl_->scene_->GetScene()->SetRenderOnce(impl_->scene_->GetViewId());
+}
+
 void SceneWidget::SetRenderQuality(Quality quality) {
     auto currentQuality = GetRenderQuality();
     if (currentQuality != quality) {
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        impl_->current_render_quality_ = quality;
         if (quality == Quality::FAST) {
-            view->SetSampleCount(1);
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::FAST);
+            if (impl_->scene_caching_enabled_) {
+                impl_->scene_->GetRenderer().EnableCaching(false);
+                impl_->scene_->GetScene()->SetViewActive(
+                        impl_->scene_->GetViewId(), true);
+            }
         } else {
-            view->SetSampleCount(4);
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::HIGH_DETAIL);
+            if (impl_->scene_caching_enabled_) {
+                impl_->scene_->GetRenderer().EnableCaching(true);
+                impl_->scene_->GetScene()->SetRenderOnce(
+                        impl_->scene_->GetViewId());
+            }
         }
     }
 }
 
 SceneWidget::Quality SceneWidget::GetRenderQuality() const {
-    int n = impl_->scene_->GetView(impl_->view_id_)->GetSampleCount();
-    if (n == 1) {
-        return Quality::FAST;
-    } else {
-        return Quality::BEST;
-    }
+    return impl_->current_render_quality_;
 }
 
 void SceneWidget::GoToCameraPreset(CameraPreset preset) {
@@ -754,7 +746,7 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     // (0, 0, 0), and this will result in the far plane being not being
     // far enough and clipping the model. To test, use
     // https://docs.google.com/uc?export=download&id=0B-ePgl6HF260ODdvT09Xc1JxOFE
-    float max_dim = 1.25f * impl_->bounds_.GetMaxExtent();
+    float max_dim = float(1.25 * impl_->bounds_.GetMaxExtent());
     Eigen::Vector3f center = impl_->bounds_.GetCenter().cast<float>();
     Eigen::Vector3f eye, up;
     switch (preset) {
@@ -776,10 +768,18 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     }
     GetCamera()->LookAt(center, eye, up);
     impl_->controls_->SetCenterOfRotation(center);
+    ForceRedraw();
 }
 
 rendering::Camera* SceneWidget::GetCamera() const {
     return impl_->scene_->GetCamera();
+}
+
+void SceneWidget::Layout(const Theme& theme) {
+    Super::Layout(theme);
+    // The UI may have changed size such that the scene has been exposed. Need
+    // to force a redraw in that case.
+    ForceRedraw();
 }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
@@ -795,7 +795,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
 
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        auto view = impl_->scene_->GetView();
         view->SetViewport(f.x, y, f.width, f.height);
 
         auto* camera = GetCamera();

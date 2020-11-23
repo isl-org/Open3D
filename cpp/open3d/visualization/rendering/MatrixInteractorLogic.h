@@ -89,8 +89,8 @@ protected:
     Eigen::Vector3f center_of_rotation_at_mouse_down_;
 
     void SetMatrix(const Camera::Transform& matrix);
-    double CalcRotateRadians(int dx, int dy);
-    double CalcRotateZRadians(int dx, int dy);
+    float CalcRotateRadians(int dx, int dy);
+    float CalcRotateZRadians(int dx, int dy);
     float CalcDollyDist(int dy, DragType drag_type);
 };
 

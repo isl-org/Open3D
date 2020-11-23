@@ -185,7 +185,7 @@ bool SetMeshData(const core::Tensor& vertices,
         LogError(
                 "SetMeshData: vertices must have dtype Float32 or Float64 but "
                 "is {}",
-                core::DtypeUtil::ToString(vertices.GetDtype()));
+                vertices.GetDtype().ToString());
     }
 
     auto PrepareTensor = [](const core::Tensor& a) {
@@ -232,12 +232,12 @@ bool SetMeshData(const core::Tensor& vertices,
             LogError(
                     "SetMeshData: faces must have dtype Int32 or Int64 but "
                     "is {}",
-                    core::DtypeUtil::ToString(vertices.GetDtype()));
+                    vertices.GetDtype().ToString());
         } else if (faces.NumDims() != 2) {
             LogError("SetMeshData: faces must have rank 2 but is {}",
                      faces.NumDims());
-        } else if (faces.GetShape()[1] >= 3) {
-            LogError("SetMeshData: last dim of faces must be >3 but is {}",
+        } else if (faces.GetShape()[1] < 3) {
+            LogError("SetMeshData: last dim of faces must be >=3 but is {}",
                      faces.GetShape()[1]);
         } else {
             tensor_cache.push_back(PrepareTensor(faces));
@@ -266,12 +266,12 @@ bool SetMeshData(const core::Tensor& vertices,
             LogError(
                     "SetMeshData: lines must have dtype Int32 or Int64 but "
                     "is {}",
-                    core::DtypeUtil::ToString(vertices.GetDtype()));
+                    vertices.GetDtype().ToString());
         } else if (lines.NumDims() != 2) {
             LogError("SetMeshData: lines must have rank 2 but is {}",
                      lines.NumDims());
-        } else if (lines.GetShape()[1] >= 2) {
-            LogError("SetMeshData: last dim of lines must be >2 but is {}",
+        } else if (lines.GetShape()[1] < 2) {
+            LogError("SetMeshData: last dim of lines must be >=2 but is {}",
                      lines.GetShape()[1]);
         } else {
             tensor_cache.push_back(PrepareTensor(lines));

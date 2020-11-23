@@ -24,24 +24,91 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/visualization/rendering/Gradient.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/rendering/View.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
+#include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "pybind/docstring.h"
 #include "pybind/visualization/gui/gui.h"
+#include "pybind/visualization/visualization.h"
 #include "pybind11/functional.h"
 
-using namespace open3d::visualization;
-using namespace open3d::visualization::rendering;
-
 namespace open3d {
+namespace visualization {
+namespace rendering {
+
+class PyOffscreenRenderer {
+public:
+    PyOffscreenRenderer(int width,
+                        int height,
+                        const std::string &resource_path) {
+        gui::InitializeForPython(resource_path);
+        width_ = width;
+        height_ = height;
+        renderer_ = new FilamentRenderer(EngineInstance::GetInstance(), width,
+                                         height,
+                                         EngineInstance::GetResourceManager());
+        scene_ = new Open3DScene(*renderer_);
+    }
+
+    ~PyOffscreenRenderer() {
+        delete scene_;
+        delete renderer_;
+    }
+
+    Open3DScene *GetScene() { return scene_; }
+
+    std::shared_ptr<geometry::Image> RenderToImage() {
+        return gui::RenderToImageWithoutWindow(scene_, width_, height_);
+    }
+
+private:
+    int width_;
+    int height_;
+    FilamentRenderer *renderer_;
+    // The offscreen renderer owns the scene so that it can clean it up
+    // in the right order (otherwise we will crash).
+    Open3DScene *scene_;
+};
 
 void pybind_rendering_classes(py::module &m) {
     py::class_<Renderer> renderer(
             m, "Renderer",
             "Renderer class that manages 3D resources. Get from gui.Window.");
-    ;
+    renderer.def("set_clear_color", &Renderer::SetClearColor,
+                 "Sets the background color for the renderer, [r, g, b, a]. "
+                 "Applies to everything being rendered, so it essentially acts "
+                 "as the background color of the window");
+
+    // It would be nice to have this inherit from Renderer, but the problem is
+    // that Python needs to own this class and Python needs to not own Renderer,
+    // and pybind does not let us mix the two styls of ownership.
+    py::class_<PyOffscreenRenderer, std::shared_ptr<PyOffscreenRenderer>>
+            offscreen(m, "OffscreenRenderer",
+                      "Renderer instance that can be used for rendering to an "
+                      "image");
+    offscreen
+            .def(py::init([](int w, int h, const std::string &resource_path) {
+                     return std::make_shared<PyOffscreenRenderer>(
+                             w, h, resource_path);
+                 }),
+                 "width"_a, "height"_a, "resource_path"_a = "",
+                 "Takes width, height and an optional resource_path. If "
+                 "unspecified, resource_path will use the resource path from "
+                 "the installed Open3D library.")
+            .def_property_readonly(
+                    "scene", &PyOffscreenRenderer::GetScene,
+                    "Returns the Open3DScene for this renderer. This scene is "
+                    "destroyed when the renderer is destroyed and should not "
+                    "be accessed after that point.")
+            .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
+                 "Renders scene to an image, blocking until the image is "
+                 "returned");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
@@ -86,11 +153,59 @@ void pybind_rendering_classes(py::module &m) {
                  "Sets the position and orientation of the camera: "
                  "look_at(center, eye, up)");
 
+    // ---- Gradient ----
+    py::class_<Gradient, std::shared_ptr<Gradient>> gradient(
+            m, "Gradient",
+            "Manages a gradient for the unlitGradient shader."
+            "In gradient mode, the array of points specifies points along "
+            "the gradient, from 0 to 1 (inclusive). These do need to be "
+            "evenly spaced."
+            "Simple greyscale:"
+            "    [ ( 0.0, black ),"
+            "      ( 1.0, white ) ]"
+            "Rainbow (note the gaps around green):"
+            "    [ ( 0.000, blue ),"
+            "      ( 0.125, cornflower blue ),"
+            "      ( 0.250, cyan ),"
+            "      ( 0.500, green ),"
+            "      ( 0.750, yellow ),"
+            "      ( 0.875, orange ),"
+            "      ( 1.000, red ) ]"
+            "The gradient will generate a largish texture, so it should "
+            "be fairly smooth, but the boundaries may not be exactly as "
+            "specified due to quantization imposed by the fixed size of "
+            "the texture."
+            "  The points *must* be sorted from the smallest value to the "
+            "largest. The values must be in the range [0, 1].");
+    py::enum_<Gradient::Mode> gradient_mode(gradient, "Mode", py::arithmetic());
+    gradient_mode.value("GRADIENT", Gradient::Mode::kGradient)
+            .value("LUT", Gradient::Mode::kLUT)
+            .export_values();
+    py::class_<Gradient::Point> gpt(gradient, "Point");
+    gpt.def(py::init<float, const Eigen::Vector4f>())
+            .def("__repr__",
+                 [](const Gradient::Point &p) {
+                     std::stringstream s;
+                     s << "Gradient.Point[" << p.value << ", (" << p.color[0]
+                       << ", " << p.color[1] << ", " << p.color[2] << ", "
+                       << p.color[3] << ")]";
+                     return s.str();
+                 })
+            .def_readwrite("value", &Gradient::Point::value,
+                           "Must be within 0.0 and 1.0")
+            .def_readwrite("color", &Gradient::Point::color,
+                           "[R, G, B, A]. Color values must be in [0.0, 1.0]");
+    gradient.def(py::init<>())
+            .def(py::init<std::vector<Gradient::Point>>())
+            .def_property("points", &Gradient::GetPoints, &Gradient::SetPoints)
+            .def_property("mode", &Gradient::GetMode, &Gradient::SetMode);
+
     // ---- Material ----
     py::class_<Material> mat(m, "Material",
                              "Describes the real-world, physically based (PBR) "
                              "material used to render a geometry");
     mat.def(py::init<>())
+            .def_readwrite("has_alpha", &Material::has_alpha)
             .def_readwrite("base_color", &Material::base_color)
             .def_readwrite("base_metallic", &Material::base_metallic)
             .def_readwrite("base_roughness", &Material::base_roughness)
@@ -112,11 +227,14 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("anisotropy_img", &Material::anisotropy_img)
             .def_readwrite("generic_params", &Material::generic_params)
             .def_readwrite("generic_imgs", &Material::generic_imgs)
+            .def_readwrite("gradient", &Material::gradient)
+            .def_readwrite("scalar_min", &Material::scalar_min)
+            .def_readwrite("scalar_max", &Material::scalar_max)
             .def_readwrite("shader", &Material::shader);
 
     // ---- Scene ----
-    py::class_<Scene, std::shared_ptr<Scene>> scene(
-            m, "Scene", "Low-level rendering scene");
+    py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
+                                                   "Low-level rendering scene");
     scene.def("add_camera", &Scene::AddCamera, "Adds a camera to the scene")
             .def("remove_camera", &Scene::RemoveCamera,
                  "Removes the camera with the given name")
@@ -124,11 +242,30 @@ void pybind_rendering_classes(py::module &m) {
                  "Sets the camera with the given name as the active camera for "
                  "the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(const std::string &,
-                                  const geometry::Geometry3D &,
-                                  const Material &)) &
+                 (bool (Scene::*)(
+                         const std::string &, const geometry::Geometry3D &,
+                         const Material &, const std::string &, size_t)) &
                          Scene::AddGeometry,
+                 "name"_a, "geometry"_a, "material"_a,
+                 "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
+            .def("add_geometry",
+                 (bool (Scene::*)(
+                         const std::string &, const t::geometry::PointCloud &,
+                         const Material &, const std::string &, size_t)) &
+                         Scene::AddGeometry,
+                 "name"_a, "geometry"_a, "material"_a,
+                 "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
+                 "Adds a Geometry with a material to the scene")
+            .def("has_geometry", &Scene::HasGeometry,
+                 "Returns True if a geometry with the provided name exists in "
+                 "the scene.")
+            .def("update_geometry", &Scene::UpdateGeometry,
+                 "Updates the flagged arrays from the tgeometry.PointCloud. "
+                 "The "
+                 "flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
+                 "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
+                 "Scene.UPDATE_UV0_FLAG")
             .def("enable_indirect_light", &Scene::EnableIndirectLight,
                  "Enables or disables indirect lighting")
             .def("set_indirect_light", &Scene::SetIndirectLight,
@@ -142,30 +279,73 @@ void pybind_rendering_classes(py::module &m) {
                  "Sets the parameters of the directional light: direction, "
                  "color, intensity")
             .def("render_to_image", &Scene::RenderToImage,
-                 "Renders the scene; image will be provided via a callback "
-                 "function. The callback is necessary because rendering is "
-                 "done "
-                 "on a different thread. The image remains valid after the "
-                 "callback, assuming it was assigned somewhere.");
+                 "Renders the scene to an image. This can only be used in a "
+                 "GUI app. To render without a window, use "
+                 "Application.render_to_image");
+
+    scene.attr("UPDATE_POINTS_FLAG") = py::int_(Scene::kUpdatePointsFlag);
+    scene.attr("UPDATE_NORMALS_FLAG") = py::int_(Scene::kUpdateNormalsFlag);
+    scene.attr("UPDATE_COLORS_FLAG") = py::int_(Scene::kUpdateColorsFlag);
+    scene.attr("UPDATE_UV0_FLAG") = py::int_(Scene::kUpdateUv0Flag);
 
     // ---- Open3DScene ----
-    py::class_<Open3DScene, std::shared_ptr<Open3DScene>> o3dscene(
+    py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
             m, "Open3DScene", "High-level scene for rending");
     o3dscene.def(py::init<Renderer &>())
             .def("show_skybox", &Open3DScene::ShowSkybox,
                  "Toggles display of the skybox")
             .def("show_axes", &Open3DScene::ShowAxes,
                  "Toggles display of xyz axes")
+            .def("set_background_color", &Open3DScene::SetBackgroundColor,
+                 "Sets the background color of the scene, [r, g, b, a].")
             .def("clear_geometry", &Open3DScene::ClearGeometry)
-            .def("add_geometry", &Open3DScene::AddGeometry, "geometry"_a,
-                 "material"_a,
+            .def("add_geometry",
+                 py::overload_cast<const std::string &,
+                                   std::shared_ptr<const geometry::Geometry3D>,
+                                   const Material &, bool>(
+                         &Open3DScene::AddGeometry),
+                 "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
+            .def("add_geometry",
+                 py::overload_cast<const std::string &,
+                                   const t::geometry::PointCloud *,
+                                   const Material &, bool>(
+                         &Open3DScene::AddGeometry),
+                 "name"_a, "geometry"_a, "material"_a,
+                 "add_downsampled_copy_for_fast_rendering"_a = true)
+            .def("has_geometry", &Open3DScene::HasGeometry,
+                 "has_geometry(name): returns True if the geometry has been "
+                 "added to the scene, False otherwise")
+            .def("remove_geometry", &Open3DScene::RemoveGeometry,
+                 "Removes the geometry with the given name")
+            .def("modify_geometry_material",
+                 &Open3DScene::ModifyGeometryMaterial,
+                 "modify_geometry_material(name, material). Modifies the "
+                 "material of the specified geometry")
+            .def("show_geometry", &Open3DScene::ShowGeometry,
+                 "Shows or hides the geometry with the given name")
             .def("update_material", &Open3DScene::UpdateMaterial,
                  "Applies the passed material to all the geometries")
+            .def(
+                    "set_view_size",
+                    [](Open3DScene *scene, int width, int height) {
+                        scene->GetView()->SetViewport(0, 0, width, height);
+                    },
+                    "Sets the view size. This should not be used except for "
+                    "rendering to an image")
             .def_property_readonly("scene", &Open3DScene::GetScene,
                                    "The low-level rendering scene object")
             .def_property_readonly("camera", &Open3DScene::GetCamera,
-                                   "The camera object");
+                                   "The camera object")
+            .def_property_readonly("bounding_box", &Open3DScene::GetBoundingBox,
+                                   "The bounding box of all the items in the "
+                                   "scene, visible and invisible")
+            .def_property("downsample_threshold",
+                          &Open3DScene::GetDownsampleThreshold,
+                          &Open3DScene::SetDownsampleThreshold,
+                          "Minimum number of points before downsampled point "
+                          "clouds are created and used when rendering speed "
+                          "is important");
 }
 
 void pybind_rendering(py::module &m) {
@@ -173,4 +353,6 @@ void pybind_rendering(py::module &m) {
     pybind_rendering_classes(m_rendering);
 }
 
+}  // namespace rendering
+}  // namespace visualization
 }  // namespace open3d

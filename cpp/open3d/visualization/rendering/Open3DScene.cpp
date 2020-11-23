@@ -28,6 +28,7 @@
 
 #include <algorithm>
 
+#include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/rendering/Material.h"
@@ -39,8 +40,8 @@ namespace visualization {
 namespace rendering {
 
 const std::string kAxisObjectName("__axis__");
-const std::string kModelObjectName("__model__");
-const std::string kFastModelObjectName("__fast_model__");
+const std::string kFastModelObjectSuffix("__fast__");
+const std::string kLowQualityModelObjectSuffix("__low__");
 
 namespace {
 std::shared_ptr<geometry::TriangleMesh> CreateAxisGeometry(double axis_length) {
@@ -115,6 +116,8 @@ void RecreateAxis(Scene* scene,
 Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
+    view_ = scene->AddView(0, 0, 1, 1);
+    scene->SetBackgroundColor({1.0f, 1.0f, 1.0f, 1.0f});
 
     RecreateAxis(scene, bounds_, false);
 }
@@ -123,23 +126,12 @@ Open3DScene::~Open3DScene() {
     ClearGeometry();
     auto scene = renderer_.GetScene(scene_);
     scene->RemoveGeometry(kAxisObjectName);
+    scene->RemoveView(view_);
 }
 
-ViewHandle Open3DScene::CreateView() {
+View* Open3DScene::GetView() const {
     auto scene = renderer_.GetScene(scene_);
-    view_ = scene->AddView(0, 0, 1, 1);
-
-    return view_;
-}
-
-void Open3DScene::DestroyView(ViewHandle view) {
-    auto scene = renderer_.GetScene(scene_);
-    scene->RemoveView(view);
-}
-
-View* Open3DScene::GetView(ViewHandle view) const {
-    auto scene = renderer_.GetScene(scene_);
-    return scene->GetView(view);
+    return scene->GetView(view_);
 }
 
 void Open3DScene::ShowSkybox(bool enable) {
@@ -149,86 +141,235 @@ void Open3DScene::ShowSkybox(bool enable) {
 
 void Open3DScene::ShowAxes(bool enable) {
     auto scene = renderer_.GetScene(scene_);
+    if (enable && axis_dirty_) {
+        RecreateAxis(scene, bounds_, false);
+        axis_dirty_ = false;
+    }
     scene->ShowGeometry(kAxisObjectName, enable);
+}
+
+void Open3DScene::SetBackgroundColor(const Eigen::Vector4f& color) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->SetBackgroundColor(color);
 }
 
 void Open3DScene::ClearGeometry() {
     auto scene = renderer_.GetScene(scene_);
-    if (model_name_ == fast_model_name_) {
-        fast_model_name_.clear();
+    for (auto& g : geometries_) {
+        scene->RemoveGeometry(g.second.name);
+        if (!g.second.fast_name.empty()) {
+            scene->RemoveGeometry(g.second.fast_name);
+        }
+        if (!g.second.low_name.empty()) {
+            scene->RemoveGeometry(g.second.low_name);
+        }
     }
-
-    if (!model_name_.empty()) {
-        scene->RemoveGeometry(model_name_);
-    }
-    if (!fast_model_name_.empty()) {
-        scene->RemoveGeometry(fast_model_name_);
-    }
-    model_name_.clear();
-    fast_model_name_.clear();
+    geometries_.clear();
     bounds_ = geometry::AxisAlignedBoundingBox();
-    RecreateAxis(scene, bounds_, false);
+    axis_dirty_ = true;
 }
 
 void Open3DScene::AddGeometry(
+        const std::string& name,
         std::shared_ptr<const geometry::Geometry3D> geom,
         const Material& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
-    auto scene = renderer_.GetScene(scene_);
-    if (scene->AddGeometry(kModelObjectName, *geom, mat)) {
-        model_name_ = kModelObjectName;
-        bounds_ = scene->GetGeometryBoundingBox(model_name_);
-        scene->ShowGeometry(model_name_, (lod_ == LOD::HIGH_DETAIL));
-    }
-
+    size_t downsample_threshold = SIZE_MAX;
+    std::string fast_name;
     if (add_downsampled_copy_for_fast_rendering) {
-        const std::size_t kMinPointsForDecimation = 6000000;
-        auto pcd = std::dynamic_pointer_cast<const geometry::PointCloud>(geom);
-        if (pcd && pcd->points_.size() > kMinPointsForDecimation) {
-            int sample_rate =
-                    pcd->points_.size() / (kMinPointsForDecimation / 2);
-            auto small = pcd->UniformDownSample(sample_rate);
-            scene->AddGeometry(kFastModelObjectName, *small, mat);
-            fast_model_name_ = kFastModelObjectName;
-            scene->ShowGeometry(fast_model_name_, (lod_ == LOD::FAST));
-        } else {
-            fast_model_name_ = model_name_;
-        }
-    } else {
-        fast_model_name_ = model_name_;
+        fast_name = name + "." + kFastModelObjectSuffix;
+        downsample_threshold = downsample_threshold_;
     }
 
-    // Bounding box may have changed, force recreation of axes
-    RecreateAxis(scene, bounds_, false);
+    auto scene = renderer_.GetScene(scene_);
+    if (scene->AddGeometry(name, *geom, mat, fast_name, downsample_threshold)) {
+        bounds_ += scene->GetGeometryBoundingBox(name);
+        GeometryData info(name, "");
+        // If the downsampled object got created, add it. It may not have been
+        // created if downsampling wasn't enabled or if the object does not meet
+        // the threshold.
+        if (add_downsampled_copy_for_fast_rendering &&
+            scene->HasGeometry(fast_name)) {
+            info.fast_name = fast_name;
+            geometries_[fast_name] = info;
+        }
+        geometries_[name] = info;
+        SetGeometryToLOD(info, lod_);
+    }
+
+    axis_dirty_ = true;
+}
+
+void Open3DScene::AddGeometry(
+        const std::string& name,
+        const t::geometry::PointCloud* geom,
+        const Material& mat,
+        bool add_downsampled_copy_for_fast_rendering /*= true*/) {
+    size_t downsample_threshold = SIZE_MAX;
+    std::string fast_name;
+    if (add_downsampled_copy_for_fast_rendering) {
+        fast_name = name + "." + kFastModelObjectSuffix;
+        downsample_threshold = downsample_threshold_;
+    }
+
+    auto scene = renderer_.GetScene(scene_);
+    if (scene->AddGeometry(name, *geom, mat, fast_name, downsample_threshold)) {
+        auto bbox = scene->GetGeometryBoundingBox(name);
+        bounds_ += bbox;
+        GeometryData info(name, "");
+        // If the downsampled object got created, add it. It may not have been
+        // created if downsampling wasn't enabled or if the object does not meet
+        // the threshold.
+        if (add_downsampled_copy_for_fast_rendering &&
+            scene->HasGeometry(fast_name)) {
+            info.fast_name = fast_name;
+
+            auto lowq_name = name + kLowQualityModelObjectSuffix;
+            auto bbox_geom =
+                    geometry::LineSet::CreateFromAxisAlignedBoundingBox(bbox);
+            Material bbox_mat;
+            bbox_mat.base_color = {1.0f, 0.5f, 0.0f, 1.0f};  // orange
+            bbox_mat.shader = "unlitSolidColor";
+            scene->AddGeometry(lowq_name, *bbox_geom, bbox_mat);
+            info.low_name = lowq_name;
+        }
+        geometries_[name] = info;
+        SetGeometryToLOD(info, lod_);
+    }
+
+    // Axes may need to be recreated
+    axis_dirty_ = true;
+}
+
+bool Open3DScene::HasGeometry(const std::string& name) const {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->HasGeometry(name);
+}
+
+void Open3DScene::RemoveGeometry(const std::string& name) {
+    auto scene = renderer_.GetScene(scene_);
+    auto g = geometries_.find(name);
+    if (g != geometries_.end()) {
+        scene->RemoveGeometry(name);
+        if (!g->second.fast_name.empty()) {
+            scene->RemoveGeometry(g->second.fast_name);
+        }
+        if (!g->second.low_name.empty()) {
+            scene->RemoveGeometry(g->second.low_name);
+        }
+        geometries_.erase(name);
+    }
+}
+
+void Open3DScene::ModifyGeometryMaterial(const std::string& name,
+                                         const Material& mat) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->OverrideMaterial(name, mat);
+    auto it = geometries_.find(name);
+    if (it != geometries_.end()) {
+        if (!it->second.fast_name.empty()) {
+            scene->OverrideMaterial(it->second.fast_name, mat);
+        }
+        // Don't want to override low_name, as that is a bounding box.
+    }
+}
+
+void Open3DScene::ShowGeometry(const std::string& name, bool show) {
+    auto it = geometries_.find(name);
+    if (it != geometries_.end()) {
+        it->second.visible = show;
+
+        int n_lowq_visible = 0;
+        for (auto& g : geometries_) {
+            if (g.second.visible && !g.second.low_name.empty()) {
+                n_lowq_visible += 1;
+            }
+        }
+        use_low_quality_if_available_ = (n_lowq_visible > 1);
+
+        SetGeometryToLOD(it->second, lod_);
+    }
+}
+
+void Open3DScene::AddModel(const std::string& name,
+                           const TriangleMeshModel& model) {
+    auto scene = renderer_.GetScene(scene_);
+    if (scene->AddGeometry(name, model)) {
+        GeometryData info(name, "");
+        bounds_ += scene->GetGeometryBoundingBox(name);
+        geometries_[name] = info;
+        scene->ShowGeometry(name, true);
+    }
+
+    axis_dirty_ = true;
 }
 
 void Open3DScene::UpdateMaterial(const Material& mat) {
-    if (model_name_.empty()) {
-        return;
-    }
-
     auto scene = renderer_.GetScene(scene_);
-    scene->OverrideMaterial(model_name_, mat);
-    if (model_name_ != fast_model_name_) {
-        scene->OverrideMaterial(fast_model_name_, mat);
+    for (auto& g : geometries_) {
+        scene->OverrideMaterial(g.second.name, mat);
+        if (!g.second.fast_name.empty()) {
+            scene->OverrideMaterial(g.second.fast_name, mat);
+        }
+        // Low-quality model is a bounding box right now, and we want it to
+        // be a solid color, so we do not want to override.
+        // if (!g.second.low_name.empty()) {
+        //     scene->OverrideMaterial(g.second.low_name, mat);
+        // }
     }
+}
+
+void Open3DScene::UpdateModelMaterial(const std::string& name,
+                                      const TriangleMeshModel& model) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->RemoveGeometry(name);
+    scene->AddGeometry(name, model);
+}
+
+std::vector<std::string> Open3DScene::GetGeometries() {
+    std::vector<std::string> names;
+    names.reserve(geometries_.size());
+    for (auto& it : geometries_) {
+        names.push_back(it.first);
+    }
+    return names;
 }
 
 void Open3DScene::SetLOD(LOD lod) {
     if (lod != lod_) {
         lod_ = lod;
-        if (model_name_.empty()) {
-            return;
-        }
 
-        auto scene = renderer_.GetScene(scene_);
-        scene->ShowGeometry(model_name_, false);
-        scene->ShowGeometry(fast_model_name_, false);
-        // Enable the appropriate geometry for the LOD
-        if (lod_ == LOD::HIGH_DETAIL) {
-            scene->ShowGeometry(model_name_, true);
+        for (auto& g : geometries_) {
+            SetGeometryToLOD(g.second, lod);
+        }
+    }
+}
+
+void Open3DScene::SetGeometryToLOD(const GeometryData& data, LOD lod) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->ShowGeometry(data.name, false);
+    if (!data.fast_name.empty()) {
+        scene->ShowGeometry(data.fast_name, false);
+    }
+    if (!data.low_name.empty()) {
+        scene->ShowGeometry(data.low_name, false);
+    }
+
+    if (data.visible) {
+        if (lod == LOD::HIGH_DETAIL) {
+            scene->ShowGeometry(data.name, true);
         } else {
-            scene->ShowGeometry(fast_model_name_, true);
+            std::string id;
+            if (use_low_quality_if_available_) {
+                id = data.low_name;
+            }
+            if (id.empty()) {
+                id = data.fast_name;
+            }
+            if (id.empty()) {
+                id = data.name;
+            }
+            scene->ShowGeometry(id, true);
         }
     }
 }
@@ -242,6 +383,8 @@ Camera* Open3DScene::GetCamera() const {
     auto view = scene->GetView(view_);
     return view->GetCamera();
 }
+
+Renderer& Open3DScene::GetRenderer() const { return renderer_; }
 
 }  // namespace rendering
 }  // namespace visualization

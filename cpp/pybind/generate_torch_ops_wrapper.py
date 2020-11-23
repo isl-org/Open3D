@@ -83,7 +83,7 @@ def get_tensorflow_docstring_from_file(path):
     with open(path, 'r') as f:
         tf_reg_op_file = f.read()
     # docstring must use raw string with R"doc( ... )doc"
-    m = re.search('R"doc\((.*)\)doc"',
+    m = re.search('R"doc\((.*?)\)doc"',
                   tf_reg_op_file,
                   flags=re.MULTILINE | re.DOTALL)
     return m.group(1).strip()
@@ -123,7 +123,7 @@ def main():
     parser.add_argument("--tensorflow_ops_dir",
                         type=str,
                         required=True,
-                        help="This is src/Open3D/ML/TensorFlow")
+                        help="This is cpp/open3d/ml/tensorflow")
 
     args = parser.parse_args()
     print(args)

@@ -42,9 +42,8 @@ attributes = pytest.mark.parametrize('attributes',
 
 @value_dtypes
 @attributes
-@mltest.parametrize.device
 @mltest.parametrize.ml
-def test_invert_neighbors_list(dtype, attributes, device, ml):
+def test_invert_neighbors_list(dtype, attributes, ml):
 
     # yapf: disable
 
@@ -82,9 +81,9 @@ def test_invert_neighbors_list(dtype, attributes, device, ml):
 # yapf: enable
 
     ans = mltest.run_op(ml,
-                        device,
+                        ml.device,
+                        True,
                         ml.ops.invert_neighbors_list,
-                        check_device=True,
                         num_points=num_points,
                         inp_neighbors_index=neighbors_index,
                         inp_neighbors_row_splits=neighbors_row_splits,
@@ -140,9 +139,9 @@ def test_invert_neighbors_list_shape_checking(ml):
     # test the shape checking by passing arrays with wrong rank and/or size
     with pytest.raises(Exception) as einfo:
         _ = mltest.run_op(ml,
-                          mltest.cpu_device,
+                          ml.cpu_device,
+                          False,
                           ml.ops.invert_neighbors_list,
-                          check_device=False,
                           num_points=num_points,
                           inp_neighbors_index=inp_neighbors_index[1:],
                           inp_neighbors_row_splits=inp_neighbors_row_splits,
@@ -151,9 +150,9 @@ def test_invert_neighbors_list_shape_checking(ml):
 
     with pytest.raises(Exception) as einfo:
         _ = mltest.run_op(ml,
-                          mltest.cpu_device,
+                          ml.cpu_device,
+                          False,
                           ml.ops.invert_neighbors_list,
-                          check_device=False,
                           num_points=num_points,
                           inp_neighbors_index=inp_neighbors_index[:,
                                                                   np.newaxis],
@@ -164,9 +163,9 @@ def test_invert_neighbors_list_shape_checking(ml):
     with pytest.raises(Exception) as einfo:
         _ = mltest.run_op(
             ml,
-            mltest.cpu_device,
+            ml.cpu_device,
+            False,
             ml.ops.invert_neighbors_list,
-            check_device=False,
             num_points=num_points,
             inp_neighbors_index=inp_neighbors_index,
             inp_neighbors_row_splits=inp_neighbors_row_splits[:, np.newaxis],
@@ -175,9 +174,9 @@ def test_invert_neighbors_list_shape_checking(ml):
 
     with pytest.raises(Exception) as einfo:
         _ = mltest.run_op(ml,
-                          mltest.cpu_device,
+                          ml.cpu_device,
+                          False,
                           ml.ops.invert_neighbors_list,
-                          check_device=False,
                           num_points=num_points,
                           inp_neighbors_index=inp_neighbors_index,
                           inp_neighbors_row_splits=inp_neighbors_row_splits,

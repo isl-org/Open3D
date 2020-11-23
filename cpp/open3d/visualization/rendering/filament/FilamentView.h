@@ -26,8 +26,6 @@
 
 #pragma once
 
-#include <filament/Color.h>
-
 #include <memory>
 #include <numeric>
 
@@ -75,6 +73,7 @@ public:
                      std::int32_t y,
                      std::uint32_t w,
                      std::uint32_t h) override;
+    std::array<int, 4> GetViewport() const override;
 
     void SetSSAOEnabled(bool enabled) override;
 

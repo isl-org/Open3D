@@ -79,6 +79,8 @@ struct Menu::Impl {
 
     std::vector<MenuItem> items_;
     std::unordered_map<int, size_t> id2idx_;
+    bool submenu_visible_ = false;
+    bool submenu_visibility_changed_ = false;
 
     MenuItem *FindMenuItem(ItemId item_id) {
         auto it = this->id2idx_.find(item_id);
@@ -106,14 +108,14 @@ void *Menu::GetNativePointer() { return nullptr; }
 void Menu::AddItem(const char *name,
                    ItemId itemId /*= NO_ITEM*/,
                    KeyName key /*= KEY_NONE*/) {
-    InsertItem(impl_->items_.size(), name, itemId, key);
+    InsertItem(int(impl_->items_.size()), name, itemId, key);
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
-    InsertMenu(impl_->items_.size(), name, submenu);
+    InsertMenu(int(impl_->items_.size()), name, submenu);
 }
 
-void Menu::AddSeparator() { InsertSeparator(impl_->items_.size()); }
+void Menu::AddSeparator() { InsertSeparator(int(impl_->items_.size())); }
 
 void Menu::InsertItem(int index,
                       const char *name,
@@ -188,7 +190,11 @@ void Menu::SetChecked(ItemId item_id, bool checked) {
 int Menu::CalcHeight(const Theme &theme) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
-    return std::ceil(em + 2.0f * (padding.y + EXTRA_PADDING_Y));
+    return int(std::ceil(em + 2.0f * (padding.y + EXTRA_PADDING_Y)));
+}
+
+bool Menu::CheckVisibilityChange() const {
+    return impl_->submenu_visibility_changed_;
 }
 
 Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
@@ -196,18 +202,23 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
 
     ImVec2 size;
     size.x = ImGui::GetIO().DisplaySize.x;
-    size.y = CalcHeight(context.theme);
+    size.y = float(CalcHeight(context.theme));
     auto padding = ImGui::GetStyle().FramePadding;
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
                         ImVec2(padding.x, padding.y + EXTRA_PADDING_Y));
 
+    impl_->submenu_visibility_changed_ = false;
     ImGui::BeginMainMenuBar();
     for (auto &item : impl_->items_) {
         if (item.submenu_) {
+            bool submenu_visible = item.submenu_impl_->submenu_visible_;
             auto id = item.submenu_->Draw(context, item.name_.c_str(),
                                           is_enabled);
             if (id >= 0) {
                 activate_id = id;
+            }
+            if (submenu_visible != item.submenu_impl_->submenu_visible_) {
+                impl_->submenu_visibility_changed_ = true;
             }
         }
     }
@@ -242,37 +253,39 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
     // margin without the window padding.
 
     auto *font = ImGui::GetFont();
-    int em = std::ceil(ImGui::GetTextLineHeight());
+    int em = int(std::ceil(ImGui::GetTextLineHeight()));
     int padding = context.theme.default_margin;
     int name_width = 0, shortcut_width = 0;
     for (auto &item : impl_->items_) {
-        auto size1 = font->CalcTextSizeA(context.theme.font_size, 10000, 10000,
-                                         item.name_.c_str());
+        auto size1 = font->CalcTextSizeA(float(context.theme.font_size), 10000,
+                                         10000, item.name_.c_str());
         auto shortcut = CalcShortcutText(item.shortcut_key_);
-        auto size2 = font->CalcTextSizeA(context.theme.font_size, 10000, 10000,
-                                         shortcut.c_str());
+        auto size2 = font->CalcTextSizeA(float(context.theme.font_size), 10000,
+                                         10000, shortcut.c_str());
         name_width = std::max(name_width, int(std::ceil(size1.x)));
         shortcut_width = std::max(shortcut_width, int(std::ceil(size2.x)));
     }
     int width = padding + name_width + 2 * em + shortcut_width + 2 * em +
-                std::ceil(1.5 * em) + padding;  // checkbox
+                int(std::ceil(1.5 * em)) + padding;  // checkbox
 
-    ImGui::SetNextWindowContentWidth(width);
+    ImGui::SetNextWindowContentWidth(float(width));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,
-                        ImVec2(0, context.theme.default_margin));
+                        ImVec2(0, float(context.theme.default_margin)));
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,
-                        context.theme.font_size / 3);
-    ImGui::PushStyleVar(
-            ImGuiStyleVar_ItemSpacing,
-            ImVec2(context.theme.default_margin, context.theme.default_margin));
+                        float(context.theme.font_size) / 3.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
+                        ImVec2(float(context.theme.default_margin),
+                               float(context.theme.default_margin)));
 
     if (ImGui::BeginMenu(name, is_enabled)) {
+        impl_->submenu_visible_ = true;
+
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
             auto &item = impl_->items_[i];
             if (item.is_separator_) {
                 ImGui::Separator();
             } else if (item.submenu_) {
-                ImGui::SetCursorPosX(padding);
+                ImGui::SetCursorPosX(float(padding));
                 auto possibility = item.submenu_->Draw(
                         context, item.name_.c_str(), is_enabled);
                 if (possibility != NO_ITEM) {
@@ -289,13 +302,15 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
                 // proper margins on top.
                 // Note: can't set width (width - 2 * padding) because
                 //       SetNextItemWidth is ignored.
-                ImGui::SetCursorPos(ImVec2(padding, y));
+                ImGui::SetCursorPos(ImVec2(float(padding), y));
                 auto shortcut_text = CalcShortcutText(item.shortcut_key_);
                 ImGui::MenuItem(item.name_.c_str(), shortcut_text.c_str(),
                                 item.is_checked_, item.is_enabled_);
             }
         }
         ImGui::EndMenu();
+    } else {
+        impl_->submenu_visible_ = false;
     }
 
     ImGui::PopStyleVar(3);

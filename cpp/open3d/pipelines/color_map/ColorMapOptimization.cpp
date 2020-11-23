@@ -64,9 +64,7 @@ static void OptimizeImageCoorNonrigid(
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         double residual_reg = 0.0;
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int c = 0; c < n_camera; c++) {
             int nonrigidval = warping_fields[c].anchor_w_ *
                               warping_fields[c].anchor_h_ * 2;
@@ -126,9 +124,7 @@ static void OptimizeImageCoorNonrigid(
             }
             camera.parameters_[c].extrinsic_ = pose;
 
-#ifdef _OPENMP
 #pragma omp critical
-#endif
             {
                 residual += r2;
                 residual_reg += rr_reg;
@@ -161,9 +157,7 @@ static void OptimizeImageCoorRigid(
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         total_num_ = 0;
-#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
-#endif
         for (int c = 0; c < n_camera; c++) {
             Eigen::Matrix4d pose;
             pose = camera.parameters_[c].extrinsic_;
@@ -175,9 +169,10 @@ static void OptimizeImageCoorRigid(
             intr.block<3, 3>(0, 0) = intrinsic;
             intr(3, 3) = 1.0;
 
-            auto f_lambda = [&](int i, Eigen::Vector6d& J_r, double& r) {
+            auto f_lambda = [&](int i, Eigen::Vector6d& J_r, double& r,
+                                double& w) {
                 jac.ComputeJacobianAndResidualRigid(
-                        i, J_r, r, mesh, proxy_intensity, images_gray[c],
+                        i, J_r, r, w, mesh, proxy_intensity, images_gray[c],
                         images_dx[c], images_dy[c], intr, extrinsic,
                         visibility_image_to_vertex[c],
                         option.image_boundary_margin_);
@@ -197,9 +192,7 @@ static void OptimizeImageCoorRigid(
                                                                          JTr);
             pose = delta * pose;
             camera.parameters_[c].extrinsic_ = pose;
-#ifdef _OPENMP
 #pragma omp critical
-#endif
             {
                 residual += r2;
                 total_num_ += int(visibility_image_to_vertex[c].size());

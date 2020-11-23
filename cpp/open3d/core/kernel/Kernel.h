@@ -36,7 +36,7 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-void TestMKLIntegration();
+void TestLinalgIntegration();
 
 }  // namespace kernel
 }  // namespace core

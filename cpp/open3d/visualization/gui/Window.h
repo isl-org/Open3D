@@ -52,6 +52,7 @@ class Window {
     friend class Renderer;
 
 public:
+    static const int FLAG_HIDDEN;
     static const int FLAG_TOPMOST;
 
     /// Creates a Window that is auto-sized and centered. Window creation is
@@ -136,6 +137,8 @@ public:
     void SetOnMenuItemActivated(Menu::ItemId item_id,
                                 std::function<void()> callback);
 
+    void SetOnTickEvent(std::function<bool()> callback);
+
     /// Shows the dialog. If a dialog is currently being shown it will be
     /// closed.
     void ShowDialog(std::shared_ptr<Dialog> dlg);
@@ -143,6 +146,10 @@ public:
     void CloseDialog();
 
     void ShowMessageBox(const char* title, const char* message);
+
+    /// This is for internal use in rare circumstances when the destructor
+    /// will not be called in a timely fashion.
+    void DestroyWindow();
 
 protected:
     /// Returns the preferred size of the window. The window is not
@@ -169,6 +176,7 @@ private:
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw();
     Widget::DrawResult DrawOnce(bool is_layout_pass);
+    void ForceRedrawSceneWidget();
     void OnResize();
     void OnMouseEvent(const MouseEvent& e);
     void OnKeyEvent(const KeyEvent& e);

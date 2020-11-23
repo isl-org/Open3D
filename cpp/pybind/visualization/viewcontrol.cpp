@@ -32,6 +32,7 @@
 #include "pybind/visualization/visualization_trampoline.h"
 
 namespace open3d {
+namespace visualization {
 
 // Functions have similar arguments, thus the arg docstrings may be shared
 static const std::unordered_map<std::string, std::string>
@@ -48,72 +49,62 @@ static const std::unordered_map<std::string, std::string>
 };
 
 void pybind_viewcontrol(py::module &m) {
-    py::class_<visualization::ViewControl, PyViewControl<>,
-               std::shared_ptr<visualization::ViewControl>>
+    py::class_<ViewControl, PyViewControl<>, std::shared_ptr<ViewControl>>
             viewcontrol(m, "ViewControl", "View controller for visualizer.");
-    py::detail::bind_default_constructor<visualization::ViewControl>(
-            viewcontrol);
+    py::detail::bind_default_constructor<ViewControl>(viewcontrol);
     viewcontrol
             .def("__repr__",
-                 [](const visualization::ViewControl &vc) {
+                 [](const ViewControl &vc) {
                      return std::string("ViewControl");
                  })
             .def(
                     "convert_to_pinhole_camera_parameters",
-                    [](visualization::ViewControl &vc) {
+                    [](ViewControl &vc) {
                         camera::PinholeCameraParameters parameter;
                         vc.ConvertToPinholeCameraParameters(parameter);
                         return parameter;
                     },
-                    "Function to convert visualization::ViewControl to "
+                    "Function to convert ViewControl to "
                     "camera::PinholeCameraParameters")
             .def("convert_from_pinhole_camera_parameters",
-                 &visualization::ViewControl::
-                         ConvertFromPinholeCameraParameters,
-                 "parameter"_a)
-            .def("scale", &visualization::ViewControl::Scale,
-                 "Function to process scaling", "scale"_a)
-            .def("rotate", &visualization::ViewControl::Rotate,
-                 "Function to process rotation", "x"_a, "y"_a, "xo"_a = 0.0,
-                 "yo"_a = 0.0)
-            .def("translate", &visualization::ViewControl::Translate,
+                 &ViewControl::ConvertFromPinholeCameraParameters,
+                 "parameter"_a, "allow_arbitrary"_a = false)
+            .def("scale", &ViewControl::Scale, "Function to process scaling",
+                 "scale"_a)
+            .def("rotate", &ViewControl::Rotate, "Function to process rotation",
+                 "x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0)
+            .def("translate", &ViewControl::Translate,
                  "Function to process translation", "x"_a, "y"_a, "xo"_a = 0.0,
                  "yo"_a = 0.0)
-            .def("get_field_of_view",
-                 &visualization::ViewControl::GetFieldOfView,
+            .def("get_field_of_view", &ViewControl::GetFieldOfView,
                  "Function to get field of view")
-            .def("change_field_of_view",
-                 &visualization::ViewControl::ChangeFieldOfView,
+            .def("change_field_of_view", &ViewControl::ChangeFieldOfView,
                  "Function to change field of view", "step"_a = 0.45)
-            .def("set_constant_z_near",
-                 &visualization::ViewControl::SetConstantZNear,
+            .def("set_constant_z_near", &ViewControl::SetConstantZNear,
                  "Function to change the near z-plane of the visualizer to a "
                  "constant value, i.e., independent of zoom and bounding box "
                  "size.",
                  "z_near"_a)
-            .def("set_constant_z_far",
-                 &visualization::ViewControl::SetConstantZFar,
+            .def("set_constant_z_far", &ViewControl::SetConstantZFar,
                  "Function to change the far z-plane of the visualizer to a "
                  "constant value, i.e., independent of zoom and bounding box "
                  "size.",
                  "z_far"_a)
-            .def("unset_constant_z_near",
-                 &visualization::ViewControl::UnsetConstantZNear,
+            .def("unset_constant_z_near", &ViewControl::UnsetConstantZNear,
                  "Function to remove a previously set constant z near value, "
                  "i.e., near z-plane of the visualizer is dynamically set "
                  "dependent on zoom and bounding box size.")
-            .def("unset_constant_z_far",
-                 &visualization::ViewControl::UnsetConstantZFar,
+            .def("unset_constant_z_far", &ViewControl::UnsetConstantZFar,
                  "Function to remove a previously set constant z far value, "
                  "i.e., far z-plane of the visualizer is dynamically set "
                  "dependent on zoom and bounding box size.")
-            .def("set_lookat", &visualization::ViewControl::SetLookat,
+            .def("set_lookat", &ViewControl::SetLookat,
                  "Set the lookat vector of the visualizer", "lookat"_a)
-            .def("set_up", &visualization::ViewControl::SetUp,
+            .def("set_up", &ViewControl::SetUp,
                  "Set the up vector of the visualizer", "up"_a)
-            .def("set_front", &visualization::ViewControl::SetFront,
+            .def("set_front", &ViewControl::SetFront,
                  "Set the front vector of the visualizer", "front"_a)
-            .def("set_zoom", &visualization::ViewControl::SetZoom,
+            .def("set_zoom", &ViewControl::SetZoom,
                  "Set the zoom of the visualizer", "zoom"_a);
     docstring::ClassMethodDocInject(m, "ViewControl", "change_field_of_view",
                                     map_view_control_docstrings);
@@ -143,4 +134,5 @@ void pybind_viewcontrol(py::module &m) {
 
 void pybind_viewcontrol_method(py::module &m) {}
 
+}  // namespace visualization
 }  // namespace open3d

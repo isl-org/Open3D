@@ -71,8 +71,10 @@ public:
     virtual void DestroyScene(const SceneHandle& id) = 0;
 
     virtual void SetClearColor(const Eigen::Vector4f& color) = 0;
+    virtual void SetPreserveBuffer(bool preserve) = 0;
     virtual void UpdateSwapChain() = 0;
 
+    virtual void EnableCaching(bool enable) = 0;
     virtual void BeginFrame() = 0;
     virtual void Draw() = 0;
     virtual void EndFrame() = 0;
@@ -80,8 +82,6 @@ public:
     virtual MaterialHandle AddMaterial(const ResourceLoadRequest& request) = 0;
     virtual MaterialInstanceHandle AddMaterialInstance(
             const MaterialHandle& material) = 0;
-    virtual MaterialInstanceHandle AddMaterialInstance(
-            const geometry::TriangleMesh::Material& material) = 0;
     virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
     virtual MaterialModifier& ModifyMaterial(
             const MaterialInstanceHandle& id) = 0;
@@ -104,8 +104,6 @@ public:
     virtual std::shared_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
 
     void RenderToImage(
-            std::size_t width,
-            std::size_t height,
             View* view,
             Scene* scene,
             std::function<void(std::shared_ptr<geometry::Image>)> cb);

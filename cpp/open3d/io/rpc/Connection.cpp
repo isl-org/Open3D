@@ -58,11 +58,11 @@ Connection::Connection(const std::string& address,
       address_(address),
       connect_timeout_(connect_timeout),
       timeout_(timeout) {
-    socket_->setsockopt(ZMQ_LINGER, timeout);
-    socket_->setsockopt(ZMQ_CONNECT_TIMEOUT, connect_timeout);
-    socket_->setsockopt(ZMQ_RCVTIMEO, timeout);
-    socket_->setsockopt(ZMQ_SNDTIMEO, timeout);
-    socket_->connect(address.c_str());
+    socket_->setsockopt(ZMQ_LINGER, timeout_);
+    socket_->setsockopt(ZMQ_CONNECT_TIMEOUT, connect_timeout_);
+    socket_->setsockopt(ZMQ_RCVTIMEO, timeout_);
+    socket_->setsockopt(ZMQ_SNDTIMEO, timeout_);
+    socket_->connect(address_.c_str());
 }
 
 Connection::~Connection() { socket_->close(); }
