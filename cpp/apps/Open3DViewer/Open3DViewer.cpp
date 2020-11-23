@@ -55,10 +55,12 @@ int Run(int argc, const char *argv[]) {
 
     auto vis = std::make_shared<GuiVisualizer>("Open3D", WIDTH, HEIGHT);
 #ifdef BUILD_RPC_INTERFACE
-    std::string address = utility::GetProgramOptionAsString(
-            argc, (char **)argv, "--bind",
-            io::rpc::Connection::DefaultAddress());
-    vis->StartRPCInterface(address, 1000);
+    if (utility::ProgramOptionExists(argc, (char **)argv, "--bind")) {
+        std::string address = utility::GetProgramOptionAsString(
+                argc, (char **)argv, "--bind",
+                io::rpc::Connection::DefaultAddress());
+        vis->StartRPCInterface(address, 1000);
+    }
 #endif
     bool is_path_valid = (path && path[0] != '\0');
     if (is_path_valid) {
