@@ -65,7 +65,7 @@ public:
     ReceiverBase(const ReceiverBase&) = delete;
     ReceiverBase& operator=(const ReceiverBase&) = delete;
 
-    ~ReceiverBase();
+    virtual ~ReceiverBase();
 
     /// Starts the receiver mainloop in a new thread.
     void Start();
