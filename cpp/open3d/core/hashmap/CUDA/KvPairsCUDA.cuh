@@ -49,9 +49,9 @@ public:
     addr_t *heap_;      /* [N] */
     int *heap_counter_; /* [1] */
 
-    int dsize_key_;
-    int dsize_value_;
-    int capacity_;
+    int64_t dsize_key_;
+    int64_t dsize_value_;
+    int64_t capacity_;
 
 public:
     // The value_ array's size is FIXED.
