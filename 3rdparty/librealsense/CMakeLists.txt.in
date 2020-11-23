@@ -13,15 +13,19 @@ set(LIBREALSENSE_CMAKE_ARGS
     -DBUILD_UNIT_TESTS=OFF
     -DBUILD_GLSL_EXTENSIONS=OFF
     -DBUILD_GRAPHICAL_EXAMPLES=OFF
-    -DBUILD_PYTHON_BINDINGS=@BUILD_PYTHON_MODULE@
+    -DBUILD_PYTHON_BINDINGS=OFF
     -DBUILD_WITH_CUDA=@BUILD_CUDA_MODULE@
     )
+# Build and link to external (static) libusb in macOS and Windows.
+# On Linux, libusb-1.0 is installed by default
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND LIBREALSENSE_CMAKE_ARGS
+        -DUSE_EXTERNAL_USB=ON
         -DBUILD_WITH_OPENMP=OFF
         -DHWM_OVER_XU=OFF)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(APPEND LIBREALSENSE_CMAKE_ARGS
+        -DUSE_EXTERNAL_USB=ON
         -DBUILD_WITH_STATIC_CRT=@STATIC_WINDOWS_RUNTIME@)
 endif ()
 
@@ -31,8 +35,6 @@ ExternalProject_Add(
     PREFIX @CMAKE_BINARY_DIR@/3rdparty/librealsense
     URL "https://github.com/IntelRealSense/librealsense/archive/v${LIBREALSENSE_VERSION}.zip"
     URL_HASH SHA256=64ca0c9eed0dce23bfe2502c7c8d02f71d0534e3cbe4e2c888380ccfb06d7970
-    PATCH_COMMAND "${CMAKE_COMMAND}" -E copy @CMAKE_CURRENT_LIST_DIR@/librealsense/libusb_config.cmake
-    @CMAKE_BINARY_DIR@/3rdparty/librealsense/src/ext_librealsense/CMake/
     CMAKE_ARGS ${LIBREALSENSE_CMAKE_ARGS}
     TEST_COMMAND ""
 )

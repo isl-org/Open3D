@@ -49,7 +49,7 @@ bool RSBagReader::Open(const std::string &filename) {
         cfg.enable_device_from_file(filename, false);  // Do not loop playback
         pipe_.start(cfg);  // File will be opened in read mode at this point
         utility::LogInfo("File {} opened", filename);
-    } catch (const rs2::error &e) {
+    } catch (const rs2::error &) {
         utility::LogWarning("Unable to open file {}", filename);
         return false;
     }
