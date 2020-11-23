@@ -223,11 +223,11 @@ struct Array {
     /// appends an error description to errstr.
     bool CheckType(const std::vector<std::string>& expected_types,
                    std::string& errstr) const {
-        for (auto t : expected_types) {
+        for (const auto& t : expected_types) {
             if (t == type) return true;
         }
         errstr += " expected array type to be one of (";
-        for (const auto t : expected_types) {
+        for (const auto& t : expected_types) {
             errstr += t + ", ";
         }
         errstr += ") but got " + type;
