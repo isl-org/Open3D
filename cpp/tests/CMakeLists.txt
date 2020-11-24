@@ -9,6 +9,17 @@ include_directories(".")
 
 file(GLOB_RECURSE UNIT_TEST_SOURCE_FILES "*.cpp")
 
+# TODO: consider explicitly listing the files
+if (NOT BUILD_AZURE_KINECT)
+    set (EXCLUDE_DIR "io/sensor")
+    foreach (TMP_PATH ${UNIT_TEST_SOURCE_FILES})
+        string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
+        if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
+            list (REMOVE_ITEM UNIT_TEST_SOURCE_FILES ${TMP_PATH})
+        endif ()
+    endforeach(TMP_PATH)
+endif()
+
 # TODO: handle conditional compilation more systematically
 if (NOT BUILD_GUI)
     list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/visualization/rendering/.*cpp)
