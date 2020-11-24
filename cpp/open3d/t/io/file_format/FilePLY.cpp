@@ -259,7 +259,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     pointcloud.Clear();
 
-    // Add base attribtes.
+    // Add base attributes.
     if (state.name_to_attr_state_.count("x") != 0 &&
         state.name_to_attr_state_.count("y") != 0 &&
         state.name_to_attr_state_.count("z") != 0) {
@@ -348,7 +348,7 @@ bool WritePointCloudToPLY(const std::string &filename,
     geometry::TensorListMap tl_map = pointcloud.GetPointAttr();
     long num_points = static_cast<long>(pointcloud.GetPoints().GetSize());
 
-    // Make sure all the attribtes have same size.
+    // Make sure all the attributes have same size.
     if (!tl_map.IsSizeSynchronized()) {
         for (auto const &it : tl_map) {
             if (it.second.GetSize() != num_points) {
