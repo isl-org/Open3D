@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import open3d.visualization.gui as gui
-import os
+import os.path
+import platform
 
 basedir = os.path.dirname(os.path.realpath(__file__))
 
@@ -20,11 +21,11 @@ mode = MODE_SERIF_AND_COMMON_HANYU
 #mode = MODE_ALL_HANYU
 #mode = MODE_CUSTOM_CHARS
 
-if os.system == "Darwin":
+if platform.system() == "Darwin":
     serif = "Times New Roman"
     hanzi = "STHeiti Light"
     chess = "Apple Symbols"
-elif os.system == "Windows":
+elif platform.system() == "Windows":
     serif = "Times New Roman"
     hanzi = "STHeiti Light"
     chess = "Apple Symbols"
