@@ -288,8 +288,9 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
     return true;
 }
 
-std::vector<std::string> FindFilesRecursively(const std::string &directory,
-                                              std::function<bool(const std::string&)> is_match) {
+std::vector<std::string> FindFilesRecursively(
+        const std::string &directory,
+        std::function<bool(const std::string &)> is_match) {
     std::vector<std::string> matches;
 
     std::vector<std::string> subdirs;

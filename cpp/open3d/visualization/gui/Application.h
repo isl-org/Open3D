@@ -90,7 +90,7 @@ public:
     /// will be searched. The font is assumed to contain the code points;
     /// if it does not no error will be produced.
     void SetFontForCodePoints(const char *font,
-                              const std::vector<uint32_t>& code_points);
+                              const std::vector<uint32_t> &code_points);
 
     /// Does not return until the UI is completely finished.
     void Run();
@@ -185,7 +185,7 @@ public:
         std::string lang;
         std::vector<uint32_t> code_points;
     };
-    const std::vector<UserFontInfo>& GetUserFontInfo() const;
+    const std::vector<UserFontInfo> &GetUserFontInfo() const;
 
 private:
     Application();

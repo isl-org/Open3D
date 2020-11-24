@@ -34,6 +34,7 @@ else:
     hanzi = "NotoSansCJK"
     chess = "DejaVuSans"
 
+
 def main():
     gui.Application.instance.initialize()
 
@@ -59,14 +60,14 @@ def main():
     # MODE_ALL_HANYU uses the default English font but includes all the Chinese
     # characters (which uses a substantial amount of memory)
     elif mode == MODE_ALL_HANYU:
-        gui.Application.instance.set_font_for_language(hanzi, "zh_all");
+        gui.Application.instance.set_font_for_language(hanzi, "zh_all")
     elif mode == MODE_CUSTOM_CHARS:
         range = [0x2654, 0x2655, 0x2656, 0x2657, 0x2658, 0x2659]
         gui.Application.instance.set_font_for_code_points(chess, range)
 
-
     w = ExampleWindow()
     gui.Application.instance.run()
+
 
 class ExampleWindow:
     MENU_CHECKABLE = 1
@@ -442,8 +443,6 @@ class MessageBox:
 
     def _on_ok(self):
         self._window.close_dialog()
-
-
 
 
 if __name__ == "__main__":

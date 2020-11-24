@@ -327,20 +327,22 @@ Window::Window(const std::string& title,
     if (!theme.font_path.empty()) {
         ImGuiIO& io = ImGui::GetIO();
         int en_fonts = 0;
-        for (auto &custom : Application::GetInstance().GetUserFontInfo()) {
+        for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
             if (custom.lang == "en") {
-                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(custom.path.c_str(), float(theme.font_size), NULL, io.Fonts->GetGlyphRangesDefault());
+                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
+                        custom.path.c_str(), float(theme.font_size), NULL,
+                        io.Fonts->GetGlyphRangesDefault());
                 en_fonts += 1;
             }
         }
         if (en_fonts == 0) {
             impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                        theme.font_path.c_str(), float(theme.font_size));
+                    theme.font_path.c_str(), float(theme.font_size));
         }
-        
+
         ImFontConfig config;
         config.MergeMode = true;
-        for (auto &custom : Application::GetInstance().GetUserFontInfo()) {
+        for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
             if (!custom.lang.empty()) {
                 const ImWchar* range;
                 if (custom.lang == "en") {
@@ -357,10 +359,13 @@ Window::Window(const std::string& title,
                     range = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
                 } else if (custom.lang == "zh_all") {
                     range = io.Fonts->GetGlyphRangesChineseFull();
-                } else {  // so many languages use Cyrillic it can be the default
+                } else {  // so many languages use Cyrillic it can be the
+                          // default
                     range = io.Fonts->GetGlyphRangesCyrillic();
                 }
-                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(custom.path.c_str(), float(theme.font_size), &config, range);
+                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
+                        custom.path.c_str(), float(theme.font_size), &config,
+                        range);
             } else if (!custom.code_points.empty()) {
                 ImVector<ImWchar> range;
                 ImFontGlyphRangesBuilder builder;
@@ -368,8 +373,10 @@ Window::Window(const std::string& title,
                     builder.AddChar(c);
                 }
                 builder.BuildRanges(&range);
-                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(custom.path.c_str(), float(theme.font_size), &config, range.Data);
-           }
+                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
+                        custom.path.c_str(), float(theme.font_size), &config,
+                        range.Data);
+            }
         }
 
         /*static*/ unsigned char* pixels;
@@ -380,10 +387,11 @@ Window::Window(const std::string& title,
         // not contain any of the code points?), which cause Filament to
         // panic. Handle this gracefully.
         if (textureW == 0 || textureH == 0) {
-            utility::LogWarning("Got zero-byte font texture; ignoring custom fonts");
+            utility::LogWarning(
+                    "Got zero-byte font texture; ignoring custom fonts");
             io.Fonts->Clear();
             impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                        theme.font_path.c_str(), float(theme.font_size));
+                    theme.font_path.c_str(), float(theme.font_size));
             io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
                                          &bytesPerPx);
         }
