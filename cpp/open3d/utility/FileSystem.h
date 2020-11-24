@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -71,6 +72,9 @@ bool ListFilesInDirectory(const std::string &directory,
 bool ListFilesInDirectoryWithExtension(const std::string &directory,
                                        const std::string &extname,
                                        std::vector<std::string> &filenames);
+
+std::vector<std::string> FindFilesRecursively(const std::string &directory,
+                                              std::function<bool(const std::string&)> is_match);
 
 // wrapper for fopen that enables unicode paths on Windows
 FILE *FOpen(const std::string &filename, const std::string &mode);

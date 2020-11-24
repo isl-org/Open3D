@@ -107,8 +107,10 @@ std::string FindResourcePath(int argc, const char *argv[]) {
     return resource_path;
 }
 
-std::string FindFontPath(const char *font) {
-    if (open3d::utility::filesystem::FileExists(font)) {
+std::string FindFontPath(const std::string& font) {
+    using namespace open3d::utility::filesystem;
+
+    if (FileExists(font)) {
         return font;
     }
 
@@ -125,23 +127,69 @@ std::string FindFontPath(const char *font) {
 #elif _WIN32
         "c:/Windows/Fonts"
 #else
-        "/usr/share/fonts/truetype",
         "/usr/share/fonts",
-        home + "/.fonts"
-        home + "/.fonts/truetype"
+        home + "/.fonts",
 #endif  // __APPLE__
     };
 
+#ifdef __APPLE__
     std::vector<std::string> font_ext = { ".ttf", ".ttc", ".otf" };
     for (auto &font_path : system_font_paths) {
         for (auto &ext : font_ext) {
             std::string candidate = font_path + "/" + font + ext;
-            if (open3d::utility::filesystem::FileExists(candidate)) {
+            if (FileExists(candidate)) {
                 return candidate;
             }
         }
     }
     return "";
+#else
+    std::string font_ttf = font + ".ttf";
+    std::string font_ttc = font + ".ttc";
+    std::string font_otf = font + ".otf";
+    auto is_match = [font, &font_ttf, &font_ttc, &font_otf](const std::string& path) {
+        auto filename = GetFileNameWithoutDirectory(path);
+        auto ext = GetFileExtensionInLowerCase(filename);
+        if (ext != "ttf" && ext != "ttc" && ext != "otf") {
+            return false;
+        }
+        if (filename == font_ttf || filename == font_ttc || filename == font_otf) {
+            return true;
+        }
+        if (filename.find(font) == 0) {
+            return true;
+        }
+        return false;
+    };
+
+    for (auto &font_dir : system_font_paths) {
+        auto matches = FindFilesRecursively(font_dir, is_match);
+        for (auto &m : matches) {
+            if (GetFileNameWithoutExtension(GetFileNameWithoutDirectory(m)) == font) {
+                return m;
+            }
+        }
+        std::vector<std::string> suffixes = {
+            "-Regular.ttf", "-Regular.ttc", "-Regular.otf",
+            "-Normal.ttf", "-Normal.ttc", "-Normal.otf",
+            "-Medium.ttf", "-Medium.ttc", "-Medium.otf",
+            "-Narrow.ttf", "-Narrow.ttc", "-Narrow.otf",
+            "Regular.ttf", "-Regular.ttc", "-Regular.otf",
+            "Normal.ttf", "Normal.ttc", "Normal.otf",
+            "Medium.ttf", "Medium.ttc", "Medium.otf",
+            "Narrow.ttf", "Narrow.ttc", "Narrow.otf" };
+        for (auto &m : matches) {
+            auto dir = GetFileParentDirectory(m);  // has trailing slash
+            for (auto &suf : suffixes) {
+                std::string candidate = dir + font + suf;
+                if (m == candidate) {
+                    return candidate;
+                }
+            }
+        }
+    }
+    return "";
+#endif  // __APPLE__
 }
 
 }  // namespace
@@ -332,6 +380,7 @@ void Application::SetFontForLanguage(const char *font, const char *lang_code) {
     auto font_path = FindFontPath(font);
     if (font_path.empty()) {
         utility::LogWarning("Could not find font '{}'", font);
+        return;
     }
     impl_->fonts_.push_back({font_path, lang_code, {}});
 }
@@ -341,6 +390,7 @@ void Application::SetFontForCodePoints(const char *font,
     auto font_path = FindFontPath(font);
     if (font_path.empty()) {
         utility::LogWarning("Could not find font '{}'", font);
+        return;
     }
     impl_->fonts_.push_back({font_path, "", code_points});
 }

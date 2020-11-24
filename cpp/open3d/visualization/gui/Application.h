@@ -87,7 +87,8 @@ public:
     /// Sets the font for the specified code points. The font can be a path to
     /// a TrueType (.ttf), TrueType Collection (.ttc), or OpenType (.otf) file,
     /// or it can be the name of the font, in which case the system font paths
-    /// will be searched.
+    /// will be searched. The font is assumed to contain the code points;
+    /// if it does not no error will be produced.
     void SetFontForCodePoints(const char *font,
                               const std::vector<uint32_t>& code_points);
 

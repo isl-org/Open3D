@@ -288,6 +288,28 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
     return true;
 }
 
+std::vector<std::string> FindFilesRecursively(const std::string &directory,
+                                              std::function<bool(const std::string&)> is_match) {
+    std::vector<std::string> matches;
+
+    std::vector<std::string> subdirs;
+    std::vector<std::string> files;
+    ListDirectory(directory, subdirs, files);  // results are paths
+    for (auto &f : files) {
+        if (is_match(f)) {
+            matches.push_back(f);
+        }
+    }
+    for (auto &d : subdirs) {
+        auto submatches = FindFilesRecursively(d, is_match);
+        if (!submatches.empty()) {
+            matches.insert(matches.end(), submatches.begin(), submatches.end());
+        }
+    }
+
+    return matches;
+}
+
 FILE *FOpen(const std::string &filename, const std::string &mode) {
     FILE *fp;
 #ifndef _WIN32

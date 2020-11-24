@@ -344,7 +344,7 @@ Window::Window(const std::string& title,
             if (!custom.lang.empty()) {
                 const ImWchar* range;
                 if (custom.lang == "en") {
-                    ;  // added above, but we don't want to add cyrillic too
+                    continue;  // added above, don't want to add cyrillic too
                 } else if (custom.lang == "ja") {
                     range = io.Fonts->GetGlyphRangesJapanese();
                 } else if (custom.lang == "ko") {
@@ -369,13 +369,24 @@ Window::Window(const std::string& title,
                 }
                 builder.BuildRanges(&range);
                 impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(custom.path.c_str(), float(theme.font_size), &config, range.Data);
-            }
+           }
         }
 
         /*static*/ unsigned char* pixels;
         int textureW, textureH, bytesPerPx;
         io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
                                      &bytesPerPx);
+        // Some fonts seem to result in 0x0 textures (maybe if the font does
+        // not contain any of the code points?), which cause Filament to
+        // panic. Handle this gracefully.
+        if (textureW == 0 || textureH == 0) {
+            utility::LogWarning("Got zero-byte font texture; ignoring custom fonts");
+            io.Fonts->Clear();
+            impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
+                        theme.font_path.c_str(), float(theme.font_size));
+            io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
+                                         &bytesPerPx);
+        }
         impl_->imgui_.imgui_bridge->CreateAtlasTextureAlpha8(
                 pixels, textureW, textureH, bytesPerPx);
         ImGui::SetCurrentFont(impl_->imgui_.system_font);

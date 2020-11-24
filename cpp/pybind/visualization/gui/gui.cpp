@@ -226,7 +226,9 @@ void pybind_gui_classes(py::module &m) {
                     "set_font_for_code_points(font, [unicode_code_points])."
                     "The font can the path to a TrueType or OpenType font or "
                     "it can be the name of the font, in which case the font "
-                    "will be located from the system directories.")
+                    "will be located from the system directories. No error "
+                    "will be produced if the font does not contain glyphs "
+                    "for the specified components.")
             .def(
                     "create_window",
                     [](Application &instance, const std::string &title,

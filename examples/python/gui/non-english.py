@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import open3d.visualization.gui as gui
-import os.path
+import os
 
 basedir = os.path.dirname(os.path.realpath(__file__))
 
@@ -14,8 +14,25 @@ MODE_COMMON_HANYU_EN = "hanyu_en+common"
 MODE_ALL_HANYU = "all"
 MODE_CUSTOM_CHARS = "custom"
 
+#mode = MODE_SERIF
+#mode = MODE_COMMON_HANYU
+#mode = MODE_SERIF_AND_COMMON_HANYU
 mode = MODE_ALL_HANYU
+#mode = MODE_CUSTOM_CHARS
 
+if os.system == "Darwin":
+    serif = "Times New Roman"
+    hanzi = "STHeiti Light"
+    chess = "Apple Symbols"
+elif os.system == "Windows":
+    serif = "Times New Roman"
+    hanzi = "STHeiti Light"
+    chess = "Apple Symbols"
+else:
+    # Assumes Ubuntu 18.04
+    serif = "DejaVuSerif"
+    hanzi = "NotoSansCJK"
+    chess = "DejaVuSans"
 
 def main():
     gui.Application.instance.initialize()
@@ -25,29 +42,27 @@ def main():
 
     # MODE_SERIF changes the English font; Chinese will not be displayed
     if mode == MODE_SERIF:
-        gui.Application.instance.set_font_for_language("Times New Roman", "en")
+        gui.Application.instance.set_font_for_language(serif, "en")
     # MODE_COMMON_HANYU uses the default English font and adds common Chinese
     elif mode == MODE_COMMON_HANYU:
-        gui.Application.instance.set_font_for_language("STHeiti Light", "zh")
+        gui.Application.instance.set_font_for_language(hanzi, "zh")
     # MODE_SERIF_AND_COMMON_HANYU uses a serif English font and adds common
     # Chinese characters
     elif mode == MODE_SERIF_AND_COMMON_HANYU:
-        gui.Application.instance.set_font_for_language("Times New Roman", "en")
-        gui.Application.instance.set_font_for_language("STHeiti Light", "zh")
+        gui.Application.instance.set_font_for_language(serif, "en")
+        gui.Application.instance.set_font_for_language(hanzi, "zh")
     # MODE_COMMON_HANYU_EN the Chinese font for both English and the common
     # characters
     elif mode == MODE_COMMON_HANYU_EN:
-        gui.Application.instance.set_font_for_language("STHeiti Light", "en")
-        gui.Application.instance.set_font_for_language("STHeiti Light", "zh")
+        gui.Application.instance.set_font_for_language(hanzi, "en")
+        gui.Application.instance.set_font_for_language(hanzi, "zh")
     # MODE_ALL_HANYU uses the default English font but includes all the Chinese
     # characters (which uses a substantial amount of memory)
     elif mode == MODE_ALL_HANYU:
-        gui.Application.instance.set_font_for_language("STHeiti Light",
-                                                       "zh_all");
+        gui.Application.instance.set_font_for_language(hanzi, "zh_all");
     elif mode == MODE_CUSTOM_CHARS:
         range = [0x2654, 0x2655, 0x2656, 0x2657, 0x2658, 0x2659]
-        gui.Application.instance.set_font_for_code_points("Apple Symbols",
-                                                          range)
+        gui.Application.instance.set_font_for_code_points(chess, range)
 
 
     w = ExampleWindow()
