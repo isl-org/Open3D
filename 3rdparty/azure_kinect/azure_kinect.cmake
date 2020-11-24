@@ -38,16 +38,10 @@ else()
         ext_k4a
         PREFIX k4a
         URL https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4-dev/libk4a1.4-dev_1.4.1_amd64.deb
-        UPDATE_COMMAND ""
+        UPDATE_COMMAND ${CMAKE_COMMAND} -E tar xvf data.tar.gz
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
-    )
-    ExternalProject_Add_Step(ext_k4a extract
-        COMMAND ${CMAKE_COMMAND} -E tar xvf data.tar.gz # remove v
-        WORKING_DIRECTORY <SOURCE_DIR>
-        DEPENDEES download
-        DEPENDERS update
     )
     ExternalProject_Get_Property(ext_k4a SOURCE_DIR)
     set(K4A_INCLUDE_DIR ${SOURCE_DIR}/usr/include/) # "/" is critical
