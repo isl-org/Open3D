@@ -29,6 +29,10 @@ if (NOT BUILD_RPC_INTERFACE)
     list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/io/rpc/RemoteFunctions.cpp)
 endif()
 
+if (NOT WITH_FAISS)
+    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/KnnFaiss.cpp)
+endif()
+
 add_executable(tests ${UNIT_TEST_SOURCE_FILES})
 add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
 
