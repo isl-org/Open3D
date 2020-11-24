@@ -19,11 +19,9 @@ endif()
 # Conditionally include header files in Open3D.h, when azure kinect is enabled.
 set(BUILD_AZURE_KINECT_COMMENT "")
 
-# Export the following variables:
-# - K4A_INCLUDE_DIR
+# This works even when the user does not have k4a libraries installed
+# in `Program Files`. We only need the headers.
 if (WIN32)
-    # This works even when the user does not have k4a libraries installed
-    # in `Program Files`. We only need the headers.
     ExternalProject_Add(
         ext_k4a
         PREFIX k4a
@@ -36,18 +34,21 @@ if (WIN32)
     ExternalProject_Get_Property(ext_k4a SOURCE_DIR)
     set(K4A_INCLUDE_DIR ${SOURCE_DIR}/build/native/include/) # "/" is critical
 else()
-    # Try to find system-wide installed K4a.
-    # The property names are tested with k4a 1.4.1, future versions might work.
-    find_package(k4a QUIET)
-    find_package(k4arecord QUIET)
-    if (k4a_FOUND)
-        get_target_property(K4A_INCLUDE_DIR k4a::k4a INTERFACE_INCLUDE_DIRECTORIES)
-    endif()
-
-    if (k4a_FOUND)
-        message(STATUS "K4A_INCLUDE_DIR: ${K4A_INCLUDE_DIR}")
-    else()
-        message(FATAL_ERROR "Kinect SDK NOT found. Please install according \
-                to https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md")
-    endif()
+    ExternalProject_Add(
+        ext_k4a
+        PREFIX k4a
+        URL https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4-dev/libk4a1.4-dev_1.4.1_amd64.deb
+        UPDATE_COMMAND ""
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+    )
+    ExternalProject_Add_Step(ext_k4a extract
+        COMMAND ${CMAKE_COMMAND} -E tar xvf data.tar.gz # remove v
+        WORKING_DIRECTORY <SOURCE_DIR>
+        DEPENDEES download
+        DEPENDERS update
+    )
+    ExternalProject_Get_Property(ext_k4a SOURCE_DIR)
+    set(K4A_INCLUDE_DIR ${SOURCE_DIR}/usr/include/) # "/" is critical
 endif()

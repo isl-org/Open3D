@@ -741,9 +741,7 @@ if (BUILD_AZURE_KINECT)
     import_3rdparty_library(3rdparty_k4a
         INCLUDE_DIRS ${K4A_INCLUDE_DIR}
     )
-    if (WIN32)
-        add_dependencies(3rdparty_k4a ext_k4a)
-    endif()
+    add_dependencies(3rdparty_k4a ext_k4a)
     set(K4A_TARGET "3rdparty_k4a")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${K4A_TARGET}")
 endif()

@@ -9,17 +9,6 @@ include_directories(".")
 
 file(GLOB_RECURSE UNIT_TEST_SOURCE_FILES "*.cpp")
 
-# TODO: consider explicitly listing the files
-if (NOT BUILD_AZURE_KINECT)
-    set (EXCLUDE_DIR "io/sensor")
-    foreach (TMP_PATH ${UNIT_TEST_SOURCE_FILES})
-        string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
-        if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
-            list (REMOVE_ITEM UNIT_TEST_SOURCE_FILES ${TMP_PATH})
-        endif ()
-    endforeach(TMP_PATH)
-endif()
-
 # TODO: handle conditional compilation more systematically
 if (NOT BUILD_GUI)
     list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/visualization/rendering/.*cpp)
@@ -44,6 +33,12 @@ find_package(Threads)
 target_link_libraries(tests PRIVATE Threads::Threads ${CMAKE_PROJECT_NAME} ${JSONCPP_TARGET} ${GOOGLETEST_TARGET})
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
+
+if (BUILD_AZURE_KINECT)
+    # K4A headres are directly used in test. Currently we don't need to link
+    # the K4A libraries.
+    target_include_directories(tests SYSTEM PRIVATE ${K4A_INCLUDE_DIR})
+endif()
 
 if (BUILD_CUDA_MODULE)
     # We still need to explicitly link against CUDA libraries.
