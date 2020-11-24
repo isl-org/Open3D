@@ -65,8 +65,6 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           source util/ci_utils.sh
-          # Install Azure Kinect dependencies
-          install_azure_kinect_dependencies
           # Install ubuntu dependencies
           # Update cmake needed in Ubuntu 18.04
           sudo apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
