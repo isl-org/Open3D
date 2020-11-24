@@ -26,13 +26,19 @@
 
 #pragma once
 
-#include <librealsense2/rs.hpp>
 #include <string>
 #include <unordered_map>
 
 #include "open3d/io/sensor/RGBDSensorConfig.h"
 #include "open3d/t/io/sensor/RGBDVideoReader.h"
 #include "open3d/utility/IJsonConvertible.h"
+
+// Forward declarations for librealsense classes
+namespace rs2 {
+class pipeline;
+class align;
+class frameset;
+}  // namespace rs2
 
 namespace open3d {
 namespace t {
@@ -52,7 +58,9 @@ namespace io {
 class RSBagReader : public RGBDVideoReader {
 public:
     RSBagReader();
-    virtual ~RSBagReader() {}
+    RSBagReader(const RSBagReader &) = delete;
+    RSBagReader &operator=(const RSBagReader &) = delete;
+    virtual ~RSBagReader();
 
     /// Check If the RSBag file is opened.
     virtual bool IsOpened() const override { return is_opened_; }
@@ -79,9 +87,9 @@ private:
     RGBDVideoMetadata metadata_;
     bool is_eof_ = false, is_opened_ = false;
 
-    rs2::pipeline pipe_;
-    rs2::align align_to_color_;
-    rs2::frameset frames_;
+    std::unique_ptr<rs2::pipeline> pipe_;
+    std::unique_ptr<rs2::align> align_to_color_;
+    std::unique_ptr<rs2::frameset> pframes_;
     core::Dtype dt_color_, dt_depth_;
     uint8_t channels_color_;
 

@@ -18,12 +18,12 @@ set(LIBREALSENSE_CMAKE_ARGS
     )
 # Build and link to external (static) libusb in macOS and Windows.
 # On Linux, libusb-1.0 is installed by default
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (APPLE)
     list(APPEND LIBREALSENSE_CMAKE_ARGS
         -DUSE_EXTERNAL_USB=ON
         -DBUILD_WITH_OPENMP=OFF
         -DHWM_OVER_XU=OFF)
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+elseif (WIN32)
     list(APPEND LIBREALSENSE_CMAKE_ARGS
         -DUSE_EXTERNAL_USB=ON
         -DBUILD_WITH_STATIC_CRT=@STATIC_WINDOWS_RUNTIME@)

@@ -31,6 +31,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <librealsense2/rs.hpp>
 #include <sstream>
 
 namespace open3d {
@@ -38,7 +39,9 @@ namespace t {
 namespace io {
 
 RSBagReader::RSBagReader()
-    : align_to_color_{rs2::align(rs2_stream::RS2_STREAM_COLOR)} {}
+    : align_to_color_{new rs2::align(rs2_stream::RS2_STREAM_COLOR)} {}
+
+RSBagReader::~RSBagReader() = default;
 
 bool RSBagReader::Open(const std::string &filename) {
     if (IsOpened()) {
@@ -47,7 +50,7 @@ bool RSBagReader::Open(const std::string &filename) {
     try {
         rs2::config cfg;
         cfg.enable_device_from_file(filename, false);  // Do not loop playback
-        pipe_.start(cfg);  // File will be opened in read mode at this point
+        pipe_->start(cfg);  // File will be opened in read mode at this point
         utility::LogInfo("File {} opened", filename);
     } catch (const rs2::error &) {
         utility::LogWarning("Unable to open file {}", filename);
@@ -61,7 +64,7 @@ bool RSBagReader::Open(const std::string &filename) {
 }
 
 void RSBagReader::Close() {
-    pipe_.stop();
+    pipe_->stop();
     is_opened_ = false;
 }
 
@@ -95,7 +98,7 @@ Json::Value RSBagReader::GetMetadataJson() {
 
     Json::Value value;
 
-    const auto profile = pipe_.get_active_profile();
+    const auto profile = pipe_->get_active_profile();
     const auto rs_device = profile.get_device().as<rs2::playback>();
     const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH)
                                   .as<rs2::video_stream_profile>();
@@ -150,7 +153,7 @@ bool RSBagReader::SeekTimestamp(size_t timestamp) {
     }
 
     auto rs_device =
-            pipe_.get_active_profile().get_device().as<rs2::playback>();
+            pipe_->get_active_profile().get_device().as<rs2::playback>();
     try {
         rs_device.seek(std::chrono::microseconds(timestamp));
     } catch (const rs2::error &e) {
@@ -164,8 +167,9 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().");
     }
-    if (pipe_.try_wait_for_frames(&frames_)) {
-        frames_ = align_to_color_.process(frames_);
+    auto &frames_ = *pframes_;
+    if (pipe_->try_wait_for_frames(&frames_)) {
+        frames_ = align_to_color_->process(frames_);
         const auto &color_frame = frames_.get_color_frame();
         // Copy frame data to Tensors
         current_frame_.color_ = core::Tensor(

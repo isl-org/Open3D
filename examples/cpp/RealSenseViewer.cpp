@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// TODO: Add support for recording
+
 #include <librealsense2/rs.hpp>
 
 #include "open3d/Open3D.h"
