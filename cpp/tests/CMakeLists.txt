@@ -49,6 +49,12 @@ target_link_libraries(tests PRIVATE Threads::Threads ${CMAKE_PROJECT_NAME} ${JSO
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
 
+if (BUILD_AZURE_KINECT)
+    # K4A headres are directly used in test. Currently we don't need to link
+    # the K4A libraries.
+    target_include_directories(tests SYSTEM PRIVATE ${K4A_INCLUDE_DIR})
+endif()
+
 if (BUILD_CUDA_MODULE)
     # We still need to explicitly link against CUDA libraries.
     # See: https://stackoverflow.com/a/48540499/1255535.
