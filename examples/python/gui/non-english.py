@@ -21,10 +21,11 @@ mode = MODE_SERIF_AND_COMMON_HANYU
 #mode = MODE_ALL_HANYU
 #mode = MODE_CUSTOM_CHARS
 
+# Fonts can be names or paths
 if platform.system() == "Darwin":
     serif = "Times New Roman"
     hanzi = "STHeiti Light"
-    chess = "Apple Symbols"
+    chess = "/System/Library/Fonts/Apple Symbols.ttf"
 elif platform.system() == "Windows":
     serif = "Times New Roman"
     hanzi = "STHeiti Light"
@@ -33,7 +34,7 @@ else:
     # Assumes Ubuntu 18.04
     serif = "DejaVuSerif"
     hanzi = "NotoSansCJK"
-    chess = "DejaVuSans"
+    chess = "/usr/share/fonts/truetype/freefont/FreeSerif.ttf"
 
 
 def main():
