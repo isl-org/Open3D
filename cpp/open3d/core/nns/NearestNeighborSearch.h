@@ -29,6 +29,9 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#ifdef WITH_FAISS
+#include "open3d/core/nns/FaissIndex.h"
+#endif
 #include "open3d/core/nns/NanoFlannIndex.h"
 
 namespace open3d {
@@ -45,9 +48,7 @@ public:
     /// \param dataset_points Dataset points for constructing search index. Must
     /// be 2D, with shape {n, d}.
     NearestNeighborSearch(const Tensor &dataset_points)
-        : dataset_points_(dataset_points) {
-        AssertNotCUDA(dataset_points);
-    };
+        : dataset_points_(dataset_points){};
 
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
@@ -133,6 +134,9 @@ private:
 
 protected:
     std::unique_ptr<NanoFlannIndex> nanoflann_index_;
+#ifdef WITH_FAISS
+    std::unique_ptr<FaissIndex> faiss_index_;
+#endif
     const Tensor dataset_points_;
 };
 }  // namespace nns
