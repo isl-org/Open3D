@@ -837,6 +837,7 @@ void pybind_gui_classes(py::module &m) {
             .value("ROTATE_SUN", SceneWidget::Controls::ROTATE_SUN)
             .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)
             .value("ROTATE_MODEL", SceneWidget::Controls::ROTATE_MODEL)
+            .value("PICK_POINTS", SceneWidget::Controls::PICK_POINTS)
             .export_values();
 
     scene.def(py::init<>(),
@@ -861,7 +862,9 @@ void pybind_gui_classes(py::module &m) {
                  &SceneWidget::SetOnSunDirectionChanged,
                  "Callback when user changes sun direction (only called in "
                  "ROTATE_SUN control mode). Called with one argument, the "
-                 "[i, j, k] vector of the new sun direction");
+                 "[i, j, k] vector of the new sun direction")
+            .def("set_pickable_points", &SceneWidget::SetPickablePoints,
+                 "Sets the points available for picking");
 
     // ---- Slider ----
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(

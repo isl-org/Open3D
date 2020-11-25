@@ -100,11 +100,16 @@ public:
         downsample_threshold_ = min_points;
     }
 
+    virtual void SetAdjustColorsForSRGBToneMapping(bool adjust) {
+        adjust_colors_for_srgb_tonemapping_ = adjust;
+    }
+
     virtual Buffers ConstructBuffers() = 0;
     virtual filament::Box ComputeAABB() = 0;
 
 protected:
     size_t downsample_threshold_ = SIZE_MAX;
+    bool adjust_colors_for_srgb_tonemapping_ = true;
 
     static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr);
 

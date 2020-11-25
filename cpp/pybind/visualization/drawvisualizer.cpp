@@ -37,6 +37,29 @@ namespace visualization {
 using namespace visualizer;
 
 void pybind_drawvisualizer(py::module& m) {
+    py::class_<DrawVisualizerSelections::SelectedIndex> selected_index(m, "SelectedIndex", "Information about a point or vertex that was selected");
+    selected_index.def("__repr__",
+                       [](const DrawVisualizerSelections::SelectedIndex &idx) {
+                           std::stringstream s;
+                           s << "{ index: " << idx.index << ", order: "
+                             << idx.order << ", point: (" << idx.point.x()
+                             << ", " << idx.point.y() << ", " << idx.point.z()
+                             << ") }";
+                           return s.str();
+                       })
+                  .def_readonly("index",
+                                &DrawVisualizerSelections::SelectedIndex::index,
+                                "The index of this point in the point/vertex "
+                                "array")
+                  .def_readonly("order",
+                                &DrawVisualizerSelections::SelectedIndex::order,
+                                "A monotonically increasing value that can be "
+                                "used to determine in what order the points "
+                                "were selected")
+                  .def_readonly("point",
+                                &DrawVisualizerSelections::SelectedIndex::point,
+                                "The (x, y, z) value of this point");
+    
     py::class_<DrawVisualizer, UnownedPointer<DrawVisualizer>, gui::Window>
             drawvis(m, "DrawVisualizer", "Visualization object used by draw()");
 
@@ -162,6 +185,8 @@ void pybind_drawvisualizer(py::module& m) {
                  "removing the object and re-adding it with the new values")
             .def("reset_camera", &DrawVisualizer::ResetCamera,
                  "Sets camera to default position")
+            .def("get_selection_sets", &DrawVisualizer::GetSelectionSets,
+                 "Returns the selection sets, as [{'obj_name', [SelectedIndex]}]")
             .def("export_current_image", &DrawVisualizer::ExportCurrentImage,
                  "export_image(path). Exports a PNG image of what is "
                  "currently displayed to the given path.")
@@ -192,6 +217,12 @@ void pybind_drawvisualizer(py::module& m) {
                         return dv.GetUIState().show_axes;
                     },
                     &DrawVisualizer::ShowAxes, "Gets/sets if axes are visible")
+            .def_property(
+                    "point_size",
+                    [](const DrawVisualizer& dv) {
+                        return dv.GetUIState().point_size;
+                    },
+                    &DrawVisualizer::SetPointSize, "Gets/sets size of points")
             .def_property_readonly("scene", &DrawVisualizer::GetScene,
                                    "Returns the rendering.Open3DScene object "
                                    "for low-level manipulation")

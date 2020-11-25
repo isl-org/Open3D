@@ -44,11 +44,76 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
+namespace {
+Camera::Transform FilamentToCameraTransform(const filament::math::mat4& ft) {
+    Camera::Transform::MatrixType m;
+
+    m << float(ft(0, 0)), float(ft(0, 1)), float(ft(0, 2)), float(ft(0, 3)),
+         float(ft(1, 0)), float(ft(1, 1)), float(ft(1, 2)), float(ft(1, 3)),
+         float(ft(2, 0)), float(ft(2, 1)), float(ft(2, 2)), float(ft(2, 3)),
+         float(ft(3, 0)), float(ft(3, 1)), float(ft(3, 2)), float(ft(3, 3));
+
+    return Camera::Transform(m);
+}
+
+Camera::Transform FilamentToCameraTransform(const filament::math::mat4f& ft) {
+    Camera::Transform::MatrixType m;
+
+    m << ft(0, 0), ft(0, 1), ft(0, 2), ft(0, 3),
+         ft(1, 0), ft(1, 1), ft(1, 2), ft(1, 3),
+         ft(2, 0), ft(2, 1), ft(2, 2), ft(2, 3),
+         ft(3, 0), ft(3, 1), ft(3, 2), ft(3, 3);
+
+    return Camera::Transform(m);
+}
+
+filament::math::mat4f CameraToFilamentTransformF(const Camera::Transform& t) {
+    auto e_matrix = t.matrix();
+    return filament::math::mat4f(filament::math::mat4f::row_major_init{
+            e_matrix(0, 0), e_matrix(0, 1), e_matrix(0, 2), e_matrix(0, 3),
+            e_matrix(1, 0), e_matrix(1, 1), e_matrix(1, 2), e_matrix(1, 3),
+            e_matrix(2, 0), e_matrix(2, 1), e_matrix(2, 2), e_matrix(2, 3),
+            e_matrix(3, 0), e_matrix(3, 1), e_matrix(3, 2), e_matrix(3, 3)});
+}
+
+/*filament::math::mat4 CameraToFilamentTransform(const Camera::Transform& t) {
+    auto e_matrix = t.matrix();
+    return filament::math::mat4(filament::math::mat4::row_major_init{
+            e_matrix(0, 0), e_matrix(0, 1), e_matrix(0, 2), e_matrix(0, 3),
+            e_matrix(1, 0), e_matrix(1, 1), e_matrix(1, 2), e_matrix(1, 3),
+            e_matrix(2, 0), e_matrix(2, 1), e_matrix(2, 2), e_matrix(2, 3),
+            e_matrix(3, 0), e_matrix(3, 1), e_matrix(3, 2), e_matrix(3, 3)});
+}
+*/
+
+}  // namespace
+
 FilamentCamera::FilamentCamera(filament::Engine& engine) : engine_(engine) {
     camera_ = engine_.createCamera();
 }
 
 FilamentCamera::~FilamentCamera() { engine_.destroy(camera_); }
+
+void FilamentCamera::CopyFrom(const Camera *camera) {
+    SetModelMatrix(camera->GetModelMatrix());
+
+    auto &proj = camera->GetProjection();
+    if (proj.is_defined_by_planes) {
+        SetProjection(proj.proj.planes.projection,
+                      proj.proj.planes.left,
+                      proj.proj.planes.right,
+                      proj.proj.planes.bottom,
+                      proj.proj.planes.top,
+                      proj.proj.planes.near,
+                      proj.proj.planes.far);
+    } else {
+        SetProjection(proj.proj.fov.fov,
+                      proj.proj.fov.aspect,
+                      proj.proj.fov.near,
+                      proj.proj.fov.far,
+                      proj.proj.fov.fov_type);
+    }
+}
 
 void FilamentCamera::SetProjection(
         double fov, double aspect, double near, double far, FovType fov_type) {
@@ -58,8 +123,13 @@ void FilamentCamera::SetProjection(
                                             : filament::Camera::Fov::VERTICAL;
 
         camera_->setProjection(fov, aspect, near, far, dir);
-        fov_ = fov;
-        fov_type_ = fov_type;
+
+        projection_.is_defined_by_planes = false;
+        projection_.proj.fov.fov_type = fov_type;
+        projection_.proj.fov.fov = fov;
+        projection_.proj.fov.aspect = aspect;
+        projection_.proj.fov.near = near;
+        projection_.proj.fov.far = far;
     }
 }
 
@@ -76,44 +146,34 @@ void FilamentCamera::SetProjection(Projection projection,
                     : filament::Camera::Projection::PERSPECTIVE;
 
     camera_->setProjection(proj, left, right, bottom, top, near, far);
-    // technically orthographic projection is lim(fov->0) as dist->inf,
-    // but it also serves as an obviously wrong value if you call
-    // GetFieldOfView() after setting an orthographic projection
-    fov_ = 0.0;
+
+    projection_.is_defined_by_planes = true;
+    projection_.proj.planes.projection = projection;
+    projection_.proj.planes.left = left;
+    projection_.proj.planes.right = right;
+    projection_.proj.planes.bottom = bottom;
+    projection_.proj.planes.top = top;
+    projection_.proj.planes.near = near;
+    projection_.proj.planes.far = far;
 }
 
 double FilamentCamera::GetNear() const { return camera_->getNear(); }
 
 double FilamentCamera::GetFar() const { return camera_->getCullingFar(); }
 
-double FilamentCamera::GetFieldOfView() const { return fov_; }
-
-Camera::FovType FilamentCamera::GetFieldOfViewType() const { return fov_type_; }
-
-void FilamentCamera::SetModelMatrix(const Transform& view) {
-    using namespace filament::math;
-
-    auto e_matrix = view.matrix();
-    mat4f ftransform(mat4f::row_major_init{
-            e_matrix(0, 0), e_matrix(0, 1), e_matrix(0, 2), e_matrix(0, 3),
-            e_matrix(1, 0), e_matrix(1, 1), e_matrix(1, 2), e_matrix(1, 3),
-            e_matrix(2, 0), e_matrix(2, 1), e_matrix(2, 2), e_matrix(2, 3),
-            e_matrix(3, 0), e_matrix(3, 1), e_matrix(3, 2), e_matrix(3, 3)});
-
-    camera_->setModelMatrix(ftransform);
+double FilamentCamera::GetFieldOfView() const {
+    if (projection_.is_defined_by_planes) {
+        // technically orthographic projection is lim(fov->0) as dist->inf,
+        // but it also serves as an obviously wrong value if you call
+        // GetFieldOfView() after setting an orthographic projection
+        return 0.0;
+    } else {
+        return projection_.proj.fov.fov;
+    }
 }
 
-void FilamentCamera::SetModelMatrix(const Eigen::Vector3f& forward,
-                                    const Eigen::Vector3f& left,
-                                    const Eigen::Vector3f& up) {
-    using namespace filament;
-
-    math::mat4f ftransform = camera_->getModelMatrix();
-    ftransform[0].xyz = math::float3(left.x(), left.y(), left.z());
-    ftransform[1].xyz = math::float3(up.x(), up.y(), up.z());
-    ftransform[2].xyz = math::float3(forward.x(), forward.y(), forward.z());
-
-    camera_->setModelMatrix(ftransform);
+Camera::FovType FilamentCamera::GetFieldOfViewType() const {
+    return projection_.proj.fov.fov_type;
 }
 
 void FilamentCamera::LookAt(const Eigen::Vector3f& center,
@@ -144,53 +204,41 @@ Eigen::Vector3f FilamentCamera::GetUpVector() const {
     return {up.x, up.y, up.z};
 }
 
-FilamentCamera::Transform FilamentCamera::GetModelMatrix() const {
+Camera::Transform FilamentCamera::GetModelMatrix() const {
     auto ftransform = camera_->getModelMatrix();
-
-    Transform::MatrixType matrix;
-
-    matrix << ftransform(0, 0), ftransform(0, 1), ftransform(0, 2),
-            ftransform(0, 3), ftransform(1, 0), ftransform(1, 1),
-            ftransform(1, 2), ftransform(1, 3), ftransform(2, 0),
-            ftransform(2, 1), ftransform(2, 2), ftransform(2, 3),
-            ftransform(3, 0), ftransform(3, 1), ftransform(3, 2),
-            ftransform(3, 3);
-
-    return Transform(matrix);
+    return FilamentToCameraTransform(ftransform);
 }
 
-FilamentCamera::Transform FilamentCamera::GetViewMatrix() const {
+Camera::Transform FilamentCamera::GetViewMatrix() const {
     auto ftransform = camera_->getViewMatrix();  // returns mat4 (not mat4f)
-
-    Transform::MatrixType matrix;
-
-    matrix << float(ftransform(0, 0)), float(ftransform(0, 1)),
-            float(ftransform(0, 2)), float(ftransform(0, 3)),
-            float(ftransform(1, 0)), float(ftransform(1, 1)),
-            float(ftransform(1, 2)), float(ftransform(1, 3)),
-            float(ftransform(2, 0)), float(ftransform(2, 1)),
-            float(ftransform(2, 2)), float(ftransform(2, 3)),
-            float(ftransform(3, 0)), float(ftransform(3, 1)),
-            float(ftransform(3, 2)), float(ftransform(3, 3));
-
-    return Transform(matrix);
+    return FilamentToCameraTransform(ftransform);
 }
 
-FilamentCamera::Transform FilamentCamera::GetProjectionMatrix() const {
+Camera::Transform FilamentCamera::GetProjectionMatrix() const {
     auto ftransform = camera_->getProjectionMatrix();  // mat4 (not mat4f)
+    return FilamentToCameraTransform(ftransform);
+}
 
-    Transform::MatrixType matrix;
+const Camera::ProjectionInfo& FilamentCamera::GetProjection() const  {
+    return projection_;
+}
 
-    matrix << float(ftransform(0, 0)), float(ftransform(0, 1)),
-            float(ftransform(0, 2)), float(ftransform(0, 3)),
-            float(ftransform(1, 0)), float(ftransform(1, 1)),
-            float(ftransform(1, 2)), float(ftransform(1, 3)),
-            float(ftransform(2, 0)), float(ftransform(2, 1)),
-            float(ftransform(2, 2)), float(ftransform(2, 3)),
-            float(ftransform(3, 0)), float(ftransform(3, 1)),
-            float(ftransform(3, 2)), float(ftransform(3, 3));
+void FilamentCamera::SetModelMatrix(const Eigen::Vector3f& forward,
+                                    const Eigen::Vector3f& left,
+                                    const Eigen::Vector3f& up) {
+    using namespace filament;
 
-    return Transform(matrix);
+    math::mat4f ftransform = camera_->getModelMatrix();
+    ftransform[0].xyz = math::float3(left.x(), left.y(), left.z());
+    ftransform[1].xyz = math::float3(up.x(), up.y(), up.z());
+    ftransform[2].xyz = math::float3(forward.x(), forward.y(), forward.z());
+
+    camera_->setModelMatrix(ftransform);  // model matrix uses mat4f
+}
+
+void FilamentCamera::SetModelMatrix(const Transform& view) {
+    auto ftransform = CameraToFilamentTransformF(view);
+    camera_->setModelMatrix(ftransform);  // model matrix uses mat4f
 }
 
 }  // namespace rendering

@@ -77,6 +77,8 @@ public:
 
     void SetSSAOEnabled(bool enabled) override;
 
+    void ConfigureForColorPicking() override;
+
     Camera* GetCamera() const override;
 
     // Copies available settings for view and camera

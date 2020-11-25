@@ -74,6 +74,13 @@ struct Material {
     float scalar_min = 0.0f;
     float scalar_max = 1.0f;
 
+    // Colors are assumed to be sRGB and tone-mapped accordingly.
+    // If tone-mapping is disabled, then colors would be in linear RGB space,
+    // in which case this should be set to false.
+    bool sRGB_color = true;
+
+    float depth_offset = 0.0f;  // internal
+
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
     std::unordered_map<std::string, geometry::Image> generic_imgs;

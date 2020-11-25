@@ -40,6 +40,7 @@ namespace visualization {
 namespace rendering {
 class Camera;
 class CameraManipulator;
+class MatrixInteractorLogic;
 class Open3DScene;
 class View;
 }  // namespace rendering
@@ -54,12 +55,24 @@ class SceneWidget : public Widget {
     using Super = Widget;
 
 public:
+    class MouseInteractor {
+    public:
+        virtual ~MouseInteractor() = default;
+
+        virtual rendering::MatrixInteractorLogic& GetMatrixInteractor() = 0;
+        virtual void Mouse(const MouseEvent& e) = 0;
+        virtual void Key(const KeyEvent& e) = 0;
+        virtual bool Tick(const TickEvent& e) { return false; }
+    };
+
+public:
     explicit SceneWidget();
     ~SceneWidget() override;
 
     void SetFrame(const Rect& f) override;
 
-    enum Controls { ROTATE_CAMERA, FLY, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL };
+    enum Controls { ROTATE_CAMERA, FLY, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL,
+                    PICK_POINTS };
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,
@@ -76,6 +89,10 @@ public:
             std::function<void(const Eigen::Vector3f&)> on_dir_changed);
     /// Enables showing the skybox while in skybox ROTATE_IBL mode.
     void ShowSkybox(bool is_on);
+
+    void SetPickablePoints(const std::vector<Eigen::Vector3d>& points);
+    void SetPickablePointSize(int px);
+    void SetOnPointsPicked(std::function<void(const std::vector<size_t>&, int)> on_picked);
 
     void SetScene(std::shared_ptr<rendering::Open3DScene> scene);
     std::shared_ptr<rendering::Open3DScene> GetScene() const;

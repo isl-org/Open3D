@@ -8,7 +8,8 @@ def draw(geometry=None,
          height=768,
          actions=None,
          menu_actions=None,
-         show_ui=None):
+         show_ui=None,
+         point_size=None):
     gui.Application.instance.initialize()
     w = DrawVisualizer(title, width, height)
 
@@ -19,6 +20,9 @@ def draw(geometry=None,
     if menu_actions is not None:
         for a in menu_actions:
             w.add_menu_action(a[0], a[1])
+
+    if point_size is not None:
+        w.point_size = point_size
 
     def add(g, n):
         if isinstance(g, dict):

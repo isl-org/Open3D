@@ -250,6 +250,8 @@ const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitSolidColorShader =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitPolygonOffsetShader =
+        MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
@@ -271,6 +273,7 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultDepthShader,
         FilamentResourceManager::kDefaultUnlitGradientShader,
         FilamentResourceManager::kDefaultUnlitSolidColorShader,
+        FilamentResourceManager::kDefaultUnlitPolygonOffsetShader,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
@@ -816,6 +819,11 @@ void FilamentResourceManager::LoadDefaults() {
     solid_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                    {0.5f, 0.5f, 0.5f});
     materials_[kDefaultUnlitSolidColorShader] = BoxResource(solid_mat, engine_);
+
+    const auto poffset_path = resource_root + "/unlitPolygonOffset.filamat";
+    auto poffset_mat = LoadMaterialFromFile(poffset_path, engine_);
+    materials_[kDefaultUnlitPolygonOffsetShader] = BoxResource(poffset_mat,
+                                                               engine_);
 }
 
 }  // namespace rendering

@@ -28,6 +28,7 @@
 
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/Image.h"
@@ -47,14 +48,17 @@
 #include "open3d/visualization/gui/FileDialog.h"
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Layout.h"
+#include "open3d/visualization/gui/ListView.h"
 #include "open3d/visualization/gui/NumberEdit.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Slider.h"
+#include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
+#include "open3d/visualization/visualizer/DrawVisualizerSelections.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
 
 #define GROUPS_USE_TREE 1
@@ -223,8 +227,6 @@ public:
     Size CalcPreferredSize(const Theme &theme) const override {
         auto check_pref = checkbox_->CalcPreferredSize(theme);
         auto name_pref = name_->CalcPreferredSize(theme);
-        //        std::cout << "[o3d] check: " << check_pref.width << ", name: "
-        //        << name_pref.width << std::endl;
         int w = check_pref.width + name_pref.width + GroupWidth(theme) +
                 TimeWidth(theme);
         return Size(w, std::max(check_pref.height, name_pref.height));
@@ -288,6 +290,9 @@ struct DrawVisualizer::Impl {
     std::set<std::string> added_names_;
     std::set<std::string> added_groups_;
     std::vector<DrawObject> objects_;
+    std::shared_ptr<DrawVisualizerSelections> selections_;
+    bool selections_need_update_ = true;
+
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
 
@@ -308,12 +313,20 @@ struct DrawVisualizer::Impl {
 
         Vert *panel;
         CollapsableVert *mouse_panel;
+        TabControl *mouse_tab;
+        Vert *view_panel;
+        SceneWidget::Controls view_mouse_mode;
         std::map<SceneWidget::Controls, Button *> mouse_buttons;
+        Vert *pick_panel;
+        Button *new_selection_set;
+        Button *delete_selection_set;
+        ListView *selection_sets;
 
         CollapsableVert *scene_panel;
         Checkbox *show_skybox;
         Checkbox *show_axes;
         ColorEdit *bg_color;
+        Slider *point_size;
         Combobox *shader;
         Combobox *lighting;
 
@@ -331,6 +344,7 @@ struct DrawVisualizer::Impl {
 #if GROUPS_USE_TREE
         std::map<std::string, TreeView::ItemId> group2itemid;
 #endif  // GROUPS_USE_TREE
+        std::map<std::string, TreeView::ItemId> object2itemid;
 
 #if !GROUPS_USE_TREE
         EmptyIfHiddenVert *groups_panel;
@@ -353,8 +367,17 @@ struct DrawVisualizer::Impl {
 
         window_ = w;
         scene_ = new SceneWidget();
+        selections_ = std::make_shared<DrawVisualizerSelections>(*scene_);
         scene_->SetScene(std::make_shared<Open3DScene>(w->GetRenderer()));
         scene_->EnableSceneCaching(true);  // smoother UI with large geometry
+        scene_->SetOnPointsPicked([this](const std::vector<size_t>& indices,
+                                         int keymods) {
+            if (keymods & int(KeyModifier::SHIFT)) {
+                selections_->UnselectIndices(indices);
+            } else {
+                selections_->SelectIndices(indices);
+            }
+        });
         w->AddChild(GiveOwnership(scene_));
 
         auto o3dscene = scene_->GetScene();
@@ -363,6 +386,7 @@ struct DrawVisualizer::Impl {
         MakeSettingsUI();
         SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
         SetLightingProfile(gLightingProfiles[2]);  // med shadows
+        SetPointSize(ui_state_.point_size);  // sync selections_' point size
     }
 
     void MakeSettingsUI() {
@@ -373,17 +397,33 @@ struct DrawVisualizer::Impl {
         window_->AddChild(GiveOwnership(settings.panel));
 
         Margins margins(em, 0, 0.5 * em, 0);
+        Margins tabbed_margins(0, 0.5 * em, 0, 0);
 
         settings.mouse_panel =
                 new CollapsableVert("Mouse Controls", v_spacing, margins);
         settings.panel->AddChild(GiveOwnership(settings.mouse_panel));
+
+        settings.mouse_tab = new TabControl();
+        settings.mouse_panel->AddChild(GiveOwnership(settings.mouse_tab));
+
+        settings.view_panel = new Vert(v_spacing, tabbed_margins);
+        settings.pick_panel = new Vert(v_spacing, tabbed_margins);
+        settings.mouse_tab->AddTab("Scene", GiveOwnership(settings.view_panel));
+        settings.mouse_tab->AddTab("Selection",
+                                   GiveOwnership(settings.pick_panel));
+        settings.mouse_tab->SetOnSelectedTabChanged([this](int tab_idx) {
+            if (tab_idx == 0) {
+                SetMouseMode(settings.view_mouse_mode);
+            } else {
+                SetPicking();
+            }
+        });
 
         // Mouse countrols
         auto MakeMouseButton = [this](const char *name,
                                       SceneWidget::Controls type) {
             auto button = new SmallToggleButton(name);
             button->SetOnClicked([this, type]() {
-                this->scene_->SetViewControls(type);
                 this->SetMouseMode(type);
             });
             this->settings.mouse_buttons[type] = button;
@@ -398,7 +438,7 @@ struct DrawVisualizer::Impl {
         h->AddChild(GiveOwnership(
                 MakeMouseButton("Model", SceneWidget::Controls::ROTATE_MODEL)));
         h->AddStretch();
-        settings.mouse_panel->AddChild(GiveOwnership(h));
+        settings.view_panel->AddChild(GiveOwnership(h));
 
         h = new Horiz(0.25 * em);
         h->AddStretch();
@@ -407,8 +447,8 @@ struct DrawVisualizer::Impl {
         h->AddChild(GiveOwnership(MakeMouseButton(
                 "Environment", SceneWidget::Controls::ROTATE_IBL)));
         h->AddStretch();
-        settings.mouse_panel->AddChild(GiveOwnership(h));
-        settings.mouse_panel->AddFixed(0.5 * em);
+        settings.view_panel->AddChild(GiveOwnership(h));
+        settings.view_panel->AddFixed(0.5 * em);
 
         auto *reset = new SmallButton("Reset Camera");
         reset->SetOnClicked([this]() { this->ResetCamera(); });
@@ -417,7 +457,40 @@ struct DrawVisualizer::Impl {
         h->AddStretch();
         h->AddChild(GiveOwnership(reset));
         h->AddStretch();
-        settings.mouse_panel->AddChild(GiveOwnership(h));
+        settings.view_panel->AddChild(GiveOwnership(h));
+
+        // Selection sets controls
+        settings.new_selection_set = new SmallButton(" + ");
+        settings.new_selection_set->SetOnClicked([this]() {
+            NewSelectionSet();
+        });
+        settings.delete_selection_set = new SmallButton(" - ");
+        settings.delete_selection_set->SetOnClicked([this]() {
+            int idx = settings.selection_sets->GetSelectedIndex();
+            RemoveSelectionSet(idx);
+        });
+        settings.selection_sets = new ListView();
+        settings.selection_sets->SetOnValueChanged([this](const char *, bool) {
+            SelectSelectionSet(settings.selection_sets->GetSelectedIndex());
+        });
+
+#if __APPLE__
+        const char *selection_help = "Cmd-click to select a point";
+#else
+        const char *selection_help = "Ctrl-click to select a point";
+#endif  // __APPLE__
+        h = new Horiz();
+        h->AddStretch();
+        h->AddChild(std::make_shared<Label>(selection_help));
+        h->AddStretch();
+        settings.pick_panel->AddChild(GiveOwnership(h));
+        h = new Horiz(0.25 * em);
+        h->AddChild(std::make_shared<Label>("Selection Sets"));
+        h->AddStretch();
+        h->AddChild(GiveOwnership(settings.new_selection_set));
+        h->AddChild(GiveOwnership(settings.delete_selection_set));
+        settings.pick_panel->AddChild(GiveOwnership(h));
+        settings.pick_panel->AddChild(GiveOwnership(settings.selection_sets));
 
         // Scene controls
         settings.scene_panel = new CollapsableVert("Scene", v_spacing, margins);
@@ -444,6 +517,13 @@ struct DrawVisualizer::Impl {
         settings.bg_color->SetOnValueChanged([this](const Color &c) {
             this->SetBackgroundColor(
                     {c.GetRed(), c.GetGreen(), c.GetBlue(), 1.0f});
+        });
+
+        settings.point_size = new Slider(Slider::INT);
+        settings.point_size->SetLimits(1, 10);
+        settings.point_size->SetValue(ui_state_.point_size);
+        settings.point_size->SetOnValueChanged([this](const double newValue) {
+            this->SetPointSize(int(newValue));
         });
 
         settings.shader = new Combobox();
@@ -476,6 +556,8 @@ struct DrawVisualizer::Impl {
 
         grid->AddChild(std::make_shared<Label>("BG Color"));
         grid->AddChild(GiveOwnership(settings.bg_color));
+        grid->AddChild(std::make_shared<Label>("PointSize"));
+        grid->AddChild(GiveOwnership(settings.point_size));
         grid->AddChild(std::make_shared<Label>("Shader"));
         grid->AddChild(GiveOwnership(settings.shader));
         grid->AddChild(std::make_shared<Label>("Lighting"));
@@ -654,10 +736,10 @@ struct DrawVisualizer::Impl {
     void AddGeometry(const std::string &name,
                      std::shared_ptr<geometry::Geometry3D> geom,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
-                     rendering::Material *material /*= nullptr*/,
-                     const std::string &group /*= ""*/,
-                     double time /*= 0.0*/,
-                     bool is_visible /*= true*/) {
+                     rendering::Material *material,
+                     const std::string &group,
+                     double time,
+                     bool is_visible) {
         std::string group_name = group;
         if (group_name == "") {
             group_name = "default";
@@ -687,8 +769,10 @@ struct DrawVisualizer::Impl {
 
             if (cloud) {
                 has_colors = !cloud->colors_.empty();
+                has_normals = !cloud->normals_.empty();
             } else if (t_cloud) {
                 has_colors = t_cloud->HasPointColors();
+                has_normals = t_cloud->HasPointNormals();
             } else if (lines) {
                 has_colors = !lines->colors_.empty();
             } else if (obb) {
@@ -715,7 +799,7 @@ struct DrawVisualizer::Impl {
                 mat.shader = kShaderLit;
                 is_default_color = false;
             }
-            mat.point_size = 2.0f * window_->GetScaling();
+            mat.point_size = ui_state_.point_size * window_->GetScaling();
         }
 
         // We assume that the caller isn't setting a group or time (and in any
@@ -759,6 +843,7 @@ struct DrawVisualizer::Impl {
             if (objects_[i].name == name) {
                 group = objects_[i].group;
                 objects_.erase(objects_.begin() + i);
+                settings.object2itemid.erase(objects_[i].name);
                 break;
             }
         }
@@ -796,8 +881,22 @@ struct DrawVisualizer::Impl {
             if (o.name == name) {
                 if (show != o.is_visible) {
                     o.is_visible = show;
-                    UpdateObjectTree();
-                    UpdateGeometryVisibility(o);
+
+                    auto id = settings.object2itemid[o.name];
+                    auto cell = settings.geometries->GetItem(id);
+                    auto obj_cell = std::dynamic_pointer_cast<CheckableTextTreeCell>(cell);
+                    if (obj_cell) {
+                        obj_cell->GetCheckbox()->SetChecked(show);
+                    }
+
+                    UpdateGeometryVisibility(o);  // calls ForceRedraw()
+                    window_->PostRedraw();
+
+                    if (selections_->IsActive()) {
+                        UpdateSelectablePoints();
+                    } else {
+                        selections_need_update_ = true;
+                    }
                 }
                 break;
             }
@@ -855,6 +954,21 @@ struct DrawVisualizer::Impl {
         ui_state_.show_axes = show;
         settings.show_axes->SetChecked(show);  // in case called manually
         scene_->GetScene()->ShowAxes(show);
+        scene_->ForceRedraw();
+    }
+
+    void SetPointSize(int px) {
+        ui_state_.point_size = px;
+        settings.point_size->SetValue(double(px));
+
+        px = px * window_->GetScaling();
+        for (auto &o : objects_) {
+            o.material.point_size = px;
+            scene_->GetScene()->GetScene()->OverrideMaterial(o.name, o.material);
+        }
+        selections_->SetPointSize(px);
+
+        scene_->SetPickablePointSize(px);
         scene_->ForceRedraw();
     }
 
@@ -926,11 +1040,29 @@ struct DrawVisualizer::Impl {
     }
 
     void SetMouseMode(SceneWidget::Controls mode) {
+        if (selections_->IsActive()) {
+            selections_->MakeInactive();
+        }
+
+        scene_->SetViewControls(mode);
+        settings.view_mouse_mode = mode;
         for (const auto &t_b : settings.mouse_buttons) {
             t_b.second->SetOn(false);
         }
         settings.mouse_buttons[mode]->SetOn(true);
     }
+
+    void SetPicking() {
+        if (selections_->GetNumberOfSets() == 0) {
+            NewSelectionSet();
+        }
+        if (selections_need_update_) {
+            UpdateSelectablePoints();
+        }
+        selections_->MakeActive();
+    }
+
+    std::vector<DrawVisualizerSelections::SelectionSet> GetSelectionSets() const { return selections_->GetSets(); }
 
     void SetCurrentTime(double t) {
         ui_state_.current_time = t;
@@ -964,6 +1096,7 @@ struct DrawVisualizer::Impl {
     }
 
     void SetUIState(const UIState &new_state) {
+        int point_size_changed = (new_state.point_size != ui_state_.point_size);
         bool ibl_path_changed = (new_state.ibl_path != ui_state_.ibl_path);
         auto old_enabled_groups = ui_state_.enabled_groups;
         bool old_is_animating = ui_state_.is_animating;
@@ -989,6 +1122,10 @@ struct DrawVisualizer::Impl {
         SetBackgroundColor(ui_state_.bg_color);
         ShowSkybox(ui_state_.show_skybox);
         ShowAxes(ui_state_.show_axes);
+
+        if (point_size_changed) {
+            SetPointSize(ui_state_.point_size);
+        }
 
         settings.use_ibl->SetChecked(ui_state_.use_ibl);
         settings.use_sun->SetChecked(ui_state_.use_sun);
@@ -1104,21 +1241,17 @@ struct DrawVisualizer::Impl {
         auto cell = std::make_shared<DrawObjectTreeCell>(
                 o.name.c_str(), o.group.c_str(), o.time, o.is_visible, flag,
                 [this, name = o.name](bool is_on) {
-                    for (auto &o : objects_) {  // TODO? this is O(n)
-                        if (o.name == name) {
-                            o.is_visible = is_on;
-                            this->UpdateGeometryVisibility(o);
-                            break;
-                        }
-                    }
+                    ShowGeometry(name, is_on);
                 });
-        settings.geometries->AddItem(parent, cell);
+        auto id = settings.geometries->AddItem(parent, cell);
+        settings.object2itemid[o.name] = id;
     }
 
     void UpdateObjectTree() {
 #if GROUPS_USE_TREE
         settings.group2itemid.clear();
 #endif  // GROUPS_USE_TREE
+        settings.object2itemid.clear();
         settings.geometries->Clear();
 
         for (auto &o : objects_) {
@@ -1144,15 +1277,69 @@ struct DrawVisualizer::Impl {
     }
 
     void UpdateGeometryVisibility(const DrawObject &o) {
+        scene_->GetScene()->ShowGeometry(o.name, IsGeometryVisible(o));
+        scene_->ForceRedraw();
+    }
+
+    bool IsGeometryVisible(const DrawObject &o) {
         bool is_current =
                 (o.time >= ui_state_.current_time &&
                  o.time < ui_state_.current_time + ui_state_.time_step);
         bool is_group_enabled = (ui_state_.enabled_groups.find(o.group) !=
                                  ui_state_.enabled_groups.end());
         bool is_visible = o.is_visible;
-        scene_->GetScene()->ShowGeometry(
-                o.name, is_visible & is_current & is_group_enabled);
-        scene_->ForceRedraw();
+        return (is_visible & is_current & is_group_enabled);
+    }
+
+    void NewSelectionSet() {
+        selections_->NewSet();
+        UpdateSelectionSetList();
+        SelectSelectionSet(selections_->GetNumberOfSets() - 1);
+    }
+
+    void RemoveSelectionSet(int index) {
+        selections_->RemoveSet(index);
+        if (selections_->GetNumberOfSets() == 0) {
+            // You can remove the last set, but there must always be one
+            // set, so we re-create one. (So removing the last set has the
+            // effect of clearing it.)
+            selections_->NewSet();
+        }
+        UpdateSelectionSetList();
+    }
+
+    void SelectSelectionSet(int index) {
+        settings.selection_sets->SetSelectedIndex(index);
+        selections_->SelectSet(index);
+    }
+
+    void UpdateSelectionSetList() {
+        size_t n = selections_->GetNumberOfSets();
+        int idx = settings.selection_sets->GetSelectedIndex();
+        idx = std::max(0, idx);
+        idx = std::min(idx, int(n) - 1);
+
+        std::vector<std::string> items;
+        items.reserve(n);
+        for (size_t i = 0;  i < n; ++i) {
+            std::stringstream s;
+            s << "Set " << (i + 1);
+            items.push_back(s.str());
+        }
+        settings.selection_sets->SetItems(items);
+        SelectSelectionSet(idx);
+        window_->PostRedraw();
+    }
+
+    void UpdateSelectablePoints() {
+        selections_->StartSelectablePoints();
+        for (auto &o : objects_) {
+            if (!IsGeometryVisible(o)) { continue; }
+
+            selections_->AddSelectablePoints(o.name, o.geometry.get(),
+                                             o.tgeometry.get());
+        }
+        selections_->EndSelectablePoints();
     }
 
     bool OnAnimationTick() {
@@ -1306,6 +1493,7 @@ struct DrawVisualizer::Impl {
     }
 };
 
+// ----------------------------------------------------------------------------
 DrawVisualizer::DrawVisualizer(const std::string &title, int width, int height)
     : Window(title, width, height), impl_(new DrawVisualizer::Impl()) {
     impl_->Construct(this);
@@ -1428,8 +1616,16 @@ void DrawVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
 
 void DrawVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
 
+void DrawVisualizer::SetPointSize(int point_size) {
+    impl_->SetPointSize(point_size);
+}
+
 void DrawVisualizer::EnableGroup(const std::string &group, bool enable) {
     impl_->EnableGroup(group, enable);
+}
+
+std::vector<DrawVisualizerSelections::SelectionSet> DrawVisualizer::GetSelectionSets() const {
+    return impl_->GetSelectionSets();
 }
 
 double DrawVisualizer::GetAnimationFrameDelay() const {

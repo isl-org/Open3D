@@ -32,6 +32,7 @@
 
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/visualizer/DrawVisualizerSelections.h"
 
 namespace open3d {
 
@@ -81,6 +82,7 @@ public:
         std::set<std::string> enabled_groups;
 
         Eigen::Vector4f bg_color = {1.0f, 1.0f, 1.0f, 1.0f};
+        int point_size = 3;
 
         bool use_ibl = false;
         bool use_sun = true;
@@ -130,7 +132,10 @@ public:
     void ShowSettings(bool show);
     void ShowSkybox(bool show);
     void ShowAxes(bool show);
+    void SetPointSize(int point_size);
     void EnableGroup(const std::string& group, bool enable);
+
+    std::vector<DrawVisualizerSelections::SelectionSet> GetSelectionSets() const;
 
     double GetAnimationFrameDelay() const;
     void SetAnimationFrameDelay(double secs);

@@ -10,6 +10,7 @@ import sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import open3d_tutorial as o3dtut
 
+CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 def normalize(v):
     a = 1.0 / math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
@@ -75,7 +76,7 @@ def actions_layout():
     actions = []
     for a in [
             "Supercalifragilisticexpialidocious", "Action 1", "Action 2",
-            "Action 3"
+            "Action 3", "Action 4"
     ]:
 
         def make_callback(name):
@@ -86,6 +87,7 @@ def actions_layout():
             return on_action
 
         actions.append((a, make_callback(a)))
+
     vis.draw([pc], actions=actions, menu_actions=actions)
 
 
@@ -101,6 +103,7 @@ def actions():
     cloud.normals = bunny.vertex_normals
 
     def make_mesh(drawvis):
+        # TODO: call drawvis.get_geometry instead of using bunny
         mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
             cloud)
         mesh.paint_uniform_color((1, 1, 1))
@@ -113,17 +116,82 @@ def actions():
         drawvis.show_geometry(TRUTH_NAME, not truth_vis)
         drawvis.show_geometry(RESULT_NAME, truth_vis)
 
-    vis.draw([{
-        "name": SOURCE_NAME,
-        "geometry": cloud
-    }, {
-        "name": TRUTH_NAME,
-        "geometry": bunny,
-        "is_visible": False
-    }],
+    vis.draw([{"name": SOURCE_NAME,
+               "geometry": cloud
+              }, {
+               "name": TRUTH_NAME,
+               "geometry": bunny,
+               "is_visible": False
+              }],
              actions=[("Create Mesh", make_mesh),
                       ("Toggle truth/result", toggle_result)])
 
+
+def get_icp_transform(source, target, source_indices, target_indices):
+    corr = np.zeros((len(source_indices), 2))
+    corr[:, 0] = source_indices
+    corr[:, 1] = target_indices
+
+    # Estimate rough transformation using correspondences
+    p2p = o3d.pipelines.registration.TransformationEstimationPointToPoint()
+    trans_init = p2p.compute_transformation(source, target,
+                                            o3d.utility.Vector2iVector(corr))
+
+    # Point-to-point ICP for refinement
+    threshold = 0.03  # 3cm distance threshold
+    reg_p2p = o3d.pipelines.registration.registration_icp(
+        source, target, threshold, trans_init,
+        o3d.pipelines.registration.TransformationEstimationPointToPoint())
+
+    return reg_p2p.transformation
+    
+def selections():
+    source = o3d.io.read_point_cloud(CURRENT_DIR + "/../../test_data/ICP/cloud_bin_0.pcd")
+    target = o3d.io.read_point_cloud(CURRENT_DIR + "/../../test_data/ICP/cloud_bin_2.pcd")
+    source.paint_uniform_color([1, 0.706, 0])
+    target.paint_uniform_color([0, 0.651, 0.929])
+
+    source_name = "Source (yellow)"
+    target_name = "Target (blue)"
+
+    def do_icp_one_set(drawvis):
+        # sets: [name: [{ "index": int, "order": int, "point": (x, y, z)}, ...],
+        #        ...]
+        sets = drawvis.get_selection_sets()
+        source_picked = sorted(list(sets[0][source_name]), key=lambda x: x.order)
+        target_picked = sorted(list(sets[0][target_name]), key=lambda x: x.order)
+        source_indices = [idx.index for idx in source_picked]
+        target_indices = [idx.index for idx in target_picked]
+
+        t = get_icp_transform(source, target, source_indices, target_indices)
+        source.transform(t)
+
+        # Update the source geometry
+        drawvis.remove_geometry(source_name)
+        drawvis.add_geometry({"name": source_name, "geometry": source})
+
+    def do_icp_two_sets(drawvis):
+        sets = drawvis.get_selection_sets()
+        source_set = sets[0][source_name]
+        target_set = sets[1][target_name]
+        source_picked = sorted(list(source_set), key=lambda x: x.order)
+        target_picked = sorted(list(target_set), key=lambda x: x.order)
+        source_indices = [idx.index for idx in source_picked]
+        target_indices = [idx.index for idx in target_picked]
+
+        t = get_icp_transform(source, target, source_indices, target_indices)
+        source.transform(t)
+
+        # Update the source geometry
+        drawvis.remove_geometry(source_name)
+        drawvis.add_geometry({"name": source_name, "geometry": source})
+
+
+    vis.draw([{ "name": source_name, "geometry": source},
+              { "name": target_name, "geometry": target}],
+             actions=[("ICP Registration (one set)", do_icp_one_set),
+                      ("ICP Registration (two sets)", do_icp_two_sets)],
+             show_ui=True)
 
 def time_animation():
     orig = make_point_cloud(200, (0, 0, 0), 1.0, True)
@@ -138,7 +206,7 @@ def time_animation():
         pts = pts * (1.0 + amount * expand) + [amount * v for v in drift_dir]
         cloud.points = o3d.utility.Vector3dVector(pts)
         cloud.colors = orig.colors
-        clouds.append({"name": "t=" + str(i), "geometry": cloud, "time": i})
+        clouds.append({"name": "points at t=" + str(i), "geometry": cloud, "time": i})
 
     vis.draw(clouds)
 
@@ -247,15 +315,21 @@ def remove():
                       ("Remove Bounds", remove_bbox)])
 
 
+def everything():
+    raise Exception("Use all features at once")
+
 def main():
     nothing()
     single_object()
     multi_objects()
     # actions_layout()
     actions()
-    time_animation()
-    groups()
+    selections()
+    # mesh_selections()
+    # time_animation()
+    # groups()
     # remove()
+#    everything()
 
 
 if __name__ == "__main__":
