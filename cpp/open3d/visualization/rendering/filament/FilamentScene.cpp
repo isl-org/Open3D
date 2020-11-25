@@ -107,7 +107,8 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"depth", ResourceManager::kDefaultDepthShader},
         {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
         {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
-        {"unlitPolygonOffset", ResourceManager::kDefaultUnlitPolygonOffsetShader},
+        {"unlitPolygonOffset",
+         ResourceManager::kDefaultUnlitPolygonOffsetShader},
 };
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
@@ -762,7 +763,8 @@ void FilamentScene::UpdateSolidColorShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
-void FilamentScene::UpdateUnlitPolygonOffsetShader(GeometryMaterialInstance& geom_mi) {
+void FilamentScene::UpdateUnlitPolygonOffsetShader(
+        GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetParameter("pointSize", geom_mi.properties.point_size)
             .Finish();

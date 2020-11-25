@@ -370,14 +370,14 @@ struct DrawVisualizer::Impl {
         selections_ = std::make_shared<DrawVisualizerSelections>(*scene_);
         scene_->SetScene(std::make_shared<Open3DScene>(w->GetRenderer()));
         scene_->EnableSceneCaching(true);  // smoother UI with large geometry
-        scene_->SetOnPointsPicked([this](const std::vector<size_t>& indices,
-                                         int keymods) {
-            if (keymods & int(KeyModifier::SHIFT)) {
-                selections_->UnselectIndices(indices);
-            } else {
-                selections_->SelectIndices(indices);
-            }
-        });
+        scene_->SetOnPointsPicked(
+                [this](const std::vector<size_t> &indices, int keymods) {
+                    if (keymods & int(KeyModifier::SHIFT)) {
+                        selections_->UnselectIndices(indices);
+                    } else {
+                        selections_->SelectIndices(indices);
+                    }
+                });
         w->AddChild(GiveOwnership(scene_));
 
         auto o3dscene = scene_->GetScene();
@@ -423,9 +423,7 @@ struct DrawVisualizer::Impl {
         auto MakeMouseButton = [this](const char *name,
                                       SceneWidget::Controls type) {
             auto button = new SmallToggleButton(name);
-            button->SetOnClicked([this, type]() {
-                this->SetMouseMode(type);
-            });
+            button->SetOnClicked([this, type]() { this->SetMouseMode(type); });
             this->settings.mouse_buttons[type] = button;
             return button;
         };
@@ -461,9 +459,8 @@ struct DrawVisualizer::Impl {
 
         // Selection sets controls
         settings.new_selection_set = new SmallButton(" + ");
-        settings.new_selection_set->SetOnClicked([this]() {
-            NewSelectionSet();
-        });
+        settings.new_selection_set->SetOnClicked(
+                [this]() { NewSelectionSet(); });
         settings.delete_selection_set = new SmallButton(" - ");
         settings.delete_selection_set->SetOnClicked([this]() {
             int idx = settings.selection_sets->GetSelectedIndex();
@@ -884,7 +881,9 @@ struct DrawVisualizer::Impl {
 
                     auto id = settings.object2itemid[o.name];
                     auto cell = settings.geometries->GetItem(id);
-                    auto obj_cell = std::dynamic_pointer_cast<CheckableTextTreeCell>(cell);
+                    auto obj_cell =
+                            std::dynamic_pointer_cast<CheckableTextTreeCell>(
+                                    cell);
                     if (obj_cell) {
                         obj_cell->GetCheckbox()->SetChecked(show);
                     }
@@ -964,7 +963,8 @@ struct DrawVisualizer::Impl {
         px = px * window_->GetScaling();
         for (auto &o : objects_) {
             o.material.point_size = px;
-            scene_->GetScene()->GetScene()->OverrideMaterial(o.name, o.material);
+            scene_->GetScene()->GetScene()->OverrideMaterial(o.name,
+                                                             o.material);
         }
         selections_->SetPointSize(px);
 
@@ -1062,7 +1062,10 @@ struct DrawVisualizer::Impl {
         selections_->MakeActive();
     }
 
-    std::vector<DrawVisualizerSelections::SelectionSet> GetSelectionSets() const { return selections_->GetSets(); }
+    std::vector<DrawVisualizerSelections::SelectionSet> GetSelectionSets()
+            const {
+        return selections_->GetSets();
+    }
 
     void SetCurrentTime(double t) {
         ui_state_.current_time = t;
@@ -1321,7 +1324,7 @@ struct DrawVisualizer::Impl {
 
         std::vector<std::string> items;
         items.reserve(n);
-        for (size_t i = 0;  i < n; ++i) {
+        for (size_t i = 0; i < n; ++i) {
             std::stringstream s;
             s << "Set " << (i + 1);
             items.push_back(s.str());
@@ -1334,7 +1337,9 @@ struct DrawVisualizer::Impl {
     void UpdateSelectablePoints() {
         selections_->StartSelectablePoints();
         for (auto &o : objects_) {
-            if (!IsGeometryVisible(o)) { continue; }
+            if (!IsGeometryVisible(o)) {
+                continue;
+            }
 
             selections_->AddSelectablePoints(o.name, o.geometry.get(),
                                              o.tgeometry.get());
@@ -1624,7 +1629,8 @@ void DrawVisualizer::EnableGroup(const std::string &group, bool enable) {
     impl_->EnableGroup(group, enable);
 }
 
-std::vector<DrawVisualizerSelections::SelectionSet> DrawVisualizer::GetSelectionSets() const {
+std::vector<DrawVisualizerSelections::SelectionSet>
+DrawVisualizer::GetSelectionSets() const {
     return impl_->GetSelectionSets();
 }
 

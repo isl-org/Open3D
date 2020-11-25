@@ -124,7 +124,7 @@ public:
     };
     virtual const ProjectionInfo& GetProjection() const = 0;
 
-    virtual void CopyFrom(const Camera *camera) = 0;
+    virtual void CopyFrom(const Camera* camera) = 0;
 };
 
 }  // namespace rendering

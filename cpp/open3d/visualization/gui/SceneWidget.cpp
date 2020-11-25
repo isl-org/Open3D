@@ -451,9 +451,8 @@ class PickInteractor : public RotateCameraInteractor {
     using Super = RotateCameraInteractor;
 
 public:
-    PickInteractor(rendering::Open3DScene *scene, rendering::Camera* camera)
-        : Super(camera), pick_(new PickPointsInteractor(scene, camera)) {
-    }
+    PickInteractor(rendering::Open3DScene* scene, rendering::Camera* camera)
+        : Super(camera), pick_(new PickPointsInteractor(scene, camera)) {}
 
     void SetViewSize(const Size& size) {
         GetMatrixInteractor().SetViewSize(size.width, size.height);
@@ -466,13 +465,12 @@ public:
 
     void SetPickablePointSize(int px) { pick_->SetPointSize(px); }
 
-    void SetOnPointsPicked(std::function<void(const std::vector<size_t>&, int)> on_picked) {
+    void SetOnPointsPicked(
+            std::function<void(const std::vector<size_t>&, int)> on_picked) {
         pick_->SetOnPointsPicked(on_picked);
     }
 
-    void SetNeedsRedraw() {
-        pick_->SetNeedsRedraw();
-    }
+    void SetNeedsRedraw() { pick_->SetNeedsRedraw(); }
 
     void Mouse(const MouseEvent& e) override {
         if (e.modifiers & int(KeyModifier::CTRL)) {
@@ -536,13 +534,12 @@ public:
 
     void SetPickablePointSize(int px) { pick_->SetPickablePointSize(px); }
 
-    void SetOnPointsPicked(std::function<void(const std::vector<size_t>&, int)> on_picked) {
+    void SetOnPointsPicked(
+            std::function<void(const std::vector<size_t>&, int)> on_picked) {
         pick_->SetOnPointsPicked(on_picked);
     }
 
-    void SetPickNeedsRedraw() {
-        pick_->SetNeedsRedraw();
-    }
+    void SetPickNeedsRedraw() { pick_->SetNeedsRedraw(); }
 
     SceneWidget::Controls GetControls() const {
         if (current_ == fly_.get()) {
@@ -713,7 +710,8 @@ void SceneWidget::ShowSkybox(bool is_on) {
     impl_->controls_->ShowSkybox(is_on);
 }
 
-void SceneWidget::SetPickablePoints(const std::vector<Eigen::Vector3d>& points) {
+void SceneWidget::SetPickablePoints(
+        const std::vector<Eigen::Vector3d>& points) {
     impl_->controls_->SetPickablePoints(points);
 }
 
@@ -721,7 +719,8 @@ void SceneWidget::SetPickablePointSize(int px) {
     impl_->controls_->SetPickablePointSize(px);
 }
 
-void SceneWidget::SetOnPointsPicked(std::function<void(const std::vector<size_t>&, int)> on_picked) {
+void SceneWidget::SetOnPointsPicked(
+        std::function<void(const std::vector<size_t>&, int)> on_picked) {
     impl_->controls_->SetOnPointsPicked(on_picked);
 }
 

@@ -71,8 +71,14 @@ public:
 
     void SetFrame(const Rect& f) override;
 
-    enum Controls { ROTATE_CAMERA, FLY, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL,
-                    PICK_POINTS };
+    enum Controls {
+        ROTATE_CAMERA,
+        FLY,
+        ROTATE_SUN,
+        ROTATE_IBL,
+        ROTATE_MODEL,
+        PICK_POINTS
+    };
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,
@@ -92,7 +98,8 @@ public:
 
     void SetPickablePoints(const std::vector<Eigen::Vector3d>& points);
     void SetPickablePointSize(int px);
-    void SetOnPointsPicked(std::function<void(const std::vector<size_t>&, int)> on_picked);
+    void SetOnPointsPicked(
+            std::function<void(const std::vector<size_t>&, int)> on_picked);
 
     void SetScene(std::shared_ptr<rendering::Open3DScene> scene);
     std::shared_ptr<rendering::Open3DScene> GetScene() const;

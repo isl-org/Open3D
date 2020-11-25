@@ -822,8 +822,8 @@ void FilamentResourceManager::LoadDefaults() {
 
     const auto poffset_path = resource_root + "/unlitPolygonOffset.filamat";
     auto poffset_mat = LoadMaterialFromFile(poffset_path, engine_);
-    materials_[kDefaultUnlitPolygonOffsetShader] = BoxResource(poffset_mat,
-                                                               engine_);
+    materials_[kDefaultUnlitPolygonOffsetShader] =
+            BoxResource(poffset_mat, engine_);
 }
 
 }  // namespace rendering

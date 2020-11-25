@@ -28,12 +28,12 @@
 
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
-#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace visualization {
@@ -48,9 +48,9 @@ static const unsigned int kMaxPickableIndex = 0x00fffffe;
 
 Eigen::Vector3d SetColorForIndex(unsigned int idx) {
     idx = std::min(kMaxPickableIndex, idx);
-    const double red =   double((idx & 0x00ff0000) >> 16) / 255.0;
-    const double green = double((idx & 0x0000ff00) >>  8) / 255.0;
-    const double blue =  double((idx & 0x000000ff)      ) / 255.0;
+    const double red = double((idx & 0x00ff0000) >> 16) / 255.0;
+    const double green = double((idx & 0x0000ff00) >> 8) / 255.0;
+    const double blue = double((idx & 0x000000ff)) / 255.0;
     return {red, green, blue};
 }
 
@@ -68,7 +68,8 @@ PickPointsInteractor::PickPointsInteractor(rendering::Open3DScene *scene,
                                            rendering::Camera *camera) {
     scene_ = scene;
     camera_ = camera;
-    picking_scene_ = std::make_shared<rendering::Open3DScene>(scene->GetRenderer());
+    picking_scene_ =
+            std::make_shared<rendering::Open3DScene>(scene->GetRenderer());
 
     picking_scene_->SetDownsampleThreshold(SIZE_MAX);  // don't downsample!
     // Background color is white, so that index 0 can be black
@@ -77,19 +78,23 @@ PickPointsInteractor::PickPointsInteractor(rendering::Open3DScene *scene,
     picking_scene_->GetView()->ConfigureForColorPicking();
 }
 
-PickPointsInteractor::~PickPointsInteractor() {}        
+PickPointsInteractor::~PickPointsInteractor() {}
 
 void PickPointsInteractor::SetPointSize(int px) {
     point_size_ = px;
     if (!pickable_points_.empty()) {
         auto mat = MakeMaterial();
-        picking_scene_->GetScene()->OverrideMaterial(kSelectablePointsName, mat);
+        picking_scene_->GetScene()->OverrideMaterial(kSelectablePointsName,
+                                                     mat);
     }
 }
 
-void PickPointsInteractor::SetPickablePoints(const std::vector<Eigen::Vector3d>& points) {
+void PickPointsInteractor::SetPickablePoints(
+        const std::vector<Eigen::Vector3d> &points) {
     if (points.size() > kMaxPickableIndex) {
-        utility::LogWarning("Can only select from a maximumum of {} points; given {}", kMaxPickableIndex, points.size());
+        utility::LogWarning(
+                "Can only select from a maximumum of {} points; given {}",
+                kMaxPickableIndex, points.size());
     }
 
     pickable_points_ = points;
@@ -100,14 +105,14 @@ void PickPointsInteractor::SetPickablePoints(const std::vector<Eigen::Vector3d>&
     if (!points.empty()) {  // Filament panics if an object has zero vertices
         auto cloud = std::make_shared<geometry::PointCloud>(points);
         cloud->colors_.reserve(points.size());
-        for (size_t i = 0;  i < cloud->points_.size();  ++i) {
+        for (size_t i = 0; i < cloud->points_.size(); ++i) {
             cloud->colors_.emplace_back(SetColorForIndex(i));
         }
 
         auto mat = MakeMaterial();
         picking_scene_->AddGeometry(kSelectablePointsName, cloud, mat);
-        picking_scene_->GetScene()->GeometryShadows(kSelectablePointsName, false,
-                                                    false);
+        picking_scene_->GetScene()->GeometryShadows(kSelectablePointsName,
+                                                    false, false);
     }
 }
 
@@ -117,17 +122,18 @@ void PickPointsInteractor::SetNeedsRedraw() {
     while (!pending_.empty()) {
         pending_.pop();
     }
-} 
+}
 
-rendering::MatrixInteractorLogic& PickPointsInteractor::GetMatrixInteractor() {
+rendering::MatrixInteractorLogic &PickPointsInteractor::GetMatrixInteractor() {
     return matrix_logic_;
 }
 
-void PickPointsInteractor::SetOnPointsPicked(std::function<void(const std::vector<size_t>&, int)> f) {
+void PickPointsInteractor::SetOnPointsPicked(
+        std::function<void(const std::vector<size_t> &, int)> f) {
     on_picked_ = f;
 }
 
-void PickPointsInteractor::Mouse(const MouseEvent& e) {
+void PickPointsInteractor::Mouse(const MouseEvent &e) {
     if (e.type == MouseEvent::BUTTON_UP) {
         gui::Rect pick_rect(e.x, e.y, 1, 1);
         if (dirty_) {
@@ -138,12 +144,12 @@ void PickPointsInteractor::Mouse(const MouseEvent& e) {
                               matrix_logic_.GetViewWidth(),
                               matrix_logic_.GetViewHeight());
             view->GetCamera()->CopyFrom(camera_);
-            picking_scene_->GetRenderer().RenderToImage(view,
-                              picking_scene_->GetScene(),
-                              [this](std::shared_ptr<geometry::Image> img) {
-                this->OnPickImageDone(img);
-                // io::WriteImage("/tmp/debug.png", *img); // debugging
-            });
+            picking_scene_->GetRenderer().RenderToImage(
+                    view, picking_scene_->GetScene(),
+                    [this](std::shared_ptr<geometry::Image> img) {
+                        this->OnPickImageDone(img);
+                        // io::WriteImage("/tmp/debug.png", *img); // debugging
+                    });
         } else {
             pending_.push({pick_rect, e.modifiers});
             OnPickImageDone(pick_image_);
@@ -152,7 +158,7 @@ void PickPointsInteractor::Mouse(const MouseEvent& e) {
 }
 
 // TODO: do we need this?
-void PickPointsInteractor::Key(const KeyEvent& e) {}
+void PickPointsInteractor::Key(const KeyEvent &e) {}
 
 rendering::Material PickPointsInteractor::MakeMaterial() {
     rendering::Material mat;
@@ -164,7 +170,8 @@ rendering::Material PickPointsInteractor::MakeMaterial() {
     return mat;
 }
 
-void PickPointsInteractor::OnPickImageDone(std::shared_ptr<geometry::Image> img) {
+void PickPointsInteractor::OnPickImageDone(
+        std::shared_ptr<geometry::Image> img) {
     if (dirty_) {
         pick_image_ = img;
         dirty_ = false;

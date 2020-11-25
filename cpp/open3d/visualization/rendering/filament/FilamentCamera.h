@@ -83,7 +83,7 @@ public:
     Transform GetProjectionMatrix() const override;
     const ProjectionInfo& GetProjection() const override;
 
-    void CopyFrom(const Camera *camera) override;
+    void CopyFrom(const Camera* camera) override;
 
     filament::Camera* GetNativeCamera() const { return camera_; }
 

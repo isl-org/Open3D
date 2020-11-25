@@ -12,6 +12,7 @@ import open3d_tutorial as o3dtut
 
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 
+
 def normalize(v):
     a = 1.0 / math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
     return (a * v[0], a * v[1], a * v[2])
@@ -116,13 +117,14 @@ def actions():
         drawvis.show_geometry(TRUTH_NAME, not truth_vis)
         drawvis.show_geometry(RESULT_NAME, truth_vis)
 
-    vis.draw([{"name": SOURCE_NAME,
-               "geometry": cloud
-              }, {
-               "name": TRUTH_NAME,
-               "geometry": bunny,
-               "is_visible": False
-              }],
+    vis.draw([{
+        "name": SOURCE_NAME,
+        "geometry": cloud
+    }, {
+        "name": TRUTH_NAME,
+        "geometry": bunny,
+        "is_visible": False
+    }],
              actions=[("Create Mesh", make_mesh),
                       ("Toggle truth/result", toggle_result)])
 
@@ -144,10 +146,13 @@ def get_icp_transform(source, target, source_indices, target_indices):
         o3d.pipelines.registration.TransformationEstimationPointToPoint())
 
     return reg_p2p.transformation
-    
+
+
 def selections():
-    source = o3d.io.read_point_cloud(CURRENT_DIR + "/../../test_data/ICP/cloud_bin_0.pcd")
-    target = o3d.io.read_point_cloud(CURRENT_DIR + "/../../test_data/ICP/cloud_bin_2.pcd")
+    source = o3d.io.read_point_cloud(CURRENT_DIR +
+                                     "/../../test_data/ICP/cloud_bin_0.pcd")
+    target = o3d.io.read_point_cloud(CURRENT_DIR +
+                                     "/../../test_data/ICP/cloud_bin_2.pcd")
     source.paint_uniform_color([1, 0.706, 0])
     target.paint_uniform_color([0, 0.651, 0.929])
 
@@ -158,8 +163,10 @@ def selections():
         # sets: [name: [{ "index": int, "order": int, "point": (x, y, z)}, ...],
         #        ...]
         sets = drawvis.get_selection_sets()
-        source_picked = sorted(list(sets[0][source_name]), key=lambda x: x.order)
-        target_picked = sorted(list(sets[0][target_name]), key=lambda x: x.order)
+        source_picked = sorted(list(sets[0][source_name]),
+                               key=lambda x: x.order)
+        target_picked = sorted(list(sets[0][target_name]),
+                               key=lambda x: x.order)
         source_indices = [idx.index for idx in source_picked]
         target_indices = [idx.index for idx in target_picked]
 
@@ -186,12 +193,17 @@ def selections():
         drawvis.remove_geometry(source_name)
         drawvis.add_geometry({"name": source_name, "geometry": source})
 
-
-    vis.draw([{ "name": source_name, "geometry": source},
-              { "name": target_name, "geometry": target}],
+    vis.draw([{
+        "name": source_name,
+        "geometry": source
+    }, {
+        "name": target_name,
+        "geometry": target
+    }],
              actions=[("ICP Registration (one set)", do_icp_one_set),
                       ("ICP Registration (two sets)", do_icp_two_sets)],
              show_ui=True)
+
 
 def time_animation():
     orig = make_point_cloud(200, (0, 0, 0), 1.0, True)
@@ -206,7 +218,11 @@ def time_animation():
         pts = pts * (1.0 + amount * expand) + [amount * v for v in drift_dir]
         cloud.points = o3d.utility.Vector3dVector(pts)
         cloud.colors = orig.colors
-        clouds.append({"name": "points at t=" + str(i), "geometry": cloud, "time": i})
+        clouds.append({
+            "name": "points at t=" + str(i),
+            "geometry": cloud,
+            "time": i
+        })
 
     vis.draw(clouds)
 
@@ -318,6 +334,7 @@ def remove():
 def everything():
     raise Exception("Use all features at once")
 
+
 def main():
     nothing()
     single_object()
@@ -329,8 +346,9 @@ def main():
     # time_animation()
     # groups()
     # remove()
-#    everything()
 
+
+#    everything()
 
 if __name__ == "__main__":
     main()

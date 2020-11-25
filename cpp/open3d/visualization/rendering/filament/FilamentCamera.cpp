@@ -49,9 +49,9 @@ Camera::Transform FilamentToCameraTransform(const filament::math::mat4& ft) {
     Camera::Transform::MatrixType m;
 
     m << float(ft(0, 0)), float(ft(0, 1)), float(ft(0, 2)), float(ft(0, 3)),
-         float(ft(1, 0)), float(ft(1, 1)), float(ft(1, 2)), float(ft(1, 3)),
-         float(ft(2, 0)), float(ft(2, 1)), float(ft(2, 2)), float(ft(2, 3)),
-         float(ft(3, 0)), float(ft(3, 1)), float(ft(3, 2)), float(ft(3, 3));
+            float(ft(1, 0)), float(ft(1, 1)), float(ft(1, 2)), float(ft(1, 3)),
+            float(ft(2, 0)), float(ft(2, 1)), float(ft(2, 2)), float(ft(2, 3)),
+            float(ft(3, 0)), float(ft(3, 1)), float(ft(3, 2)), float(ft(3, 3));
 
     return Camera::Transform(m);
 }
@@ -59,10 +59,9 @@ Camera::Transform FilamentToCameraTransform(const filament::math::mat4& ft) {
 Camera::Transform FilamentToCameraTransform(const filament::math::mat4f& ft) {
     Camera::Transform::MatrixType m;
 
-    m << ft(0, 0), ft(0, 1), ft(0, 2), ft(0, 3),
-         ft(1, 0), ft(1, 1), ft(1, 2), ft(1, 3),
-         ft(2, 0), ft(2, 1), ft(2, 2), ft(2, 3),
-         ft(3, 0), ft(3, 1), ft(3, 2), ft(3, 3);
+    m << ft(0, 0), ft(0, 1), ft(0, 2), ft(0, 3), ft(1, 0), ft(1, 1), ft(1, 2),
+            ft(1, 3), ft(2, 0), ft(2, 1), ft(2, 2), ft(2, 3), ft(3, 0),
+            ft(3, 1), ft(3, 2), ft(3, 3);
 
     return Camera::Transform(m);
 }
@@ -94,23 +93,18 @@ FilamentCamera::FilamentCamera(filament::Engine& engine) : engine_(engine) {
 
 FilamentCamera::~FilamentCamera() { engine_.destroy(camera_); }
 
-void FilamentCamera::CopyFrom(const Camera *camera) {
+void FilamentCamera::CopyFrom(const Camera* camera) {
     SetModelMatrix(camera->GetModelMatrix());
 
-    auto &proj = camera->GetProjection();
+    auto& proj = camera->GetProjection();
     if (proj.is_defined_by_planes) {
-        SetProjection(proj.proj.planes.projection,
-                      proj.proj.planes.left,
-                      proj.proj.planes.right,
-                      proj.proj.planes.bottom,
-                      proj.proj.planes.top,
-                      proj.proj.planes.near,
+        SetProjection(proj.proj.planes.projection, proj.proj.planes.left,
+                      proj.proj.planes.right, proj.proj.planes.bottom,
+                      proj.proj.planes.top, proj.proj.planes.near,
                       proj.proj.planes.far);
     } else {
-        SetProjection(proj.proj.fov.fov,
-                      proj.proj.fov.aspect,
-                      proj.proj.fov.near,
-                      proj.proj.fov.far,
+        SetProjection(proj.proj.fov.fov, proj.proj.fov.aspect,
+                      proj.proj.fov.near, proj.proj.fov.far,
                       proj.proj.fov.fov_type);
     }
 }
@@ -219,7 +213,7 @@ Camera::Transform FilamentCamera::GetProjectionMatrix() const {
     return FilamentToCameraTransform(ftransform);
 }
 
-const Camera::ProjectionInfo& FilamentCamera::GetProjection() const  {
+const Camera::ProjectionInfo& FilamentCamera::GetProjection() const {
     return projection_;
 }
 

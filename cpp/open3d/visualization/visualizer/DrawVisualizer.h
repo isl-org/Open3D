@@ -135,7 +135,8 @@ public:
     void SetPointSize(int point_size);
     void EnableGroup(const std::string& group, bool enable);
 
-    std::vector<DrawVisualizerSelections::SelectionSet> GetSelectionSets() const;
+    std::vector<DrawVisualizerSelections::SelectionSet> GetSelectionSets()
+            const;
 
     double GetAnimationFrameDelay() const;
     void SetAnimationFrameDelay(double secs);

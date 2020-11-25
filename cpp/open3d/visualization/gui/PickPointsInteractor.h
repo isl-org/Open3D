@@ -26,10 +26,10 @@
 
 #pragma once
 
+#include <queue>
+
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/rendering/MatrixInteractorLogic.h"
-
-#include <queue>
 
 namespace open3d {
 
@@ -51,8 +51,8 @@ namespace gui {
 // This is an internal class used by SceneWidget
 class PickPointsInteractor : public SceneWidget::MouseInteractor {
 public:
-    PickPointsInteractor(rendering::Open3DScene *scene,
-                         rendering::Camera *camera);
+    PickPointsInteractor(rendering::Open3DScene* scene,
+                         rendering::Camera* camera);
     virtual ~PickPointsInteractor();
 
     void SetPointSize(int px);
@@ -66,7 +66,8 @@ public:
 
     /// Calls the provided function when points are picked:
     ///    f(indices, key_modifiers)
-    void SetOnPointsPicked(std::function<void(const std::vector<size_t>&, int)> f);
+    void SetOnPointsPicked(
+            std::function<void(const std::vector<size_t>&, int)> f);
 
     rendering::MatrixInteractorLogic& GetMatrixInteractor() override;
     void Mouse(const MouseEvent& e) override;
@@ -78,8 +79,8 @@ protected:
     rendering::Material MakeMaterial();
 
 private:
-    rendering::Open3DScene *scene_;
-    rendering::Camera *camera_;
+    rendering::Open3DScene* scene_;
+    rendering::Camera* camera_;
 
     std::function<void(const std::vector<size_t>&, int)> on_picked_;
     int point_size_ = 3;
@@ -93,7 +94,6 @@ private:
         int keymods;
     };
     std::queue<PickInfo> pending_;
-
 };
 
 }  // namespace gui
