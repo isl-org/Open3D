@@ -27,9 +27,11 @@ if platform.system() == "Darwin":
     hanzi = "STHeiti Light"
     chess = "/System/Library/Fonts/Apple Symbols.ttf"
 elif platform.system() == "Windows":
-    serif = "Times New Roman"
-    hanzi = "STHeiti Light"
-    chess = "Apple Symbols"
+    # it is necessary to specify paths on Windows since it stores its fonts
+    # with a cryptic name, so font name searches do not work on Windows
+    serif = "c:/windows/fonts/times.ttf"  # Times New Roman
+    hanzi = "c:/windows/fonts/msyh.ttc"  # YaHei UI
+    chess = "c:/windows/fonts/seguisym.ttf"  # Segoe UI Symbol
 else:
     # Assumes Ubuntu 18.04
     serif = "DejaVuSerif"
