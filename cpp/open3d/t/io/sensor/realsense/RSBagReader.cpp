@@ -156,7 +156,7 @@ bool RSBagReader::SeekTimestamp(size_t timestamp) {
             pipe_->get_active_profile().get_device().as<rs2::playback>();
     try {
         rs_device.seek(std::chrono::microseconds(timestamp));
-    } catch (const rs2::error &e) {
+    } catch (const rs2::error &) {
         utility::LogWarning("Unable to go to timestamp {}", timestamp);
         return false;
     }
