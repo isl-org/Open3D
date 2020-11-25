@@ -72,11 +72,12 @@ set(HASHMAP_CUDA_SRC
   )
 
 set(CORE_NNS_SRC
+    nns/NNSIndex.cpp
     nns/NanoFlannIndex.cpp
     nns/NearestNeighborSearch.cpp
 )
 
-if (NOT WIN32)
+if (WITH_FAISS)
     list(APPEND CORE_NNS_SRC nns/FaissIndex.cpp)
 endif()
 

@@ -45,25 +45,12 @@ NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
 
 NanoFlannIndex::~NanoFlannIndex(){};
 
-int NanoFlannIndex::GetDimension() const {
-    SizeVector shape = dataset_points_.GetShape();
-    return static_cast<int>(shape[1]);
-}
-
-size_t NanoFlannIndex::GetDatasetSize() const {
-    SizeVector shape = dataset_points_.GetShape();
-    return static_cast<size_t>(shape[0]);
-}
-
-Dtype NanoFlannIndex::GetDtype() const { return dataset_points_.GetDtype(); }
-
 bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
     SizeVector shape = dataset_points.GetShape();
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
                 "[NanoFlannIndex::SetTensorData] dataset_points must be "
                 "2D matrix, with shape {n_dataset_points, d}.");
-        return false;
     }
     dataset_points_ = dataset_points.Contiguous();
     size_t dataset_size = GetDatasetSize();
@@ -80,7 +67,7 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
 };
 
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
-                                                    int knn) {
+                                                    int knn) const {
     // Check dtype.
     if (query_points.GetDtype() != GetDtype()) {
         utility::LogError(
@@ -154,7 +141,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
 };
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
-        const Tensor &query_points, const Tensor &radii) {
+        const Tensor &query_points, const Tensor &radii) const {
     // Check dtype.
     if (query_points.GetDtype() != GetDtype()) {
         utility::LogError(
@@ -258,7 +245,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 };
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
-        const Tensor &query_points, double radius) {
+        const Tensor &query_points, double radius) const {
     int64_t num_query_points = query_points.GetShape()[0];
     Dtype dtype = GetDtype();
     std::tuple<Tensor, Tensor, Tensor> result;

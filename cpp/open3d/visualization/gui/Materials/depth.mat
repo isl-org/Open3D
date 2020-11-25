@@ -23,7 +23,8 @@ fragment {
         float near = materialParams.cameraNear;
         float far = materialParams.cameraFar;
 
-        float eye_z = near * far / ((gl_FragCoord.z * (far - near)) - far);
+        float inverse_z = 1.0 - gl_FragCoord.z;
+        float eye_z = near * far / ((inverse_z * (far - near)) - far);
         float linearZ = (eye_z + near) / (near - far);
 
         material.baseColor.rgb = heatmap(4.0*linearZ);
