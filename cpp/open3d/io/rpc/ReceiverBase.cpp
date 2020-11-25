@@ -101,9 +101,9 @@ void ReceiverBase::Mainloop() {
     socket_ = std::unique_ptr<zmq::socket_t>(
             new zmq::socket_t(GetZMQContext(), ZMQ_REP));
 
-    socket_->setsockopt(ZMQ_LINGER, 1000);
-    socket_->setsockopt(ZMQ_RCVTIMEO, 1000);
-    socket_->setsockopt(ZMQ_SNDTIMEO, timeout_);
+    socket_->set(zmq::sockopt::linger, 1000);
+    socket_->set(zmq::sockopt::rcvtimeo, 1000);
+    socket_->set(zmq::sockopt::sndtimeo, timeout_);
 
     auto limits = msgpack::unpack_limit(0xffffffff,  // array
                                         0xffffffff,  // map
@@ -181,7 +181,7 @@ void ReceiverBase::Mainloop() {
                 }
             }
             if (replies.size() == 1) {
-                socket_->send(*replies[0]);
+                socket_->send(*replies[0], zmq::send_flags::none);
             } else {
                 size_t size = 0;
                 for (auto r : replies) {
@@ -193,7 +193,7 @@ void ReceiverBase::Mainloop() {
                     memcpy((char*)reply.data() + offset, r->data(), r->size());
                     offset += r->size();
                 }
-                socket_->send(reply);
+                socket_->send(reply, zmq::send_flags::none);
             }
         } catch (const zmq::error_t& err) {
             LogInfo("ReceiverBase::Mainloop: {}", err.what());

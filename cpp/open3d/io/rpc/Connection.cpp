@@ -58,17 +58,17 @@ Connection::Connection(const std::string& address,
       address_(address),
       connect_timeout_(connect_timeout),
       timeout_(timeout) {
-    socket_->setsockopt(ZMQ_LINGER, timeout_);
-    socket_->setsockopt(ZMQ_CONNECT_TIMEOUT, connect_timeout_);
-    socket_->setsockopt(ZMQ_RCVTIMEO, timeout_);
-    socket_->setsockopt(ZMQ_SNDTIMEO, timeout_);
+    socket_->set(zmq::sockopt::linger, timeout_);
+    socket_->set(zmq::sockopt::connect_timeout, connect_timeout_);
+    socket_->set(zmq::sockopt::rcvtimeo, timeout_);
+    socket_->set(zmq::sockopt::sndtimeo, timeout_);
     socket_->connect(address_.c_str());
 }
 
 Connection::~Connection() { socket_->close(); }
 
 std::shared_ptr<zmq::message_t> Connection::Send(zmq::message_t& send_msg) {
-    if (!socket_->send(send_msg)) {
+    if (!socket_->send(send_msg, zmq::send_flags::none)) {
         zmq::error_t err;
         if (err.num()) {
             LogInfo("Connection::send() send failed with: {}", err.what());

@@ -126,7 +126,7 @@ struct Array {
         arr.data.ptr = (const char*)ptr;
         int64_t num = 1;
         for (int64_t n : shape) num *= n;
-        arr.data.size = sizeof(T) * num;
+        arr.data.size = uint32_t(sizeof(T) * num);
         return arr;
     }
     std::string type;
