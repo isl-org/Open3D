@@ -30,6 +30,7 @@
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/nns/NNSIndex.h"
 
 namespace open3d {
 namespace core {
@@ -38,7 +39,7 @@ namespace nns {
 /// \class FixedRadiusIndex
 ///
 /// \brief FixedRadiusIndex for nearest neighbor range search.
-class FixedRadiusIndex {
+class FixedRadiusIndex : public NNSIndex {
 public:
     /// \brief Default Constructor.
     FixedRadiusIndex();
@@ -53,13 +54,25 @@ public:
     FixedRadiusIndex& operator=(const FixedRadiusIndex&) = delete;
 
 public:
-    /// Set the data for the spatial hash map from a Tensor.
-    ///
-    /// \param dataset_points Dataset points for spatial hash map construction.
-    /// Must be 2D, with shape {n, d}.
-    /// \return Returns true if the construction success, otherwise false.
-    bool SetTensorData(const Tensor& dataset_points, double radius);
+    bool SetTensorData(const Tensor& dataset_points) override {
+        utility::LogError(
+                "FixedRadiusIndex::SetTensorData witout radius not "
+                "implemented.");
+    }
 
+    bool SetTensorData(const Tensor& dataset_points, double radius) override;
+
+    std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
+                                        int knn) const override {
+        utility::LogError("FixedRadiusIndex::SearchKnn not implemented.");
+    }
+
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor& query_points, const Tensor& radii) const override {
+        utility::LogError(
+                "FixedRadiusIndex::SearchRadius with multi-radii not "
+                "implemented.");
+    }
     /// Perform radius search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}, same
@@ -70,26 +83,19 @@ public:
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
     /// - num_neighbors: Tensor of shape {n}, dtype Int64.
-    std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor& query_points,
-                                                    double radius);
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor& query_points, double radius) const override;
 
-    /// Get dimension of the dataset points.
-    /// \return dimension of dataset points.
-    int GetDimension() const;
-
-    /// Get size of the dataset points.
-    /// \return number of points in dataset.
-    size_t GetDatasetSize() const;
-
-    /// Get dtype of the dataset points.
-    /// \return dtype of dataset points.
-    Dtype GetDtype() const;
+    std::pair<Tensor, Tensor> SearchHybrid(const Tensor& query_points,
+                                           float radius,
+                                           int max_knn) const override {
+        utility::LogError("FixedRadiusIndex::SearchHybrid not implemented.");
+    }
 
     const double hash_table_size_factor = 1 / 32;
     const int64_t max_hash_tabls_size = 10000;
 
 protected:
-    Tensor dataset_points_;
     std::vector<int64_t> points_row_splits_;
     std::vector<uint32_t> hash_table_splits_;
     std::vector<uint32_t> out_hash_table_splits_;

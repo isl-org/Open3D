@@ -46,18 +46,6 @@ FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
 
 FixedRadiusIndex::~FixedRadiusIndex(){};
 
-int FixedRadiusIndex::GetDimension() const {
-    SizeVector shape = dataset_points_.GetShape();
-    return static_cast<int>(shape[1]);
-}
-
-size_t FixedRadiusIndex::GetDatasetSize() const {
-    SizeVector shape = dataset_points_.GetShape();
-    return static_cast<size_t>(shape[0]);
-}
-
-Dtype FixedRadiusIndex::GetDtype() const { return dataset_points_.GetDtype(); }
-
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius) {
     dataset_points_ = dataset_points.Contiguous();
@@ -114,7 +102,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 };
 
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
-        const Tensor &query_points, double radius) {
+        const Tensor &query_points, double radius) const {
     Tensor query_points_ = query_points.Contiguous();
     int64_t num_query_points = query_points_.GetShape()[0];
     std::vector<int64_t> queries_row_splits({0, num_query_points});
@@ -135,16 +123,16 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                 temp_ptr, temp_size,
                 static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
                 GetDatasetSize(),
-                static_cast<scalar_t *>(dataset_points_.GetDataPtr()),
+                static_cast<const scalar_t *>(dataset_points_.GetDataPtr()),
                 num_query_points,
                 static_cast<scalar_t *>(query_points_.GetDataPtr()),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), queries_row_splits.size(),
                 queries_row_splits.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
-                (uint32_t *)static_cast<int32_t *>(
+                (uint32_t *)static_cast<const int32_t *>(
                         hash_table_cell_splits_.GetDataPtr()),
-                (uint32_t *)static_cast<int32_t *>(
+                (uint32_t *)static_cast<const int32_t *>(
                         hash_table_index_.GetDataPtr()),
                 output_allocator);
 
@@ -156,16 +144,16 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                 temp_ptr, temp_size,
                 static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
                 GetDatasetSize(),
-                static_cast<scalar_t *>(dataset_points_.GetDataPtr()),
+                static_cast<const scalar_t *>(dataset_points_.GetDataPtr()),
                 num_query_points,
                 static_cast<scalar_t *>(query_points_.GetDataPtr()),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), queries_row_splits.size(),
                 queries_row_splits.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
-                (uint32_t *)static_cast<int32_t *>(
+                (uint32_t *)static_cast<const int32_t *>(
                         hash_table_cell_splits_.GetDataPtr()),
-                (uint32_t *)static_cast<int32_t *>(
+                (uint32_t *)static_cast<const int32_t *>(
                         hash_table_index_.GetDataPtr()),
                 output_allocator);
 
