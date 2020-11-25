@@ -28,11 +28,6 @@ def make_point_cloud(npts, center, radius, colorize):
     return cloud
 
 
-def nothing():
-    # Empty white window
-    vis.draw()
-
-
 def single_object():
     # No colors, no normals, should appear unlit black
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
@@ -70,26 +65,6 @@ def multi_objects():
         pc_nocolor, pc_color, sphere_unlit, sphere_colored_unlit, sphere_lit,
         sphere_colored_lit, big_bbox, sphere_bbox, lines, lines_colored
     ])
-
-
-def actions_layout():
-    pc = make_point_cloud(200, (0, 0, 0), 1, True)
-    actions = []
-    for a in [
-            "Supercalifragilisticexpialidocious", "Action 1", "Action 2",
-            "Action 3", "Action 4"
-    ]:
-
-        def make_callback(name):
-
-            def on_action(drawvis):
-                print('Trigged action "' + name + '"')
-
-            return on_action
-
-        actions.append((a, make_callback(a)))
-
-    vis.draw([pc], actions=actions, menu_actions=actions)
 
 
 def actions():
@@ -331,24 +306,12 @@ def remove():
                       ("Remove Bounds", remove_bbox)])
 
 
-def everything():
-    raise Exception("Use all features at once")
-
-
 def main():
-    nothing()
     single_object()
     multi_objects()
-    # actions_layout()
     actions()
     selections()
-    # mesh_selections()
-    # time_animation()
-    # groups()
-    # remove()
 
-
-#    everything()
 
 if __name__ == "__main__":
     main()
