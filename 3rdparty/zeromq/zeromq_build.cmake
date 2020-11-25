@@ -39,7 +39,11 @@ endif()
 
 if( WIN32 )
     # On windows the lib name is more complicated
-    set(ZEROMQ_LIBRARIES libzmq-${CMAKE_VS_PLATFORM_TOOLSET}-mt-s$<$<CONFIG:Debug>,gd>-4_3_3 )
+    if( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+        set(ZEROMQ_LIBRARIES libzmq-${CMAKE_VS_PLATFORM_TOOLSET}-mt-sgd-4_3_3 )
+    else()
+        set(ZEROMQ_LIBRARIES libzmq-${CMAKE_VS_PLATFORM_TOOLSET}-mt-s-4_3_3 )
+    endif()
 
     # On windows we need to link some additional libs.
     # The following code is taken from the zeromq CMakeLists.txt and collects
