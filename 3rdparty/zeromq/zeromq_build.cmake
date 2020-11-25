@@ -38,8 +38,12 @@ if(NOT ext_cppzmq_POPULATED)
 endif()
 
 if( WIN32 )
-    set(ZEROMQ_LIBRARIES libzmq-${CMAKE_VS_PLATFORM_TOOLSET}-mt-s-4_3_3 )
+    # On windows the lib name is more complicated
+    set(ZEROMQ_LIBRARIES libzmq-${CMAKE_VS_PLATFORM_TOOLSET}-mt-s$<$<CONFIG:Debug>,gd>-4_3_3 )
 
+    # On windows we need to link some additional libs.
+    # The following code is taken from the zeromq CMakeLists.txt and collects
+    # the additional libs in ZEROMQ_ADDITIONAL_LIBS.
     include(CheckCXXSymbolExists)
     set(CMAKE_REQUIRED_LIBRARIES "ws2_32.lib")
     check_cxx_symbol_exists(WSAStartup "winsock2.h" HAVE_WS2_32)
