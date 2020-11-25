@@ -59,8 +59,8 @@ namespace rendering {
 
 namespace {
 struct ColoredVertex {
-    math::float3 position = {0.f, 0.f, 0.f};
-    math::float4 color = {1.f, 1.f, 1.f, 1.f};
+    math::float3 position;
+    math::float4 color;
 
     static std::uint32_t GetPositionOffset() {
         return offsetof(ColoredVertex, position);
@@ -81,6 +81,7 @@ struct ColoredVertex {
         color.x = float_color(0);
         color.y = float_color(1);
         color.z = float_color(2);
+        color.w = 1.0f;
     }
 };
 

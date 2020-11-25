@@ -720,7 +720,6 @@ void FilamentScene::UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi) {
             .SetParameter("pointSize", geom_mi.properties.point_size)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
-            .SetParameter("depthOffset", geom_mi.properties.depth_offset)
             .Finish();
 }
 
@@ -918,7 +917,7 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateSolidColorShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
         UpdateUnlitPolygonOffsetShader(geom.mat);
-    } else {
+    } else if (props.shader != "") {
         utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
 }
