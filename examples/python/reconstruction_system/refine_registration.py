@@ -20,16 +20,16 @@ def update_posegraph_for_scene(s, t, transformation, information, odometry,
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
         pose_graph.nodes.append(
-            o3d.pipelines.registration.PoseGraphNode(odometry_inv))
+            o3d.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
-            o3d.pipelines.registration.PoseGraphEdge(s,
+            o3d.registration.PoseGraphEdge(s,
                                                      t,
                                                      transformation,
                                                      information,
                                                      uncertain=False))
     else:  # loop closure case
         pose_graph.edges.append(
-            o3d.pipelines.registration.PoseGraphEdge(s,
+            o3d.registration.PoseGraphEdge(s,
                                                      t,
                                                      transformation,
                                                      information,
@@ -51,12 +51,12 @@ def multiscale_icp(source,
         source_down = source.voxel_down_sample(voxel_size[scale])
         target_down = target.voxel_down_sample(voxel_size[scale])
         if config["icp_method"] == "point_to_point":
-            result_icp = o3d.pipelines.registration.registration_icp(
+            result_icp = o3d.registration.registration_icp(
                 source_down, target_down, distance_threshold,
                 current_transformation,
-                o3d.pipelines.registration.TransformationEstimationPointToPoint(
+                o3d.registration.TransformationEstimationPointToPoint(
                 ),
-                o3d.pipelines.registration.ICPConvergenceCriteria(
+                o3d.registration.ICPConvergenceCriteria(
                     max_iteration=iter))
         else:
             source_down.estimate_normals(
@@ -68,26 +68,26 @@ def multiscale_icp(source,
                                                      2.0,
                                                      max_nn=30))
             if config["icp_method"] == "point_to_plane":
-                result_icp = o3d.pipelines.registration.registration_icp(
+                result_icp = o3d.registration.registration_icp(
                     source_down, target_down, distance_threshold,
                     current_transformation,
-                    o3d.pipelines.registration.
+                    o3d.registration.
                     TransformationEstimationPointToPlane(),
-                    o3d.pipelines.registration.ICPConvergenceCriteria(
+                    o3d.registration.ICPConvergenceCriteria(
                         max_iteration=iter))
             if config["icp_method"] == "color":
-                result_icp = o3d.pipelines.registration.registration_colored_icp(
+                result_icp = o3d.registration.registration_colored_icp(
                     source_down, target_down, voxel_size[scale],
                     current_transformation,
-                    o3d.pipelines.registration.
+                    o3d.registration.
                     TransformationEstimationForColoredICP(),
-                    o3d.pipelines.registration.ICPConvergenceCriteria(
+                    o3d.registration.ICPConvergenceCriteria(
                         relative_fitness=1e-6,
                         relative_rmse=1e-6,
                         max_iteration=iter))
         current_transformation = result_icp.transformation
         if i == len(max_iter) - 1:
-            information_matrix = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
+            information_matrix = o3d.registration.get_information_matrix_from_point_clouds(
                 source_down, target_down, voxel_size[scale] * 1.4,
                 result_icp.transformation)
 
@@ -169,10 +169,10 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
                     matching_results[r].s, matching_results[r].t,
                     matching_results[r].transformation, config)
 
-    pose_graph_new = o3d.pipelines.registration.PoseGraph()
+    pose_graph_new = o3d.registration.PoseGraph()
     odometry = np.identity(4)
     pose_graph_new.nodes.append(
-        o3d.pipelines.registration.PoseGraphNode(odometry))
+        o3d.registration.PoseGraphNode(odometry))
     for r in matching_results:
         (odometry, pose_graph_new) = update_posegraph_for_scene(
             matching_results[r].s, matching_results[r].t,
