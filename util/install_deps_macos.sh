@@ -16,20 +16,3 @@ else
         brew update  # `brew update` upgrades brew itself.
     fi
 fi
-
-for pkg in pkg-config; do
-    if brew list -1 | grep -q "^${pkg}\$"; then
-        if [ "$1" == "skip-upgrade" ]; then
-            echo "Package '$pkg' has already been installed."
-        else
-            echo "Package '$pkg' has already been installed and is being upgraded ..."
-            # Using HOMEBREW_NO_AUTO_UPDATE=1 since `brew update` has already
-            # been performed if needed. Upgrade might cause error when already
-            # installed and thus `|| true` is used.
-            HOMEBREW_NO_AUTO_UPDATE=1 brew upgrade $pkg || true
-        fi
-    else
-        echo "Package '$pkg' is being installed ..."
-        HOMEBREW_NO_AUTO_UPDATE=1 brew install $pkg
-    fi
-done
