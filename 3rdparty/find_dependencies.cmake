@@ -540,40 +540,38 @@ build_3rdparty_library(3rdparty_tritriintersect DIRECTORY tomasakeninemoeller IN
 set(TRITRIINTERSECT_TARGET "3rdparty_tritriintersect")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TRITRIINTERSECT_TARGET}")
 
-# librealsense SDK: Integrated into Open3D build using method from
-# https://crascit.com/2015/07/25/cmake-gtest/ but with find_package() instead of
-# add_subdirectory() to keep build config separate
+# librealsense SDK
 if (BUILD_LIBREALSENSE)
-    if (USE_SYSTEM_LIBREALSENSE)    # Requires libusb-1.0 shared library
-        find_package(realsense2 QUIET)
-        if (TARGET realsense2::realsense2)
-            message(STATUS "Using installed third-party library realsense2")
-        else()
-            message(STATUS "Unable to find installed third-party library realsense2")
-            set(USE_SYSTEM_LIBREALSENSE OFF)
+    include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
+    import_3rdparty_library(3rdparty_librealsense
+        INCLUDE_DIRS ${LIBREALSENSE_INCLUDE_DIR}
+        LIBRARIES    ${LIBREALSENSE_LIBRARIES}
+        LIB_DIR      ${LIBREALSENSE_LIB_DIR}
+    )
+    add_dependencies(3rdparty_librealsense ext_librealsense)
+    set(LIBREALSENSE_TARGET "3rdparty_librealsense")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
+
+    if (UNIX AND NOT APPLE)
+        # Ubuntu dependency: libusb-1.0.0-dev
+        find_library(LIBUSB_LIB usb-1.0)
+        find_path(LIBUSB_INC libusb.h HINTS PATH_SUFFIXES libusb-1.0)
+        if (NOT LIBUSB_LIB)
+            message(FATAL_ERROR "libusb-1.0 library not found, please install libusb-1.0.0-dev.")
         endif()
-    endif ()
-    if (NOT USE_SYSTEM_LIBREALSENSE)
-        message(STATUS "Building third-party library realsense2 from source")
-        configure_file(3rdparty/librealsense/CMakeLists.txt.in
-            3rdparty/librealsense/CMakeLists.txt @ONLY)
-        execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
-            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/3rdparty/librealsense")
-        execute_process(COMMAND "${CMAKE_COMMAND}" --build . --parallel ${NPROC} --config Release
-            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/3rdparty/librealsense")
-        find_package(realsense2 CONFIG QUIET REQUIRED
-            PATHS "${CMAKE_BINARY_DIR}/3rdparty/librealsense" NO_DEFAULT_PATH)
+        if (NOT LIBUSB_INC)
+            message(FATAL_ERROR "libusb-1.0 header not found, please install libusb-1.0.0-dev.")
+        endif()
+        message(STATUS "LIBUSB_LIB: ${LIBUSB_LIB}")
+        message(STATUS "LIBUSB_INC: ${LIBUSB_INC}")
+        add_library(usb INTERFACE IMPORTED)
+        set_target_properties(usb PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES ${LIBUSB_INC}
+            INTERFACE_LINK_LIBRARIES ${LIBUSB_LIB}
+        )
+        target_link_libraries(3rdparty_librealsense INTERFACE usb)
     endif()
-    if(NOT BUILD_SHARED_LIBS)
-        list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "realsense2")
-    endif()
-    set(LIBREALSENSE_TARGET realsense2::realsense2)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${LIBREALSENSE_TARGET})
-    # Conditionally include header files in Open3D.h
-    set(BUILD_LIBREALSENSE_COMMENT "")
-else ()
-    set(BUILD_LIBREALSENSE_COMMENT "//")
-endif ()
+endif()
 
 # PNG
 if(USE_SYSTEM_PNG)

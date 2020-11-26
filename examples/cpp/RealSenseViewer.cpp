@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     }
     bool align_streams = false;
     visualization::gui::Size color_size(0, 0), depth_size(0, 0);
-    size_t color_fps = 0, depth_fps = 0;
+    int color_fps = 0, depth_fps = 0;
 
     if (utility::ProgramOptionExists(argc, argv, "--align")) {
         align_streams = true;
@@ -66,14 +66,14 @@ int main(int argc, char **argv) {
                 argc, argv, "--depth-stream", Eigen::VectorXd::Zero(3, 1));
         depth_size = {static_cast<int>(depth_stream_options[0]),
                       static_cast<int>(depth_stream_options[1])};
-        depth_fps = depth_stream_options[2];
+        depth_fps = static_cast<int>(depth_stream_options[2]);
     }
     if (utility::ProgramOptionExists(argc, argv, "--color-stream")) {
         auto color_stream_options = utility::GetProgramOptionAsEigenVectorXd(
                 argc, argv, "--color-stream", Eigen::VectorXd::Zero(3, 1));
         color_size = {static_cast<int>(color_stream_options[0]),
                       static_cast<int>(color_stream_options[1])};
-        color_fps = color_stream_options[2];
+        color_fps = static_cast<int>(color_stream_options[2]);
     }
 
     // Create a pipeline to easily configure and start the camera
