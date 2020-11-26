@@ -56,9 +56,7 @@ Ubuntu/macOS
     # On Ubuntu
     util/install_deps_ubuntu.sh
 
-    # On macOS
-    # Install Homebrew first: https://brew.sh/
-    util/install_deps_macos.sh
+    # On macOS: skip this step
 
 .. _compilation_unix_python:
 
