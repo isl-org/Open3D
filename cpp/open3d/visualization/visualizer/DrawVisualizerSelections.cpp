@@ -47,7 +47,7 @@ namespace {
 rendering::Material MakeMaterial(int point_size) {
     rendering::Material m;
     m.shader = "unlitPolygonOffset";
-    m.point_size = point_size;
+    m.point_size = float(point_size);
     //    m.depth_offset = -0.000010f;
     return m;
 }

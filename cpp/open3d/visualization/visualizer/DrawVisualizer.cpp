@@ -114,7 +114,7 @@ public:
         }
     }
 
-    unsigned int size() const { return GetChildren().size(); }
+    size_t size() const { return GetChildren().size(); }
 
 private:
     int spacing_;
@@ -391,13 +391,14 @@ struct DrawVisualizer::Impl {
 
     void MakeSettingsUI() {
         auto em = window_->GetTheme().font_size;
-        auto v_spacing = 0.25 * em;
+        auto half_em = int(std::round(0.5f * float(em)));
+        auto v_spacing = int(std::round(0.25 * float(em)));
 
-        settings.panel = new Vert(0.5 * em);
+        settings.panel = new Vert(half_em);
         window_->AddChild(GiveOwnership(settings.panel));
 
-        Margins margins(em, 0, 0.5 * em, 0);
-        Margins tabbed_margins(0, 0.5 * em, 0, 0);
+        Margins margins(em, 0, half_em, 0);
+        Margins tabbed_margins(0, half_em, 0, 0);
 
         settings.mouse_panel =
                 new CollapsableVert("Mouse Controls", v_spacing, margins);
@@ -427,7 +428,7 @@ struct DrawVisualizer::Impl {
             this->settings.mouse_buttons[type] = button;
             return button;
         };
-        auto *h = new Horiz(0.25 * em);
+        auto *h = new Horiz(v_spacing);
         h->AddStretch();
         h->AddChild(GiveOwnership(MakeMouseButton(
                 "Arcball", SceneWidget::Controls::ROTATE_CAMERA)));
@@ -438,7 +439,7 @@ struct DrawVisualizer::Impl {
         h->AddStretch();
         settings.view_panel->AddChild(GiveOwnership(h));
 
-        h = new Horiz(0.25 * em);
+        h = new Horiz(v_spacing);
         h->AddStretch();
         h->AddChild(GiveOwnership(MakeMouseButton(
                 "Sun Direction", SceneWidget::Controls::ROTATE_SUN)));
@@ -446,12 +447,12 @@ struct DrawVisualizer::Impl {
                 "Environment", SceneWidget::Controls::ROTATE_IBL)));
         h->AddStretch();
         settings.view_panel->AddChild(GiveOwnership(h));
-        settings.view_panel->AddFixed(0.5 * em);
+        settings.view_panel->AddFixed(half_em);
 
         auto *reset = new SmallButton("Reset Camera");
         reset->SetOnClicked([this]() { this->ResetCamera(); });
 
-        h = new Horiz(0.25 * em);
+        h = new Horiz(v_spacing);
         h->AddStretch();
         h->AddChild(GiveOwnership(reset));
         h->AddStretch();
@@ -481,7 +482,7 @@ struct DrawVisualizer::Impl {
         h->AddChild(std::make_shared<Label>(selection_help));
         h->AddStretch();
         settings.pick_panel->AddChild(GiveOwnership(h));
-        h = new Horiz(0.25 * em);
+        h = new Horiz(v_spacing);
         h->AddChild(std::make_shared<Label>("Selection Sets"));
         h->AddStretch();
         h->AddChild(GiveOwnership(settings.new_selection_set));
@@ -501,7 +502,7 @@ struct DrawVisualizer::Impl {
         settings.show_axes->SetOnChecked(
                 [this](bool is_checked) { this->ShowAxes(is_checked); });
 
-        h = new Horiz(0.25 * em);
+        h = new Horiz(v_spacing);
         h->AddChild(GiveOwnership(settings.show_axes));
         h->AddFixed(em);
         h->AddChild(GiveOwnership(settings.show_skybox));
@@ -565,7 +566,7 @@ struct DrawVisualizer::Impl {
         settings.light_panel->SetIsOpen(false);
         settings.panel->AddChild(GiveOwnership(settings.light_panel));
 
-        h = new Horiz(0.25 * em);
+        h = new Horiz(v_spacing);
         settings.use_ibl = new Checkbox("HDR map");
         settings.use_ibl->SetChecked(ui_state_.use_ibl);
         settings.use_ibl->SetOnChecked([this](bool checked) {
@@ -583,13 +584,13 @@ struct DrawVisualizer::Impl {
         });
 
         h->AddChild(GiveOwnership(settings.use_ibl));
-        h->AddFixed(1.4 * em);  // align with Show Skybox checkbox above
+        h->AddFixed(int(std::round(1.4 * em)));  // align with Show Skybox checkbox above
         h->AddChild(GiveOwnership(settings.use_sun));
 
         settings.light_panel->AddChild(
                 std::make_shared<Label>("Light sources"));
         settings.light_panel->AddChild(GiveOwnership(h));
-        settings.light_panel->AddFixed(0.5 * em);
+        settings.light_panel->AddFixed(half_em);
 
         grid = new VGrid(2, v_spacing);
 
@@ -611,7 +612,7 @@ struct DrawVisualizer::Impl {
         settings.ibl_intensity->SetLimits(0.0, 150000.0);
         settings.ibl_intensity->SetValue(ui_state_.ibl_intensity);
         settings.ibl_intensity->SetOnValueChanged([this](double new_value) {
-            this->ui_state_.ibl_intensity = new_value;
+            this->ui_state_.ibl_intensity = int(new_value);
             this->SetUIState(ui_state_);
             this->settings.lighting->SetSelectedValue(kCustomName);
         });
@@ -620,7 +621,7 @@ struct DrawVisualizer::Impl {
 
         settings.light_panel->AddChild(std::make_shared<Label>("Environment"));
         settings.light_panel->AddChild(GiveOwnership(grid));
-        settings.light_panel->AddFixed(0.5 * em);
+        settings.light_panel->AddFixed(half_em);
 
         grid = new VGrid(2, v_spacing);
 
@@ -628,7 +629,7 @@ struct DrawVisualizer::Impl {
         settings.sun_intensity->SetLimits(0.0, 150000.0);
         settings.sun_intensity->SetValue(ui_state_.ibl_intensity);
         settings.sun_intensity->SetOnValueChanged([this](double new_value) {
-            this->ui_state_.sun_intensity = new_value;
+            this->ui_state_.sun_intensity = int(new_value);
             this->SetUIState(ui_state_);
             this->settings.lighting->SetSelectedValue(kCustomName);
         });
@@ -711,7 +712,7 @@ struct DrawVisualizer::Impl {
         settings.play->SetOnClicked(
                 [this]() { this->SetAnimating(settings.play->GetIsOn()); });
 
-        h = new Horiz(0.25 * em);
+        h = new Horiz(v_spacing);
         h->AddChild(GiveOwnership(settings.time_slider));
         h->AddChild(GiveOwnership(settings.time_edit));
         h->AddChild(GiveOwnership(settings.play));
@@ -960,9 +961,9 @@ struct DrawVisualizer::Impl {
         ui_state_.point_size = px;
         settings.point_size->SetValue(double(px));
 
-        px = px * window_->GetScaling();
+        px = int(std::round(px * window_->GetScaling()));
         for (auto &o : objects_) {
-            o.material.point_size = px;
+            o.material.point_size = float(px);
             scene_->GetScene()->GetScene()->OverrideMaterial(o.name,
                                                              o.material);
         }
@@ -1029,9 +1030,9 @@ struct DrawVisualizer::Impl {
         ui_state_.use_sun =
                 (profile.profile != Open3DScene::LightingProfile::NO_SHADOWS);
         ui_state_.ibl_intensity =
-                scene->GetScene()->GetIndirectLightIntensity();
+                int(scene->GetScene()->GetIndirectLightIntensity());
         ui_state_.sun_intensity =
-                scene->GetScene()->GetDirectionalLightIntensity();
+                int(scene->GetScene()->GetDirectionalLightIntensity());
         ui_state_.sun_dir = sun_dir;
         ui_state_.sun_color = {1.0f, 1.0f, 1.0f};
         SetUIState(ui_state_);
@@ -1146,10 +1147,10 @@ struct DrawVisualizer::Impl {
 
         auto *raw_scene = scene_->GetScene()->GetScene();
         raw_scene->EnableIndirectLight(ui_state_.use_ibl);
-        raw_scene->SetIndirectLightIntensity(ui_state_.ibl_intensity);
+        raw_scene->SetIndirectLightIntensity(float(ui_state_.ibl_intensity));
         raw_scene->EnableDirectionalLight(ui_state_.use_sun);
         raw_scene->SetDirectionalLight(ui_state_.sun_dir, ui_state_.sun_color,
-                                       ui_state_.sun_intensity);
+                                       float(ui_state_.sun_intensity));
 
         if (old_enabled_groups != ui_state_.enabled_groups) {
             for (auto &group : added_groups_) {
@@ -1297,7 +1298,7 @@ struct DrawVisualizer::Impl {
     void NewSelectionSet() {
         selections_->NewSet();
         UpdateSelectionSetList();
-        SelectSelectionSet(selections_->GetNumberOfSets() - 1);
+        SelectSelectionSet(int(selections_->GetNumberOfSets()) - 1);
     }
 
     void RemoveSelectionSet(int index) {
@@ -1469,10 +1470,10 @@ struct DrawVisualizer::Impl {
     }
 
     Eigen::Vector4f CalcDefaultUnlitColor() {
-        float luminosity = 0.21 * ui_state_.bg_color.x() +
-                           0.72 * ui_state_.bg_color.y() +
-                           0.07 * ui_state_.bg_color.z();
-        if (luminosity >= 0.5) {
+        float luminosity = 0.21f * ui_state_.bg_color.x() +
+                           0.72f * ui_state_.bg_color.y() +
+                           0.07f * ui_state_.bg_color.z();
+        if (luminosity >= 0.5f) {
             return {0.0f, 0.0f, 0.0f, 1.0f};
         } else {
             return {1.0f, 1.0f, 1.0f, 1.0f};
@@ -1687,7 +1688,7 @@ void DrawVisualizer::Layout(const Theme &theme) {
     }
 
     auto f = GetContentRect();
-    impl_->settings.actions->SetWidth(settings_width - 1.5 * em);
+    impl_->settings.actions->SetWidth(settings_width - int(std::round(1.5 * em)));
     if (impl_->settings.panel->IsVisible()) {
         impl_->scene_->SetFrame(
                 Rect(f.x, f.y, f.width - settings_width, f.height));

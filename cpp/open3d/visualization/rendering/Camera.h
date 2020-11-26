@@ -109,16 +109,16 @@ public:
                 double right;
                 double bottom;
                 double top;
-                double near;
-                double far;
+                double near_plane;  // Windows #defines "near"
+                double far_plane;  // Windows #defines "far"
             } planes;
             struct {
                 bool is_defined_by_planes;
                 FovType fov_type;
                 double fov;
                 double aspect;
-                double near;
-                double far;
+                double near_plane;
+                double far_plane;
             } fov;
         } proj;
     };

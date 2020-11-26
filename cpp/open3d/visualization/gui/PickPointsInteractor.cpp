@@ -46,7 +46,7 @@ static const std::string kSelectablePointsName = "__selectable_points";
 static const unsigned int kNoIndex = 0x00ffffff;
 static const unsigned int kMaxPickableIndex = 0x00fffffe;
 
-Eigen::Vector3d SetColorForIndex(unsigned int idx) {
+Eigen::Vector3d SetColorForIndex(uint32_t idx) {
     idx = std::min(kMaxPickableIndex, idx);
     const double red = double((idx & 0x00ff0000) >> 16) / 255.0;
     const double green = double((idx & 0x0000ff00) >> 8) / 255.0;
@@ -54,7 +54,7 @@ Eigen::Vector3d SetColorForIndex(unsigned int idx) {
     return {red, green, blue};
 }
 
-unsigned int GetIndexForColor(geometry::Image *image, int x, int y) {
+uint32_t GetIndexForColor(geometry::Image *image, int x, int y) {
     uint8_t *rgb = image->PointerAt<uint8_t>(x, y, 0);
     const unsigned int red = (static_cast<unsigned int>(rgb[0]) << 16);
     const unsigned int green = (static_cast<unsigned int>(rgb[1]) << 8);
@@ -106,7 +106,7 @@ void PickPointsInteractor::SetPickablePoints(
         auto cloud = std::make_shared<geometry::PointCloud>(points);
         cloud->colors_.reserve(points.size());
         for (size_t i = 0; i < cloud->points_.size(); ++i) {
-            cloud->colors_.emplace_back(SetColorForIndex(i));
+            cloud->colors_.emplace_back(SetColorForIndex(uint32_t(i)));
         }
 
         auto mat = MakeMaterial();
@@ -163,7 +163,7 @@ void PickPointsInteractor::Key(const KeyEvent &e) {}
 rendering::Material PickPointsInteractor::MakeMaterial() {
     rendering::Material mat;
     mat.shader = "defaultUnlit";
-    mat.point_size = point_size_;
+    mat.point_size = float(point_size_);
     // We are not tonemapping, so src colors are RGB. This prevents the colors
     // being converetd from sRGB -> linear like normal.
     mat.sRGB_color = false;

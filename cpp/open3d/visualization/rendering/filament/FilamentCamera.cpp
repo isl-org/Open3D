@@ -100,11 +100,11 @@ void FilamentCamera::CopyFrom(const Camera* camera) {
     if (proj.is_defined_by_planes) {
         SetProjection(proj.proj.planes.projection, proj.proj.planes.left,
                       proj.proj.planes.right, proj.proj.planes.bottom,
-                      proj.proj.planes.top, proj.proj.planes.near,
-                      proj.proj.planes.far);
+                      proj.proj.planes.top, proj.proj.planes.near_plane,
+                      proj.proj.planes.far_plane);
     } else {
         SetProjection(proj.proj.fov.fov, proj.proj.fov.aspect,
-                      proj.proj.fov.near, proj.proj.fov.far,
+                      proj.proj.fov.near_plane, proj.proj.fov.far_plane,
                       proj.proj.fov.fov_type);
     }
 }
@@ -122,8 +122,8 @@ void FilamentCamera::SetProjection(
         projection_.proj.fov.fov_type = fov_type;
         projection_.proj.fov.fov = fov;
         projection_.proj.fov.aspect = aspect;
-        projection_.proj.fov.near = near;
-        projection_.proj.fov.far = far;
+        projection_.proj.fov.near_plane = near;
+        projection_.proj.fov.far_plane = far;
     }
 }
 
@@ -147,8 +147,8 @@ void FilamentCamera::SetProjection(Projection projection,
     projection_.proj.planes.right = right;
     projection_.proj.planes.bottom = bottom;
     projection_.proj.planes.top = top;
-    projection_.proj.planes.near = near;
-    projection_.proj.planes.far = far;
+    projection_.proj.planes.near_plane = near;
+    projection_.proj.planes.far_plane = far;
 }
 
 double FilamentCamera::GetNear() const { return camera_->getNear(); }

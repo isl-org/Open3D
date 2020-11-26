@@ -229,7 +229,12 @@ void pybind_drawvisualizer(py::module& m) {
             .def_property_readonly("scene", &DrawVisualizer::GetScene,
                                    "Returns the rendering.Open3DScene object "
                                    "for low-level manipulation")
-            .def_property("current_time", &DrawVisualizer::GetCurrentTime,
+            .def_property("current_time",
+                          // MSVC doesn't like this for some reason
+                          //&DrawVisualizer::GetCurrentTime,
+                          [](const DrawVisualizer& dv) -> double {
+                              return dv.GetCurrentTime();
+                          },
                           &DrawVisualizer::SetCurrentTime,
                           "Gets/sets the current time. If setting, only the "
                           "objects belonging to the current time-step will "
