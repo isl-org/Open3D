@@ -47,9 +47,7 @@ std::shared_ptr<zmq::context_t> GetZMQContext() {
 
 void DestroyZMQContext() {
     std::lock_guard<std::mutex> lock(context_ptr_mutex);
-    if (context_ptr) {
-        context_ptr.reset();
-    }
+    context_ptr.reset();
 }
 
 }  // namespace rpc

@@ -36,6 +36,12 @@ namespace io {
 
 void pybind_rpc(py::module& m_io) {
     py::module m = m_io.def_submodule("rpc");
+
+    // this is to cleanly shutdown the zeromq context on windows.
+    auto atexit = py::module::import("atexit");
+    atexit.attr("register")(
+            py::cpp_function([]() { rpc::DestroyZMQContext(); }));
+
     py::class_<rpc::ConnectionBase, std::shared_ptr<rpc::ConnectionBase>>(
             m, "_ConnectionBase");
 
