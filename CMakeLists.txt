@@ -2,12 +2,12 @@
 if (WIN32)
     cmake_minimum_required(VERSION 3.18)
 else()
-    # If you're using Ubuntu 18.04 or older, we suggest you install the latest
+    # If you're using Ubuntu 18.04, we suggest you install the latest
     # CMake from the official repository https://apt.kitware.com/.
-    # CMake 3.15+ is required to allow linking with OBJECT libraries,
+    # CMake 3.18+ is required to allow linking with OBJECT libraries,
     # to prevent erroneous -gencode option deduplication with CUDA,
     # and to simplify generator expressions for selecting compile flags.
-    cmake_minimum_required(VERSION 3.15)
+    cmake_minimum_required(VERSION 3.18)
 endif()
 
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING
