@@ -4,6 +4,18 @@ include(FetchContent)
 # ExternalProject seems to be the best solution for including zeromq.
 # The projects defines options which clash with and pollute our CMake cache.
 
+# Define the compile flags for Windows
+if(WIN32)
+    set(WIN_CMAKE_ARGS "-DCMAKE_CXX_FLAGS_DEBUG=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MTd,/MDd> /Zi /Ob0 /Od /RTC1" 
+                       "-DCMAKE_CXX_FLAGS_RELEASE=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> /O2 /Ob2 /DNDEBUG"
+                       "-DCMAKE_C_FLAGS_DEBUG=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MTd,/MDd> /Zi /Ob0 /Od /RTC1"
+                       "-DCMAKE_C_FLAGS_RELEASE=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> /O2 /Ob2 /DNDEBUG"
+                       )
+else()
+    set(WIN_CMAKE_ARGS "")
+endif()
+
+
 ExternalProject_Add(
     ext_zeromq
     PREFIX "${CMAKE_BINARY_DIR}/zeromq"
@@ -12,8 +24,9 @@ ExternalProject_Add(
     # do not update
     UPDATE_COMMAND ""
     CMAKE_ARGS
-        -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW 
-        -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
+        # Does not seem to work. We have to directly set the flags on Windows.
+        #-DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW 
+        #-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
         -DBUILD_STATIC=ON
         -DBUILD_SHARED=OFF
         -DBUILD_TESTS=OFF
@@ -23,6 +36,7 @@ ExternalProject_Add(
         -DWITH_DOCS=OFF
         -DWITH_PERF_TOOL=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        ${WIN_CMAKE_ARGS}
 )
 
 # cppzmq is header only. we just need to download
@@ -39,13 +53,10 @@ endif()
 
 if( WIN32 )
     # On windows the lib name is more complicated
-    if( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
-        set(ZEROMQ_LIBRARIES libzmq-${CMAKE_VS_PLATFORM_TOOLSET}-mt-sgd-4_3_3 )
-    else()
-        set(ZEROMQ_LIBRARIES libzmq-${CMAKE_VS_PLATFORM_TOOLSET}-mt-s-4_3_3 )
-    endif()
-
-    # On windows we need to link some additional libs.
+    set(ZEROMQ_LIBRARIES libzmq-${CMAKE_VS_PLATFORM_TOOLSET}-mt-s$<$<CONFIG:Debug>:gd>-4_3_3 )
+ 
+    # On windows we need to link some additional libs. We will use them 
+    # directly as targets in find_dependencies.cmake.
     # The following code is taken from the zeromq CMakeLists.txt and collects
     # the additional libs in ZEROMQ_ADDITIONAL_LIBS.
     include(CheckCXXSymbolExists)

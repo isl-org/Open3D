@@ -21,8 +21,8 @@ ExternalProject_Add(
     CONFIGURE_COMMAND ""
     BUILD_COMMAND echo "Running Boost build..."
     COMMAND python tools/boostdep/depinst/depinst.py predef
-    COMMAND $<IF:$<PLATFORM_ID:WIN32>,bootstrap.bat,./bootstrap.sh>
-    COMMAND $<IF:$<PLATFORM_ID:WIN32>,b2.exe,./b2> headers
+    COMMAND $<IF:$<PLATFORM_ID:Windows>,bootstrap.bat,./bootstrap.sh>
+    COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> headers
     UPDATE_COMMAND ""
     INSTALL_COMMAND ""
 )
