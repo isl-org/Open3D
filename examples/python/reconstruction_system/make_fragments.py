@@ -38,7 +38,7 @@ def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
     target_rgbd_image = read_rgbd_image(color_files[t], depth_files[t], True,
                                         config)
 
-    option = o3d.pipelines.odometry.OdometryOption()
+    option = o3d.odometry.OdometryOption()
     option.max_depth_diff = config["max_depth_diff"]
     if abs(s - t) != 1:
         if with_opencv:
@@ -47,9 +47,9 @@ def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
                                                     intrinsic, False)
             if success_5pt:
                 [success, trans, info
-                ] = o3d.pipelines.odometry.compute_rgbd_odometry(
+                ] = o3d.odometry.compute_rgbd_odometry(
                     source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
-                    o3d.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm(),
+                    o3d.odometry.RGBDOdometryJacobianFromHybridTerm(),
                     option)
                 return [success, trans, info]
         return [False, np.identity(4), np.identity(6)]
@@ -57,7 +57,7 @@ def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
         odo_init = np.identity(4)
         [success, trans, info] = o3d.pipelines.odometry.compute_rgbd_odometry(
             source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
-            o3d.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
+            o3d.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
         return [success, trans, info]
 
 
@@ -65,10 +65,10 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files,
                                 depth_files, fragment_id, n_fragments,
                                 intrinsic, with_opencv, config):
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Error)
-    pose_graph = o3d.pipelines.registration.PoseGraph()
+    pose_graph = o3d.registration.PoseGraph()
     trans_odometry = np.identity(4)
     pose_graph.nodes.append(
-        o3d.pipelines.registration.PoseGraphNode(trans_odometry))
+        o3d.registration.PoseGraphNode(trans_odometry))
     for s in range(sid, eid):
         for t in range(s + 1, eid):
             # odometry
@@ -82,10 +82,10 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files,
                 trans_odometry = np.dot(trans, trans_odometry)
                 trans_odometry_inv = np.linalg.inv(trans_odometry)
                 pose_graph.nodes.append(
-                    o3d.pipelines.registration.PoseGraphNode(
+                    o3d.registration.PoseGraphNode(
                         trans_odometry_inv))
                 pose_graph.edges.append(
-                    o3d.pipelines.registration.PoseGraphEdge(s - sid,
+                    o3d.registration.PoseGraphEdge(s - sid,
                                                              t - sid,
                                                              trans,
                                                              info,
@@ -102,7 +102,7 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files,
                                                 intrinsic, with_opencv, config)
                 if success:
                     pose_graph.edges.append(
-                        o3d.pipelines.registration.PoseGraphEdge(
+                        o3d.registration.PoseGraphEdge(
                             s - sid, t - sid, trans, info, uncertain=True))
     o3d.io.write_pose_graph(
         join(path_dataset, config["template_fragment_posegraph"] % fragment_id),
@@ -113,10 +113,10 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files, fragment_id,
                                       n_fragments, pose_graph_name, intrinsic,
                                       config):
     pose_graph = o3d.io.read_pose_graph(pose_graph_name)
-    volume = o3d.pipelines.integration.ScalableTSDFVolume(
+    volume = o3d.integration.ScalableTSDFVolume(
         voxel_length=config["tsdf_cubic_size"] / 512.0,
         sdf_trunc=0.04,
-        color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
+        color_type=o3d.integration.TSDFVolumeColorType.RGB8)
     for i in range(len(pose_graph.nodes)):
         i_abs = fragment_id * config['n_frames_per_fragment'] + i
         print(
