@@ -27,6 +27,7 @@
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/DummyReceiver.h"
 #include "open3d/io/rpc/RemoteFunctions.h"
+#include "open3d/io/rpc/ZMQContext.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
@@ -67,6 +68,9 @@ void pybind_rpc(py::module& m_io) {
                  "Stops the receiver mainloop and joins the thread. This "
                  "function blocks until the mainloop is done with processing "
                  "messages that have already been received.");
+
+    m.def("destroy_zmq_context", &rpc::DestroyZMQContext,
+          "Destroys the ZMQ context.");
 
     m.def("set_point_cloud", &rpc::SetPointCloud, "pcd"_a, "path"_a = "",
           "time"_a = 0, "layer"_a = "",

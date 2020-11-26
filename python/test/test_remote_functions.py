@@ -72,3 +72,4 @@ def test_external_visualizer():
     ev.set_active_camera('camera')
 
     receiver.stop()
+    o3d.io.rpc.destroy_zmq_context()

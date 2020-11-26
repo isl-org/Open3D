@@ -98,8 +98,9 @@ void ReceiverBase::Stop() {
 }
 
 void ReceiverBase::Mainloop() {
+    context_ = GetZMQContext();
     socket_ = std::unique_ptr<zmq::socket_t>(
-            new zmq::socket_t(GetZMQContext(), ZMQ_REP));
+            new zmq::socket_t(*context_, ZMQ_REP));
 
     socket_->set(zmq::sockopt::linger, 1000);
     socket_->set(zmq::sockopt::rcvtimeo, 1000);

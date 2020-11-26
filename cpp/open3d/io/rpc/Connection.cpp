@@ -54,7 +54,8 @@ Connection::Connection()
 Connection::Connection(const std::string& address,
                        int connect_timeout,
                        int timeout)
-    : socket_(new zmq::socket_t(GetZMQContext(), ZMQ_REQ)),
+    : context_(GetZMQContext()),
+      socket_(new zmq::socket_t(*GetZMQContext(), ZMQ_REQ)),
       address_(address),
       connect_timeout_(connect_timeout),
       timeout_(timeout) {
