@@ -2,17 +2,18 @@ from . import gui
 from . import DrawVisualizer
 
 
-def draw(geometry=None,
-         title="Open3D",
-         width=1024,
-         height=768,
-         actions=None,
-         #lookat=None,
-         #eye=None,
-         #up=None,
-         #field_of_view=None,
-         show_ui=None,
-         point_size=None):
+def draw(
+        geometry=None,
+        title="Open3D",
+        width=1024,
+        height=768,
+        actions=None,
+        #lookat=None,
+        #eye=None,
+        #up=None,
+        #field_of_view=None,
+        show_ui=None,
+        point_size=None):
     gui.Application.instance.initialize()
     w = DrawVisualizer(title, width, height)
 

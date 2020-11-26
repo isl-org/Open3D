@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "open3d/visualization/visualizer/DrawVisualizer.h"
-
 #include <vector>
+
+#include "open3d/visualization/visualizer/DrawVisualizer.h"
 
 namespace open3d {
 namespace visualization {
@@ -39,14 +39,13 @@ struct DrawObject {
     std::shared_ptr<t::geometry::Geometry> tgeometry;
     bool is_visible;
 
-    DrawObject(const std::string& n, std::shared_ptr<geometry::Geometry3D> g);
-    DrawObject(const std::string& n,
-               std::shared_ptr<t::geometry::Geometry> tg);
+    DrawObject(const std::string &n, std::shared_ptr<geometry::Geometry3D> g);
+    DrawObject(const std::string &n, std::shared_ptr<t::geometry::Geometry> tg);
 };
 
 struct DrawAction {
     std::string name;
-    std::function<void(visualizer::DrawVisualizer&)> callback;
+    std::function<void(visualizer::DrawVisualizer &)> callback;
 };
 
 void Draw(const std::vector<std::shared_ptr<geometry::Geometry3D>> &geometries,
@@ -55,13 +54,14 @@ void Draw(const std::vector<std::shared_ptr<geometry::Geometry3D>> &geometries,
           int height = 768,
           const std::vector<DrawAction> &actions = {});
 
-void Draw(const std::vector<std::shared_ptr<t::geometry::Geometry>> &tgeometries,
-          const std::string &window_name = "Open3D",
-          int width = 1024,
-          int height = 768,
-          const std::vector<DrawAction> &actions = {});
+void Draw(
+        const std::vector<std::shared_ptr<t::geometry::Geometry>> &tgeometries,
+        const std::string &window_name = "Open3D",
+        int width = 1024,
+        int height = 768,
+        const std::vector<DrawAction> &actions = {});
 
-void Draw(const std::vector<DrawObject>& objects,
+void Draw(const std::vector<DrawObject> &objects,
           const std::string &window_name = "Open3D",
           int width = 1024,
           int height = 768,

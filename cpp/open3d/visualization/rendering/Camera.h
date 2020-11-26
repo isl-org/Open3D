@@ -110,7 +110,7 @@ public:
                 double bottom;
                 double top;
                 double near_plane;  // Windows #defines "near"
-                double far_plane;  // Windows #defines "far"
+                double far_plane;   // Windows #defines "far"
             } planes;
             struct {
                 bool is_defined_by_planes;

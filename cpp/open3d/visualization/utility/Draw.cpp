@@ -34,14 +34,14 @@
 namespace open3d {
 namespace visualization {
 
-DrawObject::DrawObject(const std::string& n,
+DrawObject::DrawObject(const std::string &n,
                        std::shared_ptr<geometry::Geometry3D> g) {
     this->name = n;
     this->geometry = g;
     this->is_visible = true;
 }
 
-DrawObject::DrawObject(const std::string& n,
+DrawObject::DrawObject(const std::string &n,
                        std::shared_ptr<t::geometry::Geometry> tg) {
     this->name = n;
     this->tgeometry = tg;
@@ -64,11 +64,12 @@ void Draw(const std::vector<std::shared_ptr<geometry::Geometry3D>> &geometries,
     Draw(objs, window_name, width, height, actions);
 }
 
-void Draw(const std::vector<std::shared_ptr<t::geometry::Geometry>> &tgeometries,
-          const std::string &window_name /*= "Open3D"*/,
-          int width /*= 1024*/,
-          int height /*= 768*/,
-          const std::vector<DrawAction> &actions /*= {}*/) {
+void Draw(
+        const std::vector<std::shared_ptr<t::geometry::Geometry>> &tgeometries,
+        const std::string &window_name /*= "Open3D"*/,
+        int width /*= 1024*/,
+        int height /*= 768*/,
+        const std::vector<DrawAction> &actions /*= {}*/) {
     std::vector<DrawObject> objs;
     objs.reserve(tgeometries.size());
     for (size_t i = 0; i < tgeometries.size(); ++i) {
@@ -79,7 +80,7 @@ void Draw(const std::vector<std::shared_ptr<t::geometry::Geometry>> &tgeometries
     Draw(objs, window_name, width, height, actions);
 }
 
-void Draw(const std::vector<DrawObject>& objects,
+void Draw(const std::vector<DrawObject> &objects,
           const std::string &window_name /*= "Open3D"*/,
           int width /*= 1024*/,
           int height /*= 768*/,

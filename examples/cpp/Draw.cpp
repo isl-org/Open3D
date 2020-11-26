@@ -24,19 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/Open3D.h"
-
 #include <cstdlib>
+
+#include "open3d/Open3D.h"
 
 using namespace open3d;
 
-double GetRandom() {
-    return double(std::rand()) / double(RAND_MAX);
-}
+double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
 std::shared_ptr<geometry::PointCloud> MakePointCloud(
-            int npts, const Eigen::Vector3d center, double radius,
-            bool colorize) {
+        int npts, const Eigen::Vector3d center, double radius, bool colorize) {
     auto cloud = std::make_shared<geometry::PointCloud>();
     cloud->points_.reserve(npts);
     for (int i = 0; i < npts; ++i) {
@@ -77,16 +74,16 @@ void MultiObjects() {
     sphere_colored_lit->PaintUniformColor({0.0, 1.0, 0.0});
     sphere_colored_lit->Translate({6, 1, 0});
     auto big_bbox = std::make_shared<geometry::AxisAlignedBoundingBox>(
-                Eigen::Vector3d{-pc_rad, -3, -pc_rad},
-                Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
+            Eigen::Vector3d{-pc_rad, -3, -pc_rad},
+            Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
     auto bbox = sphere_unlit->GetAxisAlignedBoundingBox();
     auto sphere_bbox = std::make_shared<geometry::AxisAlignedBoundingBox>(
-                bbox.min_bound_, bbox.max_bound_);
+            bbox.min_bound_, bbox.max_bound_);
     sphere_bbox->color_ = {1.0, 0.5, 0.0};
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-                sphere_lit->GetAxisAlignedBoundingBox());
+            sphere_lit->GetAxisAlignedBoundingBox());
     auto lines_colored = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
-                sphere_colored_lit->GetAxisAlignedBoundingBox());
+            sphere_colored_lit->GetAxisAlignedBoundingBox());
     lines_colored->PaintUniformColor({0.0, 0.0, 1.0});
 
     visualization::Draw({pc_nocolor, pc_color, sphere_unlit,
@@ -131,10 +128,13 @@ void Actions() {
                       ("Toggle truth/result", toggle_result)])
 }
 */
-Eigen::Matrix4d_u GetICPTransform(const geometry::PointCloud& source,
-                                  const geometry::PointCloud& target,
-                                  const std::vector<visualization::visualizer::DrawVisualizerSelections::SelectedIndex>& source_picked,
-                                  const std::vector<visualization::visualizer::DrawVisualizerSelections::SelectedIndex>& target_picked) {
+Eigen::Matrix4d_u GetICPTransform(
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
+        const std::vector<visualization::visualizer::DrawVisualizerSelections::
+                                  SelectedIndex>& source_picked,
+        const std::vector<visualization::visualizer::DrawVisualizerSelections::
+                                  SelectedIndex>& target_picked) {
     std::vector<Eigen::Vector2i> indices;
     for (size_t i = 0; i < source_picked.size(); ++i) {
         indices.push_back({source_picked[i].index, target_picked[i].index});
@@ -147,7 +147,7 @@ Eigen::Matrix4d_u GetICPTransform(const geometry::PointCloud& source,
     // Point-to-point ICP for refinement
     const double max_dist = 0.03;  // 3cm distance threshold
     auto result = pipelines::registration::RegistrationICP(
-                source, target, max_dist, trans_init);
+            source, target, max_dist, trans_init);
 
     return result.transformation_;
 }
@@ -175,30 +175,28 @@ Eigen::Matrix4d_u GetICPTransform(const geometry::PointCloud& source,
     const char *source_name = "Source (yellow)";
     const char *target_name = "Target (blue)";
 
-    auto DoICPOneSet = [source, target, source_name, target_name](visualization::visualizer::DrawVisualizer& drawvis) {
-        auto sets = drawvis.GetSelectionSets();
-        auto &source_picked = sets[0][source_name];
-        auto &target_picked = sets[0][target_name];
-        std::sort(source_picked.begin(), source_picked.end());
-        std::sort(target_picked.begin(), target_picked.end());
+    auto DoICPOneSet = [source, target, source_name,
+target_name](visualization::visualizer::DrawVisualizer& drawvis) { auto sets =
+drawvis.GetSelectionSets(); auto &source_picked = sets[0][source_name]; auto
+&target_picked = sets[0][target_name]; std::sort(source_picked.begin(),
+source_picked.end()); std::sort(target_picked.begin(), target_picked.end());
 
-        auto t = GetICPTransform(*source, *target, source_picked, target_picked);
-        source->Transform(t);
+        auto t = GetICPTransform(*source, *target, source_picked,
+target_picked); source->Transform(t);
 
         // Update the source geometry
         drawvis.RemoveGeometry(source_name);
         drawvis.AddGeometry({visualization::DrawObject(source_name, source)});
     };
 
-    auto DoICPTwoSets = [source, target, source_name, target_name](visualization::visualizer::DrawVisualizer& drawvis) {
-        auto sets = drawvis.GetSelectionSets();
-        auto &source_picked = sets[0][source_name];
-        auto &target_picked = sets[1][target_name];
-        std::sort(source_picked.begin(), source_picked.end());
-        std::sort(target_picked.begin(), target_picked.end());
+    auto DoICPTwoSets = [source, target, source_name,
+target_name](visualization::visualizer::DrawVisualizer& drawvis) { auto sets =
+drawvis.GetSelectionSets(); auto &source_picked = sets[0][source_name]; auto
+&target_picked = sets[1][target_name]; std::sort(source_picked.begin(),
+source_picked.end()); std::sort(target_picked.begin(), target_picked.end());
 
-        auto t = GetICPTransform(*source, *target, source_picked, target_picked);
-        source->Transform(t);
+        auto t = GetICPTransform(*source, *target, source_picked,
+target_picked); source->Transform(t);
 
         // Update the source geometry
         drawvis.RemoveGeometry(source_name);
@@ -212,9 +210,9 @@ Eigen::Matrix4d_u GetICPTransform(const geometry::PointCloud& source,
                           {"ICP Registration (two sets)", DoICPTwoSets}});
 }
 */
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     SingleObject();
     MultiObjects();
-//    Actions();
-//    Selections();
+    //    Actions();
+    //    Selections();
 }

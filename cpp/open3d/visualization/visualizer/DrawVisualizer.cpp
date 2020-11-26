@@ -584,7 +584,8 @@ struct DrawVisualizer::Impl {
         });
 
         h->AddChild(GiveOwnership(settings.use_ibl));
-        h->AddFixed(int(std::round(1.4 * em)));  // align with Show Skybox checkbox above
+        h->AddFixed(int(std::round(
+                1.4 * em)));  // align with Show Skybox checkbox above
         h->AddChild(GiveOwnership(settings.use_sun));
 
         settings.light_panel->AddChild(
@@ -912,8 +913,10 @@ struct DrawVisualizer::Impl {
         return DrawObject();
     }
 
-    void SetupCamera(float fov, const Eigen::Vector3f& center,
-                     const Eigen::Vector3f& eye, const Eigen::Vector3f& up) {
+    void SetupCamera(float fov,
+                     const Eigen::Vector3f &center,
+                     const Eigen::Vector3f &eye,
+                     const Eigen::Vector3f &up) {
         auto scene = scene_->GetScene();
         scene_->SetupCamera(fov, scene->GetBoundingBox(), {0.0f, 0.0f, 0.0f});
         scene->GetCamera()->LookAt(center, eye, up);
@@ -1673,10 +1676,10 @@ void DrawVisualizer::SetAnimating(bool is_animating) {
     impl_->SetAnimating(is_animating);
 }
 
-void DrawVisualizer::SetupCamera(float fov, const Eigen::Vector3f& center,
-                                 const Eigen::Vector3f& eye,
-                                 const Eigen::Vector3f& up) {
-}
+void DrawVisualizer::SetupCamera(float fov,
+                                 const Eigen::Vector3f &center,
+                                 const Eigen::Vector3f &eye,
+                                 const Eigen::Vector3f &up) {}
 
 void DrawVisualizer::ResetCameraToDefault() {
     return impl_->ResetCameraToDefault();
@@ -1703,7 +1706,8 @@ void DrawVisualizer::Layout(const Theme &theme) {
     }
 
     auto f = GetContentRect();
-    impl_->settings.actions->SetWidth(settings_width - int(std::round(1.5 * em)));
+    impl_->settings.actions->SetWidth(settings_width -
+                                      int(std::round(1.5 * em)));
     if (impl_->settings.panel->IsVisible()) {
         impl_->scene_->SetFrame(
                 Rect(f.x, f.y, f.width - settings_width, f.height));

@@ -127,8 +127,10 @@ public:
 
     DrawObject GetGeometry(const std::string& name) const;
 
-    void SetupCamera(float fov, const Eigen::Vector3f& center,
-                     const Eigen::Vector3f& eye, const Eigen::Vector3f& up);
+    void SetupCamera(float fov,
+                     const Eigen::Vector3f& center,
+                     const Eigen::Vector3f& eye,
+                     const Eigen::Vector3f& up);
     void ResetCameraToDefault();
 
     void ShowSettings(bool show);
