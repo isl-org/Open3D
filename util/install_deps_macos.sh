@@ -17,7 +17,7 @@ else
     fi
 fi
 
-for pkg in libusb pkg-config; do
+for pkg in pkg-config; do
     if brew list -1 | grep -q "^${pkg}\$"; then
         if [ "$1" == "skip-upgrade" ]; then
             echo "Package '$pkg' has already been installed."
