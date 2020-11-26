@@ -185,7 +185,8 @@ void pybind_drawvisualizer(py::module& m) {
                  "the name. This should be treated as read-only. Modify "
                  "visibility with show_geometry(), and other values by "
                  "removing the object and re-adding it with the new values")
-            .def("reset_camera", &DrawVisualizer::ResetCamera,
+            .def("reset_camera_to_default",
+                 &DrawVisualizer::ResetCameraToDefault,
                  "Sets camera to default position")
             .def("get_selection_sets", &DrawVisualizer::GetSelectionSets,
                  "Returns the selection sets, as [{'obj_name', "

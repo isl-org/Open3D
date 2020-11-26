@@ -7,7 +7,10 @@ def draw(geometry=None,
          width=1024,
          height=768,
          actions=None,
-         menu_actions=None,
+         #lookat=None,
+         #eye=None,
+         #up=None,
+         #field_of_view=None,
          show_ui=None,
          point_size=None):
     gui.Application.instance.initialize()
@@ -16,10 +19,6 @@ def draw(geometry=None,
     if actions is not None:
         for a in actions:
             w.add_action(a[0], a[1])
-
-    if menu_actions is not None:
-        for a in menu_actions:
-            w.add_menu_action(a[0], a[1])
 
     if point_size is not None:
         w.point_size = point_size
@@ -38,7 +37,7 @@ def draw(geometry=None,
     elif geometry is not None:
         add(geometry, n)
 
-    w.reset_camera()
+    w.reset_camera_to_default()
 
     if show_ui is not None:
         w.show_settings = show_ui

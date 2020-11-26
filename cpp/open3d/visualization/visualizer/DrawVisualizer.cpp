@@ -450,7 +450,7 @@ struct DrawVisualizer::Impl {
         settings.view_panel->AddFixed(half_em);
 
         auto *reset = new SmallButton("Reset Camera");
-        reset->SetOnClicked([this]() { this->ResetCamera(); });
+        reset->SetOnClicked([this]() { this->ResetCameraToDefault(); });
 
         h = new Horiz(v_spacing);
         h->AddStretch();
@@ -912,9 +912,17 @@ struct DrawVisualizer::Impl {
         return DrawObject();
     }
 
-    void ResetCamera() {
+    void SetupCamera(float fov, const Eigen::Vector3f& center,
+                     const Eigen::Vector3f& eye, const Eigen::Vector3f& up) {
         auto scene = scene_->GetScene();
-        scene_->SetupCamera(60.0, scene->GetBoundingBox(), {0.0f, 0.0f, 0.0f});
+        scene_->SetupCamera(fov, scene->GetBoundingBox(), {0.0f, 0.0f, 0.0f});
+        scene->GetCamera()->LookAt(center, eye, up);
+        scene_->ForceRedraw();
+    }
+
+    void ResetCameraToDefault() {
+        auto scene = scene_->GetScene();
+        scene_->SetupCamera(60.0f, scene->GetBoundingBox(), {0.0f, 0.0f, 0.0f});
         scene_->ForceRedraw();
     }
 
@@ -1665,7 +1673,14 @@ void DrawVisualizer::SetAnimating(bool is_animating) {
     impl_->SetAnimating(is_animating);
 }
 
-void DrawVisualizer::ResetCamera() { return impl_->ResetCamera(); }
+void DrawVisualizer::SetupCamera(float fov, const Eigen::Vector3f& center,
+                                 const Eigen::Vector3f& eye,
+                                 const Eigen::Vector3f& up) {
+}
+
+void DrawVisualizer::ResetCameraToDefault() {
+    return impl_->ResetCameraToDefault();
+}
 
 DrawVisualizer::UIState DrawVisualizer::GetUIState() const {
     return impl_->ui_state_;
