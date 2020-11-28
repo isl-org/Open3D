@@ -40,7 +40,6 @@
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/visualizer/GuiVisualizer.h"
-#include "open3d/io/rpc/Connection.h"
 
 // ----------------------------------------------------------------------------
 using namespace open3d::visualization::gui;
@@ -51,10 +50,6 @@ public:
     Open3DVisualizer()
         : open3d::visualization::GuiVisualizer("Open3D", WIDTH, HEIGHT) {
         AddItemsToAppMenu({{"Make Default 3D Viewer", MAC_MAKE_DEFAULT_APP}});
-#ifdef BUILD_RPC_INTERFACE
-        std::string address = open3d::io::rpc::Connection::DefaultAddress();
-        StartRPCInterface(address,1000);
-#endif
     }
 
 protected:
