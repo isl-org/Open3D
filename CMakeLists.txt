@@ -2,12 +2,12 @@
 if (WIN32)
     cmake_minimum_required(VERSION 3.18)
 else()
-    # If you're using Ubuntu 18.04 or older, we suggest you install the latest
+    # If you're using Ubuntu 18.04, we suggest you install the latest
     # CMake from the official repository https://apt.kitware.com/.
-    # CMake 3.15+ is required to allow linking with OBJECT libraries,
+    # CMake 3.17+ is required to allow linking with OBJECT libraries,
     # to prevent erroneous -gencode option deduplication with CUDA,
     # and to simplify generator expressions for selecting compile flags.
-    cmake_minimum_required(VERSION 3.15)
+    cmake_minimum_required(VERSION 3.17)
 endif()
 
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING
@@ -430,6 +430,9 @@ function(open3d_set_global_properties target)
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
+    if(WITH_FAISS)
+        target_compile_definitions(${target} PRIVATE WITH_FAISS)
+    endif()
 endfunction()
 
 macro(add_source_group module_name)

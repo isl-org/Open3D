@@ -54,7 +54,10 @@ void pybind_pointcloud(py::module& m) {
     // def_property_readonly is sufficient, since the returned TensorListMap can
     // be editable in Python. We don't want the TensorListMp to be replaced
     // by another TensorListMap in Python.
-    pointcloud.def_property_readonly("point", &PointCloud::GetPointAttrPybind);
+    pointcloud.def_property_readonly(
+            "point",
+            py::overload_cast<>(&PointCloud::GetPointAttr, py::const_));
+
     pointcloud.def("synchronized_push_back", &PointCloud::SynchronizedPushBack,
                    "map_keys_to_tensors"_a);
 
