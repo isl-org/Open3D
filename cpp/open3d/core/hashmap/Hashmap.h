@@ -110,6 +110,7 @@ public:
 
     int64_t Size() const;
     int64_t GetCapacity() const { return device_hashmap_->GetCapacity(); }
+    int64_t GetBucketCount() const { return device_hashmap_->GetBucketCount(); }
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
