@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/hashmap/CUDA/HashmapBufferCUDA.cuh"
 #include "open3d/core/hashmap/CUDA/InternalNodeManager.h"
-#include "open3d/core/hashmap/CUDA/KvPairsCUDA.cuh"
 #include "open3d/core/hashmap/CUDA/Macros.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 
@@ -42,7 +42,7 @@ public:
                         int64_t dsize_key,
                         int64_t dsize_value,
                         const InternalNodeManagerContext& node_mgr_ctx,
-                        const CUDAKvPairsContext& kv_mgr_ctx);
+                        const CUDAHashmapBufferContext& kv_mgr_ctx);
 
     __device__ bool Insert(bool lane_active,
                            uint32_t lane_id,
@@ -97,7 +97,7 @@ public:
 
     Slab* bucket_list_head_;
     InternalNodeManagerContext node_mgr_ctx_;
-    CUDAKvPairsContext kv_mgr_ctx_;
+    CUDAHashmapBufferContext kv_mgr_ctx_;
 };
 
 /// Kernels

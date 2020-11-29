@@ -37,7 +37,7 @@ void CUDAHashmapImplContext<Hash, KeyEq>::Setup(
         int64_t dsize_key,
         int64_t dsize_value,
         const InternalNodeManagerContext& allocator_ctx,
-        const CUDAKvPairsContext& pair_allocator_ctx) {
+        const CUDAHashmapBufferContext& pair_allocator_ctx) {
     bucket_count_ = init_buckets;
     capacity_ = init_capacity;
     dsize_key_ = dsize_key;

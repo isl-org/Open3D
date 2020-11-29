@@ -40,12 +40,12 @@
 namespace open3d {
 namespace core {
 
-class KvPairs {
+class HashmapBuffer {
 public:
-    KvPairs(int64_t capacity,
-            int64_t dsize_key,
-            int64_t dsize_value,
-            const Device &device)
+    HashmapBuffer(int64_t capacity,
+                  int64_t dsize_key,
+                  int64_t dsize_value,
+                  const Device &device)
         : capacity_(capacity),
           dsize_key_(dsize_key),
           dsize_val_(dsize_value),
@@ -60,7 +60,7 @@ public:
                        device_);
         heap_ = Tensor({capacity_}, Dtype::Int32, device_);
     }
-    virtual ~KvPairs() {}
+    virtual ~HashmapBuffer() {}
 
     virtual void ResetHeap() = 0;
     virtual int heap_counter() = 0;
