@@ -60,10 +60,14 @@ namespace rendering {
 namespace {
 struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
+    math::float4 next = {0.f, 0.f, 0.f, 1.f};
     math::float4 color = {1.f, 1.f, 1.f, 1.f};
 
     static std::uint32_t GetPositionOffset() {
         return offsetof(ColoredVertex, position);
+    }
+    static std::uint32_t GetNextOffset() {
+        return offsetof(ColoredVertex, next);
     }
     static std::uint32_t GetColorOffset() {
         return offsetof(ColoredVertex, color);
@@ -74,6 +78,14 @@ struct ColoredVertex {
         position.x = float_pos(0);
         position.y = float_pos(1);
         position.z = float_pos(2);
+    }
+
+    void SetVertexNext(const Eigen::Vector3d& pos, float dir) {
+        auto float_pos = pos.cast<float>();
+        next.x = float_pos(0);
+        next.y = float_pos(1);
+        next.z = float_pos(2);
+        next.w = dir;
     }
 
     void SetVertexColor(const Eigen::Vector3d& c) {
@@ -91,88 +103,69 @@ LineSetBuffersBuilder::LineSetBuffersBuilder(const geometry::LineSet& geometry)
 
 RenderableManager::PrimitiveType LineSetBuffersBuilder::GetPrimitiveType()
         const {
-    return RenderableManager::PrimitiveType::LINES;
+    return RenderableManager::PrimitiveType::TRIANGLES;
 }
 
 LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();
 
-    struct LookupKey {
-        LookupKey() = default;
-        explicit LookupKey(const Eigen::Vector3d& pos,
-                           const Eigen::Vector3d& color) {
-            values[0] = pos.x();
-            values[1] = pos.y();
-            values[2] = pos.z();
-            values[3] = color.x();
-            values[4] = color.y();
-            values[5] = color.z();
-        }
-
-        // Not necessarily transitive.
-        // TODO: does this break sort and map?
-        bool operator<(const LookupKey& other) const {
-            for (int i = 0; i < 6; ++i) {
-                double diff = abs(values[i] - other.values[i]);
-                if (diff > kEpsilon) {
-                    return values[i] < other.values[i];
-                }
-            }
-
-            return false;
-        }
-
-        const double kEpsilon = 0.00001;
-        double values[6] = {0};
-    };
-
-    // <source, real>
-    std::map<LookupKey, std::pair<GeometryBuffersBuilder::IndexType,
-                                  GeometryBuffersBuilder::IndexType>>
-            index_lookup;
-
     const size_t lines_count = geometry_.lines_.size();
-    const size_t vertices_bytes_count = lines_count * 2 * sizeof(ColoredVertex);
+    // NOTE: Vertices are duplicated so you need double (x4 instead of x2) the
+    // bytes
+    const size_t vertices_bytes_count = lines_count * 4 * sizeof(ColoredVertex);
     auto* vertices = static_cast<ColoredVertex*>(malloc(vertices_bytes_count));
 
-    const size_t indices_bytes_count = lines_count * 2 * sizeof(IndexType);
+    // NOTE: Each line is 2 triangles
+    const size_t indices_bytes_count = lines_count * 6 * sizeof(IndexType);
     auto* indices = static_cast<IndexType*>(malloc(indices_bytes_count));
 
     const bool has_colors = geometry_.HasColors();
     Eigen::Vector3d kWhite(1.0, 1.0, 1.0);
     size_t vertex_idx = 0;
+    size_t index_idx = 0;
     for (size_t i = 0; i < lines_count; ++i) {
         const auto& line = geometry_.lines_[i];
 
-        for (size_t j = 0; j < 2; ++j) {
-            size_t index = line(j);
-
-            auto& color = kWhite;
-            if (has_colors) {
-                color = geometry_.colors_[i];
-            }
-            const auto& pos = geometry_.points_[index];
-
-            LookupKey lookup_key(pos, color);
-            auto found = index_lookup.find(lookup_key);
-            if (found != index_lookup.end()) {
-                index = found->second.second;
-            } else {
-                auto& element = vertices[vertex_idx];
-
-                element.SetVertexPosition(pos);
-                element.SetVertexColor(color);
-
-                index_lookup[lookup_key] = {IndexType(index),
-                                            IndexType(vertex_idx)};
-                index = vertex_idx;
-
-                ++vertex_idx;
-            }
-
-            indices[2 * i + j] = IndexType(index);
+        auto& color = kWhite;
+        if (has_colors) {
+            color = geometry_.colors_[i];
         }
+
+        const auto& pos1 = geometry_.points_[line(0)];
+        const auto& pos2 = geometry_.points_[line(1)];
+
+        auto& element1 = vertices[vertex_idx];
+        element1.SetVertexPosition(pos1);
+        element1.SetVertexNext(pos2, 1.f);
+        element1.SetVertexColor(color);
+
+        auto& element2 = vertices[vertex_idx + 1];
+        element2.SetVertexPosition(pos1);
+        element2.SetVertexNext(pos2, -1.f);
+        element2.SetVertexColor(color);
+
+        auto& element3 = vertices[vertex_idx + 2];
+        element3.SetVertexPosition(pos2);
+        element3.SetVertexNext(pos1, -1.f);
+        element3.SetVertexColor(color);
+
+        auto& element4 = vertices[vertex_idx + 3];
+        element4.SetVertexPosition(pos2);
+        element4.SetVertexNext(pos1, 1.f);
+        element4.SetVertexColor(color);
+
+        // Triangle 1
+        indices[index_idx++] = IndexType(vertex_idx);
+        indices[index_idx++] = IndexType(vertex_idx + 1);
+        indices[index_idx++] = IndexType(vertex_idx + 2);
+
+        // Triangle 2
+        indices[index_idx++] = IndexType(vertex_idx + 3);
+        indices[index_idx++] = IndexType(vertex_idx + 2);
+        indices[index_idx++] = IndexType(vertex_idx + 1);
+
+        vertex_idx += 4;
     }
 
     const size_t vertices_count = vertex_idx;
@@ -183,6 +176,10 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
                                  .attribute(VertexAttribute::POSITION, 0,
                                             VertexBuffer::AttributeType::FLOAT3,
                                             ColoredVertex::GetPositionOffset(),
+                                            sizeof(ColoredVertex))
+                                 .attribute(VertexAttribute::CUSTOM0, 0,
+                                            VertexBuffer::AttributeType::FLOAT4,
+                                            ColoredVertex::GetNextOffset(),
                                             sizeof(ColoredVertex))
                                  .normalized(VertexAttribute::COLOR)
                                  .attribute(VertexAttribute::COLOR, 0,
@@ -207,7 +204,8 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
     vb_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(vb_descriptor));
 
-    const size_t indices_count = lines_count * 2;
+    // const size_t indices_count = lines_count * 6;
+    const size_t indices_count = index_idx;
     auto ib_handle =
             resource_mgr.CreateIndexBuffer(indices_count, sizeof(IndexType));
     if (!ib_handle) {

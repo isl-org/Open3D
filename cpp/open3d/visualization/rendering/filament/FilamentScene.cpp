@@ -107,6 +107,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"depth", ResourceManager::kDefaultDepthShader},
         {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
         {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
+        {"unlitLine", ResourceManager::kDefaultLineShader},
 };
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
@@ -759,6 +760,13 @@ void FilamentScene::UpdateSolidColorShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+void FilamentScene::UpdateLineShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetParameter("lineWidth", geom_mi.properties.line_width)
+            .Finish();
+}
+
 std::shared_ptr<geometry::Image> CombineTextures(
         std::shared_ptr<geometry::Image> ao,
         std::shared_ptr<geometry::Image> rough,
@@ -906,6 +914,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateGradientShader(geom.mat);
     } else if (props.shader == "unlitSolidColor") {
         UpdateSolidColorShader(geom.mat);
+    } else if (props.shader == "unlitLine") {
+        UpdateLineShader(geom.mat);
     }
 }
 
@@ -945,6 +955,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateGradientShader(geom->mat);
         } else if (material.shader == "unlitSolidColor") {
             UpdateSolidColorShader(geom->mat);
+        } else if (material.shader == "unlitLine") {
+            UpdateLineShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }
