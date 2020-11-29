@@ -425,7 +425,6 @@ template <typename Hash, typename KeyEq>
 __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   const void* input_values,
                                   addr_t* input_iterator_addrs,
-                                  iterator_t* output_iterators,
                                   bool* output_masks,
                                   int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -445,15 +444,8 @@ __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                hash_ctx.dsize_value_);
             }
 
-            if (output_iterators != nullptr) {
-                output_iterators[tid] = iterator;
-            }
         } else {
             hash_ctx.kv_mgr_ctx_.Free(iterator_addr);
-
-            if (output_iterators != nullptr) {
-                output_iterators[tid] = iterator_t();
-            }
         }
     }
 }
@@ -461,7 +453,7 @@ __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
 template <typename Hash, typename KeyEq>
 __global__ void FindKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                            const void* input_keys,
-                           iterator_t* output_iterators,
+                           addr_t* output_iterators,
                            bool* output_masks,
                            int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -493,8 +485,7 @@ __global__ void FindKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     result = hash_ctx.Find(lane_active, lane_id, bucket_id, key);
 
     if (tid < count) {
-        output_iterators[tid] =
-                hash_ctx.kv_mgr_ctx_.extract_iterator(result.first);
+        output_iterators[tid] = result.first;
         output_masks[tid] = result.second;
     }
 }

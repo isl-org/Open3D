@@ -51,17 +51,17 @@ public:
 
     void Insert(const void* input_keys,
                 const void* input_values,
-                iterator_t* output_iterators,
+                addr_t* output_addrs,
                 bool* output_masks,
                 int64_t count) override;
 
     void Activate(const void* input_keys,
-                  iterator_t* output_iterators,
+                  addr_t* output_addrs,
                   bool* output_masks,
                   int64_t count) override;
 
     void Find(const void* input_keys,
-              iterator_t* output_iterators,
+              addr_t* output_addrs,
               bool* output_masks,
               int64_t count) override;
 
@@ -85,7 +85,7 @@ protected:
 
     void InsertImpl(const void* input_keys,
                     const void* input_values,
-                    iterator_t* output_iterators,
+                    addr_t* output_addrs,
                     bool* output_masks,
                     int64_t count);
 };
@@ -124,7 +124,7 @@ int64_t CPUHashmap<Hash, KeyEq>::Size() const {
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
                                      const void* input_values,
-                                     iterator_t* output_iterators,
+                                     addr_t* output_addrs,
                                      bool* output_masks,
                                      int64_t count) {
     int64_t new_size = Size() + count;
@@ -136,12 +136,12 @@ void CPUHashmap<Hash, KeyEq>::Insert(const void* input_keys,
                 int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
         Rehash(expected_buckets);
     }
-    InsertImpl(input_keys, input_values, output_iterators, output_masks, count);
+    InsertImpl(input_keys, input_values, output_addrs, output_masks, count);
 }
 
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Activate(const void* input_keys,
-                                       iterator_t* output_iterators,
+                                       addr_t* output_addrs,
                                        bool* output_masks,
                                        int64_t count) {
     int64_t new_size = Size() + count;
@@ -153,12 +153,12 @@ void CPUHashmap<Hash, KeyEq>::Activate(const void* input_keys,
                 int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
         Rehash(expected_buckets);
     }
-    InsertImpl(input_keys, nullptr, output_iterators, output_masks, count);
+    InsertImpl(input_keys, nullptr, output_addrs, output_masks, count);
 }
 
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
-                                   iterator_t* output_iterators,
+                                   addr_t* output_addrs,
                                    bool* output_masks,
                                    int64_t count) {
     auto buffer_ctx = buffer_->GetContext();
@@ -169,10 +169,9 @@ void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
 
         auto iter = impl_->find(key);
         if (iter == impl_->end()) {
-            output_iterators[i] = iterator_t();
             output_masks[i] = false;
         } else {
-            output_iterators[i] = buffer_ctx->extract_iterator(iter->second);
+            output_addrs[i] = iter->second;
             output_masks[i] = true;
         }
     }
@@ -216,12 +215,11 @@ template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
-    Tensor active_addrs;
     Tensor active_keys;
     Tensor active_vals;
 
     if (iterator_count > 0) {
-        active_addrs = Tensor({iterator_count}, Dtype::Int32, this->device_);
+        Tensor active_addrs({iterator_count}, Dtype::Int32, this->device_);
         GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
         Tensor active_indices = active_addrs.To(Dtype::Int64);
@@ -241,19 +239,13 @@ void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
             this->device_);
 
     if (iterator_count > 0) {
-        // TODO: also update masks & iterators
-        iterator_t* output_iterators = nullptr;
-        bool* output_masks = nullptr;
-        output_iterators = static_cast<iterator_t*>(MemoryManager::Malloc(
-                sizeof(iterator_t) * iterator_count, this->device_));
-        output_masks = static_cast<bool*>(MemoryManager::Malloc(
-                sizeof(bool) * iterator_count, this->device_));
+        Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);
+        Tensor output_masks({iterator_count}, Dtype::Bool, this->device_);
 
         InsertImpl(active_keys.GetDataPtr(), active_vals.GetDataPtr(),
-                   output_iterators, output_masks, iterator_count);
-
-        MemoryManager::Free(output_iterators, this->device_);
-        MemoryManager::Free(output_masks, this->device_);
+                   static_cast<addr_t*>(output_addrs.GetDataPtr()),
+                   static_cast<bool*>(output_masks.GetDataPtr()),
+                   iterator_count);
     }
 
     impl_->rehash(buckets);
@@ -278,11 +270,10 @@ float CPUHashmap<Hash, KeyEq>::LoadFactor() const {
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
                                          const void* input_values,
-                                         iterator_t* output_iterators,
+                                         addr_t* output_addrs,
                                          bool* output_masks,
                                          int64_t count) {
     auto buffer_ctx = buffer_->GetContext();
-    std::vector<addr_t> output_addrs(count);
 
 #pragma omp parallel for
     for (int64_t i = 0; i < count; ++i) {
@@ -308,16 +299,14 @@ void CPUHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
         // Try insertion.
         auto res = impl_->insert({dst_key, dst_kv_addr});
 
-        output_masks[i] = res.second;
         output_addrs[i] = dst_kv_addr;
-        output_iterators[i] = dst_kv_iter;
+        output_masks[i] = res.second;
     }
 
 #pragma omp parallel for
     for (int64_t i = 0; i < count; ++i) {
         if (!output_masks[i]) {
             buffer_ctx->Free(output_addrs[i]);
-            output_iterators[i] = iterator_t();
         }
     }
 

@@ -65,17 +65,17 @@ public:
 
     void Insert(const void* input_keys,
                 const void* input_values,
-                iterator_t* output_iterators,
+                addr_t* output_addrs,
                 bool* output_masks,
                 int64_t count) override;
 
     void Activate(const void* input_keys,
-                  iterator_t* output_iterators,
+                  addr_t* output_addrs,
                   bool* output_masks,
                   int64_t count) override;
 
     void Find(const void* input_keys,
-              iterator_t* output_iterators,
+              addr_t* output_addrs,
               bool* output_masks,
               int64_t count) override;
 
@@ -105,7 +105,7 @@ protected:
     /// separate this implementation and avoid shared checks.
     void InsertImpl(const void* input_keys,
                     const void* input_values,
-                    iterator_t* output_iterators,
+                    addr_t* output_addrs,
                     bool* output_masks,
                     int64_t count);
 
@@ -132,12 +132,12 @@ template <typename Hash, typename KeyEq>
 void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
-    Tensor active_addrs;
     Tensor active_keys;
     Tensor active_vals;
 
     if (iterator_count > 0) {
-        active_addrs = Tensor({iterator_count}, Dtype::Int32, this->device_);
+        Tensor active_addrs =
+                Tensor({iterator_count}, Dtype::Int32, this->device_);
         GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
         Tensor active_indices = active_addrs.To(Dtype::Int64);
@@ -151,26 +151,20 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     Allocate(buckets, int64_t(std::ceil(buckets * avg_capacity_per_bucket)));
 
     if (iterator_count > 0) {
-        // TODO: also update masks & iterators
-        iterator_t* output_iterators = nullptr;
-        bool* output_masks = nullptr;
-        output_iterators = static_cast<iterator_t*>(MemoryManager::Malloc(
-                sizeof(iterator_t) * iterator_count, this->device_));
-        output_masks = static_cast<bool*>(MemoryManager::Malloc(
-                sizeof(bool) * iterator_count, this->device_));
+        Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);
+        Tensor output_masks({iterator_count}, Dtype::Bool, this->device_);
 
         InsertImpl(active_keys.GetDataPtr(), active_vals.GetDataPtr(),
-                   output_iterators, output_masks, iterator_count);
-
-        MemoryManager::Free(output_iterators, this->device_);
-        MemoryManager::Free(output_masks, this->device_);
+                   static_cast<addr_t*>(output_addrs.GetDataPtr()),
+                   static_cast<bool*>(output_masks.GetDataPtr()),
+                   iterator_count);
     }
 }
 
 template <typename Hash, typename KeyEq>
 void CUDAHashmap<Hash, KeyEq>::Insert(const void* input_keys,
                                       const void* input_values,
-                                      iterator_t* output_iterators,
+                                      addr_t* output_addrs,
                                       bool* output_masks,
                                       int64_t count) {
     int64_t new_size = Size() + count;
@@ -183,12 +177,12 @@ void CUDAHashmap<Hash, KeyEq>::Insert(const void* input_keys,
         Rehash(expected_buckets);
     }
 
-    InsertImpl(input_keys, input_values, output_iterators, output_masks, count);
+    InsertImpl(input_keys, input_values, output_addrs, output_masks, count);
 }
 
 template <typename Hash, typename KeyEq>
 void CUDAHashmap<Hash, KeyEq>::Activate(const void* input_keys,
-                                        iterator_t* output_iterators,
+                                        addr_t* output_addrs,
                                         bool* output_masks,
                                         int64_t count) {
     int64_t new_size = Size() + count;
@@ -201,12 +195,12 @@ void CUDAHashmap<Hash, KeyEq>::Activate(const void* input_keys,
         Rehash(expected_buckets);
     }
 
-    InsertImpl(input_keys, nullptr, output_iterators, output_masks, count);
+    InsertImpl(input_keys, nullptr, output_addrs, output_masks, count);
 }
 
 template <typename Hash, typename KeyEq>
 void CUDAHashmap<Hash, KeyEq>::Find(const void* input_keys,
-                                    iterator_t* output_iterators,
+                                    addr_t* output_addrs,
                                     bool* output_masks,
                                     int64_t count) {
     if (count == 0) return;
@@ -216,7 +210,7 @@ void CUDAHashmap<Hash, KeyEq>::Find(const void* input_keys,
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
     FindKernel<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, input_keys, output_iterators, output_masks, count);
+            gpu_context_, input_keys, output_addrs, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
@@ -296,12 +290,10 @@ int64_t CUDAHashmap<Hash, KeyEq>::Size() const {
 template <typename Hash, typename KeyEq>
 void CUDAHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
                                           const void* input_values,
-                                          iterator_t* output_iterators,
+                                          addr_t* output_addrs,
                                           bool* output_masks,
                                           int64_t count) {
     if (count == 0) return;
-    auto iterator_addrs = static_cast<addr_t*>(
-            MemoryManager::Malloc(sizeof(addr_t) * count, this->device_));
 
     /// Increase heap_counter to pre-allocate potential memory increment and
     /// avoid atomicAdd in kernel.
@@ -313,16 +305,13 @@ void CUDAHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
     InsertKernelPass0<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, input_keys, iterator_addrs, prev_heap_counter, count);
+            gpu_context_, input_keys, output_addrs, prev_heap_counter, count);
     InsertKernelPass1<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, input_keys, iterator_addrs, output_masks, count);
+            gpu_context_, input_keys, output_addrs, output_masks, count);
     InsertKernelPass2<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, input_values, iterator_addrs, output_iterators,
-            output_masks, count);
+            gpu_context_, input_values, output_addrs, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
-
-    MemoryManager::Free(iterator_addrs, this->device_);
 }
 
 template <typename Hash, typename KeyEq>

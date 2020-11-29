@@ -114,7 +114,7 @@ public:
     /// Parallel insert contiguous arrays of keys and values.
     virtual void Insert(const void* input_keys,
                         const void* input_values,
-                        iterator_t* output_iterators,
+                        addr_t* output_iterators,
                         bool* output_masks,
                         int64_t count) = 0;
 
@@ -122,13 +122,13 @@ public:
     /// Specifically useful for large value elements (e.g., a tensor), where we
     /// can do in-place management after activation.
     virtual void Activate(const void* input_keys,
-                          iterator_t* output_iterators,
+                          addr_t* output_iterators,
                           bool* output_masks,
                           int64_t count) = 0;
 
     /// Parallel find a contiguous array of keys.
     virtual void Find(const void* input_keys,
-                      iterator_t* output_iterators,
+                      addr_t* output_iterators,
                       bool* output_masks,
                       int64_t count) = 0;
 

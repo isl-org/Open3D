@@ -56,7 +56,7 @@ public:
     /// to be processed.
     void Insert(const void* input_keys,
                 const void* input_values,
-                iterator_t* output_iterators,
+                addr_t* output_iterators,
                 bool* output_masks,
                 int64_t count);
 
@@ -71,7 +71,7 @@ public:
     /// Specifically useful for large value elements (e.g., a tensor), where we
     /// can do in-place management after activation.
     void Activate(const void* input_keys,
-                  iterator_t* output_iterators,
+                  addr_t* output_iterators,
                   bool* output_masks,
                   int64_t count);
 
@@ -86,7 +86,7 @@ public:
     /// Output iterators and masks CANNOT be nullptrs as we have to interpret
     /// them.
     void Find(const void* input_keys,
-              iterator_t* output_iterators,
+              addr_t* output_iterators,
               bool* output_masks,
               int64_t count);
 

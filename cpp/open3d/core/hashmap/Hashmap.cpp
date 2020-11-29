@@ -58,7 +58,7 @@ void Hashmap::Rehash(int64_t buckets) {
 
 void Hashmap::Insert(const void* input_keys,
                      const void* input_values,
-                     iterator_t* output_iterators,
+                     addr_t* output_iterators,
                      bool* output_masks,
                      int64_t count) {
     return device_hashmap_->Insert(input_keys, input_values, output_iterators,
@@ -93,18 +93,16 @@ void Hashmap::Insert(const Tensor& input_keys,
     }
 
     int64_t count = shape[0];
-    Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
-
-    output_iterators = Tensor({count}, dtype_it, GetDevice());
+    output_iterators = Tensor({count}, Dtype::Int32, GetDevice());
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
     Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
-           static_cast<iterator_t*>(output_iterators.GetDataPtr()),
+           static_cast<addr_t*>(output_iterators.GetDataPtr()),
            static_cast<bool*>(output_masks.GetDataPtr()), count);
 }
 
 void Hashmap::Activate(const void* input_keys,
-                       iterator_t* output_iterators,
+                       addr_t* output_iterators,
                        bool* output_masks,
                        int64_t count) {
     return device_hashmap_->Activate(input_keys, output_iterators, output_masks,
@@ -127,18 +125,17 @@ void Hashmap::Activate(const Tensor& input_keys,
     }
 
     int64_t count = shape[0];
-    Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
 
-    output_iterators = Tensor({count}, dtype_it, GetDevice());
+    output_iterators = Tensor({count}, Dtype::Int32, GetDevice());
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
     return Activate(input_keys.GetDataPtr(),
-                    static_cast<iterator_t*>(output_iterators.GetDataPtr()),
+                    static_cast<addr_t*>(output_iterators.GetDataPtr()),
                     static_cast<bool*>(output_masks.GetDataPtr()), count);
 }
 
 void Hashmap::Find(const void* input_keys,
-                   iterator_t* output_iterators,
+                   addr_t* output_iterators,
                    bool* output_masks,
                    int64_t count) {
     return device_hashmap_->Find(input_keys, output_iterators, output_masks,
@@ -161,13 +158,12 @@ void Hashmap::Find(const Tensor& input_keys,
     }
 
     int64_t count = shape[0];
-    Dtype dtype_it(Dtype::DtypeCode::Object, sizeof(iterator_t), "iterator_t");
 
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
-    output_iterators = Tensor({count}, dtype_it, GetDevice());
+    output_iterators = Tensor({count}, Dtype::Int32, GetDevice());
 
     return Find(input_keys.GetDataPtr(),
-                static_cast<iterator_t*>(output_iterators.GetDataPtr()),
+                static_cast<addr_t*>(output_iterators.GetDataPtr()),
                 static_cast<bool*>(output_masks.GetDataPtr()), count);
 }
 

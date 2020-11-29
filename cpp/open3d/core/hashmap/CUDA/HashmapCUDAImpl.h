@@ -119,14 +119,13 @@ template <typename Hash, typename KeyEq>
 __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                   const void* input_values,
                                   addr_t* input_iterator_addrs,
-                                  iterator_t* output_iterators,
                                   bool* output_masks,
                                   int64_t count);
 
 template <typename Hash, typename KeyEq>
 __global__ void FindKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                            const void* input_keys,
-                           iterator_t* output_iterators,
+                           addr_t* output_iterators,
                            bool* output_masks,
                            int64_t count);
 
@@ -144,28 +143,15 @@ __global__ void EraseKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                  int64_t count);
 
 template <typename Hash, typename KeyEq>
-__global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
-                                   iterator_t* output_iterators,
-                                   uint32_t* output_iterator_count);
+__global__ void GetActiveIndicesKernel(
+        CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
+        addr_t* output_iterators,
+        uint32_t* output_iterator_count);
 
 template <typename Hash, typename KeyEq>
 __global__ void CountElemsPerBucketKernel(
         CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
         int64_t* bucket_elem_counts);
-
-__global__ void UnpackIteratorsKernel(const iterator_t* input_iterators,
-                                      const bool* input_masks,
-                                      void* output_keys,
-                                      void* output_values,
-                                      int64_t dsize_key,
-                                      int64_t dsize_value,
-                                      int64_t iterator_count);
-
-__global__ void AssignIteratorsKernel(iterator_t* input_iterators,
-                                      const bool* input_masks,
-                                      const void* input_values,
-                                      int64_t dsize_value,
-                                      int64_t iterator_count);
 
 }  // namespace core
 }  // namespace open3d
