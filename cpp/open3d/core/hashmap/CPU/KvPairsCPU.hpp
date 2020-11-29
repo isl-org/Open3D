@@ -47,7 +47,7 @@ class CPUKvPairsContext {
 public:
     uint8_t *keys_;                 /* [N] * sizeof(Key) */
     uint8_t *values_;               /* [N] * sizeof(Value) */
-    std::vector<addr_t> heap_;      /* [N] */
+    addr_t *heap_;                  /* [N] */
     std::atomic<int> heap_counter_; /* [1] */
 
 public:
@@ -97,9 +97,9 @@ public:
         context_->dsize_key_ = dsize_key;
         context_->dsize_value_ = dsize_value;
 
-        context_->heap_ = std::vector<addr_t>(capacity_);
-        context_->keys_ = static_cast<uint8_t *>(key_blob_->GetDataPtr());
-        context_->values_ = static_cast<uint8_t *>(val_blob_->GetDataPtr());
+        context_->keys_ = static_cast<uint8_t *>(key_blob_.GetDataPtr());
+        context_->values_ = static_cast<uint8_t *>(val_blob_.GetDataPtr());
+        context_->heap_ = static_cast<addr_t *>(heap_.GetDataPtr());
 
         ResetHeap();
     }

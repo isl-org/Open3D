@@ -104,21 +104,20 @@ public:
         : KvPairs(capacity, dsize_key, dsize_value, device) {
         context_.heap_counter_ =
                 static_cast<int *>(MemoryManager::Malloc(sizeof(int), device_));
-        context_.heap_ = static_cast<addr_t *>(
-                MemoryManager::Malloc(capacity * sizeof(addr_t), device_));
+
+        context_.keys_ = static_cast<uint8_t *>(key_blob_.GetDataPtr());
+        context_.values_ = static_cast<uint8_t *>(val_blob_.GetDataPtr());
+        context_.heap_ = static_cast<addr_t *>(heap_.GetDataPtr());
 
         context_.capacity_ = capacity;
         context_.dsize_key_ = dsize_key;
         context_.dsize_value_ = dsize_value;
-        context_.keys_ = static_cast<uint8_t *>(key_blob_->GetDataPtr());
-        context_.values_ = static_cast<uint8_t *>(val_blob_->GetDataPtr());
 
         ResetHeap();
     }
 
     ~CUDAKvPairs() override {
         MemoryManager::Free(context_.heap_counter_, device_);
-        MemoryManager::Free(context_.heap_, device_);
     }
 
     void ResetHeap() override {
@@ -143,14 +142,6 @@ public:
     }
 
     CUDAKvPairsContext &GetContext() { return context_; }
-
-    std::vector<int> DownloadHeap() {
-        std::vector<int> ret;
-        ret.resize(context_.capacity_);
-        MemoryManager::Memcpy(ret.data(), Device("CPU:0"), context_.heap_,
-                              device_, sizeof(int) * context_.capacity_);
-        return ret;
-    }
 
 protected:
     CUDAKvPairsContext context_;

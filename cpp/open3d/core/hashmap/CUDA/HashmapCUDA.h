@@ -102,9 +102,6 @@ public:
 
     int64_t Size() const override;
 
-    Tensor GetKeyBlobAsTensor(const SizeVector& shape, Dtype dtype) override;
-    Tensor GetValueBlobAsTensor(const SizeVector& shape, Dtype dtype) override;
-
 protected:
     /// The struct is directly passed to kernels by value, so cannot be a shared
     /// pointer.
@@ -338,34 +335,6 @@ float CUDAHashmap<Hash, KeyEq>::LoadFactor() const {
 template <typename Hash, typename KeyEq>
 int64_t CUDAHashmap<Hash, KeyEq>::Size() const {
     return *thrust::device_ptr<int>(gpu_context_.kv_mgr_ctx_.heap_counter_);
-}
-
-template <typename Hash, typename KeyEq>
-Tensor CUDAHashmap<Hash, KeyEq>::GetKeyBlobAsTensor(const SizeVector& shape,
-                                                    Dtype dtype) {
-    if (dtype.ByteSize() * shape.NumElements() !=
-        this->capacity_ * this->dsize_key_) {
-        utility::LogError(
-                "[CUDAHashmap] Tensor shape and dtype mismatch with key blob "
-                "size");
-    }
-    return Tensor(shape, Tensor::DefaultStrides(shape),
-                  kv_pairs_->GetKeyBlob()->GetDataPtr(), dtype,
-                  kv_pairs_->GetKeyBlob());
-}
-
-template <typename Hash, typename KeyEq>
-Tensor CUDAHashmap<Hash, KeyEq>::GetValueBlobAsTensor(const SizeVector& shape,
-                                                      Dtype dtype) {
-    if (dtype.ByteSize() * shape.NumElements() !=
-        this->capacity_ * this->dsize_value_) {
-        utility::LogError(
-                "[CUDAHashmap] Tensor shape and dtype mismatch with value blob "
-                "size: {} vs {}");
-    }
-    return Tensor(shape, Tensor::DefaultStrides(shape),
-                  kv_pairs_->GetValueBlob()->GetDataPtr(), dtype,
-                  kv_pairs_->GetValueBlob());
 }
 
 template <typename Hash, typename KeyEq>

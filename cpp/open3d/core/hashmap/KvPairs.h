@@ -45,29 +45,38 @@ public:
     KvPairs(int64_t capacity,
             int64_t dsize_key,
             int64_t dsize_value,
-            const Device& device)
+            const Device &device)
         : capacity_(capacity),
           dsize_key_(dsize_key),
           dsize_val_(dsize_value),
           device_(device) {
-        key_blob_ = std::make_shared<Blob>(capacity_ * dsize_key_, device_);
-        val_blob_ = std::make_shared<Blob>(capacity_ * dsize_val_, device_);
+        key_blob_ =
+                Tensor({capacity_},
+                       Dtype(Dtype::DtypeCode::Object, dsize_key_, "_hash_k"),
+                       device_);
+        val_blob_ =
+                Tensor({capacity_},
+                       Dtype(Dtype::DtypeCode::Object, dsize_val_, "_hash_v"),
+                       device_);
+        heap_ = Tensor({capacity_}, Dtype::Int32, device_);
     }
     virtual ~KvPairs() {}
 
     virtual void ResetHeap() = 0;
     virtual int heap_counter() = 0;
 
-    std::shared_ptr<Blob> GetKeyBlob() { return key_blob_; }
-    std::shared_ptr<Blob> GetValueBlob() { return val_blob_; }
+    Tensor &GetKeyTensor() { return key_blob_; }
+    Tensor &GetValueTensor() { return val_blob_; }
+    Tensor &GetHeapTensor() { return heap_; }
 
 protected:
     int64_t capacity_;
     int64_t dsize_key_;
     int64_t dsize_val_;
 
-    std::shared_ptr<Blob> key_blob_;
-    std::shared_ptr<Blob> val_blob_;
+    Tensor key_blob_;
+    Tensor val_blob_;
+    Tensor heap_;
 
     Device device_;
 };

@@ -87,9 +87,6 @@ public:
 
     int64_t Size() const override;
 
-    Tensor GetKeyBlobAsTensor(const SizeVector& shape, Dtype dtype) override;
-    Tensor GetValueBlobAsTensor(const SizeVector& shape, Dtype dtype) override;
-
 protected:
     std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
             impl_;
@@ -357,34 +354,6 @@ std::vector<int64_t> CPUHashmap<Hash, KeyEq>::BucketSizes() const {
 template <typename Hash, typename KeyEq>
 float CPUHashmap<Hash, KeyEq>::LoadFactor() const {
     return impl_->load_factor();
-}
-
-template <typename Hash, typename KeyEq>
-Tensor CPUHashmap<Hash, KeyEq>::GetKeyBlobAsTensor(const SizeVector& shape,
-                                                   Dtype dtype) {
-    if (dtype.ByteSize() * shape.NumElements() !=
-        this->capacity_ * this->dsize_key_) {
-        utility::LogError(
-                "[CPUHashmap] Tensor shape and dtype mismatch with key blob "
-                "size");
-    }
-    return Tensor(shape, Tensor::DefaultStrides(shape),
-                  kv_pairs_->GetKeyBlob()->GetDataPtr(), dtype,
-                  kv_pairs_->GetKeyBlob());
-}
-
-template <typename Hash, typename KeyEq>
-Tensor CPUHashmap<Hash, KeyEq>::GetValueBlobAsTensor(const SizeVector& shape,
-                                                     Dtype dtype) {
-    if (dtype.ByteSize() * shape.NumElements() !=
-        this->capacity_ * this->dsize_value_) {
-        utility::LogError(
-                "[CPUHashmap] Tensor shape and dtype mismatch with value blob "
-                "size");
-    }
-    return Tensor(shape, Tensor::DefaultStrides(shape),
-                  kv_pairs_->GetValueBlob()->GetDataPtr(), dtype,
-                  kv_pairs_->GetValueBlob());
 }
 
 template <typename Hash, typename KeyEq>

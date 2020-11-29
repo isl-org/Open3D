@@ -143,12 +143,17 @@ public:
 
     Device GetDevice() const { return device_hashmap_->GetDevice(); }
 
-    Tensor GetKeyBlobAsTensor(const SizeVector& shape, Dtype dtype) {
-        return device_hashmap_->GetKeyBlobAsTensor(shape, dtype);
-    }
-
-    Tensor GetValueBlobAsTensor(const SizeVector& shape, Dtype dtype) {
-        return device_hashmap_->GetValueBlobAsTensor(shape, dtype);
+    static Tensor ReinterpretBufferTensor(Tensor& buffer,
+                                          const SizeVector& shape,
+                                          Dtype dtype) {
+        if (dtype.ByteSize() * shape.NumElements() !=
+            buffer.GetDtype().ByteSize() * buffer.GetShape().NumElements()) {
+            utility::LogError(
+                    "[Hashmap] Reinterpret buffer as Tensor expects same byte "
+                    "size");
+        }
+        return Tensor(shape, Tensor::DefaultStrides(shape), buffer.GetDataPtr(),
+                      dtype, buffer.GetBlob());
     }
 
 private:

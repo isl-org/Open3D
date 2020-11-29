@@ -98,8 +98,8 @@ void pybind_core_hashmap(py::module& m) {
         return iterators;
     });
 
-    hashmap.def("get_key_blob_as_tensor", &Hashmap::GetKeyBlobAsTensor);
-    hashmap.def("get_value_blob_as_tensor", &Hashmap::GetValueBlobAsTensor);
+    hashmap.def("reinterpret_buffer_as_tensor",
+                &Hashmap::ReinterpretBufferTensor);
 
     hashmap.def("rehash", &Hashmap::Rehash);
     hashmap.def("size", &Hashmap::Size);
