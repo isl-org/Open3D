@@ -90,6 +90,8 @@ public:
     float LoadFactor() const override;
 
     int64_t Size() const override;
+    Tensor& GetKeyTensor() { return buffer_->GetKeyTensor(); }
+    Tensor& GetValueTensor() { return buffer_->GetValueTensor(); }
 
 protected:
     /// The struct is directly passed to kernels by value, so cannot be a shared

@@ -149,6 +149,9 @@ public:
     /// Return size / bucket_count.
     virtual float LoadFactor() const = 0;
 
+    virtual Tensor& GetKeyTensor() = 0;
+    virtual Tensor& GetValueTensor() = 0;
+
     int64_t GetBucketCount() const { return bucket_count_; }
     int64_t GetCapacity() const { return capacity_; }
     int64_t GetKeyBytesize() const { return dsize_key_; }

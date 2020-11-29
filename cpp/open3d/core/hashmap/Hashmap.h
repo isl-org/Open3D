@@ -126,6 +126,9 @@ public:
 
     Device GetDevice() const { return device_hashmap_->GetDevice(); }
 
+    Tensor& GetKeyTensor() { return device_hashmap_->GetKeyTensor(); }
+    Tensor& GetValueTensor() { return device_hashmap_->GetValueTensor(); }
+
     static Tensor ReinterpretBufferTensor(Tensor& buffer,
                                           const SizeVector& shape,
                                           Dtype dtype) {

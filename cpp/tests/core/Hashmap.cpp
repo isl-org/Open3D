@@ -157,31 +157,26 @@ TEST_P(HashmapPermuteDevices, Insert) {
               std::vector<bool>({false, false, true, false, true}));
 
     n = hashmap.Size();
-    core::Tensor iterators_all(
-            {n},
-            core::Dtype(core::Dtype::DtypeCode::Object,
-                        sizeof(core::iterator_t), "iterator_t"),
-            device);
-    core::Tensor keys_all({n}, core::Dtype::Int32, device);
-    core::Tensor values_all({n}, core::Dtype::Int32, device);
-    // hashmap.GetIterators(
-    //         static_cast<core::iterator_t *>(iterators_all.GetDataPtr()));
-    // hashmap.UnpackIterators(
-    //         static_cast<core::iterator_t *>(iterators_all.GetDataPtr()),
-    //         nullptr, keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
-    // std::unordered_map<int, int> key_value_all = {
-    //         {100, 1}, {300, 3}, {500, 5},   {700, 7},
-    //         {800, 8}, {900, 9}, {1000, 10},
-    // };
-    // for (int64_t i = 0; i < n; ++i) {
-    //     int k = keys_all[i].Item<int>();
-    //     int v = values_all[i].Item<int>();
+    core::Tensor addrs_all({n}, core::Dtype::Int32, device);
+    hashmap.GetActiveIndices(
+            static_cast<core::addr_t *>(addrs_all.GetDataPtr()));
+    core::Tensor indices_all = addrs_all.To(core::Dtype::Int64);
+    core::Tensor keys_all = hashmap.GetKeyTensor().IndexGet({indices_all});
+    core::Tensor values_all = hashmap.GetValueTensor().IndexGet({indices_all});
 
-    //     auto it = key_value_all.find(k);
-    //     EXPECT_TRUE(it != key_value_all.end());
-    //     EXPECT_EQ(it->first, k);
-    //     EXPECT_EQ(it->second, v);
-    // }
+    std::unordered_map<int, int> key_value_all = {
+            {100, 1}, {300, 3}, {500, 5},   {700, 7},
+            {800, 8}, {900, 9}, {1000, 10},
+    };
+    for (int64_t i = 0; i < n; ++i) {
+        int k = keys_all[i].Item<int>();
+        int v = values_all[i].Item<int>();
+
+        auto it = key_value_all.find(k);
+        EXPECT_TRUE(it != key_value_all.end());
+        EXPECT_EQ(it->first, k);
+        EXPECT_EQ(it->second, v);
+    }
 }
 
 TEST_P(HashmapPermuteDevices, Erase) {
@@ -216,32 +211,26 @@ TEST_P(HashmapPermuteDevices, Erase) {
               std::vector<bool>({true, true, false, true, false}));
 
     n = hashmap.Size();
-    core::Tensor iterators_all(
-            {n},
-            core::Dtype(core::Dtype::DtypeCode::Object,
-                        sizeof(core::iterator_t), "iterator_t"),
-            device);
-    core::Tensor keys_all({n}, core::Dtype::Int32, device);
-    core::Tensor values_all({n}, core::Dtype::Int32, device);
-    // size_t n_ = hashmap.GetIterators(
-    //         static_cast<core::iterator_t *>(iterators_all.GetDataPtr()));
-    // EXPECT_EQ(n, n_);
-    // hashmap.UnpackIterators(
-    //         static_cast<core::iterator_t *>(iterators_all.GetDataPtr()),
-    //         nullptr, keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
-    // std::unordered_map<int, int> key_value_all = {
-    //         {300, 3},
-    //         {700, 7},
-    // };
-    // for (int64_t i = 0; i < n; ++i) {
-    //     int k = keys_all[i].Item<int>();
-    //     int v = values_all[i].Item<int>();
+    core::Tensor addrs_all({n}, core::Dtype::Int32, device);
+    hashmap.GetActiveIndices(
+            static_cast<core::addr_t *>(addrs_all.GetDataPtr()));
+    core::Tensor indices_all = addrs_all.To(core::Dtype::Int64);
+    core::Tensor keys_all = hashmap.GetKeyTensor().IndexGet({indices_all});
+    core::Tensor values_all = hashmap.GetValueTensor().IndexGet({indices_all});
 
-    //     auto it = key_value_all.find(k);
-    //     EXPECT_TRUE(it != key_value_all.end());
-    //     EXPECT_EQ(it->first, k);
-    //     EXPECT_EQ(it->second, v);
-    // }
+    std::unordered_map<int, int> key_value_all = {
+            {300, 3},
+            {700, 7},
+    };
+    for (int64_t i = 0; i < n; ++i) {
+        int k = keys_all[i].Item<int>();
+        int v = values_all[i].Item<int>();
+
+        auto it = key_value_all.find(k);
+        EXPECT_TRUE(it != key_value_all.end());
+        EXPECT_EQ(it->first, k);
+        EXPECT_EQ(it->second, v);
+    }
 }
 
 TEST_P(HashmapPermuteDevices, Rehash) {
@@ -272,30 +261,24 @@ TEST_P(HashmapPermuteDevices, Rehash) {
     n = hashmap.Size();
     EXPECT_EQ(n, 5);
 
-    core::Tensor iterators_all(
-            {n},
-            core::Dtype(core::Dtype::DtypeCode::Object,
-                        sizeof(core::iterator_t), "iterator_t"),
-            device);
-    core::Tensor keys_all({n}, core::Dtype::Int32, device);
-    core::Tensor values_all({n}, core::Dtype::Int32, device);
-    // hashmap.GetIterators(
-    //         static_cast<core::iterator_t *>(iterators_all.GetDataPtr()));
-    // hashmap.UnpackIterators(
-    //         static_cast<core::iterator_t *>(iterators_all.GetDataPtr()),
-    //         nullptr, keys_all.GetDataPtr(), values_all.GetDataPtr(), n);
+    core::Tensor addrs_all({n}, core::Dtype::Int32, device);
+    hashmap.GetActiveIndices(
+            static_cast<core::addr_t *>(addrs_all.GetDataPtr()));
+    core::Tensor indices_all = addrs_all.To(core::Dtype::Int64);
+    core::Tensor keys_all = hashmap.GetKeyTensor().IndexGet({indices_all});
+    core::Tensor values_all = hashmap.GetValueTensor().IndexGet({indices_all});
 
-    // std::unordered_map<int, int> key_value_all = {
-    //         {100, 1}, {300, 3}, {500, 5}, {700, 7}, {900, 9}};
-    // for (int64_t i = 0; i < n; ++i) {
-    //     int k = keys_all[i].Item<int>();
-    //     int v = values_all[i].Item<int>();
+    std::unordered_map<int, int> key_value_all = {
+            {100, 1}, {300, 3}, {500, 5}, {700, 7}, {900, 9}};
+    for (int64_t i = 0; i < n; ++i) {
+        int k = keys_all[i].Item<int>();
+        int v = values_all[i].Item<int>();
 
-    //     auto it = key_value_all.find(k);
-    //     EXPECT_TRUE(it != key_value_all.end());
-    //     EXPECT_EQ(it->first, k);
-    //     EXPECT_EQ(it->second, v);
-    // }
+        auto it = key_value_all.find(k);
+        EXPECT_TRUE(it != key_value_all.end());
+        EXPECT_EQ(it->first, k);
+        EXPECT_EQ(it->second, v);
+    }
 }
 
 }  // namespace tests
