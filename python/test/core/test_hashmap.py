@@ -68,8 +68,8 @@ def test_insertion(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_activate(device):
     capacity = 10
-    hashmap = o3d.core.Hashmap(capacity, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
-                               device)
+    hashmap = o3d.core.Hashmap(capacity, o3d.core.Dtype.Int64,
+                               o3d.core.Dtype.Int64, device)
     keys = o3d.core.Tensor([100, 300, 500, 700, 900, 900],
                            dtype=o3d.core.Dtype.Int64,
                            device=device)
@@ -87,8 +87,8 @@ def test_activate(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_find(device):
     capacity = 10
-    hashmap = o3d.core.Hashmap(capacity, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
-                               device)
+    hashmap = o3d.core.Hashmap(capacity, o3d.core.Dtype.Int64,
+                               o3d.core.Dtype.Int64, device)
     keys = o3d.core.Tensor([100, 300, 500, 700, 900],
                            dtype=o3d.core.Dtype.Int64,
                            device=device)
@@ -101,8 +101,7 @@ def test_find(device):
                            dtype=o3d.core.Dtype.Int64,
                            device=device)
     addrs, masks = hashmap.find(keys)
-    np.testing.assert_equal(masks.cpu().numpy(),
-                            np.array([True, False, True]))
+    np.testing.assert_equal(masks.cpu().numpy(), np.array([True, False, True]))
 
     valid_indices = addrs[masks].to(o3d.core.Dtype.Int64)
     valid_keys = hashmap.reinterpret_buffer_as_tensor(
@@ -113,17 +112,15 @@ def test_find(device):
         o3d.core.Dtype.Int64)[valid_indices]
     assert valid_keys.shape[0] == 2
 
-    np.testing.assert_equal(valid_keys.cpu().numpy(),
-                            np.array([100, 500]))
-    np.testing.assert_equal(valid_values.cpu().numpy(),
-                            np.array([1, 5]))
+    np.testing.assert_equal(valid_keys.cpu().numpy(), np.array([100, 500]))
+    np.testing.assert_equal(valid_values.cpu().numpy(), np.array([1, 5]))
 
 
 @pytest.mark.parametrize("device", list_devices())
 def test_erase(device):
     capacity = 10
-    hashmap = o3d.core.Hashmap(capacity, o3d.core.Dtype.Int64, o3d.core.Dtype.Int64,
-                               device)
+    hashmap = o3d.core.Hashmap(capacity, o3d.core.Dtype.Int64,
+                               o3d.core.Dtype.Int64, device)
     keys = o3d.core.Tensor([100, 300, 500, 700, 900],
                            dtype=o3d.core.Dtype.Int64,
                            device=device)
@@ -137,6 +134,4 @@ def test_erase(device):
                            device=device)
     masks = hashmap.erase(keys)
 
-    np.testing.assert_equal(masks.cpu().numpy(),
-                            np.array([True, False, True]))
-
+    np.testing.assert_equal(masks.cpu().numpy(), np.array([True, False, True]))
