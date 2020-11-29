@@ -195,25 +195,8 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
                  static_cast<bool*>(output_masks.GetDataPtr()), count);
 }
 
-int64_t Hashmap::GetIterators(iterator_t* output_iterators) {
-    return device_hashmap_->GetIterators(output_iterators);
-}
-
-void Hashmap::UnpackIterators(const iterator_t* input_iterators,
-                              const bool* input_masks,
-                              void* output_keys,
-                              void* output_values,
-                              int64_t count) {
-    return device_hashmap_->UnpackIterators(input_iterators, input_masks,
-                                            output_keys, output_values, count);
-}
-
-void Hashmap::AssignIterators(iterator_t* input_iterators,
-                              const bool* input_masks,
-                              const void* input_values,
-                              int64_t count) {
-    return device_hashmap_->AssignIterators(input_iterators, input_masks,
-                                            input_values, count);
+int64_t Hashmap::GetActiveIndices(addr_t* output_addrs) {
+    return device_hashmap_->GetActiveIndices(output_addrs);
 }
 
 int64_t Hashmap::Size() const { return device_hashmap_->Size(); }

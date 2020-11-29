@@ -83,18 +83,7 @@ public:
                bool* output_masks,
                int64_t count) override;
 
-    int64_t GetIterators(iterator_t* output_iterators) override;
-
-    void UnpackIterators(const iterator_t* input_iterators,
-                         const bool* input_masks,
-                         void* output_keys,
-                         void* output_values,
-                         int64_t count) override;
-
-    void AssignIterators(iterator_t* input_iterators,
-                         const bool* input_masks,
-                         const void* input_values,
-                         int64_t count) override;
+    int64_t GetActiveIndices(addr_t* output_indices) override;
 
     std::vector<int64_t> BucketSizes() const override;
 
@@ -141,24 +130,17 @@ template <typename Hash, typename KeyEq>
 void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
-    void* output_keys = nullptr;
-    void* output_values = nullptr;
-    iterator_t* output_iterators = nullptr;
-    bool* output_masks = nullptr;
+    Tensor active_addrs;
+    Tensor active_keys;
+    Tensor active_vals;
 
     if (iterator_count > 0) {
-        output_keys = MemoryManager::Malloc(this->dsize_key_ * iterator_count,
-                                            this->device_);
-        output_values = MemoryManager::Malloc(
-                this->dsize_value_ * iterator_count, this->device_);
-        output_iterators = static_cast<iterator_t*>(MemoryManager::Malloc(
-                sizeof(iterator_t) * iterator_count, this->device_));
-        output_masks = static_cast<bool*>(MemoryManager::Malloc(
-                sizeof(bool) * iterator_count, this->device_));
+        active_addrs = Tensor({iterator_count}, Dtype::Int32, this->device_);
+        GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
-        GetIterators(output_iterators);
-        UnpackIterators(output_iterators, /* masks = */ nullptr, output_keys,
-                        output_values, iterator_count);
+        Tensor active_indices = active_addrs.To(Dtype::Int64);
+        active_keys = buffer_->GetKeyTensor().IndexGet({active_indices});
+        active_vals = buffer_->GetValueTensor().IndexGet({active_indices});
     }
 
     float avg_capacity_per_bucket =
@@ -167,13 +149,19 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     Allocate(buckets, int64_t(std::ceil(buckets * avg_capacity_per_bucket)));
 
     if (iterator_count > 0) {
-        InsertImpl(output_keys, output_values, output_iterators, output_masks,
-                   iterator_count);
+        // TODO: also update masks & iterators
+        iterator_t* output_iterators = nullptr;
+        bool* output_masks = nullptr;
+        output_iterators = static_cast<iterator_t*>(MemoryManager::Malloc(
+                sizeof(iterator_t) * iterator_count, this->device_));
+        output_masks = static_cast<bool*>(MemoryManager::Malloc(
+                sizeof(bool) * iterator_count, this->device_));
 
-        MemoryManager::Free(output_keys, this->device_);
-        MemoryManager::Free(output_values, this->device_);
-        MemoryManager::Free(output_masks, this->device_);
+        InsertImpl(active_keys.GetDataPtr(), active_vals.GetDataPtr(),
+                   output_iterators, output_masks, iterator_count);
+
         MemoryManager::Free(output_iterators, this->device_);
+        MemoryManager::Free(output_masks, this->device_);
     }
 }
 
@@ -254,7 +242,7 @@ void CUDAHashmap<Hash, KeyEq>::Erase(const void* input_keys,
 }
 
 template <typename Hash, typename KeyEq>
-int64_t CUDAHashmap<Hash, KeyEq>::GetIterators(iterator_t* output_iterators) {
+int64_t CUDAHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_addrs) {
     uint32_t* iterator_count = static_cast<uint32_t*>(
             MemoryManager::Malloc(sizeof(uint32_t), this->device_));
     cudaMemset(iterator_count, 0, sizeof(uint32_t));
@@ -262,8 +250,8 @@ int64_t CUDAHashmap<Hash, KeyEq>::GetIterators(iterator_t* output_iterators) {
     const int64_t num_blocks =
             (gpu_context_.bucket_count_ * kWarpSize + kThreadsPerBlock - 1) /
             kThreadsPerBlock;
-    GetIteratorsKernel<<<num_blocks, kThreadsPerBlock>>>(
-            gpu_context_, output_iterators, iterator_count);
+    GetActiveIndicesKernel<<<num_blocks, kThreadsPerBlock>>>(
+            gpu_context_, output_addrs, iterator_count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
@@ -273,40 +261,6 @@ int64_t CUDAHashmap<Hash, KeyEq>::GetIterators(iterator_t* output_iterators) {
     MemoryManager::Free(iterator_count, this->device_);
 
     return static_cast<int64_t>(ret);
-}
-
-template <typename Hash, typename KeyEq>
-void CUDAHashmap<Hash, KeyEq>::UnpackIterators(
-        const iterator_t* input_iterators,
-        const bool* input_masks,
-        void* output_keys,
-        void* output_values,
-        int64_t iterator_count) {
-    if (iterator_count == 0) return;
-
-    const int64_t num_blocks =
-            (iterator_count + kThreadsPerBlock - 1) / kThreadsPerBlock;
-    UnpackIteratorsKernel<<<num_blocks, kThreadsPerBlock>>>(
-            input_iterators, input_masks, output_keys, output_values,
-            this->dsize_key_, this->dsize_value_, iterator_count);
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-    OPEN3D_CUDA_CHECK(cudaGetLastError());
-}
-
-template <typename Hash, typename KeyEq>
-void CUDAHashmap<Hash, KeyEq>::AssignIterators(iterator_t* input_iterators,
-                                               const bool* input_masks,
-                                               const void* input_values,
-                                               int64_t iterator_count) {
-    if (iterator_count == 0) return;
-
-    const int64_t num_blocks =
-            (iterator_count + kThreadsPerBlock - 1) / kThreadsPerBlock;
-    AssignIteratorsKernel<<<num_blocks, kThreadsPerBlock>>>(
-            input_iterators, input_masks, input_values, this->dsize_value_,
-            iterator_count);
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-    OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
 
 template <typename Hash, typename KeyEq>

@@ -547,9 +547,10 @@ __global__ void EraseKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
 }
 
 template <typename Hash, typename KeyEq>
-__global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
-                                   iterator_t* output_iterators,
-                                   uint32_t* output_iterator_count) {
+__global__ void GetActiveIndicesKernel(
+        CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
+        addr_t* output_addrs,
+        uint32_t* output_iterator_count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
@@ -566,10 +567,8 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
     bool is_active = src_unit_data != kEmptyNodeAddr;
 
     if (is_active && ((1 << lane_id) & kNodePtrLanesMask)) {
-        iterator_t iterator =
-                hash_ctx.kv_mgr_ctx_.extract_iterator(src_unit_data);
         uint32_t index = atomicAdd(output_iterator_count, 1);
-        output_iterators[index] = iterator;
+        output_addrs[index] = src_unit_data;
     }
 
     addr_t next = __shfl_sync(kSyncLanesMask, src_unit_data, kNextSlabPtrLaneId,
@@ -581,10 +580,8 @@ __global__ void GetIteratorsKernel(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
         is_active = (src_unit_data != kEmptyNodeAddr);
 
         if (is_active && ((1 << lane_id) & kNodePtrLanesMask)) {
-            iterator_t iterator =
-                    hash_ctx.kv_mgr_ctx_.extract_iterator(src_unit_data);
             uint32_t index = atomicAdd(output_iterator_count, 1);
-            output_iterators[index] = iterator;
+            output_addrs[index] = src_unit_data;
         }
         next = __shfl_sync(kSyncLanesMask, src_unit_data, kNextSlabPtrLaneId,
                            kWarpSize);
@@ -631,47 +628,5 @@ __global__ void CountElemsPerBucketKernel(
     }
 }
 
-__global__ void UnpackIteratorsKernel(const iterator_t* input_iterators,
-                                      const bool* input_masks,
-                                      void* output_keys,
-                                      void* output_values,
-                                      int64_t dsize_key,
-                                      int64_t dsize_value,
-                                      int64_t iterator_count) {
-    int64_t tid = threadIdx.x + blockIdx.x * blockDim.x;
-
-    // Valid queries.
-    if (tid < iterator_count && (input_masks == nullptr || input_masks[tid])) {
-        if (output_keys != nullptr) {
-            MEMCPY_AS_INTS(
-                    static_cast<uint8_t*>(output_keys) + tid * dsize_key,
-                    static_cast<const uint8_t*>(input_iterators[tid].first),
-                    dsize_key)
-        }
-
-        if (output_values != nullptr) {
-            MEMCPY_AS_INTS(
-                    static_cast<uint8_t*>(output_values) + tid * dsize_value,
-                    static_cast<const uint8_t*>(input_iterators[tid].second),
-                    dsize_value);
-        }
-    }
-}
-
-__global__ void AssignIteratorsKernel(iterator_t* input_iterators,
-                                      const bool* input_masks,
-                                      const void* input_values,
-                                      int64_t dsize_value,
-                                      int64_t iterator_count) {
-    int64_t tid = threadIdx.x + blockIdx.x * blockDim.x;
-
-    // Valid queries.
-    if (tid < iterator_count && (input_masks == nullptr || input_masks[tid])) {
-        MEMCPY_AS_INTS(
-                static_cast<uint8_t*>(input_iterators[tid].second),
-                static_cast<const uint8_t*>(input_values) + dsize_value * tid,
-                dsize_value);
-    }
-}
 }  // namespace core
 }  // namespace open3d

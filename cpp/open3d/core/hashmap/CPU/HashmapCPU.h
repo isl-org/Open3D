@@ -69,18 +69,7 @@ public:
                bool* output_masks,
                int64_t count) override;
 
-    int64_t GetIterators(iterator_t* output_iterators) override;
-
-    void UnpackIterators(const iterator_t* input_iterators,
-                         const bool* input_masks,
-                         void* output_keys,
-                         void* output_values,
-                         int64_t count) override;
-
-    void AssignIterators(iterator_t* input_iterators,
-                         const bool* input_masks,
-                         const void* input_values,
-                         int64_t count) override;
+    int64_t GetActiveIndices(addr_t* output_indices) override;
 
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
@@ -209,113 +198,33 @@ void CPUHashmap<Hash, KeyEq>::Erase(const void* input_keys,
 }
 
 template <typename Hash, typename KeyEq>
-int64_t CPUHashmap<Hash, KeyEq>::GetIterators(iterator_t* output_iterators) {
+int64_t CPUHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_indices) {
     auto buffer_ctx = buffer_->GetContext();
 
     int64_t count = impl_->size();
     int64_t i = 0;
     for (auto iter = impl_->begin(); iter != impl_->end(); ++iter, ++i) {
-        output_iterators[i] = buffer_ctx->extract_iterator(iter->second);
+        output_indices[i] = static_cast<int64_t>(iter->second);
     }
 
     return count;
-}
-
-void UnpackIteratorsStep(const iterator_t* input_iterators,
-                         const bool* input_masks,
-                         void* output_keys,
-                         void* output_values,
-                         const Device& device,
-                         int64_t dsize_key,
-                         int64_t dsize_value,
-                         int64_t tid) {
-    // Valid queries.
-    if (input_masks == nullptr || input_masks[tid]) {
-        if (output_keys != nullptr) {
-            uint8_t* dst_key_ptr =
-                    static_cast<uint8_t*>(output_keys) + dsize_key * tid;
-            uint8_t* src_key_ptr =
-                    static_cast<uint8_t*>(input_iterators[tid].first);
-            MemoryManager::Memcpy(dst_key_ptr, device, src_key_ptr, device,
-                                  dsize_key);
-        }
-
-        if (output_values != nullptr) {
-            uint8_t* dst_value_ptr =
-                    static_cast<uint8_t*>(output_values) + dsize_value * tid;
-            uint8_t* src_value_ptr =
-                    static_cast<uint8_t*>(input_iterators[tid].second);
-            MemoryManager::Memcpy(dst_value_ptr, device, src_value_ptr, device,
-                                  dsize_value);
-        }
-    }
-}
-
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::UnpackIterators(const iterator_t* input_iterators,
-                                              const bool* input_masks,
-                                              void* output_keys,
-                                              void* output_values,
-                                              int64_t iterator_count) {
-#pragma omp parallel for
-    for (int64_t i = 0; i < iterator_count; ++i) {
-        UnpackIteratorsStep(input_iterators, input_masks, output_keys,
-                            output_values, this->device_, this->dsize_key_,
-                            this->dsize_value_, i);
-    }
-}
-
-void AssignIteratorsStep(iterator_t* input_iterators,
-                         const bool* input_masks,
-                         const void* input_values,
-                         const Device& device,
-                         int64_t dsize_value,
-                         int64_t tid) {
-    // Valid queries.
-    if (input_masks == nullptr || input_masks[tid]) {
-        const uint8_t* src_value_ptr =
-                static_cast<const uint8_t*>(input_values) + dsize_value * tid;
-        uint8_t* dst_value_ptr =
-                static_cast<uint8_t*>(input_iterators[tid].second);
-        MemoryManager::Memcpy(dst_value_ptr, device, src_value_ptr, device,
-                              dsize_value);
-    }
-}
-
-template <typename Hash, typename KeyEq>
-void CPUHashmap<Hash, KeyEq>::AssignIterators(iterator_t* input_iterators,
-                                              const bool* input_masks,
-                                              const void* input_values,
-                                              int64_t iterator_count) {
-#pragma omp parallel for
-    for (int64_t i = 0; i < iterator_count; ++i) {
-        AssignIteratorsStep(input_iterators, input_masks, input_values,
-                            this->device_, this->dsize_value_, i);
-    }
 }
 
 template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
-    void* output_keys = nullptr;
-    void* output_values = nullptr;
-    iterator_t* output_iterators = nullptr;
-    bool* output_masks = nullptr;
+    Tensor active_addrs;
+    Tensor active_keys;
+    Tensor active_vals;
 
     if (iterator_count > 0) {
-        output_keys = MemoryManager::Malloc(this->dsize_key_ * iterator_count,
-                                            this->device_);
-        output_values = MemoryManager::Malloc(
-                this->dsize_value_ * iterator_count, this->device_);
-        output_iterators = static_cast<iterator_t*>(MemoryManager::Malloc(
-                sizeof(iterator_t) * iterator_count, this->device_));
-        output_masks = static_cast<bool*>(MemoryManager::Malloc(
-                sizeof(bool) * iterator_count, this->device_));
+        active_addrs = Tensor({iterator_count}, Dtype::Int32, this->device_);
+        GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
-        GetIterators(output_iterators);
-        UnpackIterators(output_iterators, /* masks = */ nullptr, output_keys,
-                        output_values, iterator_count);
+        Tensor active_indices = active_addrs.To(Dtype::Int64);
+        active_keys = buffer_->GetKeyTensor().IndexGet({active_indices});
+        active_vals = buffer_->GetValueTensor().IndexGet({active_indices});
     }
 
     float avg_capacity_per_bucket =
@@ -330,13 +239,19 @@ void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
             this->device_);
 
     if (iterator_count > 0) {
-        InsertImpl(output_keys, output_values, output_iterators, output_masks,
-                   iterator_count);
+        // TODO: also update masks & iterators
+        iterator_t* output_iterators = nullptr;
+        bool* output_masks = nullptr;
+        output_iterators = static_cast<iterator_t*>(MemoryManager::Malloc(
+                sizeof(iterator_t) * iterator_count, this->device_));
+        output_masks = static_cast<bool*>(MemoryManager::Malloc(
+                sizeof(bool) * iterator_count, this->device_));
 
-        MemoryManager::Free(output_keys, this->device_);
-        MemoryManager::Free(output_values, this->device_);
-        MemoryManager::Free(output_masks, this->device_);
+        InsertImpl(active_keys.GetDataPtr(), active_vals.GetDataPtr(),
+                   output_iterators, output_masks, iterator_count);
+
         MemoryManager::Free(output_iterators, this->device_);
+        MemoryManager::Free(output_masks, this->device_);
     }
 
     impl_->rehash(buckets);

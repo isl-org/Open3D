@@ -138,20 +138,7 @@ public:
                        int64_t count) = 0;
 
     /// Parallel collect all iterators in the hash table
-    virtual int64_t GetIterators(iterator_t* output_iterators) = 0;
-
-    /// Parallel unpack iterators to contiguous arrays of keys and/or values.
-    virtual void UnpackIterators(const iterator_t* input_iterators,
-                                 const bool* input_masks,
-                                 void* output_keys,
-                                 void* output_values,
-                                 int64_t count) = 0;
-
-    /// Parallel assign iterators in-place with associated values.
-    virtual void AssignIterators(iterator_t* input_iterators,
-                                 const bool* input_masks,
-                                 const void* input_values,
-                                 int64_t count) = 0;
+    virtual int64_t GetActiveIndices(addr_t* output_indices) = 0;
 
     virtual int64_t Size() const = 0;
 

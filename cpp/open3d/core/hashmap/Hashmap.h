@@ -106,24 +106,7 @@ public:
     void Erase(const Tensor& input_keys, Tensor& output_masks);
 
     /// Parallel collect all iterators in the hash table
-    int64_t GetIterators(iterator_t* output_iterators);
-
-    /// Parallel unpack iterators to contiguous arrays of keys and/or
-    /// values. Output keys and values can be nullptrs if they are not
-    /// to be processed/stored.
-    void UnpackIterators(const iterator_t* input_iterators,
-                         const bool* input_masks,
-                         void* output_keys,
-                         void* output_values,
-                         int64_t count);
-
-    /// Parallel assign iterators in-place with associated values.
-    /// Note: users should manage the key-value correspondences around
-    /// iterators.
-    void AssignIterators(iterator_t* input_iterators,
-                         const bool* input_masks,
-                         const void* input_values,
-                         int64_t count);
+    int64_t GetActiveIndices(addr_t* output_indices);
 
     int64_t Size() const;
     int64_t GetCapacity() const { return device_hashmap_->GetCapacity(); }
