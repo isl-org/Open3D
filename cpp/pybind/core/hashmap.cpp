@@ -71,35 +71,10 @@ void pybind_core_hashmap(py::module& m) {
         return masks;
     });
 
-    hashmap.def("unpack_iterators", [](Hashmap& h, const Tensor& iterators,
-                                       const Tensor& masks = Tensor()) {
-        int64_t count = iterators.GetShape()[0];
-
-        Tensor keys({count}, h.GetKeyDtype(), iterators.GetDevice());
-        Tensor values({count}, h.GetValueDtype(), iterators.GetDevice());
-
-        h.UnpackIterators(
-                static_cast<const iterator_t*>(iterators.GetDataPtr()),
-                static_cast<const bool*>(masks.GetDataPtr()), keys.GetDataPtr(),
-                values.GetDataPtr(), count);
-
-        return py::make_tuple(keys, values);
-    });
-
-    hashmap.def("assign_iterators", [](Hashmap& h, Tensor& iterators,
-                                       Tensor& values,
-                                       const Tensor& masks = Tensor()) {
-        int64_t count = iterators.GetShape()[0];
-
-        h.AssignIterators(static_cast<iterator_t*>(iterators.GetDataPtr()),
-                          static_cast<const bool*>(masks.GetDataPtr()),
-                          values.GetDataPtr(), count);
-
-        return iterators;
-    });
-
-    hashmap.def("reinterpret_buffer_as_tensor",
-                &Hashmap::ReinterpretBufferTensor);
+    hashmap.def("get_key_tensor", &Hashmap::GetKeyTensor);
+    hashmap.def("get_value_tensor", &Hashmap::GetValueTensor);
+    hashmap.def_static("reinterpret_buffer_as_tensor",
+                       &Hashmap::ReinterpretBufferTensor);
 
     hashmap.def("rehash", &Hashmap::Rehash);
     hashmap.def("size", &Hashmap::Size);

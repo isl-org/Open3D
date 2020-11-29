@@ -976,21 +976,17 @@ class Hashmap(o3d.pybind.core.Hashmap):
         return super(Hashmap, self).erase(keys)
 
     @cast_to_py_tensor
-    def unpack_iterators(self, iterators, masks):
-        return super(Hashmap, self).unpack_iterators(iterators, masks)
+    def get_key_tensor(self):
+        return super(Hashmap, self).get_key_tensor()
 
     @cast_to_py_tensor
-    def assign_iterators(self, iterators, values, masks=Tensor([])):
-        return super(Hashmap, self).assign_iterators(iterators, values, masks)
+    def get_value_tensor(self):
+        return super(Hashmap, self).get_value_tensor()
 
+    @staticmethod
     @cast_to_py_tensor
-    def get_key_blob_as_tensor(self, shape, dtype):
+    def reinterpret_buffer_as_tensor(buffer_tensor, shape, dtype):
         if not isinstance(shape, SizeVector):
             shape = SizeVector(shape)
-        return super(Hashmap, self).get_key_blob_as_tensor(shape, dtype)
-
-    @cast_to_py_tensor
-    def get_value_blob_as_tensor(self, shape, dtype):
-        if not isinstance(shape, SizeVector):
-            shape = SizeVector(shape)
-        return super(Hashmap, self).get_value_blob_as_tensor(shape, dtype)
+        return super(Hashmap, Hashmap).reinterpret_buffer_as_tensor(
+            buffer_tensor, shape, dtype)
