@@ -564,12 +564,7 @@ if (BUILD_LIBREALSENSE)
         endif()
         message(STATUS "LIBUSB_LIB: ${LIBUSB_LIB}")
         message(STATUS "LIBUSB_INC: ${LIBUSB_INC}")
-        add_library(usb INTERFACE IMPORTED)
-        set_target_properties(usb PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES ${LIBUSB_INC}
-            INTERFACE_LINK_LIBRARIES ${LIBUSB_LIB}
-        )
-        target_link_libraries(3rdparty_librealsense INTERFACE usb)
+        target_link_libraries(3rdparty_librealsense INTERFACE ${LIBUSB_LIB})
     endif()
 endif()
 
