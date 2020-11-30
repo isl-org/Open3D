@@ -976,6 +976,10 @@ class Hashmap(o3d.pybind.core.Hashmap):
         return super(Hashmap, self).erase(keys)
 
     @cast_to_py_tensor
+    def get_active_addrs(self):
+        return super(Hashmap, self).get_active_addrs()
+
+    @cast_to_py_tensor
     def get_key_tensor(self):
         return super(Hashmap, self).get_key_tensor()
 

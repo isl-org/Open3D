@@ -136,6 +136,23 @@ def test_erase(device):
 
     np.testing.assert_equal(masks.cpu().numpy(), np.array([True, False, True]))
 
+    assert hashmap.size() == 3
+    active_addrs = hashmap.get_active_addrs()
+    active_indices = active_addrs.to(o3d.core.Dtype.Int64)
+
+    active_keys = hashmap.reinterpret_buffer_as_tensor(
+        hashmap.get_key_tensor(), (hashmap.capacity(),),
+        o3d.core.Dtype.Int64)[active_indices]
+    active_values = hashmap.reinterpret_buffer_as_tensor(
+        hashmap.get_value_tensor(), (hashmap.capacity(),),
+        o3d.core.Dtype.Int64)[active_indices]
+
+    active_keys_np = active_keys.cpu().numpy()
+    active_values_np = active_values.cpu().numpy()
+    sorted_i = np.argsort(active_keys_np)
+    np.testing.assert_equal(active_keys_np[sorted_i], np.array([300, 700, 900]))
+    np.testing.assert_equal(active_values_np[sorted_i], np.array([3, 7, 9]))
+
 
 @pytest.mark.parametrize("device", list_devices())
 def test_complex_dtype(device):
@@ -163,8 +180,7 @@ def test_complex_dtype(device):
 
     np.testing.assert_equal(valid_keys.cpu().numpy(),
                             np.array([[1, 2, 3], [2, 3, 4], [3, 4, 5]]))
-    np.testing.assert_equal(valid_values.cpu().numpy(),
-                            np.array([1, 2, 3]))
+    np.testing.assert_equal(valid_values.cpu().numpy(), np.array([1, 2, 3]))
 
     keys = o3d.core.Tensor([[1, 2, 3], [4, 5, 6]],
                            dtype=o3d.core.Dtype.Int64,

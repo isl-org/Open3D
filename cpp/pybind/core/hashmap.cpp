@@ -48,21 +48,21 @@ void pybind_core_hashmap(py::module& m) {
 
     hashmap.def("insert",
                 [](Hashmap& h, const Tensor& keys, const Tensor& values) {
-                    Tensor iterators, masks;
-                    h.Insert(keys, values, iterators, masks);
-                    return py::make_tuple(iterators, masks);
+                    Tensor addrs, masks;
+                    h.Insert(keys, values, addrs, masks);
+                    return py::make_tuple(addrs, masks);
                 });
 
     hashmap.def("activate", [](Hashmap& h, const Tensor& keys) {
-        Tensor iterators, masks;
-        h.Activate(keys, iterators, masks);
-        return py::make_tuple(iterators, masks);
+        Tensor addrs, masks;
+        h.Activate(keys, addrs, masks);
+        return py::make_tuple(addrs, masks);
     });
 
     hashmap.def("find", [](Hashmap& h, const Tensor& keys) {
-        Tensor iterators, masks;
-        h.Find(keys, iterators, masks);
-        return py::make_tuple(iterators, masks);
+        Tensor addrs, masks;
+        h.Find(keys, addrs, masks);
+        return py::make_tuple(addrs, masks);
     });
 
     hashmap.def("erase", [](Hashmap& h, const Tensor& keys) {
@@ -71,6 +71,11 @@ void pybind_core_hashmap(py::module& m) {
         return masks;
     });
 
+    hashmap.def("get_active_addrs", [](Hashmap& h) {
+        Tensor addrs({h.Size()}, Dtype::Int32, h.GetDevice());
+        h.GetActiveIndices(static_cast<addr_t*>(addrs.GetDataPtr()));
+        return addrs;
+    });
     hashmap.def("get_key_tensor", &Hashmap::GetKeyTensor);
     hashmap.def("get_value_tensor", &Hashmap::GetValueTensor);
     hashmap.def_static("reinterpret_buffer_as_tensor",
