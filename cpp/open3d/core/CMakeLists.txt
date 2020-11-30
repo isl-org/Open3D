@@ -75,6 +75,7 @@ set(CORE_NNS_SRC
     nns/NNSIndex.cpp
     nns/NanoFlannIndex.cpp
     nns/NearestNeighborSearch.cpp
+    nns/FixedRadiusIndex.cpp
 )
 
 if (WITH_FAISS)
@@ -82,9 +83,9 @@ if (WITH_FAISS)
 endif()
 
 if (BUILD_CUDA_MODULE)
-    list(APPEND CORE_NNS_SRC nns/FixedRadiusIndex.cpp)
     list(APPEND CORE_NNS_SRC nns/FixedRadiusSearch.cu)
 endif()
+
 if(BUILD_CUDA_MODULE)
     set(ALL_CORE_SRC
         ${CORE_SRC}

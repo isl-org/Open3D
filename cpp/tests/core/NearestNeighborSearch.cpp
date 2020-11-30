@@ -98,30 +98,38 @@ TEST_P(NNSPermuteDevices, KnnSearch) {
                                  0.00747938, 0.0108912}));
 }
 
-TEST(NearestNeighborSearch, FixedRadiusSearch) {
+TEST_P(NNSPermuteDevices, FixedRadiusSearch) {
     // Set up nns.
     int size = 10;
+    core::Device device = GetParam();
     std::vector<double> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
                                0.2, 0.0, 0.1, 0.0, 0.0, 0.1, 0.1, 0.0,
                                0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
                                0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
+    core::Tensor ref(points, {size, 3}, core::Dtype::Float64, device);
     core::nns::NearestNeighborSearch nns(ref);
-    nns.FixedRadiusIndex();
-
     core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Dtype::Float64);
+                       {1, 3}, core::Dtype::Float64, device);
 
     // If radius <= 0.
-    EXPECT_THROW(nns.FixedRadiusSearch(query, -1.0), std::runtime_error);
-    EXPECT_THROW(nns.FixedRadiusSearch(query, 0.0), std::runtime_error);
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        EXPECT_THROW(nns.FixedRadiusIndex(-1.0), std::runtime_error);
+        EXPECT_THROW(nns.FixedRadiusIndex(0.0), std::runtime_error);
+    } else {
+        nns.FixedRadiusIndex();
+        EXPECT_THROW(nns.FixedRadiusSearch(query, -1.0), std::runtime_error);
+        EXPECT_THROW(nns.FixedRadiusSearch(query, 0.0), std::runtime_error);
+    }
 
     // If radius == 0.1.
+    nns.FixedRadiusIndex(0.1);
     std::tuple<core::Tensor, core::Tensor, core::Tensor> result =
             nns.FixedRadiusSearch(query, 0.1);
     core::Tensor indices = std::get<0>(result);
     core::Tensor distances = std::get<1>(result);
 
+    std::vector<int64_t> indices_vec = indices.ToFlatVector<int64_t>();
+    std::vector<double> distances_vec = distances.ToFlatVector<double>();
     ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4}));
     ExpectEQ(distances.ToFlatVector<double>(),
              std::vector<double>({0.00626358, 0.00747938}));

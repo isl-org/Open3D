@@ -63,7 +63,7 @@ void pybind_core_nns(py::module &m) {
     nns.def("knn_index", &NearestNeighborSearch::KnnIndex,
             "Set index for knn search.");
     nns.def("fixed_radius_index", &NearestNeighborSearch::FixedRadiusIndex,
-            "Set index for fixed-radius search.");
+            "radius"_a, "Set index for fixed-radius search.");
     nns.def("multi_radius_index", &NearestNeighborSearch::MultiRadiusIndex,
             "Set index for multi-radius search.");
     nns.def("hybrid_index", &NearestNeighborSearch::HybridIndex,
