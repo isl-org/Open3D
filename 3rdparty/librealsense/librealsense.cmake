@@ -26,7 +26,12 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_librealsense INSTALL_DIR)
 set(LIBREALSENSE_INCLUDE_DIR ${INSTALL_DIR}/include/) # "/" is critical.
 set(LIBREALSENSE_LIB_DIR ${INSTALL_DIR}/lib)
-set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file) # The order is critical.
+
+if(WIN32 AND (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+    set(LIBREALSENSE_LIBRARIES realsense2d fwd realsense-filed) # The order is critical.
+else()
+    set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file)
+endif()
 
 if(APPLE)
     ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
