@@ -56,10 +56,10 @@ def test_insertion(device):
 
     valid_indices = addrs[masks].to(o3d.core.Dtype.Int64)
     valid_keys = hashmap.reinterpret_buffer_as_tensor(
-        hashmap.get_key_tensor(), (capacity,),
+        hashmap.get_key_tensor(), (hashmap.capacity(),),
         o3d.core.Dtype.Int64)[valid_indices]
     valid_values = hashmap.reinterpret_buffer_as_tensor(
-        hashmap.get_value_tensor(), (capacity,),
+        hashmap.get_value_tensor(), (hashmap.capacity(),),
         o3d.core.Dtype.Int64)[valid_indices]
     np.testing.assert_equal(valid_keys.cpu().numpy(),
                             valid_values.cpu().numpy() * 100)
@@ -78,7 +78,7 @@ def test_activate(device):
 
     valid_indices = addrs[masks].to(o3d.core.Dtype.Int64)
     valid_keys = hashmap.reinterpret_buffer_as_tensor(
-        hashmap.get_key_tensor(), (capacity,),
+        hashmap.get_key_tensor(), (hashmap.capacity(),),
         o3d.core.Dtype.Int64)[valid_indices]
     np.testing.assert_equal(np.sort(valid_keys.cpu().numpy()),
                             np.array([100, 300, 500, 700, 900]))
@@ -105,10 +105,10 @@ def test_find(device):
 
     valid_indices = addrs[masks].to(o3d.core.Dtype.Int64)
     valid_keys = hashmap.reinterpret_buffer_as_tensor(
-        hashmap.get_key_tensor(), (capacity,),
+        hashmap.get_key_tensor(), (hashmap.capacity(),),
         o3d.core.Dtype.Int64)[valid_indices]
     valid_values = hashmap.reinterpret_buffer_as_tensor(
-        hashmap.get_value_tensor(), (capacity,),
+        hashmap.get_value_tensor(), (hashmap.capacity(),),
         o3d.core.Dtype.Int64)[valid_indices]
     assert valid_keys.shape[0] == 2
 

@@ -75,8 +75,8 @@ public:
     float LoadFactor() const override;
 
     int64_t Size() const override;
-    Tensor& GetKeyTensor() { return buffer_->GetKeyTensor(); }
-    Tensor& GetValueTensor() { return buffer_->GetValueTensor(); }
+    Tensor& GetKeyTensor() override { return buffer_->GetKeyTensor(); }
+    Tensor& GetValueTensor() override { return buffer_->GetValueTensor(); }
 
 protected:
     std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
