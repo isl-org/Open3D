@@ -2,8 +2,8 @@ include(ExternalProject)
 
 set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
 
-set(FILAMENT_GIT_REPOSITORY "https://github.com/google/filament.git")
-set(FILAMENT_GIT_TAG "v1.9.5")
+set(FILAMENT_GIT_REPOSITORY "https://github.com/intel-isl/filament.git")
+set(FILAMENT_GIT_TAG "release")
 
 ExternalProject_Add(
     ext_filament
@@ -24,6 +24,7 @@ ExternalProject_Add(
         -DUSE_STATIC_LIBCXX=ON
         -DFILAMENT_SUPPORTS_VULKAN=OFF
         -DFILAMENT_SKIP_SAMPLES=ON
+        -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
 )
 
 set(filament_LIBRARIES
