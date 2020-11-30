@@ -119,8 +119,10 @@ public:
     /// Return size / bucket_count.
     float LoadFactor() const;
 
-    void AssertKeyDtype(const Dtype& dtype_key) const;
-    void AssertValueDtype(const Dtype& dtype_val) const;
+    void AssertKeyDtype(const Dtype& dtype_key,
+                        const SizeVector& elem_shape) const;
+    void AssertValueDtype(const Dtype& dtype_val,
+                          const SizeVector& elem_shape) const;
 
     Dtype GetKeyDtype() const { return dtype_key_; }
     Dtype GetValueDtype() const { return dtype_val_; }

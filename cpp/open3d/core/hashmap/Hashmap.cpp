@@ -69,8 +69,13 @@ void Hashmap::Insert(const Tensor& input_keys,
                      const Tensor& input_values,
                      Tensor& output_iterators,
                      Tensor& output_masks) {
-    AssertKeyDtype(input_keys.GetDtype());
-    AssertValueDtype(input_values.GetDtype());
+    SizeVector input_key_elem_shape(input_keys.GetShape());
+    input_key_elem_shape.erase(input_key_elem_shape.begin());
+    SizeVector input_value_elem_shape(input_values.GetShape());
+    input_value_elem_shape.erase(input_value_elem_shape.begin());
+
+    AssertKeyDtype(input_keys.GetDtype(), input_key_elem_shape);
+    AssertValueDtype(input_values.GetDtype(), input_value_elem_shape);
 
     SizeVector shape = input_keys.GetShape();
     if (shape.size() == 0 || shape[0] == 0) {
@@ -112,7 +117,9 @@ void Hashmap::Activate(const void* input_keys,
 void Hashmap::Activate(const Tensor& input_keys,
                        Tensor& output_iterators,
                        Tensor& output_masks) {
-    AssertKeyDtype(input_keys.GetDtype());
+    SizeVector input_key_elem_shape(input_keys.GetShape());
+    input_key_elem_shape.erase(input_key_elem_shape.begin());
+    AssertKeyDtype(input_keys.GetDtype(), input_key_elem_shape);
 
     SizeVector shape = input_keys.GetShape();
     if (shape.size() == 0 || shape[0] == 0) {
@@ -145,7 +152,9 @@ void Hashmap::Find(const void* input_keys,
 void Hashmap::Find(const Tensor& input_keys,
                    Tensor& output_iterators,
                    Tensor& output_masks) {
-    AssertKeyDtype(input_keys.GetDtype());
+    SizeVector input_key_elem_shape(input_keys.GetShape());
+    input_key_elem_shape.erase(input_key_elem_shape.begin());
+    AssertKeyDtype(input_keys.GetDtype(), input_key_elem_shape);
 
     SizeVector shape = input_keys.GetShape();
     if (shape.size() == 0 || shape[0] == 0) {
@@ -172,7 +181,9 @@ void Hashmap::Erase(const void* input_keys, bool* output_masks, int64_t count) {
 }
 
 void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
-    AssertKeyDtype(input_keys.GetDtype());
+    SizeVector input_key_elem_shape(input_keys.GetShape());
+    input_key_elem_shape.erase(input_key_elem_shape.begin());
+    AssertKeyDtype(input_keys.GetDtype(), input_key_elem_shape);
 
     SizeVector shape = input_keys.GetShape();
     if (shape.size() == 0 || shape[0] == 0) {
@@ -203,20 +214,25 @@ std::vector<int64_t> Hashmap::BucketSizes() const {
 
 float Hashmap::LoadFactor() const { return device_hashmap_->LoadFactor(); }
 
-void Hashmap::AssertKeyDtype(const Dtype& dtype_key) const {
-    if (dtype_key != dtype_key_) {
+void Hashmap::AssertKeyDtype(const Dtype& dtype_key,
+                             const SizeVector& elem_shape) const {
+    int64_t elem_byte_size = dtype_key.ByteSize() * elem_shape.NumElements();
+    if (elem_byte_size != dtype_key_.ByteSize()) {
         utility::LogError(
-                "[Hashmap] Inconsistent key dtype, expected {}, but got {}",
-                dtype_key_.ToString(), dtype_key.ToString());
+                "[Hashmap] Inconsistent entry-wise byte size, expected {}, but "
+                "got {}",
+                dtype_key_.ByteSize(), elem_byte_size);
     }
 }
 
-void Hashmap::AssertValueDtype(const Dtype& dtype_val) const {
-    if (dtype_val != dtype_val_) {
+void Hashmap::AssertValueDtype(const Dtype& dtype_val,
+                               const SizeVector& elem_shape) const {
+    int64_t elem_byte_size = dtype_val.ByteSize() * elem_shape.NumElements();
+    if (elem_byte_size != dtype_val_.ByteSize()) {
         utility::LogError(
-                "[Hashmap] Inconsistent value dtype, expected {}, but got "
-                "{}",
-                dtype_val_.ToString(), dtype_val.ToString());
+                "[Hashmap] Inconsistent entry-wise byte size, expected {}, but "
+                "got {}",
+                dtype_val_.ByteSize(), elem_byte_size);
     }
 }
 
