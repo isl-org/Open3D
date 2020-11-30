@@ -36,7 +36,7 @@ using namespace open3d::utility;
 namespace {
 
 struct ConnectionDefaults {
-    std::string address = "tcp://localhost:51454";
+    std::string address = "tcp://127.0.0.1:51454";
     int connect_timeout = 5000;
     int timeout = 10000;
 } defaults;
@@ -93,6 +93,8 @@ std::shared_ptr<zmq::message_t> Connection::Send(const void* data,
     zmq::message_t send_msg(data, size);
     return Send(send_msg);
 }
+
+std::string Connection::DefaultAddress() { return defaults.address; }
 
 }  // namespace rpc
 }  // namespace io

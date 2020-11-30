@@ -60,23 +60,33 @@ ReceiverBase::ReceiverBase(const std::string& address, int timeout)
     : address_(address),
       timeout_(timeout),
       keep_running_(false),
-      loop_running_(false) {}
+      loop_running_(false),
+      mainloop_error_code_(0),
+      mainloop_exception_("") {}
 
 ReceiverBase::~ReceiverBase() { Stop(); }
 
 void ReceiverBase::Start() {
-    const std::lock_guard<std::mutex> lock(mutex_);
-    if (!keep_running_) {
-        keep_running_ = true;
-        thread_ = std::thread(&ReceiverBase::Mainloop, this);
-        // wait for the loop to start running
-        while (!loop_running_.load()) {
-            std::this_thread::yield();
-        };
+    {
+        const std::lock_guard<std::mutex> lock(mutex_);
+        if (!keep_running_) {
+            keep_running_ = true;
+            thread_ = std::thread(&ReceiverBase::Mainloop, this);
+            // wait for the loop to start running
+            while (!loop_running_.load() && !mainloop_error_code_.load()) {
+                std::this_thread::yield();
+            };
 
-        LogDebug("ReceiverBase: started");
-    } else {
-        LogDebug("ReceiverBase: already running");
+            if (!mainloop_error_code_.load()) {
+                LogDebug("ReceiverBase: started");
+            }
+        } else {
+            LogDebug("ReceiverBase: already running");
+        }
+    }
+
+    if (mainloop_error_code_.load()) {
+        LogError(GetLastError().what());
     }
 }
 
@@ -97,6 +107,14 @@ void ReceiverBase::Stop() {
     }
 }
 
+std::runtime_error ReceiverBase::GetLastError() {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    mainloop_error_code_.store(0);
+    std::runtime_error result = mainloop_exception_;
+    mainloop_exception_ = std::runtime_error("");
+    return result;
+}
+
 void ReceiverBase::Mainloop() {
     socket_ = std::unique_ptr<zmq::socket_t>(
             new zmq::socket_t(GetZMQContext(), ZMQ_REP));
@@ -115,8 +133,11 @@ void ReceiverBase::Mainloop() {
     try {
         socket_->bind(address_.c_str());
     } catch (const zmq::error_t& err) {
-        LogError("ReceiverBase::Mainloop: Failed to bind address, {}",
-                 err.what());
+        mainloop_exception_ = std::runtime_error(
+                "ReceiverBase::Mainloop: Failed to bind address, " +
+                std::string(err.what()));
+        mainloop_error_code_.store(1);
+        return;
     }
 
     loop_running_.store(true);
@@ -156,7 +177,12 @@ void ReceiverBase::Mainloop() {
         MSGTYPE msg;                                                    \
         msg = obj.as<MSGTYPE>();                                        \
         auto reply = ProcessMessage(req, msg, MsgpackObject(obj));      \
-        replies.push_back(reply);                                       \
+        if (reply) {                                                    \
+            replies.push_back(reply);                                   \
+        } else {                                                        \
+            replies.push_back(CreateStatusMessage(                      \
+                    messages::Status::ErrorProcessingMessage()));       \
+        }                                                               \
     }
                     PROCESS_MESSAGE(messages::SetMeshData)
                     PROCESS_MESSAGE(messages::GetMeshData)
@@ -173,7 +199,7 @@ void ReceiverBase::Mainloop() {
                         break;
                     }
                 } catch (std::exception& err) {
-                    LogInfo("ReceiverBase::Mainloop: {}", err.what());
+                    LogInfo("ReceiverBase::Mainloop:a {}", err.what());
                     auto status = messages::Status::ErrorUnpackingFailed();
                     status.str += std::string(" with ") + err.what();
                     replies.push_back(CreateStatusMessage(status));
@@ -211,7 +237,9 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
             msg.MsgId());
-    return std::shared_ptr<zmq::message_t>();
+    auto status = messages::Status::ErrorProcessingMessage();
+    status.str += ": messages with id " + msg.MsgId() + " are not supported";
+    return CreateStatusMessage(status);
 }
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
@@ -221,7 +249,9 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
             msg.MsgId());
-    return std::shared_ptr<zmq::message_t>();
+    auto status = messages::Status::ErrorProcessingMessage();
+    status.str += ": messages with id " + msg.MsgId() + " are not supported";
+    return CreateStatusMessage(status);
 }
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
@@ -231,7 +261,9 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
             msg.MsgId());
-    return std::shared_ptr<zmq::message_t>();
+    auto status = messages::Status::ErrorProcessingMessage();
+    status.str += ": messages with id " + msg.MsgId() + " are not supported";
+    return CreateStatusMessage(status);
 }
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
@@ -241,7 +273,9 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
             msg.MsgId());
-    return std::shared_ptr<zmq::message_t>();
+    auto status = messages::Status::ErrorProcessingMessage();
+    status.str += ": messages with id " + msg.MsgId() + " are not supported";
+    return CreateStatusMessage(status);
 }
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
@@ -251,7 +285,9 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
             msg.MsgId());
-    return std::shared_ptr<zmq::message_t>();
+    auto status = messages::Status::ErrorProcessingMessage();
+    status.str += ": messages with id " + msg.MsgId() + " are not supported";
+    return CreateStatusMessage(status);
 }
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
@@ -261,7 +297,9 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
             msg.MsgId());
-    return std::shared_ptr<zmq::message_t>();
+    auto status = messages::Status::ErrorProcessingMessage();
+    status.str += ": messages with id " + msg.MsgId() + " are not supported";
+    return CreateStatusMessage(status);
 }
 
 }  // namespace rpc

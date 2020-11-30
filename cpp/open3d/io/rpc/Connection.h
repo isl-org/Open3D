@@ -39,6 +39,7 @@ namespace rpc {
 /// functions.
 class Connection : public ConnectionBase {
 public:
+    /// Creates a connection with the default parameters
     Connection();
 
     /// Creates a Connection object used for sending data.
@@ -57,6 +58,8 @@ public:
 
     /// Function for sending raw data. Meant for testing purposes
     std::shared_ptr<zmq::message_t> Send(const void* data, size_t size);
+
+    static std::string DefaultAddress();
 
 private:
     std::unique_ptr<zmq::socket_t> socket_;

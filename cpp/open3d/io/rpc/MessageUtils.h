@@ -72,6 +72,8 @@ std::tuple<const void*, size_t> GetZMQMessageDataAndSize(
 std::tuple<int32_t, std::string> GetStatusCodeAndStr(
         const messages::Status& status);
 
+std::shared_ptr<zmq::message_t> CreateStatusOKMsg();
+
 }  // namespace rpc
 }  // namespace io
 }  // namespace open3d
