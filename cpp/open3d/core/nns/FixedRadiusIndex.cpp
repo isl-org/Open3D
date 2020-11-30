@@ -48,6 +48,7 @@ FixedRadiusIndex::~FixedRadiusIndex(){};
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius) {
+#ifdef BUILD_CUDA_MODULE
     dataset_points_ = dataset_points.Contiguous();
     int64_t num_points = GetDatasetSize();
     int64_t hash_table_size = std::min<int64_t>(
@@ -99,10 +100,17 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                         hash_table_index_.GetDataPtr()));
     });
     return true;
+#else
+    utility::LogError(
+            "[FixedRadiusIndex::SetTensorData] BUILD_CUDA_MODULE is off. "
+            "Please recompile Open3D with BUILD_CUDA_MODULE=ON to use "
+            "FixedRadiusIndex class.");
+#endif
 };
 
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         const Tensor &query_points, double radius) const {
+#ifdef BUILD_CUDA_MODULE
     Tensor query_points_ = query_points.Contiguous();
     int64_t num_query_points = query_points_.GetShape()[0];
     std::vector<int64_t> queries_row_splits({0, num_query_points});
@@ -163,6 +171,12 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
 
     return std::make_tuple(neighbors_index, neighbors_distance,
                            neighbors_row_splits);
+#else
+    utility::LogError(
+            "[FixedRadiusIndex::SetTensorData] BUILD_CUDA_MODULE is off. "
+            "Please recompile Open3D with BUILD_CUDA_MODULE=ON to use "
+            "FixedRadiusIndex class.");
+#endif
 };
 
 }  // namespace nns
