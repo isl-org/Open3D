@@ -21,7 +21,6 @@ ExternalProject_Add(
         $<$<PLATFORM_ID:Darwin>:-DHWM_OVER_XU=OFF>
         $<$<PLATFORM_ID:Windows>:-DUSE_EXTERNAL_USB=ON>
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>
-        $<$<PLATFORM_ID:Windows>:-DCMAKE_DEBUG_POSTFIX="">
 )
 
 ExternalProject_Get_Property(ext_librealsense INSTALL_DIR)
