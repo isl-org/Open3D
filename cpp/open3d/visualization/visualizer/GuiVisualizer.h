@@ -70,8 +70,6 @@ public:
 
     void Layout(const gui::Theme& theme) override;
 
-    void CauseCrash();
-
 protected:
     // Add custom items to the application menu (only relevant on macOS)
     void AddItemsToAppMenu(

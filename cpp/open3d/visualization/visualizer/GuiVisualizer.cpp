@@ -327,7 +327,7 @@ enum MenuId {
     HELP_CAMERA,
     HELP_ABOUT,
     HELP_CONTACT,
-    HELP_CRASH
+    HELP_DEBUG
 };
 
 struct GuiVisualizer::Impl {
@@ -608,7 +608,6 @@ void GuiVisualizer::Init() {
         help_menu->AddSeparator();
         help_menu->AddItem("About", HELP_ABOUT);
         help_menu->AddItem("Contact", HELP_CONTACT);
-        help_menu->AddItem("Cause Crash", HELP_CRASH);
 #if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
         // macOS adds a special search item to menus named "Help",
         // so add a space to avoid that.
@@ -971,25 +970,6 @@ void GuiVisualizer::ExportCurrentImage(const std::string &path) {
             });
 }
 
-void GuiVisualizer::CauseCrash() {
-    utility::LogWarning("Causing Crash!");
-    rendering::Material line_material;
-    line_material.base_color = Eigen::Vector4f(1.f, 0.f, 0.f, 1.f);
-    line_material.line_width = 0.3f;
-    line_material.shader = "unlitLine";
-    // line_material.shader = "defaultUnlit";
-    std::mt19937 rng;
-    std::uniform_real_distribution<> dist(-5.0, 5.0);
-    for (int i = 0; i < 10; ++i) {
-        auto line = std::make_shared<geometry::LineSet>();
-        line->points_.push_back({dist(rng), dist(rng), dist(rng)});
-        line->points_.push_back({dist(rng), dist(rng), dist(rng)});
-        line->lines_.push_back({0, 1});
-        impl_->scene_wgt_->GetScene()->AddGeometry("line" + std::to_string(i),
-                                                   line, line_material);
-    }
-}
-
 void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
     auto menu_id = MenuId(item_id);
     switch (menu_id) {
@@ -1096,10 +1076,6 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
         case HELP_CONTACT: {
             auto dlg = CreateContactDialog(this);
             ShowDialog(dlg);
-            break;
-        }
-        case HELP_CRASH: {
-            CauseCrash();
             break;
         }
     }
