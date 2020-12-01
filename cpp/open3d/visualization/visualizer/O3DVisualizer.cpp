@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/visualizer/DrawVisualizer.h"
+#include "open3d/visualization/visualizer/O3DVisualizer.h"
 
 #include <set>
 #include <unordered_map>
@@ -58,7 +58,7 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
-#include "open3d/visualization/visualizer/DrawVisualizerSelections.h"
+#include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
 
 #define GROUPS_USE_TREE 1
@@ -286,11 +286,11 @@ static const std::vector<LightingProfile> gLightingProfiles = {
 
 }  // namespace
 
-struct DrawVisualizer::Impl {
+struct O3DVisualizer::Impl {
     std::set<std::string> added_names_;
     std::set<std::string> added_groups_;
     std::vector<DrawObject> objects_;
-    std::shared_ptr<DrawVisualizerSelections> selections_;
+    std::shared_ptr<O3DVisualizerSelections> selections_;
     bool selections_need_update_ = true;
 
     UIState ui_state_;
@@ -308,7 +308,7 @@ struct DrawVisualizer::Impl {
         // all the shared_ptrs at destruction just to ensure that the gui gets
         // destroyed before the Window, because the Window will do that for us.
         Menu *actions_menu;
-        std::unordered_map<int, std::function<void(DrawVisualizer &)>>
+        std::unordered_map<int, std::function<void(O3DVisualizer &)>>
                 menuid2action;
 
         Vert *panel;
@@ -360,14 +360,14 @@ struct DrawVisualizer::Impl {
         ButtonList *actions;
     } settings;
 
-    void Construct(DrawVisualizer *w) {
+    void Construct(O3DVisualizer *w) {
         if (window_) {
             return;
         }
 
         window_ = w;
         scene_ = new SceneWidget();
-        selections_ = std::make_shared<DrawVisualizerSelections>(*scene_);
+        selections_ = std::make_shared<O3DVisualizerSelections>(*scene_);
         scene_->SetScene(std::make_shared<Open3DScene>(w->GetRenderer()));
         scene_->EnableSceneCaching(true);  // smoother UI with large geometry
         scene_->SetOnPointsPicked(
@@ -530,11 +530,11 @@ struct DrawVisualizer::Impl {
         settings.shader->AddItem("Depth");
         settings.shader->SetOnValueChanged([this](const char *item, int idx) {
             if (idx == 1) {
-                this->SetShader(DrawVisualizer::Shader::NORMALS);
+                this->SetShader(O3DVisualizer::Shader::NORMALS);
             } else if (idx == 2) {
-                this->SetShader(DrawVisualizer::Shader::DEPTH);
+                this->SetShader(O3DVisualizer::Shader::DEPTH);
             } else {
-                this->SetShader(DrawVisualizer::Shader::STANDARD);
+                this->SetShader(O3DVisualizer::Shader::STANDARD);
             }
         });
 
@@ -904,7 +904,7 @@ struct DrawVisualizer::Impl {
         }
     }
 
-    DrawVisualizer::DrawObject GetGeometry(const std::string &name) const {
+    O3DVisualizer::DrawObject GetGeometry(const std::string &name) const {
         for (auto &o : objects_) {
             if (o.name == name) {
                 return o;
@@ -984,7 +984,7 @@ struct DrawVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
-    void SetShader(DrawVisualizer::Shader shader) {
+    void SetShader(O3DVisualizer::Shader shader) {
         const char *shader_name = nullptr;
         switch (shader) {
             case Shader::STANDARD:
@@ -1074,7 +1074,7 @@ struct DrawVisualizer::Impl {
         selections_->MakeActive();
     }
 
-    std::vector<DrawVisualizerSelections::SelectionSet> GetSelectionSets()
+    std::vector<O3DVisualizerSelections::SelectionSet> GetSelectionSets()
             const {
         return selections_->GetSets();
     }
@@ -1511,8 +1511,8 @@ struct DrawVisualizer::Impl {
 };
 
 // ----------------------------------------------------------------------------
-DrawVisualizer::DrawVisualizer(const std::string &title, int width, int height)
-    : Window(title, width, height), impl_(new DrawVisualizer::Impl()) {
+O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
+    : Window(title, width, height), impl_(new O3DVisualizer::Impl()) {
     impl_->Construct(this);
 
     // Create the app menu. We will take over the existing menubar (if any)
@@ -1558,14 +1558,14 @@ DrawVisualizer::DrawVisualizer(const std::string &title, int width, int height)
     impl_->OnToggleSettings();  // must do this after menu is created
 }
 
-DrawVisualizer::~DrawVisualizer() {}
+O3DVisualizer::~O3DVisualizer() {}
 
-Open3DScene *DrawVisualizer::GetScene() const {
+Open3DScene *O3DVisualizer::GetScene() const {
     return impl_->scene_->GetScene().get();
 }
 
-void DrawVisualizer::AddAction(const std::string &name,
-                               std::function<void(DrawVisualizer &)> callback) {
+void O3DVisualizer::AddAction(const std::string &name,
+                               std::function<void(O3DVisualizer &)> callback) {
     // Add button to the "Custom Actions" segment in the UI
     SmallButton *button = new SmallButton(name.c_str());
     button->SetOnClicked([this, callback]() { callback(*this); });
@@ -1590,13 +1590,13 @@ void DrawVisualizer::AddAction(const std::string &name,
     SetOnMenuItemActivated(id, [this, callback]() { callback(*this); });
 }
 
-void DrawVisualizer::SetBackgroundColor(const Eigen::Vector4f &bg_color) {
+void O3DVisualizer::SetBackgroundColor(const Eigen::Vector4f &bg_color) {
     impl_->SetBackgroundColor(bg_color);
 }
 
-void DrawVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
+void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
 
-void DrawVisualizer::AddGeometry(const std::string &name,
+void O3DVisualizer::AddGeometry(const std::string &name,
                                  std::shared_ptr<geometry::Geometry3D> geom,
                                  rendering::Material *material /*= nullptr*/,
                                  const std::string &group /*= ""*/,
@@ -1605,7 +1605,7 @@ void DrawVisualizer::AddGeometry(const std::string &name,
     impl_->AddGeometry(name, geom, nullptr, material, group, time, is_visible);
 }
 
-void DrawVisualizer::AddGeometry(const std::string &name,
+void O3DVisualizer::AddGeometry(const std::string &name,
                                  std::shared_ptr<t::geometry::Geometry> tgeom,
                                  rendering::Material *material /*= nullptr*/,
                                  const std::string &group /*= ""*/,
@@ -1614,86 +1614,86 @@ void DrawVisualizer::AddGeometry(const std::string &name,
     impl_->AddGeometry(name, nullptr, tgeom, material, group, time, is_visible);
 }
 
-void DrawVisualizer::RemoveGeometry(const std::string &name) {
+void O3DVisualizer::RemoveGeometry(const std::string &name) {
     return impl_->RemoveGeometry(name);
 }
 
-void DrawVisualizer::ShowGeometry(const std::string &name, bool show) {
+void O3DVisualizer::ShowGeometry(const std::string &name, bool show) {
     return impl_->ShowGeometry(name, show);
 }
 
-DrawVisualizer::DrawObject DrawVisualizer::GetGeometry(
+O3DVisualizer::DrawObject O3DVisualizer::GetGeometry(
         const std::string &name) const {
     return impl_->GetGeometry(name);
 }
 
-void DrawVisualizer::ShowSettings(bool show) { impl_->ShowSettings(show); }
+void O3DVisualizer::ShowSettings(bool show) { impl_->ShowSettings(show); }
 
-void DrawVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
+void O3DVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
 
-void DrawVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
+void O3DVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
 
-void DrawVisualizer::SetPointSize(int point_size) {
+void O3DVisualizer::SetPointSize(int point_size) {
     impl_->SetPointSize(point_size);
 }
 
-void DrawVisualizer::EnableGroup(const std::string &group, bool enable) {
+void O3DVisualizer::EnableGroup(const std::string &group, bool enable) {
     impl_->EnableGroup(group, enable);
 }
 
-std::vector<DrawVisualizerSelections::SelectionSet>
-DrawVisualizer::GetSelectionSets() const {
+std::vector<O3DVisualizerSelections::SelectionSet>
+O3DVisualizer::GetSelectionSets() const {
     return impl_->GetSelectionSets();
 }
 
-double DrawVisualizer::GetAnimationFrameDelay() const {
+double O3DVisualizer::GetAnimationFrameDelay() const {
     return impl_->ui_state_.frame_delay;
 }
 
-void DrawVisualizer::SetAnimationFrameDelay(double secs) {
+void O3DVisualizer::SetAnimationFrameDelay(double secs) {
     impl_->ui_state_.frame_delay = secs;
 }
 
-double DrawVisualizer::GetAnimationTimeStep() const {
+double O3DVisualizer::GetAnimationTimeStep() const {
     return impl_->ui_state_.time_step;
 }
 
-void DrawVisualizer::SetAnimationTimeStep(double time_step) {
+void O3DVisualizer::SetAnimationTimeStep(double time_step) {
     impl_->ui_state_.time_step = time_step;
 }
 
-double DrawVisualizer::GetCurrentTime() const {
+double O3DVisualizer::GetCurrentTime() const {
     return impl_->ui_state_.current_time;
 }
 
-void DrawVisualizer::SetCurrentTime(double t) { impl_->SetCurrentTime(t); }
+void O3DVisualizer::SetCurrentTime(double t) { impl_->SetCurrentTime(t); }
 
-bool DrawVisualizer::GetIsAnimating() const {
+bool O3DVisualizer::GetIsAnimating() const {
     return impl_->ui_state_.is_animating;
 }
 
-void DrawVisualizer::SetAnimating(bool is_animating) {
+void O3DVisualizer::SetAnimating(bool is_animating) {
     impl_->SetAnimating(is_animating);
 }
 
-void DrawVisualizer::SetupCamera(float fov,
+void O3DVisualizer::SetupCamera(float fov,
                                  const Eigen::Vector3f &center,
                                  const Eigen::Vector3f &eye,
                                  const Eigen::Vector3f &up) {}
 
-void DrawVisualizer::ResetCameraToDefault() {
+void O3DVisualizer::ResetCameraToDefault() {
     return impl_->ResetCameraToDefault();
 }
 
-DrawVisualizer::UIState DrawVisualizer::GetUIState() const {
+O3DVisualizer::UIState O3DVisualizer::GetUIState() const {
     return impl_->ui_state_;
 }
 
-void DrawVisualizer::ExportCurrentImage(const std::string &path) {
+void O3DVisualizer::ExportCurrentImage(const std::string &path) {
     impl_->ExportCurrentImage(path);
 }
 
-void DrawVisualizer::Layout(const Theme &theme) {
+void O3DVisualizer::Layout(const Theme &theme) {
     auto em = theme.font_size;
     int settings_width = 15 * theme.font_size;
 #if !GROUPS_USE_TREE

@@ -93,7 +93,7 @@
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "open3d/visualization/utility/SelectionPolygon.h"
 #include "open3d/visualization/utility/SelectionPolygonVolume.h"
-#include "open3d/visualization/visualizer/DrawVisualizer.h"
+#include "open3d/visualization/visualizer/O3DVisualizer.h"
 #include "open3d/visualization/visualizer/ViewControl.h"
 #include "open3d/visualization/visualizer/ViewControlWithCustomAnimation.h"
 #include "open3d/visualization/visualizer/ViewControlWithEditing.h"

@@ -1,5 +1,5 @@
 from . import gui
-from . import DrawVisualizer
+from . import O3DVisualizer
 
 
 def draw(
@@ -15,7 +15,7 @@ def draw(
         show_ui=None,
         point_size=None):
     gui.Application.instance.initialize()
-    w = DrawVisualizer(title, width, height)
+    w = O3DVisualizer(title, width, height)
 
     if actions is not None:
         for a in actions:

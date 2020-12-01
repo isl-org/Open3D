@@ -32,7 +32,7 @@
 
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Material.h"
-#include "open3d/visualization/visualizer/DrawVisualizerSelections.h"
+#include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
 
 namespace open3d {
 
@@ -54,7 +54,7 @@ class Open3DScene;
 
 namespace visualizer {
 
-class DrawVisualizer : public gui::Window {
+class O3DVisualizer : public gui::Window {
     using Super = gui::Window;
 
 public:
@@ -97,11 +97,11 @@ public:
         double frame_delay = 0.100;  // seconds
     };
 
-    DrawVisualizer(const std::string& title, int width, int height);
-    virtual ~DrawVisualizer();
+    O3DVisualizer(const std::string& title, int width, int height);
+    virtual ~O3DVisualizer();
 
     void AddAction(const std::string& name,
-                   std::function<void(DrawVisualizer&)> callback);
+                   std::function<void(O3DVisualizer&)> callback);
 
     void SetBackgroundColor(const Eigen::Vector4f& bg_color);
 
@@ -139,7 +139,7 @@ public:
     void SetPointSize(int point_size);
     void EnableGroup(const std::string& group, bool enable);
 
-    std::vector<DrawVisualizerSelections::SelectionSet> GetSelectionSets()
+    std::vector<O3DVisualizerSelections::SelectionSet> GetSelectionSets()
             const;
 
     double GetAnimationFrameDelay() const;

@@ -81,7 +81,7 @@ void pybind_viewcontrol_method(py::module &m);
 void pybind_visualizer_method(py::module &m);
 void pybind_visualization_utility_methods(py::module &m);
 
-void pybind_drawvisualizer(py::module &m);
+void pybind_o3dvisualizer(py::module &m);
 
 }  // namespace visualization
 }  // namespace open3d

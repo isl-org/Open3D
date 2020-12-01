@@ -28,7 +28,7 @@
 #include <open3d/t/geometry/Geometry.h>
 #include <open3d/visualization/gui/Window.h>
 #include <open3d/visualization/rendering/Open3DScene.h>
-#include <open3d/visualization/visualizer/DrawVisualizer.h>
+#include <open3d/visualization/visualizer/O3DVisualizer.h>
 #include <pybind/visualization/visualization.h>
 
 namespace open3d {
@@ -36,13 +36,12 @@ namespace visualization {
 
 using namespace visualizer;
 
-void pybind_drawvisualizer(py::module& m) {
-    py::class_<DrawVisualizerSelections::SelectedIndex> selected_index(
+void pybind_o3dvisualizer(py::module& m) {
+    py::class_<O3DVisualizerSelections::SelectedIndex> selected_index(
             m, "SelectedIndex",
             "Information about a point or vertex that was selected");
     selected_index
-            .def("__repr__",
-                 [](const DrawVisualizerSelections::SelectedIndex& idx) {
+            .def("__repr__", [](const O3DVisualizerSelections::SelectedIndex& idx) {
                      std::stringstream s;
                      s << "{ index: " << idx.index << ", order: " << idx.order
                        << ", point: (" << idx.point.x() << ", " << idx.point.y()
@@ -50,41 +49,41 @@ void pybind_drawvisualizer(py::module& m) {
                      return s.str();
                  })
             .def_readonly("index",
-                          &DrawVisualizerSelections::SelectedIndex::index,
+                          &O3DVisualizerSelections::SelectedIndex::index,
                           "The index of this point in the point/vertex "
                           "array")
             .def_readonly("order",
-                          &DrawVisualizerSelections::SelectedIndex::order,
+                          &O3DVisualizerSelections::SelectedIndex::order,
                           "A monotonically increasing value that can be "
                           "used to determine in what order the points "
                           "were selected")
             .def_readonly("point",
-                          &DrawVisualizerSelections::SelectedIndex::point,
+                          &O3DVisualizerSelections::SelectedIndex::point,
                           "The (x, y, z) value of this point");
 
-    py::class_<DrawVisualizer, UnownedPointer<DrawVisualizer>, gui::Window>
-            drawvis(m, "DrawVisualizer", "Visualization object used by draw()");
+    py::class_<O3DVisualizer, UnownedPointer<O3DVisualizer>, gui::Window>
+            drawvis(m, "O3DVisualizer", "Visualization object used by draw()");
 
-    py::enum_<DrawVisualizer::Shader> dv_shader(
+    py::enum_<O3DVisualizer::Shader> dv_shader(
             drawvis, "Shader", "Scene-level rendering options");
     dv_shader
-            .value("STANDARD", DrawVisualizer::Shader::STANDARD,
+            .value("STANDARD", O3DVisualizer::Shader::STANDARD,
                    "Pixel colors from standard lighting model")
-            .value("NORMALS", DrawVisualizer::Shader::NORMALS,
+            .value("NORMALS", O3DVisualizer::Shader::NORMALS,
                    "Pixel colors correspond to surface normal")
-            .value("DEPTH", DrawVisualizer::Shader::DEPTH,
+            .value("DEPTH", O3DVisualizer::Shader::DEPTH,
                    "Pixel colors correspond to depth buffer value")
             .export_values();
 
-    py::class_<DrawVisualizer::DrawObject> drawobj(
+    py::class_<O3DVisualizer::DrawObject> drawobj(
             drawvis, "DrawObject",
             "Information about an object that is drawn. Do not modify this, it "
             "can lead to unexpected results.");
-    drawobj.def_readonly("name", &DrawVisualizer::DrawObject::name,
+    drawobj.def_readonly("name", &O3DVisualizer::DrawObject::name,
                          "The name of the object")
             .def_property_readonly(
                     "geometry",
-                    [](const DrawVisualizer::DrawObject& o) {
+                    [](const O3DVisualizer::DrawObject& o) {
                         if (o.geometry) {
                             return py::cast(o.geometry);
                         } else {
@@ -95,11 +94,11 @@ void pybind_drawvisualizer(py::module& m) {
                     "result in any visible change. Use "
                     "remove_geometry() and then add_geometry()"
                     "to change the geometry")
-            .def_readonly("group", &DrawVisualizer::DrawObject::group,
+            .def_readonly("group", &O3DVisualizer::DrawObject::group,
                           "The group that the object belongs to")
-            .def_readonly("time", &DrawVisualizer::DrawObject::time,
+            .def_readonly("time", &O3DVisualizer::DrawObject::time,
                           "The object's timestamp")
-            .def_readonly("is_visible", &DrawVisualizer::DrawObject::is_visible,
+            .def_readonly("is_visible", &O3DVisualizer::DrawObject::is_visible,
                           "True if the object is checked in the list. "
                           "If the object's group is unchecked or an "
                           "animation is playing, the object's "
@@ -108,18 +107,18 @@ void pybind_drawvisualizer(py::module& m) {
 
     drawvis.def(py::init<const std::string, int, int>(), "title"_a = "Open3D",
                 "width"_a = 1024, "height"_a = 768,
-                "Creates a DrawVisualizer object")
-            .def("add_action", &DrawVisualizer::AddAction,
+                "Creates a O3DVisualizer object")
+            .def("add_action", &O3DVisualizer::AddAction,
                  "Adds a button to the custom actions section of the UI "
                  "and a corresponding menu item in the \"Actions\" menu. "
                  "add_action(name, callback). The callback will be given "
-                 "one parameter, the DrawVisualizer instance, and does not "
+                 "one parameter, the O3DVisualizer instance, and does not "
                  "return any value.")
             .def("add_geometry",
                  py::overload_cast<const std::string&,
                                    std::shared_ptr<geometry::Geometry3D>,
                                    rendering::Material*, const std::string&,
-                                   double, bool>(&DrawVisualizer::AddGeometry),
+                                   double, bool>(&O3DVisualizer::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
                  "time"_a = 0.0, "is_visible"_a = true,
                  "Adds a geometry: geometry(name, geometry, material=None, "
@@ -130,7 +129,7 @@ void pybind_drawvisualizer(py::module& m) {
                                                rendering::Material *,
                                                const std::string&,
                                                double,
-                                               bool>(&DrawVisualizer::AddGeometry),
+                                               bool>(&O3DVisualizer::AddGeometry),
                              "Adds a geometry")
             */
             .def(
@@ -172,86 +171,86 @@ void pybind_drawvisualizer(py::module& m) {
                     "group: a string declaring the group it is a member of "
                     "(optional)\n"
                     "time: a time value\n")
-            .def("remove_geometry", &DrawVisualizer::RemoveGeometry,
+            .def("remove_geometry", &O3DVisualizer::RemoveGeometry,
                  "remove_geometry(name): removes the geometry with the "
                  "name.")
-            .def("show_geometry", &DrawVisualizer::ShowGeometry,
+            .def("show_geometry", &O3DVisualizer::ShowGeometry,
                  "Checks or unchecks the named geometry in the list. Note that "
                  "even if show_geometry(name, True) is called, the object may "
                  "not actually be visible if its group is unchecked, or if an "
                  "animation is in progress.")
-            .def("get_geometry", &DrawVisualizer::GetGeometry,
+            .def("get_geometry", &O3DVisualizer::GetGeometry,
                  "get_geometry(name): Returns the DrawObject corresponding to "
                  "the name. This should be treated as read-only. Modify "
                  "visibility with show_geometry(), and other values by "
                  "removing the object and re-adding it with the new values")
             .def("reset_camera_to_default",
-                 &DrawVisualizer::ResetCameraToDefault,
+                 &O3DVisualizer::ResetCameraToDefault,
                  "Sets camera to default position")
-            .def("get_selection_sets", &DrawVisualizer::GetSelectionSets,
+            .def("get_selection_sets", &O3DVisualizer::GetSelectionSets,
                  "Returns the selection sets, as [{'obj_name', "
                  "[SelectedIndex]}]")
-            .def("export_current_image", &DrawVisualizer::ExportCurrentImage,
+            .def("export_current_image", &O3DVisualizer::ExportCurrentImage,
                  "export_image(path). Exports a PNG image of what is "
                  "currently displayed to the given path.")
             .def_property(
                     "show_settings",
-                    [](const DrawVisualizer& dv) {
+                    [](const O3DVisualizer& dv) {
                         return dv.GetUIState().show_settings;
                     },
-                    &DrawVisualizer::ShowSettings,
+                    &O3DVisualizer::ShowSettings,
                     "Gets/sets if settings panel is visible")
             .def_property(
                     "background_color",
-                    [](const DrawVisualizer& dv) {
+                    [](const O3DVisualizer& dv) {
                         return dv.GetUIState().bg_color;
                     },
-                    &DrawVisualizer::SetBackgroundColor,
+                    &O3DVisualizer::SetBackgroundColor,
                     "Gets/sets the background color")
             .def_property(
                     "scene_shader",
-                    [](const DrawVisualizer& dv) {
+                    [](const O3DVisualizer& dv) {
                         return dv.GetUIState().scene_shader;
                     },
-                    &DrawVisualizer::SetShader,
+                    &O3DVisualizer::SetShader,
                     "Gets/sets the shading model for the scene")
             .def_property(
                     "show_axes",
-                    [](const DrawVisualizer& dv) {
+                    [](const O3DVisualizer& dv) {
                         return dv.GetUIState().show_axes;
                     },
-                    &DrawVisualizer::ShowAxes, "Gets/sets if axes are visible")
+                    &O3DVisualizer::ShowAxes, "Gets/sets if axes are visible")
             .def_property(
                     "point_size",
-                    [](const DrawVisualizer& dv) {
+                    [](const O3DVisualizer& dv) {
                         return dv.GetUIState().point_size;
                     },
-                    &DrawVisualizer::SetPointSize, "Gets/sets size of points")
-            .def_property_readonly("scene", &DrawVisualizer::GetScene,
+                    &O3DVisualizer::SetPointSize, "Gets/sets size of points")
+            .def_property_readonly("scene", &O3DVisualizer::GetScene,
                                    "Returns the rendering.Open3DScene object "
                                    "for low-level manipulation")
             .def_property(
                     "current_time",
                     // MSVC doesn't like this for some reason
-                    //&DrawVisualizer::GetCurrentTime,
-                    [](const DrawVisualizer& dv) -> double {
+                    //&O3DVisualizer::GetCurrentTime,
+                    [](const O3DVisualizer& dv) -> double {
                         return dv.GetCurrentTime();
                     },
-                    &DrawVisualizer::SetCurrentTime,
+                    &O3DVisualizer::SetCurrentTime,
                     "Gets/sets the current time. If setting, only the "
                     "objects belonging to the current time-step will "
                     "be displayed")
             .def_property("animation_time_step",
-                          &DrawVisualizer::GetAnimationTimeStep,
-                          &DrawVisualizer::SetAnimationTimeStep,
+                          &O3DVisualizer::GetAnimationTimeStep,
+                          &O3DVisualizer::SetAnimationTimeStep,
                           "Gets/sets the time step for animations. Default is "
                           "1.0")
             .def_property("animation_frame_delay",
-                          &DrawVisualizer::GetAnimationFrameDelay,
-                          &DrawVisualizer::SetAnimationFrameDelay,
+                          &O3DVisualizer::GetAnimationFrameDelay,
+                          &O3DVisualizer::SetAnimationFrameDelay,
                           "Gets/sets the length of time a frame is visible.")
-            .def_property("is_animating", &DrawVisualizer::GetIsAnimating,
-                          &DrawVisualizer::SetAnimating,
+            .def_property("is_animating", &O3DVisualizer::GetIsAnimating,
+                          &O3DVisualizer::SetAnimating,
                           "Gets/sets the status of the animation. Changing "
                           "value will start or stop the animating.");
 }

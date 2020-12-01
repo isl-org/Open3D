@@ -78,19 +78,19 @@ def actions():
     cloud.points = bunny.vertices
     cloud.normals = bunny.vertex_normals
 
-    def make_mesh(drawvis):
-        # TODO: call drawvis.get_geometry instead of using bunny
+    def make_mesh(o3dvis):
+        # TODO: call o3dvis.get_geometry instead of using bunny
         mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
             cloud)
         mesh.paint_uniform_color((1, 1, 1))
         mesh.compute_vertex_normals()
-        drawvis.add_geometry({"name": RESULT_NAME, "geometry": mesh})
-        drawvis.show_geometry(SOURCE_NAME, False)
+        o3dvis.add_geometry({"name": RESULT_NAME, "geometry": mesh})
+        o3dvis.show_geometry(SOURCE_NAME, False)
 
-    def toggle_result(drawvis):
-        truth_vis = drawvis.get_geometry(TRUTH_NAME).is_visible
-        drawvis.show_geometry(TRUTH_NAME, not truth_vis)
-        drawvis.show_geometry(RESULT_NAME, truth_vis)
+    def toggle_result(o3dvis):
+        truth_vis = o3dvis.get_geometry(TRUTH_NAME).is_visible
+        o3dvis.show_geometry(TRUTH_NAME, not truth_vis)
+        o3dvis.show_geometry(RESULT_NAME, truth_vis)
 
     vis.draw([{
         "name": SOURCE_NAME,
@@ -134,10 +134,10 @@ def selections():
     source_name = "Source (yellow)"
     target_name = "Target (blue)"
 
-    def do_icp_one_set(drawvis):
+    def do_icp_one_set(o3dvis):
         # sets: [name: [{ "index": int, "order": int, "point": (x, y, z)}, ...],
         #        ...]
-        sets = drawvis.get_selection_sets()
+        sets = o3dvis.get_selection_sets()
         source_picked = sorted(list(sets[0][source_name]),
                                key=lambda x: x.order)
         target_picked = sorted(list(sets[0][target_name]),
@@ -149,11 +149,11 @@ def selections():
         source.transform(t)
 
         # Update the source geometry
-        drawvis.remove_geometry(source_name)
-        drawvis.add_geometry({"name": source_name, "geometry": source})
+        o3dvis.remove_geometry(source_name)
+        o3dvis.add_geometry({"name": source_name, "geometry": source})
 
-    def do_icp_two_sets(drawvis):
-        sets = drawvis.get_selection_sets()
+    def do_icp_two_sets(o3dvis):
+        sets = o3dvis.get_selection_sets()
         source_set = sets[0][source_name]
         target_set = sets[1][target_name]
         source_picked = sorted(list(source_set), key=lambda x: x.order)
@@ -165,8 +165,8 @@ def selections():
         source.transform(t)
 
         # Update the source geometry
-        drawvis.remove_geometry(source_name)
-        drawvis.add_geometry({"name": source_name, "geometry": source})
+        o3dvis.remove_geometry(source_name)
+        o3dvis.add_geometry({"name": source_name, "geometry": source})
 
     vis.draw([{
         "name": source_name,

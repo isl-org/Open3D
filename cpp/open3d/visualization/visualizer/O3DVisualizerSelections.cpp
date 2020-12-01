@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/visualizer/DrawVisualizerSelections.h"
+#include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
 
 #include <assert.h>
 
@@ -96,16 +96,16 @@ private:
 };
 
 // ----------------------------------------------------------------------------
-DrawVisualizerSelections::DrawVisualizerSelections(gui::SceneWidget &widget3d)
+O3DVisualizerSelections::O3DVisualizerSelections(gui::SceneWidget &widget3d)
     : widget3d_(widget3d) {
     current_.lookup = new SelectionIndexLookup();
 }
 
-DrawVisualizerSelections::~DrawVisualizerSelections() {
+O3DVisualizerSelections::~O3DVisualizerSelections() {
     delete current_.lookup;
 }
 
-void DrawVisualizerSelections::NewSet() {
+void O3DVisualizerSelections::NewSet() {
     std::stringstream s;
     s << "__selection_" << next_id_++;
     sets_.push_back({s.str()});
@@ -114,7 +114,7 @@ void DrawVisualizerSelections::NewSet() {
     }
 }
 
-void DrawVisualizerSelections::RemoveSet(int index) {
+void O3DVisualizerSelections::RemoveSet(int index) {
     auto scene = widget3d_.GetScene();
     if (scene->HasGeometry(sets_[index].name)) {
         scene->RemoveGeometry(sets_[index].name);
@@ -127,7 +127,7 @@ void DrawVisualizerSelections::RemoveSet(int index) {
     }
 }
 
-void DrawVisualizerSelections::SelectSet(int index) {
+void O3DVisualizerSelections::SelectSet(int index) {
     auto scene = widget3d_.GetScene();
     if (scene->HasGeometry(sets_[current_.index].name)) {
         scene->ShowGeometry(sets_[current_.index].name, false);
@@ -140,11 +140,11 @@ void DrawVisualizerSelections::SelectSet(int index) {
     }
 }
 
-size_t DrawVisualizerSelections::GetNumberOfSets() const {
+size_t O3DVisualizerSelections::GetNumberOfSets() const {
     return sets_.size();
 }
 
-void DrawVisualizerSelections::SelectIndices(
+void O3DVisualizerSelections::SelectIndices(
         const std::vector<size_t> &indices) {
     auto &selection = sets_[current_.index];
     for (auto idx : indices) {
@@ -157,7 +157,7 @@ void DrawVisualizerSelections::SelectIndices(
     UpdateSelectionGeometry();
 }
 
-void DrawVisualizerSelections::UnselectIndices(
+void O3DVisualizerSelections::UnselectIndices(
         const std::vector<size_t> &indices) {
     auto &selection = sets_[current_.index];
     for (auto idx : indices) {
@@ -170,7 +170,7 @@ void DrawVisualizerSelections::UnselectIndices(
     UpdateSelectionGeometry();
 }
 
-void DrawVisualizerSelections::UpdateSelectionGeometry() {
+void O3DVisualizerSelections::UpdateSelectionGeometry() {
     auto scene = widget3d_.GetScene();
     auto &selection = sets_[current_.index];
     if (scene->HasGeometry(selection.name)) {
@@ -203,8 +203,8 @@ void DrawVisualizerSelections::UpdateSelectionGeometry() {
     widget3d_.ForceRedraw();
 }
 
-std::vector<DrawVisualizerSelections::SelectionSet>
-DrawVisualizerSelections::GetSets() {
+std::vector<O3DVisualizerSelections::SelectionSet>
+O3DVisualizerSelections::GetSets() {
     std::vector<SelectionSet> all;
     all.reserve(sets_.size());
     for (auto &s : sets_) {
@@ -213,7 +213,7 @@ DrawVisualizerSelections::GetSets() {
     return all;
 }
 
-void DrawVisualizerSelections::SetPointSize(int px) {
+void O3DVisualizerSelections::SetPointSize(int px) {
     point_size_ = px;
     if (IsActive()) {
         UpdatePointSize();
@@ -222,7 +222,7 @@ void DrawVisualizerSelections::SetPointSize(int px) {
     }
 }
 
-void DrawVisualizerSelections::MakeActive() {
+void O3DVisualizerSelections::MakeActive() {
     assert(!is_active_);
 
     is_active_ = true;
@@ -240,9 +240,9 @@ void DrawVisualizerSelections::MakeActive() {
     }
 }
 
-bool DrawVisualizerSelections::IsActive() const { return is_active_; }
+bool O3DVisualizerSelections::IsActive() const { return is_active_; }
 
-void DrawVisualizerSelections::MakeInactive() {
+void O3DVisualizerSelections::MakeInactive() {
     auto scene = widget3d_.GetScene();
 
     auto &selection = sets_[current_.index];
@@ -253,12 +253,12 @@ void DrawVisualizerSelections::MakeInactive() {
     is_active_ = false;
 }
 
-void DrawVisualizerSelections::StartSelectablePoints() {
+void O3DVisualizerSelections::StartSelectablePoints() {
     current_.selectable_points.clear();
     current_.lookup->Clear();
 }
 
-void DrawVisualizerSelections::AddSelectablePoints(
+void O3DVisualizerSelections::AddSelectablePoints(
         const std::string &name,
         geometry::Geometry3D *geom,
         t::geometry::Geometry *tgeom) {
@@ -288,11 +288,11 @@ void DrawVisualizerSelections::AddSelectablePoints(
     }
 }
 
-void DrawVisualizerSelections::EndSelectablePoints() {
+void O3DVisualizerSelections::EndSelectablePoints() {
     widget3d_.SetPickablePoints(current_.selectable_points);
 }
 
-void DrawVisualizerSelections::UpdatePointSize() {
+void O3DVisualizerSelections::UpdatePointSize() {
     auto scene = widget3d_.GetScene();
     auto material = MakeMaterial(point_size_);
     for (auto &s : sets_) {

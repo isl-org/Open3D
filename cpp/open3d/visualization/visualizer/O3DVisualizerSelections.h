@@ -55,8 +55,8 @@ namespace visualizer {
 class SelectionIndexLookup;
 
 /// Internal class that acts as a selections model + controller for
-    /// DrawVisualizer
-class DrawVisualizerSelections { 
+/// O3DVisualizer
+class O3DVisualizerSelections { 
 public:
     struct SelectedIndex {
         size_t index;  /// the index of the point within the object
@@ -75,8 +75,8 @@ public:
                                   std::set<SelectedIndex>>;
 
 public:
-    DrawVisualizerSelections(gui::SceneWidget& widget3d);
-    ~DrawVisualizerSelections();
+    O3DVisualizerSelections(gui::SceneWidget& widget3d);
+    ~O3DVisualizerSelections();
 
     void NewSet();
     void RemoveSet(int index);

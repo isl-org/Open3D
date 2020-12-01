@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include "open3d/visualization/visualizer/DrawVisualizer.h"
+#include "open3d/visualization/visualizer/O3DVisualizer.h"
 
 namespace open3d {
 namespace visualization {
@@ -47,7 +47,7 @@ struct DrawObject {
 
 struct DrawAction {
     std::string name;
-    std::function<void(visualizer::DrawVisualizer &)> callback;
+    std::function<void(visualizer::O3DVisualizer &)> callback;
 };
 
 void Draw(const std::vector<std::shared_ptr<geometry::Geometry3D>> &geometries,
