@@ -129,7 +129,25 @@ public:
         return *this;
     }
 
-    // std::string ToString() const { return fmt::format("{}", *this); }
+    std::string ToString() const {
+        std::stringstream ss;
+        ss << "{";
+        bool first = true;
+        for (const optint64_t& element : *this) {
+            if (first) {
+                first = false;
+            } else {
+                ss << ", ";
+            }
+            if (element.has_value()) {
+                ss << fmt::format("{}", element.value());
+            } else {
+                ss << "None";
+            }
+        }
+        ss << "}";
+        return ss.str();
+    }
 };
 
 }  // namespace core
