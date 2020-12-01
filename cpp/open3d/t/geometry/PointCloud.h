@@ -168,9 +168,8 @@ public:
     /// \param value A tensor.
     void SetPointAttr(const std::string &key, const core::Tensor &value) {
         if (value.GetDevice() != device_) {
-            // utility::LogError("Attribute device {} != Pointcloud's device
-            // {}.",
-            //                   value.GetDevice(), device_.ToString());
+            utility::LogError("Attribute device {} != Pointcloud's device {}.",
+                              value.GetDevice().ToString(), device_.ToString());
         }
         point_attr_[key] = value;
     }
@@ -178,9 +177,8 @@ public:
     /// Set the value of the "points" attribute. Convenience function.
     void SetPoints(const core::Tensor &value) {
         if (value.NumDims() != 2 || value.GetShape()[1] != 3) {
-            // utility::LogError("Input must have shape (N, 3) but got shape
-            // {}.",
-            //                   value.GetShape());
+            utility::LogError("Input must have shape (N, 3) but got shape {}.",
+                              value.GetShape());
         }
         SetPointAttr("points", value);
     }
@@ -188,9 +186,8 @@ public:
     /// Set the value of the "colors" attribute. Convenience function.
     void SetPointColors(const core::Tensor &value) {
         if (value.NumDims() != 2 || value.GetShape()[1] != 3) {
-            // utility::LogError("Input must have shape (N, 3) but got shape
-            // {}.",
-            //                   value.GetShape());
+            utility::LogError("Input must have shape (N, 3) but got shape {}.",
+                              value.GetShape());
         }
         SetPointAttr("colors", value);
     }
@@ -198,9 +195,8 @@ public:
     /// Set the value of the "normals" attribute. Convenience function.
     void SetPointNormals(const core::Tensor &value) {
         if (value.NumDims() != 2 || value.GetShape()[1] != 3) {
-            // utility::LogError("Input must have shape (N, 3) but got shape
-            // {}.",
-            //                   value.GetShape());
+            utility::LogError("Input must have shape (N, 3) but got shape {}.",
+                              value.GetShape());
         }
         SetPointAttr("normals", value);
     }
