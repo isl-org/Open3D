@@ -216,18 +216,6 @@ public:
     /// This is a convenience function.
     bool HasPointNormals() const { return HasPointAttr("normals"); }
 
-    /// Synchronized push back, data will be copied. Before push back, all
-    /// existing tensorlists must have the same length.
-    ///
-    /// \param map_keys_to_tensors The keys and values to be pushed back. It
-    /// must contain the same keys and each corresponding tensor must have the
-    /// same dtype and device.
-    void SynchronizedPushBack(
-            const std::unordered_map<std::string, core::Tensor>
-                    &map_keys_to_tensors) {
-        point_attr_.SynchronizedPushBack(map_keys_to_tensors);
-    }
-
 public:
     /// Clear all data in the pointcloud.
     PointCloud &Clear() override {

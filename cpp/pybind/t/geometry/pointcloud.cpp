@@ -58,9 +58,6 @@ void pybind_pointcloud(py::module& m) {
             "point",
             py::overload_cast<>(&PointCloud::GetPointAttr, py::const_));
 
-    pointcloud.def("synchronized_push_back", &PointCloud::SynchronizedPushBack,
-                   "map_keys_to_tensors"_a);
-
     // Pointcloud specific functions.
     // TOOD: convert o3d.pybind.core.Tensor (C++ binded Python) to
     //       o3d.core.Tensor (pure Python wrapper).

@@ -115,31 +115,6 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
             core::Tensor::Ones({10, 3}, dtype, device) * 0.25));
 }
 
-TEST_P(PointCloudPermuteDevices, SynchronizedPushBack) {
-    core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
-
-    // Create pointcloud.
-    core::TensorList points = core::TensorList::FromTensor(
-            core::Tensor::Ones({10, 3}, dtype, device));
-    core::TensorList colors = core::TensorList::FromTensor(
-            core::Tensor::Ones({10, 3}, dtype, device) * 0.5);
-    t::geometry::PointCloud pcd({
-            {"points", points},
-            {"colors", colors},
-    });
-
-    // Exception cases are tested in TensorListMap::SynchronizedPushBack().
-    std::unordered_map<std::string, core::Tensor> point_struct;
-    EXPECT_EQ(pcd.GetPoints().GetSize(), 10);
-    EXPECT_EQ(pcd.GetPointColors().GetSize(), 10);
-    pcd.SynchronizedPushBack(
-            {{"points", core::Tensor::Ones({3}, dtype, device)},
-             {"colors", core::Tensor::Ones({3}, dtype, device)}});
-    EXPECT_EQ(pcd.GetPoints().GetSize(), 11);
-    EXPECT_EQ(pcd.GetPointColors().GetSize(), 11);
-}
-
 TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
     core::Device device = GetParam();
     t::geometry::PointCloud pcd(core::Dtype::Float32, device);
