@@ -57,17 +57,47 @@ void TensorMap::Assign(const std::unordered_map<std::string, core::Tensor>&
     }
 }
 
-bool TensorMap::IsSizeSynchronized() const { return true; }
+bool TensorMap::IsSizeSynchronized() const {
+    const int64_t primary_size = GetPrimarySize();
+    for (auto& kv : *this) {
+        if (kv.second.GetShape()[0] != primary_size) {
+            return false;
+        }
+    }
+    return true;
+}
 
-void TensorMap::AssertSizeSynchronized() const {}
-
-void TensorMap::AssertTensorMapSameKeys(
-        const std::unordered_map<std::string, core::Tensor>&
-                map_keys_to_tensors) const {}
+void TensorMap::AssertSizeSynchronized() const {
+    if (!IsSizeSynchronized()) {
+        const int64_t primary_size = GetPrimarySize();
+        std::stringstream ss;
+        ss << fmt::format("Primary Tensor \"{}\" has size {}, however: \n",
+                          primary_key_, primary_size);
+        for (auto& kv : *this) {
+            if (kv.first != primary_key_ &&
+                kv.second.GetShape()[0] != primary_size) {
+                fmt::format("    > Tensor \"{}\" has size {}.\n", kv.first,
+                            kv.second.GetShape()[0]);
+            }
+        }
+        utility::LogError("{}", ss.str());
+    }
+}
 
 void TensorMap::AssertTensorMapSameDevice(
         const std::unordered_map<std::string, core::Tensor>&
-                map_keys_to_tensors) const {}
+                map_keys_to_tensors) const {
+    const core::Device& primary_device = GetPrimaryDevice();
+    for (auto& kv : map_keys_to_tensors) {
+        if (kv.second.GetDevice() != primary_device) {
+            utility::LogError(
+                    "Tensor in the input map does not have the same device as "
+                    "the primary Tensor: {} != {}.",
+                    kv.second.GetDevice().ToString(),
+                    primary_device.ToString());
+        }
+    }
+}
 
 }  // namespace geometry
 }  // namespace t

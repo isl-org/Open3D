@@ -92,15 +92,6 @@ public:
     bool Contains(const std::string& key) const { return count(key) != 0; }
 
 private:
-    /// Asserts that \p map_keys_to_tensors has the same keys as the
-    /// TensorMap.
-    ///
-    /// \param map_keys_to_tensors A map of string to Tensor. Typically the map
-    /// is used for SynchronizedPushBack.
-    void AssertTensorMapSameKeys(
-            const std::unordered_map<std::string, core::Tensor>&
-                    map_keys_to_tensors) const;
-
     /// Asserts that all of the tensors in \p map_keys_to_tensors have the same
     /// device as the primary tensor.
     ///
