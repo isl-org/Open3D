@@ -53,8 +53,20 @@ TEST_P(TensorMapPermuteDevices, Constructor) {
 
     // Initializer list.
     t::geometry::TensorMap tm1(
-            "points",
-            {{"points", core::Tensor::Zeros({10, 3}, dtype, device)}});
+            "points", {{"points", core::Tensor::Zeros({10, 3}, dtype, device)},
+                       {"colors", core::Tensor::Ones({10, 3}, dtype, device)}});
+
+    // Copy constructor.
+    t::geometry::TensorMap tm1_copied(tm1);
+    EXPECT_EQ(tm1_copied["points"][0][0].Item<float>(), 0);
+    tm1["points"][0][0] = 100;
+    EXPECT_EQ(tm1_copied["points"][0][0].Item<float>(), 100);
+
+    // Move constructor.
+    t::geometry::TensorMap tm1_moved = std::move(tm1);
+    EXPECT_EQ(tm1_moved["points"][0][1].Item<float>(), 0);
+    tm1["points"][0][1] = 200;
+    EXPECT_EQ(tm1_moved["points"][0][1].Item<float>(), 200);
 }
 
 // TEST_P(TensorMap, Assign) {

@@ -74,12 +74,14 @@ public:
         AssertEmptyOrPrimaryKeyInMap();
     }
 
+    /// Copy constructor performs a "shallow" copy of the Tensors.
     TensorMap(const TensorMap& other)
         : std::unordered_map<std::string, core::Tensor>(other),
           primary_key_(other.primary_key_) {
         AssertEmptyOrPrimaryKeyInMap();
     }
 
+    /// Move constructor performs a "shallow" copy of the Tensors.
     TensorMap(TensorMap&& other)
         : std::unordered_map<std::string, core::Tensor>(other),
           primary_key_(other.primary_key_) {
