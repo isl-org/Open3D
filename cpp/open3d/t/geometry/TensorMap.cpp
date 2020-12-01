@@ -67,6 +67,13 @@ bool TensorMap::IsSizeSynchronized() const {
     return true;
 }
 
+void TensorMap::AssertEmptyOrPrimaryKeyInMap() const {
+    if (this->size() != 0 && this->count(primary_key_) == 0) {
+        utility::LogError("TensorMap does not contain primary key \"{}\".",
+                          primary_key_);
+    }
+}
+
 void TensorMap::AssertSizeSynchronized() const {
     if (!IsSizeSynchronized()) {
         const int64_t primary_size = GetPrimarySize();
