@@ -1,3 +1,4 @@
+
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
@@ -24,14 +25,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/DummyReceiver.h"
+#pragma once
 
-#include <zmq.hpp>
-
-#include "open3d/io/rpc/Messages.h"
+#include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/visualization/rendering/Open3DScene.h"
 
 namespace open3d {
-namespace io {
-namespace rpc {}  // namespace rpc
-}  // namespace io
+namespace visualization {
+
+class GuiVisualizer;
+
+/// Receiver implementation for the GuiVisualizer
+class Receiver : public io::rpc::ReceiverBase {
+public:
+    Receiver(GuiVisualizer* gui_visualizer,
+             std::shared_ptr<rendering::Open3DScene> scene,
+             const std::string& address,
+             int timeout)
+        : ReceiverBase(address, timeout),
+          gui_visualizer_(gui_visualizer),
+          scene_(scene) {}
+
+    std::shared_ptr<zmq::message_t> ProcessMessage(
+            const io::rpc::messages::Request& req,
+            const io::rpc::messages::SetMeshData& msg,
+            const MsgpackObject& obj) override;
+
+private:
+    void SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
+                     const std::string& path,
+                     int time,
+                     const std::string& layer);
+
+    GuiVisualizer* gui_visualizer_;
+    std::shared_ptr<rendering::Open3DScene> scene_;
+};
+
+}  // namespace visualization
 }  // namespace open3d
