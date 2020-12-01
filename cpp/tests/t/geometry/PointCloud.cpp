@@ -275,29 +275,26 @@ TEST_P(PointCloudPermuteDevices, Setters) {
     }
 }
 
-// TEST_P(PointCloudPermuteDevices, Has) {
-//     core::Device device = GetParam();
-//     core::Dtype dtype = core::Dtype::Float32;
+TEST_P(PointCloudPermuteDevices, Has) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
 
-//     t::geometry::PointCloud pcd(dtype, device);
-//     EXPECT_FALSE(pcd.HasPoints());
-//     EXPECT_FALSE(pcd.HasPointColors());
-//     EXPECT_FALSE(pcd.HasPointAttr("labels"));
+    t::geometry::PointCloud pcd(dtype, device);
+    EXPECT_FALSE(pcd.HasPoints());
+    EXPECT_FALSE(pcd.HasPointColors());
+    EXPECT_FALSE(pcd.HasPointAttr("labels"));
 
-//     pcd.SetPoints(core::Tensor::FromTensor(
-//             core::Tensor::Ones({10, 3}, dtype, device)));
-//     EXPECT_TRUE(pcd.HasPoints());
+    pcd.SetPoints(core::Tensor::Ones({10, 3}, dtype, device));
+    EXPECT_TRUE(pcd.HasPoints());
 
-//     // Different size.
-//     pcd.SetPointColors(core::Tensor::FromTensor(
-//             core::Tensor::Ones({5, 3}, dtype, device)));
-//     EXPECT_FALSE(pcd.HasPointColors());
+    // Different size.
+    pcd.SetPointColors(core::Tensor::Ones({5, 3}, dtype, device));
+    EXPECT_FALSE(pcd.HasPointColors());
 
-//     // Same size.
-//     pcd.SetPointColors(core::Tensor::FromTensor(
-//             core::Tensor::Ones({10, 3}, dtype, device)));
-//     EXPECT_TRUE(pcd.HasPointColors());
-// }
+    // Same size.
+    pcd.SetPointColors(core::Tensor::Ones({10, 3}, dtype, device));
+    EXPECT_TRUE(pcd.HasPointColors());
+}
 
 }  // namespace tests
 }  // namespace open3d
