@@ -57,8 +57,8 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
         reporter.SetTotal(file.GetFileSize());
 
         pointcloud.Clear();
-        core::TensorList points({3}, core::Dtype::Float64),
-                intensities({1}, core::Dtype::Float64);
+        core::TensorList points({3}, core::Dtype::Float64);
+        core::TensorList intensities({1}, core::Dtype::Float64);
         int i = 0;
         double x, y, z, I;
         const char *line_buffer;
@@ -73,8 +73,8 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
                 reporter.Update(file.CurPos());
             }
         }
-        pointcloud.SetPoints(points);
-        pointcloud.SetPointAttr("intensities", intensities);
+        pointcloud.SetPoints(points.AsTensor().Copy());
+        pointcloud.SetPointAttr("intensities", intensities.AsTensor().Copy());
         reporter.Finish();
 
         return true;
@@ -99,7 +99,7 @@ bool WritePointCloudToXYZI(const std::string &filename,
             return false;
         }
         utility::CountingProgressReporter reporter(params.update_progress);
-        const core::Tensor &points = pointcloud.GetPoints().AsTensor();
+        const core::Tensor &points = pointcloud.GetPoints();
         if (points.GetShape(1) != 3) {
             utility::LogWarning(
                     "Write XYZI failed: Shape of points is {}, but it should "
@@ -108,7 +108,7 @@ bool WritePointCloudToXYZI(const std::string &filename,
             return false;
         }
         const core::Tensor &intensities =
-                pointcloud.GetPointAttr("intensities").AsTensor();
+                pointcloud.GetPointAttr("intensities");
         if (points.GetShape(0) != intensities.GetShape(0)) {
             utility::LogWarning(
                     "Write XYZI failed: Points ({}) and intensities ({}) have "
