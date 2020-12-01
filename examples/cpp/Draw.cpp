@@ -101,10 +101,11 @@ void Actions() {
     auto bunny = std::make_shared<geometry::TriangleMesh>();
     io::ReadTriangleMesh(TEST_DIR + "/Bunny.ply", *bunny);
     if (bunny->vertices_.empty()) {
-        utility::LogError("Please download the Standford Bunny dataset using:\n"
-                          "   cd <open3d_dir>/examples/python\n"
-                          "   python -c 'from open3d_tutorial import *; "
-                          "get_bunny_mesh()'");
+        utility::LogError(
+                "Please download the Standford Bunny dataset using:\n"
+                "   cd <open3d_dir>/examples/python\n"
+                "   python -c 'from open3d_tutorial import *; "
+                "get_bunny_mesh()'");
         return;
     }
 
@@ -115,35 +116,41 @@ void Actions() {
     cloud->normals_ = bunny->vertex_normals_;
     cloud->PaintUniformColor({0, 0.2, 1.0});
 
-    auto make_mesh = [SOURCE_NAME, RESULT_NAME](visualization::visualizer::O3DVisualizer& o3dvis) {
-        std::shared_ptr<geometry::PointCloud> source = std::dynamic_pointer_cast<geometry::PointCloud>(o3dvis.GetGeometry(SOURCE_NAME).geometry);
-        auto mesh = std::get<0>(geometry::TriangleMesh::CreateFromPointCloudPoisson(*source));
+    auto make_mesh = [SOURCE_NAME, RESULT_NAME](
+                             visualization::visualizer::O3DVisualizer &o3dvis) {
+        std::shared_ptr<geometry::PointCloud> source =
+                std::dynamic_pointer_cast<geometry::PointCloud>(
+                        o3dvis.GetGeometry(SOURCE_NAME).geometry);
+        auto mesh = std::get<0>(
+                geometry::TriangleMesh::CreateFromPointCloudPoisson(*source));
         mesh->PaintUniformColor({1, 1, 1});
         mesh->ComputeVertexNormals();
         o3dvis.AddGeometry(RESULT_NAME, mesh);
         o3dvis.ShowGeometry(SOURCE_NAME, false);
     };
 
-    auto toggle_result = [TRUTH_NAME, RESULT_NAME](visualization::visualizer::O3DVisualizer& o3dvis) {
-        bool truth_vis = o3dvis.GetGeometry(TRUTH_NAME).is_visible;
-        o3dvis.ShowGeometry(TRUTH_NAME, !truth_vis);
-        o3dvis.ShowGeometry(RESULT_NAME, truth_vis);
-    };
+    auto toggle_result =
+            [TRUTH_NAME,
+             RESULT_NAME](visualization::visualizer::O3DVisualizer &o3dvis) {
+                bool truth_vis = o3dvis.GetGeometry(TRUTH_NAME).is_visible;
+                o3dvis.ShowGeometry(TRUTH_NAME, !truth_vis);
+                o3dvis.ShowGeometry(RESULT_NAME, truth_vis);
+            };
 
     visualization::Draw({visualization::DrawObject(SOURCE_NAME, cloud),
                          visualization::DrawObject(TRUTH_NAME, bunny, false)},
-                         "Open3D: Draw Example: Actions", 1024, 768,
-                         {{"Create Mesh", make_mesh},
-                          {"Toggle truth/result", toggle_result}});
+                        "Open3D: Draw Example: Actions", 1024, 768,
+                        {{"Create Mesh", make_mesh},
+                         {"Toggle truth/result", toggle_result}});
 }
 
 Eigen::Matrix4d_u GetICPTransform(
-        const geometry::PointCloud& source,
-        const geometry::PointCloud& target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const std::vector<visualization::visualizer::O3DVisualizerSelections::
-                                  SelectedIndex>& source_picked,
+                                  SelectedIndex> &source_picked,
         const std::vector<visualization::visualizer::O3DVisualizerSelections::
-                                  SelectedIndex>& target_picked) {
+                                  SelectedIndex> &target_picked) {
     std::vector<Eigen::Vector2i> indices;
     for (size_t i = 0; i < source_picked.size(); ++i) {
         indices.push_back({source_picked[i].index, target_picked[i].index});
@@ -166,7 +173,8 @@ void Selections() {
     std::cout << "  One set:  pick three points from the source (yellow), "
               << std::endl;
     std::cout << "            then pick the same three points in the target"
-                 "(blue) cloud" << std::endl;
+                 "(blue) cloud"
+              << std::endl;
     std::cout << "  Two sets: pick three points from the source cloud, "
               << std::endl;
     std::cout << "            then create a new selection set, and pick the"
@@ -193,50 +201,70 @@ void Selections() {
     const char *source_name = "Source (yellow)";
     const char *target_name = "Target (blue)";
 
-    auto DoICPOneSet = [source, target, source_name, target_name](visualization::visualizer::O3DVisualizer& o3dvis) {
-        auto sets = o3dvis.GetSelectionSets();
-        auto &source_picked_set = sets[0][source_name];
-        auto &target_picked_set = sets[0][target_name];
-        std::vector<visualization::visualizer::O3DVisualizerSelections::SelectedIndex> source_picked(source_picked_set.begin(), source_picked_set.end());
-        std::vector<visualization::visualizer::O3DVisualizerSelections::SelectedIndex> target_picked(target_picked_set.begin(), target_picked_set.end());
-        std::sort(source_picked.begin(), source_picked.end());
-        std::sort(target_picked.begin(), target_picked.end());
+    auto DoICPOneSet =
+            [source, target, source_name,
+             target_name](visualization::visualizer::O3DVisualizer &o3dvis) {
+                auto sets = o3dvis.GetSelectionSets();
+                auto &source_picked_set = sets[0][source_name];
+                auto &target_picked_set = sets[0][target_name];
+                std::vector<visualization::visualizer::O3DVisualizerSelections::
+                                    SelectedIndex>
+                        source_picked(source_picked_set.begin(),
+                                      source_picked_set.end());
+                std::vector<visualization::visualizer::O3DVisualizerSelections::
+                                    SelectedIndex>
+                        target_picked(target_picked_set.begin(),
+                                      target_picked_set.end());
+                std::sort(source_picked.begin(), source_picked.end());
+                std::sort(target_picked.begin(), target_picked.end());
 
-        auto t = GetICPTransform(*source, *target, source_picked,
-target_picked); source->Transform(t);
+                auto t = GetICPTransform(*source, *target, source_picked,
+                                         target_picked);
+                source->Transform(t);
 
-        // Update the source geometry
-        o3dvis.RemoveGeometry(source_name);
-        o3dvis.AddGeometry(source_name, source);
-    };
+                // Update the source geometry
+                o3dvis.RemoveGeometry(source_name);
+                o3dvis.AddGeometry(source_name, source);
+            };
 
-    auto DoICPTwoSets = [source, target, source_name, target_name](visualization::visualizer::O3DVisualizer& o3dvis) {
-        auto sets = o3dvis.GetSelectionSets();
-        auto &source_picked_set = sets[0][source_name];
-        auto &target_picked_set = sets[1][target_name];
-        std::vector<visualization::visualizer::O3DVisualizerSelections::SelectedIndex> source_picked(source_picked_set.begin(), source_picked_set.end());
-        std::vector<visualization::visualizer::O3DVisualizerSelections::SelectedIndex> target_picked(target_picked_set.begin(), target_picked_set.end());
-        std::sort(source_picked.begin(), source_picked.end());
-        std::sort(target_picked.begin(), target_picked.end());
+    auto DoICPTwoSets =
+            [source, target, source_name,
+             target_name](visualization::visualizer::O3DVisualizer &o3dvis) {
+                auto sets = o3dvis.GetSelectionSets();
+                auto &source_picked_set = sets[0][source_name];
+                auto &target_picked_set = sets[1][target_name];
+                std::vector<visualization::visualizer::O3DVisualizerSelections::
+                                    SelectedIndex>
+                        source_picked(source_picked_set.begin(),
+                                      source_picked_set.end());
+                std::vector<visualization::visualizer::O3DVisualizerSelections::
+                                    SelectedIndex>
+                        target_picked(target_picked_set.begin(),
+                                      target_picked_set.end());
+                std::sort(source_picked.begin(), source_picked.end());
+                std::sort(target_picked.begin(), target_picked.end());
 
-        auto t = GetICPTransform(*source, *target, source_picked,
-target_picked); source->Transform(t);
+                auto t = GetICPTransform(*source, *target, source_picked,
+                                         target_picked);
+                source->Transform(t);
 
-        // Update the source geometry
-        o3dvis.RemoveGeometry(source_name);
-        o3dvis.AddGeometry(source_name, source);
-    };
+                // Update the source geometry
+                o3dvis.RemoveGeometry(source_name);
+                o3dvis.AddGeometry(source_name, source);
+            };
 
     visualization::Draw({visualization::DrawObject(source_name, source),
                          visualization::DrawObject(target_name, target)},
-                         "Open3D: Draw example: Selection", 1024, 768,
-                         {{"ICP Registration (one set)", DoICPOneSet},
-                          {"ICP Registration (two sets)", DoICPTwoSets}});
+                        "Open3D: Draw example: Selection", 1024, 768,
+                        {{"ICP Registration (one set)", DoICPOneSet},
+                         {"ICP Registration (two sets)", DoICPTwoSets}});
 }
 
 int main(int argc, char **argv) {
     if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
-        utility::LogError("This example needs to be run from the <build>/bin/examples directory");
+        utility::LogError(
+                "This example needs to be run from the <build>/bin/examples "
+                "directory");
     }
 
     SingleObject();

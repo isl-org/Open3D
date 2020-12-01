@@ -101,9 +101,7 @@ O3DVisualizerSelections::O3DVisualizerSelections(gui::SceneWidget &widget3d)
     current_.lookup = new SelectionIndexLookup();
 }
 
-O3DVisualizerSelections::~O3DVisualizerSelections() {
-    delete current_.lookup;
-}
+O3DVisualizerSelections::~O3DVisualizerSelections() { delete current_.lookup; }
 
 void O3DVisualizerSelections::NewSet() {
     std::stringstream s;
@@ -140,9 +138,7 @@ void O3DVisualizerSelections::SelectSet(int index) {
     }
 }
 
-size_t O3DVisualizerSelections::GetNumberOfSets() const {
-    return sets_.size();
-}
+size_t O3DVisualizerSelections::GetNumberOfSets() const { return sets_.size(); }
 
 void O3DVisualizerSelections::SelectIndices(
         const std::vector<size_t> &indices) {

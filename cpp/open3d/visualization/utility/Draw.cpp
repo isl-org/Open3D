@@ -34,7 +34,7 @@
 namespace open3d {
 namespace visualization {
 
-DrawObject::DrawObject(const std::string& n,
+DrawObject::DrawObject(const std::string &n,
                        std::shared_ptr<geometry::Geometry3D> g,
                        bool vis /*= true*/) {
     this->name = n;
@@ -42,7 +42,7 @@ DrawObject::DrawObject(const std::string& n,
     this->is_visible = vis;
 }
 
-DrawObject::DrawObject(const std::string& n,
+DrawObject::DrawObject(const std::string &n,
                        std::shared_ptr<t::geometry::Geometry> tg,
                        bool vis /*= true*/) {
     this->name = n;

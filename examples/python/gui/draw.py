@@ -201,6 +201,7 @@ def seq_animation():
 
     vis.draw(clouds)
 
+
 def groups():
     building_mat = vis.rendering.Material()
     building_mat.shader = "defaultLit"

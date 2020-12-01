@@ -41,7 +41,8 @@ void pybind_o3dvisualizer(py::module& m) {
             m, "SelectedIndex",
             "Information about a point or vertex that was selected");
     selected_index
-            .def("__repr__", [](const O3DVisualizerSelections::SelectedIndex& idx) {
+            .def("__repr__",
+                 [](const O3DVisualizerSelections::SelectedIndex& idx) {
                      std::stringstream s;
                      s << "{ index: " << idx.index << ", order: " << idx.order
                        << ", point: (" << idx.point.x() << ", " << idx.point.y()
@@ -64,8 +65,8 @@ void pybind_o3dvisualizer(py::module& m) {
     py::class_<O3DVisualizer, UnownedPointer<O3DVisualizer>, gui::Window>
             o3dvis(m, "O3DVisualizer", "Visualization object used by draw()");
 
-    py::enum_<O3DVisualizer::Shader> dv_shader(
-            o3dvis, "Shader", "Scene-level rendering options");
+    py::enum_<O3DVisualizer::Shader> dv_shader(o3dvis, "Shader",
+                                               "Scene-level rendering options");
     dv_shader
             .value("STANDARD", O3DVisualizer::Shader::STANDARD,
                    "Pixel colors from standard lighting model")
@@ -107,8 +108,8 @@ void pybind_o3dvisualizer(py::module& m) {
                           "value");
 
     o3dvis.def(py::init<const std::string, int, int>(), "title"_a = "Open3D",
-                "width"_a = 1024, "height"_a = 768,
-                "Creates a O3DVisualizer object")
+               "width"_a = 1024, "height"_a = 768,
+               "Creates a O3DVisualizer object")
             .def("add_action", &O3DVisualizer::AddAction,
                  "Adds a button to the custom actions section of the UI "
                  "and a corresponding menu item in the \"Actions\" menu. "
@@ -123,7 +124,8 @@ void pybind_o3dvisualizer(py::module& m) {
                  "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
                  "order"_a = 0.0, "is_visible"_a = true,
                  "Adds a geometry: geometry(name, geometry, material=None, "
-                 "group='', order=0.0, is_visible=True). 'name' must be unique.")
+                 "group='', order=0.0, is_visible=True). 'name' must be "
+                 "unique.")
             /*            .def("add_geometry",
                              py::overload_cast<const std::string&,
                                                std::shared_ptr<t::geometry::Geometry>,
@@ -230,11 +232,9 @@ void pybind_o3dvisualizer(py::module& m) {
             .def_property_readonly("scene", &O3DVisualizer::GetScene,
                                    "Returns the rendering.Open3DScene object "
                                    "for low-level manipulation")
-            .def_property(
-                    "current_frame",
-                    &O3DVisualizer::GetCurrentFrame,
-                    &O3DVisualizer::SetCurrentFrame,
-                    "Gets/sets the current frame.")
+            .def_property("current_frame", &O3DVisualizer::GetCurrentFrame,
+                          &O3DVisualizer::SetCurrentFrame,
+                          "Gets/sets the current frame.")
             .def_property("animation_frame_delay",
                           &O3DVisualizer::GetAnimationFrameDelay,
                           &O3DVisualizer::SetAnimationFrameDelay,

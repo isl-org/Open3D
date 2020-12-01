@@ -59,8 +59,8 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
-#include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
+#include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
 
 #define GROUPS_USE_TREE 1
 
@@ -724,7 +724,8 @@ struct O3DVisualizer::Impl {
 #endif  // !GROUPS_USE_TREE
 
         // Time controls
-        settings.anim_panel = new EmptyIfHiddenVert("Animation", v_spacing, margins);
+        settings.anim_panel =
+                new EmptyIfHiddenVert("Animation", v_spacing, margins);
         settings.panel->AddChild(GiveOwnership(settings.anim_panel));
 
         settings.anim_slider = new Slider(Slider::INT);
@@ -888,7 +889,9 @@ struct O3DVisualizer::Impl {
         int n_others_with_this_order = 0;
         for (auto &o : objects_) {
             groups.insert(o.group);
-            if (o.order == order) { n_others_with_this_order += 1; }
+            if (o.order == order) {
+                n_others_with_this_order += 1;
+            }
         }
 
         if (n_others_with_this_order == 0) {
@@ -923,8 +926,7 @@ struct O3DVisualizer::Impl {
                     auto id = settings.object2itemid[o.name];
                     auto cell = settings.geometries->GetItem(id);
                     auto obj_cell =
-                            std::dynamic_pointer_cast<DrawObjectTreeCell>(
-                                    cell);
+                            std::dynamic_pointer_cast<DrawObjectTreeCell>(cell);
                     if (obj_cell) {
                         obj_cell->GetCheckbox()->SetChecked(show);
                     }
@@ -1291,7 +1293,8 @@ struct O3DVisualizer::Impl {
                                            : 0);
 #endif  // !GROUPS_USE_TREE
         flag |= ((frames_.GetNumberOfFrames() > 1)
-                     ? DrawObjectTreeCell::FLAG_ORDER : 0);
+                         ? DrawObjectTreeCell::FLAG_ORDER
+                         : 0);
         auto cell = std::make_shared<DrawObjectTreeCell>(
                 o.name.c_str(), o.group.c_str(), o.order, o.is_visible, flag,
                 [this, name = o.name](bool is_on) {
@@ -1324,7 +1327,8 @@ struct O3DVisualizer::Impl {
     }
 
     bool IsGeometryVisible(const DrawObject &o) {
-        bool is_current = (frames_.GetFrameForValue(o.order) == ui_state_.current_frame);
+        bool is_current =
+                (frames_.GetFrameForValue(o.order) == ui_state_.current_frame);
         bool is_group_enabled = (ui_state_.enabled_groups.find(o.group) !=
                                  ui_state_.enabled_groups.end());
         bool is_visible = o.is_visible;
@@ -1590,7 +1594,7 @@ Open3DScene *O3DVisualizer::GetScene() const {
 }
 
 void O3DVisualizer::AddAction(const std::string &name,
-                               std::function<void(O3DVisualizer &)> callback) {
+                              std::function<void(O3DVisualizer &)> callback) {
     // Add button to the "Custom Actions" segment in the UI
     SmallButton *button = new SmallButton(name.c_str());
     button->SetOnClicked([this, callback]() { callback(*this); });
@@ -1622,20 +1626,20 @@ void O3DVisualizer::SetBackgroundColor(const Eigen::Vector4f &bg_color) {
 void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
 
 void O3DVisualizer::AddGeometry(const std::string &name,
-                                 std::shared_ptr<geometry::Geometry3D> geom,
-                                 rendering::Material *material /*= nullptr*/,
-                                 const std::string &group /*= ""*/,
-                                 double time /*= 0.0*/,
-                                 bool is_visible /*= true*/) {
+                                std::shared_ptr<geometry::Geometry3D> geom,
+                                rendering::Material *material /*= nullptr*/,
+                                const std::string &group /*= ""*/,
+                                double time /*= 0.0*/,
+                                bool is_visible /*= true*/) {
     impl_->AddGeometry(name, geom, nullptr, material, group, time, is_visible);
 }
 
 void O3DVisualizer::AddGeometry(const std::string &name,
-                                 std::shared_ptr<t::geometry::Geometry> tgeom,
-                                 rendering::Material *material /*= nullptr*/,
-                                 const std::string &group /*= ""*/,
-                                 double time /*= 0.0*/,
-                                 bool is_visible /*= true*/) {
+                                std::shared_ptr<t::geometry::Geometry> tgeom,
+                                rendering::Material *material /*= nullptr*/,
+                                const std::string &group /*= ""*/,
+                                double time /*= 0.0*/,
+                                bool is_visible /*= true*/) {
     impl_->AddGeometry(name, nullptr, tgeom, material, group, time, is_visible);
 }
 
@@ -1694,9 +1698,9 @@ void O3DVisualizer::SetAnimating(bool is_animating) {
 }
 
 void O3DVisualizer::SetupCamera(float fov,
-                                 const Eigen::Vector3f &center,
-                                 const Eigen::Vector3f &eye,
-                                 const Eigen::Vector3f &up) {}
+                                const Eigen::Vector3f &center,
+                                const Eigen::Vector3f &eye,
+                                const Eigen::Vector3f &up) {}
 
 void O3DVisualizer::ResetCameraToDefault() {
     return impl_->ResetCameraToDefault();
