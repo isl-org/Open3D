@@ -68,6 +68,10 @@ public:
     }
 
     TensorMap(const std::string& primary_key,
+              const std::unordered_map<std::string, core::Tensor>& tensor_map)
+        : TensorMap(primary_key, tensor_map.begin(), tensor_map.end()) {}
+
+    TensorMap(const std::string& primary_key,
               std::initializer_list<value_type> init)
         : std::unordered_map<std::string, core::Tensor>(init),
           primary_key_(primary_key) {

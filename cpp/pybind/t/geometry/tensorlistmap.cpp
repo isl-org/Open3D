@@ -35,28 +35,30 @@ namespace t {
 namespace geometry {
 
 void pybind_tensorlistmap(py::module& m) {
-    // Bind to the generic dictionary interface such that it works the same as a
-    // regular dictionay in Python, except that types are enforced. Supported
-    // functions include `__bool__`, `__iter__`, `items`, `__getitem__`,
-    // `__contains__`, `__delitem__`, `__len__` and map assignment.
-    auto tlm = py::bind_map<TensorListMap>(m, "TensorListMap",
-                                           "Map of TensorList by string.");
+    // // Bind to the generic dictionary interface such that it works the same
+    // as a
+    // // regular dictionay in Python, except that types are enforced. Supported
+    // // functions include `__bool__`, `__iter__`, `items`, `__getitem__`,
+    // // `__contains__`, `__delitem__`, `__len__` and map assignment.
+    // auto tlm = py::bind_map<TensorListMap>(m, "TensorListMap",
+    //                                        "Map of TensorList by string.");
 
-    // Constructors.
-    tlm.def(py::init<const std::string&>(), "primary_key"_a)
-            .def(py::init<const std::string&,
-                          const std::unordered_map<std::string,
-                                                   core::TensorList>&>(),
-                 "primary_key"_a, "map_keys_to_tensorlists"_a);
+    // // Constructors.
+    // tlm.def(py::init<const std::string&>(), "primary_key"_a)
+    //         .def(py::init<const std::string&,
+    //                       const std::unordered_map<std::string,
+    //                                                core::TensorList>&>(),
+    //              "primary_key"_a, "map_keys_to_tensorlists"_a);
 
-    // Member functions. Some C++ functions are ignored since the
-    // functionalities are already covered in the generic dictionary interface.
-    tlm.def("synchronized_push_back", &TensorListMap::SynchronizedPushBack,
-            "map_keys_to_tensors"_a)
-            .def("get_primary_key", &TensorListMap::GetPrimaryKey)
-            .def("is_size_synchronized", &TensorListMap::IsSizeSynchronized)
-            .def("assert_size_synchronized",
-                 &TensorListMap::AssertSizeSynchronized);
+    // // Member functions. Some C++ functions are ignored since the
+    // // functionalities are already covered in the generic dictionary
+    // interface. tlm.def("synchronized_push_back",
+    // &TensorListMap::SynchronizedPushBack,
+    //         "map_keys_to_tensors"_a)
+    //         .def("get_primary_key", &TensorListMap::GetPrimaryKey)
+    //         .def("is_size_synchronized", &TensorListMap::IsSizeSynchronized)
+    //         .def("assert_size_synchronized",
+    //              &TensorListMap::AssertSizeSynchronized);
 }
 
 }  // namespace geometry

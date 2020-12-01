@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,35 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/t/geometry/TensorMap.h"
 
-#include "open3d/t/geometry/Geometry.h"
-#include "pybind/open3d_pybind.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "pybind/docstring.h"
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
-// Geometry trampoline class.
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
-public:
-    using GeometryBase::GeometryBase;
+void pybind_tensormap(py::module& m) {
+    // Bind to the generic dictionary interface such that it works the same as a
+    // regular dictionay in Python, except that types are enforced. Supported
+    // functions include `__bool__`, `__iter__`, `items`, `__getitem__`,
+    // `__contains__`, `__delitem__`, `__len__` and map assignment.
+    auto tm = py::bind_map<TensorMap>(
+            m, "TensorMap", "Map of String to Tensor with a primary key.");
 
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
-    }
-
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-    }
-};
-
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_tensorlistmap(py::module& m);
-void pybind_tensormap(py::module& m);
-void pybind_pointcloud(py::module& m);
+    // Constructors.
+    tm.def(py::init<const std::string&>(), "primary_key"_a);
+    tm.def(py::init<const std::string&,
+                    const std::unordered_map<std::string, core::Tensor>&>(),
+           "primary_key"_a, "map_keys_to_tensors"_a);
+}
 
 }  // namespace geometry
 }  // namespace t

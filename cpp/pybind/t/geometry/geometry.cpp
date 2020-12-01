@@ -50,6 +50,7 @@ void pybind_geometry(py::module& m) {
 
     pybind_geometry_class(m_submodule);
     pybind_tensorlistmap(m_submodule);
+    pybind_tensormap(m_submodule);
     pybind_pointcloud(m_submodule);
 }
 
