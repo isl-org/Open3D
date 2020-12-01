@@ -32,10 +32,7 @@ vertex {
         vec2 normal = vec2(-dir.y, dir.x);
         normal *= materialParams.lineWidth;
         vec4 offset = vec4(normal * next.w, 0.0, 1.0);
-        // material.worldPosition.xy = screen_pos + normal*next.w;
         material.worldPosition = getWorldFromClipMatrix() * (projected_pos + offset);
-//        material.worldPosition.xyz -= getWorldOffset();
-        //        gl_Position = projected_pos + offset;
     }
 }
 
