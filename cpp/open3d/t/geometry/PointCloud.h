@@ -206,9 +206,8 @@ public:
     /// 2) attribute's length as points' length
     /// 3) attribute's length > 0
     bool HasPointAttr(const std::string &key) const {
-        return point_attr_.Contains(key) &&
-               GetPointAttr(key).GetShape()[0] > 0 &&
-               GetPointAttr(key).GetShape()[0] == GetPoints().GetShape()[0];
+        return point_attr_.Contains(key) && GetPointAttr(key).GetLength() > 0 &&
+               GetPointAttr(key).GetLength() == GetPoints().GetLength();
     }
 
     /// Check if the "points" attribute's value has length > 0.

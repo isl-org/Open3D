@@ -83,8 +83,7 @@ static core::Tensor ConcatColumns(const core::Tensor &a,
         utility::LogError("Read PLY failed: only 1D attributes are supported.");
     }
 
-    if ((a.GetShape()[0] != b.GetShape()[0]) ||
-        (a.GetShape()[0] != c.GetShape()[0])) {
+    if ((a.GetLength() != b.GetLength()) || (a.GetLength() != c.GetLength())) {
         utility::LogError("Read PLY failed: size mismatch in base attributes.");
     }
     if ((a.GetDtype() != b.GetDtype()) || (a.GetDtype() != c.GetDtype())) {
@@ -93,7 +92,7 @@ static core::Tensor ConcatColumns(const core::Tensor &a,
     }
 
     core::Tensor combined =
-            core::Tensor::Empty({a.GetShape()[0], 3}, a.GetDtype());
+            core::Tensor::Empty({a.GetLength(), 3}, a.GetDtype());
     combined.IndexExtract(1, 0) = a;
     combined.IndexExtract(1, 1) = b;
     combined.IndexExtract(1, 2) = c;
@@ -343,16 +342,16 @@ bool WritePointCloudToPLY(const std::string &filename,
     }
 
     geometry::TensorMap t_map = pointcloud.GetPointAttr();
-    long num_points = static_cast<long>(pointcloud.GetPoints().GetShape()[0]);
+    long num_points = static_cast<long>(pointcloud.GetPoints().GetLength());
 
     // Make sure all the attributes have same size.
     if (!t_map.IsSizeSynchronized()) {
         for (auto const &it : t_map) {
-            if (it.second.GetShape()[0] != num_points) {
+            if (it.second.GetLength() != num_points) {
                 utility::LogWarning(
                         "Write PLY failed: Points ({}) and {} ({}) have "
                         "different lengths.",
-                        num_points, it.first, it.second.GetShape()[0]);
+                        num_points, it.first, it.second.GetLength());
                 return false;
             }
         }

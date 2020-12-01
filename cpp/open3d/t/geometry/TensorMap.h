@@ -111,7 +111,7 @@ private:
     void AssertPrimaryKeyInMapOrEmpty() const;
 
     /// Returns the size (length) of the primary key's tensor.
-    int64_t GetPrimarySize() const { return at(primary_key_).GetShape()[0]; }
+    int64_t GetPrimarySize() const { return at(primary_key_).GetLength(); }
 
     /// Returns the device of the primary key's tensor.
     core::Device GetPrimaryDevice() const {

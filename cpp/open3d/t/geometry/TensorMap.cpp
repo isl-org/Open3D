@@ -41,7 +41,7 @@ namespace geometry {
 bool TensorMap::IsSizeSynchronized() const {
     const int64_t primary_size = GetPrimarySize();
     for (auto& kv : *this) {
-        if (kv.second.GetShape()[0] != primary_size) {
+        if (kv.second.GetLength() != primary_size) {
             return false;
         }
     }
@@ -63,9 +63,9 @@ void TensorMap::AssertSizeSynchronized() const {
                           primary_key_, primary_size);
         for (auto& kv : *this) {
             if (kv.first != primary_key_ &&
-                kv.second.GetShape()[0] != primary_size) {
+                kv.second.GetLength() != primary_size) {
                 fmt::format("    > Tensor \"{}\" has size {}.\n", kv.first,
-                            kv.second.GetShape()[0]);
+                            kv.second.GetLength());
             }
         }
         utility::LogError("{}", ss.str());
