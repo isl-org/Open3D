@@ -237,48 +237,43 @@ TEST_P(PointCloudPermuteDevices, Getters) {
     EXPECT_ANY_THROW(const core::Tensor& tl = pcd.GetPointNormals(); (void)tl);
 }
 
-// TEST_P(PointCloudPermuteDevices, Setters) {
-//     core::Device device = GetParam();
-//     core::Dtype dtype = core::Dtype::Float32;
+TEST_P(PointCloudPermuteDevices, Setters) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
 
-//     core::Tensor points = core::Tensor::FromTensor(
-//             core::Tensor::Ones({2, 3}, dtype, device));
-//     core::Tensor colors = core::Tensor::FromTensor(
-//             core::Tensor::Ones({2, 3}, dtype, device) * 2);
-//     core::Tensor labels = core::Tensor::FromTensor(
-//             core::Tensor::Ones({2, 3}, dtype, device) * 3);
+    core::Tensor points = core::Tensor::Ones({2, 3}, dtype, device);
+    core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, device) * 2;
+    core::Tensor labels = core::Tensor::Ones({2, 3}, dtype, device) * 3;
 
-//     t::geometry::PointCloud pcd(dtype, device);
+    t::geometry::PointCloud pcd(dtype, device);
 
-//     pcd.SetPoints(points);
-//     pcd.SetPointColors(colors);
-//     pcd.SetPointAttr("labels", labels);
+    pcd.SetPoints(points);
+    pcd.SetPointColors(colors);
+    pcd.SetPointAttr("labels", labels);
 
-//     EXPECT_TRUE(pcd.GetPoints().AllClose(
-//             core::Tensor::Ones({2, 3}, dtype, device)));
-//     EXPECT_TRUE(pcd.GetPointColors().AllClose(
-//             core::Tensor::Ones({2, 3}, dtype, device) * 2));
-//     EXPECT_TRUE(pcd.GetPointAttr("labels").AllClose(
-//             core::Tensor::Ones({2, 3}, dtype, device) * 3));
-//     EXPECT_ANY_THROW(pcd.GetPointNormals());
+    EXPECT_TRUE(pcd.GetPoints().AllClose(
+            core::Tensor::Ones({2, 3}, dtype, device)));
+    EXPECT_TRUE(pcd.GetPointColors().AllClose(
+            core::Tensor::Ones({2, 3}, dtype, device) * 2));
+    EXPECT_TRUE(pcd.GetPointAttr("labels").AllClose(
+            core::Tensor::Ones({2, 3}, dtype, device) * 3));
+    EXPECT_ANY_THROW(pcd.GetPointNormals());
 
-//     // Mismatched device should throw an exception. This test is only
-//     effective
-//     // is device is a CUDA device.
-//     core::Device cpu_device = core::Device("CPU:0");
-//     if (cpu_device != device) {
-//         core::Tensor cpu_points = core::Tensor::FromTensor(
-//                 core::Tensor::Ones({2, 3}, dtype, cpu_device));
-//         core::Tensor cpu_colors = core::Tensor::FromTensor(
-//                 core::Tensor::Ones({2, 3}, dtype, cpu_device) * 2);
-//         core::Tensor cpu_labels = core::Tensor::FromTensor(
-//                 core::Tensor::Ones({2, 3}, dtype, cpu_device) * 3);
+    // Mismatched device should throw an exception. This test is only
+    // effective if device is a CUDA device.
+    core::Device cpu_device = core::Device("CPU:0");
+    if (cpu_device != device) {
+        core::Tensor cpu_points = core::Tensor::Ones({2, 3}, dtype, cpu_device);
+        core::Tensor cpu_colors =
+                core::Tensor::Ones({2, 3}, dtype, cpu_device) * 2;
+        core::Tensor cpu_labels =
+                core::Tensor::Ones({2, 3}, dtype, cpu_device) * 3;
 
-//         EXPECT_ANY_THROW(pcd.SetPoints(cpu_points));
-//         EXPECT_ANY_THROW(pcd.SetPointColors(cpu_colors));
-//         EXPECT_ANY_THROW(pcd.SetPointAttr("labels", cpu_labels));
-//     }
-// }
+        EXPECT_ANY_THROW(pcd.SetPoints(cpu_points));
+        EXPECT_ANY_THROW(pcd.SetPointColors(cpu_colors));
+        EXPECT_ANY_THROW(pcd.SetPointAttr("labels", cpu_labels));
+    }
+}
 
 // TEST_P(PointCloudPermuteDevices, Has) {
 //     core::Device device = GetParam();
