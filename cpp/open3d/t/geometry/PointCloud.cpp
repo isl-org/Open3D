@@ -48,10 +48,7 @@ PointCloud::PointCloud(core::Dtype dtype, const core::Device &device)
 
 PointCloud::PointCloud(const core::Tensor &points)
     : PointCloud(points.GetDtype(), points.GetDevice()) {
-    if (points.NumDims() != 2 || points.GetShape()[1] != 3) {
-        utility::LogError("Input must have shape (N, 3) but got shape {}.",
-                          points.GetShape());
-    }
+    points.GetShape().AssertCompatible({utility::nullopt, 3});
     SetPoints(points);
 }
 
@@ -62,11 +59,8 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
     if (map_keys_to_tensors.count("points") == 0) {
         utility::LogError("\"points\" attribute must be specified.");
     }
-    if (map_keys_to_tensors.at("points").NumDims() != 2 ||
-        map_keys_to_tensors.at("points").GetShape()[1] != 3) {
-        utility::LogError("Input must have shape (N, 3) but got shape {}.",
-                          map_keys_to_tensors.at("points").GetShape());
-    }
+    map_keys_to_tensors.at("points").GetShape().AssertCompatible(
+            {utility::nullopt, 3});
     point_attr_ = TensorMap("points", map_keys_to_tensors.begin(),
                             map_keys_to_tensors.end());
 }
@@ -148,7 +142,7 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
     }
     if (HasPointNormals()) {
         const core::Tensor &normals = GetPointNormals();
-        for (int64_t i = 0; i < normals.GetLength(); i++) {
+        for (int64_t i = 0; i < normals.GetShape()[0]; i++) {
             pcd_legacy.normals_.push_back(
                     core::eigen_converter::TensorToEigenVector3d(normals[i]));
         }

@@ -176,28 +176,19 @@ public:
 
     /// Set the value of the "points" attribute. Convenience function.
     void SetPoints(const core::Tensor &value) {
-        if (value.NumDims() != 2 || value.GetShape()[1] != 3) {
-            utility::LogError("Input must have shape (N, 3) but got shape {}.",
-                              value.GetShape());
-        }
+        value.GetShape().AssertCompatible({utility::nullopt, 3});
         SetPointAttr("points", value);
     }
 
     /// Set the value of the "colors" attribute. Convenience function.
     void SetPointColors(const core::Tensor &value) {
-        if (value.NumDims() != 2 || value.GetShape()[1] != 3) {
-            utility::LogError("Input must have shape (N, 3) but got shape {}.",
-                              value.GetShape());
-        }
+        value.GetShape().AssertCompatible({utility::nullopt, 3});
         SetPointAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute. Convenience function.
     void SetPointNormals(const core::Tensor &value) {
-        if (value.NumDims() != 2 || value.GetShape()[1] != 3) {
-            utility::LogError("Input must have shape (N, 3) but got shape {}.",
-                              value.GetShape());
-        }
+        value.GetShape().AssertCompatible({utility::nullopt, 3});
         SetPointAttr("normals", value);
     }
 

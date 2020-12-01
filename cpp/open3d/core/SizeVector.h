@@ -154,10 +154,16 @@ public:
 
     std::string ToString() const { return fmt::format("{}", *this); }
 
-    void AssertCompatible(const DynamicSizeVector& dsv) const {
+    void AssertCompatible(const DynamicSizeVector& dsv,
+                          const std::string msg = "") const {
         if (!IsCompatible(dsv)) {
-            utility::LogError("Shape {} is not compatible with {}.", ToString(),
-                              dsv.ToString());
+            if (msg.empty()) {
+                utility::LogError("Shape {} is not compatible with {}.",
+                                  ToString(), dsv.ToString());
+            } else {
+                utility::LogError("Shape {} is not compatible with {}: {}",
+                                  ToString(), dsv.ToString(), msg);
+            }
         }
     }
 

@@ -100,7 +100,7 @@ bool WritePointCloudToXYZI(const std::string &filename,
         }
         utility::CountingProgressReporter reporter(params.update_progress);
         const core::Tensor &points = pointcloud.GetPoints();
-        if (points.GetShape(1) != 3) {
+        if (!points.GetShape().IsCompatible({utility::nullopt, 3})) {
             utility::LogWarning(
                     "Write XYZI failed: Shape of points is {}, but it should "
                     "be Nx3.",
