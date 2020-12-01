@@ -95,8 +95,13 @@ public:
     std::string ToString() const { return fmt::format("{}", *this); }
 };
 
-/// DynamicSizeVector is a vector of int64_t, typically used in Tensor shape
-/// and strides. A signed int64_t type is chosen to allow negative strides.
+/// DynamicSizeVector is a vector of optional<int64_t>, it is used to represent
+/// a shape with unknown (dynamic) dimensions.
+///
+/// Example: create a shape of (None, 3)
+/// ```
+/// core::DynamicSizeVector shape{utility::nullopt, 3};
+/// ```
 class DynamicSizeVector : public std::vector<utility::optional<int64_t>> {
     using optint64_t = utility::optional<int64_t>;
 
