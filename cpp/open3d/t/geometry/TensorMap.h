@@ -64,28 +64,28 @@ public:
     TensorMap(const std::string& primary_key, InputIt first, InputIt last)
         : std::unordered_map<std::string, core::Tensor>(first, last),
           primary_key_(primary_key) {
-        AssertEmptyOrPrimaryKeyInMap();
+        AssertPrimaryKeyInMapOrEmpty();
     }
 
     TensorMap(const std::string& primary_key,
               std::initializer_list<value_type> init)
         : std::unordered_map<std::string, core::Tensor>(init),
           primary_key_(primary_key) {
-        AssertEmptyOrPrimaryKeyInMap();
+        AssertPrimaryKeyInMapOrEmpty();
     }
 
     /// Copy constructor performs a "shallow" copy of the Tensors.
     TensorMap(const TensorMap& other)
         : std::unordered_map<std::string, core::Tensor>(other),
           primary_key_(other.primary_key_) {
-        AssertEmptyOrPrimaryKeyInMap();
+        AssertPrimaryKeyInMapOrEmpty();
     }
 
     /// Move constructor performs a "shallow" copy of the Tensors.
     TensorMap(TensorMap&& other)
         : std::unordered_map<std::string, core::Tensor>(other),
           primary_key_(other.primary_key_) {
-        AssertEmptyOrPrimaryKeyInMap();
+        AssertPrimaryKeyInMapOrEmpty();
     }
 
     /// Returns the primary key of the TensorMap.
@@ -104,25 +104,7 @@ public:
 private:
     /// Asserts that the map indeed contains the primary_key. This is typically
     /// called in constructors.
-    void AssertEmptyOrPrimaryKeyInMap() const;
-
-    /// Asserts that all of the tensors in \p map_keys_to_tensors have the same
-    /// device as the primary tensor.
-    ///
-    /// \param map_keys_to_tensors A map of string to Tensor. Typically the map
-    /// is used for SynchronizedPushBack.
-    void AssertTensorMapSameDevice(
-            const std::unordered_map<std::string, core::Tensor>&
-                    map_keys_to_tensors) const;
-
-    /// Clear the current map and assign new keys and values. The primary key
-    /// remains unchanged. The input \p map_keys_to_tensors must at least
-    /// contain the primary key. Data won't be copied, tensors still share
-    /// the same memory as the input.
-    ///
-    /// \param map_keys_to_tensors. The keys and values to be assigned.
-    void Assign(const std::unordered_map<std::string, core::Tensor>&
-                        map_keys_to_tensors);
+    void AssertPrimaryKeyInMapOrEmpty() const;
 
     /// Returns the size (length) of the primary key's tensor.
     int64_t GetPrimarySize() const { return at(primary_key_).GetShape()[0]; }

@@ -36,27 +36,6 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void TensorMap::Assign(const std::unordered_map<std::string, core::Tensor>&
-                               map_keys_to_tensors) {
-    if (!map_keys_to_tensors.count(primary_key_)) {
-        utility::LogError("primary key {} must be present in the input map.",
-                          primary_key_);
-    }
-    this->clear();
-    const core::Device& primary_device =
-            map_keys_to_tensors.at(primary_key_).GetDevice();
-    for (auto& kv : map_keys_to_tensors) {
-        if (primary_device != kv.second.GetDevice()) {
-            utility::LogError(
-                    "Primary tensor has device {}, however, another tensor has "
-                    "device {}.",
-                    primary_device.ToString(),
-                    kv.second.GetDevice().ToString());
-        }
-        this->operator[](kv.first) = kv.second;
-    }
-}
-
 bool TensorMap::IsSizeSynchronized() const {
     const int64_t primary_size = GetPrimarySize();
     for (auto& kv : *this) {
@@ -67,7 +46,7 @@ bool TensorMap::IsSizeSynchronized() const {
     return true;
 }
 
-void TensorMap::AssertEmptyOrPrimaryKeyInMap() const {
+void TensorMap::AssertPrimaryKeyInMapOrEmpty() const {
     if (this->size() != 0 && this->count(primary_key_) == 0) {
         utility::LogError("TensorMap does not contain primary key \"{}\".",
                           primary_key_);
@@ -88,21 +67,6 @@ void TensorMap::AssertSizeSynchronized() const {
             }
         }
         utility::LogError("{}", ss.str());
-    }
-}
-
-void TensorMap::AssertTensorMapSameDevice(
-        const std::unordered_map<std::string, core::Tensor>&
-                map_keys_to_tensors) const {
-    const core::Device& primary_device = GetPrimaryDevice();
-    for (auto& kv : map_keys_to_tensors) {
-        if (kv.second.GetDevice() != primary_device) {
-            utility::LogError(
-                    "Tensor in the input map does not have the same device as "
-                    "the primary Tensor: {} != {}.",
-                    kv.second.GetDevice().ToString(),
-                    primary_device.ToString());
-        }
     }
 }
 
