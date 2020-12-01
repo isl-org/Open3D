@@ -30,6 +30,7 @@
 #include <string>
 
 #include "open3d/io/rpc/ConnectionBase.h"
+#include "open3d/io/rpc/ZMQContext.h"
 
 namespace open3d {
 namespace io {
@@ -62,6 +63,7 @@ public:
     static std::string DefaultAddress();
 
 private:
+    std::shared_ptr<zmq::context_t> context_;
     std::unique_ptr<zmq::socket_t> socket_;
     const std::string address_;
     const int connect_timeout_;
