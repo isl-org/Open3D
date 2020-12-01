@@ -95,36 +95,36 @@ public:
     std::string ToString() const { return fmt::format("{}", *this); }
 };
 
-/// OptionalSizeVector is a vector of int64_t, typically used in Tensor shape
+/// DynamicSizeVector is a vector of int64_t, typically used in Tensor shape
 /// and strides. A signed int64_t type is chosen to allow negative strides.
-class OptionalSizeVector : public std::vector<utility::optional<int64_t>> {
+class DynamicSizeVector : public std::vector<utility::optional<int64_t>> {
     using optint64_t = utility::optional<int64_t>;
 
 public:
-    OptionalSizeVector(const std::initializer_list<optint64_t>& dim_sizes)
+    DynamicSizeVector(const std::initializer_list<optint64_t>& dim_sizes)
         : std::vector<optint64_t>(dim_sizes) {}
 
-    OptionalSizeVector(const std::vector<optint64_t>& dim_sizes)
+    DynamicSizeVector(const std::vector<optint64_t>& dim_sizes)
         : std::vector<optint64_t>(dim_sizes) {}
 
-    OptionalSizeVector(const OptionalSizeVector& other)
+    DynamicSizeVector(const DynamicSizeVector& other)
         : std::vector<optint64_t>(other) {}
 
-    explicit OptionalSizeVector(int64_t n, int64_t initial_value = 0)
+    explicit DynamicSizeVector(int64_t n, int64_t initial_value = 0)
         : std::vector<optint64_t>(n, initial_value) {}
 
     template <class InputIterator>
-    OptionalSizeVector(InputIterator first, InputIterator last)
+    DynamicSizeVector(InputIterator first, InputIterator last)
         : std::vector<optint64_t>(first, last) {}
 
-    OptionalSizeVector() {}
+    DynamicSizeVector() {}
 
-    OptionalSizeVector& operator=(const OptionalSizeVector& v) {
+    DynamicSizeVector& operator=(const DynamicSizeVector& v) {
         static_cast<std::vector<optint64_t>*>(this)->operator=(v);
         return *this;
     }
 
-    OptionalSizeVector& operator=(OptionalSizeVector&& v) {
+    DynamicSizeVector& operator=(DynamicSizeVector&& v) {
         static_cast<std::vector<optint64_t>*>(this)->operator=(v);
         return *this;
     }
