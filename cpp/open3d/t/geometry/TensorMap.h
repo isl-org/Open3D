@@ -35,9 +35,9 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-/// Map of string to Tensor. Used to store attributes geometries.
+/// TensorMap is a unordered_map<string, Tensor> with a primary key. It is
+/// typically used as a container for geometry attributes.
 ///
-/// The primary key's tensor is the primary tensor.
 /// e.g.
 /// tensor_map.primary_key: "points"
 /// tensor_map["points"]  : Tensor of shape {100, 3}.

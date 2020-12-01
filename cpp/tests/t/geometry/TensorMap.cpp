@@ -75,79 +75,43 @@ TEST_P(TensorMapPermuteDevices, Constructor) {
     EXPECT_TRUE(tm2_moved["colors"].IsSame(tm2["colors"]));
 }
 
-// TEST_P(TensorMap, Assign) {
-//     core::Dtype dtype = core::Dtype::Float32;
-//     core::Device device = core::Device("CPU:0");
+TEST_P(TensorMapPermuteDevices, IsSizeSynchronized) {
+    core::Dtype dtype = core::Dtype::Float32;
+    core::Device device = GetParam();
 
-//     t::geometry::TensorMap tm("points");
-//     tm["points"] = core::Tensor::Zeros({10, 3}, dtype, device);
-//     tm["dummy"] = core::Tensor::Zeros({10, 3}, dtype, device);
-//     EXPECT_TRUE(tm.Contains("points"));
-//     EXPECT_TRUE(tm.Contains("dummy"));
+    t::geometry::TensorMap tm(
+            "points", {{"points", core::Tensor::Zeros({5, 3}, dtype, device)},
+                       {"colors", core::Tensor::Ones({10, 3}, dtype, device)}});
+    EXPECT_FALSE(tm.IsSizeSynchronized());
 
-//     std::unordered_map<std::string, core::Tensor> replacement{
-//             {"points", core::Tensor::Ones({2, 3}, dtype, device)},
-//             {"colors", core::Tensor::Ones({2, 3}, dtype, device)},
-//     };
-//     tm.Assign(replacement);
-//     EXPECT_TRUE(tm.Contains("points"));
-//     EXPECT_TRUE(tm.Contains("colors"));
-//     EXPECT_FALSE(tm.Contains("dummy"));
+    tm["colors"] = core::Tensor::Ones({5, 3}, dtype, device);
+    EXPECT_TRUE(tm.IsSizeSynchronized());
+}
 
-//     // Underlying memory are the same.
-//     EXPECT_TRUE(tm["points"].IsSame(replacement["points"]));
-//     EXPECT_TRUE(tm["colors"].IsSame(replacement["colors"]));
-// }
+TEST_P(TensorMapPermuteDevices, AssertSizeSynchronized) {
+    core::Dtype dtype = core::Dtype::Float32;
+    core::Device device = GetParam();
 
-// TEST_P(TensorMap, IsSizeSynchronized) {
-//     core::Dtype dtype = core::Dtype::Float32;
-//     core::Device device = core::Device("CPU:0");
+    t::geometry::TensorMap tm(
+            "points", {{"points", core::Tensor::Zeros({5, 3}, dtype, device)},
+                       {"colors", core::Tensor::Ones({10, 3}, dtype, device)}});
+    EXPECT_ANY_THROW(tm.AssertSizeSynchronized());
 
-//     t::geometry::TensorMap tm(
-//             "points",
-//             {{"points", core::TensorList::FromTensor(
-//                                 core::Tensor::Ones({5, 3}, dtype, device))},
-//              {"colors", core::TensorList::FromTensor(
-//                                 core::Tensor::Ones({4, 3}, dtype,
-//                                 device))}});
-//     EXPECT_FALSE(tm.IsSizeSynchronized());
+    tm["colors"] = core::Tensor::Ones({5, 3}, dtype, device);
+    tm.AssertSizeSynchronized();
+}
 
-//     tm["colors"].PushBack(core::Tensor::Ones({3}, dtype, device));
-//     EXPECT_TRUE(tm.IsSizeSynchronized());
-// }
+TEST_P(TensorMapPermuteDevices, Contains) {
+    core::Dtype dtype = core::Dtype::Float32;
+    core::Device device = GetParam();
 
-// TEST_P(TensorMap, AssertSizeSynchronized) {
-//     core::Dtype dtype = core::Dtype::Float32;
-//     core::Device device = core::Device("CPU:0");
-
-//     t::geometry::TensorMap tm(
-//             "points",
-//             {{"points", core::TensorList::FromTensor(
-//                                 core::Tensor::Ones({5, 3}, dtype, device))},
-//              {"colors", core::TensorList::FromTensor(
-//                                 core::Tensor::Ones({4, 3}, dtype,
-//                                 device))}});
-//     EXPECT_ANY_THROW(tm.AssertSizeSynchronized());
-
-//     tm["colors"].PushBack(core::Tensor::Ones({3}, dtype, device));
-//     EXPECT_NO_THROW(tm.AssertSizeSynchronized());
-// }
-
-// TEST_P(TensorMap, Contains) {
-//     core::Dtype dtype = core::Dtype::Float32;
-//     core::Device device = core::Device("CPU:0");
-
-//     t::geometry::TensorMap tm(
-//             "points",
-//             {{"points", core::TensorList::FromTensor(
-//                                 core::Tensor::Ones({5, 3}, dtype, device))},
-//              {"colors", core::TensorList::FromTensor(
-//                                 core::Tensor::Ones({4, 3}, dtype,
-//                                 device))}});
-//     EXPECT_TRUE(tm.Contains("points"));
-//     EXPECT_TRUE(tm.Contains("colors"));
-//     EXPECT_FALSE(tm.Contains("normals"));
-// }
+    t::geometry::TensorMap tm(
+            "points", {{"points", core::Tensor::Zeros({5, 3}, dtype, device)},
+                       {"colors", core::Tensor::Ones({10, 3}, dtype, device)}});
+    EXPECT_TRUE(tm.Contains("points"));
+    EXPECT_TRUE(tm.Contains("colors"));
+    EXPECT_FALSE(tm.Contains("normals"));
+}
 
 }  // namespace tests
 }  // namespace open3d
