@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
@@ -63,6 +64,65 @@ public:
     }
 
     SizeVector& operator=(SizeVector&& v) {
+        static_cast<std::vector<int64_t>*>(this)->operator=(v);
+        return *this;
+    }
+
+    int64_t NumElements() const {
+        if (this->size() == 0) {
+            return 1;
+        }
+        return std::accumulate(
+                this->begin(), this->end(), 1LL,
+                [this](const int64_t& lhs, const int64_t& rhs) -> int64_t {
+                    if (lhs < 0 || rhs < 0) {
+                        utility::LogError(
+                                "Shape {} cannot contain negative dimensions.",
+                                this->ToString());
+                    }
+                    return std::multiplies<int64_t>()(lhs, rhs);
+                });
+    }
+
+    int64_t GetLength() const {
+        if (size() == 0) {
+            utility::LogError("Cannot get length of a 0-dimensional shape.");
+        } else {
+            return operator[](0);
+        }
+    }
+
+    std::string ToString() const { return fmt::format("{}", *this); }
+};
+
+/// OptionalSizeVector is a vector of int64_t, typically used in Tensor shape
+/// and strides. A signed int64_t type is chosen to allow negative strides.
+class OptionalSizeVector : public std::vector<int64_t> {
+public:
+    OptionalSizeVector(const std::initializer_list<int64_t>& dim_sizes)
+        : std::vector<int64_t>(dim_sizes) {}
+
+    OptionalSizeVector(const std::vector<int64_t>& dim_sizes)
+        : std::vector<int64_t>(dim_sizes) {}
+
+    OptionalSizeVector(const OptionalSizeVector& other)
+        : std::vector<int64_t>(other) {}
+
+    explicit OptionalSizeVector(int64_t n, int64_t initial_value = 0)
+        : std::vector<int64_t>(n, initial_value) {}
+
+    template <class InputIterator>
+    OptionalSizeVector(InputIterator first, InputIterator last)
+        : std::vector<int64_t>(first, last) {}
+
+    OptionalSizeVector() {}
+
+    OptionalSizeVector& operator=(const OptionalSizeVector& v) {
+        static_cast<std::vector<int64_t>*>(this)->operator=(v);
+        return *this;
+    }
+
+    OptionalSizeVector& operator=(OptionalSizeVector&& v) {
         static_cast<std::vector<int64_t>*>(this)->operator=(v);
         return *this;
     }
