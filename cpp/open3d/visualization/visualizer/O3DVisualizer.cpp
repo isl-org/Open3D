@@ -108,7 +108,7 @@ public:
         }
     }
 
-    int GetFrameForValue(double order) {
+    size_t GetFrameForValue(double order) {
         auto it = std::lower_bound(values_.begin(), values_.end(), order);
         if (it != values_.end()) {
             return (it - values_.begin());
