@@ -855,7 +855,8 @@ struct O3DVisualizer::Impl {
         // Auto-open the settings panel if we set anything fancy that would
         // imply using the UI.
         if (can_auto_show_settings_ &&
-            (added_groups_.size() == 2 || update_for_order)) {
+            (added_groups_.size() == 2 ||
+             (update_for_order && frames_.GetNumberOfFrames() > 1))) {
             ShowSettings(true);
         }
 
@@ -989,10 +990,17 @@ struct O3DVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
-    void ShowSettings(bool show) {
-        can_auto_show_settings_ = false;
+    void ShowSettings(bool show, bool cancel_auto_show = true) {
+        if (cancel_auto_show) {
+            can_auto_show_settings_ = false;
+        }
         ui_state_.show_settings = show;
         settings.panel->SetVisible(show);
+        auto menubar = Application::GetInstance().GetMenubar();
+        if (menubar) {  // might not have been created yet
+            menubar->SetChecked(MENU_SETTINGS, show);
+        }
+        window_->SetNeedsLayout();
     }
 
     void ShowSkybox(bool show) {
@@ -1172,7 +1180,7 @@ struct O3DVisualizer::Impl {
             SetIBL(ui_state_.ibl_path);
         }
 
-        settings.panel->SetVisible(ui_state_.show_settings);
+        ShowSettings(ui_state_.show_settings, false);
         SetShader(ui_state_.scene_shader);
         SetBackgroundColor(ui_state_.bg_color);
         ShowSkybox(ui_state_.show_skybox);
@@ -1483,14 +1491,7 @@ struct O3DVisualizer::Impl {
 
     void OnClose() { window_->Close(); }
 
-    void OnToggleSettings() {
-        bool is_checked = !ui_state_.show_settings;
-        ui_state_.show_settings = is_checked;
-        settings.panel->SetVisible(is_checked);
-        Application::GetInstance().GetMenubar()->SetChecked(MENU_SETTINGS,
-                                                            is_checked);
-        window_->SetNeedsLayout();
-    }
+    void OnToggleSettings() { ShowSettings(!ui_state_.show_settings); }
 
     std::string UniquifyName(const std::string &name) {
         if (added_names_.find(name) == added_names_.end()) {
@@ -1583,8 +1584,7 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     SetOnMenuItemActivated(MENU_SETTINGS,
                            [this]() { this->impl_->OnToggleSettings(); });
 
-    impl_->ui_state_.show_settings = true;  // opposite, we will toggle
-    impl_->OnToggleSettings();  // must do this after menu is created
+    impl_->ShowSettings(false, false);
 }
 
 O3DVisualizer::~O3DVisualizer() {}
@@ -1606,7 +1606,7 @@ void O3DVisualizer::AddAction(const std::string &name,
 
     if (impl_->can_auto_show_settings_ &&
         impl_->settings.actions->size() == 1) {
-        ShowSettings(true);
+        impl_->ShowSettings(true);
     }
 
     // Add menu item
