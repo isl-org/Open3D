@@ -26,6 +26,7 @@
 
 #include "open3d/visualization/visualizer/O3DVisualizer.h"
 
+#include <algorithm>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -88,6 +89,39 @@ template <typename T>
 std::shared_ptr<T> GiveOwnership(T *ptr) {
     return std::shared_ptr<T>(ptr);
 }
+
+class AnimationFrameOrder {
+public:
+    void AddValue(double order) {
+        auto it = std::lower_bound(values_.begin(), values_.end(), order);
+        if (it == values_.end()) {  // not in list; larger than anything in it
+            values_.push_back(order);
+        } else if (*it != order) {  // not in list; less than an existing value
+            values_.insert(it, order);
+        }  // else: already exists in list; do nothing
+    }
+
+    void RemoveValue(double order) {
+        auto it = std::lower_bound(values_.begin(), values_.end(), order);
+        if (it != values_.end()) {
+            values_.erase(it);
+        }
+    }
+
+    int GetFrameForValue(double order) {
+        auto it = std::lower_bound(values_.begin(), values_.end(), order);
+        if (it != values_.end()) {
+            return (it - values_.begin());
+        } else {
+            return -1;
+        }
+    }
+
+    size_t GetNumberOfFrames() const { return values_.size(); }
+
+private:
+    std::vector<double> values_;  // this is ordered in increasing value
+};
 
 class ButtonList : public Widget {
 public:
@@ -183,25 +217,25 @@ class DrawObjectTreeCell : public Widget {
     using Super = Widget;
 
 public:
-    enum { FLAG_NONE = 0, FLAG_GROUP = (1 << 0), FLAG_TIME = (1 << 1) };
+    enum { FLAG_NONE = 0, FLAG_GROUP = (1 << 0), FLAG_ORDER = (1 << 1) };
 
     DrawObjectTreeCell(const char *name,
                        const char *group,
-                       double time,
+                       double order,
                        bool is_checked,
                        int flags,
                        std::function<void(bool)> on_toggled) {
         flags_ = flags;
 
-        std::string time_str;
-        if (flags & FLAG_TIME) {
+        std::string order_str;
+        if (flags & FLAG_ORDER) {
             char buf[32];
-            if (time == double(int(time))) {
-                snprintf(buf, sizeof(buf), "t=%d", int(time));
+            if (order == double(int(order))) {
+                snprintf(buf, sizeof(buf), "%d", int(order));
             } else {
-                snprintf(buf, sizeof(buf), "t=%g", time);
+                snprintf(buf, sizeof(buf), "%g", order);
             }
-            time_str = std::string(buf);
+            order_str = std::string(buf);
         }
 
         // We don't want any text in the checkbox, but passing "" seems to make
@@ -212,11 +246,11 @@ public:
         checkbox_->SetOnChecked(on_toggled);
         name_ = std::make_shared<Label>(name);
         group_ = std::make_shared<Label>((flags & FLAG_GROUP) ? group : "");
-        time_ = std::make_shared<Label>(time_str.c_str());
+        order_ = std::make_shared<Label>(order_str.c_str());
         AddChild(checkbox_);
         AddChild(name_);
         AddChild(group_);
-        AddChild(time_);
+        AddChild(order_);
     }
 
     ~DrawObjectTreeCell() {}
@@ -228,7 +262,7 @@ public:
         auto check_pref = checkbox_->CalcPreferredSize(theme);
         auto name_pref = name_->CalcPreferredSize(theme);
         int w = check_pref.width + name_pref.width + GroupWidth(theme) +
-                TimeWidth(theme);
+                OrderWidth(theme);
         return Size(w, std::max(check_pref.height, name_pref.height));
     }
 
@@ -237,14 +271,14 @@ public:
         auto check_width = checkbox_->CalcPreferredSize(theme).width;
         checkbox_->SetFrame(Rect(frame.x, frame.y, check_width, frame.height));
         auto group_width = GroupWidth(theme);
-        auto time_width = TimeWidth(theme);
+        auto order_width = OrderWidth(theme);
         auto x = checkbox_->GetFrame().GetRight();
-        auto name_width = frame.GetRight() - group_width - time_width - x;
+        auto name_width = frame.GetRight() - group_width - order_width - x;
         name_->SetFrame(Rect(x, frame.y, name_width, frame.height));
         x += name_width;
         group_->SetFrame(Rect(x, frame.y, group_width, frame.height));
         x += group_width;
-        time_->SetFrame(Rect(x, frame.y, time_width, frame.height));
+        order_->SetFrame(Rect(x, frame.y, order_width, frame.height));
     }
 
 private:
@@ -252,7 +286,7 @@ private:
     std::shared_ptr<Checkbox> checkbox_;
     std::shared_ptr<Label> name_;
     std::shared_ptr<Label> group_;
-    std::shared_ptr<Label> time_;
+    std::shared_ptr<Label> order_;
 
     int GroupWidth(const Theme &theme) const {
         if (flags_ & FLAG_GROUP) {
@@ -262,8 +296,8 @@ private:
         }
     }
 
-    int TimeWidth(const Theme &theme) const {
-        if (flags_ & FLAG_TIME) {
+    int OrderWidth(const Theme &theme) const {
+        if (flags_ & FLAG_ORDER) {
             return 3 * theme.font_size;
         } else {
             return 0;
@@ -290,14 +324,12 @@ struct O3DVisualizer::Impl {
     std::set<std::string> added_names_;
     std::set<std::string> added_groups_;
     std::vector<DrawObject> objects_;
+    AnimationFrameOrder frames_;
     std::shared_ptr<O3DVisualizerSelections> selections_;
     bool selections_need_update_ = true;
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
-
-    double min_time_ = 0.0;
-    double max_time_ = 0.0;
     double next_animation_tick_clock_time_ = 0.0;
 
     Window *window_ = nullptr;
@@ -351,9 +383,9 @@ struct O3DVisualizer::Impl {
         TreeView *groups;
 #endif  // !GROUPS_USE_TREE
 
-        EmptyIfHiddenVert *time_panel;
-        Slider *time_slider;
-        NumberEdit *time_edit;
+        EmptyIfHiddenVert *anim_panel;
+        Slider *anim_slider;
+        NumberEdit *anim_edit;
         SmallToggleButton *play;
 
         EmptyIfHiddenVert *actions_panel;
@@ -692,21 +724,21 @@ struct O3DVisualizer::Impl {
 #endif  // !GROUPS_USE_TREE
 
         // Time controls
-        settings.time_panel = new EmptyIfHiddenVert("Time", v_spacing, margins);
-        settings.panel->AddChild(GiveOwnership(settings.time_panel));
+        settings.anim_panel = new EmptyIfHiddenVert("Animation", v_spacing, margins);
+        settings.panel->AddChild(GiveOwnership(settings.anim_panel));
 
-        settings.time_slider = new Slider(Slider::DOUBLE);
-        settings.time_slider->SetOnValueChanged([this](double new_value) {
-            this->ui_state_.current_time = new_value;
-            this->UpdateTimeUI();
-            this->SetCurrentTime(new_value);
+        settings.anim_slider = new Slider(Slider::INT);
+        settings.anim_slider->SetOnValueChanged([this](double new_value) {
+            this->ui_state_.current_frame = int(new_value);
+            this->UpdateFrameUI();
+            this->SetCurrentFrame(int(new_value));
         });
 
-        settings.time_edit = new NumberEdit(NumberEdit::DOUBLE);
-        settings.time_edit->SetOnValueChanged([this](double new_value) {
-            this->ui_state_.current_time = new_value;
-            this->UpdateTimeUI();
-            this->SetCurrentTime(new_value);
+        settings.anim_edit = new NumberEdit(NumberEdit::INT);
+        settings.anim_edit->SetOnValueChanged([this](double new_value) {
+            this->ui_state_.current_frame = int(new_value);
+            this->UpdateFrameUI();
+            this->SetCurrentFrame(new_value);
         });
 
         settings.play = new SmallToggleButton("Play");
@@ -714,12 +746,12 @@ struct O3DVisualizer::Impl {
                 [this]() { this->SetAnimating(settings.play->GetIsOn()); });
 
         h = new Horiz(v_spacing);
-        h->AddChild(GiveOwnership(settings.time_slider));
-        h->AddChild(GiveOwnership(settings.time_edit));
+        h->AddChild(GiveOwnership(settings.anim_slider));
+        h->AddChild(GiveOwnership(settings.anim_edit));
         h->AddChild(GiveOwnership(settings.play));
-        settings.time_panel->AddChild(GiveOwnership(h));
+        settings.anim_panel->AddChild(GiveOwnership(h));
 
-        settings.time_panel->SetVisible(false);  // hide until we add a
+        settings.anim_panel->SetVisible(false);  // hide until we add a
                                                  // geometry with time
 
         // Custom actions
@@ -737,7 +769,7 @@ struct O3DVisualizer::Impl {
                      std::shared_ptr<t::geometry::Geometry> tgeom,
                      rendering::Material *material,
                      const std::string &group,
-                     double time,
+                     double order,
                      bool is_visible) {
         std::string group_name = group;
         if (group_name == "") {
@@ -801,31 +833,32 @@ struct O3DVisualizer::Impl {
             mat.point_size = ui_state_.point_size * window_->GetScaling();
         }
 
-        // We assume that the caller isn't setting a group or time (and in any
+        // We assume that the caller isn't setting a group or order (and in any
         // case we don't know beforehand what they will do). So if they do,
         // we need to update the geometry tree accordingly. This needs to happen
         // before we add the object to the list, otherwise when we regenerate
         // the object will already be added in the list and then get added again
         // below.
         AddGroup(group_name);  // regenerates if necessary
-        bool update_for_time = (min_time_ == max_time_ && time != max_time_);
-        min_time_ = std::min(min_time_, time);
-        max_time_ = std::max(max_time_, time);
-        if (time != 0.0) {
-            UpdateTimeUIRange();
-            settings.time_panel->SetVisible(true);
-        }
-        if (update_for_time) {
+
+        auto orig_n_frames = frames_.GetNumberOfFrames();
+        frames_.AddValue(order);
+        bool update_for_order = (orig_n_frames < frames_.GetNumberOfFrames());
+        if (update_for_order) {
+            settings.anim_slider->SetLimits(0, frames_.GetNumberOfFrames() - 1);
+            settings.anim_edit->SetLimits(0, frames_.GetNumberOfFrames() - 1);
+            settings.anim_panel->SetVisible(true);
             UpdateObjectTree();
         }
+
         // Auto-open the settings panel if we set anything fancy that would
         // imply using the UI.
         if (can_auto_show_settings_ &&
-            (added_groups_.size() == 2 || update_for_time)) {
+            (added_groups_.size() == 2 || update_for_order)) {
             ShowSettings(true);
         }
 
-        objects_.push_back({name, geom, tgeom, mat, group_name, time,
+        objects_.push_back({name, geom, tgeom, mat, group_name, order,
                             is_visible, is_default_color});
         AddObjectToTree(objects_.back());
 
@@ -838,9 +871,11 @@ struct O3DVisualizer::Impl {
 
     void RemoveGeometry(const std::string &name) {
         std::string group;
+        double order = -1e30;
         for (size_t i = 0; i < objects_.size(); ++i) {
             if (objects_[i].name == name) {
                 group = objects_[i].group;
+                order = objects_[i].order;
                 objects_.erase(objects_.begin() + i);
                 settings.object2itemid.erase(objects_[i].name);
                 break;
@@ -848,19 +883,23 @@ struct O3DVisualizer::Impl {
         }
 
         // Need to check group membership in case this was the last item in its
-        // group. As long as we're doing that, recompute the min/max time, too.
+        // group. Also need to find the number of items with this frame order.
         std::set<std::string> groups;
-        min_time_ = max_time_ = 0.0;
-        for (size_t i = 0; i < objects_.size(); ++i) {
-            auto &o = objects_[i];
-            min_time_ = std::min(min_time_, o.time);
-            max_time_ = std::max(max_time_, o.time);
+        int n_others_with_this_order = 0;
+        for (auto &o : objects_) {
             groups.insert(o.group);
+            if (o.order == order) { n_others_with_this_order += 1; }
         }
-        if (min_time_ == max_time_) {
+
+        if (n_others_with_this_order == 0) {
+            frames_.RemoveValue(order);
+        }
+        if (frames_.GetNumberOfFrames() <= 1) {
             SetAnimating(false);
         }
-        UpdateTimeUIRange();
+        settings.anim_slider->SetLimits(0, frames_.GetNumberOfFrames() - 1);
+        settings.anim_edit->SetLimits(0, frames_.GetNumberOfFrames() - 1);
+        SetCurrentFrame(ui_state_.current_frame);  // makes current frame valid
 
         added_groups_ = groups;
         std::set<std::string> enabled;
@@ -1079,16 +1118,16 @@ struct O3DVisualizer::Impl {
         return selections_->GetSets();
     }
 
-    void SetCurrentTime(double t) {
-        ui_state_.current_time = t;
-        if (ui_state_.current_time > max_time_) {
-            ui_state_.current_time = min_time_;
+    void SetCurrentFrame(size_t f) {
+        ui_state_.current_frame = f;
+        if (ui_state_.current_frame >= frames_.GetNumberOfFrames()) {
+            ui_state_.current_frame = 0;
         }
         for (auto &o : objects_) {
             UpdateGeometryVisibility(o);
         }
-        settings.time_slider->SetValue(ui_state_.current_time);
-        settings.time_edit->SetValue(ui_state_.current_time);
+        settings.anim_slider->SetValue(ui_state_.current_frame);
+        settings.anim_edit->SetValue(ui_state_.current_frame);
     }
 
     void SetAnimating(bool is_animating) {
@@ -1098,16 +1137,15 @@ struct O3DVisualizer::Impl {
 
         ui_state_.is_animating = is_animating;
         if (is_animating) {
-            ui_state_.current_time = max_time_;
+            ui_state_.current_frame = frames_.GetNumberOfFrames();
             window_->SetOnTickEvent(
                     [this]() -> bool { return this->OnAnimationTick(); });
         } else {
             window_->SetOnTickEvent(nullptr);
-            SetCurrentTime(0.0);
-            next_animation_tick_clock_time_ = 0.0;
+            SetCurrentFrame(0);
         }
-        settings.time_slider->SetEnabled(!is_animating);
-        settings.time_edit->SetEnabled(!is_animating);
+        settings.anim_slider->SetEnabled(!is_animating);
+        settings.anim_edit->SetEnabled(!is_animating);
     }
 
     void SetUIState(const UIState &new_state) {
@@ -1252,9 +1290,10 @@ struct O3DVisualizer::Impl {
         flag |= (added_groups_.size() >= 2 ? DrawObjectTreeCell::FLAG_GROUP
                                            : 0);
 #endif  // !GROUPS_USE_TREE
-        flag |= (min_time_ != max_time_ ? DrawObjectTreeCell::FLAG_TIME : 0);
+        flag |= ((frames_.GetNumberOfFrames() > 1)
+                     ? DrawObjectTreeCell::FLAG_ORDER : 0);
         auto cell = std::make_shared<DrawObjectTreeCell>(
-                o.name.c_str(), o.group.c_str(), o.time, o.is_visible, flag,
+                o.name.c_str(), o.group.c_str(), o.order, o.is_visible, flag,
                 [this, name = o.name](bool is_on) {
                     ShowGeometry(name, is_on);
                 });
@@ -1274,21 +1313,9 @@ struct O3DVisualizer::Impl {
         }
     }
 
-    void UpdateTimeUIRange() {
-        bool enabled = (min_time_ < max_time_);
-        settings.time_slider->SetEnabled(enabled);
-        settings.time_edit->SetEnabled(enabled);
-        settings.play->SetEnabled(enabled);
-
-        settings.time_slider->SetLimits(min_time_, max_time_);
-        ui_state_.current_time = std::min(
-                max_time_, std::max(min_time_, ui_state_.current_time));
-        UpdateTimeUI();
-    }
-
-    void UpdateTimeUI() {
-        settings.time_slider->SetValue(ui_state_.current_time);
-        settings.time_edit->SetValue(ui_state_.current_time);
+    void UpdateFrameUI() {
+        settings.anim_slider->SetValue(ui_state_.current_frame);
+        settings.anim_edit->SetValue(ui_state_.current_frame);
     }
 
     void UpdateGeometryVisibility(const DrawObject &o) {
@@ -1297,9 +1324,7 @@ struct O3DVisualizer::Impl {
     }
 
     bool IsGeometryVisible(const DrawObject &o) {
-        bool is_current =
-                (o.time >= ui_state_.current_time &&
-                 o.time < ui_state_.current_time + ui_state_.time_step);
+        bool is_current = (frames_.GetFrameForValue(o.order) == ui_state_.current_frame);
         bool is_group_enabled = (ui_state_.enabled_groups.find(o.group) !=
                                  ui_state_.enabled_groups.end());
         bool is_visible = o.is_visible;
@@ -1362,7 +1387,7 @@ struct O3DVisualizer::Impl {
     bool OnAnimationTick() {
         auto now = Application::GetInstance().Now();
         if (now >= next_animation_tick_clock_time_) {
-            SetCurrentTime(ui_state_.current_time + ui_state_.time_step);
+            SetCurrentFrame(ui_state_.current_frame + 1);
             UpdateAnimationTickClockTime(now);
 
             return true;
@@ -1654,19 +1679,11 @@ void O3DVisualizer::SetAnimationFrameDelay(double secs) {
     impl_->ui_state_.frame_delay = secs;
 }
 
-double O3DVisualizer::GetAnimationTimeStep() const {
-    return impl_->ui_state_.time_step;
+size_t O3DVisualizer::GetCurrentFrame() const {
+    return impl_->ui_state_.current_frame;
 }
 
-void O3DVisualizer::SetAnimationTimeStep(double time_step) {
-    impl_->ui_state_.time_step = time_step;
-}
-
-double O3DVisualizer::GetCurrentTime() const {
-    return impl_->ui_state_.current_time;
-}
-
-void O3DVisualizer::SetCurrentTime(double t) { impl_->SetCurrentTime(t); }
+void O3DVisualizer::SetCurrentFrame(size_t f) { impl_->SetCurrentFrame(f); }
 
 bool O3DVisualizer::GetIsAnimating() const {
     return impl_->ui_state_.is_animating;
@@ -1701,7 +1718,7 @@ void O3DVisualizer::Layout(const Theme &theme) {
         settings_width += 5 * theme.font_size;
     }
 #endif  // !GROUPS_USE_TREE
-    if (impl_->min_time_ != impl_->max_time_) {
+    if (impl_->frames_.GetNumberOfFrames() > 1) {
         settings_width += 3 * theme.font_size;
     }
 

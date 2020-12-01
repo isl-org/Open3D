@@ -66,7 +66,7 @@ public:
         std::shared_ptr<t::geometry::Geometry> tgeometry;
         rendering::Material material;
         std::string group;
-        double time = 0.0;
+        double order = 0.0;
         bool is_visible = true;
 
         // internal
@@ -92,8 +92,7 @@ public:
         Eigen::Vector3f sun_dir = {0.577f, -0.577f, -0.577f};
         Eigen::Vector3f sun_color = {1.0f, 1.0f, 1.0f};
 
-        double current_time = 0.0;   // seconds
-        double time_step = 1.0;      // seconds
+        size_t current_frame = 0;
         double frame_delay = 0.100;  // seconds
     };
 
@@ -111,14 +110,14 @@ public:
                      std::shared_ptr<geometry::Geometry3D> geom,
                      rendering::Material* material = nullptr,
                      const std::string& group = "",
-                     double time = 0.0,
+                     double order = 0.0,
                      bool is_visible = true);
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
                      rendering::Material* material = nullptr,
                      const std::string& group = "",
-                     double time = 0.0,
+                     double order = 0.0,
                      bool is_visible = true);
 
     void RemoveGeometry(const std::string& name);
@@ -145,11 +144,8 @@ public:
     double GetAnimationFrameDelay() const;
     void SetAnimationFrameDelay(double secs);
 
-    double GetAnimationTimeStep() const;
-    void SetAnimationTimeStep(double time_step);
-
-    double GetCurrentTime() const;
-    void SetCurrentTime(double t);
+    size_t GetCurrentFrame() const;
+    void SetCurrentFrame(size_t f);
 
     bool GetIsAnimating() const;
     void SetAnimating(bool is_animating);

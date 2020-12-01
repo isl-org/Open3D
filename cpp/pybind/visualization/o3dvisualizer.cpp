@@ -62,10 +62,10 @@ void pybind_o3dvisualizer(py::module& m) {
                           "The (x, y, z) value of this point");
 
     py::class_<O3DVisualizer, UnownedPointer<O3DVisualizer>, gui::Window>
-            drawvis(m, "O3DVisualizer", "Visualization object used by draw()");
+            o3dvis(m, "O3DVisualizer", "Visualization object used by draw()");
 
     py::enum_<O3DVisualizer::Shader> dv_shader(
-            drawvis, "Shader", "Scene-level rendering options");
+            o3dvis, "Shader", "Scene-level rendering options");
     dv_shader
             .value("STANDARD", O3DVisualizer::Shader::STANDARD,
                    "Pixel colors from standard lighting model")
@@ -76,7 +76,7 @@ void pybind_o3dvisualizer(py::module& m) {
             .export_values();
 
     py::class_<O3DVisualizer::DrawObject> drawobj(
-            drawvis, "DrawObject",
+            o3dvis, "DrawObject",
             "Information about an object that is drawn. Do not modify this, it "
             "can lead to unexpected results.");
     drawobj.def_readonly("name", &O3DVisualizer::DrawObject::name,
@@ -96,8 +96,9 @@ void pybind_o3dvisualizer(py::module& m) {
                     "to change the geometry")
             .def_readonly("group", &O3DVisualizer::DrawObject::group,
                           "The group that the object belongs to")
-            .def_readonly("time", &O3DVisualizer::DrawObject::time,
-                          "The object's timestamp")
+            .def_readonly("order", &O3DVisualizer::DrawObject::order,
+                          "The object's identifier for determining animation "
+                          "frame")
             .def_readonly("is_visible", &O3DVisualizer::DrawObject::is_visible,
                           "True if the object is checked in the list. "
                           "If the object's group is unchecked or an "
@@ -105,7 +106,7 @@ void pybind_o3dvisualizer(py::module& m) {
                           "visiblity may not correspond with this "
                           "value");
 
-    drawvis.def(py::init<const std::string, int, int>(), "title"_a = "Open3D",
+    o3dvis.def(py::init<const std::string, int, int>(), "title"_a = "Open3D",
                 "width"_a = 1024, "height"_a = 768,
                 "Creates a O3DVisualizer object")
             .def("add_action", &O3DVisualizer::AddAction,
@@ -120,9 +121,9 @@ void pybind_o3dvisualizer(py::module& m) {
                                    rendering::Material*, const std::string&,
                                    double, bool>(&O3DVisualizer::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
-                 "time"_a = 0.0, "is_visible"_a = true,
+                 "order"_a = 0.0, "is_visible"_a = true,
                  "Adds a geometry: geometry(name, geometry, material=None, "
-                 "group='', time=0.0, is_visible=True). 'name' must be unique.")
+                 "group='', order=0.0, is_visible=True). 'name' must be unique.")
             /*            .def("add_geometry",
                              py::overload_cast<const std::string&,
                                                std::shared_ptr<t::geometry::Geometry>,
@@ -137,7 +138,7 @@ void pybind_o3dvisualizer(py::module& m) {
                     [](py::object dv, const py::dict& d) {
                         rendering::Material* material = nullptr;
                         std::string group = "";
-                        double time = 0;
+                        double order = 0;
                         bool is_visible = true;
 
                         std::string name = py::cast<std::string>(d["name"]);
@@ -148,8 +149,8 @@ void pybind_o3dvisualizer(py::module& m) {
                         if (d.contains("group")) {
                             group = py::cast<std::string>(d["group"]);
                         }
-                        if (d.contains("time")) {
-                            time = py::cast<double>(d["time"]);
+                        if (d.contains("order")) {
+                            order = py::cast<double>(d["order"]);
                         }
                         if (d.contains("is_visible")) {
                             is_visible = py::cast<bool>(d["is_visible"]);
@@ -159,7 +160,7 @@ void pybind_o3dvisualizer(py::module& m) {
                         // the appropriate shared_ptr, if we can call the
                         // function using pybind and let it figure out how to do
                         // everything.
-                        dv.attr("add_geometry")(name, g, material, group, time,
+                        dv.attr("add_geometry")(name, g, material, group, order,
                                                 is_visible);
                     },
                     "Adds a geometry from a dictionary. The dictionary has the "
@@ -170,7 +171,7 @@ void pybind_o3dvisualizer(py::module& m) {
                     "(optional)\n"
                     "group: a string declaring the group it is a member of "
                     "(optional)\n"
-                    "time: a time value\n")
+                    "order: the animation ordering value\n")
             .def("remove_geometry", &O3DVisualizer::RemoveGeometry,
                  "remove_geometry(name): removes the geometry with the "
                  "name.")
@@ -230,21 +231,10 @@ void pybind_o3dvisualizer(py::module& m) {
                                    "Returns the rendering.Open3DScene object "
                                    "for low-level manipulation")
             .def_property(
-                    "current_time",
-                    // MSVC doesn't like this for some reason
-                    //&O3DVisualizer::GetCurrentTime,
-                    [](const O3DVisualizer& dv) -> double {
-                        return dv.GetCurrentTime();
-                    },
-                    &O3DVisualizer::SetCurrentTime,
-                    "Gets/sets the current time. If setting, only the "
-                    "objects belonging to the current time-step will "
-                    "be displayed")
-            .def_property("animation_time_step",
-                          &O3DVisualizer::GetAnimationTimeStep,
-                          &O3DVisualizer::SetAnimationTimeStep,
-                          "Gets/sets the time step for animations. Default is "
-                          "1.0")
+                    "current_frame",
+                    &O3DVisualizer::GetCurrentFrame,
+                    &O3DVisualizer::SetCurrentFrame,
+                    "Gets/sets the current frame.")
             .def_property("animation_frame_delay",
                           &O3DVisualizer::GetAnimationFrameDelay,
                           &O3DVisualizer::SetAnimationFrameDelay,
