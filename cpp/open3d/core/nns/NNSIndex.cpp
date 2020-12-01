@@ -24,16 +24,26 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/core/nns/NNSIndex.h"
 
-#include "pybind/open3d_pybind.h"
-#include "pybind/pybind_utils.h"
+#include "open3d/core/CoreUtil.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace core {
 namespace nns {
 
-void pybind_core_faiss(py::module &m);
+int NNSIndex::GetDimension() const {
+    SizeVector shape = dataset_points_.GetShape();
+    return static_cast<int>(shape[1]);
+}
+
+size_t NNSIndex::GetDatasetSize() const {
+    SizeVector shape = dataset_points_.GetShape();
+    return static_cast<size_t>(shape[0]);
+}
+
+Dtype NNSIndex::GetDtype() const { return dataset_points_.GetDtype(); }
 
 }  // namespace nns
 }  // namespace core

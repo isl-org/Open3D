@@ -54,11 +54,6 @@ if (NOT BUILD_RPC_INTERFACE)
         )
 endif()
 
-if (NOT WITH_FAISS)
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/core/nns/faiss.cpp")
-endif()
-
 # NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
 if ( CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0.0" )
     pybind11_add_module(${PACKAGE_NAME} NO_EXTRAS

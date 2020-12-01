@@ -56,6 +56,7 @@ static const std::unordered_map<
                            const open3d::io::WritePointCloudOption &)>>
         file_extension_to_pointcloud_write_function{
                 {"xyzi", WritePointCloudToXYZI},
+                {"ply", WritePointCloudToPLY},
         };
 
 std::shared_ptr<geometry::PointCloud> CreatetPointCloudFromFile(
