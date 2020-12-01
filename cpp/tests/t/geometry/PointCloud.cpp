@@ -100,25 +100,23 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
             core::Tensor::Ones({10, 3}, dtype, device) * 0.25));
 }
 
-// TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
-//     core::Device device = GetParam();
-//     t::geometry::PointCloud pcd(core::Dtype::Float32, device);
+TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
+    core::Device device = GetParam();
+    t::geometry::PointCloud pcd(core::Dtype::Float32, device);
 
-//     core::TensorList& points = pcd.GetPointAttr("points");
-//     points.PushBack(core::Tensor(std::vector<float>{1, 2, 3}, {3},
-//                                  core::Dtype::Float32, device));
-//     points.PushBack(core::Tensor(std::vector<float>{4, 5, 6}, {3},
-//                                  core::Dtype::Float32, device));
+    core::Tensor& points = pcd.GetPointAttr("points");
+    points = core::Tensor(std::vector<float>{1, 2, 3, 4, 5, 6}, {2, 3},
+                          core::Dtype::Float32, device);
 
-//     EXPECT_FALSE(pcd.IsEmpty());
-//     EXPECT_TRUE(pcd.HasPoints());
-//     EXPECT_EQ(pcd.GetMinBound().ToFlatVector<float>(),
-//               std::vector<float>({1, 2, 3}));
-//     EXPECT_EQ(pcd.GetMaxBound().ToFlatVector<float>(),
-//               std::vector<float>({4, 5, 6}));
-//     EXPECT_EQ(pcd.GetCenter().ToFlatVector<float>(),
-//               std::vector<float>({2.5, 3.5, 4.5}));
-// }
+    EXPECT_FALSE(pcd.IsEmpty());
+    EXPECT_TRUE(pcd.HasPoints());
+    EXPECT_EQ(pcd.GetMinBound().ToFlatVector<float>(),
+              std::vector<float>({1, 2, 3}));
+    EXPECT_EQ(pcd.GetMaxBound().ToFlatVector<float>(),
+              std::vector<float>({4, 5, 6}));
+    EXPECT_EQ(pcd.GetCenter().ToFlatVector<float>(),
+              std::vector<float>({2.5, 3.5, 4.5}));
+}
 
 // TEST_P(PointCloudPermuteDevices, Translate) {
 //     core::Device device = GetParam();
