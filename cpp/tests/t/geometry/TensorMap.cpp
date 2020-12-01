@@ -34,17 +34,30 @@
 namespace open3d {
 namespace tests {
 
-TEST(TensorMap, Constructor) {
-    // explicit TensorMap(const std::string& primary_key).
+class TensorMapPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(TensorMap,
+                         TensorMapPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
+
+TEST_P(TensorMapPermuteDevices, Constructor) {
+    core::Dtype dtype = core::Dtype::Float32;
+    core::Device device = GetParam();
+
+    // Empty TensorMap.
     t::geometry::TensorMap tm0("points");
     EXPECT_EQ(tm0.GetPrimaryKey(), "points");
     EXPECT_EQ(tm0.size(), 0);
 
-    // explicit TensorMap().
+    // Primary key is required.
     EXPECT_ANY_THROW(t::geometry::TensorMap());
+
+    // Initializer list.
+    t::geometry::TensorMap tm1(
+            "points",
+            {{"points", core::Tensor::Zeros({10, 3}, dtype, device)}});
 }
 
-// TEST(TensorMap, Assign) {
+// TEST_P(TensorMap, Assign) {
 //     core::Dtype dtype = core::Dtype::Float32;
 //     core::Device device = core::Device("CPU:0");
 
@@ -68,7 +81,7 @@ TEST(TensorMap, Constructor) {
 //     EXPECT_TRUE(tm["colors"].IsSame(replacement["colors"]));
 // }
 
-// TEST(TensorMap, IsSizeSynchronized) {
+// TEST_P(TensorMap, IsSizeSynchronized) {
 //     core::Dtype dtype = core::Dtype::Float32;
 //     core::Device device = core::Device("CPU:0");
 
@@ -85,7 +98,7 @@ TEST(TensorMap, Constructor) {
 //     EXPECT_TRUE(tm.IsSizeSynchronized());
 // }
 
-// TEST(TensorMap, AssertSizeSynchronized) {
+// TEST_P(TensorMap, AssertSizeSynchronized) {
 //     core::Dtype dtype = core::Dtype::Float32;
 //     core::Device device = core::Device("CPU:0");
 
@@ -102,7 +115,7 @@ TEST(TensorMap, Constructor) {
 //     EXPECT_NO_THROW(tm.AssertSizeSynchronized());
 // }
 
-// TEST(TensorMap, Contains) {
+// TEST_P(TensorMap, Contains) {
 //     core::Dtype dtype = core::Dtype::Float32;
 //     core::Device device = core::Device("CPU:0");
 
