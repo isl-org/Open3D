@@ -83,6 +83,14 @@ public:
                 });
     }
 
+    int64_t GetLength() const {
+        if (size() == 0) {
+            utility::LogError("Cannot get length of a 0-dimensional shape.");
+        } else {
+            return operator[](0);
+        }
+    }
+
     std::string ToString() const { return fmt::format("{}", *this); }
 };
 

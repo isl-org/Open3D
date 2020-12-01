@@ -920,6 +920,10 @@ public:
     /// Note VT (V transpose) is returned instead of V.
     std::tuple<Tensor, Tensor, Tensor> SVD() const;
 
+    /// Returns the size of the first dimension. If NumDims() == 0, an exception
+    /// will be thrown.
+    inline int64_t GetLength() const { return GetShape().GetLength(); }
+
     inline SizeVector GetShape() const { return shape_; }
 
     inline const SizeVector& GetShapeRef() const { return shape_; }
