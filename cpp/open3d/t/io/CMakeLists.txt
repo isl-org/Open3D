@@ -1,8 +1,8 @@
 # Build
 set(SRC
     PointCloudIO.cpp
-    file_format/FileXYZI.cpp
-    file_format/FilePLY.cpp
+    # file_format/FileXYZI.cpp
+    # file_format/FilePLY.cpp
 )
 
 # Create object library

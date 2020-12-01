@@ -26,6 +26,8 @@
 
 #include "open3d/t/geometry/TensorMap.h"
 
+#include <fmt/format.h>
+
 #include <sstream>
 #include <string>
 #include <unordered_map>

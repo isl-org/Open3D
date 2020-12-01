@@ -48,6 +48,11 @@ core::TensorList EigenVector3dVectorToTensorList(
         core::Dtype dtype,
         const core::Device &device);
 
+core::Tensor EigenVector3dVectorToTensor(
+        const std::vector<Eigen::Vector3d> &values,
+        core::Dtype dtype,
+        const core::Device &device);
+
 }  // namespace eigen_converter
 }  // namespace core
 }  // namespace open3d

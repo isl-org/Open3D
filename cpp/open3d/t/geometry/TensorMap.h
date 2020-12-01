@@ -88,6 +88,10 @@ public:
         AssertPrimaryKeyInMapOrEmpty();
     }
 
+    TensorMap& operator=(const TensorMap&) = default;
+
+    TensorMap& operator=(TensorMap&&) = default;
+
     /// Returns the primary key of the TensorMap.
     std::string GetPrimaryKey() const { return primary_key_; }
 
