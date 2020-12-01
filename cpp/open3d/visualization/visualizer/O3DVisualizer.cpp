@@ -848,7 +848,9 @@ struct O3DVisualizer::Impl {
         if (update_for_order) {
             settings.anim_slider->SetLimits(0, frames_.GetNumberOfFrames() - 1);
             settings.anim_edit->SetLimits(0, frames_.GetNumberOfFrames() - 1);
-            settings.anim_panel->SetVisible(true);
+            if (frames_.GetNumberOfFrames() >= 2) {
+                settings.anim_panel->SetVisible(true);
+            }
             UpdateObjectTree();
         }
 
