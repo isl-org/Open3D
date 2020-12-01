@@ -211,38 +211,31 @@ TEST_P(PointCloudPermuteDevices, ToLegacyPointCloud) {
                                           Eigen::Vector3d(2, 2, 2)});
 }
 
-// TEST_P(PointCloudPermuteDevices, Getters) {
-//     core::Device device = GetParam();
-//     core::Dtype dtype = core::Dtype::Float32;
+TEST_P(PointCloudPermuteDevices, Getters) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
 
-//     t::geometry::PointCloud pcd({
-//             {"points", core::Tensor::FromTensor(
-//                                core::Tensor::Ones({2, 3}, dtype, device))},
-//             {"colors", core::Tensor::FromTensor(
-//                                core::Tensor::Ones({2, 3}, dtype, device) *
-//                                2)},
-//             {"labels", core::Tensor::FromTensor(
-//                                core::Tensor::Ones({2, 3}, dtype, device) *
-//                                3)},
-//     });
+    t::geometry::PointCloud pcd({
+            {"points", core::Tensor::Ones({2, 3}, dtype, device)},
+            {"colors", core::Tensor::Ones({2, 3}, dtype, device) * 2},
+            {"labels", core::Tensor::Ones({2, 3}, dtype, device) * 3},
+    });
 
-//     EXPECT_TRUE(pcd.GetPoints().AllClose(
-//             core::Tensor::Ones({2, 3}, dtype, device)));
-//     EXPECT_TRUE(pcd.GetPointColors().AllClose(
-//             core::Tensor::Ones({2, 3}, dtype, device) * 2));
-//     EXPECT_TRUE(pcd.GetPointAttr("labels").AllClose(
-//             core::Tensor::Ones({2, 3}, dtype, device) * 3));
-//     EXPECT_ANY_THROW(pcd.GetPointNormals());
+    EXPECT_TRUE(pcd.GetPoints().AllClose(
+            core::Tensor::Ones({2, 3}, dtype, device)));
+    EXPECT_TRUE(pcd.GetPointColors().AllClose(
+            core::Tensor::Ones({2, 3}, dtype, device) * 2));
+    EXPECT_TRUE(pcd.GetPointAttr("labels").AllClose(
+            core::Tensor::Ones({2, 3}, dtype, device) * 3));
+    EXPECT_ANY_THROW(pcd.GetPointNormals());
 
-//     // Const getters. (void)tl gets rid of the unused variables warning.
-//     EXPECT_NO_THROW(const core::Tensor& tl = pcd.GetPoints(); (void)tl);
-//     EXPECT_NO_THROW(const core::Tensor& tl = pcd.GetPointColors();
-//                     (void)tl);
-//     EXPECT_NO_THROW(const core::Tensor& tl = pcd.GetPointAttr("labels");
-//                     (void)tl);
-//     EXPECT_ANY_THROW(const core::Tensor& tl = pcd.GetPointNormals();
-//                      (void)tl);
-// }
+    // Const getters. (void)tl gets rid of the unused variables warning.
+    EXPECT_NO_THROW(const core::Tensor& tl = pcd.GetPoints(); (void)tl);
+    EXPECT_NO_THROW(const core::Tensor& tl = pcd.GetPointColors(); (void)tl);
+    EXPECT_NO_THROW(const core::Tensor& tl = pcd.GetPointAttr("labels");
+                    (void)tl);
+    EXPECT_ANY_THROW(const core::Tensor& tl = pcd.GetPointNormals(); (void)tl);
+}
 
 // TEST_P(PointCloudPermuteDevices, Setters) {
 //     core::Device device = GetParam();
