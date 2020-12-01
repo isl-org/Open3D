@@ -27,9 +27,9 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <string>
 #include <map>
 #include <set>
-#include <string>
 #include <vector>
 
 namespace open3d {
@@ -55,8 +55,8 @@ namespace visualizer {
 class SelectionIndexLookup;
 
 /// Internal class that acts as a selections model + controller for
-/// DrawVisualizer
-class DrawVisualizerSelections {
+    /// DrawVisualizer
+class DrawVisualizerSelections { 
 public:
     struct SelectedIndex {
         size_t index;  /// the index of the point within the object
@@ -67,7 +67,7 @@ public:
         bool operator!=(const SelectedIndex& rhs) const {
             return index != rhs.index;
         }
-        bool operator<(const SelectedIndex& rhs) const {
+        bool operator<(const SelectedIndex& rhs)  const {
             return index < rhs.index;
         }
     };
@@ -95,9 +95,10 @@ public:
 
     void StartSelectablePoints();
     void AddSelectablePoints(const std::string& name,
-                             geometry::Geometry3D* geom,
-                             t::geometry::Geometry* tgeom);
+                             geometry::Geometry3D *geom,
+                             t::geometry::Geometry *tgeom);
     void EndSelectablePoints();
+
 
 private:
     void UpdatePointSize();
@@ -121,7 +122,7 @@ private:
         std::vector<Eigen::Vector3d> selectable_points;
         // This is a pointer rather than unique_ptr so that we don't have
         // to define this (internal) class in the header file.
-        SelectionIndexLookup* lookup;
+        SelectionIndexLookup *lookup;
     } current_;
 
     bool point_size_changed_ = false;

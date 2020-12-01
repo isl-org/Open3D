@@ -39,8 +39,10 @@ struct DrawObject {
     std::shared_ptr<t::geometry::Geometry> tgeometry;
     bool is_visible;
 
-    DrawObject(const std::string &n, std::shared_ptr<geometry::Geometry3D> g);
-    DrawObject(const std::string &n, std::shared_ptr<t::geometry::Geometry> tg);
+    DrawObject(const std::string& n, std::shared_ptr<geometry::Geometry3D> g,
+               bool vis = true);
+    DrawObject(const std::string& n,
+               std::shared_ptr<t::geometry::Geometry> tg, bool vis = true);
 };
 
 struct DrawAction {

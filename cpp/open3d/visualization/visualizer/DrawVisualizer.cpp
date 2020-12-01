@@ -884,7 +884,7 @@ struct DrawVisualizer::Impl {
                     auto id = settings.object2itemid[o.name];
                     auto cell = settings.geometries->GetItem(id);
                     auto obj_cell =
-                            std::dynamic_pointer_cast<CheckableTextTreeCell>(
+                            std::dynamic_pointer_cast<DrawObjectTreeCell>(
                                     cell);
                     if (obj_cell) {
                         obj_cell->GetCheckbox()->SetChecked(show);

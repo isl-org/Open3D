@@ -34,18 +34,20 @@
 namespace open3d {
 namespace visualization {
 
-DrawObject::DrawObject(const std::string &n,
-                       std::shared_ptr<geometry::Geometry3D> g) {
+DrawObject::DrawObject(const std::string& n,
+                       std::shared_ptr<geometry::Geometry3D> g,
+                       bool vis /*= true*/) {
     this->name = n;
     this->geometry = g;
-    this->is_visible = true;
+    this->is_visible = vis;
 }
 
-DrawObject::DrawObject(const std::string &n,
-                       std::shared_ptr<t::geometry::Geometry> tg) {
+DrawObject::DrawObject(const std::string& n,
+                       std::shared_ptr<t::geometry::Geometry> tg,
+                       bool vis /*= true*/) {
     this->name = n;
     this->tgeometry = tg;
-    this->is_visible = true;
+    this->is_visible = vis;
 }
 
 // ----------------------------------------------------------------------------

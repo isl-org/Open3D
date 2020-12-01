@@ -30,6 +30,8 @@
 
 using namespace open3d;
 
+const std::string TEST_DIR = "../../../examples/test_data";
+
 double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
 std::shared_ptr<geometry::PointCloud> MakePointCloud(
@@ -90,44 +92,51 @@ void MultiObjects() {
                          sphere_colored_unlit, sphere_lit, sphere_colored_lit,
                          big_bbox, sphere_bbox, lines, lines_colored});
 }
-/*
+
 void Actions() {
-    const char *SOURCE_NAME = "Source"
-    const char *RESULT_NAME = "Result (Poisson reconstruction)"
-    const char *TRUTH_NAME = "Ground truth"
-    bunny = o3dtut.get_bunny_mesh()
-    bunny.paint_uniform_color((1, 0.75, 0))
-    bunny.compute_vertex_normals()
-    cloud = o3d.geometry.PointCloud()
-    cloud.points = bunny.vertices
-    cloud.normals = bunny.vertex_normals
+    const char *SOURCE_NAME = "Source";
+    const char *RESULT_NAME = "Result (Poisson reconstruction)";
+    const char *TRUTH_NAME = "Ground truth";
 
-    def make_mesh(drawvis):
-        # TODO: call drawvis.get_geometry instead of using bunny
-        mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
-            cloud)
-        mesh.paint_uniform_color((1, 1, 1))
-        mesh.compute_vertex_normals()
-        drawvis.add_geometry({"name": RESULT_NAME, "geometry": mesh})
-        drawvis.show_geometry(SOURCE_NAME, False)
+    auto bunny = std::make_shared<geometry::TriangleMesh>();
+    io::ReadTriangleMesh(TEST_DIR + "/Bunny.ply", *bunny);
+    if (bunny->vertices_.empty()) {
+        utility::LogError("Please download the Standford Bunny dataset using:\n"
+                          "   cd <open3d_dir>/examples/python\n"
+                          "   python -c 'from open3d_tutorial import *; "
+                          "get_bunny_mesh()'");
+        return;
+    }
 
-    def toggle_result(drawvis):
-        truth_vis = drawvis.get_geometry(TRUTH_NAME).is_visible
-        drawvis.show_geometry(TRUTH_NAME, not truth_vis)
-        drawvis.show_geometry(RESULT_NAME, truth_vis)
+    bunny->PaintUniformColor({1, 0.75, 0});
+    bunny->ComputeVertexNormals();
+    auto cloud = std::make_shared<geometry::PointCloud>();
+    cloud->points_ = bunny->vertices_;
+    cloud->normals_ = bunny->vertex_normals_;
+    cloud->PaintUniformColor({0, 0.2, 1.0});
 
-    vis.draw([{
-        "name": SOURCE_NAME,
-        "geometry": cloud
-    }, {
-        "name": TRUTH_NAME,
-        "geometry": bunny,
-        "is_visible": False
-    }],
-             actions=[("Create Mesh", make_mesh),
-                      ("Toggle truth/result", toggle_result)])
+    auto make_mesh = [SOURCE_NAME, RESULT_NAME](visualization::visualizer::DrawVisualizer& drawvis) {
+        std::shared_ptr<geometry::PointCloud> source = std::dynamic_pointer_cast<geometry::PointCloud>(drawvis.GetGeometry(SOURCE_NAME).geometry);
+        auto mesh = std::get<0>(geometry::TriangleMesh::CreateFromPointCloudPoisson(*source));
+        mesh->PaintUniformColor({1, 1, 1});
+        mesh->ComputeVertexNormals();
+        drawvis.AddGeometry(RESULT_NAME, mesh);
+        drawvis.ShowGeometry(SOURCE_NAME, false);
+    };
+
+    auto toggle_result = [TRUTH_NAME, RESULT_NAME](visualization::visualizer::DrawVisualizer& drawvis) {
+        bool truth_vis = drawvis.GetGeometry(TRUTH_NAME).is_visible;
+        drawvis.ShowGeometry(TRUTH_NAME, !truth_vis);
+        drawvis.ShowGeometry(RESULT_NAME, truth_vis);
+    };
+
+    visualization::Draw({visualization::DrawObject(SOURCE_NAME, cloud),
+                         visualization::DrawObject(TRUTH_NAME, bunny, false)},
+                         "Open3D: Draw Example: Actions", 1024, 768,
+                         {{"Create Mesh", make_mesh},
+                          {"Toggle truth/result", toggle_result}});
 }
-*/
+
 Eigen::Matrix4d_u GetICPTransform(
         const geometry::PointCloud& source,
         const geometry::PointCloud& target,
@@ -152,55 +161,70 @@ Eigen::Matrix4d_u GetICPTransform(
     return result.transformation_;
 }
 
-/*void Selections() {
+void Selections() {
     std::cout << "Selection example:" << std::endl;
     std::cout << "  One set:  pick three points from the source (yellow), "
               << std::endl;
     std::cout << "            then pick the same three points in the target"
-              << std::endl;
-    std::cout << "(blue) cloud" << std::endl;
+                 "(blue) cloud" << std::endl;
     std::cout << "  Two sets: pick three points from the source cloud, "
               << std::endl;
     std::cout << "            then create a new selection set, and pick the"
               << std::endl;
     std::cout << "            three points from the target." << std::endl;
 
+    const auto cloud0_path = TEST_DIR + "/ICP/cloud_bin_0.pcd";
+    const auto cloud1_path = TEST_DIR + "/ICP/cloud_bin_2.pcd";
     auto source = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud("/../../test_data/ICP/cloud_bin_0.pcd", *source);
+    io::ReadPointCloud(cloud0_path, *source);
+    if (source->points_.empty()) {
+        utility::LogError("Could not open {}", cloud0_path);
+        return;
+    }
     auto target = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud("/../../test_data/ICP/cloud_bin_2.pcd", *target);
+    io::ReadPointCloud(cloud1_path, *target);
+    if (target->points_.empty()) {
+        utility::LogError("Could not open {}", cloud1_path);
+        return;
+    }
     source->PaintUniformColor({1.000, 0.706, 0.000});
     target->PaintUniformColor({0.000, 0.651, 0.929});
 
     const char *source_name = "Source (yellow)";
     const char *target_name = "Target (blue)";
 
-    auto DoICPOneSet = [source, target, source_name,
-target_name](visualization::visualizer::DrawVisualizer& drawvis) { auto sets =
-drawvis.GetSelectionSets(); auto &source_picked = sets[0][source_name]; auto
-&target_picked = sets[0][target_name]; std::sort(source_picked.begin(),
-source_picked.end()); std::sort(target_picked.begin(), target_picked.end());
+    auto DoICPOneSet = [source, target, source_name, target_name](visualization::visualizer::DrawVisualizer& drawvis) {
+        auto sets = drawvis.GetSelectionSets();
+        auto &source_picked_set = sets[0][source_name];
+        auto &target_picked_set = sets[0][target_name];
+        std::vector<visualization::visualizer::DrawVisualizerSelections::SelectedIndex> source_picked(source_picked_set.begin(), source_picked_set.end());
+        std::vector<visualization::visualizer::DrawVisualizerSelections::SelectedIndex> target_picked(target_picked_set.begin(), target_picked_set.end());
+        std::sort(source_picked.begin(), source_picked.end());
+        std::sort(target_picked.begin(), target_picked.end());
 
         auto t = GetICPTransform(*source, *target, source_picked,
 target_picked); source->Transform(t);
 
         // Update the source geometry
         drawvis.RemoveGeometry(source_name);
-        drawvis.AddGeometry({visualization::DrawObject(source_name, source)});
+        drawvis.AddGeometry(source_name, source);
     };
 
-    auto DoICPTwoSets = [source, target, source_name,
-target_name](visualization::visualizer::DrawVisualizer& drawvis) { auto sets =
-drawvis.GetSelectionSets(); auto &source_picked = sets[0][source_name]; auto
-&target_picked = sets[1][target_name]; std::sort(source_picked.begin(),
-source_picked.end()); std::sort(target_picked.begin(), target_picked.end());
+    auto DoICPTwoSets = [source, target, source_name, target_name](visualization::visualizer::DrawVisualizer& drawvis) {
+        auto sets = drawvis.GetSelectionSets();
+        auto &source_picked_set = sets[0][source_name];
+        auto &target_picked_set = sets[1][target_name];
+        std::vector<visualization::visualizer::DrawVisualizerSelections::SelectedIndex> source_picked(source_picked_set.begin(), source_picked_set.end());
+        std::vector<visualization::visualizer::DrawVisualizerSelections::SelectedIndex> target_picked(target_picked_set.begin(), target_picked_set.end());
+        std::sort(source_picked.begin(), source_picked.end());
+        std::sort(target_picked.begin(), target_picked.end());
 
         auto t = GetICPTransform(*source, *target, source_picked,
 target_picked); source->Transform(t);
 
         // Update the source geometry
         drawvis.RemoveGeometry(source_name);
-        drawvis.AddGeometry({visualization::DrawObject(source_name, source)});
+        drawvis.AddGeometry(source_name, source);
     };
 
     visualization::Draw({visualization::DrawObject(source_name, source),
@@ -209,10 +233,14 @@ target_picked); source->Transform(t);
                          {{"ICP Registration (one set)", DoICPOneSet},
                           {"ICP Registration (two sets)", DoICPTwoSets}});
 }
-*/
-int main(int argc, char** argv) {
+
+int main(int argc, char **argv) {
+    if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
+        utility::LogError("This example needs to be run from the <build>/bin/examples directory");
+    }
+
     SingleObject();
     MultiObjects();
-    //    Actions();
-    //    Selections();
+    Actions();
+    Selections();
 }
