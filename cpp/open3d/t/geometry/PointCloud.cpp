@@ -48,7 +48,7 @@ PointCloud::PointCloud(core::Dtype dtype, const core::Device &device)
 
 PointCloud::PointCloud(const core::Tensor &points)
     : PointCloud(points.GetDtype(), points.GetDevice()) {
-    points.GetShape().AssertCompatible({utility::nullopt, 3});
+    points.AssertShapeCompatible({utility::nullopt, 3});
     SetPoints(points);
 }
 
@@ -59,7 +59,7 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
     if (map_keys_to_tensors.count("points") == 0) {
         utility::LogError("\"points\" attribute must be specified.");
     }
-    map_keys_to_tensors.at("points").GetShape().AssertCompatible(
+    map_keys_to_tensors.at("points").AssertShapeCompatible(
             {utility::nullopt, 3});
     point_attr_ = TensorMap("points", map_keys_to_tensors.begin(),
                             map_keys_to_tensors.end());

@@ -176,19 +176,19 @@ public:
 
     /// Set the value of the "points" attribute. Convenience function.
     void SetPoints(const core::Tensor &value) {
-        value.GetShape().AssertCompatible({utility::nullopt, 3});
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetPointAttr("points", value);
     }
 
     /// Set the value of the "colors" attribute. Convenience function.
     void SetPointColors(const core::Tensor &value) {
-        value.GetShape().AssertCompatible({utility::nullopt, 3});
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetPointAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute. Convenience function.
     void SetPointNormals(const core::Tensor &value) {
-        value.GetShape().AssertCompatible({utility::nullopt, 3});
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetPointAttr("normals", value);
     }
 

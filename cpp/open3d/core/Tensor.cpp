@@ -1230,6 +1230,18 @@ void Tensor::AssertShape(const SizeVector& expected_shape) const {
     }
 }
 
+void Tensor::AssertShapeCompatible(
+        const DynamicSizeVector& expected_shape) const {
+    GetShape().AssertCompatible(expected_shape);
+}
+
+void Tensor::AssertDevice(const Device& expected_device) const {
+    if (GetDevice() != expected_device) {
+        utility::LogError("Tensor has device {}, but is expected to be {}.",
+                          GetDevice().ToString(), expected_device.ToString());
+    }
+}
+
 Tensor Tensor::Matmul(const Tensor& rhs) const {
     Tensor output;
     core::Matmul(*this, rhs, output);

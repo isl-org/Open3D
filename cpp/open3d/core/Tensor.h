@@ -993,6 +993,12 @@ public:
     /// Assert that the Tensor has the specified shape.
     void AssertShape(const SizeVector& expected_shape) const;
 
+    /// Assert that Tensor's shape is compatible with a dynamic shape.
+    void AssertShapeCompatible(const DynamicSizeVector& expected_shape) const;
+
+    /// Assert that the Tensor has the specified device.
+    void AssertDevice(const Device& expected_device) const;
+
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
