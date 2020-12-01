@@ -150,10 +150,10 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
 
     t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd,
                           {"auto", false, false, true});
-    EXPECT_EQ(pcd.GetPoints().GetShape()[0], 196133);
-    EXPECT_EQ(pcd.GetPointNormals().GetShape()[0], 196133);
-    EXPECT_EQ(pcd.GetPointColors().GetShape()[0], 196133);
-    EXPECT_EQ(pcd.GetPointAttr("curvature").GetShape()[0], 196133);
+    EXPECT_EQ(pcd.GetPoints().GetLength(), 196133);
+    EXPECT_EQ(pcd.GetPointNormals().GetLength(), 196133);
+    EXPECT_EQ(pcd.GetPointColors().GetLength(), 196133);
+    EXPECT_EQ(pcd.GetPointAttr("curvature").GetLength(), 196133);
     EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
     EXPECT_FALSE(pcd.HasPointAttr("x"));
 }
@@ -164,7 +164,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
 
     t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/test_sample_ascii.ply",
                           pcd, {"auto", false, false, true});
-    EXPECT_EQ(pcd.GetPoints().GetShape()[0], 7);
+    EXPECT_EQ(pcd.GetPoints().GetLength(), 7);
 }
 
 // Skip unsupported datatype.
@@ -182,8 +182,8 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
     t::io::ReadPointCloud(
             std::string(TEST_DATA_DIR) + "/test_sample_custom.ply", pcd,
             {"auto", false, false, true});
-    EXPECT_EQ(pcd.GetPoints().GetShape()[0], 7);
-    EXPECT_EQ(pcd.GetPointAttr("intensity").GetShape()[0], 7);
+    EXPECT_EQ(pcd.GetPoints().GetLength(), 7);
+    EXPECT_EQ(pcd.GetPointAttr("intensity").GetLength(), 7);
 }
 
 }  // namespace tests

@@ -71,7 +71,7 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
 
     t::geometry::PointCloud pcd(points);
     EXPECT_TRUE(pcd.HasPoints());
-    EXPECT_EQ(pcd.GetPoints().GetShape()[0], 10);
+    EXPECT_EQ(pcd.GetPoints().GetLength(), 10);
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
