@@ -51,22 +51,28 @@ TEST_P(TensorMapPermuteDevices, Constructor) {
     // Primary key is required.
     EXPECT_ANY_THROW(t::geometry::TensorMap());
 
+    // Iterators.
+    std::map<std::string, core::Tensor> tensor_map(
+            {{"points", core::Tensor::Zeros({10, 3}, dtype, device)},
+             {"colors", core::Tensor::Ones({10, 3}, dtype, device)}});
+    t::geometry::TensorMap tm1("points", tensor_map.begin(), tensor_map.end());
+    EXPECT_TRUE(tm1["points"].IsSame(tensor_map["points"]));
+    EXPECT_TRUE(tm1["colors"].IsSame(tensor_map["colors"]));
+
     // Initializer list.
-    t::geometry::TensorMap tm1(
+    t::geometry::TensorMap tm2(
             "points", {{"points", core::Tensor::Zeros({10, 3}, dtype, device)},
                        {"colors", core::Tensor::Ones({10, 3}, dtype, device)}});
 
-    // Copy constructor.
-    t::geometry::TensorMap tm1_copied(tm1);
-    EXPECT_EQ(tm1_copied["points"][0][0].Item<float>(), 0);
-    tm1["points"][0][0] = 100;
-    EXPECT_EQ(tm1_copied["points"][0][0].Item<float>(), 100);
+    // Move constructor, Tensors are shallow copied.
+    t::geometry::TensorMap tm2_copied(tm2);
+    EXPECT_TRUE(tm2_copied["points"].IsSame(tm2["points"]));
+    EXPECT_TRUE(tm2_copied["colors"].IsSame(tm2["colors"]));
 
-    // Move constructor.
-    t::geometry::TensorMap tm1_moved = std::move(tm1);
-    EXPECT_EQ(tm1_moved["points"][0][1].Item<float>(), 0);
-    tm1["points"][0][1] = 200;
-    EXPECT_EQ(tm1_moved["points"][0][1].Item<float>(), 200);
+    // Move constructor, Tensors are shallow copied.
+    t::geometry::TensorMap tm2_moved = std::move(tm2);
+    EXPECT_TRUE(tm2_moved["points"].IsSame(tm2["points"]));
+    EXPECT_TRUE(tm2_moved["colors"].IsSame(tm2["colors"]));
 }
 
 // TEST_P(TensorMap, Assign) {
