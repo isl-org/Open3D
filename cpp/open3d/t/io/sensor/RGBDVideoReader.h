@@ -54,9 +54,27 @@ public:
     /// Get metadata of the RGBD video playback.
     virtual RGBDVideoMetadata &GetMetadata() = 0;
     /// Seek to the timestamp (in us).
-    virtual bool SeekTimestamp(size_t timestamp) = 0;
+    virtual bool SeekTimestamp(uint64_t timestamp) = 0;
+    /// Get current timestamp (in us).
+    virtual uint64_t GetTimestamp() const = 0;
     /// Get next frame from the RGBD video playback and returns the RGBD object.
     virtual t::geometry::RGBDImage NextFrame() = 0;
+    /// Save synchronized and aligned individual frames to subfolders
+    ///
+    /// \param frame_path Frames will be stored in stream subfolders 'color' and
+    /// 'depth' here. The intrinsic camera calibration for the color stream will
+    /// be saved in 'intrinsic.json'.
+    //
+    /// \param start_time_us (default 0) Start saving frames from this time (us)
+    //
+    /// \param end_time_us (default video length) Save frames till this time
+    /// (us)
+    virtual void SaveFrames(const std::string &frame_path,
+                            uint64_t start_time_us = 0,
+                            uint64_t end_time_us = UINT64_MAX);
+
+    /// Factory function to create object based on RGBD video file type
+    static std::shared_ptr<RGBDVideoReader> Create(const std::string &filename);
 };
 
 }  // namespace io

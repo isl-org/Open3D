@@ -6,11 +6,14 @@ set(FILE_IO_SRC
 )
 
 file(GLOB SENSOR_IO_SRC "sensor/*.cpp")
+set(IO_DEFINITIONS "")
 if (BUILD_LIBREALSENSE)
     file(GLOB REALSENSE_SRC "sensor/realsense/*.cpp")
+    list(APPEND IO_DEFINITIONS BUILD_LIBREALSENSE)
 endif ()
 if (BUILD_AZURE_KINECT)
     file(GLOB KINECT_SRC "sensor/azure_kinect/*.cpp")
+    list(APPEND IO_DEFINITIONS BUILD_AZURE_KINECT)
 endif ()
 
 # Create object library
@@ -22,6 +25,7 @@ add_library(tio OBJECT
     ${REALSENSE_SRC}
     ${KINECT_SRC}
     )
+target_compile_definitions(tio PRIVATE ${IO_DEFINITIONS})
 open3d_show_and_abort_on_warning(tio)
 open3d_set_global_properties(tio)
 open3d_set_open3d_lib_properties(tio)

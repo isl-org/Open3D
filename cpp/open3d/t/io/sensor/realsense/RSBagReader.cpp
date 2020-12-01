@@ -39,7 +39,9 @@ namespace t {
 namespace io {
 
 RSBagReader::RSBagReader()
-    : align_to_color_{new rs2::align(rs2_stream::RS2_STREAM_COLOR)} {}
+    : pipe_(new rs2::pipeline),
+      align_to_color_(new rs2::align(rs2_stream::RS2_STREAM_COLOR)),
+      pframes_(new rs2::frameset) {}
 
 RSBagReader::~RSBagReader() = default;
 
@@ -51,6 +53,9 @@ bool RSBagReader::Open(const std::string &filename) {
         rs2::config cfg;
         cfg.enable_device_from_file(filename, false);  // Do not loop playback
         pipe_->start(cfg);  // File will be opened in read mode at this point
+        auto rs_device =
+                pipe_->get_active_profile().get_device().as<rs2::playback>();
+        rs_device.set_real_time(false);  // do not drop frames
         utility::LogInfo("File {} opened", filename);
     } catch (const rs2::error &) {
         utility::LogWarning("Unable to open file {}", filename);
@@ -140,7 +145,7 @@ Json::Value RSBagReader::GetMetadataJson() {
     return value;
 }
 
-bool RSBagReader::SeekTimestamp(size_t timestamp) {
+bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
     if (!IsOpened()) {
         utility::LogWarning("Null file handler. Please call Open().");
         return false;
@@ -161,6 +166,18 @@ bool RSBagReader::SeekTimestamp(size_t timestamp) {
         return false;
     }
     return true;
+}
+
+uint64_t RSBagReader::GetTimestamp() const {
+    if (!IsOpened()) {
+        utility::LogWarning("Null file handler. Please call Open().");
+        return -1ul;
+    }
+    return pipe_->get_active_profile()
+                   .get_device()
+                   .as<rs2::playback>()
+                   .get_position() /
+           1000;  // Convert nanoseconds -> microseconds
 }
 
 t::geometry::RGBDImage RSBagReader::NextFrame() {

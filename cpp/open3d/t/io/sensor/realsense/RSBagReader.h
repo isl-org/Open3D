@@ -79,9 +79,12 @@ public:
     /// Seek to the timestamp (in us).
     ///
     /// \param timestamp Time in us to seek to
-    virtual bool SeekTimestamp(size_t timestamp) override;
+    virtual bool SeekTimestamp(uint64_t timestamp) override;
+    /// Get current timestamp (in us).
+    virtual uint64_t GetTimestamp() const override;
     /// Copy next frame from the bag file and return the RGBDImage object.
     virtual t::geometry::RGBDImage NextFrame() override;
+    using RGBDVideoReader::SaveFrames;
 
 private:
     RGBDVideoMetadata metadata_;

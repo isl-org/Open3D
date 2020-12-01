@@ -1,7 +1,7 @@
 {
-    "name": "Captured frames using Realsense",
-    "path_dataset": "dataset/realsense/",
-    "path_intrinsic": "dataset/realsense/camera_intrinsic.json",
+    "name": "Realsense bag file",
+    "path_dataset": "dataset/realsense.bag",
+    "path_intrinsic": "optional/read_from_bag_file.json",
     "max_depth": 3.0,
     "voxel_size": 0.05,
     "max_depth_diff": 0.07,
