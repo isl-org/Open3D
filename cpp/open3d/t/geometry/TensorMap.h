@@ -53,6 +53,13 @@ public:
         : std::unordered_map<std::string, core::Tensor>(),
           primary_key_(primary_key) {}
 
+    /// A primary key is always required. This constructor can be marked as
+    /// delete in C++, but it is needed for pybind to bind as a generic python
+    /// map interface.
+    explicit TensorMap() : TensorMap("Undefined") {
+        utility::LogError("Please construct TensorMap with a primary key.");
+    }
+
     template <class InputIt>
     TensorMap(const std::string& primary_key, InputIt first, InputIt last)
         : std::unordered_map<std::string, core::Tensor>(first, last),
@@ -77,13 +84,6 @@ public:
         : std::unordered_map<std::string, core::Tensor>(other),
           primary_key_(other.primary_key_) {
         AssertEmptyOrPrimaryKeyInMap();
-    }
-
-    /// A primary key is always required. This constructor can be marked as
-    /// delete in C++, but it is needed for pybind to bind as a generic python
-    /// map interface.
-    TensorMap() : TensorMap("Undefined") {
-        utility::LogError("Please construct TensorMap with a primary key.");
     }
 
     /// Returns the primary key of the TensorMap.
