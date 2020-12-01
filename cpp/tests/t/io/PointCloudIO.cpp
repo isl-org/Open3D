@@ -58,16 +58,14 @@ struct ReadWritePCArgs {
 }  // namespace
 
 const std::unordered_map<std::string, TensorCtorData> pc_data_1{
-        {"points",
-         {{0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-           1.0},
-          {5, 3}}},
-        {"intensities", {{0, 0.5, 0.5, 0.5, 1.0}, {5, 1}}}},
-        // bad data
-        pc_data_bad{
-                {"points", {{0.0, 0.0, 0.0, 1.0, 0.0, 0.0}, {2, 3}}},
-                {"intensities", {{0}, {1, 1}}},
-        };
+        {"points", {{0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1}, {5, 3}}},
+        {"intensities", {{0, 0.5, 0.5, 0.5, 1}, {5, 1}}}};
+
+// Bad data.
+const std::unordered_map<std::string, TensorCtorData> pc_data_bad{
+        {"points", {{0, 0, 0, 1, 0, 0}, {2, 3}}},
+        {"intensities", {{0}, {1, 1}}},
+};
 
 const std::vector<ReadWritePCArgs> pcArgs({
         {"test.xyzi",
@@ -92,9 +90,8 @@ TEST_P(ReadWriteTPC, Basic) {
     for (const auto &attr_tensor : pc_data_1) {
         const auto &attr = attr_tensor.first;
         const auto &tensor = attr_tensor.second;
-        pc1.SetPointAttr(attr,
-                         core::TensorList::FromTensor(
-                                 {tensor.values, tensor.size, dtype, device}));
+        pc1.SetPointAttr(
+                attr, core::Tensor(tensor.values, tensor.size, dtype, device));
     }
 
     // we loose some precision when saving generated data
@@ -110,8 +107,8 @@ TEST_P(ReadWriteTPC, Basic) {
         const std::string &attribute = attribute_rel_tol.first;
         const double rel_tol = attribute_rel_tol.second;
         SCOPED_TRACE(attribute);
-        EXPECT_TRUE(pc1.GetPointAttr(attribute).AsTensor().AllClose(
-                pc2.GetPointAttr(attribute).AsTensor(), rel_tol));
+        EXPECT_TRUE(pc1.GetPointAttr(attribute).AllClose(
+                pc2.GetPointAttr(attribute), rel_tol));
     }
 
     // Loaded data when saved should be identical when reloaded
@@ -124,8 +121,8 @@ TEST_P(ReadWriteTPC, Basic) {
     for (const auto &attribute_rel_tol : args.attributes_rel_tols) {
         const std::string &attribute = attribute_rel_tol.first;
         SCOPED_TRACE(attribute);
-        EXPECT_TRUE(pc3.GetPointAttr(attribute).AsTensor().AllClose(
-                pc2.GetPointAttr(attribute).AsTensor(), 0, 0));
+        EXPECT_TRUE(pc3.GetPointAttr(attribute).AllClose(
+                pc2.GetPointAttr(attribute), 0, 0));
     }
 }
 
@@ -138,9 +135,8 @@ TEST_P(ReadWriteTPC, WriteBadData) {
     for (const auto &attr_tensor : pc_data_bad) {
         const auto &attr = attr_tensor.first;
         const auto &tensor = attr_tensor.second;
-        pc1.SetPointAttr(attr,
-                         core::TensorList::FromTensor(
-                                 {tensor.values, tensor.size, dtype, device}));
+        pc1.SetPointAttr(
+                attr, core::Tensor(tensor.values, tensor.size, dtype, device));
     }
 
     EXPECT_FALSE(t::io::WritePointCloud(
@@ -154,10 +150,10 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
 
     t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd,
                           {"auto", false, false, true});
-    EXPECT_EQ(pcd.GetPoints().GetSize(), 196133);
-    EXPECT_EQ(pcd.GetPointNormals().GetSize(), 196133);
-    EXPECT_EQ(pcd.GetPointColors().GetSize(), 196133);
-    EXPECT_EQ(pcd.GetPointAttr("curvature").GetSize(), 196133);
+    EXPECT_EQ(pcd.GetPoints().GetShape()[0], 196133);
+    EXPECT_EQ(pcd.GetPointNormals().GetShape()[0], 196133);
+    EXPECT_EQ(pcd.GetPointColors().GetShape()[0], 196133);
+    EXPECT_EQ(pcd.GetPointAttr("curvature").GetShape()[0], 196133);
     EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
     EXPECT_FALSE(pcd.HasPointAttr("x"));
 }
@@ -168,7 +164,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
 
     t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/test_sample_ascii.ply",
                           pcd, {"auto", false, false, true});
-    EXPECT_EQ(pcd.GetPoints().GetSize(), 7);
+    EXPECT_EQ(pcd.GetPoints().GetShape()[0], 7);
 }
 
 // Skip unsupported datatype.
@@ -186,8 +182,8 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
     t::io::ReadPointCloud(
             std::string(TEST_DATA_DIR) + "/test_sample_custom.ply", pcd,
             {"auto", false, false, true});
-    EXPECT_EQ(pcd.GetPoints().GetSize(), 7);
-    EXPECT_EQ(pcd.GetPointAttr("intensity").GetSize(), 7);
+    EXPECT_EQ(pcd.GetPoints().GetShape()[0], 7);
+    EXPECT_EQ(pcd.GetPointAttr("intensity").GetShape()[0], 7);
 }
 
 }  // namespace tests
