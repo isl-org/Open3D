@@ -161,7 +161,6 @@ public:
         }
     }
 
-private:
     bool IsCompatible(const DynamicSizeVector& dsv) const {
         if (size() != dsv.size()) {
             return false;
