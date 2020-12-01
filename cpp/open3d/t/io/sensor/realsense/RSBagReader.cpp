@@ -171,7 +171,7 @@ bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
 uint64_t RSBagReader::GetTimestamp() const {
     if (!IsOpened()) {
         utility::LogWarning("Null file handler. Please call Open().");
-        return -1ul;
+        return UINT64_MAX;
     }
     return pipe_->get_active_profile()
                    .get_device()

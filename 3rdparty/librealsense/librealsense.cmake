@@ -24,33 +24,30 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_librealsense INSTALL_DIR)
-set(LIBREALSENSE_INCLUDE_DIR ${INSTALL_DIR}/include/) # "/" is critical.
-set(LIBREALSENSE_LIB_DIR ${INSTALL_DIR}/lib)
+set(LIBREALSENSE_INCLUDE_DIR "${INSTALL_DIR}/include/") # "/" is critical.
+set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/lib")
 
 set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file) # The order is critical.
 if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}
     ExternalProject_Add_Step(ext_librealsense rename_debug_libs
-        COMMAND $<IF:$<CONFIG:Debug>,${CMAKE_COMMAND},true> -E rename
-        ${LIBREALSENSE_LIB_DIR}/realsense2d.lib
-        ${LIBREALSENSE_LIB_DIR}/realsense2.lib
-        COMMAND $<IF:$<CONFIG:Debug>,${CMAKE_COMMAND},true> -E rename
-        ${LIBREALSENSE_LIB_DIR}/fwd.lib ${LIBREALSENSE_LIB_DIR}/fw.lib>
-        COMMAND $<IF:$<CONFIG:Debug>,${CMAKE_COMMAND},true> -E rename
-        ${LIBREALSENSE_LIB_DIR}/realsense-filed.lib
-        ${LIBREALSENSE_LIB_DIR}/realsense-file.lib
+        COMMAND $<IF:$<CONFIG:Debug>,Rename-Item,true> "${LIBREALSENSE_LIB_DIR}/realsense2d.lib" "${LIBREALSENSE_LIB_DIR}/realsense2.lib"
+        COMMAND $<IF:$<CONFIG:Debug>,Rename-Item,true> "${LIBREALSENSE_LIB_DIR}/fwd.lib" "${LIBREALSENSE_LIB_DIR}/fw.lib">
+        COMMAND $<IF:$<CONFIG:Debug>,Rename-Item,true> "${LIBREALSENSE_LIB_DIR}/realsense-filed.lib" "${LIBREALSENSE_LIB_DIR}/realsense-file.lib"
         DEPENDEES install
     )
 endif()
 
 if(APPLE)
     ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
-        COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/libusb_install/lib/libusb.a ${LIBREALSENSE_LIB_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy
+        "<BINARY_DIR>/libusb_install/lib/libusb.a" "${LIBREALSENSE_LIB_DIR}"
         DEPENDEES install
     )
     set(LIBREALSENSE_LIBRARIES ${LIBREALSENSE_LIBRARIES} usb)
 elseif(WIN32)
     ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
-        COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/libusb_install/lib/usb.lib ${LIBREALSENSE_LIB_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy
+        "<BINARY_DIR>/libusb_install/lib/usb.lib" "${LIBREALSENSE_LIB_DIR}"
         DEPENDEES install
     )
     set(LIBREALSENSE_LIBRARIES ${LIBREALSENSE_LIBRARIES} usb)
