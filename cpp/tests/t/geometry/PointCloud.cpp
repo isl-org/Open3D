@@ -118,46 +118,41 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
               std::vector<float>({2.5, 3.5, 4.5}));
 }
 
-// TEST_P(PointCloudPermuteDevices, Translate) {
-//     core::Device device = GetParam();
+TEST_P(PointCloudPermuteDevices, Translate) {
+    core::Device device = GetParam();
 
-//     t::geometry::PointCloud pcd(core::Dtype::Float32, device);
-//     core::Tensor translation(std::vector<float>{10, 20, 30}, {3},
-//                              core::Dtype::Float32, device);
+    t::geometry::PointCloud pcd(core::Dtype::Float32, device);
+    core::Tensor translation(std::vector<float>{10, 20, 30}, {3},
+                             core::Dtype::Float32, device);
 
-//     // Relative.
-//     pcd.SetPoints(core::TensorList::FromTensor(
-//             core::Tensor(std::vector<float>{0, 1, 2, 6, 7, 8}, {2, 3},
-//                          core::Dtype::Float32, device)));
-//     pcd.Translate(translation, /*relative=*/true);
-//     EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
-//               std::vector<float>({10, 21, 32, 16, 27, 38}));
+    // Relative.
+    pcd.SetPoints(core::Tensor(std::vector<float>{0, 1, 2, 6, 7, 8}, {2, 3},
+                               core::Dtype::Float32, device));
+    pcd.Translate(translation, /*relative=*/true);
+    EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
+              std::vector<float>({10, 21, 32, 16, 27, 38}));
 
-//     // Non-relative.
-//     pcd.SetPoints(core::TensorList::FromTensor(
-//             core::Tensor(std::vector<float>{0, 1, 2, 6, 7, 8}, {2, 3},
-//                          core::Dtype::Float32, device)));
-//     pcd.Translate(translation, /*relative=*/false);
-//     EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
-//               std::vector<float>({7, 17, 27, 13, 23, 33}));
-// }
+    // Non-relative.
+    pcd.SetPoints(core::Tensor(std::vector<float>{0, 1, 2, 6, 7, 8}, {2, 3},
+                               core::Dtype::Float32, device));
+    pcd.Translate(translation, /*relative=*/false);
+    EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
+              std::vector<float>({7, 17, 27, 13, 23, 33}));
+}
 
-// TEST_P(PointCloudPermuteDevices, Scale) {
-//     core::Device device = GetParam();
-//     t::geometry::PointCloud pcd(core::Dtype::Float32, device);
-//     core::TensorList& points = pcd.GetPointAttr("points");
-//     points = core::TensorList::FromTensor(
-//             core::Tensor(std::vector<float>{0, 0, 0, 1, 1, 1, 2, 2, 2}, {3,
-//             3},
-//                          core::Dtype::Float32, device));
-//     core::Tensor center(std::vector<float>{1, 1, 1}, {3},
-//     core::Dtype::Float32,
-//                         device);
-//     float scale = 4;
-//     pcd.Scale(scale, center);
-//     EXPECT_EQ(points.ToFlatVector<float>(),
-//               std::vector<float>({-3, -3, -3, 1, 1, 1, 5, 5, 5}));
-// }
+TEST_P(PointCloudPermuteDevices, Scale) {
+    core::Device device = GetParam();
+    t::geometry::PointCloud pcd(core::Dtype::Float32, device);
+    core::Tensor& points = pcd.GetPointAttr("points");
+    points = core::Tensor(std::vector<float>{0, 0, 0, 1, 1, 1, 2, 2, 2}, {3, 3},
+                          core::Dtype::Float32, device);
+    core::Tensor center(std::vector<float>{1, 1, 1}, {3}, core::Dtype::Float32,
+                        device);
+    float scale = 4;
+    pcd.Scale(scale, center);
+    EXPECT_EQ(points.ToFlatVector<float>(),
+              std::vector<float>({-3, -3, -3, 1, 1, 1, 5, 5, 5}));
+}
 
 // TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
 //     core::Device device = GetParam();
@@ -202,9 +197,9 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 //     core::Dtype dtype = core::Dtype::Float32;
 
 //     t::geometry::PointCloud pcd({
-//             {"points", core::TensorList::FromTensor(
+//             {"points", core::Tensor::FromTensor(
 //                                core::Tensor::Ones({2, 3}, dtype, device))},
-//             {"colors", core::TensorList::FromTensor(
+//             {"colors", core::Tensor::FromTensor(
 //                                core::Tensor::Ones({2, 3}, dtype, device) *
 //                                2)},
 //     });
@@ -229,12 +224,12 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 //     core::Dtype dtype = core::Dtype::Float32;
 
 //     t::geometry::PointCloud pcd({
-//             {"points", core::TensorList::FromTensor(
+//             {"points", core::Tensor::FromTensor(
 //                                core::Tensor::Ones({2, 3}, dtype, device))},
-//             {"colors", core::TensorList::FromTensor(
+//             {"colors", core::Tensor::FromTensor(
 //                                core::Tensor::Ones({2, 3}, dtype, device) *
 //                                2)},
-//             {"labels", core::TensorList::FromTensor(
+//             {"labels", core::Tensor::FromTensor(
 //                                core::Tensor::Ones({2, 3}, dtype, device) *
 //                                3)},
 //     });
@@ -248,12 +243,12 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 //     EXPECT_ANY_THROW(pcd.GetPointNormals());
 
 //     // Const getters. (void)tl gets rid of the unused variables warning.
-//     EXPECT_NO_THROW(const core::TensorList& tl = pcd.GetPoints(); (void)tl);
-//     EXPECT_NO_THROW(const core::TensorList& tl = pcd.GetPointColors();
+//     EXPECT_NO_THROW(const core::Tensor& tl = pcd.GetPoints(); (void)tl);
+//     EXPECT_NO_THROW(const core::Tensor& tl = pcd.GetPointColors();
 //                     (void)tl);
-//     EXPECT_NO_THROW(const core::TensorList& tl = pcd.GetPointAttr("labels");
+//     EXPECT_NO_THROW(const core::Tensor& tl = pcd.GetPointAttr("labels");
 //                     (void)tl);
-//     EXPECT_ANY_THROW(const core::TensorList& tl = pcd.GetPointNormals();
+//     EXPECT_ANY_THROW(const core::Tensor& tl = pcd.GetPointNormals();
 //                      (void)tl);
 // }
 
@@ -261,11 +256,11 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 //     core::Device device = GetParam();
 //     core::Dtype dtype = core::Dtype::Float32;
 
-//     core::TensorList points = core::TensorList::FromTensor(
+//     core::Tensor points = core::Tensor::FromTensor(
 //             core::Tensor::Ones({2, 3}, dtype, device));
-//     core::TensorList colors = core::TensorList::FromTensor(
+//     core::Tensor colors = core::Tensor::FromTensor(
 //             core::Tensor::Ones({2, 3}, dtype, device) * 2);
-//     core::TensorList labels = core::TensorList::FromTensor(
+//     core::Tensor labels = core::Tensor::FromTensor(
 //             core::Tensor::Ones({2, 3}, dtype, device) * 3);
 
 //     t::geometry::PointCloud pcd(dtype, device);
@@ -287,11 +282,11 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 //     // is device is a CUDA device.
 //     core::Device cpu_device = core::Device("CPU:0");
 //     if (cpu_device != device) {
-//         core::TensorList cpu_points = core::TensorList::FromTensor(
+//         core::Tensor cpu_points = core::Tensor::FromTensor(
 //                 core::Tensor::Ones({2, 3}, dtype, cpu_device));
-//         core::TensorList cpu_colors = core::TensorList::FromTensor(
+//         core::Tensor cpu_colors = core::Tensor::FromTensor(
 //                 core::Tensor::Ones({2, 3}, dtype, cpu_device) * 2);
-//         core::TensorList cpu_labels = core::TensorList::FromTensor(
+//         core::Tensor cpu_labels = core::Tensor::FromTensor(
 //                 core::Tensor::Ones({2, 3}, dtype, cpu_device) * 3);
 
 //         EXPECT_ANY_THROW(pcd.SetPoints(cpu_points));
@@ -309,17 +304,17 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 //     EXPECT_FALSE(pcd.HasPointColors());
 //     EXPECT_FALSE(pcd.HasPointAttr("labels"));
 
-//     pcd.SetPoints(core::TensorList::FromTensor(
+//     pcd.SetPoints(core::Tensor::FromTensor(
 //             core::Tensor::Ones({10, 3}, dtype, device)));
 //     EXPECT_TRUE(pcd.HasPoints());
 
 //     // Different size.
-//     pcd.SetPointColors(core::TensorList::FromTensor(
+//     pcd.SetPointColors(core::Tensor::FromTensor(
 //             core::Tensor::Ones({5, 3}, dtype, device)));
 //     EXPECT_FALSE(pcd.HasPointColors());
 
 //     // Same size.
-//     pcd.SetPointColors(core::TensorList::FromTensor(
+//     pcd.SetPointColors(core::Tensor::FromTensor(
 //             core::Tensor::Ones({10, 3}, dtype, device)));
 //     EXPECT_TRUE(pcd.HasPointColors());
 // }
