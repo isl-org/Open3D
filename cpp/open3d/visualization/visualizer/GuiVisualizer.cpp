@@ -1078,6 +1078,9 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
             ShowDialog(dlg);
             break;
         }
+        case HELP_DEBUG: {
+            break;
+        }
     }
 }
 
