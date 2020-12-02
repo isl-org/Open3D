@@ -47,6 +47,12 @@ void pybind_tensormap(py::module& m) {
     tm.def(py::init<const std::string&,
                     const std::unordered_map<std::string, core::Tensor>&>(),
            "primary_key"_a, "map_keys_to_tensors"_a);
+
+    // Member functions. Some C++ functions are ignored since the
+    // functionalities are already covered in the generic dictionary interface.
+    tm.def("get_primary_key", &TensorMap::GetPrimaryKey);
+    tm.def("is_size_synchronized", &TensorMap::IsSizeSynchronized);
+    tm.def("assert_size_synchronized", &TensorMap::AssertSizeSynchronized);
 }
 
 }  // namespace geometry
