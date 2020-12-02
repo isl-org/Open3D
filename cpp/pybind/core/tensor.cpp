@@ -239,6 +239,7 @@ void pybind_core_tensor(py::module& m) {
     tensor.def_property_readonly("blob", &Tensor::GetBlob);
     tensor.def_property_readonly("ndim", &Tensor::NumDims);
     tensor.def("num_elements", &Tensor::NumElements);
+    tensor.def("__len__", &Tensor::GetLength);
 
     // Unary element-wise ops
     tensor.def("sqrt", &Tensor::Sqrt);
