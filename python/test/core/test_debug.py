@@ -33,5 +33,5 @@ def test_insertion():
     a = o3d.core.Tensor([1, 1, 1, 1, 1, 0],
                         dtype=o3d.core.Dtype.Int64,
                         device=o3d.core.Device("CPU:0"))
-    print(a.sum() == 5)
+    a.sum() == 5
     assert a.sum() == 5

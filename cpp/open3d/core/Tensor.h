@@ -439,8 +439,10 @@ public:
     /// mush have empty shape ()
     template <typename T>
     T Item() const {
-        if (shape_.size() != 0) {
-            utility::LogError("Item only works for scalar Tensor of shape ()");
+        if (shape_.NumElements() != 1) {
+            utility::LogError(
+                    "Tensor::Item() only works for Tensor with exactly one "
+                    "element.");
         }
         AssertTemplateDtype<T>();
         T value;
@@ -819,6 +821,8 @@ public:
     /// the indices of the non-zero elements in i-th dimension of the original
     /// tensor.
     Tensor NonZero() const;
+
+    bool IsNonZero() const;
 
     /// Returns true if all elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
