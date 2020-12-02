@@ -26,15 +26,22 @@
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/DeviceHashmap.h"
-#include "open3d/core/hashmap/Traits.h"
+#include "open3d/core/hashmap/HashmapBuffer.h"
 
 namespace open3d {
 namespace core {
 
+// Forward declaration of device-dependent classes
+class DefaultHash;
+class DefaultKeyEq;
+
+template <typename Hash, typename KeyEq>
+class DeviceHashmap;
+typedef DeviceHashmap<DefaultHash, DefaultKeyEq> DefaultDeviceHashmap;
+
 class Hashmap {
 public:
-    static constexpr uint32_t kDefaultElemsPerBucket = 4;
+    static constexpr int64_t kDefaultElemsPerBucket = 4;
 
     // Default constructor for common users.
     Hashmap(int64_t init_capacity,
@@ -52,83 +59,103 @@ public:
     void Rehash(int64_t buckets);
 
     /// Parallel insert arrays of keys and values.
-    /// Output iterators and masks can be nullptrs if return iterators are not
-    /// to be processed.
+    /// Return \addrs: internal indices that can be directly used for advanced
+    /// indexing in Tensor key/value buffers.
+    /// \masks: success insertions, must be combined with \addrs in advanced
+    /// indexing.
     void Insert(const void* input_keys,
                 const void* input_values,
-                addr_t* output_iterators,
+                addr_t* output_addrs,
                 bool* output_masks,
                 int64_t count);
 
     /// Parallel insert arrays of keys and values in Tensors.
-    /// Output iterators and masks are Tensors and can be further processed
+    /// Return \addrs: internal indices that can be directly used for advanced
+    /// indexing in Tensor key/value buffers.
+    /// \masks: success insertions, must be combined with \addrs in advanced
+    /// indexing.
     void Insert(const Tensor& input_keys,
                 const Tensor& input_values,
-                Tensor& output_iterators,
+                Tensor& output_addrs,
                 Tensor& output_masks);
 
     /// Parallel activate arrays of keys without copying values.
     /// Specifically useful for large value elements (e.g., a tensor), where we
     /// can do in-place management after activation.
+    /// Return \addrs: internal indices that can be directly used for advanced
+    /// indexing in Tensor key/value buffers.
+    /// \masks: success insertions, must be combined with \addrs in advanced
+    /// indexing.
     void Activate(const void* input_keys,
-                  addr_t* output_iterators,
+                  addr_t* output_addrs,
                   bool* output_masks,
                   int64_t count);
 
     /// Parallel activate arrays of keys in Tensor.
     /// Specifically useful for large value elements (e.g., a tensor), where we
     /// can do in-place management after activation.
+    /// Return \addrs: internal indices that can be directly used for advanced
+    /// indexing in Tensor key/value buffers.
+    /// \masks: success insertions, must be combined with \addrs in advanced
+    /// indexing.
     void Activate(const Tensor& input_keys,
-                  Tensor& output_iterators,
+                  Tensor& output_addrs,
                   Tensor& output_masks);
 
     /// Parallel find an array of keys.
-    /// Output iterators and masks CANNOT be nullptrs as we have to interpret
-    /// them.
+    /// Return \addrs: internal indices that can be directly used for advanced
+    /// indexing in Tensor key/value buffers.
+    /// \masks: success insertions, must be combined with \addrs in advanced
+    /// indexing.
     void Find(const void* input_keys,
-              addr_t* output_iterators,
+              addr_t* output_addrs,
               bool* output_masks,
               int64_t count);
 
     /// Parallel find an array of keys in Tensor.
-    /// Output iterators is an object Tensor, masks is a bool Tensor.
+    /// Return \addrs: internal indices that can be directly used for advanced
+    /// indexing in Tensor key/value buffers.
+    /// \masks: success insertions, must be combined with \addrs in advanced
+    /// indexing.
     void Find(const Tensor& input_keys,
-              Tensor& output_iterators,
+              Tensor& output_addrs,
               Tensor& output_masks);
 
     /// Parallel erase an array of keys.
     /// Output masks can be a nullptr if return results are not to be
     /// processed.
+    /// Return \masks: success insertions, must be combined with \addrs in
+    /// advanced indexing.
     void Erase(const void* input_keys, bool* output_masks, int64_t count);
 
     /// Parallel erase an array of keys in Tensor.
     /// Output masks is a bool Tensor.
+    /// Return \masks: success insertions, must be combined with \addrs in
+    /// advanced indexing.
     void Erase(const Tensor& input_keys, Tensor& output_masks);
 
     /// Parallel collect all iterators in the hash table
+    /// Return \addrs: internal indices that can be directly used for advanced
+    /// indexing in Tensor key/value buffers.
     int64_t GetActiveIndices(addr_t* output_indices);
 
-    int64_t Size() const { return device_hashmap_->Size(); }
+    int64_t Size() const;
 
-    int64_t GetCapacity() const { return device_hashmap_->GetCapacity(); }
-    int64_t GetBucketCount() const { return device_hashmap_->GetBucketCount(); }
-    Device GetDevice() const { return device_hashmap_->GetDevice(); }
-    int64_t GetKeyBytesize() const { return device_hashmap_->GetKeyBytesize(); }
-    int64_t GetValueBytesize() const {
-        return device_hashmap_->GetValueBytesize();
-    }
+    int64_t GetCapacity() const;
+    int64_t GetBucketCount() const;
+    Device GetDevice() const;
+    int64_t GetKeyBytesize() const;
+    int64_t GetValueBytesize() const;
 
-    Tensor& GetKeyTensor() { return device_hashmap_->GetKeyTensor(); }
-    Tensor& GetValueTensor() { return device_hashmap_->GetValueTensor(); }
+    Tensor& GetKeyTensor();
+    Tensor& GetValueTensor();
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
-    std::vector<int64_t> BucketSizes() const {
-        return device_hashmap_->BucketSizes();
-    };
+    std::vector<int64_t> BucketSizes() const;
 
     /// Return size / bucket_count.
-    float LoadFactor() const { return device_hashmap_->LoadFactor(); }
+    float LoadFactor() const;
 
     /// Helper to access buffer.
     /// Example usage:

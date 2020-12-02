@@ -32,11 +32,7 @@
 #include <memory>
 #include <vector>
 
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/hashmap/CUDA/Macros.h"
 #include "open3d/core/hashmap/HashmapBuffer.h"
-#include "open3d/core/hashmap/Traits.h"
 
 namespace open3d {
 namespace core {
@@ -75,9 +71,9 @@ public:
 
     int HeapCounter() const { return heap_counter_.load(); }
 
-    iterator_t ExtractIterator(addr_t ptr) {
-        return iterator_t(keys_ + ptr * dsize_key_,
-                          values_ + ptr * dsize_value_);
+    std::pair<void *, void *> ExtractIterator(addr_t ptr) {
+        return std::make_pair(keys_ + ptr * dsize_key_,
+                              values_ + ptr * dsize_value_);
     }
 
 public:

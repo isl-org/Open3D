@@ -32,7 +32,6 @@
 
 #include "open3d/core/hashmap/CPU/HashmapBufferCPU.hpp"
 #include "open3d/core/hashmap/DeviceHashmap.h"
-#include "open3d/core/hashmap/Traits.h"
 
 namespace open3d {
 namespace core {
@@ -261,7 +260,7 @@ void CPUHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
                 static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
 
         addr_t dst_kv_addr = buffer_ctx_->DeviceAllocate();
-        iterator_t dst_kv_iter = buffer_ctx_->ExtractIterator(dst_kv_addr);
+        auto dst_kv_iter = buffer_ctx_->ExtractIterator(dst_kv_addr);
 
         uint8_t* dst_key = static_cast<uint8_t*>(dst_kv_iter.first);
         uint8_t* dst_value = static_cast<uint8_t*>(dst_kv_iter.second);

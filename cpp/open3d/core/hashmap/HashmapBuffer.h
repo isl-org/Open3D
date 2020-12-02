@@ -48,14 +48,14 @@
 #include <memory>
 #include <vector>
 
-#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/CUDA/Macros.h"
-#include "open3d/core/hashmap/Traits.h"
 
 namespace open3d {
 namespace core {
+
+// Type for the internal heap. Dtype::Int32 is used to store it in Tensors.
+typedef uint32_t addr_t;
 
 class HashmapBuffer {
 public:

@@ -44,7 +44,6 @@
 #include <memory>
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/MemoryManager.h"
 #include "open3d/core/hashmap/CUDA/HashmapCUDAImpl.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 

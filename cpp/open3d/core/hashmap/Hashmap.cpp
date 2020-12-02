@@ -32,8 +32,6 @@
 
 #include "open3d/core/hashmap/Hashmap.h"
 
-#include <unordered_map>
-
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/utility/Console.h"
@@ -59,16 +57,16 @@ void Hashmap::Rehash(int64_t buckets) {
 
 void Hashmap::Insert(const void* input_keys,
                      const void* input_values,
-                     addr_t* output_iterators,
+                     addr_t* output_addrs,
                      bool* output_masks,
                      int64_t count) {
-    return device_hashmap_->Insert(input_keys, input_values, output_iterators,
+    return device_hashmap_->Insert(input_keys, input_values, output_addrs,
                                    output_masks, count);
 }
 
 void Hashmap::Insert(const Tensor& input_keys,
                      const Tensor& input_values,
-                     Tensor& output_iterators,
+                     Tensor& output_addrs,
                      Tensor& output_masks) {
     SizeVector input_key_elem_shape(input_keys.GetShape());
     input_key_elem_shape.erase(input_key_elem_shape.begin());
@@ -99,24 +97,24 @@ void Hashmap::Insert(const Tensor& input_keys,
     }
 
     int64_t count = shape[0];
-    output_iterators = Tensor({count}, Dtype::Int32, GetDevice());
+    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
     Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
-           static_cast<addr_t*>(output_iterators.GetDataPtr()),
+           static_cast<addr_t*>(output_addrs.GetDataPtr()),
            static_cast<bool*>(output_masks.GetDataPtr()), count);
 }
 
 void Hashmap::Activate(const void* input_keys,
-                       addr_t* output_iterators,
+                       addr_t* output_addrs,
                        bool* output_masks,
                        int64_t count) {
-    return device_hashmap_->Activate(input_keys, output_iterators, output_masks,
+    return device_hashmap_->Activate(input_keys, output_addrs, output_masks,
                                      count);
 }
 
 void Hashmap::Activate(const Tensor& input_keys,
-                       Tensor& output_iterators,
+                       Tensor& output_addrs,
                        Tensor& output_masks) {
     SizeVector input_key_elem_shape(input_keys.GetShape());
     input_key_elem_shape.erase(input_key_elem_shape.begin());
@@ -134,24 +132,23 @@ void Hashmap::Activate(const Tensor& input_keys,
 
     int64_t count = shape[0];
 
-    output_iterators = Tensor({count}, Dtype::Int32, GetDevice());
+    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
 
     return Activate(input_keys.GetDataPtr(),
-                    static_cast<addr_t*>(output_iterators.GetDataPtr()),
+                    static_cast<addr_t*>(output_addrs.GetDataPtr()),
                     static_cast<bool*>(output_masks.GetDataPtr()), count);
 }
 
 void Hashmap::Find(const void* input_keys,
-                   addr_t* output_iterators,
+                   addr_t* output_addrs,
                    bool* output_masks,
                    int64_t count) {
-    return device_hashmap_->Find(input_keys, output_iterators, output_masks,
-                                 count);
+    return device_hashmap_->Find(input_keys, output_addrs, output_masks, count);
 }
 
 void Hashmap::Find(const Tensor& input_keys,
-                   Tensor& output_iterators,
+                   Tensor& output_addrs,
                    Tensor& output_masks) {
     SizeVector input_key_elem_shape(input_keys.GetShape());
     input_key_elem_shape.erase(input_key_elem_shape.begin());
@@ -170,10 +167,10 @@ void Hashmap::Find(const Tensor& input_keys,
     int64_t count = shape[0];
 
     output_masks = Tensor({count}, Dtype::Bool, GetDevice());
-    output_iterators = Tensor({count}, Dtype::Int32, GetDevice());
+    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
 
     return Find(input_keys.GetDataPtr(),
-                static_cast<addr_t*>(output_iterators.GetDataPtr()),
+                static_cast<addr_t*>(output_addrs.GetDataPtr()),
                 static_cast<bool*>(output_masks.GetDataPtr()), count);
 }
 
@@ -206,6 +203,32 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
 int64_t Hashmap::GetActiveIndices(addr_t* output_addrs) {
     return device_hashmap_->GetActiveIndices(output_addrs);
 }
+
+int64_t Hashmap::Size() const { return device_hashmap_->Size(); }
+
+int64_t Hashmap::GetCapacity() const { return device_hashmap_->GetCapacity(); }
+int64_t Hashmap::GetBucketCount() const {
+    return device_hashmap_->GetBucketCount();
+}
+Device Hashmap::GetDevice() const { return device_hashmap_->GetDevice(); }
+int64_t Hashmap::GetKeyBytesize() const {
+    return device_hashmap_->GetKeyBytesize();
+}
+int64_t Hashmap::GetValueBytesize() const {
+    return device_hashmap_->GetValueBytesize();
+}
+
+Tensor& Hashmap::GetKeyTensor() { return device_hashmap_->GetKeyTensor(); }
+Tensor& Hashmap::GetValueTensor() { return device_hashmap_->GetValueTensor(); }
+
+/// Return number of elems per bucket.
+/// High performance not required, so directly returns a vector.
+std::vector<int64_t> Hashmap::BucketSizes() const {
+    return device_hashmap_->BucketSizes();
+};
+
+/// Return size / bucket_count.
+float Hashmap::LoadFactor() const { return device_hashmap_->LoadFactor(); }
 
 void Hashmap::AssertKeyDtype(const Dtype& dtype_key,
                              const SizeVector& elem_shape) const {

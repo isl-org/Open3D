@@ -41,7 +41,6 @@
 #pragma once
 
 #include "open3d/core/hashmap/CUDA/HashmapCUDA.h"
-#include "open3d/core/hashmap/CUDA/HashmapCUDAImpl.cuh"
 
 namespace open3d {
 namespace core {
