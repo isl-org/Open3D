@@ -126,6 +126,8 @@ int main(int argc, char **argv) {
     bool flag_exit = false;
     bool flag_play = true;
     visualization::VisualizerWithKeyCallback vis;
+    visualization::SetGlobalColorMap(
+            visualization::ColorMap::ColorMapOption::Gray);
     vis.RegisterKeyCallback(GLFW_KEY_ESCAPE,
                             [&](visualization::Visualizer *vis) {
                                 flag_exit = true;
@@ -169,6 +171,9 @@ int main(int argc, char **argv) {
                 fmt::format("{}/intrinsic.json", output_path), bag_metadata);
         WriteJsonToFile(fmt::format("{}/config.json", output_path),
                         GenerateDatasetConfig(output_path, bag_filename));
+        bag_reader.SaveFrames("L515");
+        bag_reader.SeekTimestamp(0);
+        return 0;
     }
     const auto frame_interval = sc::duration<double>(1. / bag_metadata.fps_);
 
@@ -194,15 +199,23 @@ int main(int argc, char **argv) {
             }
 
             if (write_image) {
-                auto color_file =
-                        fmt::format("{0}/color/{1:05d}.jpg", output_path, idx);
-                utility::LogInfo("Writing to {}", color_file);
-                io::WriteImage(color_file, im_rgbd.color_);
-
-                auto depth_file =
-                        fmt::format("{0}/depth/{1:05d}.png", output_path, idx);
-                utility::LogInfo("Writing to {}", depth_file);
-                io::WriteImage(depth_file, im_rgbd.depth_);
+#pragma omp parallel sections
+                {
+#pragma omp section
+                    {
+                        auto color_file = fmt::format("{0}/color/{1:05d}.jpg",
+                                                      output_path, idx);
+                        utility::LogInfo("Writing to {}", color_file);
+                        io::WriteImage(color_file, im_rgbd.color_);
+                    }
+#pragma omp section
+                    {
+                        auto depth_file = fmt::format("{0}/depth/{1:05d}.png",
+                                                      output_path, idx);
+                        utility::LogInfo("Writing to {}", depth_file);
+                        io::WriteImage(depth_file, im_rgbd.depth_);
+                    }
+                }
 
                 ++idx;
             }

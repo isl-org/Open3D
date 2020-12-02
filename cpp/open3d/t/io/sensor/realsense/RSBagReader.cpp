@@ -51,11 +51,13 @@ bool RSBagReader::Open(const std::string &filename) {
     }
     try {
         rs2::config cfg;
-        cfg.enable_device_from_file(filename, false);  // Do not loop playback
+        cfg.enable_device_from_file(filename, false);  // Do not repeat playback
         pipe_->start(cfg);  // File will be opened in read mode at this point
         auto rs_device =
                 pipe_->get_active_profile().get_device().as<rs2::playback>();
-        rs_device.set_real_time(false);  // do not drop frames
+        // do not drop frames: Causes deadlock
+        // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
+        /* rs_device.set_real_time(false); */
         utility::LogInfo("File {} opened", filename);
     } catch (const rs2::error &) {
         utility::LogWarning("Unable to open file {}", filename);
@@ -185,7 +187,22 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
         utility::LogError("Null file handler. Please call Open().");
     }
     auto &frames_ = *pframes_;
-    if (pipe_->try_wait_for_frames(&frames_)) {
+    static uint64_t color_frame_number_ms = 0;
+    uint64_t next_color_frame_number_ms = 0;
+    utility::LogInfo("NextFrame call");
+    // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
+    auto rs_device =
+            pipe_->get_active_profile().get_device().as<rs2::playback>();
+    try {
+        do {
+            rs_device.resume();
+            frames_ = pipe_->wait_for_frames();
+            rs_device.pause();
+            next_color_frame_number_ms =
+                    frames_.get_color_frame().get_frame_number();
+        } while (next_color_frame_number_ms <= color_frame_number_ms);
+        color_frame_number_ms = next_color_frame_number_ms;
+        utility::LogInfo("Frame {}ms", color_frame_number_ms);
         frames_ = align_to_color_->process(frames_);
         const auto &color_frame = frames_.get_color_frame();
         // Copy frame data to Tensors
@@ -198,7 +215,7 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
         current_frame_.depth_ = core::Tensor(
                 static_cast<const uint16_t *>(depth_frame.get_data()),
                 {depth_frame.get_height(), depth_frame.get_width()}, dt_depth_);
-    } else {
+    } catch (const rs2::error &) {
         utility::LogInfo("EOF reached");
         is_eof_ = true;
         current_frame_.Clear();

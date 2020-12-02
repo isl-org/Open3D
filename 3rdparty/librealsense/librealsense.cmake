@@ -4,7 +4,7 @@ ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
     GIT_REPOSITORY https://github.com/IntelRealSense/librealsense.git
-    GIT_TAG v2.39.0 # Oct 2020
+    GIT_TAG v2.40.0 # 18 Nov 2020
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -16,6 +16,7 @@ ExternalProject_Add(
         -DBUILD_GRAPHICAL_EXAMPLES=OFF
         -DBUILD_PYTHON_BINDINGS=OFF
         -DBUILD_WITH_CUDA=${BUILD_CUDA_MODULE}
+        -DFORCE_RSUSB_BACKEND=ON      # https://github.com/IntelRealSense/librealsense/wiki/Release-Notes#release-2400
         $<$<PLATFORM_ID:Darwin>:-DUSE_EXTERNAL_USB=ON>
         $<$<PLATFORM_ID:Darwin>:-DBUILD_WITH_OPENMP=OFF>
         $<$<PLATFORM_ID:Darwin>:-DHWM_OVER_XU=OFF>
@@ -31,7 +32,7 @@ set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file) # The order is critical
 if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is no-op
     ExternalProject_Add_Step(ext_librealsense rename_debug_libs
         COMMAND $<IF:$<CONFIG:Debug>,rename,rem> "${LIBREALSENSE_LIB_DIR}/realsense2d.lib" "${LIBREALSENSE_LIB_DIR}/realsense2.lib"
-        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> "${LIBREALSENSE_LIB_DIR}/fwd.lib" "${LIBREALSENSE_LIB_DIR}/fw.lib">
+        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> "${LIBREALSENSE_LIB_DIR}/fwd.lib" "${LIBREALSENSE_LIB_DIR}/fw.lib"
         COMMAND $<IF:$<CONFIG:Debug>,rename,rem> "${LIBREALSENSE_LIB_DIR}/realsense-filed.lib" "${LIBREALSENSE_LIB_DIR}/realsense-file.lib"
         DEPENDEES install
     )

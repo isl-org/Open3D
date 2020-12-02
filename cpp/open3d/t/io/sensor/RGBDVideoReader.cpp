@@ -53,22 +53,38 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
     WriteIJsonConvertibleToJSON(fmt::format("{}/intrinsic.json", frame_path),
                                 GetMetadata());
     SeekTimestamp(start_time);
-    for (int idx = 0; GetTimestamp() < end_time; ++idx) {
-        open3d::geometry::RGBDImage im_rgbd = NextFrame().ToLegacyRGBDImage();
-        if (IsEOF()) break;
-        auto color_file = fmt::format("{0}/color/{1:05d}.png", frame_path, idx);
-        utility::LogInfo("Writing to {}", color_file);
-        WriteImage(color_file, im_rgbd.color_);
-        auto depth_file = fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
-        utility::LogInfo("Writing to {}", depth_file);
-        WriteImage(depth_file, im_rgbd.depth_);
+    auto tim_rgbd = NextFrame();
+    open3d::geometry::Image im_color, im_depth;
+    for (int idx = 0; !IsEOF() && GetTimestamp() < end_time;
+         ++idx, tim_rgbd = NextFrame())
+#pragma omp parallel sections
+    {
+#pragma omp section
+        {
+            utility::LogInfo("Getting color image {}...", idx);
+            im_color = tim_rgbd.color_.ToLegacyImage();
+            auto color_file =
+                    fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
+            WriteImage(color_file, im_color);
+            utility::LogInfo("Written {}", color_file);
+        }
+#pragma omp section
+        {
+            utility::LogInfo("Getting depth image {}...", idx);
+            im_depth = tim_rgbd.depth_.ToLegacyImage();
+            auto depth_file =
+                    fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
+            WriteImage(depth_file, im_depth);
+            utility::LogInfo("Writtten {}", depth_file);
+        }
     }
 }
 
 std::shared_ptr<RGBDVideoReader> RGBDVideoReader::Create(
         const std::string &filename) {
 #ifdef BUILD_LIBREALSENSE
-    if (filename.compare(filename.length() - 4, 4, ".bag") == 0) {
+    if (utility::ToLower(filename).compare(filename.length() - 4, 4, ".bag") ==
+        0) {
         auto reader = std::make_shared<RSBagReader>();
         reader->Open(filename);
         return reader;

@@ -106,7 +106,8 @@ void pybind_sensor(py::module &m) {
             .def("next_frame", &RSBagReader::NextFrame,
                  "Get next frame from the RS bag playback and returns the RGBD "
                  "object.")
-            .def("save_frames", &RSBagReader::SaveFrames, "frame_path"_a,
+            .def("save_frames", &RSBagReader::SaveFrames,
+                 py::call_guard<py::gil_scoped_release>(), "frame_path"_a,
                  "start_time_us"_a = 0, "end_time_us"_a = UINT64_MAX,
                  "Save synchronized and aligned individual frames to "
                  "subfolders");
