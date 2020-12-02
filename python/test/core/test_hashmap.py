@@ -68,11 +68,11 @@ def test_insertion(device):
     # randomly in 4, 5
     assert masks[4:].to(o3d.core.Dtype.Int64).sum() == 1
     if masks[4]:
-        assert keys[4] == 9
-        assert values[4] == 900
+        assert keys[4] == 900
+        assert values[4] == 9
     elif masks[5]:
-        assert keys[5] == 9
-        assert values[5] == 900
+        assert keys[5] == 900
+        assert values[5] == 9
 
 
 @pytest.mark.parametrize("device", list_devices())
