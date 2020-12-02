@@ -1,3 +1,4 @@
+
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
@@ -24,32 +25,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/ZMQContext.h"
+#pragma once
 
-#include <mutex>
-#include <zmq.hpp>
-namespace {
-std::shared_ptr<zmq::context_t> context_ptr;
-std::mutex context_ptr_mutex;
-}  // namespace
+#include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/visualization/rendering/Open3DScene.h"
 
 namespace open3d {
-namespace io {
-namespace rpc {
+namespace visualization {
 
-std::shared_ptr<zmq::context_t> GetZMQContext() {
-    std::lock_guard<std::mutex> lock(context_ptr_mutex);
-    if (!context_ptr) {
-        context_ptr = std::make_shared<zmq::context_t>();
-    }
-    return context_ptr;
-}
+class GuiVisualizer;
 
-void DestroyZMQContext() {
-    std::lock_guard<std::mutex> lock(context_ptr_mutex);
-    context_ptr.reset();
-}
+/// Receiver implementation for the GuiVisualizer
+class Receiver : public io::rpc::ReceiverBase {
+public:
+    Receiver(GuiVisualizer* gui_visualizer,
+             std::shared_ptr<rendering::Open3DScene> scene,
+             const std::string& address,
+             int timeout)
+        : ReceiverBase(address, timeout),
+          gui_visualizer_(gui_visualizer),
+          scene_(scene) {}
 
-}  // namespace rpc
-}  // namespace io
+    std::shared_ptr<zmq::message_t> ProcessMessage(
+            const io::rpc::messages::Request& req,
+            const io::rpc::messages::SetMeshData& msg,
+            const MsgpackObject& obj) override;
+
+private:
+    void SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
+                     const std::string& path,
+                     int time,
+                     const std::string& layer);
+
+    GuiVisualizer* gui_visualizer_;
+    std::shared_ptr<rendering::Open3DScene> scene_;
+};
+
+}  // namespace visualization
 }  // namespace open3d
