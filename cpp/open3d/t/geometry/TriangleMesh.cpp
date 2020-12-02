@@ -33,7 +33,6 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 
 namespace open3d {
 namespace t {
@@ -44,14 +43,14 @@ TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
                            const core::Device &device)
     : Geometry(Geometry::GeometryType::TriangleMesh, 3),
       device_(device),
-      vertex_attr_(TensorListMap("vertices")),
-      triangle_attr_(TensorListMap("triangles")) {
-    SetVertices(core::TensorList({3}, vertex_dtype, device_));
-    SetTriangles(core::TensorList({3}, triangle_dtype, device_));
+      vertex_attr_(TensorMap("vertices")),
+      triangle_attr_(TensorMap("triangles")) {
+    SetVertices(core::Tensor({0, 3}, vertex_dtype, device_));
+    SetTriangles(core::Tensor({0, 3}, triangle_dtype, device_));
 }
 
-TriangleMesh::TriangleMesh(const core::TensorList &vertices,
-                           const core::TensorList &triangles)
+TriangleMesh::TriangleMesh(const core::Tensor &vertices,
+                           const core::Tensor &triangles)
     : TriangleMesh(vertices.GetDtype(), triangles.GetDtype(), [&]() {
           if (vertices.GetDevice() != triangles.GetDevice()) {
               utility::LogError(

@@ -43,7 +43,7 @@ core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
                                    core::Dtype dtype,
                                    const core::Device &device);
 
-core::TensorList EigenVector3dVectorToTensorList(
+core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
         core::Dtype dtype,
         const core::Device &device);

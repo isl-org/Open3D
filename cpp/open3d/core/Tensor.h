@@ -439,8 +439,10 @@ public:
     /// mush have empty shape ()
     template <typename T>
     T Item() const {
-        if (shape_.size() != 0) {
-            utility::LogError("Item only works for scalar Tensor of shape ()");
+        if (shape_.NumElements() != 1) {
+            utility::LogError(
+                    "Tensor::Item() only works for Tensor with exactly one "
+                    "element.");
         }
         AssertTemplateDtype<T>();
         T value;
@@ -820,6 +822,8 @@ public:
     /// tensor.
     Tensor NonZero() const;
 
+    bool IsNonZero() const;
+
     /// Returns true if all elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
     /// the reduction is apply to all dimensions.
@@ -920,6 +924,10 @@ public:
     /// Note VT (V transpose) is returned instead of V.
     std::tuple<Tensor, Tensor, Tensor> SVD() const;
 
+    /// Returns the size of the first dimension. If NumDims() == 0, an exception
+    /// will be thrown.
+    inline int64_t GetLength() const { return GetShape().GetLength(); }
+
     inline SizeVector GetShape() const { return shape_; }
 
     inline const SizeVector& GetShapeRef() const { return shape_; }
@@ -988,6 +996,12 @@ public:
 
     /// Assert that the Tensor has the specified shape.
     void AssertShape(const SizeVector& expected_shape) const;
+
+    /// Assert that Tensor's shape is compatible with a dynamic shape.
+    void AssertShapeCompatible(const DynamicSizeVector& expected_shape) const;
+
+    /// Assert that the Tensor has the specified device.
+    void AssertDevice(const Device& expected_device) const;
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;

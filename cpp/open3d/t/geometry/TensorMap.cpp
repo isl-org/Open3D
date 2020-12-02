@@ -24,34 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/t/geometry/TensorMap.h"
 
-#include "open3d/t/geometry/Geometry.h"
-#include "pybind/open3d_pybind.h"
+#include <fmt/format.h>
+
+#include <sstream>
+#include <string>
+#include <unordered_map>
+
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
-// Geometry trampoline class.
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
-public:
-    using GeometryBase::GeometryBase;
-
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
+bool TensorMap::IsSizeSynchronized() const {
+    const int64_t primary_size = GetPrimarySize();
+    for (auto& kv : *this) {
+        if (kv.second.GetLength() != primary_size) {
+            return false;
+        }
     }
+    return true;
+}
 
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
+void TensorMap::AssertPrimaryKeyInMapOrEmpty() const {
+    if (this->size() != 0 && this->count(primary_key_) == 0) {
+        utility::LogError("TensorMap does not contain primary key \"{}\".",
+                          primary_key_);
     }
-};
+}
 
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_tensormap(py::module& m);
-void pybind_pointcloud(py::module& m);
+void TensorMap::AssertSizeSynchronized() const {
+    if (!IsSizeSynchronized()) {
+        const int64_t primary_size = GetPrimarySize();
+        std::stringstream ss;
+        ss << fmt::format("Primary Tensor \"{}\" has size {}, however: \n",
+                          primary_key_, primary_size);
+        for (auto& kv : *this) {
+            if (kv.first != primary_key_ &&
+                kv.second.GetLength() != primary_size) {
+                fmt::format("    > Tensor \"{}\" has size {}.\n", kv.first,
+                            kv.second.GetLength());
+            }
+        }
+        utility::LogError("{}", ss.str());
+    }
+}
 
 }  // namespace geometry
 }  // namespace t
