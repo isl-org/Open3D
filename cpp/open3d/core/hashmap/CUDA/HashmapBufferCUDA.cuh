@@ -42,109 +42,88 @@ namespace core {
 
 /// Dynamic memory allocation and free are expensive on kernels.
 /// We pre-allocate a chunk of memory and manually manage them on kernels.
+
+__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity) {
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < capacity) {
+        heap[i] = i;
+    }
+}
+
 class CUDAHashmapBufferContext {
 public:
-    uint8_t *keys_;     /* [N] * sizeof(Key) */
-    uint8_t *values_;   /* [N] * sizeof(Value) */
-    addr_t *heap_;      /* [N] */
-    int *heap_counter_; /* [1] */
+    __host__ void Setup(int64_t capacity,
+                        int64_t dsize_key,
+                        int64_t dsize_value,
+                        Tensor &keys,
+                        Tensor &values,
+                        Tensor &heap) {
+        capacity_ = capacity;
+        dsize_key_ = dsize_key;
+        dsize_value_ = dsize_value;
+        keys_ = static_cast<uint8_t *>(keys.GetDataPtr());
+        values_ = static_cast<uint8_t *>(values.GetDataPtr());
+        heap_ = static_cast<addr_t *>(heap.GetDataPtr());
+        OPEN3D_CUDA_CHECK(cudaMemset(values_, 0, capacity_ * dsize_value_));
+    }
 
-    int64_t dsize_key_;
-    int64_t dsize_value_;
-    int64_t capacity_;
+    __host__ void Reset(const Device &device) {
+        int heap_counter = 0;
+        MemoryManager::Memcpy(heap_counter_, device, &heap_counter,
+                              Device("CPU:0"), sizeof(int));
 
-public:
-    // The value_ array's size is FIXED.
-    // The heap_ array stores the addresses of the values.
-    // Only the unallocated part is maintained.
-    // (ONLY care about the heap above the heap counter. Below is
-    // meaningless.)
-    // During Allocate, ptr is extracted from the heap;
-    // During Free, ptr is put back to the top of the heap.
-    // ---------------------------------------------------------------------
-    // heap  ---Malloc-->  heap  ---Malloc-->  heap  ---Free(0)-->  heap
-    // N-1                 N-1                  N-1                  N-1   |
-    //  .                   .                    .                    .    |
-    //  .                   .                    .                    .    |
-    //  .                   .                    .                    .    |
-    //  3                   3                    3                    3    |
-    //  2                   2                    2 <-                 2    |
-    //  1                   1 <-                 1                    0 <- |
-    //  0 <- heap_counter   0                    0                    0
+        const int blocks =
+                (capacity_ + kThreadsPerBlock - 1) / kThreadsPerBlock;
+        ResetHashmapBufferKernel<<<blocks, kThreadsPerBlock>>>(heap_,
+                                                               capacity_);
+        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+        OPEN3D_CUDA_CHECK(cudaGetLastError());
+    }
 
-    __device__ addr_t Allocate() {
+    __host__ void HostAllocate(const Device &device) {
+        heap_counter_ =
+                static_cast<int *>(MemoryManager::Malloc(sizeof(int), device));
+    }
+
+    __host__ void HostFree(const Device &device) {
+        if (heap_counter_ != nullptr) {
+            MemoryManager::Free(heap_counter_, device);
+        }
+        heap_counter_ = nullptr;
+    }
+
+    __device__ addr_t DeviceAllocate() {
         int index = atomicAdd(heap_counter_, 1);
         return heap_[index];
     }
 
-    __device__ void Free(addr_t ptr) {
+    __device__ void DeviceFree(addr_t ptr) {
         int index = atomicSub(heap_counter_, 1);
         heap_[index - 1] = ptr;
     }
 
-    __device__ iterator_t extract_iterator(addr_t ptr) {
-        return iterator_t(keys_ + ptr * dsize_key_,
-                          values_ + ptr * dsize_value_);
-    }
-};
-
-__global__ void ResetHashmapBufferKernel(CUDAHashmapBufferContext ctx) {
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < ctx.capacity_) {
-        ctx.heap_[i] = i;
-    }
-}
-
-class CUDAHashmapBuffer : public HashmapBuffer {
-public:
-    CUDAHashmapBuffer(int64_t capacity,
-                      int64_t dsize_key,
-                      int64_t dsize_value,
-                      const Device &device)
-        : HashmapBuffer(capacity, dsize_key, dsize_value, device) {
-        context_.heap_counter_ =
-                static_cast<int *>(MemoryManager::Malloc(sizeof(int), device_));
-
-        context_.keys_ = static_cast<uint8_t *>(key_blob_.GetDataPtr());
-        context_.values_ = static_cast<uint8_t *>(val_blob_.GetDataPtr());
-        context_.heap_ = static_cast<addr_t *>(heap_.GetDataPtr());
-
-        context_.capacity_ = capacity;
-        context_.dsize_key_ = dsize_key;
-        context_.dsize_value_ = dsize_value;
-
-        ResetHeap();
-    }
-
-    ~CUDAHashmapBuffer() override {
-        MemoryManager::Free(context_.heap_counter_, device_);
-    }
-
-    void ResetHeap() override {
-        const int blocks =
-                (capacity_ + kThreadsPerBlock - 1) / kThreadsPerBlock;
-        ResetHashmapBufferKernel<<<blocks, kThreadsPerBlock>>>(context_);
-        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-        OPEN3D_CUDA_CHECK(cudaGetLastError());
-
-        int heap_counter = 0;
-        OPEN3D_CUDA_CHECK(
-                cudaMemset(context_.values_, 0, capacity_ * dsize_val_));
-        MemoryManager::Memcpy(context_.heap_counter_, device_, &heap_counter,
-                              Device("CPU:0"), sizeof(int));
-    }
-
-    int heap_counter() override {
+    __host__ int HeapCounter(const Device &device) const {
         int heap_counter;
-        MemoryManager::Memcpy(&heap_counter, Device("CPU:0"),
-                              context_.heap_counter_, device_, sizeof(int));
+        MemoryManager::Memcpy(&heap_counter, Device("CPU:0"), heap_counter_,
+                              device, sizeof(int));
         return heap_counter;
     }
 
-    CUDAHashmapBufferContext &GetContext() { return context_; }
+    __device__ iterator_t ExtractIterator(addr_t ptr) {
+        return iterator_t(keys_ + ptr * dsize_key_,
+                          values_ + ptr * dsize_value_);
+    }
 
-protected:
-    CUDAHashmapBufferContext context_;
+public:
+    uint8_t *keys_;               /* [N] * sizeof(Key) */
+    uint8_t *values_;             /* [N] * sizeof(Value) */
+    addr_t *heap_;                /* [N] */
+    int *heap_counter_ = nullptr; /* [1] */
+
+    int64_t dsize_key_;
+    int64_t dsize_value_;
+    int64_t capacity_;
 };
+
 }  // namespace core
 }  // namespace open3d

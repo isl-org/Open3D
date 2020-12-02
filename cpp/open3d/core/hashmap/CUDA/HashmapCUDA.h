@@ -85,20 +85,17 @@ public:
 
     int64_t GetActiveIndices(addr_t* output_indices) override;
 
-    std::vector<int64_t> BucketSizes() const override;
-
-    float LoadFactor() const override;
-
     int64_t Size() const override;
-    Tensor& GetKeyTensor() override { return buffer_->GetKeyTensor(); }
-    Tensor& GetValueTensor() override { return buffer_->GetValueTensor(); }
+
+    std::vector<int64_t> BucketSizes() const override;
+    float LoadFactor() const override;
 
 protected:
     /// The struct is directly passed to kernels by value, so cannot be a shared
     /// pointer.
     CUDAHashmapImplContext<Hash, KeyEq> gpu_context_;
 
-    std::shared_ptr<CUDAHashmapBuffer> buffer_;
+    CUDAHashmapBufferContext buffer_ctx_;
     std::shared_ptr<InternalNodeManager> node_mgr_;
 
     /// Rehash, Insert, Activate all call InsertImpl. It will be clean to
@@ -110,6 +107,7 @@ protected:
                     int64_t count);
 
     void Allocate(int64_t bucket_count, int64_t capacity);
+    void Free();
 };
 
 template <typename Hash, typename KeyEq>
@@ -125,7 +123,7 @@ CUDAHashmap<Hash, KeyEq>::CUDAHashmap(int64_t init_buckets,
 
 template <typename Hash, typename KeyEq>
 CUDAHashmap<Hash, KeyEq>::~CUDAHashmap() {
-    MemoryManager::Free(gpu_context_.bucket_list_head_, this->device_);
+    Free();
 }
 
 template <typename Hash, typename KeyEq>
@@ -133,7 +131,7 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
     Tensor active_keys;
-    Tensor active_vals;
+    Tensor active_values;
 
     if (iterator_count > 0) {
         Tensor active_addrs =
@@ -141,20 +139,22 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
         GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
         Tensor active_indices = active_addrs.To(Dtype::Int64);
-        active_keys = buffer_->GetKeyTensor().IndexGet({active_indices});
-        active_vals = buffer_->GetValueTensor().IndexGet({active_indices});
+        active_keys = this->buffer_->GetKeyTensor().IndexGet({active_indices});
+        active_values =
+                this->buffer_->GetValueTensor().IndexGet({active_indices});
     }
 
     float avg_capacity_per_bucket =
             float(this->capacity_) / float(this->bucket_count_);
-    MemoryManager::Free(gpu_context_.bucket_list_head_, this->device_);
+
+    Free();
     Allocate(buckets, int64_t(std::ceil(buckets * avg_capacity_per_bucket)));
 
     if (iterator_count > 0) {
         Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);
         Tensor output_masks({iterator_count}, Dtype::Bool, this->device_);
 
-        InsertImpl(active_keys.GetDataPtr(), active_vals.GetDataPtr(),
+        InsertImpl(active_keys.GetDataPtr(), active_values.GetDataPtr(),
                    static_cast<addr_t*>(output_addrs.GetDataPtr()),
                    static_cast<bool*>(output_masks.GetDataPtr()),
                    iterator_count);
@@ -260,6 +260,11 @@ int64_t CUDAHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_addrs) {
 }
 
 template <typename Hash, typename KeyEq>
+int64_t CUDAHashmap<Hash, KeyEq>::Size() const {
+    return buffer_ctx_.HeapCounter(this->device_);
+}
+
+template <typename Hash, typename KeyEq>
 std::vector<int64_t> CUDAHashmap<Hash, KeyEq>::BucketSizes() const {
     thrust::device_vector<int64_t> elems_per_bucket(gpu_context_.bucket_count_);
     thrust::fill(elems_per_bucket.begin(), elems_per_bucket.end(), 0);
@@ -283,11 +288,6 @@ float CUDAHashmap<Hash, KeyEq>::LoadFactor() const {
 }
 
 template <typename Hash, typename KeyEq>
-int64_t CUDAHashmap<Hash, KeyEq>::Size() const {
-    return *thrust::device_ptr<int>(gpu_context_.kv_mgr_ctx_.heap_counter_);
-}
-
-template <typename Hash, typename KeyEq>
 void CUDAHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
                                           const void* input_values,
                                           addr_t* output_addrs,
@@ -297,8 +297,7 @@ void CUDAHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
 
     /// Increase heap_counter to pre-allocate potential memory increment and
     /// avoid atomicAdd in kernel.
-    int prev_heap_counter =
-            *thrust::device_ptr<int>(gpu_context_.kv_mgr_ctx_.heap_counter_);
+    int prev_heap_counter = buffer_ctx_.HeapCounter(this->device_);
     *thrust::device_ptr<int>(gpu_context_.kv_mgr_ctx_.heap_counter_) =
             prev_heap_counter + count;
 
@@ -320,10 +319,16 @@ void CUDAHashmap<Hash, KeyEq>::Allocate(int64_t bucket_count,
     this->bucket_count_ = bucket_count;
     this->capacity_ = capacity;
 
-    // Allocate buffer for key-values.
-    buffer_ = std::make_shared<CUDAHashmapBuffer>(
-            this->capacity_, this->dsize_key_, this->dsize_value_,
-            this->device_);
+    // Allocate buffer for key values.
+    this->buffer_ =
+            std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
+                                            this->dsize_value_, this->device_);
+    buffer_ctx_.HostAllocate(this->device_);
+    buffer_ctx_.Setup(this->capacity_, this->dsize_key_, this->dsize_value_,
+                      this->buffer_->GetKeyTensor(),
+                      this->buffer_->GetValueTensor(),
+                      this->buffer_->GetHeapTensor());
+    buffer_ctx_.Reset(this->device_);
 
     // Allocate buffer for linked list nodes.
     node_mgr_ = std::make_shared<InternalNodeManager>(this->device_);
@@ -336,8 +341,13 @@ void CUDAHashmap<Hash, KeyEq>::Allocate(int64_t bucket_count,
 
     gpu_context_.Setup(this->bucket_count_, this->capacity_, this->dsize_key_,
                        this->dsize_value_, node_mgr_->gpu_context_,
-                       buffer_->GetContext());
+                       buffer_ctx_);
 }
 
+template <typename Hash, typename KeyEq>
+void CUDAHashmap<Hash, KeyEq>::Free() {
+    buffer_ctx_.HostFree(this->device_);
+    MemoryManager::Free(gpu_context_.bucket_list_head_, this->device_);
+}
 }  // namespace core
 }  // namespace open3d

@@ -28,6 +28,7 @@
 
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/HashmapBuffer.h"
 #include "open3d/core/hashmap/Traits.h"
 namespace open3d {
 namespace core {
@@ -39,7 +40,7 @@ struct DefaultHash {
     // be undefined.
     DefaultHash() {}
     DefaultHash(int64_t key_size) : key_size_in_int_(key_size / sizeof(int)) {
-        if (key_size_in_int_ == 0) {
+        if (key_size % 4 != 0 || key_size_in_int_ == 0) {
             utility::LogError(
                     "[DefaultHash] Only support keys whose byte size is "
                     "multiples of sizeof(int)");
@@ -66,7 +67,13 @@ struct DefaultKeyEq {
     // Must set key_size_ before calling operator(), otherwise the behavior will
     // be undefined.
     DefaultKeyEq() {}
-    DefaultKeyEq(int64_t key_size) : key_size_in_int_(key_size / sizeof(int)) {}
+    DefaultKeyEq(int64_t key_size) : key_size_in_int_(key_size / sizeof(int)) {
+        if (key_size % 4 != 0 || key_size_in_int_ == 0) {
+            utility::LogError(
+                    "[DefaultKeyEq] Only support keys whose byte size is "
+                    "multiples of sizeof(int)");
+        }
+    }
 
     bool OPEN3D_HOST_DEVICE operator()(const void* lhs, const void* rhs) const {
         if (lhs == nullptr || rhs == nullptr) {
@@ -142,6 +149,15 @@ public:
 
     virtual int64_t Size() const = 0;
 
+    int64_t GetCapacity() const { return capacity_; }
+    int64_t GetBucketCount() const { return bucket_count_; }
+    Device GetDevice() const { return device_; }
+    int64_t GetKeyBytesize() const { return dsize_key_; }
+    int64_t GetValueBytesize() const { return dsize_value_; }
+
+    Tensor& GetKeyTensor() { return buffer_->GetKeyTensor(); }
+    Tensor& GetValueTensor() { return buffer_->GetValueTensor(); }
+
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
     virtual std::vector<int64_t> BucketSizes() const = 0;
@@ -149,21 +165,15 @@ public:
     /// Return size / bucket_count.
     virtual float LoadFactor() const = 0;
 
-    virtual Tensor& GetKeyTensor() = 0;
-    virtual Tensor& GetValueTensor() = 0;
-
-    int64_t GetBucketCount() const { return bucket_count_; }
-    int64_t GetCapacity() const { return capacity_; }
-    int64_t GetKeyBytesize() const { return dsize_key_; }
-    int64_t GetValueBytesize() const { return dsize_value_; }
-    Device GetDevice() const { return device_; }
-
 public:
     int64_t bucket_count_;
     int64_t capacity_;
     int64_t dsize_key_;
     int64_t dsize_value_;
+
     Device device_;
+
+    std::shared_ptr<HashmapBuffer> buffer_;
 
     float avg_capacity_bucket_ratio() {
         return float(capacity_) / float(bucket_count_);

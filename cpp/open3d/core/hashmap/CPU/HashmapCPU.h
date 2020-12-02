@@ -71,23 +71,24 @@ public:
 
     int64_t GetActiveIndices(addr_t* output_indices) override;
 
+    int64_t Size() const override;
+
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
-
-    int64_t Size() const override;
-    Tensor& GetKeyTensor() override { return buffer_->GetKeyTensor(); }
-    Tensor& GetValueTensor() override { return buffer_->GetValueTensor(); }
 
 protected:
     std::shared_ptr<tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>
             impl_;
-    std::shared_ptr<CPUHashmapBuffer> buffer_;
+
+    std::shared_ptr<CPUHashmapBufferContext> buffer_ctx_;
 
     void InsertImpl(const void* input_keys,
                     const void* input_values,
                     addr_t* output_addrs,
                     bool* output_masks,
                     int64_t count);
+
+    void Allocate(int64_t capacity, int64_t buckets);
 };
 
 template <typename Hash, typename KeyEq>
@@ -103,18 +104,11 @@ CPUHashmap<Hash, KeyEq>::CPUHashmap(int64_t init_buckets,
               dsize_key,
               dsize_value,
               device) {
-    impl_ = std::make_shared<
-            tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>(
-            init_buckets, Hash(this->dsize_key_), KeyEq(this->dsize_key_));
-    buffer_ = std::make_shared<CPUHashmapBuffer>(
-            this->capacity_, this->dsize_key_, this->dsize_value_,
-            this->device_);
+    Allocate(init_capacity, init_buckets);
 }
 
 template <typename Hash, typename KeyEq>
-CPUHashmap<Hash, KeyEq>::~CPUHashmap() {
-    impl_->clear();
-}
+CPUHashmap<Hash, KeyEq>::~CPUHashmap() {}
 
 template <typename Hash, typename KeyEq>
 int64_t CPUHashmap<Hash, KeyEq>::Size() const {
@@ -161,19 +155,15 @@ void CPUHashmap<Hash, KeyEq>::Find(const void* input_keys,
                                    addr_t* output_addrs,
                                    bool* output_masks,
                                    int64_t count) {
-    auto buffer_ctx = buffer_->GetContext();
 #pragma omp parallel for
     for (int64_t i = 0; i < count; ++i) {
         uint8_t* key = const_cast<uint8_t*>(
                 static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
 
         auto iter = impl_->find(key);
-        if (iter == impl_->end()) {
-            output_masks[i] = false;
-        } else {
-            output_addrs[i] = iter->second;
-            output_masks[i] = true;
-        }
+        bool flag = (iter != impl_->end());
+        output_masks[i] = flag;
+        output_addrs[i] = flag ? iter->second : 0;
     }
 }
 
@@ -181,18 +171,16 @@ template <typename Hash, typename KeyEq>
 void CPUHashmap<Hash, KeyEq>::Erase(const void* input_keys,
                                     bool* output_masks,
                                     int64_t count) {
-    auto buffer_ctx = buffer_->GetContext();
     for (int64_t i = 0; i < count; ++i) {
         uint8_t* key = const_cast<uint8_t*>(
                 static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i);
 
         auto iter = impl_->find(key);
-        if (iter == impl_->end()) {
-            output_masks[i] = false;
-        } else {
-            buffer_ctx->Free(iter->second);
+        bool flag = (iter != impl_->end());
+        output_masks[i] = flag;
+        if (flag) {
+            buffer_ctx_->DeviceFree(iter->second);
             impl_->unsafe_erase(iter);
-            output_masks[i] = true;
         }
     }
     this->bucket_count_ = impl_->unsafe_bucket_count();
@@ -200,8 +188,6 @@ void CPUHashmap<Hash, KeyEq>::Erase(const void* input_keys,
 
 template <typename Hash, typename KeyEq>
 int64_t CPUHashmap<Hash, KeyEq>::GetActiveIndices(addr_t* output_indices) {
-    auto buffer_ctx = buffer_->GetContext();
-
     int64_t count = impl_->size();
     int64_t i = 0;
     for (auto iter = impl_->begin(); iter != impl_->end(); ++iter, ++i) {
@@ -216,33 +202,29 @@ void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
     Tensor active_keys;
-    Tensor active_vals;
+    Tensor active_values;
 
     if (iterator_count > 0) {
         Tensor active_addrs({iterator_count}, Dtype::Int32, this->device_);
         GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
         Tensor active_indices = active_addrs.To(Dtype::Int64);
-        active_keys = buffer_->GetKeyTensor().IndexGet({active_indices});
-        active_vals = buffer_->GetValueTensor().IndexGet({active_indices});
+        active_keys = this->GetKeyTensor().IndexGet({active_indices});
+        active_values = this->GetValueTensor().IndexGet({active_indices});
     }
 
     float avg_capacity_per_bucket =
             float(this->capacity_) / float(this->bucket_count_);
 
-    this->capacity_ = int64_t(std::ceil(buckets * avg_capacity_per_bucket));
-    impl_ = std::make_shared<
-            tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>(
-            buckets, Hash(this->dsize_key_), KeyEq(this->dsize_key_));
-    buffer_ = std::make_shared<CPUHashmapBuffer>(
-            this->capacity_, this->dsize_key_, this->dsize_value_,
-            this->device_);
+    int64_t new_capacity =
+            int64_t(std::ceil(buckets * avg_capacity_per_bucket));
+    Allocate(new_capacity, buckets);
 
     if (iterator_count > 0) {
         Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);
         Tensor output_masks({iterator_count}, Dtype::Bool, this->device_);
 
-        InsertImpl(active_keys.GetDataPtr(), active_vals.GetDataPtr(),
+        InsertImpl(active_keys.GetDataPtr(), active_values.GetDataPtr(),
                    static_cast<addr_t*>(output_addrs.GetDataPtr()),
                    static_cast<bool*>(output_masks.GetDataPtr()),
                    iterator_count);
@@ -273,15 +255,13 @@ void CPUHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
                                          addr_t* output_addrs,
                                          bool* output_masks,
                                          int64_t count) {
-    auto buffer_ctx = buffer_->GetContext();
-
 #pragma omp parallel for
     for (int64_t i = 0; i < count; ++i) {
         const uint8_t* src_key =
                 static_cast<const uint8_t*>(input_keys) + this->dsize_key_ * i;
 
-        addr_t dst_kv_addr = buffer_ctx->Allocate();
-        iterator_t dst_kv_iter = buffer_ctx->extract_iterator(dst_kv_addr);
+        addr_t dst_kv_addr = buffer_ctx_->DeviceAllocate();
+        iterator_t dst_kv_iter = buffer_ctx_->ExtractIterator(dst_kv_addr);
 
         uint8_t* dst_key = static_cast<uint8_t*>(dst_kv_iter.first);
         uint8_t* dst_value = static_cast<uint8_t*>(dst_kv_iter.second);
@@ -306,11 +286,30 @@ void CPUHashmap<Hash, KeyEq>::InsertImpl(const void* input_keys,
 #pragma omp parallel for
     for (int64_t i = 0; i < count; ++i) {
         if (!output_masks[i]) {
-            buffer_ctx->Free(output_addrs[i]);
+            buffer_ctx_->DeviceFree(output_addrs[i]);
         }
     }
 
     this->bucket_count_ = impl_->unsafe_bucket_count();
+}
+
+template <typename Hash, typename KeyEq>
+void CPUHashmap<Hash, KeyEq>::Allocate(int64_t capacity, int64_t buckets) {
+    this->capacity_ = capacity;
+
+    this->buffer_ =
+            std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
+                                            this->dsize_value_, this->device_);
+
+    buffer_ctx_ = std::make_shared<CPUHashmapBufferContext>(
+            this->capacity_, this->dsize_key_, this->dsize_value_,
+            this->buffer_->GetKeyTensor(), this->buffer_->GetValueTensor(),
+            this->buffer_->GetHeapTensor());
+    buffer_ctx_->Reset();
+
+    impl_ = std::make_shared<
+            tbb::concurrent_unordered_map<void*, addr_t, Hash, KeyEq>>(
+            buckets, Hash(this->dsize_key_), KeyEq(this->dsize_key_));
 }
 
 }  // namespace core

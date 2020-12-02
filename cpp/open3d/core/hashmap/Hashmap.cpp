@@ -44,12 +44,13 @@ namespace core {
 
 Hashmap::Hashmap(int64_t init_capacity,
                  Dtype dtype_key,
-                 Dtype dtype_val,
+                 Dtype dtype_value,
                  const Device& device)
-    : dtype_key_(dtype_key), dtype_val_(dtype_val) {
+    : dtype_key_(dtype_key), dtype_value_(dtype_value) {
     device_hashmap_ = CreateDefaultDeviceHashmap(
             std::max(init_capacity / kDefaultElemsPerBucket, int64_t(1)),
-            init_capacity, dtype_key.ByteSize(), dtype_val.ByteSize(), device);
+            init_capacity, dtype_key.ByteSize(), dtype_value.ByteSize(),
+            device);
 }
 
 void Hashmap::Rehash(int64_t buckets) {
@@ -71,10 +72,10 @@ void Hashmap::Insert(const Tensor& input_keys,
                      Tensor& output_masks) {
     SizeVector input_key_elem_shape(input_keys.GetShape());
     input_key_elem_shape.erase(input_key_elem_shape.begin());
+    AssertKeyDtype(input_keys.GetDtype(), input_key_elem_shape);
+
     SizeVector input_value_elem_shape(input_values.GetShape());
     input_value_elem_shape.erase(input_value_elem_shape.begin());
-
-    AssertKeyDtype(input_keys.GetDtype(), input_key_elem_shape);
     AssertValueDtype(input_values.GetDtype(), input_value_elem_shape);
 
     SizeVector shape = input_keys.GetShape();
@@ -87,8 +88,8 @@ void Hashmap::Insert(const Tensor& input_keys,
                 GetDevice().ToString(), input_keys.GetDevice().ToString());
     }
 
-    SizeVector val_shape = input_values.GetShape();
-    if (val_shape.size() == 0 || val_shape[0] != shape[0]) {
+    SizeVector value_shape = input_values.GetShape();
+    if (value_shape.size() == 0 || value_shape[0] != shape[0]) {
         utility::LogError("[Hashmap]: Invalid value tensor shape");
     }
     if (input_values.GetDevice() != GetDevice()) {
@@ -206,14 +207,6 @@ int64_t Hashmap::GetActiveIndices(addr_t* output_addrs) {
     return device_hashmap_->GetActiveIndices(output_addrs);
 }
 
-int64_t Hashmap::Size() const { return device_hashmap_->Size(); }
-
-std::vector<int64_t> Hashmap::BucketSizes() const {
-    return device_hashmap_->BucketSizes();
-}
-
-float Hashmap::LoadFactor() const { return device_hashmap_->LoadFactor(); }
-
 void Hashmap::AssertKeyDtype(const Dtype& dtype_key,
                              const SizeVector& elem_shape) const {
     int64_t elem_byte_size = dtype_key.ByteSize() * elem_shape.NumElements();
@@ -225,14 +218,14 @@ void Hashmap::AssertKeyDtype(const Dtype& dtype_key,
     }
 }
 
-void Hashmap::AssertValueDtype(const Dtype& dtype_val,
+void Hashmap::AssertValueDtype(const Dtype& dtype_value,
                                const SizeVector& elem_shape) const {
-    int64_t elem_byte_size = dtype_val.ByteSize() * elem_shape.NumElements();
-    if (elem_byte_size != dtype_val_.ByteSize()) {
+    int64_t elem_byte_size = dtype_value.ByteSize() * elem_shape.NumElements();
+    if (elem_byte_size != dtype_value_.ByteSize()) {
         utility::LogError(
                 "[Hashmap] Inconsistent entry-wise byte size, expected {}, but "
                 "got {}",
-                dtype_val_.ByteSize(), elem_byte_size);
+                dtype_value_.ByteSize(), elem_byte_size);
     }
 }
 

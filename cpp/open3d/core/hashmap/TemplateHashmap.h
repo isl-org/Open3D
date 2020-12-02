@@ -31,10 +31,10 @@
 // Users must create a .cu file and compile with
 // nvcc to use customized GPU hashmap.
 //
-// APIs are available in HashmapBase.h.
-// Include path: TemplatedHashmap.h -> HashmapCPU.hpp -> HashmapBase.h
-//                                |                      ^
-//                                |--> HashmapCUDA.cuh --|
+// APIs are available in DeviceHashmap.h.
+// Include path: TemplatedHashmap.h -> HashmapCPU.h  -> DeviceHashmap.h
+//                                |                    ^
+//                                |--> HashmapCUDA.h --|
 //                                        (CUDA code)
 //
 // .cpp targets only include CPU part that can be compiled by non-nvcc

@@ -108,30 +108,34 @@ public:
     /// Parallel collect all iterators in the hash table
     int64_t GetActiveIndices(addr_t* output_indices);
 
-    int64_t Size() const;
+    int64_t Size() const { return device_hashmap_->Size(); }
+
     int64_t GetCapacity() const { return device_hashmap_->GetCapacity(); }
     int64_t GetBucketCount() const { return device_hashmap_->GetBucketCount(); }
-
-    /// Return number of elems per bucket.
-    /// High performance not required, so directly returns a vector.
-    std::vector<int64_t> BucketSizes() const;
-
-    /// Return size / bucket_count.
-    float LoadFactor() const;
-
-    void AssertKeyDtype(const Dtype& dtype_key,
-                        const SizeVector& elem_shape) const;
-    void AssertValueDtype(const Dtype& dtype_val,
-                          const SizeVector& elem_shape) const;
-
-    Dtype GetKeyDtype() const { return dtype_key_; }
-    Dtype GetValueDtype() const { return dtype_val_; }
-
     Device GetDevice() const { return device_hashmap_->GetDevice(); }
+    int64_t GetKeyBytesize() const { return device_hashmap_->GetKeyBytesize(); }
+    int64_t GetValueBytesize() const {
+        return device_hashmap_->GetValueBytesize();
+    }
 
     Tensor& GetKeyTensor() { return device_hashmap_->GetKeyTensor(); }
     Tensor& GetValueTensor() { return device_hashmap_->GetValueTensor(); }
 
+    /// Return number of elems per bucket.
+    /// High performance not required, so directly returns a vector.
+    std::vector<int64_t> BucketSizes() const {
+        return device_hashmap_->BucketSizes();
+    };
+
+    /// Return size / bucket_count.
+    float LoadFactor() const { return device_hashmap_->LoadFactor(); }
+
+    /// Helper to access buffer.
+    /// Example usage:
+    /// For (N, 8, 8, 8) tensors as keys, hashmap will convert them to
+    /// (N, 256) arrays, where key size is 256*sizeof(dtype) and key type as
+    /// (Object, 256*dsize, "_hash_k"). To access buffer and access via their
+    /// original type and shape, reinterpret is required.
     static Tensor ReinterpretBufferTensor(Tensor& buffer,
                                           const SizeVector& shape,
                                           Dtype dtype) {
@@ -145,11 +149,20 @@ public:
                       dtype, buffer.GetBlob());
     }
 
+protected:
+    void AssertKeyDtype(const Dtype& dtype_key,
+                        const SizeVector& elem_shape) const;
+    void AssertValueDtype(const Dtype& dtype_val,
+                          const SizeVector& elem_shape) const;
+
+    Dtype GetKeyDtype() const { return dtype_key_; }
+    Dtype GetValueDtype() const { return dtype_value_; }
+
 private:
     std::shared_ptr<DefaultDeviceHashmap> device_hashmap_;
 
     Dtype dtype_key_ = Dtype::Undefined;
-    Dtype dtype_val_ = Dtype::Undefined;
+    Dtype dtype_value_ = Dtype::Undefined;
 };
 
 }  // namespace core

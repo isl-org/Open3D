@@ -328,7 +328,7 @@ __device__ int32_t CUDAHashmapImplContext<Hash, KeyEq>::WarpFindKey(
             // Validate key addrs.
             && (ptr != kEmptyNodeAddr)
             // Find keys in memory heap.
-            && cmp_fn_(kv_mgr_ctx_.extract_iterator(ptr).first, key_ptr);
+            && cmp_fn_(kv_mgr_ctx_.ExtractIterator(ptr).first, key_ptr);
 
     return __ffs(__ballot_sync(kNodePtrLanesMask, is_lane_found)) - 1;
 }
@@ -371,7 +371,7 @@ __global__ void InsertKernelPass0(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
         addr_t iterator_addr =
                 hash_ctx.kv_mgr_ctx_.heap_[heap_counter_prev + tid];
         iterator_t iterator =
-                hash_ctx.kv_mgr_ctx_.extract_iterator(iterator_addr);
+                hash_ctx.kv_mgr_ctx_.ExtractIterator(iterator_addr);
 
         MEMCPY_AS_INTS(iterator.first,
                        static_cast<const uint8_t*>(input_keys) +
@@ -434,7 +434,7 @@ __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
 
         if (output_masks[tid]) {
             iterator_t iterator =
-                    hash_ctx.kv_mgr_ctx_.extract_iterator(iterator_addr);
+                    hash_ctx.kv_mgr_ctx_.ExtractIterator(iterator_addr);
 
             // Success: copy remaining input_values
             if (input_values != nullptr) {
@@ -445,7 +445,7 @@ __global__ void InsertKernelPass2(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
             }
 
         } else {
-            hash_ctx.kv_mgr_ctx_.Free(iterator_addr);
+            hash_ctx.kv_mgr_ctx_.DeviceFree(iterator_addr);
         }
     }
 }
@@ -533,7 +533,7 @@ __global__ void EraseKernelPass1(CUDAHashmapImplContext<Hash, KeyEq> hash_ctx,
                                  int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid < count && output_masks[tid]) {
-        hash_ctx.kv_mgr_ctx_.Free(output_addrs[tid]);
+        hash_ctx.kv_mgr_ctx_.DeviceFree(output_addrs[tid]);
     }
 }
 

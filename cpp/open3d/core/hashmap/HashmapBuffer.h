@@ -24,6 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// The value_ array's size is FIXED.
+// The heap_ array stores the addresses of the values.
+// Only the unallocated part is maintained.
+// (ONLY care about the heap above the heap counter. Below is
+// meaningless.)
+// During Allocate, ptr is extracted from the heap;
+// During Free, ptr is put back to the top of the heap.
+// ---------------------------------------------------------------------
+// heap  ---Malloc-->  heap  ---Malloc-->  heap  ---Free(0)-->  heap
+// N-1                 N-1                  N-1                  N-1   |
+//  .                   .                    .                    .    |
+//  .                   .                    .                    .    |
+//  .                   .                    .                    .    |
+//  3                   3                    3                    3    |
+//  2                   2                    2 <-                 2    |
+//  1                   1 <-                 1                    0 <- |
+//  0 <- heap_counter   0                    0                    0
 #pragma once
 
 #include <assert.h>
@@ -48,34 +65,30 @@ public:
                   const Device &device)
         : capacity_(capacity),
           dsize_key_(dsize_key),
-          dsize_val_(dsize_value),
+          dsize_value_(dsize_value),
           device_(device) {
         key_blob_ =
                 Tensor({capacity_},
                        Dtype(Dtype::DtypeCode::Object, dsize_key_, "_hash_k"),
                        device_);
-        val_blob_ =
+        value_blob_ =
                 Tensor({capacity_},
-                       Dtype(Dtype::DtypeCode::Object, dsize_val_, "_hash_v"),
+                       Dtype(Dtype::DtypeCode::Object, dsize_value_, "_hash_v"),
                        device_);
         heap_ = Tensor({capacity_}, Dtype::Int32, device_);
     }
-    virtual ~HashmapBuffer() {}
-
-    virtual void ResetHeap() = 0;
-    virtual int heap_counter() = 0;
 
     Tensor &GetKeyTensor() { return key_blob_; }
-    Tensor &GetValueTensor() { return val_blob_; }
+    Tensor &GetValueTensor() { return value_blob_; }
     Tensor &GetHeapTensor() { return heap_; }
 
 protected:
     int64_t capacity_;
     int64_t dsize_key_;
-    int64_t dsize_val_;
+    int64_t dsize_value_;
 
     Tensor key_blob_;
-    Tensor val_blob_;
+    Tensor value_blob_;
     Tensor heap_;
 
     Device device_;
