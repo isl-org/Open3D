@@ -29,6 +29,7 @@
 #include <imgui.h>
 
 #include <cmath>
+#include <sstream>
 #include <string>
 
 #include "open3d/visualization/gui/Theme.h"
@@ -38,7 +39,12 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
+namespace {
+static int g_next_button_id = 1;
+}  // namespace
+
 struct Button::Impl {
+    std::string id_;
     std::string title_;
     std::shared_ptr<UIImage> image_;
     float padding_horizontal_em_ = 0.5f;
@@ -49,6 +55,9 @@ struct Button::Impl {
 };
 
 Button::Button(const char* title) : impl_(new Button::Impl()) {
+    std::stringstream s;
+    s << "##button_" << g_next_button_id++;
+    impl_->id_ = s.str();
     impl_->title_ = title;
 }
 
@@ -153,7 +162,7 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
                 ImVec2(params.u0, params.v0), ImVec2(params.u1, params.v1));
     } else {
         pressed = ImGui::Button(
-                impl_->title_.c_str(),
+                (impl_->title_ + impl_->id_).c_str(), 
                 ImVec2(float(GetFrame().width), float(GetFrame().height)));
     }
     if (pressed) {
