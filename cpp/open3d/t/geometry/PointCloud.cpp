@@ -80,17 +80,17 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
     //  T (4x4) =   | R(3x3)  t(3x1) |
     //              | O(1x3)  s(1x1) |  for Rigid Transformation s = 1
     //  P -> points (Nx3)
-    core::Tensor Rotate = transform.Slice(0, 0, 3).Slice(1, 0, 3);
+    core::Tensor rotate = transform.Slice(0, 0, 3).Slice(1, 0, 3);
     core::Tensor translate = transform.Slice(0, 0, 3).Slice(1, 3, 4);
 
     //  So, P.T() (3xN) = T*P
     //  Or, points = s.R(points) + t
-    points = (Rotate.Matmul(points.T())).Add_(translate).T();
+    points = (rotate.Matmul(points.T())).Add_(translate).T();
 
     if (HasPointNormals()) {
         // for normal: n.T() = R*n.T()
         core::Tensor &normals = GetPointNormals();
-        normals = (Rotate.Matmul(normals.T())).T();
+        normals = (rotate.Matmul(normals.T())).T();
     }
     return *this;
 }
