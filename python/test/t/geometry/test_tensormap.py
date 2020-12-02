@@ -31,45 +31,36 @@ import pytest
 
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_tensorlistmap(device):
+def test_tensormap(device):
     dtype = o3c.Dtype.Float32
 
     # Constructor.
-    tlm = o3d.t.geometry.TensorListMap("points")
+    tl = o3d.t.geometry.TensorMap("points")
 
     # Get primary key().
-    assert tlm.get_primary_key() == "points"
+    assert tl.get_primary_key() == "points"
 
     # Map member access, assignment and "contains" check. This should be the
-    # preferrred way to construct a TensorListMap with values in python.
-    points = o3c.TensorList(o3c.SizeVector([3]), dtype, device)
-    colors = o3c.TensorList(o3c.SizeVector([3]), dtype, device)
-    tlm = o3d.t.geometry.TensorListMap("points")
-    assert "points" not in tlm
-    tlm["points"] = points
-    assert "points" in tlm
-    assert "colors" not in tlm
-    tlm["colors"] = colors
-    assert "colors" in tlm
+    # preferrred way to construct a TensorMap with values in python.
+    points = o3c.Tensor.ones((0, 3), dtype, device)
+    colors = o3c.Tensor.ones((0, 3), dtype, device)
+    tl = o3d.t.geometry.TensorMap("points")
+    assert "points" not in tl
+    tl["points"] = points
+    assert "points" in tl
+    assert "colors" not in tl
+    tl["colors"] = colors
+    assert "colors" in tl
 
     # Constructor with tl values.
-    tlm = o3d.t.geometry.TensorListMap("points", {
+    tl = o3d.t.geometry.TensorMap("points", {
         "points": points,
         "colors": colors
     })
-
-    # Syncronized pushback.
-    one_point = o3c.Tensor.ones((3,), dtype, device)
-    one_color = o3c.Tensor.ones((3,), dtype, device)
-    tlm.synchronized_push_back({"points": one_point, "colors": one_color})
-    tlm["points"].push_back(one_point)
-    assert not tlm.is_size_synchronized()
-    with pytest.raises(RuntimeError):
-        tlm.assert_size_synchronized()
-    with pytest.raises(RuntimeError):
-        tlm.synchronized_push_back({"points": one_point, "colors": one_color})
+    assert "points" in tl
+    assert "colors" in tl
