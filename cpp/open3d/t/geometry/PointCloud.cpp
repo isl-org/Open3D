@@ -72,23 +72,24 @@ core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
 core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    transformation.AssertShape({4,4});
+    transformation.AssertShape({4, 4});
     core::Tensor transform = transformation.Copy();
     core::Tensor &points = GetPoints();
+
     //  Extract s, R, t from Transformation
-    //  T (4x4) =   | R(3x3)  t(3x1) | 
+    //  T (4x4) =   | R(3x3)  t(3x1) |
     //              | O(1x3)  s(1x1) |  for Rigid Transformation s = 1
     //  P -> points (Nx3)
     core::Tensor Rotate = transform.Slice(0, 0, 3).Slice(1, 0, 3);
     core::Tensor translate = transform.Slice(0, 0, 3).Slice(1, 3, 4);
 
-    //  So, P.T() (3xN) = T*P 
+    //  So, P.T() (3xN) = T*P
     //  Or, points = s.R(points) + t
     points = (Rotate.Matmul(points.T())).Add_(translate).T();
 
-    if(HasPointNormals()){
+    if (HasPointNormals()) {
         // for normal: n.T() = R*n.T()
-        core::Tensor &normals = GetPointNormals();        
+        core::Tensor &normals = GetPointNormals();
         normals = (Rotate.Matmul(normals.T())).T();
     }
     return *this;
