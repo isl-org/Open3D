@@ -123,16 +123,11 @@ TEST_P(PointCloudPermuteDevices, Transform) {
 
     t::geometry::PointCloud pcd(core::Dtype::Float32, device);
 
-    // i) Translated by -1, -1, -1
-    // ii) Rotated by +30 degree about x-axis, +45 degree about y-axis
-    std::vector<float> transformation_v{
-            0.707,  0.354, 0.612, -1.673, 0.0, 0.866, -0.5, -0.366,
-            -0.707, 0.354, 0.612, -0.259, 0.0, 0.0,   0.0,  1.0};
+    core::Tensor transformation(
+            std::vector<float>{1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1},
+            {4, 4}, core::Dtype::Float32, device);
 
-    core::Tensor transformation(transformation_v, {4, 4}, core::Dtype::Float32,
-                                device);
-
-    pcd.SetPoints(core::Tensor(std::vector<float>{3, 2, 1}, {1, 3},
+    pcd.SetPoints(core::Tensor(std::vector<float>{1, 1, 1}, {1, 3},
                                core::Dtype::Float32, device));
     pcd.SetPointNormals(core::Tensor(std::vector<float>{1, 1, 1}, {1, 3},
                                      core::Dtype::Float32, device));
@@ -140,9 +135,9 @@ TEST_P(PointCloudPermuteDevices, Transform) {
     pcd.Transform(transformation);
 
     EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
-              std::vector<float>({1.768, 0.866, -1.061}));
+              std::vector<float>({3, 3, 2}));
     EXPECT_EQ(pcd.GetPointNormals().ToFlatVector<float>(),
-              std::vector<float>({1.673, 0.366, 0.259}));
+              std::vector<float>({2, 2, 1}));
 }
 
 TEST_P(PointCloudPermuteDevices, Translate) {
