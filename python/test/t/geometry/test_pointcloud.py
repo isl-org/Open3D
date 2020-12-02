@@ -107,15 +107,14 @@ def test_to_legacy_pointcloud(device):
                                np.array([[6, 7, 8], [9, 10, 11]]))
 
 
-@pytest.mark.skip(reason="TODO")
 @pytest.mark.parametrize("device", list_devices())
 def test_member_functions(device):
     dtype = o3c.Dtype.Float32
 
     # get_min_bound, get_max_bound, get_center.
     pcd = o3d.t.geometry.PointCloud(dtype, device)
-    pcd.point["points"] = o3c.TensorList.from_tensor(
-        o3c.Tensor([[1, 10, 20], [30, 2, 40], [50, 60, 3]], dtype, device))
+    pcd.point["points"] = o3c.Tensor([[1, 10, 20], [30, 2, 40], [50, 60, 3]],
+                                     dtype, device)
     assert pcd.get_min_bound().allclose(o3c.Tensor([1, 2, 3], dtype, device))
     assert pcd.get_max_bound().allclose(o3c.Tensor([50, 60, 40], dtype, device))
     assert pcd.get_center().allclose(o3c.Tensor([27, 24, 21], dtype, device))
@@ -128,25 +127,23 @@ def test_member_functions(device):
     pcd = o3d.t.geometry.PointCloud(dtype, device)
     transloation = o3c.Tensor([10, 20, 30], dtype, device)
 
-    pcd.point["points"] = o3c.TensorList.from_tensor(
-        o3c.Tensor([[0, 1, 2], [6, 7, 8]], dtype, device))
+    pcd.point["points"] = o3c.Tensor([[0, 1, 2], [6, 7, 8]], dtype, device)
     pcd.translate(transloation, True)
-    assert pcd.point["points"].as_tensor().allclose(
+    assert pcd.point["points"].allclose(
         o3c.Tensor([[10, 21, 32], [16, 27, 38]], dtype, device))
 
-    pcd.point["points"] = o3c.TensorList.from_tensor(
-        o3c.Tensor([[0, 1, 2], [6, 7, 8]], dtype, device))
+    pcd.point["points"] = o3c.Tensor([[0, 1, 2], [6, 7, 8]], dtype, device)
     pcd.translate(transloation, False)
-    assert pcd.point["points"].as_tensor().allclose(
+    assert pcd.point["points"].allclose(
         o3c.Tensor([[7, 17, 27], [13, 23, 33]], dtype, device))
 
     # scale
     pcd = o3d.t.geometry.PointCloud(dtype, device)
-    pcd.point["points"] = o3c.TensorList.from_tensor(
-        o3c.Tensor([[0, 0, 0], [1, 1, 1], [2, 2, 2]], dtype, device))
+    pcd.point["points"] = o3c.Tensor([[0, 0, 0], [1, 1, 1], [2, 2, 2]], dtype,
+                                     device)
     center = o3c.Tensor([1, 1, 1], dtype, device)
     pcd.scale(4, center)
-    assert pcd.point["points"].as_tensor().allclose(
+    assert pcd.point["points"].allclose(
         o3c.Tensor([[-3, -3, -3], [1, 1, 1], [5, 5, 5]], dtype, device))
 
     # rotate.
