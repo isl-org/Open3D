@@ -73,7 +73,13 @@ core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
     transformation.AssertShape({4, 4});
-    core::Tensor transform = transformation.Copy();
+    if (transformation.GetDevice() != device_) {
+        utility::LogWarning("Attribute device {} != Pointcloud's device {}.",
+                            transformation.GetDevice().ToString(),
+                            device_.ToString());
+    }
+
+    core::Tensor transform = transformation.Copy(device_);
     core::Tensor &points = GetPoints();
 
     //  Extract s, R, t from Transformation
