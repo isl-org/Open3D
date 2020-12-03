@@ -1,8 +1,8 @@
-message(STATUS "Building Tensorflow ops")
+message(STATUS "Building TensorFlow ops")
 
 get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
 if(BUILD_CUDA_MODULE)
-    message(STATUS "Building Tensorflow ops with CUDA")
+    message(STATUS "Building TensorFlow ops with CUDA")
 endif()
 
 find_package(Tensorflow REQUIRED)
@@ -37,6 +37,10 @@ set(TF_OPS_SOURCES
     "misc/FixedRadiusSearchOpKernel.cpp"
     "misc/KnnSearchOps.cpp"
     "misc/VoxelPoolingOpKernel.cpp"
+    "misc/VoxelizeOpKernel.cpp"
+    "misc/VoxelizeOps.cpp"
+    "misc/NmsOpKernel.cpp"
+    "misc/NmsOps.cpp"
     "tf_neighbors/tf_batch_neighbors.cpp"
     "tf_neighbors/tf_neighbors.cpp"
     "tf_subsampling/tf_batch_subsampling.cpp"
@@ -44,6 +48,7 @@ set(TF_OPS_SOURCES
     "../contrib/Cloud.cpp"
     "../contrib/GridSubsampling.cpp"
     "../contrib/neighbors.cpp"
+    "../impl/misc/Nms.cpp"
 )
 
 set(TF_OPS_CUDA_SOURCES
@@ -55,7 +60,10 @@ set(TF_OPS_CUDA_SOURCES
     "misc/BuildSpatialHashTableOpKernel.cu"
     "misc/InvertNeighborsListOpKernel.cu"
     "misc/ReduceSubarraysSumOpKernel.cu"
+    "misc/VoxelizeOpKernel.cu"
+    "misc/NmsOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+    "../impl/misc/Nms.cu"
 )
 
 if(BUILD_CUDA_MODULE)
@@ -105,12 +113,13 @@ target_compile_definitions(open3d_tf_ops PRIVATE "${open3d_tf_ops_DEFINITIONS}")
 
 # Silence warnings caused by tensorflow's Eigen. Travis has a different version
 # of protobuf in /usr/local/include TBB is in /usr/local/include, so it needs to
-# be after Tensorflow
+# be after TensorFlow
 target_include_directories(open3d_tf_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
     ${Tensorflow_INCLUDE_DIR}
     ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
+    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
 target_link_libraries(open3d_tf_ops PRIVATE

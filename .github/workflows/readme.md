@@ -180,10 +180,7 @@ used for running CI.
     total cache size limit, thus the ARM cache, being the oldest one, may be
     evicted.
 
--   Therefore, we explicitly control the cache size of other build jobs to be
-    **100MB**. These will lead to a 20% (100/500) cache hit rate even under the
-    ideal scenario. However, this is acceptable since the GPU CIs on Google Cloud
-    take 30-40 as well.
+-   We explicitly control the cache size of other build jobs to be **500MB**.
 
 -   We also keep the cache size for ARM builds relatively small -- at **700MB**,
     it is roughly just enough to save one version of the cache.

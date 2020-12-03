@@ -72,9 +72,14 @@ set(HASHMAP_CUDA_SRC
   )
 
 set(CORE_NNS_SRC
+    nns/NNSIndex.cpp
     nns/NanoFlannIndex.cpp
     nns/NearestNeighborSearch.cpp
 )
+
+if (WITH_FAISS)
+    list(APPEND CORE_NNS_SRC nns/FaissIndex.cpp)
+endif()
 
 if(BUILD_CUDA_MODULE)
     set(ALL_CORE_SRC

@@ -11,7 +11,11 @@ material {
     name : unlitGradient,
     shadingModel : unlit,
     doubleSided : true,
-    blending : fade,
+    // Ideally we could use 'blending : transparent' but that seems to have
+    // depth-buffering problems, even when alpha=1.0. Since the purpose of the
+    // alpha is to turn labels on or off, we can use 'masked' instead.
+    blending : masked,
+    maskThreshold : 0.9,
 
     parameters : [
         { type : float,     name : minValue },

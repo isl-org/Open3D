@@ -735,18 +735,14 @@ if(TARGET pybind11::module)
 endif()
 
 # Azure Kinect
-include(${Open3D_3RDPARTY_DIR}/azure_kinect/azure_kinect.cmake)
-if(BUILD_AZURE_KINECT)
-    if(TARGET k4a::k4a)
-        set(K4A_TARGET "k4a::k4a")
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "k4a" "k4arecord")
-        endif()
-    else()
-        add_library(3rdparty_k4a INTERFACE)
-        target_include_directories(3rdparty_k4a INTERFACE ${k4a_INCLUDE_DIRS})
-        set(K4A_TARGET "3rdparty_k4a")
-    endif()
+set(BUILD_AZURE_KINECT_COMMENT "//") # Set include header files in Open3D.h
+if (BUILD_AZURE_KINECT)
+    include(${Open3D_3RDPARTY_DIR}/azure_kinect/azure_kinect.cmake)
+    import_3rdparty_library(3rdparty_k4a
+        INCLUDE_DIRS ${K4A_INCLUDE_DIR}
+    )
+    add_dependencies(3rdparty_k4a ext_k4a)
+    set(K4A_TARGET "3rdparty_k4a")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${K4A_TARGET}")
 endif()
 
@@ -976,6 +972,9 @@ if(BUILD_RPC_INTERFACE)
     set(ZEROMQ_TARGET "3rdparty_zeromq")
     add_dependencies(${ZEROMQ_TARGET} ext_zeromq)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZEROMQ_TARGET}")
+    if( DEFINED ZEROMQ_ADDITIONAL_LIBS )
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${ZEROMQ_ADDITIONAL_LIBS})
+    endif()
 
     # msgpack
     include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
@@ -1015,11 +1014,13 @@ if(USE_BLAS)
     else()
         # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
         message(STATUS "Building OpenBLAS with LAPACK from source")
+        set(BLAS_BUILD_FROM_SOURCE ON)
+
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         import_3rdparty_library(3rdparty_openblas
             INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
-            LIB_DIR ${OPENBLAS_LIB_DIR}
-            LIBRARIES ${OPENBLAS_LIBRARIES}
+            LIB_DIR      ${OPENBLAS_LIB_DIR}
+            LIBRARIES    ${OPENBLAS_LIBRARIES}
         )
         set(OPENBLAS_TARGET "3rdparty_openblas")
         add_dependencies(3rdparty_openblas ext_openblas)
@@ -1062,3 +1063,37 @@ else()
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
+
+# Faiss
+if (WITH_FAISS AND WIN32)
+    message(STATUS "Faiss is not supported on Windows")
+    set(WITH_FAISS OFF)
+elseif(WITH_FAISS)
+    message(STATUS "Building third-party library faiss from source")
+    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
+endif()
+if (WITH_FAISS)
+    message(STATUS "FAISS_INCLUDE_DIR: ${FAISS_INCLUDE_DIR}")
+    message(STATUS "FAISS_LIB_DIR: ${FAISS_LIB_DIR}")
+    if (USE_BLAS)
+        if (BLAS_BUILD_FROM_SOURCE)
+            set(FAISS_EXTRA_DEPENDENCIES 3rdparty_openblas)
+        endif()
+    else()
+        set(FAISS_EXTRA_LIBRARIES ${STATIC_MKL_LIBRARIES})
+        set(FAISS_EXTRA_DEPENDENCIES 3rdparty_mkl)
+    endif()
+    import_3rdparty_library(3rdparty_faiss
+        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
+        LIBRARIES ${FAISS_LIBRARIES} ${FAISS_EXTRA_LIBRARIES}
+        LIB_DIR ${FAISS_LIB_DIR}
+    )
+    add_dependencies(3rdparty_faiss ext_faiss)
+    if (FAISS_EXTRA_DEPENDENCIES)
+        add_dependencies(ext_faiss ${FAISS_EXTRA_DEPENDENCIES})
+    endif()
+    set(FAISS_TARGET "3rdparty_faiss")
+    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
+

@@ -369,7 +369,7 @@ class MessageBox:
         # ... then add the layout as the child of the Dialog
         dlg.add_child(dlg_layout)
 
-    def show(window):
+    def show(self, window):
         self._window = window
 
     def _on_ok(self):

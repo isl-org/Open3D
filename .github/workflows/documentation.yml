@@ -8,10 +8,10 @@ on:
         required: false
         default: 'ON'
   push:
-    branches: 
+    branches:
       - master
   pull_request:
-    types: [opened, reopened, synchronize] 
+    types: [opened, reopened, synchronize]
 
 env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
@@ -53,7 +53,7 @@ jobs:
         with:
           python-version: 3.6
       - name: GCloud CLI setup
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
@@ -64,17 +64,8 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          # Install Kinect k4a package
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-          sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
-          # Accept EULA using a temporary workaround
-          # https://github.com/microsoft/Azure-Kinect-Sensor-SDK/issues/1190#issuecomment-618473882
-          echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' \
-            | sudo debconf-set-selections
-          echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' \
-            | sudo debconf-set-selections
-          sudo apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
-          # Install ubuntu dependencie
+          source util/ci_utils.sh
+          # Install ubuntu dependencies
           # Update cmake needed in Ubuntu 18.04
           sudo apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
           sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
@@ -86,7 +77,7 @@ jobs:
           sudo apt-get install --yes ghostscript
           sudo apt-get install --yes pandoc
           sudo apt-get install --yes ccache
-          ccache -M 100M  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
           # Install Python dependencies for building docs
           which python
           python -V
@@ -95,10 +86,15 @@ jobs:
           # https://github.com/sphinx-doc/sphinx/issues/7420
           python -m pip install -U -q git+https://github.com/intel-isl/m2r@dev#egg=m2r
           # dependencies for building the ml ops
-          python -m pip install -U -q "yapf==0.30.0" "tensorflow==2.3.0"
-          python -m pip install -U -q "torch==1.6.0+cpu" -f https://download.pytorch.org/whl/torch_stable.html
+          python -m pip install -U -q "yapf==0.30.0"
           # Open3D-ML dependencies
           python -m pip install -r ${OPEN3D_ML_ROOT}/requirements.txt
+          python -m pip install -r ${OPEN3D_ML_ROOT}/requirements-torch.txt
+          python -m pip install -r ${OPEN3D_ML_ROOT}/requirements-tensorflow.txt
+          # the build system of the main repo expects a master branch. make sure master exists
+          pushd ${OPEN3D_ML_ROOT}
+          git checkout -b master || true
+          popd
       - name: Build docs
         run: |
           PATH=/usr/lib/ccache:$PATH

@@ -36,11 +36,15 @@ echo
 
 echo "running Open3D C++ unit tests..."
 run_cpp_unit_tests
-echo "try importing Open3D Python package"
-test_wheel
-echo "running Open3D Python tests..."
-run_python_tests
-echo
+
+# Run on GPU only. CPU versions run on Github already
+if nvidia-smi >/dev/null; then
+    echo "try importing Open3D Python package"
+    test_wheel lib/python_package/pip_package/open3d*.whl
+    echo "running Open3D Python tests..."
+    run_python_tests
+    echo
+fi
 
 echo "Test building a C++ example with installed Open3D..."
 test_cpp_example "${runExample:=ON}"

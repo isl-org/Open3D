@@ -450,6 +450,11 @@ void pybind_trianglemesh(py::module &m) {
                            "``numpy.asarray()`` to access data: List of "
                            "uvs denoted by the index of points forming "
                            "the triangle.")
+            .def_readwrite("triangle_material_ids",
+                           &TriangleMesh::triangle_material_ids_,
+                           "`int` array of shape ``(num_trianges, 1)``, use "
+                           "``numpy.asarray()`` to access data: material index "
+                           "associated with each triangle")
             .def_readwrite("textures", &TriangleMesh::textures_,
                            "open3d.geometry.Image: The texture images.");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
