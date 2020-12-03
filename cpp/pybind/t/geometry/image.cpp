@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,35 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/t/geometry/Image.h"
 
-#include "open3d/t/geometry/Geometry.h"
-#include "pybind/open3d_pybind.h"
+#include <string>
+#include <unordered_map>
+
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
-// Geometry trampoline class.
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
-public:
-    using GeometryBase::GeometryBase;
+void pybind_image(py::module& m) {
+    py::class_<Image, PyGeometry<Image>, std::unique_ptr<Image>, Geometry>
+            image(m, "Image", "An image contains a (multi-channel) 2D image.");
 
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
-    }
+    // Constructors.
+    image.def(py::init<int64_t, int64_t, int64_t, core::Dtype,
+                       const core::Device&>(),
+              "rows"_a = 0, "cols"_a = 0, "channels"_a = 1,
+              "dtype"_a = core::Dtype::Float32,
+              "device"_a = core::Device("CPU:0"))
+            .def(py::init<const core::Tensor&>(), "image"_a);
 
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-    }
-};
-
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_tensorlistmap(py::module& m);
-void pybind_pointcloud(py::module& m);
-void pybind_image(py::module& m);
+    // Conversions.
+    image.def("as_tensor", &Image::AsTensor);
+    image.def_static("from_legacy_image", &Image::FromLegacyImage,
+                     "image_legacy"_a, "device"_a = core::Device("CPU:0"),
+                     "Create a Image from a legacy Open3D Image.");
+    image.def("to_legacy_image", &Image::ToLegacyImage,
+              "Convert to a legacy Open3D Image.");
+}
 
 }  // namespace geometry
 }  // namespace t

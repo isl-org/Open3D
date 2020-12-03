@@ -69,6 +69,49 @@ Image::Image(const core::Tensor &tensor)
     }
 }
 
+Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
+                             const core::Device &device) {
+    static const std::unordered_map<int, core::Dtype> kBytesToDtypeMap = {
+            {1, core::Dtype::UInt8},
+            {2, core::Dtype::UInt16},
+            {4, core::Dtype::Float32},
+    };
+
+    if (image_legacy.IsEmpty()) {
+        return Image();
+    }
+
+    auto iter = kBytesToDtypeMap.find(image_legacy.bytes_per_channel_);
+    if (iter == kBytesToDtypeMap.end()) {
+        utility::LogError("[Image] unsupported image bytes_per_channel ({})",
+                          image_legacy.bytes_per_channel_);
+    }
+
+    core::Dtype dtype = iter->second;
+
+    Image image(image_legacy.height_, image_legacy.width_,
+                image_legacy.num_of_channels_, dtype, device);
+
+    size_t num_bytes = image_legacy.height_ * image_legacy.BytesPerLine();
+    core::MemoryManager::MemcpyFromHost(image.data_.GetDataPtr(), device,
+                                        image_legacy.data_.data(), num_bytes);
+    return image;
+}
+
+open3d::geometry::Image Image::ToLegacyImage() {
+    open3d::geometry::Image image_legacy;
+    if (IsEmpty()) {
+        return image_legacy;
+    }
+
+    image_legacy.Prepare(GetCols(), GetRows(), GetChannels(),
+                         GetDtype().ByteSize());
+    size_t num_bytes = image_legacy.height_ * image_legacy.BytesPerLine();
+
+    core::MemoryManager::MemcpyToHost(image_legacy.data_.data(), GetDataPtr(),
+                                      GetDevice(), num_bytes);
+    return image_legacy;
+}
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/geometry/Image.h"
 #include "open3d/t/geometry/Geometry.h"
 
 namespace open3d {
@@ -127,6 +128,13 @@ public:
 
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
+
+    /// Create from a legacy Open3D Image.
+    static Image FromLegacyImage(const open3d::geometry::Image &image_legacy,
+                                 const core::Device &Device);
+
+    /// Convert to a legacy Open3D Image.
+    open3d::geometry::Image ToLegacyImage();
 
 protected:
     /// Internal data of the Image, represented as a 3D tensor of shape {rols,
