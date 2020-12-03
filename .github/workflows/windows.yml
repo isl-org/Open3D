@@ -187,11 +187,11 @@ jobs:
           - ${{ contains(github.ref, 'master') }}
         exclude:
           - is_master: false
-            python-version: 3.7
+            python_version: 3.7
           - is_master: false
-            python-version: 3.8
+            python_version: 3.8
           - is_master: false
-            python-version: 3.9
+            python_version: 3.9
 
     steps:
       - name: Checkout source code

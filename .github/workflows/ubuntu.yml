@@ -81,11 +81,11 @@ jobs:
           - ${{ github.ref == 'refs/heads/ssheorey/short-ci' }}
         exclude:
           - is_master: false
-            python-version: 3.7
+            python_version: 3.7
           - is_master: false
-            python-version: 3.8
+            python_version: 3.8
           - is_master: false
-            python-version: 3.9
+            python_version: 3.9
 
     env:
       BUILD_CUDA_MODULE: ON

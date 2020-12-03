@@ -191,11 +191,11 @@ jobs:
           - ${{ contains(github.ref, 'ssheorey/short-ci') }}
         exclude:
           - is_master: false
-            python-version: 3.7
+            python_version: 3.7
           - is_master: false
-            python-version: 3.8
+            python_version: 3.8
           - is_master: false
-            python-version: 3.9
+            python_version: 3.9
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
