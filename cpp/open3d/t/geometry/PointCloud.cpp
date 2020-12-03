@@ -142,7 +142,7 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
     }
     if (HasPointNormals()) {
         const core::Tensor &normals = GetPointNormals();
-        for (int64_t i = 0; i < normals.GetShape()[0]; i++) {
+        for (int64_t i = 0; i < normals.GetLength(); i++) {
             pcd_legacy.normals_.push_back(
                     core::eigen_converter::TensorToEigenVector3d(normals[i]));
         }

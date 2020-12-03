@@ -104,6 +104,7 @@ public:
     /// return current position in the file (ftell)
     int64_t CurPos();
     int64_t GetFileSize();
+    int64_t GetNumLines();
     /// Throws if we hit buffer maximum.  In most cases, calling code is only
     /// capable of processing a complete line, if it receives a partial line it
     /// will probably fail and it is very likely to fail/corrupt on the next

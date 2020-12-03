@@ -56,12 +56,12 @@ core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
         core::Dtype dtype,
         const core::Device &device) {
-    // Init CPU TensorList.
+    // Init CPU Tensor.
     int64_t num_values = static_cast<int64_t>(values.size());
     core::Tensor tensor_cpu =
             core::Tensor::Empty({num_values, 3}, dtype, Device("CPU:0"));
 
-    // Fill TensorList.
+    // Fill Tensor.
     core::Indexer indexer({tensor_cpu}, tensor_cpu,
                           core::DtypePolicy::ALL_SAME);
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -75,7 +75,7 @@ core::Tensor EigenVector3dVectorToTensor(
                 });
     });
 
-    // Copy TensorList to device if necessary.
+    // Copy Tensor to device if necessary.
     if (device.GetType() == core::Device::DeviceType::CPU) {
         return tensor_cpu;
     } else {
