@@ -176,8 +176,10 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         neighbors_distance = output_allocator.NeighborsDistance();
     });
 
-    return std::make_tuple(neighbors_index, neighbors_distance,
-                           neighbors_row_splits);
+    Tensor num_neighbors =
+            neighbors_row_splits.Slice(0, 1, num_query_points + 1)
+                    .Sub(neighbors_row_splits.Slice(0, 0, num_query_points));
+    return std::make_tuple(neighbors_index, neighbors_distance, num_neighbors);
 #else
     utility::LogError(
             "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. Please "
