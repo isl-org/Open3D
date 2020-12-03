@@ -183,7 +183,8 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.6, 3.7, 3.8, 3.9]
-        is_master: ${{ contains(github.ref, 'master') }}
+        is_master:
+          - ${{ contains(github.ref, 'master') }}
         exclude:
           - is_master: false
             python-version: 3.7
