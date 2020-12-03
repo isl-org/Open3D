@@ -52,7 +52,7 @@ FileGeometry ReadFileGeometryTypeFBX(const std::string& path) {
     return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
 }
 
-const unsigned int kPostProcessFlags =
+unsigned int kPostProcessFlags =
         aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices |
         aiProcess_ImproveCacheLocality | aiProcess_RemoveRedundantMaterials |
         aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_SortByPType |
@@ -138,8 +138,14 @@ void LoadTextures(const std::string& filename,
 
 bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
                                  geometry::TriangleMesh& mesh,
+                                 bool enablePostProcessing,
                                  bool print_progress) {
     Assimp::Importer importer;
+
+    if (!enablePostProcessing) {
+        kPostProcessFlags = 0x00000000;
+    }
+
     const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
