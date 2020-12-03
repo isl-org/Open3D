@@ -77,7 +77,7 @@ jobs:
       matrix:
         python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
-          - ${{ github.ref == 'refs/heads/master' || contains(github.base_ref, 'refs/heads/master') }}
+          - ${{ github.ref == 'refs/heads/master' || true }}
         exclude:
           - is_master: false
             python_version: 3.7
@@ -189,7 +189,7 @@ jobs:
       matrix:
         python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
-          - ${{ github.ref == 'refs/heads/master' || contains(github.base_ref, 'refs/heads/master') }}
+          - ${{ github.ref == 'refs/heads/master' || true }}
         exclude:
           - is_master: false
             python_version: 3.7
