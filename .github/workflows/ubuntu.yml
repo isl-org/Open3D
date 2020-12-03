@@ -78,7 +78,7 @@ jobs:
       matrix:
         python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
-          - ${{ github.head_ref == 'refs/heads/ssheorey/short-ci' }}
+          - ${{ github.ref == 'refs/heads/master' || github.base_ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
             python_version: 3.7
@@ -198,14 +198,15 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.6, 3.7, 3.8, 3.9]
-        is_master: ${{ github.ref == 'refs/heads/master' }}
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' || github.base_ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python-version: 3.7
+            python_version: 3.7
           - is_master: false
-            python-version: 3.8
+            python_version: 3.8
           - is_master: false
-            python-version: 3.9
+            python_version: 3.9
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML

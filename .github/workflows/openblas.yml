@@ -186,8 +186,8 @@ jobs:
 
       - name: Download cache from GCS
         run: |
-          mkdir -p ~/.ccache
-          gsutil -m cp -r gs://open3d-ci-cache/ccache-arm64/ ~/.ccache/
+          gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
+          mv ~/ccache-arm64 ~/.ccache
           ls ~/.ccache
 
       - name: Build on ARM Container
