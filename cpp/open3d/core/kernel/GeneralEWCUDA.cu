@@ -31,6 +31,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/core/kernel/GeneralEW.h"
+#include "open3d/core/kernel/GeneralIndexer.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
