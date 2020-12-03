@@ -34,11 +34,12 @@
 namespace open3d {
 namespace core {
 
-struct DefaultHash {
+class DefaultHash {
     // Default constructor is required, since we need a struct instead of its
     // pointer as a member in a hash table for CUDA kernel launches.
     // Must set key_size_ before calling operator(), otherwise the behavior will
     // be undefined.
+public:
     DefaultHash() {}
     DefaultHash(int64_t key_size) : key_size_in_int_(key_size / sizeof(int)) {
         if (key_size % 4 != 0 || key_size_in_int_ == 0) {
@@ -62,11 +63,12 @@ struct DefaultHash {
     int64_t key_size_in_int_;
 };
 
-struct DefaultKeyEq {
+class DefaultKeyEq {
     // Default constructor is required, since we need a struct instead of its
     // pointer as a member in a hash table for CUDA kernel launches.
     // Must set key_size_ before calling operator(), otherwise the behavior will
     // be undefined.
+public:
     DefaultKeyEq() {}
     DefaultKeyEq(int64_t key_size) : key_size_in_int_(key_size / sizeof(int)) {
         if (key_size % 4 != 0 || key_size_in_int_ == 0) {
