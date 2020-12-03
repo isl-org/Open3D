@@ -846,8 +846,10 @@ struct O3DVisualizer::Impl {
         frames_.AddValue(order);
         bool update_for_order = (orig_n_frames < frames_.GetNumberOfFrames());
         if (update_for_order) {
-            settings.anim_slider->SetLimits(0, double(frames_.GetNumberOfFrames() - 1));
-            settings.anim_edit->SetLimits(0, double(frames_.GetNumberOfFrames() - 1));
+            settings.anim_slider->SetLimits(
+                    0, double(frames_.GetNumberOfFrames() - 1));
+            settings.anim_edit->SetLimits(
+                    0, double(frames_.GetNumberOfFrames() - 1));
             if (frames_.GetNumberOfFrames() >= 2) {
                 settings.anim_panel->SetVisible(true);
             }
@@ -903,8 +905,10 @@ struct O3DVisualizer::Impl {
         if (frames_.GetNumberOfFrames() <= 1) {
             SetAnimating(false);
         }
-        settings.anim_slider->SetLimits(0, double(frames_.GetNumberOfFrames() - 1));
-        settings.anim_edit->SetLimits(0, double(frames_.GetNumberOfFrames() - 1));
+        settings.anim_slider->SetLimits(
+                0, double(frames_.GetNumberOfFrames() - 1));
+        settings.anim_edit->SetLimits(0,
+                                      double(frames_.GetNumberOfFrames() - 1));
         SetCurrentFrame(ui_state_.current_frame);  // makes current frame valid
 
         added_groups_ = groups;
