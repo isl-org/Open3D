@@ -168,7 +168,7 @@ jobs:
 
   arm64:
     runs-on: ubuntu-20.04
-    # needs: [arm64-filament-only]
+    needs: [arm64-filament-only]
     strategy:
       fail-fast: false
     steps:
