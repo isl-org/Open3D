@@ -32,6 +32,11 @@ jobs:
       LOW_MEM_USAGE: ON
       BUILD_RPC_INTERFACE: ON
     steps:
+      - name: Cancel outdated
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          github_token: ${{ github.token }}
+
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
@@ -57,7 +62,7 @@ jobs:
         run: |
           ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
-          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
@@ -71,7 +76,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8, 3.9]
+        is_master: ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python-version: 3.7
+          - is_master: false
+            python-version: 3.8
+          - is_master: false
+            python-version: 3.9
+
     env:
       BUILD_CUDA_MODULE: OFF
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
@@ -111,7 +125,7 @@ jobs:
         run: |
           ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
-          ccache -M 500M  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           echo
           source util/ci_utils.sh
           install_python_dependencies with-conda
@@ -174,7 +188,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8, 3.9]
+        is_master: ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python-version: 3.7
+          - is_master: false
+            python-version: 3.8
+          - is_master: false
+            python-version: 3.9
+
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
