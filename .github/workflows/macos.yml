@@ -188,7 +188,7 @@ jobs:
       matrix:
         python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
-          - ${{ contains(github.ref, 'ssheorey/short-ci') }}
+          - ${{ contains(github.head_ref, 'ssheorey/short-ci') }}
         exclude:
           - is_master: false
             python_version: 3.7

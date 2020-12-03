@@ -78,7 +78,7 @@ jobs:
       matrix:
         python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
-          - ${{ github.ref == 'refs/heads/ssheorey/short-ci' }}
+          - ${{ github.head_ref == 'refs/heads/ssheorey/short-ci' }}
         exclude:
           - is_master: false
             python_version: 3.7
