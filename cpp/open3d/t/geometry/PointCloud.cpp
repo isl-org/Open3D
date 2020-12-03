@@ -34,6 +34,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
+#include "open3d/core/hashmap/Hashmap.h"
 
 namespace open3d {
 namespace t {
@@ -99,6 +100,37 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
     utility::LogError("Unimplemented");
     return *this;
+}
+
+PointCloud PointCloud::VoxelDownSample(double voxel_size) const {
+    core::Tensor points_voxeld = GetPoints().AsTensor() / voxel_size;
+    core::Tensor points_voxeli = points_voxeld.To(core::Dtype::Int64);
+
+    core::Hashmap points_voxeli_hashmap(
+            points_voxeli.GetShape()[0],
+            core::Dtype(core::Dtype::DtypeCode::Object,
+                        core::Dtype::Int64.ByteSize() * 3, "_hash_k"),
+            core::Dtype::Int64, device_);
+
+    core::Tensor addrs, masks;
+    points_voxeli_hashmap.Activate(points_voxeli, addrs, masks);
+
+    std::unordered_map<std::string, core::TensorList> pcd_down_map;
+    core::TensorList tl_points = core::TensorList::FromTensor(
+            points_voxeli.IndexGet({masks}).To(
+                    point_attr_.at("points").GetDtype()) *
+                    voxel_size,
+            false);
+    pcd_down_map.emplace(std::make_pair("points", tl_points));
+    for (auto &kv : point_attr_) {
+        if (kv.first != "points") {
+            core::TensorList tl = core::TensorList::FromTensor(
+                    kv.second.AsTensor().IndexGet({masks}), false);
+            pcd_down_map.emplace(std::make_pair(kv.first, tl));
+        }
+    }
+
+    return PointCloud(pcd_down_map);
 }
 
 geometry::PointCloud PointCloud::FromLegacyPointCloud(

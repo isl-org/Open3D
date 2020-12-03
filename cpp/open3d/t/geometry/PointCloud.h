@@ -260,6 +260,8 @@ public:
     /// Rotate points and normals (if exist).
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    PointCloud VoxelDownSample(double voxel_size) const;
+
     core::Device GetDevice() const { return device_; }
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
