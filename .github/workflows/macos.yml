@@ -60,7 +60,6 @@ jobs:
           python-version: 3.6
       - name: Install dependencies
         run: |
-          ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
@@ -123,7 +122,6 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          ./util/install_deps_macos.sh skip-upgrade
           brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           echo
