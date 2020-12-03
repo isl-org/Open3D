@@ -120,20 +120,18 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 
 TEST_P(PointCloudPermuteDevices, Transform) {
     core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
 
-    t::geometry::PointCloud pcd(core::Dtype::Float32, device);
-
+    t::geometry::PointCloud pcd(dtype, device);
     core::Tensor transformation(
             std::vector<float>{1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1},
-            {4, 4}, core::Dtype::Float32, device);
+            {4, 4}, dtype, device);
 
-    pcd.SetPoints(core::Tensor(std::vector<float>{1, 1, 1}, {1, 3},
-                               core::Dtype::Float32, device));
-    pcd.SetPointNormals(core::Tensor(std::vector<float>{1, 1, 1}, {1, 3},
-                                     core::Dtype::Float32, device));
-
+    pcd.SetPoints(
+            core::Tensor(std::vector<float>{1, 1, 1}, {1, 3}, dtype, device));
+    pcd.SetPointNormals(
+            core::Tensor(std::vector<float>{1, 1, 1}, {1, 3}, dtype, device));
     pcd.Transform(transformation);
-
     EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
               std::vector<float>({3, 3, 2}));
     EXPECT_EQ(pcd.GetPointNormals().ToFlatVector<float>(),
