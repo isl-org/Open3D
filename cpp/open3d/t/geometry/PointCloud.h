@@ -35,6 +35,7 @@
 #include "open3d/core/TensorList.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/TensorListMap.h"
 
 namespace open3d {
@@ -263,6 +264,9 @@ public:
     PointCloud VoxelDownSample(double voxel_size) const;
 
     core::Device GetDevice() const { return device_; }
+
+    /// Create a PointCloud from a depth image
+    static PointCloud CreateFromDepthImage(const Image &depth);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static geometry::PointCloud FromLegacyPointCloud(
