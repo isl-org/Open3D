@@ -88,13 +88,21 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Setup cache
-        uses: actions/cache@v2
+
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@master
         with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-openblas-aarch64-ccache-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-openblas-aarch64-ccache
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+
+      - name: Download cache from GCS
+        run: |
+          gsutil -m cp -c -r gs://open3d-ci-cache/ccache-arm64 ~
+          mv ~/ccache-arm64 ~/.ccache
+          ls ~/.ccache
+
       - name: Build on ARM Container
         uses: uraimo/run-on-arch-action@v2.0.2
         with:
@@ -114,6 +122,7 @@ jobs:
             --volume "${HOME}/.ccache:/root/.ccache"
 
           # Install dependencies
+          # TODO: merge this scripts with the arm64 job
           install: |
             apt-get update -q -y
             apt-get install -y apt-utils build-essential git wget
@@ -166,6 +175,11 @@ jobs:
             make ext_filament -j$(nproc)
             ccache -s
 
+      - name: Upload cache to GCS
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+          gsutil -m rsync -r -d ~/.ccache/ gs://open3d-ci-cache/ccache-arm64/
+
   arm64:
     runs-on: ubuntu-20.04
     needs: [arm64-filament-only]
@@ -176,6 +190,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
+
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
         with:
