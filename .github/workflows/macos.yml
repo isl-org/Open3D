@@ -44,6 +44,7 @@ jobs:
           submodules: false
       - name: Checkout submodules
         run: |
+          git config --global http.postBuffer 524288000
           git submodule update --depth 1 --init --recursive
       - name: Setup cache
         uses: actions/cache@v2
@@ -101,6 +102,7 @@ jobs:
           submodules: false
       - name: Checkout submodules
         run: |
+          git config --global http.postBuffer 524288000
           git submodule update --depth 1 --init --recursive
 
       - name: Checkout Open3D-ML source code
