@@ -36,7 +36,7 @@ jobs:
           submodules: false
       - name: Checkout submodules
         run: |
-          git submodule update --init --recursive
+          git submodule update --depth 1 --init --recursive
 
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
