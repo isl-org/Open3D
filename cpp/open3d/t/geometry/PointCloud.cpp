@@ -114,7 +114,6 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
 PointCloud &PointCloud::Translate(const core::Tensor &translation,
                                   bool relative) {
     translation.AssertShape({3});
-    // Use reserve() keyword.
     core::Tensor transform;
     if (translation.GetDevice() != device_) {
         utility::LogWarning("Attribute device {} != Pointcloud's device {}.",
@@ -142,7 +141,6 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
     R.AssertShape({3, 3});
     center.AssertShape({3});
-    // Use reserve() keyword.
     core::Tensor Rot;
     if (R.GetDevice() != device_) {
         utility::LogWarning("Attribute device {} != Pointcloud's device {}.",
@@ -153,9 +151,8 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
 
     core::Tensor &points = GetPoints();
 
-    // Doubt: if center is 0, will it still perform substration computationally?
-    // if so, crete case for zero and non-zero to save unnecessary computation,
-    // or create a new function 'RotateAboutOrigin'
+    // Create 'RotateAboutOrigin' function for Rotating about 0,0,0 to save
+    // unnecessary computation for subtracting center.
     points = ((Rot.Matmul((points.Sub_(center)).T())).T()).Add_(center);
 
     if (HasPointNormals()) {
