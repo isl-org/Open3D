@@ -24,35 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/core/SizeVector.h"
 
-#include "open3d/t/geometry/Geometry.h"
-#include "pybind/open3d_pybind.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
-namespace t {
-namespace geometry {
+namespace tests {
 
-// Geometry trampoline class.
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
-public:
-    using GeometryBase::GeometryBase;
+TEST(DynamicSizeVector, Constructor) {
+    core::DynamicSizeVector dsv{utility::nullopt, 3};
+    EXPECT_FALSE(dsv[0].has_value());
+    EXPECT_EQ(dsv[1].value(), 3);
+}
 
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
-    }
+TEST(DynamicSizeVector, IsCompatible) {
+    EXPECT_TRUE(core::SizeVector({}).IsCompatible({}));
+    EXPECT_FALSE(core::SizeVector({}).IsCompatible({utility::nullopt}));
+    EXPECT_TRUE(core::SizeVector({10, 3}).IsCompatible({utility::nullopt, 3}));
+    EXPECT_FALSE(core::SizeVector({10, 3}).IsCompatible({utility::nullopt, 5}));
+}
 
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-    }
-};
-
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_tensormap(py::module& m);
-void pybind_pointcloud(py::module& m);
-
-}  // namespace geometry
-}  // namespace t
+}  // namespace tests
 }  // namespace open3d
