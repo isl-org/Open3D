@@ -40,7 +40,10 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
-          submodules: true
+          fetch-depth: 1
+          submodules: false
+        run: |
+          git submodule update --init --recursive
       - name: Setup cache
         uses: actions/cache@v2
         with:
@@ -93,7 +96,10 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
-          submodules: true
+          fetch-depth: 1
+          submodules: false
+        run: |
+          git submodule update --init --recursive
 
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
@@ -201,6 +207,7 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
+          fetch-depth: 1
           submodules: false
 
       - name: Checkout Open3D-ML source code

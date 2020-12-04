@@ -46,10 +46,13 @@ jobs:
       UBUNTU_VERSION: ${{ matrix.UBUNTU_VERSION }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v2
         with:
-          submodules: 'recursive'
+          fetch-depth: 1
+          submodules: false
+        run: |
+          git submodule update --init --recursive
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -86,10 +89,11 @@ jobs:
       CI_CONFIG_ID: ${{ matrix.CI_CONFIG_ID }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v2
         with:
-          submodules: 'false'
+          fetch-depth: 1
+          submodules: false
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -124,10 +128,11 @@ jobs:
       UBUNTU_VERSION: ${{ matrix.UBUNTU_VERSION }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v2
         with:
-          submodules: 'false'
+          fetch-depth: 1
+          submodules: false
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master

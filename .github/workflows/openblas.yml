@@ -28,7 +28,11 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
-          submodules: true
+          fetch-depth: 1
+          submodules: false
+        run: |
+          git submodule update --init --recursive
+
       - name: Setup cache
         uses: actions/cache@v2
         with:
@@ -36,10 +40,12 @@ jobs:
           key: ${{ runner.os }}-openblas-x86_64-ccache-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-openblas-x86_64-ccache
+
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
             python-version: 3.6
+
       - name: Install dependencies
         run: |
             sudo apt-get --yes install ccache
@@ -52,6 +58,7 @@ jobs:
             python -m pip install -U pytest==6.0.1
             python -m pip install -U scipy==1.4.1
             python -m pip install -U wheel==0.35.1
+
       - name: Build and test
         run: |
             PATH=/usr/lib/ccache:$PATH
@@ -87,7 +94,10 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
-          submodules: true
+          fetch-depth: 1
+          submodules: false
+        run: |
+          git submodule update --init --recursive
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -189,7 +199,10 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
-          submodules: true
+          fetch-depth: 1
+          submodules: false
+        run: |
+          git submodule update --init --recursive
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
