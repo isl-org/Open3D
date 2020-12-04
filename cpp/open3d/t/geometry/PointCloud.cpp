@@ -163,8 +163,6 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
         core::Tensor &normals = GetPointNormals();
         normals = (Rot.Matmul(normals.T())).T();
     }
-
-    // utility::LogError("Unimplemented");
     return *this;
 }
 
