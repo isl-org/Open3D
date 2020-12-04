@@ -136,6 +136,8 @@ public:
     void GeometryShadows(const std::string& object_name,
                          bool cast_shadows,
                          bool receive_shadows) override;
+    void SetGeometryPriority(const std::string& object_name,
+                             uint8_t priority) override;
     void OverrideMaterial(const std::string& object_name,
                           const Material& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
@@ -195,7 +197,8 @@ public:
     void SetIndirectLightRotation(const Transform& rotation) override;
     Transform GetIndirectLightRotation() override;
     void ShowSkybox(bool show) override;
-    void SetBackgroundColor(const Eigen::Vector4f& color) override;
+    void SetBackground(const Eigen::Vector4f& color,
+                       const std::shared_ptr<geometry::Image> image = nullptr) override;
 
     void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
@@ -291,6 +294,7 @@ private:
     void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
     void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
     void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
+    void UpdateBackgroundShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
@@ -299,12 +303,13 @@ private:
     std::unordered_map<std::string, LightEntity> lights_;
     std::unordered_map<std::string, std::vector<std::string>> model_geometries_;
 
+    Eigen::Vector4f background_color_;
+    std::shared_ptr<geometry::Image> background_image_;
     std::string ibl_name_;
     bool ibl_enabled_ = false;
     bool skybox_enabled_ = false;
     std::weak_ptr<filament::IndirectLight> indirect_light_;
     std::weak_ptr<filament::Skybox> skybox_;
-    std::weak_ptr<filament::Skybox> color_skybox_;
     LightEntity sun_;
 };
 

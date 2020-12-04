@@ -74,6 +74,9 @@ struct Material {
     float scalar_min = 0.0f;
     float scalar_max = 1.0f;
 
+    // Background image (shader = "unlitBackground")
+    float aspect_ratio = 0.0f;  // 0: uses base_color; >0: uses albedo_img
+
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
     std::unordered_map<std::string, geometry::Image> generic_imgs;

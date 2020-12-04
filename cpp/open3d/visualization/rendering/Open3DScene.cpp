@@ -117,7 +117,7 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
-    scene->SetBackgroundColor({1.0f, 1.0f, 1.0f, 1.0f});
+    scene->SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
 
     RecreateAxis(scene, bounds_, false);
 }
@@ -148,9 +148,10 @@ void Open3DScene::ShowAxes(bool enable) {
     scene->ShowGeometry(kAxisObjectName, enable);
 }
 
-void Open3DScene::SetBackgroundColor(const Eigen::Vector4f& color) {
+void Open3DScene::SetBackground(const Eigen::Vector4f& color,
+                                std::shared_ptr<geometry::Image> image /*=0*/) {
     auto scene = renderer_.GetScene(scene_);
-    scene->SetBackgroundColor(color);
+    scene->SetBackground(color, image);
 }
 
 void Open3DScene::ClearGeometry() {
