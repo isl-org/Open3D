@@ -81,90 +81,29 @@ TEST_P(TriangleMeshPermuteDevices, ConstructFromVertices) {
     core::Tensor single_triangle =
             core::Tensor::Ones({3}, core::Dtype::Int64, device);
 
-    // Copied, push back okay.
-    t::geometry::TriangleMesh mesh(
-            core::TensorList::FromTensor(vertices, /*inplace=*/false),
-            core::TensorList::FromTensor(triangles, /*inplace=*/false));
-
-    EXPECT_TRUE(mesh.HasVertices());
-    EXPECT_EQ(mesh.GetVertices().GetSize(), 10);
-    mesh.GetVertices().PushBack(single_vertex);
-    EXPECT_EQ(mesh.GetVertices().GetSize(), 11);
-
-    EXPECT_TRUE(mesh.HasTriangles());
-    EXPECT_EQ(mesh.GetTriangles().GetSize(), 10);
-    mesh.GetTriangles().PushBack(single_triangle);
-    EXPECT_EQ(mesh.GetTriangles().GetSize(), 11);
-
-    // Inplace tensorlist: cannot push_back.
-    mesh = t::geometry::TriangleMesh(
-            core::TensorList::FromTensor(vertices, /*inplace=*/true),
-            core::TensorList::FromTensor(triangles, /*inplace=*/true));
-
-    EXPECT_TRUE(mesh.HasVertices());
-    EXPECT_EQ(mesh.GetVertices().GetSize(), 10);
-    EXPECT_ANY_THROW(mesh.GetVertices().PushBack(single_vertex));
-
-    EXPECT_TRUE(mesh.HasTriangles());
-    EXPECT_EQ(mesh.GetTriangles().GetSize(), 10);
-    EXPECT_ANY_THROW(mesh.GetTriangles().PushBack(single_triangle));
-}
-
-TEST_P(TriangleMeshPermuteDevices, SynchronizedPushBack) {
-    core::Device device = GetParam();
-
-    // Create trianglemesh.
-    core::TensorList vertices = core::TensorList::FromTensor(
-            core::Tensor::Ones({10, 3}, core::Dtype::Float32, device));
-    core::TensorList vertex_colors = core::TensorList::FromTensor(
-            core::Tensor::Ones({10, 3}, core::Dtype::Float32, device) * 0.5);
-    core::TensorList triangles = core::TensorList::FromTensor(
-            core::Tensor::Ones({5, 3}, core::Dtype::Int64, device));
-    core::TensorList triangle_normals = core::TensorList::FromTensor(
-            core::Tensor::Ones({5, 3}, core::Dtype::Float32, device) * 0.5);
-
     t::geometry::TriangleMesh mesh(vertices, triangles);
-    mesh.SetVertexColors(vertex_colors);
-    mesh.SetTriangleNormals(triangle_normals);
 
-    // Exception cases are tested in TensorListMap::SynchronizedPushBack().
-    std::unordered_map<std::string, core::Tensor> vertex_struct;
-    EXPECT_EQ(mesh.GetVertices().GetSize(), 10);
-    EXPECT_EQ(mesh.GetVertexColors().GetSize(), 10);
-    mesh.VertexSynchronizedPushBack({
-            {"vertices", core::Tensor::Ones({3}, core::Dtype::Float32, device)},
-            {"colors", core::Tensor::Ones({3}, core::Dtype::Float32, device)},
-    });
-    EXPECT_EQ(mesh.GetVertices().GetSize(), 11);
-    EXPECT_EQ(mesh.GetVertexColors().GetSize(), 11);
-
-    std::unordered_map<std::string, core::Tensor> triangle_struct;
-    EXPECT_EQ(mesh.GetTriangles().GetSize(), 5);
-    EXPECT_EQ(mesh.GetTriangleNormals().GetSize(), 5);
-    mesh.TriangleSynchronizedPushBack({
-            {"triangles", core::Tensor::Ones({3}, core::Dtype::Int64, device)},
-            {"normals", core::Tensor::Ones({3}, core::Dtype::Float32, device)},
-    });
-    EXPECT_EQ(mesh.GetTriangles().GetSize(), 6);
-    EXPECT_EQ(mesh.GetTriangleNormals().GetSize(), 6);
+    EXPECT_TRUE(mesh.HasVertices());
+    EXPECT_EQ(mesh.GetVertices().GetLength(), 10);
+    EXPECT_EQ(mesh.GetTriangles().GetLength(), 10);
 }
 
 TEST_P(TriangleMeshPermuteDevices, Getters) {
     core::Device device = GetParam();
 
-    auto vertices = core::TensorList::FromTensor(
-            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device));
-    auto vertex_colors = core::TensorList::FromTensor(
-            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 2);
-    auto vertex_labels = core::TensorList::FromTensor(
-            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3);
+    core::Tensor vertices =
+            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device);
+    core::Tensor vertex_colors =
+            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 2;
+    core::Tensor vertex_labels =
+            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3;
 
-    auto triangles = core::TensorList::FromTensor(
-            core::Tensor::Ones({2, 3}, core::Dtype::Int64, device));
-    auto triangle_normals = core::TensorList::FromTensor(
-            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 2);
-    auto triangle_labels = core::TensorList::FromTensor(
-            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3);
+    core::Tensor triangles =
+            core::Tensor::Ones({2, 3}, core::Dtype::Int64, device);
+    core::Tensor triangle_normals =
+            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 2;
+    core::Tensor triangle_labels =
+            core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3;
 
     t::geometry::TriangleMesh mesh(vertices, triangles);
     mesh.SetVertexColors(vertex_colors);
@@ -172,34 +111,33 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
     mesh.SetTriangleNormals(triangle_normals);
     mesh.SetTriangleAttr("labels", triangle_labels);
 
-    EXPECT_TRUE(mesh.GetVertices().AsTensor().AllClose(
+    EXPECT_TRUE(mesh.GetVertices().AllClose(
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device)));
-    EXPECT_TRUE(mesh.GetVertexColors().AsTensor().AllClose(
+    EXPECT_TRUE(mesh.GetVertexColors().AllClose(
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 2));
-    EXPECT_TRUE(mesh.GetVertexAttr("labels").AsTensor().AllClose(
+    EXPECT_TRUE(mesh.GetVertexAttr("labels").AllClose(
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3));
     EXPECT_ANY_THROW(mesh.GetVertexNormals());
 
-    EXPECT_TRUE(mesh.GetTriangles().AsTensor().AllClose(
+    EXPECT_TRUE(mesh.GetTriangles().AllClose(
             core::Tensor::Ones({2, 3}, core::Dtype::Int64, device)));
-    EXPECT_TRUE(mesh.GetTriangleNormals().AsTensor().AllClose(
+    EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 2));
-    EXPECT_TRUE(mesh.GetTriangleAttr("labels").AsTensor().AllClose(
+    EXPECT_TRUE(mesh.GetTriangleAttr("labels").AllClose(
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3));
 
     // Const getters. (void)tl gets rid of the unused variables warning.
-    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertices(); (void)tl);
-    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertexColors();
+    EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetVertices(); (void)tl);
+    EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetVertexColors(); (void)tl);
+    EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetVertexAttr("labels");
                     (void)tl);
-    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertexAttr("labels");
-                    (void)tl);
-    EXPECT_ANY_THROW(const core::TensorList& tl = mesh.GetVertexNormals();
+    EXPECT_ANY_THROW(const core::Tensor& tl = mesh.GetVertexNormals();
                      (void)tl);
 
-    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangles(); (void)tl);
-    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangleNormals();
+    EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetTriangles(); (void)tl);
+    EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetTriangleNormals();
                     (void)tl);
-    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangleAttr("labels");
+    EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetTriangleAttr("labels");
                     (void)tl);
 }
 
@@ -213,14 +151,14 @@ TEST_P(TriangleMeshPermuteDevices, Setters) {
                                    device);
     core::Device cpu_device = core::Device("CPU:0");
     if (cpu_device != device) {
-        core::TensorList cpu_vertices = core::TensorList::FromTensor(
-                core::Tensor::Ones({2, 3}, core::Dtype::Float32, cpu_device));
-        core::TensorList cpu_colors = core::TensorList::FromTensor(
+        core::Tensor cpu_vertices =
+                core::Tensor::Ones({2, 3}, core::Dtype::Float32, cpu_device);
+        core::Tensor cpu_colors =
                 core::Tensor::Ones({2, 3}, core::Dtype::Float32, cpu_device) *
-                2);
-        core::TensorList cpu_labels = core::TensorList::FromTensor(
+                2;
+        core::Tensor cpu_labels =
                 core::Tensor::Ones({2, 3}, core::Dtype::Float32, cpu_device) *
-                3);
+                3;
 
         EXPECT_ANY_THROW(mesh.SetVertices(cpu_vertices));
         EXPECT_ANY_THROW(mesh.SetVertexColors(cpu_colors));
@@ -241,27 +179,25 @@ TEST_P(TriangleMeshPermuteDevices, Has) {
     EXPECT_FALSE(mesh.HasTriangleNormals());
     EXPECT_FALSE(mesh.HasTriangleAttr("labels"));
 
-    mesh.SetVertices(core::TensorList::FromTensor(
-            core::Tensor::Ones({10, 3}, core::Dtype::Float32, device)));
+    mesh.SetVertices(core::Tensor::Ones({10, 3}, core::Dtype::Float32, device));
     EXPECT_TRUE(mesh.HasVertices());
-    mesh.SetTriangles(core::TensorList::FromTensor(
-            core::Tensor::Ones({10, 3}, core::Dtype::Int64, device)));
+    mesh.SetTriangles(core::Tensor::Ones({10, 3}, core::Dtype::Int64, device));
     EXPECT_TRUE(mesh.HasTriangles());
 
     // Different size.
-    mesh.SetVertexColors(core::TensorList::FromTensor(
-            core::Tensor::Ones({5, 3}, core::Dtype::Float32, device)));
+    mesh.SetVertexColors(
+            core::Tensor::Ones({5, 3}, core::Dtype::Float32, device));
     EXPECT_FALSE(mesh.HasVertexColors());
-    mesh.SetTriangleNormals(core::TensorList::FromTensor(
-            core::Tensor::Ones({5, 3}, core::Dtype::Float32, device)));
+    mesh.SetTriangleNormals(
+            core::Tensor::Ones({5, 3}, core::Dtype::Float32, device));
     EXPECT_FALSE(mesh.HasTriangleNormals());
 
     // Same size.
-    mesh.SetVertexColors(core::TensorList::FromTensor(
-            core::Tensor::Ones({10, 3}, core::Dtype::Float32, device)));
+    mesh.SetVertexColors(
+            core::Tensor::Ones({10, 3}, core::Dtype::Float32, device));
     EXPECT_TRUE(mesh.HasVertexColors());
-    mesh.SetTriangleNormals(core::TensorList::FromTensor(
-            core::Tensor::Ones({10, 3}, core::Dtype::Float32, device)));
+    mesh.SetTriangleNormals(
+            core::Tensor::Ones({10, 3}, core::Dtype::Float32, device));
     EXPECT_TRUE(mesh.HasTriangleNormals());
 }
 

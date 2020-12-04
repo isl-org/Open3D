@@ -29,6 +29,10 @@ if (NOT BUILD_RPC_INTERFACE)
     list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/io/rpc/RemoteFunctions.cpp)
 endif()
 
+if (NOT BUILD_CUDA_MODULE)
+    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/FixedRadiusIndex.cpp)
+endif()
+
 if (NOT WITH_FAISS)
     list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/KnnFaiss.cpp)
 endif()
