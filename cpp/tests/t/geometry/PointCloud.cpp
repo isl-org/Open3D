@@ -118,6 +118,26 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
               std::vector<float>({2.5, 3.5, 4.5}));
 }
 
+TEST_P(PointCloudPermuteDevices, Transform) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    t::geometry::PointCloud pcd(dtype, device);
+    core::Tensor transformation(
+            std::vector<float>{1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1},
+            {4, 4}, dtype, device);
+
+    pcd.SetPoints(
+            core::Tensor(std::vector<float>{1, 1, 1}, {1, 3}, dtype, device));
+    pcd.SetPointNormals(
+            core::Tensor(std::vector<float>{1, 1, 1}, {1, 3}, dtype, device));
+    pcd.Transform(transformation);
+    EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
+              std::vector<float>({3, 3, 2}));
+    EXPECT_EQ(pcd.GetPointNormals().ToFlatVector<float>(),
+              std::vector<float>({2, 2, 1}));
+}
+
 TEST_P(PointCloudPermuteDevices, Translate) {
     core::Device device = GetParam();
 
@@ -152,6 +172,27 @@ TEST_P(PointCloudPermuteDevices, Scale) {
     pcd.Scale(scale, center);
     EXPECT_EQ(points.ToFlatVector<float>(),
               std::vector<float>({-3, -3, -3, 1, 1, 1, 5, 5, 5}));
+}
+
+TEST_P(PointCloudPermuteDevices, Rotate) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    t::geometry::PointCloud pcd(dtype, device);
+    core::Tensor rotation(std::vector<float>{1, 1, 0, 0, 1, 1, 0, 1, 0}, {3, 3},
+                          dtype, device);
+    core::Tensor center = core::Tensor::Zeros({3}, dtype, device);
+
+    pcd.SetPoints(
+            core::Tensor(std::vector<float>{1, 1, 1}, {1, 3}, dtype, device));
+    pcd.SetPointNormals(
+            core::Tensor(std::vector<float>{1, 1, 1}, {1, 3}, dtype, device));
+
+    pcd.Rotate(rotation, center);
+    EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
+              std::vector<float>({2, 2, 1}));
+    EXPECT_EQ(pcd.GetPointNormals().ToFlatVector<float>(),
+              std::vector<float>({2, 2, 1}));
 }
 
 TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {

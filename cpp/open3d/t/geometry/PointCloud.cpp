@@ -72,14 +72,58 @@ core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
 core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    utility::LogError("Unimplemented");
+    transformation.AssertShape({4, 4});
+    // Use reserve() keyword.
+    core::Tensor transform;
+    if (transformation.GetDevice() != device_) {
+        utility::LogWarning("Attribute device {} != Pointcloud's device {}.",
+                            transformation.GetDevice().ToString(),
+                            device_.ToString());
+        transform = transformation.Copy(device_);  // Copy to the device.
+    } else
+        transform = transformation;  // Use Shallow Copy, if on the same device.
+
+    core::Tensor &points = GetPoints();
+
+    //  Extract s, R, t from Transformation
+    //  T (4x4) =   | R(3x3)  t(3x1) |
+    //              | O(1x3)  s(1x1) |  for Rigid Transformation s = 1
+
+    core::Tensor R = transform.Slice(0, 0, 3).Slice(1, 0, 3);
+    core::Tensor t = transform.Slice(0, 0, 3).Slice(1, 3, 4);
+
+    // To be considered for future opitmisation:
+    // - Since rotation operation is common for both points and normals
+    //   in future a parallel joint optimised kernel can be defined.
+    //   [Cache Optimisation]
+    // - After tensor: vertical stack operation is implemented,
+    //   performance of P = T*P vs P = R(P) + t is to be compared
+    //   for sequencial and parallel calculation.
+
+    //  points (3xN) = s.R(points) + t
+    points = (R.Matmul(points.T())).Add_(t).T();
+
+    if (HasPointNormals()) {
+        // for normal: n.T() = R*n.T()
+        core::Tensor &normals = GetPointNormals();
+        normals = (R.Matmul(normals.T())).T();
+    }
     return *this;
 }
 
 PointCloud &PointCloud::Translate(const core::Tensor &translation,
                                   bool relative) {
     translation.AssertShape({3});
-    core::Tensor transform = translation.Copy();
+    // Use reserve() keyword.
+    core::Tensor transform;
+    if (translation.GetDevice() != device_) {
+        utility::LogWarning("Attribute device {} != Pointcloud's device {}.",
+                            translation.GetDevice().ToString(),
+                            device_.ToString());
+        transform = translation.Copy(device_);  // Copy to 'this' device.
+    } else
+        transform = translation;  // Use Shallow Copy, if on the same device.
+
     if (!relative) {
         transform -= GetCenter();
     }
@@ -96,7 +140,31 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
-    utility::LogError("Unimplemented");
+    R.AssertShape({3, 3});
+    center.AssertShape({3});
+    // Use reserve() keyword.
+    core::Tensor Rot;
+    if (R.GetDevice() != device_) {
+        utility::LogWarning("Attribute device {} != Pointcloud's device {}.",
+                            R.GetDevice().ToString(), device_.ToString());
+        Rot = R.Copy(device_);  // Copy to 'this' device.
+    } else
+        Rot = R;  // Use Shallow Copy, if on the same device.
+
+    core::Tensor &points = GetPoints();
+
+    // Doubt: if center is 0, will it still perform substration computationally?
+    // if so, crete case for zero and non-zero to save unnecessary computation,
+    // or create a new function 'RotateAboutOrigin'
+    points = ((Rot.Matmul((points.Sub_(center)).T())).T()).Add_(center);
+
+    if (HasPointNormals()) {
+        // for normal: n.T() = R*n.T()
+        core::Tensor &normals = GetPointNormals();
+        normals = (Rot.Matmul(normals.T())).T();
+    }
+
+    // utility::LogError("Unimplemented");
     return *this;
 }
 
