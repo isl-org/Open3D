@@ -31,9 +31,10 @@ set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/lib")
 set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file) # The order is critical.
 if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is no-op
     ExternalProject_Add_Step(ext_librealsense rename_debug_libs
-        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> "${LIBREALSENSE_LIB_DIR}/realsense2d.lib" "${LIBREALSENSE_LIB_DIR}/realsense2.lib"
-        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> "${LIBREALSENSE_LIB_DIR}/fwd.lib" "${LIBREALSENSE_LIB_DIR}/fw.lib"
-        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> "${LIBREALSENSE_LIB_DIR}/realsense-filed.lib" "${LIBREALSENSE_LIB_DIR}/realsense-file.lib"
+        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> realsense2d.lib realsense2.lib
+        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> fwd.lib fw.lib
+        COMMAND $<IF:$<CONFIG:Debug>,rename,rem> realsense-filed.lib realsense-file.lib
+        WORKING_DIRECTORY "${LIBREALSENSE_LIB_DIR}"
         DEPENDEES install
     )
 endif()
