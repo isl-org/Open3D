@@ -136,7 +136,6 @@ public:
     /// \param data The data buffer to be written into.
     /// \param elem_size Element size in bytes.
     /// \param num_elems Number of elements to read.
-    template <class T>
     size_t ReadData(void *data, size_t elem_size, size_t num_elems);
 
     /// Returns the underlying C FILE pointer.
