@@ -38,11 +38,56 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+void CUDAUnprojectKernel(const std::unordered_map<std::string, Tensor>& srcs,
+                         std::unordered_map<std::string, Tensor>& dsts) {
+    if (srcs.count("depth") == 0 || srcs.count("intrinsics") == 0 ||
+        srcs.count("depth_scale") == 0) {
+        utility::LogError(
+                "[GeneralEWCUDA] expect depth, intrinsics, and depth_scale as "
+                "input");
+    }
+
+    // Input
+    Tensor depth = srcs.at("depth").To(core::Dtype::Float32);
+    Tensor intrinsics = srcs.at("intrinsics").To(core::Dtype::Float32);
+    float depth_scale = srcs.at("depth_scale").Item<float>();
+
+    NDArrayIndexer depth_ndi(depth, 2);
+    TransformIndexer ti(intrinsics);
+
+    // Output
+    Tensor vertex_map({depth_ndi.GetShape(0), depth_ndi.GetShape(1), 3},
+                      core::Dtype::Float32, depth.GetDevice());
+    NDArrayIndexer vertex_ndi(vertex_map, 2);
+
+    // Workload
+    int64_t n = depth_ndi.NumElements();
+
+    CUDALauncher::LaunchGeneralKernel(
+            n, [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+                int64_t y, x;
+                depth_ndi.WorkloadToCoord(workload_idx, &x, &y);
+
+                float d = *static_cast<float*>(depth_ndi.GetDataPtrFromWorkload(
+                                  workload_idx)) /
+                          depth_scale;
+
+                float* vertex = static_cast<float*>(
+                        vertex_ndi.GetDataPtrFromWorkload(workload_idx));
+
+                ti.Unproject(static_cast<float>(x), static_cast<float>(y), d,
+                             vertex, vertex + 1, vertex + 2);
+            });
+
+    dsts.emplace("vertex_map", vertex_map);
+}
+
 void GeneralEWCUDA(const std::unordered_map<std::string, Tensor>& srcs,
                    std::unordered_map<std::string, Tensor>& dsts,
                    GeneralEWOpCode op_code) {
     switch (op_code) {
         case GeneralEWOpCode::Unproject:
+            CUDAUnprojectKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::TSDFIntegrate:
             break;

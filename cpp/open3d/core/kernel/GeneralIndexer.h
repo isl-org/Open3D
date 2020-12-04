@@ -42,7 +42,8 @@ public:
     /// intrinsic: simple pinhole camera matrix, stored in fx, fy, cx, cy
     /// extrinsic: world to camera transform, stored in a 3x4 matrix
     TransformIndexer(const Tensor& intrinsic,
-                     const Tensor& extrinsic,
+                     const Tensor& extrinsic = Tensor::Eye(
+                             4, core::Dtype::Float32, core::Device("CPU:0")),
                      float scale = 1.0f) {
         Tensor intrinsic_f = intrinsic.To(core::Dtype::Float32);
         Tensor extrinsic_f = extrinsic.To(core::Dtype::Float32);
@@ -116,13 +117,12 @@ private:
 
 /// Convert between ND coordinates and their corresponding linear offsets
 /// Internal conversions:
-/// 2D: height (y), weight (x)
-/// 3D: depth (z), height (y), width (x)
-/// 4D: time, z, y, x
+/// 2D: height (y), weight (x), [channel (c)]
+/// 3D: depth (z), height (y), width (x), [channel (c)]
 const int64_t MAX_RESOLUTION_DIMS = 4;
 class NDArrayIndexer {
 public:
-    NDArrayIndexer(const Tensor& ndarray) {
+    NDArrayIndexer(const Tensor& ndarray, int64_t active_dims) {
         if (!ndarray.IsContiguous()) {
             utility::LogError(
                     "[NDArrayIndexer] Only support contiguous tensors for "
@@ -131,17 +131,32 @@ public:
 
         SizeVector shape = ndarray.GetShape();
         int64_t n = static_cast<int64_t>(shape.size());
-        if (n > MAX_RESOLUTION_DIMS) {
+        if (active_dims > MAX_RESOLUTION_DIMS || active_dims > n) {
             utility::LogError(
                     "[NDArrayIndexer] Tensor shape too large, only <= {} is "
                     "supported, but received {}.",
-                    MAX_RESOLUTION_DIMS, n);
+                    MAX_RESOLUTION_DIMS, active_dims);
         }
-        for (int64_t i = 0; i < n; ++i) {
+
+        // Leading dimensions are coordinates
+        active_dims_ = active_dims;
+        for (int64_t i = 0; i < active_dims_; ++i) {
             shape_[i] = shape[i];
         }
+        // Trailing dimensions are channels
         element_byte_size_ = ndarray.GetDtype().ByteSize();
+        for (int64_t i = active_dims_; i < n; ++i) {
+            element_byte_size_ *= shape[i];
+        }
         ptr_ = const_cast<void*>(ndarray.GetDataPtr());
+    }
+
+    OPEN3D_HOST_DEVICE int64_t NumElements() {
+        int64_t num_elems = 1;
+        for (int64_t i = 0; i < active_dims_; ++i) {
+            num_elems *= shape_[i];
+        }
+        return num_elems;
     }
 
     /// 2D coordinate => workload
@@ -221,7 +236,7 @@ public:
 
     OPEN3D_HOST_DEVICE int64_t GetShape(int i) const { return shape_[i]; }
 
-    OPEN3D_HOST_DEVICE void* GetPtrFromWorkload(int64_t workload) const {
+    OPEN3D_HOST_DEVICE void* GetDataPtrFromWorkload(int64_t workload) const {
         return static_cast<void*>(static_cast<uint8_t*>(ptr_) +
                                   workload * element_byte_size_);
     }
@@ -230,6 +245,7 @@ private:
     void* ptr_;
     int64_t shape_[MAX_RESOLUTION_DIMS];
     int64_t element_byte_size_;
+    int64_t active_dims_;
 };
 
 }  // namespace kernel

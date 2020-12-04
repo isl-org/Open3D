@@ -35,6 +35,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
 #include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/kernel/Kernel.h"
 
 namespace open3d {
 namespace t {
@@ -133,7 +134,34 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size) const {
     return PointCloud(pcd_down_map);
 }
 
-geometry::PointCloud PointCloud::FromLegacyPointCloud(
+/// Create a PointCloud from a depth image
+PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
+                                            const core::Tensor &intrinsics,
+                                            double depth_scale) {
+    core::Device device = depth.GetDevice();
+    std::unordered_map<std::string, core::Tensor> srcs = {
+            {"depth", depth.AsTensor()},
+            {"intrinsics", intrinsics.Copy(device)},
+            {"depth_scale",
+             core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
+                          {}, core::Dtype::Float32, device)}};
+    std::unordered_map<std::string, core::Tensor> dsts;
+
+    core::kernel::GeneralEW(srcs, dsts,
+                            core::kernel::GeneralEWOpCode::Unproject);
+    if (dsts.count("vertex_map") == 0) {
+        utility::LogError(
+                "[PointCloud] unprojection launch failed, vertex map expected "
+                "to return.");
+    }
+    core::Tensor vertex_map = dsts.at("vertex_map");
+    core::Tensor pcd_tensor =
+            vertex_map.View({depth.GetRows() * depth.GetCols(), 3});
+
+    return PointCloud(core::TensorList::FromTensor(pcd_tensor));
+}
+
+PointCloud PointCloud::FromLegacyPointCloud(
         const open3d::geometry::PointCloud &pcd_legacy,
         core::Dtype dtype,
         const core::Device &device) {

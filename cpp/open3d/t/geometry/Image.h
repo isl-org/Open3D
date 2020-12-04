@@ -130,8 +130,9 @@ public:
     core::Tensor AsTensor() const { return data_; }
 
     /// Create from a legacy Open3D Image.
-    static Image FromLegacyImage(const open3d::geometry::Image &image_legacy,
-                                 const core::Device &Device);
+    static Image FromLegacyImage(
+            const open3d::geometry::Image &image_legacy,
+            const core::Device &Device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D Image.
     open3d::geometry::Image ToLegacyImage();
