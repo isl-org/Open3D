@@ -151,6 +151,25 @@ public:
         ptr_ = const_cast<void*>(ndarray.GetDataPtr());
     }
 
+    /// Only used for simple shapes
+    NDArrayIndexer(const SizeVector& shape) {
+        int64_t n = static_cast<int64_t>(shape.size());
+        if (n > MAX_RESOLUTION_DIMS) {
+            utility::LogError(
+                    "[NDArrayIndexer] SizeVector too large, only <= {} is "
+                    "supported, but received {}.",
+                    MAX_RESOLUTION_DIMS, n);
+        }
+        active_dims_ = n;
+        for (int64_t i = 0; i < active_dims_; ++i) {
+            shape_[i] = shape[i];
+        }
+
+        // Reserved
+        element_byte_size_ = 0;
+        ptr_ = nullptr;
+    }
+
     OPEN3D_HOST_DEVICE int64_t NumElements() {
         int64_t num_elems = 1;
         for (int64_t i = 0; i < active_dims_; ++i) {

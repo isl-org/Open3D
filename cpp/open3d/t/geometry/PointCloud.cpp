@@ -36,6 +36,7 @@
 #include "open3d/core/TensorList.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/Matmul.h"
 
 namespace open3d {
 namespace t {
@@ -75,7 +76,12 @@ core::Tensor PointCloud::GetCenter() const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    utility::LogError("Unimplemented");
+    core::Tensor R = transformation.Slice(0, 0, 3).Slice(1, 0, 3);
+    core::Tensor t = transformation.Slice(0, 0, 3).Slice(1, 3, 4);
+    core::Tensor points_transformed;
+    core::Matmul(GetPoints().AsTensor(), R.T(), points_transformed);
+    points_transformed += t.T();
+    GetPoints().AsTensor() = points_transformed;
     return *this;
 }
 
