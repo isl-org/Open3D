@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/TensorListMap.h"
+#include "open3d/t/geometry/TensorMap.h"
 
 #include "open3d/t/geometry/PointCloud.h"
 #include "pybind/docstring.h"
@@ -34,29 +34,25 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_tensorlistmap(py::module& m) {
+void pybind_tensormap(py::module& m) {
     // Bind to the generic dictionary interface such that it works the same as a
     // regular dictionay in Python, except that types are enforced. Supported
     // functions include `__bool__`, `__iter__`, `items`, `__getitem__`,
     // `__contains__`, `__delitem__`, `__len__` and map assignment.
-    auto tlm = py::bind_map<TensorListMap>(m, "TensorListMap",
-                                           "Map of TensorList by string.");
+    auto tm = py::bind_map<TensorMap>(
+            m, "TensorMap", "Map of String to Tensor with a primary key.");
 
     // Constructors.
-    tlm.def(py::init<const std::string&>(), "primary_key"_a)
-            .def(py::init<const std::string&,
-                          const std::unordered_map<std::string,
-                                                   core::TensorList>&>(),
-                 "primary_key"_a, "map_keys_to_tensorlists"_a);
+    tm.def(py::init<const std::string&>(), "primary_key"_a);
+    tm.def(py::init<const std::string&,
+                    const std::unordered_map<std::string, core::Tensor>&>(),
+           "primary_key"_a, "map_keys_to_tensors"_a);
 
     // Member functions. Some C++ functions are ignored since the
     // functionalities are already covered in the generic dictionary interface.
-    tlm.def("synchronized_push_back", &TensorListMap::SynchronizedPushBack,
-            "map_keys_to_tensors"_a)
-            .def("get_primary_key", &TensorListMap::GetPrimaryKey)
-            .def("is_size_synchronized", &TensorListMap::IsSizeSynchronized)
-            .def("assert_size_synchronized",
-                 &TensorListMap::AssertSizeSynchronized);
+    tm.def("get_primary_key", &TensorMap::GetPrimaryKey);
+    tm.def("is_size_synchronized", &TensorMap::IsSizeSynchronized);
+    tm.def("assert_size_synchronized", &TensorMap::AssertSizeSynchronized);
 }
 
 }  // namespace geometry

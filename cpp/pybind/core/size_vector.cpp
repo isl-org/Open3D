@@ -32,10 +32,18 @@
 namespace open3d {
 namespace core {
 
-void pybind_core_size_vector(py::module &m) {
-    auto size_vector = py::bind_vector<SizeVector>(
+void pybind_core_size_vector(py::module& m) {
+    // bind_vector takes care of most common methods for Python list.
+    auto sv = py::bind_vector<SizeVector>(
             m, "SizeVector",
             "A vector of integers for specifying shape, strides, etc.");
+
+    auto dsv = py::bind_vector<DynamicSizeVector>(
+            m, "DynamicSizeVector",
+            "A vector of integers for specifying shape, strides, etc. Some "
+            "elements can be None.");
+    dsv.def("__repr__",
+            [](const DynamicSizeVector& dsv) { return dsv.ToString(); });
 }
 
 }  // namespace core
