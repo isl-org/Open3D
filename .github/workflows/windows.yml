@@ -34,6 +34,11 @@ jobs:
         CONFIG: [Release, Debug]
 
     steps:
+      - name: Cancel outdated
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          github_token: ${{ github.token }}
+
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
@@ -78,8 +83,17 @@ jobs:
     runs-on: windows-latest
     strategy:
       fail-fast: false
+      # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         python_version: [3.6, 3.7, 3.8]
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
@@ -169,6 +183,14 @@ jobs:
       fail-fast: false
       matrix:
         python_version: [3.6, 3.7, 3.8]
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
