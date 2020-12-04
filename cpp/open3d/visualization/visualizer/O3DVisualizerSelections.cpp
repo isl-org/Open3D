@@ -274,8 +274,8 @@ void O3DVisualizerSelections::AddSelectablePoints(
     } else if (tcloud || tmesh) {
         const auto &tpoints =
                 (tcloud ? tcloud->GetPoints() : tmesh->GetVertices());
-        const size_t n = tpoints.GetSize();
-        float *pts = (float *)tpoints.AsTensor().GetDataPtr();
+        const size_t n = tpoints.NumElements();
+        float *pts = (float *)tpoints.GetDataPtr();
         points.reserve(points.size() + n);
         for (size_t i = 0; i < n; i += 3) {
             points.emplace_back(double(pts[i]), double(pts[i + 1]),
