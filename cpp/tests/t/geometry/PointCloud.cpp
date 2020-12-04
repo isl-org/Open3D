@@ -181,16 +181,16 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
     t::geometry::PointCloud pcd(dtype, device);
     core::Tensor rotation(std::vector<float>{1, 1, 0, 0, 1, 1, 0, 1, 0}, {3, 3},
                           dtype, device);
-    core::Tensor center = core::Tensor::Zeros({3}, dtype, device);
+    core::Tensor center = core::Tensor::Ones({3}, dtype, device);
 
     pcd.SetPoints(
-            core::Tensor(std::vector<float>{1, 1, 1}, {1, 3}, dtype, device));
+            core::Tensor(std::vector<float>{2, 2, 2}, {1, 3}, dtype, device));
     pcd.SetPointNormals(
             core::Tensor(std::vector<float>{1, 1, 1}, {1, 3}, dtype, device));
 
     pcd.Rotate(rotation, center);
     EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
-              std::vector<float>({2, 2, 1}));
+              std::vector<float>({3, 3, 2}));
     EXPECT_EQ(pcd.GetPointNormals().ToFlatVector<float>(),
               std::vector<float>({2, 2, 1}));
 }

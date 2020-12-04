@@ -155,8 +155,9 @@ def test_member_functions(device):
     # rotate.
     pcd = o3d.t.geometry.PointCloud(dtype, device)
     rotation = o3c.Tensor([[1, 1, 0], [0, 1, 1], [0, 1, 0]], dtype, device)
-    pcd.point["points"] = o3c.Tensor([[1, 1, 1]], dtype, device)
+    center = o3c.Tensor([1, 1, 1], dtype, device)
+    pcd.point["points"] = o3c.Tensor([[2, 2, 2]], dtype, device)
     pcd.point["normals"] = o3c.Tensor([[1, 1, 1]], dtype, device)
-    pcd.rotate(rotation)
-    assert pcd.point["points"].allclose(o3c.Tensor([[2, 2, 1]], dtype, device))
+    pcd.rotate(rotation, center)
+    assert pcd.point["points"].allclose(o3c.Tensor([[3, 3, 2]], dtype, device))
     assert pcd.point["normals"].allclose(o3c.Tensor([[2, 2, 1]], dtype, device))
