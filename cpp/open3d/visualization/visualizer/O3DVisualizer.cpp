@@ -739,7 +739,7 @@ struct O3DVisualizer::Impl {
         settings.anim_edit->SetOnValueChanged([this](double new_value) {
             this->ui_state_.current_frame = int(new_value);
             this->UpdateFrameUI();
-            this->SetCurrentFrame(new_value);
+            this->SetCurrentFrame(size_t(new_value));
         });
 
         settings.play = new SmallToggleButton("Play");
@@ -846,8 +846,8 @@ struct O3DVisualizer::Impl {
         frames_.AddValue(order);
         bool update_for_order = (orig_n_frames < frames_.GetNumberOfFrames());
         if (update_for_order) {
-            settings.anim_slider->SetLimits(0, frames_.GetNumberOfFrames() - 1);
-            settings.anim_edit->SetLimits(0, frames_.GetNumberOfFrames() - 1);
+            settings.anim_slider->SetLimits(0, double(frames_.GetNumberOfFrames() - 1));
+            settings.anim_edit->SetLimits(0, double(frames_.GetNumberOfFrames() - 1));
             if (frames_.GetNumberOfFrames() >= 2) {
                 settings.anim_panel->SetVisible(true);
             }
@@ -903,8 +903,8 @@ struct O3DVisualizer::Impl {
         if (frames_.GetNumberOfFrames() <= 1) {
             SetAnimating(false);
         }
-        settings.anim_slider->SetLimits(0, frames_.GetNumberOfFrames() - 1);
-        settings.anim_edit->SetLimits(0, frames_.GetNumberOfFrames() - 1);
+        settings.anim_slider->SetLimits(0, double(frames_.GetNumberOfFrames() - 1));
+        settings.anim_edit->SetLimits(0, double(frames_.GetNumberOfFrames() - 1));
         SetCurrentFrame(ui_state_.current_frame);  // makes current frame valid
 
         added_groups_ = groups;
@@ -1138,8 +1138,7 @@ struct O3DVisualizer::Impl {
         for (auto &o : objects_) {
             UpdateGeometryVisibility(o);
         }
-        settings.anim_slider->SetValue(ui_state_.current_frame);
-        settings.anim_edit->SetValue(ui_state_.current_frame);
+        UpdateFrameUI();
     }
 
     void SetAnimating(bool is_animating) {
@@ -1327,8 +1326,8 @@ struct O3DVisualizer::Impl {
     }
 
     void UpdateFrameUI() {
-        settings.anim_slider->SetValue(ui_state_.current_frame);
-        settings.anim_edit->SetValue(ui_state_.current_frame);
+        settings.anim_slider->SetValue(double(ui_state_.current_frame));
+        settings.anim_edit->SetValue(double(ui_state_.current_frame));
     }
 
     void UpdateGeometryVisibility(const DrawObject &o) {
