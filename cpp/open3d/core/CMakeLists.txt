@@ -79,7 +79,11 @@ set(CORE_NNS_SRC
 )
 
 if (WITH_FAISS)
-    list(APPEND CORE_NNS_SRC nns/FaissIndex.cpp)
+    set(CORE_NNS_SRC ${CORE_NNS_SRC} nns/FaissIndex.cpp)
+endif()
+
+if (BUILD_CUDA_MODULE)
+    set(CORE_NNS_SRC ${CORE_NNS_SRC} nns/FixedRadiusSearch.cu)
 endif()
 
 if (BUILD_CUDA_MODULE)

@@ -29,8 +29,6 @@
 #include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 
-using namespace open3d::utility;
-
 namespace open3d {
 namespace core {
 namespace nns {

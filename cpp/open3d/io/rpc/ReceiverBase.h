@@ -35,6 +35,7 @@
 namespace zmq {
 class message_t;
 class socket_t;
+class context_t;
 }  // namespace zmq
 
 namespace open3d {
@@ -58,14 +59,14 @@ class ReceiverBase {
 public:
     /// Constructs a receiver listening on the specified address.
     /// \param address  Address to listen on.
-    /// \param timeout       Timeout in milliseconds for sending the repy.
+    /// \param timeout       Timeout in milliseconds for sending the reply.
     ReceiverBase(const std::string& address = "tcp://127.0.0.1:51454",
                  int timeout = 10000);
 
     ReceiverBase(const ReceiverBase&) = delete;
     ReceiverBase& operator=(const ReceiverBase&) = delete;
 
-    ~ReceiverBase();
+    virtual ~ReceiverBase();
 
     /// Starts the receiver mainloop in a new thread.
     void Start();
@@ -74,6 +75,9 @@ public:
     /// This function blocks until the mainloop is done with processing
     /// messages that have already been received.
     void Stop();
+
+    /// Returns the last error from the mainloop thread.
+    std::runtime_error GetLastError();
 
 protected:
     // Opaque type for providing the original msgpack::object to the
@@ -117,11 +121,14 @@ private:
 
     const std::string address_;
     const int timeout_;
+    std::shared_ptr<zmq::context_t> context_;
     std::unique_ptr<zmq::socket_t> socket_;
     std::thread thread_;
     std::mutex mutex_;
     bool keep_running_;
     std::atomic<bool> loop_running_;
+    std::atomic<int> mainloop_error_code_;
+    std::runtime_error mainloop_exception_;
 };
 
 }  // namespace rpc

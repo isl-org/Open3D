@@ -32,8 +32,6 @@
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/MiniVec.h"
 
-using namespace open3d::utility;
-
 namespace open3d {
 namespace core {
 namespace nns {
@@ -41,8 +39,7 @@ namespace nns {
 namespace {
 
 template <class T>
-// using Vec3 = Eigen::Matrix<T, 3, 1>;
-using Vec3 = MiniVec<T, 3>;
+using Vec3 = utility::MiniVec<T, 3>;
 
 /// Computes the distance of two points and tests if the distance is below a
 /// threshold.
@@ -120,7 +117,7 @@ void CountHashTableEntries(const cudaStream_t& stream,
     const int BLOCKSIZE = 64;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
-    grid.x = DivUp(num_points, block.x);
+    grid.x = utility::DivUp(num_points, block.x);
 
     if (grid.x)
         CountHashTableEntriesKernel<T><<<grid, block, 0, stream>>>(
@@ -190,7 +187,7 @@ void ComputePointIndexTable(
     const int BLOCKSIZE = 64;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
-    grid.x = DivUp(num_points, block.x);
+    grid.x = utility::DivUp(num_points, block.x);
 
     if (grid.x)
         ComputePointIndexTableKernel<T><<<grid, block, 0, stream>>>(
@@ -319,7 +316,7 @@ void CountNeighbors(const cudaStream_t& stream,
     const int BLOCKSIZE = 64;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
-    grid.x = DivUp(num_queries, block.x);
+    grid.x = utility::DivUp(num_queries, block.x);
 
     if (grid.x) {
 #define FN_PARAMETERS                                                   \
@@ -480,7 +477,7 @@ void WriteNeighborsIndicesAndDistances(
     const int BLOCKSIZE = 64;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
-    grid.x = DivUp(num_queries, block.x);
+    grid.x = utility::DivUp(num_queries, block.x);
 
     if (grid.x) {
 #define FN_PARAMETERS                                                      \
