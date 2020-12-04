@@ -159,7 +159,7 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
                 ImVec2(params.u0, params.v0), ImVec2(params.u1, params.v1));
     } else {
         pressed = ImGui::Button(
-                (impl_->title_ + impl_->id_).c_str(), 
+                (impl_->title_ + impl_->id_).c_str(),
                 ImVec2(float(GetFrame().width), float(GetFrame().height)));
     }
     if (pressed) {
