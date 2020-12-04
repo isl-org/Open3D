@@ -32,7 +32,10 @@ jobs:
       - name: Checkout Open3D source code
         uses: actions/checkout@v2
         with:
-          submodules: true
+          fetch-depth: 1
+          submodules: false
+        run: |
+          git submodule update --init --recursive
 
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
