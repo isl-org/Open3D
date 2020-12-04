@@ -72,6 +72,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
             PointCloud::CreateFromDepthImage(depth, intrinsics, depth_scale);
     pcd.Transform(extrinsics.Inverse());
 
+    // Pre-compressing for blocks
     float block_size = voxel_size_ * block_resolution_;
     core::Tensor block_coordd = pcd.GetPoints().AsTensor() / block_size;
     core::Tensor block_coordi = block_coordd.To(core::Dtype::Int64);
@@ -80,64 +81,60 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
             core::Dtype(core::Dtype::DtypeCode::Object,
                         core::Dtype::Int64.ByteSize() * 3, "_hash_k"),
             core::Dtype::Int64, device_);
-
     core::Tensor block_addrs, block_masks;
     pcd_block_hashmap.Activate(block_coordi, block_addrs, block_masks);
 
+    // Activate in blocks
     core::Tensor block_coords = block_coordi.IndexGet({block_masks});
     core::Tensor addrs, masks;
     block_hashmap_->Activate(block_coords, addrs, masks);
     block_hashmap_->Find(block_coords, addrs, masks);
 
-    // core::Tensor active_addrs({block_hashmap_->Size()}, core::Dtype::Int32,
-    //                           device_);
-    // block_hashmap_->GetActiveIndices(
-    //         static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
-    // core::Tensor active_keys = core::Hashmap::ReinterpretBufferTensor(
-    //         block_hashmap_->GetKeyTensor(), {block_hashmap_->GetCapacity(),
-    //         3}, core::Dtype::Int64);
-    // core::Tensor active_keysf =
-    //         active_keys.IndexGet({active_addrs.To(core::Dtype::Int64)})
-    //                 .To(core::Dtype::Float32);
+    // Input
+    std::unordered_map<std::string, core::Tensor> srcs = {
+            {"depth", depth.AsTensor()},
+            {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
+            {"block_keys",
+             core::Hashmap::ReinterpretBufferTensor(
+                     block_hashmap_->GetKeyTensor(),
+                     {block_hashmap_->GetCapacity(), 3}, core::Dtype::Int64)},
+            {"intrinsics", intrinsics.Copy(device_)},
+            {"extrinsics", extrinsics.Copy(device_)},
+            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
+                                        {}, core::Dtype::Int64, device_)},
+            {"depth_scale",
+             core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
+                          {}, core::Dtype::Float32, device_)},
+            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
+                                        core::Dtype::Float32, device_)},
+            {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
+                                       core::Dtype::Float32, device_)}};
 
-    // PointCloud pcd_active(core::TensorList::FromTensor(active_keysf));
-    // auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-    //         pcd_active.ToLegacyPointCloud());
-    // visualization::DrawGeometries({pcd_legacy});
+    // In-place modified output
+    std::unordered_map<std::string, core::Tensor> dsts = {
+            {"block_values",
+             core::Hashmap::ReinterpretBufferTensor(
+                     block_hashmap_->GetValueTensor(),
+                     {block_hashmap_->GetCapacity(), block_resolution_,
+                      block_resolution_, block_resolution_, 2},
+                     core::Dtype::Float32)}};
 
-    // // Input
-    // std::unordered_map<std::string, core::Tensor> srcs = {
-    //         {"depth", depth.AsTensor()},
-    //         {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
-    //         {"block_keys",
-    //          core::Hashmap::ReinterpretBufferTensor(
-    //                  block_hashmap_->GetKeyTensor(),
-    //                  {block_hashmap_->GetCapacity(), 3},
-    //                  core::Dtype::Int64)},
-    //         {"intrinsics", intrinsics.Copy(device_)},
-    //         {"extrinsics", extrinsics.Copy(device_)},
-    //         {"resolution",
-    //         core::Tensor(std::vector<int64_t>{block_resolution_},
-    //                                     {}, core::Dtype::Int64, device_)},
-    //         {"depth_scale",
-    //          core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
-    //                       {}, core::Dtype::Float32, device_)},
-    //         {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
-    //                                     core::Dtype::Float32, device_)},
-    //         {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
-    //                                    core::Dtype::Float32, device_)}};
+    core::kernel::GeneralEW(srcs, dsts,
+                            core::kernel::GeneralEWOpCode::TSDFIntegrate);
 
-    // // In-place modified output
-    // std::unordered_map<std::string, core::Tensor> dsts = {
-    //         {"block_values",
-    //          core::Hashmap::ReinterpretBufferTensor(
-    //                  block_hashmap_->GetValueTensor(),
-    //                  {block_hashmap_->GetCapacity(), block_resolution_,
-    //                   block_resolution_, block_resolution_, 2},
-    //                  core::Dtype::Float32)}};
-
-    // core::kernel::GeneralEW(srcs, dsts,
-    //                         core::kernel::GeneralEWOpCode::TSDFIntegrate);
+    // Debug section
+    core::Tensor active_addrs({block_hashmap_->Size()}, core::Dtype::Int32,
+                              device_);
+    block_hashmap_->GetActiveIndices(
+            static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
+    // core::Tensor active_values =
+    //         core::Hashmap::ReinterpretBufferTensor(
+    //                 block_hashmap_->GetValueTensor(),
+    //                 {block_hashmap_->GetCapacity(), block_resolution_,
+    //                  block_resolution_, block_resolution_, 2},
+    //                 core::Dtype::Float32)
+    //                 .IndexGet({active_addrs.To(core::Dtype::Int64)});
+    // utility::LogInfo("{}", active_values.ToString());
     utility::LogInfo("Active blocks in hashmap = {}", block_hashmap_->Size());
 }
 

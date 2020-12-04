@@ -189,7 +189,7 @@ void CPUTSDFIntegrateKernel(const std::unordered_map<std::string, Tensor>& srcs,
 
         /// Associate voxel workload and update TSDF/Weights
         int64_t workload_voxel;
-        voxel_block_buffer_indexer.CoordToWorkload(block_idx, xv, yv, zv,
+        voxel_block_buffer_indexer.CoordToWorkload(xv, yv, zv, block_idx,
                                                    &workload_voxel);
         float* voxel_ptr = static_cast<float*>(
                 voxel_block_buffer_indexer.GetDataPtrFromWorkload(
@@ -199,6 +199,9 @@ void CPUTSDFIntegrateKernel(const std::unordered_map<std::string, Tensor>& srcs,
         float weight_sum = voxel_ptr[1];
         voxel_ptr[0] = (weight_sum * tsdf_sum + sdf) / (weight_sum + 1);
         voxel_ptr[1] = weight_sum + 1;
+        // printf("%ld -> (%ld, %ld %ld %ld): %ld (%f %f)\n", workload_idx,
+        //        block_idx, xv, yv, zv, workload_voxel, voxel_ptr[0],
+        //        voxel_ptr[1]);
     });
 }
 

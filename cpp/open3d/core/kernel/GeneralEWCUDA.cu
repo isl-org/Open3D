@@ -94,6 +94,117 @@ void CUDAUnprojectKernel(const std::unordered_map<std::string, Tensor>& srcs,
     dsts.emplace("vertex_map", vertex_map);
 }
 
+void CUDATSDFIntegrateKernel(
+        const std::unordered_map<std::string, Tensor>& srcs,
+        std::unordered_map<std::string, Tensor>& dsts) {
+    // Decode input tensors
+    static std::unordered_set<std::string> src_attrs = {
+            "depth",      "indices",    "block_keys",
+            "intrinsics", "extrinsics", "resolution",
+            "voxel_size", "sdf_trunc",  "depth_scale",
+    };
+    for (auto& k : src_attrs) {
+        if (srcs.count(k) == 0) {
+            utility::LogError(
+                    "[CUDATSDFIntegrateKernel] expected Tensor {} in srcs, but "
+                    "did not receive",
+                    k);
+        }
+    }
+
+    Tensor depth = srcs.at("depth").To(core::Dtype::Float32);
+    Tensor indices = srcs.at("indices");
+    Tensor block_keys = srcs.at("block_keys");
+    Tensor block_values = dsts.at("block_values");
+
+    // Transforms
+    Tensor intrinsics = srcs.at("intrinsics").To(core::Dtype::Float32);
+    Tensor extrinsics = srcs.at("extrinsics").To(core::Dtype::Float32);
+
+    // Parameters
+    int64_t resolution = srcs.at("resolution").Item<int64_t>();
+    int64_t resolution3 = resolution * resolution * resolution;
+
+    float voxel_size = srcs.at("voxel_size").Item<float>();
+    float sdf_trunc = srcs.at("sdf_trunc").Item<float>();
+    float depth_scale = srcs.at("depth_scale").Item<float>();
+
+    // Shape / transform indexers, no data involved
+    NDArrayIndexer voxel_indexer({resolution, resolution, resolution});
+    TransformIndexer transform_indexer(intrinsics, extrinsics, voxel_size);
+
+    // Real data indexer
+    NDArrayIndexer image_indexer(depth, 2);
+    NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
+
+    // Plain arrays that does not require indexers
+    int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
+    int64_t* block_keys_ptr = static_cast<int64_t*>(block_keys.GetDataPtr());
+
+    int64_t n = indices.GetShape()[0] * resolution3;
+    CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_HOST_DEVICE(
+                                                 int64_t workload_idx) {
+        // Natural index (0, N) -> (block_idx, voxel_idx)
+        int64_t block_idx = indices_ptr[workload_idx / resolution3];
+        int64_t voxel_idx = workload_idx % resolution3;
+
+        /// Coordinate transform
+        // block_idx -> (x_block, y_block, z_block)
+        int64_t xb = block_keys_ptr[block_idx * 3 + 0];
+        int64_t yb = block_keys_ptr[block_idx * 3 + 1];
+        int64_t zb = block_keys_ptr[block_idx * 3 + 2];
+
+        // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+        int64_t xv, yv, zv;
+        voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+
+        // coordinate in world (in voxel)
+        int64_t x = (xb * resolution + xv);
+        int64_t y = (yb * resolution + yv);
+        int64_t z = (zb * resolution + zv);
+
+        // coordinate in camera (in voxel -> in meter)
+        float xc, yc, zc, u, v;
+        transform_indexer.RigidTransform(static_cast<float>(x),
+                                         static_cast<float>(y),
+                                         static_cast<float>(z), &xc, &yc, &zc);
+
+        // coordinate in image (in pixel)
+        transform_indexer.Project(xc, yc, zc, &u, &v);
+        if (!image_indexer.InBoundary(u, v)) {
+            return;
+        }
+
+        /// Associate image workload and compute SDF
+        int64_t workload_image;
+        image_indexer.CoordToWorkload(static_cast<int64_t>(u),
+                                      static_cast<int64_t>(v), &workload_image);
+        float depth =
+                *static_cast<const float*>(
+                        image_indexer.GetDataPtrFromWorkload(workload_image)) /
+                depth_scale;
+        float sdf = depth - zc;
+        if (depth <= 0 || zc <= 0 || sdf < -sdf_trunc) {
+            return;
+        }
+        sdf = sdf < sdf_trunc ? sdf : sdf_trunc;
+        sdf /= sdf_trunc;
+
+        /// Associate voxel workload and update TSDF/Weights
+        int64_t workload_voxel;
+        voxel_block_buffer_indexer.CoordToWorkload(xv, yv, zv, block_idx,
+                                                   &workload_voxel);
+        float* voxel_ptr = static_cast<float*>(
+                voxel_block_buffer_indexer.GetDataPtrFromWorkload(
+                        workload_voxel));
+
+        float tsdf_sum = voxel_ptr[0];
+        float weight_sum = voxel_ptr[1];
+        voxel_ptr[0] = (weight_sum * tsdf_sum + sdf) / (weight_sum + 1);
+        voxel_ptr[1] = weight_sum + 1;
+    });
+}
+
 void GeneralEWCUDA(const std::unordered_map<std::string, Tensor>& srcs,
                    std::unordered_map<std::string, Tensor>& dsts,
                    GeneralEWOpCode op_code) {
@@ -102,6 +213,7 @@ void GeneralEWCUDA(const std::unordered_map<std::string, Tensor>& srcs,
             CUDAUnprojectKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::TSDFIntegrate:
+            CUDATSDFIntegrateKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::TSDFSurfaceExtraction:
             break;

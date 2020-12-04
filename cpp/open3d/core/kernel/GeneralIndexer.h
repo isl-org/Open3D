@@ -119,6 +119,7 @@ private:
 /// Internal conversions:
 /// 2D: height (y), weight (x), [channel (c)]
 /// 3D: depth (z), height (y), width (x), [channel (c)]
+/// 4D: time (t), depth (z), height (y), width (x), [channel (c)]
 const int64_t MAX_RESOLUTION_DIMS = 4;
 class NDArrayIndexer {
 public:
