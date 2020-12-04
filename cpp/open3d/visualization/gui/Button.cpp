@@ -29,7 +29,6 @@
 #include <imgui.h>
 
 #include <cmath>
-#include <sstream>
 #include <string>
 
 #include "open3d/visualization/gui/Theme.h"
@@ -55,9 +54,7 @@ struct Button::Impl {
 };
 
 Button::Button(const char* title) : impl_(new Button::Impl()) {
-    std::stringstream s;
-    s << "##button_" << g_next_button_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = std::string("##button") + std::to_string(g_next_button_id++);
     impl_->title_ = title;
 }
 
