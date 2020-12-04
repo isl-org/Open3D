@@ -72,6 +72,9 @@ public:
                    const core::Tensor &extrinsics,
                    double depth_scale = 1000.0);
 
+    /// Extract point cloud near iso-surfaces
+    PointCloud ExtractSurface();
+
 protected:
     std::unordered_map<std::string, int> attr_channel_map_;
 

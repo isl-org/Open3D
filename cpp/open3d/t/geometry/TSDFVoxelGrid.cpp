@@ -123,10 +123,10 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                             core::kernel::GeneralEWOpCode::TSDFIntegrate);
 
     // Debug section
-    core::Tensor active_addrs({block_hashmap_->Size()}, core::Dtype::Int32,
-                              device_);
-    block_hashmap_->GetActiveIndices(
-            static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
+    // core::Tensor active_addrs({block_hashmap_->Size()}, core::Dtype::Int32,
+    //                           device_);
+    // block_hashmap_->GetActiveIndices(
+    //         static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
     // core::Tensor active_values =
     //         core::Hashmap::ReinterpretBufferTensor(
     //                 block_hashmap_->GetValueTensor(),
@@ -135,7 +135,44 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     //                 core::Dtype::Float32)
     //                 .IndexGet({active_addrs.To(core::Dtype::Int64)});
     // utility::LogInfo("{}", active_values.ToString());
-    utility::LogInfo("Active blocks in hashmap = {}", block_hashmap_->Size());
+    // utility::LogInfo("Active blocks in hashmap = {}",
+    // block_hashmap_->Size());
+}
+
+PointCloud TSDFVoxelGrid::ExtractSurface() {
+    core::Tensor active_addrs({block_hashmap_->Size()}, core::Dtype::Int32,
+                              device_);
+    block_hashmap_->GetActiveIndices(
+            static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
+
+    // Input
+    std::unordered_map<std::string, core::Tensor> srcs = {
+            {"indices", active_addrs.To(core::Dtype::Int64)},
+            {"block_keys",
+             core::Hashmap::ReinterpretBufferTensor(
+                     block_hashmap_->GetKeyTensor(),
+                     {block_hashmap_->GetCapacity(), 3}, core::Dtype::Int64)},
+            {"block_values",
+             core::Hashmap::ReinterpretBufferTensor(
+                     block_hashmap_->GetValueTensor(),
+                     {block_hashmap_->GetCapacity(), block_resolution_,
+                      block_resolution_, block_resolution_, 2},
+                     core::Dtype::Float32)},
+            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
+                                        {}, core::Dtype::Int64, device_)},
+            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
+                                        core::Dtype::Float32, device_)}};
+
+    std::unordered_map<std::string, core::Tensor> dsts;
+    core::kernel::GeneralEW(
+            srcs, dsts, core::kernel::GeneralEWOpCode::TSDFSurfaceExtraction);
+    if (dsts.count("points") == 0) {
+        utility::LogError(
+                "[TSDFVoxelGrid] extract surface launch failed, points "
+                "expected "
+                "to return.");
+    }
+    return PointCloud(core::TensorList::FromTensor(dsts.at("points")));
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors() {
