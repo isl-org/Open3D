@@ -46,12 +46,19 @@ public:
     NNSIndex &operator=(const NNSIndex &) = delete;
 
 public:
-    /// Set the data for the KDTree from a Tensor.
+    /// Set the data for the nearest neighbor search.
     ///
     /// \param dataset_points Dataset points for KDTree construction. Must be
     /// 2D, with shape {n, d}.
     /// \return Returns true if the construction success, otherwise false.
     virtual bool SetTensorData(const Tensor &dataset_points) = 0;
+
+    /// Set the data for the nearest neighbor search.
+    ///
+    /// \param dataset_points Dataset points for KDTree construction. Must be
+    /// 2D, with shape {n, d}.
+    /// \return Returns true if the construction success, otherwise false.
+    virtual bool SetTensorData(const Tensor &dataset_points, double radius) = 0;
 
     /// Perform K nearest neighbor search.
     ///
