@@ -75,16 +75,6 @@ filament::math::mat4f CameraToFilamentTransformF(const Camera::Transform& t) {
             e_matrix(3, 0), e_matrix(3, 1), e_matrix(3, 2), e_matrix(3, 3)});
 }
 
-/*filament::math::mat4 CameraToFilamentTransform(const Camera::Transform& t) {
-    auto e_matrix = t.matrix();
-    return filament::math::mat4(filament::math::mat4::row_major_init{
-            e_matrix(0, 0), e_matrix(0, 1), e_matrix(0, 2), e_matrix(0, 3),
-            e_matrix(1, 0), e_matrix(1, 1), e_matrix(1, 2), e_matrix(1, 3),
-            e_matrix(2, 0), e_matrix(2, 1), e_matrix(2, 2), e_matrix(2, 3),
-            e_matrix(3, 0), e_matrix(3, 1), e_matrix(3, 2), e_matrix(3, 3)});
-}
-*/
-
 }  // namespace
 
 FilamentCamera::FilamentCamera(filament::Engine& engine) : engine_(engine) {
@@ -97,15 +87,17 @@ void FilamentCamera::CopyFrom(const Camera* camera) {
     SetModelMatrix(camera->GetModelMatrix());
 
     auto& proj = camera->GetProjection();
-    if (proj.is_defined_by_planes) {
-        SetProjection(proj.proj.planes.projection, proj.proj.planes.left,
-                      proj.proj.planes.right, proj.proj.planes.bottom,
-                      proj.proj.planes.top, proj.proj.planes.near_plane,
-                      proj.proj.planes.far_plane);
+    if (proj.is_ortho) {
+        SetProjection(proj.proj.ortho.projection, proj.proj.ortho.left,
+                      proj.proj.ortho.right, proj.proj.ortho.bottom,
+                      proj.proj.ortho.top, proj.proj.ortho.near_plane,
+                      proj.proj.ortho.far_plane);
     } else {
-        SetProjection(proj.proj.fov.fov, proj.proj.fov.aspect,
-                      proj.proj.fov.near_plane, proj.proj.fov.far_plane,
-                      proj.proj.fov.fov_type);
+        SetProjection(proj.proj.perspective.fov,
+                      proj.proj.perspective.aspect,
+                      proj.proj.perspective.near_plane,
+                      proj.proj.perspective.far_plane,
+                      proj.proj.perspective.fov_type);
     }
 }
 
@@ -118,12 +110,12 @@ void FilamentCamera::SetProjection(
 
         camera_->setProjection(fov, aspect, near, far, dir);
 
-        projection_.is_defined_by_planes = false;
-        projection_.proj.fov.fov_type = fov_type;
-        projection_.proj.fov.fov = fov;
-        projection_.proj.fov.aspect = aspect;
-        projection_.proj.fov.near_plane = near;
-        projection_.proj.fov.far_plane = far;
+        projection_.is_ortho = false;
+        projection_.proj.perspective.fov_type = fov_type;
+        projection_.proj.perspective.fov = fov;
+        projection_.proj.perspective.aspect = aspect;
+        projection_.proj.perspective.near_plane = near;
+        projection_.proj.perspective.far_plane = far;
     }
 }
 
@@ -141,14 +133,14 @@ void FilamentCamera::SetProjection(Projection projection,
 
     camera_->setProjection(proj, left, right, bottom, top, near, far);
 
-    projection_.is_defined_by_planes = true;
-    projection_.proj.planes.projection = projection;
-    projection_.proj.planes.left = left;
-    projection_.proj.planes.right = right;
-    projection_.proj.planes.bottom = bottom;
-    projection_.proj.planes.top = top;
-    projection_.proj.planes.near_plane = near;
-    projection_.proj.planes.far_plane = far;
+    projection_.is_ortho = true;
+    projection_.proj.ortho.projection = projection;
+    projection_.proj.ortho.left = left;
+    projection_.proj.ortho.right = right;
+    projection_.proj.ortho.bottom = bottom;
+    projection_.proj.ortho.top = top;
+    projection_.proj.ortho.near_plane = near;
+    projection_.proj.ortho.far_plane = far;
 }
 
 double FilamentCamera::GetNear() const { return camera_->getNear(); }
@@ -156,18 +148,18 @@ double FilamentCamera::GetNear() const { return camera_->getNear(); }
 double FilamentCamera::GetFar() const { return camera_->getCullingFar(); }
 
 double FilamentCamera::GetFieldOfView() const {
-    if (projection_.is_defined_by_planes) {
+    if (projection_.is_ortho) {
         // technically orthographic projection is lim(fov->0) as dist->inf,
         // but it also serves as an obviously wrong value if you call
         // GetFieldOfView() after setting an orthographic projection
         return 0.0;
     } else {
-        return projection_.proj.fov.fov;
+        return projection_.proj.perspective.fov;
     }
 }
 
 Camera::FovType FilamentCamera::GetFieldOfViewType() const {
-    return projection_.proj.fov.fov_type;
+    return projection_.proj.perspective.fov_type;
 }
 
 void FilamentCamera::LookAt(const Eigen::Vector3f& center,

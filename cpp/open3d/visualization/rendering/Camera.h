@@ -101,7 +101,7 @@ public:
     virtual Transform GetProjectionMatrix() const = 0;
 
     struct ProjectionInfo {
-        bool is_defined_by_planes;
+        bool is_ortho;
         union {
             struct {
                 Projection projection;
@@ -111,15 +111,14 @@ public:
                 double top;
                 double near_plane;  // Windows #defines "near"
                 double far_plane;   // Windows #defines "far"
-            } planes;
+            } ortho;
             struct {
-                bool is_defined_by_planes;
                 FovType fov_type;
                 double fov;
                 double aspect;
                 double near_plane;
                 double far_plane;
-            } fov;
+            } perspective;
         } proj;
     };
     virtual const ProjectionInfo& GetProjection() const = 0;

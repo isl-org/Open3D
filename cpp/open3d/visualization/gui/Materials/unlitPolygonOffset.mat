@@ -13,7 +13,7 @@ vertex {
     void materialVertex(inout MaterialVertexInputs material) {
         float4 toCamera = 0.001f * (float4(getWorldCameraPosition(), 1.0f) - material.worldPosition);
         material.worldPosition += toCamera;
-        
+
         gl_PointSize = materialParams.pointSize;
     }
 }
