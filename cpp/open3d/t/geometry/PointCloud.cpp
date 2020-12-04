@@ -143,14 +143,18 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size) const {
 /// Create a PointCloud from a depth image
 PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             const core::Tensor &intrinsics,
-                                            double depth_scale) {
+                                            double depth_scale,
+                                            double depth_max) {
     core::Device device = depth.GetDevice();
     std::unordered_map<std::string, core::Tensor> srcs = {
             {"depth", depth.AsTensor()},
             {"intrinsics", intrinsics.Copy(device)},
             {"depth_scale",
              core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
-                          {}, core::Dtype::Float32, device)}};
+                          {}, core::Dtype::Float32, device)},
+            {"depth_max",
+             core::Tensor(std::vector<float>{static_cast<float>(depth_max)}, {},
+                          core::Dtype::Float32, device)}};
     std::unordered_map<std::string, core::Tensor> dsts;
 
     core::kernel::GeneralEW(srcs, dsts,

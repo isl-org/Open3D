@@ -31,7 +31,9 @@ int main(int argc, char** argv) {
 
     for (auto device : devices) {
         t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", 1}, {"weight", 1}},
-                                              3.0 / 512, 0.04, 16, 100, device);
+                                              3.0 / 512, 0.04, 16, 10, device);
+        std::vector<std::shared_ptr<const open3d::geometry::Geometry>>
+                geometries;
         for (int i = 0; i < 3000; ++i) {
             /// Load image
             std::string image_path =
@@ -45,6 +47,17 @@ int main(int argc, char** argv) {
                     trajectory->parameters_[i].extrinsic_.cast<float>();
             Tensor extrinsic = FromEigen(extrinsic_eigen).Copy(device);
 
+            // auto pcd = t::geometry::PointCloud::CreateFromDepthImage(
+            //         depth, intrinsic, 1000.0);
+            // pcd.Transform(extrinsic.Inverse());
+            // auto pcd_down = pcd.VoxelDownSample(16 * 3.0 / 512);
+
+            // auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+            //         pcd_down.ToLegacyPointCloud());
+            // geometries.push_back(pcd_legacy);
+            // if (i % 10 == 0) {
+            //     visualization::DrawGeometries(geometries);
+            // }
             utility::Timer timer;
             timer.Start();
             voxel_grid.Integrate(depth, intrinsic, extrinsic);

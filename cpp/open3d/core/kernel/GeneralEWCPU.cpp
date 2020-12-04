@@ -42,17 +42,26 @@ namespace kernel {
 
 void CPUUnprojectKernel(const std::unordered_map<std::string, Tensor>& srcs,
                         std::unordered_map<std::string, Tensor>& dsts) {
-    if (srcs.count("depth") == 0 || srcs.count("intrinsics") == 0 ||
-        srcs.count("depth_scale") == 0) {
-        utility::LogError(
-                "[GeneralEWCPU] expect depth, intrinsics, and depth_scale as "
-                "input");
+    static std::unordered_set<std::string> src_attrs = {
+            "depth",
+            "intrinsics",
+            "depth_scale",
+            "depth_max",
+    };
+    for (auto& k : src_attrs) {
+        if (srcs.count(k) == 0) {
+            utility::LogError(
+                    "[CPUUnprojectKernel] expected Tensor {} in srcs, but "
+                    "did not receive",
+                    k);
+        }
     }
 
     // Input
     Tensor depth = srcs.at("depth").To(core::Dtype::Float32);
     Tensor intrinsics = srcs.at("intrinsics").To(core::Dtype::Float32);
     float depth_scale = srcs.at("depth_scale").Item<float>();
+    float depth_max = srcs.at("depth_max").Item<float>();
 
     NDArrayIndexer depth_ndi(depth, 2);
     TransformIndexer ti(intrinsics);
@@ -65,13 +74,14 @@ void CPUUnprojectKernel(const std::unordered_map<std::string, Tensor>& srcs,
     // Workload
     int64_t n = depth_ndi.NumElements();
 
-    CPULauncher::LaunchGeneralKernel(n, [=](int64_t workload_idx) {
+    CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
         int64_t y, x;
         depth_ndi.WorkloadToCoord(workload_idx, &x, &y);
 
         float d = *static_cast<float*>(
                           depth_ndi.GetDataPtrFromWorkload(workload_idx)) /
                   depth_scale;
+        d = (d >= depth_max) ? 0 : d;
 
         float* vertex = static_cast<float*>(
                 vertex_ndi.GetDataPtrFromWorkload(workload_idx));

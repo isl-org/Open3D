@@ -26,6 +26,7 @@
 
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
 
+#include "open3d/Open3D.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
@@ -72,47 +73,72 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     pcd.Transform(extrinsics.Inverse());
 
     float block_size = voxel_size_ * block_resolution_;
-    PointCloud pcd_down = pcd.VoxelDownSample(voxel_size_ * block_resolution_);
+    core::Tensor block_coordd = pcd.GetPoints().AsTensor() / block_size;
+    core::Tensor block_coordi = block_coordd.To(core::Dtype::Int64);
+    core::Hashmap pcd_block_hashmap(
+            block_coordi.GetShape()[0],
+            core::Dtype(core::Dtype::DtypeCode::Object,
+                        core::Dtype::Int64.ByteSize() * 3, "_hash_k"),
+            core::Dtype::Int64, device_);
 
-    // TODO: reuse code in VoxelDownSample
-    core::Tensor block_coords = (pcd_down.GetPoints().AsTensor() / block_size)
-                                        .To(core::Dtype::Int64);
+    core::Tensor block_addrs, block_masks;
+    pcd_block_hashmap.Activate(block_coordi, block_addrs, block_masks);
+
+    core::Tensor block_coords = block_coordi.IndexGet({block_masks});
     core::Tensor addrs, masks;
     block_hashmap_->Activate(block_coords, addrs, masks);
     block_hashmap_->Find(block_coords, addrs, masks);
 
-    // Input
-    std::unordered_map<std::string, core::Tensor> srcs = {
-            {"depth", depth.AsTensor()},
-            {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
-            {"block_keys",
-             core::Hashmap::ReinterpretBufferTensor(
-                     block_hashmap_->GetKeyTensor(),
-                     {block_hashmap_->GetCapacity(), 3}, core::Dtype::Int64)},
-            {"intrinsics", intrinsics.Copy(device_)},
-            {"extrinsics", extrinsics.Copy(device_)},
-            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
-                                        {}, core::Dtype::Int64, device_)},
-            {"depth_scale",
-             core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
-                          {}, core::Dtype::Float32, device_)},
-            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
-                                        core::Dtype::Float32, device_)},
-            {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
-                                       core::Dtype::Float32, device_)}};
+    // core::Tensor active_addrs({block_hashmap_->Size()}, core::Dtype::Int32,
+    //                           device_);
+    // block_hashmap_->GetActiveIndices(
+    //         static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
+    // core::Tensor active_keys = core::Hashmap::ReinterpretBufferTensor(
+    //         block_hashmap_->GetKeyTensor(), {block_hashmap_->GetCapacity(),
+    //         3}, core::Dtype::Int64);
+    // core::Tensor active_keysf =
+    //         active_keys.IndexGet({active_addrs.To(core::Dtype::Int64)})
+    //                 .To(core::Dtype::Float32);
 
-    // In-place modified output
-    std::unordered_map<std::string, core::Tensor> dsts = {
-            {"block_values",
-             core::Hashmap::ReinterpretBufferTensor(
-                     block_hashmap_->GetValueTensor(),
-                     {block_hashmap_->GetCapacity(), block_resolution_,
-                      block_resolution_, block_resolution_, 2},
-                     core::Dtype::Float32)}};
+    // PointCloud pcd_active(core::TensorList::FromTensor(active_keysf));
+    // auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+    //         pcd_active.ToLegacyPointCloud());
+    // visualization::DrawGeometries({pcd_legacy});
 
-    core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::TSDFIntegrate);
-    utility::LogInfo("Active blocks = {}", block_hashmap_->Size());
+    // // Input
+    // std::unordered_map<std::string, core::Tensor> srcs = {
+    //         {"depth", depth.AsTensor()},
+    //         {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
+    //         {"block_keys",
+    //          core::Hashmap::ReinterpretBufferTensor(
+    //                  block_hashmap_->GetKeyTensor(),
+    //                  {block_hashmap_->GetCapacity(), 3},
+    //                  core::Dtype::Int64)},
+    //         {"intrinsics", intrinsics.Copy(device_)},
+    //         {"extrinsics", extrinsics.Copy(device_)},
+    //         {"resolution",
+    //         core::Tensor(std::vector<int64_t>{block_resolution_},
+    //                                     {}, core::Dtype::Int64, device_)},
+    //         {"depth_scale",
+    //          core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
+    //                       {}, core::Dtype::Float32, device_)},
+    //         {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
+    //                                     core::Dtype::Float32, device_)},
+    //         {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
+    //                                    core::Dtype::Float32, device_)}};
+
+    // // In-place modified output
+    // std::unordered_map<std::string, core::Tensor> dsts = {
+    //         {"block_values",
+    //          core::Hashmap::ReinterpretBufferTensor(
+    //                  block_hashmap_->GetValueTensor(),
+    //                  {block_hashmap_->GetCapacity(), block_resolution_,
+    //                   block_resolution_, block_resolution_, 2},
+    //                  core::Dtype::Float32)}};
+
+    // core::kernel::GeneralEW(srcs, dsts,
+    //                         core::kernel::GeneralEWOpCode::TSDFIntegrate);
+    utility::LogInfo("Active blocks in hashmap = {}", block_hashmap_->Size());
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors() {

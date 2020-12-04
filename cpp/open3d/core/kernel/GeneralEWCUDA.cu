@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <unordered_set>
+
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
@@ -40,17 +42,26 @@ namespace kernel {
 
 void CUDAUnprojectKernel(const std::unordered_map<std::string, Tensor>& srcs,
                          std::unordered_map<std::string, Tensor>& dsts) {
-    if (srcs.count("depth") == 0 || srcs.count("intrinsics") == 0 ||
-        srcs.count("depth_scale") == 0) {
-        utility::LogError(
-                "[GeneralEWCUDA] expect depth, intrinsics, and depth_scale as "
-                "input");
+    static std::unordered_set<std::string> src_attrs = {
+            "depth",
+            "intrinsics",
+            "depth_scale",
+            "depth_max",
+    };
+    for (auto& k : src_attrs) {
+        if (srcs.count(k) == 0) {
+            utility::LogError(
+                    "[CUDAUnprojectKernel] expected Tensor {} in srcs, but "
+                    "did not receive",
+                    k);
+        }
     }
 
     // Input
     Tensor depth = srcs.at("depth").To(core::Dtype::Float32);
     Tensor intrinsics = srcs.at("intrinsics").To(core::Dtype::Float32);
     float depth_scale = srcs.at("depth_scale").Item<float>();
+    float depth_max = srcs.at("depth_max").Item<float>();
 
     NDArrayIndexer depth_ndi(depth, 2);
     TransformIndexer ti(intrinsics);
@@ -71,6 +82,7 @@ void CUDAUnprojectKernel(const std::unordered_map<std::string, Tensor>& srcs,
                 float d = *static_cast<float*>(depth_ndi.GetDataPtrFromWorkload(
                                   workload_idx)) /
                           depth_scale;
+                d = (d >= depth_max) ? 0 : d;
 
                 float* vertex = static_cast<float*>(
                         vertex_ndi.GetDataPtrFromWorkload(workload_idx));
