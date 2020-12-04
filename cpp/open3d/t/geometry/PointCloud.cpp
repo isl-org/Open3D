@@ -153,6 +153,7 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
     open3d::geometry::PointCloud pcd_legacy;
     if (HasPoints()) {
         const core::Tensor &points = GetPoints();
+        pcd_legacy.points_.reserve(points.GetLength());
         for (int64_t i = 0; i < points.GetLength(); i++) {
             pcd_legacy.points_.push_back(
                     core::eigen_converter::TensorToEigenVector3d(points[i]));
@@ -160,6 +161,7 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
     }
     if (HasPointColors()) {
         const core::Tensor &colors = GetPointColors();
+        pcd_legacy.colors_.reserve(colors.GetLength());
         for (int64_t i = 0; i < colors.GetLength(); i++) {
             pcd_legacy.colors_.push_back(
                     core::eigen_converter::TensorToEigenVector3d(colors[i]));
@@ -167,7 +169,8 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
     }
     if (HasPointNormals()) {
         const core::Tensor &normals = GetPointNormals();
-        for (int64_t i = 0; i < normals.GetShape()[0]; i++) {
+        pcd_legacy.normals_.reserve(normals.GetLength());
+        for (int64_t i = 0; i < normals.GetLength(); i++) {
             pcd_legacy.normals_.push_back(
                     core::eigen_converter::TensorToEigenVector3d(normals[i]));
         }

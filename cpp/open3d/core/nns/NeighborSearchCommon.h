@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,32 +26,46 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
-#include "open3d/core/Device.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
+#include "open3d/utility/MiniVec.h"
 
 namespace open3d {
 namespace core {
-namespace eigen_converter {
+namespace nns {
 
-/// Converts a tensor of shape (3,) to Eigen::Vector3d. An exception will be
-/// thrown if the tensor shape is not (3,).
-Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
+/// Supported metrics
+enum Metric { L1, L2, Linf };
 
-/// Converts a vector of Eigen::Vector3d to a (N, 3) tensor. This function also
-/// takes care of dtype conversion and device transfer if necessary.
+#ifdef __CUDACC__
+#define HOST_DEVICE __host__ __device__
+#else
+#define HOST_DEVICE
+#endif
+
+/// Spatial hashing function for integer coordinates.
+HOST_DEVICE inline size_t SpatialHash(int x, int y, int z) {
+    return x * 73856096 ^ y * 193649663 ^ z * 83492791;
+}
+
+HOST_DEVICE inline size_t SpatialHash(const utility::MiniVec<int, 3>& xyz) {
+    return SpatialHash(xyz[0], xyz[1], xyz[2]);
+}
+
+/// Computes an integer voxel index for a 3D position.
 ///
-/// \param values A vector of Eigen::Vector3d values, e.g. a list of 3D points.
-/// \param dtype Dtype of the output tensor.
-/// \param device Device of the output tensor.
-core::Tensor EigenVector3dVectorToTensor(
-        const std::vector<Eigen::Vector3d> &values,
-        core::Dtype dtype,
-        const core::Device &device);
+/// \param pos               A 3D position.
+/// \param inv_voxel_size    The reciprocal of the voxel size
+///
+template <class TVecf>
+HOST_DEVICE inline utility::MiniVec<int, 3> ComputeVoxelIndex(
+        const TVecf& pos, const typename TVecf::Scalar_t& inv_voxel_size) {
+    TVecf ref_coord = pos * inv_voxel_size;
 
-}  // namespace eigen_converter
+    utility::MiniVec<int, 3> voxel_index;
+    voxel_index = floor(ref_coord).template cast<int>();
+    return voxel_index;
+}
+#undef HOST_DEVICE
+
+}  // namespace nns
 }  // namespace core
 }  // namespace open3d

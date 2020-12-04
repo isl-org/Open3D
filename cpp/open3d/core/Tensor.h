@@ -822,6 +822,15 @@ public:
     /// tensor.
     Tensor NonZero() const;
 
+    /// Evaluate a single-element Tensor as a boolean value. This can be used to
+    /// implement Tensor.__bool__() in Python, e.g.
+    /// ```python
+    /// assert Tensor([True])         # Passes.
+    /// assert Tensor([123])          # Passes.
+    /// assert Tensor([False])        # AssertionError.
+    /// assert Tensor([0])            # AssertionError.
+    /// assert Tensor([True, False])  # ValueError: cannot be evaluated as bool.
+    /// ```
     bool IsNonZero() const;
 
     /// Returns true if all elements in the tensor are true. Only works for
@@ -1088,8 +1097,9 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
 
 template <>
 inline bool Tensor::Item() const {
-    if (shape_.size() != 0) {
-        utility::LogError("Item only works for scalar Tensor of shape ()");
+    if (shape_.NumElements() != 1) {
+        utility::LogError(
+                "Tensor::Item only works for Tensor with one element.");
     }
     AssertTemplateDtype<bool>();
     uint8_t value;

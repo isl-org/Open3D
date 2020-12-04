@@ -44,38 +44,26 @@ Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor) {
                            dtensor[2].Item<double>());
 }
 
-core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
-                                   core::Dtype dtype,
-                                   const core::Device &device) {
-    // The memory will be copied.
-    return core::Tensor(value.data(), {3}, core::Dtype::Float64, device)
-            .To(dtype);
-}
-
 core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
         core::Dtype dtype,
         const core::Device &device) {
-    // Init CPU TensorList.
+    // Init CPU Tensor.
     int64_t num_values = static_cast<int64_t>(values.size());
     core::Tensor tensor_cpu =
             core::Tensor::Empty({num_values, 3}, dtype, Device("CPU:0"));
 
-    // Fill TensorList.
+    // Fill Tensor.
     core::Indexer indexer({tensor_cpu}, tensor_cpu,
                           core::DtypePolicy::ALL_SAME);
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         core::kernel::CPULauncher::LaunchIndexFillKernel(
                 indexer, [&](void *ptr, int64_t workload_idx) {
                     // Fills the flattened tensor tensor_cpu[:] with dtype
-                    // casting. tensor_cpu[:][i] corresponds to the (i/3)-th
-                    // element's (i%3)-th coordinate value.
-                    *static_cast<scalar_t *>(ptr) = static_cast<scalar_t>(
                             values[workload_idx / 3](workload_idx % 3));
-                });
     });
 
-    // Copy TensorList to device if necessary.
+    // Copy Tensor to device if necessary.
     if (device.GetType() == core::Device::DeviceType::CPU) {
         return tensor_cpu;
     } else {
