@@ -250,10 +250,12 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
 
     auto tris = dynamic_cast<const geometry::TriangleMesh*>(&geometry);
-    if (tris && tris->vertex_normals_.empty() && tris->triangle_normals_.empty()
-        && (material.shader == "defaultUnlit" ||
-            material.shader == "defaultLitTransparency")) {
-        utility::LogWarning("Using a shader with lighting but geometry has no normals.");
+    if (tris && tris->vertex_normals_.empty() &&
+        tris->triangle_normals_.empty() &&
+        (material.shader == "defaultUnlit" ||
+         material.shader == "defaultLitTransparency")) {
+        utility::LogWarning(
+                "Using a shader with lighting but geometry has no normals.");
     }
 
     // Build Filament buffers
@@ -684,7 +686,7 @@ void FilamentScene::GeometryShadows(const std::string& object_name,
 }
 
 void FilamentScene::SetGeometryPriority(const std::string& object_name,
-                                     uint8_t priority) {
+                                        uint8_t priority) {
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         auto& renderable_mgr = engine_.getRenderableManager();
@@ -1323,12 +1325,15 @@ void FilamentScene::ShowSkybox(bool show) {
     }
 }
 
-void FilamentScene::SetBackground(const Eigen::Vector4f& color,
-                                  const std::shared_ptr<geometry::Image> image) {
+void FilamentScene::SetBackground(
+        const Eigen::Vector4f& color,
+        const std::shared_ptr<geometry::Image> image) {
     if (!HasGeometry(kBackgroundName)) {
         geometry::TriangleMesh quad;
-        quad.vertices_ = {{-1.0, -1.0, -0.5}, {1.0, -1.0, -0.5},
-                          {1.0, 1.0, -0.5}, {-1.0, 1.0, -0.5}};
+        quad.vertices_ = {{-1.0, -1.0, -0.5},
+                          {1.0, -1.0, -0.5},
+                          {1.0, 1.0, -0.5},
+                          {-1.0, 1.0, -0.5}};
         quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
         Material m;
         m.shader = "unlitBackground";

@@ -175,9 +175,9 @@ public:
     virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
     virtual Transform GetIndirectLightRotation() = 0;
     virtual void ShowSkybox(bool show) = 0;
-    virtual void SetBackground(const Eigen::Vector4f& color,
-                               const std::shared_ptr<geometry::Image> image = nullptr) = 0;
-
+    virtual void SetBackground(
+            const Eigen::Vector4f& color,
+            const std::shared_ptr<geometry::Image> image = nullptr) = 0;
 
     /// Size of image is the size of the window.
     virtual void RenderToImage(
