@@ -32,7 +32,7 @@ jobs:
           submodules: false
       - name: Checkout submodules
         run: |
-          git submodule update --init --recursive
+          git submodule update --depth 1 --init --recursive
 
       - name: Setup cache
         uses: actions/cache@v2
@@ -99,7 +99,7 @@ jobs:
           submodules: false
       - name: Checkout submodules
         run: |
-          git submodule update --init --recursive
+          git submodule update --depth 1 --init --recursive
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -205,7 +205,7 @@ jobs:
           submodules: false
       - name: Checkout submodules
         run: |
-          git submodule update --init --recursive
+          git submodule update --depth 1 --init --recursive
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
