@@ -30,6 +30,7 @@ jobs:
         with:
           fetch-depth: 1
           submodules: false
+      - name: Checkout submodules
         run: |
           git submodule update --init --recursive
 
@@ -96,6 +97,7 @@ jobs:
         with:
           fetch-depth: 1
           submodules: false
+      - name: Checkout submodules
         run: |
           git submodule update --init --recursive
 
@@ -201,6 +203,7 @@ jobs:
         with:
           fetch-depth: 1
           submodules: false
+      - name: Checkout submodules
         run: |
           git submodule update --init --recursive
 
