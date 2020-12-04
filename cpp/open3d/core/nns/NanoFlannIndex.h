@@ -139,6 +139,11 @@ public:
 public:
     bool SetTensorData(const Tensor &dataset_points) override;
 
+    bool SetTensorData(const Tensor &dataset_points, double radius) override {
+        utility::LogError(
+                "NanoFlannIndex::SetTensorData with radius not implemented.");
+    }
+
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                         int knn) const override;
 
