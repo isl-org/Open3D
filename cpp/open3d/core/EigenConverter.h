@@ -37,12 +37,16 @@ namespace open3d {
 namespace core {
 namespace eigen_converter {
 
+/// Converts a tensor of shape (3,) to Eigen::Vector3d. An exception will be
+/// thrown if the tensor shape is not (3,).
 Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
 
-core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
-                                   core::Dtype dtype,
-                                   const core::Device &device);
-
+/// Converts a vector of Eigen::Vector3d to a (N, 3) tensor. This function also
+/// takes care of dtype conversion and device transfer if necessary.
+///
+/// \param values A vector of Eigen::Vector3d values, e.g. a list of 3D points.
+/// \param dtype Dtype of the output tensor.
+/// \param device Device of the output tensor.
 core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
         core::Dtype dtype,

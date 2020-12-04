@@ -76,6 +76,7 @@ static int ReadAttributeCallback(p_ply_argument argument) {
     return 1;
 }
 
+// TODO: ConcatColumns can be implemented in Tensor.cpp as a generic function.
 static core::Tensor ConcatColumns(const core::Tensor &a,
                                   const core::Tensor &b,
                                   const core::Tensor &c) {
