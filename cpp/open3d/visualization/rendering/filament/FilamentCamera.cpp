@@ -93,8 +93,7 @@ void FilamentCamera::CopyFrom(const Camera* camera) {
                       proj.proj.ortho.top, proj.proj.ortho.near_plane,
                       proj.proj.ortho.far_plane);
     } else {
-        SetProjection(proj.proj.perspective.fov,
-                      proj.proj.perspective.aspect,
+        SetProjection(proj.proj.perspective.fov, proj.proj.perspective.aspect,
                       proj.proj.perspective.near_plane,
                       proj.proj.perspective.far_plane,
                       proj.proj.perspective.fov_type);
