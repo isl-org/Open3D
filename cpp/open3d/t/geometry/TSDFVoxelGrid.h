@@ -81,7 +81,8 @@ protected:
     /// Return (active_entries, 27) with \addrs and \masks for radius (3)
     /// neighbor entries. Currently we preserve redundancy without compressing /
     /// reduction.
-    std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors();
+    std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
+            const core::Tensor &active_addrs);
 
     float voxel_size_;
     float sdf_trunc_;

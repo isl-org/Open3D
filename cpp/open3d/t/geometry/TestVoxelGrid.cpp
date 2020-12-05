@@ -68,6 +68,7 @@ int main(int argc, char** argv) {
         auto pcd = voxel_grid.ExtractSurface();
         auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
                 pcd.ToLegacyPointCloud());
+        pcd_legacy->EstimateNormals();
         open3d::visualization::DrawGeometries({pcd_legacy});
 
         // auto mesh = voxel_grid.MarchingCubes();

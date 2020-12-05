@@ -210,7 +210,8 @@ void CUDASurfaceExtractionKernel(
         std::unordered_map<std::string, Tensor>& dsts) {
     // Decode input tensors
     static std::unordered_set<std::string> src_attrs = {
-            "indices", "block_keys", "block_values", "voxel_size", "resolution",
+            "indices",      "nb_indices", "nb_masks",   "block_keys",
+            "block_values", "voxel_size", "resolution",
     };
     for (auto& k : src_attrs) {
         if (srcs.count(k) == 0) {
@@ -223,6 +224,8 @@ void CUDASurfaceExtractionKernel(
     utility::LogInfo("surface extraction starts");
 
     Tensor indices = srcs.at("indices");
+    Tensor nb_indices = srcs.at("nb_indices");
+    Tensor nb_masks = srcs.at("nb_masks");
     Tensor block_keys = srcs.at("block_keys");
     Tensor block_values = srcs.at("block_values");
 
@@ -239,10 +242,13 @@ void CUDASurfaceExtractionKernel(
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
 
     // Plain arrays that does not require indexers
+    int64_t* nb_indices_ptr = static_cast<int64_t*>(nb_indices.GetDataPtr());
+    bool* nb_masks_ptr = static_cast<bool*>(nb_masks.GetDataPtr());
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
     int64_t* block_keys_ptr = static_cast<int64_t*>(block_keys.GetDataPtr());
 
-    int64_t n = indices.GetShape()[0] * resolution3;
+    int n_blocks = indices.GetShape()[0];
+    int64_t n = n_blocks * resolution3;
 
     // Output
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
@@ -255,7 +261,8 @@ void CUDASurfaceExtractionKernel(
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
                                                  int64_t workload_idx) {
         // Natural index (0, N) -> (block_idx, voxel_idx)
-        int64_t block_idx = indices_ptr[workload_idx / resolution3];
+        int64_t workload_block_idx = workload_idx / resolution3;
+        int64_t block_idx = indices_ptr[workload_block_idx];
         int64_t voxel_idx = workload_idx % resolution3;
 
         /// Coordinate transform
@@ -267,7 +274,6 @@ void CUDASurfaceExtractionKernel(
         // voxel_idx -> (x_voxel, y_voxel, z_voxel)
         int64_t xv, yv, zv;
         voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
-
         int64_t workload_voxel;
         voxel_block_buffer_indexer.CoordToWorkload(xv, yv, zv, block_idx,
                                                    &workload_voxel);
@@ -277,6 +283,10 @@ void CUDASurfaceExtractionKernel(
         float tsdf_o = voxel_ptr[0];
         float weight_o = voxel_ptr[1];
         if (weight_o == 0) return;
+
+        int64_t x = xb * resolution + xv;
+        int64_t y = yb * resolution + yv;
+        int64_t z = zb * resolution + zv;
 
         for (int i = 0; i < 3; ++i) {
             int64_t xv_i = xv + int64_t(i == 0);
@@ -288,18 +298,21 @@ void CUDASurfaceExtractionKernel(
             int64_t dzb = zv_i / resolution;
 
             int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
-            if (nb_idx != 13) continue;
 
-            // int64_t nb_mask_offset;
-            // indexer2d.Convert2DToOffset(key_idx, nb_idx, &nb_mask_offset);
-            // bool nb_valid = *static_cast<bool*>(
-            //         indexer2d.GetPtrFromOffset(nb_mask_offset));
-            // if (!nb_valid) continue;
+            // if (nb_indices_ptr[13 * n_blocks + workload_block_idx] !=
+            //     block_idx) {
+            //     printf("wrong!\n");
+            // }
+            bool block_mask_i =
+                    nb_masks_ptr[nb_idx * n_blocks + workload_block_idx];
+            if (!block_mask_i) continue;
 
+            int64_t block_idx_i =
+                    nb_indices_ptr[nb_idx * n_blocks + workload_block_idx];
             int64_t workload_voxel_i;
             voxel_block_buffer_indexer.CoordToWorkload(
                     xv_i - dxb * resolution, yv_i - dyb * resolution,
-                    zv_i - dzb * resolution, block_idx, &workload_voxel_i);
+                    zv_i - dzb * resolution, block_idx_i, &workload_voxel_i);
             float* voxel_ptr_i = static_cast<float*>(
                     voxel_block_buffer_indexer.GetDataPtrFromWorkload(
                             workload_voxel_i));
@@ -312,12 +325,13 @@ void CUDASurfaceExtractionKernel(
                 float ratio = tsdf_i / (tsdf_i - tsdf_o);
 
                 int idx = atomicAdd(count_ptr, 1);
-                points_ptr[idx * 3 + 0] = voxel_size * (xb * resolution + xv +
-                                                        ratio * int(i == 0));
-                points_ptr[idx * 3 + 1] = voxel_size * (yb * resolution + yv +
-                                                        ratio * int(i == 1));
-                points_ptr[idx * 3 + 2] = voxel_size * (zb * resolution + zv +
-                                                        ratio * int(i == 2));
+
+                points_ptr[idx * 3 + 0] =
+                        voxel_size * (x + ratio * int(i == 0));
+                points_ptr[idx * 3 + 1] =
+                        voxel_size * (y + ratio * int(i == 1));
+                points_ptr[idx * 3 + 2] =
+                        voxel_size * (z + ratio * int(i == 2));
             }
         }
     });

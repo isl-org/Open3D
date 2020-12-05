@@ -144,10 +144,15 @@ PointCloud TSDFVoxelGrid::ExtractSurface() {
                               device_);
     block_hashmap_->GetActiveIndices(
             static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
+    core::Tensor active_nb_addrs, active_nb_masks;
+    std::tie(active_nb_addrs, active_nb_masks) =
+            BufferRadiusNeighbors(active_addrs);
 
     // Input
     std::unordered_map<std::string, core::Tensor> srcs = {
             {"indices", active_addrs.To(core::Dtype::Int64)},
+            {"nb_indices", active_nb_addrs.To(core::Dtype::Int64)},
+            {"nb_masks", active_nb_masks},
             {"block_keys",
              core::Hashmap::ReinterpretBufferTensor(
                      block_hashmap_->GetKeyTensor(),
@@ -175,10 +180,8 @@ PointCloud TSDFVoxelGrid::ExtractSurface() {
     return PointCloud(core::TensorList::FromTensor(dsts.at("points")));
 }
 
-std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors() {
-    core::Tensor active_addrs;
-    block_hashmap_->GetActiveIndices(
-            static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
+std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
+        const core::Tensor &active_addrs) {
     core::Tensor key_buffer_int3_tensor =
             block_hashmap_->ReinterpretBufferTensor(
                     block_hashmap_->GetKeyTensor(),
@@ -199,6 +202,7 @@ std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors() {
                              {1, 3}, core::Dtype::Int64, device_);
         keys_nb[nb] = active_keys + dt;
     }
+    keys_nb = keys_nb.View({27 * n, 3});
 
     core::Tensor addrs_nb, masks_nb;
     block_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
