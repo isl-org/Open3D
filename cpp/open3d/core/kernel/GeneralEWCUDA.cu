@@ -253,8 +253,8 @@ void CUDASurfaceExtractionKernel(
     // Output
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
                        block_values.GetDevice());
-    core::Tensor points({n * 3, 3}, core::Dtype::Float32,
-                        block_values.GetDevice());
+    core::Tensor points({std::min(n * 3, int64_t(10000000)), 3},
+                        core::Dtype::Float32, block_values.GetDevice());
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
     float* points_ptr = static_cast<float*>(points.GetDataPtr());
 

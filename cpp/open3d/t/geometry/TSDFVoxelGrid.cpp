@@ -70,6 +70,14 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // Unproject
     PointCloud pcd =
             PointCloud::CreateFromDepthImage(depth, intrinsics, depth_scale);
+    PointCloud pcd_plus = PointCloud::CreateFromDepthImage(
+            Image(depth.AsTensor() + sdf_trunc_ * depth_scale), intrinsics,
+            depth_scale);
+    PointCloud pcd_minus = PointCloud::CreateFromDepthImage(
+            Image(depth.AsTensor() - sdf_trunc_ * depth_scale), intrinsics,
+            depth_scale);
+    pcd = PointCloud(pcd.GetPoints() + pcd_plus.GetPoints() +
+                     pcd_minus.GetPoints());
     pcd.Transform(extrinsics.Inverse());
 
     // Pre-compressing for blocks
