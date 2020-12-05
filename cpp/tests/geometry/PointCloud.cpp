@@ -32,6 +32,7 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
+#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/ImageIO.h"
@@ -1290,6 +1291,38 @@ TEST(PointCloud, SegmentPlaneSpecialCase) {
     EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, 0));
     EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, -1));
     EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, 1.5));
+}
+
+TEST(PointCloud, DetectPlanarPatches) {
+    geometry::PointCloud pcd;
+    io::ReadPointCloud(utility::GetDataPathCommon("fragment.pcd"), pcd);
+    EXPECT_EQ(pcd.points_.size(), 113662);
+
+    static constexpr int nrNeighbors = 75;
+    const geometry::KDTreeSearchParam& search_param =
+            geometry::KDTreeSearchParamKNN(nrNeighbors);
+    pcd.EstimateNormals(search_param);
+
+    // set parameters
+    constexpr double normal_similarity = 0.5;
+    constexpr double coplanarity = 0.25;
+    constexpr double outlier_ratio = 0.75;
+    constexpr double min_plane_edge_length = 0.0;
+    constexpr size_t min_num_points = 30;
+
+    const auto patches = pcd.DetectPlanarPatches(
+            normal_similarity, coplanarity, outlier_ratio,
+            min_plane_edge_length, min_num_points, search_param);
+
+    EXPECT_EQ(patches.size(), 17);
+
+    const auto& patch = patches[15];
+    Eigen::Vector4d plane_model;
+    plane_model << patch->normal_.x(), patch->normal_.y(), patch->normal_.z(),
+            patch->dist_from_origin_;
+
+    // TODO: seed the ransac
+    ExpectEQ(plane_model, Eigen::Vector4d(0.06, 0.10, -0.99, 1.06), 0.1);
 }
 
 TEST(PointCloud, CreateFromDepthImage) {

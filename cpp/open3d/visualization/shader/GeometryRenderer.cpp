@@ -246,6 +246,34 @@ bool AxisAlignedBoundingBoxRenderer::UpdateGeometry() {
     return true;
 }
 
+bool PlanarPatchRenderer::Render(const RenderOption &option,
+                                 const ViewControl &view) {
+    if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
+    bool success = true;
+    if (option.point_show_normal_) {
+        success &=
+                simpleblack_normal_shader_.Render(*geometry_ptr_, option, view);
+    }
+    success &= simple_shader_for_planar_patch_.Render(*geometry_ptr_, option,
+                                                      view);
+    return success;
+}
+
+bool PlanarPatchRenderer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::PlanarPatch) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool PlanarPatchRenderer::UpdateGeometry() {
+    simple_shader_for_planar_patch_.InvalidateGeometry();
+    return true;
+}
+
 bool TriangleMeshRenderer::Render(const RenderOption &option,
                                   const ViewControl &view) {
     if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
