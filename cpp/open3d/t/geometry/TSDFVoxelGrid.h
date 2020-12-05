@@ -58,8 +58,8 @@ public:
     /// \brief Default Constructor.
     TSDFVoxelGrid(std::unordered_map<std::string, int> attr_channel_map =
                           {{"tsdf", 1}, {"weight", 1}},
-                  float voxel_size = 0.01,       /* in meter */
-                  float sdf_trunc = 0.03,        /*  in meter  */
+                  float voxel_size = 3.0 / 512.0, /* in meter */
+                  float sdf_trunc = 0.04,         /*  in meter  */
                   int64_t block_resolution = 16, /*  block Tensor resolution  */
                   int64_t block_count = 1000,
                   const core::Device &device = core::Device("CPU:0"));

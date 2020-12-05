@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <tbb/concurrent_unordered_set.h>
+
 #include <unordered_set>
 
 #include "open3d/core/Dispatch.h"
@@ -91,6 +93,90 @@ void CPUUnprojectKernel(const std::unordered_map<std::string, Tensor>& srcs,
     });
 
     dsts.emplace("vertex_map", vertex_map);
+}
+
+struct Coord3i {
+    Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
+    bool operator==(const Coord3i& other) const {
+        return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
+    }
+
+    int64_t x_;
+    int64_t y_;
+    int64_t z_;
+};
+
+struct Coord3iHash {
+    size_t operator()(const Coord3i& k) const {
+        static const size_t p0 = 73856093;
+        static const size_t p1 = 19349669;
+        static const size_t p2 = 83492791;
+
+        return (static_cast<size_t>(k.x_) * p0) ^
+               (static_cast<size_t>(k.y_) * p1) ^
+               (static_cast<size_t>(k.z_) * p2);
+    }
+};
+
+void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
+                        std::unordered_map<std::string, Tensor>& dsts) {
+    static std::unordered_set<std::string> src_attrs = {
+            "points", "voxel_size", "resolution", "sdf_trunc"};
+
+    for (auto& k : src_attrs) {
+        if (srcs.count(k) == 0) {
+            utility::LogError(
+                    "[CUDATSDFTouchKernel] expected Tensor {} in srcs, but "
+                    "did not receive",
+                    k);
+        }
+    }
+
+    Tensor pcd = srcs.at("points");
+    float voxel_size = srcs.at("voxel_size").Item<float>();
+    int64_t resolution = srcs.at("resolution").Item<int64_t>();
+    float block_size = voxel_size * resolution;
+
+    float sdf_trunc = srcs.at("sdf_trunc").Item<float>();
+
+    int64_t n = pcd.GetShape()[0];
+    float* pcd_ptr = static_cast<float*>(pcd.GetDataPtr());
+
+    tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
+    CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
+        float x = pcd_ptr[3 * workload_idx + 0];
+        float y = pcd_ptr[3 * workload_idx + 1];
+        float z = pcd_ptr[3 * workload_idx + 2];
+
+        int64_t xb_lo = static_cast<int64_t>((x - sdf_trunc) / block_size);
+        int64_t xb_hi = static_cast<int64_t>((x + sdf_trunc) / block_size);
+        int64_t yb_lo = static_cast<int64_t>((y - sdf_trunc) / block_size);
+        int64_t yb_hi = static_cast<int64_t>((y + sdf_trunc) / block_size);
+        int64_t zb_lo = static_cast<int64_t>((z - sdf_trunc) / block_size);
+        int64_t zb_hi = static_cast<int64_t>((z + sdf_trunc) / block_size);
+        for (int64_t xb = xb_lo; xb <= xb_hi; ++xb) {
+            for (int64_t yb = yb_lo; yb <= yb_hi; ++yb) {
+                for (int64_t zb = zb_lo; zb <= zb_hi; ++zb) {
+                    set.emplace(xb, yb, zb);
+                }
+            }
+        }
+    });
+
+    int64_t block_count = set.size();
+    core::Tensor block_coords({block_count, 3}, core::Dtype::Int64,
+                              pcd.GetDevice());
+    int64_t* block_coords_ptr =
+            static_cast<int64_t*>(block_coords.GetDataPtr());
+    int count = 0;
+    for (auto it = set.begin(); it != set.end(); ++it, ++count) {
+        int64_t offset = count * 3;
+        block_coords_ptr[offset + 0] = (*it).x_;
+        block_coords_ptr[offset + 1] = (*it).y_;
+        block_coords_ptr[offset + 2] = (*it).z_;
+    }
+
+    dsts.emplace("block_coords", block_coords);
 }
 
 void CPUTSDFIntegrateKernel(const std::unordered_map<std::string, Tensor>& srcs,
@@ -352,6 +438,9 @@ void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
     switch (op_code) {
         case GeneralEWOpCode::Unproject:
             CPUUnprojectKernel(srcs, dsts);
+            break;
+        case GeneralEWOpCode::TSDFTouch:
+            CPUTSDFTouchKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::TSDFIntegrate:
             CPUTSDFIntegrateKernel(srcs, dsts);

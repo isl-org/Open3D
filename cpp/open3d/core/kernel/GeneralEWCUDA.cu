@@ -31,6 +31,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/core/kernel/GeneralEW.h"
 #include "open3d/core/kernel/GeneralIndexer.h"
@@ -92,6 +93,60 @@ void CUDAUnprojectKernel(const std::unordered_map<std::string, Tensor>& srcs,
             });
 
     dsts.emplace("vertex_map", vertex_map);
+}
+
+/// Dummy kernel launch: global hashmap calls
+void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
+                         std::unordered_map<std::string, Tensor>& dsts) {
+    static std::unordered_set<std::string> src_attrs = {
+            "points",
+            "voxel_size",
+            "resolution",
+    };
+
+    for (auto& k : src_attrs) {
+        if (srcs.count(k) == 0) {
+            utility::LogError(
+                    "[CUDATSDFTouchKernel] expected Tensor {} in srcs, but "
+                    "did not receive",
+                    k);
+        }
+    }
+
+    Tensor pcd = srcs.at("points");
+    float voxel_size = srcs.at("voxel_size").Item<float>();
+    int64_t resolution = srcs.at("resolution").Item<int64_t>();
+    Device device = pcd.GetDevice();
+
+    float block_size = voxel_size * resolution;
+    core::Tensor block_coordd = pcd / block_size;
+    core::Tensor block_coordi = block_coordd.To(core::Dtype::Int64);
+    core::Hashmap pcd_block_hashmap(
+            block_coordi.GetShape()[0],
+            core::Dtype(core::Dtype::DtypeCode::Object,
+                        core::Dtype::Int64.ByteSize() * 3, "_hash_k"),
+            core::Dtype::Int64, device);
+    core::Tensor block_addrs, block_masks;
+    pcd_block_hashmap.Activate(block_coordi, block_addrs, block_masks);
+
+    // Activate in blocks
+    core::Tensor block_coords = block_coordi.IndexGet({block_masks});
+    int64_t block_count = block_coords.GetShape()[0];
+    core::Tensor block_nb_coords({27, block_count, 3}, core::Dtype::Int64,
+                                 device);
+
+    /// 3x3 neighbor blocks, more aggressive sampling
+    for (int nb = 0; nb < 27; ++nb) {
+        int dz = nb / 9;
+        int dy = (nb % 9) / 3;
+        int dx = nb % 3;
+        core::Tensor dt =
+                core::Tensor(std::vector<int64_t>{dx - 1, dy - 1, dz - 1},
+                             {1, 3}, core::Dtype::Int64, device);
+        block_nb_coords[nb] = block_coords + dt;
+    }
+
+    dsts.emplace("block_coords", block_nb_coords.View({27 * block_count, 3}));
 }
 
 void CUDATSDFIntegrateKernel(
@@ -347,6 +402,9 @@ void GeneralEWCUDA(const std::unordered_map<std::string, Tensor>& srcs,
     switch (op_code) {
         case GeneralEWOpCode::Unproject:
             CUDAUnprojectKernel(srcs, dsts);
+            break;
+        case GeneralEWOpCode::TSDFTouch:
+            CUDATSDFTouchKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::TSDFIntegrate:
             CUDATSDFIntegrateKernel(srcs, dsts);

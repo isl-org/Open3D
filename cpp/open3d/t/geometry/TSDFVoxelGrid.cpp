@@ -70,37 +70,32 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // Unproject
     PointCloud pcd =
             PointCloud::CreateFromDepthImage(depth, intrinsics, depth_scale);
-    PointCloud pcd_plus = PointCloud::CreateFromDepthImage(
-            Image(depth.AsTensor() + sdf_trunc_ * depth_scale), intrinsics,
-            depth_scale);
-    PointCloud pcd_minus = PointCloud::CreateFromDepthImage(
-            Image(depth.AsTensor() - sdf_trunc_ * depth_scale), intrinsics,
-            depth_scale);
-    pcd = PointCloud(pcd.GetPoints() + pcd_plus.GetPoints() +
-                     pcd_minus.GetPoints());
     pcd.Transform(extrinsics.Inverse());
 
-    // Pre-compressing for blocks
-    float block_size = voxel_size_ * block_resolution_;
-    core::Tensor block_coordd = pcd.GetPoints().AsTensor() / block_size;
-    core::Tensor block_coordi = block_coordd.To(core::Dtype::Int64);
-    core::Hashmap pcd_block_hashmap(
-            block_coordi.GetShape()[0],
-            core::Dtype(core::Dtype::DtypeCode::Object,
-                        core::Dtype::Int64.ByteSize() * 3, "_hash_k"),
-            core::Dtype::Int64, device_);
-    core::Tensor block_addrs, block_masks;
-    pcd_block_hashmap.Activate(block_coordi, block_addrs, block_masks);
+    // Touch blocks
+    std::unordered_map<std::string, core::Tensor> srcs = {
+            {"points", pcd.GetPoints().AsTensor()},
+            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
+                                        {}, core::Dtype::Int64, device_)},
+            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
+                                        core::Dtype::Float32, device_)},
+            {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
+                                       core::Dtype::Float32, device_)}};
+    std::unordered_map<std::string, core::Tensor> dsts;
+    core::kernel::GeneralEW(srcs, dsts,
+                            core::kernel::GeneralEWOpCode::TSDFTouch);
+    if (dsts.count("block_coords") == 0) {
+        utility::LogError(
+                "[TSDFVoxelGrid] touch launch failed, expected block_coords");
+    }
 
-    // Activate in blocks
-    core::Tensor block_coords = block_coordi.IndexGet({block_masks});
+    core::Tensor block_coords = dsts.at("block_coords");
     core::Tensor addrs, masks;
     block_hashmap_->Activate(block_coords, addrs, masks);
     block_hashmap_->Find(block_coords, addrs, masks);
 
-    // Input
-    std::unordered_map<std::string, core::Tensor> srcs = {
-            {"depth", depth.AsTensor()},
+    // Integration
+    srcs = {{"depth", depth.AsTensor()},
             {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
             {"block_keys",
              core::Hashmap::ReinterpretBufferTensor(
@@ -119,8 +114,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                                        core::Dtype::Float32, device_)}};
 
     // In-place modified output
-    std::unordered_map<std::string, core::Tensor> dsts = {
-            {"block_values",
+    dsts = {{"block_values",
              core::Hashmap::ReinterpretBufferTensor(
                      block_hashmap_->GetValueTensor(),
                      {block_hashmap_->GetCapacity(), block_resolution_,

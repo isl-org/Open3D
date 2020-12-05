@@ -39,6 +39,7 @@ namespace kernel {
 enum class GeneralEWOpCode {
     Unproject,
     TSDFIntegrate,
+    TSDFTouch,
     TSDFSurfaceExtraction,
     MarchingCubesPass0,
     MarchingCubesPass1,
