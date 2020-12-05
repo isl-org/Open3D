@@ -191,9 +191,9 @@ std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
             if (msg.data.faces.type == messages::TypeStr<int64_t>()) {
                 const int64_t* ptr = msg.data.faces.Ptr<int64_t>();
                 for (int64_t i = 0; i < msg.data.faces.shape[0]; ++i) {
-                    mesh->triangles_[i].x() = ptr[0];
-                    mesh->triangles_[i].y() = ptr[1];
-                    mesh->triangles_[i].z() = ptr[2];
+                    mesh->triangles_[i].x() = static_cast<int>(ptr[0]);
+                    mesh->triangles_[i].y() = static_cast<int>(ptr[1]);
+                    mesh->triangles_[i].z() = static_cast<int>(ptr[2]);
                     ptr += 3;
                 }
             }
