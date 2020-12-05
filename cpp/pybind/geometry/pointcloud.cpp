@@ -30,6 +30,7 @@
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/Image.h"
+#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
@@ -210,6 +211,13 @@ Returns:
                  "algorithm.",
                  "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a,
                  "probability"_a = 0.99999999, "seed"_a = py::none())
+            .def("detect_planar_patches", &PointCloud::DetectPlanarPatches,
+                 "Detects planar patches in the point cloud using a robust "
+                 "statistics-based approach.",
+                 "normal_similarity"_a = 0.5, "coplanarity"_a = 0.25,
+                 "outlier_ratio"_a = 0.75, "min_plane_edge_length"_a = 0.0,
+                 "min_num_points"_a = 0,
+                 "search_param"_a = KDTreeSearchParamKNN())
             .def_static(
                     "create_from_depth_image",
                     &PointCloud::CreateFromDepthImage,
@@ -365,6 +373,28 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
              {"seed",
               "Seed value used in the random generator, set to None to use a "
               "random seed value with each function call."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "detect_planar_patches",
+            {
+                    {"normal_similarity",
+                     "Angle threshold based on robust statistics for planarity "
+                     "test."},
+                    {"coplanarity",
+                     "Angle threshold based on robust statistics for planarity "
+                     "test."},
+                    {"outlier_ratio",
+                     "Maximum allowable ratio of outliers "
+                     "associated to a plane."},
+                    {"min_plane_edge_length",
+                     "Minimum edge length of plane's long "
+                     "edge before being rejected."},
+                    {"min_num_points",
+                     "Minimum number of points allowable for "
+                     "fitting planes."},
+                    {"search_param",
+                     "The KDTree search parameters for "
+                     "neighborhood search."},
+            });
     docstring::ClassMethodDocInject(
             m, "PointCloud", "create_from_depth_image",
             {{"depth",
