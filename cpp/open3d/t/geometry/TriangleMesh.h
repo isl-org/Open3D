@@ -405,17 +405,14 @@ public:
     core::Device GetDevice() const { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
-    static geometry::TriangleMesh FromLegacyTrangleMesh(
-            const geometry::TriangleMesh &mesh_legacy,
-            core::Dtype dtype = core::Dtype::Float32,
-            const core::Device &device = core::Device("CPU:0")) {
-        utility::LogError("Unimplemented");
-    }
+    static TriangleMesh FromLegacyTrangleMesh(
+            const open3d::geometry::TriangleMesh &mesh_legacy,
+            core::Dtype vertex_dtype = core::Dtype::Float32,
+            core::Dtype triangle_dtype = core::Dtype::Int64,
+            const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D TriangleMesh.
-    geometry::TriangleMesh ToLegacyTriangleMesh() const {
-        utility::LogError("Unimplemented");
-    }
+    open3d::geometry::TriangleMesh ToLegacyTriangleMesh() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

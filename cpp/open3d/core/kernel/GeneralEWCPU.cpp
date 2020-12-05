@@ -35,6 +35,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/core/kernel/GeneralEW.h"
+#include "open3d/core/kernel/GeneralEWMacros.h"
 #include "open3d/core/kernel/GeneralIndexer.h"
 #include "open3d/utility/Console.h"
 

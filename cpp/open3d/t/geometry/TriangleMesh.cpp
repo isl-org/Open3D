@@ -66,6 +66,81 @@ TriangleMesh::TriangleMesh(const core::TensorList &vertices,
     SetTriangles(triangles);
 }
 
+/// Create a TriangleMesh from a legacy Open3D TriangleMesh.
+TriangleMesh TriangleMesh::FromLegacyTrangleMesh(
+        const open3d::geometry::TriangleMesh &mesh_legacy,
+        core::Dtype vertex_dtype,
+        core::Dtype triangle_dtype,
+        const core::Device &device) {
+    TriangleMesh mesh(vertex_dtype, triangle_dtype, device);
+
+    if (mesh_legacy.HasVertices()) {
+        mesh.SetVertices(core::eigen_converter::EigenVector3dVectorToTensorList(
+                mesh_legacy.vertices_, vertex_dtype, device));
+    } else {
+        utility::LogWarning(
+                "Creating from an empty legacy pointcloud, an empty pointcloud "
+                "with default dtype and device will be created.");
+    }
+    if (mesh_legacy.HasVertexColors()) {
+        mesh.SetVertexColors(
+                core::eigen_converter::EigenVector3dVectorToTensorList(
+                        mesh_legacy.vertex_colors_, vertex_dtype, device));
+    }
+    if (mesh_legacy.HasVertexNormals()) {
+        mesh.SetVertexNormals(
+                core::eigen_converter::EigenVector3dVectorToTensorList(
+                        mesh_legacy.vertex_normals_, vertex_dtype, device));
+    }
+
+    if (mesh_legacy.HasTriangles()) {
+        mesh.SetTriangles(
+                core::eigen_converter::EigenVector3iVectorToTensorList(
+                        mesh_legacy.triangles_, triangle_dtype, device));
+    }
+
+    return mesh;
+};
+
+/// Convert to a legacy Open3D TriangleMesh.
+open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
+    open3d::geometry::TriangleMesh mesh_legacy;
+    if (HasVertices()) {
+        core::Tensor vertices =
+                GetVertices().AsTensor().Copy(core::Device("CPU:0"));
+        int64_t N = vertices.GetShape()[0];
+        mesh_legacy.vertices_.resize(N);
+        for (int64_t i = 0; i < N; ++i) {
+            mesh_legacy.vertices_[i] =
+                    core::eigen_converter::TensorToEigenVector3d(vertices[i]);
+        }
+    }
+
+    if (HasVertexNormals()) {
+        core::Tensor normals =
+                GetVertexNormals().AsTensor().Copy(core::Device("CPU:0"));
+        int64_t N = normals.GetShape()[0];
+        mesh_legacy.vertex_normals_.resize(N);
+        for (int64_t i = 0; i < N; ++i) {
+            mesh_legacy.vertex_normals_[i] =
+                    core::eigen_converter::TensorToEigenVector3d(normals[i]);
+        }
+    }
+
+    if (HasTriangles()) {
+        core::Tensor triangles =
+                GetTriangles().AsTensor().Copy(core::Device("CPU:0"));
+        int64_t N = triangles.GetShape()[0];
+        mesh_legacy.triangles_.resize(N);
+        for (int64_t i = 0; i < N; ++i) {
+            mesh_legacy.triangles_[i] =
+                    core::eigen_converter::TensorToEigenVector3i(triangles[i]);
+        }
+    }
+
+    return mesh_legacy;
+};
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

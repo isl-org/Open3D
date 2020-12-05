@@ -4,6 +4,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
 
 using namespace open3d;
@@ -19,6 +20,13 @@ Tensor FromEigen(const Eigen::Matrix<T, M, N, A>& matrix) {
 
 int main(int argc, char** argv) {
     std::string root_path = argv[1];
+    std::shared_ptr<geometry::TriangleMesh> mesh_io =
+            io::CreateMeshFromFile(root_path + "/scene/integrated.ply");
+
+    auto mesh = t::geometry::TriangleMesh::FromLegacyTrangleMesh(*mesh_io);
+    auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
+            mesh.ToLegacyTriangleMesh());
+    visualization::DrawGeometries({mesh_legacy});
 
     Tensor intrinsic = Tensor(
             std::vector<float>({525.0, 0, 319.5, 0, 525.0, 239.5, 0, 0, 1}),

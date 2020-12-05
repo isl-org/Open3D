@@ -38,13 +38,21 @@ namespace core {
 namespace eigen_converter {
 
 Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
+Eigen::Vector3i TensorToEigenVector3i(const core::Tensor &tensor);
 
+core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
+                                   core::Dtype dtype,
+                                   const core::Device &device);
 core::Tensor EigenVector3dToTensor(const Eigen::Vector3d &value,
                                    core::Dtype dtype,
                                    const core::Device &device);
 
 core::TensorList EigenVector3dVectorToTensorList(
         const std::vector<Eigen::Vector3d> &values,
+        core::Dtype dtype,
+        const core::Device &device);
+core::TensorList EigenVector3iVectorToTensorList(
+        const std::vector<Eigen::Vector3i> &values,
         core::Dtype dtype,
         const core::Device &device);
 

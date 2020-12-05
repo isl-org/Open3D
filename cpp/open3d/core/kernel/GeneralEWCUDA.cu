@@ -34,6 +34,7 @@
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/core/kernel/GeneralEW.h"
+#include "open3d/core/kernel/GeneralEWMacros.h"
 #include "open3d/core/kernel/GeneralIndexer.h"
 #include "open3d/utility/Console.h"
 
