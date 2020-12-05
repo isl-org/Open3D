@@ -46,6 +46,7 @@ class Image;
 class RGBDImage;
 class TriangleMesh;
 class VoxelGrid;
+class PlanarPatch;
 
 /// \class PointCloud
 ///
@@ -311,6 +312,11 @@ public:
             const double distance_threshold = 0.01,
             const int ransac_n = 3,
             const int num_iterations = 100) const;
+
+    /// \brief Segment PointCloud plane using the RANSAC algorithm.
+    ///
+    ///
+    std::vector<std::shared_ptr<PlanarPatch>> DetectPlanarPatches() const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.
