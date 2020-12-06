@@ -449,11 +449,7 @@ void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
         case GeneralEWOpCode::TSDFSurfaceExtraction:
             CPUSurfaceExtractionKernel(srcs, dsts);
             break;
-        case GeneralEWOpCode::MarchingCubesPass0:
-            break;
-        case GeneralEWOpCode::MarchingCubesPass1:
-            break;
-        case GeneralEWOpCode::MarchingCubesPass2:
+        case GeneralEWOpCode::MarchingCubes:
             break;
         case GeneralEWOpCode::RayCasting:
             break;

@@ -23,10 +23,10 @@ int main(int argc, char** argv) {
     std::shared_ptr<geometry::TriangleMesh> mesh_io =
             io::CreateMeshFromFile(root_path + "/scene/integrated.ply");
 
-    auto mesh = t::geometry::TriangleMesh::FromLegacyTrangleMesh(*mesh_io);
-    auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
-            mesh.ToLegacyTriangleMesh());
-    visualization::DrawGeometries({mesh_legacy});
+    // auto mesh = t::geometry::TriangleMesh::FromLegacyTrangleMesh(*mesh_io);
+    // auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
+    //         mesh.ToLegacyTriangleMesh());
+    // visualization::DrawGeometries({mesh_legacy});
 
     Tensor intrinsic = Tensor(
             std::vector<float>({525.0, 0, 319.5, 0, 525.0, 239.5, 0, 0, 1}),
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
                                               3.0 / 512, 0.04, 16, 10, device);
         std::vector<std::shared_ptr<const open3d::geometry::Geometry>>
                 geometries;
-        for (int i = 0; i < 3000; ++i) {
+        for (int i = 0; i < 3; ++i) {
             /// Load image
             std::string image_path =
                     fmt::format("{}/depth/{:06d}.png", root_path, i + 1);
@@ -73,13 +73,13 @@ int main(int argc, char** argv) {
             utility::LogInfo("Integration takes {}", timer.GetDuration());
         }
 
-        auto pcd = voxel_grid.ExtractSurface();
-        auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-                pcd.ToLegacyPointCloud());
-        pcd_legacy->EstimateNormals();
-        open3d::visualization::DrawGeometries({pcd_legacy});
+        // auto pcd = voxel_grid.ExtractSurfacePoints();
+        // auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+        //         pcd.ToLegacyPointCloud());
+        // pcd_legacy->EstimateNormals();
+        // open3d::visualization::DrawGeometries({pcd_legacy});
 
-        // auto mesh = voxel_grid.MarchingCubes();
+        auto mesh = voxel_grid.ExtractSurfaceMesh();
         // auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
         //         mesh.ToLegacyTriangleMesh());
         // // open3d::io::WriteTriangleMesh("mesh.ply", *mesh_legacy);

@@ -41,9 +41,7 @@ enum class GeneralEWOpCode {
     TSDFIntegrate,
     TSDFTouch,
     TSDFSurfaceExtraction,
-    MarchingCubesPass0,
-    MarchingCubesPass1,
-    MarchingCubesPass2,
+    MarchingCubes,
     RayCasting,
     Debug
 };

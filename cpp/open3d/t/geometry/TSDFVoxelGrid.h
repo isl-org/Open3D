@@ -38,6 +38,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TensorListMap.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace t {
@@ -72,8 +73,11 @@ public:
                    const core::Tensor &extrinsics,
                    double depth_scale = 1000.0);
 
-    /// Extract point cloud near iso-surfaces
-    PointCloud ExtractSurface();
+    /// Extract point cloud near iso-surfaces.
+    PointCloud ExtractSurfacePoints();
+
+    /// Extract mesh near iso-surfaces with Marching Cubes.
+    TriangleMesh ExtractSurfaceMesh();
 
 protected:
     std::unordered_map<std::string, int> attr_channel_map_;

@@ -141,9 +141,9 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // block_hashmap_->Size());
 }
 
-PointCloud TSDFVoxelGrid::ExtractSurface() {
-    core::Tensor active_addrs({block_hashmap_->Size()}, core::Dtype::Int32,
-                              device_);
+PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
+    int64_t num_blocks = block_hashmap_->Size();
+    core::Tensor active_addrs({num_blocks}, core::Dtype::Int32, device_);
     block_hashmap_->GetActiveIndices(
             static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
     core::Tensor active_nb_addrs, active_nb_masks;
@@ -180,6 +180,67 @@ PointCloud TSDFVoxelGrid::ExtractSurface() {
                 "to return.");
     }
     return PointCloud(core::TensorList::FromTensor(dsts.at("points")));
+}
+
+TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
+    int64_t num_blocks = block_hashmap_->Size();
+
+    // Query active blocks and their nearest neighbors.
+    core::Tensor active_addrs({num_blocks}, core::Dtype::Int32, device_);
+    block_hashmap_->GetActiveIndices(
+            static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
+    core::Tensor active_nb_addrs, active_nb_masks;
+    std::tie(active_nb_addrs, active_nb_masks) =
+            BufferRadiusNeighbors(active_addrs);
+
+    // Map active indices to [0, num_blocks] to be allocated for surface mesh.
+    core::Tensor inverse_index_map({block_hashmap_->GetCapacity()},
+                                   core::Dtype::Int64, device_);
+    std::vector<int64_t> iota_map(num_blocks);
+    std::iota(iota_map.begin(), iota_map.end(), 0);
+    inverse_index_map.IndexSet(
+            {active_addrs.To(core::Dtype::Int64)},
+            core::Tensor(iota_map, {num_blocks}, core::Dtype::Int64, device_));
+
+    // Voxel-wise mesh info. 4 channels correspond to:
+    // 3 edges' corresponding vertex index + 1 table index
+    core::Tensor mesh_structure =
+            core::Tensor::Zeros({num_blocks, block_resolution_,
+                                 block_resolution_, block_resolution_, 4},
+                                core::Dtype::Int32, device_);
+
+    // Input
+    std::unordered_map<std::string, core::Tensor> srcs = {
+            {"indices", active_addrs.To(core::Dtype::Int64)},
+            {"inv_indices", inverse_index_map},
+            {"nb_indices", active_nb_addrs.To(core::Dtype::Int64)},
+            {"nb_masks", active_nb_masks},
+            {"block_keys",
+             core::Hashmap::ReinterpretBufferTensor(
+                     block_hashmap_->GetKeyTensor(),
+                     {block_hashmap_->GetCapacity(), 3}, core::Dtype::Int64)},
+            {"block_values",
+             core::Hashmap::ReinterpretBufferTensor(
+                     block_hashmap_->GetValueTensor(),
+                     {block_hashmap_->GetCapacity(), block_resolution_,
+                      block_resolution_, block_resolution_, 2},
+                     core::Dtype::Float32)},
+            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
+                                        {}, core::Dtype::Int64, device_)},
+            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
+                                        core::Dtype::Float32, device_)}};
+
+    std::unordered_map<std::string, core::Tensor> dsts = {
+            {"mesh_structure", mesh_structure}};
+
+    core::kernel::GeneralEW(srcs, dsts,
+                            core::kernel::GeneralEWOpCode::MarchingCubes);
+
+    PointCloud pcd(core::TensorList::FromTensor(dsts.at("vertices")));
+    auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+            pcd.ToLegacyPointCloud());
+    visualization::DrawGeometries({pcd_legacy});
+    return TriangleMesh();
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
