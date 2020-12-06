@@ -304,7 +304,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     // dtype
 
     const auto& points = geometry_.GetPoints();
-    const size_t n_vertices = points.GetSize();
+    const size_t n_vertices = points.GetLength();
 
     // We use CUSTOM0 for tangents along with TANGENTS attribute
     // because Filament would optimize out anything about normals and lightning
@@ -335,14 +335,13 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     }
 
     VertexBuffer::BufferDescriptor pts_descriptor(
-            points.AsTensor().GetDataPtr(), n_vertices * 3 * sizeof(float));
+            points.GetDataPtr(), n_vertices * 3 * sizeof(float));
     vbuf->setBufferAt(engine, 0, std::move(pts_descriptor));
 
     const size_t color_array_size = n_vertices * 3 * sizeof(float);
     if (geometry_.HasPointColors()) {
         VertexBuffer::BufferDescriptor color_descriptor(
-                geometry_.GetPointColors().AsTensor().GetDataPtr(),
-                color_array_size);
+                geometry_.GetPointColors().GetDataPtr(), color_array_size);
         vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
     } else {
         float* color_array = static_cast<float*>(malloc(color_array_size));
@@ -362,11 +361,12 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
         // Converting normals to Filament type - quaternions
         auto float4v_tangents =
                 static_cast<math::quatf*>(malloc(normal_array_size));
-        auto orientation = filament::geometry::SurfaceOrientation::Builder()
-                                   .vertexCount(n_vertices)
-                                   .normals(reinterpret_cast<math::float3*>(
-                                           normals.AsTensor().GetDataPtr()))
-                                   .build();
+        auto orientation =
+                filament::geometry::SurfaceOrientation::Builder()
+                        .vertexCount(n_vertices)
+                        .normals(reinterpret_cast<const math::float3*>(
+                                normals.GetDataPtr()))
+                        .build();
         orientation->getQuats(float4v_tangents, n_vertices);
         VertexBuffer::BufferDescriptor normals_descriptor(
                 float4v_tangents, normal_array_size,
@@ -390,16 +390,14 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     const size_t uv_array_size = n_vertices * 2 * sizeof(float);
     float* uv_array = static_cast<float*>(malloc(uv_array_size));
     if (geometry_.HasPointAttr("uv")) {
-        float* uv_src = static_cast<float*>(
-                geometry_.GetPointAttr("uv").AsTensor().GetDataPtr());
+        const float* uv_src = static_cast<const float*>(
+                geometry_.GetPointAttr("uv").GetDataPtr());
         memcpy(uv_array, uv_src, uv_array_size);
     } else if (geometry_.HasPointAttr("__visualization_scalar")) {
         // Update in FilamentScene::UpdateGeometry(), too.
         memset(uv_array, 0, uv_array_size);
-        float* src = static_cast<float*>(
-                geometry_.GetPointAttr("__visualization_scalar")
-                        .AsTensor()
-                        .GetDataPtr());
+        const float* src = static_cast<const float*>(
+                geometry_.GetPointAttr("__visualization_scalar").GetDataPtr());
         const size_t n = 2 * n_vertices;
         for (size_t i = 0; i < n; i += 2) {
             uv_array[i] = *src++;

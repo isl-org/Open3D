@@ -1,5 +1,11 @@
 # Create object library
-file(GLOB ALL_SOURCE_FILES *.cpp)
+set(ALL_SOURCE_FILES
+    PointCloud.cpp
+    Image.cpp
+    RGBDImage.cpp
+    TensorMap.cpp
+    TriangleMesh.cpp
+)
 
 add_library(tgeometry OBJECT ${ALL_SOURCE_FILES})
 open3d_show_and_abort_on_warning(tgeometry)

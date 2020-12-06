@@ -21,21 +21,30 @@ fi
 BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
-# Dependency versions
+# Dependency versions:
+# CUDA
 CUDA_VERSION=("10-1" "10.1")
 CUDNN_MAJOR_VERSION=7
 CUDNN_VERSION="7.6.5.32-1+cuda10.1"
+# ML
 TENSORFLOW_VER="2.3.1"
 TORCH_CUDA_GLNX_VER="1.6.0+cu101"
 TORCH_CPU_GLNX_VER="1.6.0+cpu"
 TORCH_MACOS_VER="1.6.0"
-YAPF_VER="0.30.0"
+# Python
+CONDA_BUILD_VER="3.20.0"
 PIP_VER="20.2.4"
 WHEEL_VER="0.35.1"
 STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
 SCIPY_VER="1.4.1"
-CONDA_BUILD_VER="3.20.0"
+YAPF_VER="0.30.0"
+
+# Documentation
+SPHINX_VER=3.1.2
+SPHINX_RTD_VER=0.5.0
+NBSPHINX_VER=0.7.1
+PILLOW_VER=7.2.0
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -383,4 +392,102 @@ test_cpp_example() {
         ./TestVisualizer
     fi
     cd ../../../../build
+}
+
+# Install dependencies needed for building documentation (on Ubuntu 18.04)
+# Usage: install_docs_dependencies "${OPEN3D_ML_ROOT}"
+install_docs_dependencies() {
+    echo
+    echo Install ubuntu dependencies
+    echo Update cmake needed in Ubuntu 18.04
+    sudo apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
+    sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
+    ./util/install_deps_ubuntu.sh assume-yes
+    sudo apt-get install --yes cmake
+    sudo apt-get install --yes doxygen
+    sudo apt-get install --yes texlive
+    sudo apt-get install --yes texlive-latex-extra
+    sudo apt-get install --yes ghostscript
+    sudo apt-get install --yes pandoc
+    sudo apt-get install --yes ccache
+    echo
+    echo Install Python dependencies for building docs
+    which python
+    python -V
+    python -m pip install -U -q "wheel==$WHEEL_VER" "Pillow==$PILLOW_VER" \
+        "sphinx==$SPHINX_VER" "sphinx-rtd-theme==$SPHINX_RTD_VER" "nbsphinx==$NBSPHINX_VER"
+    # m2r needs a patch for sphinx 3
+    # https://github.com/sphinx-doc/sphinx/issues/7420
+    python -m pip install -U -q "git+https://github.com/intel-isl/m2r@dev#egg=m2r"
+    python -m pip install -U -q "yapf==$YAPF_VER"
+    echo
+    if [[ -d "$1" ]]; then
+        OPEN3D_ML_ROOT="$1"
+        echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
+        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
+        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-torch.txt"
+        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt"
+    else
+        echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
+    fi
+}
+
+# Build documentation
+# Usage: build_docs $DEVELOPER_BUILD
+build_docs() {
+    NPROC=$(nproc)
+    echo NPROC="$NPROC"
+    mkdir build
+    cd build
+    set +u
+    DEVELOPER_BUILD="$1"
+    set -u
+    if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+        DEVELOPER_BUILD=ON
+        DOC_ARGS=""
+    else
+        DOC_ARGS="--is_release"
+        echo "Building docs for a new Open3D release"
+        echo
+        echo "Building Open3D with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
+        echo
+    fi
+    cmakeOptions=(-DDEVELOPER_BUILD="$DEVELOPER_BUILD"
+        -DCMAKE_BUILD_TYPE=Release
+        -DBUILD_JUPYTER_EXTENSION=ON
+        -DWITH_OPENMP=ON
+        -DBUILD_AZURE_KINECT=ON
+        -DBUILD_TENSORFLOW_OPS=ON
+        -DBUILD_PYTORCH_OPS=ON
+        -DBUILD_RPC_INTERFACE=ON
+        -DBUNDLE_OPEN3D_ML=ON
+    )
+    set -x # Echo commands on
+    cmake "${cmakeOptions[@]}" \
+        -DENABLE_HEADLESS_RENDERING=ON \
+        -DBUILD_GUI=OFF \
+        ..
+    make install-pip-package -j$NPROC
+    make -j$NPROC
+    bin/GLInfo
+    python -c "from open3d import *; import open3d; print(open3d)"
+    cd ../docs # To Open3D/docs
+    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --pyapi_rst=never
+    cd ../build
+    set +x # Echo commands off
+    echo
+    echo "Building Open3D with BUILD_GUI=ON for visualization.{gui,rendering} documentation"
+    echo
+    set -x # Echo commands on
+    cmake "${cmakeOptions[@]}" \
+        -DENABLE_HEADLESS_RENDERING=OFF \
+        -DBUILD_GUI=ON \
+        ..
+    make install-pip-package -j$NPROC
+    make -j$NPROC
+    bin/GLInfo || true # Expect failure since HEADLESS_RENDERING=OFF
+    python -c "from open3d import *; import open3d; print(open3d)"
+    cd ../docs # To Open3D/docs
+    python make_docs.py $DOC_ARGS --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen
+    set +x # Echo commands off
 }
