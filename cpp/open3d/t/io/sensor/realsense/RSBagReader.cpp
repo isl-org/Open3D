@@ -34,6 +34,8 @@
 #include <librealsense2/rs.hpp>
 #include <sstream>
 
+#include <thread>
+
 namespace open3d {
 namespace t {
 namespace io {
@@ -55,7 +57,8 @@ bool RSBagReader::Open(const std::string &filename) {
         pipe_->start(cfg);  // File will be opened in read mode at this point
         auto rs_device =
                 pipe_->get_active_profile().get_device().as<rs2::playback>();
-        // do not drop frames: Causes deadlock
+        rs_device.pause();  // Pause playback to prevent frame drops
+        // do not drop frames: Causes deadlock after 4 frames on macOS/Linux
         // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
         /* rs_device.set_real_time(false); */
         utility::LogInfo("File {} opened", filename);
@@ -162,11 +165,15 @@ bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
     auto rs_device =
             pipe_->get_active_profile().get_device().as<rs2::playback>();
     try {
+        if (is_eof_)    // restart streaming
+            Open(rs_device.file_name());
         rs_device.seek(std::chrono::microseconds(timestamp));
     } catch (const rs2::error &) {
         utility::LogWarning("Unable to go to timestamp {}", timestamp);
         return false;
     }
+    dev_color_fid = 0;
+    is_eof_ = false;
     return true;
 }
 
@@ -182,43 +189,48 @@ uint64_t RSBagReader::GetTimestamp() const {
            1000;  // Convert nanoseconds -> microseconds
 }
 
+// TODO: Implement frame buffer (single producer single consumer concurrent
+// queue)
 t::geometry::RGBDImage RSBagReader::NextFrame() {
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().");
     }
+    const uint64_t RS2_PLAYBACK_TIMEOUT_MS = 10*1000.0/metadata_.fps_;
     auto &frames_ = *pframes_;
-    static uint64_t color_frame_number_ms = 0;
-    uint64_t next_color_frame_number_ms = 0;
-    utility::LogInfo("NextFrame call");
+    uint64_t next_dev_color_fid = 0;
     // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
     auto rs_device =
-            pipe_->get_active_profile().get_device().as<rs2::playback>();
-    try {
-        do {
-            rs_device.resume();
-            frames_ = pipe_->wait_for_frames();
-            rs_device.pause();
-            next_color_frame_number_ms =
-                    frames_.get_color_frame().get_frame_number();
-        } while (next_color_frame_number_ms <= color_frame_number_ms);
-        color_frame_number_ms = next_color_frame_number_ms;
-        utility::LogInfo("Frame {}ms", color_frame_number_ms);
+        pipe_->get_active_profile().get_device().as<rs2::playback>();
+    rs_device.resume();
+    while(next_dev_color_fid <= dev_color_fid &&
+            pipe_->try_wait_for_frames(&frames_, RS2_PLAYBACK_TIMEOUT_MS)) {
+        ++nreq;
+        next_dev_color_fid =
+            frames_.get_color_frame().get_frame_number();
+    }
+    rs_device.pause();
+    ++fid;
+    if (next_dev_color_fid <= dev_color_fid) {
+        utility::LogInfo("EOF reached");
+        is_eof_ = true;
+        current_frame_.Clear();
+    } else {
+        dev_color_fid = next_dev_color_fid;
+        utility::LogDebug("Device Frame {}, Request {}, output frame {}", dev_color_fid, nreq, fid);
+
         frames_ = align_to_color_->process(frames_);
         const auto &color_frame = frames_.get_color_frame();
         // Copy frame data to Tensors
         current_frame_.color_ = core::Tensor(
                 static_cast<const uint8_t *>(color_frame.get_data()),
                 {color_frame.get_height(), color_frame.get_width(),
-                 channels_color_},
+                channels_color_},
                 dt_color_);
         const auto &depth_frame = frames_.get_depth_frame();
         current_frame_.depth_ = core::Tensor(
                 static_cast<const uint16_t *>(depth_frame.get_data()),
                 {depth_frame.get_height(), depth_frame.get_width()}, dt_depth_);
-    } catch (const rs2::error &) {
-        utility::LogInfo("EOF reached");
-        is_eof_ = true;
-        current_frame_.Clear();
+
     }
     return current_frame_;
 }

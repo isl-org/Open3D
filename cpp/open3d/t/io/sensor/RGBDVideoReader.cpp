@@ -53,31 +53,28 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
     WriteIJsonConvertibleToJSON(fmt::format("{}/intrinsic.json", frame_path),
                                 GetMetadata());
     SeekTimestamp(start_time);
-    auto tim_rgbd = NextFrame();
+    int idx = 0;
     open3d::geometry::Image im_color, im_depth;
-    for (int idx = 0; !IsEOF() && GetTimestamp() < end_time;
+    for (auto tim_rgbd = NextFrame(); !IsEOF() && GetTimestamp() < end_time;
          ++idx, tim_rgbd = NextFrame())
 #pragma omp parallel sections
     {
 #pragma omp section
         {
-            utility::LogInfo("Getting color image {}...", idx);
             im_color = tim_rgbd.color_.ToLegacyImage();
             auto color_file =
                     fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
             WriteImage(color_file, im_color);
-            utility::LogInfo("Written {}", color_file);
         }
 #pragma omp section
         {
-            utility::LogInfo("Getting depth image {}...", idx);
             im_depth = tim_rgbd.depth_.ToLegacyImage();
             auto depth_file =
                     fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
             WriteImage(depth_file, im_depth);
-            utility::LogInfo("Writtten {}", depth_file);
         }
     }
+    utility::LogInfo("Written {} depth and color images to {}/{{depth,color}}/", idx, frame_path);
 }
 
 std::shared_ptr<RGBDVideoReader> RGBDVideoReader::Create(

@@ -88,15 +88,18 @@ public:
 
 private:
     RGBDVideoMetadata metadata_;
+    core::Dtype dt_color_, dt_depth_;
+    uint8_t channels_color_;
+
     bool is_eof_ = false, is_opened_ = false;
+    t::geometry::RGBDImage current_frame_;
+    uint64_t dev_color_fid = 0;
+    uint64_t  nreq = 0, fid = 0;    // debug
 
     std::unique_ptr<rs2::pipeline> pipe_;
     std::unique_ptr<rs2::align> align_to_color_;
     std::unique_ptr<rs2::frameset> pframes_;
-    core::Dtype dt_color_, dt_depth_;
-    uint8_t channels_color_;
 
-    t::geometry::RGBDImage current_frame_;
     Json::Value GetMetadataJson();
     std::string GetTagInMetadata(const std::string &tag_name);
 };

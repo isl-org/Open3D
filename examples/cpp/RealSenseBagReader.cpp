@@ -101,11 +101,11 @@ int main(int argc, char **argv) {
             return 1;
         }
         if (utility::filesystem::DirectoryExists(output_path)) {
-            utility::LogError("Output path {} already existing, only play bag.",
+            utility::LogWarning("Output path {} already existing, only play bag.",
                               output_path);
             return 1;
         } else if (!utility::filesystem::MakeDirectory(output_path)) {
-            utility::LogError("Unable to create path {}, only play bag.",
+            utility::LogWarning("Unable to create path {}, only play bag.",
                               output_path);
             return 1;
         } else {
@@ -171,9 +171,6 @@ int main(int argc, char **argv) {
                 fmt::format("{}/intrinsic.json", output_path), bag_metadata);
         WriteJsonToFile(fmt::format("{}/config.json", output_path),
                         GenerateDatasetConfig(output_path, bag_filename));
-        bag_reader.SaveFrames("L515");
-        bag_reader.SeekTimestamp(0);
-        return 0;
     }
     const auto frame_interval = sc::duration<double>(1. / bag_metadata.fps_);
 
