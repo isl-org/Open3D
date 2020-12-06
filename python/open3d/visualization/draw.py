@@ -13,7 +13,8 @@ def draw(
         #up=None,
         #field_of_view=None,
         show_ui=None,
-        point_size=None):
+        point_size=None,
+        rpc_interface=False):
     gui.Application.instance.initialize()
     w = O3DVisualizer(title, width, height)
 
@@ -43,5 +44,11 @@ def draw(
     if show_ui is not None:
         w.show_settings = show_ui
 
+    if rpc_interface:
+        w.start_rpc_interface(address="tcp://127.0.0.1:51454", timeout=10000)
+
     gui.Application.instance.add_window(w)
     gui.Application.instance.run()
+
+    if rpc_interface:
+        w.stop_rpc_interface()

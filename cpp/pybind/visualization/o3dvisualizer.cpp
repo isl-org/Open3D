@@ -194,6 +194,13 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("export_current_image", &O3DVisualizer::ExportCurrentImage,
                  "export_image(path). Exports a PNG image of what is "
                  "currently displayed to the given path.")
+            .def("start_rpc_interface", &O3DVisualizer::StartRPCInterface,
+                 "address"_a, "timeout"_a,
+                 "Starts the RPC interface.\n"
+                 "address: str with the address to listen on.\n"
+                 "timeout: int timeout in milliseconds for sending the reply.")
+            .def("stop_rpc_interface", &O3DVisualizer::StopRPCInterface,
+                 "Stops the RPC interface.")
             .def_property(
                     "show_settings",
                     [](const O3DVisualizer& dv) {
