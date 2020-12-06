@@ -43,11 +43,7 @@ namespace kernel {
 void CUDAUnprojectKernel(const std::unordered_map<std::string, Tensor>& srcs,
                          std::unordered_map<std::string, Tensor>& dsts) {
     static std::vector<std::string> src_attrs = {
-            "depth",
-            "intrinsics",
-            "depth_scale",
-            "depth_max",
-    };
+            "depth", "intrinsics", "depth_scale", "depth_max", "stride"};
     for (auto& k : src_attrs) {
         if (srcs.count(k) == 0) {
             utility::LogError(
@@ -62,36 +58,44 @@ void CUDAUnprojectKernel(const std::unordered_map<std::string, Tensor>& srcs,
     Tensor intrinsics = srcs.at("intrinsics").To(core::Dtype::Float32);
     float depth_scale = srcs.at("depth_scale").Item<float>();
     float depth_max = srcs.at("depth_max").Item<float>();
+    int64_t stride = srcs.at("stride").Item<int64_t>();
 
     NDArrayIndexer depth_ndi(depth, 2);
     TransformIndexer ti(intrinsics);
 
     // Output
-    Tensor vertex_map({depth_ndi.GetShape(0), depth_ndi.GetShape(1), 3},
-                      core::Dtype::Float32, depth.GetDevice());
-    NDArrayIndexer vertex_ndi(vertex_map, 2);
+    int64_t rows_strided = depth_ndi.GetShape(0) / stride;
+    int64_t cols_strided = depth_ndi.GetShape(1) / stride;
+    Tensor points({rows_strided * cols_strided, 3}, core::Dtype::Float32,
+                  depth.GetDevice());
+    Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
+                 depth.GetDevice());
+    float* points_ptr = static_cast<float*>(points.GetDataPtr());
+    int* count_ptr = static_cast<int*>(count.GetDataPtr());
 
     // Workload
-    int64_t n = depth_ndi.NumElements();
+    int64_t n = rows_strided * cols_strided;
 
     CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-                int64_t y, x;
-                depth_ndi.WorkloadToCoord(workload_idx, &x, &y);
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int64_t y = (workload_idx / cols_strided) * stride;
+                int64_t x = (workload_idx % cols_strided) * stride;
 
+                int64_t workload_depth;
+                depth_ndi.CoordToWorkload(x, y, &workload_depth);
                 float d = *static_cast<float*>(depth_ndi.GetDataPtrFromWorkload(
-                                  workload_idx)) /
+                                  workload_depth)) /
                           depth_scale;
-                d = (d >= depth_max) ? 0 : d;
-
-                float* vertex = static_cast<float*>(
-                        vertex_ndi.GetDataPtrFromWorkload(workload_idx));
-
-                ti.Unproject(static_cast<float>(x), static_cast<float>(y), d,
-                             vertex, vertex + 1, vertex + 2);
+                if (d > 0 && d < depth_max) {
+                    int idx = atomicAdd(count_ptr, 1);
+                    float* vertex = points_ptr + 3 * idx;
+                    ti.Unproject(static_cast<float>(x), static_cast<float>(y),
+                                 d, vertex + 0, vertex + 1, vertex + 2);
+                }
             });
 
-    dsts.emplace("vertex_map", vertex_map);
+    int total_pts_count = count.Item<int>();
+    dsts.emplace("points", points.Slice(0, 0, total_pts_count));
 }
 
 /// Dummy kernel launch: global hashmap calls
@@ -760,9 +764,10 @@ void CUDAMarchingCubesKernel(
             vertices_ptr[3 * idx + 1] = voxel_size * (y + ratio_y);
             vertices_ptr[3 * idx + 2] = voxel_size * (z + ratio_z);
 
-            float nx = n_o[0] * (1 - ratio) + n_e[0] * (ratio);
-            float ny = n_o[1] * (1 - ratio) + n_e[1] * (ratio);
-            float nz = n_o[2] * (1 - ratio) + n_e[2] * (ratio);
+            float nx = n_o[0] +
+                       0.00001 * n_e[0];  // * (1 - ratio) + n_e[0] * (ratio);
+            float ny = n_o[1];            // * (1 - ratio) + n_e[1] * (ratio);
+            float nz = n_o[2];            // * (1 - ratio) + n_e[2] * (ratio);
             float norm = sqrtf(nx * nx + ny * ny + nz * nz);
 
             normals_ptr[3 * idx + 0] = nx / norm;

@@ -269,7 +269,8 @@ public:
     static PointCloud CreateFromDepthImage(const Image &depth,
                                            const core::Tensor &intrinsics,
                                            double depth_scale = 1000.0,
-                                           double depth_max = 3.0);
+                                           double depth_max = 3.0,
+                                           int stride = 1);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static PointCloud FromLegacyPointCloud(

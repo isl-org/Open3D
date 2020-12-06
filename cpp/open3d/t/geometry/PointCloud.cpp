@@ -144,7 +144,8 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size) const {
 PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             const core::Tensor &intrinsics,
                                             double depth_scale,
-                                            double depth_max) {
+                                            double depth_max,
+                                            int stride) {
     core::Device device = depth.GetDevice();
     std::unordered_map<std::string, core::Tensor> srcs = {
             {"depth", depth.AsTensor()},
@@ -154,21 +155,19 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                           {}, core::Dtype::Float32, device)},
             {"depth_max",
              core::Tensor(std::vector<float>{static_cast<float>(depth_max)}, {},
-                          core::Dtype::Float32, device)}};
+                          core::Dtype::Float32, device)},
+            {"stride", core::Tensor(std::vector<int64_t>{stride}, {},
+                                    core::Dtype::Int64, device)}};
     std::unordered_map<std::string, core::Tensor> dsts;
 
     core::kernel::GeneralEW(srcs, dsts,
                             core::kernel::GeneralEWOpCode::Unproject);
-    if (dsts.count("vertex_map") == 0) {
+    if (dsts.count("points") == 0) {
         utility::LogError(
                 "[PointCloud] unprojection launch failed, vertex map expected "
                 "to return.");
     }
-    core::Tensor vertex_map = dsts.at("vertex_map");
-    core::Tensor pcd_tensor =
-            vertex_map.View({depth.GetRows() * depth.GetCols(), 3});
-
-    return PointCloud(core::TensorList::FromTensor(pcd_tensor));
+    return PointCloud(core::TensorList::FromTensor(dsts.at("points")));
 }
 
 PointCloud PointCloud::FromLegacyPointCloud(

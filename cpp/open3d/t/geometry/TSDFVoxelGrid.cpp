@@ -68,8 +68,8 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                               const core::Tensor &extrinsics,
                               double depth_scale) {
     // Unproject
-    PointCloud pcd =
-            PointCloud::CreateFromDepthImage(depth, intrinsics, depth_scale);
+    PointCloud pcd = PointCloud::CreateFromDepthImage(depth, intrinsics,
+                                                      depth_scale, 3.0, 4);
     pcd.Transform(extrinsics.Inverse());
 
     // Touch blocks
@@ -232,7 +232,7 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
 
     TriangleMesh mesh(core::TensorList::FromTensor(dsts.at("vertices")),
                       core::TensorList::FromTensor(dsts.at("triangles")));
-    mesh.SetVertexNormals(core::TensorList::FromTensor(dsts.at("normals")));
+    // mesh.SetVertexNormals(core::TensorList::FromTensor(dsts.at("normals")));
     return mesh;
 }
 
