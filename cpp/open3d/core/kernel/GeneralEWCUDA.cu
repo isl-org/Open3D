@@ -115,37 +115,56 @@ void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
     Tensor pcd = srcs.at("points");
     float voxel_size = srcs.at("voxel_size").Item<float>();
     int64_t resolution = srcs.at("resolution").Item<int64_t>();
+    float block_size = voxel_size * resolution;
+
+    float sdf_trunc = srcs.at("sdf_trunc").Item<float>();
+
     Device device = pcd.GetDevice();
 
-    float block_size = voxel_size * resolution;
-    core::Tensor block_coordd = pcd / block_size;
-    core::Tensor block_coordi = block_coordd.To(core::Dtype::Int64);
+    int64_t n = pcd.GetShape()[0];
+    float* pcd_ptr = static_cast<float*>(pcd.GetDataPtr());
+
+    Tensor block_coordi({8 * n, 3}, Dtype::Int32, device);
+    int* block_coordi_ptr = static_cast<int*>(block_coordi.GetDataPtr());
+    Tensor count(std::vector<int>{0}, {}, Dtype::Int32, device);
+    int* count_ptr = static_cast<int*>(count.GetDataPtr());
+
+    CUDALauncher::LaunchGeneralKernel(
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                float x = pcd_ptr[3 * workload_idx + 0];
+                float y = pcd_ptr[3 * workload_idx + 1];
+                float z = pcd_ptr[3 * workload_idx + 2];
+
+                int xb_lo = static_cast<int>((x - sdf_trunc) / block_size);
+                int xb_hi = static_cast<int>((x + sdf_trunc) / block_size);
+                int yb_lo = static_cast<int>((y - sdf_trunc) / block_size);
+                int yb_hi = static_cast<int>((y + sdf_trunc) / block_size);
+                int zb_lo = static_cast<int>((z - sdf_trunc) / block_size);
+                int zb_hi = static_cast<int>((z + sdf_trunc) / block_size);
+                for (int64_t xb = xb_lo; xb <= xb_hi; ++xb) {
+                    for (int64_t yb = yb_lo; yb <= yb_hi; ++yb) {
+                        for (int64_t zb = zb_lo; zb <= zb_hi; ++zb) {
+                            int idx = atomicAdd(count_ptr, 1);
+                            block_coordi_ptr[3 * idx + 0] = xb;
+                            block_coordi_ptr[3 * idx + 1] = yb;
+                            block_coordi_ptr[3 * idx + 2] = zb;
+                        }
+                    }
+                }
+            });
+
+    int total_block_count = count.Item<int>();
+    block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Hashmap pcd_block_hashmap(
-            block_coordi.GetShape()[0],
+            total_block_count,
             core::Dtype(core::Dtype::DtypeCode::Object,
-                        core::Dtype::Int64.ByteSize() * 3, "_hash_k"),
-            core::Dtype::Int64, device);
+                        core::Dtype::Int32.ByteSize() * 3, "_hash_k"),
+            core::Dtype::Int32, device);
     core::Tensor block_addrs, block_masks;
-    pcd_block_hashmap.Activate(block_coordi, block_addrs, block_masks);
-
-    // Activate in blocks
-    core::Tensor block_coords = block_coordi.IndexGet({block_masks});
-    int64_t block_count = block_coords.GetShape()[0];
-    core::Tensor block_nb_coords({27, block_count, 3}, core::Dtype::Int64,
-                                 device);
-
-    /// 3x3 neighbor blocks, more aggressive sampling
-    for (int nb = 0; nb < 27; ++nb) {
-        int dz = nb / 9;
-        int dy = (nb % 9) / 3;
-        int dx = nb % 3;
-        core::Tensor dt =
-                core::Tensor(std::vector<int64_t>{dx - 1, dy - 1, dz - 1},
-                             {1, 3}, core::Dtype::Int64, device);
-        block_nb_coords[nb] = block_coords + dt;
-    }
-
-    dsts.emplace("block_coords", block_nb_coords.View({27 * block_count, 3}));
+    pcd_block_hashmap.Activate(block_coordi.Slice(0, 0, count.Item<int>()),
+                               block_addrs, block_masks);
+    dsts.emplace("block_coords",
+                 block_coordi.IndexGet({block_masks}).To(Dtype::Int64));
 }
 
 void CUDATSDFIntegrateKernel(
@@ -353,10 +372,10 @@ void CUDASurfaceExtractionKernel(
 
             int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-            // if (nb_indices_ptr[13 * n_blocks + workload_block_idx] !=
-            //     block_idx) {
-            //     printf("wrong!\n");
-            // }
+            if (nb_indices_ptr[13 * n_blocks + workload_block_idx] !=
+                block_idx) {
+                printf("wrong!\n");
+            }
             bool block_mask_i =
                     nb_masks_ptr[nb_idx * n_blocks + workload_block_idx];
             if (!block_mask_i) continue;
@@ -367,16 +386,18 @@ void CUDASurfaceExtractionKernel(
             voxel_block_buffer_indexer.CoordToWorkload(
                     xv_i - dxb * resolution, yv_i - dyb * resolution,
                     zv_i - dzb * resolution, block_idx_i, &workload_voxel_i);
+            // printf("%ld %ld %ld at %d: %ld %ld %ld\n", xv_i, yv_i, zv_i, i,
+            //        xv_i - dxb * resolution, yv_i - dyb * resolution,
+            //        zv_i - dzb * resolution);
             float* voxel_ptr_i = static_cast<float*>(
                     voxel_block_buffer_indexer.GetDataPtrFromWorkload(
                             workload_voxel_i));
 
             float tsdf_i = voxel_ptr_i[0];
             float weight_i = voxel_ptr_i[1];
-            // printf("%f %f\n", tsdf_i, weight_i);
 
             if (weight_i > 0 && tsdf_i * tsdf_o < 0) {
-                float ratio = tsdf_i / (tsdf_i - tsdf_o);
+                float ratio = (0 - tsdf_o) / (tsdf_i - tsdf_o);
 
                 int idx = atomicAdd(count_ptr, 1);
 
@@ -725,23 +746,23 @@ void CUDAMarchingCubesKernel(
                 n_e[axis] = (tsdfs[1] - tsdfs[0]) / (2 * voxel_size);
             }
 
-            float ratio = tsdf_e / (tsdf_e - tsdf_o);
+            float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 
             int idx = atomicAdd(vtx_count_ptr, 1);
             mesh_struct_ptr[e] = idx;
             /// printf("%d\n", idx);
 
-            float ratio_x = (1 - ratio) * int(e == 0);
-            float ratio_y = (1 - ratio) * int(e == 1);
-            float ratio_z = (1 - ratio) * int(e == 2);
+            float ratio_x = ratio * int(e == 0);
+            float ratio_y = ratio * int(e == 1);
+            float ratio_z = ratio * int(e == 2);
 
             vertices_ptr[3 * idx + 0] = voxel_size * (x + ratio_x);
             vertices_ptr[3 * idx + 1] = voxel_size * (y + ratio_y);
             vertices_ptr[3 * idx + 2] = voxel_size * (z + ratio_z);
 
-            float nx = n_o[0] * (ratio) + n_e[0] * (1 - ratio);
-            float ny = n_o[1] * (ratio) + n_e[1] * (1 - ratio);
-            float nz = n_o[2] * (ratio) + n_e[2] * (1 - ratio);
+            float nx = n_o[0] * (1 - ratio) + n_e[0] * (ratio);
+            float ny = n_o[1] * (1 - ratio) + n_e[1] * (ratio);
+            float nz = n_o[2] * (1 - ratio) + n_e[2] * (ratio);
             float norm = sqrtf(nx * nx + ny * ny + nz * nz);
 
             normals_ptr[3 * idx + 0] = nx / norm;
