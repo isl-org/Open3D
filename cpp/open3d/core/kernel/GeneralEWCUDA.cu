@@ -167,8 +167,7 @@ void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
     core::Tensor block_addrs, block_masks;
     pcd_block_hashmap.Activate(block_coordi.Slice(0, 0, count.Item<int>()),
                                block_addrs, block_masks);
-    dsts.emplace("block_coords",
-                 block_coordi.IndexGet({block_masks}).To(Dtype::Int64));
+    dsts.emplace("block_coords", block_coordi.IndexGet({block_masks}));
 }
 
 void CUDATSDFIntegrateKernel(
@@ -216,7 +215,7 @@ void CUDATSDFIntegrateKernel(
 
     // Plain arrays that does not require indexers
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
-    int64_t* block_keys_ptr = static_cast<int64_t*>(block_keys.GetDataPtr());
+    int* block_keys_ptr = static_cast<int*>(block_keys.GetDataPtr());
 
     int64_t n = indices.GetShape()[0] * resolution3;
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_HOST_DEVICE(
@@ -227,9 +226,9 @@ void CUDATSDFIntegrateKernel(
 
         /// Coordinate transform
         // block_idx -> (x_block, y_block, z_block)
-        int64_t xb = block_keys_ptr[block_idx * 3 + 0];
-        int64_t yb = block_keys_ptr[block_idx * 3 + 1];
-        int64_t zb = block_keys_ptr[block_idx * 3 + 2];
+        int64_t xb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 0]);
+        int64_t yb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 1]);
+        int64_t zb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 2]);
 
         // voxel_idx -> (x_voxel, y_voxel, z_voxel)
         int64_t xv, yv, zv;
@@ -322,7 +321,7 @@ void CUDASurfaceExtractionKernel(
     int64_t* nb_indices_ptr = static_cast<int64_t*>(nb_indices.GetDataPtr());
     bool* nb_masks_ptr = static_cast<bool*>(nb_masks.GetDataPtr());
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
-    int64_t* block_keys_ptr = static_cast<int64_t*>(block_keys.GetDataPtr());
+    int* block_keys_ptr = static_cast<int*>(block_keys.GetDataPtr());
 
     int n_blocks = indices.GetShape()[0];
     int64_t n = n_blocks * resolution3;
@@ -344,9 +343,9 @@ void CUDASurfaceExtractionKernel(
 
         /// Coordinate transform
         // block_idx -> (x_block, y_block, z_block)
-        int64_t xb = block_keys_ptr[block_idx * 3 + 0];
-        int64_t yb = block_keys_ptr[block_idx * 3 + 1];
-        int64_t zb = block_keys_ptr[block_idx * 3 + 2];
+        int64_t xb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 0]);
+        int64_t yb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 1]);
+        int64_t zb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 2]);
 
         // voxel_idx -> (x_voxel, y_voxel, z_voxel)
         int64_t xv, yv, zv;
@@ -471,7 +470,7 @@ void CUDAMarchingCubesKernel(
     bool* nb_masks_ptr = static_cast<bool*>(nb_masks.GetDataPtr());
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
     int64_t* inv_indices_ptr = static_cast<int64_t*>(inv_indices.GetDataPtr());
-    int64_t* block_keys_ptr = static_cast<int64_t*>(block_keys.GetDataPtr());
+    int* block_keys_ptr = static_cast<int*>(block_keys.GetDataPtr());
 
     int64_t n = n_blocks * resolution3;
 
@@ -583,9 +582,9 @@ void CUDAMarchingCubesKernel(
         int64_t voxel_idx = workload_idx % resolution3;
 
         // block_idx -> (x_block, y_block, z_block)
-        int64_t xb = block_keys_ptr[block_idx * 3 + 0];
-        int64_t yb = block_keys_ptr[block_idx * 3 + 1];
-        int64_t zb = block_keys_ptr[block_idx * 3 + 2];
+        int64_t xb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 0]);
+        int64_t yb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 1]);
+        int64_t zb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 2]);
 
         // voxel_idx -> (x_voxel, y_voxel, z_voxel)
         int64_t xv, yv, zv;

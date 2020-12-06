@@ -179,10 +179,9 @@ void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
     });
 
     int64_t block_count = set.size();
-    core::Tensor block_coords({block_count, 3}, core::Dtype::Int64,
+    core::Tensor block_coords({block_count, 3}, core::Dtype::Int32,
                               pcd.GetDevice());
-    int64_t* block_coords_ptr =
-            static_cast<int64_t*>(block_coords.GetDataPtr());
+    int* block_coords_ptr = static_cast<int*>(block_coords.GetDataPtr());
     int count = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++count) {
         int64_t offset = count * 3;
@@ -238,7 +237,7 @@ void CPUTSDFIntegrateKernel(const std::unordered_map<std::string, Tensor>& srcs,
 
     // Plain arrays that does not require indexers
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
-    int64_t* block_keys_ptr = static_cast<int64_t*>(block_keys.GetDataPtr());
+    int* block_keys_ptr = static_cast<int*>(block_keys.GetDataPtr());
 
     int64_t n = indices.GetShape()[0] * resolution3;
     CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
@@ -248,9 +247,9 @@ void CPUTSDFIntegrateKernel(const std::unordered_map<std::string, Tensor>& srcs,
 
         /// Coordinate transform
         // block_idx -> (x_block, y_block, z_block)
-        int64_t xb = block_keys_ptr[block_idx * 3 + 0];
-        int64_t yb = block_keys_ptr[block_idx * 3 + 1];
-        int64_t zb = block_keys_ptr[block_idx * 3 + 2];
+        int64_t xb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 0]);
+        int64_t yb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 1]);
+        int64_t zb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 2]);
 
         // voxel_idx -> (x_voxel, y_voxel, z_voxel)
         int64_t xv, yv, zv;
@@ -346,7 +345,7 @@ void CPUSurfaceExtractionKernel(
     int64_t* nb_indices_ptr = static_cast<int64_t*>(nb_indices.GetDataPtr());
     bool* nb_masks_ptr = static_cast<bool*>(nb_masks.GetDataPtr());
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
-    int64_t* block_keys_ptr = static_cast<int64_t*>(block_keys.GetDataPtr());
+    int* block_keys_ptr = static_cast<int*>(block_keys.GetDataPtr());
 
     int n_blocks = indices.GetShape()[0];
     int64_t n = n_blocks * resolution3;
@@ -367,9 +366,9 @@ void CPUSurfaceExtractionKernel(
 
         /// Coordinate transform
         // block_idx -> (x_block, y_block, z_block)
-        int64_t xb = block_keys_ptr[block_idx * 3 + 0];
-        int64_t yb = block_keys_ptr[block_idx * 3 + 1];
-        int64_t zb = block_keys_ptr[block_idx * 3 + 2];
+        int64_t xb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 0]);
+        int64_t yb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 1]);
+        int64_t zb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 2]);
 
         // voxel_idx -> (x_voxel, y_voxel, z_voxel)
         int64_t xv, yv, zv;
@@ -495,7 +494,7 @@ void CPUMarchingCubesKernel(const std::unordered_map<std::string, Tensor>& srcs,
     bool* nb_masks_ptr = static_cast<bool*>(nb_masks.GetDataPtr());
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
     int64_t* inv_indices_ptr = static_cast<int64_t*>(inv_indices.GetDataPtr());
-    int64_t* block_keys_ptr = static_cast<int64_t*>(block_keys.GetDataPtr());
+    int* block_keys_ptr = static_cast<int*>(block_keys.GetDataPtr());
 
     int64_t n = n_blocks * resolution3;
 
@@ -605,9 +604,9 @@ void CPUMarchingCubesKernel(const std::unordered_map<std::string, Tensor>& srcs,
         int64_t voxel_idx = workload_idx % resolution3;
 
         // block_idx -> (x_block, y_block, z_block)
-        int64_t xb = block_keys_ptr[block_idx * 3 + 0];
-        int64_t yb = block_keys_ptr[block_idx * 3 + 1];
-        int64_t zb = block_keys_ptr[block_idx * 3 + 2];
+        int64_t xb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 0]);
+        int64_t yb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 1]);
+        int64_t zb = static_cast<int64_t>(block_keys_ptr[block_idx * 3 + 2]);
 
         // voxel_idx -> (x_voxel, y_voxel, z_voxel)
         int64_t xv, yv, zv;
