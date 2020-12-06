@@ -204,11 +204,6 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
 
     // Voxel-wise mesh info. 4 channels correspond to:
     // 3 edges' corresponding vertex index + 1 table index
-    core::Tensor mesh_structure =
-            core::Tensor::Zeros({num_blocks, block_resolution_,
-                                 block_resolution_, block_resolution_, 4},
-                                core::Dtype::Int32, device_);
-
     // Input
     std::unordered_map<std::string, core::Tensor> srcs = {
             {"indices", active_addrs.To(core::Dtype::Int64)},
@@ -230,17 +225,15 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
             {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
                                         core::Dtype::Float32, device_)}};
 
-    std::unordered_map<std::string, core::Tensor> dsts = {
-            {"mesh_structure", mesh_structure}};
+    std::unordered_map<std::string, core::Tensor> dsts;
 
     core::kernel::GeneralEW(srcs, dsts,
                             core::kernel::GeneralEWOpCode::MarchingCubes);
 
-    PointCloud pcd(core::TensorList::FromTensor(dsts.at("vertices")));
-    auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-            pcd.ToLegacyPointCloud());
-    visualization::DrawGeometries({pcd_legacy});
-    return TriangleMesh();
+    TriangleMesh mesh(core::TensorList::FromTensor(dsts.at("vertices")),
+                      core::TensorList::FromTensor(dsts.at("triangles")));
+    mesh.SetVertexNormals(core::TensorList::FromTensor(dsts.at("normals")));
+    return mesh;
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
@@ -260,6 +253,7 @@ std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
         int dz = nb / 9;
         int dy = (nb % 9) / 3;
         int dx = nb % 3;
+        utility::LogInfo("{} - {} {} {}", nb, dx - 1, dy - 1, dz - 1);
         core::Tensor dt =
                 core::Tensor(std::vector<int64_t>{dx - 1, dy - 1, dz - 1},
                              {1, 3}, core::Dtype::Int64, device_);

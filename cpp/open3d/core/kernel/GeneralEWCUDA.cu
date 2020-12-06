@@ -413,6 +413,8 @@ void CUDAMarchingCubesKernel(
     }
     utility::LogInfo("surface extraction starts");
 
+    CUDACachedMemoryManager::ReleaseCache();
+
     Tensor indices = srcs.at("indices");
     Tensor inv_indices = srcs.at("inv_indices");
     Tensor nb_indices = srcs.at("nb_indices");
@@ -430,13 +432,10 @@ void CUDAMarchingCubesKernel(
     NDArrayIndexer voxel_indexer({resolution, resolution, resolution});
 
     // Output
-    if (dsts.count("mesh_structure") == 0) {
-        utility::LogError(
-                "[CUDAMarchingCubesKernel] expected Tensor mesh_structure in "
-                "srcs, but "
-                "did not receive");
-    }
-    Tensor mesh_structure = dsts.at("mesh_structure");
+    int n_blocks = indices.GetShape()[0];
+    core::Tensor mesh_structure = core::Tensor::Zeros(
+            {n_blocks, resolution, resolution, resolution, 4},
+            core::Dtype::Int32, block_keys.GetDevice());
 
     // Real data indexer
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
@@ -449,7 +448,6 @@ void CUDAMarchingCubesKernel(
     int64_t* inv_indices_ptr = static_cast<int64_t*>(inv_indices.GetDataPtr());
     int64_t* block_keys_ptr = static_cast<int64_t*>(block_keys.GetDataPtr());
 
-    int n_blocks = indices.GetShape()[0];
     int64_t n = n_blocks * resolution3;
 
     // Pass 0: analyze mesh structure, set up one-on-one correspondences
@@ -543,13 +541,13 @@ void CUDAMarchingCubesKernel(
     });
 
     // Pass 1: allocate and assign vertices with normals
-    core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
-                       block_values.GetDevice());
-    core::Tensor vertices({std::min(n * 3, int64_t(10000000)), 3},
+    core::Tensor vtx_count(std::vector<int>{0}, {}, core::Dtype::Int32,
+                           block_values.GetDevice());
+    core::Tensor vertices({std::min(n * 3, int64_t(5000000)), 3},
                           core::Dtype::Float32, block_values.GetDevice());
-    core::Tensor normals({std::min(n * 3, int64_t(10000000)), 3},
+    core::Tensor normals({std::min(n * 3, int64_t(5000000)), 3},
                          core::Dtype::Float32, block_values.GetDevice());
-    int* count_ptr = static_cast<int*>(count.GetDataPtr());
+    int* vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
     float* vertices_ptr = static_cast<float*>(vertices.GetDataPtr());
     float* normals_ptr = static_cast<float*>(normals.GetDataPtr());
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
@@ -729,7 +727,7 @@ void CUDAMarchingCubesKernel(
 
             float ratio = tsdf_e / (tsdf_e - tsdf_o);
 
-            int idx = atomicAdd(count_ptr, 1);
+            int idx = atomicAdd(vtx_count_ptr, 1);
             mesh_struct_ptr[e] = idx;
             /// printf("%d\n", idx);
 
@@ -752,12 +750,88 @@ void CUDAMarchingCubesKernel(
         }
     });
 
-    int total_count = count.Item<int>();
-    utility::LogInfo("Total vertex count = {}", total_count);
-    vertices = vertices.Slice(0, 0, total_count);
-    normals = normals.Slice(0, 0, total_count);
+    int total_vtx_count = vtx_count.Item<int>();
+    utility::LogInfo("Total vertex count = {}", total_vtx_count);
+    vertices = vertices.Slice(0, 0, total_vtx_count);
+    normals = normals.Slice(0, 0, total_vtx_count);
     dsts.emplace("vertices", vertices);
     dsts.emplace("normals", normals);
+
+    // Pass 2: connect vertices
+    core::Tensor triangle_count(std::vector<int>{0}, {}, core::Dtype::Int32,
+                                block_values.GetDevice());
+    core::Tensor triangles({std::min(total_vtx_count * 3, 8000000), 3},
+                           core::Dtype::Int64, block_values.GetDevice());
+    int* tri_count_ptr = static_cast<int*>(triangle_count.GetDataPtr());
+    int64_t* triangles_ptr = static_cast<int64_t*>(triangles.GetDataPtr());
+
+    CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
+                                                 int64_t workload_idx) {
+        // Natural index (0, N) -> (block_idx, voxel_idx)
+        int64_t workload_block_idx = workload_idx / resolution3;
+        int64_t voxel_idx = workload_idx % resolution3;
+
+        // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+        int64_t xv, yv, zv;
+        voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+
+        // Obtain voxel's mesh struct ptr
+        int64_t workload_mesh_struct_idx;
+        mesh_structure_indexer.CoordToWorkload(xv, yv, zv, workload_block_idx,
+                                               &workload_mesh_struct_idx);
+        int* mesh_struct_ptr =
+                static_cast<int*>(mesh_structure_indexer.GetDataPtrFromWorkload(
+                        workload_mesh_struct_idx));
+
+        int table_idx = mesh_struct_ptr[3];
+        if (tri_count[table_idx] == 0) return;
+
+        for (size_t tri = 0; tri < 16; tri += 3) {
+            if (tri_table[table_idx][tri] == -1) return;
+
+            int tri_idx = atomicAdd(tri_count_ptr, 1);
+
+            for (size_t vertex = 0; vertex < 3; ++vertex) {
+                int edge = tri_table[table_idx][tri + vertex];
+
+                int64_t xv_i = xv + edge_shifts[edge][0];
+                int64_t yv_i = yv + edge_shifts[edge][1];
+                int64_t zv_i = zv + edge_shifts[edge][2];
+                int64_t edge_i = edge_shifts[edge][3];
+
+                int dxb = xv_i / resolution;
+                int dyb = yv_i / resolution;
+                int dzb = zv_i / resolution;
+
+                int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
+
+                int64_t block_idx_i =
+                        nb_indices_ptr[nb_idx * n_blocks + workload_block_idx];
+                int64_t workload_mesh_struct_i;
+                mesh_structure_indexer.CoordToWorkload(
+                        xv_i - dxb * resolution, yv_i - dyb * resolution,
+                        zv_i - dzb * resolution, inv_indices_ptr[block_idx_i],
+                        &workload_mesh_struct_i);
+                if (indices_ptr[inv_indices_ptr[block_idx_i]] != block_idx_i) {
+                    printf("inv indices error!\n");
+                }
+                int* mesh_struct_ptr_i = static_cast<int*>(
+                        mesh_structure_indexer.GetDataPtrFromWorkload(
+                                workload_mesh_struct_i));
+
+                if (mesh_struct_ptr_i[edge_i] < 0) {
+                    printf("triangle: mesh struct error");
+                }
+                triangles_ptr[3 * tri_idx + 2 - vertex] =
+                        mesh_struct_ptr_i[edge_i];
+            }
+        }
+    });
+
+    int total_tri_count = triangle_count.Item<int>();
+    utility::LogInfo("Total triangle count = {}", total_tri_count);
+    triangles = triangles.Slice(0, 0, total_tri_count);
+    dsts.emplace("triangles", triangles);
 }
 
 void GeneralEWCUDA(const std::unordered_map<std::string, Tensor>& srcs,
