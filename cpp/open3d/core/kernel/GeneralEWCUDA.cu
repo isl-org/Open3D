@@ -133,29 +133,30 @@ void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
     Tensor count(std::vector<int>{0}, {}, Dtype::Int32, device);
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
 
-    CUDALauncher::LaunchGeneralKernel(
-            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                float x = pcd_ptr[3 * workload_idx + 0];
-                float y = pcd_ptr[3 * workload_idx + 1];
-                float z = pcd_ptr[3 * workload_idx + 2];
+    CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
+                                                 int64_t workload_idx) {
+        float x = pcd_ptr[3 * workload_idx + 0];
+        float y = pcd_ptr[3 * workload_idx + 1];
+        float z = pcd_ptr[3 * workload_idx + 2];
 
-                int xb_lo = static_cast<int>((x - sdf_trunc) / block_size);
-                int xb_hi = static_cast<int>((x + sdf_trunc) / block_size);
-                int yb_lo = static_cast<int>((y - sdf_trunc) / block_size);
-                int yb_hi = static_cast<int>((y + sdf_trunc) / block_size);
-                int zb_lo = static_cast<int>((z - sdf_trunc) / block_size);
-                int zb_hi = static_cast<int>((z + sdf_trunc) / block_size);
-                for (int64_t xb = xb_lo; xb <= xb_hi; ++xb) {
-                    for (int64_t yb = yb_lo; yb <= yb_hi; ++yb) {
-                        for (int64_t zb = zb_lo; zb <= zb_hi; ++zb) {
-                            int idx = atomicAdd(count_ptr, 1);
-                            block_coordi_ptr[3 * idx + 0] = xb;
-                            block_coordi_ptr[3 * idx + 1] = yb;
-                            block_coordi_ptr[3 * idx + 2] = zb;
-                        }
-                    }
+        int xb_lo = static_cast<int>(floor((x - sdf_trunc) / block_size));
+        int xb_hi = static_cast<int>(floor((x + sdf_trunc) / block_size));
+        int yb_lo = static_cast<int>(floor((y - sdf_trunc) / block_size));
+        int yb_hi = static_cast<int>(floor((y + sdf_trunc) / block_size));
+        int zb_lo = static_cast<int>(floor((z - sdf_trunc) / block_size));
+        int zb_hi = static_cast<int>(floor((z + sdf_trunc) / block_size));
+
+        for (int64_t xb = xb_lo; xb <= xb_hi; ++xb) {
+            for (int64_t yb = yb_lo; yb <= yb_hi; ++yb) {
+                for (int64_t zb = zb_lo; zb <= zb_hi; ++zb) {
+                    int idx = atomicAdd(count_ptr, 1);
+                    block_coordi_ptr[3 * idx + 0] = xb;
+                    block_coordi_ptr[3 * idx + 1] = yb;
+                    block_coordi_ptr[3 * idx + 2] = zb;
                 }
-            });
+            }
+        }
+    });
 
     int total_block_count = count.Item<int>();
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
@@ -175,9 +176,9 @@ void CUDATSDFIntegrateKernel(
         std::unordered_map<std::string, Tensor>& dsts) {
     // Decode input tensors
     static std::vector<std::string> src_attrs = {
-            "depth",      "indices",    "block_keys",
-            "intrinsics", "extrinsics", "resolution",
-            "voxel_size", "sdf_trunc",  "depth_scale",
+            "depth",       "indices",    "block_keys", "intrinsics",
+            "extrinsics",  "resolution", "voxel_size", "sdf_trunc",
+            "depth_scale", "depth_max",
     };
     for (auto& k : src_attrs) {
         if (srcs.count(k) == 0) {
@@ -204,6 +205,7 @@ void CUDATSDFIntegrateKernel(
     float voxel_size = srcs.at("voxel_size").Item<float>();
     float sdf_trunc = srcs.at("sdf_trunc").Item<float>();
     float depth_scale = srcs.at("depth_scale").Item<float>();
+    float depth_max = srcs.at("depth_max").Item<float>();
 
     // Shape / transform indexers, no data involved
     NDArrayIndexer voxel_indexer({resolution, resolution, resolution});
@@ -259,8 +261,16 @@ void CUDATSDFIntegrateKernel(
                 *static_cast<const float*>(
                         image_indexer.GetDataPtrFromWorkload(workload_image)) /
                 depth_scale;
-        float sdf = depth - zc;
-        if (depth <= 0 || zc <= 0 || sdf < -sdf_trunc) {
+
+        // Compute multiplier
+        float xc_unproj, yc_unproj, zc_unproj;
+        transform_indexer.Unproject(static_cast<float>(u),
+                                    static_cast<float>(v), 1.0, &xc_unproj,
+                                    &yc_unproj, &zc_unproj);
+        float multiplier =
+                sqrtf(xc_unproj * xc_unproj + yc_unproj * yc_unproj + 1.0);
+        float sdf = (depth - zc) * multiplier;
+        if (depth <= 0 || depth > depth_max || zc <= 0 || sdf < -sdf_trunc) {
             return;
         }
         sdf = sdf < sdf_trunc ? sdf : sdf_trunc;

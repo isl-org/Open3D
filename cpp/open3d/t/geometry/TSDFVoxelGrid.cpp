@@ -66,10 +66,11 @@ TSDFVoxelGrid::TSDFVoxelGrid(
 void TSDFVoxelGrid::Integrate(const Image &depth,
                               const core::Tensor &intrinsics,
                               const core::Tensor &extrinsics,
-                              double depth_scale) {
+                              double depth_scale,
+                              double depth_max) {
     // Unproject
-    PointCloud pcd = PointCloud::CreateFromDepthImage(depth, intrinsics,
-                                                      depth_scale, 3.0, 4);
+    PointCloud pcd = PointCloud::CreateFromDepthImage(
+            depth, intrinsics, depth_scale, depth_max, 4);
     pcd.Transform(extrinsics.Inverse());
 
     // Touch blocks
@@ -108,6 +109,9 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
             {"depth_scale",
              core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
                           {}, core::Dtype::Float32, device_)},
+            {"depth_max",
+             core::Tensor(std::vector<float>{static_cast<float>(depth_max)}, {},
+                          core::Dtype::Float32, device_)},
             {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
                                         core::Dtype::Float32, device_)},
             {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
@@ -123,22 +127,6 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     core::kernel::GeneralEW(srcs, dsts,
                             core::kernel::GeneralEWOpCode::TSDFIntegrate);
-
-    // Debug section
-    // core::Tensor active_addrs({block_hashmap_->Size()}, core::Dtype::Int32,
-    //                           device_);
-    // block_hashmap_->GetActiveIndices(
-    //         static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
-    // core::Tensor active_values =
-    //         core::Hashmap::ReinterpretBufferTensor(
-    //                 block_hashmap_->GetValueTensor(),
-    //                 {block_hashmap_->GetCapacity(), block_resolution_,
-    //                  block_resolution_, block_resolution_, 2},
-    //                 core::Dtype::Float32)
-    //                 .IndexGet({active_addrs.To(core::Dtype::Int64)});
-    // utility::LogInfo("{}", active_values.ToString());
-    // utility::LogInfo("Active blocks in hashmap = {}",
-    // block_hashmap_->Size());
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {

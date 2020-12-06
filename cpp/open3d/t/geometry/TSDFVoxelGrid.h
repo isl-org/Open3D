@@ -71,7 +71,8 @@ public:
     void Integrate(const Image &depth,
                    const core::Tensor &intrinsics,
                    const core::Tensor &extrinsics,
-                   double depth_scale = 1000.0);
+                   double depth_scale = 1000.0,
+                   double depth_max = 3.0);
 
     /// Extract point cloud near iso-surfaces.
     PointCloud ExtractSurfacePoints();
