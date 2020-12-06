@@ -49,6 +49,7 @@ GCE_VM_BASE_OS=ubuntu20.04
 GCE_VM_IMAGE_SPEC=(--image-project=ubuntu-os-cloud --image-family=ubuntu-2004-lts)
 GCE_VM_CUSTOM_IMAGE_FAMILY=ubuntu-os-docker-gpu-2004-lts
 VM_IMAGE=open3d-gpu-ci-base-$(date +%Y%m%d)
+GCE_CI_TIMEOUT=720 # Self delete VM after timeout
 
 # Container configuration
 REGISTRY_HOSTNAME=gcr.io
@@ -127,7 +128,11 @@ create-vm)
             --boot-disk-size=$GCE_BOOT_DISK_SIZE \
             --boot-disk-type=$GCE_BOOT_DISK_TYPE \
             --image-family="$GCE_VM_CUSTOM_IMAGE_FAMILY" \
-            --service-account="$GCE_GPU_CI_SA"; do
+            --service-account="$GCE_GPU_CI_SA" \
+            --metadata=startup-script="\
+            sleep ${GCE_CI_TIMEOUT}; \
+            gcloud --quiet compute instances delete ${GCE_INSTANCE} \
+            --zone=${GCE_INSTANCE_ZONE[$GCE_ZID]}"; do
         ((GCE_ZID = GCE_ZID + 1))
     done
     sleep 30 # wait for instance ssh service startup
