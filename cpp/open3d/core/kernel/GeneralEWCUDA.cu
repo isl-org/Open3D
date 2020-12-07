@@ -577,13 +577,10 @@ void CUDAMarchingCubesKernel(
     // Pass 1: allocate and assign vertices with normals
     core::Tensor vtx_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                            block_values.GetDevice());
-    core::Tensor vertices({std::min(n * 3, int64_t(5000000)), 3},
+    core::Tensor vertices({std::min(n * 3, int64_t(10000000)), 3},
                           core::Dtype::Float32, block_values.GetDevice());
-    core::Tensor normals({std::min(n * 3, int64_t(5000000)), 3},
-                         core::Dtype::Float32, block_values.GetDevice());
     int* vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
     float* vertices_ptr = static_cast<float*>(vertices.GetDataPtr());
-    float* normals_ptr = static_cast<float*>(normals.GetDataPtr());
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
                                                  int64_t workload_idx) {
         // Natural index (0, N) -> (block_idx, voxel_idx)
@@ -631,55 +628,6 @@ void CUDAMarchingCubesKernel(
             printf("voxel weight error!\n");
         }
 
-        // Normal buffers
-        float n_o[3], n_e[3];
-
-        // Offset vertex coordinates (plus / minus one voxel)
-        int64_t xvs[2], yvs[2], zvs[2];
-        // Delta block coordinates (unchanged or plus / minus one block)
-        int64_t dxbs[2], dybs[2], dzbs[2];
-        // TSDF
-        float tsdfs[2];
-
-        // First compute normal at origin
-        for (int axis = 0; axis < 3; ++axis) {
-            xvs[1] = xv + int(axis == 0);
-            yvs[1] = yv + int(axis == 1);
-            zvs[1] = zv + int(axis == 2);
-
-            xvs[0] = xv - int(axis == 0);
-            yvs[0] = yv - int(axis == 1);
-            zvs[0] = zv - int(axis == 2);
-
-            dxbs[1] = xvs[1] / resolution;
-            dybs[1] = xvs[1] / resolution;
-            dzbs[1] = zvs[1] / resolution;
-
-            dxbs[0] = xvs[0] >= 0 ? 0 : -1;
-            dybs[0] = yvs[0] >= 0 ? 0 : -1;
-            dzbs[0] = zvs[0] >= 0 ? 0 : -1;
-
-            for (int k = 0; k < 2; ++k) {
-                int64_t nb_idx_k =
-                        (dxbs[k] + 1) + (dybs[k] + 1) * 3 + (dzbs[k] + 1) * 9;
-                bool block_mask_k =
-                        nb_masks_ptr[nb_idx_k * n_blocks + workload_block_idx];
-                int64_t block_idx_k = nb_indices_ptr[nb_idx_k * n_blocks +
-                                                     workload_block_idx];
-                int64_t workload_voxel_k;
-                voxel_block_buffer_indexer.CoordToWorkload(
-                        xvs[k] - dxbs[k] * resolution,
-                        yvs[k] - dybs[k] * resolution,
-                        zvs[k] - dzbs[k] * resolution, block_idx_k,
-                        &workload_voxel_k);
-                float* voxel_ptr_k = static_cast<float*>(
-                        voxel_block_buffer_indexer.GetDataPtrFromWorkload(
-                                workload_voxel_k));
-                tsdfs[k] = block_mask_k ? voxel_ptr_k[0] : 0;
-            }
-            n_o[axis] = (tsdfs[1] - tsdfs[0]) / (2 * voxel_size);
-        }
-
         // Enumerate 3 edges in the voxel
         for (int e = 0; e < 3; ++e) {
             int vertex_idx = mesh_struct_ptr[e];
@@ -694,16 +642,16 @@ void CUDAMarchingCubesKernel(
             int dzb = zv_e / resolution;
 
             // First query tsdf
-            int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
+            int64_t nb_idx_e = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
             bool block_mask_e =
-                    nb_masks_ptr[nb_idx * n_blocks + workload_block_idx];
+                    nb_masks_ptr[nb_idx_e * n_blocks + workload_block_idx];
             if (!block_mask_e) {
                 printf("edge: block mask error!\n");
             }
 
             int64_t block_idx_e =
-                    nb_indices_ptr[nb_idx * n_blocks + workload_block_idx];
+                    nb_indices_ptr[nb_idx_e * n_blocks + workload_block_idx];
             int64_t workload_voxel_e;
             voxel_block_buffer_indexer.CoordToWorkload(
                     xv_e - dxb * resolution, yv_e - dyb * resolution,
@@ -720,45 +668,6 @@ void CUDAMarchingCubesKernel(
                 return;
             }
 
-            // Then compute normals
-            for (int axis = 0; axis < 3; ++axis) {
-                xvs[1] = xv_e + int(axis == 0);
-                yvs[1] = yv_e + int(axis == 1);
-                zvs[1] = zv_e + int(axis == 2);
-
-                xvs[0] = xv_e - int(axis == 0);
-                yvs[0] = yv_e - int(axis == 1);
-                zvs[0] = zv_e - int(axis == 2);
-
-                dxbs[1] = xvs[1] / resolution;
-                dybs[1] = xvs[1] / resolution;
-                dzbs[1] = zvs[1] / resolution;
-
-                dxbs[0] = xvs[0] >= 0 ? 0 : -1;
-                dybs[0] = yvs[0] >= 0 ? 0 : -1;
-                dzbs[0] = zvs[0] >= 0 ? 0 : -1;
-
-                for (int k = 0; k < 2; ++k) {
-                    int64_t nb_idx_k = (dxbs[k] + 1) + (dybs[k] + 1) * 3 +
-                                       (dzbs[k] + 1) * 9;
-                    bool block_mask_k = nb_masks_ptr[nb_idx_k * n_blocks +
-                                                     workload_block_idx];
-                    int64_t block_idx_k = nb_indices_ptr[nb_idx_k * n_blocks +
-                                                         workload_block_idx];
-                    int64_t workload_voxel_k;
-                    voxel_block_buffer_indexer.CoordToWorkload(
-                            xvs[k] - dxbs[k] * resolution,
-                            yvs[k] - dybs[k] * resolution,
-                            zvs[k] - dzbs[k] * resolution, block_idx_k,
-                            &workload_voxel_k);
-                    float* voxel_ptr_k = static_cast<float*>(
-                            voxel_block_buffer_indexer.GetDataPtrFromWorkload(
-                                    workload_voxel_k));
-                    tsdfs[k] = block_mask_k ? voxel_ptr_k[0] : 0;
-                }
-                n_e[axis] = (tsdfs[1] - tsdfs[0]) / (2 * voxel_size);
-            }
-
             float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 
             int idx = atomicAdd(vtx_count_ptr, 1);
@@ -772,31 +681,19 @@ void CUDAMarchingCubesKernel(
             vertices_ptr[3 * idx + 0] = voxel_size * (x + ratio_x);
             vertices_ptr[3 * idx + 1] = voxel_size * (y + ratio_y);
             vertices_ptr[3 * idx + 2] = voxel_size * (z + ratio_z);
-
-            float nx = n_o[0] +
-                       0.00001 * n_e[0];  // * (1 - ratio) + n_e[0] * (ratio);
-            float ny = n_o[1];            // * (1 - ratio) + n_e[1] * (ratio);
-            float nz = n_o[2];            // * (1 - ratio) + n_e[2] * (ratio);
-            float norm = sqrtf(nx * nx + ny * ny + nz * nz);
-
-            normals_ptr[3 * idx + 0] = nx / norm;
-            normals_ptr[3 * idx + 1] = ny / norm;
-            normals_ptr[3 * idx + 2] = nz / norm;
         }
     });
 
     int total_vtx_count = vtx_count.Item<int>();
     utility::LogInfo("Total vertex count = {}", total_vtx_count);
     vertices = vertices.Slice(0, 0, total_vtx_count);
-    normals = normals.Slice(0, 0, total_vtx_count);
     dsts.emplace("vertices", vertices);
-    dsts.emplace("normals", normals);
 
     // Pass 2: connect vertices
     core::Tensor triangle_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                                 block_values.GetDevice());
-    core::Tensor triangles({std::min(total_vtx_count * 3, 8000000), 3},
-                           core::Dtype::Int64, block_values.GetDevice());
+    core::Tensor triangles({total_vtx_count * 3, 3}, core::Dtype::Int64,
+                           block_values.GetDevice());
     int* tri_count_ptr = static_cast<int*>(triangle_count.GetDataPtr());
     int64_t* triangles_ptr = static_cast<int64_t*>(triangles.GetDataPtr());
 

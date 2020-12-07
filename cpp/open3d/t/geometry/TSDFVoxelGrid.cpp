@@ -220,7 +220,6 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
 
     TriangleMesh mesh(core::TensorList::FromTensor(dsts.at("vertices")),
                       core::TensorList::FromTensor(dsts.at("triangles")));
-    // mesh.SetVertexNormals(core::TensorList::FromTensor(dsts.at("normals")));
     return mesh;
 }
 
@@ -241,7 +240,6 @@ std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
         int dz = nb / 9;
         int dy = (nb % 9) / 3;
         int dx = nb % 3;
-        utility::LogInfo("{} - {} {} {}", nb, dx - 1, dy - 1, dz - 1);
         core::Tensor dt = core::Tensor(std::vector<int>{dx - 1, dy - 1, dz - 1},
                                        {1, 3}, core::Dtype::Int32, device_);
         keys_nb[nb] = active_keys + dt;
