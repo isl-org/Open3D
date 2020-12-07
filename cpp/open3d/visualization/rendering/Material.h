@@ -79,8 +79,6 @@ struct Material {
     // in which case this should be set to false.
     bool sRGB_color = true;
 
-    float depth_offset = 0.0f;  // internal
-
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
     std::unordered_map<std::string, geometry::Image> generic_imgs;

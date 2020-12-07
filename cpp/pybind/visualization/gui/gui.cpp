@@ -883,9 +883,7 @@ void pybind_gui_classes(py::module &m) {
                  &SceneWidget::SetOnSunDirectionChanged,
                  "Callback when user changes sun direction (only called in "
                  "ROTATE_SUN control mode). Called with one argument, the "
-                 "[i, j, k] vector of the new sun direction")
-            .def("set_pickable_points", &SceneWidget::SetPickablePoints,
-                 "Sets the points available for picking");
+                 "[i, j, k] vector of the new sun direction");
 
     // ---- Slider ----
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(

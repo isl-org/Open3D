@@ -32,6 +32,8 @@
 #include <string>
 #include <vector>
 
+#include "open3d/visualization/gui/SceneWidget.h"
+
 namespace open3d {
 
 namespace geometry {
@@ -45,14 +47,7 @@ class Geometry;
 }  // namespace t
 
 namespace visualization {
-
-namespace gui {
-class SceneWidget;
-}  // namespace gui
-
 namespace visualizer {
-
-class SelectionIndexLookup;
 
 /// Internal class that acts as a selections model + controller for
 /// O3DVisualizer
@@ -83,8 +78,8 @@ public:
     void SelectSet(int index);
     size_t GetNumberOfSets() const;
 
-    void SelectIndices(const std::vector<size_t>& indices);
-    void UnselectIndices(const std::vector<size_t>& indices);
+    void SelectIndices(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>& indices);
+    void UnselectIndices(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>& indices);
     std::vector<SelectionSet> GetSets();
 
     void SetPointSize(int px);
@@ -93,11 +88,8 @@ public:
     void MakeInactive();
     bool IsActive() const;
 
-    void StartSelectablePoints();
-    void AddSelectablePoints(const std::string& name,
-                             geometry::Geometry3D* geom,
-                             t::geometry::Geometry* tgeom);
-    void EndSelectablePoints();
+
+    void SetSelectableGeometry(const std::vector<gui::SceneWidget::PickableGeometry>& geometry);
 
 private:
     void UpdatePointSize();
@@ -116,13 +108,7 @@ private:
     bool is_active_ = false;
     size_t pick_order_ = 0;
     std::vector<SelectedPoints> sets_;
-    struct {
-        int index = -1;
-        std::vector<Eigen::Vector3d> selectable_points;
-        // This is a pointer rather than unique_ptr so that we don't have
-        // to define this (internal) class in the header file.
-        SelectionIndexLookup* lookup;
-    } current_;
+    int current_set_index_ = -1;
 
     bool point_size_changed_ = false;
 };

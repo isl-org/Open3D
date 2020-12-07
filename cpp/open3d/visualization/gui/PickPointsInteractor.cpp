@@ -28,6 +28,9 @@
 
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/rendering/Material.h"
@@ -40,6 +43,8 @@ namespace visualization {
 namespace gui {
 
 namespace {
+// Background color is white, so that index 0 can be black
+static const Eigen::Vector4f kBackgroundColor = {1.0f, 1.0f, 1.0f, 1.0f};
 static const std::string kSelectablePointsName = "__selectable_points";
 // The maximum pickable point is one less than FFFFFF, because that would
 // be white, which is the color of the background.
@@ -64,6 +69,50 @@ uint32_t GetIndexForColor(geometry::Image *image, int x, int y) {
 
 }  // namespace
 
+// ----------------------------------------------------------------------------
+class SelectionIndexLookup {
+private:
+    struct Obj {
+        std::string name;
+        size_t start_index;
+
+        Obj(const std::string &n, size_t start) : name(n), start_index(start){};
+    };
+
+public:
+    void Clear() { objects_.clear(); }
+
+    // start_index must be larger than all previously added items
+    void Add(const std::string &name, size_t start_index) {
+        assert(objects_.empty() || objects_.back().start_index < start_index);
+        objects_.emplace_back(name, start_index);
+        assert(objects_[0].start_index == 0);
+    }
+
+    const Obj &ObjectForIndex(size_t index) {
+        if (objects_.size() == 1) {
+            return objects_[0];
+        } else {
+            auto next = std::upper_bound(objects_.begin(), objects_.end(),
+                                         index, [](size_t value, const Obj &o) {
+                                             return value < o.start_index;
+                                         });
+            assert(next != objects_.end());  // first object != 0
+            if (next == objects_.end()) {
+                return objects_.back();
+
+            } else {
+                --next;
+                return *next;
+            }
+        }
+    }
+
+private:
+    std::vector<Obj> objects_;
+};
+
+// ----------------------------------------------------------------------------
 PickPointsInteractor::PickPointsInteractor(rendering::Open3DScene *scene,
                                            rendering::Camera *camera) {
     scene_ = scene;
@@ -72,45 +121,93 @@ PickPointsInteractor::PickPointsInteractor(rendering::Open3DScene *scene,
             std::make_shared<rendering::Open3DScene>(scene->GetRenderer());
 
     picking_scene_->SetDownsampleThreshold(SIZE_MAX);  // don't downsample!
-    // Background color is white, so that index 0 can be black
-    picking_scene_->SetBackgroundColor({1.0f, 1.0f, 1.0f, 1.0f});
+    picking_scene_->SetBackgroundColor(kBackgroundColor);
 
     picking_scene_->GetView()->ConfigureForColorPicking();
 }
 
-PickPointsInteractor::~PickPointsInteractor() {}
+PickPointsInteractor::~PickPointsInteractor() {
+    delete lookup_;
+}
 
 void PickPointsInteractor::SetPointSize(int px) {
     point_size_ = px;
-    if (!pickable_points_.empty()) {
+    if (!points_.empty()) {
         auto mat = MakeMaterial();
         picking_scene_->GetScene()->OverrideMaterial(kSelectablePointsName,
                                                      mat);
     }
 }
 
-void PickPointsInteractor::SetPickablePoints(
-        const std::vector<Eigen::Vector3d> &points) {
-    if (points.size() > kMaxPickableIndex) {
-        utility::LogWarning(
-                "Can only select from a maximumum of {} points; given {}",
-                kMaxPickableIndex, points.size());
-    }
+void PickPointsInteractor::SetPickableGeometry(
+            const std::vector<SceneWidget::PickableGeometry> &geometry) {
+    delete lookup_;
+    lookup_ = new SelectionIndexLookup();
 
-    pickable_points_ = points;
+    picking_scene_->ClearGeometry();
     SetNeedsRedraw();
 
-    picking_scene_->RemoveGeometry(kSelectablePointsName);
+    // Record the points (for selection), and add a depth-write copy of any
+    // TriangleMesh so that occluded points are not selected.
+    points_.clear();
+    for (auto &pg : geometry) {
+        lookup_->Add(pg.name, points_.size());
 
-    if (!points.empty()) {  // Filament panics if an object has zero vertices
-        auto cloud = std::make_shared<geometry::PointCloud>(points);
-        cloud->colors_.reserve(points.size());
+        auto cloud = dynamic_cast<const geometry::PointCloud *>(pg.geometry);
+        auto tcloud = dynamic_cast<const t::geometry::PointCloud *>(pg.tgeometry);
+        auto mesh = dynamic_cast<const geometry::TriangleMesh *>(pg.geometry);
+        auto tmesh = dynamic_cast<const t::geometry::TriangleMesh *>(pg.tgeometry);
+        if (cloud) {
+            points_.insert(points_.end(), cloud->points_.begin(),
+                           cloud->points_.end());
+        } else if (mesh) {
+            points_.insert(points_.end(), mesh->vertices_.begin(),
+                           mesh->vertices_.end());
+        } else if (tcloud || tmesh) {
+            const auto &tpoints =
+                    (tcloud ? tcloud->GetPoints() : tmesh->GetVertices());
+            const size_t n = tpoints.NumElements();
+            float *pts = (float *)tpoints.GetDataPtr();
+            points_.reserve(points_.size() + n);
+            for (size_t i = 0; i < n; i += 3) {
+                points_.emplace_back(double(pts[i]), double(pts[i + 1]),
+                                     double(pts[i + 2]));
+            }
+        }
+
+        if (mesh || tmesh) {
+            // If we draw unlit with the background color, then if the mesh is
+            // drawn before the picking points the end effect is to just write
+            // to the depth buffer,and if we draw after the points then we paint
+            // over the occluded points.
+            rendering::Material mat;
+            mat.shader = "defaultUnlit";
+            mat.base_color = kBackgroundColor;
+            mat.sRGB_color = false;
+            if (mesh) {
+                picking_scene_->AddGeometry(pg.name, mesh, mat);
+            } else {
+                utility::LogWarning("PickPointsInteractor::SetPickableGeometry(): Open3DScene cannot add a t::geometry::TriangleMesh, so points on the back side of the mesh '{}', will be pickable", pg.name);
+                // picking_scene_->AddGeometry(pg.name, tmesh, mat);
+            }
+        }
+    }
+
+    if (points_.size() > kMaxPickableIndex) {
+        utility::LogWarning(
+                "Can only select from a maximumum of {} points; given {}",
+                kMaxPickableIndex, points_.size());
+    }
+
+    if (!points_.empty()) {  // Filament panics if an object has zero vertices
+        auto cloud = std::make_shared<geometry::PointCloud>(points_);
+        cloud->colors_.reserve(points_.size());
         for (size_t i = 0; i < cloud->points_.size(); ++i) {
             cloud->colors_.emplace_back(SetColorForIndex(uint32_t(i)));
         }
 
         auto mat = MakeMaterial();
-        picking_scene_->AddGeometry(kSelectablePointsName, cloud, mat);
+        picking_scene_->AddGeometry(kSelectablePointsName, cloud.get(), mat);
         picking_scene_->GetScene()->GeometryShadows(kSelectablePointsName,
                                                     false, false);
     }
@@ -128,8 +225,7 @@ rendering::MatrixInteractorLogic &PickPointsInteractor::GetMatrixInteractor() {
     return matrix_logic_;
 }
 
-void PickPointsInteractor::SetOnPointsPicked(
-        std::function<void(const std::vector<size_t> &, int)> f) {
+void PickPointsInteractor::SetOnPointsPicked(std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> f) {
     on_picked_ = f;
 }
 
@@ -162,10 +258,10 @@ void PickPointsInteractor::Key(const KeyEvent &e) {}
 
 rendering::Material PickPointsInteractor::MakeMaterial() {
     rendering::Material mat;
-    mat.shader = "defaultUnlit";
+    mat.shader = "unlitPolygonOffset";
     mat.point_size = float(point_size_);
     // We are not tonemapping, so src colors are RGB. This prevents the colors
-    // being converetd from sRGB -> linear like normal.
+    // being converted from sRGB -> linear like normal.
     mat.sRGB_color = false;
     return mat;
 }
@@ -177,7 +273,7 @@ void PickPointsInteractor::OnPickImageDone(
         dirty_ = false;
     }
 
-    std::vector<size_t> indices;
+    std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>> indices;
     while (!pending_.empty()) {
         PickInfo &info = pending_.back();
         const int x0 = info.rect.x;
@@ -190,7 +286,9 @@ void PickPointsInteractor::OnPickImageDone(
             for (int x = x0; x < x1; ++x) {
                 unsigned int idx = GetIndexForColor(img, x, y);
                 if (idx < kNoIndex) {
-                    indices.push_back(idx);
+                    auto &o = lookup_->ObjectForIndex(idx);
+                    size_t obj_idx = idx - o.start_index;
+                    indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(obj_idx, points_[idx]));
                 }
             }
         }

@@ -315,7 +315,7 @@ void pybind_rendering_classes(py::module &m) {
             .def("clear_geometry", &Open3DScene::ClearGeometry)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
-                                   std::shared_ptr<const geometry::Geometry3D>,
+                                   const geometry::Geometry3D *,
                                    const Material &, bool>(
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,

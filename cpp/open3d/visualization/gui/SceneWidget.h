@@ -30,11 +30,20 @@
 #include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/View.h"
 
+#include <map>
+
 namespace open3d {
 
 namespace geometry {
 class AxisAlignedBoundingBox;
+class Geometry3D;
 }  // namespace geometry
+
+namespace t {
+namespace geometry {
+class Geometry;
+}  // namespace geometry
+}  // namespace t
 
 namespace visualization {
 namespace rendering {
@@ -96,11 +105,6 @@ public:
     /// Enables showing the skybox while in skybox ROTATE_IBL mode.
     void ShowSkybox(bool is_on);
 
-    void SetPickablePoints(const std::vector<Eigen::Vector3d>& points);
-    void SetPickablePointSize(int px);
-    void SetOnPointsPicked(
-            std::function<void(const std::vector<size_t>&, int)> on_picked);
-
     void SetScene(std::shared_ptr<rendering::Open3DScene> scene);
     std::shared_ptr<rendering::Open3DScene> GetScene() const;
 
@@ -123,6 +127,29 @@ public:
         PLUS_Z   // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
     };
     void GoToCameraPreset(CameraPreset preset);
+
+    struct PickableGeometry {
+        std::string name;
+        const geometry::Geometry3D *geometry = nullptr;
+        const t::geometry::Geometry *tgeometry = nullptr;
+
+        PickableGeometry(const std::string& n, const geometry::Geometry3D *g)
+            : name(n), geometry(g) {}
+
+        PickableGeometry(const std::string& n, const t::geometry::Geometry *t)
+            : name(n), tgeometry(t) {}
+
+        /// This is for programmatic use when you don't want to know if you
+        /// have a geometry or a t::geometry; exactly one of g and t should be
+        /// non-null; the other should be nullptr.
+        PickableGeometry(const std::string& n, const geometry::Geometry3D *g,
+                         const t::geometry::Geometry *t)
+            : name(n), geometry(g), tgeometry(t) {}
+    };
+
+    void SetPickableGeometry(const std::vector<PickableGeometry>& geometry);
+    void SetPickablePointSize(int px);
+    void SetOnPointsPicked(std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> on_picked);
 
     void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;

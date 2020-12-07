@@ -403,7 +403,7 @@ struct O3DVisualizer::Impl {
         scene_->SetScene(std::make_shared<Open3DScene>(w->GetRenderer()));
         scene_->EnableSceneCaching(true);  // smoother UI with large geometry
         scene_->SetOnPointsPicked(
-                [this](const std::vector<size_t> &indices, int keymods) {
+                [this](const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>> &indices, int keymods) {
                     if (keymods & int(KeyModifier::SHIFT)) {
                         selections_->UnselectIndices(indices);
                     } else {
@@ -869,7 +869,7 @@ struct O3DVisualizer::Impl {
         AddObjectToTree(objects_.back());
 
         auto scene = scene_->GetScene();
-        scene->AddGeometry(name, geom, mat);
+        scene->AddGeometry(name, geom.get(), mat);
         UpdateGeometryVisibility(objects_.back());
 
         scene_->ForceRedraw();
@@ -942,7 +942,7 @@ struct O3DVisualizer::Impl {
                     window_->PostRedraw();
 
                     if (selections_->IsActive()) {
-                        UpdateSelectablePoints();
+                        UpdateSelectableGeometry();
                     } else {
                         selections_need_update_ = true;
                     }
@@ -1124,7 +1124,7 @@ struct O3DVisualizer::Impl {
             NewSelectionSet();
         }
         if (selections_need_update_) {
-            UpdateSelectablePoints();
+            UpdateSelectableGeometry();
         }
         selections_->MakeActive();
     }
@@ -1388,17 +1388,16 @@ struct O3DVisualizer::Impl {
         window_->PostRedraw();
     }
 
-    void UpdateSelectablePoints() {
-        selections_->StartSelectablePoints();
+    void UpdateSelectableGeometry() {
+        std::vector<SceneWidget::PickableGeometry> pickable;
+        pickable.reserve(objects_.size());
         for (auto &o : objects_) {
             if (!IsGeometryVisible(o)) {
                 continue;
             }
-
-            selections_->AddSelectablePoints(o.name, o.geometry.get(),
-                                             o.tgeometry.get());
+            pickable.emplace_back(o.name, o.geometry.get(), o.tgeometry.get());
         }
-        selections_->EndSelectablePoints();
+        selections_->SetSelectableGeometry(pickable);
     }
 
     bool OnAnimationTick() {

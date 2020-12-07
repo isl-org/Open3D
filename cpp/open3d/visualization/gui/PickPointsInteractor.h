@@ -34,6 +34,7 @@
 namespace open3d {
 
 namespace geometry {
+class Geometry3D;
 class Image;
 }  // namespace geometry
 
@@ -48,6 +49,8 @@ class Open3DScene;
 
 namespace gui {
 
+class SelectionIndexLookup;
+
 // This is an internal class used by SceneWidget
 class PickPointsInteractor : public SceneWidget::MouseInteractor {
 public:
@@ -58,7 +61,8 @@ public:
     void SetPointSize(int px);
 
     /// Sets the points that can be picked. Limited to 16 million or less
-    void SetPickablePoints(const std::vector<Eigen::Vector3d>& points);
+    /// points/vertices total. Geometry pointers will not be cached.
+    void SetPickableGeometry(const std::vector<SceneWidget::PickableGeometry>& geometry);
 
     /// Indicates that the selection scene must be redrawn and the picking
     /// pixels retrieved again before picking.
@@ -66,8 +70,7 @@ public:
 
     /// Calls the provided function when points are picked:
     ///    f(indices, key_modifiers)
-    void SetOnPointsPicked(
-            std::function<void(const std::vector<size_t>&, int)> f);
+    void SetOnPointsPicked(std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> f);
 
     rendering::MatrixInteractorLogic& GetMatrixInteractor() override;
     void Mouse(const MouseEvent& e) override;
@@ -82,11 +85,14 @@ private:
     rendering::Open3DScene* scene_;
     rendering::Camera* camera_;
 
-    std::function<void(const std::vector<size_t>&, int)> on_picked_;
+    std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> on_picked_;
     int point_size_ = 3;
     rendering::MatrixInteractorLogic matrix_logic_;
     std::shared_ptr<rendering::Open3DScene> picking_scene_;
-    std::vector<Eigen::Vector3d> pickable_points_;
+    std::vector<Eigen::Vector3d> points_;
+    // This is a pointer rather than unique_ptr so that we don't have
+    // to define this (internal) class in the header file.
+    SelectionIndexLookup* lookup_ = nullptr;
     std::shared_ptr<geometry::Image> pick_image_;
     bool dirty_ = true;
     struct PickInfo {

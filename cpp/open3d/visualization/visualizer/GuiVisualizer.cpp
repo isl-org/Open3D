@@ -787,7 +787,7 @@ void GuiVisualizer::SetGeometry(
                 loaded_material.shader = "defaultLit";
             }
 
-            scene3d->AddGeometry(MODEL_NAME, pcd, loaded_material);
+            scene3d->AddGeometry(MODEL_NAME, pcd.get(), loaded_material);
 
             impl_->settings_.model_.SetDisplayingPointClouds(true);
             if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {

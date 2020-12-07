@@ -28,12 +28,7 @@
 
 #include <assert.h>
 
-#include <sstream>
-
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/TriangleMesh.h"
-#include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
@@ -48,67 +43,22 @@ rendering::Material MakeMaterial(int point_size) {
     rendering::Material m;
     m.shader = "unlitPolygonOffset";
     m.point_size = float(point_size);
-    //    m.depth_offset = -0.000010f;
     return m;
 }
 }  // namespace
 
-class SelectionIndexLookup {
-private:
-    struct Obj {
-        std::string name;
-        size_t start_index;
-
-        Obj(const std::string &n, size_t start) : name(n), start_index(start){};
-    };
-
-public:
-    void Clear() { objects_.clear(); }
-
-    // start_index must be larger than all previously added items
-    void Add(const std::string &name, size_t start_index) {
-        assert(objects_.empty() || objects_.back().start_index < start_index);
-        objects_.emplace_back(name, start_index);
-        assert(objects_[0].start_index == 0);
-    }
-
-    const Obj &ObjectForIndex(size_t index) {
-        if (objects_.size() == 1) {
-            return objects_[0];
-        } else {
-            auto next = std::upper_bound(objects_.begin(), objects_.end(),
-                                         index, [](size_t value, const Obj &o) {
-                                             return value < o.start_index;
-                                         });
-            assert(next != objects_.end());  // first object != 0
-            if (next == objects_.end()) {
-                return objects_.back();
-
-            } else {
-                --next;
-                return *next;
-            }
-        }
-    }
-
-private:
-    std::vector<Obj> objects_;
-};
-
 // ----------------------------------------------------------------------------
 O3DVisualizerSelections::O3DVisualizerSelections(gui::SceneWidget &widget3d)
     : widget3d_(widget3d) {
-    current_.lookup = new SelectionIndexLookup();
 }
 
-O3DVisualizerSelections::~O3DVisualizerSelections() { delete current_.lookup; }
+O3DVisualizerSelections::~O3DVisualizerSelections() {}
 
 void O3DVisualizerSelections::NewSet() {
-    std::stringstream s;
-    s << "__selection_" << next_id_++;
-    sets_.push_back({s.str()});
-    if (current_.index < 0) {
-        current_.index = int(sets_.size()) - 1;
+    auto name = std::string("__selection_") + std::to_string(next_id_++);
+    sets_.push_back({name});
+    if (current_set_index_ < 0) {
+        current_set_index_ = int(sets_.size()) - 1;
     }
 }
 
@@ -118,35 +68,38 @@ void O3DVisualizerSelections::RemoveSet(int index) {
         scene->RemoveGeometry(sets_[index].name);
     }
     sets_.erase(sets_.begin() + index);
-    current_.index = std::min(int(sets_.size()) - 1, current_.index);
+    current_set_index_ = std::min(int(sets_.size()) - 1, current_set_index_);
 
-    if (scene->HasGeometry(sets_[current_.index].name)) {
-        scene->ShowGeometry(sets_[current_.index].name, true);
+    if (scene->HasGeometry(sets_[current_set_index_].name)) {
+        scene->ShowGeometry(sets_[current_set_index_].name, true);
     }
 }
 
 void O3DVisualizerSelections::SelectSet(int index) {
     auto scene = widget3d_.GetScene();
-    if (scene->HasGeometry(sets_[current_.index].name)) {
-        scene->ShowGeometry(sets_[current_.index].name, false);
+    if (scene->HasGeometry(sets_[current_set_index_].name)) {
+        scene->ShowGeometry(sets_[current_set_index_].name, false);
     }
 
-    current_.index = index;
+    current_set_index_ = index;
 
-    if (scene->HasGeometry(sets_[current_.index].name)) {
-        scene->ShowGeometry(sets_[current_.index].name, true);
+    if (scene->HasGeometry(sets_[current_set_index_].name)) {
+        scene->ShowGeometry(sets_[current_set_index_].name, true);
     }
 }
 
 size_t O3DVisualizerSelections::GetNumberOfSets() const { return sets_.size(); }
 
 void O3DVisualizerSelections::SelectIndices(
-        const std::vector<size_t> &indices) {
-    auto &selection = sets_[current_.index];
-    for (auto idx : indices) {
-        auto &o = current_.lookup->ObjectForIndex(idx);
-        auto p = current_.selectable_points[idx];
-        selection.indices[o.name].insert({idx - o.start_index, pick_order_, p});
+            const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>> &indices) {
+    auto &selection = sets_[current_set_index_];
+    for (auto &name_indices : indices) {
+        auto &name = name_indices.first;
+        for (auto idx_pt : name_indices.second) {
+            auto &idx = idx_pt.first;
+            auto &p = idx_pt.second;
+            selection.indices[name].insert({idx, pick_order_, p});
+        }
     }
     pick_order_ += 1;
 
@@ -154,12 +107,15 @@ void O3DVisualizerSelections::SelectIndices(
 }
 
 void O3DVisualizerSelections::UnselectIndices(
-        const std::vector<size_t> &indices) {
-    auto &selection = sets_[current_.index];
-    for (auto idx : indices) {
-        auto &o = current_.lookup->ObjectForIndex(idx);
-        auto p = current_.selectable_points[idx];
-        selection.indices[o.name].erase({idx - o.start_index, pick_order_, p});
+            const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>> &indices) {
+    auto &selection = sets_[current_set_index_];
+    for (auto &name_indices : indices) {
+        auto &name = name_indices.first;
+        for (auto idx_pt : name_indices.second) {
+            auto &idx = idx_pt.first;
+            auto &p = idx_pt.second;
+            selection.indices[name].erase({idx, pick_order_, p});
+        }
     }
     pick_order_ += 1;
 
@@ -168,7 +124,7 @@ void O3DVisualizerSelections::UnselectIndices(
 
 void O3DVisualizerSelections::UpdateSelectionGeometry() {
     auto scene = widget3d_.GetScene();
-    auto &selection = sets_[current_.index];
+    auto &selection = sets_[current_set_index_];
     if (scene->HasGeometry(selection.name)) {
         scene->RemoveGeometry(selection.name);
     }
@@ -181,8 +137,8 @@ void O3DVisualizerSelections::UpdateSelectionGeometry() {
     }
 
     // Hack: Filament doesn't like a 1 point object, because it wants a
-    // non-empty bounding box. So if we only have one point, offset it
-    // ever-so-slightly to make Filament happy.
+    // non-empty bounding box. So if we only have one point, add another that
+    // is offset ever-so-slightly to make Filament happy.
     if (points.size() == 1) {
         points.push_back({points[0].x() + 0.000001, points[0].y() + 0.000001,
                           points[0].z() + 0.000001});
@@ -193,7 +149,8 @@ void O3DVisualizerSelections::UpdateSelectionGeometry() {
         for (size_t i = 0; i < points.size(); ++i) {
             cloud->colors_.push_back({1.0, 0.0, 1.0});
         }
-        scene->AddGeometry(selection.name, cloud, MakeMaterial(point_size_));
+        scene->AddGeometry(selection.name, cloud.get(),
+                           MakeMaterial(point_size_));
         scene->GetScene()->GeometryShadows(selection.name, false, false);
     }
     widget3d_.ForceRedraw();
@@ -230,7 +187,7 @@ void O3DVisualizerSelections::MakeActive() {
         point_size_changed_ = false;
     }
 
-    auto &selection = sets_[current_.index];
+    auto &selection = sets_[current_set_index_];
     if (scene->HasGeometry(selection.name)) {
         scene->ShowGeometry(selection.name, true);
     }
@@ -241,7 +198,7 @@ bool O3DVisualizerSelections::IsActive() const { return is_active_; }
 void O3DVisualizerSelections::MakeInactive() {
     auto scene = widget3d_.GetScene();
 
-    auto &selection = sets_[current_.index];
+    auto &selection = sets_[current_set_index_];
     if (scene->HasGeometry(selection.name)) {
         scene->ShowGeometry(selection.name, false);
     }
@@ -249,43 +206,8 @@ void O3DVisualizerSelections::MakeInactive() {
     is_active_ = false;
 }
 
-void O3DVisualizerSelections::StartSelectablePoints() {
-    current_.selectable_points.clear();
-    current_.lookup->Clear();
-}
-
-void O3DVisualizerSelections::AddSelectablePoints(
-        const std::string &name,
-        geometry::Geometry3D *geom,
-        t::geometry::Geometry *tgeom) {
-    auto &points = current_.selectable_points;
-    current_.lookup->Add(name, points.size());
-
-    auto cloud = dynamic_cast<geometry::PointCloud *>(geom);
-    auto tcloud = dynamic_cast<t::geometry::PointCloud *>(tgeom);
-    auto mesh = dynamic_cast<geometry::TriangleMesh *>(geom);
-    auto tmesh = dynamic_cast<t::geometry::TriangleMesh *>(tgeom);
-    if (cloud) {
-        points.insert(points.end(), cloud->points_.begin(),
-                      cloud->points_.end());
-    } else if (mesh) {
-        points.insert(points.end(), mesh->vertices_.begin(),
-                      mesh->vertices_.end());
-    } else if (tcloud || tmesh) {
-        const auto &tpoints =
-                (tcloud ? tcloud->GetPoints() : tmesh->GetVertices());
-        const size_t n = tpoints.NumElements();
-        float *pts = (float *)tpoints.GetDataPtr();
-        points.reserve(points.size() + n);
-        for (size_t i = 0; i < n; i += 3) {
-            points.emplace_back(double(pts[i]), double(pts[i + 1]),
-                                double(pts[i + 2]));
-        }
-    }
-}
-
-void O3DVisualizerSelections::EndSelectablePoints() {
-    widget3d_.SetPickablePoints(current_.selectable_points);
+void O3DVisualizerSelections::SetSelectableGeometry(const std::vector<gui::SceneWidget::PickableGeometry>& geometry) {
+    widget3d_.SetPickableGeometry(geometry);
 }
 
 void O3DVisualizerSelections::UpdatePointSize() {

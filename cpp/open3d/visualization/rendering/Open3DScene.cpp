@@ -224,7 +224,7 @@ void Open3DScene::ClearGeometry() {
 
 void Open3DScene::AddGeometry(
         const std::string& name,
-        std::shared_ptr<const geometry::Geometry3D> geom,
+        const geometry::Geometry3D *geom,
         const Material& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;
