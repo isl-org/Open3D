@@ -459,14 +459,19 @@ public:
         pick_->GetMatrixInteractor().SetViewSize(size.width, size.height);
     }
 
-    void SetPickableGeometry(const std::vector<SceneWidget::PickableGeometry>& geometry) {
+    void SetPickableGeometry(
+            const std::vector<SceneWidget::PickableGeometry>& geometry) {
         pick_->SetPickableGeometry(geometry);
     }
 
     void SetPickablePointSize(int px) { pick_->SetPointSize(px); }
 
     void SetOnPointsPicked(
-            std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> on_picked) {
+            std::function<void(
+                    const std::map<
+                            std::string,
+                            std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
+                    int)> on_picked) {
         pick_->SetOnPointsPicked(on_picked);
     }
 
@@ -528,13 +533,19 @@ public:
 
     void ShowSkybox(bool isOn) { ibl_->ShowSkybox(isOn); }
 
-    void SetPickableGeometry(const std::vector<SceneWidget::PickableGeometry>& geometry) {
+    void SetPickableGeometry(
+            const std::vector<SceneWidget::PickableGeometry>& geometry) {
         pick_->SetPickableGeometry(geometry);
     }
 
     void SetPickablePointSize(int px) { pick_->SetPickablePointSize(px); }
 
-    void SetOnPointsPicked(std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> on_picked) {
+    void SetOnPointsPicked(
+            std::function<void(
+                    const std::map<
+                            std::string,
+                            std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
+                    int)> on_picked) {
         pick_->SetOnPointsPicked(on_picked);
     }
 
@@ -718,7 +729,12 @@ void SceneWidget::SetPickablePointSize(int px) {
     impl_->controls_->SetPickablePointSize(px);
 }
 
-void SceneWidget::SetOnPointsPicked(std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> on_picked) {
+void SceneWidget::SetOnPointsPicked(
+        std::function<
+                void(const std::map<
+                             std::string,
+                             std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
+                     int)> on_picked) {
     impl_->controls_->SetOnPointsPicked(on_picked);
 }
 

@@ -26,11 +26,11 @@
 
 #pragma once
 
+#include <map>
+
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/View.h"
-
-#include <map>
 
 namespace open3d {
 
@@ -130,26 +130,32 @@ public:
 
     struct PickableGeometry {
         std::string name;
-        const geometry::Geometry3D *geometry = nullptr;
-        const t::geometry::Geometry *tgeometry = nullptr;
+        const geometry::Geometry3D* geometry = nullptr;
+        const t::geometry::Geometry* tgeometry = nullptr;
 
-        PickableGeometry(const std::string& n, const geometry::Geometry3D *g)
+        PickableGeometry(const std::string& n, const geometry::Geometry3D* g)
             : name(n), geometry(g) {}
 
-        PickableGeometry(const std::string& n, const t::geometry::Geometry *t)
+        PickableGeometry(const std::string& n, const t::geometry::Geometry* t)
             : name(n), tgeometry(t) {}
 
         /// This is for programmatic use when you don't want to know if you
         /// have a geometry or a t::geometry; exactly one of g and t should be
         /// non-null; the other should be nullptr.
-        PickableGeometry(const std::string& n, const geometry::Geometry3D *g,
-                         const t::geometry::Geometry *t)
+        PickableGeometry(const std::string& n,
+                         const geometry::Geometry3D* g,
+                         const t::geometry::Geometry* t)
             : name(n), geometry(g), tgeometry(t) {}
     };
 
     void SetPickableGeometry(const std::vector<PickableGeometry>& geometry);
     void SetPickablePointSize(int px);
-    void SetOnPointsPicked(std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> on_picked);
+    void SetOnPointsPicked(
+            std::function<void(
+                    const std::map<
+                            std::string,
+                            std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
+                    int)> on_picked);
 
     void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;

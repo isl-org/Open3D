@@ -403,7 +403,11 @@ struct O3DVisualizer::Impl {
         scene_->SetScene(std::make_shared<Open3DScene>(w->GetRenderer()));
         scene_->EnableSceneCaching(true);  // smoother UI with large geometry
         scene_->SetOnPointsPicked(
-                [this](const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>> &indices, int keymods) {
+                [this](const std::map<
+                               std::string,
+                               std::vector<std::pair<size_t, Eigen::Vector3d>>>
+                               &indices,
+                       int keymods) {
                     if (keymods & int(KeyModifier::SHIFT)) {
                         selections_->UnselectIndices(indices);
                     } else {

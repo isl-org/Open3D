@@ -126,9 +126,7 @@ PickPointsInteractor::PickPointsInteractor(rendering::Open3DScene *scene,
     picking_scene_->GetView()->ConfigureForColorPicking();
 }
 
-PickPointsInteractor::~PickPointsInteractor() {
-    delete lookup_;
-}
+PickPointsInteractor::~PickPointsInteractor() { delete lookup_; }
 
 void PickPointsInteractor::SetPointSize(int px) {
     point_size_ = px;
@@ -140,7 +138,7 @@ void PickPointsInteractor::SetPointSize(int px) {
 }
 
 void PickPointsInteractor::SetPickableGeometry(
-            const std::vector<SceneWidget::PickableGeometry> &geometry) {
+        const std::vector<SceneWidget::PickableGeometry> &geometry) {
     delete lookup_;
     lookup_ = new SelectionIndexLookup();
 
@@ -154,9 +152,11 @@ void PickPointsInteractor::SetPickableGeometry(
         lookup_->Add(pg.name, points_.size());
 
         auto cloud = dynamic_cast<const geometry::PointCloud *>(pg.geometry);
-        auto tcloud = dynamic_cast<const t::geometry::PointCloud *>(pg.tgeometry);
+        auto tcloud =
+                dynamic_cast<const t::geometry::PointCloud *>(pg.tgeometry);
         auto mesh = dynamic_cast<const geometry::TriangleMesh *>(pg.geometry);
-        auto tmesh = dynamic_cast<const t::geometry::TriangleMesh *>(pg.tgeometry);
+        auto tmesh =
+                dynamic_cast<const t::geometry::TriangleMesh *>(pg.tgeometry);
         if (cloud) {
             points_.insert(points_.end(), cloud->points_.begin(),
                            cloud->points_.end());
@@ -187,7 +187,12 @@ void PickPointsInteractor::SetPickableGeometry(
             if (mesh) {
                 picking_scene_->AddGeometry(pg.name, mesh, mat);
             } else {
-                utility::LogWarning("PickPointsInteractor::SetPickableGeometry(): Open3DScene cannot add a t::geometry::TriangleMesh, so points on the back side of the mesh '{}', will be pickable", pg.name);
+                utility::LogWarning(
+                        "PickPointsInteractor::SetPickableGeometry(): "
+                        "Open3DScene cannot add a t::geometry::TriangleMesh, "
+                        "so points on the back side of the mesh '{}', will be "
+                        "pickable",
+                        pg.name);
                 // picking_scene_->AddGeometry(pg.name, tmesh, mat);
             }
         }
@@ -225,7 +230,12 @@ rendering::MatrixInteractorLogic &PickPointsInteractor::GetMatrixInteractor() {
     return matrix_logic_;
 }
 
-void PickPointsInteractor::SetOnPointsPicked(std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> f) {
+void PickPointsInteractor::SetOnPointsPicked(
+        std::function<void(
+                const std::map<std::string,
+                               std::vector<std::pair<size_t, Eigen::Vector3d>>>
+                        &,
+                int)> f) {
     on_picked_ = f;
 }
 
@@ -273,7 +283,8 @@ void PickPointsInteractor::OnPickImageDone(
         dirty_ = false;
     }
 
-    std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>> indices;
+    std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>
+            indices;
     while (!pending_.empty()) {
         PickInfo &info = pending_.back();
         const int x0 = info.rect.x;
@@ -288,7 +299,9 @@ void PickPointsInteractor::OnPickImageDone(
                 if (idx < kNoIndex) {
                     auto &o = lookup_->ObjectForIndex(idx);
                     size_t obj_idx = idx - o.start_index;
-                    indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(obj_idx, points_[idx]));
+                    indices[o.name].push_back(
+                            std::pair<size_t, Eigen::Vector3d>(obj_idx,
+                                                               points_[idx]));
                 }
             }
         }

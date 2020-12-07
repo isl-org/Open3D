@@ -78,8 +78,14 @@ public:
     void SelectSet(int index);
     size_t GetNumberOfSets() const;
 
-    void SelectIndices(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>& indices);
-    void UnselectIndices(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>& indices);
+    void SelectIndices(
+            const std::map<std::string,
+                           std::vector<std::pair<size_t, Eigen::Vector3d>>>&
+                    indices);
+    void UnselectIndices(
+            const std::map<std::string,
+                           std::vector<std::pair<size_t, Eigen::Vector3d>>>&
+                    indices);
     std::vector<SelectionSet> GetSets();
 
     void SetPointSize(int px);
@@ -88,8 +94,8 @@ public:
     void MakeInactive();
     bool IsActive() const;
 
-
-    void SetSelectableGeometry(const std::vector<gui::SceneWidget::PickableGeometry>& geometry);
+    void SetSelectableGeometry(
+            const std::vector<gui::SceneWidget::PickableGeometry>& geometry);
 
 private:
     void UpdatePointSize();

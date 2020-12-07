@@ -62,7 +62,8 @@ public:
 
     /// Sets the points that can be picked. Limited to 16 million or less
     /// points/vertices total. Geometry pointers will not be cached.
-    void SetPickableGeometry(const std::vector<SceneWidget::PickableGeometry>& geometry);
+    void SetPickableGeometry(
+            const std::vector<SceneWidget::PickableGeometry>& geometry);
 
     /// Indicates that the selection scene must be redrawn and the picking
     /// pixels retrieved again before picking.
@@ -70,7 +71,12 @@ public:
 
     /// Calls the provided function when points are picked:
     ///    f(indices, key_modifiers)
-    void SetOnPointsPicked(std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> f);
+    void SetOnPointsPicked(
+            std::function<void(
+                    const std::map<
+                            std::string,
+                            std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
+                    int)> f);
 
     rendering::MatrixInteractorLogic& GetMatrixInteractor() override;
     void Mouse(const MouseEvent& e) override;
@@ -85,7 +91,11 @@ private:
     rendering::Open3DScene* scene_;
     rendering::Camera* camera_;
 
-    std::function<void(const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>>&, int)> on_picked_;
+    std::function<void(
+            const std::map<std::string,
+                           std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
+            int)>
+            on_picked_;
     int point_size_ = 3;
     rendering::MatrixInteractorLogic matrix_logic_;
     std::shared_ptr<rendering::Open3DScene> picking_scene_;

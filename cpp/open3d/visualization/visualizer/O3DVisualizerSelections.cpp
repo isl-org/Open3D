@@ -49,8 +49,7 @@ rendering::Material MakeMaterial(int point_size) {
 
 // ----------------------------------------------------------------------------
 O3DVisualizerSelections::O3DVisualizerSelections(gui::SceneWidget &widget3d)
-    : widget3d_(widget3d) {
-}
+    : widget3d_(widget3d) {}
 
 O3DVisualizerSelections::~O3DVisualizerSelections() {}
 
@@ -91,7 +90,9 @@ void O3DVisualizerSelections::SelectSet(int index) {
 size_t O3DVisualizerSelections::GetNumberOfSets() const { return sets_.size(); }
 
 void O3DVisualizerSelections::SelectIndices(
-            const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>> &indices) {
+        const std::map<std::string,
+                       std::vector<std::pair<size_t, Eigen::Vector3d>>>
+                &indices) {
     auto &selection = sets_[current_set_index_];
     for (auto &name_indices : indices) {
         auto &name = name_indices.first;
@@ -107,7 +108,9 @@ void O3DVisualizerSelections::SelectIndices(
 }
 
 void O3DVisualizerSelections::UnselectIndices(
-            const std::map<std::string, std::vector<std::pair<size_t, Eigen::Vector3d>>> &indices) {
+        const std::map<std::string,
+                       std::vector<std::pair<size_t, Eigen::Vector3d>>>
+                &indices) {
     auto &selection = sets_[current_set_index_];
     for (auto &name_indices : indices) {
         auto &name = name_indices.first;
@@ -206,7 +209,8 @@ void O3DVisualizerSelections::MakeInactive() {
     is_active_ = false;
 }
 
-void O3DVisualizerSelections::SetSelectableGeometry(const std::vector<gui::SceneWidget::PickableGeometry>& geometry) {
+void O3DVisualizerSelections::SetSelectableGeometry(
+        const std::vector<gui::SceneWidget::PickableGeometry> &geometry) {
     widget3d_.SetPickableGeometry(geometry);
 }
 

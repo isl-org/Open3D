@@ -84,7 +84,7 @@ public:
     void ClearGeometry();
     /// Adds a geometry with the specified name. Default visible is true.
     void AddGeometry(const std::string& name,
-                     const geometry::Geometry3D *geom,
+                     const geometry::Geometry3D* geom,
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     // Note: we can't use shared_ptr here, as we might be given something
