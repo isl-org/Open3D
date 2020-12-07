@@ -70,7 +70,7 @@ struct MiniVec {
     }
 
     FN_SPECIFIERS MiniVec<T, N> abs() const {
-        MiniVec<float, N> r;
+        MiniVec<T, N> r;
         for (int i = 0; i < N; ++i) r[i] = std::abs(operator[](i));
         return r;
     }

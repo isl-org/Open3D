@@ -28,9 +28,8 @@
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 #include "open3d/io/FileFormatIO.h"
-#include "open3d/t/geometry/TensorListMap.h"
+#include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
@@ -77,15 +76,15 @@ static int ReadAttributeCallback(p_ply_argument argument) {
     return 1;
 }
 
-static core::TensorList ConcatColumns(const core::Tensor &a,
-                                      const core::Tensor &b,
-                                      const core::Tensor &c) {
+// TODO: ConcatColumns can be implemented in Tensor.cpp as a generic function.
+static core::Tensor ConcatColumns(const core::Tensor &a,
+                                  const core::Tensor &b,
+                                  const core::Tensor &c) {
     if (a.NumDims() != 1 || b.NumDims() != 1 || c.NumDims() != 1) {
         utility::LogError("Read PLY failed: only 1D attributes are supported.");
     }
 
-    if ((a.GetShape()[0] != b.GetShape()[0]) ||
-        (a.GetShape()[0] != c.GetShape()[0])) {
+    if ((a.GetLength() != b.GetLength()) || (a.GetLength() != c.GetLength())) {
         utility::LogError("Read PLY failed: size mismatch in base attributes.");
     }
     if ((a.GetDtype() != b.GetDtype()) || (a.GetDtype() != c.GetDtype())) {
@@ -93,16 +92,16 @@ static core::TensorList ConcatColumns(const core::Tensor &a,
                 "Read PLY failed: datatype mismatch in base attributes.");
     }
 
-    core::TensorList combined =
-            core::TensorList(a.GetShape()[0], {3}, a.GetDtype());
-    combined.AsTensor().IndexExtract(1, 0) = a;
-    combined.AsTensor().IndexExtract(1, 1) = b;
-    combined.AsTensor().IndexExtract(1, 2) = c;
+    core::Tensor combined =
+            core::Tensor::Empty({a.GetLength(), 3}, a.GetDtype());
+    combined.IndexExtract(1, 0) = a;
+    combined.IndexExtract(1, 1) = b;
+    combined.IndexExtract(1, 2) = c;
 
     return combined;
 }
 
-// Some of these datatypes are supported by TensorList but are added here just
+// Some of these datatypes are supported by Tensor but are added here just
 // for completeness.
 static std::string GetDtypeString(e_ply_type type) {
     if (type == PLY_INT8) {
@@ -263,7 +262,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     if (state.name_to_attr_state_.count("x") != 0 &&
         state.name_to_attr_state_.count("y") != 0 &&
         state.name_to_attr_state_.count("z") != 0) {
-        core::TensorList points =
+        core::Tensor points =
                 ConcatColumns(state.name_to_attr_state_.at("x")->data_,
                               state.name_to_attr_state_.at("y")->data_,
                               state.name_to_attr_state_.at("z")->data_);
@@ -275,7 +274,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     if (state.name_to_attr_state_.count("nx") != 0 &&
         state.name_to_attr_state_.count("ny") != 0 &&
         state.name_to_attr_state_.count("nz") != 0) {
-        core::TensorList normals =
+        core::Tensor normals =
                 ConcatColumns(state.name_to_attr_state_.at("nx")->data_,
                               state.name_to_attr_state_.at("ny")->data_,
                               state.name_to_attr_state_.at("nz")->data_);
@@ -287,7 +286,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     if (state.name_to_attr_state_.count("red") != 0 &&
         state.name_to_attr_state_.count("green") != 0 &&
         state.name_to_attr_state_.count("blue") != 0) {
-        core::TensorList colors =
+        core::Tensor colors =
                 ConcatColumns(state.name_to_attr_state_.at("red")->data_,
                               state.name_to_attr_state_.at("green")->data_,
                               state.name_to_attr_state_.at("blue")->data_);
@@ -299,10 +298,8 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     // Add rest of the attributes.
     for (auto const &it : state.name_to_attr_state_) {
-        pointcloud.SetPointAttr(
-                it.second->name_,
-                core::TensorList::FromTensor(
-                        it.second->data_.Reshape({element_size, 1})));
+        pointcloud.SetPointAttr(it.second->name_,
+                                it.second->data_.Reshape({element_size, 1}));
     }
     ply_close(ply_file);
     reporter.Finish();
@@ -345,17 +342,17 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    geometry::TensorListMap tl_map = pointcloud.GetPointAttr();
-    long num_points = static_cast<long>(pointcloud.GetPoints().GetSize());
+    geometry::TensorMap t_map = pointcloud.GetPointAttr();
+    long num_points = static_cast<long>(pointcloud.GetPoints().GetLength());
 
     // Make sure all the attributes have same size.
-    if (!tl_map.IsSizeSynchronized()) {
-        for (auto const &it : tl_map) {
-            if (it.second.GetSize() != num_points) {
+    if (!t_map.IsSizeSynchronized()) {
+        for (auto const &it : t_map) {
+            if (it.second.GetLength() != num_points) {
                 utility::LogWarning(
                         "Write PLY failed: Points ({}) and {} ({}) have "
                         "different lengths.",
-                        num_points, it.first, it.second.GetSize());
+                        num_points, it.first, it.second.GetLength());
                 return false;
             }
         }
@@ -402,7 +399,7 @@ bool WritePointCloudToPLY(const std::string &filename,
     }
 
     e_ply_type attributeType;
-    for (auto const &it : tl_map) {
+    for (auto const &it : t_map) {
         if (it.first != "points" && it.first != "colors" &&
             it.first != "normals") {
             attributeType = GetPlyType(it.second.GetDtype());
@@ -449,7 +446,7 @@ bool WritePointCloudToPLY(const std::string &filename,
                     });
         }
 
-        for (auto const &it : tl_map) {
+        for (auto const &it : t_map) {
             if (it.first != "points" && it.first != "colors" &&
                 it.first != "normals") {
                 DISPATCH_DTYPE_TO_TEMPLATE(it.second.GetDtype(), [&]() {
