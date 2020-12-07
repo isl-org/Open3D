@@ -222,6 +222,7 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
 
     TriangleMesh mesh(core::TensorList::FromTensor(dsts.at("vertices")),
                       core::TensorList::FromTensor(dsts.at("triangles")));
+    mesh.SetVertexNormals(core::TensorList::FromTensor(dsts.at("normals")));
     return mesh;
 }
 

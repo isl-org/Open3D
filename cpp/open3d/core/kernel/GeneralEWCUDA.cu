@@ -608,10 +608,52 @@ void CUDAMarchingCubesKernel(
                            block_values.GetDevice());
     core::Tensor vertices({std::min(n * 3, int64_t(10000000)), 3},
                           core::Dtype::Float32, block_values.GetDevice());
+    core::Tensor normals({std::min(n * 3, int64_t(10000000)), 3},
+                         core::Dtype::Float32, block_values.GetDevice());
     int* vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
     float* vertices_ptr = static_cast<float*>(vertices.GetDataPtr());
+    float* normals_ptr = static_cast<float*>(normals.GetDataPtr());
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
                                                  int64_t workload_idx) {
+        auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                            int curr_block_idx) -> float* {
+            int xn = (xo + resolution) % resolution;
+            int yn = (yo + resolution) % resolution;
+            int zn = (zo + resolution) % resolution;
+
+            int64_t dxb = sign(xo - xn);
+            int64_t dyb = sign(yo - yn);
+            int64_t dzb = sign(zo - zn);
+
+            int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
+
+            bool block_mask_i =
+                    nb_masks_ptr[nb_idx * n_blocks + curr_block_idx];
+            if (!block_mask_i) return nullptr;
+
+            int64_t block_idx_i =
+                    nb_indices_ptr[nb_idx * n_blocks + curr_block_idx];
+            int64_t workload_voxel_i;
+            voxel_block_buffer_indexer.CoordToWorkload(xn, yn, zn, block_idx_i,
+                                                       &workload_voxel_i);
+            return static_cast<float*>(
+                    voxel_block_buffer_indexer.GetDataPtrFromWorkload(
+                            workload_voxel_i));
+        };
+
+        auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                             int curr_block_idx, float* n) {
+            float* vxp = GetVoxelAt(xo + 1, yo, zo, curr_block_idx);
+            float* vxn = GetVoxelAt(xo - 1, yo, zo, curr_block_idx);
+            float* vyp = GetVoxelAt(xo, yo + 1, zo, curr_block_idx);
+            float* vyn = GetVoxelAt(xo, yo - 1, zo, curr_block_idx);
+            float* vzp = GetVoxelAt(xo, yo, zo + 1, curr_block_idx);
+            float* vzn = GetVoxelAt(xo, yo, zo - 1, curr_block_idx);
+            if (vxp && vxn) n[0] = (vxp[0] - vxn[0]) / (2 * voxel_size);
+            if (vyp && vyn) n[1] = (vyp[0] - vyn[0]) / (2 * voxel_size);
+            if (vzp && vzn) n[2] = (vzp[0] - vzn[0]) / (2 * voxel_size);
+        };
+
         // Natural index (0, N) -> (block_idx, voxel_idx)
         int64_t workload_block_idx = workload_idx / resolution3;
         int64_t block_idx = indices_ptr[workload_block_idx];
@@ -657,41 +699,21 @@ void CUDAMarchingCubesKernel(
             printf("voxel weight error!\n");
         }
 
+        float no[3], ne[3];
+        GetNormalAt(xv, yv, zv, workload_block_idx, no);
+
         // Enumerate 3 edges in the voxel
         for (int e = 0; e < 3; ++e) {
             int vertex_idx = mesh_struct_ptr[e];
             if (vertex_idx != -1) continue;
 
-            int64_t xv_e = xv + int(e == 0);
-            int64_t yv_e = yv + int(e == 1);
-            int64_t zv_e = zv + int(e == 2);
-
-            int dxb = xv_e / resolution;
-            int dyb = yv_e / resolution;
-            int dzb = zv_e / resolution;
-
-            // First query tsdf
-            int64_t nb_idx_e = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
-
-            bool block_mask_e =
-                    nb_masks_ptr[nb_idx_e * n_blocks + workload_block_idx];
-            if (!block_mask_e) {
-                printf("edge: block mask error!\n");
+            float* voxel_ptr_e =
+                    GetVoxelAt(xv + int(e == 0), yv + int(e == 1),
+                               zv + int(e == 2), workload_block_idx);
+            if (voxel_ptr_e == nullptr) {
+                printf("ptr_e error!\n");
             }
-
-            int64_t block_idx_e =
-                    nb_indices_ptr[nb_idx_e * n_blocks + workload_block_idx];
-            int64_t workload_voxel_e;
-            voxel_block_buffer_indexer.CoordToWorkload(
-                    xv_e - dxb * resolution, yv_e - dyb * resolution,
-                    zv_e - dzb * resolution, block_idx_e, &workload_voxel_e);
-            float* voxel_ptr_e = static_cast<float*>(
-                    voxel_block_buffer_indexer.GetDataPtrFromWorkload(
-                            workload_voxel_e));
             float tsdf_e = voxel_ptr_e[0];
-            if (voxel_ptr_e[1] == 0) {
-                printf("edge: weight error!\n");
-            }
             if (tsdf_e * tsdf_o > 0) {
                 printf("tsdf error: %f %f\n", tsdf_e, tsdf_o);
                 return;
@@ -710,13 +732,25 @@ void CUDAMarchingCubesKernel(
             vertices_ptr[3 * idx + 0] = voxel_size * (x + ratio_x);
             vertices_ptr[3 * idx + 1] = voxel_size * (y + ratio_y);
             vertices_ptr[3 * idx + 2] = voxel_size * (z + ratio_z);
+
+            GetNormalAt(xv + int(e == 0), yv + int(e == 1), zv + int(e == 2),
+                        workload_block_idx, ne);
+            float nx = (1 - ratio) * no[0] + ratio * ne[0];
+            float ny = (1 - ratio) * no[1] + ratio * ne[1];
+            float nz = (1 - ratio) * no[2] + ratio * ne[2];
+            float norm = sqrt(nx * nx + ny * ny + nz * nz) + 1e-5;
+            normals_ptr[idx * 3 + 0] = nx / norm;
+            normals_ptr[idx * 3 + 1] = ny / norm;
+            normals_ptr[idx * 3 + 2] = nz / norm;
         }
     });
 
     int total_vtx_count = vtx_count.Item<int>();
     utility::LogInfo("Total vertex count = {}", total_vtx_count);
     vertices = vertices.Slice(0, 0, total_vtx_count);
+    normals = normals.Slice(0, 0, total_vtx_count);
     dsts.emplace("vertices", vertices);
+    dsts.emplace("normals", normals);
 
     // Pass 2: connect vertices
     core::Tensor triangle_count(std::vector<int>{0}, {}, core::Dtype::Int32,
