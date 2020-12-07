@@ -67,28 +67,28 @@ public:
           dsize_key_(dsize_key),
           dsize_value_(dsize_value),
           device_(device) {
-        key_blob_ =
+        key_buffer_ =
                 Tensor({capacity_},
                        Dtype(Dtype::DtypeCode::Object, dsize_key_, "_hash_k"),
                        device_);
-        value_blob_ =
+        value_buffer_ =
                 Tensor({capacity_},
                        Dtype(Dtype::DtypeCode::Object, dsize_value_, "_hash_v"),
                        device_);
         heap_ = Tensor({capacity_}, Dtype::Int32, device_);
     }
 
-    Tensor &GetKeyTensor() { return key_blob_; }
-    Tensor &GetValueTensor() { return value_blob_; }
-    Tensor &GetHeapTensor() { return heap_; }
+    Tensor &GetKeyBuffer() { return key_buffer_; }
+    Tensor &GetValueBuffer() { return value_buffer_; }
+    Tensor &GetHeap() { return heap_; }
 
 protected:
     int64_t capacity_;
     int64_t dsize_key_;
     int64_t dsize_value_;
 
-    Tensor key_blob_;
-    Tensor value_blob_;
+    Tensor key_buffer_;
+    Tensor value_buffer_;
     Tensor heap_;
 
     Device device_;

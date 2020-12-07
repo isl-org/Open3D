@@ -43,8 +43,10 @@ void pybind_core_hashmap(py::module& m) {
             m, "Hashmap",
             "A Hashmap is a map from key to data wrapped by Tensors.");
 
-    hashmap.def(py::init<size_t, const Dtype&, const Dtype&, const Device&>(),
-                "init_capacity"_a, "dtype_key"_a, "dtype_val"_a, "device"_a);
+    hashmap.def(py::init<size_t, const Dtype&, const Dtype&, const SizeVector&,
+                         const SizeVector&, const Device&>(),
+                "init_capacity"_a, "dtype_key"_a, "dtype_value"_a,
+                "shape_key"_a, "shape_value"_a, "device"_a);
 
     hashmap.def("insert",
                 [](Hashmap& h, const Tensor& keys, const Tensor& values) {
@@ -72,14 +74,16 @@ void pybind_core_hashmap(py::module& m) {
     });
 
     hashmap.def("get_active_addrs", [](Hashmap& h) {
-        Tensor addrs({h.Size()}, Dtype::Int32, h.GetDevice());
-        h.GetActiveIndices(static_cast<addr_t*>(addrs.GetDataPtr()));
+        Tensor addrs;
+        h.GetActiveIndices(addrs);
         return addrs;
     });
+
+    hashmap.def("get_key_buffer", &Hashmap::GetKeyBuffer);
+    hashmap.def("get_value_buffer", &Hashmap::GetValueBuffer);
+
     hashmap.def("get_key_tensor", &Hashmap::GetKeyTensor);
     hashmap.def("get_value_tensor", &Hashmap::GetValueTensor);
-    hashmap.def_static("reinterpret_buffer_as_tensor",
-                       &Hashmap::ReinterpretBufferTensor);
 
     hashmap.def("rehash", &Hashmap::Rehash);
     hashmap.def("size", &Hashmap::Size);

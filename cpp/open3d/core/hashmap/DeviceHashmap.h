@@ -158,8 +158,8 @@ public:
     int64_t GetKeyBytesize() const { return dsize_key_; }
     int64_t GetValueBytesize() const { return dsize_value_; }
 
-    Tensor& GetKeyTensor() { return buffer_->GetKeyTensor(); }
-    Tensor& GetValueTensor() { return buffer_->GetValueTensor(); }
+    Tensor& GetKeyBuffer() { return buffer_->GetKeyBuffer(); }
+    Tensor& GetValueBuffer() { return buffer_->GetValueBuffer(); }
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.

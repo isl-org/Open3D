@@ -112,7 +112,7 @@ public:
     /// Parallel collect all iterators in the hash table
     /// Return \addrs: internal indices that can be directly used for advanced
     /// indexing in Tensor key/value buffers.
-    Tensor GetActiveIndices();
+    void GetActiveIndices(Tensor& output_indices);
 
     int64_t Size() const;
 
@@ -122,8 +122,8 @@ public:
     int64_t GetKeyBytesize() const;
     int64_t GetValueBytesize() const;
 
-    Tensor& GetKeyRawBuffer();
-    Tensor& GetValueRawBuffer();
+    Tensor& GetKeyBuffer();
+    Tensor& GetValueBuffer();
 
     Tensor GetKeyTensor();
     Tensor GetValueTensor();
@@ -149,6 +149,9 @@ private:
 
     Dtype dtype_key_ = Dtype::Undefined;
     Dtype dtype_value_ = Dtype::Undefined;
+
+    SizeVector element_shape_key_;
+    SizeVector element_shape_value_;
 };
 
 }  // namespace core

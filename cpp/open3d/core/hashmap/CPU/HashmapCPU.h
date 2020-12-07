@@ -208,8 +208,8 @@ void CPUHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
         GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
         Tensor active_indices = active_addrs.To(Dtype::Int64);
-        active_keys = this->GetKeyTensor().IndexGet({active_indices});
-        active_values = this->GetValueTensor().IndexGet({active_indices});
+        active_keys = this->GetKeyBuffer().IndexGet({active_indices});
+        active_values = this->GetValueBuffer().IndexGet({active_indices});
     }
 
     float avg_capacity_per_bucket =
@@ -302,8 +302,8 @@ void CPUHashmap<Hash, KeyEq>::Allocate(int64_t capacity, int64_t buckets) {
 
     buffer_ctx_ = std::make_shared<CPUHashmapBufferContext>(
             this->capacity_, this->dsize_key_, this->dsize_value_,
-            this->buffer_->GetKeyTensor(), this->buffer_->GetValueTensor(),
-            this->buffer_->GetHeapTensor());
+            this->buffer_->GetKeyBuffer(), this->buffer_->GetValueBuffer(),
+            this->buffer_->GetHeap());
     buffer_ctx_->Reset();
 
     impl_ = std::make_shared<

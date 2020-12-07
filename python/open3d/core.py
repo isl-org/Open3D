@@ -957,9 +957,19 @@ class Hashmap(o3d.pybind.core.Hashmap):
     Open3D Hashmap class. A Hashmap is a map from key to data wrapped by Tensors.
     """
 
-    def __init__(self, init_capacity, dtype_key, dtype_value, device=None):
+    def __init__(self,
+                 init_capacity,
+                 dtype_key,
+                 dtype_value,
+                 shape_key=[1],
+                 shape_value=[1],
+                 device=None):
+        if not isinstance(shape_key, SizeVector):
+            shape_key = SizeVector(shape_key)
+        if not isinstance(shape_value, SizeVector):
+            shape_value = SizeVector(shape_value)
         super(Hashmap, self).__init__(init_capacity, dtype_key, dtype_value,
-                                      device)
+                                      shape_key, shape_value, device)
 
     @cast_to_py_tensor
     def insert(self, keys, values):
@@ -982,6 +992,14 @@ class Hashmap(o3d.pybind.core.Hashmap):
         return super(Hashmap, self).get_active_addrs()
 
     @cast_to_py_tensor
+    def get_key_buffer(self):
+        return super(Hashmap, self).get_key_buffer()
+
+    @cast_to_py_tensor
+    def get_value_buffer(self):
+        return super(Hashmap, self).get_value_buffer()
+
+    @cast_to_py_tensor
     def get_key_tensor(self):
         return super(Hashmap, self).get_key_tensor()
 
@@ -989,10 +1007,3 @@ class Hashmap(o3d.pybind.core.Hashmap):
     def get_value_tensor(self):
         return super(Hashmap, self).get_value_tensor()
 
-    @staticmethod
-    @cast_to_py_tensor
-    def reinterpret_buffer_as_tensor(buffer_tensor, shape, dtype):
-        if not isinstance(shape, SizeVector):
-            shape = SizeVector(shape)
-        return super(Hashmap, Hashmap).reinterpret_buffer_as_tensor(
-            buffer_tensor, shape, dtype)
