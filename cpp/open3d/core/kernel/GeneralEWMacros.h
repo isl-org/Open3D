@@ -358,4 +358,7 @@ OPEN3D_DEVICE const int edge_to_vert[12][2] = {
         {7, 6}, {4, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7},
 };
 
+OPEN3D_HOST_DEVICE inline int sign(int x) {
+    return (x > 0) ? 1 : ((x < 0) ? -1 : 0);
+}
 }  // unnamed namespace

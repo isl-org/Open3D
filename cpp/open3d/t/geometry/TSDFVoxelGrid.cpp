@@ -167,7 +167,9 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
                 "expected "
                 "to return.");
     }
-    return PointCloud(core::TensorList::FromTensor(dsts.at("points")));
+    auto pcd = PointCloud(core::TensorList::FromTensor(dsts.at("points")));
+    pcd.SetPointNormals(core::TensorList::FromTensor(dsts.at("normals")));
+    return pcd;
 }
 
 TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {

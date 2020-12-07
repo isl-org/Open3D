@@ -341,11 +341,53 @@ void CUDASurfaceExtractionKernel(
                        block_values.GetDevice());
     core::Tensor points({std::min(n * 3, int64_t(10000000)), 3},
                         core::Dtype::Float32, block_values.GetDevice());
+    core::Tensor normals({std::min(n * 3, int64_t(10000000)), 3},
+                         core::Dtype::Float32, block_values.GetDevice());
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
     float* points_ptr = static_cast<float*>(points.GetDataPtr());
+    float* normals_ptr = static_cast<float*>(normals.GetDataPtr());
 
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
                                                  int64_t workload_idx) {
+        auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                            int curr_block_idx) -> float* {
+            int xn = (xo + resolution) % resolution;
+            int yn = (yo + resolution) % resolution;
+            int zn = (zo + resolution) % resolution;
+
+            int64_t dxb = sign(xo - xn);
+            int64_t dyb = sign(yo - yn);
+            int64_t dzb = sign(zo - zn);
+
+            int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
+
+            bool block_mask_i =
+                    nb_masks_ptr[nb_idx * n_blocks + curr_block_idx];
+            if (!block_mask_i) return nullptr;
+
+            int64_t block_idx_i =
+                    nb_indices_ptr[nb_idx * n_blocks + curr_block_idx];
+            int64_t workload_voxel_i;
+            voxel_block_buffer_indexer.CoordToWorkload(xn, yn, zn, block_idx_i,
+                                                       &workload_voxel_i);
+            return static_cast<float*>(
+                    voxel_block_buffer_indexer.GetDataPtrFromWorkload(
+                            workload_voxel_i));
+        };
+
+        auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                             int curr_block_idx, float* n) {
+            float* vxp = GetVoxelAt(xo + 1, yo, zo, curr_block_idx);
+            float* vxn = GetVoxelAt(xo - 1, yo, zo, curr_block_idx);
+            float* vyp = GetVoxelAt(xo, yo + 1, zo, curr_block_idx);
+            float* vyn = GetVoxelAt(xo, yo - 1, zo, curr_block_idx);
+            float* vzp = GetVoxelAt(xo, yo, zo + 1, curr_block_idx);
+            float* vzn = GetVoxelAt(xo, yo, zo - 1, curr_block_idx);
+            if (vxp && vxn) n[0] = (vxp[0] - vxn[0]) / (2 * voxel_size);
+            if (vyp && vyn) n[1] = (vyp[0] - vyn[0]) / (2 * voxel_size);
+            if (vzp && vzn) n[2] = (vzp[0] - vzn[0]) / (2 * voxel_size);
+        };
+
         // Natural index (0, N) -> (block_idx, voxel_idx)
         int64_t workload_block_idx = workload_idx / resolution3;
         int64_t block_idx = indices_ptr[workload_block_idx];
@@ -374,40 +416,15 @@ void CUDASurfaceExtractionKernel(
         int64_t y = yb * resolution + yv;
         int64_t z = zb * resolution + zv;
 
+        float no[3], ni[3];
+        GetNormalAt(xv, yv, zv, workload_block_idx, no);
         for (int i = 0; i < 3; ++i) {
-            int64_t xv_i = xv + int64_t(i == 0);
-            int64_t yv_i = yv + int64_t(i == 1);
-            int64_t zv_i = zv + int64_t(i == 2);
+            float* ptr = GetVoxelAt(xv + int64_t(i == 0), yv + int64_t(i == 1),
+                                    zv + int64_t(i == 2), workload_block_idx);
+            if (ptr == nullptr) continue;
 
-            int64_t dxb = xv_i / resolution;
-            int64_t dyb = yv_i / resolution;
-            int64_t dzb = zv_i / resolution;
-
-            int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
-
-            if (nb_indices_ptr[13 * n_blocks + workload_block_idx] !=
-                block_idx) {
-                printf("wrong!\n");
-            }
-            bool block_mask_i =
-                    nb_masks_ptr[nb_idx * n_blocks + workload_block_idx];
-            if (!block_mask_i) continue;
-
-            int64_t block_idx_i =
-                    nb_indices_ptr[nb_idx * n_blocks + workload_block_idx];
-            int64_t workload_voxel_i;
-            voxel_block_buffer_indexer.CoordToWorkload(
-                    xv_i - dxb * resolution, yv_i - dyb * resolution,
-                    zv_i - dzb * resolution, block_idx_i, &workload_voxel_i);
-            // printf("%ld %ld %ld at %d: %ld %ld %ld\n", xv_i, yv_i, zv_i, i,
-            //        xv_i - dxb * resolution, yv_i - dyb * resolution,
-            //        zv_i - dzb * resolution);
-            float* voxel_ptr_i = static_cast<float*>(
-                    voxel_block_buffer_indexer.GetDataPtrFromWorkload(
-                            workload_voxel_i));
-
-            float tsdf_i = voxel_ptr_i[0];
-            float weight_i = voxel_ptr_i[1];
+            float tsdf_i = ptr[0];
+            float weight_i = ptr[1];
 
             if (weight_i > 0 && tsdf_i * tsdf_o < 0) {
                 float ratio = (0 - tsdf_o) / (tsdf_i - tsdf_o);
@@ -420,12 +437,24 @@ void CUDASurfaceExtractionKernel(
                         voxel_size * (y + ratio * int(i == 1));
                 points_ptr[idx * 3 + 2] =
                         voxel_size * (z + ratio * int(i == 2));
+
+                GetNormalAt(xv + int64_t(i == 0), yv + int64_t(i == 1),
+                            zv + int64_t(i == 2), workload_block_idx, ni);
+
+                float nx = (1 - ratio) * no[0] + ratio * ni[0];
+                float ny = (1 - ratio) * no[1] + ratio * ni[1];
+                float nz = (1 - ratio) * no[2] + ratio * ni[2];
+                float norm = sqrt(nx * nx + ny * ny + nz * nz) + 1e-5;
+                normals_ptr[idx * 3 + 0] = nx / norm;
+                normals_ptr[idx * 3 + 1] = ny / norm;
+                normals_ptr[idx * 3 + 2] = nz / norm;
             }
         }
     });
 
     int total_count = count.Item<int>();
     dsts.emplace("points", points.Slice(0, 0, total_count));
+    dsts.emplace("normals", normals.Slice(0, 0, total_count));
     utility::LogInfo("surface extraction finished");
 }
 

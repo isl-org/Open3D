@@ -74,19 +74,19 @@ int main(int argc, char** argv) {
                              timer.GetDuration());
         }
 
-        // auto pcd = voxel_grid.ExtractSurfacePoints();
-        // auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-        //         pcd.ToLegacyPointCloud());
-        // // pcd_legacy->EstimateNormals();
-        // open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
-        //                             *pcd_legacy);
+        auto pcd = voxel_grid.ExtractSurfacePoints();
+        auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+                pcd.ToLegacyPointCloud());
+        // pcd_legacy->EstimateNormals();
+        open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
+                                    *pcd_legacy);
         // open3d::visualization::DrawGeometries({pcd_legacy});
 
-        auto mesh = voxel_grid.ExtractSurfaceMesh();
-        auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
-                mesh.ToLegacyTriangleMesh());
-        open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
-                                      *mesh_legacy);
+        // auto mesh = voxel_grid.ExtractSurfaceMesh();
+        // auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
+        //         mesh.ToLegacyTriangleMesh());
+        // open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
+        //                               *mesh_legacy);
         // open3d::visualization::DrawGeometries({mesh_legacy});
 
         // auto mesh = voxel_grid.ExtractSurfaceMesh();
