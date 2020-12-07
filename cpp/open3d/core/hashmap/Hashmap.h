@@ -43,10 +43,25 @@ class Hashmap {
 public:
     static constexpr int64_t kDefaultElemsPerBucket = 4;
 
-    // Default constructor for common users.
+    /// Constructor for primitive and custom types, supporting element shapes.
+    /// Example 1:
+    /// Key is int<3> coordinate:
+    /// # Option 1:
+    /// - dtype_key = Dtype::Int32
+    /// - element_shape_key = {3}
+    /// # Option 2:
+    /// - dtype_key = Dtype(DtypeCode::Object, 3 * Dtype::Int32.ByteSize(),
+    /// "int3")
+    /// - element_shape_key = {1}
+    /// Example 2:
+    /// Key is struct Pt {int x; int y; int z;}
+    /// - dtype_key = Dtype(DtypeCode::Object, sizeof(Pt), "pt")
+    /// - element_shape_key = {1}
     Hashmap(int64_t init_capacity,
-            Dtype dtype_key,
-            Dtype dtype_val,
+            const Dtype& dtype_key,
+            const Dtype& dtype_value,
+            const SizeVector& element_shape_key,
+            const SizeVector& element_shape_value,
             const Device& device);
 
     ~Hashmap(){};
@@ -58,17 +73,6 @@ public:
     /// 4) parallel insert dumped key value pairs
     void Rehash(int64_t buckets);
 
-    /// Parallel insert arrays of keys and values.
-    /// Return \addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    /// \masks: success insertions, must be combined with \addrs in advanced
-    /// indexing.
-    void Insert(const void* input_keys,
-                const void* input_values,
-                addr_t* output_addrs,
-                bool* output_masks,
-                int64_t count);
-
     /// Parallel insert arrays of keys and values in Tensors.
     /// Return \addrs: internal indices that can be directly used for advanced
     /// indexing in Tensor key/value buffers.
@@ -78,18 +82,6 @@ public:
                 const Tensor& input_values,
                 Tensor& output_addrs,
                 Tensor& output_masks);
-
-    /// Parallel activate arrays of keys without copying values.
-    /// Specifically useful for large value elements (e.g., a tensor), where we
-    /// can do in-place management after activation.
-    /// Return \addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    /// \masks: success insertions, must be combined with \addrs in advanced
-    /// indexing.
-    void Activate(const void* input_keys,
-                  addr_t* output_addrs,
-                  bool* output_masks,
-                  int64_t count);
 
     /// Parallel activate arrays of keys in Tensor.
     /// Specifically useful for large value elements (e.g., a tensor), where we
@@ -102,16 +94,6 @@ public:
                   Tensor& output_addrs,
                   Tensor& output_masks);
 
-    /// Parallel find an array of keys.
-    /// Return \addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    /// \masks: success insertions, must be combined with \addrs in advanced
-    /// indexing.
-    void Find(const void* input_keys,
-              addr_t* output_addrs,
-              bool* output_masks,
-              int64_t count);
-
     /// Parallel find an array of keys in Tensor.
     /// Return \addrs: internal indices that can be directly used for advanced
     /// indexing in Tensor key/value buffers.
@@ -120,13 +102,6 @@ public:
     void Find(const Tensor& input_keys,
               Tensor& output_addrs,
               Tensor& output_masks);
-
-    /// Parallel erase an array of keys.
-    /// Output masks can be a nullptr if return results are not to be
-    /// processed.
-    /// Return \masks: success insertions, must be combined with \addrs in
-    /// advanced indexing.
-    void Erase(const void* input_keys, bool* output_masks, int64_t count);
 
     /// Parallel erase an array of keys in Tensor.
     /// Output masks is a bool Tensor.
@@ -137,7 +112,7 @@ public:
     /// Parallel collect all iterators in the hash table
     /// Return \addrs: internal indices that can be directly used for advanced
     /// indexing in Tensor key/value buffers.
-    int64_t GetActiveIndices(addr_t* output_indices);
+    Tensor GetActiveIndices();
 
     int64_t Size() const;
 
@@ -147,8 +122,11 @@ public:
     int64_t GetKeyBytesize() const;
     int64_t GetValueBytesize() const;
 
-    Tensor& GetKeyTensor();
-    Tensor& GetValueTensor();
+    Tensor& GetKeyRawBuffer();
+    Tensor& GetValueRawBuffer();
+
+    Tensor GetKeyTensor();
+    Tensor GetValueTensor();
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
@@ -156,25 +134,6 @@ public:
 
     /// Return size / bucket_count.
     float LoadFactor() const;
-
-    /// Helper to access buffer.
-    /// Example usage:
-    /// For (N, 8, 8, 8) tensors as keys, hashmap will convert them to
-    /// (N, 256) arrays, where key size is 256*sizeof(dtype) and key type as
-    /// (Object, 256*dsize, "_hash_k"). To access buffer and access via their
-    /// original type and shape, reinterpret is required.
-    static Tensor ReinterpretBufferTensor(Tensor& buffer,
-                                          const SizeVector& shape,
-                                          Dtype dtype) {
-        if (dtype.ByteSize() * shape.NumElements() !=
-            buffer.GetDtype().ByteSize() * buffer.GetShape().NumElements()) {
-            utility::LogError(
-                    "[Hashmap] Reinterpret buffer as Tensor expects same byte "
-                    "size");
-        }
-        return Tensor(shape, Tensor::DefaultStrides(shape), buffer.GetDataPtr(),
-                      dtype, buffer.GetBlob());
-    }
 
 protected:
     void AssertKeyDtype(const Dtype& dtype_key,
