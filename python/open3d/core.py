@@ -1006,4 +1006,3 @@ class Hashmap(o3d.pybind.core.Hashmap):
     @cast_to_py_tensor
     def get_value_tensor(self):
         return super(Hashmap, self).get_value_tensor()
-

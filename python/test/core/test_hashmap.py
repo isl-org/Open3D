@@ -138,10 +138,8 @@ def test_erase(device):
     active_keys_np = active_keys.cpu().numpy().flatten()
     active_values_np = active_values.cpu().numpy().flatten()
     sorted_i = np.argsort(active_keys_np)
-    np.testing.assert_equal(active_keys_np[sorted_i],
-                            np.array([300, 700, 900]))
-    np.testing.assert_equal(active_values_np[sorted_i],
-                            np.array([3, 7, 9]))
+    np.testing.assert_equal(active_keys_np[sorted_i], np.array([300, 700, 900]))
+    np.testing.assert_equal(active_values_np[sorted_i], np.array([3, 7, 9]))
 
 
 @pytest.mark.parametrize("device", list_devices())
