@@ -215,6 +215,7 @@ void pybind_rendering_classes(py::module &m) {
                            &Material::base_clearcoat_roughness)
             .def_readwrite("base_anisotropy", &Material::base_anisotropy)
             .def_readwrite("point_size", &Material::point_size)
+            .def_readwrite("line_width", &Material::line_width)
             .def_readwrite("albedo_img", &Material::albedo_img)
             .def_readwrite("normal_img", &Material::normal_img)
             .def_readwrite("ao_img", &Material::ao_img)
@@ -230,6 +231,7 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("gradient", &Material::gradient)
             .def_readwrite("scalar_min", &Material::scalar_min)
             .def_readwrite("scalar_max", &Material::scalar_max)
+            .def_readwrite("sRGB_color", &Material::sRGB_color)
             .def_readwrite("shader", &Material::shader);
 
     // ---- Scene ----
