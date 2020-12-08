@@ -122,11 +122,11 @@ def test_member_functions(device):
     # transform.
     pcd = o3d.t.geometry.PointCloud(dtype, device)
     transform_t = o3c.Tensor(
-        [[1, 1, 0, 1], [0, 1, 1, 1], [0, 1, 0, 1], [0, 0, 0, 1]], dtype, device)
+        [[1, 1, 0, 1], [0, 1, 1, 1], [0, 1, 0, 1], [0, 0, 0, 2]], dtype, device)
     pcd.point["points"] = o3c.Tensor([[1, 1, 1]], dtype, device)
     pcd.point["normals"] = o3c.Tensor([[1, 1, 1]], dtype, device)
     pcd.transform(transform_t)
-    assert pcd.point["points"].allclose(o3c.Tensor([[3, 3, 2]], dtype, device))
+    assert pcd.point["points"].allclose(o3c.Tensor([[5, 5, 3]], dtype, device))
     assert pcd.point["normals"].allclose(o3c.Tensor([[2, 2, 1]], dtype, device))
 
     # translate.
