@@ -60,7 +60,7 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertices,
     SetTriangles(triangles);
 }
 
-geometry::TriangleMesh TriangleMesh::FromLegacyTrangleMesh(
+geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
         const open3d::geometry::TriangleMesh &mesh_legacy,
         core::Dtype float_dtype,
         core::Dtype int_dtype,

@@ -196,5 +196,51 @@ TEST_P(TriangleMeshPermuteDevices, Has) {
     EXPECT_TRUE(mesh.HasTriangleNormals());
 }
 
+TEST_P(TriangleMeshPermuteDevices, FromLegacyTriangleMesh) {
+    core::Device device = GetParam();
+    geometry::TriangleMesh legacy_mesh;
+    legacy_mesh.vertices_ = std::vector<Eigen::Vector3d>{
+            Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0)};
+    legacy_mesh.vertex_colors_ = std::vector<Eigen::Vector3d>{
+            Eigen::Vector3d(1, 1, 1), Eigen::Vector3d(1, 1, 1)};
+    legacy_mesh.vertex_normals_ = std::vector<Eigen::Vector3d>{
+            Eigen::Vector3d(2, 2, 2), Eigen::Vector3d(2, 2, 2)};
+    legacy_mesh.triangles_ = std::vector<Eigen::Vector3i>{
+            Eigen::Vector3i(3, 3, 3), Eigen::Vector3i(3, 3, 3)};
+    legacy_mesh.triangle_normals_ = std::vector<Eigen::Vector3d>{
+            Eigen::Vector3d(4, 4, 4), Eigen::Vector3d(4, 4, 4)};
+
+    core::Dtype float_dtype = core::Dtype::Float32;
+    core::Dtype int_dtype = core::Dtype::Int64;
+    t::geometry::TriangleMesh mesh =
+            t::geometry::TriangleMesh::FromLegacyTriangleMesh(
+                    legacy_mesh, float_dtype, int_dtype, device);
+
+    EXPECT_TRUE(mesh.HasVertices());
+    EXPECT_TRUE(mesh.HasVertexColors());
+    EXPECT_TRUE(mesh.HasVertexNormals());
+    EXPECT_TRUE(mesh.HasTriangles());
+    EXPECT_TRUE(mesh.HasTriangleNormals());
+    EXPECT_FALSE(mesh.HasTriangleColors());
+
+    EXPECT_NO_THROW(mesh.GetVertices().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(mesh.GetVertices().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(mesh.GetVertexColors().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(mesh.GetVertexNormals().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(mesh.GetTriangles().AssertDtype(int_dtype));
+    EXPECT_NO_THROW(mesh.GetTriangleNormals().AssertDtype(float_dtype));
+
+    EXPECT_TRUE(mesh.GetVertices().AllClose(
+            core::Tensor::Ones({2, 3}, float_dtype, device) * 0));
+    EXPECT_TRUE(mesh.GetVertexColors().AllClose(
+            core::Tensor::Ones({2, 3}, float_dtype, device) * 1));
+    EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
+            core::Tensor::Ones({2, 3}, float_dtype, device) * 2));
+    EXPECT_TRUE(mesh.GetTriangles().AllClose(
+            core::Tensor::Ones({2, 3}, int_dtype, device) * 3));
+    EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
+            core::Tensor::Ones({2, 3}, float_dtype, device) * 4));
+}
+
 }  // namespace tests
 }  // namespace open3d
