@@ -52,8 +52,8 @@ def test_constructor_and_accessors(device):
     dtype = o3c.Dtype.Float32
 
     # Constructor.
-    pcd = o3d.t.geometry.PointCloud(dtype, device)
-    assert "points" in pcd.point
+    pcd = o3d.t.geometry.PointCloud(device)
+    assert "points" not in pcd.point
     assert "colors" not in pcd.point
     assert isinstance(pcd.point, o3d.t.geometry.TensorMap)
 
@@ -96,7 +96,7 @@ def test_from_legacy_pointcloud(device):
 def test_to_legacy_pointcloud(device):
     dtype = o3c.Dtype.Float32
 
-    pcd = o3d.t.geometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(device)
     pcd.point["points"] = o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype, device)
     pcd.point["colors"] = o3c.Tensor([[6, 7, 8], [9, 10, 11]], dtype, device)
 
@@ -112,7 +112,7 @@ def test_member_functions(device):
     dtype = o3c.Dtype.Float32
 
     # get_min_bound, get_max_bound, get_center.
-    pcd = o3d.t.geometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(device)
     pcd.point["points"] = o3c.Tensor([[1, 10, 20], [30, 2, 40], [50, 60, 3]],
                                      dtype, device)
     assert pcd.get_min_bound().allclose(o3c.Tensor([1, 2, 3], dtype, device))
@@ -124,7 +124,7 @@ def test_member_functions(device):
         pcd.transform(o3c.Tensor.eye(4, dtype, device))
 
     # translate.
-    pcd = o3d.t.geometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(device)
     transloation = o3c.Tensor([10, 20, 30], dtype, device)
 
     pcd.point["points"] = o3c.Tensor([[0, 1, 2], [6, 7, 8]], dtype, device)
@@ -138,7 +138,7 @@ def test_member_functions(device):
         o3c.Tensor([[7, 17, 27], [13, 23, 33]], dtype, device))
 
     # scale
-    pcd = o3d.t.geometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(device)
     pcd.point["points"] = o3c.Tensor([[0, 0, 0], [1, 1, 1], [2, 2, 2]], dtype,
                                      device)
     center = o3c.Tensor([1, 1, 1], dtype, device)

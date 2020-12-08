@@ -39,23 +39,22 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-PointCloud::PointCloud(core::Dtype dtype, const core::Device &device)
+PointCloud::PointCloud(const core::Device &device)
     : Geometry(Geometry::GeometryType::PointCloud, 3),
       device_(device),
       point_attr_(TensorMap("points")) {
-    SetPoints(core::Tensor::Zeros({0, 3}, dtype, device_));
+    ;
 }
 
 PointCloud::PointCloud(const core::Tensor &points)
-    : PointCloud(points.GetDtype(), points.GetDevice()) {
+    : PointCloud(points.GetDevice()) {
     points.AssertShapeCompatible({utility::nullopt, 3});
     SetPoints(points);
 }
 
 PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
                                &map_keys_to_tensors)
-    : PointCloud(map_keys_to_tensors.at("points").GetDtype(),
-                 map_keys_to_tensors.at("points").GetDevice()) {
+    : PointCloud(map_keys_to_tensors.at("points").GetDevice()) {
     if (map_keys_to_tensors.count("points") == 0) {
         utility::LogError("\"points\" attribute must be specified.");
     }
@@ -104,7 +103,7 @@ geometry::PointCloud PointCloud::FromLegacyPointCloud(
         const open3d::geometry::PointCloud &pcd_legacy,
         core::Dtype dtype,
         const core::Device &device) {
-    geometry::PointCloud pcd(dtype, device);
+    geometry::PointCloud pcd(device);
     if (pcd_legacy.HasPoints()) {
         pcd.SetPoints(core::eigen_converter::EigenVector3dVectorToTensor(
                 pcd_legacy.points_, dtype, device));
