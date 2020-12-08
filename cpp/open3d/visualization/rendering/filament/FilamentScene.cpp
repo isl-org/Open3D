@@ -107,6 +107,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"depth", ResourceManager::kDefaultDepthShader},
         {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
         {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
+        {"unlitLine", ResourceManager::kDefaultLineShader},
 };
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
@@ -262,6 +263,10 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
+    if (material.shader == "unlitLine") {
+        buffer_builder->SetWideLines();
+    }
+
     auto buffers = buffer_builder->ConstructBuffers();
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
@@ -292,8 +297,8 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
         Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
         const auto& points = cloud.GetPoints();
-        const size_t n = points.GetSize();
-        float* pts = (float*)points.AsTensor().GetDataPtr();
+        const size_t n = points.GetLength();
+        float* pts = (float*)points.GetDataPtr();
         for (size_t i = 0; i < 3 * n; i += 3) {
             min_pt[0] = std::min(min_pt[0], pts[i]);
             min_pt[1] = std::min(min_pt[1], pts[i + 1]);
@@ -478,7 +483,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         auto vbuf = vbuf_ptr.get();
 
         const auto& points = point_cloud.GetPoints();
-        const size_t n_vertices = points.GetSize();
+        const size_t n_vertices = points.GetLength();
 
         // NOTE: number of points in the updated point cloud must be the
         // same as the number of points when the vertex buffer was first
@@ -495,15 +500,14 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
 
         if (update_flags & kUpdatePointsFlag) {
             filament::VertexBuffer::BufferDescriptor pts_descriptor(
-                    points.AsTensor().GetDataPtr(),
-                    n_vertices * 3 * sizeof(float));
+                    points.GetDataPtr(), n_vertices * 3 * sizeof(float));
             vbuf->setBufferAt(engine_, 0, std::move(pts_descriptor));
         }
 
         if (update_flags & kUpdateColorsFlag && point_cloud.HasPointColors()) {
             const size_t color_array_size = n_vertices * 3 * sizeof(float);
             filament::VertexBuffer::BufferDescriptor color_descriptor(
-                    point_cloud.GetPointColors().AsTensor().GetDataPtr(),
+                    point_cloud.GetPointColors().GetDataPtr(),
                     color_array_size);
             vbuf->setBufferAt(engine_, 1, std::move(color_descriptor));
         }
@@ -516,12 +520,12 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             // Converting normals to Filament type - quaternions
             auto float4v_tangents = static_cast<filament::math::quatf*>(
                     malloc(normal_array_size));
-            auto orientation =
-                    filament::geometry::SurfaceOrientation::Builder()
-                            .vertexCount(n_vertices)
-                            .normals(reinterpret_cast<filament::math::float3*>(
-                                    normals.AsTensor().GetDataPtr()))
-                            .build();
+            auto orientation = filament::geometry::SurfaceOrientation::Builder()
+                                       .vertexCount(n_vertices)
+                                       .normals(reinterpret_cast<
+                                                const filament::math::float3*>(
+                                               normals.GetDataPtr()))
+                                       .build();
             orientation->getQuats(float4v_tangents, n_vertices);
             filament::VertexBuffer::BufferDescriptor normals_descriptor(
                     float4v_tangents, normal_array_size,
@@ -533,7 +537,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             const size_t uv_array_size = n_vertices * 2 * sizeof(float);
             if (point_cloud.HasPointAttr("uv")) {
                 filament::VertexBuffer::BufferDescriptor uv_descriptor(
-                        point_cloud.GetPointAttr("uv").AsTensor().GetDataPtr(),
+                        point_cloud.GetPointAttr("uv").GetDataPtr(),
                         uv_array_size);
                 vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
             } else if (point_cloud.HasPointAttr("__visualization_scalar")) {
@@ -541,9 +545,8 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                 //     TPointCloudBuffersBuilder::ConstructBuffers
                 float* uv_array = static_cast<float*>(malloc(uv_array_size));
                 memset(uv_array, 0, uv_array_size);
-                float* src = static_cast<float*>(
+                const float* src = static_cast<const float*>(
                         point_cloud.GetPointAttr("__visualization_scalar")
-                                .AsTensor()
                                 .GetDataPtr());
                 const size_t n = 2 * n_vertices;
                 for (size_t i = 0; i < n; i += 2) {
@@ -759,6 +762,13 @@ void FilamentScene::UpdateSolidColorShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+void FilamentScene::UpdateLineShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetParameter("lineWidth", geom_mi.properties.line_width)
+            .Finish();
+}
+
 std::shared_ptr<geometry::Image> CombineTextures(
         std::shared_ptr<geometry::Image> ao,
         std::shared_ptr<geometry::Image> rough,
@@ -906,6 +916,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateGradientShader(geom.mat);
     } else if (props.shader == "unlitSolidColor") {
         UpdateSolidColorShader(geom.mat);
+    } else if (props.shader == "unlitLine") {
+        UpdateLineShader(geom.mat);
     }
 }
 
@@ -945,6 +957,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateGradientShader(geom->mat);
         } else if (material.shader == "unlitSolidColor") {
             UpdateSolidColorShader(geom->mat);
+        } else if (material.shader == "unlitLine") {
+            UpdateLineShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }

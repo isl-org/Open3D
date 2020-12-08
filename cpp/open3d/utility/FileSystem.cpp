@@ -484,6 +484,33 @@ int64_t CFile::GetFileSize() {
     return size;
 }
 
+int64_t CFile::GetNumLines() {
+    if (!file_) {
+        utility::LogError("CFile::GetNumLines() called on a closed file");
+    }
+    fpos_t prevpos;
+    if (fgetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fgetpos failed: {}", GetError());
+    }
+    if (fseek(file_, 0, SEEK_SET)) {
+        error_code_ = errno;
+        utility::LogError("fseek failed: {}", GetError());
+    }
+    int64_t num_lines = 0;
+    int c;
+    while (EOF != (c = getc(file_))) {
+        if (c == '\n') {
+            num_lines++;
+        }
+    }
+    if (fsetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fsetpos failed: {}", GetError());
+    }
+    return num_lines;
+}
+
 const char *CFile::ReadLine() {
     if (!file_) {
         utility::LogError("CFile::ReadLine() called on a closed file");
