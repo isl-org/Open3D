@@ -60,11 +60,8 @@ TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
     EXPECT_FALSE(mesh.HasTriangles());
     EXPECT_FALSE(mesh.HasTriangleNormals());
 
-    // Default dtypes.
-    EXPECT_EQ(mesh.GetVertices().GetDevice(), core::Device("CPU:0"));
-    EXPECT_EQ(mesh.GetVertices().GetDtype(), core::Dtype::Float32);
-    EXPECT_EQ(mesh.GetTriangles().GetDevice(), core::Device("CPU:0"));
-    EXPECT_EQ(mesh.GetTriangles().GetDtype(), core::Dtype::Int64);
+    // Default device.
+    EXPECT_EQ(mesh.GetDevice(), core::Device("CPU:0"));
 }
 
 TEST_P(TriangleMeshPermuteDevices, ConstructFromVertices) {
