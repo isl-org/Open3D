@@ -74,6 +74,7 @@ namespace visualizer {
 namespace {
 static const std::string kShaderLit = "defaultLit";
 static const std::string kShaderUnlit = "defaultUnlit";
+static const std::string kShaderUnlitLines = "unlitLine";
 
 static const std::string kDefaultIBL = "default";
 
@@ -781,6 +782,7 @@ struct O3DVisualizer::Impl {
             group_name = "default";
         }
         bool is_default_color;
+        bool no_shadows = false;
         Material mat;
         if (material) {
             mat = *material;
@@ -811,10 +813,13 @@ struct O3DVisualizer::Impl {
                 has_normals = t_cloud->HasPointNormals();
             } else if (lines) {
                 has_colors = !lines->colors_.empty();
+                no_shadows = true;
             } else if (obb) {
                 has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
+                no_shadows = true;
             } else if (aabb) {
                 has_colors = (aabb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
+                no_shadows = true;
             } else if (mesh) {
                 has_normals = !mesh->vertex_normals_.empty();
                 has_colors = true;  // always want base_color as white
@@ -825,6 +830,10 @@ struct O3DVisualizer::Impl {
 
             mat.base_color = CalcDefaultUnlitColor();
             mat.shader = kShaderUnlit;
+            // if (lines || obb || aabb) {
+            //     mat.shader = kShaderUnlitLines;
+            //     mat.line_width = ui_state_.line_width * window_->GetScaling();
+            // }
             is_default_color = true;
             if (has_colors) {
                 mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -874,6 +883,9 @@ struct O3DVisualizer::Impl {
 
         auto scene = scene_->GetScene();
         scene->AddGeometry(name, geom.get(), mat);
+        if (no_shadows) {
+            scene->GetScene()->GeometryShadows(name, false, false);
+        }
         UpdateGeometryVisibility(objects_.back());
 
         scene_->ForceRedraw();
@@ -1043,6 +1055,18 @@ struct O3DVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
+    void SetLineWidth(int px) {
+        ui_state_.line_width = px;
+
+        px = int(std::round(px * window_->GetScaling()));
+        for (auto &o : objects_) {
+            o.material.line_width = float(px);
+            scene_->GetScene()->GetScene()->OverrideMaterial(o.name,
+                                                             o.material);
+        }
+        scene_->ForceRedraw();
+    }
+
     void SetShader(O3DVisualizer::Shader shader) {
         const char *shader_name = nullptr;
         switch (shader) {
@@ -1169,6 +1193,7 @@ struct O3DVisualizer::Impl {
 
     void SetUIState(const UIState &new_state) {
         int point_size_changed = (new_state.point_size != ui_state_.point_size);
+        int line_width_changed = (new_state.line_width != ui_state_.line_width);
         bool ibl_path_changed = (new_state.ibl_path != ui_state_.ibl_path);
         auto old_enabled_groups = ui_state_.enabled_groups;
         bool old_is_animating = ui_state_.is_animating;
@@ -1197,6 +1222,9 @@ struct O3DVisualizer::Impl {
 
         if (point_size_changed) {
             SetPointSize(ui_state_.point_size);
+        }
+        if (line_width_changed) {
+            SetLineWidth(ui_state_.line_width);
         }
 
         settings.use_ibl->SetChecked(ui_state_.use_ibl);
@@ -1672,6 +1700,10 @@ void O3DVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
 
 void O3DVisualizer::SetPointSize(int point_size) {
     impl_->SetPointSize(point_size);
+}
+
+void O3DVisualizer::SetLineWidth(int line_width) {
+    impl_->SetLineWidth(line_width);
 }
 
 void O3DVisualizer::EnableGroup(const std::string &group, bool enable) {
