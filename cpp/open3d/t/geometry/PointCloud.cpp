@@ -124,6 +124,25 @@ geometry::PointCloud PointCloud::FromLegacyPointCloud(
     return pcd;
 }
 
+// open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
+//     open3d::geometry::PointCloud pcd_legacy;
+//     if (HasPoints()) {
+//         pcd_legacy.points_ =
+//                 core::eigen_converter::TensorToEigenVector3dVector(GetPoints());
+//     }
+//     if (HasPointColors()) {
+//         pcd_legacy.colors_ =
+//         core::eigen_converter::TensorToEigenVector3dVector(
+//                 GetPointColors());
+//     }
+//     if (HasPointNormals()) {
+//         pcd_legacy.normals_ =
+//                 core::eigen_converter::TensorToEigenVector3dVector(
+//                         GetPointNormals());
+//     }
+//     return pcd_legacy;
+// }
+
 open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
     open3d::geometry::PointCloud pcd_legacy;
     if (HasPoints()) {

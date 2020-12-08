@@ -44,6 +44,21 @@ Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor) {
                            dtensor[2].Item<double>());
 }
 
+std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
+        const core::Tensor &tensor) {
+    tensor.AssertShapeCompatible({utility::nullopt, 3});
+    core::Tensor t =
+            tensor.Contiguous().To(core::Dtype::Float64, /*copy=*/false);
+    // Eigen::Vector3d is not a "fixed-size vectorizable Eigen type" thus it is
+    // safe to write directly into std vector memory, see:
+    // https://eigen.tuxfamily.org/dox/group__TopicStlContainers.html.
+    std::vector<Eigen::Vector3d> eigen_vector(t.GetLength());
+    MemoryManager::MemcpyToHost(eigen_vector.data(), t.GetDataPtr(),
+                                t.GetDevice(),
+                                t.GetDtype().ByteSize() * t.NumElements());
+    return eigen_vector;
+}
+
 core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
         core::Dtype dtype,
