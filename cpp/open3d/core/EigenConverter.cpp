@@ -35,7 +35,7 @@ namespace core {
 namespace eigen_converter {
 
 template <typename T>
-std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
+static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
         const core::Tensor &tensor) {
     static_assert(std::is_same<T, double>::value || std::is_same<T, int>::value,
                   "Only supports double and int (Vector3d and Vector3i).");
