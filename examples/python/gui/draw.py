@@ -180,9 +180,9 @@ def selections():
              show_ui=True)
 
 
-def seq_animation():
+def time_animation():
     orig = make_point_cloud(200, (0, 0, 0), 1.0, True)
-    clouds = [{"name": "order=0", "geometry": orig, "time": 0}]
+    clouds = [{"name": "t=0", "geometry": orig, "time": 0}]
     drift_dir = (1.0, 0.0, 0.0)
     expand = 1.0
     n = 20
@@ -194,9 +194,9 @@ def seq_animation():
         cloud.points = o3d.utility.Vector3dVector(pts)
         cloud.colors = orig.colors
         clouds.append({
-            "name": "points (order=" + str(i) + ")",
+            "name": "points at t=" + str(i),
             "geometry": cloud,
-            "order": i
+            "time": i
         })
 
     vis.draw(clouds)
