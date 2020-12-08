@@ -832,7 +832,8 @@ struct O3DVisualizer::Impl {
             mat.shader = kShaderUnlit;
             // if (lines || obb || aabb) {
             //     mat.shader = kShaderUnlitLines;
-            //     mat.line_width = ui_state_.line_width * window_->GetScaling();
+            //     mat.line_width = ui_state_.line_width *
+            //     window_->GetScaling();
             // }
             is_default_color = true;
             if (has_colors) {
