@@ -106,9 +106,7 @@ namespace geometry {
 class TriangleMesh : public Geometry {
 public:
     /// Construct an empty trianglemesh.
-    TriangleMesh(core::Dtype vertex_dtype = core::Dtype::Float32,
-                 core::Dtype triangle_dtype = core::Dtype::Int64,
-                 const core::Device &device = core::Device("CPU:0"));
+    TriangleMesh(const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a trianglemesh from vertices and triangles.
     ///

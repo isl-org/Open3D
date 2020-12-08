@@ -38,20 +38,15 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
-                           core::Dtype triangle_dtype,
-                           const core::Device &device)
+TriangleMesh::TriangleMesh(const core::Device &device)
     : Geometry(Geometry::GeometryType::TriangleMesh, 3),
       device_(device),
       vertex_attr_(TensorMap("vertices")),
-      triangle_attr_(TensorMap("triangles")) {
-    SetVertices(core::Tensor({0, 3}, vertex_dtype, device_));
-    SetTriangles(core::Tensor({0, 3}, triangle_dtype, device_));
-}
+      triangle_attr_(TensorMap("triangles")) {}
 
 TriangleMesh::TriangleMesh(const core::Tensor &vertices,
                            const core::Tensor &triangles)
-    : TriangleMesh(vertices.GetDtype(), triangles.GetDtype(), [&]() {
+    : TriangleMesh([&]() {
           if (vertices.GetDevice() != triangles.GetDevice()) {
               utility::LogError(
                       "vertices' device {} does not match triangles' device "
