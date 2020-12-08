@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,39 +24,52 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/TensorListMap.h"
+#include "open3d/t/geometry/TensorMap.h"
 
-#include "open3d/t/geometry/PointCloud.h"
-#include "pybind/docstring.h"
-#include "pybind/t/geometry/geometry.h"
+#include <fmt/format.h>
+
+#include <sstream>
+#include <string>
+#include <unordered_map>
+
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_tensorlistmap(py::module& m) {
-    // Bind to the generic dictionary interface such that it works the same as a
-    // regular dictionay in Python, except that types are enforced. Supported
-    // functions include `__bool__`, `__iter__`, `items`, `__getitem__`,
-    // `__contains__`, `__delitem__`, `__len__` and map assignment.
-    auto tlm = py::bind_map<TensorListMap>(m, "TensorListMap",
-                                           "Map of TensorList by string.");
+bool TensorMap::IsSizeSynchronized() const {
+    const int64_t primary_size = GetPrimarySize();
+    for (auto& kv : *this) {
+        if (kv.second.GetLength() != primary_size) {
+            return false;
+        }
+    }
+    return true;
+}
 
-    // Constructors.
-    tlm.def(py::init<const std::string&>(), "primary_key"_a)
-            .def(py::init<const std::string&,
-                          const std::unordered_map<std::string,
-                                                   core::TensorList>&>(),
-                 "primary_key"_a, "map_keys_to_tensorlists"_a);
+void TensorMap::AssertPrimaryKeyInMapOrEmpty() const {
+    if (this->size() != 0 && this->count(primary_key_) == 0) {
+        utility::LogError("TensorMap does not contain primary key \"{}\".",
+                          primary_key_);
+    }
+}
 
-    // Member functions. Some C++ functions are ignored since the
-    // functionalities are already covered in the generic dictionary interface.
-    tlm.def("synchronized_push_back", &TensorListMap::SynchronizedPushBack,
-            "map_keys_to_tensors"_a)
-            .def("get_primary_key", &TensorListMap::GetPrimaryKey)
-            .def("is_size_synchronized", &TensorListMap::IsSizeSynchronized)
-            .def("assert_size_synchronized",
-                 &TensorListMap::AssertSizeSynchronized);
+void TensorMap::AssertSizeSynchronized() const {
+    if (!IsSizeSynchronized()) {
+        const int64_t primary_size = GetPrimarySize();
+        std::stringstream ss;
+        ss << fmt::format("Primary Tensor \"{}\" has size {}, however: \n",
+                          primary_key_, primary_size);
+        for (auto& kv : *this) {
+            if (kv.first != primary_key_ &&
+                kv.second.GetLength() != primary_size) {
+                fmt::format("    > Tensor \"{}\" has size {}.\n", kv.first,
+                            kv.second.GetLength());
+            }
+        }
+        utility::LogError("{}", ss.str());
+    }
 }
 
 }  // namespace geometry

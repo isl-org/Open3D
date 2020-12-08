@@ -73,7 +73,7 @@ void Visualizer::Render(bool render_screen) {
 
     if (render_screen) {
         if (render_fbo_ != 0) {
-            utility::LogError("Render framebuffer is not released.");
+            utility::LogWarning("Render framebuffer is not released.");
         }
 
         glGenFramebuffers(1, &render_fbo_);
@@ -145,13 +145,13 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
 void Visualizer::CopyViewStatusToClipboard() {
     ViewParameters current_status;
     if (!view_control_ptr_->ConvertToViewParameters(current_status)) {
-        utility::LogError("Something is wrong copying view status.");
+        utility::LogWarning("Something is wrong copying view status.");
     }
     ViewTrajectory trajectory;
     trajectory.view_status_.push_back(current_status);
     std::string clipboard_string;
     if (!io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory)) {
-        utility::LogError("Something is wrong copying view status.");
+        utility::LogWarning("Something is wrong copying view status.");
     }
     glfwSetClipboardString(window_, clipboard_string.c_str());
 }
@@ -163,10 +163,10 @@ void Visualizer::CopyViewStatusFromClipboard() {
         ViewTrajectory trajectory;
         if (!io::ReadIJsonConvertibleFromJSONString(clipboard_string,
                                                     trajectory)) {
-            utility::LogError("Something is wrong copying view status.");
+            utility::LogWarning("Something is wrong copying view status.");
         }
         if (trajectory.view_status_.size() != 1) {
-            utility::LogError("Something is wrong copying view status.");
+            utility::LogWarning("Something is wrong copying view status.");
         }
         view_control_ptr_->ConvertFromViewParameters(
                 trajectory.view_status_[0]);

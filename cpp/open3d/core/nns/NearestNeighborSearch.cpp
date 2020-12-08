@@ -39,34 +39,103 @@ bool NearestNeighborSearch::SetIndex() {
     nanoflann_index_.reset(new NanoFlannIndex());
     return nanoflann_index_->SetTensorData(dataset_points_);
 };
-bool NearestNeighborSearch::KnnIndex() { return SetIndex(); };
+
+bool NearestNeighborSearch::KnnIndex() {
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
+#ifdef WITH_FAISS
+        if (dataset_points_.GetDtype() != Dtype::Float32) {
+            utility::LogError(
+                    "[NearestNeighborSearch::KnnIndex] For GPU knn index, "
+                    "dataset_points_ type must be Float32.");
+        }
+        faiss_index_.reset(new FaissIndex());
+        return faiss_index_->SetTensorData(dataset_points_);
+#else
+        utility::LogError(
+                "[NearestNeighborSearch::KnnIndex] Currently, Faiss is "
+                "disabled. Please recompile Open3D with WITH_FAISS=ON.");
+#endif
+    } else {
+        return SetIndex();
+    }
+};
+
 bool NearestNeighborSearch::MultiRadiusIndex() { return SetIndex(); };
-bool NearestNeighborSearch::FixedRadiusIndex() { return SetIndex(); }
+
+bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
+        if (!radius.has_value())
+            utility::LogError(
+                    "[NearestNeighborSearch::FixedRadiusIndex] radius is "
+                    "required for GPU FixedRadiusIndex.");
+#ifdef BUILD_CUDA_MODULE
+        fixed_radius_index_.reset(new nns::FixedRadiusIndex());
+        return fixed_radius_index_->SetTensorData(dataset_points_,
+                                                  radius.value());
+#else
+        utility::LogError(
+                "[NearestNeighborSearch::FixedRadiusIndex] FixedRadiusIndex "
+                "with GPU tensor is disabled since BUILD_CUDA_MODULE is OFF. "
+                "Please recompile Open3D with BUILD_CUDA_MODULE=ON.");
+#endif
+
+    } else {
+        return SetIndex();
+    }
+}
+
 bool NearestNeighborSearch::HybridIndex() { return SetIndex(); };
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
-    AssertNotCUDA(query_points);
-    if (!nanoflann_index_) {
+#ifdef WITH_FAISS
+    if (faiss_index_) {
+        if (query_points.GetDtype() != Dtype::Float32) {
+            utility::LogError(
+                    "[NearestNeighborSearch::KnnSearch] For GPU knn search, "
+                    "query_points_ type must be Float32.");
+        }
+        return faiss_index_->SearchKnn(query_points, knn);
+    }
+#endif
+    if (nanoflann_index_) {
+        return nanoflann_index_->SearchKnn(query_points, knn);
+    } else {
         utility::LogError(
                 "[NearestNeighborSearch::KnnSearch] Index is not set.");
     }
-    return nanoflann_index_->SearchKnn(query_points, knn);
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
         const Tensor& query_points, double radius) {
-    AssertNotCUDA(query_points);
-    if (!nanoflann_index_) {
-        utility::LogError(
-                "[NearestNeighborSearch::FixedRadiusSearch] Index is not set.");
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
+        if (fixed_radius_index_) {
+            if (query_points.GetDevice().GetType() !=
+                Device::DeviceType::CUDA) {
+                utility::LogError(
+                        "[NearsetNeighborSearch::FixedRadiusSearch] "
+                        "query_points should be CUDA Tensor.");
+            }
+            return fixed_radius_index_->SearchRadius(query_points, radius);
+        } else {
+            utility::LogError(
+                    "[NearsetNeighborSearch::FixedRadiusSearch] Index is not "
+                    "set.");
+        }
+    } else {
+        if (nanoflann_index_) {
+            if (dataset_points_.GetDtype() != query_points.GetDtype()) {
+                utility::LogError(
+                        "[NearsetNeighborSearch::FixedRadiusSearch] reference "
+                        "and query have different dtype.");
+            }
+            return nanoflann_index_->SearchRadius(query_points, radius);
+        } else {
+            utility::LogError(
+                    "[NearestNeighborSearch::FixedRadiusSearch] Index is not "
+                    "set.");
+        }
     }
-    if (dataset_points_.GetDtype() != query_points.GetDtype()) {
-        utility::LogError(
-                "[NearsetNeighborSearch::FixedRadiusSearch] reference and "
-                "query have different dtype.");
-    }
-    return nanoflann_index_->SearchRadius(query_points, radius);
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(

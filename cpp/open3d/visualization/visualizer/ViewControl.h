@@ -81,11 +81,16 @@ public:
     /// \param parameters The pinhole camera parameter to convert to.
     bool ConvertToPinholeCameraParameters(
             camera::PinholeCameraParameters &parameters);
+
     /// Function to get view controller from pinhole camera parameters.
     ///
     /// \param parameters The pinhole camera parameter to convert from.
+    /// \param allow_arbitrary Allow an arbitrary pinhole camera parameters.
+    /// This can be useful to render images or depthmaps without any restriction
+    /// in window size, FOV and zoom.
     bool ConvertFromPinholeCameraParameters(
-            const camera::PinholeCameraParameters &parameters);
+            const camera::PinholeCameraParameters &parameters,
+            bool allow_arbitrary = false);
 
     ProjectionType GetProjectionType() const;
     void SetProjectionParameters();

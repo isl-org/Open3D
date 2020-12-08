@@ -183,6 +183,10 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
             image.color_.num_of_channels_ == 3) {
             return CreatePointCloudFromRGBDImageT<uint8_t, 3>(
                     image, intrinsic, extrinsic, project_valid_depth_only);
+        } else if (image.color_.bytes_per_channel_ == 1 &&
+                   image.color_.num_of_channels_ == 4) {
+            return CreatePointCloudFromRGBDImageT<uint8_t, 4>(
+                    image, intrinsic, extrinsic, project_valid_depth_only);
         } else if (image.color_.bytes_per_channel_ == 4 &&
                    image.color_.num_of_channels_ == 1) {
             return CreatePointCloudFromRGBDImageT<float, 1>(
