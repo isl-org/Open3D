@@ -110,6 +110,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
         {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
         {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
+        {"unlitLine", ResourceManager::kDefaultLineShader}
 };
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
@@ -270,6 +271,10 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
+    if (material.shader == "unlitLine") {
+        buffer_builder->SetWideLines();
+    }
+
     auto buffers = buffer_builder->ConstructBuffers();
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
@@ -782,6 +787,11 @@ void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
             .SetParameter("aspectRatio", geom_mi.properties.aspect_ratio)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
+
+void FilamentScene::UpdateLineShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetParameter("lineWidth", geom_mi.properties.line_width)
             .Finish();
 }
 
@@ -934,6 +944,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateSolidColorShader(geom.mat);
     } else if (props.shader == "unlitBackground") {
         UpdateBackgroundShader(geom.mat);
+    } else if (props.shader == "unlitLine") {
+        UpdateLineShader(geom.mat);
     }
 }
 
@@ -975,6 +987,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateSolidColorShader(geom->mat);
         } else if (material.shader == "unlitBackground") {
             UpdateBackgroundShader(geom->mat);
+        } else if (material.shader == "unlitLine") {
+            UpdateLineShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }

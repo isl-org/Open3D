@@ -53,6 +53,7 @@ struct Material {
     float base_anisotropy = 0.f;
 
     float point_size = 3.f;
+    float line_width = 1.f;
 
     std::shared_ptr<geometry::Image> albedo_img;
     std::shared_ptr<geometry::Image> normal_img;

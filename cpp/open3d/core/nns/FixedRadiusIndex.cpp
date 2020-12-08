@@ -49,6 +49,10 @@ FixedRadiusIndex::~FixedRadiusIndex(){};
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius) {
 #ifdef BUILD_CUDA_MODULE
+    if (radius <= 0) {
+        utility::LogError(
+                "[FixedRadiusIndex::SetTensorData] radius should be positive.");
+    }
     dataset_points_ = dataset_points.Contiguous();
     int64_t num_points = GetDatasetSize();
     int64_t hash_table_size = std::min<int64_t>(
@@ -102,15 +106,18 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     return true;
 #else
     utility::LogError(
-            "[FixedRadiusIndex::SetTensorData] BUILD_CUDA_MODULE is off. "
-            "Please recompile Open3D with BUILD_CUDA_MODULE=ON to use "
-            "FixedRadiusIndex class.");
+            "FixedRadiusIndex::SetTensorData BUILD_CUDA_MODULE is OFF. Please "
+            "compile Open3d with BUILD_CUDA_MODULE=ON.");
 #endif
 };
 
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         const Tensor &query_points, double radius) const {
 #ifdef BUILD_CUDA_MODULE
+    if (radius <= 0) {
+        utility::LogError(
+                "[FixedRadiusIndex::SearchRadius] radius should be positive.");
+    }
     Tensor query_points_ = query_points.Contiguous();
     int64_t num_query_points = query_points_.GetShape()[0];
     std::vector<int64_t> queries_row_splits({0, num_query_points});
@@ -165,17 +172,18 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                         hash_table_index_.GetDataPtr()),
                 output_allocator);
 
-        neighbors_index = output_allocator.NeighborsIndex();
+        neighbors_index = output_allocator.NeighborsIndex().To(Dtype::Int64);
         neighbors_distance = output_allocator.NeighborsDistance();
     });
 
-    return std::make_tuple(neighbors_index, neighbors_distance,
-                           neighbors_row_splits);
+    Tensor num_neighbors =
+            neighbors_row_splits.Slice(0, 1, num_query_points + 1)
+                    .Sub(neighbors_row_splits.Slice(0, 0, num_query_points));
+    return std::make_tuple(neighbors_index, neighbors_distance, num_neighbors);
 #else
     utility::LogError(
-            "[FixedRadiusIndex::SetTensorData] BUILD_CUDA_MODULE is off. "
-            "Please recompile Open3D with BUILD_CUDA_MODULE=ON to use "
-            "FixedRadiusIndex class.");
+            "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. Please "
+            "compile Open3d with BUILD_CUDA_MODULE=ON.");
 #endif
 };
 
