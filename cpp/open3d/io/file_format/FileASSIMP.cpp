@@ -142,7 +142,6 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
                                  bool print_progress) {
     Assimp::Importer importer;
 
-
     unsigned int post_process_flags = 0;
 
     if (enable_post_processing) {
