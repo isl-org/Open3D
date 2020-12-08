@@ -251,6 +251,7 @@ const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
 const MaterialHandle FilamentResourceManager::kDefaultUnlitSolidColorShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitBackgroundShader =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLineShader =
         MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =

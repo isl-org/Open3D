@@ -110,8 +110,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
         {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
         {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
-        {"unlitLine", ResourceManager::kDefaultLineShader}
-};
+        {"unlitLine", ResourceManager::kDefaultLineShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -787,6 +786,8 @@ void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
             .SetParameter("aspectRatio", geom_mi.properties.aspect_ratio)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
+            .Finish();
+}
 
 void FilamentScene::UpdateLineShader(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
