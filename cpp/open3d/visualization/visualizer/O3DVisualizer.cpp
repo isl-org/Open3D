@@ -777,6 +777,7 @@ struct O3DVisualizer::Impl {
             group_name = "default";
         }
         bool is_default_color;
+        bool no_shadows = false;
         Material mat;
         if (material) {
             mat = *material;
@@ -807,10 +808,13 @@ struct O3DVisualizer::Impl {
                 has_normals = t_cloud->HasPointNormals();
             } else if (lines) {
                 has_colors = !lines->colors_.empty();
+                no_shadows = true;
             } else if (obb) {
                 has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
+                no_shadows = true;
             } else if (aabb) {
                 has_colors = (aabb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
+                no_shadows = true;
             } else if (mesh) {
                 has_normals = !mesh->vertex_normals_.empty();
                 has_colors = true;  // always want base_color as white
@@ -870,6 +874,9 @@ struct O3DVisualizer::Impl {
 
         auto scene = scene_->GetScene();
         scene->AddGeometry(name, geom.get(), mat);
+        if (no_shadows) {
+            scene->GetScene()->GeometryShadows(name, false, false);
+        }
         UpdateGeometryVisibility(objects_.back());
 
         scene_->ForceRedraw();
