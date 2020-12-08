@@ -32,22 +32,28 @@
 #include <iomanip>
 #include <iostream>
 #include <librealsense2/rs.hpp>
+#include <mutex>
 #include <sstream>
-
-#include <thread>
 
 namespace open3d {
 namespace t {
 namespace io {
 
-RSBagReader::RSBagReader()
-    : pipe_(new rs2::pipeline),
-      align_to_color_(new rs2::align(rs2_stream::RS2_STREAM_COLOR)),
-      pframes_(new rs2::frameset) {}
+RSBagReader::RSBagReader(size_t buffer_size)
+    : frame_buffer_(buffer_size),
+      frame_position_us_(buffer_size),
+      pipe_(new rs2::pipeline),
+      align_to_color_(new rs2::align(rs2_stream::RS2_STREAM_COLOR)) {}
 
-RSBagReader::~RSBagReader() = default;
+RSBagReader::~RSBagReader() {
+    if (IsOpened()) Close();
+}
 
 bool RSBagReader::Open(const std::string &filename) {
+    return Open(filename, 0);
+}
+
+bool RSBagReader::Open(const std::string &filename, uint64_t start_time_us) {
     if (IsOpened()) {
         Close();
     }
@@ -55,9 +61,6 @@ bool RSBagReader::Open(const std::string &filename) {
         rs2::config cfg;
         cfg.enable_device_from_file(filename, false);  // Do not repeat playback
         pipe_->start(cfg);  // File will be opened in read mode at this point
-        auto rs_device =
-                pipe_->get_active_profile().get_device().as<rs2::playback>();
-        rs_device.pause();  // Pause playback to prevent frame drops
         // do not drop frames: Causes deadlock after 4 frames on macOS/Linux
         // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
         /* rs_device.set_real_time(false); */
@@ -69,13 +72,17 @@ bool RSBagReader::Open(const std::string &filename) {
     is_eof_ = false;
     is_opened_ = true;
     metadata_.ConvertFromJsonValue(GetMetadataJson());
-
+    // Launch thread to keep frame_buffer full
+    frame_reader_thread =
+            std::thread{&RSBagReader::fill_frame_buffer, this, start_time_us};
     return true;
 }
 
 void RSBagReader::Close() {
-    pipe_->stop();
     is_opened_ = false;
+    need_frames.notify_one();
+    frame_reader_thread.join();
+    pipe_->stop();
 }
 
 Json::Value RSBagReader::GetMetadataJson() {
@@ -150,6 +157,105 @@ Json::Value RSBagReader::GetMetadataJson() {
     return value;
 }
 
+void RSBagReader::fill_frame_buffer(uint64_t start_time_us) try {
+    std::mutex frame_buffer_mutex;
+    std::unique_lock<std::mutex> lock(frame_buffer_mutex);
+    const unsigned int RS2_PLAYBACK_TIMEOUT_MS =
+            (unsigned int)(10 * 1000.0 / metadata_.fps_);
+    rs2::frameset frames;
+    rs2::playback rs_device =
+            pipe_->get_active_profile().get_device().as<rs2::playback>();
+    rs_device.seek(std::chrono::microseconds(start_time_us));
+    uint64_t next_dev_color_fid = 0;
+    head_fid = 0;
+    tail_fid = 0;
+    uint64_t dev_color_fid = 0;
+    uint64_t nreq = 0, fid = 0;  // debug
+
+    while (is_opened_) {
+        // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
+        rs_device.resume();
+        utility::LogInfo(
+                "frame_reader_thread start reading tail_fid={}, head_fid={}",
+                tail_fid, head_fid);
+        while (!is_eof_ && head_fid < tail_fid + frame_buffer_.size()) {
+            // Ensure next frameset is not a repeat
+            while (next_dev_color_fid <= dev_color_fid &&
+                   pipe_->try_wait_for_frames(&frames,
+                                              RS2_PLAYBACK_TIMEOUT_MS)) {
+                ++nreq;
+                next_dev_color_fid =
+                        frames.get_color_frame().get_frame_number();
+            }
+            ++fid;
+            if (next_dev_color_fid > dev_color_fid) {
+                dev_color_fid = next_dev_color_fid;
+                auto &current_frame =
+                        frame_buffer_[head_fid % frame_buffer_.size()];
+
+                frames = align_to_color_->process(frames);
+                const auto &color_frame = frames.get_color_frame();
+                // Copy frame data to Tensors
+                current_frame.color_ = core::Tensor(
+                        static_cast<const uint8_t *>(color_frame.get_data()),
+                        {color_frame.get_height(), color_frame.get_width(),
+                         channels_color_},
+                        dt_color_);
+                const auto &depth_frame = frames.get_depth_frame();
+                current_frame.depth_ = core::Tensor(
+                        static_cast<const uint16_t *>(depth_frame.get_data()),
+                        {depth_frame.get_height(), depth_frame.get_width()},
+                        dt_depth_);
+                frame_position_us_[head_fid % frame_buffer_.size()] =
+                        rs_device.get_position() /
+                        1000;  // Convert nanoseconds -> microseconds
+                ++head_fid;    // atomic
+                utility::LogDebug(
+                        "Device Frame {}, Request {}, output frame {}",
+                        dev_color_fid, nreq, fid);
+            } else {
+                utility::LogInfo("frame_reader_thread EOF reached");
+                is_eof_ = true;
+                return;
+            }
+            if (!is_opened_) break;  // exit if SeekTimestamp() / Close()
+        }
+        rs_device.pause();  // Pause playback to prevent frame drops
+        utility::LogInfo(
+                "frame_reader_thread pause reading tail_fid={}, head_fid={}",
+                tail_fid, head_fid);
+        need_frames.wait(lock, [this] {
+            return !is_opened_ ||
+                   head_fid < tail_fid + frame_buffer_.size() / 2;
+        });
+    }
+} catch (const rs2::error &e) {
+    utility::LogError("Realsense function call {}({}) error.",
+                      e.get_failed_function(), e.get_failed_args());
+}
+
+bool RSBagReader::IsEOF() const { return is_eof_ && tail_fid == head_fid; }
+
+t::geometry::RGBDImage RSBagReader::NextFrame() {
+    if (!IsOpened()) {
+        utility::LogError("Null file handler. Please call Open().");
+    }
+    if (!is_eof_ && head_fid < tail_fid + frame_buffer_.size() / 2)
+        need_frames.notify_one();
+
+    while (!is_eof_ &&
+           tail_fid == head_fid) {  // spin wait for frame_reader_thread
+        std::this_thread::sleep_for(
+                std::chrono::duration<double>(1 / metadata_.fps_));
+    }
+    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
+    if (is_eof_ && tail_fid == head_fid)  // no more frames
+        return t::geometry::RGBDImage();
+    else
+        return frame_buffer_[(tail_fid++) %
+                             frame_buffer_.size()];  // tail_fid < head_fid here
+}
+
 bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
     if (!IsOpened()) {
         utility::LogWarning("Null file handler. Please call Open().");
@@ -164,16 +270,7 @@ bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
 
     auto rs_device =
             pipe_->get_active_profile().get_device().as<rs2::playback>();
-    try {
-        if (is_eof_)    // restart streaming
-            Open(rs_device.file_name());
-        rs_device.seek(std::chrono::microseconds(timestamp));
-    } catch (const rs2::error &) {
-        utility::LogWarning("Unable to go to timestamp {}", timestamp);
-        return false;
-    }
-    dev_color_fid = 0;
-    is_eof_ = false;
+    Open(rs_device.file_name(), timestamp);  // restart streaming
     return true;
 }
 
@@ -182,57 +279,9 @@ uint64_t RSBagReader::GetTimestamp() const {
         utility::LogWarning("Null file handler. Please call Open().");
         return UINT64_MAX;
     }
-    return pipe_->get_active_profile()
-                   .get_device()
-                   .as<rs2::playback>()
-                   .get_position() /
-           1000;  // Convert nanoseconds -> microseconds
-}
-
-// TODO: Implement frame buffer (single producer single consumer concurrent
-// queue)
-t::geometry::RGBDImage RSBagReader::NextFrame() {
-    if (!IsOpened()) {
-        utility::LogError("Null file handler. Please call Open().");
-    }
-    const uint64_t RS2_PLAYBACK_TIMEOUT_MS = 10*1000.0/metadata_.fps_;
-    auto &frames_ = *pframes_;
-    uint64_t next_dev_color_fid = 0;
-    // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
-    auto rs_device =
-        pipe_->get_active_profile().get_device().as<rs2::playback>();
-    rs_device.resume();
-    while(next_dev_color_fid <= dev_color_fid &&
-            pipe_->try_wait_for_frames(&frames_, RS2_PLAYBACK_TIMEOUT_MS)) {
-        ++nreq;
-        next_dev_color_fid =
-            frames_.get_color_frame().get_frame_number();
-    }
-    rs_device.pause();
-    ++fid;
-    if (next_dev_color_fid <= dev_color_fid) {
-        utility::LogInfo("EOF reached");
-        is_eof_ = true;
-        current_frame_.Clear();
-    } else {
-        dev_color_fid = next_dev_color_fid;
-        utility::LogDebug("Device Frame {}, Request {}, output frame {}", dev_color_fid, nreq, fid);
-
-        frames_ = align_to_color_->process(frames_);
-        const auto &color_frame = frames_.get_color_frame();
-        // Copy frame data to Tensors
-        current_frame_.color_ = core::Tensor(
-                static_cast<const uint8_t *>(color_frame.get_data()),
-                {color_frame.get_height(), color_frame.get_width(),
-                channels_color_},
-                dt_color_);
-        const auto &depth_frame = frames_.get_depth_frame();
-        current_frame_.depth_ = core::Tensor(
-                static_cast<const uint16_t *>(depth_frame.get_data()),
-                {depth_frame.get_height(), depth_frame.get_width()}, dt_depth_);
-
-    }
-    return current_frame_;
+    return tail_fid == 0
+                   ? 0
+                   : frame_position_us_[(tail_fid - 1) % frame_buffer_.size()];
 }
 
 }  // namespace io

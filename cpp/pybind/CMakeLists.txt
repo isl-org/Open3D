@@ -46,6 +46,11 @@ if (NOT BUILD_AZURE_KINECT)
         "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
 endif()
 
+if (NOT BUILD_LIBREALSENSE)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/t/io/sensor.cpp")
+endif()
+
 if (NOT BUILD_RPC_INTERFACE)
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/io/rpc.cpp"

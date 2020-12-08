@@ -26,8 +26,11 @@
 
 #pragma once
 
+#include <atomic>
 #include <string>
+#include <thread>
 #include <unordered_map>
+#include <vector>
 
 #include "open3d/io/sensor/RGBDSensorConfig.h"
 #include "open3d/t/io/sensor/RGBDVideoReader.h"
@@ -57,7 +60,8 @@ namespace io {
  */
 class RSBagReader : public RGBDVideoReader {
 public:
-    RSBagReader();
+    static const size_t DEFAULT_BUFFER_SIZE = 64;
+    RSBagReader(size_t buffer_size = DEFAULT_BUFFER_SIZE);
     RSBagReader(const RSBagReader &) = delete;
     RSBagReader &operator=(const RSBagReader &) = delete;
     virtual ~RSBagReader();
@@ -65,7 +69,7 @@ public:
     /// Check If the RSBag file is opened.
     virtual bool IsOpened() const override { return is_opened_; }
     /// Check if the RSBag file is all read.
-    virtual bool IsEOF() const override { return is_eof_; }
+    virtual bool IsEOF() const override;
 
     /// Open an RGBD Video playback.
     ///
@@ -91,18 +95,30 @@ private:
     core::Dtype dt_color_, dt_depth_;
     uint8_t channels_color_;
 
-    bool is_eof_ = false, is_opened_ = false;
-    t::geometry::RGBDImage current_frame_;
-    uint64_t dev_color_fid = 0;
-    uint64_t  nreq = 0, fid = 0;    // debug
+    bool is_eof_ = false,  ///< Write by frame_reader_thread
+            is_opened_ = false;
+
+    std::vector<t::geometry::RGBDImage> frame_buffer_;
+    std::vector<uint64_t> frame_position_us_;
+    std::atomic<uint64_t> head_fid{0},  ///< Write by frame_reader_thread.
+                                        ///< Invalid buffer position.
+            tail_fid{0};                ///< Next unread frame position
+    std::condition_variable need_frames;
+    void fill_frame_buffer(uint64_t start_time_us = 0);
+    std::thread frame_reader_thread;
 
     std::unique_ptr<rs2::pipeline> pipe_;
     std::unique_ptr<rs2::align> align_to_color_;
-    std::unique_ptr<rs2::frameset> pframes_;
 
     Json::Value GetMetadataJson();
+    bool Open(const std::string &filename, uint64_t start_time_us);
     std::string GetTagInMetadata(const std::string &tag_name);
 };
 }  // namespace io
 }  // namespace t
 }  // namespace open3d
+
+/* frame_acq thread jobs:
+ *  - Fill frame_buffer_
+ *  - seek
+ */

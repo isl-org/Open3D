@@ -48,9 +48,23 @@ public:
     }
 };
 
+// Geometry2D trampoline class
+template <class Geometry2DBase = Geometry2D>
+class PyGeometry2D : public PyGeometry<Geometry2DBase> {
+public:
+    using PyGeometry<Geometry2DBase>::PyGeometry;
+    core::Tensor GetMinBound() const override {
+        PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
+    }
+    core::Tensor GetMaxBound() const override {
+        PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
+    }
+};
+
 void pybind_geometry(py::module& m);
 void pybind_geometry_class(py::module& m);
 void pybind_tensormap(py::module& m);
+void pybind_image(py::module &m);
 void pybind_pointcloud(py::module& m);
 
 }  // namespace geometry

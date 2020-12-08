@@ -65,6 +65,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             auto color_file =
                     fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
             WriteImage(color_file, im_color);
+            utility::LogInfo("Written color image to {}", color_file);
         }
 #pragma omp section
         {
@@ -72,9 +73,11 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             auto depth_file =
                     fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
             WriteImage(depth_file, im_depth);
+            utility::LogInfo("Written depth image to {}", depth_file);
         }
     }
-    utility::LogInfo("Written {} depth and color images to {}/{{depth,color}}/", idx, frame_path);
+    utility::LogInfo("Written {} depth and color images to {}/{{depth,color}}/",
+                     idx, frame_path);
 }
 
 std::shared_ptr<RGBDVideoReader> RGBDVideoReader::Create(
