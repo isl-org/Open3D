@@ -100,6 +100,10 @@ public:
         downsample_threshold_ = min_points;
     }
 
+    // Instructs LineSetBuffersBuilder to build lines out of triangles for wide
+    // lines shader.
+    virtual void SetWideLines() { wide_lines_ = true; }
+
     virtual void SetAdjustColorsForSRGBToneMapping(bool adjust) {
         adjust_colors_for_srgb_tonemapping_ = adjust;
     }
@@ -109,6 +113,7 @@ public:
 
 protected:
     size_t downsample_threshold_ = SIZE_MAX;
+    bool wide_lines_ = false;
     bool adjust_colors_for_srgb_tonemapping_ = true;
 
     static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr);
@@ -170,6 +175,8 @@ public:
     filament::Box ComputeAABB() override;
 
 private:
+    Buffers ConstructThinLines();
+
     const geometry::LineSet& geometry_;
 };
 
