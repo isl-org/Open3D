@@ -73,38 +73,22 @@ core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
     transformation.AssertShape({4, 4});
-    // Use reserve() keyword.
-    core::Tensor transform;
-    if (transformation.GetDevice() != device_) {
-        utility::LogWarning("Attribute device {} != Pointcloud's device {}.",
-                            transformation.GetDevice().ToString(),
-                            device_.ToString());
-        transform = transformation.Copy(device_);  // Copy to the device.
-    } else
-        transform = transformation;  // Use Shallow Copy, if on the same device.
+    transformation.AssertDevice(device_);
+
+    core::Tensor R = transformation.Slice(0, 0, 3).Slice(1, 0, 3);
+    core::Tensor t = transformation.Slice(0, 0, 3).Slice(1, 3, 4);
+    core::Tensor s = transformation.Slice(0, 3, 4).Slice(1, 3, 4);
+    R.Mul_(s);
+
+    // TODO: consider adding a new op extending MatMul to support `AB + C`
+    // GEMM operation. Also, a parallel joint optimimsed kernel for
+    // independent MatMul operation with common matrix like AB and AC
+    // with fusion based cache optimisation
 
     core::Tensor &points = GetPoints();
-
-    //  Extract s, R, t from Transformation
-    //  T (4x4) =   | R(3x3)  t(3x1) |
-    //              | O(1x3)  s(1x1) |  for Rigid Transformation s = 1
-
-    core::Tensor R = transform.Slice(0, 0, 3).Slice(1, 0, 3);
-    core::Tensor t = transform.Slice(0, 0, 3).Slice(1, 3, 4);
-
-    // To be considered for future opitmisation:
-    // - Since rotation operation is common for both points and normals
-    //   in future a parallel joint optimised kernel can be defined.
-    //   [Cache Optimisation]
-    // - After tensor: vertical stack operation is implemented,
-    //   performance of P = T*P vs P = R(P) + t is to be compared
-    //   for sequencial and parallel calculation.
-
-    //  points (3xN) = s.R(points) + t
     points = (R.Matmul(points.T())).Add_(t).T();
 
     if (HasPointNormals()) {
-        // for normal: n.T() = R*n.T()
         core::Tensor &normals = GetPointNormals();
         normals = (R.Matmul(normals.T())).T();
     }
@@ -114,15 +98,9 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
 PointCloud &PointCloud::Translate(const core::Tensor &translation,
                                   bool relative) {
     translation.AssertShape({3});
-    core::Tensor transform;
-    if (translation.GetDevice() != device_) {
-        utility::LogWarning("Attribute device {} != Pointcloud's device {}.",
-                            translation.GetDevice().ToString(),
-                            device_.ToString());
-        transform = translation.Copy(device_);  // Copy to 'this' device.
-    } else
-        transform = translation;  // Use Shallow Copy, if on the same device.
+    translation.AssertDevice(device_);
 
+    core::Tensor transform = translation;
     if (!relative) {
         transform -= GetCenter();
     }
@@ -132,6 +110,8 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
 
 PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
     center.AssertShape({3});
+    center.AssertDevice(device_);
+
     core::Tensor points = GetPoints();
     points.Sub_(center).Mul_(scale).Add_(center);
     return *this;
@@ -140,23 +120,15 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
     R.AssertShape({3, 3});
+    R.AssertDevice(device_);
     center.AssertShape({3});
-    core::Tensor Rot;
-    if (R.GetDevice() != device_) {
-        utility::LogWarning("Attribute device {} != Pointcloud's device {}.",
-                            R.GetDevice().ToString(), device_.ToString());
-        Rot = R.Copy(device_);  // Copy to 'this' device.
-    } else
-        Rot = R;  // Use Shallow Copy, if on the same device.
+    center.AssertDevice(device_);
 
+    core::Tensor Rot = R;
     core::Tensor &points = GetPoints();
-
-    // Create 'RotateAboutOrigin' function for Rotating about 0,0,0 to save
-    // unnecessary computation for subtracting center.
     points = ((Rot.Matmul((points.Sub_(center)).T())).T()).Add_(center);
 
     if (HasPointNormals()) {
-        // for normal: n.T() = R*n.T()
         core::Tensor &normals = GetPointNormals();
         normals = (Rot.Matmul(normals.T())).T();
     }
