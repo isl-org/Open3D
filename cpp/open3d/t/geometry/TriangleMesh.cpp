@@ -33,7 +33,6 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 
 namespace open3d {
 namespace t {
@@ -44,14 +43,14 @@ TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
                            const core::Device &device)
     : Geometry(Geometry::GeometryType::TriangleMesh, 3),
       device_(device),
-      vertex_attr_(TensorListMap("vertices")),
-      triangle_attr_(TensorListMap("triangles")) {
-    SetVertices(core::TensorList({3}, vertex_dtype, device_));
-    SetTriangles(core::TensorList({3}, triangle_dtype, device_));
+      vertex_attr_(TensorMap("vertices")),
+      triangle_attr_(TensorMap("triangles")) {
+    SetVertices(core::Tensor({0, 3}, vertex_dtype, device_));
+    SetTriangles(core::Tensor({0, 3}, triangle_dtype, device_));
 }
 
-TriangleMesh::TriangleMesh(const core::TensorList &vertices,
-                           const core::TensorList &triangles)
+TriangleMesh::TriangleMesh(const core::Tensor &vertices,
+                           const core::Tensor &triangles)
     : TriangleMesh(vertices.GetDtype(), triangles.GetDtype(), [&]() {
           if (vertices.GetDevice() != triangles.GetDevice()) {
               utility::LogError(
@@ -75,7 +74,7 @@ TriangleMesh TriangleMesh::FromLegacyTrangleMesh(
     TriangleMesh mesh(vertex_dtype, triangle_dtype, device);
 
     if (mesh_legacy.HasVertices()) {
-        mesh.SetVertices(core::eigen_converter::EigenVector3dVectorToTensorList(
+        mesh.SetVertices(core::eigen_converter::EigenVector3dVectorToTensor(
                 mesh_legacy.vertices_, vertex_dtype, device));
     } else {
         utility::LogWarning(
@@ -83,20 +82,18 @@ TriangleMesh TriangleMesh::FromLegacyTrangleMesh(
                 "with default dtype and device will be created.");
     }
     if (mesh_legacy.HasVertexColors()) {
-        mesh.SetVertexColors(
-                core::eigen_converter::EigenVector3dVectorToTensorList(
-                        mesh_legacy.vertex_colors_, vertex_dtype, device));
+        mesh.SetVertexColors(core::eigen_converter::EigenVector3dVectorToTensor(
+                mesh_legacy.vertex_colors_, vertex_dtype, device));
     }
     if (mesh_legacy.HasVertexNormals()) {
         mesh.SetVertexNormals(
-                core::eigen_converter::EigenVector3dVectorToTensorList(
+                core::eigen_converter::EigenVector3dVectorToTensor(
                         mesh_legacy.vertex_normals_, vertex_dtype, device));
     }
 
     if (mesh_legacy.HasTriangles()) {
-        mesh.SetTriangles(
-                core::eigen_converter::EigenVector3iVectorToTensorList(
-                        mesh_legacy.triangles_, triangle_dtype, device));
+        mesh.SetTriangles(core::eigen_converter::EigenVector3iVectorToTensor(
+                mesh_legacy.triangles_, triangle_dtype, device));
     }
 
     return mesh;
@@ -106,8 +103,7 @@ TriangleMesh TriangleMesh::FromLegacyTrangleMesh(
 open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
     open3d::geometry::TriangleMesh mesh_legacy;
     if (HasVertices()) {
-        core::Tensor vertices =
-                GetVertices().AsTensor().Copy(core::Device("CPU:0"));
+        core::Tensor vertices = GetVertices().Copy(core::Device("CPU:0"));
         int64_t N = vertices.GetShape()[0];
         mesh_legacy.vertices_.resize(N);
         for (int64_t i = 0; i < N; ++i) {
@@ -117,8 +113,7 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
     }
 
     if (HasVertexNormals()) {
-        core::Tensor normals =
-                GetVertexNormals().AsTensor().Copy(core::Device("CPU:0"));
+        core::Tensor normals = GetVertexNormals().Copy(core::Device("CPU:0"));
         int64_t N = normals.GetShape()[0];
         mesh_legacy.vertex_normals_.resize(N);
         for (int64_t i = 0; i < N; ++i) {
@@ -128,8 +123,7 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
     }
 
     if (HasTriangles()) {
-        core::Tensor triangles =
-                GetTriangles().AsTensor().Copy(core::Device("CPU:0"));
+        core::Tensor triangles = GetTriangles().Copy(core::Device("CPU:0"));
         int64_t N = triangles.GetShape()[0];
         mesh_legacy.triangles_.resize(N);
         for (int64_t i = 0; i < N; ++i) {

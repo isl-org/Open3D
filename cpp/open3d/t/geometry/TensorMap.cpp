@@ -24,34 +24,52 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/TensorMap.h"
 
-#include "pybind/docstring.h"
-#include "pybind/t/geometry/geometry.h"
+#include <fmt/format.h>
+
+#include <sstream>
+#include <string>
+#include <unordered_map>
+
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_geometry_class(py::module& m) {
-    py::class_<Geometry, PyGeometry<Geometry>, std::unique_ptr<Geometry>>
-            geometry(m, "Geometry", "The base geometry class.");
-
-    geometry.def("clear", &Geometry::Clear,
-                 "Clear all elements in the geometry.")
-            .def("is_empty", &Geometry::IsEmpty,
-                 "Returns ``True`` iff the geometry is empty.");
-    docstring::ClassMethodDocInject(m, "Geometry", "clear");
-    docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
+bool TensorMap::IsSizeSynchronized() const {
+    const int64_t primary_size = GetPrimarySize();
+    for (auto& kv : *this) {
+        if (kv.second.GetLength() != primary_size) {
+            return false;
+        }
+    }
+    return true;
 }
 
-void pybind_geometry(py::module& m) {
-    py::module m_submodule = m.def_submodule("geometry");
+void TensorMap::AssertPrimaryKeyInMapOrEmpty() const {
+    if (this->size() != 0 && this->count(primary_key_) == 0) {
+        utility::LogError("TensorMap does not contain primary key \"{}\".",
+                          primary_key_);
+    }
+}
 
-    pybind_geometry_class(m_submodule);
-    pybind_tensormap(m_submodule);
-    pybind_pointcloud(m_submodule);
-    pybind_image(m_submodule);
+void TensorMap::AssertSizeSynchronized() const {
+    if (!IsSizeSynchronized()) {
+        const int64_t primary_size = GetPrimarySize();
+        std::stringstream ss;
+        ss << fmt::format("Primary Tensor \"{}\" has size {}, however: \n",
+                          primary_key_, primary_size);
+        for (auto& kv : *this) {
+            if (kv.first != primary_key_ &&
+                kv.second.GetLength() != primary_size) {
+                fmt::format("    > Tensor \"{}\" has size {}.\n", kv.first,
+                            kv.second.GetLength());
+            }
+        }
+        utility::LogError("{}", ss.str());
+    }
 }
 
 }  // namespace geometry

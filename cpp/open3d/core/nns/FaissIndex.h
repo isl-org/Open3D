@@ -63,6 +63,11 @@ public:
     // dataset_points must be float32.
     bool SetTensorData(const Tensor &dataset_points) override;
 
+    bool SetTensorData(const Tensor &dataset_points, double radius) override {
+        utility::LogError(
+                "FaissIndex::SetTensorData with radius not implemented.");
+    }
+
     // query_points must be float32.
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                         int knn) const override;

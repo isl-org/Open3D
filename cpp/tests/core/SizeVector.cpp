@@ -24,36 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/Geometry.h"
+#include "open3d/core/SizeVector.h"
 
-#include "pybind/docstring.h"
-#include "pybind/t/geometry/geometry.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
-namespace t {
-namespace geometry {
+namespace tests {
 
-void pybind_geometry_class(py::module& m) {
-    py::class_<Geometry, PyGeometry<Geometry>, std::unique_ptr<Geometry>>
-            geometry(m, "Geometry", "The base geometry class.");
-
-    geometry.def("clear", &Geometry::Clear,
-                 "Clear all elements in the geometry.")
-            .def("is_empty", &Geometry::IsEmpty,
-                 "Returns ``True`` iff the geometry is empty.");
-    docstring::ClassMethodDocInject(m, "Geometry", "clear");
-    docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
+TEST(DynamicSizeVector, Constructor) {
+    core::DynamicSizeVector dsv{utility::nullopt, 3};
+    EXPECT_FALSE(dsv[0].has_value());
+    EXPECT_EQ(dsv[1].value(), 3);
 }
 
-void pybind_geometry(py::module& m) {
-    py::module m_submodule = m.def_submodule("geometry");
-
-    pybind_geometry_class(m_submodule);
-    pybind_tensormap(m_submodule);
-    pybind_pointcloud(m_submodule);
-    pybind_image(m_submodule);
+TEST(DynamicSizeVector, IsCompatible) {
+    EXPECT_TRUE(core::SizeVector({}).IsCompatible({}));
+    EXPECT_FALSE(core::SizeVector({}).IsCompatible({utility::nullopt}));
+    EXPECT_TRUE(core::SizeVector({10, 3}).IsCompatible({utility::nullopt, 3}));
+    EXPECT_FALSE(core::SizeVector({10, 3}).IsCompatible({utility::nullopt, 5}));
 }
 
-}  // namespace geometry
-}  // namespace t
+}  // namespace tests
 }  // namespace open3d

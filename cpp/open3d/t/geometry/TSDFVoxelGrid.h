@@ -37,7 +37,7 @@
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/geometry/TensorListMap.h"
+#include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 
 namespace open3d {

@@ -48,19 +48,16 @@ TSDFVoxelGrid::TSDFVoxelGrid(
       block_resolution_(block_resolution),
       block_count_(block_count),
       device_(device) {
-    int total_channels = 0;
+    int64_t total_channels = 0;
     for (auto &kv : attr_channel_map_) {
         total_channels += kv.second;
     }
-    core::Dtype key_dtype(core::Dtype::DtypeCode::Object,
-                          core::Dtype::Int32.ByteSize() * 3, "_hash_k");
-    core::Dtype val_dtype(core::Dtype::DtypeCode::Object,
-                          core::Dtype::Float32.ByteSize() * block_resolution_ *
-                                  block_resolution_ * block_resolution_ *
-                                  total_channels,
-                          "_hash_v");
-    block_hashmap_ = std::make_shared<core::Hashmap>(block_count_, key_dtype,
-                                                     val_dtype, device);
+    block_hashmap_ = std::make_shared<core::Hashmap>(
+            block_count_, core::Dtype::Int32, core::Dtype::Float32,
+            core::SizeVector{3},
+            core::SizeVector{block_resolution_, block_resolution_,
+                             block_resolution_, total_channels},
+            device);
 }
 
 void TSDFVoxelGrid::Integrate(const Image &depth,
@@ -75,7 +72,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     // Touch blocks
     std::unordered_map<std::string, core::Tensor> srcs = {
-            {"points", pcd.GetPoints().AsTensor()},
+            {"points", pcd.GetPoints()},
             {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
                                         {}, core::Dtype::Int64, device_)},
             {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
@@ -98,10 +95,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     // Integration
     srcs = {{"depth", depth.AsTensor()},
             {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
-            {"block_keys",
-             core::Hashmap::ReinterpretBufferTensor(
-                     block_hashmap_->GetKeyTensor(),
-                     {block_hashmap_->GetCapacity(), 3}, core::Dtype::Int32)},
+            {"block_keys", block_hashmap_->GetKeyTensor()},
             {"intrinsics", intrinsics.Copy(device_)},
             {"extrinsics", extrinsics.Copy(device_)},
             {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
@@ -118,22 +112,16 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                                        core::Dtype::Float32, device_)}};
 
     // In-place modified output
-    dsts = {{"block_values",
-             core::Hashmap::ReinterpretBufferTensor(
-                     block_hashmap_->GetValueTensor(),
-                     {block_hashmap_->GetCapacity(), block_resolution_,
-                      block_resolution_, block_resolution_, 2},
-                     core::Dtype::Float32)}};
+    dsts = {{"block_values", block_hashmap_->GetValueTensor()}};
 
     core::kernel::GeneralEW(srcs, dsts,
                             core::kernel::GeneralEWOpCode::TSDFIntegrate);
+    utility::LogInfo("hashmap size = {}", block_hashmap_->Size());
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
-    int64_t num_blocks = block_hashmap_->Size();
-    core::Tensor active_addrs({num_blocks}, core::Dtype::Int32, device_);
-    block_hashmap_->GetActiveIndices(
-            static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
+    core::Tensor active_addrs;
+    block_hashmap_->GetActiveIndices(active_addrs);
     core::Tensor active_nb_addrs, active_nb_masks;
     std::tie(active_nb_addrs, active_nb_masks) =
             BufferRadiusNeighbors(active_addrs);
@@ -143,16 +131,8 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
             {"indices", active_addrs.To(core::Dtype::Int64)},
             {"nb_indices", active_nb_addrs.To(core::Dtype::Int64)},
             {"nb_masks", active_nb_masks},
-            {"block_keys",
-             core::Hashmap::ReinterpretBufferTensor(
-                     block_hashmap_->GetKeyTensor(),
-                     {block_hashmap_->GetCapacity(), 3}, core::Dtype::Int32)},
-            {"block_values",
-             core::Hashmap::ReinterpretBufferTensor(
-                     block_hashmap_->GetValueTensor(),
-                     {block_hashmap_->GetCapacity(), block_resolution_,
-                      block_resolution_, block_resolution_, 2},
-                     core::Dtype::Float32)},
+            {"block_keys", block_hashmap_->GetKeyTensor()},
+            {"block_values", block_hashmap_->GetValueTensor()},
             {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
                                         {}, core::Dtype::Int64, device_)},
             {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
@@ -167,8 +147,8 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
                 "expected "
                 "to return.");
     }
-    auto pcd = PointCloud(core::TensorList::FromTensor(dsts.at("points")));
-    pcd.SetPointNormals(core::TensorList::FromTensor(dsts.at("normals")));
+    auto pcd = PointCloud(dsts.at("points"));
+    pcd.SetPointNormals(dsts.at("normals"));
     return pcd;
 }
 
@@ -176,9 +156,8 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
     int64_t num_blocks = block_hashmap_->Size();
 
     // Query active blocks and their nearest neighbors.
-    core::Tensor active_addrs({num_blocks}, core::Dtype::Int32, device_);
-    block_hashmap_->GetActiveIndices(
-            static_cast<core::addr_t *>(active_addrs.GetDataPtr()));
+    core::Tensor active_addrs;
+    block_hashmap_->GetActiveIndices(active_addrs);
     core::Tensor active_nb_addrs, active_nb_masks;
     std::tie(active_nb_addrs, active_nb_masks) =
             BufferRadiusNeighbors(active_addrs);
@@ -200,16 +179,8 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
             {"inv_indices", inverse_index_map},
             {"nb_indices", active_nb_addrs.To(core::Dtype::Int64)},
             {"nb_masks", active_nb_masks},
-            {"block_keys",
-             core::Hashmap::ReinterpretBufferTensor(
-                     block_hashmap_->GetKeyTensor(),
-                     {block_hashmap_->GetCapacity(), 3}, core::Dtype::Int32)},
-            {"block_values",
-             core::Hashmap::ReinterpretBufferTensor(
-                     block_hashmap_->GetValueTensor(),
-                     {block_hashmap_->GetCapacity(), block_resolution_,
-                      block_resolution_, block_resolution_, 2},
-                     core::Dtype::Float32)},
+            {"block_keys", block_hashmap_->GetKeyTensor()},
+            {"block_values", block_hashmap_->GetValueTensor()},
             {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
                                         {}, core::Dtype::Int64, device_)},
             {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
@@ -220,18 +191,14 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
     core::kernel::GeneralEW(srcs, dsts,
                             core::kernel::GeneralEWOpCode::MarchingCubes);
 
-    TriangleMesh mesh(core::TensorList::FromTensor(dsts.at("vertices")),
-                      core::TensorList::FromTensor(dsts.at("triangles")));
-    mesh.SetVertexNormals(core::TensorList::FromTensor(dsts.at("normals")));
+    TriangleMesh mesh(dsts.at("vertices"), dsts.at("triangles"));
+    mesh.SetVertexNormals(dsts.at("normals"));
     return mesh;
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
         const core::Tensor &active_addrs) {
-    core::Tensor key_buffer_int3_tensor =
-            block_hashmap_->ReinterpretBufferTensor(
-                    block_hashmap_->GetKeyTensor(),
-                    {block_hashmap_->GetCapacity(), 3}, core::Dtype::Int32);
+    core::Tensor key_buffer_int3_tensor = block_hashmap_->GetKeyTensor();
 
     core::Tensor active_keys = key_buffer_int3_tensor.IndexGet(
             {active_addrs.To(core::Dtype::Int64)});

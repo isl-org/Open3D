@@ -138,9 +138,9 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
         GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
         Tensor active_indices = active_addrs.To(Dtype::Int64);
-        active_keys = this->buffer_->GetKeyTensor().IndexGet({active_indices});
+        active_keys = this->buffer_->GetKeyBuffer().IndexGet({active_indices});
         active_values =
-                this->buffer_->GetValueTensor().IndexGet({active_indices});
+                this->buffer_->GetValueBuffer().IndexGet({active_indices});
     }
 
     float avg_capacity_per_bucket =
@@ -324,9 +324,9 @@ void CUDAHashmap<Hash, KeyEq>::Allocate(int64_t bucket_count,
                                             this->dsize_value_, this->device_);
     buffer_ctx_.HostAllocate(this->device_);
     buffer_ctx_.Setup(this->capacity_, this->dsize_key_, this->dsize_value_,
-                      this->buffer_->GetKeyTensor(),
-                      this->buffer_->GetValueTensor(),
-                      this->buffer_->GetHeapTensor());
+                      this->buffer_->GetKeyBuffer(),
+                      this->buffer_->GetValueBuffer(),
+                      this->buffer_->GetHeap());
     buffer_ctx_.Reset(this->device_);
 
     // Allocate buffer for linked list nodes.

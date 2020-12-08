@@ -162,9 +162,8 @@ void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Hashmap pcd_block_hashmap(
             total_block_count,
-            core::Dtype(core::Dtype::DtypeCode::Object,
-                        core::Dtype::Int32.ByteSize() * 3, "_hash_k"),
-            core::Dtype::Int32, device);
+            core::Dtype::Int32,
+            core::Dtype::Int32, {3}, {1}, device);
     core::Tensor block_addrs, block_masks;
     pcd_block_hashmap.Activate(block_coordi.Slice(0, 0, count.Item<int>()),
                                block_addrs, block_masks);
