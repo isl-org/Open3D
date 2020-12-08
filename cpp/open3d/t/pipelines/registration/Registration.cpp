@@ -43,7 +43,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         open3d::core::nns::NearestNeighborSearch &target_nns,
         double max_correspondence_distance,
         const core::Tensor &transformation) {
-
     core::Device device = source.GetDevice();
 
     transformation.AssertShape({4, 4});
