@@ -47,8 +47,53 @@ std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
     return eigen_vector;
 }
 
+std::vector<Eigen::Vector3i> TensorToEigenVector3iVector(
+        const core::Tensor &tensor) {
+    tensor.AssertShapeCompatible({utility::nullopt, 3});
+    core::Tensor t = tensor.Contiguous().To(core::Dtype::Int32, /*copy=*/false);
+    // Eigen::Vector3i is not a "fixed-size vectorizable Eigen type" thus it is
+    // safe to write directly into std vector memory, see:
+    // https://eigen.tuxfamily.org/dox/group__TopicStlContainers.html.
+    std::vector<Eigen::Vector3i> eigen_vector(t.GetLength());
+    MemoryManager::MemcpyToHost(eigen_vector.data(), t.GetDataPtr(),
+                                t.GetDevice(),
+                                t.GetDtype().ByteSize() * t.NumElements());
+    return eigen_vector;
+}
+
 core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
+        core::Dtype dtype,
+        const core::Device &device) {
+    // Init CPU Tensor.
+    int64_t num_values = static_cast<int64_t>(values.size());
+    core::Tensor tensor_cpu =
+            core::Tensor::Empty({num_values, 3}, dtype, Device("CPU:0"));
+
+    // Fill Tensor. This takes care of dtype conversion at the same time.
+    core::Indexer indexer({tensor_cpu}, tensor_cpu,
+                          core::DtypePolicy::ALL_SAME);
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        core::kernel::CPULauncher::LaunchIndexFillKernel(
+                indexer, [&](void *ptr, int64_t workload_idx) {
+                    // Fills the flattened tensor tensor_cpu[:] with dtype
+                    // casting. tensor_cpu[:][i] corresponds to the (i/3)-th
+                    // element's (i%3)-th coordinate value.
+                    *static_cast<scalar_t *>(ptr) = static_cast<scalar_t>(
+                            values[workload_idx / 3](workload_idx % 3));
+                });
+    });
+
+    // Copy Tensor to device if necessary.
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        return tensor_cpu;
+    } else {
+        return tensor_cpu.Copy(device);
+    }
+}
+
+core::Tensor EigenVector3iVectorToTensor(
+        const std::vector<Eigen::Vector3i> &values,
         core::Dtype dtype,
         const core::Device &device) {
     // Init CPU Tensor.
