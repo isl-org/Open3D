@@ -40,25 +40,35 @@ namespace registration {
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const core::Tensor &corres) const {
+        const core::Tensor &corres,
+        const int corres_num) const {
     // if (corres.empty()) return 0.0;
+
+    // The current implementaion assumes, the dim of CorrespondeceSet is Nx1
+    // the value at index i, is the corresponding index of target and
+    // and the index i itself is assumed to be index of source
+    // TODO: after Tensor Vertical Stacking is implemented,
+    // stack index 0 to N-1, [New shape of CorrespondenceSet = Nx2]
+    // and change the implementations of TransformationEstimation functions
+    // accordingly
+    if (corres.NumDims() != 1) {
+        utility::LogError(
+                "Correspondance Tesor must be of shape {Correspondences, 1}.");
+    }
+
     double err = 0.0;
-    // Vectorised
-    //  source, target -> shared memory
-    //  error_ -> shared memory [to be used for reduction]
-    //
-    //  error_ += (source.points_[corres[threadIdx][0]] -
-    //              target.points_[corres[threadIdx][1]]).squaredNorm();
-    //
+
     // Existing CPU Implementation:
     // for (const auto &c : corres) {
     //     err += (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
     // }
 
-    // error = (source.IndexGet({corres[0]}) -
-    // target.IndexGet({corres[1]}))*(source.IndexGet({corres[0]}) -
-    // target.IndexGet({corres[1]}))
-    //
+    // TODO: Tensor - squaredNormal()
+    core::Tensor error_t =
+            (source.GetPoints() - target.GetPoints().IndexGet({corres}));
+    error_t.Mul_(error_t);
+    err = error_t.Sum({0, 0}).Item<double_t>();
+
     // return std::sqrt(err / (double)corres.size());
     return err;
 }
@@ -66,7 +76,8 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const core::Tensor &corres) const {
+        const core::Tensor &corres,
+        const int corres_num) const {
     // if (corres.empty()) return core::Tensor::Eye(4,
     //                              core::Dtype::Float64,
     //                              core::Device("CPU:0"));
@@ -92,7 +103,8 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
 double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const core::Tensor &corres) const {
+        const core::Tensor &corres,
+        const int corres_num) const {
     // if (corres.empty() || !target.HasPointNormals()) return 0.0;
     double err = 0.0;
     // double r;
@@ -112,13 +124,21 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     //     err += r * r;
     // }
     // return std::sqrt(err / (double)corres.size());
+
+    core::Tensor error_t =
+            (source.GetPoints() - target.GetPoints().IndexGet({corres[0]}))
+                    .Matmul(target.GetPointNormals().IndexGet({corres[0]}));
+    error_t.Mul_(error_t);
+    err = error_t.Sum({0, 0}).Item<double_t>();
+
     return err;
 }
 
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const core::Tensor &corres) const {
+        const core::Tensor &corres,
+        const int corres_num) const {
     // if (corres.empty() || !target.HasPointNormals())
     //     return core::Tensor::Eye(4,
     //                          core::Dtype::Float64, core::Device("CPU:0"));

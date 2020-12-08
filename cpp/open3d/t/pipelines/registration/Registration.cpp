@@ -44,33 +44,21 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         double max_correspondence_distance,
         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-    geometry::PointCloud source_ = source;
-    geometry::PointCloud target_;
-    core::Tensor transform;
-
+    transformation.AssertShape({4, 4});
+    transformation.AssertDevice(device);
     if (target.GetDevice() != device) {
-        utility::LogWarning(
+        utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
-
-        // Copy to the device.
-        // [TO DO: Implement a dedicated Copy() function in PointClout]
-        target_.GetPoints() = target.GetPoints().Copy(device);
-        if (target.HasPointNormals())
-            target_.GetPointNormals() = target.GetPointNormals().Copy(device);
-    } else {  // Use Shallow Copy, if on the same device.
-        target_ = target;
     }
 
-    if (transformation.GetDevice() != device) {
-        utility::LogWarning(
-                "Transformation device {} != Pointcloud's device {}.",
-                transformation.GetDevice().ToString(), device.ToString());
-        transform = transformation.Copy(device);  // Copy to the device.
-    } else
-        transform = transformation;  // Use Shallow Copy, if on the same device.
+    if (target.GetDevice() != device) {
+        utility::LogError(
+                "Target Pointcloud device {} != Source Pointcloud's device {}.",
+                target.GetDevice().ToString(), device.ToString());
+    }
 
-    RegistrationResult result(transform);
+    RegistrationResult result(transformation);
     if (max_correspondence_distance <= 0.0) {
         return result;
     }
@@ -88,7 +76,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     // Tensor implementation of HybridSearch takes square of max_corr_dist
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
-    auto result_nns = target_nns.HybridSearch(source_.GetPoints(),
+    auto result_nns = target_nns.HybridSearch(source.GetPoints(),
                                               max_correspondence_distance, 1);
 
     auto corres_vec = result_nns.first.ToFlatVector<int64_t>();
@@ -119,41 +107,21 @@ RegistrationResult EvaluateRegistration(
         const core::Tensor
                 &transformation /* = core::Tensor::Eye(4,
                         core::Dtype::Float64, core::Device("CPU:0")))*/) {
-    transformation.AssertShape({4, 4});
-
     core::Device device = source.GetDevice();
-    geometry::PointCloud target_;
-    core::Tensor transform;
-
+    transformation.AssertShape({4, 4});
+    transformation.AssertDevice(device);
     if (target.GetDevice() != device) {
-        utility::LogWarning(
+        utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
-
-        // Copy to the device.
-        // [TO DO: Implement a dedicated Copy() function in PointClout]
-        target_.GetPoints() = target.GetPoints().Copy(device);
-        if (target.HasPointNormals())
-            target_.GetPointNormals() = target.GetPointNormals().Copy(device);
-    } else {  // Use Shallow Copy, if on the same device.
-        target_ = target;
     }
 
-    if (transformation.GetDevice() != device) {
-        utility::LogWarning(
-                "Transformation device {} != Pointcloud's device {}.",
-                transformation.GetDevice().ToString(), device.ToString());
-        transform = transformation.Copy(device);  // Copy to the device.
-    } else
-        transform = transformation;  // Use Shallow Copy, if on the same device.
-
-    open3d::core::nns::NearestNeighborSearch target_nns(target_.GetPoints());
+    open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
     geometry::PointCloud pcd = source;
-
     // TO DO: Check if transformation isIdentity (skip transform operation)
     pcd.Transform(transformation);
 
-    return GetRegistrationResultAndCorrespondences(pcd, target_, target_nns,
+    return GetRegistrationResultAndCorrespondences(pcd, target, target_nns,
                                                    max_correspondence_distance,
                                                    transformation);
 }
@@ -181,6 +149,8 @@ RegistrationResult RegistrationICP(
                 "require pre-computed normal vectors for target PointCloud.");
     }
 
+    double corres_num = 0;
+
     core::Tensor transformation = init;
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
     geometry::PointCloud pcd = source;
@@ -196,7 +166,7 @@ RegistrationResult RegistrationICP(
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
         core::Tensor update = estimation.ComputeTransformation(
-                pcd, target, result.correspondence_set_);
+                pcd, target, result.correspondence_set_, corres_num);
         transformation = update * transformation;
         pcd.Transform(update);
         RegistrationResult backup = result;

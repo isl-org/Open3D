@@ -68,6 +68,12 @@ public:
 public:
     virtual TransformationEstimationType GetTransformationEstimationType()
             const = 0;
+
+    // TODO: corres_num is an additional parameter which needs to be passed
+    // as new CorrespondenceSet is of same length as pointcloud,
+    // in future this needs to be corrected, as it will potentially break
+    // the existing code / ability to move to tensor without much change.
+
     /// Compute RMSE between source and target points cloud given
     /// correspondences.
     ///
@@ -76,7 +82,8 @@ public:
     /// \param corres Correspondence set between source and target point cloud.
     virtual double ComputeRMSE(const geometry::PointCloud &source,
                                const geometry::PointCloud &target,
-                               const core::Tensor &corres) const = 0;
+                               const core::Tensor &corres,
+                               const int corres_num) const = 0;
     /// Compute transformation from source to target point cloud given
     /// correspondences.
     ///
@@ -86,7 +93,8 @@ public:
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const core::Tensor &corres) const = 0;
+            const core::Tensor &corres,
+            const int corres_num) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -109,11 +117,12 @@ public:
     };
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       const core::Tensor &corres) const override;
-    core::Tensor ComputeTransformation(
-            const geometry::PointCloud &source,
-            const geometry::PointCloud &target,
-            const core::Tensor &corres) const override;
+                       const core::Tensor &corres,
+                       const int corres_num) const override;
+    core::Tensor ComputeTransformation(const geometry::PointCloud &source,
+                                       const geometry::PointCloud &target,
+                                       const core::Tensor &corres,
+                                       const int corres_num) const override;
 
 public:
     /// \brief Set to True to estimate scaling, False to force scaling to be 1.
@@ -152,11 +161,12 @@ public:
     };
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       const core::Tensor &corres) const override;
-    core::Tensor ComputeTransformation(
-            const geometry::PointCloud &source,
-            const geometry::PointCloud &target,
-            const core::Tensor &corres) const override;
+                       const core::Tensor &corres,
+                       const int corres_num) const override;
+    core::Tensor ComputeTransformation(const geometry::PointCloud &source,
+                                       const geometry::PointCloud &target,
+                                       const core::Tensor &corres,
+                                       const int corres_num) const override;
 
 public:
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
