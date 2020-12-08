@@ -32,18 +32,6 @@ namespace open3d {
 namespace core {
 namespace eigen_converter {
 
-Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor) {
-    // TODO: Tensor::To(dtype, device).
-    if (tensor.GetShape() != SizeVector{3}) {
-        utility::LogError("Tensor shape must be {3}, but got {}.",
-                          tensor.GetShape().ToString());
-    }
-    core::Tensor dtensor =
-            tensor.To(core::Dtype::Float64).Copy(core::Device("CPU:0"));
-    return Eigen::Vector3d(dtensor[0].Item<double>(), dtensor[1].Item<double>(),
-                           dtensor[2].Item<double>());
-}
-
 std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
         const core::Tensor &tensor) {
     tensor.AssertShapeCompatible({utility::nullopt, 3});
@@ -68,7 +56,7 @@ core::Tensor EigenVector3dVectorToTensor(
     core::Tensor tensor_cpu =
             core::Tensor::Empty({num_values, 3}, dtype, Device("CPU:0"));
 
-    // Fill Tensor.
+    // Fill Tensor. This takes care of dtype conversion at the same time.
     core::Indexer indexer({tensor_cpu}, tensor_cpu,
                           core::DtypePolicy::ALL_SAME);
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {

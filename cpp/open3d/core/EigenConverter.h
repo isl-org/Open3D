@@ -38,10 +38,6 @@ namespace open3d {
 namespace core {
 namespace eigen_converter {
 
-/// Converts a tensor of shape (3,) to Eigen::Vector3d. An exception will be
-/// thrown if the tensor shape is not (3,).
-Eigen::Vector3d TensorToEigenVector3d(const core::Tensor &tensor);
-
 /// Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3d>. An
 /// exception will be thrown if the tensor shape is not (N, 3). Regardless of
 /// the tensor dtype, the output will be converted to to double.
