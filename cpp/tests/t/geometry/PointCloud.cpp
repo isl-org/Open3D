@@ -58,9 +58,8 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
     EXPECT_FALSE(pcd.HasPointColors());
     EXPECT_FALSE(pcd.HasPointNormals());
 
-    // Default dtypes.
-    EXPECT_EQ(pcd.GetPoints().GetDevice(), core::Device("CPU:0"));
-    EXPECT_EQ(pcd.GetPoints().GetDtype(), core::Dtype::Float32);
+    // Default device.
+    EXPECT_EQ(pcd.GetDevice(), core::Device("CPU:0"));
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
@@ -104,9 +103,9 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
     core::Device device = GetParam();
     t::geometry::PointCloud pcd(device);
 
-    core::Tensor& points = pcd.GetPointAttr("points");
-    points = core::Tensor(std::vector<float>{1, 2, 3, 4, 5, 6}, {2, 3},
-                          core::Dtype::Float32, device);
+    core::Tensor points = core::Tensor(std::vector<float>{1, 2, 3, 4, 5, 6},
+                                       {2, 3}, core::Dtype::Float32, device);
+    pcd.SetPoints(points);
 
     EXPECT_FALSE(pcd.IsEmpty());
     EXPECT_TRUE(pcd.HasPoints());
@@ -143,9 +142,10 @@ TEST_P(PointCloudPermuteDevices, Translate) {
 TEST_P(PointCloudPermuteDevices, Scale) {
     core::Device device = GetParam();
     t::geometry::PointCloud pcd(device);
-    core::Tensor& points = pcd.GetPointAttr("points");
-    points = core::Tensor(std::vector<float>{0, 0, 0, 1, 1, 1, 2, 2, 2}, {3, 3},
-                          core::Dtype::Float32, device);
+    core::Tensor points =
+            core::Tensor(std::vector<float>{0, 0, 0, 1, 1, 1, 2, 2, 2}, {3, 3},
+                         core::Dtype::Float32, device);
+    pcd.SetPoints(points);
     core::Tensor center(std::vector<float>{1, 1, 1}, {3}, core::Dtype::Float32,
                         device);
     float scale = 4;
