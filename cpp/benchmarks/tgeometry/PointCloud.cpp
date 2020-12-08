@@ -56,7 +56,7 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
 
 void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     int64_t num_points = 1000;  // 1M
-    PointCloud pcd;
+    PointCloud pcd(core::Dtype::Float32, device);
     pcd.SetPoints(core::Tensor({num_points, 3}, core::Dtype::Float32, device));
     pcd.SetPointColors(
             core::Tensor({num_points, 3}, core::Dtype::Float32, device));
