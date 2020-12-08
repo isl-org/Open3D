@@ -24,14 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-try:
-    # Azure Kinect is not officially supported on Ubuntu 16.04, this is an
-    # unofficial workaround. Install the fix package with
-    # `pip install open3d_azure_kinect_ubuntu1604_fix`
-    import open3d_azure_kinect_ubuntu1604_fix
-except ImportError:
-    pass
-
 # Workaround when multiple copies of the OpenMP runtime have been linked to
 # the program, which happens when PyTorch loads OpenMP runtime first. Not that
 # this method is "unsafe, unsupported, undocumented", but we found it to be
