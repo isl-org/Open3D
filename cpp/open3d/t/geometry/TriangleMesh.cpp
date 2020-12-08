@@ -104,7 +104,34 @@ geometry::TriangleMesh TriangleMesh::FromLegacyTrangleMesh(
 }
 
 open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
-    utility::LogError("Unimplemented");
+    open3d::geometry::TriangleMesh mesh_legacy;
+    if (HasVertices()) {
+        mesh_legacy.vertices_ =
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        GetVertices());
+    }
+    if (HasVertexColors()) {
+        mesh_legacy.vertex_colors_ =
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        GetVertexColors());
+    }
+    if (HasVertexNormals()) {
+        mesh_legacy.vertex_normals_ =
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        GetVertexNormals());
+    }
+    if (HasTriangles()) {
+        mesh_legacy.triangles_ =
+                core::eigen_converter::TensorToEigenVector3iVector(
+                        GetTriangles());
+    }
+    if (HasTriangleNormals()) {
+        mesh_legacy.triangle_normals_ =
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        GetTriangleNormals());
+    }
+
+    return mesh_legacy;
 }
 
 }  // namespace geometry
