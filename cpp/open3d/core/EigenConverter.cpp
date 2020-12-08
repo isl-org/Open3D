@@ -62,6 +62,42 @@ static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
     return eigen_vector;
 }
 
+template <typename T>
+static core::Tensor EigenVector3xVectorToTensor(
+        const std::vector<Eigen::Matrix<T, 3, 1>> &values,
+        core::Dtype dtype,
+        const core::Device &device) {
+    // Unlike TensorToEigenVector3xVector, more types can be supported here. To
+    // keep consistency, we only allow double and int.
+    static_assert(std::is_same<T, double>::value || std::is_same<T, int>::value,
+                  "Only supports double and int (Vector3d and Vector3i).");
+    // Init CPU Tensor.
+    int64_t num_values = static_cast<int64_t>(values.size());
+    core::Tensor tensor_cpu =
+            core::Tensor::Empty({num_values, 3}, dtype, Device("CPU:0"));
+
+    // Fill Tensor. This takes care of dtype conversion at the same time.
+    core::Indexer indexer({tensor_cpu}, tensor_cpu,
+                          core::DtypePolicy::ALL_SAME);
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        core::kernel::CPULauncher::LaunchIndexFillKernel(
+                indexer, [&](void *ptr, int64_t workload_idx) {
+                    // Fills the flattened tensor tensor_cpu[:] with dtype
+                    // casting. tensor_cpu[:][i] corresponds to the (i/3)-th
+                    // element's (i%3)-th coordinate value.
+                    *static_cast<scalar_t *>(ptr) = static_cast<scalar_t>(
+                            values[workload_idx / 3](workload_idx % 3));
+                });
+    });
+
+    // Copy Tensor to device if necessary.
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        return tensor_cpu;
+    } else {
+        return tensor_cpu.Copy(device);
+    }
+}
+
 std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
         const core::Tensor &tensor) {
     return TensorToEigenVector3xVector<double>(tensor);
@@ -76,62 +112,14 @@ core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
         core::Dtype dtype,
         const core::Device &device) {
-    // Init CPU Tensor.
-    int64_t num_values = static_cast<int64_t>(values.size());
-    core::Tensor tensor_cpu =
-            core::Tensor::Empty({num_values, 3}, dtype, Device("CPU:0"));
-
-    // Fill Tensor. This takes care of dtype conversion at the same time.
-    core::Indexer indexer({tensor_cpu}, tensor_cpu,
-                          core::DtypePolicy::ALL_SAME);
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        core::kernel::CPULauncher::LaunchIndexFillKernel(
-                indexer, [&](void *ptr, int64_t workload_idx) {
-                    // Fills the flattened tensor tensor_cpu[:] with dtype
-                    // casting. tensor_cpu[:][i] corresponds to the (i/3)-th
-                    // element's (i%3)-th coordinate value.
-                    *static_cast<scalar_t *>(ptr) = static_cast<scalar_t>(
-                            values[workload_idx / 3](workload_idx % 3));
-                });
-    });
-
-    // Copy Tensor to device if necessary.
-    if (device.GetType() == core::Device::DeviceType::CPU) {
-        return tensor_cpu;
-    } else {
-        return tensor_cpu.Copy(device);
-    }
+    return EigenVector3xVectorToTensor(values, dtype, device);
 }
 
 core::Tensor EigenVector3iVectorToTensor(
         const std::vector<Eigen::Vector3i> &values,
         core::Dtype dtype,
         const core::Device &device) {
-    // Init CPU Tensor.
-    int64_t num_values = static_cast<int64_t>(values.size());
-    core::Tensor tensor_cpu =
-            core::Tensor::Empty({num_values, 3}, dtype, Device("CPU:0"));
-
-    // Fill Tensor. This takes care of dtype conversion at the same time.
-    core::Indexer indexer({tensor_cpu}, tensor_cpu,
-                          core::DtypePolicy::ALL_SAME);
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        core::kernel::CPULauncher::LaunchIndexFillKernel(
-                indexer, [&](void *ptr, int64_t workload_idx) {
-                    // Fills the flattened tensor tensor_cpu[:] with dtype
-                    // casting. tensor_cpu[:][i] corresponds to the (i/3)-th
-                    // element's (i%3)-th coordinate value.
-                    *static_cast<scalar_t *>(ptr) = static_cast<scalar_t>(
-                            values[workload_idx / 3](workload_idx % 3));
-                });
-    });
-
-    // Copy Tensor to device if necessary.
-    if (device.GetType() == core::Device::DeviceType::CPU) {
-        return tensor_cpu;
-    } else {
-        return tensor_cpu.Copy(device);
-    }
+    return EigenVector3xVectorToTensor(values, dtype, device);
 }
 
 }  // namespace eigen_converter
