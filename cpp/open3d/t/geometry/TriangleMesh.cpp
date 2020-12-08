@@ -60,6 +60,53 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertices,
     SetTriangles(triangles);
 }
 
+geometry::TriangleMesh TriangleMesh::FromLegacyTrangleMesh(
+        const open3d::geometry::TriangleMesh &mesh_legacy,
+        core::Dtype float_dtype,
+        core::Dtype int_dtype,
+        const core::Device &device) {
+    if (float_dtype != core::Dtype::Float32 &&
+        float_dtype != core::Dtype::Float64) {
+        utility::LogError("float_dtype must be Float32 or Float64, but got {}.",
+                          float_dtype.ToString());
+    }
+    if (int_dtype != core::Dtype::Int32 && int_dtype != core::Dtype::Int64) {
+        utility::LogError("int_dtype must be Int32 or Int64, but got {}.",
+                          int_dtype.ToString());
+    }
+
+    TriangleMesh mesh(device);
+    if (mesh_legacy.HasVertices()) {
+        mesh.SetVertices(core::eigen_converter::EigenVector3dVectorToTensor(
+                mesh_legacy.vertices_, float_dtype, device));
+    } else {
+        utility::LogWarning("Creating from empty legacy TriangleMesh.");
+    }
+    if (mesh_legacy.HasVertexColors()) {
+        mesh.SetVertexColors(core::eigen_converter::EigenVector3dVectorToTensor(
+                mesh_legacy.vertex_colors_, float_dtype, device));
+    }
+    if (mesh_legacy.HasVertexNormals()) {
+        mesh.SetVertexNormals(
+                core::eigen_converter::EigenVector3dVectorToTensor(
+                        mesh_legacy.vertex_normals_, float_dtype, device));
+    }
+    if (mesh_legacy.HasTriangles()) {
+        mesh.SetTriangles(core::eigen_converter::EigenVector3iVectorToTensor(
+                mesh_legacy.triangles_, int_dtype, device));
+    }
+    if (mesh_legacy.HasTriangleNormals()) {
+        mesh.SetTriangleNormals(
+                core::eigen_converter::EigenVector3dVectorToTensor(
+                        mesh_legacy.triangle_normals_, float_dtype, device));
+    }
+    return mesh;
+}
+
+open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
+    utility::LogError("Unimplemented");
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

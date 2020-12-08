@@ -108,9 +108,7 @@ geometry::PointCloud PointCloud::FromLegacyPointCloud(
         pcd.SetPoints(core::eigen_converter::EigenVector3dVectorToTensor(
                 pcd_legacy.points_, dtype, device));
     } else {
-        utility::LogWarning(
-                "Creating from an empty legacy pointcloud, an empty pointcloud "
-                "with default dtype and device will be created.");
+        utility::LogWarning("Creating from an empty legacy PointCloud.");
     }
     if (pcd_legacy.HasColors()) {
         pcd.SetPointColors(core::eigen_converter::EigenVector3dVectorToTensor(
