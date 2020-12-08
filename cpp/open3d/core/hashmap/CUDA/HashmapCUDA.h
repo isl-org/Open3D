@@ -127,6 +127,8 @@ CUDAHashmap<Hash, KeyEq>::~CUDAHashmap() {
 
 template <typename Hash, typename KeyEq>
 void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
+    CUDACachedMemoryManager::ReleaseCache();
+
     int64_t iterator_count = Size();
 
     Tensor active_keys;
@@ -158,6 +160,8 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
                    static_cast<bool*>(output_masks.GetDataPtr()),
                    iterator_count);
     }
+
+    CUDACachedMemoryManager::ReleaseCache();
 }
 
 template <typename Hash, typename KeyEq>

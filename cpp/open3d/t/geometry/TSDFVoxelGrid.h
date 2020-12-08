@@ -58,7 +58,7 @@ class TSDFVoxelGrid {
 public:
     /// \brief Default Constructor.
     TSDFVoxelGrid(std::unordered_map<std::string, int> attr_channel_map =
-                          {{"tsdf", 1}, {"weight", 1}},
+                          {{"tsdf", 1}, {"weight", 1}, {"color", 3}},
                   float voxel_size = 3.0 / 512.0, /* in meter */
                   float sdf_trunc = 0.04,         /*  in meter  */
                   int64_t block_resolution = 16, /*  block Tensor resolution  */
@@ -69,6 +69,7 @@ public:
 
     /// Depth-only integration
     void Integrate(const Image &depth,
+                   const Image &color,
                    const core::Tensor &intrinsics,
                    const core::Tensor &extrinsics,
                    double depth_scale = 1000.0,

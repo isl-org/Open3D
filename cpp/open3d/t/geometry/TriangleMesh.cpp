@@ -112,6 +112,16 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
         }
     }
 
+    if (HasVertexColors()) {
+        core::Tensor colors = GetVertexColors().Copy(core::Device("CPU:0"));
+        int64_t N = colors.GetShape()[0];
+        mesh_legacy.vertex_colors_.resize(N);
+        for (int64_t i = 0; i < N; ++i) {
+            mesh_legacy.vertex_colors_[i] =
+                    core::eigen_converter::TensorToEigenVector3d(colors[i]);
+        }
+    }
+
     if (HasVertexNormals()) {
         core::Tensor normals = GetVertexNormals().Copy(core::Device("CPU:0"));
         int64_t N = normals.GetShape()[0];

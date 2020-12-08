@@ -61,6 +61,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
 }
 
 void TSDFVoxelGrid::Integrate(const Image &depth,
+                              const Image &color,
                               const core::Tensor &intrinsics,
                               const core::Tensor &extrinsics,
                               double depth_scale,
@@ -94,6 +95,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     // Integration
     srcs = {{"depth", depth.AsTensor().Contiguous()},
+            {"color", color.AsTensor().To(core::Dtype::Float32).Contiguous()},
             {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
             {"block_keys", block_hashmap_->GetKeyTensor()},
             {"intrinsics", intrinsics.Copy(device_)},
@@ -148,6 +150,7 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
                 "to return.");
     }
     auto pcd = PointCloud(dsts.at("points"));
+    pcd.SetPointColors(dsts.at("colors"));
     pcd.SetPointNormals(dsts.at("normals"));
     return pcd;
 }
@@ -193,6 +196,7 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
 
     TriangleMesh mesh(dsts.at("vertices"), dsts.at("triangles"));
     mesh.SetVertexNormals(dsts.at("normals"));
+    mesh.SetVertexColors(dsts.at("colors"));
     return mesh;
 }
 

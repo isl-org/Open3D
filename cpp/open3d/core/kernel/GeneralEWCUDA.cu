@@ -160,10 +160,8 @@ void CUDATSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
 
     int total_block_count = count.Item<int>();
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
-    core::Hashmap pcd_block_hashmap(
-            total_block_count,
-            core::Dtype::Int32,
-            core::Dtype::Int32, {3}, {1}, device);
+    core::Hashmap pcd_block_hashmap(total_block_count, core::Dtype::Int32,
+                                    core::Dtype::Int32, {3}, {1}, device);
     core::Tensor block_addrs, block_masks;
     pcd_block_hashmap.Activate(block_coordi.Slice(0, 0, count.Item<int>()),
                                block_addrs, block_masks);
@@ -175,9 +173,9 @@ void CUDATSDFIntegrateKernel(
         std::unordered_map<std::string, Tensor>& dsts) {
     // Decode input tensors
     static std::vector<std::string> src_attrs = {
-            "depth",       "indices",    "block_keys", "intrinsics",
-            "extrinsics",  "resolution", "voxel_size", "sdf_trunc",
-            "depth_scale", "depth_max",
+            "depth",      "color",       "indices",    "block_keys",
+            "intrinsics", "extrinsics",  "resolution", "voxel_size",
+            "sdf_trunc",  "depth_scale", "depth_max",
     };
     for (auto& k : src_attrs) {
         if (srcs.count(k) == 0) {
@@ -189,6 +187,7 @@ void CUDATSDFIntegrateKernel(
     }
 
     Tensor depth = srcs.at("depth").To(core::Dtype::Float32);
+    Tensor color = srcs.at("color").To(core::Dtype::Float32);
     Tensor indices = srcs.at("indices");
     Tensor block_keys = srcs.at("block_keys");
     Tensor block_values = dsts.at("block_values");
@@ -212,6 +211,7 @@ void CUDATSDFIntegrateKernel(
 
     // Real data indexer
     NDArrayIndexer image_indexer(depth, 2);
+    NDArrayIndexer color_indexer(color, 2);
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
 
     // Plain arrays that does not require indexers
@@ -261,6 +261,12 @@ void CUDATSDFIntegrateKernel(
                         image_indexer.GetDataPtrFromWorkload(workload_image)) /
                 depth_scale;
 
+        int64_t workload_color;
+        color_indexer.CoordToWorkload(static_cast<int64_t>(u),
+                                      static_cast<int64_t>(v), &workload_color);
+        float* color_ptr = static_cast<float*>(
+                color_indexer.GetDataPtrFromWorkload(workload_color));
+
         // Compute multiplier
         float xc_unproj, yc_unproj, zc_unproj;
         transform_indexer.Unproject(static_cast<float>(u),
@@ -285,8 +291,16 @@ void CUDATSDFIntegrateKernel(
 
         float tsdf_sum = voxel_ptr[0];
         float weight_sum = voxel_ptr[1];
-        voxel_ptr[0] = (weight_sum * tsdf_sum + sdf) / (weight_sum + 1);
-        voxel_ptr[1] = weight_sum + 1;
+        float r_sum = voxel_ptr[2];
+        float g_sum = voxel_ptr[3];
+        float b_sum = voxel_ptr[4];
+
+        float new_weight_sum = weight_sum + 1;
+        voxel_ptr[0] = (weight_sum * tsdf_sum + sdf) / new_weight_sum;
+        voxel_ptr[1] = new_weight_sum;
+        voxel_ptr[2] = (weight_sum * r_sum + color_ptr[0]) / new_weight_sum;
+        voxel_ptr[3] = (weight_sum * g_sum + color_ptr[1]) / new_weight_sum;
+        voxel_ptr[4] = (weight_sum * b_sum + color_ptr[2]) / new_weight_sum;
     });
 }
 
@@ -342,9 +356,12 @@ void CUDASurfaceExtractionKernel(
                         core::Dtype::Float32, block_values.GetDevice());
     core::Tensor normals({std::min(n * 3, int64_t(10000000)), 3},
                          core::Dtype::Float32, block_values.GetDevice());
+    core::Tensor colors({std::min(n * 3, int64_t(10000000)), 3},
+                        core::Dtype::Float32, block_values.GetDevice());
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
     float* points_ptr = static_cast<float*>(points.GetDataPtr());
     float* normals_ptr = static_cast<float*>(normals.GetDataPtr());
+    float* colors_ptr = static_cast<float*>(colors.GetDataPtr());
 
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
                                                  int64_t workload_idx) {
@@ -409,6 +426,9 @@ void CUDASurfaceExtractionKernel(
                         workload_voxel));
         float tsdf_o = voxel_ptr[0];
         float weight_o = voxel_ptr[1];
+        float r_o = voxel_ptr[2];
+        float g_o = voxel_ptr[3];
+        float b_o = voxel_ptr[4];
         if (weight_o == 0) return;
 
         int64_t x = xb * resolution + xv;
@@ -447,6 +467,13 @@ void CUDASurfaceExtractionKernel(
                 normals_ptr[idx * 3 + 0] = nx / norm;
                 normals_ptr[idx * 3 + 1] = ny / norm;
                 normals_ptr[idx * 3 + 2] = nz / norm;
+
+                float r_i = ptr[2];
+                float g_i = ptr[3];
+                float b_i = ptr[4];
+                colors_ptr[idx * 3 + 0] = (1 - ratio) * r_o + ratio * r_i;
+                colors_ptr[idx * 3 + 1] = (1 - ratio) * g_o + ratio * g_i;
+                colors_ptr[idx * 3 + 2] = (1 - ratio) * b_o + ratio * b_i;
             }
         }
     });
@@ -454,6 +481,7 @@ void CUDASurfaceExtractionKernel(
     int total_count = count.Item<int>();
     dsts.emplace("points", points.Slice(0, 0, total_count));
     dsts.emplace("normals", normals.Slice(0, 0, total_count));
+    dsts.emplace("colors", colors.Slice(0, 0, total_count) / 255.0);
     utility::LogInfo("surface extraction finished");
 }
 
@@ -607,10 +635,13 @@ void CUDAMarchingCubesKernel(
                            block_values.GetDevice());
     core::Tensor vertices({std::min(n * 3, int64_t(10000000)), 3},
                           core::Dtype::Float32, block_values.GetDevice());
+    core::Tensor colors({std::min(n * 3, int64_t(10000000)), 3},
+                        core::Dtype::Float32, block_values.GetDevice());
     core::Tensor normals({std::min(n * 3, int64_t(10000000)), 3},
                          core::Dtype::Float32, block_values.GetDevice());
     int* vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
     float* vertices_ptr = static_cast<float*>(vertices.GetDataPtr());
+    float* colors_ptr = static_cast<float*>(colors.GetDataPtr());
     float* normals_ptr = static_cast<float*>(normals.GetDataPtr());
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
                                                  int64_t workload_idx) {
@@ -698,6 +729,9 @@ void CUDAMarchingCubesKernel(
             printf("voxel weight error!\n");
         }
 
+        float r_o = voxel_ptr[2];
+        float g_o = voxel_ptr[3];
+        float b_o = voxel_ptr[4];
         float no[3], ne[3];
         GetNormalAt(xv, yv, zv, workload_block_idx, no);
 
@@ -741,6 +775,13 @@ void CUDAMarchingCubesKernel(
             normals_ptr[idx * 3 + 0] = nx / norm;
             normals_ptr[idx * 3 + 1] = ny / norm;
             normals_ptr[idx * 3 + 2] = nz / norm;
+
+            float r_e = voxel_ptr_e[2];
+            float g_e = voxel_ptr_e[3];
+            float b_e = voxel_ptr_e[4];
+            colors_ptr[idx * 3 + 0] = (1 - ratio) * r_o + ratio * r_e;
+            colors_ptr[idx * 3 + 1] = (1 - ratio) * g_o + ratio * g_e;
+            colors_ptr[idx * 3 + 2] = (1 - ratio) * b_o + ratio * b_e;
         }
     });
 
@@ -748,7 +789,9 @@ void CUDAMarchingCubesKernel(
     utility::LogInfo("Total vertex count = {}", total_vtx_count);
     vertices = vertices.Slice(0, 0, total_vtx_count);
     normals = normals.Slice(0, 0, total_vtx_count);
+    colors = colors.Slice(0, 0, total_vtx_count);
     dsts.emplace("vertices", vertices);
+    dsts.emplace("colors", colors / 255.0);
     dsts.emplace("normals", normals);
 
     // Pass 2: connect vertices
