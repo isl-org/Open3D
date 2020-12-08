@@ -26,9 +26,12 @@
 
 #include "open3d/visualization/visualizer/GuiVisualizer.h"
 
+#include <random>
+
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
+#include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/FileFormatIO.h"
@@ -324,7 +327,8 @@ enum MenuId {
     HELP_KEYS,
     HELP_CAMERA,
     HELP_ABOUT,
-    HELP_CONTACT
+    HELP_CONTACT,
+    HELP_DEBUG
 };
 
 struct GuiVisualizer::Impl {
@@ -1099,6 +1103,9 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
         case HELP_CONTACT: {
             auto dlg = CreateContactDialog(this);
             ShowDialog(dlg);
+            break;
+        }
+        case HELP_DEBUG: {
             break;
         }
     }
