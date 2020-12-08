@@ -72,7 +72,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     // Touch blocks
     std::unordered_map<std::string, core::Tensor> srcs = {
-            {"points", pcd.GetPoints()},
+            {"points", pcd.GetPoints().Contiguous()},
             {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
                                         {}, core::Dtype::Int64, device_)},
             {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
@@ -93,7 +93,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     block_hashmap_->Find(block_coords, addrs, masks);
 
     // Integration
-    srcs = {{"depth", depth.AsTensor()},
+    srcs = {{"depth", depth.AsTensor().Contiguous()},
             {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
             {"block_keys", block_hashmap_->GetKeyTensor()},
             {"intrinsics", intrinsics.Copy(device_)},
