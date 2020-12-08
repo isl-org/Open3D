@@ -43,15 +43,17 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         open3d::core::nns::NearestNeighborSearch &target_nns,
         double max_correspondence_distance,
         const core::Tensor &transformation) {
+
     core::Device device = source.GetDevice();
+
     transformation.AssertShape({4, 4});
     transformation.AssertDevice(device);
+
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
-
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -78,7 +80,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
             max_correspondence_distance * max_correspondence_distance;
     auto result_nns = target_nns.HybridSearch(source.GetPoints(),
                                               max_correspondence_distance, 1);
-
     auto corres_vec = result_nns.first.ToFlatVector<int64_t>();
 
     // This is unnecessary to itterate again through the entire thing just
