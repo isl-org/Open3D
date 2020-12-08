@@ -2,7 +2,7 @@
 file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR})
 file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/open3d)
 
-# Create python pacakge. It contains:
+# Create python package. It contains:
 # 1) Pure-python code and misc files, copied from ${PYTHON_PACKAGE_SRC_DIR}
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 #    Optionally other modules e.g. open3d_tf_ops.so may be included.
@@ -11,14 +11,33 @@ file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/open3d)
 # 1) Pure-python code and misc files, copied from ${PYTHON_PACKAGE_SRC_DIR}
 file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
      DESTINATION ${PYTHON_PACKAGE_DST_DIR}
-)
+     )
 
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 #    Optionally other modules e.g. open3d_tf_ops.so may be included.
-list( GET COMPILED_MODULE_PATH_LIST 0 PYTHON_COMPILED_MODULE_PATH )
-get_filename_component(PYTHON_COMPILED_MODULE_NAME ${PYTHON_COMPILED_MODULE_PATH} NAME)
-file(COPY ${COMPILED_MODULE_PATH_LIST}
-     DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d)
+# Folder structure is base_dir/{cpu|cuda}/{pybind*.so|open3d_{torch|tf}_ops.so},
+# so copy base_dir directly to ${PYTHON_PACKAGE_DST_DIR}/open3d
+foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
+    get_filename_component(COMPILED_MODULE_NAME ${COMPILED_MODULE_PATH} NAME)
+    get_filename_component(COMPILED_MODULE_ARCH_DIR ${COMPILED_MODULE_PATH} DIRECTORY)
+    get_filename_component(COMPILED_MODULE_BASE_DIR ${COMPILED_MODULE_ARCH_DIR} DIRECTORY)
+    foreach(ARCH cpu cuda)
+        if(IS_DIRECTORY "${COMPILED_MODULE_BASE_DIR}/${ARCH}")
+            file(INSTALL "${COMPILED_MODULE_BASE_DIR}/${ARCH}/" DESTINATION
+                "${PYTHON_PACKAGE_DST_DIR}/open3d/${ARCH}"
+                FILES_MATCHING PATTERN "${COMPILED_MODULE_NAME}")
+        endif()
+    endforeach()
+endforeach()
+# Include additional libraries that may be absent from the user system
+# eg: libc++.so and libc++abi.so (needed by filament)
+# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filname
+foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
+    get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
+    get_filename_component(SO_VER_NAME ${PYTHON_EXTRA_LIB_REAL} NAME)
+    string(REGEX REPLACE "\\.so\\.1\\..*" ".so.1" SO_1_NAME ${SO_VER_NAME})
+    configure_file(${PYTHON_EXTRA_LIB_REAL} ${PYTHON_PACKAGE_DST_DIR}/open3d/${SO_1_NAME} COPYONLY)
+endforeach()
 
 # 3) Configured files and supporting files
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"
@@ -48,6 +67,12 @@ if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
     # copy generated files
     file(COPY "${PYTHON_PACKAGE_DST_DIR}/../ml"
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )
+endif()
+
+if (BUNDLE_OPEN3D_ML)
+    file(COPY "${PYTHON_PACKAGE_DST_DIR}/../../open3d_ml/src/open3d_ml/ml3d"
+         DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )
+    file(RENAME "${PYTHON_PACKAGE_DST_DIR}/open3d/ml3d" "${PYTHON_PACKAGE_DST_DIR}/open3d/_ml3d")
 endif()
 
 # Build Jupyter plugin with webpack. This step distills and merges all js

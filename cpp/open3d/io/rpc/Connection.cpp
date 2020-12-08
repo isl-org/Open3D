@@ -36,7 +36,7 @@ using namespace open3d::utility;
 namespace {
 
 struct ConnectionDefaults {
-    std::string address = "tcp://localhost:51454";
+    std::string address = "tcp://127.0.0.1:51454";
     int connect_timeout = 5000;
     int timeout = 10000;
 } defaults;
@@ -54,21 +54,22 @@ Connection::Connection()
 Connection::Connection(const std::string& address,
                        int connect_timeout,
                        int timeout)
-    : socket_(new zmq::socket_t(GetZMQContext(), ZMQ_REQ)),
+    : context_(GetZMQContext()),
+      socket_(new zmq::socket_t(*GetZMQContext(), ZMQ_REQ)),
       address_(address),
       connect_timeout_(connect_timeout),
       timeout_(timeout) {
-    socket_->setsockopt(ZMQ_LINGER, timeout_);
-    socket_->setsockopt(ZMQ_CONNECT_TIMEOUT, connect_timeout_);
-    socket_->setsockopt(ZMQ_RCVTIMEO, timeout_);
-    socket_->setsockopt(ZMQ_SNDTIMEO, timeout_);
+    socket_->set(zmq::sockopt::linger, timeout_);
+    socket_->set(zmq::sockopt::connect_timeout, connect_timeout_);
+    socket_->set(zmq::sockopt::rcvtimeo, timeout_);
+    socket_->set(zmq::sockopt::sndtimeo, timeout_);
     socket_->connect(address_.c_str());
 }
 
 Connection::~Connection() { socket_->close(); }
 
 std::shared_ptr<zmq::message_t> Connection::Send(zmq::message_t& send_msg) {
-    if (!socket_->send(send_msg)) {
+    if (!socket_->send(send_msg, zmq::send_flags::none)) {
         zmq::error_t err;
         if (err.num()) {
             LogInfo("Connection::send() send failed with: {}", err.what());
@@ -93,6 +94,8 @@ std::shared_ptr<zmq::message_t> Connection::Send(const void* data,
     zmq::message_t send_msg(data, size);
     return Send(send_msg);
 }
+
+std::string Connection::DefaultAddress() { return defaults.address; }
 
 }  // namespace rpc
 }  // namespace io

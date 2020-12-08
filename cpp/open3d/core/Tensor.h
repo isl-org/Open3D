@@ -104,7 +104,9 @@ public:
                                       shape_.NumElements() * dtype.ByteSize());
     }
 
-    /// The fully specified constructor
+    /// The fully specified constructor. Since you're responsible for creating
+    /// the Blob, take care of Blob's deleter if the memory is allocated
+    /// elsewhere. See Blob.h for more details.
     Tensor(const SizeVector& shape,
            const SizeVector& strides,
            void* data_ptr,
@@ -374,19 +376,25 @@ public:
     /// IndexExtract, the dimension \p dim will be removed.
     Tensor IndexExtract(int64_t dim, int64_t idx) const;
 
-    /// Slice Tensor
+    /// Slice Tensor.
+    ///
+    /// \param dim The dimension to slice.
+    /// \param start The start index (inclusive).
+    /// \param stop The end index (exclusive).
+    /// \param step Pick one eleemnt for every \p step elements.
     Tensor Slice(int64_t dim,
                  int64_t start,
                  int64_t stop,
                  int64_t step = 1) const;
 
     /// Convert to rvalue such that the Tensor can be assigned.
-    /// E.g. in numpy
+    /// E.g. in numpy \code{.py}
     /// tensor_a = tensor_b     # tensor_a is lvalue, tensor_a variable will
     ///                         # now reference tensor_b, that is, tensor_a
     ///                         # and tensor_b share exactly the same memory.
     /// tensor_a[:] = tensor_b  # tensor_a[:] is rvalue, tensor_b's values are
     ///                         # assigned to tensor_a's memory.
+    /// \endcode
     Tensor AsRvalue() const { return *this; }
 
     /// \brief Advanced indexing getter
@@ -431,8 +439,10 @@ public:
     /// mush have empty shape ()
     template <typename T>
     T Item() const {
-        if (shape_.size() != 0) {
-            utility::LogError("Item only works for scalar Tensor of shape ()");
+        if (shape_.NumElements() != 1) {
+            utility::LogError(
+                    "Tensor::Item() only works for Tensor with exactly one "
+                    "element.");
         }
         AssertTemplateDtype<T>();
         T value;
@@ -812,6 +822,17 @@ public:
     /// tensor.
     Tensor NonZero() const;
 
+    /// Evaluate a single-element Tensor as a boolean value. This can be used to
+    /// implement Tensor.__bool__() in Python, e.g.
+    /// ```python
+    /// assert Tensor([True])         # Passes.
+    /// assert Tensor([123])          # Passes.
+    /// assert Tensor([False])        # AssertionError.
+    /// assert Tensor([0])            # AssertionError.
+    /// assert Tensor([True, False])  # ValueError: cannot be evaluated as bool.
+    /// ```
+    bool IsNonZero() const;
+
     /// Returns true if all elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
     /// the reduction is apply to all dimensions.
@@ -912,6 +933,10 @@ public:
     /// Note VT (V transpose) is returned instead of V.
     std::tuple<Tensor, Tensor, Tensor> SVD() const;
 
+    /// Returns the size of the first dimension. If NumDims() == 0, an exception
+    /// will be thrown.
+    inline int64_t GetLength() const { return GetShape().GetLength(); }
+
     inline SizeVector GetShape() const { return shape_; }
 
     inline const SizeVector& GetShapeRef() const { return shape_; }
@@ -980,6 +1005,12 @@ public:
 
     /// Assert that the Tensor has the specified shape.
     void AssertShape(const SizeVector& expected_shape) const;
+
+    /// Assert that Tensor's shape is compatible with a dynamic shape.
+    void AssertShapeCompatible(const DynamicSizeVector& expected_shape) const;
+
+    /// Assert that the Tensor has the specified device.
+    void AssertDevice(const Device& expected_device) const;
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
@@ -1066,8 +1097,9 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
 
 template <>
 inline bool Tensor::Item() const {
-    if (shape_.size() != 0) {
-        utility::LogError("Item only works for scalar Tensor of shape ()");
+    if (shape_.NumElements() != 1) {
+        utility::LogError(
+                "Tensor::Item only works for Tensor with one element.");
     }
     AssertTemplateDtype<bool>();
     uint8_t value;

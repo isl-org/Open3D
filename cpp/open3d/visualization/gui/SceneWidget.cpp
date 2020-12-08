@@ -576,7 +576,6 @@ private:
 // ----------------------------------------------------------------------------
 struct SceneWidget::Impl {
     std::shared_ptr<rendering::Open3DScene> scene_;
-    rendering::ViewHandle view_id_;
     geometry::AxisAlignedBoundingBox bounds_;
     std::shared_ptr<Interactors> controls_;
     std::function<void(const Eigen::Vector3f&)> on_light_dir_changed_;
@@ -584,6 +583,8 @@ struct SceneWidget::Impl {
     int buttons_down_ = 0;
     double last_fast_time_ = 0.0;
     bool frame_rect_changed_ = false;
+    SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
+    bool scene_caching_enabled_ = false;
 };
 
 SceneWidget::SceneWidget() : impl_(new Impl()) {}
@@ -653,14 +654,9 @@ void SceneWidget::ShowSkybox(bool is_on) {
 }
 
 void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {
-    if (impl_->scene_) {
-        impl_->scene_->DestroyView(impl_->view_id_);
-        impl_->view_id_ = rendering::ViewHandle();
-    }
     impl_->scene_ = scene;
     if (impl_->scene_) {
-        impl_->view_id_ = impl_->scene_->CreateView();
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        auto view = impl_->scene_->GetView();
         impl_->controls_ = std::make_shared<Interactors>(impl_->scene_.get(),
                                                          view->GetCamera());
     }
@@ -672,7 +668,7 @@ std::shared_ptr<rendering::Open3DScene> SceneWidget::GetScene() const {
 
 rendering::View* SceneWidget::GetRenderView() const {
     if (impl_->scene_) {
-        return impl_->scene_->GetView(impl_->view_id_);
+        return impl_->scene_->GetView();
     } else {
         return nullptr;
     }
@@ -700,27 +696,47 @@ void SceneWidget::SetViewControls(Controls mode) {
     }
 }
 
+void SceneWidget::EnableSceneCaching(bool enable) {
+    impl_->scene_caching_enabled_ = enable;
+    if (!enable) {
+        impl_->scene_->GetRenderer().EnableCaching(false);
+        impl_->scene_->GetScene()->SetViewActive(impl_->scene_->GetViewId(),
+                                                 true);
+    }
+}
+
+void SceneWidget::ForceRedraw() {
+    // ForceRedraw only applies when scene caching is enabled
+    if (!impl_->scene_caching_enabled_) return;
+
+    impl_->scene_->GetRenderer().EnableCaching(true);
+    impl_->scene_->GetScene()->SetRenderOnce(impl_->scene_->GetViewId());
+}
+
 void SceneWidget::SetRenderQuality(Quality quality) {
     auto currentQuality = GetRenderQuality();
     if (currentQuality != quality) {
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        impl_->current_render_quality_ = quality;
         if (quality == Quality::FAST) {
-            view->SetSampleCount(1);
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::FAST);
+            if (impl_->scene_caching_enabled_) {
+                impl_->scene_->GetRenderer().EnableCaching(false);
+                impl_->scene_->GetScene()->SetViewActive(
+                        impl_->scene_->GetViewId(), true);
+            }
         } else {
-            view->SetSampleCount(4);
             impl_->scene_->SetLOD(rendering::Open3DScene::LOD::HIGH_DETAIL);
+            if (impl_->scene_caching_enabled_) {
+                impl_->scene_->GetRenderer().EnableCaching(true);
+                impl_->scene_->GetScene()->SetRenderOnce(
+                        impl_->scene_->GetViewId());
+            }
         }
     }
 }
 
 SceneWidget::Quality SceneWidget::GetRenderQuality() const {
-    int n = impl_->scene_->GetView(impl_->view_id_)->GetSampleCount();
-    if (n == 1) {
-        return Quality::FAST;
-    } else {
-        return Quality::BEST;
-    }
+    return impl_->current_render_quality_;
 }
 
 void SceneWidget::GoToCameraPreset(CameraPreset preset) {
@@ -752,10 +768,18 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     }
     GetCamera()->LookAt(center, eye, up);
     impl_->controls_->SetCenterOfRotation(center);
+    ForceRedraw();
 }
 
 rendering::Camera* SceneWidget::GetCamera() const {
     return impl_->scene_->GetCamera();
+}
+
+void SceneWidget::Layout(const Theme& theme) {
+    Super::Layout(theme);
+    // The UI may have changed size such that the scene has been exposed. Need
+    // to force a redraw in that case.
+    ForceRedraw();
 }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
@@ -771,7 +795,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
 
-        auto view = impl_->scene_->GetView(impl_->view_id_);
+        auto view = impl_->scene_->GetView();
         view->SetViewport(f.x, y, f.width, f.height);
 
         auto* camera = GetCamera();

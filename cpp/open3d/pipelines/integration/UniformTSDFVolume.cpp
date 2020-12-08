@@ -312,12 +312,10 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
     const float safe_width_f = intrinsic.width_ - 0.0001f;
     const float safe_height_f = intrinsic.height_ - 0.0001f;
 
-#ifdef _OPENMP
 #ifdef _WIN32
 #pragma omp parallel for schedule(static)
 #else
 #pragma omp parallel for collapse(2) schedule(static)
-#endif
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {

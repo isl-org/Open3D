@@ -371,6 +371,7 @@ void TreeView::Layout(const Theme &theme) {
 }
 
 Widget::DrawResult TreeView::Draw(const DrawContext &context) {
+    auto result = Widget::DrawResult::NONE;
     auto &frame = GetFrame();
 
     DrawImGuiPushEnabledState();
@@ -401,8 +402,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     Impl::Item *new_selection = nullptr;
 
     std::function<void(Impl::Item &)> DrawItem;
-    DrawItem = [&DrawItem, this, &frame, &context,
-                &new_selection](Impl::Item &item) {
+    DrawItem = [&DrawItem, this, &frame, &context, &new_selection,
+                &result](Impl::Item &item) {
         int height = item.cell->CalcPreferredSize(context.theme).height;
 
         // ImGUI's tree doesn't seem to support selected items,
@@ -419,7 +420,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
                     colorToImguiRGBA(context.theme.tree_selected_color));
         }
 
-        int flags = ImGuiTreeNodeFlags_DefaultOpen;
+        int flags = ImGuiTreeNodeFlags_DefaultOpen |
+                    ImGuiTreeNodeFlags_AllowItemOverlap;
         if (impl_->can_select_parents_) {
             flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
             flags |= ImGuiTreeNodeFlags_OpenOnArrow;
@@ -429,9 +431,9 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         }
         bool is_selectable =
                 (item.children.empty() || impl_->can_select_parents_);
-        auto DrawThis = [this, &tree_frame = frame, &context, &new_selection](
-                                TreeView::Impl::Item &item, int height,
-                                bool is_selectable) {
+        auto DrawThis = [this, &tree_frame = frame, &context, &new_selection,
+                         &result](TreeView::Impl::Item &item, int height,
+                                  bool is_selectable) {
             ImGui::SameLine(0, 0);
             auto x = int(std::round(ImGui::GetCursorScreenPos().x));
             auto y = int(std::round(ImGui::GetCursorScreenPos().y));
@@ -446,7 +448,10 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             item.cell->Layout(context.theme);
 
             ImGui::BeginGroup();
-            item.cell->Draw(context);
+            auto this_result = item.cell->Draw(context);
+            if (this_result == Widget::DrawResult::REDRAW) {
+                result = Widget::DrawResult::REDRAW;
+            }
             ImGui::EndGroup();
 
             if (ImGui::IsItemClicked() && is_selectable) {
@@ -479,7 +484,6 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     // finished drawing, so that the callback is able to change the contents
     // of the tree if it wishes (which could cause a crash if done while
     // drawing, e.g. deleting the current item).
-    auto result = Widget::DrawResult::NONE;
     if (new_selection) {
         if (impl_->on_selection_changed_) {
             impl_->on_selection_changed_(new_selection->id);

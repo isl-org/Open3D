@@ -1,18 +1,46 @@
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+
 import open3d as o3d
 import numpy as np
 
-from open3d.pybind.core import Dtype
-from open3d.pybind.core import DtypeCode
-from open3d.pybind.core import Device
-from open3d.pybind.core import cuda
-from open3d.pybind.core import NoneType
-from open3d.pybind.core import TensorList
-from open3d.pybind.core import SizeVector
-from open3d.pybind.core import matmul as pybind_matmul
-from open3d.pybind.core import lstsq as pybind_lstsq
-from open3d.pybind.core import solve as pybind_solve
-from open3d.pybind.core import inv as pybind_inv
-from open3d.pybind.core import svd as pybind_svd
+if o3d.__DEVICE_API__ == 'cuda':
+    from open3d.cuda.pybind.core import (Dtype, DtypeCode, Device, cuda, nns,
+                                         NoneType, TensorList, SizeVector,
+                                         DynamicSizeVector, matmul as
+                                         pybind_matmul, lstsq as pybind_lstsq,
+                                         solve as pybind_solve, inv as
+                                         pybind_inv, svd as pybind_svd)
+else:
+    from open3d.cpu.pybind.core import (Dtype, DtypeCode, Device, cuda, nns,
+                                        NoneType, TensorList, SizeVector,
+                                        DynamicSizeVector, matmul as
+                                        pybind_matmul, lstsq as pybind_lstsq,
+                                        solve as pybind_solve, inv as
+                                        pybind_inv, svd as pybind_svd)
 
 none = NoneType()
 
@@ -100,7 +128,8 @@ def matmul(lhs, rhs):
 
     - Both tensors should share the same device and dtype.
     - Int32, Int64, Float32, Float64 are supported,
-      but results of big integers' matmul are not guaranteed, overflow can happen.
+      but results of big integers' matmul are not guaranteed, overflow can
+      happen.
     """
     return pybind_matmul(lhs, rhs)
 
@@ -635,7 +664,8 @@ class Tensor(o3d.pybind.core.Tensor):
 
         - Both tensors should share the same device and dtype.
         - Int32, Int64, Float32, Float64 are supported,
-          but results of big integers' matmul are not guaranteed, overflow can happen.
+          but results of big integers' matmul are not guaranteed, overflow can
+          happen.
         """
         return super(Tensor, self).matmul(value)
 
@@ -673,7 +703,8 @@ class Tensor(o3d.pybind.core.Tensor):
 
         - Both tensors should share the same device and dtype.
         - Float32 and Float64 are supported.
-        - The result can be unexpected when A is not a full-rank matrix and the backend is cuda.
+        - The result can be unexpected when A is not a full-rank matrix and the
+          backend is cuda.
         """
         return super(Tensor, self).lstsq(value)
 
@@ -695,7 +726,8 @@ class Tensor(o3d.pybind.core.Tensor):
     @cast_to_py_tensor
     def svd(self):
         """
-        Returns matrix's SVD decomposition: U S VT = A, where A is Tensor \param self.
+        Returns matrix's SVD decomposition: U S VT = A, where A is Tensor
+        \param self.
 
         Args:
           self: Tensor of shape (m, n).
@@ -918,3 +950,37 @@ class Tensor(o3d.pybind.core.Tensor):
             return super(Tensor, self)._item_bool()
         else:
             raise TypeError("Unspported type when calling item()")
+
+
+class Hashmap(o3d.pybind.core.Hashmap):
+    """
+    Open3D Hashmap class. A Hashmap is a map from key to data wrapped by Tensors.
+    """
+
+    def __init__(self, init_capacity, dtype_key, dtype_value, device=None):
+        super(Hashmap, self).__init__(init_capacity, dtype_key, dtype_value,
+                                      device)
+
+    @cast_to_py_tensor
+    def insert(self, keys, values):
+        return super(Hashmap, self).insert(keys, values)
+
+    @cast_to_py_tensor
+    def find(self, keys):
+        return super(Hashmap, self).find(keys)
+
+    @cast_to_py_tensor
+    def activate(self, keys):
+        return super(Hashmap, self).activate(keys)
+
+    @cast_to_py_tensor
+    def erase(self, keys):
+        return super(Hashmap, self).erase(keys)
+
+    @cast_to_py_tensor
+    def unpack_iterators(self, iterators, masks):
+        return super(Hashmap, self).unpack_iterators(iterators, masks)
+
+    @cast_to_py_tensor
+    def assign_iterators(self, iterators, values, masks=Tensor([])):
+        return super(Hashmap, self).assign_iterators(iterators, values, masks)

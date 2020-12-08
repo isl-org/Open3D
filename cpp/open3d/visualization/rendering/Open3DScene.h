@@ -38,6 +38,12 @@ namespace geometry {
 class Geometry3D;
 }  // namespace geometry
 
+namespace t {
+namespace geometry {
+class PointCloud;
+}
+}  // namespace t
+
 namespace visualization {
 namespace rendering {
 
@@ -50,12 +56,20 @@ public:
     Open3DScene(Renderer& renderer);
     ~Open3DScene();
 
-    ViewHandle CreateView();
-    void DestroyView(ViewHandle view);
-    View* GetView(ViewHandle view) const;
+    View* GetView() const;
+    ViewHandle GetViewId() const { return view_; }
 
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);
+    void SetBackgroundColor(const Eigen::Vector4f& color);
+
+    /// Sets the maximum number of points before AddGeometry also adds a
+    /// downsampled point cloud with number of points, used when rendering
+    /// speed is important.
+    void SetDownsampleThreshold(size_t n_points) {
+        downsample_threshold_ = n_points;
+    }
+    size_t GetDownsampleThreshold() const { return downsample_threshold_; }
 
     void ClearGeometry();
     /// Adds a geometry with the specified name. Default visible is true.
@@ -63,9 +77,18 @@ public:
                      std::shared_ptr<const geometry::Geometry3D> geom,
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
+    // Note: we can't use shared_ptr here, as we might be given something
+    //       from Python, which is using unique_ptr. The pointer must live long
+    //       enough to get copied to the GPU by the render thread.
+    void AddGeometry(const std::string& name,
+                     const t::geometry::PointCloud* geom,
+                     const Material& mat,
+                     bool add_downsampled_copy_for_fast_rendering = true);
+    bool HasGeometry(const std::string& name) const;
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
+    void ModifyGeometryMaterial(const std::string& name, const Material& mat);
     void AddModel(const std::string& name, const TriangleMeshModel& model);
 
     /// Updates all geometries to use this material
@@ -92,6 +115,7 @@ private:
     struct GeometryData {
         std::string name;
         std::string fast_name;
+        std::string low_name;
         bool visible;
 
         GeometryData() : visible(false) {}  // for STL containers
@@ -107,8 +131,11 @@ private:
     ViewHandle view_;
 
     LOD lod_ = LOD::HIGH_DETAIL;
+    bool use_low_quality_if_available_ = false;
+    bool axis_dirty_ = true;
     std::map<std::string, GeometryData> geometries_;  // name -> data
     geometry::AxisAlignedBoundingBox bounds_;
+    size_t downsample_threshold_ = 6000000;
 };
 
 }  // namespace rendering

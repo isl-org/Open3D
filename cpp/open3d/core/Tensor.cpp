@@ -610,6 +610,8 @@ std::string Tensor::ScalarPtrToString(const void* ptr) const {
     std::string str = "";
     if (dtype_ == Dtype::Bool) {
         str = *static_cast<const unsigned char*>(ptr) ? "True" : "False";
+    } else if (dtype_.IsObject()) {
+        str = fmt::format("{}", fmt::ptr(ptr));
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
             str = fmt::format("{}", *static_cast<const scalar_t*>(ptr));
@@ -641,21 +643,38 @@ Tensor Tensor::Slice(int64_t dim,
                      int64_t stop,
                      int64_t step) const {
     if (shape_.size() == 0) {
-        utility::LogError("Slice cannot be applied to 0-dim Tensor");
+        utility::LogError("Slice cannot be applied to 0-dim Tensor.");
     }
     dim = shape_util::WrapDim(dim, NumDims());
     if (dim < 0 || dim >= static_cast<int64_t>(shape_.size())) {
-        utility::LogError("Dim {} is out of bound for SizeVector of length {}",
+        utility::LogError("Dim {} is out of bound for SizeVector of length {}.",
                           dim, shape_.size());
     }
-    // TODO: support negative step sizes
     if (step == 0) {
-        utility::LogError("Step size cannot be 0");
+        utility::LogError("Step size cannot be 0.");
+    } else if (step < 0) {
+        // TODO: support negative step sizes
+        utility::LogError("Step size cannot be 0.");
     }
-    start = shape_util::WrapDim(start, shape_[dim]);
-    stop = shape_util::WrapDim(stop, shape_[dim], /*inclusive=*/true);
+
+    // Wrap start. Out-of-range slice is valid and produces empty Tensor.
+    if (start < 0) {
+        start += shape_[dim];
+    }
+    if (start < 0) {
+        start = 0;
+    } else if (start >= shape_[dim]) {
+        start = shape_[dim];
+    }
+
+    // Wrap stop. Out-of-range slice is valid and produces empty Tensor.
+    if (stop < 0) {
+        stop += shape_[dim];
+    }
     if (stop < start) {
         stop = start;
+    } else if (stop >= shape_[dim]) {
+        stop = shape_[dim];
     }
 
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
@@ -1062,6 +1081,19 @@ std::vector<Tensor> Tensor::NonZeroNumpy() const {
 
 Tensor Tensor::NonZero() const { return kernel::NonZero(*this); }
 
+bool Tensor::IsNonZero() const {
+    if (shape_.NumElements() != 1) {
+        utility::LogError(
+                "Tensor must have exactly one element to be evaluated as "
+                "boolean.");
+    }
+    bool rc = false;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        rc = Item<scalar_t>() != static_cast<scalar_t>(0);
+    });
+    return rc;
+}
+
 bool Tensor::All() const {
     Tensor dst({}, dtype_, GetDevice());
     kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
@@ -1208,6 +1240,18 @@ void Tensor::AssertShape(const SizeVector& expected_shape) const {
         utility::LogError(
                 "Tensor shape {} does not match expected shape {}: {}", shape_,
                 expected_shape);
+    }
+}
+
+void Tensor::AssertShapeCompatible(
+        const DynamicSizeVector& expected_shape) const {
+    GetShape().AssertCompatible(expected_shape);
+}
+
+void Tensor::AssertDevice(const Device& expected_device) const {
+    if (GetDevice() != expected_device) {
+        utility::LogError("Tensor has device {}, but is expected to be {}.",
+                          GetDevice().ToString(), expected_device.ToString());
     }
 }
 

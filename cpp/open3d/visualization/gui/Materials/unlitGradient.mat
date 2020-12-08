@@ -1,0 +1,48 @@
+// This shader provides both a colormap and a LUT shader. The calculations are
+// slightly different, so to avoid an if-statement, we multiply by isLUT to
+// disable features of the calculation. The scalar values need to go in uv0.x.
+// The user of the shader is responsible for creating the texture. For a
+// colormap, the texture can be anything, and the shader will compute the correct
+// texture coordinate in the range of [0.0, 1.0]. isLUT must be set to 0.
+// For an LUT, minValue should be 0.0 and maxValue should be N, the number of
+// items in the table. The labels are assumed to be continuous integer values
+// from [0, N]. The texture must be an Nx1 texture. isLUT must be set to 1.0.
+material {
+    name : unlitGradient,
+    shadingModel : unlit,
+    doubleSided : true,
+    // Ideally we could use 'blending : transparent' but that seems to have
+    // depth-buffering problems, even when alpha=1.0. Since the purpose of the
+    // alpha is to turn labels on or off, we can use 'masked' instead.
+    blending : masked,
+    maskThreshold : 0.9,
+
+    parameters : [
+        { type : float,     name : minValue },
+        { type : float,     name : maxValue },
+        { type : float,     name : isLUT },
+        { type : float,     name : pointSize },
+        { type : sampler2d, name : gradient }
+    ],
+
+    requires : [ uv0 ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        float range = (materialParams.maxValue - materialParams.minValue + materialParams.isLUT); 
+        float val = (getUV0().x - materialParams.minValue + 0.5 * materialParams.isLUT) / range;
+        // (don't need clamp, since we should be using ClampToEdge on the texture
+        material.baseColor = texture(materialParams_gradient, float2(val, 0.5));
+        // blending: fade assumes pre-multiplied alpha
+        material.baseColor.rgb *= material.baseColor.a;
+    }
+}

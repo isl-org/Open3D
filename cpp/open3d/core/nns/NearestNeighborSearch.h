@@ -29,7 +29,10 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/nns/FaissIndex.h"
+#include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/NanoFlannIndex.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
@@ -44,7 +47,7 @@ public:
     ///
     /// \param dataset_points Dataset points for constructing search index. Must
     /// be 2D, with shape {n, d}.
-    NearestNeighborSearch(const core::Tensor &dataset_points)
+    NearestNeighborSearch(const Tensor &dataset_points)
         : dataset_points_(dataset_points){};
 
     ~NearestNeighborSearch();
@@ -64,8 +67,9 @@ public:
 
     /// Set index for fixed-radius search.
     ///
-    /// \return Returns true if building index success, otherwise false.
-    bool FixedRadiusIndex();
+    /// \param radius optional radius parameter. required for gpu fixed radius
+    /// index. \return Returns true if building index success, otherwise false.
+    bool FixedRadiusIndex(utility::optional<double> radius = {});
 
     /// Set index for hybrid search.
     ///
@@ -75,15 +79,13 @@ public:
     /// Perform knn search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
-    /// \param knn Number of neighbor to search.
-    /// \return Ap air of Tensors, (indices, distances):
+    /// \param knn Number of neighbors to search per query point.
+    /// \return Pair of Tensors, (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distainces: Tensor of shape {n, knn}, with dtype Float64.
-    std::pair<core::Tensor, core::Tensor> KnnSearch(
-            const core::Tensor &query_points, int knn);
+    /// - distainces: Tensor of shape {n, knn}, same dtype with query_points.
+    std::pair<Tensor, Tensor> KnnSearch(const Tensor &query_points, int knn);
 
-    /// Perform fixed radius search. All query points are searched with the same
-    /// radius value.
+    /// Perform fixed radius search. All query points share the same radius.
     ///
     /// \param query_points Data points for querying. Must be 2D, with shape {n,
     /// d}.
@@ -91,13 +93,13 @@ public:
     /// \return Tuple of Tensors, (indices, distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
     /// Int64.
-    /// - distances: Tensor of shape {total_number_of_neighbors,}, with
-    /// dtype Float64.
+    /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
+    /// with query_points.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
-    std::tuple<core::Tensor, core::Tensor, core::Tensor> FixedRadiusSearch(
-            const core::Tensor &query_points, double radius);
+    std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
+            const Tensor &query_points, double radius);
 
-    /// Perform multi-radius search. Each query point has one radius.
+    /// Perform multi-radius search. Each query point has an independent radius.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param radii Radii of query points. Each query point has one radius.
@@ -105,11 +107,11 @@ public:
     /// \return Tuple of Tensors, (indices,distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
     /// Int64.
-    /// - distances: Tensor of shape {total_number_of_neighbors,}, with
-    /// dtype Float64.
+    /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
+    /// with query_points.
     /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
-    std::tuple<core::Tensor, core::Tensor, core::Tensor> MultiRadiusSearch(
-            const core::Tensor &query_points, const std::vector<double> &radii);
+    std::tuple<Tensor, Tensor, Tensor> MultiRadiusSearch(
+            const Tensor &query_points, const Tensor &radii);
 
     /// Perform hybrid search.
     ///
@@ -119,15 +121,22 @@ public:
     /// \param max_knn Maximum number of neighbor to search per query.
     /// \return Pair of Tensors, (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distainces: Tensor of shape {n, knn}, with dtype Float64.
-    std::pair<core::Tensor, core::Tensor> HybridSearch(
-            const core::Tensor &query_points, double radius, int max_knn);
+    /// - distainces: Tensor of shape {n, knn}, with same dtype with
+    /// query_points.
+    std::pair<Tensor, Tensor> HybridSearch(const Tensor &query_points,
+                                           double radius,
+                                           int max_knn);
 
 private:
     bool SetIndex();
 
+    /// Assert a Tensor is not CUDA tensoer. This will be removed in the future.
+    void AssertNotCUDA(const Tensor &t) const;
+
 protected:
     std::unique_ptr<NanoFlannIndex> nanoflann_index_;
+    std::unique_ptr<FaissIndex> faiss_index_;
+    std::unique_ptr<nns::FixedRadiusIndex> fixed_radius_index_;
     const Tensor dataset_points_;
 };
 }  // namespace nns

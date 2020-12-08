@@ -57,7 +57,7 @@ public:
     }
 
     static void GLFWErrorCallback(int error, const char *description) {
-        utility::LogError("GLFW Error: {}", description);
+        utility::LogWarning("GLFW Error: {}", description);
     }
 };
 

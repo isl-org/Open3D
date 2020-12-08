@@ -60,6 +60,7 @@
 
 /// @cond
 namespace filament {
+class Box;
 class Engine;
 class IndirectLight;
 class Renderer;
@@ -74,8 +75,8 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class FilamentResourceManager;
 class FilamentView;
+class GeometryBuffersBuilder;
 class Renderer;
 class View;
 
@@ -98,6 +99,7 @@ public:
 
     View* GetView(const ViewHandle& view_id) const override;
     void SetViewActive(const ViewHandle& view_id, bool is_active) override;
+    void SetRenderOnce(const ViewHandle& view_id) override;
     void RemoveView(const ViewHandle& view_id) override;
 
     // Camera
@@ -109,12 +111,20 @@ public:
     // Scene geometry
     bool AddGeometry(const std::string& object_name,
                      const geometry::Geometry3D& geometry,
-                     const Material& material) override;
+                     const Material& material,
+                     const std::string& downsampled_name = "",
+                     size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
-                     const tgeometry::PointCloud& point_cloud,
-                     const Material& material) override;
+                     const t::geometry::PointCloud& point_cloud,
+                     const Material& material,
+                     const std::string& downsampled_name = "",
+                     size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
                      const TriangleMeshModel& model) override;
+    bool HasGeometry(const std::string& object_name) const override;
+    void UpdateGeometry(const std::string& object_name,
+                        const t::geometry::PointCloud& point_cloud,
+                        uint32_t update_flags) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
     bool GeometryIsVisible(const std::string& object_name) override;
@@ -185,10 +195,9 @@ public:
     void SetIndirectLightRotation(const Transform& rotation) override;
     Transform GetIndirectLightRotation() override;
     void ShowSkybox(bool show) override;
+    void SetBackgroundColor(const Eigen::Vector4f& color) override;
 
-    void RenderToImage(int width,
-                       int height,
-                       std::function<void(std::shared_ptr<geometry::Image>)>
+    void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
 
     void Draw(filament::Renderer& renderer);
@@ -199,6 +208,15 @@ private:
     MaterialInstanceHandle AssignMaterialToFilamentGeometry(
             filament::RenderableManager::Builder& builder,
             const Material& material);
+    enum BufferReuse { kNo, kYes };
+    bool CreateAndAddFilamentEntity(
+            const std::string& object_name,
+            GeometryBuffersBuilder& buffer_builder,
+            filament::Box& aabb,
+            VertexBufferHandle vb,
+            IndexBufferHandle ib,
+            const Material& material,
+            BufferReuse reusing_vertex_buffer = BufferReuse::kNo);
 
     filament::Engine& engine_;
     FilamentResourceManager& resource_mgr_;
@@ -218,6 +236,8 @@ private:
         rendering::TextureHandle clear_coat_roughness_map =
                 rendering::FilamentResourceManager::kDefaultTexture;
         rendering::TextureHandle anisotropy_map =
+                rendering::FilamentResourceManager::kDefaultTexture;
+        rendering::TextureHandle gradient_texture =
                 rendering::FilamentResourceManager::kDefaultTexture;
     };
 
@@ -252,12 +272,13 @@ private:
     struct ViewContainer {
         std::unique_ptr<FilamentView> view;
         bool is_active = true;
+        int render_count = -1;
     };
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
 
     std::vector<RenderableGeometry*> GetGeometry(const std::string& object_name,
                                                  bool warn_if_not_found = true);
-    bool GeometryIsModel(const std::string& object_name);
+    bool GeometryIsModel(const std::string& object_name) const;
     LightEntity* GetLightInternal(const std::string& light_name,
                                   bool warn_if_not_found = true);
     void OverrideMaterialInternal(RenderableGeometry* geom,
@@ -268,6 +289,9 @@ private:
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);
     void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
+    void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
+    void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
+    void UpdateLineShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
@@ -281,6 +305,7 @@ private:
     bool skybox_enabled_ = false;
     std::weak_ptr<filament::IndirectLight> indirect_light_;
     std::weak_ptr<filament::Skybox> skybox_;
+    std::weak_ptr<filament::Skybox> color_skybox_;
     LightEntity sun_;
 };
 

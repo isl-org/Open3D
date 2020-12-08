@@ -121,9 +121,6 @@ Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input) {
 
 std::tuple<bool, Eigen::Matrix4d> SolveJacobianSystemAndObtainExtrinsicMatrix(
         const Eigen::Matrix6d &JTJ, const Eigen::Vector6d &JTr) {
-    std::vector<Eigen::Matrix4d, Matrix4d_allocator> output_matrix_array;
-    output_matrix_array.clear();
-
     bool solution_exist;
     Eigen::Vector6d x;
     std::tie(solution_exist, x) = SolveLinearSystemPSD(JTJ, -JTr);
@@ -131,9 +128,8 @@ std::tuple<bool, Eigen::Matrix4d> SolveJacobianSystemAndObtainExtrinsicMatrix(
     if (solution_exist) {
         Eigen::Matrix4d extrinsic = TransformVector6dToMatrix4d(x);
         return std::make_tuple(solution_exist, std::move(extrinsic));
-    } else {
-        return std::make_tuple(false, Eigen::Matrix4d::Identity());
     }
+    return std::make_tuple(false, Eigen::Matrix4d::Identity());
 }
 
 std::tuple<bool, std::vector<Eigen::Matrix4d, Matrix4d_allocator>>
@@ -167,7 +163,7 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
 
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(int, VecType &, double &)> f,
+        std::function<void(int, VecType &, double &, double &)> f,
         int iteration_num,
         bool verbose /*=true*/) {
     MatType JTJ;
@@ -175,10 +171,8 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
     double r2_sum = 0.0;
     JTJ.setZero();
     JTr.setZero();
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
         MatType JTJ_private;
         VecType JTr_private;
         double r2_sum_private = 0.0;
@@ -186,26 +180,21 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         JTr_private.setZero();
         VecType J_r;
         double r;
-#ifdef _OPENMP
+        double w = 0.0;
 #pragma omp for nowait
-#endif
         for (int i = 0; i < iteration_num; i++) {
-            f(i, J_r, r);
-            JTJ_private.noalias() += J_r * J_r.transpose();
-            JTr_private.noalias() += J_r * r;
+            f(i, J_r, r, w);
+            JTJ_private.noalias() += J_r * w * J_r.transpose();
+            JTr_private.noalias() += J_r * w * r;
             r2_sum_private += r * r;
         }
-#ifdef _OPENMP
 #pragma omp critical
         {
-#endif
             JTJ += JTJ_private;
             JTr += JTr_private;
             r2_sum += r2_sum_private;
-#ifdef _OPENMP
         }
     }
-#endif
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",
                  r2_sum / (double)iteration_num, iteration_num);
@@ -218,6 +207,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         std::function<
                 void(int,
                      std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
+                     std::vector<double> &,
                      std::vector<double> &)> f,
         int iteration_num,
         bool verbose /*=true*/) {
@@ -226,39 +216,32 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
     double r2_sum = 0.0;
     JTJ.setZero();
     JTr.setZero();
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
         MatType JTJ_private;
         VecType JTr_private;
         double r2_sum_private = 0.0;
         JTJ_private.setZero();
         JTr_private.setZero();
         std::vector<double> r;
+        std::vector<double> w;
         std::vector<VecType, Eigen::aligned_allocator<VecType>> J_r;
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
         for (int i = 0; i < iteration_num; i++) {
-            f(i, J_r, r);
+            f(i, J_r, r, w);
             for (int j = 0; j < (int)r.size(); j++) {
-                JTJ_private.noalias() += J_r[j] * J_r[j].transpose();
-                JTr_private.noalias() += J_r[j] * r[j];
+                JTJ_private.noalias() += J_r[j] * w[j] * J_r[j].transpose();
+                JTr_private.noalias() += J_r[j] * w[j] * r[j];
                 r2_sum_private += r[j] * r[j];
             }
         }
-#ifdef _OPENMP
 #pragma omp critical
         {
-#endif
             JTJ += JTJ_private;
             JTr += JTr_private;
             r2_sum += r2_sum_private;
-#ifdef _OPENMP
         }
     }
-#endif
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",
                  r2_sum / (double)iteration_num, iteration_num);
@@ -268,12 +251,13 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
 
 // clang-format off
 template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
-        std::function<void(int, Eigen::Vector6d &, double &)> f,
+        std::function<void(int, Eigen::Vector6d &, double &, double &)> f,
         int iteration_num, bool verbose);
 
 template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
         std::function<void(int,
                            std::vector<Eigen::Vector6d, Vector6d_allocator> &,
+                           std::vector<double> &,
                            std::vector<double> &)> f,
         int iteration_num, bool verbose);
 // clang-format on
@@ -316,5 +300,84 @@ Eigen::Vector3d ColorToDouble(const Eigen::Vector3uint8 &rgb) {
     return ColorToDouble(rgb(0), rgb(1), rgb(2));
 }
 
+template <typename IdxType>
+Eigen::Matrix3d ComputeCovariance(const std::vector<Eigen::Vector3d> &points,
+                                  const std::vector<IdxType> &indices) {
+    Eigen::Matrix3d covariance;
+    Eigen::Matrix<double, 9, 1> cumulants;
+    cumulants.setZero();
+    for (const auto &idx : indices) {
+        const Eigen::Vector3d &point = points[idx];
+        cumulants(0) += point(0);
+        cumulants(1) += point(1);
+        cumulants(2) += point(2);
+        cumulants(3) += point(0) * point(0);
+        cumulants(4) += point(0) * point(1);
+        cumulants(5) += point(0) * point(2);
+        cumulants(6) += point(1) * point(1);
+        cumulants(7) += point(1) * point(2);
+        cumulants(8) += point(2) * point(2);
+    }
+    cumulants /= (double)indices.size();
+    covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
+    covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
+    covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
+    covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
+    covariance(1, 0) = covariance(0, 1);
+    covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
+    covariance(2, 0) = covariance(0, 2);
+    covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
+    covariance(2, 1) = covariance(1, 2);
+    return covariance;
+}
+
+template <typename IdxType>
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const std::vector<Eigen::Vector3d> &points,
+        const std::vector<IdxType> &indices) {
+    Eigen::Vector3d mean;
+    Eigen::Matrix3d covariance;
+    Eigen::Matrix<double, 9, 1> cumulants;
+    cumulants.setZero();
+    for (const auto &idx : indices) {
+        const Eigen::Vector3d &point = points[idx];
+        cumulants(0) += point(0);
+        cumulants(1) += point(1);
+        cumulants(2) += point(2);
+        cumulants(3) += point(0) * point(0);
+        cumulants(4) += point(0) * point(1);
+        cumulants(5) += point(0) * point(2);
+        cumulants(6) += point(1) * point(1);
+        cumulants(7) += point(1) * point(2);
+        cumulants(8) += point(2) * point(2);
+    }
+    cumulants /= (double)indices.size();
+    mean(0) = cumulants(0);
+    mean(1) = cumulants(1);
+    mean(2) = cumulants(2);
+    covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
+    covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
+    covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
+    covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
+    covariance(1, 0) = covariance(0, 1);
+    covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
+    covariance(2, 0) = covariance(0, 2);
+    covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
+    covariance(2, 1) = covariance(1, 2);
+    return std::make_tuple(mean, covariance);
+}
+
+template Eigen::Matrix3d ComputeCovariance(
+        const std::vector<Eigen::Vector3d> &points,
+        const std::vector<size_t> &indices);
+template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const std::vector<Eigen::Vector3d> &points,
+        const std::vector<size_t> &indices);
+template Eigen::Matrix3d ComputeCovariance(
+        const std::vector<Eigen::Vector3d> &points,
+        const std::vector<int> &indices);
+template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const std::vector<Eigen::Vector3d> &points,
+        const std::vector<int> &indices);
 }  // namespace utility
 }  // namespace open3d

@@ -315,7 +315,7 @@ if(WITH_OPENMP)
 endif()
 
 # X11
-if(UNIX)
+if(UNIX AND NOT APPLE)
     find_package(X11 QUIET)
     if(X11_FOUND)
         add_library(3rdparty_x11 INTERFACE)
@@ -735,18 +735,14 @@ if(TARGET pybind11::module)
 endif()
 
 # Azure Kinect
-include(${Open3D_3RDPARTY_DIR}/azure_kinect/azure_kinect.cmake)
-if(BUILD_AZURE_KINECT)
-    if(TARGET k4a::k4a)
-        set(K4A_TARGET "k4a::k4a")
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "k4a" "k4arecord")
-        endif()
-    else()
-        add_library(3rdparty_k4a INTERFACE)
-        target_include_directories(3rdparty_k4a INTERFACE ${k4a_INCLUDE_DIRS})
-        set(K4A_TARGET "3rdparty_k4a")
-    endif()
+set(BUILD_AZURE_KINECT_COMMENT "//") # Set include header files in Open3D.h
+if (BUILD_AZURE_KINECT)
+    include(${Open3D_3RDPARTY_DIR}/azure_kinect/azure_kinect.cmake)
+    import_3rdparty_library(3rdparty_k4a
+        INCLUDE_DIRS ${K4A_INCLUDE_DIR}
+    )
+    add_dependencies(3rdparty_k4a ext_k4a)
+    set(K4A_TARGET "3rdparty_k4a")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${K4A_TARGET}")
 endif()
 
@@ -846,7 +842,9 @@ endif()
 if(BUILD_GUI)
     if(BUILD_FILAMENT_FROM_SOURCE)
         message(STATUS "Building third-party library Filament from source")
-        if(MSVC OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7))
+        if(MSVC OR (CMAKE_C_COMPILER_ID MATCHES ".*Clang" AND
+            CMAKE_CXX_COMPILER_ID MATCHES ".*Clang"
+            AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7))
             set(FILAMENT_C_COMPILER "${CMAKE_C_COMPILER}")
             set(FILAMENT_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
         else()
@@ -861,14 +859,14 @@ if(BUILD_GUI)
                     if (CMAKE_MATCH_1 GREATER_EQUAL 7)
                         message(STATUS "Using ${CLANG_DEFAULT_CXX} to build Filament")
                         set(FILAMENT_C_COMPILER "${CLANG_DEFAULT_CC}")
-                        set(FILAMENT_CXX_COMPILER "${CLANG_DEFAULT_CC}")
+                        set(FILAMENT_CXX_COMPILER "${CLANG_DEFAULT_CXX}")
                     endif()
                 endif()
             endif()
             # If the default version is not sufficient, look for some specific versions
             if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
-                find_program(CLANG_VERSIONED_CC NAMES clang-10 clang-9 clang-8 clang-7)
-                find_program(CLANG_VERSIONED_CXX NAMES clang++-10 clang++-9 clang++-8 clang++-7)
+                find_program(CLANG_VERSIONED_CC NAMES clang-11 clang-10 clang-9 clang-8 clang-7)
+                find_program(CLANG_VERSIONED_CXX NAMES clang++11 clang++-10 clang++-9 clang++-8 clang++-7)
                 if (CLANG_VERSIONED_CC AND CLANG_VERSIONED_CXX)
                     set(FILAMENT_C_COMPILER "${CLANG_VERSIONED_CC}")
                     set(FILAMENT_CXX_COMPILER "${CLANG_VERSIONED_CXX}")
@@ -877,6 +875,17 @@ if(BUILD_GUI)
                     message(FATAL_ERROR "Need Clang >= 7 to compile Filament from source")
                 endif()
             endif()
+        endif()
+        # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
+        # libraries are located at /usr/lib/llvm-{version}/lib, and the default
+        # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
+        # /usr/lib/aarch64-linux-gnu.
+        # For aarch64, the symbolic link path may not work for CMake's
+        # find_library. Therefore, when compiling Filament from source, we
+        # explicitly find the corresponidng path based on the clang version.
+        execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
+        if(clang_version MATCHES "clang version ([0-9]+)")
+            set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
         endif()
         include(${Open3D_3RDPARTY_DIR}/filament/filament_build.cmake)
     else()
@@ -899,11 +908,28 @@ if(BUILD_GUI)
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
     target_link_libraries(3rdparty_filament INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
     if(UNIX AND NOT APPLE)
-        find_library(CPP_LIBRARY c++)
-        if(CPP_LIBRARY)
-            # Ensure that libstdc++ gets linked first
-            target_link_libraries(3rdparty_filament INTERFACE -lstdc++ ${CPP_LIBRARY})
+        # Find CLANG_LIBDIR if it is not defined. Mutiple paths will be searched.
+        if (NOT CLANG_LIBDIR)
+            find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+                         llvm-11/lib llvm-10/lib llvm-9/lib llvm-8/lib llvm-7/lib
+                         REQUIRED)
+            get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
         endif()
+        # Find clang libraries at the exact path ${CLANG_LIBDIR}.
+        find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+        find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+        if(CPP_LIBRARY-NOTFOUND)
+            message(FATAL_ERROR "CPP_LIBRARY-NOTFOUND")
+        endif()
+        if(CPPABI_LIBRARY-NOTFOUND)
+            message(FATAL_ERROR "CPPABI_LIBRARY-NOTFOUND")
+        endif()
+        # Ensure that libstdc++ gets linked first
+        target_link_libraries(3rdparty_filament INTERFACE -lstdc++
+                              ${CPP_LIBRARY} ${CPPABI_LIBRARY})
+        message(STATUS "CLANG_LIBDIR: ${CLANG_LIBDIR}")
+        message(STATUS "CPP_LIBRARY: ${CPP_LIBRARY}")
+        message(STATUS "CPPABI_LIBRARY: ${CPPABI_LIBRARY}")
     endif()
     if (APPLE)
         find_library(CORE_VIDEO CoreVideo)
@@ -946,6 +972,9 @@ if(BUILD_RPC_INTERFACE)
     set(ZEROMQ_TARGET "3rdparty_zeromq")
     add_dependencies(${ZEROMQ_TARGET} ext_zeromq)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZEROMQ_TARGET}")
+    if( DEFINED ZEROMQ_ADDITIONAL_LIBS )
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${ZEROMQ_ADDITIONAL_LIBS})
+    endif()
 
     # msgpack
     include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
@@ -957,31 +986,114 @@ if(BUILD_RPC_INTERFACE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MSGPACK_TARGET}")
 endif()
 
-# MKL, cuSOLVER, cuBLAS
-# We link MKL statically. For MKL link flags, refer to:
-# https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
-message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
-include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
-import_3rdparty_library(3rdparty_mkl
-    INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
-    LIB_DIR      ${STATIC_MKL_LIB_DIR}
-    LIBRARIES    ${STATIC_MKL_LIBRARIES}
+# TBB
+include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
+import_3rdparty_library(3rdparty_tbb
+    INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
+    LIB_DIR      ${STATIC_TBB_LIB_DIR}
+    LIBRARIES    ${STATIC_TBB_LIBRARIES}
 )
-set(MKL_TARGET "3rdparty_mkl")
-add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
-message(STATUS "STATIC_MKL_INCLUDE_DIR: ${STATIC_MKL_INCLUDE_DIR}")
-message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
-message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
-if(UNIX)
-    target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
-    target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
-    # cuSOLVER and cuBLAS
-    if(BUILD_CUDA_MODULE)
-        target_link_libraries(3rdparty_mkl INTERFACE
-                              ${CUDA_cusolver_LIBRARY}
-                              ${CUDA_CUBLAS_LIBRARIES})
+set(TBB_TARGET "3rdparty_tbb")
+add_dependencies(3rdparty_tbb ext_tbb)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
+
+if(USE_BLAS)
+    # Try to locate system BLAS/LAPACK
+    find_package(BLAS)
+    find_package(LAPACK)
+    find_package(LAPACKE)
+    if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
+        message(STATUS "Using system BLAS/LAPACK")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${BLAS_LIBRARIES}")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACK_LIBRARIES}")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACKE_LIBRARIES}")
+        if(BUILD_CUDA_MODULE)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CUDA_cusolver_LIBRARY}")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CUDA_CUBLAS_LIBRARIES}")
+        endif()
+    else()
+        # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
+        message(STATUS "Building OpenBLAS with LAPACK from source")
+        set(BLAS_BUILD_FROM_SOURCE ON)
+
+        include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
+        import_3rdparty_library(3rdparty_openblas
+            INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
+            LIB_DIR      ${OPENBLAS_LIB_DIR}
+            LIBRARIES    ${OPENBLAS_LIBRARIES}
+        )
+        set(OPENBLAS_TARGET "3rdparty_openblas")
+        add_dependencies(3rdparty_openblas ext_openblas)
+        target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads gfortran)
+        if(BUILD_CUDA_MODULE)
+            target_link_libraries(3rdparty_openblas INTERFACE
+                                ${CUDA_cusolver_LIBRARY}
+                                ${CUDA_CUBLAS_LIBRARIES})
+        endif()
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
     endif()
-elseif(MSVC)
-    target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
+else()
+    include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
+    # MKL, cuSOLVER, cuBLAS
+    # We link MKL statically. For MKL link flags, refer to:
+    # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
+    message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
+    import_3rdparty_library(3rdparty_mkl
+        INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
+        LIB_DIR      ${STATIC_MKL_LIB_DIR}
+        LIBRARIES    ${STATIC_MKL_LIBRARIES}
+    )
+    set(MKL_TARGET "3rdparty_mkl")
+    add_dependencies(3rdparty_mkl ext_tbb ext_mkl_include ext_mkl)
+
+    message(STATUS "STATIC_MKL_INCLUDE_DIR: ${STATIC_MKL_INCLUDE_DIR}")
+    message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
+    message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
+    if(UNIX)
+        target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
+        target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+        # cuSOLVER and cuBLAS
+        if(BUILD_CUDA_MODULE)
+            target_link_libraries(3rdparty_mkl INTERFACE
+                                ${CUDA_cusolver_LIBRARY}
+                                ${CUDA_CUBLAS_LIBRARIES})
+        endif()
+    elseif(MSVC)
+        target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
+    endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
+
+# Faiss
+if (WITH_FAISS AND WIN32)
+    message(STATUS "Faiss is not supported on Windows")
+    set(WITH_FAISS OFF)
+elseif(WITH_FAISS)
+    message(STATUS "Building third-party library faiss from source")
+    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
+endif()
+if (WITH_FAISS)
+    message(STATUS "FAISS_INCLUDE_DIR: ${FAISS_INCLUDE_DIR}")
+    message(STATUS "FAISS_LIB_DIR: ${FAISS_LIB_DIR}")
+    if (USE_BLAS)
+        if (BLAS_BUILD_FROM_SOURCE)
+            set(FAISS_EXTRA_DEPENDENCIES 3rdparty_openblas)
+        endif()
+    else()
+        set(FAISS_EXTRA_LIBRARIES ${STATIC_MKL_LIBRARIES})
+        set(FAISS_EXTRA_DEPENDENCIES 3rdparty_mkl)
+    endif()
+    import_3rdparty_library(3rdparty_faiss
+        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
+        LIBRARIES ${FAISS_LIBRARIES} ${FAISS_EXTRA_LIBRARIES}
+        LIB_DIR ${FAISS_LIB_DIR}
+    )
+    add_dependencies(3rdparty_faiss ext_faiss)
+    if (FAISS_EXTRA_DEPENDENCIES)
+        add_dependencies(ext_faiss ${FAISS_EXTRA_DEPENDENCIES})
+    endif()
+    set(FAISS_TARGET "3rdparty_faiss")
+    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
+

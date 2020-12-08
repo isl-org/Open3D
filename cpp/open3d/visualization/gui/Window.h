@@ -52,6 +52,7 @@ class Window {
     friend class Renderer;
 
 public:
+    static const int FLAG_HIDDEN;
     static const int FLAG_TOPMOST;
 
     /// Creates a Window that is auto-sized and centered. Window creation is
@@ -146,6 +147,10 @@ public:
 
     void ShowMessageBox(const char* title, const char* message);
 
+    /// This is for internal use in rare circumstances when the destructor
+    /// will not be called in a timely fashion.
+    void DestroyWindow();
+
 protected:
     /// Returns the preferred size of the window. The window is not
     /// obligated to honor this size. If all children of the window
@@ -171,6 +176,7 @@ private:
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw();
     Widget::DrawResult DrawOnce(bool is_layout_pass);
+    void ForceRedrawSceneWidget();
     void OnResize();
     void OnMouseEvent(const MouseEvent& e);
     void OnKeyEvent(const KeyEvent& e);

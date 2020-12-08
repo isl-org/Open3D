@@ -26,9 +26,12 @@
 
 #include "open3d/visualization/visualizer/GuiVisualizer.h"
 
+#include <random>
+
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
+#include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/FileFormatIO.h"
@@ -65,6 +68,7 @@
 #include "open3d/visualization/visualizer/GuiSettingsModel.h"
 #include "open3d/visualization/visualizer/GuiSettingsView.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
+#include "open3d/visualization/visualizer/Receiver.h"
 
 #define LOAD_IN_NEW_WINDOW 0
 
@@ -323,13 +327,15 @@ enum MenuId {
     HELP_KEYS,
     HELP_CAMERA,
     HELP_ABOUT,
-    HELP_CONTACT
+    HELP_CONTACT,
+    HELP_DEBUG
 };
 
 struct GuiVisualizer::Impl {
     std::shared_ptr<gui::SceneWidget> scene_wgt_;
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
+    std::shared_ptr<Receiver> receiver_;
 
     struct Settings {
         rendering::Material lit_material_;
@@ -384,6 +390,7 @@ struct GuiVisualizer::Impl {
         render_scene->SetIndirectLight(ibl_name);
         float intensity = render_scene->GetIndirectLightIntensity();
         render_scene->SetIndirectLightIntensity(intensity);
+        scene_wgt_->ForceRedraw();
 
         return true;
     }
@@ -402,7 +409,8 @@ struct GuiVisualizer::Impl {
 
     void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
         auto bcolor = settings_.model_.GetBackgroundColor();
-        renderer.SetClearColor({bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
+        scene_wgt_->GetScene()->SetBackgroundColor(
+                {bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
 
         if (settings_.model_.GetShowSkybox()) {
             scene_wgt_->GetScene()->ShowSkybox(true);
@@ -414,6 +422,9 @@ struct GuiVisualizer::Impl {
         scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
+
+        // Make sure scene redraws once changes have been applied
+        scene_wgt_->ForceRedraw();
 
         // Bail early if there were no material property changes
         if (!material_changed) return;
@@ -620,6 +631,7 @@ void GuiVisualizer::Init() {
                 lighting.sun_dir = new_dir.normalized();
                 impl_->settings_.model_.SetCustomLighting(lighting);
             });
+    impl_->scene_wgt_->EnableSceneCaching(true);
 
     // Create light
     auto &settings = impl_->settings_;
@@ -816,6 +828,9 @@ void GuiVisualizer::SetGeometry(
     auto &bounds = scene3d->GetBoundingBox();
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
                                    bounds.GetCenter().cast<float>());
+
+    // Make sure scene is redrawn
+    impl_->scene_wgt_->ForceRedraw();
 }
 
 void GuiVisualizer::Layout(const gui::Theme &theme) {
@@ -844,6 +859,31 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     impl_->settings_.wgt_base->SetFrame(lightSettingsRect);
 
     Super::Layout(theme);
+}
+
+void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
+#ifdef BUILD_RPC_INTERFACE
+    impl_->receiver_ = std::make_shared<Receiver>(
+            this, impl_->scene_wgt_->GetScene(), address, timeout);
+    try {
+        utility::LogInfo("Starting to listen on {}", address);
+        impl_->receiver_->Start();
+    } catch (std::exception &e) {
+        utility::LogWarning("Failed to start RPC interface: {}", e.what());
+    }
+#else
+    utility::LogWarning(
+            "GuiVisualizer::StartRPCInterface: RPC interface not built");
+#endif
+}
+
+void GuiVisualizer::StopRPCInterface() {
+#ifdef BUILD_RPC_INTERFACE
+    impl_->receiver_.reset();
+#else
+    utility::LogWarning(
+            "GuiVisualizer::StopRPCInterface: RPC interface not built");
+#endif
 }
 
 bool GuiVisualizer::SetIBL(const char *path) {
@@ -943,11 +983,9 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
     });
 }
 
-void GuiVisualizer::ExportCurrentImage(int width,
-                                       int height,
-                                       const std::string &path) {
+void GuiVisualizer::ExportCurrentImage(const std::string &path) {
+    impl_->scene_wgt_->EnableSceneCaching(false);
     impl_->scene_wgt_->GetScene()->GetScene()->RenderToImage(
-            width, height,
             [this, path](std::shared_ptr<geometry::Image> image) mutable {
                 if (!io::WriteImage(path, *image)) {
                     this->ShowMessageBox(
@@ -955,6 +993,7 @@ void GuiVisualizer::ExportCurrentImage(int width,
                                       path + ".")
                                              .c_str());
                 }
+                impl_->scene_wgt_->EnableSceneCaching(true);
             });
 }
 
@@ -1000,8 +1039,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
             dlg->SetOnCancel([this]() { this->CloseDialog(); });
             dlg->SetOnDone([this](const char *path) {
                 this->CloseDialog();
-                auto r = GetContentRect();
-                this->ExportCurrentImage(r.width, r.height, path);
+                this->ExportCurrentImage(path);
             });
             ShowDialog(dlg);
             break;
@@ -1065,6 +1103,9 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
         case HELP_CONTACT: {
             auto dlg = CreateContactDialog(this);
             ShowDialog(dlg);
+            break;
+        }
+        case HELP_DEBUG: {
             break;
         }
     }
