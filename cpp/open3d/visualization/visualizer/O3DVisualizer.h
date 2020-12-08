@@ -83,6 +83,7 @@ public:
 
         Eigen::Vector4f bg_color = {1.0f, 1.0f, 1.0f, 1.0f};
         int point_size = 3;
+        int line_width = 1;
 
         bool use_ibl = false;
         bool use_sun = true;
@@ -136,6 +137,7 @@ public:
     void ShowSkybox(bool show);
     void ShowAxes(bool show);
     void SetPointSize(int point_size);
+    void SetLineWidth(int line_width);
     void EnableGroup(const std::string& group, bool enable);
 
     std::vector<O3DVisualizerSelections::SelectionSet> GetSelectionSets() const;

@@ -228,7 +228,15 @@ void pybind_o3dvisualizer(py::module& m) {
                     [](const O3DVisualizer& dv) {
                         return dv.GetUIState().point_size;
                     },
-                    &O3DVisualizer::SetPointSize, "Gets/sets size of points")
+                    &O3DVisualizer::SetPointSize,
+                    "Gets/sets size of points (in units of pixels)")
+            .def_property(
+                    "line_width",
+                    [](const O3DVisualizer& dv) {
+                        return dv.GetUIState().line_width;
+                    },
+                    &O3DVisualizer::SetLineWidth,
+                    "Gets/sets width of lines (in units of pixels)")
             .def_property_readonly("scene", &O3DVisualizer::GetScene,
                                    "Returns the rendering.Open3DScene object "
                                    "for low-level manipulation")
