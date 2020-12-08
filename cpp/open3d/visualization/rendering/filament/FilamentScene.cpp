@@ -1362,7 +1362,8 @@ void FilamentScene::SetBackground(
     m.base_color = color;
     if (image) {
         m.albedo_img = image;
-        m.aspect_ratio = image->width_ / image->height_;
+        m.aspect_ratio = static_cast<float>(image->width_) /
+                         static_cast<float>(image->height_);
     } else {
         m.albedo_img = nullptr;
         m.aspect_ratio = 0.0;

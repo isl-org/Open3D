@@ -38,7 +38,7 @@ fragment {
                 // (This if should have good coherence: nearby pixels are
                 // very likely to take the same branch)
                 if (xy[0] >= 0.5 - half_w && xy[0] <= 0.5 + half_w) {
-                    float2 uv = float2((xy[0] - (0.5 - half_w)) / (2 * half_w),
+                    float2 uv = float2((xy[0] - (0.5 - half_w)) / (2.0 * half_w),
                                        xy[1]);
                     material.baseColor.rgb = texture(materialParams_albedo, uv).rgb;
                 } else {
@@ -50,7 +50,7 @@ fragment {
                 // very likely to take the same branch)
                 if (xy[1] >= 0.5 - half_h && xy[1] <= 0.5 + half_h) {
                     float2 uv = float2(xy[0],
-                                       (xy[1] - (0.5 - half_h)) / (2 * half_h));
+                                       (xy[1] - (0.5 - half_h)) / (2.0 * half_h));
                     material.baseColor.rgb = texture(materialParams_albedo, uv).rgb;
                 } else {
                     material.baseColor = float4(materialParams.baseColor, 1.0f);
