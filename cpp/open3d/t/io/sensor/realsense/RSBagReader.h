@@ -27,6 +27,7 @@
 #pragma once
 
 #include <atomic>
+#include <condition_variable>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -55,12 +56,18 @@ namespace io {
  *  - The streams must have the same frame rate.
  *  - The color stream must have RGB 8 bit (RGB8/BGR8) pixel format
  *  - The depth stream must have 16 bit unsigned int (Z16) pixel format
+ * The output is synchronized color and depth frame pairs with the depth frame
+ * aligned to the color frame. Unsynchronized frames will be dropped. With
+ * alignment, the depth and color camera pair behaves as a single camera.
  * https://intelrealsense.github.io/librealsense/doxygen/rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7
  * for format documentation
+ *
+ * Note: A few frames may be dropped if user code takes a long time (>10 frame
+ * intervals) to process a frame.
  */
 class RSBagReader : public RGBDVideoReader {
 public:
-    static const size_t DEFAULT_BUFFER_SIZE = 64;
+    static const size_t DEFAULT_BUFFER_SIZE = 32;
     RSBagReader(size_t buffer_size = DEFAULT_BUFFER_SIZE);
     RSBagReader(const RSBagReader &) = delete;
     RSBagReader &operator=(const RSBagReader &) = delete;
@@ -95,15 +102,33 @@ private:
     core::Dtype dt_color_, dt_depth_;
     uint8_t channels_color_;
 
-    bool is_eof_ = false,  ///< Write by frame_reader_thread
-            is_opened_ = false;
+    bool is_eof_ = false,  ///< Write by frame_reader_thread. Non-atomic OK
+                           ///< since 1 byte.
+            is_opened_ = false;  ///< Read by frame_reader_thread. Non-atomic OK
+                                 ///< since 1 byte.
 
+    /// A frame buffer and a separate frame reader thread are used to prevent
+    /// frame drops in non real time applications, when the frames
+    /// are processed by user code for an arbitrarily long time. The
+    /// librealsense2 API for this use case rs2::playback::set_real_time(false)
+    /// results in a deadlock after 4 frames on macOS and Linux with SDK
+    /// v2.40.0. The recommended workaround with rs2::playback::pause() and
+    /// rs2::playback::resume() after reading each frame results in memory
+    /// corruption in macOS (not in Linux).
+    /// https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
     std::vector<t::geometry::RGBDImage> frame_buffer_;
-    std::vector<uint64_t> frame_position_us_;
-    std::atomic<uint64_t> head_fid{0},  ///< Write by frame_reader_thread.
-                                        ///< Invalid buffer position.
-            tail_fid{0};                ///< Next unread frame position
+    std::vector<uint64_t>
+            frame_position_us_;  ///< buffer for frame position in us
+    std::atomic<uint64_t> head_fid{
+            0},           ///< Next write position by frame_reader_thread.
+            tail_fid{0};  ///< Next unread frame position
     std::condition_variable need_frames;
+    /// This workaround implements a single producer single consumer frame queue
+    /// with a circular buffer. The producer thread (frame_reader_thread) keeps
+    /// the buffer full. The main thread reads from the current position in the
+    /// buffer and signals the producer thread with a condition variable for
+    /// more frames if less than a quarter of the frames remain. \param
+    /// start_time_us is used to implement seeking in the file.
     void fill_frame_buffer(uint64_t start_time_us = 0);
     std::thread frame_reader_thread;
 

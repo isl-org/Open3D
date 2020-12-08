@@ -173,9 +173,8 @@ void RSBagReader::fill_frame_buffer(uint64_t start_time_us) try {
     uint64_t nreq = 0, fid = 0;  // debug
 
     while (is_opened_) {
-        // https://github.com/IntelRealSense/librealsense/issues/7547#issuecomment-706984376
         rs_device.resume();
-        utility::LogInfo(
+        utility::LogDebug(
                 "frame_reader_thread start reading tail_fid={}, head_fid={}",
                 tail_fid, head_fid);
         while (!is_eof_ && head_fid < tail_fid + frame_buffer_.size()) {
@@ -214,24 +213,26 @@ void RSBagReader::fill_frame_buffer(uint64_t start_time_us) try {
                         "Device Frame {}, Request {}, output frame {}",
                         dev_color_fid, nreq, fid);
             } else {
-                utility::LogInfo("frame_reader_thread EOF reached");
+                utility::LogDebug("frame_reader_thread EOF reached");
                 is_eof_ = true;
                 return;
             }
             if (!is_opened_) break;  // exit if SeekTimestamp() / Close()
         }
         rs_device.pause();  // Pause playback to prevent frame drops
-        utility::LogInfo(
+        utility::LogDebug(
                 "frame_reader_thread pause reading tail_fid={}, head_fid={}",
                 tail_fid, head_fid);
         need_frames.wait(lock, [this] {
             return !is_opened_ ||
-                   head_fid < tail_fid + frame_buffer_.size() / 2;
+                   head_fid < tail_fid + frame_buffer_.size() / 4;
         });
     }
 } catch (const rs2::error &e) {
     utility::LogError("Realsense function call {}({}) error.",
                       e.get_failed_function(), e.get_failed_args());
+} catch (const std::exception &e) {
+    utility::LogError("Error in reading RealSense bag file: {}", e.what());
 }
 
 bool RSBagReader::IsEOF() const { return is_eof_ && tail_fid == head_fid; }
@@ -240,7 +241,7 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().");
     }
-    if (!is_eof_ && head_fid < tail_fid + frame_buffer_.size() / 2)
+    if (!is_eof_ && head_fid < tail_fid + frame_buffer_.size() / 4)
         need_frames.notify_one();
 
     while (!is_eof_ &&
@@ -248,12 +249,13 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
         std::this_thread::sleep_for(
                 std::chrono::duration<double>(1 / metadata_.fps_));
     }
-    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
-    if (is_eof_ && tail_fid == head_fid)  // no more frames
+    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));  // DEBUG
+    if (is_eof_ && tail_fid == head_fid) {  // no more frames
+        utility::LogInfo("EOF reached");
         return t::geometry::RGBDImage();
-    else
-        return frame_buffer_[(tail_fid++) %
-                             frame_buffer_.size()];  // tail_fid < head_fid here
+    } else
+        return frame_buffer_[(tail_fid++) %  // atomic
+                             frame_buffer_.size()];
 }
 
 bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
