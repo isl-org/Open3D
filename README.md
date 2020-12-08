@@ -7,13 +7,14 @@
 <h4>
     <a href="http://www.open3d.org">Homepage</a> |
     <a href="http://www.open3d.org/docs">Docs</a> |
-    <a href="https://github.com/intel-isl/Open3D/releases">Viewer App</a> |
     <a href="http://www.open3d.org/docs/release/getting_started.html">Quick Start</a> |
-    <a href="http://www.open3d.org/docs/release/compilation.html">Build from Source</a> |
-    <a href="http://www.open3d.org/docs/release/index.html#python-api-index">Python API</a> |
-    <a href="http://www.open3d.org/docs/release/cpp_api/index.html">C++ API</a> |
+    <a href="http://www.open3d.org/docs/release/compilation.html">Compile</a> |
+    <a href="http://www.open3d.org/docs/release/index.html#python-api-index">Python</a> |
+    <a href="http://www.open3d.org/docs/release/cpp_api.html">C++</a> |
+    <a href="https://github.com/intel-isl/Open3D-ML">Open3D-ML</a> |
+    <a href="https://github.com/intel-isl/Open3D/releases">Viewer</a> |
     <a href="http://www.open3d.org/docs/release/contribute/contribute.html">Contribute</a> |
-    <a href="https://www.youtube.com/watch?v=I3UjXlA4IsU">Demo</a> |
+    <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a> |
     <a href="https://forum.open3d.org">Forum</a>
 </h4>
 
@@ -36,57 +37,55 @@ the open-source community.
 * Surface alignment
 * 3D visualization
 * Physically based rendering (PBR)
+* 3D machine learning support with PyTorch and TensorFlow
+* GPU acceleration for core 3D operations
 * Available in C++ and Python
 
 For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 
-## Open3D viewer app
-
-<img align="left" width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D/master/docs/_static/open3d_viewer.png">
-
-Open3D now comes with a standalone 3D viewer app available on Ubuntu and macOS.
-Please stay tuned for Windows.
-
-You can download Open3D viewer from
-[our release page](https://github.com/intel-isl/Open3D/releases).
-
-<br clear="left"/>
-
 ## Python quick start
 
 Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.14+ and
-Windows 10 (64-bit) with Python 3.5, 3.6, 3.7 and 3.8. If you have other Python
-versions or operating systems, please
-[compile Open3D from source](http://www.open3d.org/docs/release/compilation.html).
-
-* To install Open3D with pip:
-
-    ```bash
-    $ pip install open3d
-    ```
-    To test the latest features in Open3D, download and install the [development version](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip)
-
-* To install Open3D with Conda:
-
-    ```bash
-    $ conda install -c open3d-admin open3d
-    ```
-
-* To compile Open3D from source:
-    * See [compiling from source](http://www.open3d.org/docs/release/compilation.html).
-
-Test your installation with:
+Windows 10 (64-bit) with Python 3.6, 3.7 and 3.8.
 
 ```bash
-$ python -c "import open3d as o3d"
+# Install Open3D stable release with pip
+$ pip install open3d
+
+# Install Open3D stable release with Conda
+$ conda install -c open3d-admin open3d
+
+# Test the installation
+$ python -c "import open3d as o3d; print(o3d)"
+
 ```
 
-and follow the tutorials to get started.
+To get the latest features in Open3D, install the
+[development pip package](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip).
+To compile Open3D from source, refer to
+[compiling from source](http://www.open3d.org/docs/release/compilation.html).
 
 ## C++ quick start
 
 Please refer to [compiling from source](http://www.open3d.org/docs/release/compilation.html)
-and [Open3D C++ interface](http://www.open3d.org/docs/release/tutorial/C++/cplusplus_interface.html).
+and [Open3D C++ interface](http://www.open3d.org/docs/release/cpp_api.html).
+
+## Open3D-Viewer app
+
+<img width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D/master/docs/_static/open3d_viewer.png">
+
+Open3D-Viewer is a standalone 3D viewer app available on Ubuntu and macOS.
+Please stay tuned for Windows. Download Open3D Viewer from the
+[release page](https://github.com/intel-isl/Open3D/releases).
+
+## Open3D-ML
+
+<img width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D-ML/master/docs/images/getting_started_ml_visualizer.gif">
+
+Open3D-ML is an extension of Open3D for 3D machine learning tasks. It builds on
+top of the Open3D core library and extends it with machine learning tools for
+3D data processing. To try it out, install Open3D with PyTorch or TensorFlow and check out
+[Open3D-ML](https://github.com/intel-isl/Open3D-ML).
 
 ## Communication channels
 

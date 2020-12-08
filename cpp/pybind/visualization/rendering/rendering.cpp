@@ -35,6 +35,7 @@
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "pybind/docstring.h"
 #include "pybind/visualization/gui/gui.h"
+#include "pybind/visualization/visualization.h"
 #include "pybind11/functional.h"
 
 namespace open3d {
@@ -45,10 +46,14 @@ class PyOffscreenRenderer {
 public:
     PyOffscreenRenderer(int width,
                         int height,
-                        const std::string &resource_path) {
+                        const std::string &resource_path,
+                        bool headless) {
         gui::InitializeForPython(resource_path);
         width_ = width;
         height_ = height;
+        if (headless) {
+            EngineInstance::EnableHeadless();
+        }
         renderer_ = new FilamentRenderer(EngineInstance::GetInstance(), width,
                                          height,
                                          EngineInstance::GetResourceManager());
@@ -92,14 +97,19 @@ void pybind_rendering_classes(py::module &m) {
                       "Renderer instance that can be used for rendering to an "
                       "image");
     offscreen
-            .def(py::init([](int w, int h, const std::string &resource_path) {
+            .def(py::init([](int w, int h, const std::string &resource_path,
+                             bool headless) {
                      return std::make_shared<PyOffscreenRenderer>(
-                             w, h, resource_path);
+                             w, h, resource_path, headless);
                  }),
                  "width"_a, "height"_a, "resource_path"_a = "",
-                 "Takes width, height and an optional resource_path. If "
+                 "headless"_a = false,
+                 "Takes width, height and optionally a resource_path and "
+                 "headless flag. If "
                  "unspecified, resource_path will use the resource path from "
-                 "the installed Open3D library.")
+                 "the installed Open3D library. By default a running windowing "
+                 "session is required. To enable headless rendering set "
+                 "headless to True")
             .def_property_readonly(
                     "scene", &PyOffscreenRenderer::GetScene,
                     "Returns the Open3DScene for this renderer. This scene is "
@@ -232,8 +242,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("shader", &Material::shader);
 
     // ---- Scene ----
-    py::class_<Scene, std::shared_ptr<Scene>> scene(
-            m, "Scene", "Low-level rendering scene");
+    py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
+                                                   "Low-level rendering scene");
     scene.def("add_camera", &Scene::AddCamera, "Adds a camera to the scene")
             .def("remove_camera", &Scene::RemoveCamera,
                  "Removes the camera with the given name")
@@ -288,7 +298,7 @@ void pybind_rendering_classes(py::module &m) {
     scene.attr("UPDATE_UV0_FLAG") = py::int_(Scene::kUpdateUv0Flag);
 
     // ---- Open3DScene ----
-    py::class_<Open3DScene, std::shared_ptr<Open3DScene>> o3dscene(
+    py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
             m, "Open3DScene", "High-level scene for rending");
     o3dscene.def(py::init<Renderer &>())
             .def("show_skybox", &Open3DScene::ShowSkybox,
@@ -312,8 +322,15 @@ void pybind_rendering_classes(py::module &m) {
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
+            .def("has_geometry", &Open3DScene::HasGeometry,
+                 "has_geometry(name): returns True if the geometry has been "
+                 "added to the scene, False otherwise")
             .def("remove_geometry", &Open3DScene::RemoveGeometry,
                  "Removes the geometry with the given name")
+            .def("modify_geometry_material",
+                 &Open3DScene::ModifyGeometryMaterial,
+                 "modify_geometry_material(name, material). Modifies the "
+                 "material of the specified geometry")
             .def("show_geometry", &Open3DScene::ShowGeometry,
                  "Shows or hides the geometry with the given name")
             .def("update_material", &Open3DScene::UpdateMaterial,

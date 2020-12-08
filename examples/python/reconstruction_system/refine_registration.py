@@ -79,6 +79,8 @@ def multiscale_icp(source,
                 result_icp = o3d.pipelines.registration.registration_colored_icp(
                     source_down, target_down, voxel_size[scale],
                     current_transformation,
+                    o3d.pipelines.registration.
+                    TransformationEstimationForColoredICP(),
                     o3d.pipelines.registration.ICPConvergenceCriteria(
                         relative_fitness=1e-6,
                         relative_rmse=1e-6,
@@ -145,7 +147,7 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
         matching_results[s * n_files + t] = \
                 matching_result(s, t, edge.transformation)
 
-    if config["python_multi_threading"].lower() == "true":
+    if config["python_multi_threading"] == True:
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess

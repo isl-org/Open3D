@@ -39,6 +39,7 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualRigid(
         int row,
         Eigen::Vector6d& J_r,
         double& r,
+        double& w,
         const geometry::TriangleMesh& mesh,
         const std::vector<double>& proxy_intensity,
         const std::shared_ptr<geometry::Image>& images_gray,
@@ -74,6 +75,7 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualRigid(
     J_r(4) = v1;
     J_r(5) = v2;
     r = (gray - proxy_intensity[vid]);
+    w = 1.0;
 }
 
 void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(

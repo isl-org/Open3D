@@ -250,6 +250,8 @@ const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitSolidColorShader =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultLineShader =
+        MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
@@ -271,6 +273,7 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultDepthShader,
         FilamentResourceManager::kDefaultUnlitGradientShader,
         FilamentResourceManager::kDefaultUnlitSolidColorShader,
+        FilamentResourceManager::kDefaultLineShader,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
@@ -816,6 +819,13 @@ void FilamentResourceManager::LoadDefaults() {
     solid_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                    {0.5f, 0.5f, 0.5f});
     materials_[kDefaultUnlitSolidColorShader] = BoxResource(solid_mat, engine_);
+
+    const auto line_path = resource_root + "/unlitLine.filamat";
+    auto line_mat = LoadMaterialFromFile(line_path, engine_);
+    line_mat->setDefaultParameter("baseColor", filament::RgbType::LINEAR,
+                                  {1.f, 1.f, 1.f});
+    line_mat->setDefaultParameter("lineWidth", 1.f);
+    materials_[kDefaultLineShader] = BoxResource(line_mat, engine_);
 }
 
 }  // namespace rendering

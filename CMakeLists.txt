@@ -2,15 +2,16 @@
 if (WIN32)
     cmake_minimum_required(VERSION 3.18)
 else()
-    # If you're using Ubuntu 18.04 or older, we suggest you install the latest
+    # If you're using Ubuntu 18.04, we suggest you install the latest
     # CMake from the official repository https://apt.kitware.com/.
-    # CMake 3.15+ is required to allow linking with OBJECT libraries,
+    # CMake 3.17+ is required to allow linking with OBJECT libraries,
     # to prevent erroneous -gencode option deduplication with CUDA,
     # and to simplify generator expressions for selecting compile flags.
-    cmake_minimum_required(VERSION 3.15)
+    cmake_minimum_required(VERSION 3.17)
 endif()
 
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING
+    "Minimum OS X deployment version" FORCE)
 
 # Open3D build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
@@ -45,12 +46,14 @@ option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
+option(WITH_FAISS                 "Enable Faiss"                             ON )
+
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
 option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF)
 # ML library options
-option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                 OFF)
-option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                    OFF)
+option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF)
+option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
 option(DEVELOPER_BUILD  "Add -dev+commit_hash to the project version number" ON )
 
@@ -125,12 +128,8 @@ if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
     set(USE_SYSTEM_GLEW OFF)
     set(USE_SYSTEM_GLFW OFF)
 endif()
-if(BUILD_RPC_INTERFACE AND WIN32)
-    message(STATUS "The RPC interface is currently unsupported on Windows.")
-    set(BUILD_RPC_INTERFACE OFF)
-endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
-    message(SEND_ERROR "3DML depends on Tensorflow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
+    message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
 endif()
 
 # Parse Open3D version number
@@ -160,7 +159,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
     ${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst @ONLY)
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
-message(STATUS "Open3D ${PROJECT_VERSION}")
+message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
 if(UNIX AND NOT APPLE)
     execute_process(COMMAND uname -p
@@ -374,7 +373,7 @@ function(open3d_set_global_properties target)
         target_compile_definitions(${target} PRIVATE USE_BLAS)
     endif()
     if(BUILD_RPC_INTERFACE)
-        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE)
+        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE ZMQ_STATIC)
     endif()
     if(GLIBCXX_USE_CXX11_ABI)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
@@ -427,6 +426,9 @@ function(open3d_set_global_properties target)
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
+    if(WITH_FAISS)
+        target_compile_definitions(${target} PRIVATE WITH_FAISS)
+    endif()
 endfunction()
 
 macro(add_source_group module_name)
@@ -510,8 +512,8 @@ open3d_aligned_print("Build Python Module" "${BUILD_PYTHON_MODULE}")
 if(BUILD_PYTHON_MODULE)
     open3d_aligned_print("- with Jupyter Notebook Support" "${BUILD_JUPYTER_EXTENSION}")
 endif()
-open3d_aligned_print("Build Tensorflow Ops" "${BUILD_TENSORFLOW_OPS}")
-open3d_aligned_print("Build Pytorch Ops" "${BUILD_PYTORCH_OPS}")
+open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
+open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
 open3d_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
@@ -525,6 +527,7 @@ message(STATUS "================================================================
 message(STATUS "Third-Party Dependencies:")
 set(deps
     EIGEN3
+    FAISS
     FILAMENT
     FLANN
     FMT

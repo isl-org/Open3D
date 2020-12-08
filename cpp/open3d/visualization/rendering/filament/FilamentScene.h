@@ -291,6 +291,7 @@ private:
     void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
     void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
     void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
+    void UpdateLineShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();

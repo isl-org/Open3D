@@ -11,9 +11,9 @@ class ExampleWindow:
     MENU_QUIT = 3
 
     def __init__(self):
-        self.window = gui.Window("Test")
-        # self.window = gui.Window("Test", 640, 480)
-        # self.window = gui.Window("Test", 640, 480, x=50, y=100)
+        self.window = gui.Application.instance.create_window("Test", 400, 768)
+        # self.window = gui.Application.instance.create_window("Test", 400, 768,
+        #                                                        x=50, y=100)
         w = self.window  # for more concise code
 
         # Rather than specifying sizes in pixels, which may vary in size based
@@ -209,7 +209,6 @@ class ExampleWindow:
         vgrid.add_child(gui.Label("Cars"))
         vgrid.add_child(gui.Label("5 (87% certainty)"))
         collapse.add_child(vgrid)
-        collapse.add_child(vgrid)
 
         # Create a tab control. This is really a set of N layouts on top of each
         # other, but with only one selected.
@@ -370,7 +369,7 @@ class MessageBox:
         # ... then add the layout as the child of the Dialog
         dlg.add_child(dlg_layout)
 
-    def show(window):
+    def show(self, window):
         self._window = window
 
     def _on_ok(self):
@@ -383,7 +382,6 @@ def main():
     gui.Application.instance.initialize()
 
     w = ExampleWindow()
-    gui.Application.instance.add_window(w.window)  # make the window visible
 
     # Run the event loop. This will not return until the last window is closed.
     gui.Application.instance.run()

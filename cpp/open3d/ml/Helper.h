@@ -36,6 +36,17 @@
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 
+#include <stdio.h>
+
+#include <stdexcept>
+#include <string>
+
+#ifdef BUILD_CUDA_MODULE
+/// TODO: Link Open3D and use OPEN3D_CUDA_CHECK instead.
+#define OPEN3D_ML_CUDA_CHECK(err) \
+    { open3d::ml::__OPEN3D_ML_CUDA_CHECK((err), __FILE__, __LINE__); }
+#endif
+
 namespace open3d {
 namespace ml {
 
@@ -60,6 +71,20 @@ inline int GetCUDACurrentDeviceTextureAlignment() {
                 std::string(cudaGetErrorString(err)));
     }
     return value;
+}
+
+/// TODO: Link Open3D and use OPEN3D_CUDA_CHECK instead.
+inline void __OPEN3D_ML_CUDA_CHECK(cudaError_t err,
+                                   const char *file,
+                                   int line,
+                                   bool abort = true) {
+    if (err != cudaSuccess) {
+        fprintf(stderr, "%s:%d CUDA runtime error: %s\n", file, line,
+                cudaGetErrorString(err));
+        if (abort) {
+            exit(err);
+        }
+    }
 }
 #endif
 
