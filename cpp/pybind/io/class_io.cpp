@@ -209,14 +209,16 @@ void pybind_class_io(py::module &m_io) {
     // open3d::geometry::TriangleMesh
     m_io.def(
             "read_triangle_mesh",
-            [](const std::string &filename, bool print_progress) {
+            [](const std::string &filename, bool enable_post_processing,
+               bool print_progress) {
                 py::gil_scoped_release release;
                 geometry::TriangleMesh mesh;
-                ReadTriangleMesh(filename, mesh, print_progress);
+                ReadTriangleMesh(filename, mesh, enable_post_processing,
+                                 print_progress);
                 return mesh;
             },
             "Function to read TriangleMesh from file", "filename"_a,
-            "print_progress"_a = false);
+            "enable_post_processing"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_triangle_mesh",
                                  map_shared_argument_docstrings);
 
