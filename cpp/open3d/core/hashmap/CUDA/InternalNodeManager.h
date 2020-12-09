@@ -49,7 +49,6 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/hashmap/CUDA/Macros.h"
-#include "open3d/core/hashmap/Traits.h"
 
 namespace open3d {
 namespace core {

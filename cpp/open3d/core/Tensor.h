@@ -69,6 +69,7 @@ public:
            const Device& device = Device("CPU:0"))
         : Tensor(shape, dtype, device) {
         // Check number of elements
+
         if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
             utility::LogError(
                     "Tensor initialization values' size {} does not match the "
