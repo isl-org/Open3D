@@ -76,9 +76,7 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
 
     core::Tensor R = transformation.Slice(0, 0, 3).Slice(1, 0, 3);
     core::Tensor t = transformation.Slice(0, 0, 3).Slice(1, 3, 4);
-    core::Tensor s = transformation.Slice(0, 3, 4).Slice(1, 3, 4);
-    core::Tensor Rn = R.Copy();
-    R.Mul_(s);
+    // TODO: Make it more generalised [4x4][4xN] Transformation
 
     // TODO: consider adding a new op extending MatMul to support `AB + C`
     // GEMM operation. Also, a parallel joint optimimsed kernel for
@@ -86,11 +84,11 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
     // with fusion based cache optimisation
 
     core::Tensor &points = GetPoints();
-    points = R.Matmul(points.T()).Add_(t).T();
+    points = (R.Matmul(points.T())).Add_(t).T();
 
     if (HasPointNormals()) {
         core::Tensor &normals = GetPointNormals();
-        normals = (Rn.Matmul(normals.T())).T();
+        normals = (R.Matmul(normals.T())).T();
     }
     return *this;
 }
