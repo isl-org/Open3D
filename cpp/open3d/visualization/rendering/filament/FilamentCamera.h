@@ -58,6 +58,10 @@ public:
                        double near,
                        double far) override;
 
+    void SetProjection(const Eigen::Matrix3d& intrinsics,
+                       double near,
+                       double far) override;
+
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,
                 const Eigen::Vector3f& up) override;

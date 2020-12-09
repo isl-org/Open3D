@@ -76,6 +76,10 @@ public:
                                double near,
                                double far) = 0;
 
+    virtual void SetProjection(const Eigen::Matrix3d& intrinsics,
+                               double near,
+                               double far) = 0;
+
     virtual void LookAt(const Eigen::Vector3f& center,
                         const Eigen::Vector3f& eye,
                         const Eigen::Vector3f& up) = 0;
@@ -102,6 +106,7 @@ public:
 
     struct ProjectionInfo {
         bool is_ortho;
+        bool uses_intrinsics;
         union {
             struct {
                 Projection projection;

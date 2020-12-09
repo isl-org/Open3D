@@ -142,6 +142,11 @@ void FilamentCamera::SetProjection(Projection projection,
     projection_.proj.ortho.far_plane = far;
 }
 
+void FilamentCamera::SetProjection(const Eigen::Matrix3d& intrinsics,
+                                   double near,
+                                   double far)
+{}
+
 double FilamentCamera::GetNear() const { return camera_->getNear(); }
 
 double FilamentCamera::GetFar() const { return camera_->getCullingFar(); }
