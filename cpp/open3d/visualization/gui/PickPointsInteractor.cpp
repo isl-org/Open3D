@@ -38,7 +38,7 @@
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
 
-#define WANT_DEBUG_IMAGE	0
+#define WANT_DEBUG_IMAGE 0
 
 #if WANT_DEBUG_IMAGE
 #include "open3d/io/ImageIO.h"
