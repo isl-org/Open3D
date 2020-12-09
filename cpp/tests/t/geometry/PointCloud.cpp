@@ -120,7 +120,6 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 TEST_P(PointCloudPermuteDevices, Transform) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
-
     t::geometry::PointCloud pcd(device);
     core::Tensor transformation(
             std::vector<float>{1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1},
@@ -139,7 +138,6 @@ TEST_P(PointCloudPermuteDevices, Transform) {
 
 TEST_P(PointCloudPermuteDevices, Translate) {
     core::Device device = GetParam();
-
     t::geometry::PointCloud pcd(device);
     core::Tensor translation(std::vector<float>{10, 20, 30}, {3},
                              core::Dtype::Float32, device);
@@ -177,7 +175,6 @@ TEST_P(PointCloudPermuteDevices, Scale) {
 TEST_P(PointCloudPermuteDevices, Rotate) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
-
     t::geometry::PointCloud pcd(device);
     core::Tensor rotation(std::vector<float>{1, 1, 0, 0, 1, 1, 0, 1, 0}, {3, 3},
                           dtype, device);

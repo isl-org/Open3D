@@ -120,7 +120,7 @@ def test_member_functions(device):
     assert pcd.get_center().allclose(o3c.Tensor([27, 24, 21], dtype, device))
 
     # transform.
-    pcd = o3d.t.geometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(device)
     transform_t = o3c.Tensor(
         [[1, 1, 0, 1], [0, 1, 1, 1], [0, 1, 0, 1], [0, 0, 0, 1]], dtype, device)
     pcd.point["points"] = o3c.Tensor([[1, 1, 1]], dtype, device)
@@ -153,7 +153,7 @@ def test_member_functions(device):
         o3c.Tensor([[-3, -3, -3], [1, 1, 1], [5, 5, 5]], dtype, device))
 
     # rotate.
-    pcd = o3d.t.geometry.PointCloud(dtype, device)
+    pcd = o3d.t.geometry.PointCloud(device)
     rotation = o3c.Tensor([[1, 1, 0], [0, 1, 1], [0, 1, 0]], dtype, device)
     center = o3c.Tensor([1, 1, 1], dtype, device)
     pcd.point["points"] = o3c.Tensor([[2, 2, 2]], dtype, device)
