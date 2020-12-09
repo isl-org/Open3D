@@ -120,9 +120,9 @@ void Visualizer::KeyPressCallback(
         case GLFW_KEY_ENTER:
             if (mods & GLFW_MOD_ALT) {
                 if (IsFullScreen()) {
-                    SetFullScreen(0);
+                    SetFullScreen(false);
                 } else {
-                    SetFullScreen(1);
+                    SetFullScreen(true);
                 };
             }
             break;
