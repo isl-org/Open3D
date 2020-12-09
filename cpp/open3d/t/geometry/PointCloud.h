@@ -239,11 +239,12 @@ public:
 
     /// \brief Transforms the points and normals (if exist)
     /// of the PointCloud.
-    /// Extracts s, R, t from Transformation
+    /// Extracts R, t from Transformation
     ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
     ///               [ O(1x3)  s(1x1) ]]
     ///  (s = 1 for Transformation wihtout scaling)
-    /// and applies the transformation as P = sR(P) + t
+    /// PS. It Assumes s = 1 and O = [0,0,0]
+    /// and applies the transformation as P = R(P) + t
     /// \param transformation Transformation [Tensor of dim {4,4}].
     /// Should be on the same device as the PointCloud
     /// \return Transformed pointcloud
