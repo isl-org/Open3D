@@ -93,8 +93,7 @@ namespace geometry {
 class PointCloud : public Geometry {
 public:
     /// Construct an empty pointcloud.
-    PointCloud(core::Dtype dtype = core::Dtype::Float32,
-               const core::Device &device = core::Device("CPU:0"));
+    PointCloud(const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a pointcloud from points.
     ///
