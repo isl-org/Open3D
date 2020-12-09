@@ -2,12 +2,12 @@
 if (WIN32)
     cmake_minimum_required(VERSION 3.18)
 else()
-    # If you're using Ubuntu 18.04 or older, we suggest you install the latest
+    # If you're using Ubuntu 18.04, we suggest you install the latest
     # CMake from the official repository https://apt.kitware.com/.
-    # CMake 3.15+ is required to allow linking with OBJECT libraries,
+    # CMake 3.17+ is required to allow linking with OBJECT libraries,
     # to prevent erroneous -gencode option deduplication with CUDA,
     # and to simplify generator expressions for selecting compile flags.
-    cmake_minimum_required(VERSION 3.15)
+    cmake_minimum_required(VERSION 3.17)
 endif()
 
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING
@@ -46,6 +46,8 @@ option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
+option(WITH_FAISS                 "Enable Faiss"                             ON )
+
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
 option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF)
@@ -125,10 +127,6 @@ if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
     message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
     set(USE_SYSTEM_GLEW OFF)
     set(USE_SYSTEM_GLFW OFF)
-endif()
-if(BUILD_RPC_INTERFACE AND WIN32)
-    message(STATUS "The RPC interface is currently unsupported on Windows.")
-    set(BUILD_RPC_INTERFACE OFF)
 endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
@@ -375,7 +373,7 @@ function(open3d_set_global_properties target)
         target_compile_definitions(${target} PRIVATE USE_BLAS)
     endif()
     if(BUILD_RPC_INTERFACE)
-        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE)
+        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE ZMQ_STATIC)
     endif()
     if(GLIBCXX_USE_CXX11_ABI)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
@@ -428,6 +426,9 @@ function(open3d_set_global_properties target)
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
+    if(WITH_FAISS)
+        target_compile_definitions(${target} PRIVATE WITH_FAISS)
+    endif()
 endfunction()
 
 macro(add_source_group module_name)
@@ -526,6 +527,7 @@ message(STATUS "================================================================
 message(STATUS "Third-Party Dependencies:")
 set(deps
     EIGEN3
+    FAISS
     FILAMENT
     FLANN
     FMT

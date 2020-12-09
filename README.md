@@ -72,15 +72,11 @@ and [Open3D C++ interface](http://www.open3d.org/docs/release/cpp_api.html).
 
 ## Open3D-Viewer app
 
-<img width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D/master/docs/_static/open3d_viewer.png"/>
+<img width="480" src="https://raw.githubusercontent.com/intel-isl/Open3D/master/docs/_static/open3d_viewer.png">
 
 Open3D-Viewer is a standalone 3D viewer app available on Ubuntu and macOS.
-Please stay tuned for Windows.
-
-Download Open3D Viewer from the
+Please stay tuned for Windows. Download Open3D Viewer from the
 [release page](https://github.com/intel-isl/Open3D/releases).
-
-<br/>
 
 ## Open3D-ML
 
@@ -88,12 +84,8 @@ Download Open3D Viewer from the
 
 Open3D-ML is an extension of Open3D for 3D machine learning tasks. It builds on
 top of the Open3D core library and extends it with machine learning tools for
-3D data processing.
-
-To try it out, install Open3D with PyTorch or TensorFlow and check out
+3D data processing. To try it out, install Open3D with PyTorch or TensorFlow and check out
 [Open3D-ML](https://github.com/intel-isl/Open3D-ML).
-
-<br/>
 
 ## Communication channels
 

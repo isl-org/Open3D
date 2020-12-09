@@ -29,7 +29,10 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/nns/FaissIndex.h"
+#include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/NanoFlannIndex.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
@@ -45,9 +48,7 @@ public:
     /// \param dataset_points Dataset points for constructing search index. Must
     /// be 2D, with shape {n, d}.
     NearestNeighborSearch(const Tensor &dataset_points)
-        : dataset_points_(dataset_points) {
-        AssertNotCUDA(dataset_points);
-    };
+        : dataset_points_(dataset_points){};
 
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
@@ -66,8 +67,9 @@ public:
 
     /// Set index for fixed-radius search.
     ///
-    /// \return Returns true if building index success, otherwise false.
-    bool FixedRadiusIndex();
+    /// \param radius optional radius parameter. required for gpu fixed radius
+    /// index. \return Returns true if building index success, otherwise false.
+    bool FixedRadiusIndex(utility::optional<double> radius = {});
 
     /// Set index for hybrid search.
     ///
@@ -133,6 +135,8 @@ private:
 
 protected:
     std::unique_ptr<NanoFlannIndex> nanoflann_index_;
+    std::unique_ptr<FaissIndex> faiss_index_;
+    std::unique_ptr<nns::FixedRadiusIndex> fixed_radius_index_;
     const Tensor dataset_points_;
 };
 }  // namespace nns

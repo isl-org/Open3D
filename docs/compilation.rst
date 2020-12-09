@@ -11,7 +11,7 @@ System requirements
 * Ubuntu 18.04+: GCC 5+, Clang 7+
 * macOS 10.14+: XCode 8.0+
 * Windows 10 (64-bit): Visual Studio 2019+
-* CMake: 3.15+ for Ubuntu and macOS, 3.18+ for Windows
+* CMake: 3.17+ for Ubuntu and macOS, 3.18+ for Windows
 
   * Ubuntu (18.04):
 
@@ -56,9 +56,7 @@ Ubuntu/macOS
     # On Ubuntu
     util/install_deps_ubuntu.sh
 
-    # On macOS
-    # Install Homebrew first: https://brew.sh/
-    util/install_deps_macos.sh
+    # On macOS: skip this step
 
 .. _compilation_unix_python:
 
@@ -162,14 +160,14 @@ Instead of ``which``, check the Python path with ``where python``.
 
     :: Specify the generator based on your Visual Studio version
     :: If CMAKE_INSTALL_PREFIX is a system folder, admin access is needed for installation
-    cmake -G "Visual Studio 16 2019 Win64" -DCMAKE_INSTALL_PREFIX="<open3d_install_directory>" ..
+    cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="<open3d_install_directory>" ..
 
 3. Build
 ````````
 
 .. code-block:: bat
 
-    cmake --build --config Release --target ALL_BUILD
+    cmake --build . --config Release --target ALL_BUILD
 
 Alternatively, you can open the ``Open3D.sln`` project with Visual Studio and
 build the same target.

@@ -43,6 +43,7 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 /// \return return true if the read function is successful, false otherwise.
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
+                      bool enable_post_processing = false,
                       bool print_progress = false);
 
 /// The general entrance for writing a TriangleMesh to a file
@@ -61,8 +62,10 @@ bool WriteTriangleMesh(const std::string &filename,
                        bool write_triangle_uvs = true,
                        bool print_progress = false);
 
+// Currently enable_post_processing not used in ReadTriangleMeshFromPLY.
 bool ReadTriangleMeshFromPLY(const std::string &filename,
                              geometry::TriangleMesh &mesh,
+                             bool enable_post_processing,
                              bool print_progress);
 
 bool WriteTriangleMeshToPLY(const std::string &filename,
@@ -73,10 +76,6 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                             bool write_vertex_colors,
                             bool write_triangle_uvs,
                             bool print_progress);
-
-bool ReadTriangleMeshFromSTL(const std::string &filename,
-                             geometry::TriangleMesh &mesh,
-                             bool print_progress);
 
 bool WriteTriangleMeshToSTL(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
@@ -102,10 +101,13 @@ bool WriteTriangleMeshToOBJ(const std::string &filename,
 
 bool ReadTriangleMeshUsingASSIMP(const std::string &filename,
                                  geometry::TriangleMesh &mesh,
+                                 bool enable_post_processing,
                                  bool print_progress);
 
+// Currently enable_post_processing not used in ReadTriangleMeshFromOFF.
 bool ReadTriangleMeshFromOFF(const std::string &filename,
                              geometry::TriangleMesh &mesh,
+                             bool enable_post_processing,
                              bool print_progress);
 
 bool WriteTriangleMeshToOFF(const std::string &filename,
