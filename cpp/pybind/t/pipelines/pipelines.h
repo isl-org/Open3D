@@ -24,21 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/t/t.h"
+#pragma once
 
+#include "open3d/t/pipelines/registration/Registration.h"
+#include "open3d/t/pipelines/registration/TransformationEstimation.h"
 #include "pybind/open3d_pybind.h"
-#include "pybind/t/geometry/geometry.h"
-#include "pybind/t/io/io.h"
 
 namespace open3d {
 namespace t {
+namespace pipelines {
 
-void pybind_t(py::module& m) {
-    py::module m_submodule = m.def_submodule("t");
-    geometry::pybind_geometry(m_submodule);
-    io::pybind_io(m_submodule);
-    // pipelines::pybind_pipelines(m_submodule);
-}
+void pybind_pipelines(py::module& m);
 
+}  // namespace pipelines
 }  // namespace t
 }  // namespace open3d

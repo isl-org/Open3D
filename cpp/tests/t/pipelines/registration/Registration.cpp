@@ -24,21 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/t/t.h"
+#include "open3d/t/pipelines/registration/Registration.h"
 
-#include "pybind/open3d_pybind.h"
-#include "pybind/t/geometry/geometry.h"
-#include "pybind/t/io/io.h"
+#include "core/CoreTest.h"
+#include "open3d/core/Tensor.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
-namespace t {
+namespace tests {
 
-void pybind_t(py::module& m) {
-    py::module m_submodule = m.def_submodule("t");
-    geometry::pybind_geometry(m_submodule);
-    io::pybind_io(m_submodule);
-    // pipelines::pybind_pipelines(m_submodule);
+TEST(tRegistration, DISABLED_ICPConvergenceCriteria) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_Destructor) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_Constructor) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_MemberData) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_RANSACConvergenceCriteria) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_RegistrationResult) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_EvaluateRegistration) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_RegistrationICP) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_TransformationEstimationPointToPoint) {
+    NotImplemented();
 }
 
-}  // namespace t
+TEST(tRegistration, DISABLED_RegistrationRANSACBasedOnCorrespondence) {
+    NotImplemented();
+}
+
+TEST(tRegistration, DISABLED_RegistrationRANSACBasedOnFeatureMatching) {
+    NotImplemented();
+}
+
+TEST(tRegistration, DISABLED_GetInformationMatrixFromPointClouds) {
+    NotImplemented();
+}
+
+}  // namespace tests
 }  // namespace open3d

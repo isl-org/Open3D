@@ -54,7 +54,6 @@ EXAMPLE_CPP(ViewPCDMatch              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Visualizer                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(OpenMP                    ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
-
 EXAMPLE_CPP(TensorPointCloudTransform ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(LegacyPointCloudTransform ${CMAKE_PROJECT_NAME})
 
