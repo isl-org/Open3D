@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 // Copyright 2019 Saman Ashkiani
-// Rewritten by Wei Dong 2019 - 2020
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -39,22 +39,35 @@
 // and limitations under the License.
 
 #pragma once
+#include <cstdint>
 
-#include "open3d/core/hashmap/CUDA/HashmapCUDA.h"
+#include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
 namespace core {
 
-/// Templated factory.
-template <typename Hash, typename KeyEq>
-std::shared_ptr<CUDAHashmap<Hash, KeyEq>> CreateTemplateCUDAHashmap(
-        int64_t init_buckets,
-        int64_t init_capacity,
-        int64_t dsize_key,
-        int64_t dsize_value,
-        const Device& device) {
-    return std::make_shared<CUDAHashmap<Hash, KeyEq>>(
-            init_buckets, init_capacity, dsize_key, dsize_value, device);
+struct iterator_t {
+    OPEN3D_HOST_DEVICE iterator_t() : first(nullptr), second(nullptr) {}
+    OPEN3D_HOST_DEVICE iterator_t(void* key_ptr, void* value_ptr)
+        : first(key_ptr), second(value_ptr) {}
+
+    void* first;
+    void* second;
+};
+
+template <typename First, typename Second>
+struct Pair {
+    First first;
+    Second second;
+    OPEN3D_HOST_DEVICE Pair() {}
+    OPEN3D_HOST_DEVICE Pair(const First& _first, const Second& _second)
+        : first(_first), second(_second) {}
+};
+
+template <typename First, typename Second>
+OPEN3D_HOST_DEVICE Pair<First, Second> make_pair(const First& _first,
+                                                 const Second& _second) {
+    return Pair<First, Second>(_first, _second);
 }
 
 }  // namespace core

@@ -24,38 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Copyright 2019 Saman Ashkiani
-// Rewritten by Wei Dong 2019 - 2020
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-// implied. See the License for the specific language governing permissions
-// and limitations under the License.
+#include "open3d/t/pipelines/registration/Registration.h"
 
-#pragma once
-
-#include "open3d/core/hashmap/CUDA/HashmapCUDA.h"
+#include "core/CoreTest.h"
+#include "open3d/core/Tensor.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
-namespace core {
+namespace tests {
 
-/// Templated factory.
-template <typename Hash, typename KeyEq>
-std::shared_ptr<CUDAHashmap<Hash, KeyEq>> CreateTemplateCUDAHashmap(
-        int64_t init_buckets,
-        int64_t init_capacity,
-        int64_t dsize_key,
-        int64_t dsize_value,
-        const Device& device) {
-    return std::make_shared<CUDAHashmap<Hash, KeyEq>>(
-            init_buckets, init_capacity, dsize_key, dsize_value, device);
+TEST(tRegistration, DISABLED_ICPConvergenceCriteria) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_Destructor) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_Constructor) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_MemberData) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_RANSACConvergenceCriteria) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_RegistrationResult) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_EvaluateRegistration) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_RegistrationICP) { NotImplemented(); }
+
+TEST(tRegistration, DISABLED_TransformationEstimationPointToPoint) {
+    NotImplemented();
 }
 
-}  // namespace core
+TEST(tRegistration, DISABLED_RegistrationRANSACBasedOnCorrespondence) {
+    NotImplemented();
+}
+
+TEST(tRegistration, DISABLED_RegistrationRANSACBasedOnFeatureMatching) {
+    NotImplemented();
+}
+
+TEST(tRegistration, DISABLED_GetInformationMatrixFromPointClouds) {
+    NotImplemented();
+}
+
+}  // namespace tests
 }  // namespace open3d

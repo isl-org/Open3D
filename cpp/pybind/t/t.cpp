@@ -37,6 +37,7 @@ void pybind_t(py::module& m) {
     py::module m_submodule = m.def_submodule("t");
     geometry::pybind_geometry(m_submodule);
     io::pybind_io(m_submodule);
+    // pipelines::pybind_pipelines(m_submodule);
 }
 
 }  // namespace t

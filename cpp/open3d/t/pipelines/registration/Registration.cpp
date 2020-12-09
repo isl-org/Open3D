@@ -128,7 +128,7 @@ RegistrationResult EvaluateRegistration(
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
     geometry::PointCloud pcd = source;
-    // TO DO: Check if transformation isIdentity (skip transform operation)
+    // TODO: Check if transformation isIdentity (skip transform operation)
     pcd.Transform(transformation);
 
     return GetRegistrationResultAndCorrespondences(pcd, target, target_nns,

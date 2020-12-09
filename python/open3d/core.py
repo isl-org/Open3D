@@ -957,9 +957,19 @@ class Hashmap(o3d.pybind.core.Hashmap):
     Open3D Hashmap class. A Hashmap is a map from key to data wrapped by Tensors.
     """
 
-    def __init__(self, init_capacity, dtype_key, dtype_value, device=None):
+    def __init__(self,
+                 init_capacity,
+                 dtype_key,
+                 dtype_value,
+                 shape_key=[1],
+                 shape_value=[1],
+                 device=None):
+        if not isinstance(shape_key, SizeVector):
+            shape_key = SizeVector(shape_key)
+        if not isinstance(shape_value, SizeVector):
+            shape_value = SizeVector(shape_value)
         super(Hashmap, self).__init__(init_capacity, dtype_key, dtype_value,
-                                      device)
+                                      shape_key, shape_value, device)
 
     @cast_to_py_tensor
     def insert(self, keys, values):
@@ -978,9 +988,21 @@ class Hashmap(o3d.pybind.core.Hashmap):
         return super(Hashmap, self).erase(keys)
 
     @cast_to_py_tensor
-    def unpack_iterators(self, iterators, masks):
-        return super(Hashmap, self).unpack_iterators(iterators, masks)
+    def get_active_addrs(self):
+        return super(Hashmap, self).get_active_addrs()
 
     @cast_to_py_tensor
-    def assign_iterators(self, iterators, values, masks=Tensor([])):
-        return super(Hashmap, self).assign_iterators(iterators, values, masks)
+    def get_key_buffer(self):
+        return super(Hashmap, self).get_key_buffer()
+
+    @cast_to_py_tensor
+    def get_value_buffer(self):
+        return super(Hashmap, self).get_value_buffer()
+
+    @cast_to_py_tensor
+    def get_key_tensor(self):
+        return super(Hashmap, self).get_key_tensor()
+
+    @cast_to_py_tensor
+    def get_value_tensor(self):
+        return super(Hashmap, self).get_value_tensor()
