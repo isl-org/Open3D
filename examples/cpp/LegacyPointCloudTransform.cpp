@@ -62,6 +62,7 @@ void PrintHelp() {
 }
 
 int main(int argc, char *argv[]) {
+    // TODO: Add argument input options for users and developers
     if (argc < 2) {
         PrintHelp();
         return 1;

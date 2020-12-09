@@ -76,8 +76,8 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
 
     core::Tensor R = transformation.Slice(0, 0, 3).Slice(1, 0, 3);
     core::Tensor t = transformation.Slice(0, 0, 3).Slice(1, 3, 4);
-    core::Tensor s = transformation.Slice(0, 3, 4).Slice(1, 3, 4);
-    R.Mul_(s);
+
+    // TODO: Make it more generalised [4x4][4xN] Transformation
 
     // TODO: consider adding a new op extending MatMul to support `AB + C`
     // GEMM operation. Also, a parallel joint optimimsed kernel for

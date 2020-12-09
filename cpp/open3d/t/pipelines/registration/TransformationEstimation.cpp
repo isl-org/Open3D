@@ -42,34 +42,8 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &target,
         const core::Tensor &corres,
         const int corres_num) const {
-    // if (corres.empty()) return 0.0;
-
-    // The current implementaion assumes, the dim of CorrespondeceSet is Nx1
-    // the value at index i, is the corresponding index of target and
-    // and the index i itself is assumed to be index of source
-    // TODO: after Tensor Vertical Stacking is implemented,
-    // stack index 0 to N-1, [New shape of CorrespondenceSet = Nx2]
-    // and change the implementations of TransformationEstimation functions
-    // accordingly
-    if (corres.NumDims() != 1) {
-        utility::LogError(
-                "Correspondance Tesor must be of shape {Correspondences, 1}.");
-    }
-
+    utility::LogError("Unimplemented");
     double err = 0.0;
-
-    // Existing CPU Implementation:
-    // for (const auto &c : corres) {
-    //     err += (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
-    // }
-
-    // TODO: Tensor - squaredNormal()
-    core::Tensor error_t =
-            (source.GetPoints() - target.GetPoints().IndexGet({corres}));
-    error_t.Mul_(error_t);
-    err = error_t.Sum({0, 0}).Item<double_t>();
-
-    // return std::sqrt(err / (double)corres.size());
     return err;
 }
 
@@ -78,25 +52,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &target,
         const core::Tensor &corres,
         const int corres_num) const {
-    // if (corres.empty()) return core::Tensor::Eye(4,
-    //                              core::Dtype::Float64,
-    //                              core::Device("CPU:0"));
-
-    // Existing: Creates a new Cx3 src and target points based on correspondaces
-    // New: Use Advanced indexing
-    //
-    // core::Tensor source_mat(3, corres.size());
-    // core::Tensor target_mat(3, corres.size());
-    // for (size_t i = 0; i < corres.size(); i++) {
-    //     source_mat.block<3, 1>(0, i) = source.points_[corres[i][0]];
-    //     target_mat.block<3, 1>(0, i) = target.points_[corres[i][1]];
-    // }
-
-    // Tensor::umeyama to be implemented for calculating Transformation
-    //
-    // return Eigen::umeyama(source_mat, target_mat, with_scaling_);
-
-    // Temp. for finalizing header file. Return Type: Matrix4d
+    utility::LogError("Unimplemented");
     return core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 }
 
@@ -105,32 +61,8 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &target,
         const core::Tensor &corres,
         const int corres_num) const {
-    // if (corres.empty() || !target.HasPointNormals()) return 0.0;
+    utility::LogError("Unimplemented");
     double err = 0.0;
-    // double r;
-
-    // Vectorisation:
-    //  source, target -> shared memory
-    //  error_ -> shared memory [to be used for reduction]
-    //
-    //  error_ += (source.points_[corres[threadIdx][0]] -
-    //               target.points_[corres[threadIdx][1]]).dot(
-    //                      target.points_[corres[threadIdx][1]])
-    //
-    // Existing CPU Implementation:
-    // for (const auto &c : corres) {
-    //     r = (source.points_[c[0]] - target.points_[c[1]])
-    //                 .dot(target.normals_[c[1]]);
-    //     err += r * r;
-    // }
-    // return std::sqrt(err / (double)corres.size());
-
-    core::Tensor error_t =
-            (source.GetPoints() - target.GetPoints().IndexGet({corres[0]}))
-                    .Matmul(target.GetPointNormals().IndexGet({corres[0]}));
-    error_t.Mul_(error_t);
-    err = error_t.Sum({0, 0}).Item<double_t>();
-
     return err;
 }
 
@@ -139,36 +71,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &target,
         const core::Tensor &corres,
         const int corres_num) const {
-    // if (corres.empty() || !target.HasPointNormals())
-    //     return core::Tensor::Eye(4,
-    //                          core::Dtype::Float64, core::Device("CPU:0"));
-
-    // auto compute_jacobian_and_residual = [&](int i, Eigen::Vector6d &J_r,
-    //                                          double &r, double &w) {
-    //     const core::Tensor &vs = source.points_[corres[i][0]];
-    //     const core::Tensor &vt = target.points_[corres[i][1]];
-    //     const core::Tensor &nt = target.normals_[corres[i][1]];
-    //     r = (vs - vt).dot(nt);
-    //     w = kernel_->Weight(r);
-    //     J_r.block<3, 1>(0, 0) = vs.cross(nt);
-    //     J_r.block<3, 1>(3, 0) = nt;
-    // };
-
-    // core::Tensor JTJ;
-    // core::Tensor JTr;
-    // double r2;
-    // std::tie(JTJ, JTr, r2) =
-    //         utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
-    //                 compute_jacobian_and_residual, (int)corres.size());
-
-    // bool is_success;
-    // core::Tensor extrinsic;
-    // std::tie(is_success, extrinsic) =
-    //         utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
-
-    // return is_success ? extrinsic : core::Tensor::Eye(4,
-    //                              core::Dtype::Float64,
-    //                              core::Device("CPU:0"));
+    utility::LogError("Unimplemented");
     return core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 }
 

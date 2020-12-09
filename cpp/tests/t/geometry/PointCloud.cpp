@@ -121,7 +121,7 @@ TEST_P(PointCloudPermuteDevices, Transform) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    t::geometry::PointCloud pcd(dtype, device);
+    t::geometry::PointCloud pcd(device);
     core::Tensor transformation(
             std::vector<float>{1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1},
             {4, 4}, dtype, device);
@@ -178,7 +178,7 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    t::geometry::PointCloud pcd(dtype, device);
+    t::geometry::PointCloud pcd(device);
     core::Tensor rotation(std::vector<float>{1, 1, 0, 0, 1, 1, 0, 1, 0}, {3, 3},
                           dtype, device);
     core::Tensor center = core::Tensor::Ones({3}, dtype, device);

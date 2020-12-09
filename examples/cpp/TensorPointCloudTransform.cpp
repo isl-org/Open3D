@@ -61,6 +61,7 @@ void ManualTransformationVisualizeRegistration(
 }
 
 int main(int argc, char *argv[]) {
+    // TODO: Add argument input options for users and developers
     if (argc < 2) {
         PrintHelp();
         return 1;
@@ -90,7 +91,6 @@ int main(int argc, char *argv[]) {
               << "   Inlier RMSE: " << evaluation.inlier_rmse_ << std::endl;
 
     // Testing Transformation Function
-    // Status: Working
     tsource->Transform(trans_init_tensor);
     // converts tensor pointclouod back to legacy for visualisation
     ManualTransformationVisualizeRegistration(tsource, ttarget);

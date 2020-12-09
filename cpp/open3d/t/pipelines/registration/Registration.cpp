@@ -135,51 +135,8 @@ RegistrationResult RegistrationICP(
         /* = TransformationEstimationPointToPoint(false)*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
-    if (max_correspondence_distance <= 0.0) {
-        utility::LogError("Invalid max_correspondence_distance.");
-    }
-    if ((estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::PointToPlane ||
-         estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::ColoredICP) &&
-        (!target.HasPointNormals())) {
-        utility::LogError(
-                "TransformationEstimationPointToPlane and "
-                "TransformationEstimationColoredICP "
-                "require pre-computed normal vectors for target PointCloud.");
-    }
-
-    double corres_num = 0;
-
-    core::Tensor transformation = init;
-    open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
-    geometry::PointCloud pcd = source;
-    // if (!init.isIdentity()) {
-    //     pcd.Transform(init);
-    // }
-    pcd.Transform(init);
+    utility::LogError("Unimplemented");
     RegistrationResult result;
-    result = GetRegistrationResultAndCorrespondences(
-            pcd, target, target_nns, max_correspondence_distance,
-            transformation);
-    for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
-                          result.fitness_, result.inlier_rmse_);
-        core::Tensor update = estimation.ComputeTransformation(
-                pcd, target, result.correspondence_set_, corres_num);
-        transformation = update * transformation;
-        pcd.Transform(update);
-        RegistrationResult backup = result;
-        result = GetRegistrationResultAndCorrespondences(
-                pcd, target, target_nns, max_correspondence_distance,
-                transformation);
-        if (std::abs(backup.fitness_ - result.fitness_) <
-                    criteria.relative_fitness_ &&
-            std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
-                    criteria.relative_rmse_) {
-            break;
-        }
-    }
     return result;
 }
 
