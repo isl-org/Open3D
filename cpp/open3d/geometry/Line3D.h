@@ -112,8 +112,7 @@ public:
     }
 
     /// \brief Transform the Line3D by the given matrix
-    virtual void Transform(
-            const Eigen::Transform<double, 3, Eigen::Affine>& t);
+    virtual void Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t);
 
     /// \brief Returns a const reference to the underlying
     /// Eigen::ParametrizedLine object

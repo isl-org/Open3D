@@ -26,8 +26,7 @@ Line3D::Line3D(const Eigen::Vector3d& origin,
     z_inv_ = 1. / direction.z();
 }
 
-void Line3D::Transform(
-        const Eigen::Transform<double, 3, Eigen::Affine>& t) {
+void Line3D::Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t) {
     this->transform(t);
 }
 
@@ -321,8 +320,7 @@ Segment3D::Segment3D(const Eigen::Vector3d& start_point,
 Segment3D::Segment3D(const std::pair<Eigen::Vector3d, Eigen::Vector3d>& pair)
     : Segment3D(std::get<0>(pair), std::get<1>(pair)) {}
 
-void Segment3D::Transform(
-        const Eigen::Transform<double, 3, Eigen::Affine>& t) {
+void Segment3D::Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t) {
     this->transform(t);
     end_point_ = t * end_point_;
 }
