@@ -74,7 +74,8 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         return result;
     }
 
-    // Tensor implementation of HybridSearch takes square of max_corr_dist
+    // PS. Tensor implementation of HybridSearch takes square of max_corr_dist
+    // HybridSearch returns pair of Nx1 Tensors [indices, distances]
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
     auto result_nns = target_nns.HybridSearch(source.GetPoints(),
@@ -91,12 +92,21 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         }
     }
 
+    // TODO: Transform corres from Nx1 to {N,} and get the count here itself
+    // Modify the TransformationEstimation functions accordingly
+
     // Reduction Sum of "distances"
     auto error2 = (result_nns.second.Sum({0})).Item<double_t>();
 
     result.correspondence_set_ = result_nns.first.Copy();
     result.fitness_ = (double)corres_number / (double)corres_vec.size();
     result.inlier_rmse_ = std::sqrt(error2 / (double)corres_number);
+
+    // Only for DEBUG: [Testing ComputeRMSE Function]
+    TransformationEstimationPointToPoint estimation(false);
+    auto temp = estimation.ComputeRMSE(source, target, result.correspondence_set_, corres_number);
+    std::cout << " RMSE FROM TransformationEstimation: " << temp << std::endl;
+
     return result;
 }
 

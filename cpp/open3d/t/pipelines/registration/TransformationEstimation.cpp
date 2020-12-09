@@ -42,9 +42,26 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &target,
         const core::Tensor &corres,
         const int corres_num) const {
-    utility::LogError("Unimplemented");
-    double err = 0.0;
-    return err;
+    // TODO: corres_num is for temp. use, to be removed from params
+    if (!corres_num) return 0.0;
+    double error;
+
+    core::Tensor select_bool = 
+            (corres.Ne(-1)).Reshape({corres.GetShape()[0]});
+    core::Tensor source_select = 
+            source.GetPoints().IndexGet({select_bool});
+    core::Tensor corres_select = 
+            corres.IndexGet({select_bool});
+    core::Tensor corres_select_r = 
+            corres_select.Reshape({corres_select.GetShape()[0]});
+    core::Tensor target_select =
+            target.GetPoints().IndexGet({corres_select_r});
+
+    core::Tensor error_t =
+            (source_select - target_select);
+    error_t.Mul_(error_t);
+    error = error_t.Sum({0,1}).Item<double_t>();
+    return std::sqrt(error / (double)corres_num);
 }
 
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
@@ -52,6 +69,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &target,
         const core::Tensor &corres,
         const int corres_num) const {
+    // TODO: corres_num is for temp. use, to be removed from params
     utility::LogError("Unimplemented");
     return core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 }
@@ -61,9 +79,28 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &target,
         const core::Tensor &corres,
         const int corres_num) const {
-    utility::LogError("Unimplemented");
-    double err = 0.0;
-    return err;
+    // TODO: corres_num is for temp. use, to be removed from params
+    if (corres_num == 0 || !target.HasPointNormals()) return 0.0;
+    double error;
+
+    core::Tensor select_bool = 
+            (corres.Ne(-1)).Reshape({corres.GetShape()[0]});
+    core::Tensor source_select = 
+            source.GetPoints().IndexGet({select_bool});
+    core::Tensor corres_select = 
+            (corres.IndexGet({select_bool}));
+    core::Tensor corres_select_r = 
+            corres_select.Reshape({corres_select.GetShape()[0]});
+    core::Tensor target_select =
+            target.GetPoints().IndexGet({corres_select_r});
+    core::Tensor target_n_select =
+            target.GetPointNormals().IndexGet({corres_select_r});
+
+    core::Tensor error_t =
+            (source_select - target_select).Matmul(target_n_select);
+    error_t.Mul_(error_t);
+    error = error_t.Sum({0,1}).Item<double_t>();
+    return std::sqrt(error / (double)corres_num);
 }
 
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
@@ -71,6 +108,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &target,
         const core::Tensor &corres,
         const int corres_num) const {
+    // TODO: corres_num is for temp. use, to be removed from params
     utility::LogError("Unimplemented");
     return core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 }
