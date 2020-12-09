@@ -120,8 +120,14 @@ def test_member_functions(device):
     assert pcd.get_center().allclose(o3c.Tensor([27, 24, 21], dtype, device))
 
     # transform.
-    with pytest.raises(RuntimeError):
-        pcd.transform(o3c.Tensor.eye(4, dtype, device))
+    pcd = o3d.t.geometry.PointCloud(dtype, device)
+    transform_t = o3c.Tensor(
+        [[1, 1, 0, 1], [0, 1, 1, 1], [0, 1, 0, 1], [0, 0, 0, 2]], dtype, device)
+    pcd.point["points"] = o3c.Tensor([[1, 1, 1]], dtype, device)
+    pcd.point["normals"] = o3c.Tensor([[1, 1, 1]], dtype, device)
+    pcd.transform(transform_t)
+    assert pcd.point["points"].allclose(o3c.Tensor([[5, 5, 3]], dtype, device))
+    assert pcd.point["normals"].allclose(o3c.Tensor([[2, 2, 1]], dtype, device))
 
     # translate.
     pcd = o3d.t.geometry.PointCloud(device)
@@ -147,7 +153,11 @@ def test_member_functions(device):
         o3c.Tensor([[-3, -3, -3], [1, 1, 1], [5, 5, 5]], dtype, device))
 
     # rotate.
-    with pytest.raises(RuntimeError):
-        r = o3c.Tensor.eye(3, dtype, device)
-        center = o3c.Tensor.ones((3,), dtype, device)
-        pcd.rotate(r, center)
+    pcd = o3d.t.geometry.PointCloud(dtype, device)
+    rotation = o3c.Tensor([[1, 1, 0], [0, 1, 1], [0, 1, 0]], dtype, device)
+    center = o3c.Tensor([1, 1, 1], dtype, device)
+    pcd.point["points"] = o3c.Tensor([[2, 2, 2]], dtype, device)
+    pcd.point["normals"] = o3c.Tensor([[1, 1, 1]], dtype, device)
+    pcd.rotate(rotation, center)
+    assert pcd.point["points"].allclose(o3c.Tensor([[3, 3, 2]], dtype, device))
+    assert pcd.point["normals"].allclose(o3c.Tensor([[2, 2, 1]], dtype, device))

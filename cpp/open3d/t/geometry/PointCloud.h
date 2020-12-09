@@ -237,19 +237,42 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
-    /// Transforms the points and normals (if exist).
+    /// \brief Transforms the points and normals (if exist)
+    /// of the PointCloud.
+    /// Extracts s, R, t from Transformation
+    ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
+    ///               [ O(1x3)  s(1x1) ]]
+    ///  (s = 1 for Transformation wihtout scaling)
+    /// and applies the transformation as P = sR(P) + t
+    /// \param transformation Transformation [Tensor of dim {4,4}].
+    /// Should be on the same device as the PointCloud
+    /// \return Transformed pointcloud
     PointCloud &Transform(const core::Tensor &transformation);
 
-    /// Translates points.
+    /// \brief Translates the points of the PointCloud.
+    /// \param translation translation tensor of dimention {3}
+    /// Should be on the same device as the PointCloud
+    /// \param relative if true (default): translates relative to Center
+    /// \return Translated pointcloud
     PointCloud &Translate(const core::Tensor &translation,
                           bool relative = true);
 
-    /// Scale points.
+    /// \brief Scales the points of the PointCloud.
+    /// \param scale Scale [double] of dimention
+    /// \param center Center [Tensor of dim {3}] about which the PointCloud is
+    /// to be scaled. Should be on the same device as the PointCloud
+    /// \return Scaled pointcloud
     PointCloud &Scale(double scale, const core::Tensor &center);
 
-    /// Rotate points and normals (if exist).
+    /// \brief Rotates the points and normals (if exists).
+    /// \param R Rotation [Tensor of dim {3,3}].
+    /// Should be on the same device as the PointCloud
+    /// \param center Center [Tensor of dim {3}] about which the PointCloud is
+    /// to be scaled. Should be on the same device as the PointCloud
+    /// \return Rotated pointcloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
