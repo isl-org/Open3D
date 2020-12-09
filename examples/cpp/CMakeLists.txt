@@ -58,9 +58,6 @@ EXAMPLE_CPP(TensorPointCloudTransform ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(LegacyPointCloudTransform ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(AdvancedIndexing          ${CMAKE_PROJECT_NAME})
 
-EXAMPLE_CPP(TensorPointCloudTransform ${CMAKE_PROJECT_NAME})
-EXAMPLE_CPP(LegacyPointCloudTransform ${CMAKE_PROJECT_NAME})
-
 if(BUILD_LIBREALSENSE)
     EXAMPLE_CPP(RealSense             ${CMAKE_PROJECT_NAME} ${LIBREALSENSE_TARGET})
 endif()
