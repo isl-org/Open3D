@@ -946,7 +946,11 @@ Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
         impl_->buttons_down_ &= ~int(e.button.button);
     }
 
-    impl_->controls_->Mouse(e);
+    auto& frame = GetFrame();
+    MouseEvent local = e;
+    local.x -= frame.x;
+    local.y -= frame.y;
+    impl_->controls_->Mouse(local);
 
     if (impl_->on_camera_changed_) {
         impl_->on_camera_changed_(GetCamera());
