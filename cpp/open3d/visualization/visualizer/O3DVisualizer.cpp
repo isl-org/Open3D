@@ -386,7 +386,7 @@ struct O3DVisualizer::Impl {
         w->AddChild(GiveOwnership(scene_));
 
         auto o3dscene = scene_->GetScene();
-        o3dscene->SetBackgroundColor(ui_state_.bg_color);
+        o3dscene->SetBackground(ui_state_.bg_color);
 
         MakeSettingsUI();
         SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
@@ -958,7 +958,7 @@ struct O3DVisualizer::Impl {
         auto old_default_color = CalcDefaultUnlitColor();
         ui_state_.bg_color = bg_color;
         auto scene = scene_->GetScene();
-        scene->SetBackgroundColor(ui_state_.bg_color);
+        scene->SetBackground(ui_state_.bg_color);
 
         auto new_default_color = CalcDefaultUnlitColor();
         if (new_default_color != old_default_color) {
