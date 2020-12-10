@@ -93,6 +93,7 @@ struct ColoredVertex {
         color.x = float_color(0);
         color.y = float_color(1);
         color.z = float_color(2);
+        color.w = 1.0f;
     }
 };
 

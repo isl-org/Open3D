@@ -254,6 +254,8 @@ const MaterialHandle FilamentResourceManager::kDefaultUnlitBackgroundShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLineShader =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitPolygonOffsetShader =
+        MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
@@ -277,6 +279,7 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultUnlitSolidColorShader,
         FilamentResourceManager::kDefaultUnlitBackgroundShader,
         FilamentResourceManager::kDefaultLineShader,
+        FilamentResourceManager::kDefaultUnlitPolygonOffsetShader,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
@@ -837,6 +840,11 @@ void FilamentResourceManager::LoadDefaults() {
                                   {1.f, 1.f, 1.f});
     line_mat->setDefaultParameter("lineWidth", 1.f);
     materials_[kDefaultLineShader] = BoxResource(line_mat, engine_);
+
+    const auto poffset_path = resource_root + "/unlitPolygonOffset.filamat";
+    auto poffset_mat = LoadMaterialFromFile(poffset_path, engine_);
+    materials_[kDefaultUnlitPolygonOffsetShader] =
+            BoxResource(poffset_mat, engine_);
 }
 
 }  // namespace rendering

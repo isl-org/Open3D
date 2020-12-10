@@ -76,6 +76,8 @@ public:
 
     virtual void SetSSAOEnabled(bool enabled) = 0;
 
+    virtual void ConfigureForColorPicking() = 0;
+
     virtual Camera* GetCamera() const = 0;
 };
 

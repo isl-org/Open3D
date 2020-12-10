@@ -185,6 +185,7 @@ public:
                              float intensity) override;
     void EnableDirectionalLight(bool enable) override;
     void EnableDirectionalLightShadows(bool enable) override;
+    float GetDirectionalLightIntensity() override;
     void SetDirectionalLightDirection(
             const Eigen::Vector3f& direction) override;
     Eigen::Vector3f GetDirectionalLightDirection() override;
@@ -297,6 +298,7 @@ private:
     void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
     void UpdateBackgroundShader(GeometryMaterialInstance& geom_mi);
     void UpdateLineShader(GeometryMaterialInstance& geom_mi);
+    void UpdateUnlitPolygonOffsetShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();

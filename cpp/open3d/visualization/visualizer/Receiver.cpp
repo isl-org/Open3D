@@ -319,7 +319,7 @@ void Receiver::SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
     gui::Application::GetInstance().PostToMainThread(
             gui_visualizer_, [geom, path, time, layer, scene]() {
                 (void)time;  // unused at the moment
-                scene->AddGeometry(path, geom, rendering::Material());
+                scene->AddGeometry(path, geom.get(), rendering::Material());
             });
 }
 
