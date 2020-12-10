@@ -41,8 +41,8 @@ namespace visualizer {
 namespace {
 rendering::Material MakeMaterial(int point_size) {
     rendering::Material m;
-    m.shader = "unlitPolygonOffset";
-    m.point_size = float(point_size);
+    m.shader = "defaultUnlit";
+    m.base_color = {1.0f, 0.0f, 1.0f, 1.0f};
     return m;
 }
 }  // namespace
@@ -139,23 +139,18 @@ void O3DVisualizerSelections::UpdateSelectionGeometry() {
         }
     }
 
-    // Hack: Filament doesn't like a 1 point object, because it wants a
-    // non-empty bounding box. So if we only have one point, add another that
-    // is offset ever-so-slightly to make Filament happy.
-    if (points.size() == 1) {
-        points.push_back({points[0].x() + 0.000001, points[0].y() + 0.000001,
-                          points[0].z() + 0.000001});
-    }
     if (!points.empty()) {
-        auto cloud = std::make_shared<geometry::PointCloud>(points);
-        cloud->colors_.reserve(points.size());
-        for (size_t i = 0; i < points.size(); ++i) {
-            cloud->colors_.push_back({1.0, 0.0, 1.0});
+        geometry::TriangleMesh spheres;
+        for (auto &p : points) {
+            auto ps = geometry::TriangleMesh::CreateSphere(point_size_, 10);
+            ps->Translate(p);
+            spheres += *ps;
         }
-        scene->AddGeometry(selection.name, cloud.get(),
+        scene->AddGeometry(selection.name, &spheres,
                            MakeMaterial(point_size_));
         scene->GetScene()->GeometryShadows(selection.name, false, false);
     }
+
     widget3d_.ForceRedraw();
 }
 
@@ -169,8 +164,8 @@ O3DVisualizerSelections::GetSets() {
     return all;
 }
 
-void O3DVisualizerSelections::SetPointSize(int px) {
-    point_size_ = px;
+void O3DVisualizerSelections::SetPointSize(double radius_world) {
+    point_size_ = radius_world;
     if (IsActive()) {
         UpdatePointSize();
     } else {
@@ -215,13 +210,15 @@ void O3DVisualizerSelections::SetSelectableGeometry(
 }
 
 void O3DVisualizerSelections::UpdatePointSize() {
-    auto scene = widget3d_.GetScene();
+/*    auto scene = widget3d_.GetScene();
     auto material = MakeMaterial(point_size_);
     for (auto &s : sets_) {
         if (scene->HasGeometry(s.name)) {
             scene->GetScene()->OverrideMaterial(s.name, material);
         }
     }
+*/
+    UpdateSelectionGeometry();
 }
 
 }  // namespace visualizer

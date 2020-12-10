@@ -88,7 +88,8 @@ public:
                     indices);
     std::vector<SelectionSet> GetSets();
 
-    void SetPointSize(int px);
+    // Since the points are spheres, the radius is in world coordinates
+    void SetPointSize(double radius_world);
 
     void MakeActive();
     void MakeInactive();
@@ -110,7 +111,7 @@ private:
         SelectionSet indices;
     };
 
-    int point_size_ = 3;
+    double point_size_ = 3.0;
     bool is_active_ = false;
     size_t pick_order_ = 0;
     std::vector<SelectedPoints> sets_;

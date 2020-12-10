@@ -850,6 +850,10 @@ struct O3DVisualizer::Impl {
         }
         UpdateGeometryVisibility(objects_.back());
 
+        // Bounds have changed, so update the selection point size, since they
+        // depend on the bounds.
+        SetPointSize(ui_state_.point_size);
+
         scene_->ForceRedraw();
     }
 
@@ -889,6 +893,11 @@ struct O3DVisualizer::Impl {
         ui_state_.enabled_groups = enabled;
         UpdateObjectTree();
         scene_->GetScene()->RemoveGeometry(name);
+
+        // Bounds have changed, so update the selection point size, since they
+        // depend on the bounds.
+        SetPointSize(ui_state_.point_size);
+
         scene_->ForceRedraw();
     }
 
@@ -1001,7 +1010,13 @@ struct O3DVisualizer::Impl {
             scene_->GetScene()->GetScene()->OverrideMaterial(o.name,
                                                              o.material);
         }
-        selections_->SetPointSize(px);
+        auto bbox = scene_->GetScene()->GetBoundingBox();
+        auto xdim = bbox.max_bound_.x() - bbox.min_bound_.x();
+        auto ydim = bbox.max_bound_.y() - bbox.min_bound_.z();
+        auto zdim = bbox.max_bound_.z() - bbox.min_bound_.y();
+        auto psize = double(std::max(5, px)) * 0.000666 *
+                                        std::max(xdim, std::max(ydim, zdim));
+        selections_->SetPointSize(psize);
 
         scene_->SetPickablePointSize(px);
         scene_->ForceRedraw();
