@@ -38,6 +38,12 @@
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
 
+#define WANT_DEBUG_IMAGE 0
+
+#if WANT_DEBUG_IMAGE
+#include "open3d/io/ImageIO.h"
+#endif  // WANT_DEBUG_IMAGE
+
 namespace open3d {
 namespace visualization {
 namespace gui {
@@ -121,7 +127,7 @@ PickPointsInteractor::PickPointsInteractor(rendering::Open3DScene *scene,
             std::make_shared<rendering::Open3DScene>(scene->GetRenderer());
 
     picking_scene_->SetDownsampleThreshold(SIZE_MAX);  // don't downsample!
-    picking_scene_->SetBackgroundColor(kBackgroundColor);
+    picking_scene_->SetBackground(kBackgroundColor);
 
     picking_scene_->GetView()->ConfigureForColorPicking();
 }
@@ -181,7 +187,7 @@ void PickPointsInteractor::SetPickableGeometry(
             // to the depth buffer,and if we draw after the points then we paint
             // over the occluded points.
             rendering::Material mat;
-            mat.shader = "defaultUnlit";
+            mat.shader = "unlitSolidColor";  // ignore any vertex colors!
             mat.base_color = kBackgroundColor;
             mat.sRGB_color = false;
             if (mesh) {
@@ -254,7 +260,11 @@ void PickPointsInteractor::Mouse(const MouseEvent &e) {
                     view, picking_scene_->GetScene(),
                     [this](std::shared_ptr<geometry::Image> img) {
                         this->OnPickImageDone(img);
-                        // io::WriteImage("/tmp/debug.png", *img); // debugging
+#if WANT_DEBUG_IMAGE
+                        std::cout << "[debug] Writing pick image to "
+                                  << "/tmp/debug.png" << std::endl;
+                        io::WriteImage("/tmp/debug.png", *img);
+#endif  // WANT_DEBUG_IMAGE
                     });
         } else {
             pending_.push({pick_rect, e.modifiers});

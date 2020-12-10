@@ -1255,6 +1255,13 @@ void Tensor::AssertDevice(const Device& expected_device) const {
     }
 }
 
+void Tensor::AssertDtype(const Dtype& expected_dtype) const {
+    if (GetDtype() != expected_dtype) {
+        utility::LogError("Tensor has dtype {}, but is expected to be {}.",
+                          GetDtype().ToString(), expected_dtype.ToString());
+    }
+}
+
 Tensor Tensor::Matmul(const Tensor& rhs) const {
     Tensor output;
     core::Matmul(*this, rhs, output);

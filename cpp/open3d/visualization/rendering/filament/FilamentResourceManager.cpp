@@ -250,6 +250,8 @@ const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitSolidColorShader =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitBackgroundShader =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLineShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitPolygonOffsetShader =
@@ -275,6 +277,7 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultDepthShader,
         FilamentResourceManager::kDefaultUnlitGradientShader,
         FilamentResourceManager::kDefaultUnlitSolidColorShader,
+        FilamentResourceManager::kDefaultUnlitBackgroundShader,
         FilamentResourceManager::kDefaultLineShader,
         FilamentResourceManager::kDefaultUnlitPolygonOffsetShader,
         FilamentResourceManager::kDepthMaterial,
@@ -822,6 +825,14 @@ void FilamentResourceManager::LoadDefaults() {
     solid_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                    {0.5f, 0.5f, 0.5f});
     materials_[kDefaultUnlitSolidColorShader] = BoxResource(solid_mat, engine_);
+
+    const auto bg_path = resource_root + "/unlitBackground.filamat";
+    auto bg_mat = LoadMaterialFromFile(bg_path, engine_);
+    bg_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                {1.0f, 1.0f, 1.0f});
+    bg_mat->setDefaultParameter("albedo", texture, default_sampler);
+    bg_mat->setDefaultParameter("aspectRatio", 0.0f);
+    materials_[kDefaultUnlitBackgroundShader] = BoxResource(bg_mat, engine_);
 
     const auto line_path = resource_root + "/unlitLine.filamat";
     auto line_mat = LoadMaterialFromFile(line_path, engine_);
