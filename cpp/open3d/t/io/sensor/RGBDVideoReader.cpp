@@ -26,6 +26,8 @@
 
 #include "open3d/t/io/sensor/RGBDVideoReader.h"
 
+#include <string>
+
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/t/io/sensor/realsense/RSBagReader.h"
@@ -34,6 +36,16 @@
 namespace open3d {
 namespace t {
 namespace io {
+
+std::string RGBDVideoReader::ToString() const {
+    if (IsOpened())
+        return fmt::format(
+                "RGBDVideoReader reading file {} at position {}us / {}us",
+                GetFilename(), GetTimestamp(),
+                GetMetadata().stream_length_usec_);
+    else
+        return "RGBDVideoReader: No open file.";
+}
 
 void RGBDVideoReader::SaveFrames(const std::string &frame_path,
                                  uint64_t start_time,

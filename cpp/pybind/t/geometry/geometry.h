@@ -27,6 +27,7 @@
 #pragma once
 
 #include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/Geometry2D.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
@@ -54,10 +55,10 @@ class PyGeometry2D : public PyGeometry<Geometry2DBase> {
 public:
     using PyGeometry<Geometry2DBase>::PyGeometry;
     core::Tensor GetMinBound() const override {
-        PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
+        PYBIND11_OVERLOAD_PURE(core::Tensor, Geometry2DBase, );
     }
     core::Tensor GetMaxBound() const override {
-        PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
+        PYBIND11_OVERLOAD_PURE(core::Tensor, Geometry2DBase, );
     }
 };
 

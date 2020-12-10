@@ -69,6 +69,7 @@ bool RSBagReader::Open(const std::string &filename, uint64_t start_time_us) {
         utility::LogWarning("Unable to open file {}", filename);
         return false;
     }
+    filename_ = filename;
     is_eof_ = false;
     is_opened_ = true;
     metadata_.ConvertFromJsonValue(GetMetadataJson());
@@ -79,6 +80,7 @@ bool RSBagReader::Open(const std::string &filename, uint64_t start_time_us) {
 }
 
 void RSBagReader::Close() {
+    filename_.clear();
     is_opened_ = false;
     need_frames.notify_one();
     frame_reader_thread.join();
@@ -249,7 +251,6 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
         std::this_thread::sleep_for(
                 std::chrono::duration<double>(1 / metadata_.fps_));
     }
-    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));  // DEBUG
     if (is_eof_ && tail_fid == head_fid) {  // no more frames
         utility::LogInfo("EOF reached");
         return t::geometry::RGBDImage();

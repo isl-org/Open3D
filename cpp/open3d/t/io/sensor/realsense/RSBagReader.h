@@ -86,6 +86,10 @@ public:
     virtual void Close() override;
 
     /// Get metadata of the playback.
+    virtual const RGBDVideoMetadata &GetMetadata() const override {
+        return metadata_;
+    }
+    /// Get reference to the metadata of the RGBD video playback.
     virtual RGBDVideoMetadata &GetMetadata() override { return metadata_; }
     /// Seek to the timestamp (in us).
     ///
@@ -96,8 +100,12 @@ public:
     /// Copy next frame from the bag file and return the RGBDImage object.
     virtual t::geometry::RGBDImage NextFrame() override;
     using RGBDVideoReader::SaveFrames;
+    /// Return filename being read
+    virtual std::string GetFilename() const override { return filename_; };
+    using RGBDVideoReader::ToString;
 
 private:
+    std::string filename_;
     RGBDVideoMetadata metadata_;
     core::Dtype dt_color_, dt_depth_;
     uint8_t channels_color_;

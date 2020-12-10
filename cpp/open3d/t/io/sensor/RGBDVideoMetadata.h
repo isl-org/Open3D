@@ -47,6 +47,8 @@ class RGBDVideoMetadata : public utility::IJsonConvertible {
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
+    /// Text description
+    using utility::IJsonConvertible::ToString;
 
 public:
     /// \brief Shared intrinsics between RGB & depth.

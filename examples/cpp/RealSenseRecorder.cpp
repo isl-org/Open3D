@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// TODO: Add support for recording
-
 #include <librealsense2/rs.hpp>
 
 #include "open3d/Open3D.h"
@@ -35,16 +33,19 @@ using namespace open3d;
 void PrintUsage() {
     PrintOpen3DVersion();
     utility::LogInfo(
-            "Open a RealSense camera and display live color and depth streams. "
-            "You can set frame sizes and frame rates for each stream and the "
-            "depth stream can be optionally aligned to the color stream."
-            "NOTE: An error of 'Couldn't resolve requests' implies unsupported "
+            "Open a RealSense camera and display live color and depth "
+            "streams.\n"
+            "You can set frame sizes and frame rates for each stream and the\n"
+            "depth stream can be optionally aligned to the color stream.\n"
+            "NOTE: An error of 'Couldn't resolve requests' implies "
+            "unsupported\n"
             "stream format settings.");
     utility::LogInfo("Usage:");
     utility::LogInfo(
-            "RealSenseBagReader [-h|--help] [--align] "
-            "[--depth-stream (WIDTH,HEIGHT,FPS)] "
-            "[--color-stream (WIDTH,HEIGHT,FPS)]");
+            "RealSenseRecorder [-h|--help] [--align] \n"
+            "   [--depth-stream (WIDTH,HEIGHT,FPS)] \n"
+            "   [--color-stream (WIDTH,HEIGHT,FPS)] \n"
+            "   [--record rgbd_video_file.bag]");
 }
 
 int main(int argc, char **argv) {
@@ -57,6 +58,7 @@ int main(int argc, char **argv) {
     bool align_streams = false;
     visualization::gui::Size color_size(0, 0), depth_size(0, 0);
     int color_fps = 0, depth_fps = 0;
+    std::string bag_file;
 
     if (utility::ProgramOptionExists(argc, argv, "--align")) {
         align_streams = true;
@@ -75,18 +77,28 @@ int main(int argc, char **argv) {
                       static_cast<int>(color_stream_options[1])};
         color_fps = static_cast<int>(color_stream_options[2]);
     }
+    if (utility::ProgramOptionExists(argc, argv, "--record"))
+        bag_file = utility::GetProgramOptionAsString(argc, argv, "--record");
 
     // Create a pipeline to easily configure and start the camera
-    rs2::pipeline pipe;
     rs2::config cfg;
     // Select stream type, stream frame size, pixel format and frame rate.
     cfg.enable_stream(RS2_STREAM_DEPTH, depth_size.width, depth_size.height,
                       RS2_FORMAT_Z16, depth_fps);
     cfg.enable_stream(RS2_STREAM_COLOR, color_size.width, color_size.height,
                       RS2_FORMAT_RGB8, color_fps);
+    if (!bag_file.empty()) {
+        cfg.enable_record_to_file(bag_file);
+        utility::LogInfo("Recording to bag file {}", bag_file);
+    }
+    rs2::pipeline pipe;
+    rs2::device rs_device;
     rs2::pipeline_profile profile;
     try {
         profile = pipe.start(cfg);
+        rs_device = profile.get_device();
+        rs_device.as<rs2::recorder>()
+                .pause();  // Wait for user to start recording
     } catch (const rs2::error &e) {
         utility::LogError(
                 "Could not start capture from RealSense camera!\n"
@@ -95,7 +107,6 @@ int main(int argc, char **argv) {
     }
 
     // Get device details
-    const auto rs_device = profile.get_device();
     utility::LogInfo("Using device 0, an {}",
                      rs_device.get_info(RS2_CAMERA_INFO_NAME));
     utility::LogInfo("    Serial number: {}",
@@ -145,7 +156,55 @@ int main(int argc, char **argv) {
     color_image_ptr->Prepare(color_size.width, color_size.height, 3, 1);
 
     // Create windows to show depth and color streams
-    visualization::Visualizer depth_vis, color_vis;
+    bool flag_record = false, flag_start = false, flag_exit = false;
+    visualization::VisualizerWithKeyCallback depth_vis, color_vis;
+    auto callback_exit = [&](visualization::Visualizer *vis) {
+        flag_exit = true;
+        if (flag_start) {
+            utility::LogInfo("Recording finished.");
+        } else {
+            utility::LogInfo("Nothing has been recorded.");
+        }
+        return false;
+    };
+    depth_vis.RegisterKeyCallback(GLFW_KEY_ESCAPE, callback_exit);
+    color_vis.RegisterKeyCallback(GLFW_KEY_ESCAPE, callback_exit);
+    auto callback_toggle_record = [&](visualization::Visualizer *vis) {
+        if (flag_record) {
+            rs_device.as<rs2::recorder>().pause();
+            utility::LogInfo(
+                    "Recording paused. "
+                    "Press [SPACE] to continue. "
+                    "Press [ESC] to save and exit.");
+            flag_record = false;
+        } else {
+            rs_device.as<rs2::recorder>().resume();
+            flag_record = true;
+            if (!flag_start) {
+                utility::LogInfo(
+                        "Recording started. "
+                        "Press [SPACE] to pause. "
+                        "Press [ESC] to save and exit.");
+                flag_start = true;
+            } else {
+                utility::LogInfo(
+                        "Recording resumed, video may be discontinuous. "
+                        "Press [SPACE] to pause. "
+                        "Press [ESC] to save and exit.");
+            }
+        }
+        return false;
+    };
+    if (!bag_file.empty()) {
+        depth_vis.RegisterKeyCallback(GLFW_KEY_SPACE, callback_toggle_record);
+        color_vis.RegisterKeyCallback(GLFW_KEY_SPACE, callback_toggle_record);
+        utility::LogInfo(
+                "In the visulizer window, "
+                "press [SPACE] to start recording, "
+                "press [ESC] to exit.");
+    } else
+        utility::LogInfo("In the visulizer window, press [ESC] to exit.");
+
     if (!depth_vis.CreateVisualizerWindow("Open3D || RealSense || Depth",
                                           depth_size.width, depth_size.height,
                                           15, 50) ||
@@ -154,6 +213,7 @@ int main(int argc, char **argv) {
                                           color_size.width, color_size.height,
                                           675, 50) ||
         !color_vis.AddGeometry(color_image_ptr)) {
+        utility::LogError("Window creation failed!");
         return 0;
     }
 
@@ -164,7 +224,7 @@ int main(int argc, char **argv) {
     rs2::rates_printer printer;
 
     // Loop over frames from device
-    while (depth_vis.PollEvents() && color_vis.PollEvents()) {
+    do {
         rs2::frameset frames =
                 pipe.wait_for_frames()  // Wait for next set of frames from
                                         // the camera
@@ -176,12 +236,20 @@ int main(int argc, char **argv) {
         const auto &depth_frame = frames.get_depth_frame();
         memcpy(depth_image_ptr->data_.data(), depth_frame.get_data(),
                depth_image_ptr->data_.size());
+        // Improve depth visualization by scaling
+        /* depth_image_ptr->LinearTransform(0.25); */
         const auto &color_frame = frames.get_color_frame();
         memcpy(color_image_ptr->data_.data(), color_frame.get_data(),
                color_image_ptr->data_.size());
         depth_vis.UpdateGeometry();
         color_vis.UpdateGeometry();
-    }
+        depth_vis.PollEvents();
+        color_vis.PollEvents();
+        depth_vis.UpdateRender();
+        color_vis.UpdateRender();
+    } while (!flag_exit);
 
+    pipe.stop();
+    utility::LogInfo("RS pipeline stopped.");
     return 0;
 }

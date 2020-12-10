@@ -172,8 +172,6 @@ int main(int argc, char **argv) {
                 fmt::format("{}/intrinsic.json", output_path), bag_metadata);
         WriteJsonToFile(fmt::format("{}/config.json", output_path),
                         GenerateDatasetConfig(output_path, bag_filename));
-        bag_reader.SaveFrames(output_path);
-        bag_reader.SeekTimestamp(0);
     }
     const auto frame_interval = sc::duration<double>(1. / bag_metadata.fps_);
 
@@ -187,6 +185,10 @@ int main(int argc, char **argv) {
             std::this_thread::sleep_until(last_frame_time + frame_interval);
             last_frame_time = std::chrono::high_resolution_clock::now();
             im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
+            // Improve depth visualization by scaling
+            /* im_rgbd.depth_.LinearTransform(0.25); */
+            auto depth_image_ptr = std::shared_ptr<open3d::geometry::Image>(
+                    &im_rgbd.depth_, [](open3d::geometry::Image *) {});
             // create shared_ptr with no-op deleter for stack RGBDImage
             auto ptr_im_rgbd = std::shared_ptr<legacyRGBDImage>(
                     &im_rgbd, [](legacyRGBDImage *) {});
@@ -198,32 +200,30 @@ int main(int argc, char **argv) {
                 is_geometry_added = true;
             }
 
-            if (write_image) {
+            ++idx;
+            if (write_image)
 #pragma omp parallel sections
+            {
+#pragma omp section
                 {
-#pragma omp section
-                    {
-                        auto color_file = fmt::format("{0}/color/{1:05d}.jpg",
-                                                      output_path, idx);
-                        utility::LogInfo("Writing to {}", color_file);
-                        io::WriteImage(color_file, im_rgbd.color_);
-                    }
-#pragma omp section
-                    {
-                        auto depth_file = fmt::format("{0}/depth/{1:05d}.png",
-                                                      output_path, idx);
-                        utility::LogInfo("Writing to {}", depth_file);
-                        io::WriteImage(depth_file, im_rgbd.depth_);
-                    }
+                    auto color_file = fmt::format("{0}/color/{1:05d}.jpg",
+                                                  output_path, idx);
+                    utility::LogInfo("Writing to {}", color_file);
+                    io::WriteImage(color_file, im_rgbd.color_);
                 }
-
-                ++idx;
+#pragma omp section
+                {
+                    auto depth_file = fmt::format("{0}/depth/{1:05d}.png",
+                                                  output_path, idx);
+                    utility::LogInfo("Writing to {}", depth_file);
+                    io::WriteImage(depth_file, im_rgbd.depth_);
+                }
             }
-        }
 
-        vis.UpdateGeometry();
+            vis.UpdateGeometry();
+            vis.UpdateRender();
+        }
         vis.PollEvents();
-        vis.UpdateRender();
     }
 
     bag_reader.Close();

@@ -48,7 +48,10 @@ void pybind_sensor(py::module &m) {
                     {"start_time_us",
                      "(default 0) Start saving frames from this time (us)"},
                     {"end_time_us",
-                     "(default video length) Save frames till this time (us)"}};
+                     "(default video length) Save frames till this time (us)"},
+                    {"buffer_size",
+                     "Size of internal frame buffer, increase this if you "
+                     "experience frame drops."}};
 
     py::enum_<SensorType>(m, "SensorType")
             .value("AZURE_KINECT", SensorType::AZURE_KINECT)
@@ -73,14 +76,18 @@ void pybind_sensor(py::module &m) {
                            "Capture device serial number")
             .def_readwrite("stream_length_usec",
                            &RGBDVideoMetadata::stream_length_usec_,
-                           "Length of the video (usec)");
+                           "Length of the video (usec)")
+            .def_readwrite("intrinsics", &RGBDVideoMetadata::intrinsics_,
+                           "Shared intrinsics between RGB & depth")
+            .def("__repr__", &RGBDVideoMetadata::ToString);
 
     // Class RGBD video reader
     py::class_<RGBDVideoReader, std::shared_ptr<RGBDVideoReader>>
             rgbd_video_reader(m, "RGBDVideoReader", "RGBD Video file reader.");
-    rgbd_video_reader.def_static("create", &RGBDVideoReader::Create,
-                                 "filename"_a,
-                                 "Create RGBD video reader based on filename");
+    rgbd_video_reader
+            .def_static("create", &RGBDVideoReader::Create, "filename"_a,
+                        "Create RGBD video reader based on filename")
+            .def("__repr__", &RGBDVideoReader::ToString);
     docstring::ClassMethodDocInject(m, "RGBDVideoReader", "create",
                                     map_shared_argument_docstrings);
 
@@ -89,16 +96,22 @@ void pybind_sensor(py::module &m) {
     py::class_<RSBagReader, std::shared_ptr<RSBagReader>, RGBDVideoReader>
             rs_bag_reader(m, "RSBagReader", "RealSense Bag file reader.");
     rs_bag_reader.def(py::init<>())
+            .def(py::init<size_t>(),
+                 "buffer_size"_a = RSBagReader::DEFAULT_BUFFER_SIZE)
             .def("is_opened", &RSBagReader::IsOpened,
                  "Check if the RS bag file  is opened.")
-            .def("open", &RSBagReader::Open, "filename"_a,
-                 "Open an RS bag playback.")
+            .def("open",
+                 py::overload_cast<const std::string &>(&RSBagReader::Open),
+                 "filename"_a, "Open an RS bag playback.")
             .def("close", &RSBagReader::Close,
                  "Close the opened RS bag playback.")
             .def("is_eof", &RSBagReader::IsEOF,
                  "Check if the RS bag file is all read.")
-            .def("get_metadata", &RSBagReader::GetMetadata,
-                 "Get metadata of the RS bag playback.")
+            .def_property(
+                    "metadata",
+                    py::overload_cast<>(&RSBagReader::GetMetadata, py::const_),
+                    py::overload_cast<>(&RSBagReader::GetMetadata),
+                    "Get metadata of the RS bag playback.")
             .def("seek_timestamp", &RSBagReader::SeekTimestamp, "timestamp"_a,
                  "Seek to the timestamp (in us).")
             .def("get_timestamp", &RSBagReader::GetTimestamp,
@@ -110,7 +123,10 @@ void pybind_sensor(py::module &m) {
                  py::call_guard<py::gil_scoped_release>(), "frame_path"_a,
                  "start_time_us"_a = 0, "end_time_us"_a = UINT64_MAX,
                  "Save synchronized and aligned individual frames to "
-                 "subfolders");
+                 "subfolders")
+            .def("__repr__", &RSBagReader::ToString);
+    docstring::ClassMethodDocInject(m, "RSBagReader", "__init__",
+                                    map_shared_argument_docstrings);
     docstring::ClassMethodDocInject(m, "RSBagReader", "open",
                                     map_shared_argument_docstrings);
     docstring::ClassMethodDocInject(m, "RSBagReader", "seek_timestamp",

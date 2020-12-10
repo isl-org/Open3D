@@ -51,8 +51,10 @@ public:
     /// Close the opened RGBD video playback.
     virtual void Close() = 0;
 
-    /// Get metadata of the RGBD video playback.
+    /// Get reference to the metadata of the RGBD video playback.
     virtual RGBDVideoMetadata &GetMetadata() = 0;
+    /// Get metadata of the RGBD video playback.
+    virtual const RGBDVideoMetadata &GetMetadata() const = 0;
     /// Seek to the timestamp (in us).
     virtual bool SeekTimestamp(uint64_t timestamp) = 0;
     /// Get current timestamp (in us).
@@ -72,6 +74,12 @@ public:
     virtual void SaveFrames(const std::string &frame_path,
                             uint64_t start_time_us = 0,
                             uint64_t end_time_us = UINT64_MAX);
+
+    /// Return filename being read
+    virtual std::string GetFilename() const = 0;
+
+    /// Text description
+    virtual std::string ToString() const;
 
     /// Factory function to create object based on RGBD video file type
     static std::shared_ptr<RGBDVideoReader> Create(const std::string &filename);
