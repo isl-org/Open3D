@@ -126,6 +126,16 @@ public:
                 double near_plane;
                 double far_plane;
             } perspective;
+            struct {
+                double fx;
+                double fy;
+                double cx;
+                double cy;
+                double near_plane;
+                double far_plane;
+                double width;
+                double height;
+            } intrinsics;
         } proj;
     };
     virtual const ProjectionInfo& GetProjection() const = 0;
