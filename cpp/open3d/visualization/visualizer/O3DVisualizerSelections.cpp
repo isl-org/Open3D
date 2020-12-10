@@ -39,7 +39,7 @@ namespace visualization {
 namespace visualizer {
 
 namespace {
-rendering::Material MakeMaterial(int point_size) {
+rendering::Material MakeMaterial() {
     rendering::Material m;
     m.shader = "defaultUnlit";
     m.base_color = {1.0f, 0.0f, 1.0f, 1.0f};
@@ -146,7 +146,7 @@ void O3DVisualizerSelections::UpdateSelectionGeometry() {
             ps->Translate(p);
             spheres += *ps;
         }
-        scene->AddGeometry(selection.name, &spheres, MakeMaterial(point_size_));
+        scene->AddGeometry(selection.name, &spheres, MakeMaterial());
         scene->GetScene()->GeometryShadows(selection.name, false, false);
     }
 
