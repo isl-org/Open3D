@@ -149,6 +149,13 @@ void pybind_rendering_classes(py::module &m) {
                  "Sets the camera projection via a viewing frustum. "
                  "set_projection(projection_type, left, right, bottom, top, "
                  "near, far)")
+            .def("set_projection",
+                 (void (Camera::*)(const Eigen::Matrix3d &, double, double,
+                                   double, double)) &
+                         Camera::SetProjection,
+                 "Sets the camera projection via intrinsics matrix. "
+                 "set_projection(intrinsics, near_place, far_plane, "
+                 "image_width, image_height)")
             .def("look_at", &Camera::LookAt,
                  "Sets the position and orientation of the camera: "
                  "look_at(center, eye, up)");
