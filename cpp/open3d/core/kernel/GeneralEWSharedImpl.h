@@ -39,6 +39,62 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+inline OPEN3D_DEVICE float* DeviceGetVoxelAt(
+        int xo,
+        int yo,
+        int zo,
+        int curr_block_idx,
+        int resolution,
+        int n_blocks,
+        bool* nb_masks_ptr,
+        int64_t* nb_indices_ptr,
+        const NDArrayIndexer& voxel_block_buffer_indexer) {
+    int xn = (xo + resolution) % resolution;
+    int yn = (yo + resolution) % resolution;
+    int zn = (zo + resolution) % resolution;
+
+    int64_t dxb = sign(xo - xn);
+    int64_t dyb = sign(yo - yn);
+    int64_t dzb = sign(zo - zn);
+
+    int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
+
+    bool block_mask_i = nb_masks_ptr[nb_idx * n_blocks + curr_block_idx];
+    if (!block_mask_i) return nullptr;
+
+    int64_t block_idx_i = nb_indices_ptr[nb_idx * n_blocks + curr_block_idx];
+    return static_cast<float*>(voxel_block_buffer_indexer.GetDataPtrFromCoord(
+            xn, yn, zn, block_idx_i));
+}
+
+inline OPEN3D_DEVICE void DeviceGetNormalAt(
+        int xo,
+        int yo,
+        int zo,
+        int curr_block_idx,
+        float* n,
+        int resolution,
+        float voxel_size,
+        int n_blocks,
+        bool* nb_masks_ptr,
+        int64_t* nb_indices_ptr,
+        const NDArrayIndexer& voxel_block_buffer_indexer) {
+    auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo) {
+        return DeviceGetVoxelAt(xo, yo, zo, curr_block_idx, resolution,
+                                n_blocks, nb_masks_ptr, nb_indices_ptr,
+                                voxel_block_buffer_indexer);
+    };
+    float* vxp = GetVoxelAt(xo + 1, yo, zo);
+    float* vxn = GetVoxelAt(xo - 1, yo, zo);
+    float* vyp = GetVoxelAt(xo, yo + 1, zo);
+    float* vyn = GetVoxelAt(xo, yo - 1, zo);
+    float* vzp = GetVoxelAt(xo, yo, zo + 1);
+    float* vzn = GetVoxelAt(xo, yo, zo - 1);
+    if (vxp && vxn) n[0] = (vxp[0] - vxn[0]) / (2 * voxel_size);
+    if (vyp && vyn) n[1] = (vyp[0] - vyn[0]) / (2 * voxel_size);
+    if (vzp && vzn) n[2] = (vzp[0] - vzn[0]) / (2 * voxel_size);
+};
+
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
 void CUDAUnprojectKernel
 #else
@@ -81,9 +137,7 @@ void CPUUnprojectKernel
                  depth.GetDevice());
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
 
-    // Workload
     int64_t n = rows_strided * cols_strided;
-
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
                                                  int64_t workload_idx) {
@@ -320,25 +374,9 @@ void CPUSurfaceExtractionKernel
 #endif
         auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                             int curr_block_idx) -> float* {
-            int xn = (xo + resolution) % resolution;
-            int yn = (yo + resolution) % resolution;
-            int zn = (zo + resolution) % resolution;
-
-            int64_t dxb = sign(xo - xn);
-            int64_t dyb = sign(yo - yn);
-            int64_t dzb = sign(zo - zn);
-
-            int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
-
-            bool block_mask_i =
-                    nb_masks_ptr[nb_idx * n_blocks + curr_block_idx];
-            if (!block_mask_i) return nullptr;
-
-            int64_t block_idx_i =
-                    nb_indices_ptr[nb_idx * n_blocks + curr_block_idx];
-            return static_cast<float*>(
-                    voxel_block_buffer_indexer.GetDataPtrFromCoord(
-                            xn, yn, zn, block_idx_i));
+            return DeviceGetVoxelAt(xo, yo, zo, curr_block_idx, resolution,
+                                    n_blocks, nb_masks_ptr, nb_indices_ptr,
+                                    voxel_block_buffer_indexer);
         };
 
         // Natural index (0, N) -> (block_idx, voxel_idx)
@@ -403,38 +441,16 @@ void CPUSurfaceExtractionKernel
 #endif
         auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                             int curr_block_idx) -> float* {
-            int xn = (xo + resolution) % resolution;
-            int yn = (yo + resolution) % resolution;
-            int zn = (zo + resolution) % resolution;
-
-            int64_t dxb = sign(xo - xn);
-            int64_t dyb = sign(yo - yn);
-            int64_t dzb = sign(zo - zn);
-
-            int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
-
-            bool block_mask_i =
-                    nb_masks_ptr[nb_idx * n_blocks + curr_block_idx];
-            if (!block_mask_i) return nullptr;
-
-            int64_t block_idx_i =
-                    nb_indices_ptr[nb_idx * n_blocks + curr_block_idx];
-            return static_cast<float*>(
-                    voxel_block_buffer_indexer.GetDataPtrFromCoord(
-                            xn, yn, zn, block_idx_i));
+            return DeviceGetVoxelAt(xo, yo, zo, curr_block_idx, resolution,
+                                    n_blocks, nb_masks_ptr, nb_indices_ptr,
+                                    voxel_block_buffer_indexer);
         };
-
         auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                              int curr_block_idx, float* n) {
-            float* vxp = GetVoxelAt(xo + 1, yo, zo, curr_block_idx);
-            float* vxn = GetVoxelAt(xo - 1, yo, zo, curr_block_idx);
-            float* vyp = GetVoxelAt(xo, yo + 1, zo, curr_block_idx);
-            float* vyn = GetVoxelAt(xo, yo - 1, zo, curr_block_idx);
-            float* vzp = GetVoxelAt(xo, yo, zo + 1, curr_block_idx);
-            float* vzn = GetVoxelAt(xo, yo, zo - 1, curr_block_idx);
-            if (vxp && vxn) n[0] = (vxp[0] - vxn[0]) / (2 * voxel_size);
-            if (vyp && vyn) n[1] = (vyp[0] - vyn[0]) / (2 * voxel_size);
-            if (vzp && vzn) n[2] = (vzp[0] - vzn[0]) / (2 * voxel_size);
+            return DeviceGetNormalAt(xo, yo, zo, curr_block_idx, n, resolution,
+                                     voxel_size, n_blocks, nb_masks_ptr,
+                                     nb_indices_ptr,
+                                     voxel_block_buffer_indexer);
         };
 
         // Natural index (0, N) -> (block_idx, voxel_idx)
@@ -737,38 +753,17 @@ void CPUMarchingCubesKernel
 #endif
         auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                             int curr_block_idx) -> float* {
-            int xn = (xo + resolution) % resolution;
-            int yn = (yo + resolution) % resolution;
-            int zn = (zo + resolution) % resolution;
-
-            int64_t dxb = sign(xo - xn);
-            int64_t dyb = sign(yo - yn);
-            int64_t dzb = sign(zo - zn);
-
-            int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
-
-            bool block_mask_i =
-                    nb_masks_ptr[nb_idx * n_blocks + curr_block_idx];
-            if (!block_mask_i) return nullptr;
-
-            int64_t block_idx_i =
-                    nb_indices_ptr[nb_idx * n_blocks + curr_block_idx];
-            return static_cast<float*>(
-                    voxel_block_buffer_indexer.GetDataPtrFromCoord(
-                            xn, yn, zn, block_idx_i));
+            return DeviceGetVoxelAt(xo, yo, zo, curr_block_idx, resolution,
+                                    n_blocks, nb_masks_ptr, nb_indices_ptr,
+                                    voxel_block_buffer_indexer);
         };
 
         auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                              int curr_block_idx, float* n) {
-            float* vxp = GetVoxelAt(xo + 1, yo, zo, curr_block_idx);
-            float* vxn = GetVoxelAt(xo - 1, yo, zo, curr_block_idx);
-            float* vyp = GetVoxelAt(xo, yo + 1, zo, curr_block_idx);
-            float* vyn = GetVoxelAt(xo, yo - 1, zo, curr_block_idx);
-            float* vzp = GetVoxelAt(xo, yo, zo + 1, curr_block_idx);
-            float* vzn = GetVoxelAt(xo, yo, zo - 1, curr_block_idx);
-            if (vxp && vxn) n[0] = (vxp[0] - vxn[0]) / (2 * voxel_size);
-            if (vyp && vyn) n[1] = (vyp[0] - vyn[0]) / (2 * voxel_size);
-            if (vzp && vzn) n[2] = (vzp[0] - vzn[0]) / (2 * voxel_size);
+            return DeviceGetNormalAt(xo, yo, zo, curr_block_idx, n, resolution,
+                                     voxel_size, n_blocks, nb_masks_ptr,
+                                     nb_indices_ptr,
+                                     voxel_block_buffer_indexer);
         };
 
         // Natural index (0, N) -> (block_idx, voxel_idx)
