@@ -94,8 +94,7 @@ namespace geometry {
 class PointCloud : public Geometry {
 public:
     /// Construct an empty pointcloud.
-    PointCloud(core::Dtype dtype = core::Dtype::Float32,
-               const core::Device &device = core::Device("CPU:0"));
+    PointCloud(const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a pointcloud from points.
     ///
@@ -239,21 +238,45 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
-    /// Transforms the points and normals (if exist).
+    /// \brief Transforms the points and normals (if exist)
+    /// of the PointCloud.
+    /// Extracts R, t from Transformation
+    ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
+    ///               [ O(1x3)  s(1x1) ]]
+    ///  (s = 1 for Transformation wihtout scaling)
+    /// PS. It Assumes s = 1 and O = [0,0,0]
+    /// and applies the transformation as P = R(P) + t
+    /// \param transformation Transformation [Tensor of dim {4,4}].
+    /// Should be on the same device as the PointCloud
+    /// \return Transformed pointcloud
     PointCloud &Transform(const core::Tensor &transformation);
 
-    /// Translates points.
+    /// \brief Translates the points of the PointCloud.
+    /// \param translation translation tensor of dimention {3}
+    /// Should be on the same device as the PointCloud
+    /// \param relative if true (default): translates relative to Center
+    /// \return Translated pointcloud
     PointCloud &Translate(const core::Tensor &translation,
                           bool relative = true);
 
-    /// Scale points.
+    /// \brief Scales the points of the PointCloud.
+    /// \param scale Scale [double] of dimention
+    /// \param center Center [Tensor of dim {3}] about which the PointCloud is
+    /// to be scaled. Should be on the same device as the PointCloud
+    /// \return Scaled pointcloud
     PointCloud &Scale(double scale, const core::Tensor &center);
 
-    /// Rotate points and normals (if exist).
+    /// \brief Rotates the points and normals (if exists).
+    /// \param R Rotation [Tensor of dim {3,3}].
+    /// Should be on the same device as the PointCloud
+    /// \param center Center [Tensor of dim {3}] about which the PointCloud is
+    /// to be scaled. Should be on the same device as the PointCloud
+    /// \return Rotated pointcloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     PointCloud VoxelDownSample(double voxel_size) const;
 
+    /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
 
     /// Create a PointCloud from a depth image

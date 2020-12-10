@@ -106,9 +106,7 @@ namespace geometry {
 class TriangleMesh : public Geometry {
 public:
     /// Construct an empty trianglemesh.
-    TriangleMesh(core::Dtype vertex_dtype = core::Dtype::Float32,
-                 core::Dtype triangle_dtype = core::Dtype::Int64,
-                 const core::Device &device = core::Device("CPU:0"));
+    TriangleMesh(const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a trianglemesh from vertices and triangles.
     ///
@@ -375,10 +373,16 @@ public:
     core::Device GetDevice() const { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
-    static TriangleMesh FromLegacyTrangleMesh(
+    /// \param mesh_legacy Legacy Open3D TriangleMesh.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static geometry::TriangleMesh FromLegacyTriangleMesh(
             const open3d::geometry::TriangleMesh &mesh_legacy,
-            core::Dtype vertex_dtype = core::Dtype::Float32,
-            core::Dtype triangle_dtype = core::Dtype::Int64,
+            core::Dtype float_dtype = core::Dtype::Float32,
+            core::Dtype int_dtype = core::Dtype::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D TriangleMesh.

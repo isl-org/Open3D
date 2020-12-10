@@ -1013,6 +1013,9 @@ public:
     /// Assert that the Tensor has the specified device.
     void AssertDevice(const Device& expected_device) const;
 
+    /// Assert that the Tensor has the specified dtype.
+    void AssertDtype(const Dtype& expected_dtype) const;
+
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 

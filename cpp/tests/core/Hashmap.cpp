@@ -265,8 +265,9 @@ class int3 {
 public:
     int3() : x_(0), y_(0), z_(0){};
     int3(int k) : x_(k), y_(k * 2), z_(k * 4){};
-
-private:
+    bool operator==(const int3 &other) const {
+        return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
+    }
     int x_;
     int y_;
     int z_;
@@ -284,8 +285,8 @@ TEST_P(HashmapPermuteDevices, InsertComplexKeys) {
     HashData<int3, int> data(n, slots);
 
     std::vector<int> keys_int3;
-    keys_int3.assign(reinterpret_cast<int*>(data.keys_.data()),
-                     reinterpret_cast<int*>(data.keys_.data()) + 3 * n);
+    keys_int3.assign(reinterpret_cast<int *>(data.keys_.data()),
+                     reinterpret_cast<int *>(data.keys_.data()) + 3 * n);
     core::Tensor keys(keys_int3, {n, 3}, core::Dtype::Int32, device);
     core::Tensor values(data.vals_, {n}, core::Dtype::Int32, device);
 
@@ -311,12 +312,12 @@ TEST_P(HashmapPermuteDevices, InsertComplexKeys) {
                                                          core::None),
                                   core::TensorKey::Index(0)})
                         .AllClose(active_values.View({s}) * data.k_factor_));
-    // // Check existence
-    // std::vector<int> active_values_vec = active_values.ToFlatVector<int>();
-    // std::sort(active_values_vec.begin(), active_values_vec.end());
-    // for (int i = 0; i < s; ++i) {
-    //     EXPECT_EQ(active_values_vec[i], i);
-    // }
+    // Check existence
+    std::vector<int> active_values_vec = active_values.ToFlatVector<int>();
+    std::sort(active_values_vec.begin(), active_values_vec.end());
+    for (int i = 0; i < s; ++i) {
+        EXPECT_EQ(active_values_vec[i], i);
+    }
 }
 
 }  // namespace tests

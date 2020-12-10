@@ -40,6 +40,7 @@ FileGeometry ReadFileGeometryTypeOFF(const std::string &path) {
 
 bool ReadTriangleMeshFromOFF(const std::string &filename,
                              geometry::TriangleMesh &mesh,
+                             bool enable_post_processing,
                              bool print_progress) {
     std::ifstream file(filename.c_str(), std::ios::in);
     if (!file) {

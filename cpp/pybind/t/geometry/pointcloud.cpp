@@ -42,9 +42,7 @@ void pybind_pointcloud(py::module& m) {
                        "A pointcloud contains a set of 3D points.");
 
     // Constructors.
-    pointcloud
-            .def(py::init<core::Dtype, const core::Device&>(), "dtype"_a,
-                 "device"_a)
+    pointcloud.def(py::init<const core::Device&>(), "device"_a)
             .def(py::init<const core::Tensor&>(), "points"_a)
             .def(py::init<const std::unordered_map<std::string,
                                                    core::Tensor>&>(),
