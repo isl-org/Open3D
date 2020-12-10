@@ -173,6 +173,15 @@ void FilamentView::SetSSAOEnabled(const bool enabled) {
     view_->setAmbientOcclusion(option);
 }
 
+void FilamentView::ConfigureForColorPicking() {
+    view_->setSampleCount(1);
+    view_->setAntiAliasing(filament::View::AntiAliasing::NONE);
+    view_->setPostProcessingEnabled(false);
+    view_->setAmbientOcclusion(filament::View::AmbientOcclusion::NONE);
+    view_->setShadowsEnabled(false);
+    view_->setToneMapping(filament::View::ToneMapping::LINEAR);
+}
+
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
 
 void FilamentView::CopySettingsFrom(const FilamentView& other) {

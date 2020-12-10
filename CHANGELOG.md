@@ -21,6 +21,7 @@
 * Fast compression mode for PNG writing. (Issue #846)
 * Ubuntu 20.04 (Focal) support.
 * Added Line3D/Ray3D/Segment3D classes with plane, point, closest-distance, and AABB tests
+* Updated Open3D.h.in to add certain missing header files
 * Add Open3D-ML to Open3D wheel
 * Fix a bug in PointCloud file format, use `float` instead of `float_t`
 

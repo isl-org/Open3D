@@ -549,10 +549,9 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
 
             impl_->is_running_ = false;
             impl_->CleanupAfterRunning();
-        } else {
-            // reset, otherwise we will be done next time, too.
-            impl_->should_quit_ = false;
         }
+        // reset, otherwise we will be done next time, too.
+        impl_->should_quit_ = false;
     }
 
     return (status == RunStatus::CONTINUE);
