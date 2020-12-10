@@ -88,6 +88,12 @@ open3d::geometry::Image Image::ToLegacyImage() const {
     return image_legacy;
 }
 
+std::string Image::ToString() const {
+    return fmt::format("Image[size={{{},{}}}, channels={}, {}, {}]", GetCols(),
+                       GetRows(), GetChannels(), GetDtype().ToString(),
+                       GetDevice().ToString());
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

@@ -39,7 +39,7 @@ namespace geometry {
 /// \brief RGBDImage is for a pair of registered color and depth images,
 ///
 /// viewed from the same view, of the same resolution.
-/// If you have other format, convert it first.
+/// If you have another format, convert it first.
 class RGBDImage : public Geometry2D {
 public:
     /// \brief Default Comnstructor.
@@ -79,6 +79,9 @@ public:
         return open3d::geometry::RGBDImage(color_.ToLegacyImage(),
                                            depth_.ToLegacyImage());
     }
+
+    /// Text description
+    std::string ToString() const;
 
 public:
     /// The color image.
