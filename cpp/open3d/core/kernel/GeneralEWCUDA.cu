@@ -141,13 +141,8 @@ void GeneralEWCUDA(const std::unordered_map<std::string, Tensor>& srcs,
             CUDAMarchingCubesKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::RayCasting:
+            utility::LogError("[RayCasting] Unimplemented.");
             break;
-        case GeneralEWOpCode::Debug: {
-            int64_t n = 10;
-            CUDALauncher::LaunchGeneralKernel(
-                    n, [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {});
-            break;
-        }
         default:
             break;
     }

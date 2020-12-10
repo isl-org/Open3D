@@ -117,6 +117,7 @@ private:
 
 /// Convert between ND coordinates and their corresponding linear offsets
 /// Internal conversions:
+/// 1D: index (x), [channel (c)]
 /// 2D: height (y), weight (x), [channel (c)]
 /// 3D: depth (z), height (y), width (x), [channel (c)]
 /// 4D: time (t), depth (z), height (y), width (x), [channel (c)]
@@ -180,43 +181,43 @@ public:
     }
 
     /// 2D coordinate => workload
-    OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
-                                            int64_t y_in,
-                                            int64_t* workload) const {
+    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
+                                                   int64_t y_in,
+                                                   int64_t* workload) const {
         *workload = y_in * shape_[1] + x_in;
     }
 
     /// 3D coordinate => workload
-    OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
-                                            int64_t y_in,
-                                            int64_t z_in,
-                                            int64_t* workload) const {
+    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
+                                                   int64_t y_in,
+                                                   int64_t z_in,
+                                                   int64_t* workload) const {
         *workload = (z_in * shape_[1] + y_in) * shape_[2] + x_in;
     }
 
     /// 4D coordinate => workload
-    OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
-                                            int64_t y_in,
-                                            int64_t z_in,
-                                            int64_t t_in,
-                                            int64_t* workload) const {
+    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
+                                                   int64_t y_in,
+                                                   int64_t z_in,
+                                                   int64_t t_in,
+                                                   int64_t* workload) const {
         *workload = ((t_in * shape_[1] + z_in) * shape_[2] + y_in) * shape_[3] +
                     x_in;
     }
 
     /// Workload => 2D coordinate
-    OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
-                                            int64_t* x_out,
-                                            int64_t* y_out) const {
+    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
+                                                   int64_t* x_out,
+                                                   int64_t* y_out) const {
         *x_out = workload % shape_[1];
         *y_out = workload / shape_[1];
     }
 
     /// Workload => 3D coordinate
-    OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
-                                            int64_t* x_out,
-                                            int64_t* y_out,
-                                            int64_t* z_out) const {
+    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
+                                                   int64_t* x_out,
+                                                   int64_t* y_out,
+                                                   int64_t* z_out) const {
         *x_out = workload % shape_[2];
         workload = (workload - *x_out) / shape_[2];
         *y_out = workload % shape_[1];
@@ -224,11 +225,11 @@ public:
     }
 
     /// Workload => 4D coordinate
-    OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
-                                            int64_t* x_out,
-                                            int64_t* y_out,
-                                            int64_t* z_out,
-                                            int64_t* t_out) const {
+    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
+                                                   int64_t* x_out,
+                                                   int64_t* y_out,
+                                                   int64_t* z_out,
+                                                   int64_t* t_out) const {
         *x_out = workload % shape_[3];
         workload = (workload - *x_out) / shape_[3];
         *y_out = workload % shape_[2];
@@ -237,26 +238,53 @@ public:
         *t_out = workload / shape_[1];
     }
 
-    OPEN3D_HOST_DEVICE bool InBoundary(float x, float y) const {
+    inline OPEN3D_HOST_DEVICE bool InBoundary(float x, float y) const {
         return y >= 0 && x >= 0 && y <= shape_[0] - 1.0f &&
                x <= shape_[1] - 1.0f;
     }
-    OPEN3D_HOST_DEVICE bool InBoundary(float x, float y, float z) const {
+    inline OPEN3D_HOST_DEVICE bool InBoundary(float x, float y, float z) const {
         return z >= 0 && y >= 0 && x >= 0 && z <= shape_[0] - 1.0f &&
                y <= shape_[1] - 1.0f && x <= shape_[2] - 1.0f;
     }
-    OPEN3D_HOST_DEVICE bool InBoundary(float x,
-                                       float y,
-                                       float z,
-                                       float t) const {
+    inline OPEN3D_HOST_DEVICE bool InBoundary(float x,
+                                              float y,
+                                              float z,
+                                              float t) const {
         return t >= 0 && z >= 0 && y >= 0 && x >= 0 && t <= shape_[0] - 1.0f &&
                z <= shape_[1] - 1.0f && y <= shape_[2] - 1.0f &&
                x <= shape_[3] - 1.0f;
     }
 
-    OPEN3D_HOST_DEVICE int64_t GetShape(int i) const { return shape_[i]; }
+    inline OPEN3D_HOST_DEVICE int64_t GetShape(int i) const {
+        return shape_[i];
+    }
 
-    OPEN3D_HOST_DEVICE void* GetDataPtrFromWorkload(int64_t workload) const {
+    inline OPEN3D_HOST_DEVICE void* GetDataPtrFromCoord(int64_t x) const {
+        return static_cast<void*>(static_cast<uint8_t*>(ptr_) +
+                                  x * element_byte_size_);
+    }
+
+    inline OPEN3D_HOST_DEVICE void* GetDataPtrFromCoord(int64_t x,
+                                                        int64_t y) const {
+        int64_t workload;
+        CoordToWorkload(x, y, &workload);
+        return static_cast<void*>(static_cast<uint8_t*>(ptr_) +
+                                  workload * element_byte_size_);
+    }
+    inline OPEN3D_HOST_DEVICE void* GetDataPtrFromCoord(int64_t x,
+                                                        int64_t y,
+                                                        int64_t z) const {
+        int64_t workload;
+        CoordToWorkload(x, y, z, &workload);
+        return static_cast<void*>(static_cast<uint8_t*>(ptr_) +
+                                  workload * element_byte_size_);
+    }
+    inline OPEN3D_HOST_DEVICE void* GetDataPtrFromCoord(int64_t x,
+                                                        int64_t y,
+                                                        int64_t z,
+                                                        int64_t t) const {
+        int64_t workload;
+        CoordToWorkload(x, y, z, t, &workload);
         return static_cast<void*>(static_cast<uint8_t*>(ptr_) +
                                   workload * element_byte_size_);
     }

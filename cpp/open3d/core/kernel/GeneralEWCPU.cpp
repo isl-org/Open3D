@@ -26,8 +26,6 @@
 
 #include <tbb/concurrent_unordered_set.h>
 
-#include <unordered_set>
-
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
@@ -69,8 +67,8 @@ struct Coord3iHash {
 
 void CPUTSDFTouchKernel(const std::unordered_map<std::string, Tensor>& srcs,
                         std::unordered_map<std::string, Tensor>& dsts) {
-    static std::unordered_set<std::string> src_attrs = {
-            "points", "voxel_size", "resolution", "sdf_trunc"};
+    static std::vector<std::string> src_attrs = {"points", "voxel_size",
+                                                 "resolution", "sdf_trunc"};
 
     for (auto& k : src_attrs) {
         if (srcs.count(k) == 0) {
@@ -153,12 +151,8 @@ void GeneralEWCPU(const std::unordered_map<std::string, Tensor>& srcs,
             CPUMarchingCubesKernel(srcs, dsts);
             break;
         case GeneralEWOpCode::RayCasting:
+            utility::LogError("[RayCasting] Unimplemented.");
             break;
-        case GeneralEWOpCode::Debug: {
-            int64_t n = 10;
-            CPULauncher::LaunchGeneralKernel(n, [=](int64_t workload_idx) {});
-            break;
-        }
         default:
             break;
     }
