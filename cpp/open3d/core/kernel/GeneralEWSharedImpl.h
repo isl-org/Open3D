@@ -237,7 +237,7 @@ void CPUTSDFIntegrateKernel
                                     static_cast<float>(v), 1.0, &xc_unproj,
                                     &yc_unproj, &zc_unproj);
         float multiplier =
-                std::sqrt(xc_unproj * xc_unproj + yc_unproj * yc_unproj + 1.0);
+                sqrt(xc_unproj * xc_unproj + yc_unproj * yc_unproj + 1.0);
         float sdf = (depth - zc) * multiplier;
         if (depth <= 0 || depth > depth_max || zc <= 0 || sdf < -sdf_trunc) {
             return;
