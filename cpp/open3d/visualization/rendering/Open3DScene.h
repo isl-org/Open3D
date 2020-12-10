@@ -36,6 +36,7 @@ namespace open3d {
 
 namespace geometry {
 class Geometry3D;
+class Image;
 }  // namespace geometry
 
 namespace t {
@@ -61,7 +62,8 @@ public:
 
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);
-    void SetBackgroundColor(const Eigen::Vector4f& color);
+    void SetBackground(const Eigen::Vector4f& color,
+                       std::shared_ptr<geometry::Image> image = nullptr);
 
     /// Sets the maximum number of points before AddGeometry also adds a
     /// downsampled point cloud with number of points, used when rendering

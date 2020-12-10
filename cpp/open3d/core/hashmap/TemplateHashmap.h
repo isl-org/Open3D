@@ -31,10 +31,10 @@
 // Users must create a .cu file and compile with
 // nvcc to use customized GPU hashmap.
 //
-// APIs are available in HashmapBase.h.
-// Include path: TemplatedHashmap.h -> HashmapCPU.hpp -> HashmapBase.h
-//                                |                      ^
-//                                |--> HashmapCUDA.cuh --|
+// APIs are available in DeviceHashmap.h.
+// Include path: TemplatedHashmap.h -> HashmapCPU.h  -> DeviceHashmap.h
+//                                |                    ^
+//                                |--> HashmapCUDA.h --|
 //                                        (CUDA code)
 //
 // .cpp targets only include CPU part that can be compiled by non-nvcc
@@ -54,10 +54,10 @@ namespace core {
 
 template <typename Hash, typename KeyEq>
 std::shared_ptr<DeviceHashmap<Hash, KeyEq>> CreateTemplateDeviceHashmap(
-        size_t init_buckets,
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
+        int64_t init_buckets,
+        int64_t init_capacity,
+        int64_t dsize_key,
+        int64_t dsize_value,
         const Device &device) {
     if (device.GetType() == Device::DeviceType::CPU) {
         return CreateTemplateCPUHashmap<Hash, KeyEq>(

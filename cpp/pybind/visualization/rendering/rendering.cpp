@@ -305,8 +305,21 @@ void pybind_rendering_classes(py::module &m) {
                  "Toggles display of the skybox")
             .def("show_axes", &Open3DScene::ShowAxes,
                  "Toggles display of xyz axes")
-            .def("set_background_color", &Open3DScene::SetBackgroundColor,
-                 "Sets the background color of the scene, [r, g, b, a].")
+            .def(
+                    "set_background_color",
+                    [](Open3DScene &scene, const Eigen::Vector4f &color) {
+                        utility::LogWarning(
+                                "visualization.rendering.Open3DScene.set_"
+                                "background_color()\nhas been deprecated. "
+                                "Please use set_background() instead.");
+                        scene.SetBackground(color, nullptr);
+                    },
+                    "This function has been deprecated. Please use "
+                    "set_background() instead.")
+            .def("set_background", &Open3DScene::SetBackground, "color"_a,
+                 "image"_a = nullptr,
+                 "set_background([r, g, b, a], image=None). Sets the "
+                 "background color and (optionally) image of the scene. ")
             .def("clear_geometry", &Open3DScene::ClearGeometry)
             .def("add_geometry",
                  py::overload_cast<const std::string &,

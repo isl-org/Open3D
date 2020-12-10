@@ -71,14 +71,34 @@ core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
 core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    utility::LogError("Unimplemented");
+    transformation.AssertShape({4, 4});
+    transformation.AssertDevice(device_);
+
+    core::Tensor R = transformation.Slice(0, 0, 3).Slice(1, 0, 3);
+    core::Tensor t = transformation.Slice(0, 0, 3).Slice(1, 3, 4);
+    // TODO: Make it more generalised [4x4][4xN] Transformation
+
+    // TODO: consider adding a new op extending MatMul to support `AB + C`
+    // GEMM operation. Also, a parallel joint optimimsed kernel for
+    // independent MatMul operation with common matrix like AB and AC
+    // with fusion based cache optimisation
+
+    core::Tensor &points = GetPoints();
+    points = (R.Matmul(points.T())).Add_(t).T();
+
+    if (HasPointNormals()) {
+        core::Tensor &normals = GetPointNormals();
+        normals = (R.Matmul(normals.T())).T();
+    }
     return *this;
 }
 
 PointCloud &PointCloud::Translate(const core::Tensor &translation,
                                   bool relative) {
     translation.AssertShape({3});
-    core::Tensor transform = translation.Copy();
+    translation.AssertDevice(device_);
+
+    core::Tensor transform = translation;
     if (!relative) {
         transform -= GetCenter();
     }
@@ -88,6 +108,8 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
 
 PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
     center.AssertShape({3});
+    center.AssertDevice(device_);
+
     core::Tensor points = GetPoints();
     points.Sub_(center).Mul_(scale).Add_(center);
     return *this;
@@ -95,7 +117,19 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
-    utility::LogError("Unimplemented");
+    R.AssertShape({3, 3});
+    R.AssertDevice(device_);
+    center.AssertShape({3});
+    center.AssertDevice(device_);
+
+    core::Tensor Rot = R;
+    core::Tensor &points = GetPoints();
+    points = ((Rot.Matmul((points.Sub_(center)).T())).T()).Add_(center);
+
+    if (HasPointNormals()) {
+        core::Tensor &normals = GetPointNormals();
+        normals = (Rot.Matmul(normals.T())).T();
+    }
     return *this;
 }
 
