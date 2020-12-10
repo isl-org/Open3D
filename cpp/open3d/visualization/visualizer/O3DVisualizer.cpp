@@ -1635,8 +1635,9 @@ void O3DVisualizer::AddAction(const std::string &name,
     SetOnMenuItemActivated(id, [this, callback]() { callback(*this); });
 }
 
-void O3DVisualizer::SetBackground(const Eigen::Vector4f &bg_color,
-                      std::shared_ptr<geometry::Image> bg_image /*= nullptr*/) {
+void O3DVisualizer::SetBackground(
+        const Eigen::Vector4f &bg_color,
+        std::shared_ptr<geometry::Image> bg_image /*= nullptr*/) {
     impl_->SetBackground(bg_color, bg_image);
 }
 
