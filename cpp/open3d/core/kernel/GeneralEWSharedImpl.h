@@ -39,6 +39,50 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+struct Voxel32f {
+    float tsdf;
+    float weight;
+
+    void Integrate(uint8_t* input){};
+};
+
+struct ColoredVoxel32f {
+    float tsdf;
+    float weight;
+
+    float r;
+    float g;
+    float b;
+
+    void Integrate(float dsdf, float dr, float dg, float db) {
+        float inv_wsum = 1.0 / (weight + 1);
+        tsdf = (weight * tsdf + dsdf) * inv_wsum;
+        r = (weight * r + dr) * inv_wsum;
+        g = (weight * g + dg) * inv_wsum;
+        b = (weight * b + db) * inv_wsum;
+
+        weight += 1;
+    }
+};
+
+struct Voxel16i {
+    float tsdf;
+    uint16_t weight;
+
+    void Integrate(uint8_t* input){};
+};
+
+struct ColoredVoxel16i {
+    float tsdf;
+    uint16_t weight;
+
+    uint16_t r;
+    uint16_t g;
+    uint16_t b;
+
+    void Integrate(uint8_t* input) {}
+};
+
 inline OPEN3D_DEVICE float* DeviceGetVoxelAt(
         int xo,
         int yo,
@@ -294,22 +338,11 @@ void CPUTSDFIntegrateKernel
         sdf /= sdf_trunc;
 
         /// Associate voxel workload and update TSDF/Weights
-        float* voxel_ptr = static_cast<float*>(
+        ColoredVoxel32f* voxel_ptr = static_cast<ColoredVoxel32f*>(
                 voxel_block_buffer_indexer.GetDataPtrFromCoord(xv, yv, zv,
                                                                block_idx));
 
-        float tsdf_sum = voxel_ptr[0];
-        float weight_sum = voxel_ptr[1];
-        float r_sum = voxel_ptr[2];
-        float g_sum = voxel_ptr[3];
-        float b_sum = voxel_ptr[4];
-
-        float new_weight_sum = weight_sum + 1;
-        voxel_ptr[0] = (weight_sum * tsdf_sum + sdf) / new_weight_sum;
-        voxel_ptr[1] = new_weight_sum;
-        voxel_ptr[2] = (weight_sum * r_sum + color_ptr[0]) / new_weight_sum;
-        voxel_ptr[3] = (weight_sum * g_sum + color_ptr[1]) / new_weight_sum;
-        voxel_ptr[4] = (weight_sum * b_sum + color_ptr[2]) / new_weight_sum;
+        voxel_ptr->Integrate(sdf, color_ptr[0], color_ptr[1], color_ptr[2]);
     });
 }
 
