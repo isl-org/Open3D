@@ -84,23 +84,23 @@ int main(int argc, char** argv) {
         }
 
         utility::Timer timer;
-        // timer.Start();
-        // auto pcd = voxel_grid.ExtractSurfacePoints();
-        // timer.Stop();
-        // utility::LogInfo("Point Extraction takes {}", timer.GetDuration());
+        timer.Start();
+        auto pcd = voxel_grid.ExtractSurfacePoints();
+        timer.Stop();
+        utility::LogInfo("Point Extraction takes {}", timer.GetDuration());
 
-        // timer.Start();
-        // auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-        //         pcd.ToLegacyPointCloud());
-        // timer.Stop();
-        // utility::LogInfo("Conversion takes {}", timer.GetDuration());
+        timer.Start();
+        auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+                pcd.ToLegacyPointCloud());
+        timer.Stop();
+        utility::LogInfo("Conversion takes {}", timer.GetDuration());
 
-        // timer.Start();
-        // open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
-        //                             *pcd_legacy);
-        // timer.Stop();
-        // utility::LogInfo("IO takes {}", timer.GetDuration());
-        // open3d::visualization::DrawGeometries({pcd_legacy});
+        timer.Start();
+        open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
+                                    *pcd_legacy);
+        timer.Stop();
+        utility::LogInfo("IO takes {}", timer.GetDuration());
+        open3d::visualization::DrawGeometries({pcd_legacy});
 
         timer.Start();
         auto mesh = voxel_grid.ExtractSurfaceMesh();
