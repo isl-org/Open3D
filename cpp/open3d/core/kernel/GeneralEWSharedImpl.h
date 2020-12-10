@@ -312,16 +312,88 @@ void CPUSurfaceExtractionKernel
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
                        block_values.GetDevice());
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
+                                                 int64_t workload_idx) {
+#else
+    CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
+#endif
+        auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                            int curr_block_idx) -> float* {
+            int xn = (xo + resolution) % resolution;
+            int yn = (yo + resolution) % resolution;
+            int zn = (zo + resolution) % resolution;
 
-    core::Tensor points({std::min(n * 3, int64_t(10000000)), 3},
-                        core::Dtype::Float32, block_values.GetDevice());
-    core::Tensor normals({std::min(n * 3, int64_t(10000000)), 3},
-                         core::Dtype::Float32, block_values.GetDevice());
-    core::Tensor colors({std::min(n * 3, int64_t(10000000)), 3},
-                        core::Dtype::Float32, block_values.GetDevice());
+            int64_t dxb = sign(xo - xn);
+            int64_t dyb = sign(yo - yn);
+            int64_t dzb = sign(zo - zn);
+
+            int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
+
+            bool block_mask_i =
+                    nb_masks_ptr[nb_idx * n_blocks + curr_block_idx];
+            if (!block_mask_i) return nullptr;
+
+            int64_t block_idx_i =
+                    nb_indices_ptr[nb_idx * n_blocks + curr_block_idx];
+            return static_cast<float*>(
+                    voxel_block_buffer_indexer.GetDataPtrFromCoord(
+                            xn, yn, zn, block_idx_i));
+        };
+
+        // Natural index (0, N) -> (block_idx, voxel_idx)
+        int64_t workload_block_idx = workload_idx / resolution3;
+        int64_t block_idx = indices_ptr[workload_block_idx];
+        int64_t voxel_idx = workload_idx % resolution3;
+
+        // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+        int64_t xv, yv, zv;
+        voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+
+        float* voxel_ptr = static_cast<float*>(
+                voxel_block_buffer_indexer.GetDataPtrFromCoord(xv, yv, zv,
+                                                               block_idx));
+        float tsdf_o = voxel_ptr[0];
+        float weight_o = voxel_ptr[1];
+        if (weight_o == 0) return;
+
+        for (int i = 0; i < 3; ++i) {
+            float* ptr = GetVoxelAt(xv + int64_t(i == 0), yv + int64_t(i == 1),
+                                    zv + int64_t(i == 2), workload_block_idx);
+            if (ptr == nullptr) continue;
+
+            float tsdf_i = ptr[0];
+            float weight_i = ptr[1];
+
+            if (weight_i > 0 && tsdf_i * tsdf_o < 0) {
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+                atomicAdd(count_ptr, 1);
+#else
+#pragma omp atomic
+                *count_ptr += 1;
+
+#endif
+            }
+        }
+    });
+
+    int total_count = count.Item<int>();
+
+    core::Tensor points({total_count, 3}, core::Dtype::Float32,
+                        block_values.GetDevice());
+    core::Tensor normals({total_count, 3}, core::Dtype::Float32,
+                         block_values.GetDevice());
+    core::Tensor colors({total_count, 3}, core::Dtype::Float32,
+                        block_values.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
     NDArrayIndexer normal_indexer(normals, 1);
     NDArrayIndexer color_indexer(colors, 1);
+
+    // Reset count
+    count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
+                         block_values.GetDevice());
+    count_ptr = static_cast<int*>(count.GetDataPtr());
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
@@ -443,17 +515,16 @@ void CPUSurfaceExtractionKernel
                 float r_i = ptr[2];
                 float g_i = ptr[3];
                 float b_i = ptr[4];
-                color_ptr[0] = (1 - ratio) * r_o + ratio * r_i;
-                color_ptr[1] = (1 - ratio) * g_o + ratio * g_i;
-                color_ptr[2] = (1 - ratio) * b_o + ratio * b_i;
+                color_ptr[0] = ((1 - ratio) * r_o + ratio * r_i) / 255.0f;
+                color_ptr[1] = ((1 - ratio) * g_o + ratio * g_i) / 255.0f;
+                color_ptr[2] = ((1 - ratio) * b_o + ratio * b_i) / 255.0f;
             }
         }
     });
 
-    int total_count = count.Item<int>();
-    dsts.emplace("points", points.Slice(0, 0, total_count));
-    dsts.emplace("normals", normals.Slice(0, 0, total_count));
-    dsts.emplace("colors", colors.Slice(0, 0, total_count) / 255.0);
+    dsts.emplace("points", points);
+    dsts.emplace("normals", normals);
+    dsts.emplace("colors", colors);
 }
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -599,13 +670,59 @@ void CPUMarchingCubesKernel
     core::Tensor vtx_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                            block_values.GetDevice());
     int* vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    CUDALauncher::LaunchGeneralKernel(
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+#else
+    CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
+#endif
+                // Natural index (0, N) -> (block_idx, voxel_idx)
+                int64_t workload_block_idx = workload_idx / resolution3;
+                int64_t voxel_idx = workload_idx % resolution3;
 
-    core::Tensor vertices({std::min(n * 3, int64_t(10000000)), 3},
-                          core::Dtype::Float32, block_values.GetDevice());
-    core::Tensor normals({std::min(n * 3, int64_t(10000000)), 3},
-                         core::Dtype::Float32, block_values.GetDevice());
-    core::Tensor colors({std::min(n * 3, int64_t(10000000)), 3},
-                        core::Dtype::Float32, block_values.GetDevice());
+                // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                int64_t xv, yv, zv;
+                voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+
+                // Obtain voxel's mesh struct ptr
+                int* mesh_struct_ptr = static_cast<int*>(
+                        mesh_structure_indexer.GetDataPtrFromCoord(
+                                xv, yv, zv, workload_block_idx));
+
+                // Early quit -- no allocated vertex to compute
+                if (mesh_struct_ptr[0] != -1 && mesh_struct_ptr[1] != -1 &&
+                    mesh_struct_ptr[2] != -1) {
+                    return;
+                }
+
+                // Enumerate 3 edges in the voxel
+                for (int e = 0; e < 3; ++e) {
+                    int vertex_idx = mesh_struct_ptr[e];
+                    if (vertex_idx != -1) continue;
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+                    atomicAdd(vtx_count_ptr, 1);
+#else
+#pragma omp atomic
+            *vtx_count_ptr += 1;
+#endif
+                }
+            });
+
+    int total_vtx_count = vtx_count.Item<int>();
+    utility::LogInfo("Total vertex count = {}", total_vtx_count);
+
+    // Reset counter
+    vtx_count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
+                             block_values.GetDevice());
+    vtx_count_ptr = static_cast<int*>(vtx_count.GetDataPtr());
+
+    core::Tensor vertices({total_vtx_count, 3}, core::Dtype::Float32,
+                          block_values.GetDevice());
+    core::Tensor normals({total_vtx_count, 3}, core::Dtype::Float32,
+                         block_values.GetDevice());
+    core::Tensor colors({total_vtx_count, 3}, core::Dtype::Float32,
+                        block_values.GetDevice());
 
     NDArrayIndexer block_keys_indexer(block_keys, 1);
     NDArrayIndexer vertex_indexer(vertices, 1);
@@ -748,19 +865,14 @@ void CPUMarchingCubesKernel
             float r_e = voxel_ptr_e[2];
             float g_e = voxel_ptr_e[3];
             float b_e = voxel_ptr_e[4];
-            color_ptr[0] = (1 - ratio) * r_o + ratio * r_e;
-            color_ptr[1] = (1 - ratio) * g_o + ratio * g_e;
-            color_ptr[2] = (1 - ratio) * b_o + ratio * b_e;
+            color_ptr[0] = ((1 - ratio) * r_o + ratio * r_e) / 255.0;
+            color_ptr[1] = ((1 - ratio) * g_o + ratio * g_e) / 255.0;
+            color_ptr[2] = ((1 - ratio) * b_o + ratio * b_e) / 255.0;
         }
     });
 
-    int total_vtx_count = vtx_count.Item<int>();
-    utility::LogInfo("Total vertex count = {}", total_vtx_count);
-    vertices = vertices.Slice(0, 0, total_vtx_count);
-    normals = normals.Slice(0, 0, total_vtx_count);
-    colors = colors.Slice(0, 0, total_vtx_count);
     dsts.emplace("vertices", vertices);
-    dsts.emplace("colors", colors / 255.0);
+    dsts.emplace("colors", colors);
     dsts.emplace("normals", normals);
 
     // Pass 2: connect vertices
@@ -840,6 +952,7 @@ void CPUMarchingCubesKernel
 
     int total_tri_count = triangle_count.Item<int>();
     utility::LogInfo("Total triangle count = {}", total_tri_count);
+
     triangles = triangles.Slice(0, 0, total_tri_count);
     dsts.emplace("triangles", triangles);
 }
