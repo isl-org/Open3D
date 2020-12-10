@@ -127,7 +127,7 @@ PickPointsInteractor::PickPointsInteractor(rendering::Open3DScene *scene,
             std::make_shared<rendering::Open3DScene>(scene->GetRenderer());
 
     picking_scene_->SetDownsampleThreshold(SIZE_MAX);  // don't downsample!
-    picking_scene_->SetBackgroundColor(kBackgroundColor);
+    picking_scene_->SetBackground(kBackgroundColor);
 
     picking_scene_->GetView()->ConfigureForColorPicking();
 }

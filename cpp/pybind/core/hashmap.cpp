@@ -43,26 +43,28 @@ void pybind_core_hashmap(py::module& m) {
             m, "Hashmap",
             "A Hashmap is a map from key to data wrapped by Tensors.");
 
-    hashmap.def(py::init<size_t, const Dtype&, const Dtype&, const Device&>(),
-                "init_capacity"_a, "dtype_key"_a, "dtype_val"_a, "device"_a);
+    hashmap.def(py::init<size_t, const Dtype&, const Dtype&, const SizeVector&,
+                         const SizeVector&, const Device&>(),
+                "init_capacity"_a, "dtype_key"_a, "dtype_value"_a,
+                "shape_key"_a, "shape_value"_a, "device"_a);
 
     hashmap.def("insert",
                 [](Hashmap& h, const Tensor& keys, const Tensor& values) {
-                    Tensor iterators, masks;
-                    h.Insert(keys, values, iterators, masks);
-                    return py::make_tuple(iterators, masks);
+                    Tensor addrs, masks;
+                    h.Insert(keys, values, addrs, masks);
+                    return py::make_tuple(addrs, masks);
                 });
 
     hashmap.def("activate", [](Hashmap& h, const Tensor& keys) {
-        Tensor iterators, masks;
-        h.Activate(keys, iterators, masks);
-        return py::make_tuple(iterators, masks);
+        Tensor addrs, masks;
+        h.Activate(keys, addrs, masks);
+        return py::make_tuple(addrs, masks);
     });
 
     hashmap.def("find", [](Hashmap& h, const Tensor& keys) {
-        Tensor iterators, masks;
-        h.Find(keys, iterators, masks);
-        return py::make_tuple(iterators, masks);
+        Tensor addrs, masks;
+        h.Find(keys, addrs, masks);
+        return py::make_tuple(addrs, masks);
     });
 
     hashmap.def("erase", [](Hashmap& h, const Tensor& keys) {
@@ -71,35 +73,21 @@ void pybind_core_hashmap(py::module& m) {
         return masks;
     });
 
-    hashmap.def("unpack_iterators", [](Hashmap& h, const Tensor& iterators,
-                                       const Tensor& masks = Tensor()) {
-        int64_t count = iterators.GetShape()[0];
-
-        Tensor keys({count}, h.GetKeyDtype(), iterators.GetDevice());
-        Tensor values({count}, h.GetValueDtype(), iterators.GetDevice());
-
-        h.UnpackIterators(
-                static_cast<const iterator_t*>(iterators.GetDataPtr()),
-                static_cast<const bool*>(masks.GetDataPtr()), keys.GetDataPtr(),
-                values.GetDataPtr(), count);
-
-        return py::make_tuple(keys, values);
+    hashmap.def("get_active_addrs", [](Hashmap& h) {
+        Tensor addrs;
+        h.GetActiveIndices(addrs);
+        return addrs;
     });
 
-    hashmap.def("assign_iterators", [](Hashmap& h, Tensor& iterators,
-                                       Tensor& values,
-                                       const Tensor& masks = Tensor()) {
-        int64_t count = iterators.GetShape()[0];
+    hashmap.def("get_key_buffer", &Hashmap::GetKeyBuffer);
+    hashmap.def("get_value_buffer", &Hashmap::GetValueBuffer);
 
-        h.AssignIterators(static_cast<iterator_t*>(iterators.GetDataPtr()),
-                          static_cast<const bool*>(masks.GetDataPtr()),
-                          values.GetDataPtr(), count);
-
-        return iterators;
-    });
+    hashmap.def("get_key_tensor", &Hashmap::GetKeyTensor);
+    hashmap.def("get_value_tensor", &Hashmap::GetValueTensor);
 
     hashmap.def("rehash", &Hashmap::Rehash);
     hashmap.def("size", &Hashmap::Size);
+    hashmap.def("capacity", &Hashmap::GetCapacity);
 }
 }  // namespace core
 }  // namespace open3d
