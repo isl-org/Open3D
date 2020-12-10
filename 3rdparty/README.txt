@@ -52,9 +52,9 @@ dirent                      1.21                                     MIT license
 https://github.com/tronkko/dirent
 A C/C++ programming interface for cross-platform filesystem
 --------------------------------------------------------------------------------
-librealsense                2.39.0                               Apache-2 license
-A cross-platform library for capturing data from the Intel RealSense F200, SR300
-and R200 cameras
+librealsense                2.40.0                               Apache-2 license
+A cross-platform library for capturing data from the Intel RealSense F200,
+SR300, R200 and L500 cameras
 https://github.com/IntelRealSense/librealsense
 --------------------------------------------------------------------------------
 tinyfiledialogs             2.7.2                                   zlib license
