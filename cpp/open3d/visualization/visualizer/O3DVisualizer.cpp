@@ -518,8 +518,8 @@ struct O3DVisualizer::Impl {
                                     ui_state_.bg_color.y(),
                                     ui_state_.bg_color.z());
         settings.bg_color->SetOnValueChanged([this](const Color &c) {
-            this->SetBackgroundColor(
-                    {c.GetRed(), c.GetGreen(), c.GetBlue(), 1.0f});
+            this->SetBackground({c.GetRed(), c.GetGreen(), c.GetBlue(), 1.0f},
+                                nullptr);
         });
 
         settings.point_size = new Slider(Slider::INT);
@@ -954,11 +954,12 @@ struct O3DVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
-    void SetBackgroundColor(const Eigen::Vector4f &bg_color) {
+    void SetBackground(const Eigen::Vector4f &bg_color,
+                       std::shared_ptr<geometry::Image> bg_image) {
         auto old_default_color = CalcDefaultUnlitColor();
         ui_state_.bg_color = bg_color;
         auto scene = scene_->GetScene();
-        scene->SetBackground(ui_state_.bg_color);
+        scene->SetBackground(ui_state_.bg_color, bg_image);
 
         auto new_default_color = CalcDefaultUnlitColor();
         if (new_default_color != old_default_color) {
@@ -1184,7 +1185,7 @@ struct O3DVisualizer::Impl {
 
         ShowSettings(ui_state_.show_settings, false);
         SetShader(ui_state_.scene_shader);
-        SetBackgroundColor(ui_state_.bg_color);
+        SetBackground(ui_state_.bg_color, nullptr);
         ShowSkybox(ui_state_.show_skybox);
         ShowAxes(ui_state_.show_axes);
 
@@ -1634,8 +1635,9 @@ void O3DVisualizer::AddAction(const std::string &name,
     SetOnMenuItemActivated(id, [this, callback]() { callback(*this); });
 }
 
-void O3DVisualizer::SetBackgroundColor(const Eigen::Vector4f &bg_color) {
-    impl_->SetBackgroundColor(bg_color);
+void O3DVisualizer::SetBackground(const Eigen::Vector4f &bg_color,
+                      std::shared_ptr<geometry::Image> bg_image /*= nullptr*/) {
+    impl_->SetBackground(bg_color, bg_image);
 }
 
 void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
