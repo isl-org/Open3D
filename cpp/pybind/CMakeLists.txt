@@ -40,7 +40,7 @@ if (NOT BUILD_GUI)
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/visualization/rendering/rendering.cpp")
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/drawvisualizer.cpp")
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/o3dvisualizer.cpp")
 endif()
 
 if (NOT BUILD_AZURE_KINECT)
