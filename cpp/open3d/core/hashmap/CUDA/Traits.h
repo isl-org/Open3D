@@ -46,8 +46,6 @@
 namespace open3d {
 namespace core {
 
-typedef uint32_t addr_t;
-
 struct iterator_t {
     OPEN3D_HOST_DEVICE iterator_t() : first(nullptr), second(nullptr) {}
     OPEN3D_HOST_DEVICE iterator_t(void* key_ptr, void* value_ptr)

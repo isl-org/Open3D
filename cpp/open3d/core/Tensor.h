@@ -69,6 +69,7 @@ public:
            const Device& device = Device("CPU:0"))
         : Tensor(shape, dtype, device) {
         // Check number of elements
+
         if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
             utility::LogError(
                     "Tensor initialization values' size {} does not match the "
@@ -1011,6 +1012,9 @@ public:
 
     /// Assert that the Tensor has the specified device.
     void AssertDevice(const Device& expected_device) const;
+
+    /// Assert that the Tensor has the specified dtype.
+    void AssertDtype(const Dtype& expected_dtype) const;
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;

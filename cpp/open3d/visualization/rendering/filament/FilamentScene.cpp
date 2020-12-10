@@ -91,6 +91,8 @@ void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
     free(buffer);
 }
 
+const std::string kBackgroundName = "__background";
+
 namespace defaults_mapping {
 
 using GeometryType = open3d::geometry::Geometry::GeometryType;
@@ -107,10 +109,10 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"depth", ResourceManager::kDefaultDepthShader},
         {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
         {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
-        {"unlitLine", ResourceManager::kDefaultLineShader},
         {"unlitPolygonOffset",
          ResourceManager::kDefaultUnlitPolygonOffsetShader},
-};
+        {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
+        {"unlitLine", ResourceManager::kDefaultLineShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -158,13 +160,9 @@ FilamentScene::FilamentScene(filament::Engine& engine,
     : Scene(renderer), engine_(engine), resource_mgr_(resource_mgr) {
     scene_ = engine_.createScene();
     CreateSunDirectionalLight();
-
-    // Create initial color skybox...
-    auto skybox_handle = resource_mgr_.CreateColorSkybox({1.0f, 1.0f, 1.0f});
-    auto wskybox = resource_mgr_.GetSkybox(skybox_handle);
-    if (auto skybox = wskybox.lock()) {
-        color_skybox_ = wskybox;
-    }
+    // Note: can't set background color, because ImguiFilamentBridge
+    // creates a Scene, and it needs to not have anything drawing, or it
+    // covers up any SceneWidgets in the window.
 }
 
 FilamentScene::~FilamentScene() {}
@@ -251,6 +249,15 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
                 "Geometry {} has already been added to scene graph.",
                 object_name);
         return false;
+    }
+
+    auto tris = dynamic_cast<const geometry::TriangleMesh*>(&geometry);
+    if (tris && tris->vertex_normals_.empty() &&
+        tris->triangle_normals_.empty() &&
+        (material.shader == "defaultUnlit" ||
+         material.shader == "defaultLitTransparency")) {
+        utility::LogWarning(
+                "Using a shader with lighting but geometry has no normals.");
     }
 
     // Build Filament buffers
@@ -684,6 +691,17 @@ void FilamentScene::GeometryShadows(const std::string& object_name,
     }
 }
 
+void FilamentScene::SetGeometryPriority(const std::string& object_name,
+                                        uint8_t priority) {
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
+        auto& renderable_mgr = engine_.getRenderableManager();
+        filament::RenderableManager::Instance inst =
+                renderable_mgr.getInstance(g->filament_entity);
+        renderable_mgr.setPriority(inst, priority);
+    }
+}
+
 void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
     auto& material = geom_mi.properties;
     auto& maps = geom_mi.maps;
@@ -763,6 +781,15 @@ void FilamentScene::UpdateSolidColorShader(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
             .SetParameter("pointSize", geom_mi.properties.point_size)
+            .Finish();
+}
+
+void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetParameter("aspectRatio", geom_mi.properties.aspect_ratio)
+            .SetTexture("albedo", geom_mi.maps.albedo_map,
+                        rendering::TextureSamplerParameters::Pretty())
             .Finish();
 }
 
@@ -927,6 +954,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateGradientShader(geom.mat);
     } else if (props.shader == "unlitSolidColor") {
         UpdateSolidColorShader(geom.mat);
+    } else if (props.shader == "unlitBackground") {
+        UpdateBackgroundShader(geom.mat);
     } else if (props.shader == "unlitLine") {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
@@ -972,6 +1001,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateGradientShader(geom->mat);
         } else if (material.shader == "unlitSolidColor") {
             UpdateSolidColorShader(geom->mat);
+        } else if (material.shader == "unlitBackground") {
+            UpdateBackgroundShader(geom->mat);
         } else if (material.shader == "unlitLine") {
             UpdateLineShader(geom->mat);
         } else if (material.shader == "unlitPolygonOffset") {
@@ -1265,8 +1296,7 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
         skybox_ = wskybox;
         if (skybox_enabled_) {
             scene_->setSkybox(skybox.get());
-        } else {
-            scene_->setSkybox(color_skybox_.lock().get());
+            ShowSkybox(true);
         }
     }
 
@@ -1325,30 +1355,44 @@ void FilamentScene::ShowSkybox(bool show) {
                 scene_->setSkybox(skybox.get());
             }
         } else {
-            if (auto skybox = color_skybox_.lock()) {
-                scene_->setSkybox(skybox.get());
-            } else {
-                scene_->setSkybox(nullptr);
-            }
+            scene_->setSkybox(nullptr);
         }
+        ShowGeometry(kBackgroundName, !show);
         skybox_enabled_ = show;
     }
 }
 
-void FilamentScene::SetBackgroundColor(const Eigen::Vector4f& color) {
-    if (auto skybox = color_skybox_.lock()) {
-        filament::math::float4 fcolor;
-        fcolor.r = color.x();
-        fcolor.g = color.y();
-        fcolor.b = color.z();
-        fcolor.a = color.w();
-        skybox->setColor(fcolor);
-        if (!skybox_enabled_) {
-            if (auto skybox = color_skybox_.lock()) {
-                scene_->setSkybox(skybox.get());
-            }
-        }
+void FilamentScene::SetBackground(
+        const Eigen::Vector4f& color,
+        const std::shared_ptr<geometry::Image> image) {
+    if (!HasGeometry(kBackgroundName)) {
+        geometry::TriangleMesh quad;
+        quad.vertices_ = {{-1.0, -1.0, -0.5},
+                          {1.0, -1.0, -0.5},
+                          {1.0, 1.0, -0.5},
+                          {-1.0, 1.0, -0.5}};
+        quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
+        Material m;
+        m.shader = "unlitBackground";
+        m.base_color = color;
+        m.aspect_ratio = 0.0;
+        AddGeometry(kBackgroundName, quad, m);
+        GeometryShadows(kBackgroundName, false, false);
+        SetGeometryPriority(kBackgroundName, 0);
     }
+
+    Material m;
+    m.shader = "unlitBackground";
+    m.base_color = color;
+    if (image) {
+        m.albedo_img = image;
+        m.aspect_ratio = static_cast<float>(image->width_) /
+                         static_cast<float>(image->height_);
+    } else {
+        m.albedo_img = nullptr;
+        m.aspect_ratio = 0.0;
+    }
+    OverrideMaterial(kBackgroundName, m);
 }
 
 struct RenderRequest {
