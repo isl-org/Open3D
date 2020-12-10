@@ -1015,7 +1015,7 @@ struct O3DVisualizer::Impl {
         auto ydim = bbox.max_bound_.y() - bbox.min_bound_.z();
         auto zdim = bbox.max_bound_.z() - bbox.min_bound_.y();
         auto psize = double(std::max(5, px)) * 0.000666 *
-                                        std::max(xdim, std::max(ydim, zdim));
+                     std::max(xdim, std::max(ydim, zdim));
         selections_->SetPointSize(psize);
 
         scene_->SetPickablePointSize(px);

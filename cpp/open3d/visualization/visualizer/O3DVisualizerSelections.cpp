@@ -146,8 +146,7 @@ void O3DVisualizerSelections::UpdateSelectionGeometry() {
             ps->Translate(p);
             spheres += *ps;
         }
-        scene->AddGeometry(selection.name, &spheres,
-                           MakeMaterial(point_size_));
+        scene->AddGeometry(selection.name, &spheres, MakeMaterial(point_size_));
         scene->GetScene()->GeometryShadows(selection.name, false, false);
     }
 
@@ -209,17 +208,7 @@ void O3DVisualizerSelections::SetSelectableGeometry(
     widget3d_.SetPickableGeometry(geometry);
 }
 
-void O3DVisualizerSelections::UpdatePointSize() {
-/*    auto scene = widget3d_.GetScene();
-    auto material = MakeMaterial(point_size_);
-    for (auto &s : sets_) {
-        if (scene->HasGeometry(s.name)) {
-            scene->GetScene()->OverrideMaterial(s.name, material);
-        }
-    }
-*/
-    UpdateSelectionGeometry();
-}
+void O3DVisualizerSelections::UpdatePointSize() { UpdateSelectionGeometry(); }
 
 }  // namespace visualizer
 }  // namespace visualization
