@@ -40,7 +40,7 @@
 
 #include "open3d/ml/Helper.h"
 #include "open3d/ml/contrib/Nms.h"
-#include "open3d/ml/impl/misc/NmsImpl.h"
+#include "open3d/ml/contrib/NmsImpl.h"
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
