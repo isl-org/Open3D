@@ -135,9 +135,39 @@ RegistrationResult RegistrationICP(
         /* = TransformationEstimationPointToPoint(false)*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
-    utility::LogError("Unimplemented");
-    RegistrationResult result(
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
+    // TODO: SANITY CHECK
+    // API FOR PLANE AND POINT ICP
+
+    core::Tensor transformation = init;
+
+    open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
+    geometry::PointCloud pcd = source;
+    // TODO: Check if transformation isIdentity (skip transform operation)
+    pcd.Transform(transformation);
+    RegistrationResult result(transformation);
+
+    result = GetRegistrationResultAndCorrespondences(
+            pcd, target, target_nns, max_correspondence_distance,
+            transformation);
+    for (int i = 0; i < criteria.max_iteration_; i++) {
+        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
+                          result.fitness_, result.inlier_rmse_);
+        core::Tensor update = estimation.ComputeTransformation(
+                pcd, target, result.correspondence_set_);
+        transformation = update.Matmul(transformation);
+        pcd.Transform(update);
+        RegistrationResult backup = result;
+        result = GetRegistrationResultAndCorrespondences(
+                pcd, target, target_nns, max_correspondence_distance,
+                transformation);
+        if (std::abs(backup.fitness_ - result.fitness_) <
+                    criteria.relative_fitness_ &&
+            std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
+                    criteria.relative_rmse_) {
+            break;
+        }
+    }
+
     return result;
 }
 
