@@ -44,15 +44,8 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         double max_correspondence_distance,
         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-
     transformation.AssertShape({4, 4});
     transformation.AssertDevice(device);
-
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -67,11 +60,10 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     bool check = target_nns.HybridIndex();
     if (!check) {
         utility::LogError(
-                "[Tensor: EvaluateRegistration::"
-                "GetRegistrationResultAndCorrespondences::"
+                "[Tensor: EvaluateRegistration: "
+                "GetRegistrationResultAndCorrespondences: "
                 "NearestNeighborSearch::HybridSearch] "
                 "Index is not set.");
-        return result;
     }
 
     // Tensor implementation of HybridSearch takes square of max_corr_dist
@@ -135,20 +127,30 @@ RegistrationResult RegistrationICP(
         /* = TransformationEstimationPointToPoint(false)*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
-    // TODO: SANITY CHECK
-    // API FOR PLANE AND POINT ICP
+    core::Device device = source.GetDevice();
+    // TODO: Assert Dtypes compatibility
+    init.AssertShape({4, 4});
+    init.AssertDevice(device);
+    if (target.GetDevice() != device) {
+        utility::LogError(
+                "Target Pointcloud device {} != Source Pointcloud's device {}.",
+                target.GetDevice().ToString(), device.ToString());
+    }
 
     core::Tensor transformation = init;
-
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
     geometry::PointCloud pcd = source;
+
     // TODO: Check if transformation isIdentity (skip transform operation)
     pcd.Transform(transformation);
+
+    // TODO: Default constructor absent in RegistrationResult class
     RegistrationResult result(transformation);
 
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, target_nns, max_correspondence_distance,
             transformation);
+
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
@@ -167,7 +169,6 @@ RegistrationResult RegistrationICP(
             break;
         }
     }
-
     return result;
 }
 
