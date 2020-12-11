@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/ml/Helper.h"
-#include "open3d/ml/impl/misc/Nms.h"
+#include "open3d/ml/contrib/Nms.h"
 #include "open3d/ml/tensorflow/misc/NmsOpKernel.h"
 
 using namespace nms_opkernel;
@@ -39,7 +39,7 @@ public:
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& boxes,
                 const tensorflow::Tensor& scores) {
-        std::vector<int64_t> keep_indices = open3d::ml::impl::NmsCUDAKernel(
+        std::vector<int64_t> keep_indices = open3d::ml::contrib::NmsCUDAKernel(
                 boxes.flat<float>().data(), scores.flat<float>().data(),
                 boxes.dim_size(0), this->nms_overlap_thresh);
 
