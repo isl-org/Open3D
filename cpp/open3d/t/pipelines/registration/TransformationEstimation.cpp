@@ -149,12 +149,125 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     return std::sqrt(error / (double)corres_select.GetShape()[0]);
 }
 
+core::Tensor ComputeTransformationFromPose(const core::Tensor &X,
+                                           const core::Dtype &dtype,
+                                           const core::Device &device) {
+    // TODO:
+    // Asserts and Checks
+    // A better implementation of this function
+    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
+
+    // Rotation from Pose X
+    transformation[0][0] = X[2].Cos().Mul(X[1].Cos());
+    transformation[0][1] =
+            -1 * X[2].Sin() * X[0].Cos() + X[2].Cos() * X[1].Sin() * X[0].Sin();
+    transformation[0][2] =
+            X[2].Sin() * X[0].Sin() + X[2].Cos() * X[1].Sin() * X[0].Cos();
+    transformation[1][0] = X[2].Sin() * X[1].Cos();
+    transformation[1][1] =
+            X[2].Cos() * X[0].Cos() + X[2].Sin() * X[1].Sin() * X[0].Sin();
+    transformation[1][2] =
+            -1 * X[2].Cos() * X[0].Sin() + X[2].Sin() * X[1].Sin() * X[0].Cos();
+    transformation[2][0] = -1 * X[1].Sin();
+    transformation[2][1] = X[1].Cos() * X[0].Sin();
+    transformation[2][2] = X[1].Cos() * X[0].Cos();
+
+    // Translation from Pose X
+    transformation[0][3] = X[3];
+    transformation[1][3] = X[4];
+    transformation[2][3] = X[5];
+
+    // Current Implementation DOES NOT SUPPORT SCALE transfomation
+    transformation[3][3] = 1;
+    return transformation;
+}
+
+core::Tensor Compute_A(const core::Tensor &source_select,
+                       const core::Tensor &target_n_select,
+                       const core::Dtype &dtype,
+                       const core::Device &device) {
+    // TODO:
+    // Asserts and Checks
+    // A better implementation of this function
+    int32_t num_corres = source_select.GetShape()[0];
+    // if num_corres == 0 : LogError / Return 0 Tensor
+
+    // Slicing Normals: (nx, ny, nz) and Source Points: (sx, sy, sz)
+    core::Tensor nx =
+            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                     core::TensorKey::Slice(0, 1, 1)});
+    core::Tensor ny =
+            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                     core::TensorKey::Slice(1, 2, 1)});
+    core::Tensor nz =
+            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                     core::TensorKey::Slice(2, 3, 1)});
+    core::Tensor sx =
+            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                   core::TensorKey::Slice(0, 1, 1)});
+    core::Tensor sy =
+            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                   core::TensorKey::Slice(1, 2, 1)});
+    core::Tensor sz =
+            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
+                                   core::TensorKey::Slice(2, 3, 1)});
+
+    // Cross Product Calculation
+    core::Tensor a1 = (nz * sy) - (ny * sz);
+    core::Tensor a2 = (nx * sz) - (nz * sx);
+    core::Tensor a3 = (ny * sx) - (nx * sy);
+
+    // Putting the pieces back together.
+    core::Tensor A({num_corres, 6}, dtype, device);
+    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
+               core::TensorKey::Slice(0, 1, 1)},
+              a1);
+    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
+               core::TensorKey::Slice(1, 2, 1)},
+              a2);
+    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
+               core::TensorKey::Slice(2, 3, 1)},
+              a3);
+    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
+               core::TensorKey::Slice(3, 6, 1)},
+              target_n_select);
+    return A;
+}
+
+core::Tensor SolvePointToPlaneTransformation(const geometry::PointCloud &source,
+                                             const geometry::PointCloud &target,
+                                             const core::Tensor &corres,
+                                             const core::Dtype dtype,
+                                             const core::Device device) {
+    // TODO:
+    // Asserts and Checks
+    // A better implementation of this function
+    core::Tensor select_bool = (corres.Ne(-1)).Reshape({-1});
+    core::Tensor source_select = source.GetPoints().IndexGet({select_bool});
+    core::Tensor corres_select = corres.IndexGet({select_bool}).Reshape({-1});
+    core::Tensor target_select = target.GetPoints().IndexGet({corres_select});
+    core::Tensor target_n_select =
+            target.GetPointNormals().IndexGet({corres_select});
+
+    // TODO: SANITY CHECKS
+    core::Tensor B = ((target_select - source_select).Mul_(target_n_select))
+                             .Sum({1}, true);
+    core::Tensor A = Compute_A(source_select, target_n_select, dtype, device);
+    core::Tensor X = (A.LeastSquares(B)).Reshape({-1});
+    return ComputeTransformationFromPose(X, dtype, device);
+}
+
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &corres) const {
-    utility::LogError("Unimplemented");
-    return core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+    // TODO:
+    // Assert Devices and Checks
+    // Remove hardcoded dtype and device
+    core::Dtype dtype = core::Dtype::Float64;
+    core::Device device = core::Device("CPU:0");
+    return SolvePointToPlaneTransformation(source, target, corres, dtype,
+                                           device);
 }
 
 }  // namespace registration
