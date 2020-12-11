@@ -58,48 +58,12 @@
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "pybind/docstring.h"
+#include "pybind/visualization/visualization.h"
 #include "pybind11/functional.h"
-
-// We cannot give out a shared_ptr to objects like Window which reference
-// Filament objects, because we cannot guarantee that the Python script is
-// not holding on to a reference when we cleanup Filament. The Open3D library
-// will clear its shared_ptrs expecting the dependent object(s) to clean up,
-// but they won't because Python still has a shared_ptr, leading to a crash
-// when the variable goes of scope on the Python side.
-// The following would crash gui.Window's holder is std::shared_ptr:
-//   import open3d.visualization.gui as gui
-//   def main():
-//       gui.Application.instance.initialize()
-//       w = gui.Application.instance.create_window("Crash", 640, 480)
-//       gui.Application.instance.run()
-//   if __name__ == "__main__":
-//       main()
-// However, if remove the 'w = ' part, it would not crash.
-template <typename T>
-class UnownedPointer {
-public:
-    UnownedPointer() : ptr_(nullptr) {}
-    explicit UnownedPointer(T *p) : ptr_(p) {}
-    ~UnownedPointer() {}  // don't delete!
-
-    T *get() { return ptr_; }
-    T &operator*() { return *ptr_; }
-    T *operator->() { return ptr_; }
-    void reset() { ptr_ = nullptr; }  // don't delete!
-
-private:
-    T *ptr_;
-};
-PYBIND11_DECLARE_HOLDER_TYPE(T, UnownedPointer<T>);
 
 namespace open3d {
 namespace visualization {
 namespace gui {
-
-template <typename T>
-std::shared_ptr<T> TakeOwnership(UnownedPointer<T> x) {
-    return std::shared_ptr<T>(x.get());
-}
 
 class PythonUnlocker : public Application::EnvUnlocker {
 public:
@@ -241,6 +205,27 @@ void pybind_gui_classes(py::module &m) {
                     "provided by the caller. One of the `initialize` functions "
                     "_must_ be called prior to using anything in the gui "
                     "module")
+            .def("set_font_for_language", &Application::SetFontForLanguage,
+                 "set_font_for_language(font, language_code). The font can "
+                 "the path to a TrueType or OpenType font or it can be the "
+                 "name of the font, in which case the font will be located "
+                 "from the system directories. The language code must be "
+                 "two-letter, lowercase ISO 639-1 codes. Support is "
+                 "available for 'en' (English), 'ja' (Japanese), 'ko' "
+                 "(Korean), 'th' (Thai), 'vi' (Vietnamese), 'zh' (common "
+                 "Chinese characters), 'zh_all' (all Chinese characters; "
+                 "this creates a very large bitmap for each window). All "
+                 "other codes are assumed to by Cyrillic. Note that 'ja', "
+                 "'zh' will create a 50 MB bitmap, and 'zh_all' creates a "
+                 "200 MB bitmap")
+
+            .def("set_font_for_code_points", &Application::SetFontForCodePoints,
+                 "set_font_for_code_points(font, [unicode_code_points])."
+                 "The font can the path to a TrueType or OpenType font or "
+                 "it can be the name of the font, in which case the font "
+                 "will be located from the system directories. No error "
+                 "will be produced if the font does not contain glyphs "
+                 "for the specified components.")
             .def(
                     "create_window",
                     [](Application &instance, const std::string &title,
@@ -314,6 +299,11 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
+            .def("add_window", &Application::AddWindow,
+                 "Adds a window to the application. This is only necessary "
+                 "when "
+                 "creating object that is a Window directly, rather than with "
+                 "create_window")
             .def("run_in_thread", &Application::RunInThread,
                  "Runs function in a separate thread. Do not call GUI "
                  "functions on this thread, call post_to_main_thread() if "
@@ -868,6 +858,7 @@ void pybind_gui_classes(py::module &m) {
             .value("ROTATE_SUN", SceneWidget::Controls::ROTATE_SUN)
             .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)
             .value("ROTATE_MODEL", SceneWidget::Controls::ROTATE_MODEL)
+            .value("PICK_POINTS", SceneWidget::Controls::PICK_POINTS)
             .export_values();
 
     scene.def(py::init<>(),

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/t/geometry/TensorMap.h"
 
-#include "pybind/open3d_pybind.h"
-#include "pybind/pybind_utils.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "pybind/docstring.h"
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
-namespace core {
-namespace nns {
+namespace t {
+namespace geometry {
 
-void pybind_core_faiss(py::module &m);
+void pybind_tensormap(py::module& m) {
+    // Bind to the generic dictionary interface such that it works the same as a
+    // regular dictionay in Python, except that types are enforced. Supported
+    // functions include `__bool__`, `__iter__`, `items`, `__getitem__`,
+    // `__contains__`, `__delitem__`, `__len__` and map assignment.
+    auto tm = py::bind_map<TensorMap>(
+            m, "TensorMap", "Map of String to Tensor with a primary key.");
 
-}  // namespace nns
-}  // namespace core
+    // Constructors.
+    tm.def(py::init<const std::string&>(), "primary_key"_a);
+    tm.def(py::init<const std::string&,
+                    const std::unordered_map<std::string, core::Tensor>&>(),
+           "primary_key"_a, "map_keys_to_tensors"_a);
+
+    // Member functions. Some C++ functions are ignored since the
+    // functionalities are already covered in the generic dictionary interface.
+    tm.def("get_primary_key", &TensorMap::GetPrimaryKey);
+    tm.def("is_size_synchronized", &TensorMap::IsSizeSynchronized);
+    tm.def("assert_size_synchronized", &TensorMap::AssertSizeSynchronized);
+}
+
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

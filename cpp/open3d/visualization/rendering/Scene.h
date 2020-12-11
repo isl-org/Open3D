@@ -111,6 +111,8 @@ public:
     virtual void GeometryShadows(const std::string& object_name,
                                  bool cast_shadows,
                                  bool receive_shadows) = 0;
+    virtual void SetGeometryPriority(const std::string& object_name,
+                                     uint8_t priority) = 0;
     virtual void QueryGeometry(std::vector<std::string>& geometry) = 0;
     virtual void SetGeometryTransform(const std::string& object_name,
                                       const Transform& transform) = 0;
@@ -161,6 +163,7 @@ public:
                                      float intensity) = 0;
     virtual void EnableDirectionalLight(bool enable) = 0;
     virtual void EnableDirectionalLightShadows(bool enable) = 0;
+    virtual float GetDirectionalLightIntensity() = 0;
     virtual void SetDirectionalLightDirection(
             const Eigen::Vector3f& direction) = 0;
     virtual Eigen::Vector3f GetDirectionalLightDirection() = 0;
@@ -173,7 +176,9 @@ public:
     virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
     virtual Transform GetIndirectLightRotation() = 0;
     virtual void ShowSkybox(bool show) = 0;
-    virtual void SetBackgroundColor(const Eigen::Vector4f& color) = 0;
+    virtual void SetBackground(
+            const Eigen::Vector4f& color,
+            const std::shared_ptr<geometry::Image> image = nullptr) = 0;
 
     /// Size of image is the size of the window.
     virtual void RenderToImage(

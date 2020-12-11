@@ -32,8 +32,6 @@
 
 #include "open3d/core/hashmap/DeviceHashmap.h"
 
-#include <unordered_map>
-
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 
@@ -41,10 +39,10 @@ namespace open3d {
 namespace core {
 
 std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
-        size_t init_buckets,
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
+        int64_t init_buckets,
+        int64_t init_capacity,
+        int64_t dsize_key,
+        int64_t dsize_value,
         const Device& device) {
     if (device.GetType() == Device::DeviceType::CPU) {
         return CreateDefaultCPUHashmap(init_buckets, init_capacity, dsize_key,

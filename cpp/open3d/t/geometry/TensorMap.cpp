@@ -24,53 +24,54 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Copyright 2019 Saman Ashkiani
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-// implied. See the License for the specific language governing permissions
-// and limitations under the License.
+#include "open3d/t/geometry/TensorMap.h"
 
-#pragma once
-#include <cstdint>
+#include <fmt/format.h>
 
-#include "open3d/core/CUDAUtils.h"
+#include <sstream>
+#include <string>
+#include <unordered_map>
+
+#include "open3d/utility/Console.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace geometry {
 
-typedef uint32_t addr_t;
-
-struct iterator_t {
-    OPEN3D_HOST_DEVICE iterator_t() : first(nullptr), second(nullptr) {}
-    OPEN3D_HOST_DEVICE iterator_t(void* key_ptr, void* value_ptr)
-        : first(key_ptr), second(value_ptr) {}
-
-    void* first;
-    void* second;
-};
-
-template <typename First, typename Second>
-struct Pair {
-    First first;
-    Second second;
-    OPEN3D_HOST_DEVICE Pair() {}
-    OPEN3D_HOST_DEVICE Pair(const First& _first, const Second& _second)
-        : first(_first), second(_second) {}
-};
-
-template <typename First, typename Second>
-OPEN3D_HOST_DEVICE Pair<First, Second> make_pair(const First& _first,
-                                                 const Second& _second) {
-    return Pair<First, Second>(_first, _second);
+bool TensorMap::IsSizeSynchronized() const {
+    const int64_t primary_size = GetPrimarySize();
+    for (auto& kv : *this) {
+        if (kv.second.GetLength() != primary_size) {
+            return false;
+        }
+    }
+    return true;
 }
 
-}  // namespace core
+void TensorMap::AssertPrimaryKeyInMapOrEmpty() const {
+    if (this->size() != 0 && this->count(primary_key_) == 0) {
+        utility::LogError("TensorMap does not contain primary key \"{}\".",
+                          primary_key_);
+    }
+}
+
+void TensorMap::AssertSizeSynchronized() const {
+    if (!IsSizeSynchronized()) {
+        const int64_t primary_size = GetPrimarySize();
+        std::stringstream ss;
+        ss << fmt::format("Primary Tensor \"{}\" has size {}, however: \n",
+                          primary_key_, primary_size);
+        for (auto& kv : *this) {
+            if (kv.first != primary_key_ &&
+                kv.second.GetLength() != primary_size) {
+                fmt::format("    > Tensor \"{}\" has size {}.\n", kv.first,
+                            kv.second.GetLength());
+            }
+        }
+        utility::LogError("{}", ss.str());
+    }
+}
+
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

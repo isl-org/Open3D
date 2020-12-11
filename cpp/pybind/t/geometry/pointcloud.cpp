@@ -42,21 +42,19 @@ void pybind_pointcloud(py::module& m) {
                        "A pointcloud contains a set of 3D points.");
 
     // Constructors.
-    pointcloud
-            .def(py::init<core::Dtype, const core::Device&>(), "dtype"_a,
-                 "device"_a)
-            .def(py::init<const core::TensorList&>(), "points"_a)
+    pointcloud.def(py::init<const core::Device&>(), "device"_a)
+            .def(py::init<const core::Tensor&>(), "points"_a)
             .def(py::init<const std::unordered_map<std::string,
-                                                   core::TensorList>&>(),
-                 "map_keys_to_tensorlists"_a);
+                                                   core::Tensor>&>(),
+                 "map_keys_to_tensors"_a);
 
     // Point's attributes: points, colors, normals, etc.
-    // def_property_readonly is sufficient, since the returned TensorListMap can
-    // be editable in Python. We don't want the TensorListMp to be replaced
-    // by another TensorListMap in Python.
-    pointcloud.def_property_readonly("point", &PointCloud::GetPointAttrPybind);
-    pointcloud.def("synchronized_push_back", &PointCloud::SynchronizedPushBack,
-                   "map_keys_to_tensors"_a);
+    // def_property_readonly is sufficient, since the returned TensorMap can
+    // be editable in Python. We don't want the TensorMap to be replaced
+    // by another TensorMap in Python.
+    pointcloud.def_property_readonly(
+            "point",
+            py::overload_cast<>(&PointCloud::GetPointAttr, py::const_));
 
     // Pointcloud specific functions.
     // TOOD: convert o3d.pybind.core.Tensor (C++ binded Python) to

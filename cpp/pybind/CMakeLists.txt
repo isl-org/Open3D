@@ -39,6 +39,8 @@ if (NOT BUILD_GUI)
         "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp")
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/visualization/rendering/rendering.cpp")
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/o3dvisualizer.cpp")
 endif()
 
 if (NOT BUILD_AZURE_KINECT)
@@ -50,11 +52,6 @@ if (NOT BUILD_RPC_INTERFACE)
     list(REMOVE_ITEM PY_ALL_SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/io/rpc.cpp"
         )
-endif()
-
-if (NOT WITH_FAISS)
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/core/nns/faiss.cpp")
 endif()
 
 # NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x

@@ -68,6 +68,9 @@ public:
     static const MaterialHandle kDefaultDepthShader;
     static const MaterialHandle kDefaultUnlitGradientShader;
     static const MaterialHandle kDefaultUnlitSolidColorShader;
+    static const MaterialHandle kDefaultUnlitBackgroundShader;
+    static const MaterialHandle kDefaultLineShader;
+    static const MaterialHandle kDefaultUnlitPolygonOffsetShader;
     static const MaterialInstanceHandle kDepthMaterial;
     static const MaterialInstanceHandle kNormalsMaterial;
     static const MaterialInstanceHandle kColorMapMaterial;

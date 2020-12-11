@@ -26,8 +26,11 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "open3d/visualization/gui/Menu.h"
 
@@ -65,6 +68,29 @@ public:
     void Initialize(int argc, const char *argv[]);
     /// Initializes the application, with a specific path to the resources.
     void Initialize(const char *resource_path);
+
+    /// Sets the font for the character range in language specified two-letter
+    /// lowercase ISO 639-1 codes. The font can be a path to a TrueType (.ttf),
+    /// TrueType Collection (.ttc), or OpenType (.otf) file, or it can be the
+    /// name of the font, in which case the system font paths will be searched
+    /// from the file. Supported languages are:
+    ///   "en" (English)
+    ///   "ja" (Japanese)
+    ///   "ko" (Korean)
+    ///   "th" (Thai)
+    ///   "vi" (Vietnamese)
+    ///   "zh" (Chinese, 2500 most common characters, 50 MB per window)
+    ///   "zh_all" (Chinese, all characters, ~200 MB per window)
+    //  All other languages will be assumed to be Cyrillic.
+    void SetFontForLanguage(const char *font, const char *lang_code);
+
+    /// Sets the font for the specified code points. The font can be a path to
+    /// a TrueType (.ttf), TrueType Collection (.ttc), or OpenType (.otf) file,
+    /// or it can be the name of the font, in which case the system font paths
+    /// will be searched. The font is assumed to contain the code points;
+    /// if it does not no error will be produced.
+    void SetFontForCodePoints(const char *font,
+                              const std::vector<uint32_t> &code_points);
 
     /// Does not return until the UI is completely finished.
     void Run();
@@ -153,6 +179,13 @@ public:
                                                    rendering::Scene *scene,
                                                    int width,
                                                    int height);
+
+    struct UserFontInfo {
+        std::string path;
+        std::string lang;
+        std::vector<uint32_t> code_points;
+    };
+    const std::vector<UserFontInfo> &GetUserFontInfo() const;
 
 private:
     Application();

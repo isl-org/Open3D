@@ -26,9 +26,12 @@
 
 #include "open3d/visualization/visualizer/GuiVisualizer.h"
 
+#include <random>
+
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
+#include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/FileFormatIO.h"
@@ -65,6 +68,7 @@
 #include "open3d/visualization/visualizer/GuiSettingsModel.h"
 #include "open3d/visualization/visualizer/GuiSettingsView.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
+#include "open3d/visualization/visualizer/Receiver.h"
 
 #define LOAD_IN_NEW_WINDOW 0
 
@@ -323,13 +327,15 @@ enum MenuId {
     HELP_KEYS,
     HELP_CAMERA,
     HELP_ABOUT,
-    HELP_CONTACT
+    HELP_CONTACT,
+    HELP_DEBUG
 };
 
 struct GuiVisualizer::Impl {
     std::shared_ptr<gui::SceneWidget> scene_wgt_;
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
+    std::shared_ptr<Receiver> receiver_;
 
     struct Settings {
         rendering::Material lit_material_;
@@ -403,7 +409,7 @@ struct GuiVisualizer::Impl {
 
     void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
         auto bcolor = settings_.model_.GetBackgroundColor();
-        scene_wgt_->GetScene()->SetBackgroundColor(
+        scene_wgt_->GetScene()->SetBackground(
                 {bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
 
         if (settings_.model_.GetShowSkybox()) {
@@ -785,7 +791,7 @@ void GuiVisualizer::SetGeometry(
                 loaded_material.shader = "defaultLit";
             }
 
-            scene3d->AddGeometry(MODEL_NAME, pcd, loaded_material);
+            scene3d->AddGeometry(MODEL_NAME, pcd.get(), loaded_material);
 
             impl_->settings_.model_.SetDisplayingPointClouds(true);
             if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
@@ -853,6 +859,31 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     impl_->settings_.wgt_base->SetFrame(lightSettingsRect);
 
     Super::Layout(theme);
+}
+
+void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
+#ifdef BUILD_RPC_INTERFACE
+    impl_->receiver_ = std::make_shared<Receiver>(
+            this, impl_->scene_wgt_->GetScene(), address, timeout);
+    try {
+        utility::LogInfo("Starting to listen on {}", address);
+        impl_->receiver_->Start();
+    } catch (std::exception &e) {
+        utility::LogWarning("Failed to start RPC interface: {}", e.what());
+    }
+#else
+    utility::LogWarning(
+            "GuiVisualizer::StartRPCInterface: RPC interface not built");
+#endif
+}
+
+void GuiVisualizer::StopRPCInterface() {
+#ifdef BUILD_RPC_INTERFACE
+    impl_->receiver_.reset();
+#else
+    utility::LogWarning(
+            "GuiVisualizer::StopRPCInterface: RPC interface not built");
+#endif
 }
 
 bool GuiVisualizer::SetIBL(const char *path) {
@@ -1072,6 +1103,9 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
         case HELP_CONTACT: {
             auto dlg = CreateContactDialog(this);
             ShowDialog(dlg);
+            break;
+        }
+        case HELP_DEBUG: {
             break;
         }
     }

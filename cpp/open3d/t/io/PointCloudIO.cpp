@@ -56,6 +56,7 @@ static const std::unordered_map<
                            const open3d::io::WritePointCloudOption &)>>
         file_extension_to_pointcloud_write_function{
                 {"xyzi", WritePointCloudToXYZI},
+                {"ply", WritePointCloudToPLY},
         };
 
 std::shared_ptr<geometry::PointCloud> CreatetPointCloudFromFile(
@@ -89,7 +90,7 @@ bool ReadPointCloud(const std::string &filename,
     } else {
         success = map_itr->second(filename, pointcloud, params);
         utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
-                          (int)pointcloud.GetPoints().GetSize());
+                          (int)pointcloud.GetPoints().GetLength());
         if (params.remove_nan_points || params.remove_infinite_points) {
             utility::LogError(
                     "remove_nan_points and remove_infinite_points options are "
@@ -136,7 +137,7 @@ bool WritePointCloud(const std::string &filename,
 
     bool success = map_itr->second(filename, pointcloud, params);
     utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
-                      (int)pointcloud.GetPoints().GetSize());
+                      (int)pointcloud.GetPoints().GetLength());
     return success;
 }
 

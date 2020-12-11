@@ -137,6 +137,9 @@ public:
     void SetOnMenuItemActivated(Menu::ItemId item_id,
                                 std::function<void()> callback);
 
+    /// Sets a callback that will be called on every UI tick (about 10 msec).
+    /// Callback should return true if a redraw is required (i.e. the UI or
+    /// a 3D scene has changed), false otherwise.
     void SetOnTickEvent(std::function<bool()> callback);
 
     /// Shows the dialog. If a dialog is currently being shown it will be
