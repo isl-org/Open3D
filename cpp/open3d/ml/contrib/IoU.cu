@@ -24,10 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <tbb/parallel_for.h>
-
-#include <vector>
-
 #include "open3d/ml/contrib/IoU.h"
 #include "open3d/ml/contrib/IoUImpl.h"
 

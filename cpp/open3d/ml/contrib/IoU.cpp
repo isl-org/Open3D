@@ -28,8 +28,6 @@
 
 #include <tbb/parallel_for.h>
 
-#include <vector>
-
 #include "open3d/ml/contrib/IoUImpl.h"
 
 namespace open3d {
@@ -41,14 +39,6 @@ void IoUBevCPUKernel(const float *boxes_a,
                      float *iou,
                      int num_a,
                      int num_b) {
-    // previously:
-    // (x_min, z_min, x_max, z_max, y_rotate)
-    //
-    // new:
-    //    0                  1         2              3        4
-    // (x_center,        z_center, x_size,         z_size, y_rotate)
-    // (x_center, y_max, z_center, x_size, y_size, z_size, y_rotate)
-    //    0         1        2        3      4       5          6
     tbb::parallel_for(0, num_a, [&](int idx_a) {
         tbb::parallel_for(0, num_b, [&](int idx_b) {
             const float *box_a = boxes_a + idx_a * 5;
@@ -59,11 +49,6 @@ void IoUBevCPUKernel(const float *boxes_a,
     });
 }
 
-/// \param boxes_a (num_a, 7) float32.
-/// \param boxes_b (num_b, 7) float32.
-/// \param iou (num_a, num_b) float32, output iou values.
-/// \param num_a Number of boxes in boxes_a.
-/// \param num_b Number of boxes in boxes_b.
 void IoU3dCPUKernel(const float *boxes_a,
                     const float *boxes_b,
                     float *iou,

@@ -26,8 +26,6 @@
 
 #pragma once
 
-#include <vector>
-
 namespace open3d {
 namespace ml {
 namespace contrib {
