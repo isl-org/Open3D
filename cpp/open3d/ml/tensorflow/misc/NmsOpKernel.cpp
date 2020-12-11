@@ -39,7 +39,7 @@ public:
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& boxes,
                 const tensorflow::Tensor& scores) {
-        std::vector<int64_t> keep_indices = open3d::ml::impl::NmsCPUKernel(
+        std::vector<int64_t> keep_indices = open3d::ml::contrib::NmsCPUKernel(
                 boxes.flat<float>().data(), scores.flat<float>().data(),
                 boxes.dim_size(0), this->nms_overlap_thresh);
 

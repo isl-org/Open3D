@@ -45,7 +45,7 @@
 
 namespace open3d {
 namespace ml {
-namespace impl {
+namespace contrib {
 
 template <typename T>
 static std::vector<int64_t> SortIndexes(const T *values,
@@ -177,6 +177,6 @@ std::vector<int64_t> NmsCPUKernel(const float *boxes,
     return keep_indices;
 }
 
-}  // namespace impl
+}  // namespace contrib
 }  // namespace ml
 }  // namespace open3d

@@ -32,7 +32,7 @@
 
 namespace open3d {
 namespace ml {
-namespace impl {
+namespace contrib {
 
 constexpr int NMS_BLOCK_SIZE = sizeof(uint64_t) * 8;
 constexpr float EPS = 1e-8;
@@ -249,6 +249,6 @@ OPEN3D_HOST_DEVICE inline float IouBev(const float *box_a, const float *box_b) {
     return s_overlap / fmaxf(sa + sb - s_overlap, EPS);
 }
 
-}  // namespace impl
+}  // namespace contrib
 }  // namespace ml
 }  // namespace open3d
