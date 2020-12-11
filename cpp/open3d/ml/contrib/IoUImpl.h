@@ -39,7 +39,7 @@ constexpr float EPS = 1e-8;
 
 struct Point {
     OPEN3D_HOST_DEVICE Point() {}
-    OPEN3D_HOST_DEVICE Point(double x, double y) : x_(x), y_(y) {}
+    OPEN3D_HOST_DEVICE Point(float x, float y) : x_(x), y_(y) {}
     OPEN3D_HOST_DEVICE void set(float x, float y) {
         x_ = x;
         y_ = y;
@@ -237,7 +237,7 @@ OPEN3D_HOST_DEVICE inline float BoxOverlap(const float *box_a,
                       cross_points[k + 1] - cross_points[0]);
     }
 
-    return fabs(area) / 2.0;
+    return static_cast<float>(fabs(area)) / 2.0;
 }
 
 /// (x_min, z_min, x_max, z_max, y_rotate)
