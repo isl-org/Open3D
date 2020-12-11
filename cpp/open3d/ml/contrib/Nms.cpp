@@ -67,12 +67,12 @@ static std::vector<int64_t> SortIndexes(const T *values,
     return indices;
 }
 
-static void AllPairsIoU(const float *boxes,
-                        const float *scores,
-                        const int64_t *sort_indices,
-                        uint64_t *mask,
-                        int n,
-                        double nms_overlap_thresh) {
+static void AllPairsSortedIoU(const float *boxes,
+                              const float *scores,
+                              const int64_t *sort_indices,
+                              uint64_t *mask,
+                              int n,
+                              double nms_overlap_thresh) {
     const int num_block_cols = utility::DivUp(n, NMS_BLOCK_SIZE);
     const int num_block_rows = utility::DivUp(n, NMS_BLOCK_SIZE);
 
@@ -148,8 +148,8 @@ std::vector<int64_t> NmsCPUKernel(const float *boxes,
     // mask:  (n, n/BS)
     std::vector<uint64_t> mask_vec(n * num_block_cols);
     uint64_t *mask = mask_vec.data();
-    AllPairsIoU(boxes, scores, sort_indices.data(), mask, n,
-                nms_overlap_thresh);
+    AllPairsSortedIoU(boxes, scores, sort_indices.data(), mask, n,
+                      nms_overlap_thresh);
 
     // Write to keep. remv_cpu has n bits in total. If the bit is 1, the
     // corresponding box will be removed.
