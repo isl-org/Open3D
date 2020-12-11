@@ -33,7 +33,7 @@
 // Written by Shaoshuai Shi
 // All Rights Reserved 2019-2020.
 
-#include "open3d/ml/impl/misc/Nms.h"
+#include "open3d/ml/contrib/Nms.h"
 
 #include <tbb/parallel_for.h>
 

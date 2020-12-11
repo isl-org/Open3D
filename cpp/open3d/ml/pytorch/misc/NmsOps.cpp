@@ -26,7 +26,7 @@
 
 #include <vector>
 
-#include "open3d/ml/impl/misc/Nms.h"
+#include "open3d/ml/contrib/Nms.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 

@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/ml/Helper.h"
-#include "open3d/ml/impl/misc/Nms.h"
+#include "open3d/ml/contrib/Nms.h"
 #include "open3d/ml/tensorflow/misc/NmsOpKernel.h"
 
 using namespace nms_opkernel;

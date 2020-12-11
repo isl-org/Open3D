@@ -39,7 +39,7 @@
 #include <thrust/sort.h>
 
 #include "open3d/ml/Helper.h"
-#include "open3d/ml/impl/misc/Nms.h"
+#include "open3d/ml/contrib/Nms.h"
 #include "open3d/ml/impl/misc/NmsImpl.h"
 #include "open3d/utility/Helper.h"
 
