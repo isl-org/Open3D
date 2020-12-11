@@ -89,6 +89,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     result.correspondence_set_ = result_nns.first.Copy();
     result.fitness_ = (double)corres_number / (double)corres_vec.size();
     result.inlier_rmse_ = std::sqrt(error2 / (double)corres_number);
+    result.transformation_ = transformation;
     return result;
 }
 

@@ -222,7 +222,7 @@ core::Tensor Compute_A(const core::Tensor &source_select,
                 source_select.GetShape().ToString());
     }
 
-    int32_t num_corres = source_select.GetShape()[0];
+    auto num_corres = source_select.GetShape()[0];
     // if num_corres == 0 : LogError / Return 0 Tensor
 
     // Slicing Normals: (nx, ny, nz) and Source Points: (sx, sy, sz)
