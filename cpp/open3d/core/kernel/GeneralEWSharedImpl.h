@@ -41,6 +41,9 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+/// 8-byte voxel structure.
+/// Smallest struct we can get. float tsdf + uint16_t weight also requires
+/// 8-bytes for alignement, so not implemented anyway.
 struct Voxel32f {
     float tsdf;
     float weight;
@@ -60,67 +63,12 @@ struct Voxel32f {
                                       float dr,
                                       float dg,
                                       float db) {
-        printf("Should never reach here: dummy to make DISPATCH happy.\n");
+        printf("[Voxel32f] should never reach here.\n");
     }
 };
 
-struct Voxel16i {
-    float tsdf;
-    uint16_t weight;
-
-    static bool HasColor() { return false; }
-    OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
-    OPEN3D_HOST_DEVICE float GetWeight() { return static_cast<float>(weight); }
-    OPEN3D_HOST_DEVICE float GetR() { return 1.0; }
-    OPEN3D_HOST_DEVICE float GetG() { return 1.0; }
-    OPEN3D_HOST_DEVICE float GetB() { return 1.0; }
-
-    OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
-        float inv_wsum = 1.0 / (weight + 1);
-        tsdf = (weight * tsdf + dsdf) * inv_wsum;
-        weight += 1;
-    }
-    OPEN3D_HOST_DEVICE void Integrate(float dsdf,
-                                      float dr,
-                                      float dg,
-                                      float db) {
-        printf("Should never reach here: dummy to make DISPATCH happy.\n");
-    }
-};
-
-struct ColoredVoxel32f {
-    float tsdf;
-    float weight;
-
-    float r;
-    float g;
-    float b;
-
-    static bool HasColor() { return true; }
-    OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
-    OPEN3D_HOST_DEVICE float GetWeight() { return weight; }
-    OPEN3D_HOST_DEVICE float GetR() { return r; }
-    OPEN3D_HOST_DEVICE float GetG() { return g; }
-    OPEN3D_HOST_DEVICE float GetB() { return b; }
-    OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
-        float inv_wsum = 1.0 / (weight + 1);
-        tsdf = (weight * tsdf + dsdf) * inv_wsum;
-        weight += 1;
-    }
-    OPEN3D_HOST_DEVICE void Integrate(float dsdf,
-                                      float dr,
-                                      float dg,
-                                      float db) {
-        float inv_wsum = 1.0 / (weight + 1);
-        tsdf = (weight * tsdf + dsdf) * inv_wsum;
-        r = (weight * r + dr) * inv_wsum;
-        g = (weight * g + dg) * inv_wsum;
-        b = (weight * b + db) * inv_wsum;
-
-        weight += 1;
-    }
-};
-
+/// 12-byte voxel structure.
+/// uint16_t for colors and weights, sacrifices minor accuracy but saves memory.
 OPEN3D_DEVICE const float kColorFactor = 255.0f;
 struct ColoredVoxel16i {
     static const uint16_t kMaxUint16 = 65535;
@@ -171,6 +119,41 @@ struct ColoredVoxel16i {
     }
 };
 
+/// 20-byte voxel structure.
+/// Float for colors and weights, accurate but memory-consuming.
+struct ColoredVoxel32f {
+    float tsdf;
+    float weight;
+
+    float r;
+    float g;
+    float b;
+
+    static bool HasColor() { return true; }
+    OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
+    OPEN3D_HOST_DEVICE float GetWeight() { return weight; }
+    OPEN3D_HOST_DEVICE float GetR() { return r; }
+    OPEN3D_HOST_DEVICE float GetG() { return g; }
+    OPEN3D_HOST_DEVICE float GetB() { return b; }
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
+        float inv_wsum = 1.0 / (weight + 1);
+        tsdf = (weight * tsdf + dsdf) * inv_wsum;
+        weight += 1;
+    }
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf,
+                                      float dr,
+                                      float dg,
+                                      float db) {
+        float inv_wsum = 1.0 / (weight + 1);
+        tsdf = (weight * tsdf + dsdf) * inv_wsum;
+        r = (weight * r + dr) * inv_wsum;
+        g = (weight * g + dg) * inv_wsum;
+        b = (weight * b + db) * inv_wsum;
+
+        weight += 1;
+    }
+};
+
 #define DISPATCH_BYTESIZE_TO_VOXEL(BYTESIZE, ...)            \
     [&] {                                                    \
         if (BYTESIZE == sizeof(ColoredVoxel32f)) {           \
@@ -185,11 +168,6 @@ struct ColoredVoxel16i {
         if (BYTESIZE == sizeof(Voxel32f)) {                  \
             utility::LogInfo("Voxel32f");                    \
             using voxel_t = Voxel32f;                        \
-            return __VA_ARGS__();                            \
-        }                                                    \
-        if (BYTESIZE == sizeof(Voxel16i)) {                  \
-            utility::LogInfo("Voxel16i");                    \
-            using voxel_t = Voxel16i;                        \
             return __VA_ARGS__();                            \
         } else {                                             \
             utility::LogError("Unsupported voxel bytesize"); \

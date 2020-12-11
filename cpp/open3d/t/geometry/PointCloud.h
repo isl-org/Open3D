@@ -274,12 +274,10 @@ public:
     /// \return Rotated pointcloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
-    PointCloud VoxelDownSample(double voxel_size) const;
-
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
 
-    /// Create a PointCloud from a depth image
+    /// Create a PointCloud from a depth image.
     static PointCloud CreateFromDepthImage(const Image &depth,
                                            const core::Tensor &intrinsics,
                                            double depth_scale = 1000.0,

@@ -1,7 +1,6 @@
 #include <fmt/format.h>
 
 #include "open3d/Open3D.h"
-#include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
@@ -39,14 +38,14 @@ int main(int argc, char** argv) {
     std::vector<Device> devices{Device("CUDA:0"), Device("CPU:0")};
 
     for (auto device : devices) {
-        core::cuda::ReleaseCache();
-
-        t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", 4}, {"weight", 4}},
+        t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
+                                               {"weight", core::Dtype::UInt16},
+                                               {"color", core::Dtype::UInt16}},
                                               3.0 / 512, 0.04, 16, 100, device);
 
         std::vector<std::shared_ptr<const open3d::geometry::Geometry>>
                 geometries;
-        for (int i = 0; i < trajectory->parameters_.size(); ++i) {
+        for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
             // for (int i = 0; i < 100; ++i) {
             /// Load image
             std::string image_path =

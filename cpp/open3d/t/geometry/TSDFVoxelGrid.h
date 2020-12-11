@@ -57,8 +57,10 @@ namespace geometry {
 class TSDFVoxelGrid {
 public:
     /// \brief Default Constructor.
-    TSDFVoxelGrid(std::unordered_map<std::string, int> attr_bytesize_map =
-                          {{"tsdf", 4}, {"weight", 2}, {"color", 6}},
+    TSDFVoxelGrid(std::unordered_map<std::string, core::Dtype> attr_dtype_map =
+                          {{"tsdf", core::Dtype::Float32},
+                           {"weight", core::Dtype::UInt16},
+                           {"color", core::Dtype::UInt16}},
                   float voxel_size = 3.0 / 512.0, /* in meter */
                   float sdf_trunc = 0.04,         /*  in meter  */
                   int64_t block_resolution = 16, /*  block Tensor resolution  */
@@ -68,6 +70,14 @@ public:
     ~TSDFVoxelGrid(){};
 
     /// Depth-only integration
+    void Integrate(const Image &depth,
+                   const core::Tensor &intrinsics,
+                   const core::Tensor &extrinsics,
+                   double depth_scale = 1000.0,
+                   double depth_max = 3.0);
+
+    /// RGB-D integration
+    /// TODO: reuse RGB-D t/geometry
     void Integrate(const Image &depth,
                    const Image &color,
                    const core::Tensor &intrinsics,
@@ -86,14 +96,14 @@ public:
     TSDFVoxelGrid CPU();
     TSDFVoxelGrid CUDA();
 
-    std::shared_ptr<core::Hashmap> GetVoxelBlockHashmap() {
-        return block_hashmap_;
-    }
-
     core::Device GetDevice() { return device_; }
 
 protected:
-    std::unordered_map<std::string, int> attr_bytesize_map_;
+    std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
+
+    std::shared_ptr<core::Hashmap> GetVoxelBlockHashmap() {
+        return block_hashmap_;
+    }
 
     /// Return (active_entries, 27) with \addrs and \masks for radius (3)
     /// neighbor entries. Currently we preserve redundancy without compressing /

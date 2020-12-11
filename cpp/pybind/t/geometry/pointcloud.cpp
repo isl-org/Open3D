@@ -73,12 +73,10 @@ void pybind_pointcloud(py::module& m) {
                    "Scale points.");
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
-    pointcloud.def("voxel_down_sample", &PointCloud::VoxelDownSample,
-                   "voxel_size"_a, "Voxelize point cloud to voxel grids.");
     pointcloud.def_static("create_from_depth_image",
                           &PointCloud::CreateFromDepthImage, "depth"_a,
                           "intrinsics"_a, "depth_scale"_a = 1000.0,
-                          "depth_max"_a = 3.0);
+                          "depth_max"_a = 3.0, "stride"_a = 1);
     pointcloud.def_static(
             "from_legacy_pointcloud", &PointCloud::FromLegacyPointCloud,
             "pcd_legacy"_a, "dtype"_a = core::Dtype::Float32,

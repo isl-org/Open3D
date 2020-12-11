@@ -36,22 +36,63 @@ namespace t {
 namespace geometry {
 
 TSDFVoxelGrid::TSDFVoxelGrid(
-        std::unordered_map<std::string, int> attr_bytesize_map,
+        std::unordered_map<std::string, core::Dtype> attr_dtype_map,
         float voxel_size,
         float sdf_trunc,
         int64_t block_resolution,
         int64_t block_count,
         const core::Device &device)
-    : attr_bytesize_map_(attr_bytesize_map),
+    : attr_dtype_map_(attr_dtype_map),
       voxel_size_(voxel_size),
       sdf_trunc_(sdf_trunc),
       block_resolution_(block_resolution),
       block_count_(block_count),
       device_(device) {
-    int64_t total_bytes = 0;
-    for (auto &kv : attr_bytesize_map_) {
-        total_bytes += kv.second;
+    if (attr_dtype_map_.count("tsdf") == 0 ||
+        attr_dtype_map_.count("weight") == 0) {
+        utility::LogError(
+                "[TSDFVoxelGrid] expected properties tsdf and weight are "
+                "missing.");
     }
+
+    int64_t total_bytes = 0;
+    for (auto &kv : attr_dtype_map_) {
+        std::string key = kv.first;
+        core::Dtype dtype = kv.second;
+
+        if (key == "tsdf") {
+            if (dtype != core::Dtype::Float32) {
+                utility::LogWarning(
+                        "[TSDFVoxelGrid] unexpected TSDF dtype, please "
+                        "implement your own Voxel structure in "
+                        "core/kernel/GeneralEWSharedImpl.h for dispatching.",
+                        key);
+            }
+            total_bytes += dtype.ByteSize();
+        }
+        if (key == "weight") {
+            if (dtype != core::Dtype::Float32 && dtype != core::Dtype::UInt16) {
+                utility::LogWarning(
+                        "[TSDFVoxelGrid] unexpected weight dtype, please "
+                        "implement your own Voxel structure in "
+                        "core/kernel/GeneralEWSharedImpl.h for "
+                        "dispatching.",
+                        key);
+            }
+            total_bytes += dtype.ByteSize();
+        }
+        if (key == "color") {
+            if (dtype != core::Dtype::Float32 && dtype != core::Dtype::UInt16) {
+                utility::LogWarning(
+                        "[TSDFVoxelGrid] unexpected color dtype, please "
+                        "implement your own Voxel structure in "
+                        "core/kernel/GeneralEWSharedImpl.h for dispatching.",
+                        key);
+            }
+            total_bytes += dtype.ByteSize() * 3;
+        }
+    }
+
     block_hashmap_ = std::make_shared<core::Hashmap>(
             block_count_, core::Dtype::Int32, core::Dtype::UInt8,
             core::SizeVector{3},
@@ -61,11 +102,26 @@ TSDFVoxelGrid::TSDFVoxelGrid(
 }
 
 void TSDFVoxelGrid::Integrate(const Image &depth,
+                              const core::Tensor &intrinsics,
+                              const core::Tensor &extrinsics,
+                              double depth_scale,
+                              double depth_max) {
+    Image empty_color;
+    Integrate(depth, empty_color, intrinsics, extrinsics, depth_scale,
+              depth_max);
+}
+
+void TSDFVoxelGrid::Integrate(const Image &depth,
                               const Image &color,
                               const core::Tensor &intrinsics,
                               const core::Tensor &extrinsics,
                               double depth_scale,
                               double depth_max) {
+    if (depth.IsEmpty()) {
+        utility::LogError(
+                "[TSDFVoxelGrid] input depth is empty for integration.");
+    }
+
     // Unproject
     PointCloud pcd = PointCloud::CreateFromDepthImage(
             depth, intrinsics, depth_scale, depth_max, 4);
@@ -95,8 +151,6 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     // Integration
     srcs = {{"depth", depth.AsTensor().Contiguous()},
-            // {"color",
-            // color.AsTensor().To(core::Dtype::Float32).Contiguous()},
             {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
             {"block_keys", block_hashmap_->GetKeyTensor()},
             {"intrinsics", intrinsics.Copy(device_)},
@@ -114,13 +168,31 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
             {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
                                        core::Dtype::Float32, device_)}};
 
-    // In-place modified output
+    if (color.IsEmpty()) {
+        utility::LogDebug(
+                "[TSDFIntegrate] color image is empty, perform depth "
+                "integration only.");
+    } else if (color.GetRows() == depth.GetRows() &&
+               color.GetCols() == depth.GetCols() && color.GetChannels() == 3) {
+        if (attr_dtype_map_.count("color") != 0) {
+            srcs.emplace(
+                    "color",
+                    color.AsTensor().To(core::Dtype::Float32).Contiguous());
+        } else {
+            utility::LogWarning(
+                    "[TSDFIntegrate] color image is ignored since voxels do "
+                    "not contain colors.");
+        }
+    } else {
+        utility::LogWarning(
+                "[TSDFIntegrate] color image is ignored for the incompatible "
+                "shape.");
+    }
+
     dsts = {{"block_values", block_hashmap_->GetValueTensor()}};
 
     core::kernel::GeneralEW(srcs, dsts,
                             core::kernel::GeneralEWOpCode::TSDFIntegrate);
-    utility::LogInfo("hashmap size = {}, capacity = {}", block_hashmap_->Size(),
-                     block_hashmap_->GetCapacity());
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
@@ -148,12 +220,14 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
     if (dsts.count("points") == 0) {
         utility::LogError(
                 "[TSDFVoxelGrid] extract surface launch failed, points "
-                "expected "
-                "to return.");
+                "expected to return.");
     }
     auto pcd = PointCloud(dsts.at("points"));
-    pcd.SetPointColors(dsts.at("colors"));
     pcd.SetPointNormals(dsts.at("normals"));
+    if (attr_dtype_map_.count("colors") != 0) {
+        pcd.SetPointColors(dsts.at("colors"));
+    }
+
     return pcd;
 }
 
@@ -198,14 +272,15 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
 
     TriangleMesh mesh(dsts.at("vertices"), dsts.at("triangles"));
     mesh.SetVertexNormals(dsts.at("normals"));
-    // mesh.SetVertexColors(dsts.at("colors"));
+    if (attr_dtype_map_.count("color") != 0) {
+        mesh.SetVertexColors(dsts.at("colors"));
+    }
     return mesh;
 }
 
 TSDFVoxelGrid TSDFVoxelGrid::Copy(const core::Device &device) {
-    TSDFVoxelGrid cpu_tsdf_voxelgrid(attr_bytesize_map_, voxel_size_,
-                                     sdf_trunc_, block_resolution_,
-                                     block_count_, device);
+    TSDFVoxelGrid cpu_tsdf_voxelgrid(attr_dtype_map_, voxel_size_, sdf_trunc_,
+                                     block_resolution_, block_count_, device);
     auto cpu_tsdf_hashmap = cpu_tsdf_voxelgrid.GetVoxelBlockHashmap();
     *cpu_tsdf_hashmap = block_hashmap_->Copy(device);
     return cpu_tsdf_voxelgrid;
