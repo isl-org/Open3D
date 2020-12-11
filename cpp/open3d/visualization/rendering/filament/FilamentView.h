@@ -78,6 +78,8 @@ public:
     void SetSSAOEnabled(bool enabled) override;
     void SetColorGrading(const ColorGradingParams& color_grading) override;
 
+    void ConfigureForColorPicking() override;
+
     Camera* GetCamera() const override;
 
     // Copies available settings for view and camera

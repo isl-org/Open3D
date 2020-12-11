@@ -78,6 +78,8 @@ public:
     virtual void SetSSAOEnabled(bool enabled) = 0;
     virtual void SetColorGrading(const ColorGradingParams& color_grading) = 0;
 
+    virtual void ConfigureForColorPicking() = 0;
+
     virtual Camera* GetCamera() const = 0;
 };
 

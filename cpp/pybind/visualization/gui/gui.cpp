@@ -299,6 +299,11 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
+            .def("add_window", &Application::AddWindow,
+                 "Adds a window to the application. This is only necessary "
+                 "when "
+                 "creating object that is a Window directly, rather than with "
+                 "create_window")
             .def("run_in_thread", &Application::RunInThread,
                  "Runs function in a separate thread. Do not call GUI "
                  "functions on this thread, call post_to_main_thread() if "
@@ -853,6 +858,7 @@ void pybind_gui_classes(py::module &m) {
             .value("ROTATE_SUN", SceneWidget::Controls::ROTATE_SUN)
             .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)
             .value("ROTATE_MODEL", SceneWidget::Controls::ROTATE_MODEL)
+            .value("PICK_POINTS", SceneWidget::Controls::PICK_POINTS)
             .export_values();
 
     scene.def(py::init<>(),

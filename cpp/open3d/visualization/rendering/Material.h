@@ -75,6 +75,11 @@ struct Material {
     float scalar_min = 0.0f;
     float scalar_max = 1.0f;
 
+    // Colors are assumed to be sRGB and tone-mapped accordingly.
+    // If tone-mapping is disabled, then colors would be in linear RGB space,
+    // in which case this should be set to false.
+    bool sRGB_color = true;
+
     // Background image (shader = "unlitBackground")
     float aspect_ratio = 0.0f;  // 0: uses base_color; >0: uses albedo_img
 

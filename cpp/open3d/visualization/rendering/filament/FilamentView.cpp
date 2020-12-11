@@ -251,6 +251,14 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
                             eigen_to_float3(color_grading.GetHighlightScale()))
                     .build(engine_);
     view_->setColorGrading(color_grading_);
+
+void FilamentView::ConfigureForColorPicking() {
+    view_->setSampleCount(1);
+    view_->setAntiAliasing(filament::View::AntiAliasing::NONE);
+    view_->setPostProcessingEnabled(false);
+    view_->setAmbientOcclusion(filament::View::AmbientOcclusion::NONE);
+    view_->setShadowsEnabled(false);
+    view_->setToneMapping(filament::View::ToneMapping::LINEAR);
 }
 
 Camera* FilamentView::GetCamera() const { return camera_.get(); }

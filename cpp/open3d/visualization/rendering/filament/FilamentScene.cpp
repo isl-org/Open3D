@@ -109,6 +109,8 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
         {"depth", ResourceManager::kDefaultDepthShader},
         {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
         {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
+        {"unlitPolygonOffset",
+         ResourceManager::kDefaultUnlitPolygonOffsetShader},
         {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
         {"unlitLine", ResourceManager::kDefaultLineShader}};
 
@@ -270,6 +272,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
+    buffer_builder->SetAdjustColorsForSRGBToneMapping(material.sRGB_color);
     if (material.shader == "unlitLine") {
         buffer_builder->SetWideLines();
     }
@@ -344,6 +347,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
+    buffer_builder->SetAdjustColorsForSRGBToneMapping(material.sRGB_color);
     auto buffers = buffer_builder->ConstructBuffers();
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
@@ -796,6 +800,13 @@ void FilamentScene::UpdateLineShader(GeometryMaterialInstance& geom_mi) {
             .Finish();
 }
 
+void FilamentScene::UpdateUnlitPolygonOffsetShader(
+        GeometryMaterialInstance& geom_mi) {
+    renderer_.ModifyMaterial(geom_mi.mat_instance)
+            .SetParameter("pointSize", geom_mi.properties.point_size)
+            .Finish();
+}
+
 std::shared_ptr<geometry::Image> CombineTextures(
         std::shared_ptr<geometry::Image> ao,
         std::shared_ptr<geometry::Image> rough,
@@ -947,6 +958,10 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateBackgroundShader(geom.mat);
     } else if (props.shader == "unlitLine") {
         UpdateLineShader(geom.mat);
+    } else if (props.shader == "unlitPolygonOffset") {
+        UpdateUnlitPolygonOffsetShader(geom.mat);
+    } else if (props.shader != "") {
+        utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
 }
 
@@ -990,6 +1005,8 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
             UpdateBackgroundShader(geom->mat);
         } else if (material.shader == "unlitLine") {
             UpdateLineShader(geom->mat);
+        } else if (material.shader == "unlitPolygonOffset") {
+            UpdateUnlitPolygonOffsetShader(geom->mat);
         } else {
             UpdateDepthShader(geom->mat);
         }
@@ -1229,6 +1246,13 @@ void FilamentScene::EnableDirectionalLight(bool enable) {
 
 void FilamentScene::EnableDirectionalLightShadows(bool enable) {
     // TODO: Research. Not previously implemented
+}
+
+float FilamentScene::GetDirectionalLightIntensity() {
+    auto& light_mgr = engine_.getLightManager();
+    filament::LightManager::Instance inst =
+            light_mgr.getInstance(sun_.filament_entity);
+    return light_mgr.getIntensity(inst);
 }
 
 void FilamentScene::SetDirectionalLightDirection(
