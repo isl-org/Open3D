@@ -40,6 +40,7 @@ void pybind_contrib(py::module& m) {
 
     pybind_contrib_subsample(m_contrib);
     pybind_contrib_nns(m_contrib);
+    pybind_contrib_iou(m_contrib);
 }
 
 }  // namespace contrib

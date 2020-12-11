@@ -32,7 +32,7 @@
 
 namespace open3d {
 namespace ml {
-namespace impl {
+namespace contrib {
 
 constexpr int NMS_BLOCK_SIZE = sizeof(uint64_t) * 8;
 constexpr float EPS = 1e-8;
@@ -240,15 +240,79 @@ OPEN3D_HOST_DEVICE inline float BoxOverlap(const float *box_a,
     return fabs(area) / 2.0;
 }
 
-OPEN3D_HOST_DEVICE inline float IouBev(const float *box_a, const float *box_b) {
+/// (x_min, z_min, x_max, z_max, y_rotate)
+OPEN3D_HOST_DEVICE inline float IoUBev2DWithMinAndMax(
+        const float *box_a,
+        const float *box_b,
+        bool intersection_only = false) {
     // params: box_a (5) [x1, y1, x2, y2, angle].
     // params: box_b (5) [x1, y1, x2, y2, angle].
     float sa = (box_a[2] - box_a[0]) * (box_a[3] - box_a[1]);
     float sb = (box_b[2] - box_b[0]) * (box_b[3] - box_b[1]);
     float s_overlap = BoxOverlap(box_a, box_b);
-    return s_overlap / fmaxf(sa + sb - s_overlap, EPS);
+    if (intersection_only) {
+        return s_overlap;
+    } else {
+        return s_overlap / fmaxf(sa + sb - s_overlap, EPS);
+    }
 }
 
-}  // namespace impl
+/// (x_center, z_center, x_size, z_size, y_rotate)
+OPEN3D_HOST_DEVICE inline float IoUBev2DWithCenterAndSize(
+        const float *box_a,
+        const float *box_b,
+        bool intersection_only = false) {
+    float box_a_new[5];
+    box_a_new[0] = box_a[0] - box_a[2] / 2;
+    box_a_new[1] = box_a[1] - box_a[3] / 2;
+    box_a_new[2] = box_a[0] + box_a[2] / 2;
+    box_a_new[3] = box_a[1] + box_a[3] / 2;
+    box_a_new[4] = box_a[4];
+
+    float box_b_new[5];
+    box_b_new[0] = box_b[0] - box_b[2] / 2;
+    box_b_new[1] = box_b[1] - box_b[3] / 2;
+    box_b_new[2] = box_b[0] + box_b[2] / 2;
+    box_b_new[3] = box_b[1] + box_b[3] / 2;
+    box_b_new[4] = box_b[4];
+    return IoUBev2DWithMinAndMax(box_a_new, box_b_new, intersection_only);
+}
+
+/// (x_center, y_max, z_center, x_size, y_size, z_size, y_rotate)
+OPEN3D_HOST_DEVICE inline float IoU3DWithCenterAndSize(const float *box_a,
+                                                       const float *box_b) {
+    float box_a_2d[5];
+    box_a_2d[0] = box_a[0];
+    box_a_2d[1] = box_a[2];
+    box_a_2d[2] = box_a[3];
+    box_a_2d[3] = box_a[5];
+    box_a_2d[4] = box_a[6];
+
+    float box_b_2d[5];
+    box_b_2d[0] = box_b[0];
+    box_b_2d[1] = box_b[2];
+    box_b_2d[2] = box_b[3];
+    box_b_2d[3] = box_b[5];
+    box_b_2d[4] = box_b[6];
+    float intersection_2d = IoUBev2DWithCenterAndSize(box_a_2d, box_b_2d, true);
+
+    float y_a_min = box_a[1] - box_a[4];
+    float y_a_max = box_a[1];
+    float y_b_min = box_b[1] - box_b[4];
+    float y_b_max = box_b[1];
+    float iw = (y_a_max < y_b_max ? y_a_max : y_b_max) -
+               (y_a_min > y_b_min ? y_a_min : y_b_min);
+    float iou_3d = 0;
+    if (iw > 0) {
+        float intersection_3d = intersection_2d * iw;
+        float volume_a = box_a[3] * box_a[4] * box_a[5];
+        float volume_b = box_b[3] * box_b[4] * box_b[5];
+        float union_3d = volume_a + volume_b - intersection_3d;
+        iou_3d = intersection_3d / union_3d;
+    }
+    return iou_3d;
+}
+
+}  // namespace contrib
 }  // namespace ml
 }  // namespace open3d
