@@ -750,6 +750,10 @@ void CPUMarchingCubesKernel
     NDArrayIndexer voxel_indexer({resolution, resolution, resolution});
 
     // Output
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    CUDACachedMemoryManager::ReleaseCache();
+#endif
+
     int n_blocks = indices.GetShape()[0];
     core::Tensor mesh_structure = core::Tensor::Zeros(
             {n_blocks, resolution, resolution, resolution, 4},

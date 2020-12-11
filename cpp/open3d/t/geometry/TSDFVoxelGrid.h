@@ -81,6 +81,15 @@ public:
     /// Extract mesh near iso-surfaces with Marching Cubes.
     TriangleMesh ExtractSurfaceMesh();
 
+    TSDFVoxelGrid Copy(const core::Device &device);
+
+    TSDFVoxelGrid CPU();
+    TSDFVoxelGrid CUDA();
+
+    std::shared_ptr<core::Hashmap> GetVoxelBlockHashmap() {
+        return block_hashmap_;
+    }
+
 protected:
     std::unordered_map<std::string, int> attr_bytesize_map_;
 
