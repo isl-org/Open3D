@@ -10,7 +10,7 @@ from open3d_test import list_devices
 
 @pytest.mark.parametrize("device", list_devices())
 def test_bev_iou(device):
-    # (pos_x, pos_z, size_x, size_z, yaw)
+    # (x_center, z_center, x_size, z_size, y_rotate)
     boxes_0 = np.array(
         [[2.72802408, 7.45882562, 0.66284931, 0.50729007, 3.10826707],
          [-12.76986872, 19.57236453, 3.99570131, 1.61373711, -2.76809883],
@@ -48,7 +48,7 @@ def test_bev_iou(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_3d_iou(device):
     # yapf: disable
-    # (pos_x, pos_y, pos_z, size_x, size_y, size_z, yaw)
+    # (x_center, y_max, z_center, x_size, y_size, z_size, y_rotate)
     boxes_0 = np.array([[2.72802408, 0.91428565, 7.45882562, 0.66284931, 1.7254113, 0.50729007, 3.10826707],
                         [-12.76986872, 1.4418739, 19.57236453, 3.99570131, 1.4493804, 1.61373711, -2.76809883],
                         [-2.58648862, 1.01205023, 31.65405458, 4.07396841, 1.43224728, 1.58861041, -1.8442196],
