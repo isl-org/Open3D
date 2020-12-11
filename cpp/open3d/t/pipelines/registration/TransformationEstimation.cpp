@@ -41,9 +41,18 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &corres) const {
-    utility::LogError("Unimplemented");
-    double err = 0.0;
-    return err;
+    // TODO: Asserts and Checks
+    double error;
+
+    core::Tensor select_bool = (corres.Ne(-1)).Reshape({-1});
+    core::Tensor source_select = source.GetPoints().IndexGet({select_bool});
+    core::Tensor corres_select = corres.IndexGet({select_bool}).Reshape({-1});
+    core::Tensor target_select = target.GetPoints().IndexGet({corres_select});
+
+    core::Tensor error_t = (source_select - target_select);
+    error_t.Mul_(error_t);
+    error = error_t.Sum({0, 1}).Item<double_t>();
+    return std::sqrt(error / (double)corres_select.GetShape()[0]);
 }
 
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
@@ -58,9 +67,21 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &corres) const {
-    utility::LogError("Unimplemented");
-    double err = 0.0;
-    return err;
+    // TODO: Asserts and Checks
+    if (!target.HasPointNormals()) return 0.0;
+
+    core::Tensor select_bool = (corres.Ne(-1)).Reshape({-1});
+    core::Tensor source_select = source.GetPoints().IndexGet({select_bool});
+    core::Tensor corres_select = corres.IndexGet({select_bool}).Reshape({-1});
+    core::Tensor target_select = target.GetPoints().IndexGet({corres_select});
+    core::Tensor target_n_select =
+            target.GetPointNormals().IndexGet({corres_select});
+
+    core::Tensor error_t =
+            (source_select - target_select).Matmul(target_n_select);
+    error_t.Mul_(error_t);
+    double error = error_t.Sum({0, 1}).Item<double_t>();
+    return std::sqrt(error / (double)corres_select.GetShape()[0]);
 }
 
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
