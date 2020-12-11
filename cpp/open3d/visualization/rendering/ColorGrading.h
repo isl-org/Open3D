@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,59 +26,45 @@
 
 #pragma once
 
-#include <Eigen/Geometry>
+#include <cstdint>
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class Scene;
-class Camera;
-class ColorGradingParams;
-
-class View {
+/// Manages
+class ColorGradingParams {
 public:
-    enum class TargetBuffers : std::uint8_t {
-        None = 0u,
-        Color = 1u,
-        Depth = 2u,
-        Stencil = 4u,
+    /// Quality level of color grading operations
+    enum class Quality : std::uint8_t { kLow, kMedium, kHigh, kUltra };
 
-        ColorAndDepth = Color | Depth,
-        ColorAndStencil = Color | Stencil,
-        DepthAndStencil = Depth | Stencil,
-        All = Color | Depth | Stencil
+    enum class ToneMapping : std::uint8_t {
+        kLinear = 0,
+        kAcesLegacy = 1,
+        kAces = 2,
+        kFilmic = 3,
+        kUchimura = 4,
+        kReinhard = 5,
+        kDisplayRange = 6,
     };
 
-    enum class Mode : std::uint8_t {
-        Color = 0u,
-        Depth,
-        Normals,
-        // This three modes always stay at end
-        ColorMapX,
-        ColorMapY,
-        ColorMapZ
-    };
+    ColorGradingParams(Quality q, ToneMapping algorithm);
 
-    virtual ~View() {}
+    Quality GetQuality() const { return quality_; }
+    ToneMapping GetToneMapping() const { return tonemapping_; }
 
-    virtual void SetDiscardBuffers(const TargetBuffers& buffers) = 0;
-    virtual Mode GetMode() const = 0;
-    virtual void SetMode(Mode mode) = 0;
+    void SetWhiteBalance(float temperature, float tint);
+    bool WhiteBalanceModified() { return white_balance_modified_; }
 
-    virtual void SetSampleCount(int n) = 0;
-    virtual int GetSampleCount() const = 0;
+private:
 
-    virtual void SetViewport(std::int32_t x,
-                             std::int32_t y,
-                             std::uint32_t w,
-                             std::uint32_t h) = 0;
-    virtual std::array<int, 4> GetViewport() const = 0;
+    Quality quality_;
+    ToneMapping tonemapping_;
 
-    virtual void SetSSAOEnabled(bool enabled) = 0;
-    virtual void SetColorGrading(const ColorGradingParams& color_grading) = 0;
-
-    virtual Camera* GetCamera() const = 0;
+    bool white_balance_modified_ = false;
+    float temperature_ = 0.f;
+    float tint_ = 0.f;
+    
 };
 
 }  // namespace rendering
