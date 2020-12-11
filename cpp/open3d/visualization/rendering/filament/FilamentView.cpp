@@ -251,6 +251,7 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
                             eigen_to_float3(color_grading.GetHighlightScale()))
                     .build(engine_);
     view_->setColorGrading(color_grading_);
+}
 
 void FilamentView::ConfigureForColorPicking() {
     view_->setSampleCount(1);
