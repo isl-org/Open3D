@@ -90,8 +90,6 @@ public:
         return block_hashmap_;
     }
 
-    void Release();
-
 protected:
     std::unordered_map<std::string, int> attr_bytesize_map_;
 

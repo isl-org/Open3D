@@ -1,6 +1,7 @@
 #include <fmt/format.h>
 
 #include "open3d/Open3D.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
@@ -38,10 +39,10 @@ int main(int argc, char** argv) {
     std::vector<Device> devices{Device("CUDA:0"), Device("CPU:0")};
 
     for (auto device : devices) {
-        t::geometry::TSDFVoxelGrid voxel_grid(
-                {{"tsdf", 4}, {"weight", 2}, {"color", 6}}, 3.0 / 512, 0.04, 16,
-                10, device);
-        voxel_grid.Release();
+        core::cuda::ReleaseCache();
+
+        t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", 4}, {"weight", 4}},
+                                              3.0 / 512, 0.04, 16, 100, device);
 
         std::vector<std::shared_ptr<const open3d::geometry::Geometry>>
                 geometries;
@@ -49,9 +50,9 @@ int main(int argc, char** argv) {
             // for (int i = 0; i < 100; ++i) {
             /// Load image
             std::string image_path =
-                    fmt::format("{}/depth/{:06d}.png", root_path, i);
+                    fmt::format("{}/depth/{:06d}.png", root_path, i + 1);
             std::string color_path =
-                    fmt::format("{}/image/{:06d}.jpg", root_path, i);
+                    fmt::format("{}/color/{:06d}.png", root_path, i + 1);
 
             std::shared_ptr<geometry::Image> depth_legacy =
                     io::CreateImageFromFile(image_path);
@@ -72,7 +73,8 @@ int main(int argc, char** argv) {
             // pcd.Transform(extrinsic.Inverse());
             // auto pcd_down = pcd.VoxelDownSample(16 * 3.0 / 512);
 
-            // auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+            // auto pcd_legacy =
+            // std::make_shared<open3d::geometry::PointCloud>(
             //         pcd_down.ToLegacyPointCloud());
             // geometries.push_back(pcd_legacy);
             // if (i % 10 == 0) {
@@ -90,23 +92,26 @@ int main(int argc, char** argv) {
         // timer.Start();
         // auto pcd = voxel_grid.ExtractSurfacePoints();
         // timer.Stop();
-        // utility::LogInfo("Point Extraction takes {}", timer.GetDuration());
+        // utility::LogInfo("Point Extraction takes {}",
+        // timer.GetDuration());
 
         // timer.Start();
-        // auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+        // auto pcd_legacy =
+        // std::make_shared<open3d::geometry::PointCloud>(
         //         pcd.ToLegacyPointCloud());
         // timer.Stop();
         // utility::LogInfo("Conversion takes {}", timer.GetDuration());
 
         // timer.Start();
-        // open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
+        // open3d::io::WritePointCloud("pcd_" + device.ToString() +
+        // ".ply",
         //                             *pcd_legacy);
         // timer.Stop();
         // utility::LogInfo("IO takes {}", timer.GetDuration());
         // open3d::visualization::DrawGeometries({pcd_legacy});
 
         timer.Start();
-        auto mesh = voxel_grid.CPU().ExtractSurfaceMesh();
+        auto mesh = voxel_grid.ExtractSurfaceMesh();
         timer.Stop();
         utility::LogInfo("Mesh Extraction takes {}", timer.GetDuration());
 
@@ -122,8 +127,6 @@ int main(int argc, char** argv) {
         timer.Stop();
         utility::LogInfo("IO takes {}", timer.GetDuration());
 
-        voxel_grid.Release();
-
         // open3d::visualization::DrawGeometries({mesh_legacy});
 
         // auto mesh = voxel_grid.ExtractSurfaceMesh();
@@ -133,7 +136,8 @@ int main(int argc, char** argv) {
         // std::make_shared<open3d::geometry::PointCloud>(
         //         mesh_pcd.ToLegacyPointCloud());
         // // mesh_pcd_legacy->EstimateNormals();
-        // open3d::io::WritePointCloud("mesh_pcd_" + device.ToString() + ".ply",
+        // open3d::io::WritePointCloud("mesh_pcd_" + device.ToString() +
+        // ".ply",
         //                             *mesh_pcd_legacy);
         // open3d::visualization::DrawGeometries({mesh_pcd_legacy});
     }

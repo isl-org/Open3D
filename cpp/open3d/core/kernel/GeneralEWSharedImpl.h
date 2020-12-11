@@ -45,9 +45,46 @@ struct Voxel32f {
     float tsdf;
     float weight;
 
-    void Integrate(float dsdf) {
+    static bool HasColor() { return false; }
+    OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
+    OPEN3D_HOST_DEVICE float GetWeight() { return static_cast<float>(weight); }
+    OPEN3D_HOST_DEVICE float GetR() { return 1.0; }
+    OPEN3D_HOST_DEVICE float GetG() { return 1.0; }
+    OPEN3D_HOST_DEVICE float GetB() { return 1.0; }
+
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
         tsdf = (weight * tsdf + dsdf) / (weight + 1);
         weight += 1;
+    }
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf,
+                                      float dr,
+                                      float dg,
+                                      float db) {
+        printf("Should never reach here: dummy to make DISPATCH happy.\n");
+    }
+};
+
+struct Voxel16i {
+    float tsdf;
+    uint16_t weight;
+
+    static bool HasColor() { return false; }
+    OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
+    OPEN3D_HOST_DEVICE float GetWeight() { return static_cast<float>(weight); }
+    OPEN3D_HOST_DEVICE float GetR() { return 1.0; }
+    OPEN3D_HOST_DEVICE float GetG() { return 1.0; }
+    OPEN3D_HOST_DEVICE float GetB() { return 1.0; }
+
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
+        float inv_wsum = 1.0 / (weight + 1);
+        tsdf = (weight * tsdf + dsdf) * inv_wsum;
+        weight += 1;
+    }
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf,
+                                      float dr,
+                                      float dg,
+                                      float db) {
+        printf("Should never reach here: dummy to make DISPATCH happy.\n");
     }
 };
 
@@ -59,11 +96,17 @@ struct ColoredVoxel32f {
     float g;
     float b;
 
+    static bool HasColor() { return true; }
     OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
     OPEN3D_HOST_DEVICE float GetWeight() { return weight; }
     OPEN3D_HOST_DEVICE float GetR() { return r; }
     OPEN3D_HOST_DEVICE float GetG() { return g; }
     OPEN3D_HOST_DEVICE float GetB() { return b; }
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
+        float inv_wsum = 1.0 / (weight + 1);
+        tsdf = (weight * tsdf + dsdf) * inv_wsum;
+        weight += 1;
+    }
     OPEN3D_HOST_DEVICE void Integrate(float dsdf,
                                       float dr,
                                       float dg,
@@ -78,13 +121,6 @@ struct ColoredVoxel32f {
     }
 };
 
-struct Voxel16i {
-    float tsdf;
-    uint16_t weight;
-
-    void Integrate(uint8_t* input){};
-};
-
 OPEN3D_DEVICE const float kColorFactor = 255.0f;
 struct ColoredVoxel16i {
     static const uint16_t kMaxUint16 = 65535;
@@ -96,6 +132,7 @@ struct ColoredVoxel16i {
     uint16_t g;
     uint16_t b;
 
+    static bool HasColor() { return true; }
     OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
     OPEN3D_HOST_DEVICE float GetWeight() { return static_cast<float>(weight); }
     OPEN3D_HOST_DEVICE float GetR() {
@@ -106,6 +143,14 @@ struct ColoredVoxel16i {
     }
     OPEN3D_HOST_DEVICE float GetB() {
         return static_cast<float>(b / kColorFactor);
+    }
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
+        float inc_wsum = weight + 1;
+        float inv_wsum = 1.0 / inc_wsum;
+        tsdf = (weight * tsdf + dsdf) * inv_wsum;
+        weight = static_cast<uint16_t>(inc_wsum < static_cast<float>(kMaxUint16)
+                                               ? weight + 1
+                                               : kMaxUint16);
     }
     OPEN3D_HOST_DEVICE void Integrate(float dsdf,
                                       float dr,
@@ -135,6 +180,16 @@ struct ColoredVoxel16i {
         } else if (BYTESIZE == sizeof(ColoredVoxel16i)) {    \
             utility::LogInfo("ColoredVoxel16i");             \
             using voxel_t = ColoredVoxel16i;                 \
+            return __VA_ARGS__();                            \
+        }                                                    \
+        if (BYTESIZE == sizeof(Voxel32f)) {                  \
+            utility::LogInfo("Voxel32f");                    \
+            using voxel_t = Voxel32f;                        \
+            return __VA_ARGS__();                            \
+        }                                                    \
+        if (BYTESIZE == sizeof(Voxel16i)) {                  \
+            utility::LogInfo("Voxel16i");                    \
+            using voxel_t = Voxel16i;                        \
             return __VA_ARGS__();                            \
         } else {                                             \
             utility::LogError("Unsupported voxel bytesize"); \
@@ -304,7 +359,6 @@ void CPUTSDFIntegrateKernel
     }
 
     Tensor depth = srcs.at("depth").To(core::Dtype::Float32);
-    Tensor color = srcs.at("color").To(core::Dtype::Float32);
     Tensor indices = srcs.at("indices");
     Tensor block_keys = srcs.at("block_keys");
     Tensor block_values = dsts.at("block_values");
@@ -328,9 +382,18 @@ void CPUTSDFIntegrateKernel
 
     // Real data indexer
     NDArrayIndexer depth_indexer(depth, 2);
-    NDArrayIndexer color_indexer(color, 2);
     NDArrayIndexer block_keys_indexer(block_keys, 1);
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
+
+    // Optional color integration
+    Tensor color;
+    NDArrayIndexer color_indexer;
+    bool integrate_color = false;
+    if (srcs.count("color") != 0) {
+        color = srcs.at("color").To(core::Dtype::Float32);
+        color_indexer = NDArrayIndexer(color, 2);
+        integrate_color = true;
+    }
 
     // Plain arrays that does not require indexers
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
@@ -392,21 +455,16 @@ void CPUTSDFIntegrateKernel
                                                     static_cast<int64_t>(v))) /
                                     depth_scale;
 
-                            float* color_ptr = static_cast<float*>(
-                                    color_indexer.GetDataPtrFromCoord(
-                                            static_cast<int64_t>(u),
-                                            static_cast<int64_t>(v)));
-
                             // Compute multiplier
                             float xc_unproj, yc_unproj, zc_unproj;
                             transform_indexer.Unproject(static_cast<float>(u),
                                                         static_cast<float>(v),
                                                         1.0, &xc_unproj,
                                                         &yc_unproj, &zc_unproj);
-                            float multiplier =
-                                    sqrt(xc_unproj * xc_unproj +
-                                         yc_unproj * yc_unproj + 1.0);
-                            float sdf = (depth - zc) * multiplier;
+                            // float multiplier =
+                            //         sqrt(xc_unproj * xc_unproj +
+                            //              yc_unproj * yc_unproj + 1.0);
+                            float sdf = (depth - zc);
                             if (depth <= 0 || depth > depth_max || zc <= 0 ||
                                 sdf < -sdf_trunc) {
                                 return;
@@ -420,8 +478,18 @@ void CPUTSDFIntegrateKernel
                                             .GetDataPtrFromCoord(xv, yv, zv,
                                                                  block_idx));
 
-                            voxel_ptr->Integrate(sdf, color_ptr[0],
-                                                 color_ptr[1], color_ptr[2]);
+                            if (integrate_color) {
+                                float* color_ptr = static_cast<float*>(
+                                        color_indexer.GetDataPtrFromCoord(
+                                                static_cast<int64_t>(u),
+                                                static_cast<int64_t>(v)));
+
+                                voxel_ptr->Integrate(sdf, color_ptr[0],
+                                                     color_ptr[1],
+                                                     color_ptr[2]);
+                            } else {
+                                voxel_ptr->Integrate(sdf);
+                            }
                         });
             });
 }
@@ -554,11 +622,8 @@ void CPUSurfaceExtractionKernel
                         block_values.GetDevice());
     core::Tensor normals({total_count, 3}, core::Dtype::Float32,
                          block_values.GetDevice());
-    core::Tensor colors({total_count, 3}, core::Dtype::Float32,
-                        block_values.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
     NDArrayIndexer normal_indexer(normals, 1);
-    NDArrayIndexer color_indexer(colors, 1);
 
     // Reset count
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -571,6 +636,15 @@ void CPUSurfaceExtractionKernel
 
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+                bool extract_color = false;
+                Tensor colors;
+                NDArrayIndexer color_indexer;
+                if (voxel_t::HasColor()) {
+                    extract_color = true;
+                    colors = Tensor({total_count, 3}, core::Dtype::Float32,
+                                    block_values.GetDevice());
+                    color_indexer = NDArrayIndexer(colors, 1);
+                }
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
                 CUDALauncher::LaunchGeneralKernel(
@@ -626,9 +700,7 @@ void CPUSurfaceExtractionKernel
                                                                  block_idx));
                             float tsdf_o = voxel_ptr->GetTSDF();
                             float weight_o = voxel_ptr->GetWeight();
-                            float r_o = voxel_ptr->GetR();
-                            float g_o = voxel_ptr->GetG();
-                            float b_o = voxel_ptr->GetB();
+
                             if (weight_o == 0) return;
 
                             int64_t x = xb * resolution + xv;
@@ -687,28 +759,40 @@ void CPUSurfaceExtractionKernel
                                     normal_ptr[1] = ny / norm;
                                     normal_ptr[2] = nz / norm;
 
-                                    float* color_ptr = static_cast<float*>(
-                                            color_indexer.GetDataPtrFromCoord(
-                                                    idx));
-                                    float r_i = ptr->GetR();
-                                    float g_i = ptr->GetG();
-                                    float b_i = ptr->GetB();
-                                    color_ptr[0] =
-                                            ((1 - ratio) * r_o + ratio * r_i) /
-                                            255.0f;
-                                    color_ptr[1] =
-                                            ((1 - ratio) * g_o + ratio * g_i) /
-                                            255.0f;
-                                    color_ptr[2] =
-                                            ((1 - ratio) * b_o + ratio * b_i) /
-                                            255.0f;
+                                    if (extract_color) {
+                                        float* color_ptr = static_cast<float*>(
+                                                color_indexer
+                                                        .GetDataPtrFromCoord(
+                                                                idx));
+
+                                        float r_o = voxel_ptr->GetR();
+                                        float g_o = voxel_ptr->GetG();
+                                        float b_o = voxel_ptr->GetB();
+
+                                        float r_i = ptr->GetR();
+                                        float g_i = ptr->GetG();
+                                        float b_i = ptr->GetB();
+
+                                        color_ptr[0] = ((1 - ratio) * r_o +
+                                                        ratio * r_i) /
+                                                       255.0f;
+                                        color_ptr[1] = ((1 - ratio) * g_o +
+                                                        ratio * g_i) /
+                                                       255.0f;
+                                        color_ptr[2] = ((1 - ratio) * b_o +
+                                                        ratio * b_i) /
+                                                       255.0f;
+                                    }
                                 }
                             }
                         });
+                dsts.emplace("points", points);
+                dsts.emplace("normals", normals);
+
+                if (extract_color) {
+                    dsts.emplace("colors", colors);
+                }
             });
-    dsts.emplace("points", points);
-    dsts.emplace("normals", normals);
-    dsts.emplace("colors", colors);
 }
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -914,16 +998,22 @@ void CPUMarchingCubesKernel
                           block_values.GetDevice());
     core::Tensor normals({total_vtx_count, 3}, core::Dtype::Float32,
                          block_values.GetDevice());
-    core::Tensor colors({total_vtx_count, 3}, core::Dtype::Float32,
-                        block_values.GetDevice());
 
     NDArrayIndexer block_keys_indexer(block_keys, 1);
     NDArrayIndexer vertex_indexer(vertices, 1);
     NDArrayIndexer normal_indexer(normals, 1);
-    NDArrayIndexer color_indexer(colors, 1);
 
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+                bool extract_color = false;
+                Tensor colors;
+                NDArrayIndexer color_indexer;
+                if (voxel_t::HasColor()) {
+                    extract_color = true;
+                    colors = Tensor({total_vtx_count, 3}, core::Dtype::Float32,
+                                    block_values.GetDevice());
+                    color_indexer = NDArrayIndexer(colors, 1);
+                }
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
                 CUDALauncher::LaunchGeneralKernel(
                         n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
@@ -995,10 +1085,6 @@ void CPUMarchingCubesKernel
                                             .GetDataPtrFromCoord(xv, yv, zv,
                                                                  block_idx));
                             float tsdf_o = voxel_ptr->GetTSDF();
-
-                            float r_o = voxel_ptr->GetR();
-                            float g_o = voxel_ptr->GetG();
-                            float b_o = voxel_ptr->GetB();
                             float no[3] = {0}, ne[3] = {0};
                             GetNormalAt(xv, yv, zv, workload_block_idx, no);
 
@@ -1046,27 +1132,36 @@ void CPUMarchingCubesKernel
                                 normal_ptr[1] = ny / norm;
                                 normal_ptr[2] = nz / norm;
 
-                                float* color_ptr = static_cast<float*>(
-                                        color_indexer.GetDataPtrFromCoord(idx));
-                                float r_e = voxel_ptr_e->GetR();
-                                float g_e = voxel_ptr_e->GetG();
-                                float b_e = voxel_ptr_e->GetB();
-                                color_ptr[0] =
-                                        ((1 - ratio) * r_o + ratio * r_e) /
-                                        255.0;
-                                color_ptr[1] =
-                                        ((1 - ratio) * g_o + ratio * g_e) /
-                                        255.0;
-                                color_ptr[2] =
-                                        ((1 - ratio) * b_o + ratio * b_e) /
-                                        255.0;
+                                if (extract_color) {
+                                    float* color_ptr = static_cast<float*>(
+                                            color_indexer.GetDataPtrFromCoord(
+                                                    idx));
+                                    float r_o = voxel_ptr->GetR();
+                                    float g_o = voxel_ptr->GetG();
+                                    float b_o = voxel_ptr->GetB();
+
+                                    float r_e = voxel_ptr_e->GetR();
+                                    float g_e = voxel_ptr_e->GetG();
+                                    float b_e = voxel_ptr_e->GetB();
+                                    color_ptr[0] =
+                                            ((1 - ratio) * r_o + ratio * r_e) /
+                                            255.0;
+                                    color_ptr[1] =
+                                            ((1 - ratio) * g_o + ratio * g_e) /
+                                            255.0;
+                                    color_ptr[2] =
+                                            ((1 - ratio) * b_o + ratio * b_e) /
+                                            255.0;
+                                }
                             }
                         });
-            });
+                dsts.emplace("vertices", vertices);
+                dsts.emplace("normals", normals);
 
-    dsts.emplace("vertices", vertices);
-    dsts.emplace("colors", colors);
-    dsts.emplace("normals", normals);
+                if (extract_color) {
+                    dsts.emplace("colors", colors);
+                }
+            });
 
     // Pass 2: connect vertices
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)

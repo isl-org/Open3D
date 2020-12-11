@@ -124,6 +124,7 @@ private:
 const int64_t MAX_RESOLUTION_DIMS = 4;
 class NDArrayIndexer {
 public:
+    NDArrayIndexer() {}
     NDArrayIndexer(const Tensor& ndarray, int64_t active_dims) {
         if (!ndarray.IsContiguous()) {
             utility::LogError(

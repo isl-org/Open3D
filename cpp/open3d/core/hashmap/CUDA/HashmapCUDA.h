@@ -127,8 +127,6 @@ CUDAHashmap<Hash, KeyEq>::~CUDAHashmap() {
 
 template <typename Hash, typename KeyEq>
 void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
-    CUDACachedMemoryManager::ReleaseCache();
-
     int64_t iterator_count = Size();
 
     Tensor active_keys;
@@ -149,6 +147,8 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
             float(this->capacity_) / float(this->bucket_count_);
 
     Free();
+    CUDACachedMemoryManager::ReleaseCache();
+
     Allocate(buckets, int64_t(std::ceil(buckets * avg_capacity_per_bucket)));
 
     if (iterator_count > 0) {
@@ -160,7 +160,6 @@ void CUDAHashmap<Hash, KeyEq>::Rehash(int64_t buckets) {
                    static_cast<bool*>(output_masks.GetDataPtr()),
                    iterator_count);
     }
-
     CUDACachedMemoryManager::ReleaseCache();
 }
 
@@ -175,7 +174,7 @@ void CUDAHashmap<Hash, KeyEq>::Insert(const void* input_keys,
         float avg_capacity_per_bucket =
                 float(this->capacity_) / float(this->bucket_count_);
         int64_t expected_buckets = std::max(
-                this->bucket_count_ * 2,
+                int64_t(this->bucket_count_ * 2),
                 int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
         Rehash(expected_buckets);
     }
@@ -193,7 +192,7 @@ void CUDAHashmap<Hash, KeyEq>::Activate(const void* input_keys,
         float avg_capacity_per_bucket =
                 float(this->capacity_) / float(this->bucket_count_);
         int64_t expected_buckets = std::max(
-                this->bucket_count_ * 2,
+                int64_t(this->bucket_count_ * 2),
                 int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
         Rehash(expected_buckets);
     }
