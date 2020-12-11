@@ -222,7 +222,7 @@ std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
 
     core::Tensor addrs_nb, masks_nb;
     block_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
-    return std::make_pair(addrs_nb, masks_nb);
+    return std::make_pair(addrs_nb.View({27, n, 1}), masks_nb.View({27, n, 1}));
 }
 }  // namespace geometry
 }  // namespace t

@@ -43,7 +43,10 @@ struct Voxel32f {
     float tsdf;
     float weight;
 
-    void Integrate(uint8_t* input){};
+    void Integrate(float dsdf) {
+        tsdf = (weight * tsdf + dsdf) / (weight + 1);
+        weight += 1;
+    }
 };
 
 struct ColoredVoxel32f {
@@ -54,7 +57,15 @@ struct ColoredVoxel32f {
     float g;
     float b;
 
-    void Integrate(float dsdf, float dr, float dg, float db) {
+    OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
+    OPEN3D_HOST_DEVICE float GetWeight() { return weight; }
+    OPEN3D_HOST_DEVICE float GetR() { return r; }
+    OPEN3D_HOST_DEVICE float GetG() { return g; }
+    OPEN3D_HOST_DEVICE float GetB() { return b; }
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf,
+                                      float dr,
+                                      float dg,
+                                      float db) {
         float inv_wsum = 1.0 / (weight + 1);
         tsdf = (weight * tsdf + dsdf) * inv_wsum;
         r = (weight * r + dr) * inv_wsum;
@@ -80,8 +91,23 @@ struct ColoredVoxel16i {
     uint16_t g;
     uint16_t b;
 
+    float GetWeight() { return static_cast<float>(weight); }
+
     void Integrate(uint8_t* input) {}
 };
+
+#define DISPATCH_BYTESIZE_TO_VOXEL(BYTESIZE, ...)            \
+    [&] {                                                    \
+        if (BYTESIZE == sizeof(ColoredVoxel32f)) {           \
+            using voxel_t = ColoredVoxel32f;                 \
+            return __VA_ARGS__();                            \
+        } else if (BYTESIZE == sizeof(ColoredVoxel16i)) {    \
+            using voxel_t = ColoredVoxel16i;                 \
+            return __VA_ARGS__();                            \
+        } else {                                             \
+            utility::LogError("Unsupported voxel bytesize"); \
+        }                                                    \
+    }()
 
 inline OPEN3D_DEVICE float* DeviceGetVoxelAt(
         int xo,
@@ -89,10 +115,9 @@ inline OPEN3D_DEVICE float* DeviceGetVoxelAt(
         int zo,
         int curr_block_idx,
         int resolution,
-        int n_blocks,
-        bool* nb_masks_ptr,
-        int64_t* nb_indices_ptr,
-        const NDArrayIndexer& voxel_block_buffer_indexer) {
+        const NDArrayIndexer& nb_block_masks_indexer,
+        const NDArrayIndexer& nb_block_indices_indexer,
+        const NDArrayIndexer& blocks_indexer) {
     int xn = (xo + resolution) % resolution;
     int yn = (yo + resolution) % resolution;
     int zn = (zo + resolution) % resolution;
@@ -103,12 +128,16 @@ inline OPEN3D_DEVICE float* DeviceGetVoxelAt(
 
     int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-    bool block_mask_i = nb_masks_ptr[nb_idx * n_blocks + curr_block_idx];
+    bool block_mask_i = *static_cast<bool*>(
+            nb_block_masks_indexer.GetDataPtrFromCoord(curr_block_idx, nb_idx));
     if (!block_mask_i) return nullptr;
 
-    int64_t block_idx_i = nb_indices_ptr[nb_idx * n_blocks + curr_block_idx];
-    return static_cast<float*>(voxel_block_buffer_indexer.GetDataPtrFromCoord(
-            xn, yn, zn, block_idx_i));
+    int64_t block_idx_i =
+            *static_cast<int64_t*>(nb_block_indices_indexer.GetDataPtrFromCoord(
+                    curr_block_idx, nb_idx));
+
+    return static_cast<float*>(
+            blocks_indexer.GetDataPtrFromCoord(xn, yn, zn, block_idx_i));
 }
 
 inline OPEN3D_DEVICE void DeviceGetNormalAt(
@@ -119,14 +148,13 @@ inline OPEN3D_DEVICE void DeviceGetNormalAt(
         float* n,
         int resolution,
         float voxel_size,
-        int n_blocks,
-        bool* nb_masks_ptr,
-        int64_t* nb_indices_ptr,
-        const NDArrayIndexer& voxel_block_buffer_indexer) {
+        const NDArrayIndexer& nb_block_masks_indexer,
+        const NDArrayIndexer& nb_block_indices_indexer,
+        const NDArrayIndexer& blocks_indexer) {
     auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo) {
         return DeviceGetVoxelAt(xo, yo, zo, curr_block_idx, resolution,
-                                n_blocks, nb_masks_ptr, nb_indices_ptr,
-                                voxel_block_buffer_indexer);
+                                nb_block_masks_indexer,
+                                nb_block_indices_indexer, blocks_indexer);
     };
     float* vxp = GetVoxelAt(xo + 1, yo, zo);
     float* vxn = GetVoxelAt(xo - 1, yo, zo);
@@ -386,10 +414,10 @@ void CPUSurfaceExtractionKernel
     // Real data indexer
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
     NDArrayIndexer block_keys_indexer(block_keys, 1);
+    NDArrayIndexer nb_block_masks_indexer(nb_masks, 2);
+    NDArrayIndexer nb_block_indices_indexer(nb_indices, 2);
 
     // Plain arrays that does not require indexers
-    int64_t* nb_indices_ptr = static_cast<int64_t*>(nb_indices.GetDataPtr());
-    bool* nb_masks_ptr = static_cast<bool*>(nb_masks.GetDataPtr());
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
 
     int n_blocks = indices.GetShape()[0];
@@ -399,6 +427,7 @@ void CPUSurfaceExtractionKernel
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
                        block_values.GetDevice());
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
+
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
                                                  int64_t workload_idx) {
@@ -408,7 +437,8 @@ void CPUSurfaceExtractionKernel
         auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                             int curr_block_idx) -> float* {
             return DeviceGetVoxelAt(xo, yo, zo, curr_block_idx, resolution,
-                                    n_blocks, nb_masks_ptr, nb_indices_ptr,
+                                    nb_block_masks_indexer,
+                                    nb_block_indices_indexer,
                                     voxel_block_buffer_indexer);
         };
 
@@ -475,14 +505,15 @@ void CPUSurfaceExtractionKernel
         auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                             int curr_block_idx) -> float* {
             return DeviceGetVoxelAt(xo, yo, zo, curr_block_idx, resolution,
-                                    n_blocks, nb_masks_ptr, nb_indices_ptr,
+                                    nb_block_masks_indexer,
+                                    nb_block_indices_indexer,
                                     voxel_block_buffer_indexer);
         };
         auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                              int curr_block_idx, float* n) {
             return DeviceGetNormalAt(xo, yo, zo, curr_block_idx, n, resolution,
-                                     voxel_size, n_blocks, nb_masks_ptr,
-                                     nb_indices_ptr,
+                                     voxel_size, nb_block_masks_indexer,
+                                     nb_block_indices_indexer,
                                      voxel_block_buffer_indexer);
         };
 
@@ -623,10 +654,10 @@ void CPUMarchingCubesKernel
     // Real data indexer
     NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
     NDArrayIndexer mesh_structure_indexer(mesh_structure, 4);
+    NDArrayIndexer nb_block_masks_indexer(nb_masks, 2);
+    NDArrayIndexer nb_block_indices_indexer(nb_indices, 2);
 
     // Plain arrays that does not require indexers
-    int64_t* nb_indices_ptr = static_cast<int64_t*>(nb_indices.GetDataPtr());
-    bool* nb_masks_ptr = static_cast<bool*>(nb_masks.GetDataPtr());
     int64_t* indices_ptr = static_cast<int64_t*>(indices.GetDataPtr());
     int64_t* inv_indices_ptr = static_cast<int64_t*>(inv_indices.GetDataPtr());
 
@@ -639,6 +670,14 @@ void CPUMarchingCubesKernel
 #else
     CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
 #endif
+        auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                            int curr_block_idx) -> float* {
+            return DeviceGetVoxelAt(xo, yo, zo, curr_block_idx, resolution,
+                                    nb_block_masks_indexer,
+                                    nb_block_indices_indexer,
+                                    voxel_block_buffer_indexer);
+        };
+
         // Natural index (0, N) -> (block_idx, voxel_idx)
         int64_t workload_block_idx = workload_idx / resolution3;
         int64_t voxel_idx = workload_idx % resolution3;
@@ -650,26 +689,10 @@ void CPUMarchingCubesKernel
         // Check per-vertex sign in the cube to determine cube type
         int table_idx = 0;
         for (int i = 0; i < 8; ++i) {
-            int64_t xv_i = xv + vtx_shifts[i][0];
-            int64_t yv_i = yv + vtx_shifts[i][1];
-            int64_t zv_i = zv + vtx_shifts[i][2];
-
-            int64_t dxb = xv_i / resolution;
-            int64_t dyb = yv_i / resolution;
-            int64_t dzb = zv_i / resolution;
-
-            int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
-
-            bool block_mask_i =
-                    nb_masks_ptr[nb_idx * n_blocks + workload_block_idx];
-            if (!block_mask_i) return;
-
-            int64_t block_idx_i =
-                    nb_indices_ptr[nb_idx * n_blocks + workload_block_idx];
-            float* voxel_ptr_i = static_cast<float*>(
-                    voxel_block_buffer_indexer.GetDataPtrFromCoord(
-                            xv_i - dxb * resolution, yv_i - dyb * resolution,
-                            zv_i - dzb * resolution, block_idx_i));
+            float* voxel_ptr_i =
+                    GetVoxelAt(xv + vtx_shifts[i][0], yv + vtx_shifts[i][1],
+                               zv + vtx_shifts[i][2], workload_block_idx);
+            if (voxel_ptr_i == 0) return;
 
             float tsdf_i = voxel_ptr_i[0];
             float weight_i = voxel_ptr_i[1];
@@ -700,9 +723,10 @@ void CPUMarchingCubesKernel
 
                 int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-                int64_t block_idx_i =
-                        nb_indices_ptr[nb_idx * n_blocks + workload_block_idx];
-                int* mesh_struct_ptr_i = static_cast<int*>(
+                int64_t block_idx_i = *static_cast<int64_t*>(
+                        nb_block_indices_indexer.GetDataPtrFromCoord(
+                                workload_block_idx, nb_idx));
+                int* mesh_ptr_i = static_cast<int*>(
                         mesh_structure_indexer.GetDataPtrFromCoord(
                                 xv_i - dxb * resolution,
                                 yv_i - dyb * resolution,
@@ -710,7 +734,7 @@ void CPUMarchingCubesKernel
                                 inv_indices_ptr[block_idx_i]));
 
                 // Non-atomic write, but we are safe
-                mesh_struct_ptr_i[edge_i] = -1;
+                mesh_ptr_i[edge_i] = -1;
             }
         }
     });
@@ -787,15 +811,16 @@ void CPUMarchingCubesKernel
         auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                             int curr_block_idx) -> float* {
             return DeviceGetVoxelAt(xo, yo, zo, curr_block_idx, resolution,
-                                    n_blocks, nb_masks_ptr, nb_indices_ptr,
+                                    nb_block_masks_indexer,
+                                    nb_block_indices_indexer,
                                     voxel_block_buffer_indexer);
         };
 
         auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                              int curr_block_idx, float* n) {
             return DeviceGetNormalAt(xo, yo, zo, curr_block_idx, n, resolution,
-                                     voxel_size, n_blocks, nb_masks_ptr,
-                                     nb_indices_ptr,
+                                     voxel_size, nb_block_masks_indexer,
+                                     nb_block_indices_indexer,
                                      voxel_block_buffer_indexer);
         };
 
@@ -913,32 +938,32 @@ void CPUMarchingCubesKernel
     NDArrayIndexer triangle_indexer(triangles, 1);
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
-                                                 int64_t workload_idx) {
+    CUDALauncher::LaunchGeneralKernel(
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
 #else
     CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
 #endif
-        // Natural index (0, N) -> (block_idx, voxel_idx)
-        int64_t workload_block_idx = workload_idx / resolution3;
-        int64_t voxel_idx = workload_idx % resolution3;
+                // Natural index (0, N) -> (block_idx, voxel_idx)
+                int64_t workload_block_idx = workload_idx / resolution3;
+                int64_t voxel_idx = workload_idx % resolution3;
 
-        // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-        int64_t xv, yv, zv;
-        voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+                // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                int64_t xv, yv, zv;
+                voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
-        // Obtain voxel's mesh struct ptr
-        int* mesh_struct_ptr =
-                static_cast<int*>(mesh_structure_indexer.GetDataPtrFromCoord(
-                        xv, yv, zv, workload_block_idx));
+                // Obtain voxel's mesh struct ptr
+                int* mesh_struct_ptr = static_cast<int*>(
+                        mesh_structure_indexer.GetDataPtrFromCoord(
+                                xv, yv, zv, workload_block_idx));
 
-        int table_idx = mesh_struct_ptr[3];
-        if (tri_count[table_idx] == 0) return;
+                int table_idx = mesh_struct_ptr[3];
+                if (tri_count[table_idx] == 0) return;
 
-        for (size_t tri = 0; tri < 16; tri += 3) {
-            if (tri_table[table_idx][tri] == -1) return;
+                for (size_t tri = 0; tri < 16; tri += 3) {
+                    if (tri_table[table_idx][tri] == -1) return;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-            int tri_idx = atomicAdd(tri_count_ptr, 1);
+                    int tri_idx = atomicAdd(tri_count_ptr, 1);
 #else
             int tri_idx;
 #pragma omp atomic capture
@@ -948,35 +973,36 @@ void CPUMarchingCubesKernel
             }
 #endif
 
-            for (size_t vertex = 0; vertex < 3; ++vertex) {
-                int edge = tri_table[table_idx][tri + vertex];
+                    for (size_t vertex = 0; vertex < 3; ++vertex) {
+                        int edge = tri_table[table_idx][tri + vertex];
 
-                int64_t xv_i = xv + edge_shifts[edge][0];
-                int64_t yv_i = yv + edge_shifts[edge][1];
-                int64_t zv_i = zv + edge_shifts[edge][2];
-                int64_t edge_i = edge_shifts[edge][3];
+                        int64_t xv_i = xv + edge_shifts[edge][0];
+                        int64_t yv_i = yv + edge_shifts[edge][1];
+                        int64_t zv_i = zv + edge_shifts[edge][2];
+                        int64_t edge_i = edge_shifts[edge][3];
 
-                int dxb = xv_i / resolution;
-                int dyb = yv_i / resolution;
-                int dzb = zv_i / resolution;
+                        int dxb = xv_i / resolution;
+                        int dyb = yv_i / resolution;
+                        int dzb = zv_i / resolution;
 
-                int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
+                        int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-                int64_t block_idx_i =
-                        nb_indices_ptr[nb_idx * n_blocks + workload_block_idx];
-                int* mesh_struct_ptr_i = static_cast<int*>(
-                        mesh_structure_indexer.GetDataPtrFromCoord(
-                                xv_i - dxb * resolution,
-                                yv_i - dyb * resolution,
-                                zv_i - dzb * resolution,
-                                inv_indices_ptr[block_idx_i]));
+                        int64_t block_idx_i = *static_cast<int64_t*>(
+                                nb_block_indices_indexer.GetDataPtrFromCoord(
+                                        workload_block_idx, nb_idx));
+                        int* mesh_struct_ptr_i = static_cast<int*>(
+                                mesh_structure_indexer.GetDataPtrFromCoord(
+                                        xv_i - dxb * resolution,
+                                        yv_i - dyb * resolution,
+                                        zv_i - dzb * resolution,
+                                        inv_indices_ptr[block_idx_i]));
 
-                int64_t* triangle_ptr = static_cast<int64_t*>(
-                        triangle_indexer.GetDataPtrFromCoord(tri_idx));
-                triangle_ptr[2 - vertex] = mesh_struct_ptr_i[edge_i];
-            }
-        }
-    });
+                        int64_t* triangle_ptr = static_cast<int64_t*>(
+                                triangle_indexer.GetDataPtrFromCoord(tri_idx));
+                        triangle_ptr[2 - vertex] = mesh_struct_ptr_i[edge_i];
+                    }
+                }
+            });
 
     int total_tri_count = triangle_count.Item<int>();
     utility::LogInfo("Total triangle count = {}", total_tri_count);
