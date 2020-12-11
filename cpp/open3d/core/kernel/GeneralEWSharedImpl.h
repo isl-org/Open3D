@@ -130,8 +130,10 @@ struct ColoredVoxel16i {
     [&] {                                                    \
         if (BYTESIZE == sizeof(ColoredVoxel32f)) {           \
             using voxel_t = ColoredVoxel32f;                 \
+            utility::LogInfo("ColoredVoxel32f");             \
             return __VA_ARGS__();                            \
         } else if (BYTESIZE == sizeof(ColoredVoxel16i)) {    \
+            utility::LogInfo("ColoredVoxel16i");             \
             using voxel_t = ColoredVoxel16i;                 \
             return __VA_ARGS__();                            \
         } else {                                             \

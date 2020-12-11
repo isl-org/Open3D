@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
     for (auto device : devices) {
         t::geometry::TSDFVoxelGrid voxel_grid(
-                {{"tsdf", 1}, {"weight", 1}, {"color", 3}}, 3.0 / 512, 0.04, 16,
+                {{"tsdf", 4}, {"weight", 2}, {"color", 6}}, 3.0 / 512, 0.04, 16,
                 10, device);
         std::vector<std::shared_ptr<const open3d::geometry::Geometry>>
                 geometries;

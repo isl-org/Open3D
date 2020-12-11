@@ -36,27 +36,27 @@ namespace t {
 namespace geometry {
 
 TSDFVoxelGrid::TSDFVoxelGrid(
-        std::unordered_map<std::string, int> attr_channel_map,
+        std::unordered_map<std::string, int> attr_bytesize_map,
         float voxel_size,
         float sdf_trunc,
         int64_t block_resolution,
         int64_t block_count,
         const core::Device &device)
-    : attr_channel_map_(attr_channel_map),
+    : attr_bytesize_map_(attr_bytesize_map),
       voxel_size_(voxel_size),
       sdf_trunc_(sdf_trunc),
       block_resolution_(block_resolution),
       block_count_(block_count),
       device_(device) {
-    int64_t total_channels = 0;
-    for (auto &kv : attr_channel_map_) {
-        total_channels += kv.second;
+    int64_t total_bytes = 0;
+    for (auto &kv : attr_bytesize_map_) {
+        total_bytes += kv.second;
     }
     block_hashmap_ = std::make_shared<core::Hashmap>(
-            block_count_, core::Dtype::Int32, core::Dtype::Float32,
+            block_count_, core::Dtype::Int32, core::Dtype::UInt8,
             core::SizeVector{3},
             core::SizeVector{block_resolution_, block_resolution_,
-                             block_resolution_, total_channels},
+                             block_resolution_, total_bytes},
             device);
 }
 
@@ -118,7 +118,8 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     core::kernel::GeneralEW(srcs, dsts,
                             core::kernel::GeneralEWOpCode::TSDFIntegrate);
-    utility::LogInfo("hashmap size = {}", block_hashmap_->Size());
+    utility::LogInfo("hashmap size = {}, capacity = {}", block_hashmap_->Size(),
+                     block_hashmap_->GetCapacity());
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {

@@ -57,8 +57,8 @@ namespace geometry {
 class TSDFVoxelGrid {
 public:
     /// \brief Default Constructor.
-    TSDFVoxelGrid(std::unordered_map<std::string, int> attr_channel_map =
-                          {{"tsdf", 1}, {"weight", 1}, {"color", 3}},
+    TSDFVoxelGrid(std::unordered_map<std::string, int> attr_bytesize_map =
+                          {{"tsdf", 4}, {"weight", 2}, {"color", 6}},
                   float voxel_size = 3.0 / 512.0, /* in meter */
                   float sdf_trunc = 0.04,         /*  in meter  */
                   int64_t block_resolution = 16, /*  block Tensor resolution  */
@@ -82,7 +82,7 @@ public:
     TriangleMesh ExtractSurfaceMesh();
 
 protected:
-    std::unordered_map<std::string, int> attr_channel_map_;
+    std::unordered_map<std::string, int> attr_bytesize_map_;
 
     /// Return (active_entries, 27) with \addrs and \masks for radius (3)
     /// neighbor entries. Currently we preserve redundancy without compressing /
