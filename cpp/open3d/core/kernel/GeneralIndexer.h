@@ -172,6 +172,8 @@ public:
         ptr_ = nullptr;
     }
 
+    OPEN3D_HOST_DEVICE int64_t ElementByteSize() { return element_byte_size_; }
+
     OPEN3D_HOST_DEVICE int64_t NumElements() {
         int64_t num_elems = 1;
         for (int64_t i = 0; i < active_dims_; ++i) {

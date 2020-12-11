@@ -44,6 +44,7 @@ int main(int argc, char** argv) {
         std::vector<std::shared_ptr<const open3d::geometry::Geometry>>
                 geometries;
         for (int i = 0; i < trajectory->parameters_.size(); ++i) {
+            // for (int i = 0; i < 100; ++i) {
             /// Load image
             std::string image_path =
                     fmt::format("{}/depth/{:06d}.png", root_path, i + 1);
