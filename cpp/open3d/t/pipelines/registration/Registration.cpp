@@ -136,7 +136,8 @@ RegistrationResult RegistrationICP(
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
     utility::LogError("Unimplemented");
-    RegistrationResult result;
+    RegistrationResult result(
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
     return result;
 }
 
