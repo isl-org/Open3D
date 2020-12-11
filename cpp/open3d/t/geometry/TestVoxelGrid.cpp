@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
         // open3d::visualization::DrawGeometries({pcd_legacy});
 
         timer.Start();
-        auto mesh = voxel_grid.ExtractSurfaceMesh();
+        auto mesh = voxel_grid.CPU().ExtractSurfaceMesh();
         timer.Stop();
         utility::LogInfo("Mesh Extraction takes {}", timer.GetDuration());
 

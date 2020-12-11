@@ -90,6 +90,8 @@ public:
         return block_hashmap_;
     }
 
+    core::Device GetDevice() { return device_; }
+
 protected:
     std::unordered_map<std::string, int> attr_bytesize_map_;
 

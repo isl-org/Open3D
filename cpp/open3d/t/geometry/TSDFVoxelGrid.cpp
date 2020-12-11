@@ -207,23 +207,22 @@ TSDFVoxelGrid TSDFVoxelGrid::Copy(const core::Device &device) {
                                      sdf_trunc_, block_resolution_,
                                      block_count_, device);
     auto cpu_tsdf_hashmap = cpu_tsdf_voxelgrid.GetVoxelBlockHashmap();
-
-    core::Tensor cpu_keys = block_hashmap_->GetKeyTensor().Copy(device);
-    core::Tensor cpu_vals = block_hashmap_->GetValueTensor().Copy(device);
-
-    core::Tensor active_addrs;
-    block_hashmap_->GetActiveIndices(active_addrs);
-    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
-
-    core::Tensor addrs, masks;
-    cpu_tsdf_hashmap->Insert(cpu_keys.IndexGet({active_indices}),
-                             cpu_vals.IndexGet({active_indices}), addrs, masks);
-
+    *cpu_tsdf_hashmap = block_hashmap_->Copy(device);
     return cpu_tsdf_voxelgrid;
 }
 
-TSDFVoxelGrid TSDFVoxelGrid::CPU() { return Copy(core::Device("CPU:0")); }
-TSDFVoxelGrid TSDFVoxelGrid::CUDA() { return Copy(core::Device("CUDA:0")); }
+TSDFVoxelGrid TSDFVoxelGrid::CPU() {
+    if (GetDevice().GetType() == core::Device::DeviceType::CPU) {
+        return *this;
+    }
+    return Copy(core::Device("CPU:0"));
+}
+TSDFVoxelGrid TSDFVoxelGrid::CUDA() {
+    if (GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+        return *this;
+    }
+    return Copy(core::Device("CUDA:0"));
+}
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
         const core::Tensor &active_addrs) {
