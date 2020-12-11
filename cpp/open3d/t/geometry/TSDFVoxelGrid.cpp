@@ -223,6 +223,7 @@ TSDFVoxelGrid TSDFVoxelGrid::Copy(const core::Device &device) {
 
 TSDFVoxelGrid TSDFVoxelGrid::CPU() { return Copy(core::Device("CPU:0")); }
 TSDFVoxelGrid TSDFVoxelGrid::CUDA() { return Copy(core::Device("CUDA:0")); }
+void TSDFVoxelGrid::Release() { core::CUDACachedMemoryManager::ReleaseCache(); }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
         const core::Tensor &active_addrs) {

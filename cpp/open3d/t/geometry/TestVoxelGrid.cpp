@@ -20,8 +20,8 @@ Tensor FromEigen(const Eigen::Matrix<T, M, N, A>& matrix) {
 
 int main(int argc, char** argv) {
     std::string root_path = argv[1];
-    std::shared_ptr<geometry::TriangleMesh> mesh_io =
-            io::CreateMeshFromFile(root_path + "/scene/integrated.ply");
+    // std::shared_ptr<geometry::TriangleMesh> mesh_io =
+    //         io::CreateMeshFromFile(root_path + "/scene/integrated.ply");
 
     // auto mesh = t::geometry::TriangleMesh::FromLegacyTrangleMesh(*mesh_io);
     // auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
@@ -41,15 +41,17 @@ int main(int argc, char** argv) {
         t::geometry::TSDFVoxelGrid voxel_grid(
                 {{"tsdf", 4}, {"weight", 2}, {"color", 6}}, 3.0 / 512, 0.04, 16,
                 10, device);
+        voxel_grid.Release();
+
         std::vector<std::shared_ptr<const open3d::geometry::Geometry>>
                 geometries;
         for (int i = 0; i < trajectory->parameters_.size(); ++i) {
             // for (int i = 0; i < 100; ++i) {
             /// Load image
             std::string image_path =
-                    fmt::format("{}/depth/{:06d}.png", root_path, i + 1);
+                    fmt::format("{}/depth/{:06d}.png", root_path, i);
             std::string color_path =
-                    fmt::format("{}/color/{:06d}.png", root_path, i + 1);
+                    fmt::format("{}/image/{:06d}.jpg", root_path, i);
 
             std::shared_ptr<geometry::Image> depth_legacy =
                     io::CreateImageFromFile(image_path);
@@ -119,6 +121,8 @@ int main(int argc, char** argv) {
                                       *mesh_legacy);
         timer.Stop();
         utility::LogInfo("IO takes {}", timer.GetDuration());
+
+        voxel_grid.Release();
 
         // open3d::visualization::DrawGeometries({mesh_legacy});
 
