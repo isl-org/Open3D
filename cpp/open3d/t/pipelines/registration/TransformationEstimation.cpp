@@ -37,6 +37,35 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
+double det_(const core::Tensor &D) {
+    core::Tensor D_ = D.Copy();
+    // TODO: Create a proper op for Determinant
+    D_[0][0] = D_[0][0] * (D_[1][1] * D_[2][2] - D_[1][2] * D_[2][1]);
+    D_[0][1] = D_[0][1] * (D_[1][0] * D_[2][2] - D_[2][0] * D_[1][2]);
+    D_[0][2] = D_[0][2] * (D_[1][0] * D_[2][1] - D_[2][0] * D_[1][1]);
+    D_[0][0] = D_[0][0] - D_[0][1] + D_[0][2];
+    return D_[0][0].Item<float>();
+}
+
+core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
+                                         const core::Tensor &t,
+                                         const core::Dtype &dtype,
+                                         const core::Device &device) {
+    core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
+
+    // Rotation
+    core::Tensor translate = t.Copy().Reshape({1, 3});
+    transformation.SetItem(
+            {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(0, 3, 1)},
+            R);
+    // Translation and Scale [Assumed to be 1]
+    transformation[0][3] = t[0];
+    transformation[1][3] = t[1];
+    transformation[2][3] = t[2];
+    transformation[3][3] = 1;
+    return transformation;
+}
+
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -59,8 +88,44 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &corres) const {
-    utility::LogError("Unimplemented");
-    return core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+    // TODO:
+    // Assert PointCloud to have Float32 Dtype, as the same is
+    // required by SVD Solver.
+    // Assert Devices and Checks
+    // Remove hardcoded dtype and device
+    core::Dtype dtype = core::Dtype::Float32;
+    core::Device device = source.GetDevice();
+
+    core::Tensor select_bool = (corres.Ne(-1)).Reshape({-1});
+    core::Tensor source_select =
+            source.GetPoints().IndexGet({select_bool}).To(dtype);
+    core::Tensor corres_select = corres.IndexGet({select_bool}).Reshape({-1});
+    core::Tensor target_select =
+            target.GetPoints().IndexGet({corres_select}).To(dtype);
+    float corres_num = corres_select.GetShape()[0];
+
+    // https://ieeexplore.ieee.org/document/88573
+
+    core::Tensor mux = source_select.Mean({0}, true).To(dtype);
+    core::Tensor muy = target_select.Mean({0}, true).To(dtype);
+
+    core::Tensor Sxy = ((target_select - muy)
+                                .T()
+                                .Matmul(source_select - mux)
+                                .Div_(corres_num))
+                               .To(dtype);
+
+    core::Tensor U, D, VT;
+    std::tie(U, D, VT) = Sxy.SVD();
+    core::Tensor S = core::Tensor::Eye(3, dtype, device);
+    if (det_(U) * det_(VT.T()) < 0) S[-1][-1] = -1;
+
+    core::Tensor R, t;
+    R = U.Matmul(S.Matmul(VT)).To(dtype);
+    t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1}).To(dtype);
+
+    return ComputeTransformationFromRt(R, t, dtype, device)
+            .To(core::Dtype::Float64);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
