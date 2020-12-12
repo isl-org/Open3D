@@ -26,6 +26,8 @@
 
 #include "open3d/visualization/gui/PickPointsInteractor.h"
 
+#include <unordered_map>
+
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
@@ -37,8 +39,6 @@
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
-
-#include <unordered_map>
 
 #define WANT_DEBUG_IMAGE 0
 
@@ -315,7 +315,9 @@ void PickPointsInteractor::OnPickImageDone(
         auto *img = pick_image_.get();
         indices.clear();
         if (x1 - x0 == 1 && y1 - y0 == 1) {
-            struct Score { float score; };
+            struct Score {
+                float score;
+            };
             std::unordered_map<unsigned int, Score> candidates;
             auto clicked_idx = GetIndexForColor(img, x0, y0);
             int radius;
@@ -344,9 +346,9 @@ void PickPointsInteractor::OnPickImageDone(
             }
             if (!candidates.empty()) {
                 // Note that scores are (radius - dist), and since we take from
-                // a square pattern, a score can be negative. And multiple pixels
-                // of a point scoring negatively can make the negative up to
-                // -point_size^2.
+                // a square pattern, a score can be negative. And multiple
+                // pixels of a point scoring negatively can make the negative up
+                // to -point_size^2.
                 float best_score = -1e30f;
                 unsigned int best_idx = (unsigned int)-1;
                 for (auto &idx_score : candidates) {
@@ -357,9 +359,8 @@ void PickPointsInteractor::OnPickImageDone(
                 }
                 auto &o = lookup_->ObjectForIndex(best_idx);
                 size_t obj_idx = best_idx - o.start_index;
-                indices[o.name].push_back(
-                    std::pair<size_t, Eigen::Vector3d>(obj_idx,
-                                                       points_[best_idx]));
+                indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(
+                        obj_idx, points_[best_idx]));
             }
         } else {
             for (int y = y0; y < y1; ++y) {
@@ -369,8 +370,8 @@ void PickPointsInteractor::OnPickImageDone(
                         auto &o = lookup_->ObjectForIndex(idx);
                         size_t obj_idx = idx - o.start_index;
                         indices[o.name].push_back(
-                            std::pair<size_t, Eigen::Vector3d>(obj_idx,
-                                                               points_[idx]));
+                                std::pair<size_t, Eigen::Vector3d>(
+                                        obj_idx, points_[idx]));
                     }
                 }
             }
