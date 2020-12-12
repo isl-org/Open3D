@@ -12,85 +12,68 @@ import open3d as o3d
 sys.path.append("../utility")
 from file import *
 sys.path.append(".")
-from make_fragments import read_rgbd_image
 
+import argparse
 
-def scalable_integrate_rgbd_frames(path_dataset, intrinsic, config):
-    device = o3d.core.Device('cuda:0')
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dataset_path', type=str)
+    parser.add_argument('trajectory_path', type=str)
+    parser.add_argument('--mesh_name', type=str, default='mesh.ply')
+    parser.add_argument('--intrinsic_path', type=str)
+    parser.add_argument('--block_count', type=int, default=1000)
+    parser.add_argument('--voxel_size', type=float, default=0.006)
+    parser.add_argument('--device', type=str, default='cuda:0')
+    args = parser.parse_args()
+
+    device = o3d.core.Device(args.device)
+
+    # Load RGBD
+    [color_files, depth_files] = get_rgbd_file_lists(args.dataset_path)
+
+    # Load intrinsics
+    if args.intrinsic_path is None:
+        intrinsic = o3d.camera.PinholeCameraIntrinsic(
+            o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+    else:
+        intrinsic = o3d.io.read_pinhole_camera_intrinsic(args.intrinsic)
 
     intrinsic = o3d.core.Tensor(intrinsic.intrinsic_matrix,
                                 o3d.core.Dtype.Float32, device)
 
-    poses = []
-    [color_files, depth_files] = get_rgbd_file_lists(path_dataset)
-    n_files = len(color_files)
-    n_fragments = int(math.ceil(float(n_files) / \
-            config['n_frames_per_fragment']))
+    # Load extrinsics
+    trajectory = read_poses_from_log(args.trajectory_path)
 
+    n_files = len(color_files)
+
+    # Setup volume
     volume = o3d.t.geometry.TSDFVoxelGrid(
         {
             'tsdf': o3d.core.Dtype.Float32,
             'weight': o3d.core.Dtype.UInt16,
             'color': o3d.core.Dtype.UInt16
         },
-        voxel_size=config["tsdf_cubic_size"] / 512.0,
+        voxel_size=args.voxel_size,
         sdf_trunc=0.04,
         block_resolution=16,
-        block_count=1000,
+        block_count=args.block_count,
         device=device)
 
-    pose_graph_fragment = o3d.io.read_pose_graph(
-        join(path_dataset, config["template_refined_posegraph_optimized"]))
+    for i in range(n_files):
+        rgb = o3d.io.read_image(color_files[i])
+        rgb = o3d.t.geometry.Image.from_legacy_image(rgb, device=device)
 
-    for fragment_id in range(len(pose_graph_fragment.nodes)):
-        pose_graph_rgbd = o3d.io.read_pose_graph(
-            join(path_dataset,
-                 config["template_fragment_posegraph_optimized"] % fragment_id))
+        depth = o3d.io.read_image(depth_files[i])
+        depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
 
-        for frame_id in range(len(pose_graph_rgbd.nodes)):
-            frame_id_abs = fragment_id * \
-                    config['n_frames_per_fragment'] + frame_id
-            print(
-                "Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)." %
-                (fragment_id, n_fragments - 1, frame_id_abs, frame_id + 1,
-                 len(pose_graph_rgbd.nodes)))
+        extrinsic = o3d.core.Tensor(np.linalg.inv(trajectory[i]),
+                                    o3d.core.Dtype.Float32, device)
 
-            rgb = o3d.io.read_image(color_files[frame_id_abs])
-            depth = o3d.io.read_image(depth_files[frame_id_abs])
-
-            rgb = o3d.t.geometry.Image.from_legacy_image(rgb, device=device)
-            depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
-
-            pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose,
-                          pose_graph_rgbd.nodes[frame_id].pose)
-            extrinsic = o3d.core.Tensor(np.linalg.inv(pose),
-                                        o3d.core.Dtype.Float32, device)
-
-            start = time.time()
-            volume.integrate(depth, rgb, intrinsic, extrinsic, 1000.0, 3.0)
-            end = time.time()
-            print('integration takes {}s'.format(end - start))
-
-            poses.append(pose)
+        start = time.time()
+        volume.integrate(depth, rgb, intrinsic, extrinsic, 1000.0, 3.0)
+        end = time.time()
+        print('Integration {:04d}/{:04d} takes {:.3f} ms'.format(
+            i, n_files, (end - start) * 1000.0))
 
     mesh = volume.extract_surface_mesh().to_legacy_triangle_mesh()
-    mesh.compute_vertex_normals()
-    if config["debug_mode"]:
-        o3d.visualization.draw_geometries([mesh])
-
-    mesh_name = join(path_dataset, config["template_global_mesh"])
-    o3d.io.write_triangle_mesh(mesh_name, mesh, False, True)
-
-    traj_name = join(path_dataset, config["template_global_traj"])
-    write_poses_to_log(traj_name, poses)
-
-
-def run(config):
-    print("integrate the whole RGBD sequence using estimated camera pose.")
-    if config["path_intrinsic"]:
-        intrinsic = o3d.io.read_pinhole_camera_intrinsic(
-            config["path_intrinsic"])
-    else:
-        intrinsic = o3d.camera.PinholeCameraIntrinsic(
-            o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    scalable_integrate_rgbd_frames(config["path_dataset"], intrinsic, config)
+    o3d.io.write_triangle_mesh(args.mesh_name, mesh, False, True)
