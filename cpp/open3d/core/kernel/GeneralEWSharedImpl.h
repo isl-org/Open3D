@@ -162,8 +162,7 @@ struct ColoredVoxel32f {
         } else if (BYTESIZE == sizeof(ColoredVoxel16i)) {    \
             using voxel_t = ColoredVoxel16i;                 \
             return __VA_ARGS__();                            \
-        }                                                    \
-        if (BYTESIZE == sizeof(Voxel32f)) {                  \
+        } else if (BYTESIZE == sizeof(Voxel32f)) {           \
             using voxel_t = Voxel32f;                        \
             return __VA_ARGS__();                            \
         } else {                                             \
