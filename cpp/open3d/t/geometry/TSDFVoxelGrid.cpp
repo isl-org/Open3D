@@ -193,8 +193,6 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     core::kernel::GeneralEW(srcs, dsts,
                             core::kernel::GeneralEWOpCode::TSDFIntegrate);
-    utility::LogInfo("{}, {}, {}", block_hashmap_->Size(),
-                     block_hashmap_->GetCapacity(), GetDevice().ToString());
 }
 
 PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {

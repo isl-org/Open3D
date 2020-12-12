@@ -45,9 +45,6 @@ public:
                      const Tensor& extrinsic = Tensor::Eye(
                              4, core::Dtype::Float32, core::Device("CPU:0")),
                      float scale = 1.0f) {
-        Tensor intrinsic_f = intrinsic.To(core::Dtype::Float32);
-        Tensor extrinsic_f = extrinsic.To(core::Dtype::Float32);
-
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 4; ++j) {
                 extrinsic_[i][j] = extrinsic[i][j].Item<float>();

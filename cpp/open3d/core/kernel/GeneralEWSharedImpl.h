@@ -158,15 +158,12 @@ struct ColoredVoxel32f {
     [&] {                                                    \
         if (BYTESIZE == sizeof(ColoredVoxel32f)) {           \
             using voxel_t = ColoredVoxel32f;                 \
-            utility::LogInfo("ColoredVoxel32f");             \
             return __VA_ARGS__();                            \
         } else if (BYTESIZE == sizeof(ColoredVoxel16i)) {    \
-            utility::LogInfo("ColoredVoxel16i");             \
             using voxel_t = ColoredVoxel16i;                 \
             return __VA_ARGS__();                            \
         }                                                    \
         if (BYTESIZE == sizeof(Voxel32f)) {                  \
-            utility::LogInfo("Voxel32f");                    \
             using voxel_t = Voxel32f;                        \
             return __VA_ARGS__();                            \
         } else {                                             \
@@ -254,14 +251,18 @@ void CPUUnprojectKernel
     }
 
     // Input
-    Tensor depth = srcs.at("depth").To(core::Dtype::Float32);
-    Tensor intrinsics = srcs.at("intrinsics").To(core::Dtype::Float32);
+    Tensor depth = srcs.at("depth");
+    Tensor intrinsics = srcs.at("intrinsics");
     float depth_scale = srcs.at("depth_scale").Item<float>();
     float depth_max = srcs.at("depth_max").Item<float>();
     int64_t stride = srcs.at("stride").Item<int64_t>();
 
     NDArrayIndexer depth_indexer(depth, 2);
-    TransformIndexer ti(intrinsics);
+    Tensor extrinsics =
+            Tensor(std::vector<float>{1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1.0, 0,
+                                      0, 0, 0, 1.0},
+                   {4, 4}, core::Dtype::Float32, core::Device("CPU:0"));
+    TransformIndexer ti(intrinsics, extrinsics, 1.0f);
 
     // Output
     int64_t rows_strided = depth_indexer.GetShape(0) / stride;
@@ -282,30 +283,30 @@ void CPUUnprojectKernel
 
     int64_t n = rows_strided * cols_strided;
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    CUDALauncher::LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
-                                                 int64_t workload_idx) {
+    CUDALauncher::LaunchGeneralKernel(
+            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
 #else
     CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
 #endif
-        int64_t y = (workload_idx / cols_strided) * stride;
-        int64_t x = (workload_idx % cols_strided) * stride;
+                int64_t y = (workload_idx / cols_strided) * stride;
+                int64_t x = (workload_idx % cols_strided) * stride;
 
-        float d =
-                *static_cast<float*>(depth_indexer.GetDataPtrFromCoord(x, y)) /
-                depth_scale;
-        if (d > 0 && d < depth_max) {
+                float d = (*static_cast<uint16_t*>(
+                                  depth_indexer.GetDataPtrFromCoord(x, y))) /
+                          depth_scale;
+                if (d > 0 && d < depth_max) {
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-            int idx = atomicAdd(count_ptr, 1);
+                    int idx = atomicAdd(count_ptr, 1);
 #else
             int idx = counter.fetch_add(1);
 #endif
-            float* vertex =
-                    static_cast<float*>(point_indexer.GetDataPtrFromCoord(idx));
-            ti.Unproject(static_cast<float>(x), static_cast<float>(y), d,
-                         vertex + 0, vertex + 1, vertex + 2);
-        }
-    });
+                    float* vertex = static_cast<float*>(
+                            point_indexer.GetDataPtrFromCoord(idx));
+                    ti.Unproject(static_cast<float>(x), static_cast<float>(y),
+                                 d, vertex + 0, vertex + 1, vertex + 2);
+                }
+            });
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     int total_pts_count = count.Item<int>();
 #else
