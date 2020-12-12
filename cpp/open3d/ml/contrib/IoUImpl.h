@@ -35,7 +35,7 @@ namespace ml {
 namespace contrib {
 
 constexpr int NMS_BLOCK_SIZE = sizeof(uint64_t) * 8;
-constexpr float EPS = 1e-8;
+constexpr float EPS = static_cast<float>(1e-8);
 
 struct Point {
     OPEN3D_HOST_DEVICE Point() {}
@@ -77,7 +77,7 @@ OPEN3D_HOST_DEVICE inline int CheckRectCross(const Point &p1,
 
 OPEN3D_HOST_DEVICE inline int CheckInBox2D(const float *box, const Point &p) {
     // box (5): [x1, y1, x2, y2, angle].
-    const float MARGIN = 1e-5;
+    const float MARGIN = static_cast<float>(1e-5);
 
     float center_x = (box[0] + box[2]) / 2;
     float center_y = (box[1] + box[3]) / 2;
@@ -237,7 +237,7 @@ OPEN3D_HOST_DEVICE inline float BoxOverlap(const float *box_a,
                       cross_points[k + 1] - cross_points[0]);
     }
 
-    return static_cast<float>(fabs(area)) / 2.0;
+    return static_cast<float>(fabs(area)) / 2.0f;
 }
 
 /// (x_min, z_min, x_max, z_max, y_rotate)
