@@ -101,6 +101,9 @@ public:
     core::Tensor transformation_;
     /// Correspondence set between source and target point cloud.
     core::Tensor correspondence_set_;
+    /// Bool Indexing Tensor, indicating valid Correspondences in Correspondace
+    /// set.
+    core::Tensor correspondence_select_bool_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
     /// For ICP: the overlapping area (# of inlier correspondences / # of points

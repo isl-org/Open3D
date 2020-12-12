@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <memory>
 #include <string>
 #include <utility>
@@ -34,6 +33,8 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/pipelines/registration/SolveTransform.h"
 
 namespace open3d {
 
@@ -45,7 +46,7 @@ class PointCloud;
 namespace pipelines {
 namespace registration {
 
-// typedef core::Tensor CorrespondenceSet;
+typedef std::pair<core::Tensor, core::Tensor> CorrespondenceSet;
 
 enum class TransformationEstimationType {
     Unspecified = 0,
@@ -82,7 +83,7 @@ public:
     /// \param corres Correspondence set between source and target point cloud.
     virtual double ComputeRMSE(const geometry::PointCloud &source,
                                const geometry::PointCloud &target,
-                               const core::Tensor &corres) const = 0;
+                               CorrespondenceSet &corres) const = 0;
     /// Compute transformation from source to target point cloud given
     /// correspondences.
     ///
@@ -92,7 +93,7 @@ public:
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const core::Tensor &corres) const = 0;
+            CorrespondenceSet &corres) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -115,18 +116,18 @@ public:
     };
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       const core::Tensor &corres) const override;
+                       CorrespondenceSet &corres) const override;
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const core::Tensor &corres) const override;
+            CorrespondenceSet &corres) const override;
 
 public:
     /// \brief Set to True to estimate scaling, False to force scaling to be 1.
     ///
     /// The homogeneous transformation is given by\n
     /// T = [ cR t]\n
-    ///    [0   1]\n
+    ///     [0   1]\n
     /// Sets 𝑐=1 if with_scaling is False.
     bool with_scaling_ = false;
 
@@ -158,11 +159,11 @@ public:
     };
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       const core::Tensor &corres) const override;
+                       CorrespondenceSet &corres) const override;
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const core::Tensor &corres) const override;
+            CorrespondenceSet &corres) const override;
 
 public:
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
