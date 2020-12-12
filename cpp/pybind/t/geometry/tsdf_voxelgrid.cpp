@@ -49,7 +49,7 @@ void pybind_tsdf_voxelgrid(py::module& m) {
                             {"weight", core::Dtype::UInt16},
                             {"color", core::Dtype::UInt16},
                     },
-            "voxel_size"_a = 3.0 / 512, "sdf_trunf"_a = 0.04,
+            "voxel_size"_a = 3.0 / 512, "sdf_trunc"_a = 0.04,
             "block_resolution"_a = 16, "block_count"_a = 100,
             "device"_a = core::Device("CUDA:0"));
 

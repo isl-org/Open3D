@@ -18,126 +18,121 @@ Tensor FromEigen(const Eigen::Matrix<T, M, N, A>& matrix) {
                   dtype);
 }
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo(">    TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
+    utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud.");
+    utility::LogInfo("     [options]");
+    utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
+    utility::LogInfo("     --output_filename [mesh]");
+    utility::LogInfo("     --mesh");
+    utility::LogInfo("     --pointcloud");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char** argv) {
-    std::string root_path = argv[1];
-    // std::shared_ptr<geometry::TriangleMesh> mesh_io =
-    //         io::CreateMeshFromFile(root_path + "/scene/integrated.ply");
+    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
+        argc < 4) {
+        PrintHelp();
+        return 1;
+    }
 
-    // auto mesh = t::geometry::TriangleMesh::FromLegacyTrangleMesh(*mesh_io);
-    // auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
-    //         mesh.ToLegacyTriangleMesh());
-    // visualization::DrawGeometries({mesh_legacy});
+    // Color and depth
+    std::string color_folder = std::string(argv[1]);
+    std::string depth_folder = std::string(argv[2]);
 
-    Tensor intrinsic = Tensor(
-            std::vector<float>({525.0, 0, 319.5, 0, 525.0, 239.5, 0, 0, 1}),
+    std::vector<std::string> color_filenames;
+    utility::filesystem::ListFilesInDirectory(color_folder, color_filenames);
+    std::sort(color_filenames.begin(), color_filenames.end());
+
+    std::vector<std::string> depth_filenames;
+    utility::filesystem::ListFilesInDirectory(depth_folder, depth_filenames);
+    std::sort(depth_filenames.begin(), depth_filenames.end());
+
+    if (color_filenames.size() != depth_filenames.size()) {
+        utility::LogError(
+                "[TIntegrateRGBD] numbers of color and depth files mismatch. "
+                "Please provide folders with same number of images.");
+    }
+
+    // Trajectory
+    std::string trajectory_path = std::string(argv[3]);
+    auto trajectory =
+            io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
+
+    // Intrinsics
+    std::string intrinsic_path =
+            utility::GetProgramOptionAsString(argc, argv, "--camera_intrinsic");
+    camera::PinholeCameraIntrinsic intrinsic;
+    if (intrinsic_path.empty() ||
+        !io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
+        utility::LogWarning(
+                "Failed to read intrinsic parameters for depth image.");
+        utility::LogWarning("Using default value for Primesense camera.");
+        intrinsic = camera::PinholeCameraIntrinsic(
+                camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    }
+
+    auto focal_length = intrinsic.GetFocalLength();
+    auto principal_point = intrinsic.GetPrincipalPoint();
+    Tensor intrinsic_t = Tensor(
+            std::vector<float>({static_cast<float>(focal_length.first), 0,
+                                static_cast<float>(principal_point.first), 0,
+                                static_cast<float>(focal_length.second),
+                                static_cast<float>(principal_point.second), 0,
+                                0, 1}),
             {3, 3}, Dtype::Float32);
 
-    auto trajectory = io::CreatePinholeCameraTrajectoryFromFile(
-            fmt::format("{}/trajectory.log", root_path));
-
     std::vector<Device> devices{Device("CUDA:0"), Device("CPU:0")};
-
     for (auto device : devices) {
         t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
                                                {"weight", core::Dtype::UInt16},
                                                {"color", core::Dtype::UInt16}},
                                               3.0 / 512, 0.04, 16, 100, device);
 
-        std::vector<std::shared_ptr<const open3d::geometry::Geometry>>
-                geometries;
         for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
-            // for (int i = 0; i < 100; ++i) {
-            /// Load image
-            std::string image_path =
-                    fmt::format("{}/depth/{:06d}.png", root_path, i + 1);
-            std::string color_path =
-                    fmt::format("{}/color/{:06d}.png", root_path, i + 1);
-
+            // Load image
             std::shared_ptr<geometry::Image> depth_legacy =
-                    io::CreateImageFromFile(image_path);
+                    io::CreateImageFromFile(depth_filenames[i]);
             std::shared_ptr<geometry::Image> color_legacy =
-                    io::CreateImageFromFile(color_path);
+                    io::CreateImageFromFile(color_filenames[i]);
 
             t::geometry::Image depth =
                     t::geometry::Image::FromLegacyImage(*depth_legacy, device);
             t::geometry::Image color =
                     t::geometry::Image::FromLegacyImage(*color_legacy, device);
 
-            Eigen::Matrix4f extrinsic_eigen =
+            Eigen::Matrix4f extrinsic =
                     trajectory->parameters_[i].extrinsic_.cast<float>();
-            Tensor extrinsic = FromEigen(extrinsic_eigen).Copy(device);
+            Tensor extrinsic_t = FromEigen(extrinsic).Copy(device);
 
-            // auto pcd = t::geometry::PointCloud::CreateFromDepthImage(
-            //         depth, intrinsic, 1000.0);
-            // pcd.Transform(extrinsic.Inverse());
-            // auto pcd_down = pcd.VoxelDownSample(16 * 3.0 / 512);
-
-            // auto pcd_legacy =
-            // std::make_shared<open3d::geometry::PointCloud>(
-            //         pcd_down.ToLegacyPointCloud());
-            // geometries.push_back(pcd_legacy);
-            // if (i % 10 == 0) {
-            //     visualization::DrawGeometries(geometries);
-            // }
             utility::Timer timer;
             timer.Start();
-            voxel_grid.Integrate(depth, color, intrinsic, extrinsic);
+            voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t);
             timer.Stop();
             utility::LogInfo("{}: Integration takes {}", i,
                              timer.GetDuration());
         }
 
-        utility::Timer timer;
-        // timer.Start();
-        // auto pcd = voxel_grid.ExtractSurfacePoints();
-        // timer.Stop();
-        // utility::LogInfo("Point Extraction takes {}",
-        // timer.GetDuration());
+        if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
+            auto mesh = voxel_grid.ExtractSurfaceMesh();
+            auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
+                    mesh.ToLegacyTriangleMesh());
+            open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
+                                          *mesh_legacy);
+        }
 
-        // timer.Start();
-        // auto pcd_legacy =
-        // std::make_shared<open3d::geometry::PointCloud>(
-        //         pcd.ToLegacyPointCloud());
-        // timer.Stop();
-        // utility::LogInfo("Conversion takes {}", timer.GetDuration());
-
-        // timer.Start();
-        // open3d::io::WritePointCloud("pcd_" + device.ToString() +
-        // ".ply",
-        //                             *pcd_legacy);
-        // timer.Stop();
-        // utility::LogInfo("IO takes {}", timer.GetDuration());
-        // open3d::visualization::DrawGeometries({pcd_legacy});
-
-        timer.Start();
-        auto mesh = voxel_grid.CPU().ExtractSurfaceMesh();
-        timer.Stop();
-        utility::LogInfo("Mesh Extraction takes {}", timer.GetDuration());
-
-        timer.Start();
-        auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
-                mesh.ToLegacyTriangleMesh());
-        timer.Stop();
-        utility::LogInfo("Conversion takes {}", timer.GetDuration());
-
-        timer.Start();
-        open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
-                                      *mesh_legacy);
-        timer.Stop();
-        utility::LogInfo("IO takes {}", timer.GetDuration());
-
-        // open3d::visualization::DrawGeometries({mesh_legacy});
-
-        // auto mesh = voxel_grid.ExtractSurfaceMesh();
-        // auto mesh_pcd = t::geometry::PointCloud(mesh.GetVertices());
-        // // mesh_pcd.SetPointNormals(mesh.GetVertexNormals());
-        // auto mesh_pcd_legacy =
-        // std::make_shared<open3d::geometry::PointCloud>(
-        //         mesh_pcd.ToLegacyPointCloud());
-        // // mesh_pcd_legacy->EstimateNormals();
-        // open3d::io::WritePointCloud("mesh_pcd_" + device.ToString() +
-        // ".ply",
-        //                             *mesh_pcd_legacy);
-        // open3d::visualization::DrawGeometries({mesh_pcd_legacy});
+        if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
+            auto pcd = voxel_grid.ExtractSurfacePoints();
+            auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+                    pcd.ToLegacyPointCloud());
+            open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
+                                        *pcd_legacy);
+        }
     }
 }

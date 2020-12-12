@@ -79,8 +79,8 @@ if __name__ == "__main__":
         times[2] = time.time() - start_time
     if args.integrate:
         start_time = time.time()
-        import integrate_scene
-        integrate_scene.run(config)
+        import tintegrate_scene
+        tintegrate_scene.run(config)
         times[3] = time.time() - start_time
 
     print("====================================")
