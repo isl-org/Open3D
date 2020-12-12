@@ -120,11 +120,6 @@ public:
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
 
-    /// Setter for point_attr_ TensorMap. Used in Pybind.
-    void SetPointAttrPybind(const TensorMap &point_attr) {
-        point_attr_ = point_attr;
-    };
-
     /// Get attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
