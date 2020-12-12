@@ -1,6 +1,7 @@
 {
     "name": "Open3D reconstruction tutorial http://open3d.org/docs/release/tutorial/reconstruction_system/system_overview.html",
-    "path_dataset": "dataset/stanford/lounge/",
+    "path_dataset_ori": "dataset/stanford/lounge/",
+    "path_dataset": "/home/wei/Workspace/data/open3d/stanford/lounge/",
     "path_intrinsic": "",
     "max_depth": 3.0,
     "voxel_size": 0.05,

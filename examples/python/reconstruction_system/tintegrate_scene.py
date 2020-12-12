@@ -7,14 +7,20 @@
 import numpy as np
 import math
 import sys
+import time
 import open3d as o3d
 sys.path.append("../utility")
 from file import *
 sys.path.append(".")
+from make_fragments import read_rgbd_image
 
 
 def scalable_integrate_rgbd_frames(path_dataset, intrinsic, config):
-    print(intrinsic)
+    device = o3d.core.Device('cuda:0')
+
+    intrinsic = o3d.core.Tensor(intrinsic.intrinsic_matrix,
+                                o3d.core.Dtype.Float32, device)
+
     poses = []
     [color_files, depth_files] = get_rgbd_file_lists(path_dataset)
     n_files = len(color_files)
@@ -31,7 +37,7 @@ def scalable_integrate_rgbd_frames(path_dataset, intrinsic, config):
         sdf_trunc=0.04,
         block_resolution=16,
         block_count=1000,
-        device=o3d.core.Device('cuda:0'))
+        device=device)
 
     pose_graph_fragment = o3d.io.read_pose_graph(
         join(path_dataset, config["template_refined_posegraph_optimized"]))
@@ -48,18 +54,26 @@ def scalable_integrate_rgbd_frames(path_dataset, intrinsic, config):
                 "Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)." %
                 (fragment_id, n_fragments - 1, frame_id_abs, frame_id + 1,
                  len(pose_graph_rgbd.nodes)))
-            rgbd = read_rgbd_image(color_files[frame_id_abs],
-                                   depth_files[frame_id_abs], False, config)
+
+            rgb = o3d.io.read_image(color_files[frame_id_abs])
+            depth = o3d.io.read_image(depth_files[frame_id_abs])
+
+            rgb = o3d.t.geometry.Image.from_legacy_image(rgb, device=device)
+            depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
+
             pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose,
                           pose_graph_rgbd.nodes[frame_id].pose)
+            extrinsic = o3d.core.Tensor(np.linalg.inv(pose),
+                                        o3d.core.Dtype.Float32, device)
 
-            rgb = o3d.t.geometry.Image.from_legacy_image(rgbd.color)
-            depth = o3d.t.geometry.Image.from_legacy_image(rgbd.depth)
+            start = time.time()
+            volume.integrate(depth, rgb, intrinsic, extrinsic, 1000.0, 3.0)
+            end = time.time()
+            print('integration takes {}s'.format(end - start))
 
-            volume.integrate(rgb, depth, intrinsic, np.linalg.inv(pose))
             poses.append(pose)
 
-    mesh = volume.extract_surface_mesh().to_legacy()
+    mesh = volume.extract_surface_mesh().to_legacy_triangle_mesh()
     mesh.compute_vertex_normals()
     if config["debug_mode"]:
         o3d.visualization.draw_geometries([mesh])
@@ -79,4 +93,4 @@ def run(config):
     else:
         intrinsic = o3d.camera.PinholeCameraIntrinsic(
             o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    scalable_integrate_rgb_frames(config["path_dataset"], intrinsic, config)
+    scalable_integrate_rgbd_frames(config["path_dataset"], intrinsic, config)
