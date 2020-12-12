@@ -69,7 +69,7 @@ void O3DVisualizerSelections::RemoveSet(int index) {
     sets_.erase(sets_.begin() + index);
     current_set_index_ = std::min(int(sets_.size()) - 1, current_set_index_);
 
-    if (scene->HasGeometry(sets_[current_set_index_].name)) {
+    if (!sets_.empty() && scene->HasGeometry(sets_[current_set_index_].name)) {
         scene->ShowGeometry(sets_[current_set_index_].name, true);
     }
 }
@@ -82,7 +82,7 @@ void O3DVisualizerSelections::SelectSet(int index) {
 
     current_set_index_ = index;
 
-    if (scene->HasGeometry(sets_[current_set_index_].name)) {
+    if (!sets_.empty() && scene->HasGeometry(sets_[current_set_index_].name)) {
         scene->ShowGeometry(sets_[current_set_index_].name, true);
     }
 }
@@ -93,36 +93,40 @@ void O3DVisualizerSelections::SelectIndices(
         const std::map<std::string,
                        std::vector<std::pair<size_t, Eigen::Vector3d>>>
                 &indices) {
-    auto &selection = sets_[current_set_index_];
-    for (auto &name_indices : indices) {
-        auto &name = name_indices.first;
-        for (auto idx_pt : name_indices.second) {
-            auto &idx = idx_pt.first;
-            auto &p = idx_pt.second;
-            selection.indices[name].insert({idx, pick_order_, p});
+    if (!sets_.empty()) {
+        auto &selection = sets_[current_set_index_];
+        for (auto &name_indices : indices) {
+            auto &name = name_indices.first;
+            for (auto idx_pt : name_indices.second) {
+                auto &idx = idx_pt.first;
+                auto &p = idx_pt.second;
+                selection.indices[name].insert({idx, pick_order_, p});
+            }
         }
-    }
-    pick_order_ += 1;
+        pick_order_ += 1;
 
-    UpdateSelectionGeometry();
+        UpdateSelectionGeometry();
+    }
 }
 
 void O3DVisualizerSelections::UnselectIndices(
         const std::map<std::string,
                        std::vector<std::pair<size_t, Eigen::Vector3d>>>
                 &indices) {
-    auto &selection = sets_[current_set_index_];
-    for (auto &name_indices : indices) {
-        auto &name = name_indices.first;
-        for (auto idx_pt : name_indices.second) {
-            auto &idx = idx_pt.first;
-            auto &p = idx_pt.second;
-            selection.indices[name].erase({idx, pick_order_, p});
+    if (!sets_.empty()) {
+        auto &selection = sets_[current_set_index_];
+        for (auto &name_indices : indices) {
+            auto &name = name_indices.first;
+            for (auto idx_pt : name_indices.second) {
+                auto &idx = idx_pt.first;
+                auto &p = idx_pt.second;
+                selection.indices[name].erase({idx, pick_order_, p});
+            }
         }
-    }
-    pick_order_ += 1;
+        pick_order_ += 1;
 
-    UpdateSelectionGeometry();
+        UpdateSelectionGeometry();
+    }
 }
 
 void O3DVisualizerSelections::UpdateSelectionGeometry() {
