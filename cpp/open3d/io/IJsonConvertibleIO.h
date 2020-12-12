@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <algorithm>
+#include <iterator>
 #include <string>
 
 #include "open3d/utility/IJsonConvertible.h"
@@ -57,5 +59,49 @@ bool ReadIJsonConvertibleFromJSONString(const std::string &json_string,
 bool WriteIJsonConvertibleToJSONString(std::string &json_string,
                                        const utility::IJsonConvertible &object);
 
+/// String to and from enum mapping, based on
+/// https://github.com/nlohmann/json/blob/master/include/nlohmann/detail/macro_scope.hpp
+/// (MIT license)
+/// If you have an enum:
+/// enum IMAGE_FORMAT {FORMAT_PNG,  FORMAT_JPG};
+/// Use as STRINGIFY_ENUM(IMAGE_FORMAT, {
+///      {FORMAT_INVALID, nullptr},
+///      {FORMAT_PNG, "png"},
+///      {FORMAT_JPG, "jpg"}
+///      })
+/// This creates a function enum_to_string(const ENUM_TYPE &e) -> std::string
+/// and a function enum_from_string<ENUM_TYPE>(const std::string &str) ->
+/// ENUM_TYPE for conversion between the enum and string. Invalid string values
+/// are apped to the first specified option in the macro.
+template <typename T>
+inline T enum_from_string(const std::string &);  // unspecialized is undefined
+#define DECLARE_STRINGIFY_ENUM(ENUM_TYPE)                          \
+    std::string enum_to_string(ENUM_TYPE e);                       \
+/*  template <>                                                    \
+    ENUM_TYPE enum_from_string<ENUM_TYPE>(const std::string &str); \
+*/
+#define STRINGIFY_ENUM(ENUM_TYPE, ...)                                        \
+    std::string enum_to_string(ENUM_TYPE e) {                                 \
+        static_assert(std::is_enum<ENUM_TYPE>::value,                         \
+                      #ENUM_TYPE " must be an enum!");                        \
+        static const std::pair<ENUM_TYPE, std::string> m[] = __VA_ARGS__;     \
+        auto it = std::find_if(                                               \
+                std::begin(m), std::end(m),                                   \
+                [e](const std::pair<ENUM_TYPE, std::string> &es_pair)         \
+                        -> bool { return es_pair.first == e; });              \
+        return ((it != std::end(m)) ? it : std::begin(m))->second;            \
+    }                                                                         \
+    /*    template <>                                                         \
+        ENUM_TYPE enum_from_string<ENUM_TYPE>(const std::string &str) {       \
+            static_assert(std::is_enum<ENUM_TYPE>::value,                     \
+                          #ENUM_TYPE " must be an enum!");                    \
+            static const std::pair<ENUM_TYPE, std::string> m[] = __VA_ARGS__; \
+            auto it = std::find_if(                                           \
+                    std::begin(m), std::end(m),                               \
+                    [&str](const std::pair<ENUM_TYPE, std::string> &es_pair)  \
+                            -> bool { return es_pair.second == str; });       \
+            return ((it != std::end(m)) ? it : std::begin(m))->first;         \
+        }                                                                     \
+    */
 }  // namespace io
 }  // namespace open3d
