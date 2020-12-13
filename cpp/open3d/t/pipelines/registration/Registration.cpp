@@ -31,7 +31,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
-// #include "open3d/utility/Timer.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -52,7 +52,7 @@ static RegistrationResult GetCorrespondencesFromKNNSearch(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
-
+    // TODO: Assert Dtype: Float32
     RegistrationResult result(transformation);
     if (max_correspondence_distance <= 0.0) {
         return result;
@@ -82,11 +82,11 @@ static RegistrationResult GetCorrespondencesFromKNNSearch(
 
     // Reduction Sum of "distances"
     // in KNN Distances is returned not DistancesSqaure, unlike HybridSearch
-    auto error2 = ((dist_select).Sum({0})).Item<float_t>();
+    auto squared_error = ((dist_select).Sum({0})).Item<float_t>();
     result.fitness_ = (float)result.correspondence_set_.GetShape()[0] /
                       (float)result.correspondence_select_bool_.GetShape()[0];
-    result.inlier_rmse_ =
-            std::sqrt(error2 / (float)result.correspondence_set_.GetShape()[0]);
+    result.inlier_rmse_ = std::sqrt(
+            squared_error / (float)result.correspondence_set_.GetShape()[0]);
     result.transformation_ = transformation;
     return result;
 }
@@ -120,12 +120,19 @@ static RegistrationResult GetCorrespondencesFromHybridSearch(
                 "Index is not set.");
     }
 
-    // Tensor implementation of HybridSearch takes square of max_corr_dist
+	// max_correspondece_dist in HybridSearch Tensor implementation
+	// is square root of that used in Legacy implementation
+	// TODO: Inform author about this
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
 
+    // TODO: Timers will be removed before merging with master
+    // utility::Timer hybrid_time;
+    // hybrid_time.Start();
     auto result_nns = target_nns.HybridSearch(source.GetPoints(),
                                               max_correspondence_distance, 1);
+    // hybrid_time.Stop();
+    // utility::LogInfo(" HYBRID SEARCH TOOK {}", hybrid_time.GetDuration());
 
     // This condition can be different for different search method used
     result.correspondence_select_bool_ =
@@ -138,11 +145,11 @@ static RegistrationResult GetCorrespondencesFromHybridSearch(
                     .Reshape({-1});
 
     // Reduction Sum of "distances"
-    auto error2 = (dist_select.Sum({0})).Item<float_t>();
+    auto squared_error = (dist_select.Sum({0})).Item<float_t>();
     result.fitness_ = (float)result.correspondence_set_.GetShape()[0] /
                       (float)result.correspondence_select_bool_.GetShape()[0];
-    result.inlier_rmse_ =
-            std::sqrt(error2 / (float)result.correspondence_set_.GetShape()[0]);
+    result.inlier_rmse_ = std::sqrt(
+            squared_error / (float)result.correspondence_set_.GetShape()[0]);
     result.transformation_ = transformation;
     return result;
 }
@@ -183,12 +190,13 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
     }
 
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
-    geometry::PointCloud pcd = source;
+
+    geometry::PointCloud source_transformed = source;
     // TODO: Check if transformation isIdentity (skip transform operation)
-    pcd.Transform(transformation);
-    return GetRegistrationResultAndCorrespondences(pcd, target, target_nns,
-                                                   max_correspondence_distance,
-                                                   transformation);
+    source_transformed.Transform(transformation);
+    return GetRegistrationResultAndCorrespondences(
+            source_transformed, target, target_nns, max_correspondence_distance,
+            transformation);
 }
 
 RegistrationResult RegistrationICP(
@@ -212,42 +220,38 @@ RegistrationResult RegistrationICP(
 
     core::Tensor transformation = init;
     open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
-    geometry::PointCloud pcd = source;
-    geometry::PointCloud target_pcd = target;
+    geometry::PointCloud source_transformed = source;
 
     // TODO: Check if transformation isIdentity (skip transform operation)
-    pcd.Transform(transformation);
-
+    source_transformed.Transform(transformation);
     // TODO: Default constructor absent in RegistrationResult class
     RegistrationResult result(transformation);
 
     result = GetRegistrationResultAndCorrespondences(
-            pcd, target_pcd, target_nns, max_correspondence_distance,
+            source_transformed, target, target_nns, max_correspondence_distance,
             transformation);
-
     auto corres = std::make_pair(result.correspondence_select_bool_,
                                  result.correspondence_set_);
 
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        // std::cout << " Inside ICP Iteration Loop! " << std::endl;
-        // utility::Timer icp_loop_time;
-        // icp_loop_time.Start();
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
-
-        auto update = estimation.ComputeTransformation(pcd, target_pcd, corres);
+        // TODO: Remote the timers before final merge
+        // utility::Timer icp_loop_time;
+        // icp_loop_time.Start();
+        auto update = estimation.ComputeTransformation(source_transformed,
+                                                       target, corres);
         transformation = update.Matmul(transformation);
-        pcd.Transform(update);
+        source_transformed.Transform(update);
         RegistrationResult backup = result;
         result = GetRegistrationResultAndCorrespondences(
-                pcd, target, target_nns, max_correspondence_distance,
-                transformation);
+                source_transformed, target, target_nns,
+                max_correspondence_distance, transformation);
         corres = std::make_pair(result.correspondence_select_bool_,
                                 result.correspondence_set_);
         // icp_loop_time.Stop();
-        // std::cout << " ICP Loop Time: " << icp_loop_time.GetDuration()
-        //           << std::endl;
-
+        // utility::LogInfo(" ICP Iteration Time: {}",
+        // icp_loop_time.GetDuration());
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
             std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <

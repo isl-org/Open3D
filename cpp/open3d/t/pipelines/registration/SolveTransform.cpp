@@ -56,9 +56,9 @@ core::Tensor ComputeTransformationFromRt(const core::Tensor &R,
             {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(0, 3, 1)},
             R);
     // Translation and Scale [Assumed to be 1]
-    transformation[0][3] = t[0];
-    transformation[1][3] = t[1];
-    transformation[2][3] = t[2];
+    transformation.SetItem(
+            {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
+            t.Reshape({3, 1}));
     transformation[3][3] = 1;
     return transformation;
 }
@@ -99,9 +99,9 @@ core::Tensor ComputeTransformationFromPose(const core::Tensor &X,
     transformation[2][2] = X[1].Cos() * X[0].Cos();
 
     // Translation from Pose X
-    transformation[0][3] = X[3];
-    transformation[1][3] = X[4];
-    transformation[2][3] = X[5];
+    transformation.SetItem(
+            {core::TensorKey::Slice(0, 3, 1), core::TensorKey::Slice(3, 4, 1)},
+            X.GetItem({core::TensorKey::Slice(3, 6, 1)}).Reshape({3, 1}));
 
     // Current Implementation DOES NOT SUPPORT SCALE transfomation
     transformation[3][3] = 1;
