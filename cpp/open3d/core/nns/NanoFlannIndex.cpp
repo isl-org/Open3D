@@ -258,6 +258,57 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     return result;
 };
 
+std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
+        const Tensor &query_points, float radius, int max_knn) const {
+    // Check dtype.
+    if (query_points.GetDtype() != GetDtype()) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchKnn] Data type mismatch {} != {}.",
+                query_points.GetDtype().ToString(), GetDtype().ToString());
+    }
+    // Check shapes.
+    if (query_points.NumDims() != 2) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchKnn] query_points must be 2D matrix, "
+                "with shape {n_query_points, d}.");
+    }
+    if (query_points.GetShape()[1] != GetDimension()) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchKnn] query_points has different "
+                "dimension with dataset_points.");
+    }
+    if (max_knn <= 0) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchHybrid] max_knn should be larger than "
+                "0.");
+    }
+    if (radius <= 0) {
+        utility::LogError(
+                "[NanoFlannIndex::SearchHybrid] radius should be larger than "
+                "0.");
+    }
+
+    Tensor indices;
+    Tensor distances;
+    std::tie(indices, distances) = SearchKnn(query_points, max_knn);
+
+    Dtype dtype = GetDtype();
+    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+        Tensor invalid = distances.Gt(radius);
+        Tensor invalid_indices =
+                Tensor(std::vector<int64_t>({-1}), {1}, indices.GetDtype(),
+                       indices.GetDevice());
+        Tensor invalid_distances =
+                Tensor(std::vector<scalar_t>({-1}), {1}, distances.GetDtype(),
+                       distances.GetDevice());
+
+        indices.SetItem(TensorKey::IndexTensor(invalid), invalid_indices);
+        distances.SetItem(TensorKey::IndexTensor(invalid), invalid_distances);
+    });
+
+    return std::make_pair(indices, distances);
+}
+
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

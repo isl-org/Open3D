@@ -155,9 +155,7 @@ public:
 
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
                                            float radius,
-                                           int max_knn) const override {
-        utility::LogError("NanoFlannIndex::SearchHybrid not implemented.");
-    }
+                                           int max_knn) const override;
 
 protected:
     // Tensor dataset_points_;
