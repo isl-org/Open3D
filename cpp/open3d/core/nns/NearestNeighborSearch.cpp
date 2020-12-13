@@ -43,11 +43,6 @@ bool NearestNeighborSearch::SetIndex() {
 bool NearestNeighborSearch::KnnIndex() {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
 #ifdef WITH_FAISS
-        if (dataset_points_.GetDtype() != Dtype::Float32) {
-            utility::LogError(
-                    "[NearestNeighborSearch::KnnIndex] For GPU knn index, "
-                    "dataset_points_ type must be Float32.");
-        }
         faiss_index_.reset(new FaissIndex());
         return faiss_index_->SetTensorData(dataset_points_);
 #else
@@ -87,11 +82,6 @@ bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
 bool NearestNeighborSearch::HybridIndex() {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
 #ifdef WITH_FAISS
-        if (dataset_points_.GetDtype() != Dtype::Float32) {
-            utility::LogError(
-                    "[NearestNeighborSearch::HybridIndex] For GPU knn index, "
-                    "dataset_points_ type must be Float32.");
-        }
         faiss_index_.reset(new FaissIndex());
         return faiss_index_->SetTensorData(dataset_points_);
 #else
@@ -108,11 +98,6 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
 #ifdef WITH_FAISS
     if (faiss_index_) {
-        if (query_points.GetDtype() != Dtype::Float32) {
-            utility::LogError(
-                    "[NearestNeighborSearch::KnnSearch] For GPU knn search, "
-                    "query_points_ type must be Float32.");
-        }
         return faiss_index_->SearchKnn(query_points, knn);
     }
 #endif
@@ -128,12 +113,6 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
         const Tensor& query_points, double radius) {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (fixed_radius_index_) {
-            if (query_points.GetDevice().GetType() !=
-                Device::DeviceType::CUDA) {
-                utility::LogError(
-                        "[NearsetNeighborSearch::FixedRadiusSearch] "
-                        "query_points should be CUDA Tensor.");
-            }
             return fixed_radius_index_->SearchRadius(query_points, radius);
         } else {
             utility::LogError(
@@ -142,11 +121,6 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
         }
     } else {
         if (nanoflann_index_) {
-            if (dataset_points_.GetDtype() != query_points.GetDtype()) {
-                utility::LogError(
-                        "[NearsetNeighborSearch::FixedRadiusSearch] reference "
-                        "and query have different dtype.");
-            }
             return nanoflann_index_->SearchRadius(query_points, radius);
         } else {
             utility::LogError(
@@ -181,12 +155,15 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         const Tensor& query_points, double radius, int max_knn) {
 #ifdef WITH_FAISS
     if (faiss_index_) {
+<<<<<<< HEAD
         if (query_points.GetDtype() != Dtype::Float32) {
             utility::LogError(
                     "[NearestNeighborSearch::HybridSearch] For GPU hybrid "
                     "search, "
                     "query_points_ type must be Float32.");
         }
+=======
+>>>>>>> bcb66865789539e20ee6f31fed5947b0c333f669
         return faiss_index_->SearchHybrid(query_points, radius, max_knn);
     }
 #endif

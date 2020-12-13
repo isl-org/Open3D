@@ -38,6 +38,7 @@ namespace open3d {
 
 namespace geometry {
 class Geometry3D;
+class Image;
 }  // namespace geometry
 
 namespace t {
@@ -104,7 +105,8 @@ public:
     void AddAction(const std::string& name,
                    std::function<void(O3DVisualizer&)> callback);
 
-    void SetBackgroundColor(const Eigen::Vector4f& bg_color);
+    void SetBackground(const Eigen::Vector4f& bg_color,
+                       std::shared_ptr<geometry::Image> bg_image = nullptr);
 
     void SetShader(Shader shader);
 

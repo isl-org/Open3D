@@ -124,15 +124,6 @@ void pybind_o3dvisualizer(py::module& m) {
                  "time"_a = 0.0, "is_visible"_a = true,
                  "Adds a geometry: geometry(name, geometry, material=None, "
                  "group='', time=0.0, is_visible=True). 'name' must be unique.")
-            /*            .def("add_geometry",
-                             py::overload_cast<const std::string&,
-                                               std::shared_ptr<t::geometry::Geometry>,
-                                               rendering::Material *,
-                                               const std::string&,
-                                               double,
-                                               bool>(&O3DVisualizer::AddGeometry),
-                             "Adds a geometry")
-            */
             .def(
                     "add_geometry",
                     [](py::object dv, const py::dict& d) {
@@ -194,6 +185,10 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("export_current_image", &O3DVisualizer::ExportCurrentImage,
                  "export_image(path). Exports a PNG image of what is "
                  "currently displayed to the given path.")
+            .def("set_background", &O3DVisualizer::SetBackground,
+                 "set_background(color, image=None): Sets the background color "
+                 "and, optionally, the background image. Passing None for the "
+                 "background image will clear any image already there.")
             .def_property(
                     "show_settings",
                     [](const O3DVisualizer& dv) {
@@ -201,13 +196,6 @@ void pybind_o3dvisualizer(py::module& m) {
                     },
                     &O3DVisualizer::ShowSettings,
                     "Gets/sets if settings panel is visible")
-            .def_property(
-                    "background_color",
-                    [](const O3DVisualizer& dv) {
-                        return dv.GetUIState().bg_color;
-                    },
-                    &O3DVisualizer::SetBackgroundColor,
-                    "Gets/sets the background color")
             .def_property(
                     "scene_shader",
                     [](const O3DVisualizer& dv) {

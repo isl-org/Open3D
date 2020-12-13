@@ -122,6 +122,10 @@ public:
     /// \return dtype of dataset points.
     Dtype GetDtype() const;
 
+    /// Get device of the dataset points.
+    /// \return device of dataset points.
+    Device GetDevice() const;
+
 protected:
     Tensor dataset_points_;
 };

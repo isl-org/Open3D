@@ -40,7 +40,7 @@
 
 namespace open3d {
 namespace ml {
-namespace impl {
+namespace contrib {
 
 #ifdef BUILD_CUDA_MODULE
 
@@ -67,6 +67,6 @@ std::vector<int64_t> NmsCPUKernel(const float *boxes,
                                   int n,
                                   double nms_overlap_thresh);
 
-}  // namespace impl
+}  // namespace contrib
 }  // namespace ml
 }  // namespace open3d
