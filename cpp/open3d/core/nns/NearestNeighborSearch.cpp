@@ -191,7 +191,8 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
     }
 #endif
     if (nanoflann_index_) {
-        return nanoflann_index_->SearchHybrid(query_points, radius, max_knn);
+        return nanoflann_index_->SearchHybrid(
+                query_points, static_cast<float>(radius), max_knn);
     } else {
         utility::LogError(
                 "[NearestNeighborSearch::HybridSearch] Index is not set.");
