@@ -48,7 +48,7 @@ set(TF_OPS_SOURCES
     "../contrib/Cloud.cpp"
     "../contrib/GridSubsampling.cpp"
     "../contrib/neighbors.cpp"
-    "../impl/misc/Nms.cpp"
+    "../contrib/Nms.cpp"
 )
 
 set(TF_OPS_CUDA_SOURCES
@@ -63,7 +63,7 @@ set(TF_OPS_CUDA_SOURCES
     "misc/VoxelizeOpKernel.cu"
     "misc/NmsOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
-    "../impl/misc/Nms.cu"
+    "../contrib/Nms.cu"
 )
 
 if(BUILD_CUDA_MODULE)

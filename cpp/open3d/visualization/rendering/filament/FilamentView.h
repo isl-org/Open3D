@@ -76,6 +76,7 @@ public:
     std::array<int, 4> GetViewport() const override;
 
     void SetSSAOEnabled(bool enabled) override;
+    void SetColorGrading(const ColorGradingParams& color_grading) override;
 
     void ConfigureForColorPicking() override;
 
