@@ -93,9 +93,9 @@ struct ColoredVoxel16i {
         return static_cast<float>(b / kColorFactor);
     }
     OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
-        float inc_wsum = weight + 1;
-        float inv_wsum = 1.0 / inc_wsum;
-        tsdf = (weight * tsdf + dsdf) * inv_wsum;
+        float inc_wsum = static_cast<float>(weight) + 1;
+        float inv_wsum = 1.0f / inc_wsum;
+        tsdf = (static_cast<float>(weight) * tsdf + dsdf) * inv_wsum;
         weight = static_cast<uint16_t>(inc_wsum < static_cast<float>(kMaxUint16)
                                                ? weight + 1
                                                : kMaxUint16);
@@ -104,8 +104,8 @@ struct ColoredVoxel16i {
                                       float dr,
                                       float dg,
                                       float db) {
-        float inc_wsum = weight + 1;
-        float inv_wsum = 1.0 / inc_wsum;
+        float inc_wsum = static_cast<float>(weight) + 1;
+        float inv_wsum = 1.0f / inc_wsum;
         tsdf = (weight * tsdf + dsdf) * inv_wsum;
         r = static_cast<uint16_t>(
                 round((weight * r + dr * kColorFactor) * inv_wsum));
@@ -136,7 +136,7 @@ struct ColoredVoxel32f {
     OPEN3D_HOST_DEVICE float GetG() { return g; }
     OPEN3D_HOST_DEVICE float GetB() { return b; }
     OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
-        float inv_wsum = 1.0 / (weight + 1);
+        float inv_wsum = 1.0f / (weight + 1);
         tsdf = (weight * tsdf + dsdf) * inv_wsum;
         weight += 1;
     }
@@ -144,7 +144,7 @@ struct ColoredVoxel32f {
                                       float dr,
                                       float dg,
                                       float db) {
-        float inv_wsum = 1.0 / (weight + 1);
+        float inv_wsum = 1.0f / (weight + 1);
         tsdf = (weight * tsdf + dsdf) * inv_wsum;
         r = (weight * r + dr) * inv_wsum;
         g = (weight * g + dg) * inv_wsum;

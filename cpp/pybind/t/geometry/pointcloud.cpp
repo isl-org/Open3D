@@ -53,7 +53,7 @@ void pybind_pointcloud(py::module& m) {
     // be editable in Python. We don't want the TensorMap to be replaced
     // by another TensorMap in Python.
     pointcloud.def_property_readonly(
-            "points",
+            "point",
             py::overload_cast<>(&PointCloud::GetPointAttr, py::const_));
 
     // Pointcloud specific functions.

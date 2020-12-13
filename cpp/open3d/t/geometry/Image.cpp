@@ -104,8 +104,10 @@ open3d::geometry::Image Image::ToLegacyImage() {
         return image_legacy;
     }
 
-    image_legacy.Prepare(GetCols(), GetRows(), GetChannels(),
-                         GetDtype().ByteSize());
+    image_legacy.Prepare(static_cast<int>(GetCols()),
+                         static_cast<int>(GetRows()),
+                         static_cast<int>(GetChannels()),
+                         static_cast<int>(GetDtype().ByteSize()));
     size_t num_bytes = image_legacy.height_ * image_legacy.BytesPerLine();
 
     core::MemoryManager::MemcpyToHost(image_legacy.data_.data(), GetDataPtr(),
