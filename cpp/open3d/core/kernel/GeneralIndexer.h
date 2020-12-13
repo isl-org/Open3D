@@ -121,7 +121,12 @@ private:
 const int64_t MAX_RESOLUTION_DIMS = 4;
 class NDArrayIndexer {
 public:
-    NDArrayIndexer() {}
+    NDArrayIndexer() : ptr_(nullptr), element_byte_size_(0), active_dims_(0) {
+        for (int i = 0; i < MAX_RESOLUTION_DIMS; ++i) {
+            shape_[i] = 0;
+        }
+    }
+
     NDArrayIndexer(const Tensor& ndarray, int64_t active_dims) {
         if (!ndarray.IsContiguous()) {
             utility::LogError(
@@ -291,9 +296,10 @@ public:
 
 private:
     void* ptr_;
-    int64_t shape_[MAX_RESOLUTION_DIMS];
     int64_t element_byte_size_;
     int64_t active_dims_;
+
+    int64_t shape_[MAX_RESOLUTION_DIMS];
 };
 
 }  // namespace kernel
