@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-	// TODO: Take this input as arguments
+    // TODO: Take this input as arguments
     auto device = core::Device("CPU:0");
     auto dtype = core::Dtype::Float32;
 
@@ -83,8 +83,7 @@ int main(int argc, char *argv[]) {
     t::geometry::PointCloud target_device(device);
     target_device.SetPoints(target_points);
     target_device.SetPointNormals(target_normals);
-	// TODO: Look for a way to make pointcloud data of Float32 (it's Float64)
-
+    // TODO: Look for a way to make pointcloud data of Float32 (it's Float64)
 
     // For matching result with the Tutorial test case,
     // Comment out Case: 1 below [init_trans], and uncomment the Case: 2
@@ -99,35 +98,36 @@ int main(int argc, char *argv[]) {
     // Inlier RMSE: 0.0117711
 
     // Case 1: [Tutorial case]
-	// if using Float64, change float to double in the following vector
+    // if using Float64, change float to double in the following vector
     // std::vector<float> trans_init_vec{
     //         0.862, 0.011, -0.507, 0.5,  -0.139, 0.967, -0.215, 0.7,
     //         0.487, 0.255, 0.835,  -1.4, 0.0,    0.0,   0.0,    1.0};
     // // Creating Tensor from manual transformation vector
     // core::Tensor init_trans(trans_init_vec, {4, 4}, dtype, device);
 
-	// Case 2: [Identity Transformation / No Transformation]
-	core::Tensor init_trans = core::Tensor::Eye(4, dtype, device);
+    // Case 2: [Identity Transformation / No Transformation]
+    core::Tensor init_trans = core::Tensor::Eye(4, dtype, device);
 
     // VisualizeRegistration(source, target, init_trans);
 
     utility::LogInfo(" Input on {} Success", device.ToString());
 
-	// Running the EstimateTransformation function in loop, to get an
-	// averged out time estimate.
+    // Running the EstimateTransformation function in loop, to get an
+    // averged out time estimate.
     utility::Timer eval_timer;
     double avg_ = 0.0;
     double max_ = 0.0;
     double min_ = 1000000.0;
     int itr = 10;
 
-	double max_correspondence_dist = 0.02;
+    double max_correspondence_dist = 0.02;
 
     t::pipelines::registration::RegistrationResult evaluation(init_trans);
     for (int i = 0; i < itr; i++) {
         eval_timer.Start();
         evaluation = open3d::t::pipelines::registration::EvaluateRegistration(
-                source_device, target_device, max_correspondence_dist, init_trans);
+                source_device, target_device, max_correspondence_dist,
+                init_trans);
         eval_timer.Stop();
         auto time = eval_timer.GetDuration();
         avg_ += time;
@@ -138,26 +138,31 @@ int main(int argc, char *argv[]) {
 
     // Printing result, [Time averaged over (itr) iterations]
     utility::LogInfo(" [Manually Initialised Transformation] ");
-	utility::LogInfo("   EvaluateRegistration on {} Success ", device.ToString());
+    utility::LogInfo("   EvaluateRegistration on {} Success ",
+                     device.ToString());
     utility::LogInfo("     [PointCloud Size]: ");
     utility::LogInfo("       Points: {} Target Points: {} ",
                      source_points.GetShape().ToString(),
                      target_points.GetShape().ToString());
-    utility::LogInfo("     [Correspondences]: {}, [maximum corrspondence distance = {}] ",
-                     evaluation.correspondence_set_.GetShape()[0], max_correspondence_dist);
+    utility::LogInfo(
+            "     [Correspondences]: {}, [maximum corrspondence distance = "
+            "{}] ",
+            evaluation.correspondence_set_.GetShape()[0],
+            max_correspondence_dist);
     utility::LogInfo("       Fitness: {} ", evaluation.fitness_);
     utility::LogInfo("       Inlier RMSE: {} ", evaluation.inlier_rmse_);
     utility::LogInfo("     [TIME]: (averaged out for {} iterations)", itr);
-    utility::LogInfo("       Average: {}   Max: {}   Min: {} ", avg_, max_, min_);
+    utility::LogInfo("       Average: {}   Max: {}   Min: {} ", avg_, max_,
+                     min_);
 
     // VisualizeRegistration(source, target, init_trans);
 
-	// ICP ConvergenceCriteria for both Point To Point and Point To Plane:
-	double relative_fitness = 1e-6;
-	double relative_rmse = 1e-6;
-	int max_iterations = 30;
+    // ICP ConvergenceCriteria for both Point To Point and Point To Plane:
+    double relative_fitness = 1e-6;
+    double relative_rmse = 1e-6;
+    int max_iterations = 30;
 
-	// ICP: Point to Point
+    // ICP: Point to Point
     auto reg_p2p = open3d::t::pipelines::registration::RegistrationICP(
             source_device, target_device, max_correspondence_dist, init_trans,
             open3d::t::pipelines::registration::
@@ -166,24 +171,28 @@ int main(int argc, char *argv[]) {
                     relative_fitness, relative_rmse, max_iterations));
 
     // Printing result for ICP Point to Point
-    utility::LogInfo(" [ICP: Point to Point] " );
-	utility::LogInfo("   Convergence Criteria: ");
-	utility::LogInfo("   Relative Fitness: {}, Relative Fitness: {}, Max Iterations {}",
-							relative_fitness, relative_rmse, max_iterations);
-	utility::LogInfo("   EvaluateRegistration on {} Success ", device.ToString());
+    utility::LogInfo(" [ICP: Point to Point] ");
+    utility::LogInfo("   Convergence Criteria: ");
+    utility::LogInfo(
+            "   Relative Fitness: {}, Relative Fitness: {}, Max Iterations {}",
+            relative_fitness, relative_rmse, max_iterations);
+    utility::LogInfo("   EvaluateRegistration on {} Success ",
+                     device.ToString());
     utility::LogInfo("     [PointCloud Size]: ");
     utility::LogInfo("       Points: {} Target Points: {} ",
                      source_points.GetShape().ToString(),
                      target_points.GetShape().ToString());
-    utility::LogInfo("     [Correspondences]: {}, [maximum corrspondence distance = {}] ",
-                     reg_p2p.correspondence_set_.GetShape()[0], max_correspondence_dist);
+    utility::LogInfo(
+            "     [Correspondences]: {}, [maximum corrspondence distance = "
+            "{}] ",
+            reg_p2p.correspondence_set_.GetShape()[0], max_correspondence_dist);
     utility::LogInfo("       Fitness: {} ", reg_p2p.fitness_);
     utility::LogInfo("       Inlier RMSE: {} ", reg_p2p.inlier_rmse_);
 
     // auto transformation_point2point = reg_p2p.transformation_;
     // VisualizeRegistration(source, target, transformation_point2point);
 
-	// ICP: Point to Plane
+    // ICP: Point to Plane
     auto reg_p2plane = open3d::t::pipelines::registration::RegistrationICP(
             source_device, target_device, max_correspondence_dist, init_trans,
             open3d::t::pipelines::registration::
@@ -192,17 +201,21 @@ int main(int argc, char *argv[]) {
                     relative_fitness, relative_rmse, max_iterations));
 
     // Printing result for ICP Point to Plane
-    utility::LogInfo(" [ICP: Point to Plane] " );
-	utility::LogInfo("   Convergence Criteria: ");
-	utility::LogInfo("   Relative Fitness: {}, Relative Fitness: {}, Max Iterations {}",
-							relative_fitness, relative_rmse, max_iterations);
-	utility::LogInfo("   EvaluateRegistration on {} Success ", device.ToString());
+    utility::LogInfo(" [ICP: Point to Plane] ");
+    utility::LogInfo("   Convergence Criteria: ");
+    utility::LogInfo(
+            "   Relative Fitness: {}, Relative Fitness: {}, Max Iterations {}",
+            relative_fitness, relative_rmse, max_iterations);
+    utility::LogInfo("   EvaluateRegistration on {} Success ",
+                     device.ToString());
     utility::LogInfo("     [PointCloud Size]: ");
     utility::LogInfo("       Points: {} Target Points: {} ",
                      source_points.GetShape().ToString(),
                      target_points.GetShape().ToString());
-    utility::LogInfo("     [Correspondences]: {}, [maximum corrspondence distance = {}] ",
-                     reg_p2p.correspondence_set_.GetShape()[0], max_correspondence_dist);
+    utility::LogInfo(
+            "     [Correspondences]: {}, [maximum corrspondence distance = "
+            "{}] ",
+            reg_p2p.correspondence_set_.GetShape()[0], max_correspondence_dist);
     utility::LogInfo("       Fitness: {} ", reg_p2plane.fitness_);
     utility::LogInfo("       Inlier RMSE: {} ", reg_p2plane.inlier_rmse_);
 

@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
     std::shared_ptr<open3d::geometry::PointCloud> target =
             open3d::io::CreatePointCloudFromFile(argv[2]);
 
-
     // For matching result with the Tutorial test case,
     // Comment out Case: 1 below [init_trans], and uncomment the Case: 2
     // for a good initial guess transformation, for pointcloud input
@@ -79,21 +78,21 @@ int main(int argc, char *argv[]) {
     // Eigen::Matrix4d init_trans;
     // init_trans << 0.862, 0.011, -0.507, 0.5, -0.139, 0.967, -0.215, 0.7,
     //             0.487, 0.255, 0.835, -1.4, 0.0, 0.0, 0.0, 1.0;
-	
-	// Case 2: [Identity Transformation / No Transformation]
+
+    // Case 2: [Identity Transformation / No Transformation]
     Eigen::Matrix4d init_trans = Eigen::Matrix4d::Identity();
 
     // VisualizeRegistration(source, target, init_trans);
 
-	// Running the EstimateTransformation function in loop, to get an
-	// averged out time estimate.
+    // Running the EstimateTransformation function in loop, to get an
+    // averged out time estimate.
     utility::Timer eval_timer;
     double avg_ = 0.0;
     double max_ = 0.0;
     double min_ = 1000000.0;
     int itr = 10;
 
-	double max_correspondence_dist = 0.02;
+    double max_correspondence_dist = 0.02;
 
     open3d::pipelines::registration::RegistrationResult evaluation(init_trans);
     for (int i = 0; i < itr; i++) {
@@ -110,22 +109,26 @@ int main(int argc, char *argv[]) {
 
     // Printing result, [Time averaged over (itr) iterations]
     utility::LogInfo(" [Manually Initialised Transformation] ");
-	utility::LogInfo("   EvaluateRegistration on [Legacy CPU Implementation] Success ");
-    utility::LogInfo("     [Correspondences]: {}, [maximum corrspondence distance = {}] ",
-                     evaluation.correspondence_set_.size(), max_correspondence_dist);
+    utility::LogInfo(
+            "   EvaluateRegistration on [Legacy CPU Implementation] Success ");
+    utility::LogInfo(
+            "     [Correspondences]: {}, [maximum corrspondence distance = "
+            "{}] ",
+            evaluation.correspondence_set_.size(), max_correspondence_dist);
     utility::LogInfo("       Fitness: {} ", evaluation.fitness_);
     utility::LogInfo("       Inlier RMSE: {} ", evaluation.inlier_rmse_);
     utility::LogInfo("     [TIME]: (averaged out for {} iterations)", itr);
-    utility::LogInfo("       Average: {}   Max: {}   Min: {} ", avg_, max_, min_);
+    utility::LogInfo("       Average: {}   Max: {}   Min: {} ", avg_, max_,
+                     min_);
 
     // VisualizeRegistration(source, target, init_trans);
 
-	// ICP ConvergenceCriteria for both Point To Point and Point To Plane:
-	double relative_fitness = 1e-6;
-	double relative_rmse = 1e-6;
-	int max_iterations = 30;
+    // ICP ConvergenceCriteria for both Point To Point and Point To Plane:
+    double relative_fitness = 1e-6;
+    double relative_rmse = 1e-6;
+    int max_iterations = 30;
 
-	// ICP: Point to Point
+    // ICP: Point to Point
     auto reg_p2p = open3d::pipelines::registration::RegistrationICP(
             *source, *target, max_correspondence_dist, init_trans,
             open3d::pipelines::registration::
@@ -134,20 +137,23 @@ int main(int argc, char *argv[]) {
                     relative_fitness, relative_rmse, max_iterations));
 
     // Printing result for ICP Point to Point
-    utility::LogInfo(" [ICP: Point to Point] " );
-	utility::LogInfo("   EvaluateRegistration on [Legacy CPU Implementation] Success ");
-	utility::LogInfo("   Convergence Criteria: ");
-	utility::LogInfo("   Relative Fitness: {}, Relative Fitness: {}, Max Iterations {}",
-							relative_fitness, relative_rmse, max_iterations);
-    utility::LogInfo("   [Correspondences]: {}, [maximum corrspondence distance = {}] ",
-                     reg_p2p.correspondence_set_.size(), max_correspondence_dist);
+    utility::LogInfo(" [ICP: Point to Point] ");
+    utility::LogInfo(
+            "   EvaluateRegistration on [Legacy CPU Implementation] Success ");
+    utility::LogInfo("   Convergence Criteria: ");
+    utility::LogInfo(
+            "   Relative Fitness: {}, Relative Fitness: {}, Max Iterations {}",
+            relative_fitness, relative_rmse, max_iterations);
+    utility::LogInfo(
+            "   [Correspondences]: {}, [maximum corrspondence distance = {}] ",
+            reg_p2p.correspondence_set_.size(), max_correspondence_dist);
     utility::LogInfo("     Fitness: {} ", reg_p2p.fitness_);
     utility::LogInfo("     Inlier RMSE: {} ", reg_p2p.inlier_rmse_);
 
     // auto transformation_point2point = reg_p2p.transformation_;
     // VisualizeRegistration(source, target, transformation_point2point);
 
-	// ICP: Point to Plane
+    // ICP: Point to Plane
     auto reg_p2plane = open3d::pipelines::registration::RegistrationICP(
             *source, *target, max_correspondence_dist, init_trans,
             open3d::pipelines::registration::
@@ -156,13 +162,16 @@ int main(int argc, char *argv[]) {
                     relative_fitness, relative_rmse, max_iterations));
 
     // Printing result for ICP Point to Plane
-    utility::LogInfo(" [ICP: Point to Plane] " );
-	utility::LogInfo("   EvaluateRegistration on [Legacy CPU Implementation] Success ");
-	utility::LogInfo("   Convergence Criteria: ");
-	utility::LogInfo("   Relative Fitness: {}, Relative Fitness: {}, Max Iterations {}",
-							relative_fitness, relative_rmse, max_iterations);
-    utility::LogInfo("   [Correspondences]: {}, [maximum corrspondence distance = {}] ",
-                     reg_p2plane.correspondence_set_.size(), max_correspondence_dist);
+    utility::LogInfo(" [ICP: Point to Plane] ");
+    utility::LogInfo(
+            "   EvaluateRegistration on [Legacy CPU Implementation] Success ");
+    utility::LogInfo("   Convergence Criteria: ");
+    utility::LogInfo(
+            "   Relative Fitness: {}, Relative Fitness: {}, Max Iterations {}",
+            relative_fitness, relative_rmse, max_iterations);
+    utility::LogInfo(
+            "   [Correspondences]: {}, [maximum corrspondence distance = {}] ",
+            reg_p2plane.correspondence_set_.size(), max_correspondence_dist);
     utility::LogInfo("     Fitness: {} ", reg_p2plane.fitness_);
     utility::LogInfo("     Inlier RMSE: {} ", reg_p2plane.inlier_rmse_);
 

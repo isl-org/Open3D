@@ -120,9 +120,9 @@ static RegistrationResult GetCorrespondencesFromHybridSearch(
                 "Index is not set.");
     }
 
-	// max_correspondece_dist in HybridSearch Tensor implementation
-	// is square root of that used in Legacy implementation
-	// TODO: Inform author about this
+    // max_correspondece_dist in HybridSearch Tensor implementation
+    // is square root of that used in Legacy implementation
+    // TODO: Inform author about this
     max_correspondence_distance =
             max_correspondence_distance * max_correspondence_distance;
 
