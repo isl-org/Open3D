@@ -187,8 +187,6 @@ int main(int argc, char **argv) {
             im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
             // Improve depth visualization by scaling
             /* im_rgbd.depth_.LinearTransform(0.25); */
-            auto depth_image_ptr = std::shared_ptr<open3d::geometry::Image>(
-                    &im_rgbd.depth_, [](open3d::geometry::Image *) {});
             // create shared_ptr with no-op deleter for stack RGBDImage
             auto ptr_im_rgbd = std::shared_ptr<legacyRGBDImage>(
                     &im_rgbd, [](legacyRGBDImage *) {});

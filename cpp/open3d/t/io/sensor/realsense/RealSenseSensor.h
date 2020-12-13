@@ -26,8 +26,10 @@
 
 #pragma once
 
-#include "open3d/io/sensor/RGBDSensor.h"
+#include <string>
+
 #include "open3d/t/geometry/RGBDImage.h"
+#include "open3d/t/io/sensor/RGBDSensor.h"
 #include "open3d/t/io/sensor/realsense/RealSenseSensorConfig.h"
 
 namespace rs2 {
@@ -37,7 +39,6 @@ class config;
 }  // namespace rs2
 
 namespace open3d {
-using io::RGBDSensor;
 namespace t {
 namespace io {
 
@@ -53,16 +54,23 @@ public:
     RealSenseSensor &operator=(const RealSenseSensor &) = delete;
     virtual ~RealSenseSensor() override;
 
-    /** Initialize sensor.
+    /** Initialize sensor (optional).
      * \p sensor_index is ignored if \p sensor_config contains a serial number
      * If \p filename is given, frames will be saved to a bag file
      * \return true if a sensor was initialized with the given settings
      */
+    virtual bool InitSensor(const RealSenseSensorConfig &sensor_config =
+                                    RealSenseSensorConfig{},
+                            size_t sensor_index = 0,
+                            const std::string &filename = std::string{});
     virtual bool InitSensor(
-            const RealSenseSensorConfig &sensor_config =
-                    RealSenseSensorConfig{},
+            const RGBDSensorConfig &sensor_config,
             size_t sensor_index = 0,
-            const std::string &filename = std::string{}) override;
+            const std::string &filename = std::string{}) override {
+        return InitSensor(
+                dynamic_cast<const RealSenseSensorConfig &>(sensor_config),
+                sensor_index, filename);
+    }
 
     virtual bool StartCapture(bool start_record = false) override;
 

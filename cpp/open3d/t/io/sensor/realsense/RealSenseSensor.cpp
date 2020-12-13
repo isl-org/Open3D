@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// TODO: validate channels_color_, dt_color_
-
 #include "open3d/t/io/sensor/realsense/RealSenseSensor.h"
 
 #include <librealsense2/rs.hpp>
@@ -52,6 +50,9 @@ bool RealSenseSensor::ListDevices() {
                 utility::LogInfo("\t{}: [{}]", config.first,
                                  fmt::join(config.second, " | "));
         }
+        utility::LogInfo(
+                "Open3D only supports synchronized color and depth capture "
+                "(color_fps = depth_fps).");
         return true;
     }
 }
@@ -125,34 +126,61 @@ RealSenseSensor::RealSenseSensor()
       align_to_color_{new rs2::align(rs2_stream::RS2_STREAM_COLOR)},
       rs_config_{new rs2::config} {}
 
-RealSenseSensor::~RealSenseSensor() override { StopCapture(); }
+RealSenseSensor::~RealSenseSensor() { StopCapture(); }
 
 bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
                                  size_t sensor_index,
-                                 const std::string& filename) {
-    /* https://www.intel.com/content/www/us/en/support/articles/000028416/emerging-technologies/intel-realsense-technology.html
-     * auto sensor = profile.get_device().first();
-    sensor.set_option(rs2_option::RS2_OPTION_VISUAL_PRESET,
-    rs2_rs400_visual_preset::RS2_RS400_VISUAL_PRESET_HIGH_ACCURACY);
-     */
-
+                                 const std::string& filename) try {
     *rs_config_ = sensor_config.ConvertToNativeConfig();
+    if (sensor_config.config_.find("serial") == sensor_config.config_.cend()) {
+        // serial number not specified, use sensor_index
+        rs2::context ctx;
+        auto device_list = ctx.query_devices();
+        if (sensor_index >= device_list.size()) {
+            utility::LogError(
+                    "No device for sensor_index {}. Only {} devices detected. "
+                    "Using default device, if any.",
+                    sensor_index, device_list.size());
+        } else
+            rs_config_->enable_device(device_list[sensor_index].get_info(
+                    RS2_CAMERA_INFO_SERIAL_NUMBER));
+    }
     if (!filename.empty()) {
+        rs_config_->enable_record_to_file(filename);
         filename_ = filename;
         enable_recording_ = true;
-        rs_config_->enable_record_to_file(bag_file);
     } else {
         filename_.clear();
         enable_recording_ = false;
     }
-    if (rs_config_->can_resolve())
-        return true;
-    else {
-        utility::LogWarning(
-                "Invalid RealSense camera configuration specified, or camera "
-                "not connected.");
-        return false;
+    auto profile = rs_config_->resolve(*pipe_);
+    auto dev = profile.get_device().first<rs2::depth_sensor>();
+    auto it = sensor_config.config_.find("visual_preset");
+    // unknown option will map to default for each product line
+    std::string option_str{"RS2_VISUAL_PRESET_DEFAULT"};
+    if (it != sensor_config.config_.cend() && !it->second.empty())
+        option_str = it->second;
+    std::string product_line = dev.get_info(RS2_CAMERA_INFO_PRODUCT_LINE);
+    if (product_line == "L500") {
+        rs2_l500_visual_preset option;
+        enum_from_string(option_str, option);
+        dev.set_option(RS2_OPTION_VISUAL_PRESET, option);
+    } else if (product_line == "RS400") {
+        rs2_rs400_visual_preset option;
+        enum_from_string(option_str, option);
+        dev.set_option(RS2_OPTION_VISUAL_PRESET, option);
+    } else if (product_line == "SR300") {
+        rs2_sr300_visual_preset option;
+        enum_from_string(option_str, option);
+        dev.set_option(RS2_OPTION_VISUAL_PRESET, option);
     }
+    return true;
+
+} catch (const rs2::error& e) {
+    utility::LogWarning(
+            "Invalid RealSense camera configuration specified, or camera "
+            "not connected.");
+    return false;
 }
 
 bool RealSenseSensor::StartCapture(bool start_record) {
@@ -161,19 +189,40 @@ bool RealSenseSensor::StartCapture(bool start_record) {
         return true;
     }
     try {
-        auto profile = pipe_->start(cfg);
+        const auto profile = pipe_->start(*rs_config_);
+        const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH)
+                                      .as<rs2::video_stream_profile>();
+        dt_depth_ = RealSenseSensorConfig::get_dtype_channels(
+                            (int)rs_depth.format())
+                            .first;
+        if (dt_depth_ != core::Dtype::UInt16) {
+            utility::LogError("Only 16 bit unsigned int depth is supported!");
+        }
+        const auto rs_color = profile.get_stream(RS2_STREAM_COLOR)
+                                      .as<rs2::video_stream_profile>();
+        std::tie(dt_color_, channels_color_) =
+                RealSenseSensorConfig::get_dtype_channels(
+                        (int)rs_color.format());
+        if (dt_color_ != core::Dtype::UInt8) {
+            utility::LogError("Only 8 bit unsigned int color is supported!");
+        }
+
+        is_capturing_ = true;
+        utility::LogInfo(
+                "Capture started with RealSense camera {}",
+                profile.get_device().get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
+        if (enable_recording_) {
+            utility::LogInfo("Recording {}to bag file {}",
+                             start_record ? "" : "[Paused] ", filename_);
+            if (!start_record) profile.get_device().as<rs2::recorder>().pause();
+        }
+        is_recording_ = enable_recording_ && start_record;
+        return true;
     } catch (const rs2::error& e) {
         utility::LogError("StartCapture() failed: {}: {}",
                           rs2_exception_type_to_string(e.get_type()), e.what());
         return false;
     }
-    is_capturing_ = true;
-    if (enable_recording_) {
-        utility::LogInfo("Recording to bag file {}", filename_);
-        if (!start_record) profile.get_device().as<rs2::recorder>().pause();
-    }
-    is_recording_ = enable_recording_ && start_record;
-    return true;
 }
 
 void RealSenseSensor::PauseRecord() {
@@ -189,24 +238,24 @@ void RealSenseSensor::ResumeRecord() {
     } catch (const rs2::error& e) {
         utility::LogError("ResumeRecord() failed: {}: {}",
                           rs2_exception_type_to_string(e.get_type()), e.what());
-        return false;
     }
     is_recording_ = true;
 }
 
 geometry::RGBDImage RealSenseSensor::CaptureFrame(bool wait,
                                                   bool align_depth_to_color) {
-    if (!is_capturing) {
+    if (!is_capturing_) {
         utility::LogError("Please StartCapture() first.");
         return geometry::RGBDImage();
     }
     try {
-        if (!(wait && pipe_->try_wait_for_frames(&frames) ||
-              !wait && pipe_->poll_for_frames(&frames)))
+        rs2::frameset frames;
+        if (!((wait && pipe_->try_wait_for_frames(&frames)) ||
+              (!wait && pipe_->poll_for_frames(&frames))))
             return geometry::RGBDImage();
         if (align_depth_to_color) frames = align_to_color_->process(frames);
-        const auto& color_frame = frames.get_color_frame();
         // Copy frame data to Tensors
+        const auto& color_frame = frames.get_color_frame();
         current_frame_.color_ = core::Tensor(
                 static_cast<const uint8_t*>(color_frame.get_data()),
                 {color_frame.get_height(), color_frame.get_width(),
@@ -225,9 +274,12 @@ geometry::RGBDImage RealSenseSensor::CaptureFrame(bool wait,
 }
 
 void RealSenseSensor::StopCapture() {
-    pipe_->stop();
-    is_recording_ = false;
-    is_capturing_ = false;
+    if (is_capturing_) {
+        pipe_->stop();
+        is_recording_ = false;
+        is_capturing_ = false;
+        utility::LogInfo("Capture stopped.");
+    }
 }
 
 }  // namespace io

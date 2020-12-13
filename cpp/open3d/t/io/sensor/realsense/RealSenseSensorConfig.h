@@ -30,7 +30,9 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
+#include "open3d/core/Dtype.h"
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/io/sensor/RGBDSensorConfig.h"
 
@@ -44,14 +46,11 @@ using io::RGBDSensorConfig;
 namespace t {
 namespace io {
 
-// clang-format off
 DECLARE_STRINGIFY_ENUM(rs2_stream);
 DECLARE_STRINGIFY_ENUM(rs2_format);
 DECLARE_STRINGIFY_ENUM(rs2_l500_visual_preset);
 DECLARE_STRINGIFY_ENUM(rs2_rs400_visual_preset);
 DECLARE_STRINGIFY_ENUM(rs2_sr300_visual_preset);
-
-// clang-format on
 
 class RealSenseSensorConfig : public RGBDSensorConfig {
 public:
@@ -71,17 +70,14 @@ public:
      *  // (width, height): Leave 0 to let RealSense pick a supported width or
      *  // height
      *     {"color_resolution": "0,0"},
-     *  // color stream framerate. Leave 0 to let RealSense pick a supported
-     *  // framerate
-     *     {"color_fps": "0"},
      *  // pixel format for depth frames
      *     {"depth_format": "RS2_FORMAT_ANY"},
      *  // (width, height): Leave 0 to let RealSense pick a supported width or
      *  // height
      *     {"depth_resolution": "0,0"},
-     *  // depth stream framerate. Leave 0 to let RealSense pick a supported
-     *  // framerate
-     *     {"depth_fps": "0"},
+     *  // framerate for both color and depth streams. Leave 0 to let RealSense
+     *  // pick a supported framerate
+     *     {"fps": "0"},
      *  // Controls depth computation on the device. Supported values are
      *  // specific to device family (SR300, RS400, L500). Leave empty to pick
      *  // the default.
@@ -106,6 +102,10 @@ public:
     /// connected. If no serial number is provided, it will be checked against
     /// any connected device
     bool IsValidConfig() const;
+
+    /// Convert rs2_format enum to Open3D Dtype and number of channels
+    static std::pair<core::Dtype, size_t> get_dtype_channels(
+            int rs2_format_enum);
 
 public:
     // To avoid including RealSense or json header, configs is stored in a map

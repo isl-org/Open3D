@@ -73,35 +73,32 @@ bool WriteIJsonConvertibleToJSONString(std::string &json_string,
 /// and a function enum_from_string<ENUM_TYPE>(const std::string &str) ->
 /// ENUM_TYPE for conversion between the enum and string. Invalid string values
 /// are apped to the first specified option in the macro.
-template <typename T>
-inline T enum_from_string(const std::string &);  // unspecialized is undefined
-#define DECLARE_STRINGIFY_ENUM(ENUM_TYPE)                          \
-    std::string enum_to_string(ENUM_TYPE e);                       \
-/*  template <>                                                    \
-    ENUM_TYPE enum_from_string<ENUM_TYPE>(const std::string &str); \
-*/
-#define STRINGIFY_ENUM(ENUM_TYPE, ...)                                        \
-    std::string enum_to_string(ENUM_TYPE e) {                                 \
-        static_assert(std::is_enum<ENUM_TYPE>::value,                         \
-                      #ENUM_TYPE " must be an enum!");                        \
-        static const std::pair<ENUM_TYPE, std::string> m[] = __VA_ARGS__;     \
-        auto it = std::find_if(                                               \
-                std::begin(m), std::end(m),                                   \
-                [e](const std::pair<ENUM_TYPE, std::string> &es_pair)         \
-                        -> bool { return es_pair.first == e; });              \
-        return ((it != std::end(m)) ? it : std::begin(m))->second;            \
-    }                                                                         \
-    /*    template <>                                                         \
-        ENUM_TYPE enum_from_string<ENUM_TYPE>(const std::string &str) {       \
-            static_assert(std::is_enum<ENUM_TYPE>::value,                     \
-                          #ENUM_TYPE " must be an enum!");                    \
-            static const std::pair<ENUM_TYPE, std::string> m[] = __VA_ARGS__; \
-            auto it = std::find_if(                                           \
-                    std::begin(m), std::end(m),                               \
-                    [&str](const std::pair<ENUM_TYPE, std::string> &es_pair)  \
-                            -> bool { return es_pair.second == str; });       \
-            return ((it != std::end(m)) ? it : std::begin(m))->first;         \
-        }                                                                     \
-    */
+#define DECLARE_STRINGIFY_ENUM(ENUM_TYPE)    \
+    std::string enum_to_string(ENUM_TYPE e); \
+    void enum_from_string(const std::string &str, ENUM_TYPE &e);
+
+#define STRINGIFY_ENUM(ENUM_TYPE, ...)                                    \
+    std::string enum_to_string(ENUM_TYPE e) {                             \
+        static_assert(std::is_enum<ENUM_TYPE>::value,                     \
+                      #ENUM_TYPE " must be an enum!");                    \
+        static const std::pair<ENUM_TYPE, std::string> m[] = __VA_ARGS__; \
+        auto it = std::find_if(                                           \
+                std::begin(m), std::end(m),                               \
+                [e](const std::pair<ENUM_TYPE, std::string> &es_pair)     \
+                        -> bool { return es_pair.first == e; });          \
+        return ((it != std::end(m)) ? it : std::begin(m))->second;        \
+    }                                                                     \
+    void enum_from_string(const std::string &str, ENUM_TYPE &e) {         \
+        static_assert(std::is_enum<ENUM_TYPE>::value,                     \
+                      #ENUM_TYPE " must be an enum!");                    \
+        static const std::pair<ENUM_TYPE, std::string> m[] = __VA_ARGS__; \
+        auto it = std::find_if(                                           \
+                std::begin(m), std::end(m),                               \
+                [&str](const std::pair<ENUM_TYPE, std::string> &es_pair)  \
+                        -> bool { return es_pair.second == str; });       \
+        e = ((it != std::end(m)) ? it : std::begin(m))->first;            \
+        utility::LogDebug("{} -> {}", str, e);                            \
+    }
+
 }  // namespace io
 }  // namespace open3d

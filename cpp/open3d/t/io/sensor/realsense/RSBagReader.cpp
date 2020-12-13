@@ -34,6 +34,9 @@
 #include <librealsense2/rs.hpp>
 #include <mutex>
 #include <sstream>
+#include <tuple>
+
+#include "open3d/t/io/sensor/realsense/RealSenseSensorConfig.h"
 
 namespace open3d {
 namespace t {
@@ -88,29 +91,6 @@ void RSBagReader::Close() {
 }
 
 Json::Value RSBagReader::GetMetadataJson() {
-    using namespace std::literals::string_literals;
-    // Names for common RealSense pixel formats. See
-    // https://intelrealsense.github.io/librealsense/doxygen/rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7
-    // for format documentation
-    static const std::unordered_map<rs2_format, std::string> format_name = {
-            {RS2_FORMAT_Z16, "Z16"s},     {RS2_FORMAT_YUYV, "YUYV"s},
-            {RS2_FORMAT_RGB8, "RGB8"s},   {RS2_FORMAT_BGR8, "BGR8"s},
-            {RS2_FORMAT_RGBA8, "RGBA8"s}, {RS2_FORMAT_BGRA8, "BGRA8"s},
-            {RS2_FORMAT_Y8, "Y8"s},       {RS2_FORMAT_Y16, "Y16"s}};
-    static const std::unordered_map<rs2_format, core::Dtype> format_dtype = {
-            {RS2_FORMAT_Z16, core::Dtype::UInt16},
-            {RS2_FORMAT_YUYV, core::Dtype::UInt8},
-            {RS2_FORMAT_RGB8, core::Dtype::UInt8},
-            {RS2_FORMAT_BGR8, core::Dtype::UInt8},
-            {RS2_FORMAT_RGBA8, core::Dtype::UInt8},
-            {RS2_FORMAT_BGRA8, core::Dtype::UInt8},
-            {RS2_FORMAT_Y8, core::Dtype::UInt8},
-            {RS2_FORMAT_Y16, core::Dtype::UInt16}};
-    static const std::unordered_map<rs2_format, uint8_t> format_channels = {
-            {RS2_FORMAT_Z16, 1},  {RS2_FORMAT_YUYV, 2},  {RS2_FORMAT_RGB8, 3},
-            {RS2_FORMAT_BGR8, 3}, {RS2_FORMAT_RGBA8, 4}, {RS2_FORMAT_BGRA8, 4},
-            {RS2_FORMAT_Y8, 1},   {RS2_FORMAT_Y16, 1}};
-
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().");
     }
@@ -133,17 +113,21 @@ Json::Value RSBagReader::GetMetadataJson() {
 
     value["device_name"] = rs_device.get_info(RS2_CAMERA_INFO_NAME);
     value["serial_number"] = rs_device.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
-    value["depth_format"] = format_name.at(rs_depth.format());
-    dt_depth_ = format_dtype.at(rs_depth.format());
+    value["depth_format"] = enum_to_string(rs_depth.format())
+                                    .substr(11);  // remove RS2_FORMAT_ prefix
+    dt_depth_ =
+            RealSenseSensorConfig::get_dtype_channels((int)rs_depth.format())
+                    .first;
     if (dt_depth_ != core::Dtype::UInt16) {
         utility::LogError("Only 16 bit unsigned int depth is supported!");
     }
-    value["color_format"] = format_name.at(rs_color.format());
-    dt_color_ = format_dtype.at(rs_color.format());
+    value["color_format"] = enum_to_string(rs_color.format())
+                                    .substr(11);  // remove RS2_FORMAT_ prefix
+    std::tie(dt_color_, channels_color_) =
+            RealSenseSensorConfig::get_dtype_channels((int)rs_color.format());
     if (dt_color_ != core::Dtype::UInt8) {
         utility::LogError("Only 8 bit unsigned int color is supported!");
     }
-    channels_color_ = format_channels.at(rs_color.format());
     value["fps"] = rs_color.fps();
     if (value["fps"] != rs_depth.fps()) {
         utility::LogError(

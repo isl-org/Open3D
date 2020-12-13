@@ -26,24 +26,30 @@
 
 #pragma once
 
+#include <string>
+
 #include "open3d/io/sensor/RGBDSensorConfig.h"
+#include "open3d/t/geometry/RGBDImage.h"
 
 namespace open3d {
+using io::RGBDSensorConfig;
 namespace t {
 namespace io {
 
 class RGBDSensor {
 public:
+    /// Default constructor
     RGBDSensor() {}
     virtual ~RGBDSensor(){};
 
     /// List all supported devices (currently only RealSense)
     static bool ListDevices();
 
-    virtual bool InitSensor(
-            const RGBDConfigConfig &sensor_config = RGBDSensorConfig{},
-            size_t sensor_index = 0,
-            const std::string &filename = std::string{}) = 0;
+    /** Initialize sensor with given configuration
+     */
+    virtual bool InitSensor(const RGBDSensorConfig &sensor_config,
+                            size_t sensor_index = 0,
+                            const std::string &filename = std::string{}) = 0;
 
     virtual bool StartCapture(bool start_record = false) = 0;
 
