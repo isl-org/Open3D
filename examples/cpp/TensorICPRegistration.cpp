@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     }
 
     // TODO: Take this input as arguments
-    auto device = core::Device("CPU:0");
+    auto device = core::Device("CUDA:0");
     auto dtype = core::Dtype::Float32;
 
     // TODO: Look for a neat method to import data on device

@@ -155,15 +155,6 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         const Tensor& query_points, double radius, int max_knn) {
 #ifdef WITH_FAISS
     if (faiss_index_) {
-<<<<<<< HEAD
-        if (query_points.GetDtype() != Dtype::Float32) {
-            utility::LogError(
-                    "[NearestNeighborSearch::HybridSearch] For GPU hybrid "
-                    "search, "
-                    "query_points_ type must be Float32.");
-        }
-=======
->>>>>>> bcb66865789539e20ee6f31fed5947b0c333f669
         return faiss_index_->SearchHybrid(query_points, radius, max_knn);
     }
 #endif
