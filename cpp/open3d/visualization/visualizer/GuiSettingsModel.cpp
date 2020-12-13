@@ -81,6 +81,13 @@ private:
 
 }  // namespace
 
+// static member definition
+constexpr const char* GuiSettingsModel::DEFAULT_IBL;
+constexpr const char* GuiSettingsModel::CUSTOM_IBL;
+constexpr const char* GuiSettingsModel::DEFAULT_MATERIAL_NAME;
+constexpr const char* GuiSettingsModel::MATERIAL_FROM_FILE_NAME;
+constexpr const char* GuiSettingsModel::POINT_CLOUD_PROFILE_NAME;
+
 const std::vector<GuiSettingsModel::LightingProfile>
         GuiSettingsModel::lighting_profiles_ = {
                 LightingProfileBuilder()
