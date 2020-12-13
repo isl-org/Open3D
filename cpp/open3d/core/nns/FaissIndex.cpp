@@ -54,20 +54,19 @@ FaissIndex::FaissIndex(const Tensor &dataset_points) {
 FaissIndex::~FaissIndex() {}
 
 bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
+    dataset_points_ = dataset_points.Contiguous();
+    size_t dataset_size = GetDatasetSize();
+    int dimension = GetDimension();
+
+    // Check dtype.
+    dataset_points_.AssertDtype(Dtype::Float32);
+
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
                 "[FaissIndex::SetTensorData] dataset_points must be "
                 "2D matrix, with shape {n_dataset_points, d}.");
     }
-    dataset_points_ = dataset_points.Contiguous();
-    size_t dataset_size = GetDatasetSize();
-    int dimension = GetDimension();
-    Dtype dtype = GetDtype();
 
-    if (dtype != Dtype::Float32) {
-        utility::LogError(
-                "[FaissIndex::SetTensorData] Data type must be Float32.");
-    }
     if (dimension == 0 || dataset_size == 0) {
         utility::LogWarning(
                 "[FaissIndex::SetTensorData] Failed due to no data.");
@@ -96,61 +95,45 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
 
 std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
                                                 int knn) const {
-    if (query_points.GetDtype() != Dtype::Float32) {
-        utility::LogError("[FaissIndex::SearchKnn] Data type must be Float32.");
-    }
-    if (query_points.NumDims() != 2) {
-        utility::LogError(
-                "[FaissIndex::SearchKnn] query must be 2D matrix, "
-                "with shape (n_query_points, d).");
-    }
-    if (query_points.GetShape()[1] != GetDimension()) {
-        utility::LogError(
-                "[FaissIndex::SearchKnn] query has different "
-                "dimension with the dataset dimension.");
-    }
+    // Check dtype.
+    query_points.AssertDtype(Dtype::Float32);
+
+    // Check shape.
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
     if (knn <= 0) {
         utility::LogError(
                 "[FaissIndex::SearchKnn] knn should be larger than 0.");
     }
 
-    SizeVector size = query_points.GetShape();
-    int64_t query_size = size[0];
+    int64_t num_query_points = query_points.GetShape()[0];
     knn = std::min(knn, (int)GetDatasetSize());
 
     auto *data_ptr = static_cast<const float *>(query_points.GetDataPtr());
 
-    Tensor indices = Tensor::Empty({query_size * knn}, Dtype::Int64,
+    Tensor indices = Tensor::Empty({num_query_points * knn}, Dtype::Int64,
                                    dataset_points_.GetDevice());
-    Tensor distances = Tensor::Empty({query_size * knn}, Dtype::Float32,
+    Tensor distances = Tensor::Empty({num_query_points * knn}, Dtype::Float32,
                                      dataset_points_.GetDevice());
 
-    index->search(query_size, data_ptr, knn,
+    index->search(num_query_points, data_ptr, knn,
                   static_cast<float *>(distances.GetDataPtr()),
                   static_cast<int64_t *>(indices.GetDataPtr()));
 
-    indices = indices.Reshape({query_size, knn});
-    distances = distances.Reshape({query_size, knn});
+    indices = indices.Reshape({num_query_points, knn});
+    distances = distances.Reshape({num_query_points, knn});
     return std::make_pair(indices, distances);
 }
 
 std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
                                                    float radius,
                                                    int max_knn) const {
-    if (query_points.GetDtype() != Dtype::Float32) {
-        utility::LogError(
-                "[FaissIndex::SearchHybrid] Data type must be Float32.");
-    }
-    if (query_points.NumDims() != 2) {
-        utility::LogError(
-                "[FaissIndex::SearchHybrid] query must be 2D matrix, "
-                "with shape (n_query_points, d).");
-    }
-    if (query_points.GetShape()[1] != GetDimension()) {
-        utility::LogError(
-                "[FaissIndex::SearchHybrid] query has different "
-                "dimension with the dataset dimension.");
-    }
+    // Check dtype.
+    query_points.AssertDtype(Dtype::Float32);
+
+    // Check shape.
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
     if (max_knn <= 0) {
         utility::LogError(
                 "[FaissIndex::SearchHybrid] max_knn should be larger than 0.");

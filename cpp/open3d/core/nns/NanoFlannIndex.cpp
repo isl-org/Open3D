@@ -69,22 +69,11 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                                                     int knn) const {
     // Check dtype.
-    if (query_points.GetDtype() != GetDtype()) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchKnn] Data type mismatch {} != {}.",
-                query_points.GetDtype().ToString(), GetDtype().ToString());
-    }
+    query_points.AssertDtype(GetDtype());
+
     // Check shapes.
-    if (query_points.NumDims() != 2) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchKnn] query_points must be 2D matrix, "
-                "with shape {n_query_points, d}.");
-    }
-    if (query_points.GetShape()[1] != GetDimension()) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchKnn] query_points has different "
-                "dimension with dataset_points.");
-    }
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
     if (knn <= 0) {
         utility::LogError(
                 "[NanoFlannIndex::SearchKnn] knn should be larger than 0.");
@@ -143,35 +132,14 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         const Tensor &query_points, const Tensor &radii) const {
     // Check dtype.
-    if (query_points.GetDtype() != GetDtype()) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchKnn] Data type mismatch {} != {}.",
-                query_points.GetDtype().ToString(), GetDtype().ToString());
-    }
-    if (query_points.GetDtype() != radii.GetDtype()) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchRadius] query tensor and radii "
-                "have different data type.");
-    }
-    // Check shapes.
-    if (query_points.NumDims() != 2) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchRadius] query tensor must be 2 "
-                "dimensional matrix, with shape {n, d}.");
-    }
-    if (query_points.GetShape()[1] != GetDimension()) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchRadius] query tensor has different "
-                "dimension with reference tensor.");
-    }
-    if (query_points.GetShape()[0] != radii.GetShape()[0] ||
-        radii.NumDims() != 1) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchRadius] radii tensor must be 1 "
-                "dimensional matrix, with shape {n, }.");
-    }
+    query_points.AssertDtype(GetDtype());
+    radii.AssertDtype(GetDtype());
 
+    // Check shapes.
     int64_t num_query_points = query_points.GetShape()[0];
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    radii.AssertShape({num_query_points});
+
     Dtype dtype = GetDtype();
     Tensor indices;
     Tensor distances;
@@ -261,22 +229,11 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, float radius, int max_knn) const {
     // Check dtype.
-    if (query_points.GetDtype() != GetDtype()) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchKnn] Data type mismatch {} != {}.",
-                query_points.GetDtype().ToString(), GetDtype().ToString());
-    }
+    query_points.AssertDtype(GetDtype());
+
     // Check shapes.
-    if (query_points.NumDims() != 2) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchKnn] query_points must be 2D matrix, "
-                "with shape {n_query_points, d}.");
-    }
-    if (query_points.GetShape()[1] != GetDimension()) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchKnn] query_points has different "
-                "dimension with dataset_points.");
-    }
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+
     if (max_knn <= 0) {
         utility::LogError(
                 "[NanoFlannIndex::SearchHybrid] max_knn should be larger than "
